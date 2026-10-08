@@ -191,7 +191,7 @@ export default function ParaVosPage() {
         </Link>
         <div className="mt-3 flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-[var(--accent)]" strokeWidth={2} aria-hidden />
-          <Kicker className="text-[var(--accent)]">Para vos</Kicker>
+          <Kicker className="text-[var(--accent)]">Para ti</Kicker>
         </div>
         <h1 className="mt-1 text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">
           Productos curados

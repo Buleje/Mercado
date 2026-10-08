@@ -245,7 +245,7 @@ export default function StoreHero({
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="WhatsApp"
-                title="Pedí por WhatsApp"
+                title="Pide por WhatsApp"
                 className="inline-flex h-12 w-12 items-center justify-center rounded-none border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)] transition-all hover:border-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
               >
                 <Phone className="h-4 w-4" strokeWidth={2.25} aria-hidden />

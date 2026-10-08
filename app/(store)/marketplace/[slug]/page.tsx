@@ -128,7 +128,7 @@ async function buildStoreMetadata(slug: string): Promise<Metadata> {
       ? ` ${store.name} · ${rating.toFixed(1)}★ · ${reviewCount} reseñas.`
       : "";
   const desc =
-    `Pedí ${formatCategoryLabel(store.category).toLowerCase()} en ${zone} con delivery rápido. Pagá con Yape, Plin o efectivo.${metricsLine}`.slice(
+    `Pide ${formatCategoryLabel(store.category).toLowerCase()} en ${zone} con delivery rápido. Paga con Yape, Plin o efectivo.${metricsLine}`.slice(
       0,
       155,
     );

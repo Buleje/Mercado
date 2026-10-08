@@ -412,7 +412,7 @@ function RepetirPedidoModal({
             <div className="flex-1 overflow-y-auto px-3 sm:px-5 py-3">
               <div className="flex items-center justify-between gap-2 px-1 pb-2.5">
                 <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                  Ajustá lo que querés repetir
+                  Ajusta lo que quieres repetir
                 </span>
                 <button
                   type="button"
@@ -505,7 +505,7 @@ function RepetirPedidoModal({
 
               {selectedKeys.size === 0 && (
                 <p className="mt-3 text-center text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
-                  Seleccioná al menos un producto para agregar al carrito.
+                  Selecciona al menos un producto para agregar al carrito.
                 </p>
               )}
             </div>

@@ -182,7 +182,7 @@ export function BulejeAssistant({ product, defaultOpen = false }: BulejeAssistan
         const errMsg: AssistantMessage = {
           id: `e-${Date.now()}`,
           role: "assistant",
-          text: "Disculpá, no pude responder ahora mismo. Intentá de nuevo en un momento.",
+          text: "Disculpa, no pude responder ahora mismo. Intenta de nuevo en un momento.",
           t: Date.now(),
         };
         setMessages((prev) => [...prev, errMsg]);
@@ -342,7 +342,7 @@ export function BulejeAssistant({ product, defaultOpen = false }: BulejeAssistan
                       sendMessage(input);
                     }
                   }}
-                  placeholder="Escribí tu pregunta..."
+                  placeholder="Escribe tu pregunta..."
                   aria-label="Escribir pregunta al asistente"
                   rows={1}
                   maxLength={400}

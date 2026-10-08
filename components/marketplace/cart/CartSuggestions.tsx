@@ -208,10 +208,10 @@ export default function CartSuggestions() {
         <div>
           <SectionHead
             icon={<Sparkles className="h-4 w-4" strokeWidth={2.25} aria-hidden />}
-            title="Sumá a tu pedido"
+            title="Suma a tu pedido"
             subtitle="Más de lo que estás llevando, de tus mismas tiendas"
           />
-          <HorizontalCarousel ariaLabel="Sumá a tu pedido">
+          <HorizontalCarousel ariaLabel="Suma a tu pedido">
             {crossSellProducts.map((p, idx) => (
               <UnifiedProductCard
                 key={p.storeProductId || p.id}

@@ -171,10 +171,10 @@ export default function SearchAutocomplete({
       const code = e?.error ?? "unknown";
       const msg =
         code === "not-allowed" || code === "service-not-allowed"
-          ? "Habilitá el micrófono en tu navegador para buscar por voz"
+          ? "Habilita el micrófono en tu navegador para buscar por voz"
           : code === "no-speech"
-            ? "No te escuchamos, intentá de nuevo"
-            : "No pudimos escucharte, probá de nuevo";
+            ? "No te escuchamos, intenta de nuevo"
+            : "No pudimos escucharte, prueba de nuevo";
       setVoiceError(msg);
       // No cerramos el overlay inmediatamente — mostramos el error 2.5s
       setTimeout(() => {
@@ -593,7 +593,7 @@ function VoiceOverlay({ open, transcript, error, onClose }: VoiceOverlayProps) {
                     Te escucho…
                   </p>
                   <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-                    Decí qué buscás (ej. &ldquo;pollo&rdquo;, &ldquo;arroz&rdquo;)
+                    Di qué buscas (ej. &ldquo;pollo&rdquo;, &ldquo;arroz&rdquo;)
                   </p>
                 </>
               )}

@@ -168,7 +168,7 @@ export default function ProductModifierModal({
     for (const g of effectiveGroups) {
       const count = (selection[g.id] ?? []).length;
       if (g.required && count === 0) {
-        errors.push({ groupId: g.id, message: `Elegí ${g.name.toLowerCase()}` });
+        errors.push({ groupId: g.id, message: `Elige ${g.name.toLowerCase()}` });
       }
       if (g.minSelect > 0 && count < g.minSelect) {
         errors.push({ groupId: g.id, message: `Mínimo ${g.minSelect} en ${g.name}` });
@@ -326,7 +326,7 @@ export default function ProductModifierModal({
               {/* Desktop meta block — bloque de info debajo de la imagen */}
               <div className="hidden lg:block px-5 pt-5 pb-3 border-b border-[var(--rule-soft)]">
                 <p className="text-[length:var(--ts-2xs)] font-black uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
-                  Armá tu pedido
+                  Arma tu pedido
                 </p>
                 <h2 className="mt-1 text-2xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)] leading-[1.15]">
                   {product.name}
@@ -421,7 +421,7 @@ export default function ProductModifierModal({
                   {isValid ? (
                     <span>Agregar al carrito</span>
                   ) : (
-                    <span className="truncate">{validation[0]?.message ?? "Elegí las opciones"}</span>
+                    <span className="truncate">{validation[0]?.message ?? "Elige las opciones"}</span>
                   )}
                 </motion.button>
               </div>
@@ -530,7 +530,7 @@ export default function ProductModifierModal({
                   <span className="font-bold text-[var(--text-tertiary)]">
                     {totalSelectedCount > 0
                       ? `${totalSelectedCount} agregado${totalSelectedCount === 1 ? "" : "s"} a tu pedido`
-                      : "Armá tu pedido a tu gusto"}
+                      : "Arma tu pedido a tu gusto"}
                   </span>
                   <span className="flex-1 h-px bg-[var(--rule-soft)]" />
                   {priceDeltaTotal > 0 && (
@@ -668,7 +668,7 @@ export default function ProductModifierModal({
                       className="w-full inline-flex items-center justify-center gap-1.5 rounded-none border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2.5 text-[length:var(--ts-sm)] font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-primary/10 transition-all"
                     >
                       <Plus className="h-3.5 w-3.5" />
-                      Dejale un mensaje al cocinero
+                      Déjale un mensaje al cocinero
                     </button>
                   )}
                 </div>
@@ -766,7 +766,7 @@ export default function ProductModifierModal({
                     </>
                   ) : (
                     <span className="truncate normal-case tracking-normal font-bold">
-                      {validation[0]?.message ?? "Elegí las opciones"}
+                      {validation[0]?.message ?? "Elige las opciones"}
                     </span>
                   )}
                 </motion.button>

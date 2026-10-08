@@ -138,9 +138,9 @@ export function ProductCatalogExplorer({
   if (products.length === 0) return null;
 
   return (
-    <section aria-label="Explorá el catálogo" className="space-y-4">
+    <section aria-label="Explora el catálogo" className="space-y-4">
       <div>
-        <Kicker as="p">Explorá según tus gustos</Kicker>
+        <Kicker as="p">Explora según tus gustos</Kicker>
         <SectionTitle as="h2">Más del catálogo de {storeName}</SectionTitle>
       </div>
 

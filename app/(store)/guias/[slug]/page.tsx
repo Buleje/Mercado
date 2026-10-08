@@ -502,7 +502,7 @@ export default async function GuiaSlugPage({ params }: PageProps) {
 
           {/* ── CTA post-lectura ─────────────────────────────────────────── */}
           <div className="mt-12 rounded-xl border border-[var(--brand-ink)]/20 bg-[var(--brand-ink)]/5 dark:bg-[var(--brand-ink)]/10 p-6 text-center">
-            <CardTitle className="mb-2">Aplicá lo que aprendiste</CardTitle>
+            <CardTitle className="mb-2">Aplica lo que aprendiste</CardTitle>
             <BodyText className="mb-4 text-[var(--text-secondary)]">
               Compra los ingredientes o productos que necesitas directo desde la tienda.
             </BodyText>

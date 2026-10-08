@@ -430,7 +430,7 @@ const StoreCardWrapper = memo(function StoreCardWrapper({
           vistazo (Brandon 2026-07-06). Fila sutil bajo los chips. */}
       <div className="flex items-center gap-1.5">
         <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)]">
-          Pagás:
+          Pagas:
         </span>
         <span className="flex items-center gap-1">
           {(["yape", "plin", "efectivo"] as const).map((m) => (

@@ -529,7 +529,7 @@ function NotifSettings({
           id="settings-heading"
           className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight"
         >
-          Cómo querés recibir avisos
+          Cómo quieres recibir avisos
         </h2>
       </div>
 
@@ -933,17 +933,17 @@ export default function NotificacionesPage() {
                   strokeWidth={2.25}
                 />
                 <p className="text-xs font-bold uppercase tracking-wider text-muted">
-                  ¿Necesitás ayuda?
+                  ¿Necesitas ayuda?
                 </p>
               </div>
               <p className="text-sm text-muted leading-relaxed mb-3">
-                Si tenés dudas con tus avisos, escribinos.
+                Si tienes dudas con tus avisos, escríbenos.
               </p>
               <Link
                 href="/ayuda"
                 className="inline-flex items-center gap-1.5 text-sm font-extrabold text-primary hover:underline"
               >
-                Contactanos
+                Contáctanos
                 <ChevronRight className="h-4 w-4" strokeWidth={2.5} />
               </Link>
             </div>

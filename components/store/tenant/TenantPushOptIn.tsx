@@ -89,7 +89,7 @@ export default function TenantPushOptIn({ slug, vapidKey, message }: { slug: str
           <Bell className="h-5 w-5" strokeWidth={1.75} aria-hidden />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold text-[var(--text-primary)]">{message?.trim() || "Recibí nuestras ofertas y novedades"}</p>
+          <p className="text-sm font-bold text-[var(--text-primary)]">{message?.trim() || "Recibe nuestras ofertas y novedades"}</p>
           <button type="button" onClick={enable} disabled={busy} className="mt-2.5 inline-flex items-center gap-1.5 rounded-full px-4 h-9 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50" style={{ background: "var(--tenant-primary, var(--accent))" }}>
             <Bell className="h-4 w-4" strokeWidth={2} aria-hidden />
             {busy ? "Activando…" : "Activar notificaciones"}

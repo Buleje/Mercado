@@ -105,9 +105,9 @@ export default function WriteReviewForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (rating === 0) return setError("Tocá las estrellas para calificar.");
-    if (body.trim().length < 10) return setError("Escribí un poco más (mínimo 10 caracteres).");
-    if (!name.trim()) return setError("Ingresá tu nombre para publicar.");
+    if (rating === 0) return setError("Toca las estrellas para calificar.");
+    if (body.trim().length < 10) return setError("Escribe un poco más (mínimo 10 caracteres).");
+    if (!name.trim()) return setError("Ingresa tu nombre para publicar.");
     setSubmitting(true);
     try {
       // Mock — cuando se integre reviews reales: POST /api/marketplace/reviews con orderId verificado.
@@ -115,7 +115,7 @@ export default function WriteReviewForm({
       setSubmitted(true);
       onSubmitted?.();
     } catch {
-      setError("No pudimos enviar tu reseña. Intentá más tarde.");
+      setError("No pudimos enviar tu reseña. Intenta más tarde.");
     } finally {
       setSubmitting(false);
     }
@@ -144,7 +144,7 @@ export default function WriteReviewForm({
     );
   }
 
-  const ratingLabel = rating > 0 ? RATING_LABELS[rating] : "Tocá las estrellas para calificar";
+  const ratingLabel = rating > 0 ? RATING_LABELS[rating] : "Toca las estrellas para calificar";
 
   return (
     <form
@@ -153,7 +153,7 @@ export default function WriteReviewForm({
       aria-label={`Escribir reseña de ${productName}`}
     >
       <div className="flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] px-4 py-3">
-        <h3 className="text-base font-semibold text-[var(--text-primary)]">Escribí tu opinión</h3>
+        <h3 className="text-base font-semibold text-[var(--text-primary)]">Escribe tu opinión</h3>
         {onCancel && (
           <button
             type="button"
@@ -195,7 +195,7 @@ export default function WriteReviewForm({
             onChange={(e) => setBody(e.target.value)}
             rows={4}
             maxLength={1000}
-            placeholder="Contanos cómo te fue: llegada, empaque, atención…"
+            placeholder="Cuéntanos cómo te fue: llegada, empaque, atención…"
             className="w-full rounded-sm border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/30 outline-none resize-none transition-colors"
           />
           <div className="mt-1 flex items-center justify-between text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">

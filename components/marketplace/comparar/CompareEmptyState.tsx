@@ -50,7 +50,7 @@ export default function CompareEmptyState({ onPickStart }: CompareEmptyStateProp
             <span className="font-semibold text-[var(--text-primary)] block mb-0.5">
               Hasta 4 productos
             </span>
-            Compará diferentes marcas y tiendas en una sola vista.
+            Compara diferentes marcas y tiendas en una sola vista.
           </li>
           <li className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-3">
             <span className="font-semibold text-[var(--text-primary)] block mb-0.5">

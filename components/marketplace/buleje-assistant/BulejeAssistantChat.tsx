@@ -117,7 +117,7 @@ export default function BulejeAssistantChat({ hideFab = false }: { hideFab?: boo
         });
         const data = await res.json();
         if (!res.ok || !data.reply) {
-          setError(data.error ?? "No pudimos responder, intentá de nuevo");
+          setError(data.error ?? "No pudimos responder, intenta de nuevo");
         } else {
           setMessages((prev) => [
             ...prev,
@@ -129,7 +129,7 @@ export default function BulejeAssistantChat({ hideFab = false }: { hideFab?: boo
           ]);
         }
       } catch {
-        setError("Error de conexión. Intentá de nuevo.");
+        setError("Error de conexión. Intenta de nuevo.");
       } finally {
         setStatus("idle");
       }
@@ -315,7 +315,7 @@ export default function BulejeAssistantChat({ hideFab = false }: { hideFab?: boo
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Escribí tu pregunta…"
+                placeholder="Escribe tu pregunta…"
                 disabled={isSending}
                 className="flex-1 rounded-full border border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-[var(--accent)] transition-colors disabled:opacity-50"
               />

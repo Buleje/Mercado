@@ -129,7 +129,7 @@ export default function CookieConsentBanner() {
               Usamos cookies
             </p>
             <p className="mt-0.5 text-[length:var(--ts-xs)] text-[var(--text-secondary)] leading-snug">
-              Para que la app funcione + analizar uso. Podés elegir qué aceptás.{" "}
+              Para que la app funcione + analizar uso. Puedes elegir qué aceptas.{" "}
               <a href="/privacidad" className="font-bold text-[var(--accent)] underline">
                 Política de privacidad
               </a>

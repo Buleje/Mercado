@@ -62,10 +62,10 @@ const ZONES = ["Centro", "Norte", "Sur", "Este", "Oeste"];
 
 // ─── Contenido de venta (landing de reclutamiento) ────────────────────────
 const HOW_STEPS: { n: string; title: string; desc: string }[] = [
-  { n: "1", title: "Inscribite", desc: "Completá el formulario en 4 pasos. Toma 2 minutos." },
+  { n: "1", title: "Inscríbete", desc: "Completa el formulario en 4 pasos. Toma 2 minutos." },
   { n: "2", title: "Validamos tus datos", desc: "Revisamos tu DNI y documentos. Te activamos en menos de 24 h." },
-  { n: "3", title: "Recibí pedidos", desc: "Te llegan pedidos de tiendas cercanas directo a la app." },
-  { n: "4", title: "Entregá y cobrá", desc: "Llevás el pedido y cobrás tarifa + propina al instante." },
+  { n: "3", title: "Recibe pedidos", desc: "Te llegan pedidos de tiendas cercanas directo a la app." },
+  { n: "4", title: "Entrega y cobra", desc: "Llevas el pedido y cobras tarifa + propina al instante." },
 ];
 
 const REQUISITOS: string[] = [
@@ -76,10 +76,10 @@ const REQUISITOS: string[] = [
 ];
 
 const REPARTIDOR_FAQS: { q: string; a: string }[] = [
-  { q: "¿Cuánto puedo ganar?", a: "Depende de cuántos pedidos tomes. Cobrás una tarifa base por entrega y te quedás con el 100% de las propinas. Mientras más repartís, más ganás." },
-  { q: "¿Cuándo y cómo cobro?", a: "Cobrás por cada entrega. Los pagos en efectivo los recibís directo del cliente y se liquidan según el esquema de tu zona." },
-  { q: "¿Necesito tener moto?", a: "No. Podés repartir en moto, bicicleta, auto o incluso a pie, según la zona y el tipo de pedido." },
-  { q: "¿Qué documentos necesito?", a: "Tu DNI vigente. Si usás moto o auto, además te pedimos tu licencia de conducir y SOAT vigentes." },
+  { q: "¿Cuánto puedo ganar?", a: "Depende de cuántos pedidos tomes. Cobras una tarifa base por entrega y te quedas con el 100% de las propinas. Mientras más repartes, más ganas." },
+  { q: "¿Cuándo y cómo cobro?", a: "Cobras por cada entrega. Los pagos en efectivo los recibes directo del cliente y se liquidan según el esquema de tu zona." },
+  { q: "¿Necesito tener moto?", a: "No. Puedes repartir en moto, bicicleta, auto o incluso a pie, según la zona y el tipo de pedido." },
+  { q: "¿Qué documentos necesito?", a: "Tu DNI vigente. Si usas moto o auto, además te pedimos tu licencia de conducir y SOAT vigentes." },
   { q: "¿Cuánto tarda la activación?", a: "Revisamos tus datos y te activamos en menos de 24 horas hábiles. Te avisamos por WhatsApp." },
   { q: "¿Tiene algún costo inscribirme?", a: "No. La inscripción es totalmente gratis y sin compromiso." },
 ];
@@ -338,20 +338,20 @@ export default function RepartidorPage() {
           <div className="lg:sticky lg:top-24">
             <span className="inline-flex items-center gap-2 rounded-full border border-[var(--accent)]/25 bg-primary/10 px-3.5 py-1.5 text-sm font-bold text-[var(--accent)]">
               <LiveSignal className="h-2.5 w-2.5" active />
-              Repartí con Buleje
+              Reparte con Buleje
             </span>
             <h1 className="mt-5 text-4xl font-extrabold leading-[1.08] tracking-[-0.03em] text-[var(--text-primary)] sm:text-[2.75rem]">
               Gana repartiendo en tu tiempo.
             </h1>
             <p className="mt-4 max-w-sm text-lg leading-relaxed text-[var(--text-secondary)]">
-              Tu moto, tu horario, tu zona. Te quedás con el{" "}
+              Tu moto, tu horario, tu zona. Te quedas con el{" "}
               <strong className="text-[var(--text-primary)]">100% de tus propinas</strong>.
             </p>
             <ul className="mt-8 space-y-4">
               {(
                 [
                   { Icon: ClockBadge, label: "Horario libre, sin jefe" },
-                  { Icon: CashIcon, label: "Cobrás por entrega + propina" },
+                  { Icon: CashIcon, label: "Cobras por entrega + propina" },
                   { Icon: ShieldBadge, label: "Activación en menos de 24 h" },
                 ] as const
               ).map(({ Icon, label }) => (
@@ -369,7 +369,7 @@ export default function RepartidorPage() {
           <div>
             <div className="mb-4 flex items-baseline justify-between gap-3">
               <h2 className="text-xl font-extrabold tracking-[-0.01em] text-[var(--text-primary)]">
-                Inscribite en 4 pasos
+                Inscríbete en 4 pasos
               </h2>
               <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-extrabold text-[var(--accent)]">
                 Gratis · 2 min
@@ -942,7 +942,7 @@ export default function RepartidorPage() {
               Requisitos
             </p>
             <h2 className="mt-2 text-2xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)] sm:text-3xl">
-              Lo que necesitás para empezar
+              Lo que necesitas para empezar
             </h2>
             <p className="mt-3 max-w-md text-base leading-relaxed text-[var(--text-secondary)]">
               Sin inversión inicial ni costo de inscripción. Solo lo básico para repartir seguro.
@@ -978,14 +978,14 @@ export default function RepartidorPage() {
               Lo que todo repartidor pregunta
             </h2>
             <p className="mt-4 max-w-md text-base leading-relaxed text-[var(--text-secondary)]">
-              ¿No encontrás tu duda?{" "}
+              ¿No encuentras tu duda?{" "}
               <a
                 href="https://wa.me/51929340532?text=Hola%20Buleje%2C%20quiero%20ser%20repartidor%20y%20tengo%20una%20duda."
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-bold text-[var(--accent)] hover:underline"
               >
-                Escribinos por WhatsApp
+                Escríbenos por WhatsApp
               </a>{" "}
               y te ayudamos.
             </p>

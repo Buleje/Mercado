@@ -30,7 +30,7 @@ export default function StorefrontFooter({ name }: { name: string }) {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-base font-extrabold text-[var(--text-primary)]">{storeName}</p>
-            <p className="mt-0.5 text-sm">Pedí online · delivery con Yape, Plin o efectivo.</p>
+            <p className="mt-0.5 text-sm">Pide online · delivery con Yape, Plin o efectivo.</p>
           </div>
           {wa && (
             <a

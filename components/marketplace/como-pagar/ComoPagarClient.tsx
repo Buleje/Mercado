@@ -43,10 +43,10 @@ type Method = {
 const OTHER_METHODS: Method[] = [
   {
     id: "efectivo",
-    eyebrow: "Pagás al recibir",
+    eyebrow: "Pagas al recibir",
     title: "Efectivo",
-    description: "Le pagás al motorizado cuando llega. Indicás si necesitás vuelto al confirmar.",
-    steps: ["Pedí desde la app", "Elegí 'Efectivo'", "Indicá tu vuelto", "Pagá al recibir"],
+    description: "Le pagas al motorizado cuando llega. Indicas si necesitas vuelto al confirmar.",
+    steps: ["Pide desde la app", "Elige 'Efectivo'", "Indica tu vuelto", "Paga al recibir"],
     icon: Banknote,
   },
   {
@@ -54,7 +54,7 @@ const OTHER_METHODS: Method[] = [
     eyebrow: "Alternativa rápida",
     title: "Plin",
     description: "Igual que Yape, desde tu app bancaria (BCP, Interbank, BBVA, Scotiabank).",
-    steps: ["Elegí Plin", "Buscá el número", "Enviá el pago", "Confirmá con la bodega"],
+    steps: ["Elige Plin", "Busca el número", "Envía el pago", "Confirma con la bodega"],
     icon: Smartphone,
   },
   {
@@ -62,7 +62,7 @@ const OTHER_METHODS: Method[] = [
     eyebrow: "Pedidos grandes",
     title: "Transferencia",
     description: "Para pedidos sobre S/500. La bodega te pasa su CCI y confirma al recibir.",
-    steps: ["Avisá por WhatsApp", "Recibí el CCI", "Transferí", "Enviá el voucher"],
+    steps: ["Avisa por WhatsApp", "Recibe el CCI", "Transfiere", "Envía el voucher"],
     icon: Building2,
   },
   {
@@ -70,7 +70,7 @@ const OTHER_METHODS: Method[] = [
     eyebrow: "Online seguro",
     title: "Tarjeta",
     description: "Visa o Mastercard vía Stripe. La bodega nunca ve tus datos completos.",
-    steps: ["Elegí 'Tarjeta'", "Cargá los datos", "Confirmá con OTP", "Recibí tu comprobante"],
+    steps: ["Elige 'Tarjeta'", "Carga los datos", "Confirma con OTP", "Recibe tu comprobante"],
     icon: CreditCard,
   },
 ];
@@ -84,7 +84,7 @@ type Feature = {
 const FEATURES: Feature[] = [
   { key: "instant",       label: "Instantáneo" },
   { key: "noCard",        label: "Sin tarjeta" },
-  { key: "payOnDelivery", label: "Pagás al recibir" },
+  { key: "payOnDelivery", label: "Pagas al recibir" },
   { key: "bigAmounts",    label: "Montos grandes" },
   { key: "noFee",         label: "Sin comisión" },
 ];
@@ -98,19 +98,19 @@ const MATRIX: Array<{ id: string; name: string } & Record<Feature["key"], boolea
 ];
 
 const YAPE_STEPS = [
-  { icon: Wallet,     n: 1, t: "Elegí Yape",  d: "Al confirmar el pedido" },
-  { icon: QrCode,     n: 2, t: "Escaneá QR",  d: "O copiá el número" },
-  { icon: Smartphone, n: 3, t: "Yapeá",       d: "El monto exacto" },
+  { icon: Wallet,     n: 1, t: "Elige Yape",  d: "Al confirmar el pedido" },
+  { icon: QrCode,     n: 2, t: "Escanea QR",  d: "O copia el número" },
+  { icon: Smartphone, n: 3, t: "Yapea",       d: "El monto exacto" },
   { icon: Check,      n: 4, t: "Listo",       d: "La bodega empaca" },
 ];
 
 const FAQ = [
-  { q: "¿La bodega cobra comisión por usar Yape?", a: "No. Pagás exactamente lo que ves en el carrito — ni un sol más." },
-  { q: "¿Puedo cambiar el método de pago después de pedir?", a: "Sí, mientras la bodega no haya despachado. Avisá por el chat del pedido." },
-  { q: "¿Y si pago en efectivo y no tengo el monto exacto?", a: "Indicás con cuánto pagás (ej. 'con S/100') y la bodega prepara tu vuelto." },
-  { q: "¿Mi tarjeta queda guardada en Buleje?", a: "Solo si lo pedís. Stripe y Mercado Pago tokenizan cada cobro; Buleje nunca ve el número completo." },
-  { q: "¿Qué hago si mi Yape no aparece en la bodega?", a: "Puede tardar hasta 30s. Si pasa de 1 minuto, enviá el comprobante por WhatsApp a la bodega." },
-  { q: "¿Aceptan Yape de empresa?", a: "Sí. Poné tu RUC en la nota del pedido para que te emitan factura electrónica." },
+  { q: "¿La bodega cobra comisión por usar Yape?", a: "No. Pagas exactamente lo que ves en el carrito — ni un sol más." },
+  { q: "¿Puedo cambiar el método de pago después de pedir?", a: "Sí, mientras la bodega no haya despachado. Avisa por el chat del pedido." },
+  { q: "¿Y si pago en efectivo y no tengo el monto exacto?", a: "Indicas con cuánto pagas (ej. 'con S/100') y la bodega prepara tu vuelto." },
+  { q: "¿Mi tarjeta queda guardada en Buleje?", a: "Solo si lo pides. Stripe y Mercado Pago tokenizan cada cobro; Buleje nunca ve el número completo." },
+  { q: "¿Qué hago si mi Yape no aparece en la bodega?", a: "Puede tardar hasta 30s. Si pasa de 1 minuto, envía el comprobante por WhatsApp a la bodega." },
+  { q: "¿Aceptan Yape de empresa?", a: "Sí. Pon tu RUC en la nota del pedido para que te emitan factura electrónica." },
 ];
 
 // ── Sub-componentes ───────────────────────────────────────────────────────
@@ -174,14 +174,14 @@ export default function ComoPagarClient() {
     <div className="min-h-screen bg-[var(--surface-canvas)]">
       {/* ════════════════════════ HERO ════════════════════════ */}
       <section className="max-w-[1180px] mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-10">
-        <Eyebrow>Pagás como prefieras</Eyebrow>
+        <Eyebrow>Pagas como prefieras</Eyebrow>
         <h1 className="text-[clamp(2.25rem,6vw,4rem)] font-extrabold tracking-[-0.035em] leading-[0.98] text-[var(--text-primary)] max-w-3xl">
           5 formas de pagar.{" "}
-          <span className="italic font-serif text-[var(--accent)]">Vos elegís.</span>
+          <span className="italic font-serif text-[var(--accent)]">Vos eliges.</span>
         </h1>
         <p className="mt-5 text-lg text-[var(--text-secondary)] leading-relaxed max-w-2xl">
           Sin tarjeta obligatoria ni trámites. Si nunca compraste online,
-          también funciona: pagás en efectivo al recibir.
+          también funciona: pagas en efectivo al recibir.
         </p>
 
         {/* Trust chips compactos */}
@@ -189,7 +189,7 @@ export default function ComoPagarClient() {
           {[
             { icon: Zap, label: "87% paga con Yape" },
             { icon: ShieldCheck, label: "Datos cifrados" },
-            { icon: Truck, label: "Pagás al recibir" },
+            { icon: Truck, label: "Pagas al recibir" },
             { icon: Receipt, label: "Boleta o factura" },
           ].map((c) => (
             <span
@@ -213,7 +213,7 @@ export default function ComoPagarClient() {
                 Yape: <span className="italic font-serif text-[var(--accent)]">instantáneo</span> y sin comisión.
               </h2>
               <p className="mt-5 text-lg text-[var(--text-secondary)] leading-relaxed">
-                Escaneás el QR de la bodega y ponés tu huella. La bodega ve el pago
+                Escaneas el QR de la bodega y pones tu huella. La bodega ve el pago
                 en segundos y empieza a empacar.
               </p>
             </div>
@@ -371,13 +371,13 @@ export default function ComoPagarClient() {
           className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[480px] w-[480px] rounded-full bg-[var(--accent)]/[0.05] blur-3xl"
         />
         <div className="relative max-w-3xl mx-auto px-4 text-center">
-          <Eyebrow>Empezá hoy</Eyebrow>
+          <Eyebrow>Empieza hoy</Eyebrow>
           <h2 className="text-[clamp(2.25rem,6vw,4rem)] font-extrabold tracking-[-0.035em] leading-[0.95] text-[var(--text-primary)]">
-            Ya sabés cómo pagar.{" "}
+            Ya sabes cómo pagar.{" "}
             <span className="italic font-serif text-[var(--accent)]">Falta sólo el pedido.</span>
           </h2>
           <p className="mt-5 text-lg text-[var(--text-secondary)] max-w-xl mx-auto leading-relaxed">
-            Mirá las bodegas que están entregando hoy y armá tu primer pedido.
+            Mira las bodegas que están entregando hoy y arma tu primer pedido.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link

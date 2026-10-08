@@ -641,7 +641,7 @@ export default function PreferenciasPage() {
             <SectionCard
               id="notif"
               title="Notificaciones"
-              description="Cómo querés que te avisemos"
+              description="Cómo quieres que te avisemos"
               Icon={Bell}
             >
               <ToggleRow
@@ -685,7 +685,7 @@ export default function PreferenciasPage() {
             >
               <SelectPills<ThemeOption>
                 label="Modo de pantalla"
-                sublabel="Elegí cómo se ve la app"
+                sublabel="Elige cómo se ve la app"
                 value={theme}
                 onChange={setTheme}
                 Icon={Moon}

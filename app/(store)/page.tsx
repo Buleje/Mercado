@@ -96,7 +96,7 @@ export const metadata: Metadata = {
   // El template del root layout agrega " | Buleje" → mantener este título
   // ≤51 chars para que el total quede ≤60 (Google trunca en SERP). Audit SEO.
   title: `Delivery en ${BRAND_GEO.city} — bodegas y comida`,
-  description: `Pedí online en ${BRAND_GEO.city} (${BRAND_GEO.province}, ${BRAND_GEO.region}): bodegas, restaurantes y farmacias con delivery rápido. Paga con Yape, Plin o efectivo.`,
+  description: `Pide online en ${BRAND_GEO.city} (${BRAND_GEO.province}, ${BRAND_GEO.region}): bodegas, restaurantes y farmacias con delivery rápido. Paga con Yape, Plin o efectivo.`,
   keywords: [
     "delivery Ciudad Constitución",
     "marketplace Ciudad Constitución",
@@ -214,7 +214,7 @@ async function getTopProductsForJsonLd() {
 const HOME_FAQS: { q: string; a: string }[] = [
   {
     q: "¿Cómo hago un pedido en Buleje?",
-    a: "Elegís tu tienda en /tiendas, seleccionás los productos y pagás con Yape, Plin o efectivo. Tu pedido llega en 25–35 minutos.",
+    a: "Eliges tu tienda en /tiendas, seleccionas los productos y pagas con Yape, Plin o efectivo. Tu pedido llega en 25–35 minutos.",
   },
   {
     q: `¿Buleje hace delivery en ${BRAND_GEO.city}?`,
@@ -466,7 +466,7 @@ async function HomeHero() {
       {/* H1 de la home — invisible pero presente (SEO). Mantiene la keyword geo
           que Google pondera fuerte en el H1 de la portada. */}
       <h1 className="sr-only">
-        Pedí online en {BRAND_GEO.city}, {BRAND_GEO.region} — bodegas,
+        Pide online en {BRAND_GEO.city}, {BRAND_GEO.region} — bodegas,
         restaurantes y farmacias con delivery rápido (Yape, Plin o efectivo)
       </h1>
       <HomeHeroBanner initialBanners={initialBanners} />
@@ -750,7 +750,7 @@ function HomeFaqSection() {
               ¿Te quedó otra duda?
             </p>
             <p className="mt-0.5 text-sm text-[var(--text-secondary)]">
-              Escribinos por WhatsApp y te respondemos al toque.
+              Escríbenos por WhatsApp y te respondemos al toque.
             </p>
           </div>
           <a
@@ -827,7 +827,7 @@ export default async function Home() {
         <ShowWhenAllVerticals>
           <Reveal>
             <section
-              aria-label="Descubrí en Buleje"
+              aria-label="Descubre en Buleje"
               className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7"
             >
               <HomeDiscoveryTabs />

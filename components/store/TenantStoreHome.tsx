@@ -46,7 +46,7 @@ export default async function TenantStoreHome() {
   const logo = (settings as { logoUrl?: string | null } | null)?.logoUrl ?? null;
   const tagline =
     (settings as { slogan?: string | null } | null)?.slogan?.trim() ||
-    "Pedí online · delivery con Yape, Plin o efectivo.";
+    "Pide online · delivery con Yape, Plin o efectivo.";
   const initial = (ctx.name?.trim()?.charAt(0) || "T").toUpperCase();
   // Sin piezas no se monta el enchufe: la portada sale idéntica, byte a byte.
   const conPiezas = negocio

@@ -78,10 +78,10 @@ export default function TierDiscountBanner({
           {tier.label} · {count} pedidos
         </p>
         <p className="text-sm font-bold mt-0.5" style={{ color: colors.text }}>
-          Tenés <span className="text-base font-black">{tier.discountPct}%</span> off extra
+          Tienes <span className="text-base font-black">{tier.discountPct}%</span> off extra
           {savings != null && savings > 0 && (
             <span className="font-normal opacity-80">
-              {" "}— ahorrás S/ {savings.toFixed(2)} en este pedido
+              {" "}— ahorras S/ {savings.toFixed(2)} en este pedido
             </span>
           )}
         </p>

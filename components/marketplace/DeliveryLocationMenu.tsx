@@ -276,7 +276,7 @@ export default function DeliveryLocationMenu({ fallbackLabel }: { fallbackLabel:
             <div className="flex items-center gap-2 pt-0.5">
               <span className="h-px flex-1 bg-[var(--rule-soft)]" aria-hidden />
               <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                o elegí tu zona
+                o elige tu zona
               </span>
               <span className="h-px flex-1 bg-[var(--rule-soft)]" aria-hidden />
             </div>
@@ -285,7 +285,7 @@ export default function DeliveryLocationMenu({ fallbackLabel }: { fallbackLabel:
             <label className="block">
               <span className="mb-1 block text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Departamento</span>
               <select className={selectCls} value={depCode} onChange={(e) => handleDep(e.target.value)} aria-label="Departamento">
-                <option value="">Elegí departamento</option>
+                <option value="">Elige departamento</option>
                 {departamentos.map((d) => (
                   <option key={d.code} value={d.code}>{d.nombre}</option>
                 ))}
@@ -296,7 +296,7 @@ export default function DeliveryLocationMenu({ fallbackLabel }: { fallbackLabel:
             <label className="block">
               <span className="mb-1 block text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Provincia</span>
               <select className={selectCls} value={provCode} onChange={(e) => handleProv(e.target.value)} disabled={!depCode} aria-label="Provincia">
-                <option value="">{depCode ? "Elegí provincia" : "Primero el departamento"}</option>
+                <option value="">{depCode ? "Elige provincia" : "Primero el departamento"}</option>
                 {provincias.map((p) => (
                   <option key={p.code} value={p.code}>{p.nombre}</option>
                 ))}
@@ -307,7 +307,7 @@ export default function DeliveryLocationMenu({ fallbackLabel }: { fallbackLabel:
             <label className="block">
               <span className="mb-1 block text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Distrito</span>
               <select className={selectCls} value={distCode} onChange={(e) => setDistCode(e.target.value)} disabled={!provCode} aria-label="Distrito">
-                <option value="">{provCode ? "Elegí distrito" : "Primero la provincia"}</option>
+                <option value="">{provCode ? "Elige distrito" : "Primero la provincia"}</option>
                 {distritos.map((d) => (
                   <option key={d.code} value={d.code}>{d.nombre}</option>
                 ))}

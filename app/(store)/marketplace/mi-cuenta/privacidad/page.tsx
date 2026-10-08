@@ -180,7 +180,7 @@ function ConsentsCard() {
             : c,
         ),
       );
-      setError("Error de red. Intentá de nuevo.");
+      setError("Error de red. Intenta de nuevo.");
     } finally {
       setToggling((prev) => ({ ...prev, [type]: false }));
     }
@@ -203,8 +203,8 @@ function ConsentsCard() {
             Mis consentimientos
           </h2>
           <p className="mt-1 text-sm text-[var(--text-secondary)] leading-snug">
-            Activá o desactivá cada tipo de comunicación o tratamiento.
-            Podés cambiar tu elección en cualquier momento.{" "}
+            Activa o desactiva cada tipo de comunicación o tratamiento.
+            Puedes cambiar tu elección en cualquier momento.{" "}
             <span className="font-semibold text-[var(--text-primary)]">
               Ley 29733 Art. 13-14
             </span>
@@ -382,7 +382,7 @@ export default function PrivacidadPage() {
           Control de tus datos
         </h1>
         <p className="mt-2 text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed">
-          Ejercé tus derechos de la Ley 29733 PE: acceder a tu información,
+          Ejerce tus derechos de la Ley 29733 PE: acceder a tu información,
           revocar consentimientos o solicitar el borrado de tu cuenta.
         </p>
       </div>
@@ -401,10 +401,10 @@ export default function PrivacidadPage() {
               id="export-title"
               className="text-base sm:text-lg font-extrabold text-[var(--text-primary)]"
             >
-              Descargá tus datos
+              Descarga tus datos
             </h2>
             <p className="mt-1 text-sm text-[var(--text-secondary)] leading-snug">
-              Recibí un archivo JSON con toda tu información: perfil, pedidos,
+              Recibe un archivo JSON con toda tu información: perfil, pedidos,
               consentimientos e historial de cambios.{" "}
               <span className="font-semibold text-[var(--text-primary)]">Ley 29733 Art. 18</span>.
             </p>
@@ -477,7 +477,7 @@ export default function PrivacidadPage() {
                       Confirmación requerida
                     </p>
                     <p className="text-sm text-[var(--text-secondary)] mb-3 leading-snug">
-                      Escribí{" "}
+                      Escribe{" "}
                       <code className="font-mono font-extrabold text-[var(--text-primary)]">
                         BORRAR_MIS_DATOS
                       </code>{" "}
@@ -522,7 +522,7 @@ export default function PrivacidadPage() {
       </section>
 
       <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] leading-relaxed">
-        ¿Dudas? Escribinos a{" "}
+        ¿Dudas? Escríbenos a{" "}
         <a
           href="mailto:soporte@buleje.pe"
           className="font-bold text-[var(--accent)] hover:underline"

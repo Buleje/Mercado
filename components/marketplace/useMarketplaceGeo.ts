@@ -203,7 +203,7 @@ export function useMarketplaceGeo(
         setGeoLoading(false);
         setProductFilters((prev) => ({ ...prev, nearbyEnabled: false }));
         alert(
-          "No pudimos obtener tu ubicación. Para ver tiendas cerca, permití la ubicación en la configuración de tu navegador.",
+          "No pudimos obtener tu ubicación. Para ver tiendas cerca, permite la ubicación en la configuración de tu navegador.",
         );
       },
       { timeout: 8000 },

@@ -1229,7 +1229,7 @@ export default function MisPedidosPage() {
         setIdentified(true);
         setError(
           err instanceof Error && err.message.startsWith("HTTP")
-            ? "No pudimos cargar tus pedidos. Intentá de nuevo en un momento."
+            ? "No pudimos cargar tus pedidos. Intenta de nuevo en un momento."
             : "",
         );
       });
@@ -1476,7 +1476,7 @@ export default function MisPedidosPage() {
             </div>
             <div>
               <h2 className="text-xl font-extrabold text-[var(--text-primary)]">
-                Consultá tu historial
+                Consulta tu historial
               </h2>
               <p className="text-base text-muted mt-2 leading-relaxed">
                 Identificate desde la barra de navegación para ver todos tus pedidos.
@@ -1634,14 +1634,14 @@ export default function MisPedidosPage() {
                       ? "Nada coincide con tu búsqueda"
                       : filter !== "todos"
                         ? "Nada coincide con este filtro"
-                        : "Hacé tu primer pedido"
+                        : "Haz tu primer pedido"
                   }
                   description={
                     search
-                      ? "Probá con otro término o limpiá la búsqueda."
+                      ? "Prueba con otro término o limpia la búsqueda."
                       : filter !== "todos"
-                        ? "Probá cambiando el filtro para ver otros pedidos."
-                        : "Realizá tu primer pedido y verás acá el historial con estado y tiempo de entrega."
+                        ? "Prueba cambiando el filtro para ver otros pedidos."
+                        : "Realiza tu primer pedido y verás acá el historial con estado y tiempo de entrega."
                   }
                   primaryAction={
                     filter === "todos" && !search ? (
@@ -1676,7 +1676,7 @@ export default function MisPedidosPage() {
                   />
                   <div className="relative">
                     <p className="text-base font-extrabold text-[var(--text-primary)]">
-                      ¿Necesitás algo más?
+                      ¿Necesitas algo más?
                     </p>
                     <p className="text-sm text-muted mt-1 mb-4">
                       Delivery rápido · Paga con Yape o efectivo

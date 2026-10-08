@@ -37,7 +37,7 @@ export const metadata: Metadata = {
   // a 159 → se truncaba en SERP. Saqué "mercados" y acorté el cierre. Mantiene
   // keywords clave (bodegas, restaurantes, farmacias, delivery, Yape, Plin).
   description:
-    `Comprá en bodegas, restaurantes y farmacias de ${BRAND_GEO.city} con delivery rápido. Paga con Yape, Plin o efectivo. Tu barrio, ahora online.`,
+    `Compra en bodegas, restaurantes y farmacias de ${BRAND_GEO.city} con delivery rápido. Paga con Yape, Plin o efectivo. Tu barrio, ahora online.`,
   keywords: [
     `bodegas ${BRAND_GEO.city}`,
     `restaurantes ${BRAND_GEO.city}`,
@@ -72,7 +72,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: `Bodegas, restaurantes y mercados en ${BRAND_GEO.city} | Buleje`,
     description:
-      `Comprá en bodegas, restaurantes, mercados y farmacias de ${BRAND_GEO.city}. Delivery rápido · Yape, Plin o efectivo.`,
+      `Compra en bodegas, restaurantes, mercados y farmacias de ${BRAND_GEO.city}. Delivery rápido · Yape, Plin o efectivo.`,
     url: `${BASE_URL}/tiendas`,
     siteName: "Buleje",
     locale: "es_PE",
@@ -93,7 +93,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: `Bodegas, restaurantes y mercados en ${BRAND_GEO.city} | Buleje`,
     description:
-      `Comprá en bodegas, restaurantes, mercados y farmacias de ${BRAND_GEO.city}. Delivery rápido · Yape, Plin o efectivo.`,
+      `Compra en bodegas, restaurantes, mercados y farmacias de ${BRAND_GEO.city}. Delivery rápido · Yape, Plin o efectivo.`,
     // Brandon 2026-05-20 v11 audit P2: twitter:image:alt requerido por
     // X/Twitter para accesibilidad de la preview cuando se comparte.
     images: [{

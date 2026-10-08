@@ -40,7 +40,7 @@ const MEGA_ITEMS: MegaMenuItem[] = [
   },
   {
     icon: Compass,
-    title: "Para vos",
+    title: "Para ti",
     description: "Feed curado según tu historial y ofertas.",
     href: "/marketplace/para-vos",
   },
@@ -135,7 +135,7 @@ export default function DiscoverMegaMenu({
       <div className="space-y-1">
         <div className="flex items-center gap-2 px-3 pb-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)] dark:text-gray-400">
           <Compass className="h-3 w-3" strokeWidth={1.75} aria-hidden />
-          Descubrí
+          Descubre
         </div>
         {MEGA_ITEMS.map((it) => {
           const Icon = it.icon;
@@ -192,7 +192,7 @@ export default function DiscoverMegaMenu({
         )}
       >
         <Compass className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
-        Descubrí
+        Descubre
         <ChevronDown
           className={cn(
             "h-3.5 w-3.5 transition-transform",
@@ -206,7 +206,7 @@ export default function DiscoverMegaMenu({
       {open && (
         <div
           role="menu"
-          aria-label="Descubrí más en Buleje"
+          aria-label="Descubre más en Buleje"
           className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[min(640px,92vw)] rounded-2xl border border-gray-200 bg-white shadow-xl dark:border-gray-800 dark:bg-gray-950 overflow-hidden z-50"
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-0.5 p-2">

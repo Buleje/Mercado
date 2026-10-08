@@ -95,7 +95,7 @@ export default function NearbyStoresFeedSection() {
           Tiendas cerca de ti
         </h3>
         <p className="text-sm font-medium text-[var(--text-secondary)]">
-          Activá tu ubicación y te mostramos las bodegas más cercanas con delivery rápido.
+          Activa tu ubicación y te mostramos las bodegas más cercanas con delivery rápido.
         </p>
       </div>
       <button

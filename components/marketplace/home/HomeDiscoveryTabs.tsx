@@ -177,7 +177,7 @@ export default function HomeDiscoveryTabs() {
           </div>
         ) : items.length === 0 ? (
           <p className="py-10 text-center text-sm text-[var(--text-tertiary)]">
-            Nada por acá todavía — probá otra pestaña.
+            Nada por acá todavía — prueba otra pestaña.
           </p>
         ) : (
           <ul className={GRID_CLASS} aria-label={activeTab.label}>

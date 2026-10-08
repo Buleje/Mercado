@@ -36,7 +36,7 @@ interface Props {
 const SECTIONS: { href: string; label: string; icon: typeof FileText }[] = [
   { href: "#descripcion", label: "Descripción", icon: FileText },
   { href: "#detalles", label: "Detalles", icon: ListChecks },
-  { href: "#combo", label: "Compralos juntos", icon: ShoppingBag },
+  { href: "#combo", label: "Cómpralos juntos", icon: ShoppingBag },
   { href: "#valoraciones", label: "Opiniones", icon: Star },
 ];
 

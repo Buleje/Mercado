@@ -130,7 +130,7 @@ export default function StorePublications({
             Novedades de {storeName}
           </h2>
           <p className="text-sm text-[var(--text-secondary)]">
-            Lo último de la tienda — comentá y enterate primero.
+            Lo último de la tienda — comenta y entérate primero.
           </p>
         </div>
       </div>
@@ -193,7 +193,7 @@ export default function StorePublications({
                 onKeyDown={(e) => {
                   if (e.key === "Enter") submitComment(post.id);
                 }}
-                placeholder={customer ? "Escribí un comentario…" : "Iniciá sesión para comentar"}
+                placeholder={customer ? "Escribe un comentario…" : "Inicia sesión para comentar"}
                 maxLength={500}
                 className="h-11 flex-1 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 text-sm text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)]"
               />

@@ -88,7 +88,7 @@ export default function FridgeScanCard({
         setSelectedIdx(new Set((data.suggested ?? []).map((_: unknown, i: number) => i)));
         setStatus(data.suggested?.length > 0 ? "ready" : "error");
         if (!data.suggested?.length) {
-          setError("No detectamos productos. Probá con otra foto más clara.");
+          setError("No detectamos productos. Prueba con otra foto más clara.");
         }
       } catch {
         setError("Error de conexión");
@@ -155,7 +155,7 @@ export default function FridgeScanCard({
               Foto del refri → lista auto
             </h3>
             <p className="text-sm text-[var(--text-tertiary)] mt-1">
-              Sacá una foto de tu refri o despensa. La IA te arma la lista de
+              Saca una foto de tu refri o despensa. La IA te arma la lista de
               lo que te falta.
             </p>
           </div>
@@ -175,7 +175,7 @@ export default function FridgeScanCard({
             </span>
             <div className="text-center">
               <p className="text-sm font-extrabold text-[var(--text-primary)]">
-                Subí foto o sacá ahora
+                Sube foto o saca ahora
               </p>
               <p className="text-xs text-[var(--text-tertiary)] mt-1">
                 JPG, PNG o WebP · Máx {MAX_SIZE_MB}MB
@@ -337,7 +337,7 @@ export default function FridgeScanCard({
             ¡Agregado al carrito!
           </p>
           <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-            Seguí comprando o andá al checkout
+            Sigue comprando o ve al checkout
           </p>
         </div>
       )}

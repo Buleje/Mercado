@@ -123,8 +123,8 @@ export default function ProductCommentsSection({
         }
         setError(
           res.status === 429
-            ? "Muy rápido — esperá un momento antes de comentar de nuevo."
-            : (j?.error ?? "No se pudo publicar. Probá de nuevo."),
+            ? "Muy rápido — espera un momento antes de comentar de nuevo."
+            : (j?.error ?? "No se pudo publicar. Prueba de nuevo."),
         );
         return;
       }
@@ -132,7 +132,7 @@ export default function ProductCommentsSection({
       setComments((prev) => [j.data as ProductComment, ...prev]);
       setText("");
     } catch {
-      setError("Sin conexión. Probá de nuevo.");
+      setError("Sin conexión. Prueba de nuevo.");
     } finally {
       setPosting(false);
     }
@@ -177,8 +177,8 @@ export default function ProductCommentsSection({
               value={text}
               onChange={(e) => { setText(e.target.value.slice(0, 300)); if (error) setError(null); }}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void submit(); } }}
-              placeholder={`Comentá como ${firstName.split(" ")[0] || "vos"}…`}
-              aria-label="Escribí tu comentario"
+              placeholder={`Comenta como ${firstName.split(" ")[0] || "tú"}…`}
+              aria-label="Escribe tu comentario"
               className="block min-w-0 flex-1 h-12 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-medium text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
             />
             <button
@@ -216,7 +216,7 @@ export default function ProductCommentsSection({
           </span>
           <span className="min-w-0 flex-1 leading-tight">
             <span className="block text-sm font-extrabold text-[var(--text-primary)] group-hover:text-[var(--accent)]">
-              Iniciá sesión para comentar
+              Inicia sesión para comentar
             </span>
             <span className="block text-[length:var(--ts-xs)] font-medium text-[var(--text-tertiary)]">
               Tu nombre aparece automático — gratis y en segundos

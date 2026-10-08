@@ -84,10 +84,10 @@ const howToJsonLd = generateHowToLD({
   description:
     "Pasos para hacer un pedido en el marketplace de bodegas de Ciudad Constitución y pagar con Yape, Plin o efectivo.",
   steps: [
-    { name: "Buscá tu bodega", text: "Entrá a buleje.pe y buscá una tienda por nombre, categoría o zona." },
-    { name: "Armá tu pedido", text: "Agregá productos al carrito; ves el total real en vivo, sin sorpresas." },
-    { name: "Elegí cómo pagar", text: "Pagá con Yape, Plin o efectivo al recibir. No necesitás tarjeta." },
-    { name: "Recibí en tu puerta", text: "El pedido llega a tu domicilio en 25 minutos promedio." },
+    { name: "Busca tu bodega", text: "Entra a buleje.pe y busca una tienda por nombre, categoría o zona." },
+    { name: "Arma tu pedido", text: "Agrega productos al carrito; ves el total real en vivo, sin sorpresas." },
+    { name: "Elige cómo pagar", text: "Paga con Yape, Plin o efectivo al recibir. No necesitas tarjeta." },
+    { name: "Recibe en tu puerta", text: "El pedido llega a tu domicilio en 25 minutos promedio." },
   ],
 });
 
@@ -150,7 +150,7 @@ export default function AyudaPage() {
             <div>
               <span className="inline-flex items-center gap-2 rounded-full border border-[var(--accent)]/25 bg-[var(--surface-raised)] px-3 py-1 text-sm font-bold text-[var(--accent)] shadow-[var(--shadow-sm)]">
                 <LifeBuoy className="h-4 w-4" strokeWidth={2.5} />
-                Centro de Ayuda · estamos para vos
+                Centro de Ayuda · estamos para ti
               </span>
               <h1 className="mt-5 text-4xl font-extrabold tracking-[-0.02em] text-[var(--text-primary)] sm:text-5xl">
                 ¿En qué podemos ayudarte?

@@ -474,7 +474,7 @@ export function ProductDetailClient({
                 <section className="border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
                   <h2 className="text-sm font-semibold text-[var(--text-primary)] mb-1">Medios de pago</h2>
                   <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] mb-3">
-                    Pagás al recibir — sin tarjetas.
+                    Pagas al recibir — sin tarjetas.
                   </p>
                   <ul className="space-y-2 text-sm font-medium text-[var(--text-primary)]">
                     {["Yape", "Plin", "Efectivo"].map((m) => (

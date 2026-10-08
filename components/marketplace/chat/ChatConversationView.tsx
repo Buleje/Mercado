@@ -316,8 +316,8 @@ export default function ChatConversationView({
       if (!res.ok) {
         setError(
           res.status === 429
-            ? "Muy rápido — esperá un momento."
-            : (j?.error ?? "No se pudo enviar. Probá de nuevo."),
+            ? "Muy rápido — espera un momento."
+            : (j?.error ?? "No se pudo enviar. Prueba de nuevo."),
         );
         return;
       }
@@ -333,7 +333,7 @@ export default function ChatConversationView({
       // Refresca al toque para ver el mensaje persistido (y sus checks).
       window.setTimeout(() => { void fetchMessages(); }, 300);
     } catch {
-      setError("Sin conexión. Probá de nuevo.");
+      setError("Sin conexión. Prueba de nuevo.");
     } finally {
       setSending(false);
     }
@@ -343,7 +343,7 @@ export default function ChatConversationView({
       Sube la imagen y manda un mensaje con attachmentUrl + messageType image. */
   const sendImage = async (file: File) => {
     if (!file || sending || uploading || unavailable || !storeSlug) return;
-    if (!threadId) { setError("Mandá un mensaje primero para abrir el chat."); return; }
+    if (!threadId) { setError("Manda un mensaje primero para abrir el chat."); return; }
     setUploading(true);
     setError(null);
     try {
@@ -376,7 +376,7 @@ export default function ChatConversationView({
       if (!res.ok) { setError("No se pudo enviar la imagen."); return; }
       window.setTimeout(() => { void fetchMessages(); }, 300);
     } catch {
-      setError("Sin conexión. Probá de nuevo.");
+      setError("Sin conexión. Prueba de nuevo.");
     } finally {
       setUploading(false);
     }
@@ -386,7 +386,7 @@ export default function ChatConversationView({
       entrega. Va en metadataJson.location (lo arma el server desde campos validados). */
   const shareLocation = () => {
     if (sending || uploading || locating || unavailable || !storeSlug) return;
-    if (!threadId) { setError("Mandá un mensaje primero para abrir el chat."); return; }
+    if (!threadId) { setError("Manda un mensaje primero para abrir el chat."); return; }
     if (typeof navigator === "undefined" || !navigator.geolocation) {
       setError("Tu dispositivo no soporta ubicación."); return;
     }
@@ -408,12 +408,12 @@ export default function ChatConversationView({
           if (!res.ok) { setError("No se pudo enviar la ubicación."); return; }
           window.setTimeout(() => { void fetchMessages(); }, 300);
         } catch {
-          setError("Sin conexión. Probá de nuevo.");
+          setError("Sin conexión. Prueba de nuevo.");
         } finally {
           setLocating(false);
         }
       },
-      () => { setError("No pudimos obtener tu ubicación. Activá el GPS."); setLocating(false); },
+      () => { setError("No pudimos obtener tu ubicación. Activa el GPS."); setLocating(false); },
       { enableHighAccuracy: true, timeout: 10000 },
     );
   };
@@ -448,7 +448,7 @@ export default function ChatConversationView({
       if (!res.ok) { setError("No se pudo enviar la nota de voz."); return; }
       window.setTimeout(() => { void fetchMessages(); }, 300);
     } catch {
-      setError("Sin conexión. Probá de nuevo.");
+      setError("Sin conexión. Prueba de nuevo.");
     } finally {
       setSendingVoice(false);
     }
@@ -457,7 +457,7 @@ export default function ChatConversationView({
   /** Tanda 4: arranca a grabar (pide permiso de micrófono). */
   const startRecording = async () => {
     if (recording || sendingVoice || unavailable) return;
-    if (!threadId) { setError("Mandá un mensaje primero para abrir el chat."); return; }
+    if (!threadId) { setError("Manda un mensaje primero para abrir el chat."); return; }
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
       setError("Tu navegador no soporta grabar audio."); return;
     }
@@ -514,9 +514,9 @@ export default function ChatConversationView({
     setRespondedSubs((prev) => new Set(prev).add(messageId));
     if (accept) {
       addSharedToCart(sub.replacement);
-      await send(`✅ Dale, mandame ${sub.replacement.name} en lugar de "${sub.originalName}".`);
+      await send(`✅ Dale, mándame ${sub.replacement.name} en lugar de "${sub.originalName}".`);
     } else {
-      await send(`❌ No, gracias. Mejor sacá "${sub.originalName}" del pedido.`);
+      await send(`❌ No, gracias. Mejor saca "${sub.originalName}" del pedido.`);
     }
   };
 
@@ -642,10 +642,10 @@ export default function ChatConversationView({
         ) : messages.length === 0 ? (
           <div className="px-4 py-8 text-center">
             <p className="text-sm font-extrabold text-[var(--text-primary)]">
-              Escribile a {storeName}
+              Escríbele a {storeName}
             </p>
             <p className="mt-1 text-sm font-medium text-[var(--text-tertiary)]">
-              Preguntá por productos, precios o tu pedido — te responden en vivo.
+              Pregunta por productos, precios o tu pedido — te responden en vivo.
             </p>
             {/* Quick replies — un tap y arranca la conversación */}
             <div className="mt-4 flex flex-col items-center gap-2">
@@ -705,7 +705,7 @@ export default function ChatConversationView({
                         tabIndex={0}
                         onClick={() => setActiveMsgId((id) => (id === m.id ? null : m.id))}
                         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setActiveMsgId((id) => (id === m.id ? null : m.id)); } }}
-                        aria-label="Tocá para reaccionar o responder"
+                        aria-label="Toca para reaccionar o responder"
                         className={cn(
                           "max-w-[80%] cursor-pointer rounded-2xl shadow-sm outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40",
                           isOrder && "w-full max-w-[88%]",
@@ -1108,7 +1108,7 @@ export default function ChatConversationView({
                               key={`${r.by}-${idx}`}
                               type="button"
                               onClick={() => { if (r.by === "buyer") void react(m.id, r.emoji); }}
-                              aria-label={`Reacción ${r.emoji}${r.by === "buyer" ? " (tuya, tocá para quitar)" : " de la tienda"}`}
+                              aria-label={`Reacción ${r.emoji}${r.by === "buyer" ? " (tuya, toca para quitar)" : " de la tienda"}`}
                               className={cn(
                                 "inline-flex items-center rounded-full border px-1.5 py-0.5 text-xs leading-none shadow-sm",
                                 r.by === "buyer"
@@ -1143,7 +1143,7 @@ export default function ChatConversationView({
               <div className="mb-1.5 flex items-center gap-2 rounded-xl border-l-[3px] border-[var(--accent)] bg-primary/10 px-2.5 py-1.5">
                 <div className="min-w-0 flex-1 leading-tight">
                   <p className="text-[length:var(--ts-2xs)] font-black text-[var(--accent)]">
-                    Respondiendo a {replyTo.senderType === "buyer" ? "vos" : storeName}
+                    Respondiendo a {replyTo.senderType === "buyer" ? "ti" : storeName}
                   </p>
                   <p className="truncate text-[length:var(--ts-xs)] font-medium text-[var(--text-secondary)]">
                     {replyTo.body}
@@ -1265,7 +1265,7 @@ export default function ChatConversationView({
                 value={text}
                 onChange={(e) => { setText(e.target.value.slice(0, 1000)); if (error) setError(null); pingTyping(); }}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(); } }}
-                placeholder={`Escribile a ${storeName}…`}
+                placeholder={`Escríbele a ${storeName}…`}
                 aria-label={`Mensaje para ${storeName}`}
                 className="block h-12 min-w-0 flex-1 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 text-sm font-medium text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
               />

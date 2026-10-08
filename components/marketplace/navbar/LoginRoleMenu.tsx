@@ -78,7 +78,7 @@ export function LoginRoleMenu({
       {open && (
         <div
           role="menu"
-          aria-label="Elegí cómo ingresar"
+          aria-label="Elige cómo ingresar"
           className="absolute right-0 top-full mt-2 w-72 overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-md)] z-50"
         >
           {/* Cliente — acción rápida (mantiene el modal) */}

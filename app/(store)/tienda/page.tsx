@@ -231,7 +231,7 @@ export default async function TiendaPage({ searchParams }: { searchParams: Promi
       <main id="main-content">
         {/* Brandon 2026-06-07: la tienda individual muestra SOLO el catálogo.
             Quitados TiendaHero ("Tu bodega en {ciudad}"), TrustBar ("¿Por qué
-            comprarme?") y TiendaSections (franja "Ofertas que no te podés perder")
+            comprarme?") y TiendaSections (franja "Ofertas que no te puedes perder")
             → página limpia, sin marketing del marketplace. */}
         <Suspense fallback={<CatalogLoadingSkeleton />}>
           <ProductCatalog initialProducts={initialProducts as unknown as ComponentProps<typeof ProductCatalog>["initialProducts"]} />

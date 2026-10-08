@@ -235,7 +235,7 @@ export default function TiendasDestacadas({ initialStores }: { initialStores?: F
       kicker="Cerca tuyo"
       title={grouped ? "Tiendas por categoría" : "Bodegas que no puedes perderte"}
       subtitle={
-        grouped ? "Elegí el tipo de tienda que buscás" : "Las tiendas mejor calificadas de tu zona"
+        grouped ? "Elige el tipo de tienda que buscas" : "Las tiendas mejor calificadas de tu zona"
       }
       actions={
         <Link

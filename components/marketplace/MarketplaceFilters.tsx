@@ -294,13 +294,13 @@ function FiltersDrawer({
             <div className="min-w-0">
               <p className="inline-flex items-center gap-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1.5">
                 <span aria-hidden className="inline-block h-[3px] w-6 rounded-full bg-[var(--accent)]" />
-                Refiná tu búsqueda
+                Refina tu búsqueda
               </p>
               <h2 className="text-xl font-extrabold tracking-[-0.025em] text-[var(--text-primary)] leading-tight">
-                Filtrá las tiendas
+                Filtra las tiendas
               </h2>
               <p className="mt-0.5 text-xs text-[var(--text-secondary)] font-medium">
-                Elegí orden, zona, categoría y precio.
+                Elige orden, zona, categoría y precio.
               </p>
             </div>
             <button

@@ -238,7 +238,7 @@ export default function ChatBubble({
                           <Send className="h-5 w-5" strokeWidth={2.25} />
                         </span>
                         <p className="text-sm font-medium text-[var(--text-secondary)] max-w-[16rem]">
-                          Envia tu primer mensaje para que la tienda te responda.
+                          Envía tu primer mensaje para que la tienda te responda.
                         </p>
                       </div>
                     )}
@@ -318,7 +318,7 @@ function StartForm({
       ) : (
         <>
           <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)]">
-            Dejanos tu nombre y telefono para que la tienda pueda responderte tambien por WhatsApp si no esta en linea.
+            Déjanos tu nombre y telefono para que la tienda pueda responderte tambien por WhatsApp si no esta en linea.
           </p>
 
           <label className="flex flex-col gap-1">
@@ -478,7 +478,7 @@ function Composer({
         rows={1}
         maxLength={4000}
         disabled={disabled || sending}
-        placeholder="Escribí un mensaje…"
+        placeholder="Escribe un mensaje…"
         className="flex-1 resize-none rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm focus:border-[var(--accent)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/20 dark:border-slate-700 dark:bg-slate-800 dark:focus:bg-slate-900 disabled:opacity-60"
         style={{ minHeight: "36px", maxHeight: "100px" }}
       />

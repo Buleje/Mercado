@@ -356,7 +356,7 @@ export function CuentaDashboardClient() {
               <AlertTriangle className="h-7 w-7" strokeWidth={2} style={{ color: "var(--data-error-500, #ef4444)" }} />
             </div>
             <p className="text-base font-extrabold text-[var(--text-primary)]">No pudimos cargar tus pedidos</p>
-            <p className="text-sm text-muted mt-1">Revisá tu conexión e intentá de nuevo.</p>
+            <p className="text-sm text-muted mt-1">Revisa tu conexión e intenta de nuevo.</p>
             <button
               type="button"
               onClick={() => { setLoadingOrders(true); setReloadKey((k) => k + 1); }}

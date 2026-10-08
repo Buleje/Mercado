@@ -138,13 +138,13 @@ export default function MiListaDelMes({
         />
         <p className="text-sm font-bold text-[var(--text-primary)]">Tu lista del mes</p>
         <p className="text-xs text-[var(--text-tertiary)] mt-1 mb-4">
-          Iniciá sesión para ver lo que solés pedir cada mes
+          Inicia sesión para ver lo que sueles pedir cada mes
         </p>
         <Link
           href="/ingresar"
           className="inline-flex items-center gap-2 rounded-full bg-[var(--text-primary)] text-[var(--surface-canvas)] px-5 py-2 text-sm font-bold hover:bg-[var(--accent)] transition-colors"
         >
-          Iniciá sesión
+          Inicia sesión
         </Link>
       </section>
     );
@@ -200,7 +200,7 @@ export default function MiListaDelMes({
             </h3>
             <p className="text-xs text-[var(--text-tertiary)] mt-0.5 inline-flex items-center gap-1">
               <TrendingUp className="h-3 w-3" strokeWidth={1.75} aria-hidden />
-              {products.length} productos que solés pedir
+              {products.length} productos que sueles pedir
             </p>
           </div>
         </div>

@@ -230,7 +230,7 @@ export default function TiendasMainCategoriesGrid({
             Categorías
           </p>
           <h2 className="text-2xl sm:text-3xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)] leading-[1.05]">
-            ¿Qué necesitás hoy?
+            ¿Qué necesitas hoy?
           </h2>
         </div>
         {selected !== "todos" && (

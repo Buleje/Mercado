@@ -142,7 +142,7 @@ export default function ExplorarAmazonBoxes() {
         <ExplorarSectionHeader
           kicker="Tu hub"
           title="Donde quieres empezar"
-          subtitle="Atajos pensados para cómo comprás. Sin filtros, sin pestañas."
+          subtitle="Atajos pensados para cómo compras. Sin filtros, sin pestañas."
         />
 
         {/* Grid uniforme: todos los boxes del mismo tamaño */}

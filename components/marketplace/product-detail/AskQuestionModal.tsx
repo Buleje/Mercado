@@ -104,7 +104,7 @@ export default function AskQuestionModal({
               Pregunta enviada
             </h3>
             <p className="mt-1 text-sm text-[var(--text-secondary)] dark:text-gray-400">
-              {storeName} recibirá tu consulta y responderá por este mismo canal.
+              {storeName} recibirá tu consulta y respondera por este mismo canal.
             </p>
             <button
               onClick={onClose}

@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     canonical: "https://www.buleje.pe/socio-buleje",
   },
   openGraph: {
-    title: "Socio Buleje — Ahorrá todo el año en tu bodega",
+    title: "Socio Buleje — Ahorra todo el año en tu bodega",
     description:
       "Delivery gratis, cashback 5%, precios exclusivos. Suscripción mensual o anual, sin permanencia.",
     url: "https://www.buleje.pe/socio-buleje",
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Socio Buleje — Ahorrá todo el año en tu bodega",
+    title: "Socio Buleje — Ahorra todo el año en tu bodega",
     description:
       "Delivery gratis, cashback 5%, precios exclusivos. 30 días gratis.",
   },

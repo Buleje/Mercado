@@ -178,7 +178,7 @@ export default function ClienteFrecuenteBadge({
       </div>
       <div className="mt-3 pt-3 border-t border-current/20">
         <p className="text-sm font-bold" style={{ color }}>
-          Tenés {discountPct}% off extra en cada compra
+          Tienes {discountPct}% off extra en cada compra
         </p>
         <p className="text-xs mt-0.5" style={{ color, opacity: 0.85 }}>
           Se aplica automáticamente al ir al checkout.

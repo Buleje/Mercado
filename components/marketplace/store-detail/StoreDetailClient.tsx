@@ -476,7 +476,7 @@ export default function StoreDetailClient({
         <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 py-3">
           {/* ── Mobile category subnav (tabs estilo iFood/Rappi) ──
                Brandon mayo 14 v4: quitado el chip "Todos" (no aporta —
-               si querés ver todo, cerrá el filtro). Pills rediseñadas
+               si quieres ver todo, cierra el filtro). Pills rediseñadas
                como tabs sin border: solo texto + contador. Franja inferior
                accent que se anima al pill activo via CSS transition.
                El click hace scroll smooth al sentinel #cat-{name} si existe.
@@ -937,7 +937,7 @@ function MobileSearchOverlay({
           </ul>
         ) : value.trim().length === 0 ? (
           <p className="text-center text-sm text-[var(--text-tertiary)] py-8">
-            Empezá a escribir para buscar productos o categorías…
+            Empieza a escribir para buscar productos o categorías…
           </p>
         ) : (
           <p className="text-center text-sm text-[var(--text-tertiary)] py-8">

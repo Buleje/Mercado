@@ -219,7 +219,7 @@ function RecetaCard({
                     <div aria-hidden className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/15 blur-xl" />
                     <div aria-hidden className="pointer-events-none absolute -bottom-8 -left-6 h-28 w-28 rounded-full bg-black/10 blur-xl" />
                     <CatIcon
-                      className="h-20 w-20 text-white/95 drop-shadow-[0_6px_16px_rgba(0,0,0,0.25)] transition-transform duration-[var(--dur-slow)] group-hover:scale-110 sm:h-24 sm:w-24"
+                      className="h-20 w-20 text-white/95 drop-shadow-[var(--shadow-md)] transition-transform duration-[var(--dur-slow)] group-hover:scale-110 sm:h-24 sm:w-24"
                       strokeWidth={1.4}
                       aria-hidden
                     />
@@ -806,9 +806,9 @@ export default function RecetarioClient({
         <section className="border-t border-[var(--rule-base)] bg-[var(--surface-raised)]">
           <div className="mx-auto max-w-[1760px] px-4 sm:px-6 lg:px-8 py-12">
             <SectionHeading
-              eyebrow="Explorá"
+              eyebrow="Explora"
               title="Categorías destacadas"
-              subtitle="Encontrá recetas por tipo de plato y armá tu carrito en un toque."
+              subtitle="Encuentra recetas por tipo de plato y arma tu carrito en un toque."
             />
             <div className="flex items-stretch gap-4 overflow-x-auto pb-4 scrollbar-hide">
               {Object.entries(categoryCounts).map(([cat, count]) => {

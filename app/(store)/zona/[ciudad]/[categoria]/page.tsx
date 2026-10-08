@@ -72,7 +72,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // Title B2C-first (2026-05-27): "Abarrotes en Pucallpa con delivery" capta
   // long-tail de compra. Cola B2B (vender/gestionar) en la descripción.
   const title = `${cat.label} en ${zone.name} con delivery`;
-  const description = `Comprá ${cat.label.toLowerCase()} en bodegas y tiendas de ${zone.name} con delivery rápido y pago con Yape o efectivo. ¿Vendés ${cat.label.toLowerCase()}? Gestioná tu stock y precios con Buleje.`;
+  const description = `Compra ${cat.label.toLowerCase()} en bodegas y tiendas de ${zone.name} con delivery rápido y pago con Yape o efectivo. ¿Vendes ${cat.label.toLowerCase()}? Gestiona tu stock y precios con Buleje.`;
   const url = `${BASE_URL}/zona/${zone.slug}/${cat.id}`;
 
   // SEO 2026-05-24: thin content guard — si la categoría no tiene productos
@@ -245,7 +245,7 @@ async function CategoryZoneContent({
             href="/registro"
             className="mt-4 inline-block rounded-lg bg-[var(--data-success-600)] px-6 py-2 text-sm font-medium text-white hover:bg-[var(--data-success-700)]"
           >
-            Registrate gratis
+            Regístrate gratis
           </Link>
         </div>
       )}

@@ -16,7 +16,7 @@ type ReferralData = {
 
 // Tiers de recompensa — cuantos mas amigos refieras, mas gana tu vecino Y tu
 const REFERRAL_TIERS = [
-  { count: 1, bonus: 10, label: "Empezá", emoji: "" },
+  { count: 1, bonus: 10, label: "Empieza", emoji: "" },
   { count: 3, bonus: 30, label: "Conector", emoji: "" },
   { count: 5, bonus: 60, label: "Influencer del barrio", emoji: "" },
   { count: 10, bonus: 150, label: "VIP — el/la embajador/a", emoji: "Crown" },

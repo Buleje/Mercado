@@ -108,7 +108,7 @@ export default function MarketplaceApplyPage() {
 
   const next = () => {
     if (!canAdvance) {
-      setError("Completá los campos para continuar");
+      setError("Completa los campos para continuar");
       return;
     }
     if (step < 4) setStep((s) => (s + 1) as Step);
@@ -301,14 +301,14 @@ export default function MarketplaceApplyPage() {
                         Paso 1 de 4
                       </p>
                       <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] dark:text-white mt-1">
-                        Primero, contanos quién sos
+                        Primero, cuéntanos quién eres
                       </h2>
                     </div>
 
                     <div>
                       <label htmlFor="apply-owner-name" className="block text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] mb-2">
                         <User className="h-3.5 w-3.5 inline mr-1.5" aria-hidden="true" />
-                        ¿Cómo te llamás?
+                        ¿Cómo te llamas?
                       </label>
                       <input
                         id="apply-owner-name"
@@ -428,7 +428,7 @@ export default function MarketplaceApplyPage() {
                     <div>
                       <label htmlFor="apply-description" className="block text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-tertiary)] mb-2">
                         <FileText className="h-3.5 w-3.5 inline mr-1.5" aria-hidden="true" />
-                        Describí tu tienda (opcional)
+                        Describe tu tienda (opcional)
                       </label>
                       <textarea
                         id="apply-description"
@@ -460,7 +460,7 @@ export default function MarketplaceApplyPage() {
                         ¿En qué zona estás?
                       </h2>
                       <p className="text-sm text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)] mt-2">
-                        Tocá la zona donde está tu tienda en Pucallpa.
+                        Toca la zona donde está tu tienda en Pucallpa.
                       </p>
                     </div>
 
@@ -489,7 +489,7 @@ export default function MarketplaceApplyPage() {
                         Revisa y listo
                       </h2>
                       <p className="text-sm text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)] mt-2">
-                        Si todo se ve bien, enviá tu solicitud.
+                        Si todo se ve bien, envía tu solicitud.
                       </p>
                     </div>
 
@@ -632,7 +632,7 @@ export default function MarketplaceApplyPage() {
                     </span>
                   )}
                   <p className="text-xs text-[var(--text-tertiary)] dark:text-[var(--text-tertiary)] mt-3 line-clamp-3 min-h-[3rem]">
-                    {form.description || "Tu descripción aparecerá aquí — contale a los vecinos qué hace tu tienda especial."}
+                    {form.description || "Tu descripción aparecerá aquí — cuéntale a los vecinos qué hace tu tienda especial."}
                   </p>
                   <div className="mt-3 pt-3 border-t border-gray-100 dark:border-[var(--rule-soft)] flex items-center justify-between text-[length:var(--ts-2xs)]">
                     <span className="inline-flex items-center gap-1 text-[var(--data-warning-500)] font-bold">

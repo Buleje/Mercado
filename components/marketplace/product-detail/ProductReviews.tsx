@@ -253,7 +253,7 @@ export default function ProductReviews({ productId, productName }: ProductReview
                 Sé el primero en opinar
               </p>
               <p className="mt-1 text-sm text-[var(--text-secondary)]">
-                Contale a la comunidad qué tal estuvo {productName}.
+                Cuéntale a la comunidad qué tal estuvo {productName}.
               </p>
               {!writeOpen && (
                 <button

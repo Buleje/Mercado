@@ -220,7 +220,7 @@ export default function SharedMobileNavDrawer({ open, onClose }: SharedMobileNav
         // al drawer lateral. Solo en modo completo (no en tiendas-only).
         ...(!tiendasOnly
           ? [
-              { href: "/marketplace/para-vos", label: "Descubrí", Icon: Sparkles },
+              { href: "/marketplace/para-vos", label: "Descubre", Icon: Sparkles },
               { href: "/marketplace/en-vivo", label: "En Vivo", Icon: Radio },
             ]
           : []),
@@ -465,7 +465,7 @@ export default function SharedMobileNavDrawer({ open, onClose }: SharedMobileNav
               className="flex items-center justify-center gap-2 w-full h-11 rounded-xl border border-[var(--rule-base)] text-[var(--text-primary)] text-[length:var(--ts-sm)] font-bold hover:border-[var(--accent)] hover:text-[var(--accent)] active:scale-[0.98] transition-all"
             >
               <Rocket className="h-4 w-4" strokeWidth={2} aria-hidden />
-              Abrí tu tienda
+              Abre tu tienda
             </Link>
           </div>
         )}

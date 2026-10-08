@@ -228,7 +228,7 @@ export default function ChefIACard({
           ) : (
             <>
               <Sparkles className="h-4 w-4" strokeWidth={1.75} aria-hidden />
-              Generá 3 recetas
+              Genera 3 recetas
             </>
           )}
         </button>
@@ -245,7 +245,7 @@ export default function ChefIACard({
       {recetas.length > 0 && (
         <div className="p-5 sm:p-6 space-y-3 bg-[var(--surface-sunken)]">
           <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-            3 opciones para vos
+            3 opciones para ti
           </p>
           {recetas.map((r, idx) => (
             <article

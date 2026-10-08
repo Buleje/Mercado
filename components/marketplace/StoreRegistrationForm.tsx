@@ -232,7 +232,7 @@ export default function StoreRegistrationForm() {
         }
         if (direccionTxt) setDireccion(direccionTxt);
       } catch {
-        setGeoError("No pudimos autocompletar la dirección. Llená los campos manualmente.");
+        setGeoError("No pudimos autocompletar la dirección. Llena los campos manualmente.");
       }
     },
     [],
@@ -254,7 +254,7 @@ export default function StoreRegistrationForm() {
         } = await r.json();
         await applyUbigeoNames(data.departamento, data.provincia, data.distrito, data.direccion);
       } catch {
-        setGeoError("No pudimos detectar tu dirección. Llená los campos manualmente.");
+        setGeoError("No pudimos detectar tu dirección. Llena los campos manualmente.");
       } finally {
         setGeoLoading(false);
       }
@@ -452,14 +452,14 @@ export default function StoreRegistrationForm() {
           <div className="text-center">
             <p className="mb-3 inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--accent)]/25 bg-primary/10 px-3 py-1 text-[length:var(--ts-xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
               <Sparkles className="h-3.5 w-3.5" strokeWidth={2.5} />
-              Sumate gratis al marketplace
+              Súmate gratis al marketplace
             </p>
             <h1 className="text-4xl font-black leading-[1.05] tracking-[var(--ls-tight)] text-[var(--text-primary)] sm:text-5xl lg:text-[3.5rem]">
               Abre tu tienda en{" "}
               <span className="text-[var(--accent)]">5 minutos</span>
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-lg text-[var(--text-secondary)] leading-relaxed">
-              Vendé tus productos a toda Ciudad Constitución desde el marketplace más grande de la ciudad.
+              Vende tus productos a toda Ciudad Constitución desde el marketplace más grande de la ciudad.
               <strong className="font-bold text-[var(--text-primary)]"> Sin tarjeta. Sin permanencia.</strong>
             </p>
 
@@ -561,7 +561,7 @@ export default function StoreRegistrationForm() {
                 </span>
                 <div>
                   <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] leading-none">
-                    {step === "info" ? "Empezamos por vos" : "Ahora hablemos del negocio"}
+                    {step === "info" ? "Empezamos por ti" : "Ahora hablemos del negocio"}
                   </p>
                   <h2 className="mt-1 text-xl font-black tracking-[var(--ls-tight)] text-[var(--text-primary)]">
                     {step === "info" ? "Tus datos de contacto" : "Datos de tu tienda"}
@@ -1098,7 +1098,7 @@ export default function StoreRegistrationForm() {
                     "Comisión solo sobre ventas reales",
                     "Pagos por Yape, Plin o efectivo",
                     "Soporte WhatsApp 7 días",
-                    "Cancelás cuando quieras",
+                    "Cancelas cuando quieras",
                   ].map((vp) => (
                     <li key={vp} className="flex items-start gap-2.5">
                       <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]">
@@ -1135,8 +1135,8 @@ export default function StoreRegistrationForm() {
                   <MessageCircle className="h-5 w-5" strokeWidth={2.25} />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-bold text-[var(--text-primary)]">¿Necesitás ayuda?</p>
-                  <p className="text-xs font-semibold text-[var(--text-secondary)]">Escribinos por WhatsApp</p>
+                  <p className="text-sm font-bold text-[var(--text-primary)]">¿Necesitas ayuda?</p>
+                  <p className="text-xs font-semibold text-[var(--text-secondary)]">Escríbenos por WhatsApp</p>
                 </div>
                 <ArrowRight className="h-4 w-4 text-[var(--text-tertiary)]" strokeWidth={2.25} />
               </a>

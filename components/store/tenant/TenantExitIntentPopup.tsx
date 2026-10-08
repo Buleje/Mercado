@@ -77,7 +77,7 @@ export default function TenantExitIntentPopup({
           <X className="h-4 w-4" strokeWidth={2.25} aria-hidden />
         </button>
         <p data-live="exitIntentTitle" className="text-xl font-black" style={{ color: brand }}>
-          {title || "¡Esperá!"}
+          {title || "¡Espera!"}
         </p>
         {message && (
           <p data-live="exitIntentMessage" className="mt-2 text-sm text-[var(--text-secondary)]">{message}</p>

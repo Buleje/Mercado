@@ -61,7 +61,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   // Title B2C-first (2026-05-27): lidera con comprar/delivery local del distrito.
   const title = `Bodegas, restaurantes y delivery en ${district.name}, ${zone.name}`;
-  const description = `Pedí comida, abarrotes y productos en ${district.name} (${zone.name}): bodegas, restaurantes, mercados y tiendas con delivery local rápido y pago con Yape, Plin o efectivo. ¿Tenés un negocio? Llevalo al sistema Buleje.`;
+  const description = `Pide comida, abarrotes y productos en ${district.name} (${zone.name}): bodegas, restaurantes, mercados y tiendas con delivery local rápido y pago con Yape, Plin o efectivo. ¿Tienes un negocio? Llevalo al sistema Buleje.`;
   const url = `${BASE_URL}/zona/${zone.slug}/distrito/${district.slug}`;
 
   return {

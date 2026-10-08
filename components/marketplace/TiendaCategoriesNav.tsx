@@ -108,7 +108,7 @@ export default function TiendaCategoriesNav() {
         {/* Header: título + clear filter */}
         <div className="flex items-center justify-between mb-3">
           <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-            ¿Qué tipo de tienda buscás?
+            ¿Qué tipo de tienda buscas?
           </p>
           {active && (
             <button

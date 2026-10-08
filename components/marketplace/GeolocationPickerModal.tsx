@@ -82,13 +82,13 @@ export default function GeolocationPickerModal({
       },
       (err) => {
         if (err.code === 1) {
-          setErrorMsg("Bloqueaste la ubicación. Tocá el candado de la barra del navegador → permisos → ubicación. O ubicá tu negocio manualmente en el mapa.");
+          setErrorMsg("Bloqueaste la ubicación. Toca el candado de la barra del navegador → permisos → ubicación. O ubica tu negocio manualmente en el mapa.");
         } else if (err.code === 2) {
-          setErrorMsg("Ubicación no disponible. Revisá tu GPS. Podés ubicar tu negocio manualmente en el mapa.");
+          setErrorMsg("Ubicación no disponible. Revisa tu GPS. Puedes ubicar tu negocio manualmente en el mapa.");
         } else if (err.code === 3) {
-          setErrorMsg("Tardó demasiado. Reintentá o ubicá tu negocio manualmente en el mapa.");
+          setErrorMsg("Tardó demasiado. Reintenta o ubica tu negocio manualmente en el mapa.");
         } else {
-          setErrorMsg("No pudimos identificar tu ubicación. Ubicá tu negocio manualmente en el mapa.");
+          setErrorMsg("No pudimos identificar tu ubicación. Ubica tu negocio manualmente en el mapa.");
         }
         setStep("error");
       },
@@ -164,7 +164,7 @@ export default function GeolocationPickerModal({
                   </h3>
                   <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] leading-snug mt-0.5">
                     {step === "loading" && "Buscando tu posición exacta…"}
-                    {step === "map" && "Mové el pin hasta la puerta exacta de tu tienda."}
+                    {step === "map" && "Mueve el pin hasta la puerta exacta de tu tienda."}
                     {step === "error" && "No pudimos usar tu GPS."}
                   </p>
                 </div>
@@ -194,7 +194,7 @@ export default function GeolocationPickerModal({
                       Ubicando tu negocio
                     </p>
                     <p className="mt-1 text-sm text-[var(--text-tertiary)] max-w-sm">
-                      Aceptá el permiso de ubicación si el navegador te lo pide.
+                      Acepta el permiso de ubicación si el navegador te lo pide.
                     </p>
                   </div>
                 </div>
@@ -236,7 +236,7 @@ export default function GeolocationPickerModal({
                     <LeafletMap lat={coords.lat} lon={coords.lon} zoom={17} height={420} onPick={handlePick} />
                     <div className="absolute top-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-raised)] shadow-lg px-3.5 py-1.5 text-xs font-bold text-[var(--text-primary)] border border-[var(--rule-soft)]">
                       <MapPin className="h-3.5 w-3.5 text-[var(--accent)]" strokeWidth={2.5} />
-                      Arrastrá el pin para ajustar
+                      Arrastra el pin para ajustar
                     </div>
                   </div>
                   {address && (

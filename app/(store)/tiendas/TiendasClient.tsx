@@ -545,7 +545,7 @@ export default function TiendasClient({
         }
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
-          setError("No pudimos cargar las tiendas. Intentá de nuevo.");
+          setError("No pudimos cargar las tiendas. Intenta de nuevo.");
         }
         // Importante: NO retornamos en AbortError — caemos al setLoading(false)
         // de abajo (sin el guard) para que el state no se quede stuck en
@@ -1024,7 +1024,7 @@ export default function TiendasClient({
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-extrabold text-[var(--text-primary)]">
-                  ¿Buscás un producto?
+                  ¿Buscas un producto?
                 </span>
                 <span className="block text-xs font-semibold text-[var(--text-secondary)] truncate">
                   Ver &quot;{search.trim()}&quot; en productos de todas las tiendas
@@ -1466,7 +1466,7 @@ export default function TiendasClient({
               v4 (Brandon 2026-05-18): el botón "Filtros" del toolbar se MOVIÓ
               acá al lado del eyebrow — entrada principal de filtrado, al
               inicio del flujo de búsqueda de tiendas. Si no hay subcategorías,
-              el botón sigue visible con eyebrow "Refiná tu búsqueda". */}
+              el botón sigue visible con eyebrow "Refina tu búsqueda". */}
             {/* Brandon 2026-05-20 v7: eyebrow "LO MÁS PEDIDO / REFINÁ TU BÚSQUEDA"
               eliminado — redundaba con el h1 + chips de subcategoría justo
               debajo. El botón de filtros queda alineado a la derecha en el
@@ -1726,7 +1726,7 @@ export default function TiendasClient({
                           Filtrar
                         </p>
                         <h3 className="text-lg font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
-                          Elegí tu zona
+                          Elige tu zona
                         </h3>
                       </div>
                     </div>

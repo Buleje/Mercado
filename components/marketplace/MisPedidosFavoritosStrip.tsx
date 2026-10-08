@@ -71,7 +71,7 @@ export default function MisPedidosFavoritosStrip() {
     <section className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-12">
       <TiendasSectionHeader
         eyebrow="Tus favoritos"
-        title="Repetí lo que te gusta"
+        title="Repite lo que te gusta"
         action={{ label: "Ver historial", href: "/marketplace/mi-cuenta?tab=pedidos" }}
       />
 

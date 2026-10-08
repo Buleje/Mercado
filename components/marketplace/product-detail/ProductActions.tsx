@@ -259,14 +259,14 @@ export function ProductActions({
           <RotateCcw className="h-5 w-5 shrink-0 text-[var(--text-tertiary)]" strokeWidth={1.75} aria-hidden />
           <p className="text-sm text-[var(--text-secondary)] leading-snug">
             <span className="font-medium text-[var(--text-primary)]">Devolución coordinada.</span>{" "}
-            Si algo llega mal, lo resolvés con la tienda por WhatsApp.
+            Si algo llega mal, lo resuelves con la tienda por WhatsApp.
           </p>
         </li>
         <li className="flex gap-2.5">
           <ShieldCheck className="h-5 w-5 shrink-0 text-[var(--text-tertiary)]" strokeWidth={1.75} aria-hidden />
           <p className="text-sm text-[var(--text-secondary)] leading-snug">
             <span className="font-medium text-[var(--text-primary)]">Compra protegida.</span>{" "}
-            Pagás al recibir — sin adelanto, sin sorpresas.
+            Pagas al recibir — sin adelanto, sin sorpresas.
           </p>
         </li>
       </ul>

@@ -281,7 +281,7 @@ async function DistrictCategoryContent({
             href="/registro"
             className="mt-4 inline-block rounded-lg bg-[var(--data-success-600)] px-6 py-2 text-sm font-medium text-white hover:bg-[var(--data-success-700)]"
           >
-            Registrate gratis
+            Regístrate gratis
           </Link>
         </div>
       )}

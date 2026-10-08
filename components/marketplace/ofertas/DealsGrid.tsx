@@ -63,7 +63,7 @@ export default function DealsGrid({ deals, source = "deals" }: DealsGridProps) {
             Sin ofertas con esos filtros
           </p>
           <p className="mt-2 text-sm text-[var(--text-tertiary)] max-w-sm leading-relaxed">
-            Probá cambiando la categoría o el rango de descuento. Las bodegas suben ofertas todos los días.
+            Prueba cambiando la categoría o el rango de descuento. Las bodegas suben ofertas todos los días.
           </p>
         </div>
       </section>
@@ -80,8 +80,8 @@ export default function DealsGrid({ deals, source = "deals" }: DealsGridProps) {
         title={source === "lowest" ? "Los precios más bajos" : "Todas las ofertas"}
         subtitle={
           source === "lowest"
-            ? `${deals.length} ${deals.length === 1 ? "producto" : "productos"} ordenados de menor a mayor precio. Filtrá por categoría arriba.`
-            : `${deals.length} ${deals.length === 1 ? "producto con descuento" : "productos con descuento"}. Filtrá por categoría o rebaja mínima arriba.`
+            ? `${deals.length} ${deals.length === 1 ? "producto" : "productos"} ordenados de menor a mayor precio. Filtra por categoría arriba.`
+            : `${deals.length} ${deals.length === 1 ? "producto con descuento" : "productos con descuento"}. Filtra por categoría o rebaja mínima arriba.`
         }
       />
 

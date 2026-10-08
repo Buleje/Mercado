@@ -448,7 +448,7 @@ export default function CarritoPage() {
               Tu carrito está <span className="text-[var(--accent)]">vacío</span>
             </p>
             <p className="mt-2 text-[length:var(--ts-sm)] sm:text-base text-[var(--text-secondary)] leading-relaxed">
-              Empezá a descubrir las bodegas, restaurantes y tiendas reales de tu barrio.
+              Empieza a descubrir las bodegas, restaurantes y tiendas reales de tu barrio.
             </p>
           </div>
           <div className="flex flex-col sm:flex-row items-center gap-2.5 mt-1 w-full max-w-md">
@@ -581,9 +581,9 @@ export default function CarritoPage() {
             />
             {!loggedCustomer && (
               <p className="mt-3 text-center text-[length:var(--ts-sm)] text-[var(--text-tertiary)]">
-                ¿Ya tenés cuenta?{" "}
+                ¿Ya tienes cuenta?{" "}
                 <button type="button" onClick={handleContinueWithoutAuth} className="font-bold text-[var(--accent)] underline underline-offset-2">
-                  Iniciá sesión
+                  Inicia sesión
                 </button>{" "}
                 para acumular puntos y seguir tu pedido.
               </p>

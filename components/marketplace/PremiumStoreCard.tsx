@@ -357,7 +357,7 @@ export default function PremiumStoreCard({
             </ul>
           ) : (
             <div className="flex h-full min-h-[96px] items-center justify-center rounded-xl max-md:rounded-none border border-dashed border-[var(--rule-base)] text-xs text-[var(--text-tertiary)]">
-              Entrá para ver el catálogo completo
+              Entra para ver el catálogo completo
             </div>
           )}
           <Link

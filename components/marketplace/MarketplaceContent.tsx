@@ -284,7 +284,7 @@ export default function MarketplaceContent({
             </span>
           </h2>
           <p className="mt-8 text-xl sm:text-2xl text-[var(--text-secondary)] max-w-2xl mx-auto leading-[1.4]">
-            Publica tus productos, recibe pedidos automáticamente y llegá a
+            Publica tus productos, recibe pedidos automáticamente y llega a
             miles de clientes. Sin costo de inscripción.
           </p>
           <div className="mt-12 flex flex-wrap justify-center gap-3">

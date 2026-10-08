@@ -718,7 +718,7 @@ export async function PaginaGeneral({ slug, searchParams }: PaginaGeneralProps) 
             {[
               {
                 n: "01",
-                title: "Explorá el catálogo",
+                title: "Explora el catálogo",
                 desc: "Mira todos los productos disponibles con precios y stock.",
                 Icon: SearchIcon,
               },
@@ -730,7 +730,7 @@ export async function PaginaGeneral({ slug, searchParams }: PaginaGeneralProps) 
               },
               {
                 n: "03",
-                title: "Recibí en tu puerta",
+                title: "Recibe en tu puerta",
                 desc: "Pagas con Yape o efectivo al recibir. Delivery rápido a tu zona.",
                 Icon: Truck,
               },
@@ -985,7 +985,7 @@ export async function PaginaGeneral({ slug, searchParams }: PaginaGeneralProps) 
               <div className="h-4 w-4/5 bg-[var(--surface-sunken)] rounded" />
               <div className="h-4 w-3/5 bg-[var(--surface-sunken)] rounded" />
             </div>
-            <p className="text-xs text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] mt-3">Solo visible para vos · configura desde Mi Tienda &gt; Identidad</p>
+            <p className="text-xs text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] mt-3">Solo visible para ti · configura desde Mi Tienda &gt; Identidad</p>
           </div>
         </section>
       )}
@@ -1006,7 +1006,7 @@ export async function PaginaGeneral({ slug, searchParams }: PaginaGeneralProps) 
             </div>
             <div className="min-w-0">
               <p className="font-bold text-base leading-tight">Editar tienda</p>
-              <p className="text-sm text-[var(--text-secondary)] mt-0.5">Solo vos lo ves · panel admin</p>
+              <p className="text-sm text-[var(--text-secondary)] mt-0.5">Solo tú lo ves · panel admin</p>
             </div>
             <ExternalLink className="w-4 h-4 text-[var(--text-tertiary)] ml-auto" />
           </Link>
@@ -1070,7 +1070,7 @@ export async function PaginaGeneral({ slug, searchParams }: PaginaGeneralProps) 
       {/* Exit-intent popup (Lote C): cupón de último momento al intentar salir. */}
       {editorTheme.exitIntentEnabled && (
         <TenantExitIntentPopup
-          title={editorTheme.exitIntentTitle ?? "¡Esperá!"}
+          title={editorTheme.exitIntentTitle ?? "¡Espera!"}
           message={editorTheme.exitIntentMessage ?? ""}
           coupon={editorTheme.exitIntentCoupon || undefined}
           ctaHref={`/t/${tenant.slug}/tienda`}

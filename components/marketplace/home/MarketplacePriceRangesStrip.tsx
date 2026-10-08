@@ -57,7 +57,7 @@ export default function MarketplacePriceRangesStrip() {
           Compra por presupuesto
         </p>
         <h2 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
-          ¿Cuánto querés gastar hoy?
+          ¿Cuánto quieres gastar hoy?
         </h2>
       </header>
 

@@ -147,10 +147,10 @@ export default function NotificationsEnableCard() {
         </span>
         <div className="flex-1">
           <h3 className="text-base font-extrabold tracking-tight text-[var(--text-primary)]">
-            Activá notificaciones
+            Activa notificaciones
           </h3>
           <p className="text-sm text-[var(--text-tertiary)] mt-1 leading-relaxed">
-            Enterate al momento cuando tu pedido esté listo, hay ofertas en tu
+            Entérate al momento cuando tu pedido esté listo, hay ofertas en tu
             bodega favorita o tu reposición del mes está armada.
           </p>
         </div>
@@ -188,7 +188,7 @@ export default function NotificationsEnableCard() {
         {enabling ? "Solicitando permiso…" : "Activar notificaciones"}
       </button>
       <p className="mt-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] text-center">
-        Podés desactivarlas cuando quieras desde tu navegador
+        Puedes desactivarlas cuando quieras desde tu navegador
       </p>
     </section>
   );

@@ -236,7 +236,7 @@ export function MarketplaceCardPrice({
       </p>
       {savings > 0 && (
         <p className="text-[length:var(--ts-xs)] font-bold text-[var(--data-success-500)] tabular-nums">
-          Ahorrás {fmt(savings)}
+          Ahorras {fmt(savings)}
         </p>
       )}
     </div>

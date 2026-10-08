@@ -100,7 +100,7 @@ export default function VoiceOrderButton({
         setItems(data.items ?? []);
         setStatus(data.items?.length > 0 ? "ready" : "error");
         if (!data.items?.length) {
-          setError("No detectamos productos. Intentá hablar más despacio.");
+          setError("No detectamos productos. Intenta hablar más despacio.");
         }
       } catch {
         setError("Error de conexión");
@@ -113,7 +113,7 @@ export default function VoiceOrderButton({
   const startRecording = useCallback(() => {
     if (!SpeechRecognitionCtor) {
       setError(
-        "Tu navegador no soporta reconocimiento de voz. Probá con Chrome o Edge.",
+        "Tu navegador no soporta reconocimiento de voz. Prueba con Chrome o Edge.",
       );
       setStatus("error");
       return;
@@ -149,7 +149,7 @@ export default function VoiceOrderButton({
       setError(
         e.error === "not-allowed"
           ? "Necesitamos permiso del micrófono para escucharte"
-          : "Error de reconocimiento. Intentá de nuevo.",
+          : "Error de reconocimiento. Intenta de nuevo.",
       );
       setStatus("error");
     };
@@ -211,9 +211,9 @@ export default function VoiceOrderButton({
     idle: "Dictame tu pedido",
     recording: "Escuchando…",
     processing: "Entendiendo…",
-    ready: "Escuchá otro",
+    ready: "Escucha otro",
     added: "Agregado al carrito",
-    error: "Intentá de nuevo",
+    error: "Intenta de nuevo",
   }[status];
 
   const isActive = status === "recording" || status === "processing";
@@ -264,7 +264,7 @@ export default function VoiceOrderButton({
         </p>
         <p className="text-xs text-[var(--text-tertiary)] mt-1 text-center max-w-xs">
           {status === "idle" && "Ejemplo: «2 kilos de arroz y media docena de huevos»"}
-          {status === "recording" && "Hablá despacio. Tocá para parar"}
+          {status === "recording" && "Habla despacio. Toca para parar"}
           {status === "processing" && "La IA está armando tu lista"}
           {status === "ready" && `Detectamos ${items.length} productos`}
           {status === "error" && error}
@@ -274,7 +274,7 @@ export default function VoiceOrderButton({
         {!supported && (
           <div className="mt-4 flex items-start gap-2 rounded-xl border border-[var(--data-warning,_#eab308)]/40 bg-[var(--data-warning,_#eab308)]/10 px-3 py-2 text-xs text-[var(--data-warning,_#eab308)]">
             <AlertCircle className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden />
-            <p>Tu navegador no soporta voz. Probá con Chrome o Edge.</p>
+            <p>Tu navegador no soporta voz. Prueba con Chrome o Edge.</p>
           </div>
         )}
       </div>

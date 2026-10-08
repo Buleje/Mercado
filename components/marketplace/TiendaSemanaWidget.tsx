@@ -111,7 +111,7 @@ export default function TiendaSemanaWidget({
         <p className="truncate text-xs font-medium leading-tight text-[var(--text-secondary)]">
           {hasVoted
             ? `${total} ${total === 1 ? "voto" : "votos"} esta semana`
-            : "Tocá tu favorita para votar"}
+            : "Toca tu favorita para votar"}
         </p>
       </div>
 

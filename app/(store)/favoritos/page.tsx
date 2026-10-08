@@ -531,7 +531,7 @@ export default function FavoritosPage() {
                 illustration={<CanastaVacia size={140} />}
                 eyebrow="Favoritos"
                 title="Aún no tienes favoritos"
-                description="Tocá el corazón en cualquier producto para guardarlo aquí y comprarlo después."
+                description="Toca el corazón en cualquier producto para guardarlo aquí y comprarlo después."
                 action={
                   <Link
                     href="/tienda"
@@ -555,7 +555,7 @@ export default function FavoritosPage() {
                 <div className="bg-[var(--surface-canvas)] border border-[var(--rule-soft)] rounded-xl">
                   <EmptyState
                     title="Ningún producto cumple el filtro"
-                    description="Desactivá el filtro de stock para ver todos tus favoritos."
+                    description="Desactiva el filtro de stock para ver todos tus favoritos."
                     action={
                       <button
                         onClick={() => setOnlyInStock(false)}

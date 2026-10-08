@@ -310,7 +310,7 @@ export default function HorariosModal({
               )}
               {!todayClosed && (
                 <p className="mt-1.5 text-sm text-[var(--text-secondary)] leading-snug">
-                  Hacé tu pedido y te lo entregamos hoy mismo.
+                  Haz tu pedido y te lo entregamos hoy mismo.
                 </p>
               )}
             </div>

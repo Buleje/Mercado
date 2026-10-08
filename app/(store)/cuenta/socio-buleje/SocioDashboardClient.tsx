@@ -55,7 +55,7 @@ export function SocioDashboardClient() {
               <SocioCorona size={200} />
             </div>
             <h2 className="text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">
-              Todavía no sos Socio Buleje
+              Todavía no eres Socio Buleje
             </h2>
             <p className="mt-2 text-sm text-[var(--text-tertiary)] leading-relaxed max-w-sm">
               Únete y empieza a ahorrar desde el primer pedido. 30 días de prueba
@@ -129,7 +129,7 @@ export function SocioDashboardClient() {
                 <div>
                   <CardTitle>Cancelar membresía</CardTitle>
                   <BodyText className="mt-1 text-[var(--text-secondary)]">
-                    Si cancelás, tus beneficios siguen hasta fin del ciclo.
+                    Si cancelas, tus beneficios siguen hasta fin del ciclo.
                     Puedes volver cuando quieras y retomar tu saldo de cashback
                     acumulado.
                   </BodyText>

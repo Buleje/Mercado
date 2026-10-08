@@ -181,7 +181,7 @@ export default function MarketplaceTopToday({ boxed = false }: { boxed?: boolean
           <MarketplaceEmptyState
             eyebrow="Sin datos por ahora"
             title="Aún no podemos mostrar el ranking de hoy"
-            description="Refrescá en un momento o explorá el catálogo completo del marketplace mientras tanto."
+            description="Refresca en un momento o explora el catálogo completo del marketplace mientras tanto."
           />
         ) : items === null ? (
           <div className={MARKETPLACE_GRID} aria-label="Cargando lo más pedido">

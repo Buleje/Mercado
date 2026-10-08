@@ -557,7 +557,7 @@ export default function UnifiedProductCard({
         </div>
 
         {/* Brandon 2026-06-24: barra inferior deslizante (hover desktop) — un
-            solo botón "Previsualizar" que abre el modal "Armá tu pedido"
+            solo botón "Previsualizar" que abre el modal "Arma tu pedido"
             (opciones + datos de tienda + agregar al carrito). Sube desde abajo
             de la imagen con animación. Oculta en mobile (card limpia tipo Rappi). */}
         <div className="absolute inset-x-0 bottom-0 z-20 hidden translate-y-full opacity-0 transition-all duration-[var(--dur-base)] group-hover:translate-y-0 group-hover:opacity-100 focus-within:translate-y-0 focus-within:opacity-100 lg:flex">

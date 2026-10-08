@@ -25,9 +25,9 @@ const TOUR_ID = "marketplace-2026-04";
 const STEPS: TourStep[] = [
   {
     target: "[data-tour='search']",
-    title: "Buscá lo que necesitás",
+    title: "Busca lo que necesitas",
     description:
-      "Escribí arroz, limpieza, bebidas… o el nombre de una bodega. Te mostramos todo lo que hay cerca.",
+      "Escribe arroz, limpieza, bebidas… o el nombre de una bodega. Te mostramos todo lo que hay cerca.",
     placement: "bottom",
     spotlight: "rounded",
     skipIfMissing: true,
@@ -36,7 +36,7 @@ const STEPS: TourStep[] = [
     target: "[data-tour='cart']",
     title: "Tu carrito vive acá",
     description:
-      "Podés armar pedidos de varias bodegas a la vez. Cada una te contacta por WhatsApp con su propio delivery.",
+      "Puedes armar pedidos de varias bodegas a la vez. Cada una te contacta por WhatsApp con su propio delivery.",
     placement: "bottom",
     spotlight: "circle",
     skipIfMissing: true,
@@ -45,7 +45,7 @@ const STEPS: TourStep[] = [
     target: "[data-tour='user-menu']",
     title: "Mi cuenta y Socio Buleje",
     description:
-      "Desde tu menú accedés a Socio Buleje y ganás puntos en cada compra. Cuanto más comprás, más subís de tier.",
+      "Desde tu menú accedes a Socio Buleje y ganas puntos en cada compra. Cuanto más compras, más subes de tier.",
     placement: "bottom",
     spotlight: "circle",
     skipIfMissing: true,

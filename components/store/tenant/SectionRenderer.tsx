@@ -71,7 +71,7 @@ function CategoriesBlock({ section, primary, accent }: { section: CategoriesSect
     <section className="max-w-6xl mx-auto px-4 py-10 sm:py-12">
       <div className="mb-7 text-center">
         <h2 data-live={`customText:${section.id}:title`} className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
-          {title || "Explorá por categoría"}
+          {title || "Explora por categoría"}
         </h2>
         {subtitle && <p data-live={`customText:${section.id}:subtitle`} className="mt-2 text-base text-[var(--text-secondary)]">{subtitle}</p>}
       </div>
@@ -91,7 +91,7 @@ function CategoriesBlock({ section, primary, accent }: { section: CategoriesSect
           ))}
         </div>
       ) : (
-        <p className="text-center text-sm text-[var(--text-tertiary)]">Agregá categorías desde el editor</p>
+        <p className="text-center text-sm text-[var(--text-tertiary)]">Agrega categorías desde el editor</p>
       )}
     </section>
   );
@@ -129,7 +129,7 @@ function TeamBlock({ section, primary }: { section: TeamSection; primary: string
           ))}
         </div>
       ) : (
-        <p className="text-center text-sm text-[var(--text-tertiary)]">Agregá personas desde el editor</p>
+        <p className="text-center text-sm text-[var(--text-tertiary)]">Agrega personas desde el editor</p>
       )}
     </section>
   );
@@ -167,7 +167,7 @@ function SocialBlock({ section, primary, accent }: { section: SocialSection; pri
           })}
         </div>
       ) : (
-        <p className="text-sm text-[var(--text-tertiary)]">Agregá los links de tus redes desde el editor</p>
+        <p className="text-sm text-[var(--text-tertiary)]">Agrega los links de tus redes desde el editor</p>
       )}
     </section>
   );
@@ -234,7 +234,7 @@ function VideoBlock({ section, primary }: { section: VideoSection; primary: stri
           <video src={videoUrl} controls className="absolute inset-0 h-full w-full object-cover" />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-center">
-            <p className="px-6 text-sm text-[var(--text-tertiary)]" style={{ color: primary }}>Pegá un link de YouTube o un .mp4 en el editor</p>
+            <p className="px-6 text-sm text-[var(--text-tertiary)]" style={{ color: primary }}>Pega un link de YouTube o un .mp4 en el editor</p>
           </div>
         )}
       </div>
@@ -259,7 +259,7 @@ function MapBlock({ section, primary }: { section: MapSection; primary: string }
           <iframe src={src} title={title || "Mapa"} className="absolute inset-0 h-full w-full" loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
-            <p className="px-6 text-sm text-[var(--text-tertiary)]">Escribí tu dirección en el editor</p>
+            <p className="px-6 text-sm text-[var(--text-tertiary)]">Escribe tu dirección en el editor</p>
           </div>
         )}
       </div>
@@ -287,7 +287,7 @@ function LogosBlock({ section }: { section: LogosSection; primary: string }) {
           ))}
         </div>
       ) : (
-        <p className="text-center text-sm text-[var(--text-tertiary)]">Agregá logos desde el editor</p>
+        <p className="text-center text-sm text-[var(--text-tertiary)]">Agrega logos desde el editor</p>
       )}
     </section>
   );
@@ -306,7 +306,7 @@ function CountdownBlock({ section, primary }: { section: CountdownSection; prima
         {endsAt ? (
           <CountdownBanner title="" endsAt={endsAt} />
         ) : (
-          <p className="text-sm text-[var(--text-tertiary)]" style={{ color: primary }}>Elegí la fecha de fin en el editor</p>
+          <p className="text-sm text-[var(--text-tertiary)]" style={{ color: primary }}>Elige la fecha de fin en el editor</p>
         )}
       </div>
     </section>
@@ -721,7 +721,7 @@ function ImageTextBlock({ section, primary, accent }: { section: ImageTextSectio
               className={`text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] mb-3 ${onColor ? "text-white/80" : ""}`}
               style={onColor ? undefined : { color: primary }}
             >
-              {eyebrow || "Conocé más"}
+              {eyebrow || "Conoce más"}
             </p>
             <h2 data-live={`customText:${section.id}:title`} className={`font-display text-3xl sm:text-4xl lg:text-[2.75rem] font-extrabold tracking-tight leading-[1.05] mb-5 ${onColor ? "text-white" : "text-[var(--text-primary)]"}`}>
               {title}

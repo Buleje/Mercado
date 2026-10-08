@@ -43,7 +43,7 @@ const FAQ = [
   { q: "¿Cómo se fija el precio del cacao?", a: "El cacao se cotiza en la bolsa ICE de Nueva York en dólares por tonelada métrica. El precio en chacra —lo que te pagan en Perú— parte de ese valor: se convierte a soles con el tipo de cambio del día y se le descuenta flete, secado y el margen del acopiador." },
   { q: "¿Por qué el precio en chacra es más bajo que el internacional?", a: "La cotización internacional es por cacao puesto en destino y con calidad de exportación. En chacra se restan transporte, mermas, humedad y el margen de quien acopia. Por eso el valor en soles por kilo es una referencia, no el precio final que vas a cobrar." },
   { q: "¿Cada cuánto se actualiza?", a: "El gráfico usa el cierre diario del último año y se refresca varias veces al día con la cotización de la bolsa y el tipo de cambio USD/PEN." },
-  { q: "¿Este es el precio que me van a pagar?", a: "No. Es una referencia de mercado para que negocies con información. Cada acopiador fija su precio según calidad (fermentación, humedad NTP 208.040), volumen y zona. Usá la calculadora como piso de conversación." },
+  { q: "¿Este es el precio que me van a pagar?", a: "No. Es una referencia de mercado para que negocies con información. Cada acopiador fija su precio según calidad (fermentación, humedad NTP 208.040), volumen y zona. Usa la calculadora como piso de conversación." },
 ];
 
 export default async function PrecioCacaoPage() {
@@ -89,7 +89,7 @@ export default async function PrecioCacaoPage() {
         {p && p.series.length > 1 ? (
           <PrecioCacaoInteractive series={p.series} usdPen={m.usdPen} pricePenPerKg={m.pricePenPerKg} />
         ) : (
-          <p className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-10 text-center text-sm text-[var(--text-tertiary)]">El precio no está disponible en este momento. Probá de nuevo en unos minutos.</p>
+          <p className="rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-10 text-center text-sm text-[var(--text-tertiary)]">El precio no está disponible en este momento. Prueba de nuevo en unos minutos.</p>
         )}
       </div>
 

@@ -26,7 +26,7 @@ const CARDS: PromoCard[] = [
   {
     href: "/marketplace/ofertas",
     eyebrow: "Ofertas del barrio",
-    title: "Ahorrá hasta 40%",
+    title: "Ahorra hasta 40%",
     subtitle: "En bodegas seleccionadas todos los días.",
     cta: "Ver ofertas",
     stat: "-40%",
@@ -37,8 +37,8 @@ const CARDS: PromoCard[] = [
   {
     href: "/marketplace/como-pagar",
     eyebrow: "Yape o efectivo",
-    title: "Pagá como prefieras",
-    subtitle: "Sin tarjetas, sin complicaciones — vos decidís.",
+    title: "Paga como prefieras",
+    subtitle: "Sin tarjetas, sin complicaciones — tú decides.",
     cta: "Cómo funciona",
     stat: "4",
     statLabel: "Métodos",
