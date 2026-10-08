@@ -2,7 +2,9 @@
 
 /**
  * Mira el video de UNA cámara cada `CADA_CUANTO_DETECTAR_MS` (más espaciado si
- * hay muchas cámaras: `intervaloDeteccionMs`) con el detector local (`detector-personas.ts`), decide con `decidirFotoPersona`
+ * hay muchas cámaras o el detector tarda) con el vigía (`vigia-camara.ts`:
+ * movimiento + zoom + D-FINE, ADR-475), sigue a cada persona con su número
+ * (`lib/camaras/seguimiento.ts`), decide con `decidirFotoPersona`
  * (lib/camaras/personas) y sube la foto a `POST /api/admin/camaras/[id]/persona`.
  *
  * - Una vuelta a la vez por cámara: el próximo `setTimeout` se agenda recién
@@ -15,27 +17,29 @@
  */
 import { useEffect, useRef, useState } from "react";
 import {
+  CADA_CUANTO_DETECTAR_MS,
   ESTADO_DETECTOR_INICIAL,
+  VENTANA_CONFIRMAR_PERSONA_MS,
   decidirFotoPersona,
   type EstadoDetector,
   type MetaFotoPersona,
   type RespuestaFotoPersona,
 } from "@/lib/camaras/personas";
 import { filtrarCajasIgnoradas, type ZonaIgnorada } from "@/lib/camaras/zonas-ignorar";
+import type { AparicionPersona, CajaFraccion, MotorDetector, PersonaEnVivo } from "@/lib/camaras/vigia";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
+import { OLVIDAR_PERSONA_MS, crearSeguimiento, seguir } from "@/lib/camaras/seguimiento";
 import {
-  cargarDetectorPersonas,
   componerFoto,
   crearLienzosCuadro,
-  detectarPersonas,
   intervaloDeteccionMs,
   leerCuadro,
-  retenerDetectorPersonas,
   selloLima,
   soltarLienzosCuadro,
   type CajaPersona,
 } from "./detector-personas";
+import { crearVigia } from "./vigia-camara";
 
 export type EstadoDetectorPersonas = "apagado" | "cargando" | "mirando" | "error";
 
@@ -76,6 +80,14 @@ export interface DetectorPersonas {
   ultimaFoto: UltimaFotoPersona | null;
   /** Mensaje corto si `estado === "error"`. */
   error: string | null;
+  /** Personas seguidas en la última mirada, con su número (para dibujarlas sobre el video). */
+  personasEnVivo: PersonaEnVivo[];
+  /** Zonas del cuadro con movimiento en la última mirada. */
+  movimientoEnVivo: CajaFraccion[];
+  /** La última vez que apareció gente (dispara el aviso); `null` si todavía no. */
+  aparicion: AparicionPersona | null;
+  /** Con qué motor está mirando; `null` mientras carga. */
+  motor: MotorDetector | null;
 }
 
 /** Color de las cajas: token del DS resuelto donde está el video (respeta claro/oscuro del panel). */
@@ -134,6 +146,10 @@ export function useDetectorPersonas(opciones: OpcionesDetectorPersonas): Detecto
   const [ignoradasAhora, setIgnoradasAhora] = useState(0);
   const [fotosTomadas, setFotosTomadas] = useState(0);
   const [ultimaFoto, setUltimaFoto] = useState<UltimaFotoPersona | null>(null);
+  const [personasEnVivo, setPersonasEnVivo] = useState<PersonaEnVivo[]>([]);
+  const [movimientoEnVivo, setMovimientoEnVivo] = useState<CajaFraccion[]>([]);
+  const [aparicion, setAparicion] = useState<AparicionPersona | null>(null);
+  const [motor, setMotor] = useState<MotorDetector | null>(null);
 
   useEffect(() => {
     if (!activo) return;
@@ -141,7 +157,11 @@ export function useDetectorPersonas(opciones: OpcionesDetectorPersonas): Detecto
     let reloj: ReturnType<typeof setTimeout> | undefined;
     let decision: EstadoDetector = ESTADO_DETECTOR_INICIAL;
     let subiendo = false;
-    const soltar = retenerDetectorPersonas();
+    const vigia = crearVigia();
+    const seguimiento = crearSeguimiento();
+    let seguidas: PersonaEnVivo[] = [];
+    /** Lo que tardó la última vuelta (ms): estira la ventana de «apareció». */
+    let msVuelta = 0;
     const lienzos = crearLienzosCuadro();
     setFase("cargando");
     setError(null);
@@ -189,26 +209,44 @@ export function useDetectorPersonas(opciones: OpcionesDetectorPersonas): Detecto
       /* Trabado (mismo cuadro una y otra vez): ni se mira ni se decide, si no
          saldría una «sigue» por minuto de una imagen quieta. */
       if (cuadro !== "nuevo" || !vivo) return;
-      const crudo = await detectarPersonas(lienzos.chico);
+      const zonas = ultimas.current.zonasIgnorar ?? [];
+      const mirada = await vigia.mirar(lienzos, seguidas, zonas);
       if (!vivo) return;
+      setMotor(vigia.motor());
       /* Zonas a ignorar ANTES de decidir: una caja descartada no confirma
          «apareció», no suma a «llegó otra» ni sostiene «sigue en cuadro». Las
-         cajas vienen en píxeles de `chico`; las zonas, en fracciones. */
-      const { quedan, ignoradas } = filtrarCajasIgnoradas(
-        crudo.cajas,
-        lienzos.chico.width,
-        lienzos.chico.height,
-        ultimas.current.zonasIgnorar ?? [],
-      );
+         cajas y las zonas van en fracciones (ancho = alto = 1). El movimiento
+         dentro de una zona tampoco se dibuja (una lona que flamea). */
+      const { quedan, ignoradas } = filtrarCajasIgnoradas(mirada.personas, 1, 1, zonas);
+      const movimiento = filtrarCajasIgnoradas(mirada.movimiento, 1, 1, zonas).quedan;
+      const at = Date.now();
+      /* Quien mira lento estira las esperas: la ventana de «apareció» (y con
+         ella la ausencia) y el olvido del seguimiento. */
+      const ventana = Math.max(VENTANA_CONFIRMAR_PERSONA_MS, Math.round(msVuelta * 2.5));
+      const enVivo = seguir(seguimiento, quedan, at, Math.max(OLVIDAR_PERSONA_MS, Math.round(ventana * 1.6)));
+      seguidas = enVivo;
+      /* Sin nada antes ni ahora no se re-dibuja el cuadro (una vuelta por segundo). */
+      setPersonasEnVivo((antes) => (antes.length === 0 && enVivo.length === 0 ? antes : enVivo));
+      setMovimientoEnVivo((antes) => (antes.length === 0 && movimiento.length === 0 ? antes : movimiento));
+      setPersonasAhora(enVivo.length);
+      setIgnoradasAhora(ignoradas.length);
+      /* Para decidir la foto cuentan sólo las que el detector VIO en esta
+         mirada: las «estimadas» confirmarían solas un «apareció» falso. */
+      const { width: cw, height: ch } = lienzos.chico;
       const r = {
         personas: quedan.length,
         confianza: quedan.reduce((m, k) => Math.max(m, k.confianza), 0),
-        cajas: quedan,
+        cajas: quedan.map(
+          (k): CajaPersona => ({ x: k.x * cw, y: k.y * ch, ancho: k.ancho * cw, alto: k.alto * ch, confianza: k.confianza }),
+        ),
       };
-      setPersonasAhora(r.personas);
-      setIgnoradasAhora(ignoradas.length);
-      const at = Date.now();
-      const d = decidirFotoPersona(decision, r.personas, at);
+      const d = decidirFotoPersona(decision, r.personas, at, {
+        ventanaConfirmarMs: ventana,
+        /* «Apareció» sólo si alguien visto ahora ya se vio antes en el mismo lugar. */
+        mismaPersona: enVivo.some((p) => !p.estimada && p.vistas >= 2),
+      });
+      if (d.foto === "aparecio" || d.foto === "mas_gente")
+        setAparicion({ camaraId, nombre: ultimas.current.nombre, at, personas: enVivo.length });
       if (d.foto && subiendo) {
         /* Subida anterior en curso (4G lento): esta foto no sale, pero tampoco
            cuenta como tomada; se anota que se vio gente y la próxima mirada decide. */
@@ -241,13 +279,19 @@ export function useDetectorPersonas(opciones: OpcionesDetectorPersonas): Detecto
       } catch (err) {
         logger.warn("[camaras] el detector de personas falló en un cuadro", { error: String(err) });
       }
+      msVuelta = performance.now() - t0;
       if (!vivo) return;
-      reloj = setTimeout(vuelta, Math.max(0, intervaloDeteccionMs() - (performance.now() - t0)));
+      /* Con D-FINE el ritmo lo da lo que tardó la mirada (está en un worker);
+         con MediaPipe, el presupuesto del hilo principal. El motor es el de
+         ESTA cámara: otra puede haber pasado al detector liviano. */
+      const intervalo = vigia.motor() === "mediapipe" ? intervaloDeteccionMs() : CADA_CUANTO_DETECTAR_MS;
+      reloj = setTimeout(vuelta, Math.max(0, intervalo - (performance.now() - t0)));
     };
 
-    cargarDetectorPersonas().then(
-      () => {
+    vigia.cargar().then(
+      (m) => {
         if (!vivo) return;
+        setMotor(m);
         setFase("mirando");
         void vuelta();
       },
@@ -262,10 +306,12 @@ export function useDetectorPersonas(opciones: OpcionesDetectorPersonas): Detecto
     return () => {
       vivo = false;
       clearTimeout(reloj);
-      soltar();
+      vigia.soltar();
       soltarLienzosCuadro(lienzos);
       setPersonasAhora(0);
       setIgnoradasAhora(0);
+      setPersonasEnVivo([]);
+      setMovimientoEnVivo([]);
     };
   }, [activo, camaraId]);
 
@@ -276,5 +322,9 @@ export function useDetectorPersonas(opciones: OpcionesDetectorPersonas): Detecto
     fotosTomadas,
     ultimaFoto,
     error: activo ? error : null,
+    personasEnVivo: activo ? personasEnVivo : [],
+    movimientoEnVivo: activo ? movimientoEnVivo : [],
+    aparicion,
+    motor: activo ? motor : null,
   };
 }

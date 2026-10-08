@@ -13,6 +13,10 @@
  * queda la burbuja (`MosaicoBurbuja`). Por eso ya no es un `AdminModal`: el
  * `Dialog` de Radix desmonta su contenido al cerrarse. Es un diálogo a mano en
  * un portal, con `useModalAccesible` (foco, Tab, Escape) sólo mientras se ve.
+ *
+ * Aviso de personas (2026-10-08): cada cuadro le pasa sus apariciones y acá
+ * suenan el pitido y el mensaje (`useAvisoPersonas`) — también minimizado,
+ * porque el mosaico sigue montado; ahí el mensaje trae «Ver» para expandirlo.
  */
 
 import { useCallback, useId, useRef, useState, type MouseEvent } from "react";
@@ -30,6 +34,7 @@ import MosaicoBurbuja from "./MosaicoBurbuja";
 import MosaicoNubeCabecera from "./MosaicoNubeCabecera";
 import MosaicoNubeCuadro, { type CamaraMosaico } from "./MosaicoNubeCuadro";
 import { navegarEnElPanel } from "./navegar-panel";
+import { useAvisoPersonas } from "./use-aviso-personas";
 import { RETRASO_ENTRE_CUADROS_MS, useMosaicoNube, vecesMas } from "./use-mosaico-nube";
 import { usePersonasMosaico } from "./use-personas-mosaico";
 import type { EstadoVisor } from "./use-visor-nube";
@@ -95,6 +100,7 @@ export default function MosaicoNube({
     else m.actividad();
     onExpandir?.();
   }, [m, onExpandir]);
+  const aviso = useAvisoPersonas(minimizado && onExpandir ? expandir : undefined);
   const cambiarSinPausa = (v: boolean) => {
     setSinPausa(v);
     if (v && m.cortado) m.seguir();
@@ -136,6 +142,8 @@ export default function MosaicoNube({
               vigilancia={!soloMirar}
               detectar={detectar}
               onDetectar={setDetectar}
+              sonido={aviso.sonido}
+              onSonido={aviso.cambiarSonido}
               sinPausa={sinPausa}
               onSinPausa={cambiarSinPausa}
               carpetaHref={carpetaHref}
@@ -179,6 +187,7 @@ export default function MosaicoNube({
                     onFotoPersona={p.onFoto}
                     onEstado={onEstado}
                     registrarCuadro={p.registrarCuadro}
+                    onAparicion={aviso.avisar}
                   />
                 ))}
               </ul>

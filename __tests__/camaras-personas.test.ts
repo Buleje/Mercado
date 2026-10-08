@@ -221,3 +221,34 @@ describe("decidirFotoPersona — entradas raras", () => {
     expect(INTERVALO_FOTO_PERSONA_MS).toBe(60 * S);
   });
 });
+
+describe("decidirFotoPersona · ventana estirada (2026-10-08)", () => {
+  it("con una vuelta lenta la 2.ª mirada a los 9 s todavía confirma «apareció»", () => {
+    const a = decidirFotoPersona(ESTADO_DETECTOR_INICIAL, 1, 100_000);
+    expect(a.foto).toBeNull();
+    expect(decidirFotoPersona(a.estado, 1, 109_000).foto).toBeNull();
+    expect(decidirFotoPersona(a.estado, 1, 109_000, { ventanaConfirmarMs: 15_000 }).foto).toBe("aparecio");
+  });
+
+  it("dos detecciones sueltas (otra persona, otro lugar) no confirman aunque entren en la ventana", () => {
+    const a = decidirFotoPersona(ESTADO_DETECTOR_INICIAL, 1, 100_000);
+    const b = decidirFotoPersona(a.estado, 1, 115_000, { ventanaConfirmarMs: 15_000, mismaPersona: false });
+    expect(b.foto).toBeNull();
+    expect(b.estado.ultimaVistaEn).toBe(115_000);
+    expect(
+      decidirFotoPersona(b.estado, 1, 121_000, { ventanaConfirmarMs: 15_000, mismaPersona: true }).foto,
+    ).toBe("aparecio");
+  });
+
+  it("la ausencia se estira con la ventana: una vuelta vacía de 9 s no reinicia la presencia", () => {
+    const foto = decidirFotoPersona(
+      decidirFotoPersona(ESTADO_DETECTOR_INICIAL, 1, 0).estado,
+      1,
+      4_000,
+    );
+    expect(foto.foto).toBe("aparecio");
+    const vacia = decidirFotoPersona(foto.estado, 0, 13_000, { ventanaConfirmarMs: 15_000 });
+    expect(vacia.estado.presentes).toBe(1);
+    expect(decidirFotoPersona(foto.estado, 0, 13_000).estado.presentes).toBe(0);
+  });
+});

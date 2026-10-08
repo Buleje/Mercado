@@ -105,6 +105,50 @@ export function pitido(opciones: OpcionesPitido = {}): boolean {
   }
 }
 
+/**
+ * Las dos notas del aviso «apareció alguien» del mosaico de cámaras: [Hz,
+ * desde (s), dura (s)]. Bajan (si → fa#), como un timbre: ~250 ms en total.
+ */
+const NOTAS_AVISO: readonly (readonly [number, number, number])[] = [
+  [988, 0, 0.12],
+  [740, 0.13, 0.13],
+];
+/** Más alto que el tip del dictado (tiene que oírse con el mosaico en la burbuja), sin asustar. */
+const GANANCIA_AVISO = 0.18;
+
+/**
+ * El aviso de personas del mosaico (2026-10-08): dos tonos que bajan. Usa el
+ * MISMO contexto de audio que el tip (uno por página). Devuelve `false` si no
+ * se pudo (sin Web Audio o bloqueado): el mensaje en pantalla sale igual.
+ */
+export function pitidoAviso(volumen = 1): boolean {
+  const ctx = obtenerContexto();
+  if (!ctx) return false;
+  try {
+    if (ctx.state === "suspended") void ctx.resume().catch(descartarEsperado);
+    const pico = Math.max(0.0002, GANANCIA_AVISO * Math.min(1, Math.max(0, volumen)));
+    const t0 = ctx.currentTime + 0.005;
+    for (const [hz, desde, dura] of NOTAS_AVISO) {
+      const t = t0 + desde;
+      const osc = ctx.createOscillator();
+      const gan = ctx.createGain();
+      /* Triangular: más presencia que la senoidal en el parlante de una laptop. */
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(hz, t);
+      gan.gain.setValueAtTime(0.0001, t);
+      gan.gain.exponentialRampToValueAtTime(pico, t + 0.01);
+      gan.gain.exponentialRampToValueAtTime(0.0001, t + dura);
+      osc.connect(gan);
+      gan.connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + dura + 0.01);
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Sólo para tests: olvida el contexto creado. */
 export function reiniciarPitidoParaTests(): void {
   contexto = null;

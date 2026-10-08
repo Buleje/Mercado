@@ -100,18 +100,37 @@ function desde(ahora: number, t: number | null): number {
  *   (si el hueco no da, espera; si la persona sigue al cumplirse, sale la foto).
  * - Sin ver a nadie menos de `AUSENCIA_PERSONA_MS`: parpadeo, no se reinicia.
  *   Pasada la ausencia, la próxima persona vuelve a ser «aparecio».
+ *
+ * `opciones` (2026-10-08, ADR-475):
+ * - `ventanaConfirmarMs`: quien mira lento (D-FINE en el procesador, 2-6 s por
+ *   vuelta con dos cámaras) la estira; con 5 s fijos la 2.ª mirada llegaba
+ *   tarde y nadie «aparecía» nunca (medido: 0 fotos en 45 s con 2 personas).
+ *   La ausencia se estira con ella (×1,6, como 5 → 8 s): la ventana tiene que
+ *   quedar por debajo de la ausencia.
+ * - `mismaPersona`: el seguimiento dice si alguien vista AHORA ya se vio en una
+ *   mirada anterior. Con la ventana estirada, dos detecciones sueltas a 15 s
+ *   (un tronco y después un perro) confirmarían un «apareció» falso; con
+ *   `false` el «apareció» queda en candidato.
  */
+export interface OpcionesDecidirFoto {
+  ventanaConfirmarMs?: number;
+  mismaPersona?: boolean;
+}
+
 export function decidirFotoPersona(
   estado: EstadoDetector,
   personas: number,
   ahora: number,
+  opciones: OpcionesDecidirFoto = {},
 ): DecisionFoto {
+  const ventana = opciones.ventanaConfirmarMs ?? VENTANA_CONFIRMAR_PERSONA_MS;
+  const ausencia = Math.max(AUSENCIA_PERSONA_MS, Math.round(ventana * 1.6));
   const n = Number.isFinite(personas) && personas > 0 ? Math.floor(personas) : 0;
   const desdeVista = desde(ahora, estado.ultimaVistaEn);
   const desdeFoto = desde(ahora, estado.ultimaFotoEn);
 
   if (n === 0) {
-    if (estado.presentes > 0 && desdeVista >= AUSENCIA_PERSONA_MS) {
+    if (estado.presentes > 0 && desdeVista >= ausencia) {
       return { estado: { ...estado, presentes: 0 }, foto: null };
     }
     return { estado, foto: null };
@@ -124,7 +143,7 @@ export function decidirFotoPersona(
   const sinFoto: DecisionFoto = { estado: { ...estado, ultimaVistaEn: ahora }, foto: null };
 
   if (estado.presentes === 0) {
-    const confirmada = desdeVista <= VENTANA_CONFIRMAR_PERSONA_MS;
+    const confirmada = desdeVista <= ventana && opciones.mismaPersona !== false;
     return confirmada && desdeFoto >= HUECO_MINIMO_FOTO_MS ? foto("aparecio") : sinFoto;
   }
   if (n > estado.presentes && desdeFoto >= HUECO_MINIMO_FOTO_MS) return foto("mas_gente");

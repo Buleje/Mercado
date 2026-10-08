@@ -2,13 +2,13 @@
 
 /**
  * Cabecera del mosaico «Ver todas en vivo»: título, minimizar y cerrar; debajo,
- * la vigilancia (2026-10-07) — «Detectar personas», «No pausar» y la carpeta
- * «Personas» del Drive. Copia la cabecera de `AdminModal` (el mosaico ya no es
+ * la vigilancia (2026-10-07) — «Detectar personas», «Aviso con sonido»
+ * (08-10), «No pausar» y la carpeta «Personas» del Drive. Copia la cabecera de `AdminModal` (el mosaico ya no es
  * un `AdminModal`: tiene que poder esconderse sin desmontar los videos).
  */
 
 import type { ComponentType, MouseEvent, ReactNode } from "react";
-import { FolderOpen, LayoutGrid, Minimize2, Timer, Users, X } from "@buleje/design-system/icons";
+import { BellRing, FolderOpen, LayoutGrid, Minimize2, Timer, Users, X } from "@buleje/design-system/icons";
 import { MODAL_GUTTER } from "@/components/admin/shared/AdminModal";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { DATOS_POR_HORA, MINUTOS_SIN_TOCAR } from "./hik-connect-teams";
@@ -20,6 +20,9 @@ interface Props {
   vigilancia: boolean;
   detectar: boolean;
   onDetectar: (v: boolean) => void;
+  /** «Aviso con sonido» al aparecer alguien (recordado; el mensaje sale igual). */
+  sonido: boolean;
+  onSonido: (v: boolean) => void;
   sinPausa: boolean;
   onSinPausa: (v: boolean) => void;
   carpetaHref: string | null;
@@ -87,10 +90,14 @@ export default function MosaicoNubeCabecera(p: Props) {
             </Interruptor>
             <InfoTip
               title="Detectar personas"
-              what="Esta PC mira el video de cada cámara y, cuando aparece alguien, guarda la foto en la carpeta «Personas» del Drive."
-              affects="No gasta datos extra: mira el video que ya llega. Minimizado sigue mirando; pausado o cerrado, no."
-              example="Minimiza el mosaico y sigue trabajando: la burbuja cuenta las fotos nuevas."
+              what="Esta PC mira el video de cada cámara, marca a cada persona con un recuadro y su número y, cuando aparece alguien, te avisa y guarda la foto en la carpeta «Personas» del Drive."
+              affects="No gasta datos extra: mira el video que ya llega. Minimizado sigue mirando y avisando; pausado o cerrado, no."
+              example="Minimiza el mosaico y sigue trabajando: si entra alguien al patio, suena y sale «Apareció 1 persona en Patio de trozas»."
             />
+            <Interruptor activo={p.sonido} onCambiar={p.onSonido} icono={BellRing}>
+              <span className="sm:hidden">Sonido</span>
+              <span className="max-sm:hidden">Aviso con sonido</span>
+            </Interruptor>
           </>
         )}
         <Interruptor activo={p.sinPausa} onCambiar={p.onSinPausa} icono={Timer}>

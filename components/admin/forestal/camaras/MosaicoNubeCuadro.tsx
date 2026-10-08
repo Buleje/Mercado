@@ -12,16 +12,26 @@
  * porque el cuadro sigue montado — y su pastilla dice cuántas ve y cuántas
  * fotos guardó. El ojo tachado abre «Zonas que el detector ignora» sobre el
  * cuadro en vivo (08-10): lo que cae ahí no cuenta como persona.
+ *
+ * Marcar y avisar (Brandon 2026-10-08: «que detecte el movimiento de las
+ * personas, las marque, les ponga la etiqueta y avise»): encima del video van
+ * las cajas del detector (`CajasEnVivo`); cuando aparece gente el cuadro se
+ * resalta con un anillo coral unos segundos y le pasa la aparición al mosaico
+ * (`onAparicion`), que es el que suena y muestra el mensaje.
  */
 
 import { useCallback, useEffect, useState } from "react";
 import { EyeOff, Maximize2, Sparkles, Users, Volume2, VolumeX } from "@buleje/design-system/icons";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
+import { MOTOR_DETECTOR_LABEL, type AparicionPersona } from "@/lib/camaras/vigia";
+import { cn } from "@/lib/utils";
 import { useApiCamaras } from "./api-camaras";
+import CajasEnVivo from "./CajasEnVivo";
 import { BTN, CHIP_BASE, CHIP_TONO, ICONO_TONO } from "./camaras-ui";
 import ControlesCamara from "./ControlesCamara";
 import { fuenteDelVideo } from "./reproductor-nube";
 import { useAnalizarCuadro } from "./use-analizar-cuadro";
+import { useAparicionReciente } from "./use-aviso-personas";
 import {
   useDetectorPersonas,
   type DetectorPersonas,
@@ -55,6 +65,8 @@ interface Props {
   onEstado?: (camaraId: string, estado: EstadoVisor) => void;
   /** La miniatura de respaldo de la burbuja: un cuadro sin contar como toque. */
   registrarCuadro?: (camaraId: string, tomar: TomarCuadro | null) => void;
+  /** Apareció gente en este cuadro: el mosaico avisa (mensaje + pitido). */
+  onAparicion?: (a: AparicionPersona) => void;
 }
 
 export default function MosaicoNubeCuadro({
@@ -68,6 +80,7 @@ export default function MosaicoNubeCuadro({
   onFotoPersona,
   onEstado,
   registrarCuadro,
+  onAparicion,
 }: Props) {
   const { base, soloMirar } = useApiCamaras(baseApi);
   const v = useVisorNube(camara.id, { activo, retrasoMs, onActividad, baseApi: base });
@@ -86,6 +99,8 @@ export default function MosaicoNubeCuadro({
     onFoto: onFotoPersona,
     zonasIgnorar: zonas,
   });
+  const reciente = useAparicionReciente(personas.aparicion, onAparicion);
+  const marcar = detectar && viendo;
 
   useEffect(() => {
     onEstado?.(camara.id, estado);
@@ -98,14 +113,20 @@ export default function MosaicoNubeCuadro({
 
   return (
     <li
-      className="min-w-0 space-y-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2.5"
+      className={cn(
+        "min-w-0 space-y-2 rounded-xl border bg-[var(--surface-raised)] p-2.5 transition-shadow",
+        reciente
+          ? "border-[var(--data-warning-500)] ring-2 ring-[var(--data-warning-500)]"
+          : "border-[var(--rule-base)]",
+      )}
       data-cuadro-mosaico={camara.id}
+      data-persona-reciente={reciente || undefined}
     >
       <div className="flex items-center gap-2">
         <span className="min-w-0 flex-1 truncate text-sm font-bold text-[var(--text-primary)]">
           {camara.nombre}
         </span>
-        {detectar && viendo && <ChipPersonas d={personas} />}
+        {marcar && <ChipPersonas d={personas} />}
         <ChipEstadoVivo estado={v.estado} />
       </div>
 
@@ -130,6 +151,13 @@ export default function MosaicoNubeCuadro({
             className="flex h-full w-full items-center justify-center"
             data-visor-nube={camara.id}
           />
+          {marcar && (
+            <CajasEnVivo
+              personas={personas.personasEnVivo}
+              movimiento={personas.movimientoEnVivo}
+              contenedorId={contenedorId}
+            />
+          )}
           <VisorNubeCapas v={v} conCodigo={camara.conCodigo} compacto />
         </div>
         {!soloMirar && (
@@ -247,7 +275,7 @@ function ChipPersonas({ d }: { d: DetectorPersonas }) {
   return (
     <span
       className={`${CHIP_BASE} ${hay ? CHIP_TONO.aviso : CHIP_TONO.neutro}`}
-      title="Personas en cuadro ahora (sin las de las zonas ignoradas) · fotos guardadas en la carpeta «Personas»"
+      title={`Personas en cuadro ahora (sin las de las zonas ignoradas) · fotos guardadas en la carpeta «Personas»${d.motor ? ` · Mira con: ${MOTOR_DETECTOR_LABEL[d.motor]}` : ""}`}
       aria-live="polite"
     >
       <Users className={`h-3.5 w-3.5 ${hay ? ICONO_TONO.aviso : ICONO_TONO.neutro}`} aria-hidden />
