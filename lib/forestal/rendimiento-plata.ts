@@ -68,6 +68,8 @@ export interface EntradaPlata {
   motivoMadera?: string | null;
   /** Alguna guía consumida quedó fuera de la lectura por el tope: su flete «no se leyó», no «falta». */
   guiasNoLeidas?: boolean;
+  /** `costoDeLinea.guiasSinCosto`: con ellas el faltante nombra la guía, no «la madera» (ADR-485). */
+  guiasSinCosto?: readonly string[];
 }
 
 export interface SalidaPlata {
@@ -92,6 +94,8 @@ export interface BasePlata {
   ventaSoles: number | null;
   /** m³ de troza sin guía atribuida: el agregado los suma para nombrar UN faltante. */
   m3SinAtribuir: number;
+  /** Guías consumidas sin costo cargado: el agregado las junta para nombrar UN faltante. */
+  guiasSinCosto?: string[];
 }
 
 export interface RendimientoPlata {
@@ -129,6 +133,15 @@ export const FALTA = {
 export const FALTA_SIN_ATRIBUIR = "la madera sin atribuir a una guía";
 export const faltaSinAtribuir = (m3: number): string => `${FALTA_SIN_ATRIBUIR} (${formatNumber(m3, { max: 3 })} m³)`;
 export const faltaMonedaMadera = (moneda: string): string => `el costo de la madera en soles (está en ${moneda})`;
+/** Final del faltante de las guías sin costo: el agregado lo reconoce y junta las guías en uno. */
+const SIN_COSTO_CARGADO = "(no tiene costo cargado)";
+const SIN_COSTO_CARGADO_VARIAS = "(no tienen costo cargado)";
+/** «el costo de la guía 010-001-0000005 (no tiene costo cargado)»: la guía, no «la madera» (ADR-485). */
+export const faltaGuiasSinCosto = (gtfs: readonly string[]): string => {
+  const lista = gtfs.length > 4 ? `${gtfs.slice(0, 4).join(", ")} y ${gtfs.length - 4} más` : gtfs.join(", ");
+  return gtfs.length === 1 ? `el costo de la guía ${lista} ${SIN_COSTO_CARGADO}` : `el costo de las guías ${lista} ${SIN_COSTO_CARGADO_VARIAS}`;
+};
+const esFaltaDeGuias = (t: string) => t.endsWith(SIN_COSTO_CARGADO) || t.endsWith(SIN_COSTO_CARGADO_VARIAS);
 export const faltaNoLeidas = (n: number): string => `la plata de ${n} ${n === 1 ? "corrida no leída" : "corridas no leídas"}`;
 
 function porPt(soles: number | null, pt: number): number | null {
@@ -185,7 +198,11 @@ export function rendimientoEnPlata(e: EntradaPlata, s: SalidaPlata, o: { parcial
     if (sinAtribuir > 0) faltantes.push(faltaSinAtribuir(sinAtribuir));
     if (otraMoneda) faltantes.push(faltaMonedaMadera(otraMoneda));
     /* Sin consumos, «sin atribuir» ya es TODO lo que falta de la madera. */
-    if (e.costoMadera == null && !(sinAtribuir > 0 && e.motivoMadera === "sin_consumos")) faltantes.push(FALTA.madera);
+    /* La guía sin costo se nombra: «el costo de la madera» mandaba a buscar cuál (ADR-485). */
+    const guiasSinCosto = e.motivoMadera === "falta_factura" ? [...(e.guiasSinCosto ?? [])] : [];
+    if (e.costoMadera == null && !(sinAtribuir > 0 && e.motivoMadera === "sin_consumos")) {
+      faltantes.push(guiasSinCosto.length > 0 ? faltaGuiasSinCosto(guiasSinCosto) : FALTA.madera);
+    }
     if (e.costoFleteGastos == null) faltantes.push(e.guiasNoLeidas ? FALTA.fleteNoLeido : FALTA.flete);
     if (s.costoAserrio == null) faltantes.push(FALTA.aserrio);
     if (ptEntradaEstimado) faltantes.push(FALTA.ptPagado);
@@ -200,6 +217,7 @@ export function rendimientoEnPlata(e: EntradaPlata, s: SalidaPlata, o: { parcial
     {
       m3Entrada: r4(e.m3), m3Salida: r4(s.m3), ptEntrada: ptEntrada != null ? r2(ptEntrada) : null, ptSalida: r2(s.pt),
       costoTotal, ventaSoles: s.ventaSoles != null ? r2(s.ventaSoles) : null, m3SinAtribuir: servicio ? 0 : sinAtribuir,
+      ...(!servicio && e.motivoMadera === "falta_factura" && (e.guiasSinCosto?.length ?? 0) > 0 ? { guiasSinCosto: [...(e.guiasSinCosto ?? [])] } : {}),
     },
     { parcial: o.parcial, servicio, ptEntradaEstimado, ptSalidaEstimado: !s.ptMedido, faltantes, motivoCosto: costoTotal == null ? "sin_costo" : "ok" },
   );
@@ -232,11 +250,17 @@ export function agregarRendimientoPlata(filas: readonly RendimientoPlata[], o: {
     ventaSoles: sinLeer > 0 ? null : todosONull(propias, (b) => b.ventaSoles),
     m3SinAtribuir: r4(sum(propias, (b) => b.m3SinAtribuir)),
   };
+  const guiasSinCosto = [...new Set(propias.flatMap((f) => f.base.guiasSinCosto ?? []))].sort();
+  if (guiasSinCosto.length > 0) base.guiasSinCosto = guiasSinCosto;
   /* Un solo «sin atribuir» con la suma, no uno por corrida con su número. */
   const faltantes = [
     ...new Set([
       ...(sinLeer > 0 ? [faltaNoLeidas(sinLeer)] : []),
-      ...propias.flatMap((f) => f.faltantes).map((t) => (t.startsWith(FALTA_SIN_ATRIBUIR) ? faltaSinAtribuir(base.m3SinAtribuir) : t)),
+      ...propias
+        .flatMap((f) => f.faltantes)
+        .map((t) =>
+          t.startsWith(FALTA_SIN_ATRIBUIR) ? faltaSinAtribuir(base.m3SinAtribuir) : esFaltaDeGuias(t) && guiasSinCosto.length > 0 ? faltaGuiasSinCosto(guiasSinCosto) : t,
+        ),
     ]),
   ];
   const r = desdeBase(base, {
@@ -302,6 +326,8 @@ export function entradaDePlata(input: {
   sinAtribuirM3?: number;
   /** `costoDeLinea.moneda` (la de la madera cuando hay costo). */
   monedaMadera?: string | null;
+  /** `costoDeLinea.guiasSinCosto` (ADR-485). */
+  guiasSinCosto?: readonly string[];
 }): EntradaPlata {
   const { consumos, guias } = input;
   let pt = 0;
@@ -346,6 +372,7 @@ export function entradaDePlata(input: {
     monedaMadera: input.monedaMadera ?? null,
     motivoMadera: input.motivoMadera,
     guiasNoLeidas,
+    guiasSinCosto: input.guiasSinCosto ?? [],
   };
 }
 

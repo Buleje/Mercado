@@ -14,6 +14,8 @@ import { limaDateKey } from "@/lib/utils";
 import { ForestCtpDB } from "@/lib/db/forest-ctp.db";
 import { ForestLoteAserrioDB } from "@/lib/db/forest-lote-aserrio.db";
 import { ForestCtpConsumoDB } from "@/lib/db/forest-ctp-consumo.db";
+import { ForestCtpCierreDB } from "@/lib/db/forest-ctp-cierre.db";
+import { closedPeriodOf } from "@/lib/forestal/ctp-cierre-types";
 import { GuiaPlataDB } from "@/lib/db/guia-plata.db";
 import {
   armarRendimientoAserradero,
@@ -93,6 +95,8 @@ async function plataDeCorridas(
       sinAtribuirM3: costo.sinAtribuirM3,
       /* La moneda vale sólo con costo: sin él, `moneda` es la de la línea, no la de la madera. */
       monedaMadera: costo.costoMateriaPrima != null ? costo.moneda : null,
+      /* ADR-485: el faltante nombra la guía sin costo en vez de «el costo de la madera». */
+      guiasSinCosto: costo.guiasSinCosto,
     });
     const salida = salidaDePlata({
       m3: c.m3Salida,
@@ -111,9 +115,10 @@ async function plataDeCorridas(
 export async function leerRendimientoAserradero(tenantId: string, opts: { plata: boolean }): Promise<RendimientoAserraderoDTO> {
   if (!tenantId) throw new Error("tenantId is required");
   const hoy = limaDateKey();
-  const [{ entries }, lotes] = await Promise.all([
+  const [{ entries }, lotes, cierres] = await Promise.all([
     ForestCtpDB.list(tenantId, { section: "produccion" }),
     ForestLoteAserrioDB.list(tenantId, { limite: 500 }),
+    ForestCtpCierreDB.list(tenantId),
   ]);
 
   /* Corrida → su lote: la que lo cerró y las que se comieron piezas suyas (ADR-365). */
@@ -141,6 +146,13 @@ export async function leerRendimientoAserradero(tenantId: string, opts: { plata:
       finProceso: lote?.fin ?? null,
       /* Un lote cerrado ya produjo todo aunque su programación diga otra fecha. */
       parcial: !!lote && !lote.cerrado && lote.fin != null && lote.fin > hoy,
+      /* Lo declarado sin guía: habilita «Ligar con su compra» también sin plata (ADR-485). */
+      m3SinAtribuir: Math.max(
+        0,
+        Math.round(((num(e.volumeInputM3) ?? 0) - atribuida - (num((e as { mpReprocesoM3?: unknown }).mpReprocesoM3) ?? 0)) * 10000) / 10000,
+      ),
+      /* Lo que la propuesta bloquea no ofrece «Ligar» (el costo congelado tras reabrir el mes lo dice la tarjeta). */
+      ligable: e.aperturaDeclaradaAt == null && !closedPeriodOf(cierres, e.entryDate),
     };
   });
 

@@ -13,6 +13,7 @@
 
 import { useMemo } from "react";
 import type { Concil, SaldosData } from "@/hooks/use-ctp-saldos";
+import type { EspecieSinIngreso } from "@/lib/forestal/corrida-compra";
 import type { ResumenAntiguedad } from "@/lib/forestal/antiguedad-por-guia";
 import type { EstadoFuente } from "@/lib/forestal/capacidad-de-planta";
 import { excepcionesDeSaldo, type Excepcion } from "@/lib/forestal/ctp-saldos-excepciones";
@@ -33,6 +34,7 @@ export function useExcepcionesDeSaldos({
   lotes,
   estadoAntiguedad,
   antiguedad,
+  especiesSinIngreso,
 }: {
   data: SaldosData | null;
   curva: CurvaSaldoData | null;
@@ -41,6 +43,8 @@ export function useExcepcionesDeSaldos({
   lotes: readonly LoteDeReporte[];
   estadoAntiguedad: EstadoFuente;
   antiguedad: ResumenAntiguedad;
+  /** ADR-485: especies aserradas sin ningún ingreso (todo el libro). `undefined` = no llegó. */
+  especiesSinIngreso?: readonly EspecieSinIngreso[];
 }): Excepcion[] {
   return useMemo(() => {
     if (!data) return [];
@@ -65,6 +69,7 @@ export function useExcepcionesDeSaldos({
       sinCosto: conAntiguedad
         ? { m3: antiguedad.m3SinCosto, guias: antiguedad.guiasSinCosto }
         : undefined,
+      especiesSinIngreso,
     });
-  }, [data, curva, concil, origen, lotes, estadoAntiguedad, antiguedad]);
+  }, [data, curva, concil, origen, lotes, estadoAntiguedad, antiguedad, especiesSinIngreso]);
 }

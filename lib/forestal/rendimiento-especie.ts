@@ -58,6 +58,10 @@ export interface CorridaRendimiento {
   /** `AAAA-MM-DD` del fin de proceso del lote. */
   finProceso: string | null;
   parcial: boolean;
+  /** m³ de troza declarados que ninguna guía respalda (ADR-485: «Ligar con su compra»). */
+  m3SinAtribuir?: number;
+  /** `false` = la propuesta la bloquearía (apertura declarada o mes cerrado): sin botón «Ligar». */
+  ligable?: boolean;
 }
 
 export interface RangoPropio {

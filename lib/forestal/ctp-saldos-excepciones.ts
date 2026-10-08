@@ -17,6 +17,8 @@
  */
 
 import { claveEspecie } from "@/lib/forestal/loth-constants";
+import type { EspecieSinIngreso } from "@/lib/forestal/corrida-compra";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import {
   EPS,
   avisosDeOperacion,
@@ -30,6 +32,7 @@ import {
 export type TonoExcepcion = "error" | "warning" | "info";
 
 export type ClaveExcepcion =
+  | "especie-sin-ingreso"
   | "mp-negativa"
   | "stock-negativo"
   | "valle-negativo"
@@ -133,6 +136,11 @@ export interface EntradaExcepciones {
   guiasVaradas?: { guias: number; m3: number; dias: number };
   /** m³ con saldo cuyas guías no tienen costo cargado. */
   sinCosto?: { m3: number; guias: number };
+  /**
+   * Especies aserradas sin NINGÚN ingreso de esa especie en todo el libro
+   * (ADR-485). Sin período: lo trae `/ctp/especies-sin-ingreso`.
+   */
+  especiesSinIngreso?: ReadonlyArray<EspecieSinIngreso>;
 }
 
 /** Con más de esto consumido, la especie se agota antes de lo que uno cree. */
@@ -148,6 +156,32 @@ export const TOPE_NOMBRES = 6;
  */
 export function excepcionesDeSaldo(input: EntradaExcepciones): Excepcion[] {
   const fuera: Excepcion[] = [];
+
+  // ── Especies que se asierran sin ninguna guía de ingreso (ADR-485) ───────
+  /* Es la causa de su saldo negativo, dicha con su nombre: esas especies
+     salen de «en negativo» para no dar dos rojos por el mismo hecho. */
+  const sinIngreso = input.especiesSinIngreso ?? [];
+  const clavesSinIngreso = new Set(sinIngreso.map((e) => claveEspecie(e.especie)));
+  if (sinIngreso.length > 0) {
+    const total = sinIngreso.reduce((a, e) => a + e.m3Troza, 0);
+    const corridas = sinIngreso.reduce((a, e) => a + e.corridas, 0);
+    const todasApertura = sinIngreso.every((e) => e.conApertura === e.corridas);
+    fuera.push({
+      clave: "especie-sin-ingreso",
+      tono: todasApertura ? "warning" : "error",
+      titulo: `${sinIngreso.length} ${plural(sinIngreso.length, "especie aserrada", "especies aserradas")} sin ningún ingreso · ${fmtM3(total)} m³`,
+      detalle:
+        `${corridas} ${plural(corridas, "corrida asierra", "corridas asierran")} madera de ${plural(sinIngreso.length, "una especie", "especies")} sin ninguna guía de ingreso en todo el libro: ante SERFOR esa madera no tiene origen. ` +
+        "Registra su guía en Ingresos; si es madera anterior al libro, declara la corrida como existencia de apertura.",
+      items: sinIngreso.map(
+        (e) =>
+          `${e.especie} (${e.corridas} ${plural(e.corridas, "corrida", "corridas")} · ${fmtM3(e.m3Troza)} m³` +
+          `${e.conApertura > 0 ? ` · ${e.conApertura === e.corridas ? "apertura declarada" : `${e.conApertura} de apertura`}` : ""})`,
+      ),
+      magnitud: Number(total.toFixed(4)),
+      ir: "ingresos",
+    });
+  }
 
   // ── Materia prima consumida sin respaldo ────────────────────────────────
   /* La existencia que se juzga: la FINAL si la conciliación la trajo, y si no
@@ -166,6 +200,7 @@ export function excepcionesDeSaldo(input: EntradaExcepciones): Excepcion[] {
   );
 
   const negativas = input.porEspecie
+    .filter((e) => !clavesSinIngreso.has(claveEspecie(e.especie)))
     .map((e) => ({ ...e, existencia: existenciaDe(e.especie, e.saldoM3) }))
     .filter((e) => e.existencia < -EPS)
     .sort((a, b) => a.existencia - b.existencia);

@@ -151,7 +151,7 @@ export default function RendimientoAserradero() {
       )}
 
       {datos && vista === "especie" && <RendimientoPorEspecie datos={datos} />}
-      {datos && vista === "corrida" && <RendimientoPorCorrida datos={datos} />}
+      {datos && vista === "corrida" && <RendimientoPorCorrida datos={datos} onCambio={recargar} />}
       {datos && vista === "simulador" && <RendimientoSimulador especies={datos.especies} />}
       {vista === "calculadora" && (
         <CalculadoraRendimiento

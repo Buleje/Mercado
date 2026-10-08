@@ -21,6 +21,7 @@ import { resumenPorPermiso } from "@/lib/forestal/patio-resumen";
 import { PanelSkeleton } from "./ctp-shared";
 import { useAntiguedadGuias } from "./hooks/use-antiguedad-guias";
 import { useCapacidadDeSaldos } from "./hooks/use-capacidad-de-saldos";
+import { useEspeciesSinIngreso } from "./hooks/use-especies-sin-ingreso";
 import { useExcepcionesDeSaldos } from "./hooks/use-excepciones-de-saldos";
 import { useFuentesDeCapacidad } from "./hooks/use-fuentes-de-capacidad";
 import { useReportesDeSaldos } from "./hooks/use-reportes-de-saldos";
@@ -58,6 +59,7 @@ export function CtpSaldosView({
   );
   const fuentes = useFuentesDeCapacidad({ period, contratoFiltro, codigoContrato });
   const aging = useAntiguedadGuias();
+  const sinIngreso = useEspeciesSinIngreso();
   const capacidad = useCapacidadDeSaldos({
     fuentes,
     productos: data?.productos,
@@ -90,13 +92,15 @@ export function CtpSaldosView({
   });
 
   const { recargar: recargarFuentes } = fuentes,
-    { recargar: recargarAging } = aging;
+    { recargar: recargarAging } = aging,
+    { recargar: recargarSinIngreso } = sinIngreso;
   const recargarTodo = useCallback(() => {
     for (const f of ["saldos=1", "conciliacion=1", "curva=1"]) invalidarCtp(f);
     void recargar();
     recargarFuentes();
     recargarAging();
-  }, [recargar, recargarFuentes, recargarAging]);
+    recargarSinIngreso();
+  }, [recargar, recargarFuentes, recargarAging, recargarSinIngreso]);
 
   const excepciones = useExcepcionesDeSaldos({
     data,
@@ -106,6 +110,7 @@ export function CtpSaldosView({
     lotes: lotesTodos,
     estadoAntiguedad: aging.estado,
     antiguedad,
+    especiesSinIngreso: sinIngreso.especies,
   });
 
   return (

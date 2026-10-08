@@ -28,6 +28,7 @@ import {
 import { csrfHeaders } from "@/lib/csrf-client";
 import { evaluarRendimiento } from "@/lib/forestal/ctp-rendimiento";
 import CtpAtribucionEditor from "./CtpAtribucionEditor";
+import CtpCorridaConSuCompra from "./CtpCorridaConSuCompra";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import CtpHistorial from "./CtpHistorial";
 import CtpTrozasDelLote from "./CtpTrozasDelLote";
@@ -75,6 +76,8 @@ interface CostoDTO {
   congelado: boolean;
   atribuidoM3: number;
   sinAtribuirM3: number;
+  /** Con `falta_factura`: cuáles guías no tienen costo (ADR-485). */
+  guiasSinCosto?: string[];
 }
 
 const UNIT_LABELS: Record<string, string> = { m3: "m³", kg: "Kg", pt: "pt", unidad: "unidad" };
@@ -116,8 +119,8 @@ export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: P
   const declarado = tras ? (tras.m3 ?? 0) : entry.volumeInputM3 ? Number(entry.volumeInputM3) : 0;
   const rendimientoPct = tras ? tras.rendimientoPct : entry.rendimientoPct != null ? Number(entry.rendimientoPct) : null;
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (silencioso = false) => {
+    if (!silencioso) setLoading(true); /* silencioso: sin desmontar la ficha (el «Listo» de ligar sobrevive) */
     setError(null);
     try {
       const r = await fetch(`/api/admin/forestal/ctp/consumos?ctpEntryId=${encodeURIComponent(entry.id)}`, { credentials: "include" });
@@ -204,7 +207,7 @@ export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: P
                    de qué guías salió es decir cuánto entró. */
                 description={
                   declarado > 0
-                    ? "La cadena de custodia se corta acá: todo despacho que cite esta corrida queda sin certificado. Usa «Editar atribución» para decir de qué guías salieron sus " +
+                    ? "La cadena de custodia se corta acá: todo despacho que cite esta corrida queda sin certificado. Lígala a su compra aquí abajo, o usa «Editar atribución» para decir de qué guías salieron sus " +
                       `${fmtM3(declarado)} m³.`
                     : "Esta corrida declaró producto y no de qué madera salió: su rendimiento queda en blanco y ningún despacho que la cite se puede certificar. " +
                       "Con «Editar atribución» le declarás sus guías, y el volumen que sumen queda como su materia prima."
@@ -221,6 +224,11 @@ export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: P
                 title="Materia prima 100% identificada"
                 description={`Los ${fmtM3(costo.atribuidoM3)} m³ consumidos tienen guía GTF de ingreso.`}
               />
+            )}
+
+            {/* ADR-485: la compra de la que sale, propuesta por el servidor y de un toque. */}
+            {!editing && !costo.congelado && declarado > 0 && (
+              <CtpCorridaConSuCompra corridaId={entry.id} pendiente={costo.sinAtribuirM3 > 0} onLigada={() => void load(true)} />
             )}
 
             <div className="grid grid-cols-3 gap-3">
@@ -342,7 +350,9 @@ export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: P
               ) : (
                 <p className="text-sm text-[var(--text-tertiary)]">
                   <strong className="text-[var(--text-secondary)]">Costo desconocido.</strong>{" "}
-                  {COSTO_MOTIVO[costo.motivo as Exclude<CostoDTO["motivo"], "ok">] ?? ""}
+                  {costo.motivo === "falta_factura" && costo.guiasSinCosto && costo.guiasSinCosto.length > 0
+                    ? `${costo.guiasSinCosto.length === 1 ? "La guía" : "Las guías"} ${costo.guiasSinCosto.join(", ")} no ${costo.guiasSinCosto.length === 1 ? "tiene" : "tienen"} costo cargado: sin eso el costo es desconocido, no 0.`
+                    : (COSTO_MOTIVO[costo.motivo as Exclude<CostoDTO["motivo"], "ok">] ?? "")}
                 </p>
               )}
             </section>

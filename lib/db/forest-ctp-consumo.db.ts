@@ -259,6 +259,11 @@ export interface CostoDeLinea {
   congelado: boolean;
   atribuidoM3: number;
   sinAtribuirM3: number;
+  /**
+   * Con `falta_factura`: las guías propias consumidas sin costo cargado (ADR-485).
+   * Para que el costo por PT diga CUÁL falta, en vez de «el costo de la madera».
+   */
+  guiasSinCosto?: string[];
 }
 
 /** Una troza como la leen los escritores de consumo por pieza: sus fechas y las de su guía. */
@@ -783,6 +788,8 @@ export class ForestCtpConsumoDB {
     }
 
     let costoMateriaPrima = 0;
+    /* Todas las que faltan, no la primera: el aviso dice CUÁLES (ADR-485). */
+    const sinCosto = new Set<string>();
     for (const c of propios) {
       // Congelado gana: es el costo con el que se reportó el período.
       const unitario =
@@ -791,17 +798,19 @@ export class ForestCtpConsumoDB {
           : c.woodEntry.costoTotal != null && Number(c.woodEntry.volumeM3) > 0
             ? Number(c.woodEntry.costoTotal) / Number(c.woodEntry.volumeM3)
             : null;
-      // Sin factura ⇒ no se sabe. NULL honesto, no 0 (D6).
-      if (unitario == null) {
-        return {
-          ...base,
-          costoMateriaPrima: null,
-          costoTotal: null,
-          costoUnitario: null,
-          motivo: "falta_factura",
-        };
-      }
-      costoMateriaPrima += unitario * Number(c.volumeM3);
+      if (unitario == null) sinCosto.add(c.woodEntry.gtfNumber);
+      else costoMateriaPrima += unitario * Number(c.volumeM3);
+    }
+    // Sin factura ⇒ no se sabe. NULL honesto, no 0 (D6).
+    if (sinCosto.size > 0) {
+      return {
+        ...base,
+        costoMateriaPrima: null,
+        costoTotal: null,
+        costoUnitario: null,
+        motivo: "falta_factura",
+        guiasSinCosto: [...sinCosto].sort(),
+      };
     }
 
     /* Propia completa + algo de servicio: no hay faltante, pero tampoco un

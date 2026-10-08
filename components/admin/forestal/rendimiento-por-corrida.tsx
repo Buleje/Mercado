@@ -1,21 +1,34 @@
+"use client";
+
 /**
  * Rendimiento › Por corrida — cada corrida del Libro CTP con su estado contra
  * las OTRAS de su especie («Bajo lo suyo», «Parcial»…), la plata si el rol la
- * ve, y el salto al Libro para abrirla.
+ * ve, y el salto al Libro para abrirla. La que tiene madera sin guía se liga a
+ * su compra desde acá mismo (ADR-485): es lo que deja el costo por PT en «Falta».
  */
+import { useState } from "react";
 import { DataTable } from "@buleje/design-system";
 import Link from "next/link";
-import { ExternalLink } from "@buleje/design-system/icons";
+import { ExternalLink, Link2 } from "@buleje/design-system/icons";
+import AdminModal from "@/components/admin/shared/AdminModal";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { RendimientoAserraderoDTO } from "@/lib/forestal/rendimiento-especie";
 import { fechaConDia } from "@/lib/forestal/loth-plan-costeo";
+import CtpCorridaConSuCompra from "./CtpCorridaConSuCompra";
 import { CeldaPlata, EstadoCorridaBadge, HREF_PRODUCCION, fmtM3, fmtPct } from "./rendimiento-compartido";
 
 const TH = "px-3 py-2 text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]";
 const TD = "px-3 py-2 align-middle";
 
-export default function RendimientoPorCorrida({ datos }: { datos: RendimientoAserraderoDTO }) {
+/** Menos de medio litro sin guía no es madera: no ofrece ligar. */
+const sinCompra = (m3: number | undefined) => (m3 ?? 0) > 0.0005;
+const BOTON_ICONO =
+  "inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]";
+
+export default function RendimientoPorCorrida({ datos, onCambio }: { datos: RendimientoAserraderoDTO; onCambio?: () => void }) {
   const { hoy, plataVisible } = datos;
+  const [ligando, setLigando] = useState<{ id: string; lineNo: number; especie: string; m3: number } | null>(null);
+  const [huboCambio, setHuboCambio] = useState(false);
   /* Lo más reciente arriba: es lo que uno viene a mirar. */
   const corridas = [...datos.corridas].reverse();
   if (corridas.length === 0) {
@@ -79,20 +92,46 @@ export default function RendimientoPorCorrida({ datos }: { datos: RendimientoAse
                   </td>
                 )}
                 <td className={`${TD} text-right`}>
-                  <Link
-                    href={HREF_PRODUCCION}
-                    title={`Abrir la corrida #${c.lineNo} en el Libro CTP › Producción`}
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
-                  >
-                    <ExternalLink className="h-4 w-4" aria-hidden />
-                    <span className="sr-only">Abrir la corrida #{c.lineNo} en el Libro CTP</span>
-                  </Link>
+                  <span className="inline-flex items-center gap-1.5">
+                    {c.ligable !== false && sinCompra(c.m3SinAtribuir) && (
+                      <button
+                        type="button"
+                        onClick={() => setLigando({ id: c.id, lineNo: c.lineNo, especie: c.especie, m3: c.m3SinAtribuir ?? 0 })}
+                        title={`Ligar la corrida #${c.lineNo} con su compra (${fmtM3(c.m3SinAtribuir ?? 0)} m³ sin guía)`}
+                        className={BOTON_ICONO}
+                      >
+                        <Link2 className="h-4 w-4" aria-hidden />
+                        <span className="sr-only">Ligar la corrida #{c.lineNo} con su compra</span>
+                      </button>
+                    )}
+                    <Link href={HREF_PRODUCCION} title={`Abrir la corrida #${c.lineNo} en el Libro CTP › Producción`} className={BOTON_ICONO}>
+                      <ExternalLink className="h-4 w-4" aria-hidden />
+                      <span className="sr-only">Abrir la corrida #{c.lineNo} en el Libro CTP</span>
+                    </Link>
+                  </span>
                 </td>
               </tr>
             ))}
           </tbody>
         </DataTable>
       </div>
+      {ligando && (
+        <AdminModal
+          open
+          onClose={() => {
+            setLigando(null);
+            /* El rendimiento se vuelve a leer al cerrar: con la compra ligada, el costo por PT cambia. */
+            if (huboCambio) onCambio?.();
+            setHuboCambio(false);
+          }}
+          variant="info"
+          icon={Link2}
+          title={`Corrida #${ligando.lineNo} · ${ligando.especie}`}
+          description={`${fmtM3(ligando.m3)} m³ de troza sin guía de compra`}
+        >
+          <CtpCorridaConSuCompra corridaId={ligando.id} onLigada={() => setHuboCambio(true)} />
+        </AdminModal>
+      )}
     </div>
   );
 }
