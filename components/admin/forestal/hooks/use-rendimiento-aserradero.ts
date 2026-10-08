@@ -51,17 +51,16 @@ export function useRendimientoAserradero(opts: { plata: boolean }): EstadoRendim
   return { datos, cargando, error, recargar };
 }
 
-/** Qué corridas (por id) y qué lotes (por código) siguen en proceso, con su fecha de fin. */
-export function useCorridasEnProceso(): { porCorrida: ReadonlyMap<string, string>; porLote: ReadonlyMap<string, string>; hoy: string | undefined } {
+/**
+ * Qué corridas (por id) siguen en proceso, con su fecha de fin. Sólo por id:
+ * el código de lote del rendimiento es el de ASERRÍO y el del Cuadro 3 el de
+ * PRODUCCIÓN — cruzarlos por código no coincidía nunca (revisión 1dc55fcad).
+ */
+export function useCorridasEnProceso(): { porCorrida: ReadonlyMap<string, string>; hoy: string | undefined } {
   const { datos } = useRendimientoAserradero({ plata: false });
   return useMemo(() => {
     const porCorrida = new Map<string, string>();
-    const porLote = new Map<string, string>();
-    for (const c of datos?.corridas ?? []) {
-      if (!c.parcial || !c.finProceso) continue;
-      porCorrida.set(c.id, c.finProceso);
-      if (c.lote) porLote.set(c.lote, c.finProceso);
-    }
-    return { porCorrida, porLote, hoy: datos?.hoy };
+    for (const c of datos?.corridas ?? []) if (c.parcial && c.finProceso) porCorrida.set(c.id, c.finProceso);
+    return { porCorrida, hoy: datos?.hoy };
   }, [datos]);
 }

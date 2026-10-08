@@ -70,12 +70,12 @@ export default function RendimientoPorCorrida({ datos }: { datos: RendimientoAse
                 </td>
                 {plataVisible && (
                   <td className={`${TD} text-right`}>
-                    <CeldaPlata plata={c.plata} campo="comercial" />
+                    <CeldaPlata plata={c.plata} campo="comercial" noLeida={!!datos.plataTruncada} />
                   </td>
                 )}
                 {plataVisible && (
                   <td className={`${TD} text-right`}>
-                    <CeldaPlata plata={c.plata} campo="costo" />
+                    <CeldaPlata plata={c.plata} campo="costo" noLeida={!!datos.plataTruncada} />
                   </td>
                 )}
                 <td className={`${TD} text-right`}>

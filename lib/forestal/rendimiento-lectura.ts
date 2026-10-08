@@ -15,7 +15,13 @@ import { ForestCtpDB } from "@/lib/db/forest-ctp.db";
 import { ForestLoteAserrioDB } from "@/lib/db/forest-lote-aserrio.db";
 import { ForestCtpConsumoDB } from "@/lib/db/forest-ctp-consumo.db";
 import { GuiaPlataDB } from "@/lib/db/guia-plata.db";
-import { armarRendimientoAserradero, type CorridaRendimiento, type RendimientoAserraderoDTO } from "./rendimiento-especie";
+import {
+  armarRendimientoAserradero,
+  TOPE_GUIAS_PLATA,
+  TOPE_PLATA_CORRIDAS,
+  type CorridaRendimiento,
+  type RendimientoAserraderoDTO,
+} from "./rendimiento-especie";
 import {
   entradaDePlata,
   rendimientoEnPlata,
@@ -24,10 +30,6 @@ import {
   type RendimientoPlata,
 } from "./rendimiento-plata";
 
-/** Corridas (las más recientes) a las que se les arma la plata: cada una son ~4 lecturas. */
-const TOPE_PLATA = 60;
-/** Guías distintas que se leen para el PT pagado y el flete. */
-const TOPE_GUIAS = 40;
 /** De a cuántas lecturas en paralelo, para no acaparar el pool. */
 const TANDA = 5;
 
@@ -39,7 +41,10 @@ async function enTandas<T, R>(items: readonly T[], fn: (t: T) => Promise<R>): Pr
 
 const num = (v: unknown): number | null => (v == null || v === "" ? null : Number.isFinite(Number(v)) ? Number(v) : null);
 
-async function plataDeCorridas(tenantId: string, corridas: readonly CorridaRendimiento[]): Promise<Map<string, RendimientoPlata>> {
+async function plataDeCorridas(
+  tenantId: string,
+  corridas: readonly CorridaRendimiento[],
+): Promise<{ porCorrida: Map<string, RendimientoPlata>; guiasSinLeer: number }> {
   const leidas = await enTandas(corridas, async (c) => {
     const [entry, costo, consumos] = await Promise.all([
       ForestCtpDB.getById(tenantId, c.id),
@@ -49,7 +54,9 @@ async function plataDeCorridas(tenantId: string, corridas: readonly CorridaRendi
     return { c, entry, costo, consumos };
   });
 
-  const gtfs = [...new Set(leidas.flatMap((l) => l.consumos.map((x) => x.woodEntry.gtfNumber).filter((g): g is string => !!g)))].slice(0, TOPE_GUIAS);
+  const todas = [...new Set(leidas.flatMap((l) => l.consumos.map((x) => x.woodEntry.gtfNumber).filter((g): g is string => !!g)))];
+  /* Las que quedan fuera NO entran al mapa: `entradaDePlata` las nombra «no leídas», no «falta el flete». */
+  const gtfs = todas.slice(0, TOPE_GUIAS_PLATA);
   const guias = new Map<string, GuiaParaPlata | null>();
   await enTandas(gtfs, async (gtf) => {
     const dto = await GuiaPlataDB.leer(tenantId, gtf).catch((err: unknown) => {
@@ -82,6 +89,10 @@ async function plataDeCorridas(tenantId: string, corridas: readonly CorridaRendi
       guias,
       costoMadera: costo.costoMateriaPrima,
       motivoMadera: costo.motivo ?? null,
+      /* Lo declarado que ninguna guía respalda: con eso, costo y PT pagado quedan en null (revisión 1dc55fcad). */
+      sinAtribuirM3: costo.sinAtribuirM3,
+      /* La moneda vale sólo con costo: sin él, `moneda` es la de la línea, no la de la madera. */
+      monedaMadera: costo.costoMateriaPrima != null ? costo.moneda : null,
     });
     const salida = salidaDePlata({
       m3: c.m3Salida,
@@ -90,7 +101,7 @@ async function plataDeCorridas(tenantId: string, corridas: readonly CorridaRendi
     });
     out.set(c.id, rendimientoEnPlata(entrada, salida, { parcial: c.parcial }));
   }
-  return out;
+  return { porCorrida: out, guiasSinLeer: todas.length - gtfs.length };
 }
 
 /**
@@ -134,7 +145,8 @@ export async function leerRendimientoAserradero(tenantId: string, opts: { plata:
   });
 
   /* La plata, sólo de las corridas más recientes: cada una son ~4 lecturas. */
-  const recientes = [...corridas].sort((a, b) => b.fecha.localeCompare(a.fecha) || b.lineNo - a.lineNo).slice(0, TOPE_PLATA);
+  const recientes = [...corridas].sort((a, b) => b.fecha.localeCompare(a.fecha) || b.lineNo - a.lineNo).slice(0, TOPE_PLATA_CORRIDAS);
   const plata = opts.plata ? await plataDeCorridas(tenantId, recientes) : null;
-  return armarRendimientoAserradero(corridas, plata, hoy, opts.plata && corridas.length > TOPE_PLATA);
+  const sinLeer = plata ? { corridas: corridas.length - recientes.length, guias: plata.guiasSinLeer } : null;
+  return armarRendimientoAserradero(corridas, plata?.porCorrida ?? null, hoy, sinLeer && (sinLeer.corridas > 0 || sinLeer.guias > 0) ? sinLeer : null);
 }

@@ -25,6 +25,7 @@ import { useLocalStorage } from "@/hooks/use-local-storage";
 import { logger } from "@/lib/logger";
 import { fechaConDia } from "@/lib/forestal/loth-plan-costeo";
 import { exportarRendimientoExcel, imprimirRendimiento } from "@/lib/forestal/rendimiento-export";
+import { TOPE_GUIAS_PLATA, TOPE_PLATA_CORRIDAS, textoPlataNoLeida } from "@/lib/forestal/rendimiento-especie";
 import CalculadoraRendimiento from "./CalculadoraRendimiento";
 import RendimientoPorEspecie from "./rendimiento-por-especie";
 import RendimientoPorCorrida from "./rendimiento-por-corrida";
@@ -104,7 +105,7 @@ export default function RendimientoAserradero() {
                 <InfoTip
                   title="Rendimiento comercial"
                   what="PT aserrado ÷ PT Oxapampa pagado: cuánto de lo que pagaste salió como tabla."
-                  affects="«≈» = sin PT pagado cargado en la plata de la guía: se estima del m³ × 424 × 0,624 (factor Oxapampa)."
+                  affects="«≈» = el PT pagado (m³ × 424 × 0,624, factor Oxapampa) o el PT aserrado (m³ × 424, paquete sin PT medido) salen de un m³, no de lo medido."
                 />
               </span>
               <span className="inline-flex items-baseline gap-1">
@@ -122,6 +123,17 @@ export default function RendimientoAserradero() {
             title="Rendimiento parcial"
             what="Entró toda la troza programada del lote y salió lo declarado hasta hoy: el número sube a medida que declaras la producción."
             affects="No es el rendimiento de la sierra. No se marca «bajo», no entra al rango de la especie ni al radar."
+          />
+        </p>
+      )}
+
+      {datos?.plataVisible && datos.plataTruncada && (
+        <p className="flex items-center gap-1.5 rounded-lg border border-dashed border-[var(--rule-strong)] px-3 py-2 text-xs font-semibold text-[var(--text-secondary)]">
+          {textoPlataNoLeida(datos.plataTruncada)}
+          <InfoTip
+            title="Plata no leída"
+            what={`Para no frenar la pantalla, la plata se arma con las ${TOPE_PLATA_CORRIDAS} corridas más recientes y hasta ${TOPE_GUIAS_PLATA} guías por lectura. Lo que queda fuera dice «No leída».`}
+            affects="El costo total queda sin calcular: sumar sólo lo leído daría el costo de una parte presentado como el de todo."
           />
         </p>
       )}

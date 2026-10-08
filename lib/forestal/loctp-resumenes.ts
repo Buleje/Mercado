@@ -51,6 +51,8 @@ export interface MovProduccion {
   /** LP = línea principal · LRE = línea de recuperación. */
   lineaProduccion: string | null;
   lote: string | null;
+  /** Id de la corrida (ForestCtpEntry): la fila del Cuadro 3 sabe qué corridas junta. */
+  id?: string;
 }
 
 export interface MovSalida {
@@ -140,6 +142,8 @@ export interface FilaResumen3 {
   rendimientoPct: number | null;
   /** Cuando las unidades difieren, el formato pide el FACTOR (ej. "pt/m³"). */
   factorConversion: string | null;
+  /** Las corridas que junta la fila (no va en el formato): con eso se sabe si alguna sigue en proceso. */
+  corridaIds: string[];
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -362,8 +366,10 @@ export function resumen3Balance(entrada: EntradaResumenes): FilaResumen3[] {
       stock: 0,
       rendimientoPct: null,
       factorConversion: null,
+      corridaIds: [],
     };
     if (!f.cientifico && p.cientifico) f.cientifico = p.cientifico;
+    if (p.id) f.corridaIds.push(p.id);
     f.cantidadConsumida = r4(f.cantidadConsumida + p.consumidoM3);
     f.cantidadProducida = r4(f.cantidadProducida + p.cantidad);
     porClave.set(clave, f);

@@ -10,7 +10,7 @@
  * ExcelJS de `saldo-permiso-export`: import dinámico, fuera del bundle.
  */
 import { esc, ctpReportFooter, openCtpReport } from "./ctp-print-shared";
-import type { CorridaRendimientoDTO, RendimientoAserraderoDTO } from "./rendimiento-especie";
+import { textoPlataNoLeida, type CorridaRendimientoDTO, type RendimientoAserraderoDTO } from "./rendimiento-especie";
 import type { RendimientoPlata } from "./rendimiento-plata";
 
 const ESTADO_TXT: Record<CorridaRendimientoDTO["estado"], string> = {
@@ -26,11 +26,27 @@ const n = (v: number | null | undefined, d: number) => (v == null ? "—" : v.to
 const pct = (v: number | null | undefined, d = 2) => (v == null ? "—" : `${n(v, d)} %`);
 const rangoTxt = (r: CorridaRendimientoDTO["rango"]) =>
   r ? `${n(r.min, 1)}–${n(r.max, 1)} %${r.provisional ? ` (provisional, ${r.corridas})` : ` (${r.corridas})`}` : "—";
-const comercial = (p: RendimientoPlata | null) => (p?.rendimientoPtPct == null ? "—" : `${p.ptEntradaEstimado ? "≈ " : ""}${n(p.rendimientoPtPct, 1)} %`);
-const costo = (p: RendimientoPlata | null) =>
-  !p ? "—" : p.servicio ? "De servicio" : p.costoPorPt != null ? `S/ ${n(p.costoPorPt, 2)}` : p.faltantes.length > 0 ? `Falta ${p.faltantes.join(", ")}` : "—";
+/* «≈» igual que la pantalla (`CeldaPlata`): el comercial si el PT pagado O el aserrado salen del m³; el costo, si el aserrado. */
+const comercial = (p: RendimientoPlata | null, vacio = "—") =>
+  !p ? vacio : p.rendimientoPtPct == null ? "—" : `${p.ptEntradaEstimado || p.ptSalidaEstimado ? "≈ " : ""}${n(p.rendimientoPtPct, 1)} %`;
+const costo = (p: RendimientoPlata | null, vacio = "—") =>
+  !p
+    ? vacio
+    : p.servicio
+      ? "De servicio"
+      : p.costoPorPt != null
+        ? `${p.ptSalidaEstimado ? "≈ " : ""}S/ ${n(p.costoPorPt, 2)}`
+        : p.faltantes.length > 0
+          ? `Falta ${p.faltantes.join(", ")}`
+          : "—";
 
 const fecha = () => new Date().toISOString().slice(0, 10);
+
+/** Lo que la plata no leyó por el tope, en una frase; `null` si se leyó todo. */
+const textoNoLeido = (d: RendimientoAserraderoDTO): string | null =>
+  d.plataVisible && d.plataTruncada ? textoPlataNoLeida(d.plataTruncada) : null;
+/** La celda de plata de una corrida sin plata: con el tope, «No leída»; si no, «—». */
+const vacioDe = (d: RendimientoAserraderoDTO) => (d.plataTruncada ? "No leída" : "—");
 
 /* ── PDF ─────────────────────────────────────────────────────────────────── */
 
@@ -50,7 +66,7 @@ export function imprimirRendimiento(d: RendimientoAserraderoDTO, nombreCtp?: str
       (c) => `<tr class="${c.parcial ? "parcial" : ""}"><td>#${c.lineNo}</td><td>${esc(c.fecha)}</td><td>${esc(c.especie)}</td><td>${esc(c.lote ?? "—")}</td>
       <td class="num">${n(c.m3Entrada, 3)}</td><td class="num">${n(c.m3Salida, 3)}</td><td class="num">${pct(c.rendimientoPct)}</td>
       <td>${esc(ESTADO_TXT[c.estado])}${c.parcial && c.finProceso ? ` hasta ${esc(c.finProceso)}` : ""}</td>
-      ${d.plataVisible ? `<td class="num">${esc(comercial(c.plata))}</td><td class="${c.plata?.costoPorPt == null ? "falta" : "num"}">${esc(costo(c.plata))}</td>` : ""}</tr>`,
+      ${d.plataVisible ? `<td class="num">${esc(comercial(c.plata, vacioDe(d)))}</td><td class="${c.plata?.costoPorPt == null ? "falta" : "num"}">${esc(costo(c.plata, vacioDe(d)))}</td>` : ""}</tr>`,
     )
     .join("");
   const body = `
@@ -61,13 +77,14 @@ export function imprimirRendimiento(d: RendimientoAserraderoDTO, nombreCtp?: str
     <div><span class="k">Troza → aserrado:</span> ${n(t.m3Entrada, 3)} m³ → ${n(t.m3Salida, 3)} m³</div>
     <div><span class="k">Rendimiento ponderado:</span> ${pct(t.ponderadoPct)} (promedio simple de los %: ${pct(t.promedioSimplePct)})</div>
     ${d.plataVisible && t.plata ? `<div><span class="k">Rendimiento comercial (PT ÷ PT pagado):</span> ${esc(comercial(t.plata))}</div><div><span class="k">Costo por PT aserrado:</span> ${esc(costo(t.plata))}</div>` : ""}
+    ${textoNoLeido(d) ? `<div class="falta">${esc(textoNoLeido(d) as string)}</div>` : ""}
   </div>
   <h2>Por especie</h2>
   <table><thead><tr><th>Especie</th><th>Corridas</th><th>Troza m³</th><th>Aserrado m³</th><th>Rendimiento</th><th>Tu rango</th><th>Tendencia</th></tr></thead><tbody>${especies}</tbody></table>
   <h2>Por corrida</h2>
   <table><thead><tr><th>N°</th><th>Fecha</th><th>Especie</th><th>Lote</th><th>Troza m³</th><th>Aserrado m³</th><th>Rend.</th><th>Estado</th>${d.plataVisible ? "<th>Comercial</th><th>Costo/PT</th>" : ""}</tr></thead><tbody>${corridas}</tbody></table>
   ${ctpReportFooter(
-    "Documento interno. Rendimiento = m³ aserrados ÷ m³ de troza del Libro CTP, ponderado por m³. «Parcial»: el lote sigue en proceso y su producción todavía no está toda declarada. «≈»: PT pagado estimado del m³ × 424 × 0,624. Ningún costo faltante se cuenta como cero.",
+    "Documento interno. Rendimiento = m³ aserrados ÷ m³ de troza del Libro CTP, ponderado por m³. «Parcial»: el lote sigue en proceso y su producción todavía no está toda declarada. «≈»: PT pagado estimado del m³ × 424 × 0,624, o PT aserrado estimado del m³ × 424 (paquetes sin PT medido). Ningún costo faltante se cuenta como cero.",
   )}`;
   openCtpReport({ title: "Rendimiento del aserradero — Libro CTP", css: CSS, body });
 }
@@ -98,6 +115,8 @@ export async function exportarRendimientoExcel(d: RendimientoAserraderoDTO): Pro
     ["Promedio simple de los % (sólo referencia)", t.promedioSimplePct ?? "—"],
   ];
   if (d.plataVisible && t.plata) kv.push(["Rendimiento comercial (PT ÷ PT pagado)", comercial(t.plata)], ["Costo por PT aserrado", costo(t.plata)]);
+  const noLeido = textoNoLeido(d);
+  if (noLeido) kv.push(["Plata no leída", noLeido]);
   for (const [k, v] of kv) rs.addRow([k, v]).getCell(1).font = { bold: true };
 
   const pe = wb.addWorksheet("Por especie");
@@ -139,7 +158,7 @@ export async function exportarRendimientoExcel(d: RendimientoAserraderoDTO): Pro
     pc.addRow({
       n: c.lineNo, fecha: c.fecha, especie: c.especie, lote: c.lote ?? "", m3e: c.m3Entrada, m3s: c.m3Salida,
       pct: c.rendimientoPct ?? "—", estado: ESTADO_TXT[c.estado], fin: c.finProceso ?? "",
-      ...(d.plataVisible ? { com: comercial(c.plata), costo: costo(c.plata) } : {}),
+      ...(d.plataVisible ? { com: comercial(c.plata, vacioDe(d)), costo: costo(c.plata, vacioDe(d)) } : {}),
     });
   }
 

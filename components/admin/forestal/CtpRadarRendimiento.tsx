@@ -14,18 +14,15 @@
  * con menos de 3 corridas.
  */
 
-import { useMemo } from "react";
 import { AlertTriangle, Clock, Eye, Gauge, TrendingDown, TrendingUp } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
   alertasRendimiento,
   DESVIO_PCT,
   FLAG_LABEL,
-  marcarParciales,
   MIN_GRUPO,
   type RendimientoCorrida,
 } from "@/lib/forestal/ctp-radar-rendimiento";
-import { useCorridasEnProceso } from "./hooks/use-rendimiento-aserradero";
 
 const TONO = {
   imposible: {
@@ -64,15 +61,13 @@ const TONO = {
 const fmt = (n: number | null, d = 2): string => (n == null || !Number.isFinite(n) ? "—" : Number(n.toFixed(d)).toString());
 
 export default function CtpRadarRendimiento({
-  rs: rsSinLotes, onVerCorrida,
+  rs, onVerCorrida,
 }: {
   rs: RendimientoCorrida[];
   onVerCorrida: (id: string) => void;
 }) {
-  /* Las corridas de un lote que sigue en proceso (K4 a): se juzgan «parcial» y
-     salen de la mediana. Mientras carga, el radar se ve como siempre. */
-  const enProceso = useCorridasEnProceso();
-  const rs = useMemo(() => marcarParciales(rsSinLotes, enProceso.porCorrida, enProceso.hoy), [rsSinLotes, enProceso]);
+  /* `rs` ya llega juzgado con las corridas en proceso (K4 a): lo arma
+     `CtpTrazaRadar` una sola vez, para esta vista y para el contador del resumen. */
   if (rs.length === 0) {
     return <p className="rounded-2xl border border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-tertiary)]">Sin corridas de producción en el período.</p>;
   }

@@ -7,8 +7,10 @@ import {
   simularAserrado,
   tendencia,
   RANGO_REFERENCIA,
+  textoPlataNoLeida,
   type CorridaRendimiento,
 } from "@/lib/forestal/rendimiento-especie";
+import { rendimientoEnPlata, salidaDePlata } from "@/lib/forestal/rendimiento-plata";
 
 const corrida = (p: Partial<CorridaRendimiento> & { id: string; especie: string; pct: number | null }): CorridaRendimiento => ({
   lineNo: 1,
@@ -132,5 +134,47 @@ describe("simulador con corridas propias", () => {
     expect(sim[0]).toMatchObject({ especie: "Tornillo", m3: 3, trozas: 4, pct: 51, fuente: "provisional", corridas: 2 });
     expect(sim[0].ptEsperado).toBeCloseTo(3 * 0.51 * 424, 1);
     expect(sim[0].ptMin).toBeLessThan(sim[0].ptEsperado);
+  });
+});
+
+/* Revisión 1dc55fcad: el ponderado se decide por los m³, no por el % guardado. */
+describe("ponderado por m³ (no por el % guardado)", () => {
+  it("una corrida en PT con un % viejo no mete su troza al denominador", () => {
+    const cs = [
+      corrida({ id: "a", especie: "Tornillo", pct: 50, m3Entrada: 10, m3Salida: 5 }),
+      corrida({ id: "pt", especie: "Tornillo", pct: 40, m3Entrada: 10, m3Salida: 0, unidad: "pt" }),
+    ];
+    expect(armarRendimientoAserradero(cs, null, "2026-10-08").total.ponderadoPct).toBe(50);
+  });
+
+  it("una corrida en m³ sin % guardado pero con entrada y salida sí cuenta", () => {
+    const cs = [
+      corrida({ id: "a", especie: "Tornillo", pct: 50, m3Entrada: 10, m3Salida: 5 }),
+      corrida({ id: "b", especie: "Tornillo", pct: null, m3Entrada: 10, m3Salida: 3 }),
+    ];
+    expect(armarRendimientoAserradero(cs, null, "2026-10-08").total.ponderadoPct).toBe(40);
+  });
+
+  it("Blas sigue en 25,13 (19,772 ÷ 78,671)", () => {
+    const t = armarRendimientoAserradero(BLAS, null, "2026-10-08").total;
+    expect(t.ponderadoPct).toBe(25.13);
+    expect(t.m3Entrada).toBeCloseTo(78.671, 4);
+    expect(t.m3Salida).toBeCloseTo(19.772, 4);
+  });
+});
+
+describe("plata no leída por el tope", () => {
+  it("una corrida sin plata con la plata pedida: el total no tiene costo y lo dice", () => {
+    const plata = rendimientoEnPlata(
+      { m3: 10, ptPagado: 2600, fuentePt: "factura", costoMadera: 2000, costoFleteGastos: 300, servicio: false },
+      salidaDePlata({ m3: 5, paquetes: [{ volumenM3: 5, pieTablar: 2000, precioVentaPt: 3 }], costoProceso: 700 }),
+      { parcial: false },
+    );
+    const cs = [corrida({ id: "a", especie: "Tornillo", pct: 50 }), corrida({ id: "b", especie: "Tornillo", pct: 40 })];
+    const dto = armarRendimientoAserradero(cs, new Map([["a", plata]]), "2026-10-08", { corridas: 1, guias: 0 });
+    expect(dto.plataTruncada).toEqual({ corridas: 1, guias: 0 });
+    expect(dto.total.plata?.costoPorPt).toBeNull();
+    expect(dto.total.plata?.faltantes).toContain("la plata de 1 corrida no leída");
+    expect(textoPlataNoLeida({ corridas: 1, guias: 3 })).toBe("No se leyó la plata de 1 corrida antigua ni de 3 guías: el costo total queda sin calcular.");
   });
 });

@@ -43,6 +43,17 @@ describe("radar de rendimiento · corrida parcial (K4 a)", () => {
     expect(despues).toEqual(directo);
   });
 
+  /* Revisión 1dc55fcad: `CtpTrazaRadar` pasaba al resumen el análisis SIN las
+     corridas en proceso y el contador decía «1 alerta» con la vista diciendo 0. */
+  it("el contador del resumen = alertasRendimiento(marcarParciales(...)): la parcial no cuenta", () => {
+    const delRadar = analizarRendimiento(grafo(), { enProceso, hoy: "2026-10-08" });
+    const deLaVista = marcarParciales(analizarRendimiento(grafo()), enProceso, "2026-10-08");
+    expect(alertasRendimiento(delRadar).length).toBe(alertasRendimiento(deLaVista).length);
+    expect(alertasRendimiento(delRadar)).toHaveLength(0);
+    /* Sin el dato de las corridas en proceso, el contador viejo daba 1. */
+    expect(alertasRendimiento(analizarRendimiento(grafo()))).toHaveLength(1);
+  });
+
   it("imposible gana aunque esté en proceso (salió más de lo que entró)", () => {
     const g = grafo();
     g.corridas[4].quantity = 12;

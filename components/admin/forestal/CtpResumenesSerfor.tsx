@@ -153,6 +153,7 @@ export default function CtpResumenesSerfor({ period }: { period: CtpPeriod }) {
             consumidoM3: num(e.volumeInputM3),
             lineaProduccion: e.lineaProduccion ?? "LP",
             lote: loteDeCorrida.get(e.id) ?? null,
+            id: e.id,
           })),
           salidas: despacho.map((e) => ({
             especie: e.speciesCommon,

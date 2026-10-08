@@ -39,6 +39,8 @@ export interface FilaRendimiento {
   tipoProducto: string;
   lineaProduccion: string;
   rendimientoPct: number | null;
+  /** Corridas de la fila. El «parcial» se decide por ellas: el código de la fila es el lote de PRODUCCIÓN y el del rendimiento, el de aserrío. */
+  corridaIds?: readonly string[];
 }
 
 /** La meta se guarda como fracción y se dibuja en porcentaje. */
@@ -71,6 +73,11 @@ const TONO = {
   parcial: { punto: "bg-[var(--text-tertiary)]", texto: "text-[var(--text-secondary)]", icono: Clock },
 } as const;
 
+/** El fin de proceso más lejano entre las corridas de la fila que siguen en proceso; `undefined` si ninguna. */
+function finEnProceso(ids: readonly string[] | undefined, porCorrida: ReadonlyMap<string, string>): string | undefined {
+  return (ids ?? []).map((id) => porCorrida.get(id)).filter((f): f is string => !!f).sort().at(-1);
+}
+
 /** El eje llega a 100: un rendimiento mayor es un error de carga, y se ancla al tope. */
 const posicion = (pct: number) => `${Math.min(100, Math.max(0, pct))}%`;
 
@@ -79,7 +86,7 @@ export default function CtpRendimientoLotes({ filas }: { filas: ReadonlyArray<Fi
   const conDato = filas.filter((f) => f.rendimientoPct != null && Number.isFinite(f.rendimientoPct));
   if (conDato.length === 0) return null;
 
-  const estadoDe = (f: FilaRendimiento) => estado(f.rendimientoPct as number, enProceso.porLote.get(f.lote), enProceso.hoy);
+  const estadoDe = (f: FilaRendimiento) => estado(f.rendimientoPct as number, finEnProceso(f.corridaIds, enProceso.porCorrida), enProceso.hoy);
   const fuera = conDato.filter((f) => estadoDe(f).tono === "malo").length;
   const parciales = conDato.filter((f) => estadoDe(f).tono === "parcial").length;
 

@@ -86,6 +86,7 @@ import {
 } from "./ctp-radar-vistas";
 import { exportarPng, exportarSvg, nombreArchivo } from "@/lib/forestal/ctp-radar-exportar";
 import { pasoZoom, ZOOM_MAX, ZOOM_MIN, type Foco, type Vista } from "./ctp-radar-tipos";
+import { useCorridasEnProceso } from "./hooks/use-rendimiento-aserradero";
 import {
   BalanceLinea,
   fmtNum,
@@ -166,7 +167,13 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
   /** Cronología y rendimiento: las otras dos lecturas del mismo grafo. */
   const hoy = useMemo(() => new Date(), []);
   const tiempo = useMemo(() => (g ? analizarTiempo(g, hoy) : null), [g, hoy]);
-  const rendimiento = useMemo(() => (g ? analizarRendimiento(g) : []), [g]);
+  /* UNA lectura con las corridas en proceso (K4 a) para el contador del resumen
+     y la vista: antes el contador contaba como «bajo» a las parciales. */
+  const enProceso = useCorridasEnProceso();
+  const rendimiento = useMemo(
+    () => (g ? analizarRendimiento(g, { enProceso: enProceso.porCorrida, hoy: enProceso.hoy }) : []),
+    [g, enProceso],
+  );
   const cadenaSeguida = useMemo(() => (g && seguirId ? cadenaDeIngreso(g, seguirId) : null), [g, seguirId]);
 
   /**

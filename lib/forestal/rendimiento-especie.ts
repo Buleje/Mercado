@@ -31,6 +31,10 @@ export const HOLGURA_PROVISIONAL_PTS = 5;
 export const MIN_CORRIDAS_TENDENCIA = 3;
 /** Pendiente (puntos por corrida) debajo de la cual la especie está «estable». */
 export const PENDIENTE_ESTABLE_PTS = 1;
+/** Corridas (las más recientes) a las que se les arma la plata: cada una son ~4 lecturas. */
+export const TOPE_PLATA_CORRIDAS = 60;
+/** Guías distintas que se leen para el PT pagado y el flete. */
+export const TOPE_GUIAS_PLATA = 40;
 /** Referencia general cuando la especie no tiene corridas terminadas: aserrío normal 40-65 %, meta 56 %. */
 export const RANGO_REFERENCIA = { min: 40, centro: 56, max: 65 } as const;
 
@@ -141,9 +145,13 @@ export function tendencia(valoresEnOrden: readonly number[]): Tendencia | null {
 const ordenFecha = (a: CorridaRendimiento, b: CorridaRendimiento) => a.fecha.localeCompare(b.fecha) || a.lineNo - b.lineNo;
 const terminadaConDato = (c: CorridaRendimiento) => !c.parcial && c.rendimientoPct != null;
 
-/** Ponderado m³/m³ de un grupo; sólo cuentan las corridas en m³ con entrada y salida. */
+/**
+ * Ponderado m³/m³ de un grupo; sólo cuentan las corridas en m³ con entrada y
+ * salida. Se decide por los m³, no por el % guardado: un % viejo en una
+ * corrida en PT metía su troza al denominador sin aserrado en el numerador.
+ */
 function ponderado(cs: readonly CorridaRendimiento[]): { entrada: number; salida: number; pct: number | null } {
-  const validas = cs.filter((c) => c.rendimientoPct != null);
+  const validas = cs.filter((c) => c.unidad === "m3" && c.m3Entrada > 0 && c.m3Salida > 0);
   const entrada = r4(validas.reduce((a, c) => a + c.m3Entrada, 0));
   const salida = r4(validas.reduce((a, c) => a + c.m3Salida, 0));
   return { entrada, salida, pct: rendimientoDeCorrida(salida, entrada, "m3") };
@@ -294,8 +302,21 @@ export interface RendimientoAserraderoDTO {
     plata: RendimientoPlata | null;
   };
   plataVisible: boolean;
-  /** Se leyeron sólo las últimas N corridas para la plata. */
-  plataTruncada: boolean;
+  /**
+   * Lo que la plata NO leyó por el tope (`TOPE_PLATA_CORRIDAS` corridas más
+   * recientes, `TOPE_GUIAS_PLATA` guías). `null` = se leyó todo. La pantalla
+   * lo dice y los totales quedan sin costo en vez de ser los de una parte.
+   */
+  plataTruncada: { corridas: number; guias: number } | null;
+}
+
+/** «No se leyó la plata de 15 corridas antiguas ni de 3 guías: …» — la pantalla y el export dicen lo mismo. */
+export function textoPlataNoLeida(t: { corridas: number; guias: number }): string {
+  const partes = [
+    t.corridas > 0 ? `${t.corridas} ${t.corridas === 1 ? "corrida antigua" : "corridas antiguas"}` : null,
+    t.guias > 0 ? `${t.guias} ${t.guias === 1 ? "guía" : "guías"}` : null,
+  ].filter((x): x is string => x != null);
+  return `No se leyó la plata de ${partes.join(" ni de ")}: el costo total queda sin calcular.`;
 }
 
 /** Arma la respuesta entera: totales en el servidor, la pantalla sólo dibuja. */
@@ -303,7 +324,7 @@ export function armarRendimientoAserradero(
   corridas: readonly CorridaRendimiento[],
   plataPorCorrida: ReadonlyMap<string, RendimientoPlata> | null,
   hoy: string,
-  plataTruncada = false,
+  plataTruncada: { corridas: number; guias: number } | null = null,
 ): RendimientoAserraderoDTO {
   const orden = [...corridas].sort(ordenFecha);
   const filas: CorridaRendimientoDTO[] = orden.map((c) => {
@@ -313,6 +334,8 @@ export function armarRendimientoAserradero(
   const tot = ponderado(orden);
   const pcts = orden.map((c) => c.rendimientoPct).filter((p): p is number => p != null);
   const platas = plataPorCorrida ? filas.map((f) => f.plata).filter((p): p is RendimientoPlata => p != null) : [];
+  /* Con la plata pedida, una corrida sin plata es una que no se leyó (tope). */
+  const sinLeer = plataPorCorrida ? filas.length - platas.length : 0;
   return {
     hoy,
     corridas: filas,
@@ -324,7 +347,7 @@ export function armarRendimientoAserradero(
       m3Salida: tot.salida,
       ponderadoPct: tot.pct,
       promedioSimplePct: pcts.length > 0 ? r2(pcts.reduce((a, b) => a + b, 0) / pcts.length) : null,
-      plata: platas.length > 0 ? agregarRendimientoPlata(platas) : null,
+      plata: platas.length > 0 ? agregarRendimientoPlata(platas, { sinLeer }) : null,
     },
     plataVisible: plataPorCorrida != null,
     plataTruncada,

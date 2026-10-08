@@ -127,21 +127,47 @@ export function TendenciaCelda({ t, serie }: { t: Tendencia | null; serie: Reado
   );
 }
 
-/** Costo o rendimiento comercial: el número, o «Falta» con la lista en el ⓘ. Nunca S/ 0. */
-export function CeldaPlata({ plata, campo }: { plata: RendimientoPlata | null; campo: "comercial" | "costo" }) {
-  if (!plata) return <span className="text-[var(--text-tertiary)]">—</span>;
+/** Por qué un número de plata lleva «≈»: el PT pagado, el aserrado o los dos salen de un m³. */
+function porQueAprox(p: RendimientoPlata, campo: "comercial" | "costo"): string | null {
+  const salida = p.ptSalidaEstimado ? "PT aserrado estimado del m³ × 424 (paquetes sin PT medido)" : null;
+  const entrada = campo === "comercial" && p.ptEntradaEstimado ? "PT pagado estimado del m³ × 424 × 0,624" : null;
+  const partes = [entrada, salida].filter((x): x is string => x != null);
+  return partes.length > 0 ? partes.join(" · ") : null;
+}
+
+/**
+ * Costo o rendimiento comercial: el número, o «Falta» con la lista en el ⓘ.
+ * Nunca S/ 0. `noLeida`: la plata de esta fila quedó fuera del tope de la lectura.
+ */
+export function CeldaPlata({ plata, campo, noLeida = false }: { plata: RendimientoPlata | null; campo: "comercial" | "costo"; noLeida?: boolean }) {
+  if (!plata) {
+    return noLeida ? (
+      <span className="text-xs text-[var(--text-tertiary)]" title="Fuera del tope de la lectura de plata: no se leyó.">No leída</span>
+    ) : (
+      <span className="text-[var(--text-tertiary)]">—</span>
+    );
+  }
   if (plata.servicio) return <span className="text-xs text-[var(--text-tertiary)]">De servicio</span>;
   if (campo === "comercial") {
+    const aprox = porQueAprox(plata, "comercial");
     return plata.rendimientoPtPct == null ? (
       <span className="text-[var(--text-tertiary)]">—</span>
     ) : (
-      <span className="font-mono tabular-nums" title={plata.ptEntradaEstimado ? "PT pagado estimado del m³ (× 424 × 0,624)" : "PT aserrado ÷ PT pagado"}>
-        {plata.ptEntradaEstimado ? "≈ " : ""}
+      <span className="whitespace-nowrap font-mono tabular-nums" title={aprox ?? "PT aserrado ÷ PT pagado"}>
+        {aprox ? "≈ " : ""}
         {fmtPct(plata.rendimientoPtPct)}
       </span>
     );
   }
-  if (plata.costoPorPt != null) return <span className="font-mono tabular-nums">{fmtSol(plata.costoPorPt)}</span>;
+  if (plata.costoPorPt != null) {
+    const aprox = porQueAprox(plata, "costo");
+    return (
+      <span className="whitespace-nowrap font-mono tabular-nums" title={aprox ?? undefined}>
+        {aprox ? "≈ " : ""}
+        {fmtSol(plata.costoPorPt)}
+      </span>
+    );
+  }
   const faltan = plata.faltantes.filter((f) => !f.startsWith("el PT") && f !== "el precio de venta");
   if (faltan.length === 0) return <span className="text-[var(--text-tertiary)]">—</span>;
   return (

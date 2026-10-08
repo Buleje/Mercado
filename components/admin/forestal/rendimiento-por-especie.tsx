@@ -22,11 +22,14 @@ export default function RendimientoPorEspecie({ datos }: { datos: RendimientoAse
   if (especies.length === 0) {
     return <p className="py-8 text-center text-sm text-[var(--text-tertiary)]">Todavía no hay corridas de producción en el Libro CTP.</p>;
   }
-  /* La plata por especie se agrega con la misma regla que el total (ponderado, null si falta algo). */
+  /* La plata por especie se agrega con la misma regla que el total (ponderado,
+     null si falta algo). Una corrida sin plata quedó fuera del tope: falta, no se omite. */
   const plataDe = (especie: string) => {
-    const filas = datos.corridas.filter((c) => c.especie === especie && c.plata).map((c) => c.plata!);
-    return filas.length > 0 ? agregarRendimientoPlata(filas) : null;
+    const deEspecie = datos.corridas.filter((c) => c.especie === especie);
+    const filas = deEspecie.filter((c) => c.plata).map((c) => c.plata!);
+    return filas.length > 0 ? agregarRendimientoPlata(filas, { sinLeer: deEspecie.length - filas.length }) : null;
   };
+  const noLeida = !!datos.plataTruncada;
 
   return (
     <div className="overflow-x-auto">
@@ -98,12 +101,12 @@ export default function RendimientoPorEspecie({ datos }: { datos: RendimientoAse
                 </td>
                 {plataVisible && (
                   <td className={`${TD} text-right`}>
-                    <CeldaPlata plata={plata} campo="comercial" />
+                    <CeldaPlata plata={plata} campo="comercial" noLeida={noLeida} />
                   </td>
                 )}
                 {plataVisible && (
                   <td className={`${TD} text-right`}>
-                    <CeldaPlata plata={plata} campo="costo" />
+                    <CeldaPlata plata={plata} campo="costo" noLeida={noLeida} />
                   </td>
                 )}
               </tr>
