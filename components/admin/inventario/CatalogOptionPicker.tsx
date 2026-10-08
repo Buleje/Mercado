@@ -15,7 +15,7 @@
  *   />
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import * as Dialog from "@radix-ui/react-dialog";
 import { CardTitle } from "@buleje/design-system";
@@ -23,6 +23,8 @@ import {
   X, Plus, Loader2, Image as ImageIcon, Check, BookOpen, Search,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 
 const OptionSchema = z.object({
   id: z.string(),
@@ -99,6 +101,9 @@ export default function CatalogOptionPicker({ onClose, onPick, existingNames }: 
     setRecentlyPicked((s) => new Set([...s, opt.id]));
   };
 
+  const contentRef = useRef<HTMLDivElement>(null);
+  const ventana = useVentanaDeModal(true, { ref: contentRef, claveMemoria: "catalogo-opciones" });
+
   // Aplana templates en pares { template, option } y filtra por categoría + search
   const flatRows = templates.flatMap((t) =>
     t.options.map((o) => ({ template: t, option: o })),
@@ -133,11 +138,14 @@ export default function CatalogOptionPicker({ onClose, onPick, existingNames }: 
             hace falta un peldaño propio. Ver gate ds-no-z-arbitrary-admin. */}
         <Dialog.Overlay className="fixed inset-0 z-system bg-black/60 backdrop-blur-sm" />
         <Dialog.Content
+          ref={contentRef}
           aria-describedby={undefined}
-          className="fixed left-1/2 top-1/2 z-system -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-3xl max-h-[88vh] flex flex-col rounded-2xl bg-[var(--surface-canvas)] shadow-[var(--shadow-xl)] overflow-hidden"
+          style={ventana.estilo}
+          onInteractOutside={ventana.onInteractOutside}
+          className="fixed left-1/2 top-1/2 z-system translate-x-[calc(-50%_+_var(--ventana-x,0px))] translate-y-[calc(-50%_+_var(--ventana-y,0px))] w-[95vw] max-w-3xl max-h-[88vh] flex flex-col rounded-2xl bg-[var(--surface-canvas)] shadow-[var(--shadow-xl)] overflow-hidden"
         >
           {/* Header */}
-          <div className="shrink-0 px-5 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] flex items-center gap-3">
+          <div {...ventana.asaProps} className="shrink-0 px-5 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] flex items-center justify-center shrink-0">
               <BookOpen className="h-5 w-5" />
             </div>
@@ -149,6 +157,7 @@ export default function CatalogOptionPicker({ onClose, onPick, existingNames }: 
                 Click en cada item para agregarlo a este grupo. El modal queda abierto para sumar más.
               </p>
             </div>
+            <ControlesDeVentana ventana={ventana} />
             <button aria-label="Cerrar" onClick={onClose} className="p-2 rounded-xl hover:bg-[var(--surface-sunken)]">
               <X className="h-5 w-5 text-[var(--text-tertiary)]" />
             </button>
@@ -310,6 +319,7 @@ export default function CatalogOptionPicker({ onClose, onPick, existingNames }: 
               Listo
             </button>
           </div>
+          <TiradorDeVentana ventana={ventana} />
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

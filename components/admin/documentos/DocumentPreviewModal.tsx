@@ -4,6 +4,8 @@ import { useState, useEffect, useRef, useId } from "react";
 import { toast } from "sonner";
 import { logger } from "@/lib/logger";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { esHojaEditable, esHojaLegible } from "@/lib/documentos/hoja-calculo";
 import { esTextoEditable, esTextoLegible } from "@/lib/documentos/texto-docx";
@@ -123,6 +125,7 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
   // foco atrapado y la semántica de diálogo.
   // `activo`: el primer render no tiene `doc` y devuelve otro árbol sin el ref.
   useModalAccesible(panelRef, { onCerrar: onClose, cerrarConEscape: false, activo: !!doc });
+  const ventana = useVentanaDeModal(!!doc, { ref: panelRef, asaAutomatica: true, aplicarTranslate: true, claveMemoria: "documento-vista-previa" });
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -244,7 +247,7 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
   return (
     <div
       className="fixed inset-0 z-modal flex items-center justify-center p-2 sm:p-3 bg-black/60 backdrop-blur-sm"
-      onClick={onClose}
+      onClick={() => { if (!ventana.fijado) onClose(); }}
       onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
       {/* Casi toda la pantalla: un contrato o una planilla se leen mejor
@@ -257,8 +260,10 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
         aria-labelledby={titleId}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => e.stopPropagation()}
-        className="flex h-[96vh] w-full max-w-[1800px] flex-col overflow-hidden rounded-2xl bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
+        /* Escape tiene que llegar al listener global: antes lo tragaba este stopPropagation
+           y no cerraba con el foco adentro (medido 08-10). */
+        onKeyDown={(e) => { if (e.key !== "Escape") e.stopPropagation(); }}
+        className="relative flex h-[96vh] w-full max-w-[1800px] flex-col overflow-hidden rounded-2xl bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
       >
         {/* Header — en un celular los botones bajan a una segunda línea en vez
             de aplastar el nombre del archivo hasta partirlo letra por letra. */}
@@ -358,6 +363,7 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
             >
               <Download className="h-3.5 w-3.5" /> Descargar
             </a>
+            <ControlesDeVentana ventana={ventana} />
             <button
               onClick={onClose}
               className="h-8 w-8 inline-flex items-center justify-center rounded-full bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
@@ -529,6 +535,7 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
           />
         )}
         </div>
+        <TiradorDeVentana ventana={ventana} />
       </div>
 
       {/* El envío se monta sobre la ficha; al cerrarlo se vuelve al documento. */}

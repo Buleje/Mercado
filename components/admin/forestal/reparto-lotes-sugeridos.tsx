@@ -15,6 +15,8 @@ import { AlertTriangle, Check, Loader2, PackagePlus, X } from "@buleje/design-sy
 import { CardTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import type { BloqueRolliza } from "@/lib/forestal/cubicacion-reparto";
 import {
@@ -68,6 +70,7 @@ export default function RepartoLotesSugeridos({ bloques, codigoDeLote, onCreados
 function ModalLotesSugeridos({ bloques, codigoDeLote, onCreados, lotesCargados, onQuitarLote, onCerrar }: Props & { onCerrar: () => void }) {
   const cajaRef = useRef<HTMLDivElement>(null);
   useModalAccesible(cajaRef, { onCerrar });
+  const ventana = useVentanaDeModal(true, { ref: cajaRef, asaAutomatica: true, aplicarTranslate: true, claveMemoria: "reparto-lotes-sugeridos" });
 
   /* La foto de los bloques al abrir: si la tabla cambia detrás, la lista que
      se confirma es la que se vio. */
@@ -134,7 +137,7 @@ function ModalLotesSugeridos({ bloques, codigoDeLote, onCreados, lotesCargados, 
   const etiquetaDe = (id: string) => foto.find((b) => b.id === id)?.etiqueta || "Sin etiqueta";
 
   return (
-    <div className="modal-backdrop fixed inset-0 z-modal flex items-center justify-center bg-black/60 p-3" onClick={(e) => { if (e.target === e.currentTarget) onCerrar(); }}>
+    <div className="modal-backdrop fixed inset-0 z-modal flex items-center justify-center bg-black/60 p-3" onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) onCerrar(); }}>
       <div ref={cajaRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Crear lotes sugeridos" className="relative flex max-h-[94vh] w-full max-w-4xl flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-lg)]">
         <div className="flex shrink-0 items-start justify-between gap-3">
           <div className="flex items-center gap-2">
@@ -148,9 +151,12 @@ function ModalLotesSugeridos({ bloques, codigoDeLote, onCreados, lotesCargados, 
               example="Guía 019-001-0000011 · Tornillo · 12 trozas · 8,412 m³ → lote LA-2026-014 con esas 12 trozas."
             />
           </div>
-          <button type="button" onClick={onCerrar} aria-label="Cerrar" className="rounded-xl p-2 text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]">
-            <X className="h-5 w-5" aria-hidden />
-          </button>
+          <div className="flex items-center gap-1">
+            <ControlesDeVentana ventana={ventana} />
+            <button type="button" onClick={onCerrar} aria-label="Cerrar" className="rounded-xl p-2 text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]">
+              <X className="h-5 w-5" aria-hidden />
+            </button>
+          </div>
         </div>
 
         {error && (
@@ -207,6 +213,7 @@ function ModalLotesSugeridos({ bloques, codigoDeLote, onCreados, lotesCargados, 
             </>
           )}
         </div>
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

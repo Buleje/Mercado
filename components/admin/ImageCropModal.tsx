@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { X, Check, RotateCcw } from "@buleje/design-system/icons";
 
 /**
@@ -31,6 +33,7 @@ export default function ImageCropModal({
   /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
        el foco, la trampa de Tab y el scroll, no una segunda salida. */
   useModalAccesible(cajaRef, { onCerrar: onCancel, cerrarConEscape: false });
+  const ventana = useVentanaDeModal(true, { ref: cajaRef, asaAutomatica: true, aplicarTranslate: true, claveMemoria: "image-crop" });
   const ratio = ASPECT[aspectRatio] ?? 16 / 9;
   const frameH = Math.round(FRAME_W / ratio);
   const imgRef = useRef<HTMLImageElement | null>(null);
@@ -110,13 +113,16 @@ export default function ImageCropModal({
 
   return (
     <div className="fixed inset-0 z-modal-3 flex items-center justify-center p-4 dark">
-      <button type="button" aria-label="Cerrar" onClick={onCancel} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <button type="button" aria-label="Cerrar" onClick={() => { if (!ventana.fijado) onCancel(); }} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div ref={cajaRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Ajustar imagen" className="relative w-full max-w-md rounded-2xl border border-white/10 bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-xl)]">
         <div className="mb-3 flex items-center justify-between">
           <p className="text-sm font-bold text-white">Ajustar imagen</p>
+          <div className="flex items-center gap-1">
+            <ControlesDeVentana ventana={ventana} />
           <button type="button" onClick={onCancel} aria-label="Cerrar" className="rounded-xl p-1 text-[var(--text-tertiary)] transition-colors hover:bg-white/10 hover:text-white">
             <X className="h-4 w-4" />
           </button>
+          </div>
         </div>
 
         {/* Marco de recorte */}
@@ -170,6 +176,7 @@ export default function ImageCropModal({
             <Check className="h-3.5 w-3.5" /> {busy ? "Aplicando…" : "Aplicar recorte"}
           </button>
         </div>
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

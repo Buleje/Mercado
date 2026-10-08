@@ -20,6 +20,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { AlertTriangle, FileSpreadsheet, Scale, ShieldCheck, X } from "@buleje/design-system/icons";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { logger } from "@/lib/logger";
 import { hoyISO } from "@/lib/forestal/distribucion-registro";
@@ -101,6 +103,7 @@ export default function RepartoCuadreModal({ cuadre, inicial, onCerrar }: {
   const cajaRef = useRef<HTMLDivElement>(null);
   const cuerpoRef = useRef<HTMLDivElement>(null);
   useModalAccesible(cajaRef, { onCerrar });
+  const ventana = useVentanaDeModal(true, { ref: cajaRef, asaAutomatica: true, aplicarTranslate: true, claveMemoria: "reparto-cuadre" });
 
   const pestanaDe = (id: IdControl) => cuadre.controles.find((x) => x.id === id)?.pestana ?? "bloque";
   const [pestana, setPestana] = useState<PestanaCuadre>(() =>
@@ -142,7 +145,7 @@ export default function RepartoCuadreModal({ cuadre, inicial, onCerrar }: {
   return (
     <div
       className="modal-backdrop fixed inset-0 z-modal flex items-center justify-center bg-black/60 p-3"
-      onClick={(e) => { if (e.target === e.currentTarget) onCerrar(); }}
+      onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) onCerrar(); }}
     >
       <div
         ref={cajaRef}
@@ -175,6 +178,7 @@ export default function RepartoCuadreModal({ cuadre, inicial, onCerrar }: {
             <button type="button" onClick={bajar} disabled={bajando} className={BTN}>
               <FileSpreadsheet className="h-4 w-4" aria-hidden /> {bajando ? "Generando…" : "Excel"}
             </button>
+            <ControlesDeVentana ventana={ventana} />
             <button type="button" onClick={onCerrar} aria-label="Cerrar el cuadre" className="rounded-xl p-2 text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]">
               <X className="h-5 w-5" aria-hidden />
             </button>
@@ -231,6 +235,7 @@ export default function RepartoCuadreModal({ cuadre, inicial, onCerrar }: {
             ))}
           </div>
         </div>
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );

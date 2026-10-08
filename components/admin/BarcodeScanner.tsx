@@ -4,6 +4,8 @@ import { CardTitle, LoadingState } from "@buleje/design-system";
 import { useEffect, useId, useRef, useState, useCallback, type ReactNode } from "react";
 import { Camera, X, SwitchCamera, Flashlight, FlashlightOff } from "@buleje/design-system/icons";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 
 type Props = {
   onDetected: (code: string) => void;
@@ -82,6 +84,7 @@ export default function BarcodeScanner({ onDetected, onClose, continuo = false, 
   }, [stopCamera, onClose]);
 
   useModalAccesible(panelRef, { onCerrar: cerrar, activo: true });
+  const ventana = useVentanaDeModal(true, { ref: panelRef, asaAutomatica: true, aplicarTranslate: true, claveMemoria: "admin-escaner-codigo-barras" });
 
   const startCamera = useCallback(async (facing: "environment" | "user") => {
     stopCamera();
@@ -172,7 +175,7 @@ export default function BarcodeScanner({ onDetected, onClose, continuo = false, 
   };
 
   return (
-    <div className="fixed inset-0 z-system bg-black/80 flex items-center justify-center p-4" onClick={cerrar}>
+    <div className="fixed inset-0 z-system bg-black/80 flex items-center justify-center p-4" onClick={() => { if (!ventana.fijado) cerrar(); }}>
       <div
         ref={panelRef}
         role="dialog"
@@ -180,7 +183,7 @@ export default function BarcodeScanner({ onDetected, onClose, continuo = false, 
         aria-labelledby={tituloId}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg overflow-hidden"
+        className="relative bg-[var(--surface-raised)] rounded-xl w-full max-w-lg overflow-hidden"
       >
         {/* Header */}
         <div className="px-2 sm:px-4 py-2 sm:py-3 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex items-center justify-between">
@@ -188,12 +191,15 @@ export default function BarcodeScanner({ onDetected, onClose, continuo = false, 
             <Camera className="h-5 w-5 text-primary" />
             <CardTitle id={tituloId} className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Escanear código de barras</CardTitle>
           </div>
+          <div className="flex items-center gap-1">
+          <ControlesDeVentana ventana={ventana} />
           <button aria-label="Cerrar"
             onClick={cerrar}
             className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
+          </div>
         </div>
 
         {/* Video area */}
@@ -260,6 +266,7 @@ export default function BarcodeScanner({ onDetected, onClose, continuo = false, 
             </button>
           </div>
         </div>
+        <TiradorDeVentana ventana={ventana} />
       </div>
 
       {/* Scanline animation keyframes */}

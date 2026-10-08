@@ -782,6 +782,9 @@ export function useVentanaDeModal(abierto: boolean, opts: OpcionesVentana = {}):
       userSelect: asa.style.userSelect,
     };
     asa.setAttribute("tabindex", "0");
+    /* Marca para que el foco inicial de `useModalAccesible` la salte (que el modal
+       abra con el foco donde siempre, no en la barra). */
+    asa.setAttribute("data-ventana-asa", "true");
     if (!previo.role) asa.setAttribute("role", "group");
     asa.setAttribute("aria-label", ETIQUETA_ASA);
     asa.style.cursor = "move";
@@ -794,6 +797,7 @@ export function useVentanaDeModal(abierto: boolean, opts: OpcionesVentana = {}):
     asa.addEventListener("lostpointercapture", alSoltarEnAsa);
     asa.addEventListener("keydown", alTeclaEnAsa);
     return () => {
+      asa.removeAttribute("data-ventana-asa");
       if (previo.tabIndex === null) asa.removeAttribute("tabindex");
       else asa.setAttribute("tabindex", previo.tabIndex);
       if (previo.label === null) asa.removeAttribute("aria-label");

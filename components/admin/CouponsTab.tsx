@@ -1,7 +1,10 @@
 "use client";
 
 import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { Ticket, Plus, Trash2, Check, X, Copy, Gift, Sparkles, Zap, UserPlus, PartyPopper, Settings, Calendar, MessageCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -90,6 +93,15 @@ export default function CouponsTab() {
   const [templatePattern, setTemplatePattern] = useState("BDAY{MMDD}{RND3}");
   const [whatsappCoupon, setWhatsappCoupon] = useState<Coupon | null>(null);
   const [whatsappPhone, setWhatsappPhone] = useState("");
+  const cajaRegla = useRef<HTMLDivElement>(null);
+  useModalAccesible(cajaRegla, { onCerrar: () => setShowRuleConfig(false), activo: showRuleConfig && !!editingRule });
+  const ventanaRegla = useVentanaDeModal(showRuleConfig && !!editingRule, { ref: cajaRegla, asaAutomatica: true, aplicarTranslate: true, claveMemoria: "cupones-regla" });
+  const cajaWhatsapp = useRef<HTMLDivElement>(null);
+  useModalAccesible(cajaWhatsapp, { onCerrar: () => setWhatsappCoupon(null), activo: !!whatsappCoupon });
+  const ventanaWhatsapp = useVentanaDeModal(!!whatsappCoupon, { ref: cajaWhatsapp, asaAutomatica: true, aplicarTranslate: true, claveMemoria: "cupones-whatsapp" });
+  const cajaPlantilla = useRef<HTMLDivElement>(null);
+  useModalAccesible(cajaPlantilla, { onCerrar: () => setShowTemplateBuilder(false), activo: showTemplateBuilder });
+  const ventanaPlantilla = useVentanaDeModal(showTemplateBuilder, { ref: cajaPlantilla, asaAutomatica: true, aplicarTranslate: true, claveMemoria: "cupones-plantilla" });
 
   const load = useCallback(() => {
     fetch("/api/coupons").then(r => r.ok ? r.json() : []).then(d => setCoupons(Array.isArray(d) ? d : d?.coupons ?? [])).catch((err) => console.warn("[CouponsTab] /api/coupons failed:", err)).finally(() => setLoading(false));
@@ -445,16 +457,17 @@ export default function CouponsTab() {
 
       {/* ── Rule Configuration Modal ──────────────────────────────────────── */}
       {showRuleConfig && editingRule && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 p-4" style={{ zIndex: 100 }} onClick={() => setShowRuleConfig(false)}>
-          <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 p-4" style={{ zIndex: 100 }} onClick={() => { if (!ventanaRegla.fijado) setShowRuleConfig(false); }}>
+          <div ref={cajaRegla} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Configurar regla" className="relative bg-[var(--surface-raised)] rounded-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <div>
                 <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Configurar Regla</CardTitle>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{ruleConfigs[editingRule.type].label}</p>
               </div>
+              <div className="flex items-center gap-1"><ControlesDeVentana ventana={ventanaRegla} />
               <button aria-label="Cerrar" onClick={() => setShowRuleConfig(false)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors">
                 <X className="h-5 w-5" />
-              </button>
+              </button></div>
             </div>
             <div className="px-5 py-4 space-y-4">
               <Field label="Tipo de descuento" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
@@ -498,22 +511,24 @@ export default function CouponsTab() {
               <button onClick={() => setShowRuleConfig(false)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-[var(--surface-sunken)] dark:bg-accent hover:bg-[var(--rule-soft)] transition-colors">Cancelar</button>
               <button onClick={saveRuleConfig} className="flex-1 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors">Guardar</button>
             </div>
+            <TiradorDeVentana ventana={ventanaRegla} />
           </div>
         </div>
       )}
 
       {/* ── WhatsApp Send Modal ──────────────────────────────────────────── */}
       {whatsappCoupon && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 p-4" style={{ zIndex: 100 }} onClick={() => setWhatsappCoupon(null)}>
-          <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 p-4" style={{ zIndex: 100 }} onClick={() => { if (!ventanaWhatsapp.fijado) setWhatsappCoupon(null); }}>
+          <div ref={cajaWhatsapp} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Enviar cupón por WhatsApp" className="relative bg-[var(--surface-raised)] rounded-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <div>
                 <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Enviar cupon por WhatsApp</CardTitle>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Codigo: <span className="font-mono font-bold text-primary">{whatsappCoupon.code}</span></p>
               </div>
+              <div className="flex items-center gap-1"><ControlesDeVentana ventana={ventanaWhatsapp} />
               <button aria-label="Quitar" onClick={() => setWhatsappCoupon(null)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors">
                 <X className="h-5 w-5" />
-              </button>
+              </button></div>
             </div>
             <div className="px-5 py-4 space-y-4">
               {/* Preview del mensaje */}
@@ -553,22 +568,24 @@ export default function CouponsTab() {
             <div className="px-5 py-3 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <button onClick={() => setWhatsappCoupon(null)} className="w-full py-2.5 rounded-xl text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-[var(--surface-sunken)] dark:bg-accent hover:bg-[var(--rule-soft)] transition-colors">Cerrar</button>
             </div>
+            <TiradorDeVentana ventana={ventanaWhatsapp} />
           </div>
         </div>
       )}
 
       {/* ── Template Builder Modal ────────────────────────────────────────── */}
       {showTemplateBuilder && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 p-4" style={{ zIndex: 100 }} onClick={() => setShowTemplateBuilder(false)}>
-          <div className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 p-4" style={{ zIndex: 100 }} onClick={() => { if (!ventanaPlantilla.fijado) setShowTemplateBuilder(false); }}>
+          <div ref={cajaPlantilla} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Constructor de plantilla" className="relative bg-[var(--surface-raised)] rounded-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <div>
                 <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Constructor de Plantilla</CardTitle>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Define el patrón de códigos automáticos</p>
               </div>
+              <div className="flex items-center gap-1"><ControlesDeVentana ventana={ventanaPlantilla} />
               <button aria-label="Cerrar" onClick={() => setShowTemplateBuilder(false)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors">
                 <X className="h-5 w-5" />
-              </button>
+              </button></div>
             </div>
             <div className="px-5 py-4 space-y-4">
               <Field label="Patrón" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
@@ -601,6 +618,7 @@ export default function CouponsTab() {
             <div className="px-5 py-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <button onClick={() => setShowTemplateBuilder(false)} className="w-full min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors">Cerrar</button>
             </div>
+            <TiradorDeVentana ventana={ventanaPlantilla} />
           </div>
         </div>
       )}

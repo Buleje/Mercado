@@ -12,6 +12,8 @@
 import { useEffect, useState, useRef } from "react";
 import { leerJson } from "@/lib/errores/sin-dato";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { AlertTriangle, Pencil } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
@@ -37,6 +39,7 @@ export default function EditarNotasModal({
   /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
        el foco, la trampa de Tab y el scroll, no una segunda salida. */
   useModalAccesible(cajaRef, { onCerrar: saving ? undefined : onClose, cerrarConEscape: false });
+  const ventana = useVentanaDeModal(true, { ref: cajaRef, asaAutomatica: true, aplicarTranslate: true, claveMemoria: "adelanto-editar-notas" });
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
@@ -70,18 +73,19 @@ export default function EditarNotasModal({
   };
 
   return (
-    <div className="fixed inset-0 z-modal-2 flex items-center justify-center bg-black/50 p-4" role="presentation" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="fixed inset-0 z-modal-2 flex items-center justify-center bg-black/50 p-4" role="presentation" onClick={(e) => e.target === e.currentTarget && !ventana.fijado && onClose()}>
       <div ref={cajaRef} tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label="Editar motivo / notas"
-        className="w-full max-w-md rounded-2xl bg-[var(--surface-raised)] p-5 shadow-[var(--shadow-xl)]"
+        className="relative w-full max-w-md rounded-2xl bg-[var(--surface-raised)] p-5 shadow-[var(--shadow-xl)]"
       >
         <div className="mb-3 flex items-center gap-2.5">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <Pencil className="h-4.5 w-4.5" />
           </span>
           <p className="text-base font-extrabold text-[var(--text-primary)]">Editar motivo / notas</p>
+          <div className="ml-auto flex items-center gap-1"><ControlesDeVentana ventana={ventana} /></div>
         </div>
 
         <textarea
@@ -116,6 +120,7 @@ export default function EditarNotasModal({
             {saving ? "Guardando…" : "Guardar"}
           </button>
         </div>
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );
