@@ -133,7 +133,11 @@ export function QuickActionsFab() {
         /* Sólo los VISIBLES: el menú de navegación del celular vive montado
            como diálogo con `display:none`, y contarlo escondía el «+» siempre
            (medido 03-10). Sin caja dibujada = no hay modal a la vista. */
-        const modales = document.querySelectorAll<HTMLElement>('[role="dialog"][aria-modal="true"], [role="alertdialog"]');
+        /* La barra de selección del libro (`ctp-barra-seleccion`, fija abajo, z-40)
+           también: el «+» le tapaba el borde derecho en sus 6 pantallas (07-10). */
+        const modales = document.querySelectorAll<HTMLElement>(
+          '[role="dialog"][aria-modal="true"], [role="alertdialog"], [data-barra-seleccion]',
+        );
         setHayModal([...modales].some((d) => d.getClientRects().length > 0));
       });
     };

@@ -29,19 +29,24 @@ function EstadoFila({
   estado,
   detalle,
 }: {
-  estado: "nueva" | "ya_trozada" | "conflicto" | "ampliar" | "existente";
+  estado: "nueva" | "ya_trozada" | "renombrada" | "conflicto" | "ampliar" | "existente";
   detalle: string | null;
 }) {
   if (estado === "nueva")
     return <CheckCircle2 className="h-4 w-4 text-[var(--data-success-ink)]" aria-label="Nueva" />;
   const texto = {
     ya_trozada: "Ya está",
+    renombrada: "Código nuevo",
     conflicto: "Choca",
     ampliar: "Se amplía",
     existente: "Ya tiene tala",
   }[estado];
   const tono =
-    estado === "conflicto" ? TONO.error : estado === "ampliar" ? TONO.aviso : TONO.neutro;
+    estado === "conflicto"
+      ? TONO.error
+      : estado === "ampliar" || estado === "renombrada"
+        ? TONO.aviso
+        : TONO.neutro;
   return (
     <span
       className={`inline-flex h-6 items-center rounded-full px-2 text-xs font-semibold ${tono}`}
@@ -52,14 +57,19 @@ function EstadoFila({
   );
 }
 
-/* A 400 px las dos tablas siguen siendo tablas, con su propio scroll. */
+/*
+ * A 400 px las dos tablas siguen siendo tablas, con su propio scroll.
+ * ADR-474: «En la guía» es el código impreso; «Código único» el del libro
+ * (difiere en las sin código y en las renombradas, que se resaltan).
+ */
 export function TablaTrozas({ trozas }: { trozas: TrozaImportada[] }) {
   return (
     <div className="overflow-x-auto px-1 pb-2">
       <table className="w-full text-sm">
         <thead>
           <tr>
-            <th className={TH}>Código</th>
+            <th className={TH}>En la guía</th>
+            <th className={TH}>Código único</th>
             <th className={TH}>Árbol</th>
             <th className={TH}>Especie</th>
             <th className={`${TH} text-right`}>D1 (m)</th>
@@ -73,9 +83,15 @@ export function TablaTrozas({ trozas }: { trozas: TrozaImportada[] }) {
         <tbody>
           {trozas.map((t) => (
             <tr key={t.indice} className="border-t border-[var(--rule-soft)]">
+              <td className={`${TD} font-mono text-[var(--text-secondary)]`}>
+                {t.codificacionGuia ?? "—"}
+              </td>
               <td
-                className={`${TD} font-mono font-semibold text-[var(--text-primary)]`}
-                title={t.sinCodigo ? `En la guía: «${t.codificacionGuia ?? "-"}»` : undefined}
+                className={`${TD} font-mono font-semibold ${
+                  t.estado === "renombrada"
+                    ? "text-[var(--data-warning-ink)]"
+                    : "text-[var(--text-primary)]"
+                }`}
               >
                 {t.trozaCode}
                 {t.sinCodigo && (

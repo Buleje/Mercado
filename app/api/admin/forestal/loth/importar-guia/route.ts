@@ -131,6 +131,8 @@ export const POST = withApiHandler("forestal-loth-importar-guia-post", async (re
         puedeExcederDespacho: puedePasarT6ConMotivo(auth.role),
         /* …y la persona vio el exceso en la vista previa (consentimiento, no permiso). */
         confirmaDespacho: items[i].confirmaDespacho === true,
+        /* ADR-474: los renombres que la persona confirmó; el servidor revisa de nuevo cuáles hay. */
+        confirmaRenombres: items[i].confirmaRenombres ?? [],
         sesion,
         /* La 1.ª no espera (otra importación en curso → rechazo); las que siguen esperan su turno. */
         esperarTurno: intentadas++ > 0,

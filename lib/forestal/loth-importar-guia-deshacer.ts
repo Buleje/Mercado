@@ -59,7 +59,11 @@ export function esTrozadoDeLaImportacion(
   const obs = txt(observations);
   if (!obs) return false;
   const r = registro ?? "";
-  return obs === observacionTrozado({ sinCodigo: false }, gtfNumber, r) || obs === observacionTrozado({ sinCodigo: true }, gtfNumber, r);
+  if (obs === observacionTrozado({ sinCodigo: false }, gtfNumber, r) || obs === observacionTrozado({ sinCodigo: true }, gtfNumber, r)) return true;
+  /* ADR-474: la renombrada lleva el código de la guía en medio («… En la guía: «12A» (…)»).
+     Se reconoce con la MISMA función que la escribe: lo de antes y lo de después del código. */
+  const [antes, despues] = observacionTrozado({ sinCodigo: false, estado: "renombrada", codificacionGuia: "\u0000" }, gtfNumber, r).split("\u0000");
+  return obs.length > antes.length + despues.length && obs.startsWith(antes) && obs.endsWith(despues);
 }
 
 /** ¿El plan lo creó una importación (cualquiera)? Su nota es la de `notaPlanImportado`. */

@@ -45,7 +45,10 @@ import type { GtfSerfor } from "@/lib/forestal/serfor-gtf";
 import {
   avisoAplica,
   claveTitulo,
+  codigosDeLaGuia,
+  codigosParaRevisar,
   destinoDe,
+  entraComoNueva,
   detectarPermiso,
   porQueNoAplicaExcepcionT6,
   fechaDelLibro,
@@ -59,6 +62,7 @@ import {
   observacionGuia,
   observacionTala,
   observacionTrozado,
+  renombresSinConfirmar,
   revisarGuia,
   talasAEscribir,
   trozasDeLaGuia,
@@ -256,7 +260,8 @@ export class ForestLothImportarDB {
   ): Promise<LibroDeLaGuia> {
     if (!tenantId) throw new Error("tenantId is required");
     const trozas = fichas.flatMap((g) => trozasDeLaGuia(g));
-    const codigos = [...new Set(trozas.map((t) => t.trozaCode))];
+    /* Los de la guía y los únicos que se propondrían (ADR-474): si ya están tomados, no se proponen. */
+    const codigos = [...new Set(fichas.flatMap((g) => codigosParaRevisar(g)))];
     const arboles = [...new Set(trozas.map((t) => t.treeCode).filter((c): c is string => !!c))];
     const vivas = { tenantId, deletedAt: null, status: "registrado" } as const;
 
@@ -476,6 +481,12 @@ export class ForestLothImportarDB {
        * (consentimiento, no permiso). Sin esto, el motivo de T9 no lo destraba.
        */
       confirmaDespacho?: boolean;
+      /**
+       * ADR-474: los códigos únicos que la persona confirmó en la vista previa
+       * (trozas `renombrada`). Se vuelve a revisar bajo el candado: la que el
+       * servidor renombre y no esté acá rechaza la guía.
+       */
+      confirmaRenombres?: readonly string[];
       /** IP y navegador del pedido (la ruta): van a los eventos sobre-cupo y sobre-autorizado. */
       sesion?: SesionDeAuditoria;
     },
@@ -596,6 +607,13 @@ export class ForestLothImportarDB {
         if (rev.yaImportada) throw new YaEnElLibroError(rev.yaImportada.gtfNumber);
         const bloquea = rev.avisos.find((a) => a.nivel === "bloquea" && avisoAplica(a, input.crearTala));
         if (bloquea) throw new ImportacionRechazadaError(bloquea.mensaje, bloquea.codigo);
+        const sinConfirmar = renombresSinConfirmar(rev.trozas, input.confirmaRenombres);
+        if (sinConfirmar.length) {
+          throw new ImportacionRechazadaError(
+            `La guía repite códigos de otra guía de este permiso y no se confirmó que sean OTRAS trozas (${sinConfirmar.slice(0, 6).join(", ")}${sinConfirmar.length > 6 ? "…" : ""}): vuelve a la vista previa y confírmalo.`,
+            "renombre_sin_confirmar",
+          );
+        }
 
         // 4. Talas referenciales (antes que los trozados: T4 mide contra ellas).
         const correlativos = new Map<string, number>();
@@ -682,7 +700,7 @@ export class ForestLothImportarDB {
 
         // 5. Trozados (las que ya estaban en el plan se usan como están).
         const trozados: Awaited<ReturnType<typeof ForestLothDB.registrarLineaEnTx>>[] = [];
-        for (const t of rev.trozas.filter((x) => x.estado === "nueva")) {
+        for (const t of rev.trozas.filter(entraComoNueva)) {
           trozados.push(
             await ForestLothDB.registrarLineaEnTx(
               tx,
@@ -727,6 +745,8 @@ export class ForestLothImportarDB {
             gtfNumber: numero,
             gtfDate: fechaLinea,
             trozaCodes: rev.trozas.map((t) => t.trozaCode),
+            /* ADR-474: la guía imprime «12A» aunque en el libro sea «12A (0000002)». */
+            codigosGuia: codigosDeLaGuia(rev.trozas),
             gtfDatos: gtfDatosConFicha(g, input.verificada),
             titularName: txt(g.titular) || null,
             observations: observacionGuia(registro, input.verificada),

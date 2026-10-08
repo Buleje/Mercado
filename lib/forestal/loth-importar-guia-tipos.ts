@@ -39,6 +39,10 @@
  *    VERIFICADA en SERFOR que pasa T6 y quien mira es admin/dueño: pide el
  *    motivo en vez de bloquearse) y `ContextoTanda.puedePasarT6`. El motivo es
  *    el mismo `ItemImportarGuia.motivoSobreCupo`. Todo AGREGADO y opcional.
+ *  - 07-10 (código único por guía, ADR-474): estado de troza `renombrada`, aviso
+ *    `troza_renombrada` e `ItemImportarGuia.confirmaRenombres` (los códigos
+ *    únicos que la persona confirmó como trozas DISTINTAS). Todo AGREGADO: un
+ *    cliente de antes no confirma y la guía con renombres vuelve rechazada.
  */
 
 import type { GtfSerfor } from "./serfor-gtf";
@@ -138,6 +142,14 @@ export type EstadoTrozaImportada =
   | "nueva"
   /** Ya tiene Trozado en ESTE plan (de una importación anterior de la misma guía o cargada a mano): se usa ésa. */
   | "ya_trozada"
+  /**
+   * ADR-474: su código ya SALIÓ con OTRA guía del MISMO permiso (plantación con
+   * códigos repetidos entre guías). Entra como troza nueva con el código único
+   * `12A (0000002)` (código + correlativo de esta guía, como lo escribe SERFOR);
+   * `codificacionGuia` sigue diciendo «12A». Nunca automático: la importación
+   * la exige confirmada (`ItemImportarGuia.confirmaRenombres`).
+   */
+  | "renombrada"
   /** Choca con el libro (otro plan, otra especie o ya salió): la guía no se importa hasta resolverlo. */
   | "conflicto";
 
@@ -146,7 +158,10 @@ export interface TrozaImportada {
   indice: number;
   /** La codificación tal como la publica la guía («186A», «173-D», «-»). */
   codificacionGuia: string | null;
-  /** El código con que queda en el libro: el de la guía, o `SC-<registro>-<n>` si no tiene. */
+  /**
+   * El código ÚNICO con que queda en el libro: el de la guía, `SC-<registro>-<n>`
+   * si no tiene, o `12A (0000002)` si está `renombrada` (ADR-474).
+   */
   trozaCode: string;
   /** El árbol («186A» → «186»). `null` en las sin código: no se trazan a un árbol. */
   treeCode: string | null;
@@ -222,7 +237,9 @@ export type CodigoAvisoImportacion =
    */
   | "exceso_autorizado"
   /** La tala nueva va con otra especie que la del censo del árbol (`TALA_ESPECIE_DISTINTA_AL_CENSO`). */
-  | "especie_distinta_al_censo";
+  | "especie_distinta_al_censo"
+  /** ADR-474: trozas con el código de otra guía del mismo permiso entran con un código único; hay que confirmarlo. */
+  | "troza_renombrada";
 
 export interface AvisoImportacion {
   /** `bloquea` = la guía no se importa así; `atencion` = se importa, pero conviene mirarlo; `info` = para saber. */
@@ -445,6 +462,13 @@ export interface ItemImportarGuia {
    * motivo escrito para T9 no destraba un exceso de T6 que nadie vio.
    */
   confirmaDespacho?: boolean;
+  /**
+   * ADR-474: los códigos ÚNICOS (`TrozaImportada.trozaCode` de las
+   * `renombrada`) que la persona confirmó como trozas DISTINTAS de las que ya
+   * salieron con otra guía. La importación vuelve a revisar y rechaza la guía
+   * (`renombre_sin_confirmar`) si renombra alguna que no esté acá.
+   */
+  confirmaRenombres?: string[];
 }
 
 export type EstadoImportacion = "importada" | "ya_estaba" | "rechazada";

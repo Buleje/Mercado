@@ -22,7 +22,8 @@ import { FiltroEnCabecera, type ColumnaFiltro, type FiltrosTabla } from "./filtr
 import GtfOrigenChip from "./GtfOrigenChip";
 
 export interface GtfItem {
-  code?: string | null; species?: string | null; scientific?: string | null; cites?: boolean;
+  /** `code` = código único del libro; `codigoGuia` = el impreso en la guía si difiere (ADR-474). */
+  code?: string | null; codigoGuia?: string | null; species?: string | null; scientific?: string | null; cites?: boolean;
   diamMayorM?: number | null; diamMenorM?: number | null; lengthM?: number | null; volumeM3?: number | null;
 }
 export interface Gtf {

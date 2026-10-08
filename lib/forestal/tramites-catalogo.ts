@@ -214,6 +214,15 @@ export interface FormatoTramite {
    * formatos cuando SERFOR pide "mandame las que presentaste este año".
    */
   carpetaDrive?: string;
+  /**
+   * Este formato se puede llenar desde las guías elegidas en la vista GTF del
+   * Libro TH (Brandon 07-10: «seleccionar las guías y usar ese formato»).
+   * `uso`: `tabla` = todas van a la tabla de guías (`guiasJson`) · `una` = una
+   * sola guía llena sus casilleros · `rango` = serie y números del-al.
+   * `estado`: la guía tiene que estar así (una anulación pide una anulada).
+   * Qué casillero llena cada guía: `tramites-desde-guias.ts`.
+   */
+  aceptaGuias?: { uso: "tabla" | "una" | "rango"; estado?: "anulada" | "emitida" };
 }
 
 const v = (d: DatosTramite, k: string, fallback = "—"): string => {
@@ -296,6 +305,7 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
   // ── 1. Visado / autorización de talonario de GTF ──────────────────────────
   {
     id: "visado-talonario-gtf",
+    aceptaGuias: { uso: "rango" },
     nombre: "Visado de talonario de GTF",
     autoridad: "arffs",
     proposito: "Pedir la autorización del talonario y el correlativo de las Guías de Transporte Forestal del CTP",
@@ -590,6 +600,7 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
   // ── 7. Relación de guías de transporte forestal emitidas ──────────────────
   {
     id: "relacion-guias-serfor",
+    aceptaGuias: { uso: "tabla" },
     nombre: "Relación de guías de transporte forestal emitidas",
     autoridad: "serfor",
     proposito:
@@ -708,6 +719,7 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
   // ── 9. Anulación de guía de transporte forestal ───────────────────────────
   {
     id: "anulacion-gtf",
+    aceptaGuias: { uso: "una", estado: "anulada" },
     nombre: "Comunicación de anulación de guía de transporte forestal",
     autoridad: "arffs",
     proposito: "Dejar constancia formal de que una GTF del talonario autorizado quedó anulada, para que no figure como guía sin rendir",
@@ -810,6 +822,7 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
   // ── 11. Reposición de talonario de GTF por pérdida o deterioro ────────────
   {
     id: "reposicion-talonario-gtf",
+    aceptaGuias: { uso: "rango" },
     nombre: "Solicitud de reposición de talonario de GTF por pérdida o deterioro",
     autoridad: "arffs",
     proposito: "Pedir un talonario nuevo cuando el vigente se perdió, fue robado o quedó inutilizable, con declaración jurada del hecho",
@@ -1094,6 +1107,7 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
   // ── 18. Denuncia policial por pérdida de GTF y Lista de Trozas ────────────
   {
     id: "denuncia-policial-perdida-gtf",
+    aceptaGuias: { uso: "una", estado: "emitida" },
     nombre: "Denuncia policial por pérdida de GTF y Lista de Trozas",
     autoridad: "otra",
     proposito:
@@ -1209,6 +1223,7 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
   // ── 19. Comunicación a SERFOR por pérdida de GTF ya emitida ──────────────
   {
     id: "comunicacion-perdida-gtf-serfor",
+    aceptaGuias: { uso: "una", estado: "emitida" },
     nombre: "Comunicación a SERFOR por pérdida de GTF ya emitida",
     autoridad: "serfor",
     proposito:

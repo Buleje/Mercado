@@ -11,6 +11,7 @@ import { leerPlaca } from "@/lib/forestal/placa-peru";
 import { GuiaThAlCtpDB } from "@/lib/db/guia-th-al-ctp.db";
 import { permisoDelPedido } from "@/lib/forestal/loth-permiso-pedido";
 import { GuiaYaEnElCtpError } from "@/lib/db/gtf-numero.db";
+import { guiaParaFormato, marcarReemitidas } from "@/lib/forestal/tramites-desde-guias";
 
 /**
  * /api/admin/forestal/gtf — Guía de Transporte Forestal (ADR-126 Fase 4)
@@ -61,6 +62,10 @@ const createSchema = z.object({
   items: z.array(itemSchema).min(1).max(500),
   observations: z.string().trim().max(1000).nullable().optional(),
 });
+const idsSchema = z
+  .array(z.string().min(1).max(60))
+  .min(1, "Elige al menos una guía.")
+  .max(200, "Hasta 200 guías por trámite.");
 /* El motivo con la regla de `motivo.ts`: sin invisibles y con al menos 3 letras. */
 const patchSchema = z.object({
   id: z.string().trim().min(1),
@@ -90,6 +95,22 @@ export const GET = withApiHandler("forestal-gtf-get", async (req: NextRequest) =
   const id = url.searchParams.get("id");
   const gtfNumber = url.searchParams.get("gtfNumber");
   try {
+    // `?ids=a,b` (07-10): las guías elegidas en la vista GTF, listas para
+    // llenar un trámite (`tramites-desde-guias`). Cada anulada dice si su N°
+    // sigue vigente en el libro (se volvió a registrar).
+    const idsParam = url.searchParams.get("ids");
+    if (idsParam !== null) {
+      const ids = idsSchema.safeParse(idsParam.split(",").map((s) => s.trim()).filter(Boolean));
+      if (!ids.success) {
+        return NextResponse.json({ error: "validation_error", message: ids.error.issues[0]?.message }, { status: 400 });
+      }
+      const [filas, vigentes] = await Promise.all([
+        ForestGtfDB.porIds(auth.tenantId, ids.data),
+        ForestGtfDB.numerosVigentes(auth.tenantId),
+      ]);
+      const guias = marcarReemitidas(filas.map(guiaParaFormato), vigentes);
+      return NextResponse.json({ guias, faltan: ids.data.length - guias.length });
+    }
     if (gtfNumber) {
       // Importar al ingreso CTP: buscar la guía emitida por su número.
       // El N° solo no identifica la guía: `titular`/`permiso` la eligen si hay

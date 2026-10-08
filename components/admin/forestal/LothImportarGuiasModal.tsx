@@ -200,7 +200,7 @@ function Pie({ s, onClose }: { s: ImportarGuias; onClose: () => void }) {
     );
 
   if (s.fase === "vista") {
-    const { listas, trozas, m3, fichas, faltaPermiso, faltaMotivo, pasanDespacho } = s.plan;
+    const { listas, trozas, m3, fichas, faltaPermiso, faltaMotivo, pasanDespacho, faltaRenombre } = s.plan;
     const n = listas.length;
     return (
       <ModalFooter
@@ -224,6 +224,11 @@ function Pie({ s, onClose }: { s: ImportarGuias; onClose: () => void }) {
                   Escribe el motivo del exceso de {faltaMotivo.join(", ")} o desmárcala
                 </span>
               )}
+              {faltaRenombre.length > 0 && (
+                <span className="font-semibold text-[var(--data-warning-ink)]">
+                  Confirma los códigos únicos de {faltaRenombre.join(", ")} o desmárcala
+                </span>
+              )}
               {pasanDespacho.length > 0 && (
                 <span className="font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
                   {pasanDespacho.join(", ")} no entra: despacharía más de lo autorizado
@@ -240,7 +245,12 @@ function Pie({ s, onClose }: { s: ImportarGuias; onClose: () => void }) {
           variant="primary"
           onClick={() => void s.confirmar()}
           disabled={
-            n === 0 || faltaPermiso.length > 0 || faltaMotivo.length > 0 || s.vista.cargando || s.recalculando.size > 0
+            n === 0 ||
+            faltaPermiso.length > 0 ||
+            faltaMotivo.length > 0 ||
+            faltaRenombre.length > 0 ||
+            s.vista.cargando ||
+            s.recalculando.size > 0
           }
         >
           <FileDown className="h-4 w-4" aria-hidden /> Importar {plural(n, "guía", "guías")}

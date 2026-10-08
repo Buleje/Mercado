@@ -22,7 +22,7 @@
  *
  * PURO y client-safe.
  */
-import { estadoDeLaRevision, mensajeDelEstado, ordenDeImportacion, talasAEscribir } from "./loth-importar-guia";
+import { entraComoNueva, estadoDeLaRevision, mensajeDelEstado, ordenDeImportacion, talasAEscribir } from "./loth-importar-guia";
 import { cupoDeLaGuia } from "./loth-importar-guia-cupo";
 import { avisoT6DeLaGuia, avisoT6SinExcepcion, avisoT6SoloDueno, despachoT6DeLaGuia, type EstadoT6DelPlan } from "./loth-t6";
 import { resolverTalaContraCenso } from "./loth-tala-del-censo";
@@ -35,7 +35,7 @@ const r4 = (n: number) => Math.round(n * 10000) / 10000;
 function aportesPorArbol(g: GuiaVistaPrevia, planId: string): Map<string, number> {
   const out = new Map<string, number>();
   for (const t of g.trozas) {
-    if (t.estado !== "nueva" || !t.treeCode || t.volumeM3 == null) continue;
+    if (!entraComoNueva(t) || !t.treeCode || t.volumeM3 == null) continue;
     const k = `${planId}:${t.treeCode}`;
     out.set(k, (out.get(k) ?? 0) + t.volumeM3);
   }

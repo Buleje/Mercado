@@ -13,7 +13,7 @@
  * ve. El catálogo, el formulario y el expediente viven en sus propios archivos.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertCircle, Building2, CalendarClock, FileText, Inbox, Stamp, TreePine } from "@buleje/design-system/icons";
 import LibroChrome, { type LibroGroup } from "@/components/admin/shared/libro-chrome";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -30,6 +30,9 @@ import TramitesCatalogo from "./TramitesCatalogo";
 import TramitesExpediente from "./TramitesExpediente";
 import TramiteAvisoWhatsApp from "./TramiteAvisoWhatsApp";
 import PlantacionesModule from "./PlantacionesModule";
+import TramiteAvisoGuias from "./TramiteAvisoGuias";
+import { useTramiteDesdeGuias } from "./hooks/use-tramite-desde-guias";
+import type { DatosDesdeGuias } from "@/lib/forestal/tramites-desde-guias";
 
 const MODULE_ID = "forestal-tramites";
 type Vista = "catalogo" | "expediente" | "plantaciones";
@@ -57,6 +60,10 @@ export default function ForestalTramites() {
    *  (estado/N° de documento) del trámite anterior. */
   const [instancia, setInstancia] = useState(0);
   const [auto, setAuto] = useState<AutollenadoTramite>({ ficha: null });
+  const [autoListo, setAutoListo] = useState(false);
+  /** Casilleros que traen las guías elegidas en la vista GTF del Libro TH (07-10). */
+  const [prellenado, setPrellenado] = useState<DatosTramite | null>(null);
+  const desdeGuias = useTramiteDesdeGuias(autoListo, auto.ficha?.razonSocial ?? null);
   const { tramites, cargando, error, setError, recargar, guardar, borrar } = useForestTramites();
   /** Sólo para el aviso "listo para presentar" — Plantaciones tiene su propio
    *  motor (ADR-380, ficha estructurada, no un `FormatoTramite`) y no vive en
@@ -106,6 +113,7 @@ export default function ForestalTramites() {
         ultimoCorrelativo: corte > 0 ? ultima.slice(corte + 1) : undefined,
         despachosCount: conGtf.length || undefined,
       });
+      setAutoListo(true);
     })();
     return () => {
       vivo = false;
@@ -149,10 +157,37 @@ export default function ForestalTramites() {
       .filter((x): x is { formato: (typeof FORMATOS_TRAMITE)[number]; aviso: NonNullable<ReturnType<typeof avisoPlazoRelacion>> } => x !== null);
   }, [tramites]);
 
+  /* Llegó con guías elegidas: abre su formato con lo que traen (y otra vez si
+     pide incluir una anulada reemitida). */
+  const resultadoGuias = desdeGuias.resultado;
+  const formatoGuias = desdeGuias.pedido?.formatoId ?? null;
+  /** El resultado ya volcado y en qué montaje del formulario quedó. */
+  const aplicadoGuias = useRef<{ resultado: DatosDesdeGuias; instancia: number } | null>(null);
+  /** «Incluirla igual» con ese formulario abierto: le suma las filas sin rearmarlo (lo tipeado queda). */
+  const [sumarGuias, setSumarGuias] = useState<{ instancia: number; guiasJson: string; numeros: string[] } | null>(null);
+  useEffect(() => {
+    if (!resultadoGuias || !formatoGuias) return;
+    const previo = aplicadoGuias.current;
+    if (previo?.resultado === resultadoGuias) return;
+    if (previo && formatoId === formatoGuias && previo.instancia === instancia) {
+      aplicadoGuias.current = { resultado: resultadoGuias, instancia };
+      setSumarGuias({ instancia, guiasJson: resultadoGuias.datos.guiasJson ?? "", numeros: previo.resultado.reemitidasExcluidas });
+      return;
+    }
+    aplicadoGuias.current = { resultado: resultadoGuias, instancia: instancia + 1 };
+    setFormatoId(formatoGuias);
+    setEditando(null);
+    setSeedDatos(null);
+    setPrellenado(resultadoGuias.datos);
+    setInstancia(instancia + 1);
+    setVista("catalogo");
+  }, [resultadoGuias, formatoGuias, formatoId, instancia]);
+
   const abrirFormato = useCallback((id: string) => {
     setFormatoId(id);
     setEditando(null);
     setSeedDatos(null);
+    setPrellenado(null);
     setInstancia((n) => n + 1);
     setVista("catalogo");
   }, []);
@@ -161,6 +196,7 @@ export default function ForestalTramites() {
     setFormatoId(t.formatoId);
     setEditando(t);
     setSeedDatos(null);
+    setPrellenado(null);
     setInstancia((n) => n + 1);
     setVista("catalogo");
   }, []);
@@ -174,6 +210,7 @@ export default function ForestalTramites() {
     setFormatoId(t.formatoId);
     setEditando(null);
     setSeedDatos(datosParaDuplicar(formatoDe, t.datos ?? {}));
+    setPrellenado(null);
     setInstancia((n) => n + 1);
     setVista("catalogo");
   }, []);
@@ -292,6 +329,8 @@ export default function ForestalTramites() {
         <TramitesCatalogo tramites={tramites} onElegir={abrirFormato} onAbrirPlantaciones={() => setVista("plantaciones")} />
       )}
 
+      {vista === "catalogo" && (!formato || formato.id === formatoGuias) && <TramiteAvisoGuias d={desdeGuias} />}
+
       {vista === "catalogo" && formato && (
         <TramiteFormulario
           key={instancia}
@@ -299,12 +338,16 @@ export default function ForestalTramites() {
           auto={auto}
           existente={editando}
           seedDatos={seedDatos}
+          prellenado={prellenado}
+          sumarGuias={sumarGuias?.instancia === instancia ? sumarGuias : null}
           tramites={tramites}
           onGuardar={guardar}
           onCerrar={() => {
             setFormatoId(null);
             setEditando(null);
             setSeedDatos(null);
+            setPrellenado(null);
+            desdeGuias.descartar();
           }}
         />
       )}

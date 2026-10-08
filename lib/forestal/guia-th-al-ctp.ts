@@ -46,7 +46,17 @@ export const soloDigitos = (v: string | null | undefined): string => String(v ??
  * con guía y la GTF corta de antes), así que todo es opcional.
  */
 export interface ItemGuiaTh {
+  /**
+   * Código ÚNICO de la troza en el Libro TH. Es el que va a `codificacion` del
+   * ingreso del CTP, también en una troza renombrada (ADR-474, «12A (0000002)»):
+   * con el de la guía («12A»), `trozasYaEnElLibro` la tomaría por la «12A» de la
+   * otra guía del mismo permiso y especie (falso «ya está en tu libro») y la
+   * atadura por código (guías sin `trozadoId`) caería en la troza de la otra
+   * guía. El código único contiene el de la guía y su correlativo: se lee igual.
+   */
   code: string | null;
+  /** ADR-474: el código impreso en la guía, sólo si difiere de `code`. Informativo: el CTP guarda `code`. */
+  codigoGuia?: string | null;
   treeCode: string | null;
   species: string | null;
   scientific: string | null;
@@ -75,6 +85,7 @@ const textoOpc = z.preprocess(
 );
 const itemSchema = z.object({
   code: textoOpc.optional(),
+  codigoGuia: textoOpc.optional(),
   treeCode: textoOpc.optional(),
   species: textoOpc.optional(),
   scientific: textoOpc.optional(),
@@ -97,6 +108,7 @@ export function leerItemsGuiaTh(raw: unknown): ItemGuiaTh[] {
     const d = p.data;
     out.push({
       code: d.code ?? null,
+      codigoGuia: d.codigoGuia ?? null,
       treeCode: d.treeCode ?? null,
       species: d.species ?? null,
       scientific: d.scientific ?? null,

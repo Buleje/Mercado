@@ -16,11 +16,14 @@
 import { CSS_GTF_OFICIAL, cuerpoGtfOficial, type LineaProducto } from "./ctp-gtf-formato";
 import { gtfDatosVacio, leerGtfDatos, type GtfDatos } from "./ctp-gtf-datos";
 import type { CtpFicha } from "./ctp-ficha-types";
-import { guiaEsDePlantacion } from "./loth-guia-despacho";
+import { codigoImpreso, guiaEsDePlantacion } from "./loth-guia-despacho";
 
 /** Un ítem de la guía del LO-TH, tal como lo guarda la columna JSON. */
 export interface LothGtfItem {
+  /** Código ÚNICO de la troza en el libro (`trozaCode`). */
   code?: string | null;
+  /** ADR-474: el código impreso en la guía, sólo si difiere de `code` («12A» de «12A (0000002)»). */
+  codigoGuia?: string | null;
   species?: string | null;
   scientific?: string | null;
   productType?: string | null;
@@ -97,17 +100,21 @@ export function lineasDeGtf(doc: LothGtfDoc): LineaProducto[] {
     cientifico: it.scientific ?? "",
     comun: it.species ?? "",
     tipoProducto: it.productType ?? (doc.tipo === "producto" ? "Producto terminado" : "Troza"),
-    // La presentación del formato: el código de la pieza cuando existe.
-    presentacion: it.code ?? "",
+    // La presentación del formato: el código de la pieza como lo dice la guía (ADR-474).
+    presentacion: codigoImpreso(it),
     cantidad: it.pieces ?? 1,
     unidad: "m³",
     total: num(it.volumeM3),
   }));
 }
 
-/** Los códigos de troza que ampara la guía — casillero (35). */
+/* `codigoImpreso` vive en `loth-guia-despacho` (sin "use client"): la relación
+   de Trámites lo usa también del lado del servidor. */
+export { codigoImpreso };
+
+/** Los códigos de troza que ampara la guía — casillero (35), como los dice la guía. */
 export function listasTrozasDe(doc: LothGtfDoc): string {
-  const codes = (doc.items ?? []).map((i) => i.code).filter((c): c is string => !!c);
+  const codes = (doc.items ?? []).map(codigoImpreso).filter(Boolean);
   return codes.join(", ");
 }
 

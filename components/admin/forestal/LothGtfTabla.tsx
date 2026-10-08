@@ -20,6 +20,8 @@ import type { PlanDeLaGuia } from "@/lib/forestal/gtf-columnas";
 import { BarraFiltrosTabla, SinCoincidenciasFila, useFiltrosTabla } from "./filtros-tabla-forestal";
 import { FILTROS_GTF, cabecerasGtf, celdasGtf, filasGtf, type FilaGtf, type Gtf } from "./gtf-tabla-columnas";
 import AccionesGtf from "./gtf-acciones-menu";
+import { CasillaFilaGtf, CasillaTodasGtf, ElegirFiltradasMovil } from "./gtf-seleccion-casillas";
+import type { SeleccionGuias } from "./hooks/use-seleccion-guias";
 
 const POR_PAGINA = 25;
 
@@ -40,6 +42,8 @@ export interface LothGtfTablaProps {
   onResumen: (g: Gtf) => void;
   onAnular: (id: string) => void;
   onRecargar: () => void;
+  /** Casillas para usar las guías en un trámite (07-10). Sin esto, la tabla de siempre. */
+  seleccion?: SeleccionGuias;
 }
 
 /** Minúsculas sin tildes, para el buscador general. */
@@ -59,7 +63,7 @@ function buscar(filas: FilaGtf[], q: string): FilaGtf[] {
 
 export default function LothGtfTabla({
   gtfs, planes, busqueda, sinIngresar, focusGtf, filaEnfocada, orden, vis,
-  onIngresarCtp, onHoja, onResumen, onAnular, onRecargar,
+  onIngresarCtp, onHoja, onResumen, onAnular, onRecargar, seleccion,
 }: LothGtfTablaProps) {
   const planesPorId = useMemo(() => new Map(planes.map((p) => [p.id, p])), [planes]);
   const filas = useMemo(() => filasGtf(gtfs, planesPorId), [gtfs, planesPorId]);
@@ -81,7 +85,8 @@ export default function LothGtfTabla({
   const ordenVisible = vis.filtrar(orden.orden);
   const soloVisibles = (celdas: Record<string, ReactNode>) =>
     Object.fromEntries(Object.entries(celdas).filter(([id]) => esVisible(id)));
-  const columnasTotal = ordenVisible.length + 1;
+  const columnasTotal = ordenVisible.length + 1 + (seleccion ? 1 : 0);
+  const idsFiltradas = useMemo(() => filtradas.map((x) => x.g.id), [filtradas]);
 
   return (
     <div className="space-y-3">
@@ -90,6 +95,7 @@ export default function LothGtfTabla({
         <DataTable filtrable className="w-full text-sm">
           <thead ref={orden.refCabecera} className="bg-[var(--surface-sunken)] text-left align-top">
             <tr>
+              {seleccion && <CasillaTodasGtf ids={idsFiltradas} sel={seleccion} etiqueta={`Elegir las ${idsFiltradas.length} guías filtradas`} />}
               <EnOrden orden={ordenVisible} celdas={soloVisibles(cabecerasGtf(f))} />
               <th className="w-px px-3 py-2.5 text-right font-bold text-[var(--text-primary)]">Acciones</th>
             </tr>
@@ -105,6 +111,7 @@ export default function LothGtfTabla({
                     g.gtfNumber === focusGtf ? "bg-[var(--data-info-500)]/15 outline outline-2 -outline-offset-2 outline-[var(--data-info-500)]" : ""
                   }`}
                 >
+                  {seleccion && <CasillaFilaGtf id={g.id} numero={g.gtfNumber} sel={seleccion} />}
                   <EnOrden orden={ordenVisible} celdas={soloVisibles(celdasGtf(fila))} />
                   <td data-label="Acciones" className="w-px px-3 py-2.5">
                     <AccionesGtf
@@ -140,6 +147,7 @@ export default function LothGtfTabla({
             <span className="font-mono tabular-nums">{fmtM3(volumenFiltrado)}</span> m³
             {totalPaginas > 1 && ` · página ${pagActual + 1} de ${totalPaginas}`}
           </p>
+          {seleccion && <ElegirFiltradasMovil ids={idsFiltradas} sel={seleccion} />}
           {totalPaginas > 1 && (
             <div className="flex items-center gap-2">
               <button

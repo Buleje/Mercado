@@ -47,6 +47,12 @@ export const UNIDAD_TROZA = "Metros cúbicos";
 export interface PiezaGuia {
   /** Codificación de la troza (T3: única en el libro). */
   codigo: string;
+  /**
+   * ADR-474: el código impreso en la guía, sólo si difiere de `codigo` (la
+   * importada «12A (0000002)» dice «12A»). La lista de trozas imprime éste;
+   * todo lo que ata líneas del libro sigue usando `codigo`.
+   */
+  codigoGuia?: string | null;
   /** Árbol del que sale — agrupa la lista y la ordena como se trozó. */
   arbol: string | null;
   comun: string | null;
@@ -164,6 +170,15 @@ export function detallePorEspecie(
 const aCm = (m: number | null): number | null => (m == null || !Number.isFinite(m) ? null : Math.round(m * 1000) / 10);
 
 /**
+ * El código que imprime un papel (hoja SERFOR, relación de guías): el de la
+ * guía si difiere del único del libro (ADR-474: si no, el papel diría
+ * «12A (0000002)» y SNIFFS «12A»).
+ */
+export function codigoImpreso(it: { code?: string | null; codigoGuia?: string | null }): string {
+  return (it.codigoGuia ?? "").trim() || (it.code ?? "").trim();
+}
+
+/**
  * La LISTA DE TROZAS O CUARTONES A MOVILIZAR: una fila por troza, con su
  * codificación y sus tres medidas. D1 y D2 son los dos diámetros que el libro
  * midió al trozar (mayor y menor); el volumen es el del Trozado, sin
@@ -176,7 +191,8 @@ export function listaDeTrozas(
   return ordenarPiezas(piezas).map((p) => {
     const comun = txt(p.comun) || null;
     return {
-      codificacion: p.codigo,
+      /* ADR-474: el papel dice lo que dice la guía (SNIFFS), no el código único del libro. */
+      codificacion: txt(p.codigoGuia) || p.codigo,
       especieComun: comun,
       especieCientifica: txt(p.cientifico) || txt(comun ? cientificoDe?.(comun) : "") || null,
       producto: PRODUCTO_TROZA,
@@ -560,6 +576,8 @@ export function piezasDeItems(items: unknown): PiezaGuia[] {
     .filter((it): it is Record<string, unknown> => Boolean(it) && typeof it === "object")
     .map((it) => ({
       codigo: str(it.code) ?? "",
+      /* Sólo si la guía lo trae (ADR-474): las demás piezas quedan como siempre. */
+      ...(str(it.codigoGuia) ? { codigoGuia: str(it.codigoGuia) } : {}),
       arbol: str(it.treeCode),
       comun: str(it.species),
       cientifico: str(it.scientific),

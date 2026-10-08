@@ -20,6 +20,8 @@ import { limaDateKey } from "@/lib/utils";
 import { BarraFiltrosTabla, FiltroEnCabecera, SinCoincidenciasFila, useFiltrosTabla, type ColumnaFiltro, type FiltrosTabla } from "./filtros-tabla-forestal";
 import AccionesGtf from "./gtf-acciones-menu";
 import type { Gtf } from "./gtf-tabla-columnas";
+import { CasillaFilaGtf, CasillaTodasGtf, ElegirFiltradasMovil } from "./gtf-seleccion-casillas";
+import type { SeleccionGuias } from "./hooks/use-seleccion-guias";
 
 export type SituacionBaja = "Anulada" | "Eliminada";
 
@@ -96,6 +98,7 @@ export default function LothGtfBajas({
   onReintentar,
   onHoja,
   onResumen,
+  seleccion,
 }: {
   bajas: readonly Gtf[];
   cargando: boolean;
@@ -104,11 +107,14 @@ export default function LothGtfBajas({
   onReintentar: () => void;
   onHoja: (g: Gtf) => void;
   onResumen: (g: Gtf) => void;
+  /** Casillas para declarar las anuladas en un trámite (07-10). Una eliminada no se declara: sin casilla. */
+  seleccion?: SeleccionGuias;
 }) {
   const filas = useMemo(() => bajas.map(filaDeBaja), [bajas]);
   const f = useFiltrosTabla(filas, FILTROS_BAJAS);
   const filtradas = f.filtradas;
-  const COLUMNAS = 10;
+  const COLUMNAS = seleccion ? 11 : 10;
+  const idsAnuladas = useMemo(() => filtradas.filter((x) => x.situacion === "Anulada").map((x) => x.g.id), [filtradas]);
 
   if (cargando) return <div className="p-6 text-center text-[var(--text-tertiary)]"><Loader2 className="mx-auto h-5 w-5 animate-spin" aria-label="Cargando las guías dadas de baja" /></div>;
   if (error) {
@@ -127,6 +133,7 @@ export default function LothGtfBajas({
         <DataTable filtrable className="w-full text-sm" aria-label="Guías anuladas y eliminadas">
           <thead className="bg-[var(--surface-sunken)] text-left align-top">
             <tr>
+              {seleccion && <CasillaTodasGtf ids={idsAnuladas} sel={seleccion} etiqueta={`Elegir las ${idsAnuladas.length} anuladas filtradas`} />}
               <Th id="gtf" f={f}>N° GTF</Th>
               <Th id="situacion" f={f}>Situación</Th>
               <Th id="fecha" f={f}>Fecha</Th>
@@ -147,6 +154,9 @@ export default function LothGtfBajas({
                   key={g.id}
                   className={`border-t border-[var(--rule-soft)] ${g.gtfNumber === focusGtf ? "bg-[var(--data-info-500)]/15 outline outline-2 -outline-offset-2 outline-[var(--data-info-500)]" : ""}`}
                 >
+                  {seleccion && (fila.situacion === "Anulada"
+                    ? <CasillaFilaGtf id={g.id} numero={g.gtfNumber} sel={seleccion} />
+                    : <td data-label="Elegir" className="w-px px-1 py-1.5 text-center text-[var(--text-tertiary)]" title="Una guía eliminada no se declara">—</td>)}
                   <td data-label="N° GTF" className={TD}><span className="font-mono font-bold text-[var(--text-primary)] line-through decoration-[var(--data-error-500)]/60">{g.gtfNumber}</span></td>
                   <td data-label="Situación" className={TD}>
                     <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-bold ${ESTILO_SITUACION[fila.situacion]}`}>{fila.situacion}</span>
@@ -177,9 +187,12 @@ export default function LothGtfBajas({
         </DataTable>
       </div>
       {filtradas.length > 0 && (
-        <p className="text-sm font-semibold text-[var(--text-tertiary)]">
-          {filtradas.length === filas.length ? `${filas.length} guía${filas.length === 1 ? "" : "s"} dada${filas.length === 1 ? "" : "s"} de baja` : `${filtradas.length} de ${filas.length} guías dadas de baja`}
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm font-semibold text-[var(--text-tertiary)]">
+            {filtradas.length === filas.length ? `${filas.length} guía${filas.length === 1 ? "" : "s"} dada${filas.length === 1 ? "" : "s"} de baja` : `${filtradas.length} de ${filas.length} guías dadas de baja`}
+          </p>
+          {seleccion && <ElegirFiltradasMovil ids={idsAnuladas} sel={seleccion} />}
+        </div>
       )}
     </div>
   );

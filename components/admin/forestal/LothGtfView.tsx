@@ -43,6 +43,8 @@ import LothGtfBajas from "./LothGtfBajas";
 import CtpApartados, { CtpApartadoPanel } from "./ctp-apartados";
 import { useGtfBajas } from "./hooks/use-gtf-bajas";
 import { COLUMNAS_GTF, ORDEN_GTF_DEFECTO, type Gtf, type GtfItem } from "./gtf-tabla-columnas";
+import { useSeleccionGuias } from "./hooks/use-seleccion-guias";
+import LothGtfSeleccionBarra from "./LothGtfSeleccionBarra";
 
 /* Las columnas, su autofiltro y sus celdas viven en `gtf-tabla-columnas`; la tabla, en `LothGtfTabla` (07-10). */
 type PlanDeLaGuiaConId = PlanDeLaGuia & { id: string };
@@ -246,6 +248,12 @@ export default function LothGtfView({
     && !gtfs.some((g) => g.gtfNumber === focusGtf) && !bajas.bajas.some((g) => g.gtfNumber === focusGtf);
   /* Se llegó buscando una guía que está anulada: se abre «Anuladas y otras». */
   const vigentes = useMemo(() => gtfs.filter((g) => g.status !== "anulada"), [gtfs]);
+  /* Tildadas para un trámite (07-10): vigentes y anuladas; una borrada no se declara. */
+  const seleccion = useSeleccionGuias();
+  const elegidas = useMemo(
+    () => [...vigentes, ...bajas.bajas.filter((g) => !g.deletedAt)].filter((g) => seleccion.ids.has(g.id)),
+    [vigentes, bajas.bajas, seleccion.ids],
+  );
   useEffect(() => {
     if (!focusGtf || loading || bajas.cargando) return;
     if (!vigentes.some((g) => g.gtfNumber === focusGtf) && bajas.bajas.some((g) => g.gtfNumber === focusGtf)) setSeccion("bajas");
@@ -473,6 +481,7 @@ export default function LothGtfView({
             onResumen={(g) => void printGtf(g)}
             onAnular={setAnnulId}
             onRecargar={() => { void load(); tras(); }}
+            seleccion={seleccion}
           />
         </CtpApartadoPanel>
       )}
@@ -486,9 +495,11 @@ export default function LothGtfView({
             onReintentar={bajas.recargar}
             onHoja={imprimirHoja}
             onResumen={(g) => void printGtf(g)}
+            seleccion={seleccion}
           />
         </CtpApartadoPanel>
       )}
+      <LothGtfSeleccionBarra elegidas={elegidas} onLimpiar={seleccion.limpiar} />
     </div>
   );
 }
@@ -892,7 +903,7 @@ function printGtfOficial(g: Gtf, caratula: LothGtfCaratula | null) {
 
 async function printGtf(g: Gtf) {
   const items = Array.isArray(g.items) ? g.items : [];
-  const rows = items.map((x, i) => `<tr><td>${i + 1}</td><td>${esc(x.code)}</td><td>${esc(x.species)}${x.cites ? " <b>(CITES)</b>" : ""}</td><td style="text-align:right">${x.diamMayorM != null ? Number(x.diamMayorM).toFixed(2) : ""}</td><td style="text-align:right">${x.diamMenorM != null ? Number(x.diamMenorM).toFixed(2) : ""}</td><td style="text-align:right">${x.lengthM != null ? Number(x.lengthM).toFixed(2) : ""}</td><td style="text-align:right">${x.volumeM3 != null ? fmtM3(x.volumeM3) : ""}</td></tr>`).join("");
+  const rows = items.map((x, i) => `<tr><td>${i + 1}</td><td>${esc(x.code)}${x.codigoGuia && x.codigoGuia.trim() !== (x.code ?? "").trim() ? `<br><small>en la guía: ${esc(x.codigoGuia)}</small>` : ""}</td><td>${esc(x.species)}${x.cites ? " <b>(CITES)</b>" : ""}</td><td style="text-align:right">${x.diamMayorM != null ? Number(x.diamMayorM).toFixed(2) : ""}</td><td style="text-align:right">${x.diamMenorM != null ? Number(x.diamMenorM).toFixed(2) : ""}</td><td style="text-align:right">${x.lengthM != null ? Number(x.lengthM).toFixed(2) : ""}</td><td style="text-align:right">${x.volumeM3 != null ? fmtM3(x.volumeM3) : ""}</td></tr>`).join("");
   const vol = g.volumenTotalM3 ? Number(g.volumenTotalM3).toFixed(4) : "0";
 
   // QR real: codifica una cadena de verificación interna escaneable
@@ -937,7 +948,7 @@ async function printGtf(g: Gtf) {
       <div><span class="k">Origen → Destino:</span> <span class="v">${esc(g.origen ?? "—")} → ${esc(g.destino ?? "—")}</span></div>
     </div></div>
     <h3 style="margin:14px 0 0">Lista de trozas / productos</h3>
-    <table><thead><tr><th>N°</th><th>Código</th><th>Especie</th><th>Ø may (m)</th><th>Ø men (m)</th><th>Long. (m)</th><th>Vol. (m³)</th></tr></thead><tbody>${rows}</tbody></table>
+    <table><thead><tr><th>N°</th><th>Código único</th><th>Especie</th><th>Ø may (m)</th><th>Ø men (m)</th><th>Long. (m)</th><th>Vol. (m³)</th></tr></thead><tbody>${rows}</tbody></table>
     <div class="tot">Volumen total: ${vol} m³ · ${items.length} piezas</div>
     ${g.observations ? `<div class="box"><span class="k">Observaciones:</span> ${esc(g.observations)}</div>` : ""}
     <div class="dj">Declaración jurada: la información consignada es veraz y los productos provienen del título habilitante señalado. La presente guía no presenta enmendaduras ni alteraciones.</div>

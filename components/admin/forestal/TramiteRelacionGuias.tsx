@@ -280,56 +280,75 @@ function FilaEditable({
           : "border-[var(--rule-base)] bg-[var(--surface-canvas)]"
       }`}
     >
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-6">
+      {/* Tres filas en 12 columnas (la columna del formulario mide ~450 px a
+          1280: en dos filas el N° y la fecha salían cortados): identidad
+          (N°, fecha, cantidad), de quién (permiso, destinatario) y qué
+          llevaba (especie, producto). «Permiso» (07-10) lo trae la guía del
+          Libro TH; en una fila manual se tipea. */}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-12">
         <input
-          className={`${IC} sm:col-span-2`}
+          className={`${IC} sm:col-span-4`}
           placeholder="N° de GTF"
+          aria-label="N° de GTF"
           value={fila.numero}
           onChange={(e) => onEditar({ numero: e.target.value })}
         />
         <input
           type="date"
-          className={`${IC} sm:col-span-1`}
+          className={`${IC} sm:col-span-4`}
           value={fila.fecha}
           onChange={(e) => onEditar({ fecha: e.target.value })}
           aria-label="Fecha de la guía"
         />
         <input
-          className={`${IC} sm:col-span-3`}
-          placeholder="Destinatario"
-          value={fila.destinatario}
-          onChange={(e) => onEditar({ destinatario: e.target.value })}
-        />
-        <input
           className={`${IC} sm:col-span-2`}
-          placeholder="Especie"
-          value={fila.especie}
-          onChange={(e) => onEditar({ especie: e.target.value })}
-        />
-        <input
-          className={`${IC} sm:col-span-2`}
-          placeholder="Producto"
-          value={fila.producto}
-          onChange={(e) => onEditar({ producto: e.target.value })}
-        />
-        <input
-          className={`${IC} sm:col-span-1`}
           placeholder="Cantidad"
+          aria-label="Cantidad"
           value={fila.cantidad}
           onChange={(e) => onEditar({ cantidad: e.target.value })}
         />
         <input
-          className={`${IC} sm:col-span-1`}
+          className={`${IC} sm:col-span-2`}
           placeholder="Unidad"
+          aria-label="Unidad"
           value={fila.unidad}
           onChange={(e) => onEditar({ unidad: e.target.value })}
+        />
+        <input
+          className={`${IC} col-span-2 sm:col-span-6`}
+          placeholder="Permiso / título habilitante"
+          aria-label="Permiso o título habilitante"
+          value={fila.permiso ?? ""}
+          onChange={(e) => onEditar({ permiso: e.target.value })}
+        />
+        <input
+          className={`${IC} col-span-2 sm:col-span-6`}
+          placeholder="Destinatario"
+          aria-label="Destinatario"
+          value={fila.destinatario}
+          onChange={(e) => onEditar({ destinatario: e.target.value })}
+        />
+        <input
+          className={`${IC} sm:col-span-6`}
+          placeholder="Especie"
+          aria-label="Especie"
+          value={fila.especie}
+          onChange={(e) => onEditar({ especie: e.target.value })}
+        />
+        <input
+          className={`${IC} sm:col-span-6`}
+          placeholder="Producto"
+          aria-label="Producto"
+          value={fila.producto}
+          onChange={(e) => onEditar({ producto: e.target.value })}
         />
       </div>
 
       <textarea
-        rows={2}
-        className={`${IC} mt-2 h-auto py-1.5`}
-        placeholder="Lista de trozas: código y medida, una por línea"
+        rows={Math.min(6, Math.max(2, fila.trozas.split("\n").length))}
+        aria-label="Lista de trozas"
+        className={`${IC} mt-2 h-auto py-1.5 font-mono`}
+        placeholder="Lista de trozas: código único y medida, una por línea"
         value={fila.trozas}
         onChange={(e) => onEditar({ trozas: e.target.value })}
       />

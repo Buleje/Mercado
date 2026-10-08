@@ -45,6 +45,7 @@ import {
   type FormatoTramite,
 } from "@/lib/forestal/tramites-catalogo";
 import type { TramiteRegistro } from "@/lib/forestal/tramites-registro";
+import { sumarFilasExcluidas } from "@/lib/forestal/tramites-desde-guias";
 import type { CtpReportFicha } from "@/lib/forestal/ctp-print-shared";
 import {
   gtfDuplicadaEntreRelaciones,
@@ -129,6 +130,8 @@ export default function TramiteFormulario({
   auto,
   existente,
   seedDatos,
+  prellenado,
+  sumarGuias,
   tramites,
   onGuardar,
   onCerrar,
@@ -142,6 +145,15 @@ export default function TramiteFormulario({
    *  si `existente` está presente — no tiene sentido duplicar Y editar a
    *  la vez. */
   seedDatos?: DatosTramite | null;
+  /** Lo que traen las guías elegidas en la vista GTF del Libro TH (07-10): va
+   *  ENCIMA de lo que se llena solo y lo PISA donde coincide — el titular
+   *  (`entidadNombre`) pasa a ser el de las guías, mientras RUC y
+   *  representante siguen siendo los de la Ficha CTP (por eso el aviso de
+   *  titular distinto). Se ignora al editar o duplicar. */
+  prellenado?: DatosTramite | null;
+  /** «Incluirla igual» con el formulario ya abierto: filas de guías a SUMAR a
+   *  la tabla actual (`sumarFilasExcluidas`), sin rearmarlo ni borrar lo tipeado. */
+  sumarGuias?: { guiasJson: string; numeros: readonly string[] } | null;
   /** Todo el expediente del tenant — sólo se usa en formatos con `correlativo`
    *  (continuidad de período, historial, duplicados cruzados; ADR-364 ronda 4). */
   tramites: TramiteRegistro[];
@@ -216,10 +228,15 @@ export default function TramiteFormulario({
       const s = c.autollenado ? sugerido(c.id, auto) : "";
       if (s) base[c.id] = s;
     }
-    setDatos(base);
+    setDatos(prellenado ? { ...base, ...prellenado } : base);
     // `auto` cambia con el período; re-llenar al vuelo pisaría lo tipeado.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formato.id, existente, seedDatos]);
+  }, [formato.id, existente, seedDatos, prellenado]);
+
+  useEffect(() => {
+    if (!sumarGuias) return;
+    setDatos((p) => ({ ...p, guiasJson: sumarFilasExcluidas(p.guiasJson, sumarGuias.guiasJson, sumarGuias.numeros) }));
+  }, [sumarGuias]);
 
   const set = (id: string, valor: string) => setDatos((p) => ({ ...p, [id]: valor }));
   const faltantes = useMemo(() => faltantesDelTramite(formato, datos), [formato, datos]);

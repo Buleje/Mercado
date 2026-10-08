@@ -24,6 +24,7 @@ import { especieEnRegistro, mensajeEspecieFueraDelRegistro } from "@/lib/foresta
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { resumirUsoDelCenso, type UsoArbolCenso } from "@/lib/forestal/loth-censo-uso";
 import { estadoDeArboles as estadoDeArbolesDelLibro, type EstadoDeArbolesPlan } from "@/lib/forestal/loth-etapa-arbol";
+import { arbolesParaTrazar } from "@/lib/forestal/loth-importar-guia";
 import { ForestGtfDB } from "@/lib/db/forest-gtf.db";
 import { colaDeGtf, mismoNumeroGtf } from "@/lib/forestal/gtf-talonario";
 import { ESTADOS_SIN_INGRESO, GtfNumeroDB, GuiaYaEnElCtpError } from "@/lib/db/gtf-numero.db";
@@ -777,6 +778,13 @@ export class ForestLothDB {
       gtfNumber: string;
       gtfDate: Date;
       trozaCodes: string[];
+      /**
+       * ADR-474 (sólo el importador): código único del libro → el código como
+       * lo imprime la guía, cuando difieren («12A (0000002)» → «12A»). Va a
+       * `items[].codigoGuia`: la hoja SERFOR lo imprime para que el papel
+       * coincida con SNIFFS. El despacho desde el libro no lo manda.
+       */
+      codigosGuia?: ReadonlyMap<string, string>;
       gtfDatos: GtfDatos;
       titularName: string | null;
       observations?: string | null;
@@ -861,8 +869,10 @@ export class ForestLothDB {
     const n = (v: Prisma.Decimal | null) => (v == null ? null : Number(v));
     const items = codes.map((code) => {
       const t = porCodigo.get(code);
+      const codigoGuia = input.codigosGuia?.get(code)?.trim();
       return {
         code,
+        ...(codigoGuia && codigoGuia !== code ? { codigoGuia } : {}),
         treeCode: t?.treeCode ?? null,
         species: t?.speciesCommon ?? null,
         scientific: t?.speciesScientific ?? null,
@@ -2914,15 +2924,18 @@ export class ForestLothDB {
     if (!tenantId) throw new Error("tenantId is required");
     const norm = code.trim();
     if (!norm) return null;
-    // El código de troza es <árbol>-<sufijo>; derivamos el árbol raíz.
-    const treeRoot = norm.includes("-") ? norm.replace(/-[A-Za-z0-9]+$/, "") : norm;
+    // El árbol raíz del código: «85-TOR-A», «186A» y el único de ADR-474
+    // «12-A (0000002)» (el paréntesis rompía la regla vieja del guion).
+    const raices = arbolesParaTrazar(norm);
+    const treeRoot = raices[0] ?? norm;
 
     const entries = await prisma.forestLothEntry.findMany({
       where: {
         tenantId, deletedAt: null, status: "registrado",
         OR: [
-          { treeCode: treeRoot }, { treeCode: norm },
-          { trozaCode: norm }, { trozaCode: treeRoot }, { trozaCode: { startsWith: `${treeRoot}-` } },
+          { treeCode: { in: [...raices, norm] } },
+          { trozaCode: { in: [...raices, norm] } },
+          ...raices.map((r) => ({ trozaCode: { startsWith: `${r}-` } })),
         ],
       },
       orderBy: [{ entryDate: "asc" }, { lineNo: "asc" }],

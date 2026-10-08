@@ -76,6 +76,8 @@ function montar(g: GuiaVistaPrevia, abiertaDeEntrada: boolean) {
       abiertaDeEntrada={abiertaDeEntrada}
       motivoCupo=""
       onMotivoCupo={vi.fn()}
+      renombresOk={[]}
+      onRenombres={vi.fn()}
     />,
   );
 }

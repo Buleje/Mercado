@@ -38,6 +38,7 @@ import LothImportarGuiasPestanas, {
 } from "./LothImportarGuiasPestanas";
 import LothImportarGuiasTrozas from "./LothImportarGuiasTrozas";
 import LothImportarGuiasCupo, { InfoT6 } from "./LothImportarGuiasCupo";
+import LothImportarGuiasRenombres from "./LothImportarGuiasRenombres";
 
 const ETIQUETA_ESTADO: Record<
   GuiaVistaPrevia["estado"],
@@ -69,6 +70,8 @@ export default function LothImportarGuiasGuia({
   abiertaDeEntrada,
   motivoCupo,
   onMotivoCupo,
+  renombresOk,
+  onRenombres,
 }: {
   g: GuiaVistaPrevia;
   incluida: boolean;
@@ -83,6 +86,9 @@ export default function LothImportarGuiasGuia({
   /** T9 (y T6 de una guía verificada, ADR-468): el motivo escrito para pasar lo autorizado (sin él, la guía no entra). */
   motivoCupo: string;
   onMotivoCupo: (texto: string) => void;
+  /** ADR-474: los códigos únicos confirmados como OTRAS trozas (y cómo confirmarlos). */
+  renombresOk: readonly string[];
+  onRenombres: (codigos: string[] | null) => void;
 }) {
   /* Con el interruptor de la tala apagado vale el estado «sin tala» y sus avisos de tala no aplican. */
   const est = ETIQUETA_ESTADO[estadoEfectivo(g, conTala)];
@@ -187,6 +193,14 @@ export default function LothImportarGuiasGuia({
           t6={sobreAutorizadoConMotivo(g)}
           motivo={motivoCupo}
           onMotivo={onMotivoCupo}
+          activa={incluida}
+        />
+      )}
+      {importable && (
+        <LothImportarGuiasRenombres
+          trozas={g.trozas}
+          confirmados={renombresOk}
+          onConfirmar={onRenombres}
           activa={incluida}
         />
       )}

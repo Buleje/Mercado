@@ -12,6 +12,9 @@
  *
  * Sólo se ofrece en las guías que guardaron la ficha (`gtfDatos.fichaSerfor`,
  * desde el 02-10 noche): una anotada a mano no tiene una «ficha de SERFOR».
+ *
+ * ADR-474 (07-10): la lista dice el «Código único» de cada troza en el libro y,
+ * si alguna se renombró al importar («12A (0000002)»), también «En la guía».
  */
 
 import { useId, useMemo, useState } from "react";
@@ -55,6 +58,8 @@ export default function ModalFichaImportada({
     () => piezas.map((p) => ({ comun: p.comun, cientifico: p.cientifico, m3: p.volumeM3 })),
     [piezas],
   );
+  /* «En la guía» sólo si alguna troza entró con otro código que el impreso. */
+  const conCodigoGuia = piezas.some((p) => p.codigoGuia && p.codigoGuia !== p.codigo);
   const [pestana, setPestana] = useState<"gtf" | "trozas">("gtf");
   const idBase = useId();
   if (!leida) return null;
@@ -105,7 +110,8 @@ export default function ModalFichaImportada({
                   </caption>
                   <thead className="bg-[var(--surface-sunken)]">
                     <tr>
-                      <th className={TH}>Código</th>
+                      <th className={TH}>Código único</th>
+                      {conCodigoGuia && <th className={TH}>En la guía</th>}
                       <th className={TH}>Especie</th>
                       <th className={`${TH} text-right`}>D1 (m)</th>
                       <th className={`${TH} text-right`}>D2 (m)</th>
@@ -117,6 +123,9 @@ export default function ModalFichaImportada({
                     {piezas.map((p, i) => (
                       <tr key={`${p.codigo}-${i}`}>
                         <td className={`${TD} font-mono font-semibold text-[var(--text-primary)]`}>{p.codigo || "—"}</td>
+                        {conCodigoGuia && (
+                          <td className={`${TD} font-mono text-[var(--text-secondary)]`}>{p.codigoGuia ?? p.codigo}</td>
+                        )}
                         <td className={`${TD} text-[var(--text-secondary)]`}>{p.comun ?? "—"}</td>
                         <td className={`${TD} text-right font-mono tabular-nums`}>{m(p.diamMayorM)}</td>
                         <td className={`${TD} text-right font-mono tabular-nums`}>{m(p.diamMenorM)}</td>

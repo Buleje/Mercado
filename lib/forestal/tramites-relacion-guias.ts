@@ -14,6 +14,7 @@
  */
 
 import { esc } from "./ctp-print-shared";
+import { codigoImpreso } from "./loth-guia-despacho";
 import type { GuiaEmitida } from "./guias-emitidas";
 import type { TramiteRegistro } from "./tramites-registro";
 
@@ -34,6 +35,8 @@ export interface FilaGuiaInforme {
   anulada: boolean;
   /** Sólo tiene sentido si `anulada`. */
   motivo: string;
+  /** Permiso / título habilitante de la guía (vacío en filas viejas o manuales). */
+  permiso?: string;
   /**
    * De dónde salió la fila — para que el operador sepa qué está verificado
    * contra un libro y qué tipeó a mano:
@@ -84,7 +87,16 @@ export function filaDesdeGuiaEmitida(uid: string, g: GuiaEmitida): FilaGuiaInfor
 
 /** Un ítem (troza) de una `ForestGtf` del Libro de Títulos Habilitantes. */
 export interface ItemGtfLoth {
+  /** Código ÚNICO de la troza en el libro (`trozaCode`). */
   code?: string | null;
+  /**
+   * El código tal como viene impreso en la guía, sólo si difiere del único
+   * (ADR-474: «12A» que ya salió con otra guía del mismo permiso → `code`
+   * «12A (0000002)», `codigoGuia` «12A»). La hoja SERFOR y la relación
+   * imprimen éste (`codigoImpreso`).
+   */
+  codigoGuia?: string | null;
+  treeCode?: string | null;
   species?: string | null;
   diamMayorM?: number | null;
   diamMenorM?: number | null;
@@ -102,6 +114,8 @@ export interface GtfLothLike {
   volumenTotalM3?: number | null;
   status: string;
   annulledReason?: string | null;
+  /** El permiso / título habilitante que cita la guía. */
+  tituloHabilitante?: string | null;
   items: ItemGtfLoth[];
 }
 
@@ -111,12 +125,15 @@ export interface GtfLothLike {
  * que no se sabe se declara vacío, no con un signo que parece un dato real.
  */
 function lineaDeItem(it: ItemGtfLoth): string {
+  /* El código como lo imprime la guía (ADR-474): lo que va a SERFOR tiene que
+     coincidir con SNIFFS, no con el código único del libro («12A (0000002)»). */
+  const codigo = codigoImpreso(it) || null;
   const diam =
     it.diamMayorM != null || it.diamMenorM != null
       ? `Ø${it.diamMayorM ?? "—"}/${it.diamMenorM ?? "—"}m`
       : null;
   const largo = it.lengthM != null ? `L${it.lengthM}m` : null;
-  return [it.code, it.species, diam, largo, it.volumeM3 != null ? `${it.volumeM3} m³` : null]
+  return [codigo, it.species, diam, largo, it.volumeM3 != null ? `${it.volumeM3} m³` : null]
     .filter(Boolean)
     .join(" · ");
 }
@@ -141,6 +158,7 @@ export function filaDesdeGtfLoth(uid: string, g: GtfLothLike): FilaGuiaInforme {
     trozas: items.map(lineaDeItem).join("\n"),
     anulada: g.status === "anulada",
     motivo: g.annulledReason ?? "",
+    permiso: g.tituloHabilitante?.trim() ?? "",
     origen: "loth",
   });
 }
@@ -207,6 +225,7 @@ export function parseGuiasInforme(json: string | undefined | null): FilaGuiaInfo
       trozas: s(o.trozas),
       anulada: Boolean(o.anulada),
       motivo: s(o.motivo),
+      permiso: s(o.permiso),
       origen: o.origen === "ctp" || o.origen === "loth" ? o.origen : "manual",
     } satisfies FilaGuiaInforme;
   });
@@ -222,11 +241,12 @@ const fmtFechaCorta = (iso: string): string => {
 const HEAD_GUIAS = ["N° de GTF", "Fecha", "Destinatario", "Especie / producto", "Cantidad"];
 const HEAD_TROZAS = ["N° de GTF", "Detalle de trozas"];
 
-function filaHtml(f: FilaGuiaInforme, conMotivo: boolean): string {
+function filaHtml(f: FilaGuiaInforme, conMotivo: boolean, conPermiso: boolean): string {
   const cantidad = f.cantidad.trim() ? esc(`${f.cantidad} ${f.unidad}`.trim()) : "—";
   return `<tr>
     <td>${esc(f.numero || "—")}</td>
     <td>${esc(fmtFechaCorta(f.fecha))}</td>
+    ${conPermiso ? `<td>${esc(f.permiso?.trim() || "—")}</td>` : ""}
     <td>${esc(f.destinatario || "—")}</td>
     <td>${esc([f.especie, f.producto].filter(Boolean).join(" · ") || "—")}</td>
     <td>${cantidad}</td>
@@ -243,10 +263,13 @@ function filaTrozasHtml(f: FilaGuiaInforme): string {
 
 /** Tabla de identidad de la guía (sin trozas) — N°/fecha/destinatario/especie/cantidad. */
 function tablaGuias(filas: FilaGuiaInforme[], conMotivo: boolean, vacio: string): string {
-  const head = conMotivo ? [...HEAD_GUIAS, "Motivo de anulación"] : HEAD_GUIAS;
+  /* «Permiso» sólo si alguna fila lo trae: las relaciones viejas o manuales se imprimen como antes. */
+  const conPermiso = filas.some((f) => f.permiso?.trim());
+  const base = conPermiso ? [...HEAD_GUIAS.slice(0, 2), "Permiso", ...HEAD_GUIAS.slice(2)] : HEAD_GUIAS;
+  const head = conMotivo ? [...base, "Motivo de anulación"] : base;
   return filas.length
     ? `<table class="tabla-guias"><thead><tr>${head.map((h) => `<th>${esc(h)}</th>`).join("")}</tr></thead>
-       <tbody>${filas.map((f) => filaHtml(f, conMotivo)).join("")}</tbody></table>`
+       <tbody>${filas.map((f) => filaHtml(f, conMotivo, conPermiso)).join("")}</tbody></table>`
     : `<p class="vacio">${esc(vacio)}</p>`;
 }
 
@@ -279,7 +302,9 @@ const listaOGuion = (items: string[]): string => (items.length ? `${items.join("
  *  carta, sin abrir el anexo. Sin filas, muestra "—" (no desaparece): mismo
  *  criterio que el Anexo 1, que siempre se ve aunque esté vacío. */
 function bloqueNumerado(titulo: string, filas: FilaGuiaInforme[]): string {
+  const permisos = [...new Set(filas.map((f) => f.permiso?.trim() ?? "").filter(Boolean))];
   return `<p><strong>${esc(titulo)}:</strong></p>
+    ${permisos.length ? `<p><strong>Permiso:</strong> ${esc(listaOGuion(permisos))}</p>` : ""}
     <p><strong>Guía de Transporte Forestal:</strong> ${esc(listaOGuion(numerosGuia(filas)))}</p>
     <p><strong>Lista de trozas:</strong> ${esc(listaOGuion(codigosDeTrozas(filas)))}</p>`;
 }

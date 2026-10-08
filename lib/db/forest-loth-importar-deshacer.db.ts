@@ -50,6 +50,7 @@ import {
   type AccionSobreTala,
 } from "@/lib/forestal/loth-importar-guia-deshacer";
 import type { DeshacerImportacion, TalaDeshecha } from "@/lib/forestal/loth-importar-guia-tipos";
+import { motivoImportacionDeshecha } from "@/lib/forestal/tramites-desde-guias";
 
 /** Unas decenas de consultas: holgado aun desde la PC por el pooler (~108 ms cada una). */
 const DESHACER_TX_OPTS = { timeout: 60_000, maxWait: 15_000 } as const;
@@ -357,7 +358,8 @@ export class ForestLothDeshacerImportacionDB {
     const razon = `Se deshizo la importación de la GTF ${e.gtfNumber}: ${motivo}`.slice(0, 500);
     await tx.forestGtf.update({
       where: { id: e.gtfId, tenantId } satisfies Prisma.ForestGtfWhereUniqueInput,
-      data: { status: "anulada", annulledReason: `Importación deshecha: ${motivo}`.slice(0, 500) },
+      /* El texto sale de la constante que lee la relación de Trámites (`esImportacionDeshecha`). */
+      data: { status: "anulada", annulledReason: motivoImportacionDeshecha(motivo) },
     });
     const anular = [
       ...e.despachos.map((d) => d.id),

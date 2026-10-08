@@ -174,6 +174,8 @@ export const pedidoImportarSchema = z.object({
           .optional(),
         /* T6 (ADR-468): la persona vio el despacho sobre lo autorizado. Consentimiento, no permiso. */
         confirmaDespacho: z.boolean().optional(),
+        /* ADR-474: los códigos únicos (`12A (0000002)`) confirmados como trozas DISTINTAS. */
+        confirmaRenombres: z.array(z.string().trim().min(1).max(120)).max(500).optional(),
       }),
     )
     .min(1, "Elige al menos una guía")

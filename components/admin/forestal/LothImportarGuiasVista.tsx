@@ -100,6 +100,8 @@ function GrupoDeGuias({
             abiertaDeEntrada={pocas}
             motivoCupo={s.motivosCupo[g.clave] ?? ""}
             onMotivoCupo={(texto) => s.escribirMotivoCupo(g.clave, texto)}
+            renombresOk={s.renombresOk[g.clave] ?? []}
+            onRenombres={(codigos) => s.confirmarRenombres(g.clave, codigos)}
           />
         ))}
       </div>

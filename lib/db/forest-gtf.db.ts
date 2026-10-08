@@ -422,6 +422,31 @@ export class ForestGtfDB {
   }
 
   /**
+   * Las guías elegidas en la vista GTF para llenar un trámite (Brandon 07-10:
+   * «seleccionar las guías y usar ese formato»). Vigentes y anuladas; las
+   * borradas no (no se declara a SERFOR un registro que el libro dio de baja).
+   */
+  static async porIds(tenantId: string, ids: readonly string[]) {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (ids.length === 0) return [];
+    return prisma.forestGtf.findMany({
+      where: { tenantId, id: { in: [...ids] }, deletedAt: null },
+      orderBy: [{ gtfDate: "asc" }, { gtfNumber: "asc" }],
+      take: 200,
+    });
+  }
+
+  /** N° de las guías vigentes (ni anuladas ni borradas): ¿una anulada se volvió a registrar? */
+  static async numerosVigentes(tenantId: string): Promise<string[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const filas = await prisma.forestGtf.findMany({
+      where: { tenantId, deletedAt: null, status: { not: "anulada" } },
+      select: { gtfNumber: true },
+    });
+    return filas.map((f) => f.gtfNumber);
+  }
+
+  /**
    * Guías de trozas EMITIDAS en el Libro de Títulos Habilitantes que todavía no
    * tienen ingreso VIGENTE en el CTP — la bandeja "monte → planta" (rec #9 del
    * QA 2026-07-17: cerrar la trazabilidad sin doble digitación).

@@ -131,6 +131,8 @@ export function useImportarGuias({ onImportadas }: { onImportadas: () => void })
   const [tanda, setTanda] = useState<ContextoTanda | null>(null);
   /** T9: el motivo escrito por guía (clave → texto) para pasar lo autorizado. */
   const [motivosCupo, setMotivosCupo] = useState<Record<string, string>>({});
+  /** ADR-474: por guía, los códigos únicos (`12A (0000002)`) que la persona confirmó como OTRAS trozas. */
+  const [renombresOk, setRenombresOk] = useState<Record<string, string[]>>({});
   const [envio, setEnvio] = useState<Envio>(ENVIO_VACIO);
   const pedido = useRef(0);
   /** «Detener»: termina la guía en curso y no manda la siguiente. También al cerrar el modal. */
@@ -217,6 +219,7 @@ export function useImportarGuias({ onImportadas }: { onImportadas: () => void })
       setExcluidas(new Set());
       setTanda(j.tanda ?? null);
       setMotivosCupo({});
+      setRenombresOk({});
       setAlDirectorio(Object.fromEntries(j.guias.map((g) => [g.clave, decisionesDirectorioIniciales(g.directorio)])));
       setVista({ cargando: false, error: null, guias: j.guias });
     } catch (err) {
@@ -297,6 +300,16 @@ export function useImportarGuias({ onImportadas }: { onImportadas: () => void })
     setMotivosCupo((m) => ({ ...m, [clave]: texto }));
   }, []);
 
+  /** ADR-474: confirma (o retira) los renombres que la guía muestra AHORA. */
+  const confirmarRenombres = useCallback((clave: string, codigos: readonly string[] | null) => {
+    setRenombresOk((r) => {
+      const n = { ...r };
+      if (codigos && codigos.length) n[clave] = [...codigos];
+      else delete n[clave];
+      return n;
+    });
+  }, []);
+
   const incluir = useCallback((clave: string, on: boolean) => {
     setExcluidas((prev) => {
       const s = new Set(prev);
@@ -317,6 +330,8 @@ export function useImportarGuias({ onImportadas }: { onImportadas: () => void })
     const faltaMotivo: string[] = [];
     /** Guías que despacharían más de lo autorizado (T6): no entran ni con motivo. */
     const pasanDespacho: string[] = [];
+    /** ADR-474: guías con códigos renombrados sin confirmar: la ruta las rechazaría. */
+    const faltaRenombre: string[] = [];
     for (const grupo of grupos) {
       const d = decisiones[grupo.clave];
       const crearTala = d?.crearTala ?? false;
@@ -335,6 +350,12 @@ export function useImportarGuias({ onImportadas }: { onImportadas: () => void })
           faltaMotivo.push(g.guia?.gtfNumber ? `GTF ${g.guia.gtfNumber}` : g.clave);
           continue;
         }
+        const renombres = g.trozas.filter((t) => t.estado === "renombrada").map((t) => t.trozaCode);
+        const confirmados = renombresOk[g.clave] ?? [];
+        if (renombres.some((c) => !confirmados.includes(c))) {
+          faltaRenombre.push(g.guia?.gtfNumber ? `GTF ${g.guia.gtfNumber}` : g.clave);
+          continue;
+        }
         /* T9 contra lo autorizado, o T6 de una guía verificada (ADR-468): el mismo motivo. */
         const conMotivo = pideMotivo(g, crearTala);
         const directorio = pedidoDirectorio(g.directorio, alDirectorio[g.clave] ?? {});
@@ -348,10 +369,11 @@ export function useImportarGuias({ onImportadas }: { onImportadas: () => void })
             ...(conMotivo && motivo ? { motivoSobreCupo: motivo.trim() } : {}),
             /* T6 (ADR-468): sólo si la vista mostró el despacho sobre lo autorizado y se escribió el motivo. */
             ...(g.t6ConMotivo && motivo ? { confirmaDespacho: true } : {}),
+            ...(renombres.length ? { confirmaRenombres: renombres } : {}),
           },
         });
         fichas += cuantasAlDirectorio(directorio);
-        trozas += g.trozas.filter((t) => t.estado === "nueva").length;
+        trozas += g.trozas.filter((t) => t.estado === "nueva" || t.estado === "renombrada").length;
         m3 += g.guia?.volumenTrozasM3 ?? 0;
       }
     }
@@ -362,8 +384,8 @@ export function useImportarGuias({ onImportadas }: { onImportadas: () => void })
         gtfNumber: x.g.guia?.gtfNumber ?? null,
       })),
     );
-    return { listas: ordenadas, trozas, m3, fichas, faltaPermiso: [...new Set(faltaPermiso)], faltaMotivo, pasanDespacho };
-  }, [grupos, decisiones, excluidas, alDirectorio, motivosCupo]);
+    return { listas: ordenadas, trozas, m3, fichas, faltaPermiso: [...new Set(faltaPermiso)], faltaMotivo, pasanDespacho, faltaRenombre };
+  }, [grupos, decisiones, excluidas, alDirectorio, motivosCupo, renombresOk]);
 
   /** Importa de a una, por fecha. Lo que ya entró queda aunque se detenga o falle la red. */
   const confirmar = useCallback(async () => {
@@ -438,6 +460,8 @@ export function useImportarGuias({ onImportadas }: { onImportadas: () => void })
     decidirDirectorio,
     motivosCupo,
     escribirMotivoCupo,
+    renombresOk,
+    confirmarRenombres,
     plan,
     envio,
     respuesta: respuestaDe(envio.resultados),
