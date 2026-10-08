@@ -109,7 +109,8 @@ describe("ActividadView — lo dado y lo recibido en el mismo feed", () => {
     const dado = ad({ id: "5", beneficiario: { id: "b1", nombre: "Ana" } as never });
     const recibido = ad({ id: "6", beneficiario: { id: "b2", nombre: "WASACO" } as never, direccion: "RECIBIDO", conceptoRecibido: "SERVICIO" });
     render(<ActividadView adelantos={[dado, recibido]} loading={false} />);
-    await userEvent.click(screen.getByText("Sólo recibiste"));
+    /* Desde N20e (08-10) la dirección es un desplegable, no tres chips. */
+    await userEvent.selectOptions(screen.getByLabelText("Dirección de la plata"), "RECIBIDO");
     expect(screen.queryByText("Diste a Ana")).toBeNull();
     expect(screen.getByText("Recibiste de WASACO")).toBeTruthy();
   });

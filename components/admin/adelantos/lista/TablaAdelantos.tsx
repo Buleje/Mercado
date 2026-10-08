@@ -148,17 +148,21 @@ export default function TablaAdelantos({
               scroll a los lados") — Persona es la ÚNICA columna sin ancho
               fijo, así que absorbe el espacio sobrante y el resto trunca con
               `truncate`/`title` en vez de forzar overflow. */}
-          <DataTable className="w-full table-fixed text-base">
-            <colgroup>
+          {/* Bajo 640 px la tabla se vuelve tarjetas (`.admin-mobile-cards`):
+              ahí los `<col>` y el `table-fixed` metían el `tbody` en la
+              primera columna y cada tarjeta medía 148 px de ancho en un
+              teléfono de 400 (medido 08-10, ya pasaba antes). */}
+          <DataTable className="w-full text-base sm:table-fixed">
+            <colgroup className="max-sm:hidden">
               <col style={{ width: 148 }} />
               <col />
-              <col style={{ width: 70 }} />
+              <col style={{ width: 96 }} />
               <col className="hidden xl:table-column" style={{ width: 128 }} />
               <col style={{ width: 98 }} />
               <col style={{ width: 88 }} />
               <col style={{ width: 98 }} />
               <col style={{ width: 72 }} />
-              <col style={{ width: 145 }} />
+              <col style={{ width: 96 }} />
             </colgroup>
             <thead className="bg-[var(--surface-sunken)] text-sm text-[var(--text-tertiary)]">
               <tr>
@@ -289,11 +293,16 @@ export default function TablaAdelantos({
                     <td className="px-2.5 py-2.5 text-right">
                       <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
                         {a.status === "ABIERTO" && (
+                          /* Ícono + tooltip (ley de la vista, 6): la fila
+                             entera ya abre la ficha; esto es el atajo visible
+                             de «cobrar», no un botón con texto por fila. */
                           <button
                             onClick={() => onVerDetalle(a)}
-                            className="inline-flex h-9 items-center gap-1 whitespace-nowrap rounded-xl border-2 border-primary px-3 text-sm font-bold text-[var(--accent-ink)] transition-colors hover:bg-primary/10 dark:text-[var(--accent)]"
+                            title="Registrar una entrega"
+                            aria-label={`Registrar una entrega de ${a.beneficiario?.nombre ?? "este adelanto"}`}
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border-2 border-primary text-[var(--accent-ink)] transition-colors hover:bg-primary/10 dark:text-[var(--accent)]"
                           >
-                            <Plus className="h-4 w-4" /> Entrega
+                            <Plus className="h-4 w-4" />
                           </button>
                         )}
                         <FilaAcciones

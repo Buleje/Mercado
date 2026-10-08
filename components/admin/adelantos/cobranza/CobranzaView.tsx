@@ -16,7 +16,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
-import { CheckCircle, FileText, MessageCircle, Search, Settings2, Target } from "@buleje/design-system/icons";
+import { CheckCircle, CheckSquare, FileText, MessageCircle, Search, Settings2, Target } from "@buleje/design-system/icons";
+import ActionMenu from "@/components/admin/shared/action-menu";
 import { formatCurrency } from "@/lib/currency";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
@@ -166,6 +167,10 @@ export default function CobranzaView({
     });
     return ordenarPorUrgencia(base);
   }, [deudores, tramo, q]);
+  /* «Marcar a todos» = los que tienen teléfono y se ven (mismo criterio que el
+     botón que vivía suelto antes de pasar al «⋯»). */
+  const conTelefonoVisibles = filtrados.filter((d) => d.telefono).map(claveFila);
+  const todosMarcados = tanda.size > 0 && tanda.size >= conTelefonoVisibles.length;
 
   useEffect(() => setTanda(new Set()), [tramo, q]);
 
@@ -321,65 +326,74 @@ export default function CobranzaView({
         ))}
       </div>
 
-      {/* ── Buscar + herramientas ─────────────────────────────────────── */}
-      <div className="flex flex-wrap items-center gap-2">
-        {/* min-w-[220px] NO alcanza acá: el reset `* { min-width: 0 }` sin capa de
-            globals.css le gana a @layer utilities (memoria min-width-utilities-muertas)
-            — el buscador se aplastaba a ~40px ("Bu" nomás) apenas compartía fila con
-            "Marcar todos". El estilo inline es el escape probado en POSSearchBar. */}
-        <div className="relative flex-1 sm:max-w-xs" style={{ minWidth: 220 }}>
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--text-tertiary)]" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Buscar deudor…"
-            aria-label="Buscar deudor"
-            className="h-11 w-full rounded-xl bg-[var(--surface-sunken)] pl-11 pr-4 text-base text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30"
-          />
-        </div>
-        <button
-          onClick={() => {
-            const conTelefono = filtrados.filter((d) => d.telefono).map(claveFila);
-            setTanda((prev) => (prev.size >= conTelefono.length && prev.size > 0 ? new Set() : new Set(conTelefono)));
-          }}
-          className="h-11 rounded-xl bg-[var(--surface-sunken)] px-3.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
-        >
-          Marcar todos
-        </button>
-        <button
-          onClick={() => setEnLlamada(true)}
-          disabled={filtrados.length === 0}
-          title="Una persona a la vez, en grande"
-          className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-[var(--surface-sunken)] px-3.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)] disabled:opacity-50"
-        >
-          <MessageCircle className="h-4 w-4" /> Modo llamada
-        </button>
-        <button
-          onClick={() => setVerPlantillas(true)}
-          title="Qué se le escribe a cada tramo"
-          className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-[var(--surface-sunken)] px-3.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
-        >
-          <Settings2 className="h-4 w-4" /> Mensajes
-        </button>
-        <button
-          onClick={exportarPdf}
-          className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-[var(--surface-sunken)] px-3.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
-        >
-          <FileText className="h-4 w-4" /> PDF
-        </button>
-        {sinTelefono > 0 && (
-          <span className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--data-warning)]/10 px-3 py-1.5 text-sm font-semibold text-[var(--data-warning)]">
-            {sinTelefono} sin teléfono
-          </span>
-        )}
-      </div>
-
       {/* ── La lista ──────────────────────────────────────────────────── */}
       <div className="rounded-xl bg-[var(--surface-raised)] p-3 ring-1 ring-[var(--rule-soft)]">
-        <CardTitle className="mb-1 px-1 text-base font-extrabold text-[var(--text-primary)]">
-          {filtrados.length} deudor{filtrados.length === 1 ? "" : "es"}
-          {tramo !== "todos" && <span className="font-semibold text-[var(--text-tertiary)]"> de {deudores.length}</span>}
-        </CardTitle>
+        {/* Título + buscador + herramientas en UNA fila, pegados a la lista que
+            filtran (ley de la vista, 5 y 6). «Marcar todos», «Mensajes» y «PDF»
+            se usan una vez por ronda: van al «⋯»; «Modo llamada» queda a la
+            vista porque ES la forma de cobrar. */}
+        <div className="mb-2 flex flex-wrap items-center gap-2 px-1">
+          <CardTitle className="mr-auto text-base font-extrabold text-[var(--text-primary)]">
+            {filtrados.length} deudor{filtrados.length === 1 ? "" : "es"}
+            {tramo !== "todos" && <span className="font-semibold text-[var(--text-tertiary)]"> de {deudores.length}</span>}
+          </CardTitle>
+          {sinTelefono > 0 && (
+            <span className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--data-warning)]/10 px-3 py-1.5 text-sm font-semibold text-[var(--data-warning)]">
+              {sinTelefono} sin teléfono
+            </span>
+          )}
+          {/* min-w-[220px] NO alcanza acá: el reset `* { min-width: 0 }` sin capa de
+              globals.css le gana a @layer utilities (memoria min-width-utilities-muertas)
+              — el buscador se aplastaba a ~40px ("Bu" nomás) apenas compartía fila con
+              "Marcar todos". El estilo inline es el escape probado en POSSearchBar. */}
+          <div className="relative flex-1 sm:max-w-xs" style={{ minWidth: 220 }}>
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--text-tertiary)]" />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Buscar deudor…"
+              aria-label="Buscar deudor"
+              className="h-11 w-full rounded-xl bg-[var(--surface-sunken)] pl-11 pr-4 text-base text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30"
+            />
+          </div>
+          <button
+            onClick={() => setEnLlamada(true)}
+            disabled={filtrados.length === 0}
+            title="Una persona a la vez, en grande"
+            className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-[var(--surface-sunken)] px-3.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)] disabled:opacity-50"
+          >
+            <MessageCircle className="h-4 w-4" /> Modo llamada
+          </button>
+          <ActionMenu
+            label="Más herramientas de cobranza"
+            soloIcono
+            size="sm"
+            actions={[
+              {
+                id: "marcar",
+                label: todosMarcados ? "Desmarcar a todos" : "Marcar a todos",
+                hint: "Los que tienen teléfono, para escribirles en una ronda",
+                icon: CheckSquare,
+                disabled: conTelefonoVisibles.length === 0,
+                onSelect: () => setTanda(todosMarcados ? new Set() : new Set(conTelefonoVisibles)),
+              },
+              {
+                id: "mensajes",
+                label: "Mensajes",
+                hint: "Qué se le escribe a cada tramo",
+                icon: Settings2,
+                onSelect: () => setVerPlantillas(true),
+              },
+              {
+                id: "pdf",
+                label: "Descargar PDF",
+                hint: "La lista de deudores para imprimir",
+                icon: FileText,
+                onSelect: () => void exportarPdf(),
+              },
+            ]}
+          />
+        </div>
         {filtrados.length === 0 ? (
           <p className="py-8 text-center text-base text-[var(--text-tertiary)]">Nadie en este tramo.</p>
         ) : (

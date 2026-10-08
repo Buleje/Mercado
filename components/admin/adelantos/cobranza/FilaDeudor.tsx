@@ -168,12 +168,17 @@ export default function FilaDeudor({
         ) : (
           /* Sin número esta persona queda fuera de toda ronda para siempre: el
              aviso es un botón, no un texto muerto. */
+          /* Ícono + tooltip (ley de la vista, 6): con muchos sin número eran
+             tantos botones con texto como filas. El tono de alerta y el aviso
+             «N sin teléfono» de la cabecera dicen qué falta. */
           <button
             type="button"
             onClick={onCargarTelefono}
-            className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-[var(--data-warning)]/12 px-3 text-sm font-bold text-[var(--data-warning)] transition-colors hover:bg-[var(--data-warning)]/20"
+            title="Cargar su teléfono: sin número no entra en ninguna ronda"
+            aria-label={`Cargar el teléfono de ${d.nombre}`}
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--data-warning)]/12 text-[var(--data-warning)] transition-colors hover:bg-[var(--data-warning)]/20"
           >
-            <Phone className="h-4 w-4" /> Cargar teléfono
+            <Phone className="h-4 w-4" />
           </button>
         )}
       </span>

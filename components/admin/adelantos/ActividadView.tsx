@@ -156,8 +156,8 @@ export function ActividadView({ adelantos, loading }: { adelantos: DbAdelanto[];
   if (loading) return <SkeletonGrid />;
   if (eventos.length === 0) return <EmptyState icon={Activity} title="Sin actividad" hint="Acá aparecen adelantos y entregas a medida que ocurren." />;
 
-  const chip = (active: boolean) =>
-    `h-10 px-4 rounded-full border-2 text-base font-bold transition-colors ${active ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`;
+  const selectCls =
+    "h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-base font-semibold text-[var(--text-primary)] outline-none focus:border-primary";
   const rangoChip = (active: boolean) =>
     `h-9 px-3 rounded-full border-2 text-sm font-bold transition-colors ${active ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`;
 
@@ -190,26 +190,47 @@ export function ActividadView({ adelantos, loading }: { adelantos: DbAdelanto[];
         </span>
       </div>
 
-      {/* Filtros por tipo + dirección + búsqueda + PDF */}
+      {/* Filtros por tipo + dirección + búsqueda + PDF. El rango (arriba)
+          queda en chips porque es lo que se toca siempre; tipo y dirección
+          afinan de vez en cuando y van en desplegables: eran seis chips con
+          texto más (ley de la vista, «a la vista sólo lo de uso constante»). */}
       <div className="flex flex-wrap items-center gap-2">
-        <button className={chip(tipo === "todo")} onClick={() => setTipo("todo")}>Todo</button>
-        <button className={chip(tipo === "adelanto")} onClick={() => setTipo("adelanto")}>Adelantos</button>
-        <button className={chip(tipo === "entrega")} onClick={() => setTipo("entrega")}>Entregas</button>
+        <select
+          value={tipo}
+          onChange={(e) => setTipo(e.target.value as typeof tipo)}
+          aria-label="Tipo de movimiento"
+          className={selectCls}
+        >
+          <option value="todo">Adelantos y entregas</option>
+          <option value="adelanto">Sólo adelantos</option>
+          <option value="entrega">Sólo entregas</option>
+        </select>
         {hayRecibido && (
-          <>
-            <span aria-hidden className="mx-0.5 h-6 w-px bg-[var(--rule-base)]" />
-            <button className={chip(dir === "todo")} onClick={() => setDir("todo")}>Diste y recibiste</button>
-            <button className={chip(dir === "DADO")} onClick={() => setDir("DADO")}>Sólo diste</button>
-            <button className={chip(dir === "RECIBIDO")} onClick={() => setDir("RECIBIDO")}>Sólo recibiste</button>
-          </>
+          <select
+            value={dir}
+            onChange={(e) => setDir(e.target.value as typeof dir)}
+            aria-label="Dirección de la plata"
+            className={selectCls}
+          >
+            <option value="todo">Diste y recibiste</option>
+            <option value="DADO">Sólo diste</option>
+            <option value="RECIBIDO">Sólo recibiste</option>
+          </select>
         )}
         {/* min-w-* es clase muerta acá (memoria min-width-utilities-muertas) — inline style. */}
         <div className="relative ml-auto flex-1 sm:flex-none" style={{ minWidth: 200 }}>
           <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--text-tertiary)]" />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por persona, código (ADL-2026-7) o recibo…" className="h-12 w-full rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-11 pr-4 text-base text-[var(--text-primary)] outline-none focus:border-primary" />
         </div>
-        <button onClick={exportarPdf} disabled={filtrados.length === 0} className="inline-flex items-center gap-1 h-12 px-4 rounded-xl border border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors disabled:opacity-50">
-          <FileText className="h-5 w-5" /> PDF
+        {/* Exportar: ícono + tooltip, no un botón con texto por cada vista. */}
+        <button
+          onClick={exportarPdf}
+          disabled={filtrados.length === 0}
+          title={`Descargar PDF de los ${filtrados.length} movimientos que ves`}
+          aria-label={`Descargar PDF de los ${filtrados.length} movimientos que ves`}
+          className="inline-flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors disabled:opacity-50"
+        >
+          <FileText className="h-5 w-5" />
         </button>
       </div>
 

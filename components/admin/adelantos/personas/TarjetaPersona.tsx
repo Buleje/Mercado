@@ -154,11 +154,16 @@ export default function TarjetaPersona({
       {/* Lo que QUEDA de su tope, no lo que ya gastó: es lo que decide si se le
           puede adelantar de nuevo. */}
       {credito.estado !== "sin-limite" && (
-        <p className={`mt-1.5 text-sm font-semibold ${requiereAtencion(credito) ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]"}`}>
-          {credito.disponible > 0
-            ? `Le queda ${formatCurrency(credito.disponible)} de ${formatCurrency(credito.limite)}`
-            : `Sin margen · debe ${formatCurrency(credito.usado)} de un tope de ${formatCurrency(credito.limite)}`}
-        </p>
+        /* Rótulo a la izquierda y cifra a la derecha, como «Cumplimiento» y
+           «Le debes»: era una oración suelta que se leía como un párrafo. */
+        <div className={`mt-1.5 flex items-baseline justify-between gap-2 text-sm font-semibold ${requiereAtencion(credito) ? "text-[var(--data-error)]" : "text-[var(--text-tertiary)]"}`}>
+          <span>{credito.disponible > 0 ? "Le queda" : "Sin margen"}</span>
+          <span className="text-right tabular-nums">
+            {credito.disponible > 0
+              ? `${formatCurrency(credito.disponible)} de ${formatCurrency(credito.limite)}`
+              : `debe ${formatCurrency(credito.usado)} de un tope de ${formatCurrency(credito.limite)}`}
+          </span>
+        </div>
       )}
 
       {/* Lo que le debes: lo que te entregó de más + lo que te pagó antes o te prestó. */}
@@ -191,11 +196,16 @@ export default function TarjetaPersona({
           )}
         </div>
         <div className="flex items-center gap-2">
+          {/* Ícono + tooltip (ley de la vista, 6): doce tarjetas con «Adelanto»
+              escrito eran doce botones con texto más que el título y los
+              filtros. Sigue siendo el único con borde de acento: se distingue. */}
           <button
             onClick={onAdelanto}
-            className="inline-flex h-9 items-center gap-1 rounded-xl border-2 border-primary px-3 text-sm font-bold text-[var(--accent-ink)] transition-colors hover:bg-primary/10 dark:text-[var(--accent)]"
+            title={`Darle un adelanto a ${b.nombre}`}
+            aria-label={`Darle un adelanto a ${b.nombre}`}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border-2 border-primary text-[var(--accent-ink)] transition-colors hover:bg-primary/10 dark:text-[var(--accent)]"
           >
-            <Plus className="h-4 w-4" /> Adelanto
+            <Plus className="h-4 w-4" />
           </button>
           {wa && (
             <a

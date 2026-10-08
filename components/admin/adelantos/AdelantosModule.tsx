@@ -21,6 +21,7 @@ import {
   ChevronLeft,
 } from "@buleje/design-system/icons";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
+import ActionMenu from "@/components/admin/shared/action-menu";
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { AnalisisView } from "./AnalisisView";
 import { ActividadView } from "./ActividadView";
@@ -65,10 +66,11 @@ const MODULE_ID = "adelantos";
 /**
  * Filas por página del listado.
  *
- * 25 entra en una pantalla sin scrollear la tabla entera y deja el paginador a
- * la vista. Más alto vuelve al muro que esto vino a resolver.
+ * 18 deja la lista en ≤ 2,5 pantallas a 1280×900 (ley de la vista, 7): con 25
+ * eran 2,98 y con 20, 2,52 — una fila con recibo y chips mide ~90 px, no ~60.
+ * Más alto vuelve al muro que esto vino a resolver.
  */
-const POR_PAGINA = 25;
+const POR_PAGINA = 18;
 
 /** Personas por página: 12 llenan tres columnas de cuatro filas sin muro. */
 const PERSONAS_POR_PAGINA = 12;
@@ -316,6 +318,8 @@ function AdelantosView({
     },
   );
 
+  const hayPlanillaAbierta = adelantos.some((a) => a.modalidad === "DESCUENTO_PLANILLA" && a.status === "ABIERTO" && a.saldoPendiente > 0);
+
   const chipCls = (active: boolean) =>
     `h-10 px-4 rounded-full border-2 text-base font-bold transition-colors ${
       active
@@ -325,21 +329,52 @@ function AdelantosView({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
+      {/* Título + totales de lo filtrado + «⋯» en UNA fila (ley de la vista,
+          6): antes los totales eran una banda propia entre los filtros y la
+          tabla, y «Descuentos de planilla» y «CSV» dos botones con texto que se
+          usan una vez por período. */}
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
         <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">
           {adelantos.length} adelanto{adelantos.length === 1 ? "" : "s"}
         </CardTitle>
-        <div className="flex items-center gap-2">
-          {/* Sólo si hay adelantos de planilla abiertos: un botón que abre una
-              lista vacía es un botón que enseña a no confiar en los botones. */}
-          {adelantos.some((a) => a.modalidad === "DESCUENTO_PLANILLA" && a.status === "ABIERTO" && a.saldoPendiente > 0) && (
-            <button
-              onClick={() => setPlanilla(true)}
-              title="Descontar los adelantos de sueldo del período, todos de una"
-              className="inline-flex h-12 items-center gap-2 rounded-2xl border border-[var(--rule-base)] px-4 text-base font-semibold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
-            >
-              <Users className="h-5 w-5" /> Descuentos de planilla
-            </button>
+        {adelantos.length > 0 && (
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-[var(--text-secondary)]">
+            <span>Adelantado <strong className="text-base tabular-nums text-[var(--text-primary)]">{fmtMonedas(tot.adelantado)}</strong></span>
+            <span>Liquidado <strong className="text-base tabular-nums text-[var(--data-success)]">{fmtMonedas(tot.liquidado)}</strong></span>
+            <span>Por recuperar <strong className="text-base tabular-nums text-[var(--data-warning)]">{fmtMonedas(tot.porRecuperar)}</strong></span>
+            {Object.values(tot.leDebes).some((v) => v > 0) && (
+              <span>Le debes <strong className="text-base tabular-nums text-[var(--data-info-ink)]">{fmtMonedas(tot.leDebes)}</strong></span>
+            )}
+          </div>
+        )}
+        <div className="ml-auto flex items-center gap-2">
+          {adelantos.length > 0 && (
+            <ActionMenu
+              label="Más acciones de la lista"
+              soloIcono
+              size="sm"
+              actions={[
+                /* Sólo si hay adelantos de planilla abiertos: una acción que
+                   abre una lista vacía enseña a no confiar en el menú. */
+                ...(hayPlanillaAbierta
+                  ? [{
+                      id: "planilla",
+                      label: "Descuentos de planilla",
+                      hint: "Descontar los adelantos de sueldo del período, todos de una",
+                      icon: Users,
+                      onSelect: () => setPlanilla(true),
+                    }]
+                  : []),
+                {
+                  id: "csv",
+                  label: `Descargar CSV (${filtrados.length})`,
+                  hint: "Baja exactamente lo que estás viendo, con filtro y búsqueda aplicados",
+                  icon: Download,
+                  disabled: filtrados.length === 0,
+                  onSelect: () => descargarCsvAdelantos(filtrados, `adelantos-${new Date().toISOString().slice(0, 10)}.csv`),
+                },
+              ]}
+            />
           )}
           {/* El alta la abre el botón de la barra de pestañas, que está visible
               desde cualquier sub-vista. Repetirlo acá dejaba dos botones
@@ -383,24 +418,6 @@ function AdelantosView({
                 className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-11 pr-4 text-base text-[var(--text-primary)] outline-none focus:border-primary"
               />
             </div>
-          </div>
-
-          {/* Totales de la vista filtrada + export de LO FILTRADO */}
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3 text-base text-[var(--text-secondary)]">
-            <span>Adelantado <strong className="tabular-nums text-[var(--text-primary)]">{fmtMonedas(tot.adelantado)}</strong></span>
-            <span>Liquidado <strong className="tabular-nums text-[var(--data-success)]">{fmtMonedas(tot.liquidado)}</strong></span>
-            <span>Por recuperar <strong className="tabular-nums text-[var(--data-warning)]">{fmtMonedas(tot.porRecuperar)}</strong></span>
-            {Object.values(tot.leDebes).some((v) => v > 0) && (
-              <span>Le debes <strong className="tabular-nums text-[var(--data-info-ink)]">{fmtMonedas(tot.leDebes)}</strong></span>
-            )}
-            <button
-              onClick={() => descargarCsvAdelantos(filtrados, `adelantos-${new Date().toISOString().slice(0, 10)}.csv`)}
-              disabled={filtrados.length === 0}
-              title="Baja exactamente lo que estás viendo, con filtro y búsqueda aplicados"
-              className="ml-auto inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] disabled:opacity-50 dark:hover:text-[var(--accent)]"
-            >
-              <Download className="h-4 w-4" /> CSV ({filtrados.length})
-            </button>
           </div>
         </>
       )}
@@ -579,30 +596,26 @@ function PersonasView({
                 </button>
               )}
             </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-sm font-semibold text-[var(--text-tertiary)]">Orden:</span>
-            <button className={chip(orden === "saldo")} onClick={() => setOrden("saldo")}>Saldo</button>
-            {hayTopes && (
-              <button
-                className={chip(orden === "riesgo")}
-                onClick={() => setOrden("riesgo")}
-                title="Primero quien está más cerca de su límite de crédito"
+            {/* El orden, en un desplegable pegado al buscador: eran seis chips
+                en una fila propia que se miran una vez y se olvidan (ley de la
+                vista, «a la vista sólo lo de uso constante»). Las mismas seis
+                opciones, con su explicación en el texto de cada una. */}
+            <label className="ml-auto inline-flex items-center gap-2 text-sm font-semibold text-[var(--text-tertiary)]">
+              Orden
+              <select
+                value={orden}
+                onChange={(e) => setOrden(e.target.value as OrdenPersonas)}
+                aria-label="Ordenar personas por"
+                className="h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-primary"
               >
-                Cerca del tope
-              </button>
-            )}
-            <button className={chip(orden === "nombre")} onClick={() => setOrden("nombre")}>Nombre</button>
-            <button className={chip(orden === "adelantado")} onClick={() => setOrden("adelantado")}>Adelantado</button>
-            <button
-              className={chip(orden === "cumplimiento")}
-              onClick={() => setOrden("cumplimiento")}
-              title="Primero quien menos devolvió de lo que sacó"
-            >
-              Cumplimiento
-            </button>
-            <button className={chip(orden === "reciente")} onClick={() => setOrden("reciente")}>Último adelanto</button>
+                <option value="saldo">Saldo</option>
+                {hayTopes && <option value="riesgo">Cerca del tope (límite de crédito)</option>}
+                <option value="nombre">Nombre</option>
+                <option value="adelantado">Adelantado</option>
+                <option value="cumplimiento">Cumplimiento (quien menos devolvió)</option>
+                <option value="reciente">Último adelanto</option>
+              </select>
+            </label>
           </div>
 
           {/* Totales de la cartera + export de lo filtrado */}
@@ -613,13 +626,16 @@ function PersonasView({
             {Object.values(tot.aFavor).some((v) => v > 0) && (
               <span>Le debes <strong className="tabular-nums text-[var(--data-info-ink)]">{fmtMonedas(tot.aFavor)}</strong></span>
             )}
+            {/* Exportar es de una vez al mes: ícono + tooltip, no un botón
+                con texto compitiendo con los totales (ley de la vista, 6). */}
             <button
               onClick={() => descargarCsvPersonas(ordenados, `personas-${new Date().toISOString().slice(0, 10)}.csv`)}
               disabled={ordenados.length === 0}
-              title="Baja exactamente lo que estás viendo, con filtro y búsqueda aplicados"
-              className="ml-auto inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] disabled:opacity-50 dark:hover:text-[var(--accent)]"
+              title={`Descargar CSV de las ${ordenados.length} personas que ves (con filtro y búsqueda)`}
+              aria-label={`Descargar CSV de las ${ordenados.length} personas que ves`}
+              className="ml-auto inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] disabled:opacity-50 dark:hover:text-[var(--accent)]"
             >
-              <Download className="h-4 w-4" /> CSV ({ordenados.length})
+              <Download className="h-4 w-4" />
             </button>
           </div>
         </>
