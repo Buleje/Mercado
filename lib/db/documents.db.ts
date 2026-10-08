@@ -385,6 +385,7 @@ export class DocumentsDB {
     if (filters.orderId) where.orderId = filters.orderId;
     if (filters.supplierId) where.supplierId = filters.supplierId;
     if (filters.tags?.length) where.tags = { hasSome: filters.tags };
+    if (filters.sinTags?.length) where.NOT = { tags: { hasSome: filters.sinTags } };
 
     /** Un término contra todo lo que puede nombrar a un documento. */
     const enTodoElDoc = (t: string) => [
@@ -1006,6 +1007,22 @@ export class DocumentsDB {
       data: { deletedAt: new Date() },
     });
     return r.count;
+  }
+
+  /**
+   * Ids de las fotos del detector de personas (tag `personas`) vivas que se
+   * subieron antes de `corte`, las más viejas primero. Para la retención: el
+   * cron las manda a la papelera con `bulkSoftDelete` (nunca purga directa).
+   */
+  static async idsFotosPersonasAnteriores(tenantId: string, corte: Date, limite: number): Promise<string[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const filas = await prisma.document.findMany({
+      where: { tenantId, deletedAt: null, tags: { has: "personas" }, uploadedAt: { lt: corte } },
+      select: { id: true },
+      orderBy: { uploadedAt: "asc" },
+      take: limite,
+    });
+    return filas.map((f) => f.id);
   }
 
   static async bulkMove(

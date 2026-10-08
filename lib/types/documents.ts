@@ -182,6 +182,8 @@ export interface DocumentListFilters {
   /** ADR-119 — búsqueda semántica: OR de términos contra name/ocrText/tags. */
   qAny?: string[];
   tags?: string[];
+  /** Excluye los documentos que tengan ALGUNA de estas etiquetas (el sync no baja las fotos de «personas»). */
+  sinTags?: string[];
   favorite?: boolean;
   customerId?: string;
   orderId?: string;

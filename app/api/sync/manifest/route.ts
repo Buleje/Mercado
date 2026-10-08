@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAgente } from "@/lib/sync/auth-agente";
-import { rutasLogicas } from "@/lib/sync/drive-sync";
+import { rutasLogicas, TAGS_FUERA_DEL_SYNC } from "@/lib/sync/drive-sync";
 import { DocumentsDB } from "@/lib/db/documents.db";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
@@ -19,7 +19,8 @@ export type ItemManifiesto = {
  * GET /api/sync/manifest — foto del Drive para que el agente compare (ADR-307).
  *
  * Devuelve solo lo vivo: los borrados quedan fuera, y el agente los trata como
- * "hay que borrarlo también de la carpeta".
+ * "hay que borrarlo también de la carpeta". Tampoco lista las fotos del detector
+ * de personas (`TAGS_FUERA_DEL_SYNC`): se ven en el panel, no en Windows.
  */
 export async function GET(req: NextRequest) {
   // El agente hace un manifest por ciclo; SHELL_POLL cubre un ciclo corto sin ahogarlo.
@@ -32,7 +33,7 @@ export async function GET(req: NextRequest) {
   try {
     const [rutas, docs] = await Promise.all([
       rutasLogicas(auth.tenantId),
-      DocumentsDB.list(auth.tenantId, {}),
+      DocumentsDB.list(auth.tenantId, { sinTags: [...TAGS_FUERA_DEL_SYNC] }),
     ]);
 
     const items: ItemManifiesto[] = docs.flatMap((d) => {

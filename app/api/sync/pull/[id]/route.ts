@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAgente } from "@/lib/sync/auth-agente";
+import { TAGS_FUERA_DEL_SYNC } from "@/lib/sync/drive-sync";
 import { DocumentsDB } from "@/lib/db/documents.db";
 import { downloadFromStorage } from "@/lib/documents/storage";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -27,6 +28,10 @@ export async function GET(
   try {
     const doc = await DocumentsDB.getById(auth.tenantId, id);
     if (!doc) return NextResponse.json({ error: "not_found" }, { status: 404 });
+    // Aunque el agente tenga el id guardado de antes, esas fotos no bajan.
+    if (doc.tags.some((t) => (TAGS_FUERA_DEL_SYNC as readonly string[]).includes(t))) {
+      return NextResponse.json({ error: "not_found" }, { status: 404 });
+    }
 
     const buffer = await downloadFromStorage(doc.storagePath);
     if (!buffer) return NextResponse.json({ error: "storage_miss" }, { status: 404 });

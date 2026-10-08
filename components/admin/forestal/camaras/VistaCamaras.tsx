@@ -16,6 +16,7 @@ import LecturaUltimaFoto from "./LecturaUltimaFoto";
 import MosaicoNubeBoton from "./MosaicoNubeBoton";
 import { camposPuente, ultimaCapturaDe } from "./puente-pc";
 import { useRecargaPuente } from "./use-puente-pc";
+import RetencionPersonas from "./RetencionPersonas";
 import GuiaHikvision from "./GuiaHikvision";
 import VincularHikConnect from "./VincularHikConnect";
 import { DireccionAviso } from "./AvisosCamaras";
@@ -217,6 +218,8 @@ export default function VistaCamaras({
           </p>
         )}
       </section>
+
+      <RetencionPersonas />
     </div>
   );
 }

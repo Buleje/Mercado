@@ -16,6 +16,15 @@ import { logger } from "@/lib/logger";
  *   `Boletas/2026/enero.pdf`  →  carpeta Boletas → 2026, documento `enero.pdf`
  */
 
+/**
+ * Etiquetas de documentos que el agente NO baja a las PCs: las fotos del
+ * detector de personas (`lib/camaras/personas-drive.server.ts`, hasta ~1.200 por
+ * día) son para verlas en el panel, no para llenar el disco de Windows. Fuera
+ * del manifiesto, y como el agente sólo baja lo que el manifiesto lista, no hay
+ * "borrado" que propagar cuando la retención las manda a la papelera.
+ */
+export const TAGS_FUERA_DEL_SYNC = ["personas"] as const;
+
 /** Separador lógico del protocolo de sync: siempre `/`, aunque Windows use `\`. */
 export const SEP = "/";
 
@@ -111,7 +120,7 @@ export async function rutasLogicas(
     return cache.get(folderId)!;
   };
 
-  const docs = await DocumentsDB.list(tenantId, {});
+  const docs = await DocumentsDB.list(tenantId, { sinTags: [...TAGS_FUERA_DEL_SYNC] });
   const salida = new Map<string, string>();
   for (const d of docs) {
     const partes = [...memo(d.folderId ?? null), d.name];

@@ -22,6 +22,9 @@
     "app/api/cron/churn-score/route.ts": {
       "maxDuration": 300
     },
+    "app/api/cron/camaras-personas-retencion/route.ts": {
+      "maxDuration": 300
+    },
     "app/api/cron/documentos-papelera/route.ts": {
       "maxDuration": 300
     },
@@ -410,6 +413,10 @@
     {
       "path": "/api/cron/camaras-resumen",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/camaras-personas-retencion",
+      "schedule": "30 8 * * *"
     },
     {
       "path": "/api/cron/tramites-vencimiento",

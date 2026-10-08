@@ -23,7 +23,6 @@ import { usePanelTokens } from "@/components/admin/shared/use-panel-tokens";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { cn } from "@/lib/utils";
-import { enlaceAlDrive } from "@/components/admin/forestal/plan-documentos/plan-documentos-api";
 import { useApiCamaras } from "./api-camaras";
 import { BTN } from "./camaras-ui";
 import { DATOS_POR_HORA, MINUTOS_SIN_TOCAR } from "./hik-connect-teams";
@@ -52,6 +51,8 @@ interface Props {
 /* Las clases de `AdminModal` variante `info` + `sm:max-w-[96vw]` (lo que era antes). */
 const PANEL =
   "fixed z-modal flex flex-col overflow-clip bg-[var(--surface-raised)] shadow-[var(--shadow-xl)] outline-none bottom-0 left-0 right-0 w-full rounded-t-2xl max-h-[92vh] sm:bottom-auto sm:right-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-[calc(100vw-2rem)] sm:max-w-[96vw] sm:rounded-2xl sm:max-h-[92vh]";
+
+const FOTOS_DE_PERSONAS = "/admin?tab=camaras&vista=personas";
 
 export default function MosaicoNube({
   camaras,
@@ -103,7 +104,8 @@ export default function MosaicoNube({
   }, []);
   const viendo = camaras.filter((c) => estados[c.id] === "viendo").length;
 
-  const carpetaHref = p.carpetaId ? enlaceAlDrive(p.carpetaId) : null;
+  /* La galería de hoy (con «Abrir en el Drive» adentro), no el Drive: ~1.200 fotos al día. */
+  const carpetaHref = FOTOS_DE_PERSONAS;
   const irACarpeta = (e: MouseEvent<HTMLAnchorElement>) => {
     if (!carpetaHref || e.metaKey || e.ctrlKey || e.shiftKey) return;
     e.preventDefault();

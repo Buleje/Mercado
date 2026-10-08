@@ -42,6 +42,7 @@ import {
   type ResultadoChalecos,
   type ResultadoConfirmar,
 } from "@/lib/camaras/cruces";
+import { diasRetencionDe, diasRetencionValidos } from "@/lib/camaras/personas-retencion";
 import { configurarPuente, type CambiosPuente } from "@/lib/camaras/vivo";
 
 /**
@@ -77,6 +78,8 @@ const CLAVE_CHALECOS = (tenantId: string) => `camaras-chalecos:${tenantId}`;
  * escribe desde la ingesta: no viaja en `getAll()` ni invalida su foto.
  */
 const CLAVE_AVISO_PILA = (tenantId: string) => `interno:camaras-pila-aviso:${tenantId}`;
+/** Cuántos días se guardan las fotos del detector de personas: `{ dias }` (default 30). */
+const CLAVE_RETENCION_PERSONAS = (tenantId: string) => `camaras-personas-retencion:${tenantId}`;
 /** Cuándo (hora de la FOTO) se reservó la última comparación de pila de cada cámara. */
 const CLAVE_COMPARACION_PILA = (tenantId: string) => `interno:camaras-pila-comparacion:${tenantId}`;
 
@@ -544,6 +547,30 @@ export const CamarasDB = {
       const quedan = todas.filter((c) => c.id !== capturaId);
       return quedan.length === todas.length ? { resultado: false } : { valor: quedan, resultado: true };
     });
+  },
+
+  /** Días que se guardan las fotos del detector de personas (default 30). */
+  async retencionPersonas(tenantId: string): Promise<number> {
+    if (!tenantId) throw new Error("tenantId is required");
+    return diasRetencionDe(await PlatformSettingsDB.getFresco<unknown>(CLAVE_RETENCION_PERSONAS(tenantId)));
+  },
+
+  /** Guarda los días de retención (entero 1-365). `false` si el número no vale. */
+  async fijarRetencionPersonas(tenantId: string, dias: number, user: string): Promise<boolean> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const validos = diasRetencionValidos(dias);
+    if (validos === null) return false;
+    await PlatformSettingsDB.set(CLAVE_RETENCION_PERSONAS(tenantId), { dias: validos }, user);
+    logActivity(
+      "camara.retencion",
+      "camara",
+      `Fotos de personas: se guardan ${validos} días`,
+      undefined,
+      user,
+      undefined,
+      tenantId,
+    ).catch((err) => logger.error("[camaras] no se pudo auditar la retención", { error: String(err), tenantId }));
+    return true;
   },
 
   /** Número de chaleco/casco → id del colaborador. `{}` si no hay ninguno. */

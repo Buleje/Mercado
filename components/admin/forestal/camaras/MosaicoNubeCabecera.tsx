@@ -107,7 +107,7 @@ export default function MosaicoNubeCabecera(p: Props) {
             href={p.carpetaHref}
             onClick={p.onIrACarpeta}
             className="ml-auto inline-flex min-h-9 items-center gap-1.5 text-sm font-bold text-[var(--accent-ink)] underline-offset-4 hover:underline dark:text-[var(--accent)]"
-            title="Abre la carpeta del Drive con las fotos de personas (el video sigue en la burbuja)"
+            title="Abre las fotos de personas de hoy (el video sigue en la burbuja)"
           >
             <FolderOpen className="h-4 w-4" aria-hidden /> Carpeta Personas
           </a>
