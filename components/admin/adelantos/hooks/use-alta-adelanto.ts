@@ -55,7 +55,8 @@ export function useAltaAdelanto({
   initialBeneficiarioId?: string;
   /** El servidor ya guarda la dirección: sin eso, lo recibido se guardaría como dado. */
   admiteRecibido: boolean;
-  onCreated: () => void;
+  /** Con el id del adelanto creado (null en un abono): el alta puede seguir a «Firmar recibo». */
+  onCreated: (adelantoId: string | null) => void;
 }) {
   const [modo, setModoRaw] = useState<ModoAlta>("dar");
   /* Por defecto la primera persona ACTIVA: una dada de baja «se deja de

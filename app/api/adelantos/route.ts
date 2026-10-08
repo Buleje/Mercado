@@ -9,6 +9,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { problemaDeDireccion } from "@/lib/adelantos/direccion";
 import { soloAdminODueno } from "@/lib/forestal/plata-de-guia-rol";
+import { esFotoDelNegocio } from "@/lib/adelantos/recibo-firmado";
 
 const METODOS_CAJA = ["efectivo", "yape", "plin", "tarjeta", "transferencia"] as const;
 
@@ -132,6 +133,13 @@ export async function POST(req: NextRequest) {
         { error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) },
         { status: 400 },
       );
+    }
+    /* La foto del comprobante (voucher, «Adjuntar archivo») tiene que ser la que
+       `/api/upload` acaba de subir a la carpeta de ESTE negocio: sin esto, una
+       URL cualquiera quedaba como respaldo del adelanto (revisión 08-10). */
+    const foto = parsed.data.comprobanteUrl?.trim();
+    if (foto && !esFotoDelNegocio(foto, { tenantId: auth.tenantId, origenStorage: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "" })) {
+      return NextResponse.json({ error: "La foto del comprobante tiene que subirse desde el panel de este negocio.", code: "foto_ajena" }, { status: 422 });
     }
     /* ADR-448: registrar plata RECIBIDA es sólo de admin o dueño. `requireAdmin`
        sin roles deja pasar a cajero y almacenero (no tienen `adelantos` en

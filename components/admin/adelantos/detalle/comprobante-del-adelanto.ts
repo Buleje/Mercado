@@ -11,7 +11,10 @@
 import { leerMembrete } from "@/lib/admin/membrete-cliente";
 import { descargarComprobante, type DatosComprobante } from "@/lib/adelantos/comprobante";
 import { leerDireccion } from "@/lib/adelantos/modos-alta";
+import { esReciboFirmado, srcDelComprobante } from "@/lib/adelantos/recibo-firmado";
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
+import { logger } from "@/lib/logger";
+import { imagenComoJpeg } from "../firma/hoja-firma";
 
 export function datosDelComprobante(a: DbAdelanto, negocio?: string | null): DatosComprobante {
   const { direccion, concepto } = leerDireccion(a);
@@ -32,7 +35,21 @@ export function datosDelComprobante(a: DbAdelanto, negocio?: string | null): Dat
   };
 }
 
+/**
+ * Con el recibo ya firmado en la pantalla, la hoja guardada va en la segunda
+ * página: la firma suelta no se guarda aparte. Si la hoja no se puede leer, sale
+ * el papel de siempre (para firmar a mano) y queda el rastro.
+ */
 export async function imprimirComprobante(a: DbAdelanto): Promise<void> {
-  const membrete = await leerMembrete();
-  await descargarComprobante(datosDelComprobante(a, membrete.nombre));
+  const [membrete, hojaFirmada] = await Promise.all([
+    leerMembrete(),
+    /* La hoja es privada: pasa por `GET /api/adelantos/<id>/comprobante`. */
+    esReciboFirmado(a.comprobanteUrl)
+      ? imagenComoJpeg(srcDelComprobante(a) as string).catch((e: unknown) => {
+          logger.error("[adelantos] no se pudo leer la hoja firmada para el PDF", { error: String(e) });
+          return undefined;
+        })
+      : Promise.resolve(undefined),
+  ]);
+  await descargarComprobante({ ...datosDelComprobante(a, membrete.nombre), hojaFirmada });
 }

@@ -19,7 +19,8 @@
  * cuentas de cada modo, en `lib/adelantos/modos-alta` (puro, con test).
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useLocalStorage } from "@/hooks/use-local-storage";
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
 import { useAltaAdelanto } from "./hooks/use-alta-adelanto";
 import { ModalShell } from "./shared";
@@ -28,6 +29,7 @@ import BloqueDevolucion from "./crear-adelanto/BloqueDevolucion";
 import BloqueMonto from "./crear-adelanto/BloqueMonto";
 import BloquePersona from "./crear-adelanto/BloquePersona";
 import BloqueRespaldo from "./crear-adelanto/BloqueRespaldo";
+import FirmarReciboModal from "./firma/FirmarReciboModal";
 import PanelCuenta from "./crear-adelanto/PanelCuenta";
 import PieAlta from "./crear-adelanto/PieAlta";
 import QuienPone from "./crear-adelanto/QuienPone";
@@ -59,7 +61,18 @@ export default function CrearAdelantoModal({
   /** Para que el módulo recargue la lista de personas cuando se crea una acá. */
   onPersonaCreada?: () => void;
 }) {
-  const alta = useAltaAdelanto({ beneficiarios, adelantos, initialBeneficiarioId, admiteRecibido, onCreated });
+  /* «Firmar el recibo al guardar» (08-10): recordado, porque en el celular se
+     firma siempre. Con el adelanto ya creado (código y monto finales) se abre
+     el lienzo; cerrarlo termina el alta como siempre. */
+  const [firmar, setFirmar] = useLocalStorage<boolean>("buleje:adelantos-alta-firmar", false);
+  const [porFirmar, setPorFirmar] = useState<string | null>(null);
+  const alta = useAltaAdelanto({
+    beneficiarios,
+    adelantos,
+    initialBeneficiarioId,
+    admiteRecibido,
+    onCreated: (id) => (firmar && id ? setPorFirmar(id) : onCreated()),
+  });
   /* Si ya quedó algo guardado (con un aviso a la vista), cerrar con la X o
      Escape también recarga la lista: sin eso el adelanto no aparecía, se volvía
      a cargar y quedaba duplicado (revisión 28-09). */
@@ -89,8 +102,9 @@ export default function CrearAdelantoModal({
         </aside>
         <BloqueMonto alta={alta} montoRef={montoRef} />
         {alta.modo === "abono" ? <BloqueAbono alta={alta} /> : <BloqueDevolucion alta={alta} />}
-        <BloqueRespaldo alta={alta} />
+        <BloqueRespaldo alta={alta} firmar={firmar} onFirmar={setFirmar} />
       </div>
+      {porFirmar && <FirmarReciboModal adelantoId={porFirmar} onClose={onCreated} />}
     </ModalShell>
   );
 }

@@ -11,6 +11,10 @@ import { soloAdminODueno } from "@/lib/forestal/plata-de-guia-rol";
 import { motivoSchema } from "@/lib/forestal/motivo";
 import { AdelantoNoControlableError, AdelantosControlDB } from "@/lib/db/adelantos-control.db";
 import { PATRON_DIA } from "@/lib/adelantos/control-edicion";
+import { randomBytes } from "crypto";
+import sharp from "sharp";
+import { esReciboFirmado, PREFIJO_PRIVADO, rutaFirmaPrivada } from "@/lib/adelantos/recibo-firmado";
+import { borrarFirmaPrivada, subirFirmaPrivada } from "@/lib/adelantos/firma-storage";
 
 const PatchSchema = z.object({
   notas: z.string().max(1000).nullable().optional(),
@@ -82,7 +86,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 }
 
-// PATCH /api/adelantos/[id] — editar notas, cancelar, poner vencimiento / permiso, o corregir la dirección
+// PATCH /api/adelantos/[id] — editar notas, cancelar, poner vencimiento / permiso, corregir la dirección o adjuntar el recibo firmado
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const _rl = await applyRateLimit(req, "MODERATE", "adelantos"); if (_rl) return _rl;
@@ -91,10 +95,22 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const sinPermiso = permisoAdelantos(auth.role, "write");
   if (sinPermiso) return sinPermiso;
   const { id } = await params;
+  /* El recibo firmado llega como ARCHIVO: lo sube el servidor a la carpeta
+     privada después de validar todo (antes, el cliente lo subía al bucket
+     público y cada 4xx dejaba una hoja con DNI huérfana). */
+  if ((req.headers.get("content-type") ?? "").toLowerCase().startsWith("multipart/form-data")) {
+    return adjuntarComprobante(req, auth, id);
+  }
   try {
     const body: unknown = await req.json().catch(() => null);
     if (body && typeof body === "object" && (body as { action?: unknown }).action === "corregirDireccion") {
       return corregirDireccion(req, auth, id, body);
+    }
+    if (body && typeof body === "object" && (body as { action?: unknown }).action === "adjuntarComprobante") {
+      return NextResponse.json(
+        { error: "La hoja firmada se manda como archivo (multipart/form-data), no como URL.", code: "sin_archivo" },
+        { status: 400 },
+      );
     }
     if (esPedidoDeControl(body)) return controlar(auth, id, body);
     const parsed = PatchSchema.safeParse(body);
@@ -211,6 +227,134 @@ async function controlar(
     logger.error("[adelantos/id] controlar error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
+}
+
+/**
+ * PATCH multipart `{ action: "adjuntarComprobante", anterior, file }` — el
+ * recibo firmado en la pantalla (08-10) queda como la foto del comprobante, la
+ * misma columna que llena «Adjuntar archivo» en el alta. `write` (chequeado
+ * arriba): no mueve plata ni saldo.
+ *
+ * Ley 29733: la hoja lleva DNI + firma + monto. El orden es lo que importa:
+ *  1. el adelanto (de ESTE negocio, no anulado, con la foto `anterior` que se
+ *     vio al firmar; `""` = ninguna) — 404/409 sin haber subido nada;
+ *  2. la imagen (lo que sharp dice que ES, pasada a WebP sin metadatos);
+ *  3. subirla a la carpeta PRIVADA del adelanto;
+ *  4. compara-y-cambia; si otro la cambió entretanto, se BORRA lo subido.
+ * La columna guarda `priv:<ruta>`; se ve por `GET …/comprobante`. La
+ * actividad dice que se firmó (quién y cuándo los pone el log), no la ruta.
+ */
+const AdjuntarSchema = z
+  .object({
+    action: z.literal("adjuntarComprobante"),
+    anterior: z.string().max(500),
+  })
+  .strict();
+
+/** Vercel corta el cuerpo en 4,5 MB; la hoja en JPEG pesa 0,2-1 MB. */
+const MAX_BYTES_HOJA = 4 * 1024 * 1024;
+const MAX_PIXELES_HOJA = 40_000_000;
+const TIPOS_HOJA = new Set(["image/jpeg", "image/png", "image/webp"]);
+const FORMATOS_HOJA = new Set(["jpeg", "png", "webp"]);
+
+async function adjuntarComprobante(
+  req: NextRequest,
+  auth: { tenantId: string; username: string; role: string },
+  id: string,
+): Promise<NextResponse> {
+  let form: FormData;
+  try {
+    form = await req.formData();
+  } catch {
+    return NextResponse.json({ error: "Manda la hoja firmada como multipart/form-data." }, { status: 400 });
+  }
+  const campos: Record<string, string> = {};
+  let file: File | null = null;
+  for (const [k, v] of form.entries()) {
+    if (k === "file" && v instanceof File && !file) file = v;
+    else if (typeof v === "string" && !(k in campos)) campos[k] = v;
+    else return NextResponse.json({ error: "Datos inválidos", issues: [`Campo repetido o inesperado: ${k}`] }, { status: 400 });
+  }
+  const parsed = AdjuntarSchema.safeParse(campos);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) }, { status: 400 });
+  }
+  if (!file) return NextResponse.json({ error: "No llegó la hoja firmada." }, { status: 400 });
+  if (!TIPOS_HOJA.has(file.type)) {
+    return NextResponse.json({ error: "La hoja firmada tiene que ser una imagen (JPG, PNG o WebP).", code: "no_es_imagen" }, { status: 422 });
+  }
+  if (file.size > MAX_BYTES_HOJA) {
+    return NextResponse.json({ error: "La hoja firmada pesa más de 4 MB.", code: "muy_grande" }, { status: 413 });
+  }
+  const anterior = parsed.data.anterior.trim() || null;
+
+  /* 1. El adelanto, antes de subir nada. */
+  let actual: Awaited<ReturnType<typeof AdelantosDB.comprobanteDe>>;
+  try {
+    actual = await AdelantosDB.comprobanteDe(auth.tenantId, id);
+  } catch (e) {
+    logger.error("[adelantos/id] adjuntarComprobante lectura error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Database error" }, { status: 503 });
+  }
+  if (!actual) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+  const rechazo = rechazoDeFirma(actual.status === "CANCELADO" ? "anulado" : (actual.comprobanteUrl ?? null) !== anterior ? "cambio" : null);
+  if (rechazo) return rechazo;
+
+  /* 2. La imagen: lo que ES, no lo que declara el navegador. */
+  let webp: Buffer;
+  try {
+    const buf = Buffer.from(await file.arrayBuffer());
+    const { format } = await sharp(buf, { limitInputPixels: MAX_PIXELES_HOJA }).metadata();
+    if (!format || !FORMATOS_HOJA.has(format)) {
+      return NextResponse.json({ error: "La hoja firmada tiene que ser una imagen (JPG, PNG o WebP).", code: "no_es_imagen" }, { status: 422 });
+    }
+    webp = await sharp(buf, { limitInputPixels: MAX_PIXELES_HOJA })
+      .resize({ width: 1200, withoutEnlargement: true })
+      .webp({ quality: 85 })
+      .toBuffer();
+  } catch (e) {
+    logger.warn("[adelantos/id] la hoja firmada no es una imagen legible", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "La hoja firmada no es una imagen que se pueda leer.", code: "no_es_imagen" }, { status: 422 });
+  }
+
+  /* 3. A la carpeta privada del adelanto. */
+  let ruta: string;
+  try {
+    ruta = rutaFirmaPrivada(auth.tenantId, id, Date.now(), randomBytes(8).toString("hex"));
+  } catch {
+    return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+  }
+  const subida = await subirFirmaPrivada(ruta, webp).catch((e: unknown) => ({ ok: false as const, error: String(e) }));
+  if (!subida.ok) return NextResponse.json({ error: "No se pudo guardar la hoja firmada. Prueba de nuevo." }, { status: 502 });
+
+  /* 4. Compara-y-cambia; lo que no quedó, no se deja en el bucket. */
+  const comprobanteUrl = `${PREFIJO_PRIVADO}${ruta}`;
+  let r: Awaited<ReturnType<typeof AdelantosDB.adjuntarComprobante>>;
+  try {
+    r = await AdelantosDB.adjuntarComprobante(auth.tenantId, id, comprobanteUrl, anterior);
+  } catch (e) {
+    await borrarFirmaPrivada(ruta);
+    logger.error("[adelantos/id] adjuntarComprobante error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Database error" }, { status: 503 });
+  }
+  if (r !== "ok") {
+    await borrarFirmaPrivada(ruta);
+    if (r === "no-existe") return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+    return rechazoDeFirma(r) ?? NextResponse.json({ error: "No encontrado" }, { status: 404 });
+  }
+  /* Al volver a firmar, la hoja anterior NO se borra: queda archivada en la
+     misma carpeta privada (y la nueva la lleva arriba). */
+  const reemplaza = !anterior ? "" : esReciboFirmado(anterior) ? " (reemplaza el recibo firmado anterior, que queda archivado)" : " (la foto que tenía va arriba en la hoja)";
+  logActivity("Firmar", "adelanto", `Adelanto ${id}: recibo firmado en la pantalla y guardado como comprobante${reemplaza}`, id, auth.username, undefined, auth.tenantId).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
+  return NextResponse.json({ id, comprobanteUrl });
+}
+
+function rechazoDeFirma(motivo: "anulado" | "cambio" | null): NextResponse | null {
+  if (motivo === "anulado") return NextResponse.json({ error: "Este adelanto está anulado: no se firma.", code: "anulado" }, { status: 409 });
+  if (motivo === "cambio") {
+    return NextResponse.json({ error: "Alguien cambió la foto de este adelanto mientras firmabas. Ciérralo, ábrelo de nuevo y vuelve a firmar.", code: "cambio" }, { status: 409 });
+  }
+  return null;
 }
 
 // DELETE /api/adelantos/[id] — soft-cancel (no borra historial)

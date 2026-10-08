@@ -1426,6 +1426,41 @@ export const AdelantosDB = {
   },
 
   /**
+   * La foto del comprobante de un adelanto YA guardado (recibo firmado en la
+   * pantalla, 08-10). Es la misma columna que llena «Adjuntar archivo» en el
+   * alta; no toca plata, saldo, estado ni caja.
+   *
+   * Compara-y-cambia: sólo si la foto actual sigue siendo `anterior` (la que se
+   * vio al abrir el lienzo; `null` = ninguna). Si otro la cambió entretanto, no
+   * se pisa (`"cambio"`). Un anulado no se firma (`"anulado"`).
+   */
+  /**
+   * Sólo el estado y la foto del comprobante, por (tenant, id): lo que mira el
+   * PATCH de la firma ANTES de subir nada (un 404/409 no deja archivo) y la
+   * puerta `GET /api/adelantos/<id>/comprobante`. Sin filtro de dirección: la
+   * foto es del adelanto, sea DADO o RECIBIDO.
+   */
+  async comprobanteDe(tenantId: string, id: string): Promise<{ status: string; comprobanteUrl: string | null } | null> {
+    return prisma.adelanto.findFirst({ where: { id, tenantId }, select: { status: true, comprobanteUrl: true } });
+  },
+
+  async adjuntarComprobante(
+    tenantId: string,
+    id: string,
+    url: string,
+    anterior: string | null,
+  ): Promise<"ok" | "no-existe" | "cambio" | "anulado"> {
+    const r = await prisma.adelanto.updateMany({
+      where: { id, tenantId, comprobanteUrl: anterior, status: { not: "CANCELADO" } },
+      data: { comprobanteUrl: url },
+    });
+    if (r.count === 1) return "ok";
+    const row = await prisma.adelanto.findFirst({ where: { id, tenantId }, select: { status: true } });
+    if (!row) return "no-existe";
+    return row.status === "CANCELADO" ? "anulado" : "cambio";
+  },
+
+  /**
    * Re-marca la dirección de un adelanto cargado del lado equivocado (ADR-448):
    * en Blas, ADL-0003/4 de WASACO son pagos por aserrío que se guardaron como
    * plata dada porque no había otra opción.

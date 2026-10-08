@@ -19,6 +19,7 @@
  */
 
 import { useRef, useState } from "react";
+import { idAleatorio } from "@/lib/id-aleatorio";
 import type { IntencionLiquidacion } from "@/lib/cuentas/liquidacion";
 import {
   guardarValoresPendientes as guardarCamposPendientes,
@@ -35,7 +36,14 @@ export type EnvioAlta =
 
 const SIN_CAJA = "No había caja abierta: la plata no se anotó en la caja. Anótala a mano.";
 
-export function useGuardarAlta({ camposPendientes, onCreated }: { camposPendientes: PendientesCampos; onCreated: () => void }) {
+export function useGuardarAlta({
+  camposPendientes,
+  onCreated: avisarCreado,
+}: {
+  camposPendientes: PendientesCampos;
+  /** Con el id del adelanto creado; `null` en un abono (no hay adelanto nuevo). */
+  onCreated: (adelantoId: string | null) => void;
+}) {
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   /** Guardado, con algo que leer antes de cerrar. */
@@ -43,8 +51,9 @@ export function useGuardarAlta({ camposPendientes, onCreated }: { camposPendient
   const [camposPorReintentar, setCamposPorReintentar] = useState(false);
   const [registrado, setRegistrado] = useState(false);
   const adelantoCreadoRef = useRef<string | null>(null);
+  const onCreated = () => avisarCreado(adelantoCreadoRef.current);
   const clave = useRef<string>("");
-  if (!clave.current) clave.current = crypto.randomUUID();
+  if (!clave.current) clave.current = idAleatorio();
 
   const guardarCampos = async (id: string): Promise<string | null> => {
     if (!hayPendientes(camposPendientes)) return null;
@@ -61,7 +70,7 @@ export function useGuardarAlta({ camposPendientes, onCreated }: { camposPendient
       setHecho(INTENTO_DISTINTO);
       return;
     }
-    if (puedeCambiarDeClave(r)) clave.current = crypto.randomUUID();
+    if (puedeCambiarDeClave(r)) clave.current = idAleatorio();
     setErr(r.error);
   };
 

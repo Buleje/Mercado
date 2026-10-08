@@ -21,6 +21,8 @@
  *   {"abrir": "<sel>"}            → click sólo si su aria-expanded no es "true" (plegables recordados)
  *   {"tecla": "Enter"}            {"elegir": ["<sel>", "valor o etiqueta"]}
  *   {"rueda": [x, y, dy]}         → rueda REAL del mouse en (x, y): prueba scroll bloqueado/libre detrás de un modal
+ *   {"trazar": ["<sel>", [[0.1,0.5],[0.5,0.2],[0.9,0.6]]]} → arrastre REAL del mouse por esos puntos (fracción
+ *                                   del elemento): firmar en el lienzo de «Firmar recibo» (08-10)
  *   {"esperar": "<sel>"}          {"esperar": 500}            (ms)
  *   {"eval": "<expresión js>"}    → su resultado sale en el reporte
  *   {"captura": "nombre"}         → la matriz de capturas de ESTE estado
@@ -293,6 +295,19 @@ async function recorrido(t, primero) {
           await page.mouse.move(x, y);
           await page.mouse.wheel(0, dy);
           await page.waitForTimeout(500);
+        }
+        else if (tipo === "trazar") {
+          /* Mouse REAL (down → moves → up) sobre un lienzo: firmar en `LienzoFirma`.
+             Los puntos van en fracción del elemento (0-1), así sirve en 1280 y en 400.
+             Pointer events sintéticos no alcanzan: `setPointerCapture` los rechaza (08-10). */
+          const [sel, puntos] = valor;
+          const caja = await page.locator(sel).first().boundingBox();
+          if (!caja) throw new Error(`trazar: no se ve ${sel}`);
+          const xy = ([fx, fy]) => [caja.x + fx * caja.width, caja.y + fy * caja.height];
+          await page.mouse.move(...xy(puntos[0]));
+          await page.mouse.down();
+          for (const pt of puntos.slice(1)) await page.mouse.move(...xy(pt), { steps: 6 });
+          await page.mouse.up();
         }
         else if (tipo === "esperar") {
           if (typeof valor === "number") await page.waitForTimeout(valor);

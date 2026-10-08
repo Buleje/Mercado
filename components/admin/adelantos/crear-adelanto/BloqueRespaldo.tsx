@@ -41,7 +41,16 @@ function leerNotasRapidas(): string[] {
   }
 }
 
-export default function BloqueRespaldo({ alta }: { alta: AltaAdelanto }) {
+export default function BloqueRespaldo({
+  alta,
+  firmar = false,
+  onFirmar,
+}: {
+  alta: AltaAdelanto;
+  /** «Firmar el recibo en la pantalla al guardar» (08-10): lo recuerda el modal del alta. */
+  firmar?: boolean;
+  onFirmar?: (v: boolean) => void;
+}) {
   const [abierto, setAbierto] = useLocalStorage<boolean>("buleje:adelantos-alta-respaldo-abierto", true);
   const [notasRapidas, setNotasRapidas] = useState<string[]>(leerNotasRapidas);
   const [conCamara, setConCamara] = useState(false);
@@ -53,6 +62,7 @@ export default function BloqueRespaldo({ alta }: { alta: AltaAdelanto }) {
     alta.notas.trim() && "Motivo",
     alta.comprobante && !(modo === "abono" && alta.abono.sinFoto) && "Foto",
     creaAdelanto && alta.contratoId && "Permiso",
+    creaAdelanto && firmar && onFirmar && "Firma al guardar",
     modo === "dar" && Number(alta.piesTablares) > 0 && fmtPt(Number(alta.piesTablares)),
   ].filter(Boolean) as string[];
 
@@ -134,6 +144,21 @@ export default function BloqueRespaldo({ alta }: { alta: AltaAdelanto }) {
                 <Field label="Foto del recibo o comprobante (opcional)" grupo>
                   <Comprobante url={alta.comprobante} onChange={alta.setComprobante} onAbrirCamara={() => setConCamara(true)} />
                 </Field>
+              )}
+              {creaAdelanto && onFirmar && (
+                <label className="flex min-h-12 cursor-pointer items-start gap-3 rounded-xl bg-[var(--surface-sunken)] px-3.5 py-3">
+                  <input
+                    type="checkbox"
+                    checked={firmar}
+                    onChange={(e) => onFirmar(e.target.checked)}
+                    data-firmar-al-guardar
+                    className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--accent)]"
+                  />
+                  <span className="min-w-0">
+                    <span className="block text-sm font-bold text-[var(--text-primary)]">Firmar el recibo en la pantalla al guardar</span>
+                    <span className="block text-sm text-[var(--text-secondary)]">La persona firma con el dedo; la hoja queda como foto del adelanto.</span>
+                  </span>
+                </label>
               )}
               {creaAdelanto && (
                 <SelectorContrato
