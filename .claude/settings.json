@@ -437,5 +437,8 @@
       "Bash(chmod 777 /*)",
       "Bash(env)"
     ]
+  },
+  "worktree": {
+    "bgIsolation": "none"
   }
 }
