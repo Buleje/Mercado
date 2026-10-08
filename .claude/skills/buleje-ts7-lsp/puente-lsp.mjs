@@ -11,10 +11,10 @@
 //
 // Todo lo demás pasa sin tocar. Apagar el plugin: `"buleje-ts7-lsp@skills-dir": false` en
 // `enabledPlugins` de .claude/settings.local.json. Depurar: BSM_LSP_DEBUG=1 (sale en `claude --debug`).
-import { spawn } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { readFileSync, statSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 process.title = "buleje-ts7-lsp";
 const raiz = process.env.CLAUDE_PROJECT_DIR || process.cwd();
@@ -102,6 +102,70 @@ function publicar(uri, items) {
   });
 }
 
+// ── Vecinos: los archivos que importan al editado ──────────────────────────────────────────────
+// Claude Code sólo abre lo que edita: si cambia la firma de OrdersDB, sus 40 importadores no avisan
+// hasta el typecheck. Se buscan por texto (rg, tope 60), se piden sus errores SIN abrirlos (15
+// archivos en 62-82 ms) y se publican sólo los de severidad 1: lo previo del repo son sugerencias
+// (severidad 4, p. ej. TS6385 «obsoleto»), así que no hace ruido. Al arreglarse, se publica vacío.
+const TOPE_VECINOS = 60;
+const vecinosDe = new Map(); // uri editado → Promise<uri[]>
+const vecinosConErrores = new Set();
+const pedidosVecinos = new Map(); // id → resolve
+const esperasVecinos = new Map();
+function buscarVecinos(uri) {
+  if (vecinosDe.has(uri)) return vecinosDe.get(uri);
+  const ruta = fileURLToPath(uri);
+  let nombre = path.basename(ruta).replace(/\.(d\.)?[mc]?[jt]sx?$/, "");
+  if (nombre === "index") nombre = path.basename(path.dirname(ruta));
+  const patron = `[/'"]${nombre.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(\\.js)?(/index)?['"]`;
+  const promesa = new Promise((resolve) => {
+    const args = ["-l", "-g", "*.{ts,tsx,mts,cts}", "-g", "!node_modules", "-g", "!.next", "-e", patron, raiz];
+    execFile("rg", args, { timeout: 5000, maxBuffer: 4 << 20 }, (err, salida) => {
+      if (err && err.code !== 1) log("rg falló:", String(err.message));
+      const lista = String(salida || "")
+        .split("\n")
+        .filter(Boolean)
+        .map((f) => pathToFileURL(f).href)
+        .filter((u) => u !== uri);
+      resolve(lista.slice(0, TOPE_VECINOS));
+    });
+  });
+  vecinosDe.set(uri, promesa);
+  return promesa;
+}
+function pedirSinAbrir(uri) {
+  const id = `puente-${++seq}`;
+  return new Promise((resolve) => {
+    pedidosVecinos.set(id, resolve);
+    alServidor({ jsonrpc: "2.0", id, method: "textDocument/diagnostic", params: { textDocument: { uri } } });
+    setTimeout(() => pedidosVecinos.delete(id) && resolve(null), 15000);
+  });
+}
+function revisarVecinos(uri) {
+  if (clientePide) return;
+  clearTimeout(esperasVecinos.get(uri));
+  esperasVecinos.set(
+    uri,
+    setTimeout(async () => {
+      esperasVecinos.delete(uri);
+      for (const v of await buscarVecinos(uri)) {
+        if (abiertos.has(v)) {
+          pedirDiagnosticos(v);
+          continue;
+        }
+        const r = await pedirSinAbrir(v);
+        if (r?.kind !== "full") continue;
+        const errores = (r.items ?? []).filter((d) => (d.severity ?? 1) === 1);
+        if (errores.length === 0 && !vecinosConErrores.has(v)) continue;
+        if (errores.length) vecinosConErrores.add(v);
+        else vecinosConErrores.delete(v);
+        alCliente({ jsonrpc: "2.0", method: "textDocument/publishDiagnostics", params: { uri: v, diagnostics: errores } });
+        log("vecino:", v, errores.length, "errores");
+      }
+    }, 600),
+  );
+}
+
 // ── Disco → servidor: lo que cambió por fuera de Edit/Write ────────────────────────────────────
 function sincronizarConDisco() {
   for (const [uri, doc] of abiertos) {
@@ -127,6 +191,7 @@ function sincronizarConDisco() {
       params: { textDocument: { uri, version: siguienteVersion(uri, 0) }, contentChanges: [{ text: texto }] },
     });
     pedirDiagnosticos(uri);
+    revisarVecinos(uri);
     log("cambiado en disco:", uri);
   }
 }
@@ -146,6 +211,7 @@ lector(process.stdin, (msg) => {
       abiertos.set(uri, { version: msg.params.textDocument.version ?? 0, mtime: mtimeDe(uri) });
       alServidor(msg);
       pedirDiagnosticos(uri);
+      revisarVecinos(uri);
       return;
     case "textDocument/didChange":
       if (!abiertos.has(uri)) abiertos.set(uri, { version: 0, mtime: null });
@@ -153,11 +219,13 @@ lector(process.stdin, (msg) => {
       abiertos.get(uri).mtime = mtimeDe(uri);
       alServidor(msg);
       pedirDiagnosticos(uri);
+      revisarVecinos(uri);
       return;
     case "textDocument/didSave":
       if (abiertos.has(uri)) abiertos.get(uri).mtime = mtimeDe(uri);
       alServidor(msg);
       pedirDiagnosticos(uri);
+      revisarVecinos(uri);
       return;
     case "textDocument/didClose":
       abiertos.delete(uri);
@@ -172,6 +240,11 @@ lector(process.stdin, (msg) => {
 
 // ── Servidor → cliente ─────────────────────────────────────────────────────────────────────────
 lector(srv.stdout, (msg) => {
+  if (msg.id !== undefined && !msg.method && pedidosVecinos.has(msg.id)) {
+    const resolver = pedidosVecinos.get(msg.id);
+    pedidosVecinos.delete(msg.id);
+    return resolver(msg.error ? null : msg.result);
+  }
   if (msg.id !== undefined && !msg.method && pedidosPropios.has(msg.id)) {
     const uri = pedidosPropios.get(msg.id);
     pedidosPropios.delete(msg.id);

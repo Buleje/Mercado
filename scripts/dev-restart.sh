@@ -20,7 +20,7 @@ sleep 3
 for p in "${PATRONES[@]}"; do pkill -KILL -f "$p" || true; done
 sleep 1
 
-# --parar: sólo apaga (modo juego de Windows, .claude-tune\modo-juego\modo-juego.ps1).
+# --parar: sólo apaga el dev (lo usaba el modo juego, retirado el 2026-10-07 junto con el juego).
 if [[ "${1:-}" == "--parar" ]]; then echo "[dev:restart] dev apagado"; exit 0; fi
 
 cd "$PROJECT_DIR" || exit 1
