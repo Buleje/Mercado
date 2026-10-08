@@ -89,13 +89,13 @@ const BUCKET_META: Record<
     label: "Yape de apertura de tienda",
     description: "Comprobantes esperando verificación para crear el tenant",
     icon: ReceiptText,
-    tone: "#0d9488",
+    tone: "var(--data-warning-500)",
   },
   paymentApprovals: {
     label: "Aprobaciones Yape",
     description: "Pagos detectados por Yape Vision pendientes de revisión",
     icon: CreditCard,
-    tone: "#0d9488",
+    tone: "var(--data-warning-500)",
   },
   vendorApplications: {
     label: "Solicitudes de tienda",

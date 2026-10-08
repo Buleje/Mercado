@@ -40,7 +40,7 @@ const PLAN_LABEL: Record<string, string> = { free: "Free", starter: "Starter", p
 
 function barColor(pct: number, near: boolean): string {
   if (near || pct >= 90) return "var(--data-error-500)";
-  if (pct >= 70) return "#0d9488";
+  if (pct >= 70) return "var(--data-warning-500)";
   return "var(--accent)";
 }
 
@@ -318,7 +318,7 @@ export default function TenantsUsagePage() {
                 <div className="border border-[var(--rule-soft)] p-2.5"><p className="text-[length:var(--ts-2xs)] font-extrabold uppercase text-[var(--text-tertiary)]">Antigüedad</p><p className="font-display text-xl font-extrabold tabular-nums text-[var(--text-primary)]">{detail.ageDays}d</p></div>
               </div>
               {detail.trialDaysLeft != null && (
-                <div className={`flex items-center gap-2 border p-3 text-sm ${isDoubleRisk(detail) ? "border-[var(--data-error-500)] bg-[var(--data-error-500)]/5 text-[var(--data-error-600,#dc2626)]" : "border-[var(--rule-soft)] text-[var(--text-secondary)]"}`}>
+                <div className={`flex items-center gap-2 border p-3 text-sm ${isDoubleRisk(detail) ? "border-[var(--data-error-500)] bg-[var(--data-error-500)]/5 text-[var(--data-error-600)]" : "border-[var(--rule-soft)] text-[var(--text-secondary)]"}`}>
                   <Gauge className="h-4 w-4 shrink-0" />
                   Trial: {detail.trialDaysLeft >= 0 ? `vence en ${detail.trialDaysLeft}d` : `venció hace ${-detail.trialDaysLeft}d`}
                   {isDoubleRisk(detail) && <span className="ml-auto font-extrabold">DOBLE RIESGO</span>}

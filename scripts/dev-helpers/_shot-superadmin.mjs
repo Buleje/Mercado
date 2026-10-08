@@ -11,7 +11,9 @@ import nextEnv from "@next/env";
 nextEnv.loadEnvConfig(process.cwd());
 
 const BASE = "http://localhost:3000";
-const CHROMIUM = path.join(process.env.HOME ?? "", ".cache/ms-playwright/chromium-1208/chrome-linux64/chrome");
+// Sin ruta fija: Playwright usa el Chromium de SU versión (la fija «chromium-1208» se rompió al
+// actualizarse a 1226, 08-10).
+const CHROMIUM = undefined;
 const out = process.argv[2] || "/tmp/sa.png";
 const route = process.argv[3] || "/superadmin/tenants";
 const dark = process.argv.includes("--dark");
@@ -23,7 +25,7 @@ if (!USER || !PASS) {
   process.exit(2);
 }
 
-const browser = await chromium.launch({ headless: true, executablePath: CHROMIUM });
+const browser = await chromium.launch({ headless: true, ...(CHROMIUM ? { executablePath: CHROMIUM } : {}) });
 try {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 1100 } });
   // Auth vía API (comparte cookie con las páginas del contexto). Evita la

@@ -13,9 +13,9 @@
  * ve. El catálogo, el formulario y el expediente viven en sus propios archivos.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertCircle, Building2, CalendarClock, FileText, Inbox, Stamp, TreePine } from "@buleje/design-system/icons";
-import LibroChrome, { type LibroGroup } from "@/components/admin/shared/libro-chrome";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AlertCircle, Building2, CalendarClock, Stamp, TreePine } from "@buleje/design-system/icons";
+import LibroChrome from "@/components/admin/shared/libro-chrome";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import ContratoActivoChip from "@/components/admin/forestal/ContratoActivoChip";
 import { useForestTramites } from "@/hooks/use-forest-tramites";
@@ -24,30 +24,17 @@ import { FORMATOS_TRAMITE, datosParaDuplicar, formatoPorId, type DatosTramite } 
 import { tramitesPorVencer, tramitesSinRespuesta, type TramiteRegistro } from "@/lib/forestal/tramites-registro";
 import { mensajeAvisoTramites } from "@/lib/forestal/tramites-aviso-mensaje";
 import { avisoPlazoRelacion, relacionesDelFormato } from "@/lib/forestal/tramites-relacion-guias";
-import type { CtpReportFicha } from "@/lib/forestal/ctp-print-shared";
-import TramiteFormulario, { type AutollenadoTramite } from "./TramiteFormulario";
+import TramiteFormulario from "./TramiteFormulario";
 import TramitesCatalogo from "./TramitesCatalogo";
 import TramitesExpediente from "./TramitesExpediente";
 import TramiteAvisoWhatsApp from "./TramiteAvisoWhatsApp";
 import PlantacionesModule from "./PlantacionesModule";
 import TramiteAvisoGuias from "./TramiteAvisoGuias";
 import { useTramiteDesdeGuias } from "./hooks/use-tramite-desde-guias";
-import type { DatosDesdeGuias } from "@/lib/forestal/tramites-desde-guias";
+import { useAutollenadoTramite } from "./hooks/use-autollenado-tramite";
+import { useTramiteDesdeUrl } from "./hooks/use-tramite-desde-url";
 
-const MODULE_ID = "forestal-tramites";
-type Vista = "catalogo" | "expediente" | "plantaciones";
-
-const GRUPOS: LibroGroup[] = [
-  {
-    id: "tramites",
-    label: "Trámites",
-    views: [
-      { key: "catalogo", label: "Formatos", icon: FileText, hint: "Elige el trámite y llénalo" },
-      { key: "expediente", label: "Expediente", icon: Inbox, hint: "Qué se presentó y en qué estado está" },
-      { key: "plantaciones", label: "Plantaciones", icon: TreePine, hint: "Registro RNPF — inscripción y actualización" },
-    ],
-  },
-];
+import { MODULE_ID, GRUPOS, type Vista } from "./tramites-grupos";
 
 export default function ForestalTramites() {
   const [vista, setVista] = useState<Vista>("catalogo");
@@ -59,11 +46,11 @@ export default function ForestalTramites() {
    *  por el catálogo reutilizaría la instancia y arrastraría estado interno
    *  (estado/N° de documento) del trámite anterior. */
   const [instancia, setInstancia] = useState(0);
-  const [auto, setAuto] = useState<AutollenadoTramite>({ ficha: null });
-  const [autoListo, setAutoListo] = useState(false);
+  const { auto, autoListo } = useAutollenadoTramite();
   /** Casilleros que traen las guías elegidas en la vista GTF del Libro TH (07-10). */
   const [prellenado, setPrellenado] = useState<DatosTramite | null>(null);
   const desdeGuias = useTramiteDesdeGuias(autoListo, auto.ficha?.razonSocial ?? null);
+  const formatoGuias = desdeGuias.pedido?.formatoId ?? null;
   const { tramites, cargando, error, setError, recargar, guardar, borrar } = useForestTramites();
   /** Sólo para el aviso "listo para presentar" — Plantaciones tiene su propio
    *  motor (ADR-380, ficha estructurada, no un `FormatoTramite`) y no vive en
@@ -75,50 +62,6 @@ export default function ForestalTramites() {
   useEffect(() => {
     if (vista === "catalogo") void recargarPlantaciones();
   }, [vista, recargarPlantaciones]);
-
-  /**
-   * Autollenado: la Ficha CTP es el membrete y el Libro tiene el resto (la serie
-   * y el correlativo de la última GTF emitida). Se carga una vez al montar: son
-   * los datos que el operador no debería re-tipear.
-   */
-  useEffect(() => {
-    let vivo = true;
-    (async () => {
-      const [f, salida] = await Promise.all([
-        fetch("/api/admin/forestal/ctp-ficha", { credentials: "include" })
-          .then((r) => (r.ok ? r.json() : null))
-          .catch((err) => {
-            console.warn("[tramites] ficha no disponible", err);
-            return null;
-          }),
-        fetch("/api/admin/forestal/ctp?section=despacho", { credentials: "include" })
-          .then((r) => (r.ok ? r.json() : null))
-          .catch((err) => {
-            console.warn("[tramites] despachos no disponibles", err);
-            return null;
-          }),
-      ]);
-      if (!vivo) return;
-      const ficha: CtpReportFicha | null = f?.ficha ?? f ?? null;
-
-      // Última GTF emitida: la serie es lo que va antes del último guion y el
-      // correlativo lo que sigue. Si el CTP la escribe distinto, el operador lo
-      // corrige en el formulario — es una sugerencia, no un dato del libro.
-      const conGtf = (salida?.entries ?? []).filter((e: { gtfNumber?: string | null }) => e.gtfNumber?.trim());
-      const ultima: string = conGtf[0]?.gtfNumber ?? "";
-      const corte = ultima.lastIndexOf("-");
-      setAuto({
-        ficha,
-        serieGtf: corte > 0 ? ultima.slice(0, corte) : ultima || undefined,
-        ultimoCorrelativo: corte > 0 ? ultima.slice(corte + 1) : undefined,
-        despachosCount: conGtf.length || undefined,
-      });
-      setAutoListo(true);
-    })();
-    return () => {
-      vivo = false;
-    };
-  }, []);
 
   const formato = formatoId ? formatoPorId(formatoId) : null;
   const esperando = useMemo(() => tramitesSinRespuesta(tramites, new Date()), [tramites]);
@@ -157,31 +100,18 @@ export default function ForestalTramites() {
       .filter((x): x is { formato: (typeof FORMATOS_TRAMITE)[number]; aviso: NonNullable<ReturnType<typeof avisoPlazoRelacion>> } => x !== null);
   }, [tramites]);
 
-  /* Llegó con guías elegidas: abre su formato con lo que traen (y otra vez si
-     pide incluir una anulada reemitida). */
-  const resultadoGuias = desdeGuias.resultado;
-  const formatoGuias = desdeGuias.pedido?.formatoId ?? null;
-  /** El resultado ya volcado y en qué montaje del formulario quedó. */
-  const aplicadoGuias = useRef<{ resultado: DatosDesdeGuias; instancia: number } | null>(null);
-  /** «Incluirla igual» con ese formulario abierto: le suma las filas sin rearmarlo (lo tipeado queda). */
-  const [sumarGuias, setSumarGuias] = useState<{ instancia: number; guiasJson: string; numeros: string[] } | null>(null);
-  useEffect(() => {
-    if (!resultadoGuias || !formatoGuias) return;
-    const previo = aplicadoGuias.current;
-    if (previo?.resultado === resultadoGuias) return;
-    if (previo && formatoId === formatoGuias && previo.instancia === instancia) {
-      aplicadoGuias.current = { resultado: resultadoGuias, instancia };
-      setSumarGuias({ instancia, guiasJson: resultadoGuias.datos.guiasJson ?? "", numeros: previo.resultado.reemitidasExcluidas });
-      return;
-    }
-    aplicadoGuias.current = { resultado: resultadoGuias, instancia: instancia + 1 };
-    setFormatoId(formatoGuias);
-    setEditando(null);
-    setSeedDatos(null);
-    setPrellenado(resultadoGuias.datos);
-    setInstancia(instancia + 1);
-    setVista("catalogo");
-  }, [resultadoGuias, formatoGuias, formatoId, instancia]);
+  const sumarGuias = useTramiteDesdeUrl({
+    resultadoGuias: desdeGuias.resultado,
+    formatoGuias,
+    formatoId,
+    instancia,
+    setFormatoId,
+    setEditando,
+    setSeedDatos,
+    setPrellenado,
+    setInstancia,
+    setVista,
+  });
 
   const abrirFormato = useCallback((id: string) => {
     setFormatoId(id);

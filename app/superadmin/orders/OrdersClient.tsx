@@ -91,7 +91,7 @@ type SortKey = "recent" | "oldest" | "total_desc" | "total_asc";
 type ViewMode = "compact" | "comfort";
 
 const STATUS_META: Record<OrderStatus, { label: string; tone: string; icon: typeof CheckCircle2 }> = {
-  pendiente: { label: "Pendiente", tone: "#0d9488", icon: Clock },
+  pendiente: { label: "Pendiente", tone: "var(--data-warning-500)", icon: Clock },
   confirmado: { label: "Confirmado", tone: "var(--data-info-500)", icon: CheckCircle2 },
   preparando: { label: "Preparando", tone: "var(--accent)", icon: Sparkles },
   en_camino: { label: "En camino", tone: "var(--accent)", icon: Truck },

@@ -100,7 +100,7 @@ const PLAN_BADGE: Record<AdminPlan, string> = {
   basico: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] border border-[var(--rule-base)]",
   pro: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border border-[var(--accent)]/30",
   enterprise: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border border-primary/30",
-  max: "bg-[var(--data-success-50,#ecfdf5)] text-[var(--data-success-700,#047857)] border border-[var(--data-success-500)]/30",
+  max: "bg-[var(--data-success-50)] text-[var(--data-success-700)] border border-[var(--data-success-500)]/30",
 };
 
 type PresetId = "minimo" | "completo" | "enterprise" | "personalizado";
@@ -441,7 +441,7 @@ export function PlantillaPanelTab() {
           style={{
             borderColor:
               toast.tone === "success" ? "var(--data-success)" :
-              toast.tone === "warning" ? "#0d9488" :
+              toast.tone === "warning" ? "var(--data-warning-500)" :
               "var(--accent)",
           }}
           role="status"
@@ -453,11 +453,11 @@ export function PlantillaPanelTab() {
               style={{
                 backgroundColor:
                   toast.tone === "success" ? "rgb(from var(--data-success) r g b / 0.12)" :
-                  toast.tone === "warning" ? "rgb(from #0d9488 r g b / 0.12)" :
+                  toast.tone === "warning" ? "rgb(from var(--data-warning-500) r g b / 0.12)" :
                   "rgb(from var(--accent) r g b / 0.12)",
                 color:
                   toast.tone === "success" ? "var(--data-success)" :
-                  toast.tone === "warning" ? "#0d9488" :
+                  toast.tone === "warning" ? "var(--data-warning-500)" :
                   "var(--accent)",
               }}
             >
@@ -570,7 +570,7 @@ export function PlantillaPanelTab() {
                   className={
                     s.accent ? "text-[var(--accent)]" :
                     s.warning ? "text-[var(--accent-ink)] dark:text-[var(--accent)]" :
-                    (s as { success?: boolean }).success ? "text-[var(--data-success-600,#059669)]" :
+                    (s as { success?: boolean }).success ? "text-[var(--data-success-600)]" :
                     "text-[var(--text-primary)]"
                   }
                 >
