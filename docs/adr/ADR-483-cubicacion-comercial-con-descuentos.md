@@ -46,4 +46,4 @@ La GTF viva `019-001-0000001` del Libro TH tiene 22 trozas con D1/D2/largo y dec
 
 ## Pendientes (default tomado; decide Brandon)
 
-P1 hueco = cilindro con el largo neto (si en la plaza se descuenta «Ø − hueco» al cuadrado, cambia sólo `trozaNeta`) · P2 ¿aplicar llena `valorVenta` del despacho vacío? hoy no · P3 una cubicación por GTF de salida, no por línea · P4 compra y venta de la misma guía siguen bloqueadas entre sí · P5 prefijo único `CUB-` · P6 «Abrir el Cubicador de madera» sólo abre la herramienta · P7 la aserrada `libre` con guía que no está en el Libro CTP se guarda como se escribió (no 422), en compra y en venta.
+P1 hueco = cilindro con el largo neto — **confirmado por Brandon 08-10: «sí se descuenta» así en la plaza** · P2 ¿aplicar llena `valorVenta` del despacho vacío? hoy no · P3 una cubicación por GTF de salida, no por línea · P4 compra y venta de la misma guía siguen bloqueadas entre sí · P5 prefijo único `CUB-` · P6 «Abrir el Cubicador de madera» sólo abre la herramienta · P7 la aserrada `libre` con guía que no está en el Libro CTP se guarda como se escribió (no 422), en compra y en venta.

@@ -599,7 +599,7 @@ export const CamarasDB = {
     return diasRetencionDe(await PlatformSettingsDB.getFresco<unknown>(CLAVE_RETENCION_PERSONAS(tenantId)));
   },
 
-  /** Guarda los días de retención (entero 1-365). `false` si el número no vale. */
+  /** Guarda los días de retención (entero 1-60). `false` si el número no vale. */
   async fijarRetencionPersonas(tenantId: string, dias: number, user: string): Promise<boolean> {
     if (!tenantId) throw new Error("tenantId is required");
     const validos = diasRetencionValidos(dias);

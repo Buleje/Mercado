@@ -61,17 +61,18 @@ describe("fotosVencidas", () => {
 });
 
 describe("días de retención", () => {
-  it("valida enteros 1-365", () => {
+  it("valida enteros 1-60 (Ley 29733)", () => {
     expect(diasRetencionValidos(30)).toBe(30);
     expect(diasRetencionValidos("45")).toBe(45);
     expect(diasRetencionValidos(1)).toBe(1);
-    expect(diasRetencionValidos(365)).toBe(365);
-    for (const malo of [0, 366, -3, 2.5, "", "abc", null, undefined, NaN]) {
+    expect(diasRetencionValidos(60)).toBe(60);
+    for (const malo of [0, 61, 365, -3, 2.5, "", "abc", null, undefined, NaN]) {
       expect(diasRetencionValidos(malo)).toBeNull();
     }
   });
   it("lo guardado raro cae al default de 30", () => {
     expect(diasRetencionDe({ dias: 7 })).toBe(7);
+    expect(diasRetencionDe({ dias: 365 })).toBe(60); // guardado con el tope viejo → el tope nuevo
     for (const raro of [null, undefined, {}, [], { dias: 0 }, { dias: "x" }, 12, "a"]) {
       expect(diasRetencionDe(raro)).toBe(30);
     }

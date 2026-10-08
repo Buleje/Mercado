@@ -19,7 +19,8 @@ import { limaDateKey } from "@/lib/utils";
 
 export const DIAS_RETENCION_PERSONAS_DEFECTO = 30;
 export const DIAS_RETENCION_PERSONAS_MIN = 1;
-export const DIAS_RETENCION_PERSONAS_MAX = 365;
+/** Tope 60 días (Ley 29733, directiva de videovigilancia; Brandon 08-10). */
+export const DIAS_RETENCION_PERSONAS_MAX = 60;
 
 /** Tag con el que el detector marca sus fotos en el Drive. */
 export const TAG_FOTO_PERSONA = "personas";
@@ -32,13 +33,15 @@ export function diasRetencionValidos(valor: unknown): number | null {
   return n;
 }
 
-/** Lo guardado (`{ dias }`) → días a usar; cualquier cosa rara = el default. */
+/**
+ * Lo guardado (`{ dias }`) → días a usar; cualquier cosa rara = el default.
+ * Un negocio que guardó más del tope (antes era 365) queda en el tope, no en
+ * el default: bajar el tope no debe borrar fotos que el negocio quería tener.
+ */
 export function diasRetencionDe(guardado: unknown): number {
-  const dias =
-    guardado && typeof guardado === "object" && !Array.isArray(guardado)
-      ? diasRetencionValidos((guardado as { dias?: unknown }).dias)
-      : null;
-  return dias ?? DIAS_RETENCION_PERSONAS_DEFECTO;
+  const crudo = guardado && typeof guardado === "object" && !Array.isArray(guardado) ? (guardado as { dias?: unknown }).dias : null;
+  if (typeof crudo === "number" && Number.isInteger(crudo) && crudo > DIAS_RETENCION_PERSONAS_MAX) return DIAS_RETENCION_PERSONAS_MAX;
+  return diasRetencionValidos(crudo) ?? DIAS_RETENCION_PERSONAS_DEFECTO;
 }
 
 /** Instante desde el cual las fotos se conservan: 00:00 de Lima de hoy − `dias`. */

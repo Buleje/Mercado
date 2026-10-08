@@ -18,7 +18,7 @@ import {
  * `camaras-personas-retencion`).
  *
  * GET — `{ ok, dias, porDefecto, min, max, puedeEditar }` (admin, dueño, almacenero).
- * PUT — `{ dias }` entero 1-365 → `{ ok, dias }`. Sólo admin y dueño: decide
+ * PUT — `{ dias }` entero 1-60 → `{ ok, dias }`. Sólo admin y dueño: decide
  *       cuánto historial se conserva (`requireAdmin` deja pasar al encargado:
  *       se corta aparte con `soloAdminODueno`).
  */
