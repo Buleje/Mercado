@@ -13,7 +13,8 @@
  *   node scripts/qa-capturas.mjs --tenant <slug> --ruta "/admin?tab=x" \
  *     [--pasos '<json>' | --pasos-archivo pasos.json] [--salida <dir>] \
  *     [--nombre base] [--anchos 1280,400] [--temas claro,oscuro] [--completa] \
- *     [--preset cubicador-lote,resumenes-rolliza]   (recorridos de scripts/qa-pasos/, van antes)
+ *     [--preset cubicador-lote,resumenes-rolliza]   (recorridos de scripts/qa-pasos/, van antes) \
+ *     [--resumen]   (stdout sólo con lo esencial; el JSON completo igual queda en <salida>/reporte.json)
  *
  * Pasos (array JSON, una clave por paso; los selectores son de Playwright,
  * p. ej. `text=Guardar`, `role=button[name="Dueños"]`, `#id`):
@@ -46,6 +47,10 @@
  *   {"quien": "<sel>"}            → qué componentes de React dibujan ese elemento (del más cercano hacia
  *                                   afuera), al reporte. 08-10: encontrar el dueño del botón «Gráficos»
  *                                   costó 5 grep (el texto venía de un valor por defecto). Ej.: {"quien": "text=Gráficos"}
+ *   {"reglas": ["<sel>", "<propiedad>"]} → las reglas CSS que tocan ese elemento (hoja:línea, selector, valor) y
+ *                                   cuál gana para esa propiedad, más su valor calculado (CDP CSS.getMatchedStylesForNode).
+ *                                   Con propiedad lista sólo las que la declaran; sin ella, todas. Ej.: {"reglas": ["h1", "color"]} — 08-10: «por qué
+ *                                   este texto sale gris» eran 4 getComputedStyle + grep de hojas.
  *   (`esperar` con selector espera el elemento VISIBLE: ya no se cuelga con un [role=dialog] oculto.)
  * Sin ningún paso «captura», se captura el estado final con --nombre.
  *
@@ -61,12 +66,16 @@
  * Cada captura mide el fondo del centro de la pantalla (`fondoCentro`): el
  * tema se mide, no se mira en la miniatura.
  *
+ * Reporte: SIEMPRE se escribe `<salida>/reporte.json` (el JSON completo) y su ruta va en `reporte`. Con `--resumen`
+ * stdout trae sólo ok, falla, nº de capturas, errores y la ruta del reporte (evals y reglas se leen en el archivo).
+ * Si el login responde ≠200 la falla trae el mensaje del servidor (campo error/message o el cuerpo), no sólo el código.
+ *
  * Sale un JSON: capturas, respuestas ≥400 (con ruta), errores de consola (nº y textos),
  * pageerror, evals y ms.
  * Código 1 si hubo `pageerror` o falló un paso.
  */
 import { chromium } from "playwright";
-import { mkdirSync, readFileSync, existsSync } from "node:fs";
+import { mkdirSync, readFileSync, existsSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { resolverChromium } from "./dev-helpers/chromium-path.mjs";
 
@@ -238,6 +247,65 @@ function vigilarRed(page) {
   };
 }
 
+/**
+ * Qué reglas CSS tocan un elemento y cuál gana para una propiedad (CDP, como el panel «Styles»
+ * de DevTools). El orden de `matchedCSSRules` es de menor a mayor prioridad en la cascada;
+ * `!important` pasa por encima y el `style=""` en línea por encima de las hojas.
+ */
+async function reglasCss(page, sel, prop) {
+  await visible(page, sel).evaluate((el) => {
+    document.querySelectorAll("[data-qa-regla]").forEach((x) => x.removeAttribute("data-qa-regla"));
+    el.setAttribute("data-qa-regla", "1");
+  });
+  const cdp = await page.context().newCDPSession(page);
+  try {
+    const hojas = new Map();
+    cdp.on("CSS.styleSheetAdded", ({ header }) => hojas.set(header.styleSheetId, header.sourceURL || (header.isInline ? "<style en línea>" : "<hoja sin url>")));
+    await cdp.send("DOM.enable");
+    await cdp.send("CSS.enable"); // vuelca styleSheetAdded de las hojas ya cargadas
+    const { root } = await cdp.send("DOM.getDocument", { depth: 0 });
+    const { nodeId } = await cdp.send("DOM.querySelector", { nodeId: root.nodeId, selector: "[data-qa-regla]" });
+    if (!nodeId) throw new Error(`reglas: no pude ubicar ${sel} en el DOM`);
+    const m = await cdp.send("CSS.getMatchedStylesForNode", { nodeId });
+    const calculado = prop
+      ? (await cdp.send("CSS.getComputedStyleForNode", { nodeId })).computedStyle.find((c) => c.name === prop)?.value ?? null
+      : null;
+    const origen = (r) => {
+      const h = hojas.get(r.styleSheetId);
+      const archivo = h ? h.replace(/^https?:\/\/[^/]+/, "").split("?")[0] : r.origin;
+      const linea = r.style.range ? `:${r.style.range.startLine + 1}` : "";
+      return `${archivo}${linea}`;
+    };
+    const lista = [];
+    for (const { rule } of m.matchedCSSRules ?? []) {
+      if (rule.origin === "user-agent") continue;
+      const decl = prop ? rule.style.cssProperties.find((p) => p.name === prop && p.parsedOk !== false && !p.disabled) : null;
+      if (prop && !decl) continue; // con propiedad, sólo las reglas que la declaran
+      const media = rule.media?.map((x) => x.text).join(" ");
+      lista.push({
+        selector: rule.selectorList.text,
+        origen: origen(rule),
+        ...(media ? { media } : {}),
+        ...(prop ? { valor: decl ? decl.value + (decl.important ? " !important" : "") : null } : {}),
+      });
+    }
+    const resultado = { elemento: sel, propiedad: prop ?? null, calculado, reglas: lista };
+    if (prop) {
+      const enLinea = m.inlineStyle?.cssProperties.find((p) => p.name === prop && p.parsedOk !== false && !p.disabled);
+      const candidatas = lista.filter((r) => r.valor != null);
+      const importante = [...candidatas].reverse().find((r) => r.valor.endsWith("!important"));
+      const gana = enLinea && !importante ? { selector: "style=\"\" (en línea)", origen: "elemento", valor: enLinea.value }
+        : importante ?? candidatas[candidatas.length - 1] ?? null;
+      resultado.gana = gana;
+      if (!gana) resultado.nota = "ninguna regla declara esa propiedad: es heredada o el valor por defecto";
+    }
+    return resultado;
+  } finally {
+    await cdp.detach().catch(() => {});
+    await page.evaluate(() => document.querySelectorAll("[data-qa-regla]").forEach((x) => x.removeAttribute("data-qa-regla"))).catch(() => {});
+  }
+}
+
 async function recorrido(t, primero) {
   const page = await ctx.newPage();
   const esperarQuietud = vigilarRed(page);
@@ -356,6 +424,11 @@ async function recorrido(t, primero) {
           });
           if (primero) evals.push({ paso: i, valor: v });
         }
+        else if (tipo === "reglas") {
+          const [sel, prop] = Array.isArray(valor) ? valor : [valor];
+          const v = await reglasCss(page, sel, prop);
+          if (primero) evals.push({ paso: i, reglas: v });
+        }
         else if (tipo === "captura") { await matriz(page, valor, t); huboCaptura = true; }
         else throw new Error(`paso desconocido «${tipo}»`);
       } catch (e) {
@@ -393,7 +466,14 @@ try {
       headers: { "content-type": "application/json", "x-tenant-id": tenant, "x-csrf-token": csrf },
       data: { username: usuario, password: clave, tenantSlug: tenant },
     });
-    if (r.status() !== 200) throw new Error(`login ${r.status()}: ${(await r.text()).slice(0, 160)}`);
+    if (r.status() !== 200) {
+      /* El mensaje del servidor (error/message/detalle del JSON, o el cuerpo crudo): un 500 sin
+         texto obligaba a abrir el log del dev server para saber qué falló (08-10). */
+      const cuerpo = await r.text();
+      let msg = cuerpo;
+      try { const j = JSON.parse(cuerpo); msg = [j.error?.message ?? j.error, j.message, j.detail ?? j.details].filter((x) => typeof x === "string").join(" | ") || cuerpo; } catch { /* no era JSON */ }
+      throw new Error(`login ${r.status()} ${r.statusText()}: ${msg.replace(/\s+/g, " ").slice(0, 400) || "(cuerpo vacío)"}`);
+    }
   }
   await page.close();
   // Los temas van en serie a propósito: en paralelo (probado 2026-09-25)
@@ -407,5 +487,13 @@ try {
 }
 
 const ok = !falla && pageerrors.length === 0;
-console.log(JSON.stringify({ ok, falla, tenant, ruta, capturas, respuestas: [...new Set(respuestas)], consola: consola.length, consolaTextos: [...new Set(consola)].slice(0, 8), pageerrors, evals, ms: Date.now() - t0 }, null, 1));
+const reporte = { ok, falla, tenant, ruta, capturas, respuestas: [...new Set(respuestas)], consola: consola.length, consolaTextos: [...new Set(consola)].slice(0, 8), pageerrors, evals, ms: Date.now() - t0 };
+const archivoReporte = path.join(salida, "reporte.json");
+try { writeFileSync(archivoReporte, JSON.stringify({ ...reporte, generado: new Date().toISOString() }, null, 1)); }
+catch (e) { console.error(`no pude escribir ${archivoReporte}: ${e.message}`); }
+if (bandera("resumen")) {
+  console.log(JSON.stringify({ ok, falla, tenant, ruta, capturas: capturas.map((c) => c.archivo), respuestasMalas: reporte.respuestas.length, consola: reporte.consola, pageerrors, evals: evals.length, ms: reporte.ms, reporte: archivoReporte }, null, 1));
+} else {
+  console.log(JSON.stringify({ ...reporte, reporte: archivoReporte }, null, 1));
+}
 process.exit(ok ? 0 : 1);
