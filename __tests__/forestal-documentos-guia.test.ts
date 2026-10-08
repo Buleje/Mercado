@@ -8,6 +8,8 @@ import {
   esPdfPorFirma,
   etiquetasDeBusqueda,
   etiquetasDeDocumentoGuia,
+  faltantesPorGuia,
+  labelEnFrase,
   llenosPorGuia,
   nombreDeDocumentoGuia,
 } from "@/lib/forestal/documentos-guia";
@@ -73,6 +75,27 @@ describe("casilleros de la guía (ADR-438)", () => {
       otra: 1,
       "sin-nada": 0,
     });
+  });
+
+  it("papeles de ley (ADR-482): transportista y otros no faltan; varias guías a la vez", () => {
+    const docs = [
+      { tags: etiquetasDeDocumentoGuia(G, "factura") },
+      { tags: etiquetasDeDocumentoGuia(G, "guia_transportista") },
+      { tags: ["forestal", "lista de trozas", G] },
+      ...(["factura", "guia_remitente", "gtf", "lista_trozas"] as const).map((c) => ({
+        tags: etiquetasDeDocumentoGuia("LLENA", c),
+      })),
+    ];
+    expect(faltantesPorGuia(docs, [G, "LLENA", "VACIA", " "])).toEqual({
+      [G]: ["guia_remitente", "gtf"],
+      LLENA: [],
+      VACIA: ["factura", "guia_remitente", "gtf", "lista_trozas"],
+    });
+    expect(["factura", "gtf", "guia_remitente"].map((c) => labelEnFrase(c as "factura"))).toEqual([
+      "factura",
+      "GTF",
+      "guía de remisión del remitente",
+    ]);
   });
 
   it("busca por la etiqueta de máquina (tal cual y en minúscula) y por el N° solo", () => {

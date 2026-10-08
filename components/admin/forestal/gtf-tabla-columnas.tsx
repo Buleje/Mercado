@@ -20,6 +20,7 @@ import {
 import type { ColumnaElegible } from "@/components/admin/shared/columnas-ordenables";
 import { FiltroEnCabecera, type ColumnaFiltro, type FiltrosTabla } from "./filtros-tabla-forestal";
 import GtfOrigenChip from "./GtfOrigenChip";
+import ChipPapelesGtf from "./ChipPapelesGtf"; // ADR-482
 
 export interface GtfItem {
   /** `code` = código único del libro; `codigoGuia` = el impreso en la guía si difiere (ADR-474). */
@@ -173,7 +174,7 @@ export function cabecerasGtf(f: FiltrosTabla<FilaGtf>): Record<string, ReactNode
 /** Las celdas movibles de una fila (las `data-label` las lee la vista en tarjetas). */
 export function celdasGtf({ g, origen, tipoPlan, resolucion, estados }: FilaGtf): Record<string, ReactNode> {
   return {
-    gtf: <td data-label="N° GTF" className={TD}><span className="font-mono font-bold text-[var(--text-primary)]">{g.gtfNumber}</span></td>,
+    gtf: <td data-label="N° GTF" className={TD}><span className="block font-mono font-bold text-[var(--text-primary)]">{g.gtfNumber}</span><ChipPapelesGtf g={g} /></td>,
     origen: <td data-label="Origen" className={TD}><GtfOrigenChip origen={origen.origen} registro={origen.registro} /></td>,
     registro: (
       <td data-label="N° de registro" className={`${TD} whitespace-nowrap font-mono text-[var(--text-secondary)]`}>

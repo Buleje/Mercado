@@ -62,6 +62,12 @@ export const PREFIJO_TAG_GTF = "gtf:";
 export const PREFIJO_TAG_CASILLERO = "casillero:";
 /** Dónde viven las guías en el Drive. Un solo nombre (lo usa también «Guardar en el expediente»). */
 export const CARPETA_GUIAS = "Guías forestales (GTF)";
+/**
+ * Quién ve los papeles de una guía (facturas, DNI del titular…): los mismos
+ * roles que la ruta. Van en el DOCUMENTO, no sólo en la ruta: en el Drive
+ * general el cajero los veía (revisión de seguridad 08-10, ADR-482).
+ */
+export const ROLES_PAPELES_GUIA = ["admin", "almacenero", "owner"] as const;
 
 /** Tope por archivo: Vercel corta el PEDIDO en 4,5 MB con un 413 sin JSON. */
 export const MAX_BYTES_DOC_GUIA = 4 * 1024 * 1024;
@@ -74,6 +80,12 @@ export function esCasilleroGuia(v: unknown): v is CasilleroGuia {
 
 export function labelDeCasillero(c: CasilleroGuia): string {
   return CASILLEROS_GUIA.find((x) => x.clave === c)?.label ?? c;
+}
+
+/** El nombre del casillero dentro de una frase: «falta factura, GTF» (la sigla no se baja). */
+export function labelEnFrase(c: CasilleroGuia): string {
+  const l = labelDeCasillero(c);
+  return l === l.toUpperCase() ? l : l.charAt(0).toLowerCase() + l.slice(1);
 }
 
 export const tagGtf = (gtf: string) => `${PREFIJO_TAG_GTF}${gtf.trim()}`;
@@ -180,6 +192,33 @@ export function llenosPorGuia(
   for (const gtf of gtfs) {
     if (!gtf.trim() || gtf in out) continue;
     out[gtf] = casillerosLlenos(agruparPorCasillero(docs, gtf));
+  }
+  return out;
+}
+
+/**
+ * Los papeles que una guía TIENE que tener para estar completa (ADR-482,
+ * Brandon 08-10: «factura, guía de remisión, GTF y lista de trozas original
+ * firmada»). La guía del transportista y «otros» suman cuando están, pero no
+ * faltan: el camión puede ser del mismo remitente.
+ */
+export const PAPELES_DE_LEY = [
+  "factura",
+  "guia_remitente",
+  "gtf",
+  "lista_trozas",
+] as const satisfies readonly CasilleroGuia[];
+
+/** Los papeles de ley que le faltan a cada guía, en el orden de `PAPELES_DE_LEY`. */
+export function faltantesPorGuia(
+  docs: readonly DocConEtiquetas[],
+  gtfs: readonly string[],
+): Record<string, CasilleroGuia[]> {
+  const out: Record<string, CasilleroGuia[]> = {};
+  for (const gtf of gtfs) {
+    if (!gtf.trim() || gtf in out) continue;
+    const g = agruparPorCasillero(docs, gtf);
+    out[gtf] = PAPELES_DE_LEY.filter((c) => g[c].length === 0);
   }
   return out;
 }

@@ -160,34 +160,56 @@ export function useDocumentosGuia(gtf: string | null) {
   return { datos, cargando, error, subiendo, recargar, subir, quitar };
 }
 
+/** El GET acepta hasta 200 guías por pedido; 100 deja la URL corta. */
+const LOTE_CONTEO = 100;
+
+type Conteo = { llenos?: Record<string, number>; faltan?: Record<string, CasilleroGuia[]> };
+
 /**
- * Casilleros llenos de cada guía en pantalla (`{ "019-0000003": 3 }`), en UN
- * pedido. Una guía sin respuesta no aparece: la fila no dibuja nada antes que
- * un «0 de 6» que no se midió.
+ * Casilleros llenos de cada guía en pantalla (`{ "019-0000003": 3 }`), en un
+ * pedido por cada 100 guías. Una guía sin respuesta no aparece: la fila no
+ * dibuja nada antes que un «0 de 6» que no se midió. `fallo` = algún pedido no
+ * contestó (quien muestra un total pone «—» en vez de esperar para siempre).
  */
 export function useConteoDocumentosGuias(gtfs: readonly string[]) {
   const [llenos, setLlenos] = useState<Record<string, number>>({});
+  /** Papeles de ley que le faltan a cada guía (ADR-482); sin medir, la guía no está. */
+  const [faltan, setFaltan] = useState<Record<string, CasilleroGuia[]>>({});
+  const [fallo, setFallo] = useState(false);
   const clave = [...new Set(gtfs.filter(Boolean))].sort().join(",");
   const turno = useRef(0);
 
   const refrescar = useCallback(async () => {
     if (!clave) return;
     const mio = ++turno.current;
-    try {
-      const res = await fetch(`${RUTA}?gtfs=${encodeURIComponent(clave)}`, {
-        credentials: "include",
-      });
-      if (!res.ok) return;
-      const d = (await res.json()) as { llenos?: Record<string, number> };
-      if (mio === turno.current && d.llenos) setLlenos(d.llenos);
-    } catch (e) {
-      logger.warn("[docs-guia] conteo failed", { error: String(e) });
-    }
+    const lista = clave.split(",");
+    const lotes: string[][] = [];
+    for (let i = 0; i < lista.length; i += LOTE_CONTEO) lotes.push(lista.slice(i, i + LOTE_CONTEO));
+    const respuestas = await Promise.all(
+      lotes.map(async (lote): Promise<Conteo | null> => {
+        try {
+          const res = await fetch(`${RUTA}?gtfs=${encodeURIComponent(lote.join(","))}`, {
+            credentials: "include",
+          });
+          return res.ok ? ((await res.json()) as Conteo) : null;
+        } catch (e) {
+          logger.warn("[docs-guia] conteo failed", { error: String(e) });
+          return null;
+        }
+      }),
+    );
+    if (mio !== turno.current) return;
+    const ok = respuestas.filter((d): d is Conteo => d != null);
+    const fallaron = ok.length < respuestas.length;
+    /* Si un lote no contestó, lo ya medido se queda: un tropiezo no borra las pastillas. */
+    setLlenos((prev) => Object.assign(fallaron ? { ...prev } : {}, ...ok.map((d) => d.llenos ?? {})));
+    setFaltan((prev) => Object.assign(fallaron ? { ...prev } : {}, ...ok.map((d) => d.faltan ?? {})));
+    setFallo(fallaron);
   }, [clave]);
 
   useEffect(() => {
     void refrescar();
   }, [refrescar]);
 
-  return { llenos, refrescar };
+  return { llenos, faltan, fallo, refrescar };
 }

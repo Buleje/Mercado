@@ -18,31 +18,36 @@ import {
   MAX_DOCS_POR_CASILLERO,
   PREFIJO_TAG_GTF,
   TOTAL_CASILLEROS,
+  PAPELES_DE_LEY,
+  ROLES_PAPELES_GUIA,
   agruparPorCasillero,
   casillerosLlenos,
+  faltantesPorGuia,
   llenosPorGuia,
 } from "@/lib/forestal/documentos-guia";
 import type { DbDocument } from "@/lib/types/documents";
 import type { SessionPayload } from "@/lib/session";
 
 /**
- * Documentos de una guía de ingreso (Libro CTP, ADR-438).
+ * Documentos de una guía (ADR-438): de ingreso del CTP, guardada antes del
+ * ingreso (ADR-442), GTF del Libro TH o GTF de despacho del CTP (ADR-482).
  *
  *   GET    ?gtf=<N°>           → los 6 casilleros con sus archivos
- *   GET    ?gtfs=<N°>,<N°>,…   → cuántos casilleros llenos tiene cada guía (fila de la tabla)
+ *   GET    ?gtfs=<N°>,<N°>,…   → casilleros llenos y papeles de ley que faltan, por guía (fila de la tabla)
  *   POST   multipart gtf, casillero, file, reemplaza? → sube uno
  *   DELETE JSON { gtf, id }    → lo quita (papelera del Drive) — sólo admin/dueño
  *
  * Guard: sesión (admin/almacenero/dueño — el almacenero es quien recibe el
  * camión con los papeles) → CSRF en escrituras → rate limit del Drive → el
- * Libro CTP habilitado → la guía existe en ESTE tenant (si no, 404: no se
+ * Libro CTP o el Libro TH habilitado → la guía existe en ESTE tenant (si no, 404: no se
  * confirma nada de otro negocio). El tenant sale SIEMPRE de la sesión.
  * DELETE agrega un chequeo explícito (`soloAdminODueno`): `requireAdmin` deja
  * pasar a manager por el bypass de management-tier sin importar `ROLES` —
  * quitar un documento del expediente es un borrado real, no para un encargado.
  */
 
-const ROLES = ["admin", "almacenero", "owner"] as const;
+/* Los mismos roles que el documento lleva en el Drive (una sola constante). */
+const ROLES = ROLES_PAPELES_GUIA;
 const gtfSchema = z.string().trim().min(1).max(60);
 
 type Guard = { auth: SessionPayload } | { res: Response };
@@ -56,12 +61,18 @@ async function guard(req: NextRequest, escritura: boolean): Promise<Guard> {
   }
   const rl = await applyRateLimit(req, escritura ? "DRIVE" : "DRIVE_READ", "forestal-guia-docs");
   if (rl) return { res: rl };
-  if (!(await isSpecializationEnabled(auth.tenantId, "spec:forestal:ctp-libro"))) {
+  /* ADR-482: los papeles de la guía también se suben desde el Libro TH
+     (la GTF del bosque): basta con uno de los dos libros habilitado. */
+  const [ctp, loth] = await Promise.all([
+    isSpecializationEnabled(auth.tenantId, "spec:forestal:ctp-libro"),
+    isSpecializationEnabled(auth.tenantId, "spec:forestal:loth-libro"),
+  ]);
+  if (!ctp && !loth) {
     return {
       res: NextResponse.json(
         {
           error: "specialization_disabled",
-          message: "El Libro CTP no está habilitado para esta tienda.",
+          message: "Ni el Libro CTP ni el Libro TH están habilitados para esta tienda.",
         },
         { status: 403 },
       ),
@@ -119,7 +130,13 @@ export const GET = withApiHandler("forestal-guia-docs-get", async (req: NextRequ
         { status: 400 },
       );
     const docs = await CtpGuiaDocumentosDB.documentosDeGuias(auth.tenantId, gtfs.data, auth.role);
-    return NextResponse.json({ llenos: llenosPorGuia(docs, gtfs.data), total: TOTAL_CASILLEROS });
+    return NextResponse.json({
+      llenos: llenosPorGuia(docs, gtfs.data),
+      total: TOTAL_CASILLEROS,
+      /* ADR-482: qué papel de ley le falta a cada guía (factura, remisión, GTF, lista). */
+      faltan: faltantesPorGuia(docs, gtfs.data),
+      deLey: PAPELES_DE_LEY.length,
+    });
   }
 
   const gtf = gtfSchema.safeParse(sp.get("gtf"));

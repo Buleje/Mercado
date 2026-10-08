@@ -22,6 +22,7 @@ import { FILTROS_GTF, cabecerasGtf, celdasGtf, filasGtf, type FilaGtf, type Gtf 
 import AccionesGtf from "./gtf-acciones-menu";
 import { CasillaFilaGtf, CasillaTodasGtf, ElegirFiltradasMovil } from "./gtf-seleccion-casillas";
 import type { SeleccionGuias } from "./hooks/use-seleccion-guias";
+import { PapelesGuiasProvider } from "./papeles-guias-contexto";
 
 const POR_PAGINA = 25;
 
@@ -89,6 +90,8 @@ export default function LothGtfTabla({
   const idsFiltradas = useMemo(() => filtradas.map((x) => x.g.id), [filtradas]);
 
   return (
+    /* ADR-482: los «Papeles 3/4» de las guías de esta página, en un pedido. */
+    <PapelesGuiasProvider gtfs={enPagina.filter((x) => x.g.status !== "anulada" && !x.g.deletedAt).map((x) => x.g.gtfNumber)}>
     <div className="space-y-3">
       <BarraFiltrosTabla f={f} />
       <div className="overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
@@ -171,5 +174,6 @@ export default function LothGtfTabla({
         </div>
       )}
     </div>
+    </PapelesGuiasProvider>
   );
 }

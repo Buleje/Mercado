@@ -11,13 +11,16 @@
  * el del Drive (`VistaPreviaDoc`, va `aboveModals`); imprimir carga el archivo
  * del proxy del Drive (mismo origen) en un marco oculto y abre el diálogo de
  * impresión.
+ *
+ * ADR-482: arriba, «Papeles de esta guía» (factura, guías de remisión, lista
+ * de trozas firmada, GTF y otros — los casilleros del Libro CTP, mismo N° =
+ * mismos papeles). Se eligen junto con las carpetas del plan. Sin plan, el
+ * modal muestra sólo los papeles (antes ni se abría).
  */
 
 import { useEffect, useMemo, useState } from "react";
 import {
   Download,
-  Eye,
-  FileText,
   FolderOpen,
   Loader2,
   MessageCircle,
@@ -25,28 +28,40 @@ import {
 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import type { ArchivoDelPlan, PlanDocumentosVista } from "@/lib/forestal/plan-documentos-tipos";
-import { carpetasConArchivos, descargar, fecha, imprimirUno } from "./gtf-documentos-acciones";
+import {
+  carpetasConArchivos,
+  descargar,
+  imprimirUno,
+  type CarpetaConArchivos,
+} from "./gtf-documentos-acciones";
 import { DocumentosNoDisponibles, leerVista } from "./plan-documentos/plan-documentos-api";
 import VistaPreviaDoc from "./plan-documentos/VistaPreviaDoc";
 import EnviarPorWhatsApp from "./EnviarPorWhatsApp";
+import GtfDocumentosCarpeta from "./GtfDocumentosCarpeta";
+import GtfPapelesDeLaGuia from "./GtfPapelesDeLaGuia";
 
 
 const BOTON =
   "inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3.5 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50";
-const ICONO =
-  "inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]";
 
 export default function GtfDocumentosModal({
   planId,
   permiso,
   gtfNumber,
   onClose,
+  onCambioPapeles,
+  sinPapeles = false,
 }: {
-  planId: string;
+  /** Sin plan (guía no atada a un permiso) sólo se muestran los papeles de la guía. */
+  planId: string | null;
   /** Código del permiso, para el título y el mensaje. */
   permiso: string | null;
   gtfNumber: string;
   onClose: () => void;
+  /** Cambió un papel de la guía (fuera de la tabla del Libro TH, que se entera sola). */
+  onCambioPapeles?: () => void;
+  /** Guía anulada: el servidor ya no le acepta papeles; sólo las carpetas del plan. */
+  sinPapeles?: boolean;
 }) {
   const [vista, setVista] = useState<PlanDocumentosVista | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -54,8 +69,10 @@ export default function GtfDocumentosModal({
   const [verId, setVerId] = useState<string | null>(null);
   const [enviar, setEnviar] = useState(false);
   const [imprimiendo, setImprimiendo] = useState(false);
+  const [papeles, setPapeles] = useState<ArchivoDelPlan[]>([]);
 
   useEffect(() => {
+    if (!planId) return;
     let vivo = true;
     leerVista(planId)
       .then((v) => vivo && setVista(v))
@@ -72,8 +89,17 @@ export default function GtfDocumentosModal({
     };
   }, [planId]);
 
-  const carpetas = useMemo(() => (vista ? carpetasConArchivos(vista) : []), [vista]);
+  const delPlan = useMemo(() => (vista ? carpetasConArchivos(vista) : []), [vista]);
+  /* Los papeles de la guía van primero: son lo de ESTA guía. */
+  const carpetas = useMemo<CarpetaConArchivos[]>(
+    () =>
+      papeles.length > 0
+        ? [{ clave: "papeles-de-la-guia", nombre: `Papeles de la guía ${gtfNumber}`, archivos: papeles }, ...delPlan]
+        : delPlan,
+    [papeles, delPlan, gtfNumber],
+  );
   const todos = useMemo(() => carpetas.flatMap((c) => c.archivos), [carpetas]);
+  const archivosDelPlan = delPlan.reduce((n, c) => n + c.archivos.length, 0);
   const lista = todos.filter((a) => elegidos.has(a.documentId));
   const alternar = (id: string) =>
     setElegidos((s) => {
@@ -99,7 +125,7 @@ export default function GtfDocumentosModal({
       onClose={onClose}
       variant="wide"
       icon={FolderOpen}
-      title="Documentos del permiso"
+      title={planId ? "Documentos del permiso" : "Documentos de la guía"}
       /* El código del permiso va acá y no en el título: a 42rem el título largo se cortaba (08-10). */
       description={`${permiso ? `Permiso ${permiso} · ` : ""}GTF ${gtfNumber}`}
       footer={
@@ -152,7 +178,19 @@ export default function GtfDocumentosModal({
       }
     >
       <div className="space-y-3 px-5 py-4 sm:px-6">
-        {error ? (
+        {sinPapeles ? (
+          <p className="text-sm text-[var(--text-secondary)]">
+            Guía anulada: ya no recibe papeles. Los que tenía siguen en Documentos.
+          </p>
+        ) : (
+          <GtfPapelesDeLaGuia gtf={gtfNumber} onArchivos={setPapeles} onCambio={onCambioPapeles} />
+        )}
+
+        {!planId ? (
+          <p className="text-sm text-[var(--text-secondary)]">
+            Esta guía no está atada a un permiso: sólo tiene sus papeles.
+          </p>
+        ) : error ? (
           <p
             role="alert"
             className="rounded-xl border-2 border-[var(--data-error-500)] p-3 text-sm font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
@@ -164,93 +202,30 @@ export default function GtfDocumentosModal({
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Leyendo las carpetas del
             plan…
           </p>
-        ) : carpetas.length === 0 ? (
+        ) : delPlan.length === 0 ? (
           <p className="rounded-xl border border-dashed border-[var(--rule-base)] px-4 py-8 text-center text-sm text-[var(--text-secondary)]">
             El plan todavía no tiene carpetas. Créalas en Plan de manejo › Documentos.
           </p>
         ) : (
-          <>
-            {todos.length === 0 && (
-              <p className="text-sm text-[var(--text-secondary)]">
-                Todavía no hay archivos en estas carpetas: súbelos en Plan de manejo › Documentos.
-              </p>
-            )}
-            {carpetas.map((c) => (
-              <section
-                key={c.clave}
-                aria-label={c.nombre}
-                className="rounded-xl border border-[var(--rule-base)]"
-              >
-                <p className="flex items-center gap-2 border-b border-[var(--rule-soft)] px-3 py-2 text-sm font-bold text-[var(--text-primary)]">
-                  <FolderOpen className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden="true" />{" "}
-                  {c.nombre}
-                  <span className="font-normal text-[var(--text-tertiary)]">
-                    · {c.archivos.length}
-                  </span>
-                </p>
-                {c.archivos.length === 0 ? (
-                  <p className="px-3 py-2 text-xs text-[var(--text-tertiary)]">Sin archivos.</p>
-                ) : (
-                  <ul className="divide-y divide-[var(--rule-soft)]">
-                    {c.archivos.map((a) => (
-                      <li key={a.documentId} className="flex items-center gap-2 px-3 py-1">
-                        <input
-                          type="checkbox"
-                          aria-label={`Elegir ${a.nombre}`}
-                          className="h-4 w-4 shrink-0 accent-[var(--accent)]"
-                          checked={elegidos.has(a.documentId)}
-                          onChange={() => alternar(a.documentId)}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setVerId(a.documentId)}
-                          className="flex min-h-11 min-w-0 flex-1 items-center gap-2 text-left text-sm text-[var(--text-primary)] hover:underline"
-                        >
-                          <FileText
-                            className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]"
-                            aria-hidden="true"
-                          />
-                          <span className="truncate">{a.nombre}</span>
-                          <span className="shrink-0 text-xs text-[var(--text-tertiary)]">
-                            {fecha(a.uploadedAt)}
-                          </span>
-                        </button>
-                        <button
-                          type="button"
-                          className={ICONO}
-                          aria-label={`Ver ${a.nombre}`}
-                          title="Ver"
-                          onClick={() => setVerId(a.documentId)}
-                        >
-                          <Eye className="h-4 w-4" aria-hidden="true" />
-                        </button>
-                        <button
-                          type="button"
-                          className={ICONO}
-                          aria-label={`Descargar ${a.nombre}`}
-                          title="Descargar"
-                          onClick={() => descargar([a])}
-                        >
-                          <Download className="h-4 w-4" aria-hidden="true" />
-                        </button>
-                        <button
-                          type="button"
-                          className={ICONO}
-                          aria-label={`Imprimir ${a.nombre}`}
-                          title="Imprimir"
-                          disabled={imprimiendo}
-                          onClick={() => void imprimir([a])}
-                        >
-                          <Printer className="h-4 w-4" aria-hidden="true" />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </section>
-            ))}
-          </>
+          archivosDelPlan === 0 && (
+            <p className="text-sm text-[var(--text-secondary)]">
+              Todavía no hay archivos en las carpetas del plan: súbelos en Plan de manejo › Documentos.
+            </p>
+          )
         )}
+
+        {carpetas.map((c) => (
+          <GtfDocumentosCarpeta
+            key={c.clave}
+            carpeta={c}
+            elegidos={elegidos}
+            imprimiendo={imprimiendo}
+            onAlternar={alternar}
+            onVer={setVerId}
+            onDescargar={(a) => descargar([a])}
+            onImprimir={(a) => void imprimir([a])}
+          />
+        ))}
 
         {enviar && lista.length > 0 && (
           <EnviarPorWhatsApp

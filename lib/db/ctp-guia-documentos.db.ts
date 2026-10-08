@@ -24,9 +24,15 @@ export interface DatosDeGuia {
   /** Para la carpeta del Drive (ADR-442): titular y permiso de la guía. */
   titular: string | null;
   permiso: string | null;
-  /** De dónde salió: el libro o una guía guardada antes del ingreso. */
-  origen: "ingreso" | "guardada";
+  /**
+   * De dónde salió: el ingreso del CTP, una guía guardada antes del ingreso,
+   * la GTF emitida en el Libro TH o la GTF de un despacho del CTP (ADR-482).
+   */
+  origen: "ingreso" | "guardada" | "libro-th" | "despacho";
 }
+
+/** Carpeta de las GTF de despacho del CTP: no tienen titular propio (ADR-482). */
+const TITULAR_DESPACHOS = "Despachos del CTP";
 
 export class CtpGuiaDocumentosDB {
   /**
@@ -43,7 +49,7 @@ export class CtpGuiaDocumentosDB {
     if (!tenantId) throw new Error("tenantId is required");
     const gtf = gtfNumber.trim();
     if (!gtf) return null;
-    const [e, g] = await Promise.all([
+    const [e, g, th, d] = await Promise.all([
       prisma.woodEntry.findFirst({
         where: { tenantId, gtfNumber: gtf, deletedAt: null },
         orderBy: { entryDate: "asc" },
@@ -53,15 +59,40 @@ export class CtpGuiaDocumentosDB {
         where: { tenantId, gtfNumber: gtf, deletedAt: null },
         select: { gtfNumber: true, titularNombre: true, permisoCodigo: true, gtfDate: true },
       }),
+      /* ADR-482: la GTF emitida en el Libro TH tiene sus papeles aunque todavía
+         no haya entrado al CTP; con el mismo N° son LOS MISMOS papeles. Una
+         anulada no recibe papeles nuevos (como un ingreso borrado). */
+      prisma.forestGtf.findFirst({
+        where: { tenantId, gtfNumber: gtf, deletedAt: null, status: { not: "anulada" } },
+        orderBy: { createdAt: "asc" },
+        select: { gtfNumber: true, gtfDate: true, titularName: true, tituloHabilitante: true },
+      }),
+      prisma.forestCtpEntry.findFirst({
+        where: { tenantId, gtfNumber: gtf, section: "despacho", deletedAt: null },
+        orderBy: { createdAt: "asc" },
+        select: { gtfNumber: true, entryDate: true, originCode: true },
+      }),
     ]);
-    if (!e && !g) return null;
+    if (!e && !g && !th && !d) return null;
+    /* Carpeta: lo que se escribió a mano al guardar > lo emitido en el Libro TH
+       > lo del ingreso > el despacho. Así la GTF del bosque y su ingreso no
+       abren dos carpetas hermanas con el titular escrito distinto. */
     return {
-      gtfNumber: e?.gtfNumber ?? g?.gtfNumber ?? gtf,
-      entryDate: e?.entryDate?.toISOString() ?? g?.gtfDate?.toISOString() ?? null,
-      providerName: e?.providerName ?? g?.titularNombre ?? null,
-      titular: g?.titularNombre ?? e?.providerName ?? null,
-      permiso: g?.permisoCodigo ?? e?.originCode ?? null,
-      origen: e ? "ingreso" : "guardada",
+      gtfNumber: e?.gtfNumber ?? g?.gtfNumber ?? th?.gtfNumber ?? d?.gtfNumber ?? gtf,
+      entryDate:
+        e?.entryDate?.toISOString() ??
+        g?.gtfDate?.toISOString() ??
+        th?.gtfDate?.toISOString() ??
+        d?.entryDate?.toISOString() ??
+        null,
+      providerName: e?.providerName ?? g?.titularNombre ?? th?.titularName ?? null,
+      titular:
+        g?.titularNombre ??
+        th?.titularName ??
+        e?.providerName ??
+        (d ? TITULAR_DESPACHOS : null),
+      permiso: g?.permisoCodigo ?? th?.tituloHabilitante ?? e?.originCode ?? d?.originCode ?? null,
+      origen: e ? "ingreso" : g ? "guardada" : th ? "libro-th" : "despacho",
     };
   }
 

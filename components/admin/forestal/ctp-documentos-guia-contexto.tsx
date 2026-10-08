@@ -9,7 +9,12 @@
 
 import { createContext, useContext, type ReactNode } from "react";
 import { FolderOpen } from "@buleje/design-system/icons";
-import { TOTAL_CASILLEROS } from "@/lib/forestal/documentos-guia";
+import {
+  PAPELES_DE_LEY,
+  TOTAL_CASILLEROS,
+  labelEnFrase,
+  type CasilleroGuia,
+} from "@/lib/forestal/documentos-guia";
 import type { GuiaIngreso } from "@/lib/forestal/ingresos-por-guia";
 import type { WoodEntry } from "./ctp-shared";
 
@@ -18,6 +23,8 @@ type Guia = GuiaIngreso<WoodEntry>;
 export interface DocumentosGuiaCtx {
   /** Casilleros llenos por N° de guía; una guía sin medir no está. */
   llenos: Record<string, number>;
+  /** Papeles de ley que faltan por N° (ADR-482). Con esto el chip dice «Papeles 3/4». */
+  faltan?: Record<string, CasilleroGuia[]>;
   abrir: (g: Guia) => void;
 }
 
@@ -51,11 +58,59 @@ export function tonoDeDocs(n: number): string {
   return n === 0 ? TONO.vacio : n >= TOTAL_CASILLEROS ? TONO.completo : TONO.parcial;
 }
 
-/** Chip-botón «3/6 docs»: abre los casilleros de la guía. */
+/**
+ * «Papeles 3/4» (ADR-482): cuántos de los papeles de ley tiene la guía
+ * (factura, guía de remisión, GTF, lista de trozas). Verde completa, azul a
+ * medias, gris sin nada; el título dice cuál falta. Lo usan las dos tablas
+ * de guías (CTP y Libro TH) y el modal de la barra de formatos.
+ */
+export function PastillaPapeles({
+  gtf,
+  faltan,
+  onClick,
+  className = "",
+}: {
+  gtf: string;
+  faltan: readonly CasilleroGuia[];
+  onClick: () => void;
+  className?: string;
+}) {
+  const deLey = PAPELES_DE_LEY.length;
+  const tiene = deLey - faltan.length;
+  const tono = tonoDeDocs(faltan.length === 0 ? TOTAL_CASILLEROS : tiene);
+  const detalle =
+    faltan.length === 0
+      ? "Tiene sus papeles: factura, guía de remisión, GTF y lista de trozas"
+      : `Falta: ${faltan.map(labelEnFrase).join(", ")}`;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={`${detalle}. Toca para subirlos o verlos.`}
+      aria-label={`Papeles de la guía ${gtf}: ${tiene} de ${deLey}. ${detalle}`}
+      className={`inline-flex min-h-6 items-center gap-1 whitespace-nowrap rounded-md px-1.5 py-0.5 text-xs font-bold tabular-nums transition hover:opacity-80 ${tono} ${className}`}
+    >
+      <FolderOpen className="h-3.5 w-3.5 shrink-0" aria-hidden />
+      Papeles {tiene}/{deLey}
+    </button>
+  );
+}
+
+/** Chip-botón «3/6 docs» (o «Papeles 3/4» si llegan los faltantes): abre los casilleros de la guía. */
 export function ChipDocumentosGuia({ guia, className = "" }: { guia: Guia; className?: string }) {
   const ctx = useDocumentosGuiaCtx();
   const n = ctx?.llenos[guia.gtfNumber];
   if (!ctx || n == null) return null;
+  const faltan = ctx.faltan?.[guia.gtfNumber];
+  if (faltan)
+    return (
+      <PastillaPapeles
+        gtf={guia.gtfNumber}
+        faltan={faltan}
+        onClick={() => ctx.abrir(guia)}
+        className={className}
+      />
+    );
   const tono = tonoDeDocs(n);
   return (
     <button

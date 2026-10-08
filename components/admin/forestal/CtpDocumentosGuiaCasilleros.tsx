@@ -15,7 +15,11 @@ import { toast } from "sonner";
 import { AlertTriangle, Loader2 } from "@buleje/design-system/icons";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { useDocumentosGuia, type DocumentoDeGuia } from "@/hooks/use-documentos-guia";
+import {
+  useDocumentosGuia,
+  type DocumentoDeGuia,
+  type DocumentosDeGuia,
+} from "@/hooks/use-documentos-guia";
 import { useMiRol } from "@/hooks/use-mi-rol";
 import { TOTAL_CASILLEROS, type CasilleroGuia } from "@/lib/forestal/documentos-guia";
 import CtpDocumentosGuiaCasillero from "./CtpDocumentosGuiaCasillero";
@@ -26,14 +30,24 @@ export interface CtpDocumentosGuiaCasillerosProps {
   onCambio?: (llenos: number) => void;
   /** Abrir el «Documento de la guía» (la GTF que arma el sistema). Sin esto no se ofrece. */
   onArmarGtf?: () => void;
+  /** Los casilleros con sus archivos cada vez que se leen (ADR-482: el modal del Libro TH los ofrece para enviar). */
+  onDatos?: (d: DocumentosDeGuia) => void;
 }
 
 export default function CtpDocumentosGuiaCasilleros({
   gtf,
   onCambio,
   onArmarGtf,
+  onDatos,
 }: CtpDocumentosGuiaCasillerosProps) {
   const { datos, cargando, error, subiendo, subir, quitar } = useDocumentosGuia(gtf);
+  const onDatosRef = useRef(onDatos);
+  useEffect(() => {
+    onDatosRef.current = onDatos;
+  });
+  useEffect(() => {
+    if (datos) onDatosRef.current?.(datos);
+  }, [datos]);
   const { confirm } = useConfirm();
   const llenos = datos?.llenos;
   /* Quitar un documento es un borrado real del expediente (factura, GTF…):

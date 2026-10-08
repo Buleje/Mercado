@@ -7,6 +7,7 @@ import { canRoleSeeEnCadena, rolesDeLaCadena } from "@/lib/documents/doc-access"
 import { CtpGuiaDocumentosDB } from "./ctp-guia-documentos.db";
 import {
   CARPETA_GUIAS,
+  ROLES_PAPELES_GUIA,
   carpetaGuiaPorTitular,
   casilleroDeDocumento,
   tagCasillero,
@@ -149,6 +150,8 @@ export class CtpGuiaPapelesViejosDB {
       const r = await DocumentsDB.update(tenantId, p.id, {
         folderId,
         ...(faltan.length ? { tags: [...doc.tags, ...faltan] } : {}),
+        /* Papel de guía = los roles de la ruta; si ya tenía roles, se respetan. */
+        ...(doc.allowedRoles?.length ? {} : { allowedRoles: [...ROLES_PAPELES_GUIA] }),
       });
       if (!r) continue;
       movidos++;

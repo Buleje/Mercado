@@ -663,6 +663,8 @@ export class DocumentsDB {
       supplierId?: string;
       /** Rol de quien sube: una carpeta que no ve es, para él, una que no existe. */
       viewerRole?: string;
+      /** Roles que lo ven (vacío = los de su carpeta). Nace restringido: sin ventana abierta. */
+      allowedRoles?: string[];
     }
   ): Promise<DbDocument> {
     // Una carpeta de otro negocio no se acepta como destino (ver `CarpetaAjenaError`).
@@ -692,6 +694,7 @@ export class DocumentsDB {
         customerId: input.customerId ?? null,
         orderId: input.orderId ?? null,
         supplierId: input.supplierId ?? null,
+        allowedRoles: input.allowedRoles ?? [],
       },
       include: { _count: { select: { versions: true, shares: true } } },
     });

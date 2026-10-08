@@ -20,6 +20,7 @@ import type { DbDocument } from "@/lib/types/documents";
 import type { DatosDeGuia } from "@/lib/db/ctp-guia-documentos.db";
 import {
   MAX_BYTES_DOC_GUIA,
+  ROLES_PAPELES_GUIA,
   carpetaGuiaPorTitular,
   esPdfPorFirma,
   etiquetasDeDocumentoGuia,
@@ -132,6 +133,9 @@ export async function guardarDocumentoDeGuia(o: GuardarDocGuia): Promise<DbDocum
     category: o.casillero === "factura" ? "facturas" : "otros",
     tags: etiquetasDeDocumentoGuia(o.guia.gtfNumber, o.casillero),
     uploadedById: o.user,
+    /* La carpeta del titular hereda los roles de su raíz (vacíos): sin esto el
+       cajero veía la factura en el Drive general aunque la ruta le diera 403. */
+    allowedRoles: [...ROLES_PAPELES_GUIA],
   });
   const storagePath = buildStoragePath({
     tenantId,

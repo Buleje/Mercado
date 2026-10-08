@@ -14,13 +14,19 @@
  * apagado con su motivo cuando lo elegido no le sirve (una anulación es de UNA
  * guía anulada). Elegir lleva a Trámites con el formato abierto y las guías
  * ya puestas.
+ *
+ * ADR-482: «Papeles completos x de y» y el botón «Papeles» (factura, guía de
+ * remisión, GTF y lista firmada de cada guía elegida; se suben ahí mismo).
  */
 
-import { useMemo } from "react";
-import { Ban, FileStack, FileText, Flag, Stamp } from "@buleje/design-system/icons";
+import { useMemo, useState } from "react";
+import { Ban, FileStack, FileText, Flag, Paperclip, Stamp } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
+import { useConteoDocumentosGuias } from "@/hooks/use-documentos-guia";
+import { useDebounce } from "@/hooks/use-debounce";
 import { formatosQueAceptan, type GuiaElegida } from "@/lib/forestal/tramites-desde-guias";
 import CtpBarraSeleccion, { type CifraSeleccion } from "./ctp-barra-seleccion";
+import GuiasPapelesModal from "./GuiasPapelesModal";
 import { irATramiteConGuias } from "./tramite-guias-url";
 
 const RELACION = "relacion-guias-serfor";
@@ -50,7 +56,22 @@ export default function GuiasAFormatoBarra({
   aviso?: string | null;
 }) {
   const opciones = useMemo(() => formatosQueAceptan(elegidas), [elegidas]);
+  /* Los papeles se cuentan cuando se deja de tildar (no un pedido por casilla). */
+  const gtfs = useMemo(() => [...new Set(elegidas.map((g) => g.gtfNumber.trim()).filter(Boolean))], [elegidas]);
+  const gtfsQuietas = useDebounce(gtfs, 400);
+  const papeles = useConteoDocumentosGuias(gtfsQuietas);
+  const [verPapeles, setVerPapeles] = useState(false);
   if (elegidas.length === 0) return null;
+
+  const medidas = gtfs.filter((g) => papeles.faltan[g]);
+  const completas = medidas.filter((g) => papeles.faltan[g]?.length === 0).length;
+  const conPapeles: CifraSeleccion[] = [
+    ...cifras,
+    {
+      label: "Papeles completos",
+      valor: medidas.length === gtfs.length ? `${completas} de ${gtfs.length}` : papeles.fallo ? "—" : "…",
+    },
+  ];
 
   const relacion = opciones.find((o) => o.formato.id === RELACION);
   const otros: MenuAccion[] = opciones
@@ -65,9 +86,11 @@ export default function GuiasAFormatoBarra({
     }));
 
   return (
+    <>
     <CtpBarraSeleccion
-      cifras={cifras}
+      cifras={conPapeles}
       onLimpiar={onLimpiar}
+      accionesSecundarias={[{ label: "Papeles", icon: Paperclip, onClick: () => setVerPapeles(true) }]}
       aviso={aviso}
       avisoTono="aviso"
       accionLabel="Relación de guías"
@@ -85,5 +108,14 @@ export default function GuiasAFormatoBarra({
         />
       }
     />
+    {verPapeles && (
+      <GuiasPapelesModal
+        gtfs={gtfs}
+        faltan={papeles.faltan}
+        onCambio={() => void papeles.refrescar()}
+        onClose={() => setVerPapeles(false)}
+      />
+    )}
+    </>
   );
 }

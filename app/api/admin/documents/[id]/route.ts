@@ -9,8 +9,10 @@ import { assertCsrf } from "@/lib/auth/csrf";
 import { ESTADOS_DOC } from "@/lib/documents/estados-doc";
 import { conDescripcionPropia } from "@/lib/documents/texto-buscable";
 import { isPrivilegedRole } from "@/lib/documents/doc-access";
+import { ROLES_PAPELES_GUIA } from "@/lib/forestal/documentos-guia";
 
-const ROLES_ETIQUETAS_DE_GUIA = new Set(["admin", "owner", "almacenero"]);
+const ROLES_ETIQUETAS_DE_GUIA = new Set<string>(ROLES_PAPELES_GUIA);
+const esEtiquetaDeGuia = (t: string) => /^(gtf|casillero):/i.test(t);
 
 
 const PatchBody = z.object({
@@ -111,9 +113,8 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
        una guía (ADR-438): sólo los roles que manejan esos documentos pueden
        tocarlas desde el Drive general. */
     if (parsed.data.tags) {
-      const deGuia = (t: string) => /^(gtf|casillero):/i.test(t);
-      const antes = (before.tags ?? []).filter(deGuia).sort().join("|");
-      const despues = parsed.data.tags.filter(deGuia).sort().join("|");
+      const antes = (before.tags ?? []).filter(esEtiquetaDeGuia).sort().join("|");
+      const despues = parsed.data.tags.filter(esEtiquetaDeGuia).sort().join("|");
       if (antes !== despues && !ROLES_ETIQUETAS_DE_GUIA.has(auth.role)) {
         return NextResponse.json(
           { error: "forbidden", message: "Solo admin, dueño o almacenero cambian a qué guía pertenece un documento." },
@@ -121,6 +122,18 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
         );
       }
     }
+
+    /* Un papel que queda en el casillero de una guía (factura, GTF, lista…) se
+       ve sólo con los roles de la ruta de papeles, venga del modal, del visor
+       del Libro TH, del envío por WhatsApp o del CTP: todos suben por POST y
+       etiquetan acá. Sin esto, cada GTF archivada quedaba a la vista del cajero
+       en el Drive (security 08-10, ADR-482). */
+    const tagsFinales = parsed.data.tags ?? before.tags ?? [];
+    const rolesFinales = parsed.data.allowedRoles ?? before.allowedRoles ?? [];
+    const allowedRoles =
+      tagsFinales.some(esEtiquetaDeGuia) && rolesFinales.length === 0
+        ? [...ROLES_PAPELES_GUIA]
+        : parsed.data.allowedRoles;
 
     const expiresAtDate =
       parsed.data.expiresAt === undefined
@@ -154,7 +167,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
       favorite: parsed.data.favorite,
       status: parsed.data.status,
       expiresAt: expiresAtDate,
-      allowedRoles: parsed.data.allowedRoles,
+      allowedRoles,
       customerId: parsed.data.customerId,
       orderId: parsed.data.orderId,
       supplierId: parsed.data.supplierId,

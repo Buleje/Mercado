@@ -6,6 +6,7 @@ import { withApiHandler } from "@/lib/api-handler";
 import { isSpecializationEnabled } from "@/lib/specializations";
 import { CtpGuiaDocumentosDB } from "@/lib/db/ctp-guia-documentos.db";
 import { DocumentsDB } from "@/lib/db/documents.db";
+import { ROLES_PAPELES_GUIA } from "@/lib/forestal/documentos-guia";
 import { esInlineSeguro, getSignedUrl } from "@/lib/documents/storage";
 import { cacheStore } from "@/lib/cache";
 import { logger } from "@/lib/logger";
@@ -32,11 +33,16 @@ const query = z.object({
 });
 
 export const GET = withApiHandler("forestal-guia-docs-ver", async (req: NextRequest) => {
-  const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
+  const auth = await requireAdmin(req, ROLES_PAPELES_GUIA);
   if (auth instanceof NextResponse) return auth;
   const rl = await applyRateLimit(req, "DRIVE_READ", "forestal-guia-docs-ver");
   if (rl) return rl;
-  if (!(await isSpecializationEnabled(auth.tenantId, "spec:forestal:ctp-libro"))) {
+  /* ADR-482: los papeles de la guía se ven también desde el Libro TH. */
+  const [ctp, loth] = await Promise.all([
+    isSpecializationEnabled(auth.tenantId, "spec:forestal:ctp-libro"),
+    isSpecializationEnabled(auth.tenantId, "spec:forestal:loth-libro"),
+  ]);
+  if (!ctp && !loth) {
     return NextResponse.json({ error: "specialization_disabled" }, { status: 403 });
   }
   const q = query.safeParse(Object.fromEntries(req.nextUrl.searchParams));
