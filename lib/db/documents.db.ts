@@ -286,6 +286,18 @@ async function rolDelCreador(tenantId: string, username: string): Promise<string
   return u?.role ?? null;
 }
 
+/** Fila liviana de `listImagenesEnRango` (galería «Personas» de Cámaras). */
+export interface ImagenEnCarpeta {
+  id: string;
+  folderId: string | null;
+  name: string;
+  mimeType: string;
+  size: number;
+  uploadedAt: string;
+  ocrMetadata: Record<string, unknown> | null;
+  allowedRoles: string[];
+}
+
 // ── DocumentsDB class ─────────────────────────────────────────────────────────
 
 export class DocumentsDB {
@@ -438,6 +450,76 @@ export class DocumentsDB {
     // privilegiados solo ven lo permitido.
     if (filtraPorRol(viewerRole)) return soloVisibles(tenantId, mapped, viewerRole);
     return mapped;
+  }
+
+  /**
+   * Imágenes vivas dentro de `folderIds` subidas en `[desde, hasta)`, de la más
+   * nueva a la más vieja — la galería «Personas» de Cámaras (2026-10-08).
+   * Liviana (sin texto OCR ni conteos) pero con la `ocrMetadata` COMPLETA: la
+   * grilla necesita la cámara, el motivo y las personas que `list()` recorta.
+   * Trae `limite + 1` filas para que quien llama sepa si hubo más.
+   */
+  static async listImagenesEnRango(
+    tenantId: string,
+    folderIds: readonly string[],
+    rango: { desde: Date; hasta: Date },
+    viewerRole?: string,
+    limite = 2000,
+  ): Promise<ImagenEnCarpeta[]> {
+    if (folderIds.length === 0) return [];
+    const filas = await prisma.document.findMany({
+      where: {
+        tenantId,
+        deletedAt: null,
+        folderId: { in: [...folderIds] },
+        mimeType: { startsWith: "image/" },
+        uploadedAt: { gte: rango.desde, lt: rango.hasta },
+      },
+      orderBy: { uploadedAt: "desc" },
+      select: { id: true, folderId: true, name: true, mimeType: true, size: true, uploadedAt: true, ocrMetadata: true, allowedRoles: true },
+      take: limite + 1,
+    });
+    const mapeadas: ImagenEnCarpeta[] = filas.map((f) => ({
+      id: f.id,
+      folderId: f.folderId,
+      name: f.name,
+      mimeType: f.mimeType,
+      size: f.size,
+      uploadedAt: f.uploadedAt.toISOString(),
+      ocrMetadata: (f.ocrMetadata as Record<string, unknown> | null) ?? null,
+      allowedRoles: f.allowedRoles ?? [],
+    }));
+    if (filtraPorRol(viewerRole)) return soloVisibles(tenantId, mapeadas, viewerRole);
+    return mapeadas;
+  }
+
+  /**
+   * El instante de la imagen viva más cercana a `borde` dentro de `folderIds`:
+   * la última ANTES (`"antes"`, estricto) o la primera DESDE (`"despues"`).
+   * `null` si no hay. Para saltar de un día con fotos al siguiente con fotos.
+   */
+  static async imagenVecina(
+    tenantId: string,
+    folderIds: readonly string[],
+    borde: Date,
+    sentido: "antes" | "despues",
+    viewerRole?: string,
+  ): Promise<string | null> {
+    if (folderIds.length === 0) return null;
+    const filas = await prisma.document.findMany({
+      where: {
+        tenantId,
+        deletedAt: null,
+        folderId: { in: [...folderIds] },
+        mimeType: { startsWith: "image/" },
+        uploadedAt: sentido === "antes" ? { lt: borde } : { gte: borde },
+      },
+      orderBy: { uploadedAt: sentido === "antes" ? "desc" : "asc" },
+      select: { folderId: true, uploadedAt: true, allowedRoles: true },
+      take: 20,
+    });
+    const visibles = filtraPorRol(viewerRole) ? await soloVisibles(tenantId, filas, viewerRole) : filas;
+    return visibles[0]?.uploadedAt.toISOString() ?? null;
   }
 
   static async getById(tenantId: string, id: string, viewerRole?: string): Promise<DbDocument | null> {

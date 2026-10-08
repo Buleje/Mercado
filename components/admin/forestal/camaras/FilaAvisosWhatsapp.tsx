@@ -42,10 +42,10 @@ export default function FilaAvisosWhatsapp({ camara: c, guardando, onGuardarAvis
           title="Avisos por WhatsApp"
           what={
             c.avisos?.whatsapp
-              ? `Avisa a ${c.avisos.whatsapp} ${c.avisos.cuando === "noche" ? "de noche" : c.avisos.cuando === "siempre" ? "siempre" : "— apagado"} cuando la foto muestra una persona o un vehículo.`
+              ? `Avisa a ${c.avisos.whatsapp} ${c.avisos.cuando === "noche" ? "de noche" : c.avisos.cuando === "siempre" ? "siempre" : "— apagado"} cuando la foto muestra una persona o un vehículo, y cuando el mosaico en vivo ve aparecer a alguien.`
               : "Sin número: la foto queda en el historial y nadie se entera hasta que lo abre."
           }
-          affects="Como mucho un aviso cada 10 minutos. «De noche» es de 19:00 a 06:00, cuando el patio está solo."
+          affects="Como mucho un aviso cada 10 minutos, sumando fotos y mosaico. Alguien que sigue en cuadro no vuelve a avisar. «De noche» es de 19:00 a 06:00, cuando el patio está solo."
         />
         <input
           value={avisos.whatsapp}

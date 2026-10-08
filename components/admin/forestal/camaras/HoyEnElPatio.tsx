@@ -13,19 +13,18 @@ import { useEffect, useRef, useState } from "react";
 import { SectionTitle, StatCard } from "@buleje/design-system";
 import {
   Camera,
-  ChevronLeft,
-  ChevronRight,
   Loader2,
   Truck,
   Users,
   UserX,
 } from "@buleje/design-system/icons";
-import { cn, limaDateKey } from "@/lib/utils";
+import { limaDateKey } from "@/lib/utils";
 import { useKpisPlegables } from "../kpis-plegables";
 import GentePorHora from "./GentePorHora";
 import { ActividadYCamaras, CamionesDelDia, ChalecosDelDia, PilaDelDia } from "./ListasDelDia";
 import { useResumenPatio } from "./use-resumen-patio";
-import { BLOQUE, BTN, diaLegible, moverDia } from "./camaras-ui";
+import SelectorDia from "./SelectorDia";
+import { BLOQUE, diaLegible } from "./camaras-ui";
 
 interface Props {
   activo: boolean;
@@ -114,40 +113,7 @@ export default function HoyEnElPatio({ activo, recarga, onAsignarChaleco }: Prop
           )}
         </SectionTitle>
         {kpis.boton}
-        <div className="flex items-center gap-1" role="group" aria-label="Elegir el día">
-          <button
-            type="button"
-            onClick={() => setFecha((f) => moverDia(f, -1))}
-            aria-label="Día anterior"
-            className={cn(BTN, "w-10 justify-center px-0")}
-          >
-            <ChevronLeft className="h-4 w-4" aria-hidden />
-          </button>
-          <input
-            type="date"
-            value={fecha}
-            max={hoy}
-            onChange={(e) => {
-              if (/^\d{4}-\d{2}-\d{2}$/.test(e.target.value)) setFecha(e.target.value);
-            }}
-            aria-label="Día del resumen"
-            className="h-9 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
-          />
-          <button
-            type="button"
-            onClick={() => setFecha((f) => moverDia(f, 1))}
-            disabled={esHoy}
-            aria-label="Día siguiente"
-            className={cn(BTN, "w-10 justify-center px-0")}
-          >
-            <ChevronRight className="h-4 w-4" aria-hidden />
-          </button>
-          {!esHoy && (
-            <button type="button" onClick={() => setFecha(hoy)} className={BTN}>
-              Hoy
-            </button>
-          )}
-        </div>
+        <SelectorDia fecha={fecha} hoy={hoy} onCambiar={setFecha} etiqueta="Día del resumen" />
       </div>
 
       {error ? (

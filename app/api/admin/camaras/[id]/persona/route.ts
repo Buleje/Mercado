@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { assertCsrf } from "@/lib/auth/csrf";
@@ -8,6 +8,7 @@ import { logger } from "@/lib/logger";
 import { CamarasDB } from "@/lib/db/camaras.db";
 import { ImagenNoPermitida, sharpSeguro, verificarImagen } from "@/lib/camaras/imagen-segura";
 import { guardarFotoPersona, metaFotoPersonaSchema } from "@/lib/camaras/personas-drive.server";
+import { avisarPersonaDelMosaico } from "@/lib/camaras/avisar";
 import type { RespuestaFotoPersona } from "@/lib/camaras/personas";
 
 /**
@@ -18,6 +19,10 @@ import type { RespuestaFotoPersona } from "@/lib/camaras/personas";
  *
  * Multipart: `file` (JPEG/PNG/WebP del cuadro), `motivo`, `personas`, `confianza`.
  * Mismos roles que ven el video en vivo (`en-vivo-nube`): admin, dueño, almacenero.
+ *
+ * Después de contestar, avisa por WhatsApp con la configuración de avisos de la
+ * cámara (número, franja, pausa de 10 min compartida con las fotos de la IA):
+ * sólo «apareció» y «llegó otra», nunca «sigue» (`avisarPersonaDelMosaico`).
  */
 const MAX_SIZE = 3 * 1024 * 1024;
 const ANCHO_MAX = 1280;
@@ -70,12 +75,26 @@ export const POST = withApiHandler(
       const bytes = Buffer.from(await archivo.arrayBuffer());
       await verificarImagen(bytes, new Set(["jpeg", "png", "webp"]));
       const webp = await sharpSeguro(bytes).rotate().resize({ width: ANCHO_MAX, withoutEnlargement: true }).webp({ quality: 75 }).toBuffer();
+      const cuando = new Date();
       const res = await guardarFotoPersona(auth.tenantId, {
         camara: { id: camara.id, nombre: camara.nombre },
         webp,
         meta: meta.data,
         autor: auth.username ?? "alguien",
+        cuando,
       });
+      /* Aunque el Drive haya fallado: la persona estuvo igual frente a la
+         cámara, y el aviso es por ella, no por el archivo. */
+      const tenantId = auth.tenantId;
+      after(() =>
+        avisarPersonaDelMosaico(tenantId, camara.id, meta.data, cuando).catch((err) =>
+          logger.error("[camaras.persona] el aviso por WhatsApp falló", {
+            tenantId,
+            camaraId: camara.id,
+            error: String(err),
+          }),
+        ),
+      );
       return NextResponse.json(res, { status: res.ok ? 200 : res.error === "storage" ? 502 : 500 });
     } catch (err) {
       if (err instanceof ImagenNoPermitida) return falla(err.message, 415);

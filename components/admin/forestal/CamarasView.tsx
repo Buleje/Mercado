@@ -9,14 +9,15 @@
  * pantalla no es un monitor de video: es **el historial de lo que pasó**, que es
  * lo que sirve a la mañana siguiente — quién entró, a qué hora, y la foto.
  *
- * Tres vistas (`?vista=`), por la pregunta que responden:
+ * Cuatro vistas (`?vista=`), por la pregunta que responden:
  *  · **Fotos** — cada foto con lo que leyó la IA: chalecos, placa con su guía,
  *    actividad y la pila. La placa y el chaleco son propuestas que se confirman.
  *  · **Hoy en el patio** — el día entero en una pantalla, de cualquier fecha.
+ *  · **Personas** — las fotos del detector local del mosaico (van al Drive).
  *  · **Cámaras** — alta, dirección para copiar, avisos, pila y chalecos: lo que
  *    se configura una vez.
  *
- * Arriba, en las tres, sólo lo que hace que la cámara funcione o no: el túnel
+ * Arriba, en todas, sólo lo que hace que la cámara funcione o no: el túnel
  * cerrado, la IA sin clave, la cámara que dejó de mandar.
  *
  * Los datos y las escrituras viven en `camaras/use-camaras.ts`; la dirección
@@ -25,7 +26,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CalendarDays, Camera, Image as ImageIcon, MoreHorizontal, RefreshCw, Tv } from "@buleje/design-system/icons";
+import { CalendarDays, Camera, Image as ImageIcon, MoreHorizontal, RefreshCw, Tv, Users } from "@buleje/design-system/icons";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
@@ -37,6 +38,7 @@ import HistorialFotos from "./camaras/HistorialFotos";
 import HoyEnElPatio from "./camaras/HoyEnElPatio";
 import OtraPantallaModal, { type PestanaOtraPantalla } from "./camaras/OtraPantallaModal";
 import VistaCamaras from "./camaras/VistaCamaras";
+import VistaPersonas from "./camaras/VistaPersonas";
 import { CalladasAviso, DireccionAviso, MensajeAccion, SinIaAviso } from "./camaras/AvisosCamaras";
 import { useCamaras } from "./camaras/use-camaras";
 import { EVENTO_FOTO_NUEVA } from "./camaras/use-analizar-cuadro";
@@ -47,12 +49,12 @@ import EstadoCamaras from "./camaras/EstadoCamaras";
 import { VisorNubeProvider } from "./camaras/VisorNubeContexto";
 import { BTN, faltaClaveIa, porQueNoSeCopia } from "./camaras/camaras-ui";
 
-const VISTAS = ["fotos", "patio", "camaras"] as const;
+const VISTAS = ["fotos", "patio", "personas", "camaras"] as const;
 
 /** «Ver en otra pantalla» abierto (Modo TV), y en qué pestaña. */
 type OtraPantalla = { pestana: PestanaOtraPantalla; codigo?: string } | null;
 
-/* La cuenta de Hik-Connect for Teams y su visor, compartidos por las tres vistas (ADR-471).
+/* La cuenta de Hik-Connect for Teams y su visor, compartidos por todas las vistas (ADR-471).
    «Ver en otra pantalla» vive arriba del proveedor: el visor de la nube lo abre con
    «Verlo en el televisor» (su video es un canvas y no se puede transmitir). */
 export default function CamarasView() {
@@ -71,7 +73,9 @@ function PantallaCamaras({ otra, setOtra }: { otra: OtraPantalla; setOtra: (o: O
   const { vista, irA } = useVistaModulo("camaras", VISTAS, "fotos");
   /* A 400 px «Hoy en el patio» partía el control en dos renglones y dejaba
      «Actualizar» solo en una fila: en el celular la pestaña dice «Hoy» y van
-     sin ícono (medido: 373 px de 368 con los íconos). */
+     sin ícono (medido: 373 px de 368 con los íconos). Con «Personas» (cuatro
+     pestañas, 348 px) ya no entraban los dos botones: «Actualizar» pasa a «⋯» y
+     el control se desliza de costado, todo en una fila. */
   const angosta = usePantallaAngosta();
   const [recarga, setRecarga] = useState(0);
   const [conectando, setConectando] = useState<string | null>(null);
@@ -151,12 +155,12 @@ function PantallaCamaras({ otra, setOtra }: { otra: OtraPantalla; setOtra: (o: O
 
   return (
     <div className="space-y-4" data-vista="camaras">
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex items-center gap-2 sm:flex-wrap">
         <SegmentedControl
           value={vista}
           onChange={(v) => irA(v)}
           label="Qué mirar de las cámaras"
-          className="max-w-full overflow-x-auto whitespace-nowrap"
+          className="mr-auto min-w-0 max-w-full overflow-x-auto whitespace-nowrap"
           options={[
             /* El conteo va en el rótulo y no en `badge`: la pastilla del control
                marcado da 2,98:1 (blanco sobre turquesa a 12 px, medido con axe). */
@@ -171,22 +175,30 @@ function PantallaCamaras({ otra, setOtra }: { otra: OtraPantalla; setOtra: (o: O
               icon: angosta ? undefined : <CalendarDays className="h-4 w-4" aria-hidden />,
             },
             {
+              value: "personas",
+              label: "Personas",
+              icon: angosta ? undefined : <Users className="h-4 w-4" aria-hidden />,
+            },
+            {
               value: "camaras",
               label: "Cámaras",
               icon: angosta ? undefined : <Camera className="h-4 w-4" aria-hidden />,
             },
           ]}
         />
-        <button type="button" onClick={actualizar} title="Actualizar" className={`${BTN} ml-auto`}>
-          <RefreshCw className={`h-4 w-4 ${d.cargando ? "animate-spin" : ""}`} aria-hidden />
-          <span className="max-sm:sr-only">Actualizar</span>
-        </button>
+        {!angosta && (
+          <button type="button" onClick={actualizar} title="Actualizar" className={BTN}>
+            <RefreshCw className={`h-4 w-4 ${d.cargando ? "animate-spin" : ""}`} aria-hidden />
+            <span className="max-sm:sr-only">Actualizar</span>
+          </button>
+        )}
         <ActionMenu
           label="Más acciones de cámaras"
           icon={MoreHorizontal}
           soloIcono
           size="sm"
           actions={[
+            ...(angosta ? [{ id: "actualizar", label: "Actualizar", icon: RefreshCw, onSelect: actualizar }] : []),
             {
               id: "otra-pantalla",
               label: "Ver en otra pantalla",
@@ -234,6 +246,7 @@ function PantallaCamaras({ otra, setOtra }: { otra: OtraPantalla; setOtra: (o: O
       {vista === "patio" && (
         <HoyEnElPatio activo recarga={recarga} onAsignarChaleco={abrirChalecos} />
       )}
+      {vista === "personas" && <VistaPersonas activo recarga={recarga} camaras={d.camaras} />}
       {vista === "camaras" && (
         <VistaCamaras
           datos={d}

@@ -356,6 +356,62 @@ export const CamarasDB = {
     return r;
   },
 
+  /**
+   * Toma el turno del aviso por WhatsApp de una cámara ANTES de mandarlo y bajo
+   * candado: lee la cámara fresca, decide con `puede` y, si toca, deja anotado
+   * `avisos.ultimoAvisoEn = ahora` (la misma pausa que usan las fotos de la IA).
+   *
+   * `marcarAvisada` anota DESPUÉS de mandar: dos fotos a 1-2 s de distancia
+   * («apareció» y «llegó otra», o el mosaico abierto en dos pantallas) pasaban
+   * las dos la pausa y salían dos WhatsApps por la misma persona. Devuelve lo
+   * que había para devolverlo si el envío falla.
+   */
+  async reservarAviso(
+    tenantId: string,
+    camaraId: string,
+    ahora: Date,
+    puede: (camara: Camara) => boolean,
+  ): Promise<{ ok: true; camara: Camara; previo: string | null } | { ok: false }> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const en = ahora.toISOString();
+    return PlatformSettingsDB.actualizar<unknown, { ok: true; camara: Camara; previo: string | null } | { ok: false }>(
+      CLAVE_CAMARAS(tenantId),
+      (actual) => {
+        const camaras = listaDe(actual);
+        const camara = camaras.find((c) => c.id === camaraId);
+        if (!camara?.avisos || !puede(camara)) return { resultado: { ok: false } };
+        const tomada: Camara = { ...camara, avisos: { ...camara.avisos, ultimoAvisoEn: en } };
+        return {
+          valor: camaras.map((c) => (c.id === camaraId ? tomada : c)),
+          resultado: { ok: true, camara: tomada, previo: camara.avisos.ultimoAvisoEn ?? null },
+        };
+      },
+      "camara",
+      TX_KV,
+    );
+  },
+
+  /** Devuelve el turno de `reservarAviso` si el WhatsApp no salió — sólo si nadie lo tomó después. */
+  async liberarAviso(tenantId: string, camaraId: string, reservadoEn: Date, previo: string | null): Promise<void> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const en = reservadoEn.toISOString();
+    await PlatformSettingsDB.actualizar<unknown, null>(
+      CLAVE_CAMARAS(tenantId),
+      (actual) => {
+        const camaras = listaDe(actual);
+        if (!camaras.some((c) => c.id === camaraId && c.avisos?.ultimoAvisoEn === en)) return { resultado: null };
+        return {
+          valor: camaras.map((c) =>
+            c.id === camaraId && c.avisos ? { ...c, avisos: { ...c.avisos, ultimoAvisoEn: previo } } : c,
+          ),
+          resultado: null,
+        };
+      },
+      "camara",
+      TX_KV,
+    );
+  },
+
   /** Deja anotado que se mandó un aviso: es lo que frena el siguiente. */
   async marcarAvisada(tenantId: string, camaraId: string, cuando: Date): Promise<void> {
     await mutarCamaras(tenantId, "camara", (camaras) =>
