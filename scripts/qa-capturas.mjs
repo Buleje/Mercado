@@ -15,6 +15,8 @@
  *     [--nombre base] [--anchos 1280,400] [--temas claro,oscuro] [--completa] \
  *     [--preset cubicador-lote,resumenes-rolliza]   (recorridos de scripts/qa-pasos/, van antes) \
  *     [--resumen]   (stdout sólo con lo esencial; el JSON completo igual queda en <salida>/reporte.json) \
+ *     [--ls '{"clave":"valor"}']   (siembra localStorage antes de cargar: estados recordados sin recargar) \
+ *     (sin QA_BASE prueba :3000 y :3001 y usa el que contesta: el dev reiniciado vuelve a veces en :3001) \
  *     [--candado]   (toma /tmp/bsm-pesado.lock por su cuenta y avisa por stderr cuánto lleva esperándolo;
  *                    NO usar si ya lo corres con `flock /tmp/bsm-pesado.lock node …`: se trabaría a sí mismo)
  *
@@ -115,7 +117,24 @@ if (process.env.QA_CANDADO_MARCA) {
   console.error("[qa-capturas] candado tomado");
 }
 
-const BASE = process.env.QA_BASE ?? "http://localhost:3000";
+/* Puerto del dev (08-10, 3 agentes lo pidieron): con 3-4 agentes el dev se reinicia por swap y vuelve
+   un rato en :3001; qa-capturas cortaba a los 200 s contra :3000. Se prueba `/login` en los dos a la vez
+   (no toca la base, a diferencia de `/api/health`, que se colgaba con la conexión caída). */
+async function baseQueResponde() {
+  const candidatos = ["http://localhost:3000", "http://localhost:3001"];
+  const vivos = await Promise.all(candidatos.map(async (b) => {
+    try { await fetch(`${b}/login`, { signal: AbortSignal.timeout(20_000), redirect: "manual" }); return true; }
+    catch { return false; }
+  }));
+  const i = vivos.indexOf(true);
+  if (i < 0) {
+    console.error("[qa-capturas] servidor colgado: ni :3000 ni :3001 contestan /login en 20 s (¿swap lleno? `free -g`); sigo con :3000");
+    return candidatos[0];
+  }
+  if (i > 0) console.error(`[qa-capturas] el dev contesta en ${candidatos[i]} (se reinició): uso ese`);
+  return candidatos[i];
+}
+const BASE = process.env.QA_BASE ?? (await baseQueResponde());
 
 function arg(nombre, porDefecto) {
   const i = process.argv.indexOf(`--${nombre}`);
@@ -177,6 +196,16 @@ await ctx.addInitScript((slug) => {
     localStorage.setItem("onboarding-completed-main", "1");
   } catch { /* sin storage */ }
 }, tenant);
+/* `--ls '{"clave":"valor"}'` (08-10): siembra localStorage ANTES de cargar; evitaba un eval con
+   `location.href=location.href` que a 1280 dejaba la captura en blanco. Valores no-string van como JSON. */
+const sembrarLs = arg("ls", null);
+if (sembrarLs) {
+  let pares;
+  try { pares = JSON.parse(sembrarLs); } catch (e) { console.error(`[qa-capturas] --ls no es JSON: ${e.message}`); process.exit(1); }
+  await ctx.addInitScript((p) => {
+    try { for (const [k, v] of Object.entries(p)) localStorage.setItem(k, typeof v === "string" ? v : JSON.stringify(v)); } catch { /* sin storage */ }
+  }, pares);
+}
 const page = await ctx.newPage(); // sólo para el login: cada tema abre la suya
 
 const consola = [];
@@ -488,9 +517,11 @@ try {
        reiniciando tras earlyoom; cortar al primer timeout tiraba la corrida entera. */
     const inicioLogin = Date.now();
     const latido = setInterval(() => console.error(`[qa-capturas] esperando al servidor para entrar: ${Math.round((Date.now() - inicioLogin) / 1000)} s (tope 120 s por pedido)`), 15_000);
-    for (let intento = 1; ; intento++) {
-      try { await page.request.get(`${BASE}/api/health`, { timeout: 60_000 }); break; }
-      catch (e) { if (intento >= 3) throw e; await page.waitForTimeout(10_000); }
+    /* 08-10: `/api/health` se colgaba cuando la base tardaba en conectar; la cookie también sale de
+       `/login`, y el login no exige csrf: si nada contesta, se intenta entrar igual sin la cookie. */
+    for (const [ruta, tope] of [["/api/health", 20_000], ["/login", 60_000], ["/login", 60_000]]) {
+      try { await page.request.get(`${BASE}${ruta}`, { timeout: tope }); break; }
+      catch { console.error(`[qa-capturas] ${ruta} no contestó en ${tope / 1000} s`); }
     }
     const csrf = (await ctx.cookies()).find((c) => c.name === "csrf-token")?.value ?? "";
     const r = await page.request.post(`${BASE}/api/auth/login`, {
