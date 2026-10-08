@@ -225,13 +225,17 @@ export function ChartsVisibilityButton({ label = "Gráficos" }: { label?: string
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-2 h-10 px-4 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-extrabold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] hover:border-[color:var(--accent,var(--rule-base))] transition-colors whitespace-nowrap"
+        className="inline-flex items-center gap-2 h-10 px-4 @max-[30rem]:px-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-extrabold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] hover:border-[color:var(--accent,var(--rule-base))] transition-colors whitespace-nowrap"
         aria-label="Abrir gestor de gráficos"
+        title={totalCount > 0 ? `${label} · ${visibleCount}/${totalCount} a la vista` : label}
       >
         <BarChart3 className="h-4 w-4 text-[var(--text-secondary)]" strokeWidth={2.5} aria-hidden />
-        {label}
+        {/* En la banda angosta (celular) queda sólo el ícono (texto y cuenta
+            van al tooltip): así entra en la fila del rango de fechas (08-10:
+            con la cuenta faltaban 13 px y eran dos filas). */}
+        <span className="@max-[30rem]:sr-only">{label}</span>
         {totalCount > 0 && (
-          <span className="inline-flex items-center justify-center min-w-6 h-5 px-1.5 rounded-full bg-[var(--surface-sunken)] text-xs font-extrabold tabular-nums text-[var(--text-secondary)]">
+          <span className="inline-flex @max-[30rem]:hidden items-center justify-center min-w-6 h-5 px-1.5 rounded-full bg-[var(--surface-sunken)] text-xs font-extrabold tabular-nums text-[var(--text-secondary)]">
             {visibleCount}/{totalCount}
           </span>
         )}
