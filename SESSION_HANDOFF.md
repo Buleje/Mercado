@@ -1,3 +1,18 @@
+# SESSION HANDOFF — 2026-10-08 (tarde): plan de mejoras + tanda 2 (ingreso desde el TH, papeles de la guía, cubicación comercial)
+
+**Estado:** ✅ commiteado (24 commits, `851f260c7` → `34e1ae011`), **sin subir** (no se pidió push). Árbol limpio salvo `.claude/autonomo/` y una captura de VRT sin versionar. Typecheck verde 14:05. **Blas: migración del código único APLICADA 13:31** (respaldo `.claude/autonomo/respaldos/codigo-unico-blas-2026-10-08-18-07-07.json`, huella `71ccd7a8…`; se revierte con `node scripts/migrar-codigo-unico-adr-477.mjs --tenant blas --revertir <respaldo>`). PDF «Mejoras ejecutadas» en el Escritorio. Doc vivo del plan (rev 123+) y bitácora `.claude/autonomo/ejecucion-2026-10-08-tarde.md`.
+
+**Hecho:** código único 12A-0001 (ADR-477) · Guías GTF con dos códigos, resumen interno en servidor, documentos del permiso y envío por WhatsApp · QR con dominio público (`/t/<slug>/verificar/…`), hoja de despacho con QR, despachar escaneando · Rendimiento por especie/corrida con plata derivada que dice qué falta · Cubicación de trozas → cuenta del adelanto (ADR-478) con 6 puertas de doble pago cerradas y un solo candado por guía normalizada · Cámaras: sonido, ver movimiento, marcadores ArUco y «Trozas a la vista» (ADR-480), personas por ropa sin biometría (ADR-479) · indicadores en una fila, permiso visible, aprovechamiento, despacho por guía, trámites, Smalian/Oxapampina · `qa-capturas` encuentra el dev en :3000/:3001 y `--ls`.
+
+**Para Brandon (decide):** dominio/subdominio de los QR (ROOT_DOMAIN) · B1 adelanto DADO excedido por cubicación · dos códigos en la hoja SERFOR · retención de fotos 365→60 · costos de Blas (K4 2-3) · reimprimir las 22 etiquetas de Blas · probar sonido/marcadores/ver movimiento con blasadmin.
+
+**Al retomar:** datos de QA en main (guías 019-001-0000771/772 y 020-001-0000771 del PO 12, cubicaciones de prueba, 3 enlaces que vencen 15/10). LSP muestra errores falsos de `forestCubicacionTrozas` (tipos de Prisma viejos en el LSP; el typecheck da verde).
+
+**Tanda 2 (14:50-16:15, workflow de 18 agentes):** `a9ce2ae6e` cubicación comercial (ADR-483: Oxapampina con descuentos desde la GTF del LO-TH y aserrada en el Despacho CTP, uno por uno o rápida, precio general, a la cuenta; 8 columnas aditivas en ForestCubicacionTrozas + CHECK v2 con `tablar`) · `c5eb816f4` ingreso al CTP «Desde tu Libro TH» ya relleno (ADR-481, sin columnas nuevas) · `34e1ae011` papeles de cada guía en LO-TH/CTP/formatos (ADR-482) + el PATCH del Drive fuerza roles admin/almacenero/dueño al etiquetar `gtf:`/`casillero:` (veto de security cerrado; probado cajero 404).
+**Decide Brandon (tanda 2):** hueco = cilindro Øh²·L′÷24,5 ¿así en la plaza? · «Aplicar» ¿llena el valor de venta del despacho si está vacío? · vender a quien no dio adelanto (hoy sólo borrador: no hay cuenta por cobrar) · ¿guía del transportista obligatoria en «Papeles x/4»? · Blas: la GTF 019-001-0000001 ya se puede traer con «Desde tu Libro TH» (vencida → pide motivo).
+
+---
+
 # SESSION HANDOFF — 2026-10-08: noche autónoma (cámaras, Libro TH/CTP, Inicio forestal, adelantos, orden de pantallas, superadmin, tuteo)
 
 **Estado:** ✅ todo commiteado (36 commits desde las 00:15, de `ea4c6f311` a `3bdb8ddb3`+handoff) y SUBIDO a la rama `audit/storefront-mejoras-verificadas-2026-06-15`. Nada en producción. Árbol limpio salvo `.claude/` sin versionar. PDF «Mejoras de la noche» en el Escritorio de Windows (`OneDrive\Documentos\Escritorio`). Plan y bitácora: `.claude/autonomo/plan-2026-10-08.md`.

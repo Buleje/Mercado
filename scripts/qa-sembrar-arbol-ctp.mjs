@@ -65,10 +65,21 @@ async function c(method, url, body) {
     const r = await fetch(BASE + url, { method, headers: H, ...(body ? { body: JSON.stringify(body) } : {}) });
     return { ok: r.ok, status: r.status, j: await r.json().catch(() => ({})) };
   };
-  let res = await go();
+  // Dev reiniciándose: ECONNREFUSED → hasta 3 reintentos con 5 s (igual que el 401).
+  const conReintento = async () => {
+    for (let n = 0; ; n++) {
+      try { return await go(); } catch (e) {
+        const cod = e?.cause?.code ?? e?.code;
+        if (n >= 3 || !(cod === "ECONNREFUSED" || /fetch failed/.test(String(e?.message)))) throw e;
+        console.error(`dev sin responder (${cod ?? "fetch failed"}), reintento ${n + 1}/3 en 5 s…`);
+        await new Promise((r) => setTimeout(r, 5000));
+      }
+    }
+  };
+  let res = await conReintento();
   if (res.status === 401) {
     await login();
-    res = await go();
+    res = await conReintento();
   }
   return res;
 }

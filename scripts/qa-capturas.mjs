@@ -30,6 +30,10 @@
  *                                   del elemento): firmar en el lienzo de «Firmar recibo» (08-10)
  *   {"esperar": "<sel>"}          {"esperar": 500}            (ms)
  *   {"eval": "<expresión js>"}    → su resultado sale en el reporte
+ *   {"evalDialogo": {"texto": "<regex>", "js": "d.querySelectorAll('input').length"}} → como eval, pero `d` es el
+ *                                   [role=dialog] cuyo textContent coincide (no el primero del DOM)
+ *   {"elegirPrimera": ["<sel select>", "<regex a excluir>"]} → espera hasta 10 s una opción con value ≠ "" que no
+ *                                   matchee el regex y la elige (setter nativo + input/change: React controlado la toma)
  *   {"captura": "nombre"}         → la matriz de capturas de ESTE estado
  *   {"subir": ["<sel input[type=file]>", "/ruta/archivo.pdf"]} → elige el archivo (03-10: importar el PDF del croquis)
  *   {"fallar": "/api/settings"}   → ese GET responde 500 (o ["/api/x", 503]); {"fallar": null} lo
@@ -55,6 +59,7 @@
  *                                   cuál gana para esa propiedad, más su valor calculado (CDP CSS.getMatchedStylesForNode).
  *                                   Con propiedad lista sólo las que la declaran; sin ella, todas. Ej.: {"reglas": ["h1", "color"]} — 08-10: «por qué
  *                                   este texto sale gris» eran 4 getComputedStyle + grep de hojas.
+ *   (`esperar` con `text=X` también acepta X en aria-label/title.)
  *   (`esperar` con selector espera el elemento VISIBLE: ya no se cuelga con un [role=dialog] oculto.)
  * Sin ningún paso «captura», se captura el estado final con --nombre.
  *
@@ -461,6 +466,12 @@ async function recorrido(t, primero) {
         }
         else if (tipo === "esperar") {
           if (typeof valor === "number") await page.waitForTimeout(valor);
+          else if (/^text=/.test(valor)) {
+            /* `text=X` también encuentra X en aria-label / title (08-10: «Cómo se carga el ingreso» es un aria-label: 70 s perdidos). Gana el primero. */
+            const t = valor.slice(5).replace(/^["']|["']$/g, "");
+            const porAttr = page.waitForFunction((x) => { const q = x.toLowerCase(); return [...document.querySelectorAll("[aria-label],[title]")].some((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && ((e.getAttribute("aria-label") || "") + " " + (e.getAttribute("title") || "")).toLowerCase().includes(q); }); }, t, { timeout: 30_000 });
+            await Promise.any([visible(page, valor).waitFor({ state: "visible", timeout: 30_000 }), porAttr]).catch(() => { throw new Error(`no apareció «${t}» en 30 s (ni como texto ni en aria-label/title)`); });
+          }
           else await visible(page, valor).waitFor({ state: "visible", timeout: 30_000 });
         }
         else if (tipo === "navegar") {
@@ -468,6 +479,32 @@ async function recorrido(t, primero) {
           await esperarQuietud({ quieto: 500, tope: 1500 });
         }
         else if (tipo === "marcar") await visible(page, valor).evaluate((el) => el.click()); else if (tipo === "eval") { const v = await page.evaluate(valor); if (primero) evals.push({ paso: i, valor: v }); }
+        else if (tipo === "evalDialogo") {
+          const { texto, js } = valor;
+          const v = await page.evaluate(({ texto, js }) => {
+            const re = new RegExp(texto, "i");
+            const d = [...document.querySelectorAll("[role=dialog]")].find((x) => re.test(x.textContent || ""));
+            if (!d) throw new Error(`evalDialogo: ningún [role=dialog] con «${texto}»`);
+            return new Function("d", `return (${js});`)(d);
+          }, { texto: String(texto), js: String(js) });
+          if (primero) evals.push({ paso: i, valor: v });
+        }
+        else if (tipo === "elegirPrimera") {
+          const [sel, excluir] = valor;
+          const v = await page.evaluate(async ({ sel, excluir }) => {
+            const ex = excluir ? new RegExp(excluir, "i") : null;
+            const buscar = () => { const s = document.querySelector(sel); return s && [...s.options].find((o) => o.value !== "" && !(ex && ex.test(o.textContent || ""))); };
+            const t0 = Date.now(); let o;
+            while (!(o = buscar()) && Date.now() - t0 < 10_000) await new Promise((r) => setTimeout(r, 200));
+            if (!o) throw new Error(`elegirPrimera: «${sel}» sin opciones elegibles en 10 s`);
+            const s = document.querySelector(sel);
+            Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set.call(s, o.value);
+            s.dispatchEvent(new Event("input", { bubbles: true }));
+            s.dispatchEvent(new Event("change", { bubbles: true }));
+            return o.value;
+          }, { sel, excluir });
+          if (primero) evals.push({ paso: i, valor: v });
+        }
         else if (tipo === "quien") {
           const v = await visible(page, valor).evaluate((el) => {
             const clave = Object.keys(el).find((k) => k.startsWith("__reactFiber$"));
