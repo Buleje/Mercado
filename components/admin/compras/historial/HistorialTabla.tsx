@@ -89,8 +89,11 @@ export default function HistorialTabla({
           convierte toda `<table>` en tarjetas (`useMobileTableCards` +
           `.admin-mobile-cards` en globals.css). */}
       <div className="max-h-[38rem] overflow-auto rounded-xl">
-        <DataTable className="w-full min-w-[880px] table-fixed text-sm">
-          <colgroup>
+        {/* Bajo 640 px la tabla son tarjetas: `<col>`, `table-fixed` y el min-w
+            dejaban el tbody en la 1.ª columna (tarjeta de 136 px en un celular
+            de 400, medido 08-10). Todo eso aplica solo desde `sm`. */}
+        <DataTable className="w-full text-sm sm:min-w-[880px] sm:table-fixed">
+          <colgroup className="max-sm:hidden">
             <col style={{ width: "8.5rem" }} />
             <col style={{ width: "11rem" }} />
             <col style={{ width: "10rem" }} />

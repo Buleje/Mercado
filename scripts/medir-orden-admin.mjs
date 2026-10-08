@@ -145,10 +145,24 @@ async function main() {
   }
   await browser.close();
 
-  filas.sort((a, b) => b.puntaje - a.puntaje);
   await mkdir(new URL("../reports/orden-admin/", import.meta.url), { recursive: true });
   const salida = new URL(`../reports/orden-admin/orden-${ANCHO}.json`, import.meta.url);
-  await writeFile(salida, JSON.stringify({ medido: new Date().toISOString(), ancho: ANCHO, ley: LEY, filas }, null, 2));
+  /* Con pestañas por argumento se MEZCLA con el reporte que había (reemplaza
+     sólo esas filas): antes lo pisaba entero y cada agente lo respaldaba y
+     restauraba a mano (4 veces la noche del 08-10). Sin argumentos, completo. */
+  let todas = filas;
+  if (pedidas.length > 0) {
+    try {
+      const previo = JSON.parse(await readFile(salida, "utf8"));
+      const nuevas = new Set(filas.map((f) => f.tab));
+      todas = [...(previo.filas ?? []).filter((f) => !nuevas.has(f.tab)), ...filas];
+    } catch {
+      /* sin reporte previo: sólo lo medido */
+    }
+  }
+  todas.sort((a, b) => b.puntaje - a.puntaje);
+  await writeFile(salida, JSON.stringify({ medido: new Date().toISOString(), ancho: ANCHO, ley: LEY, filas: todas }, null, 2));
+  filas.sort((a, b) => b.puntaje - a.puntaje);
 
   const mal = filas.filter((f) => f.puntaje > 0);
   console.log(`\n─────────────────────────────────`);
