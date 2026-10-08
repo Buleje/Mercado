@@ -14,7 +14,10 @@ import { cn } from "@/lib/utils";
 
 // Medios con archivo de logo oficial en public/payment-logos/. Sumá acá la clave
 // + el archivo para habilitar otro (ej. "tarjeta").
-const OFFICIAL_LOGOS = new Set(["yape", "plin"]);
+// 08-10: vacío hasta que estén los archivos. Con «yape» y «plin» acá pero sin
+// sus .svg en la carpeta, cada carga de la tienda pedía 2 archivos (404) para
+// caer igual al arte custom. Al subir `yape.svg`/`plin.svg`, volver a sumarlos.
+const OFFICIAL_LOGOS = new Set<string>([]);
 
 export type PaymentMethod =
   | "yape"
