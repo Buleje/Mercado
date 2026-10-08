@@ -219,7 +219,7 @@ function RecetaCard({
                     <div aria-hidden className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/15 blur-xl" />
                     <div aria-hidden className="pointer-events-none absolute -bottom-8 -left-6 h-28 w-28 rounded-full bg-black/10 blur-xl" />
                     <CatIcon
-                      className="h-20 w-20 text-white/95 drop-shadow-[var(--shadow-md)] transition-transform duration-[var(--dur-slow)] group-hover:scale-110 sm:h-24 sm:w-24"
+                      className="h-20 w-20 text-white/95 drop-shadow-lg transition-transform duration-[var(--dur-slow)] group-hover:scale-110 sm:h-24 sm:w-24"
                       strokeWidth={1.4}
                       aria-hidden
                     />
