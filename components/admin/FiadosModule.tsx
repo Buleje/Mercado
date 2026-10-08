@@ -30,6 +30,7 @@ import ClienteFormModal from "./clientes/ClienteFormModal";
 
 import dynamic from "next/dynamic";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { escapeDeLaPaginaConFijado } from "@/hooks/use-ventana-de-modal";
 const FiadoFormModal = dynamic(() => import("./fiados/FiadoFormModal"), { ssr: false });
 const FiadoTendenciaCobroChart = dynamic(() => import("./FiadoTendenciaCobroChart"), {
   ssr: false,
@@ -430,7 +431,8 @@ export default function FiadosModule() {
   // UX Mejora 13: Cerrar modales con Escape
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
+      /* Con un modal fijado y el foco en la página, el Escape es de la página (ADR-420). */
+      if (e.key !== "Escape" || escapeDeLaPaginaConFijado()) return;
       // Audit 2026-08-26: showDebtorsMap faltaba acá — Escape no cerraba el
       // Mapa de deudores, y si además había un "selected" de fondo, Escape
       // cerraba ESE panel en vez del mapa visible al frente.

@@ -24,7 +24,9 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
+import {
+  ControlesDeVentana, PausaDeFocoRadix, TiradorDeVentana, useFondoLibreAlFijar,
+} from "@/components/admin/shared/modal-controles-ventana";
 
 const OptionSchema = z.object({
   id: z.string(),
@@ -103,6 +105,9 @@ export default function CatalogOptionPicker({ onClose, onPick, existingNames }: 
 
   const contentRef = useRef<HTMLDivElement>(null);
   const ventana = useVentanaDeModal(true, { ref: contentRef, claveMemoria: "catalogo-opciones" });
+  /* Fijado = la pantalla de atrás se scrollea y se usa: sin velo (el Overlay
+     trae el bloqueo de scroll) y sin trampa de foco. Igual que `AdminModal`. */
+  const pausarFoco = useFondoLibreAlFijar(ventana.fijado, contentRef);
 
   // Aplana templates en pares { template, option } y filtra por categoría + search
   const flatRows = templates.flatMap((t) =>
@@ -136,12 +141,16 @@ export default function CatalogOptionPicker({ onClose, onPick, existingNames }: 
             Dialog.Content va DESPUÉS en el DOM dentro del mismo Dialog.Portal,
             así que con z-index igual queda arriba por orden de pintado — no
             hace falta un peldaño propio. Ver gate ds-no-z-arbitrary-admin. */}
-        <Dialog.Overlay className="fixed inset-0 z-system bg-black/60 backdrop-blur-sm" />
+        {!ventana.fijado && <Dialog.Overlay className="fixed inset-0 z-system bg-black/60 backdrop-blur-sm" />}
         <Dialog.Content
           ref={contentRef}
           aria-describedby={undefined}
           style={ventana.estilo}
           onInteractOutside={ventana.onInteractOutside}
+          /* Fijado, Escape cierra sólo con el foco adentro (como `AdminModal`). */
+          onEscapeKeyDown={(e) => {
+            if (ventana.fijado && !contentRef.current?.contains(document.activeElement)) e.preventDefault();
+          }}
           className="fixed left-1/2 top-1/2 z-system translate-x-[calc(-50%_+_var(--ventana-x,0px))] translate-y-[calc(-50%_+_var(--ventana-y,0px))] w-[95vw] max-w-3xl max-h-[88vh] flex flex-col rounded-2xl bg-[var(--surface-canvas)] shadow-[var(--shadow-xl)] overflow-hidden"
         >
           {/* Header */}
@@ -320,6 +329,7 @@ export default function CatalogOptionPicker({ onClose, onPick, existingNames }: 
             </button>
           </div>
           <TiradorDeVentana ventana={ventana} />
+          <PausaDeFocoRadix activa={pausarFoco} />
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

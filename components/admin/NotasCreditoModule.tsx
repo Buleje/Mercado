@@ -9,7 +9,7 @@ import { useState, useEffect, useCallback, useMemo, useRef, useId } from "react"
 import { m, AnimatePresence } from "@/components/admin/providers";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { escapeDeLaPaginaConFijado, useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
 import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/format";
 import {
@@ -485,7 +485,8 @@ export default function NotasCreditoModule() {
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
+      /* Con un modal fijado y el foco en la página, el Escape es de la página (ADR-420). */
+      if (e.key !== "Escape" || escapeDeLaPaginaConFijado()) return;
       if (showNew) { setShowNew(false); return; }
       if (selected) { setSelected(null); return; }
       if (showShortcuts) { setShowShortcuts(false); return; }

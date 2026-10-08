@@ -24,8 +24,14 @@
  *
  * No usa Radix a propósito: migrar quince modales a otro componente es un
  * refactor que nadie termina. Esto son tres líneas por modal.
+ *
+ * **Fijado** (ADR-420, `useVentanaDeModal`): mientras la ventana lleva la
+ * marca `ATRIBUTO_FIJADA`, la página de atrás está en uso — el Tab no se
+ * atrapa, el scroll se suelta y Escape cierra sólo si el foco está DENTRO del
+ * modal (afuera, la tecla es de la página). Al desfijar vuelve todo.
  */
 import { useEffect, useRef, type RefObject } from "react";
+import { ATRIBUTO_FIJADA, ventanaFijadaEn } from "@/hooks/use-ventana-de-modal";
 
 /** Lo que el navegador considera enfocable, en el orden en que lo tabula. */
 const ENFOCABLES =
@@ -84,12 +90,22 @@ export function useModalAccesible(
        Contarlo como otro diálogo apagaba el Tab de este modal mientras el panel
        estaba abierto y el foco se iba a la página de atrás (lo reprodujo un
        revisor el 2026-09-14). Un modal de verdad anidado adentro sí manda. */
+    /* Un diálogo FIJADO encima no manda: se fijó para trabajar en lo de abajo
+       (o sea, en éste). Manda sólo si el foco está en él — eso lo mira
+       `focoEnOtroFijado`. */
     const hayOtroDialogoEncima = () => {
-      const dialogos = document.querySelectorAll<HTMLElement>('[role="dialog"], [role="alertdialog"]');
+      const dialogos = [...document.querySelectorAll<HTMLElement>('[role="dialog"], [role="alertdialog"]')].filter(
+        (d) => d === caja || !d.hasAttribute(ATRIBUTO_FIJADA),
+      );
       const ultimo = dialogos[dialogos.length - 1];
       if (!ultimo || ultimo === caja) return false;
       return !caja.contains(ultimo) || ultimo.getAttribute("aria-modal") === "true";
     };
+    const focoEnOtroFijado = () => {
+      const fijado = document.activeElement?.closest?.(`[${ATRIBUTO_FIJADA}]`);
+      return !!fijado && fijado !== caja && !caja.contains(fijado);
+    };
+    const fijada = () => ventanaFijadaEn(caja);
 
     const enfocables = () =>
       [...caja.querySelectorAll<HTMLElement>(ENFOCABLES)].filter(
@@ -105,13 +121,17 @@ export function useModalAccesible(
 
     const onKey = (e: KeyboardEvent) => {
       /* Hay otro modal arriba: el teclado es suyo. */
-      if (hayOtroDialogoEncima()) return;
+      if (hayOtroDialogoEncima() || focoEnOtroFijado()) return;
       if (e.key === "Escape" && cerrarConEscape && onCerrarRef.current) {
+        /* Fijado y con el foco en la página de atrás: el Escape es de ella. */
+        if (fijada() && !caja.contains(document.activeElement)) return;
         e.stopPropagation();
         onCerrarRef.current();
         return;
       }
       if (e.key !== "Tab") return;
+      /* Fijado: el Tab entra y sale del modal como en cualquier página. */
+      if (fijada()) return;
       const lista = enfocables();
       if (lista.length === 0) {
         e.preventDefault();
@@ -138,12 +158,21 @@ export function useModalAccesible(
 
     /* Captura: el modal decide antes que los atajos de la pantalla de atrás. */
     document.addEventListener("keydown", onKey, true);
+    /* Scroll bloqueado, salvo mientras la ventana está fijada. La marca la pone
+       `useVentanaDeModal` en la caja (o en la ventana que vive adentro): se
+       escucha para soltar y volver a bloquear en el acto. */
     const overflowPrevio = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const aplicarScroll = () => {
+      document.body.style.overflow = fijada() ? overflowPrevio : "hidden";
+    };
+    aplicarScroll();
+    const observador = new MutationObserver(aplicarScroll);
+    observador.observe(caja, { attributes: true, attributeFilter: [ATRIBUTO_FIJADA], subtree: true });
 
     return () => {
       cancelAnimationFrame(id);
       document.removeEventListener("keydown", onKey, true);
+      observador.disconnect();
       document.body.style.overflow = overflowPrevio;
       /* Devolver el foco sólo si sigue en el documento: si la acción del modal
          borró la fila que lo abrió, forzarlo tira un error silencioso. */

@@ -97,6 +97,7 @@ export interface VentanaDeModal {
   asaProps: HTMLAttributes<HTMLElement>;
   /** Se ponen en el tirador de la esquina inferior derecha. */
   redimensionProps: HTMLAttributes<HTMLElement>;
+  /** Fijado Y con ventana activa: en el bottom-sheet del celular nunca está fijado. */
   fijado: boolean;
   alternarFijado: () => void;
   maximizado: boolean;
@@ -158,6 +159,72 @@ const PASO_TECLADO_FINO = 1;
 /** El mismo umbral que el `sm:` de Tailwind — abajo de ahí el modal es bottom-sheet. */
 const PANTALLA_ANCHA = 640;
 const PREFIJO_MEMORIA = "buleje:ventana-modal:";
+
+/**
+ * La marca que la ventana pone en su contenedor mientras está FIJADA.
+ *
+ * Las trampas de foco escritas a mano (`useModalAccesible`, `useFocusTrap`) no
+ * conocen a este hook: leen esta marca del DOM para soltar el Tab, el scroll y
+ * el Escape mientras dure el fijado, sin que cada modal tenga que cablearlo.
+ */
+export const ATRIBUTO_FIJADA = "data-ventana-fijada";
+
+/** ¿La caja —o la ventana que vive adentro de ella— está fijada? */
+export function ventanaFijadaEn(caja: Element): boolean {
+  return caja.hasAttribute(ATRIBUTO_FIJADA) || caja.querySelector(`[${ATRIBUTO_FIJADA}]`) !== null;
+}
+
+/**
+ * ¿Este Escape es de la PÁGINA de atrás de un modal fijado?
+ *
+ * Con una ventana fijada, Escape cierra sólo si el foco está en un modal; si
+ * está en la página (un buscador, una celda) la tecla es de ella. `AdminModal`
+ * y las trampas a mano ya lo respetan, pero varios módulos llevan además su
+ * propio «Escape cierra el modal abierto» en `document` (Fiados, Préstamos,
+ * Recetas…): medido en Fiados, tipear en el buscador de atrás y pulsar Escape
+ * cerraba «Nuevo fiado» fijado. Esos manejadores preguntan esto primero.
+ *
+ * Revisión 08-10: no alcanza con «el foco está en ALGÚN diálogo». Con «Nuevo
+ * fiado» fijado y un detalle abierto desde la página, Escape en el detalle
+ * llegaba a la cadena del módulo, que cierra `showNew` antes que `selected`, y
+ * se llevaba lo tipeado del fijado. Ahora el Escape es del módulo sólo si el
+ * foco está DENTRO de la ventana fijada; en la página o en otro modal, es de ese
+ * otro (el modal estándar se cierra solo con su propio Escape).
+ */
+export function escapeDeLaPaginaConFijado(): boolean {
+  if (typeof document === "undefined") return false;
+  const fijadas = document.querySelectorAll(`[${ATRIBUTO_FIJADA}]`);
+  if (fijadas.length === 0) return false;
+  const activo = document.activeElement;
+  const dentroDeUnaFijada = [...fijadas].some((f) =>
+    (f.closest('[role="dialog"], [role="alertdialog"]') ?? f).contains(activo),
+  );
+  return !dentroDeUnaFijada;
+}
+
+/**
+ * El alfa de un color computado: `rgba(…, a)` o la sintaxis moderna con
+ * `/ a` (Tailwind 4 compila `bg-black/50` a `oklab(0 0 0 / 0.5)`).
+ */
+function alfaDe(color: string): number {
+  const barra = color.match(/\/\s*([\d.]+)(%?)\s*\)\s*$/);
+  if (barra) return barra[2] ? Number(barra[1]) / 100 : Number(barra[1]);
+  const coma = color.match(/^rgba\([^,]+,[^,]+,[^,]+,\s*([\d.]+)\s*\)$/);
+  if (coma) return Number(coma[1]);
+  return color === "transparent" ? 0 : 1;
+}
+
+/**
+ * ¿Este velo OSCURECE (fondo translúcido o desenfoque)? Esos se vuelven
+ * transparentes al fijar. Un contenedor opaco —un panel con su fondo— no se
+ * toca: borrarle el fondo lo rompería.
+ */
+function oscurece(el: HTMLElement): boolean {
+  const cs = getComputedStyle(el);
+  if (cs.backdropFilter && cs.backdropFilter !== "none") return true;
+  const alfa = alfaDe(cs.backgroundColor);
+  return alfa > 0 && alfa < 1;
+}
 
 /**
  * Lo que NO arranca un arrastre. El header lleva la X y, en varios modales, un
@@ -301,6 +368,10 @@ export function useVentanaDeModal(abierto: boolean, opts: OpcionesVentana = {}):
   const [pantallaAncha, setPantallaAncha] = useState(false);
 
   const activa = habilitado && pantallaAncha;
+  /* Fijar es cosa de ventanas: en el bottom-sheet del celular no hay botón para
+     soltarlo, así que un fijado recordado de la pantalla ancha no puede dejar
+     el modal sin cerrarse al tocar afuera. */
+  const fijadaAhora = activa && fijado;
 
   /* Espejos para los manejadores imperativos, que corren fuera del render. */
   const posRef = useRef(pos);
@@ -311,8 +382,8 @@ export function useVentanaDeModal(abierto: boolean, opts: OpcionesVentana = {}):
   activaRef.current = activa;
   const maximizadoRef = useRef(maximizado);
   maximizadoRef.current = maximizado;
-  const fijadoRef = useRef(fijado);
-  fijadoRef.current = fijado;
+  const fijadoRef = useRef(fijadaAhora);
+  fijadoRef.current = fijadaAhora;
 
   const contenedorRef = useRef<HTMLElement | null>(null);
   const arrastreRef = useRef<{
@@ -711,48 +782,103 @@ export function useVentanaDeModal(abierto: boolean, opts: OpcionesVentana = {}):
    *
    * Radix apaga los clics de TODA la página mientras hay un diálogo modal
    * (`DismissableLayer` pone `body { pointer-events: none }` una sola vez, al
-   * montar) y su trampa de foco devuelve el foco al diálogo escuchando
-   * `focusin` en `document`. Mientras dure el fijado le devolvemos las dos
-   * cosas al usuario, y al desfijar queda como estaba.
+   * montar). Mientras dure el fijado se le devuelven al usuario, y al desfijar
+   * queda como estaba. La trampa de foco, el scroll y el velo de Radix los
+   * suelta `AdminModal` (ver `useFondoLibreAlFijar`); las trampas a mano leen
+   * la marca `ATRIBUTO_FIJADA` que se pone acá.
    */
   useEffect(() => {
-    if (!abierto || !fijado || typeof document === "undefined") return;
-    const body = document.body;
-    const previo = body.style.pointerEvents;
-    if (previo === "none") body.style.pointerEvents = "auto";
+    if (!abierto || !fijadaAhora || typeof document === "undefined") return;
 
-    /**
-     * Y el VELO propio, en los modales escritos a mano.
-     *
-     * Los 103 modales a mano del panel no usan el overlay de Radix: pintan su
-     * propio `div.modal-backdrop fixed inset-0`, que sigue tapando la pantalla
-     * aunque Radix ya no estorbe. Medido el 2026-09-15 en «Producir sin lote»:
-     * fijado y achicado, `elementFromPoint` sobre la tabla de atrás devolvía el
-     * velo — o sea, «fijar para seguir trabajando» dejaba mirar pero no tocar,
-     * que es justo la mitad del pedido.
-     *
-     * El velo se apaga para el puntero y el diálogo se enciende: sin lo
-     * segundo, el propio modal heredaría el `none` del padre.
-     */
+    const soltar = (caja: HTMLElement | null): (() => void) => {
+      /* Radix apaga el body en el efecto de su `DismissableLayer`, que corre
+         recién cuando su nodo llega al estado —un render DESPUÉS del montaje—.
+         Un modal que abre ya fijado llega antes que él: por eso se vigila el
+         `style` del body mientras dure el fijado, no sólo se mira una vez. */
+      const body = document.body;
+      let lePrendimos = false;
+      const prenderBody = () => {
+        if (body.style.pointerEvents !== "none") return;
+        body.style.pointerEvents = "auto";
+        lePrendimos = true;
+      };
+      prenderBody();
+      const vigia = new MutationObserver(prenderBody);
+      vigia.observe(body, { attributes: true, attributeFilter: ["style"] });
+
+      /**
+       * Y el VELO propio, en los modales escritos a mano.
+       *
+       * Los 103 modales a mano del panel no usan el overlay de Radix: pintan su
+       * propio `div.modal-backdrop fixed inset-0`, que sigue tapando la pantalla
+       * aunque Radix ya no estorbe. Medido el 2026-09-15 en «Producir sin lote»:
+       * fijado y achicado, `elementFromPoint` sobre la tabla de atrás devolvía el
+       * velo — o sea, «fijar para seguir trabajando» dejaba mirar pero no tocar,
+       * que es justo la mitad del pedido.
+       *
+       * El velo se apaga para el puntero (y, si oscurece, se vuelve
+       * transparente: fijado no hay velo, igual que en `AdminModal`) y el
+       * diálogo se enciende: sin lo segundo, heredaría el `none` del padre.
+       */
+      const velos = caja ? velosDe(caja) : [];
+      const previosVelos = velos.map((v) => ({
+        puntero: v.style.pointerEvents,
+        fondo: v.style.background,
+        filtro: v.style.backdropFilter,
+      }));
+      const previoCaja = caja?.style.pointerEvents ?? null;
+      for (const v of velos) {
+        const tinte = oscurece(v);
+        v.style.pointerEvents = "none";
+        if (tinte) {
+          v.style.background = "transparent";
+          v.style.backdropFilter = "none";
+        }
+      }
+      if (caja && velos.length > 0) caja.style.pointerEvents = "auto";
+
+      /* La marca para las trampas a mano, y `aria-modal` en falso: con la
+         página de atrás en uso, el lector de pantalla no puede seguir
+         anunciándola como inerte. */
+      const ariaModal = caja?.getAttribute("aria-modal") ?? null;
+      caja?.setAttribute(ATRIBUTO_FIJADA, "true");
+      if (ariaModal === "true") caja?.setAttribute("aria-modal", "false");
+
+      return () => {
+        vigia.disconnect();
+        /* Sólo se vuelve a apagar si lo prendimos nosotros Y sigue prendido. Si
+           Radix ya desmontó el diálogo, él devolvió el body a como estaba
+           (`""`) y apagarlo de nuevo dejaría la página entera sin clics. */
+        if (lePrendimos && body.style.pointerEvents === "auto") body.style.pointerEvents = "none";
+        velos.forEach((v, i) => {
+          const p = previosVelos[i];
+          if (!p) return;
+          v.style.pointerEvents = p.puntero;
+          v.style.background = p.fondo;
+          v.style.backdropFilter = p.filtro;
+        });
+        if (caja && previoCaja !== null) caja.style.pointerEvents = previoCaja;
+        caja?.removeAttribute(ATRIBUTO_FIJADA);
+        if (ariaModal !== null) caja?.setAttribute("aria-modal", ariaModal);
+      };
+    };
+
+    /* El contenido de un portal de Radix se monta un render DESPUÉS de
+       `abierto` —y Radix apaga el body recién ahí—: un modal que abre ya
+       fijado (la memoria lo recuerda) espera un cuadro para encontrar su caja. */
+    let deshacer: (() => void) | null = null;
+    let cuadro = 0;
     const caja = contenedor();
-    const velos = caja ? velosDe(caja) : [];
-    const previosVelos = velos.map((v) => v.style.pointerEvents);
-    const previoCaja = caja?.style.pointerEvents ?? null;
-    for (const v of velos) v.style.pointerEvents = "none";
-    if (caja && velos.length > 0) caja.style.pointerEvents = "auto";
-
-    const alEnfocar = (ev: FocusEvent) => {
-      const el = contenedor();
-      if (el && ev.target instanceof Node && !el.contains(ev.target)) ev.stopPropagation();
-    };
-    window.addEventListener("focusin", alEnfocar, true);
+    if (caja) deshacer = soltar(caja);
+    else
+      cuadro = requestAnimationFrame(() => {
+        deshacer = soltar(contenedor());
+      });
     return () => {
-      body.style.pointerEvents = previo;
-      velos.forEach((v, i) => { v.style.pointerEvents = previosVelos[i] ?? ""; });
-      if (caja && previoCaja !== null) caja.style.pointerEvents = previoCaja;
-      window.removeEventListener("focusin", alEnfocar, true);
+      cancelAnimationFrame(cuadro);
+      deshacer?.();
     };
-  }, [abierto, fijado, contenedor]);
+  }, [abierto, fijadaAhora, contenedor]);
 
   const alternarFijado = useCallback(() => setFijado((f) => !f), []);
 
@@ -857,7 +983,7 @@ export function useVentanaDeModal(abierto: boolean, opts: OpcionesVentana = {}):
     estilo,
     asaProps,
     redimensionProps,
-    fijado,
+    fijado: fijadaAhora,
     alternarFijado,
     maximizado,
     alternarMaximizado,

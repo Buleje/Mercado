@@ -46,7 +46,8 @@ achicar justo cuando más falta hacía.
 
 ### Fijar
 Es la pata que pidió Brandon con nombre propio. Con el modal fijado:
-- el clic fuera **no cierra** (Escape y la X sí, siempre: fijar no puede dejar a nadie encerrado);
+- el clic fuera **no cierra** (la X sí, siempre, y Escape con el foco dentro del modal: fijar no puede dejar a nadie
+  encerrado; con el foco en la página de atrás, Escape es de la página — 2026-10-08);
 - el velo deja de tapar. Radix apaga los clics de toda la página (`body { pointer-events: none }`) y los modales a
   mano pintan su propio `div.modal-backdrop`: **se apagan los dos** y el diálogo se enciende (`pointer-events: auto`),
   o heredaría el `none` del padre.
@@ -72,8 +73,15 @@ deja donde estaba, que es el punto de tener ventanas. «Restaurar» lo devuelve 
 - Quedan ~95 modales a mano fuera del forestal. El cableado es mecánico (5 líneas por archivo) y el hook ya lo
   soporta; no se hizo en esta ronda para poder verificar en el navegador lo que sí entró.
 - `AdminModal.tsx` creció a 397 líneas, por encima del estándar de ~300.
-- Con el modal fijado, el scroll de la página de atrás **sigue bloqueado** (`react-remove-scroll` de Radix). Se puede
-  tocar y leer lo que está a la vista, pero no scrollear hacia otra parte. Queda anotado.
+- ~~Con el modal fijado, el scroll de la página de atrás sigue bloqueado~~ — **resuelto 2026-10-08**. Fijado, `AdminModal`
+  no pinta el `Overlay` (ahí vive el `RemoveScroll` de Radix: sin velo y con scroll), pausa la trampa de foco montando
+  un `FocusScope` vacío encima del diálogo (pila de Radix; `modal={false}` se descartó porque Radix cambia de
+  componente y **remonta** el contenido: se perdía lo tipeado) y le saca el `aria-hidden` a la página. Los modales a
+  mano leen la marca `data-ventana-fijada` (`useModalAccesible`, `useFocusTrap`): sueltan el Tab y el scroll.
+  **Escape fijado = de quien tiene el foco**: dentro del modal lo cierra; en la página de atrás es de la página (los
+  6 módulos con «Escape cierra el modal» propio preguntan `escapeDeLaPaginaConFijado()`). Medido en Fiados (`main`):
+  rueda sin fijar 0 px, fijado 250-700 px; clic y tipeo atrás llegan; desfijar devuelve velo, bloqueo y lo tipeado.
+  VRT: `__tests__/vrt/modal-fijado-fondo-libre.vrt.test.tsx`.
 
 ## Alternativas descartadas
 

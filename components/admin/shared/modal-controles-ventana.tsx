@@ -12,6 +12,12 @@
  * centrada): en el bottom-sheet del celular mover y estirar no significan nada.
  */
 
+import { useEffect, useState, type RefObject } from "react";
+/* Dependencia de `@radix-ui/react-dialog` (misma copia, 1.1.7, una sola en
+   node_modules): la pila de FocusScope tiene que ser LA MISMA que usa el
+   diálogo, o la pausa no lo alcanza. El VRT `modal-fijado-fondo-libre` lo
+   comprueba con el Tab y el clic en un campo de atrás. */
+import { FocusScope } from "@radix-ui/react-focus-scope";
 import { Maximize2, Minimize2, Pin, PinOff, RotateCcw } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { VentanaDeModal } from "@/hooks/use-ventana-de-modal";
@@ -98,6 +104,89 @@ export function TiradorDeVentana({ ventana }: { ventana: VentanaDeModal }) {
         <path d="M15 11l-4 4" />
       </svg>
     </span>
+  );
+}
+
+/**
+ * Lo que un `Dialog` MODAL de Radix no suelta solo cuando la ventana se fija.
+ *
+ * Fijar es «lo dejo abierto y sigo trabajando atrás» (ADR-420). Radix, mientras
+ * el diálogo es modal, hace tres cosas que lo impiden y que no se apagan sin
+ * desmontarlo:
+ *   · bloquea el scroll (`RemoveScroll`, que vive en el `Overlay`) — eso lo
+ *     resuelve el llamador NO pintando el `Overlay` mientras está fijado;
+ *   · atrapa el foco (`FocusScope trapped`): un clic en un campo de atrás
+ *     devolvía el foco al modal y el Tab daba vueltas adentro;
+ *   · esconde la página al lector de pantalla (`aria-hidden` en todo lo demás).
+ *
+ * `modal={false}` lo resolvería, pero Radix pinta OTRO componente
+ * (`DialogContentNonModal`): React desmonta el contenido y se pierde lo tipeado.
+ *
+ * Este hook devuelve `true` un cuadro después de fijar —cuando el contenido del
+ * portal ya está montado— y mientras tanto le saca el `aria-hidden` a la
+ * página. Con ese `true`, el llamador pinta `PausaDeFocoRadix` adentro del
+ * contenido. Vive en el COMPONENTE del modal y no en el contenido a propósito:
+ * al cerrar estando fijado, su limpieza corre antes de que Radix desmonte el
+ * contenido y deshaga su `aria-hidden`, así que lo devuelve en orden.
+ */
+export function useFondoLibreAlFijar(fijado: boolean, contenidoRef: RefObject<HTMLElement | null>): boolean {
+  const [listo, setListo] = useState(false);
+  useEffect(() => {
+    if (!fijado) return;
+    const cuadro = requestAnimationFrame(() => setListo(true));
+    return () => {
+      cancelAnimationFrame(cuadro);
+      setListo(false);
+    };
+  }, [fijado]);
+
+  useEffect(() => {
+    if (!fijado || !listo) return;
+    const contenido = contenidoRef.current;
+    if (!contenido) return;
+    /* Con otro MODAL abierto (uno anidado, o un modal a mano debajo) el
+       `aria-hidden` es de los dos y no se puede repartir: se deja como está.
+       Cuenta sólo el que se ve y es modal (`data-state="open"` de Radix o
+       `aria-modal`): el panel tiene diálogos montados y ocultos todo el tiempo,
+       y contarlos dejaba la página escondida siempre (medido en Fiados). */
+    const otro = [...document.querySelectorAll<HTMLElement>('[role="dialog"], [role="alertdialog"]')].some(
+      (d) =>
+        d !== contenido &&
+        !contenido.contains(d) &&
+        !d.contains(contenido) &&
+        d.getClientRects().length > 0 &&
+        (d.getAttribute("data-state") === "open" || d.getAttribute("aria-modal") === "true"),
+    );
+    if (otro) return;
+    const ocultos = [...document.querySelectorAll<HTMLElement>("[data-aria-hidden]")].filter(
+      (el) => el.getAttribute("aria-hidden") === "true" && !el.contains(contenido),
+    );
+    for (const el of ocultos) el.removeAttribute("aria-hidden");
+    return () => {
+      /* Sólo si Radix todavía lo tiene marcado: si ya lo soltó, devolverlo
+         dejaría la página escondida para siempre. */
+      for (const el of ocultos) if (el.isConnected && el.hasAttribute("data-aria-hidden")) el.setAttribute("aria-hidden", "true");
+    };
+  }, [fijado, listo, contenidoRef]);
+
+  return fijado && listo;
+}
+
+/**
+ * Pausa la trampa de foco del diálogo que la contiene.
+ *
+ * Radix lleva una pila de `FocusScope`: el que se monta último manda y pausa
+ * al de abajo (así funcionan los diálogos anidados). Un `FocusScope` vacío y
+ * sin trampa, montado DESPUÉS del diálogo, lo pausa sin tocar ningún evento:
+ * los `onFocus`/`onBlur` de la página y del modal siguen llegando. Al
+ * desmontarse (desfijar) el diálogo vuelve a mandar y a atrapar el Tab.
+ */
+export function PausaDeFocoRadix({ activa }: { activa: boolean }) {
+  if (!activa) return null;
+  return (
+    <FocusScope asChild onMountAutoFocus={(e) => e.preventDefault()} onUnmountAutoFocus={(e) => e.preventDefault()}>
+      <span hidden data-pausa-foco="" />
+    </FocusScope>
   );
 }
 

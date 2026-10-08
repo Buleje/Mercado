@@ -201,6 +201,13 @@ export default function BulkPriceEditorTab() {
   };
 
   // Aplicar cambios al endpoint
+  /* El reseteo de la barra de progreso (800 ms) no puede disparar con el editor
+     ya cerrado: setState tras desmontar (en tests: «window is not defined»). */
+  const resetProgreso = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (resetProgreso.current) clearTimeout(resetProgreso.current);
+  }, []);
+
   const applyChanges = useCallback(async () => {
     if (changeCount === 0) return;
     setApplying(true);
@@ -238,7 +245,8 @@ export default function BulkPriceEditorTab() {
     } finally {
       setApplying(false);
       setShowConfirm(false);
-      setTimeout(() => setProgress(0), 800);
+      if (resetProgreso.current) clearTimeout(resetProgreso.current);
+      resetProgreso.current = setTimeout(() => setProgress(0), 800);
     }
   }, [changes, changeCount]);
 

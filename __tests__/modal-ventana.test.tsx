@@ -21,7 +21,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useRef } from "react";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
@@ -239,20 +239,36 @@ describe("mover la ventana", () => {
 });
 
 describe("fijar el modal", () => {
-  it("fijado: el clic de afuera no cierra, pero Escape sí", () => {
+  it("fijado: el clic de afuera no cierra; Escape sí con el foco adentro, no con el foco atrás", async () => {
     const onClose = vi.fn();
     render(
-      <AdminModal open onClose={onClose} title="Apartar madera">
-        <p>cuerpo</p>
-      </AdminModal>,
+      <>
+        <input aria-label="Campo de atrás" />
+        <AdminModal open onClose={onClose} title="Apartar madera">
+          <p>cuerpo</p>
+        </AdminModal>
+      </>,
     );
     fireEvent.click(screen.getByLabelText(/^Fija el modal/));
     const fijado = screen.getByLabelText(/^Suelta el modal/);
     expect(fijado).toHaveAttribute("aria-pressed", "true");
-    /* El velo se corre del camino para poder trabajar en la pantalla de atrás. */
-    expect(document.querySelector(".modal-backdrop")?.className).toContain("ventana-fijada");
+    /* Sin velo: el Overlay (y con él el bloqueo de scroll de Radix) no se pinta. */
+    expect(document.querySelector(".modal-backdrop")).toBeNull();
 
-    fireEvent.keyDown(document, { key: "Escape" });
+    /* Escape con el foco en la página de atrás es de la página. */
+    const atras = screen.getByLabelText("Campo de atrás", { selector: "input" });
+    /* La trampa de foco de Radix se pausa un cuadro después de fijar: hasta
+       ahí, enfocar atrás la devolvía al modal. */
+    await waitFor(() => {
+      atras.focus();
+      expect(document.activeElement).toBe(atras);
+    });
+    fireEvent.keyDown(atras, { key: "Escape" });
+    expect(onClose).not.toHaveBeenCalled();
+
+    /* Con el foco adentro cierra: fijar no encierra a nadie. */
+    fijado.focus();
+    fireEvent.keyDown(fijado, { key: "Escape" });
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
@@ -382,5 +398,24 @@ describe("tamaño y memoria", () => {
       </AdminModal>,
     );
     expect(dialogo().style.getPropertyValue("--ventana-x")).toBe("0px");
+  });
+});
+
+describe("Escape con una ventana fijada (revisión 08-10)", () => {
+  it("es del módulo sólo con el foco DENTRO de la fijada; en la página o en otro modal, no", async () => {
+    const { escapeDeLaPaginaConFijado } = await import("@/hooks/use-ventana-de-modal");
+    document.body.innerHTML = `
+      <div role="dialog" id="a" data-ventana-fijada="true"><input id="ina"></div>
+      <div role="dialog" id="b"><input id="inb"></div>
+      <input id="pagina">`;
+    (document.getElementById("ina") as HTMLInputElement).focus();
+    expect(escapeDeLaPaginaConFijado()).toBe(false);
+    (document.getElementById("inb") as HTMLInputElement).focus();
+    expect(escapeDeLaPaginaConFijado()).toBe(true);
+    (document.getElementById("pagina") as HTMLInputElement).focus();
+    expect(escapeDeLaPaginaConFijado()).toBe(true);
+    document.getElementById("a")?.removeAttribute("data-ventana-fijada");
+    expect(escapeDeLaPaginaConFijado()).toBe(false);
+    document.body.innerHTML = "";
   });
 });

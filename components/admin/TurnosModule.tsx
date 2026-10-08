@@ -5,7 +5,7 @@ import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { useState, useEffect, useCallback, useId, useRef } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { escapeDeLaPaginaConFijado, useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
 import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import {
   Clock, Play, Square, DollarSign, Loader2, AlertTriangle,
@@ -259,7 +259,8 @@ export default function TurnosModule() {
   // UX Mejora 13: Cerrar modales con Escape
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
+      /* Con un modal fijado y el foco en la página, el Escape es de la página (ADR-420). */
+      if (e.key !== "Escape" || escapeDeLaPaginaConFijado()) return;
       if (showDiffConfirm) { setShowDiffConfirm(false); return; }
       if (showCreateCajero && !creatingCajero) { setShowCreateCajero(false); return; }
       if (showMetaConfig) { setShowMetaConfig(false); return; }

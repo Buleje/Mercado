@@ -33,7 +33,7 @@ import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { X, type LucideIcon } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useVentanaDeModal, type OpcionesVentana, type VentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import { ControlesDeVentana, TiradorDeVentana } from "./modal-controles-ventana";
+import { ControlesDeVentana, PausaDeFocoRadix, TiradorDeVentana, useFondoLibreAlFijar } from "./modal-controles-ventana";
 import { usePanelTokens } from "./use-panel-tokens";
 
 type Variant = "default" | "fullscreen" | "side" | "wide" | "centered-sm" | "pos" | "info";
@@ -289,21 +289,31 @@ export default function AdminModal({
        arrastrado fuera de la pantalla, donde ya no se puede ni cerrar. */
     ref: contentRef,
   });
+  /* Fijado = la página de atrás se scrollea, se toca y se tipea (ADR-420):
+     sin velo ni `RemoveScroll` (no se pinta el `Overlay`), sin trampa de foco
+     (`PausaDeFocoRadix`) y sin `aria-hidden` en la página. El contenido NO se
+     remonta: lo tipeado sobrevive a fijar y desfijar. */
+  const fijado = ventana.fijado;
+  /* `open &&`: fijado se recuerda entre aperturas, y al volver a abrir la
+     pausa tiene que montarse DESPUÉS del contenido nuevo, no antes. */
+  const pausarFoco = useFondoLibreAlFijar(open && fijado, contentRef);
   return (
     <Dialog.Root open={open} onOpenChange={(v) => !v && onClose()}>
       <Dialog.Portal>
-        <Dialog.Overlay
-          className={cn(
-            "modal-backdrop",
-            /* Un peldaño por encima del modal que lo abrió (z-modal-2): velo y panel comparten
-             * z-modal-3 y el panel gana por orden del DOM (va después). Para que el
-               fondo se oscurezca sobre ÉL y no debajo. */
-            aboveModals && "z-modal-3",
-            /* Fijado = «lo dejo abierto y sigo trabajando atrás»: el velo no
-               puede seguir tapando ni comiéndose los clics (regla en globals.css). */
-            ventana.fijado && "ventana-fijada",
-          )}
-        />
+        {/* Fijado no hay velo: desmontar el `Overlay` es lo que suelta el
+            scroll de la página (su `RemoveScroll` vive ahí). Al desfijar
+            vuelve, con su fundido de entrada. */}
+        {!fijado && (
+          <Dialog.Overlay
+            className={cn(
+              "modal-backdrop",
+              /* Un peldaño por encima del modal que lo abrió (z-modal-2): velo y panel comparten
+               * z-modal-3 y el panel gana por orden del DOM (va después). Para que el
+                 fondo se oscurezca sobre ÉL y no debajo. */
+              aboveModals && "z-modal-3",
+            )}
+          />
+        )}
         <Dialog.Content
           ref={contentRef}
           aria-describedby={description ? undefined : undefined}
@@ -327,7 +337,16 @@ export default function AdminModal({
              propio listener; acá sólo se evita que Radix ADEMÁS cierre el
              diálogo entero (medido: Escape se llevaba las dos capas). */
           onEscapeKeyDown={(e) => {
-            if (contentRef.current?.hasAttribute("data-menu-abierto")) e.preventDefault();
+            const caja = contentRef.current;
+            if (caja?.hasAttribute("data-menu-abierto")) {
+              e.preventDefault();
+              return;
+            }
+            /* Fijado, Escape es de quien tiene el foco: dentro del modal lo
+               cierra (fijar no encierra a nadie); en la página de atrás es de
+               ella — cerrar el modal desde un buscador de atrás perdería lo
+               que tiene a medio llenar. Igual en `useModalAccesible`. */
+            if (fijado && !caja?.contains(document.activeElement)) e.preventDefault();
           }}
           /* Reemplaza el `triggerRef.current?.focus()` de Radix (null acá,
              ver comentario de `disparadorRef` arriba): vuelve el foco al
@@ -337,8 +356,8 @@ export default function AdminModal({
             const el = disparadorRef.current;
             if (el?.isConnected) el.focus({ preventScroll: true });
           }}
-          /* Con el modal fijado el clic afuera no cierra. Escape y la X sí:
-             fijar no puede dejar a nadie encerrado. */
+          /* Con el modal fijado el clic afuera no cierra. La X sí, y Escape
+             con el foco adentro: fijar no puede dejar a nadie encerrado. */
           onInteractOutside={ventana.onInteractOutside}
           /* El asa es enfocable (para mover la ventana con las flechas) y vive
              primera en el DOM, así que Radix le daría el foco al abrir. Se
@@ -455,6 +474,7 @@ export default function AdminModal({
           )}
 
           <TiradorDeVentana ventana={ventana} />
+          <PausaDeFocoRadix activa={pausarFoco} />
         </Dialog.Content>
       </Dialog.Portal>
 

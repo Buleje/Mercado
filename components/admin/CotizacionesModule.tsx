@@ -26,6 +26,7 @@ import { printCotizacion, type EmpresaEmisor } from "@/lib/documentos/cotizacion
 import { cn } from "@/lib/utils";
 import ClienteFormModal from "./clientes/ClienteFormModal";
 import { formatCurrency, formatDate, formatMonth } from "@/lib/format";
+import { escapeDeLaPaginaConFijado } from "@/hooks/use-ventana-de-modal";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -385,7 +386,8 @@ export default function CotizacionesModule() {
   // UX Mejora 13: Cerrar modales con Escape
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
+      /* Con un modal fijado y el foco en la página, el Escape es de la página (ADR-420). */
+      if (e.key !== "Escape" || escapeDeLaPaginaConFijado()) return;
       if (selected) { setSelected(null); return; }
       if (activeTab === "nueva") { setActiveTab("lista"); return; }
     };

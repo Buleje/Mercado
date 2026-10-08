@@ -20,6 +20,7 @@
  *   {"click": "<sel>"}            {"llenar": ["<sel>", "texto"]}
  *   {"abrir": "<sel>"}            → click sólo si su aria-expanded no es "true" (plegables recordados)
  *   {"tecla": "Enter"}            {"elegir": ["<sel>", "valor o etiqueta"]}
+ *   {"rueda": [x, y, dy]}         → rueda REAL del mouse en (x, y): prueba scroll bloqueado/libre detrás de un modal
  *   {"esperar": "<sel>"}          {"esperar": 500}            (ms)
  *   {"eval": "<expresión js>"}    → su resultado sale en el reporte
  *   {"captura": "nombre"}         → la matriz de capturas de ESTE estado
@@ -285,6 +286,14 @@ async function recorrido(t, primero) {
               : r.fallback());
         }
         else if (tipo === "tecla") await page.keyboard.press(valor);
+        else if (tipo === "rueda") {
+          /* `window.scrollTo` mueve la página aunque un modal bloquee el scroll (overflow
+             hidden lo permite por programa): sólo la rueda de verdad dice si el usuario puede. */
+          const [x, y, dy] = valor;
+          await page.mouse.move(x, y);
+          await page.mouse.wheel(0, dy);
+          await page.waitForTimeout(500);
+        }
         else if (tipo === "esperar") {
           if (typeof valor === "number") await page.waitForTimeout(valor);
           else await page.locator(valor).first().waitFor({ timeout: 30_000 });

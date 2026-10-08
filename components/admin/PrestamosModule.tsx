@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { escapeDeLaPaginaConFijado, useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
 import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { escapeHtml } from "@/lib/safe-html";
 import { m, AnimatePresence } from "@/components/admin/providers";
@@ -681,7 +681,8 @@ export default function PrestamosModule() {
   // Cerrar modales con Escape
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
+      /* Con un modal fijado y el foco en la página, el Escape es de la página (ADR-420). */
+      if (e.key !== "Escape" || escapeDeLaPaginaConFijado()) return;
       if (showPago) { setShowPago(false); return; }
       if (showRefinanciar) { setShowRefinanciar(false); return; }
       if (showCancelConfirm) { setShowCancelConfirm(false); return; }
