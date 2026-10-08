@@ -29,13 +29,15 @@ import {
   Store, Phone, MapPin, Clock, AlignLeft, Upload, X, Search, ShoppingCart,
   MessageCircle, AlertTriangle, Download, CheckCircle, Truck, DollarSign, FileText, Zap,
   Landmark, Hash, Percent, Timer, Layers, Mail, Key, ChevronRight,
-  Plus, Trash2, Activity, SlidersHorizontal, Palmtree,
+  Plus, Trash2, Activity, SlidersHorizontal, Palmtree, Eye, EyeOff,
 } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import { CardTitle, BlockTitle } from "@buleje/design-system";
+import { CardTitle } from "@buleje/design-system";
 import { FieldLabel, TextInput, NumberInput, SelectInput, Toggle, SectionCard, SaveButton, Plegable } from "@/components/admin/settings/campos";
 import { ImageDropCard, MockHeader, MockStoreCard, MockStorefront } from "@/components/admin/settings/ImageDropCard";
-import { TABS, IDS_AJUSTES, GRUPOS_AJUSTES, filtrarSecciones, type SeccionAjustes } from "@/components/admin/settings/secciones";
+import { TABS, IDS_AJUSTES, filtrarSecciones, type SeccionAjustes } from "@/components/admin/settings/secciones";
+import { MenuSeccionesMovil, MenuSeccionesEscritorio, CabeceraSeccion, type FaltaItem } from "@/components/admin/settings/navegacion";
+import { useLocalStorage } from "@/hooks/use-local-storage";
 
 const LeafletMap = dynamic(() => import("@/components/LeafletMap"), { ssr: false });
 const StorefrontEditor = dynamic(() => import("@/components/admin/StorefrontEditor"), { ssr: false });
@@ -64,9 +66,6 @@ type ReorderCategory = { id: string; label: string };
 
 // Secciones que se llenan con /api/settings (Plan, Equipo, Mi panel y Sistema traen lo suyo).
 const SECCIONES_CON_DATOS: ReadonlySet<SeccionAjustes> = new Set(["negocio", "cobros", "delivery", "tienda"]);
-
-// Un dato que falta: a dónde ir y, si hace falta, qué preparar antes (prender Yape, agregar una zona).
-type FaltaItem = { id: string; label: string; antes?: () => void };
 
 // Botón que lleva a otra pantalla del panel donde vive el ajuste de verdad.
 const LINK_A_OTRA_PANTALLA = "w-full flex items-center gap-3 p-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-left hover:border-primary transition-colors";
@@ -104,6 +103,8 @@ export default function SettingsModule({
   const [saving, setSaving] = useState(false);
   const [savedSection, setSavedSection] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  // Las maquetas de «dónde aparece» de logo, portada y banner: un botón para las tres, recordado.
+  const [verMaquetas, setVerMaquetas] = useLocalStorage<boolean>("ajustes-ver-maquetas", false);
   const encontradas = useMemo(() => filtrarSecciones(searchQuery), [searchQuery]);
   const irASeccion = useCallback((id: SeccionAjustes) => { irAVista(id); setSearchQuery(""); }, [irAVista]);
   const tituloSeccionId = useId();
@@ -319,24 +320,14 @@ export default function SettingsModule({
     if (el instanceof HTMLInputElement || el instanceof HTMLButtonElement) el.focus({ preventScroll: true });
   };
 
-  const renderTeFalta = (items: readonly FaltaItem[]) => items.length > 0 && (
-    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/15 px-4 py-3">
-      <span className="text-sm font-bold text-[var(--text-primary)]">Te falta:</span>
-      {items.map(f => (
-        <button
-          key={f.label}
-          type="button"
-          onClick={() => {
-            if (f.antes) { f.antes(); setTimeout(() => irACampo(f.id), 60); }
-            else irACampo(f.id);
-          }}
-          className="inline-flex items-center h-8 px-2.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs font-semibold text-[var(--text-primary)] hover:border-primary transition-colors"
-        >
-          {f.label}
-        </button>
-      ))}
-    </div>
-  );
+  // «Te falta» vive en la cabecera de la sección (un botón con menú, no una fila de chips).
+  const irAFalta = (f: FaltaItem) => {
+    if (f.antes) { f.antes(); setTimeout(() => irACampo(f.id), 60); }
+    else irACampo(f.id);
+  };
+  const faltanPorSeccion: Partial<Record<SeccionAjustes, readonly FaltaItem[]>> = {
+    negocio: faltan, cobros: faltanCobros, delivery: faltanDelivery, tienda: faltanTienda,
+  };
 
   // ── Save helper ─────────────────────────────────────────────────────────────
 
@@ -513,24 +504,8 @@ export default function SettingsModule({
 
   const renderNegocio = () => (
     <div className="space-y-6">
-      {renderTeFalta(faltan)}
-      {/* Store mode selector */}
-      <SectionCard title="Modo de tienda" desc="Cómo reciben pedidos tus clientes">
-        <div className="grid grid-cols-2 gap-3">
-          {(["whatsapp", "checkout"] as const).map(m => (
-            <button key={m} onClick={() => setMode(m)} className={cn(
-              "flex items-center justify-center gap-2 h-12 px-3 rounded-xl border-2 transition-all",
-              mode === m ? (m === "whatsapp" ? "border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15" : "border-primary bg-primary/5") : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-gray-300"
-            )}>
-              {m === "whatsapp" ? <MessageCircle className={cn("h-5 w-5", mode === m ? "text-[var(--data-success-500)]" : "text-[var(--text-tertiary)]")} /> : <ShoppingCart className={cn("h-5 w-5", mode === m ? "text-primary" : "text-[var(--text-tertiary)]")} />}
-              <span className={cn("font-bold text-sm", mode === m ? (m === "whatsapp" ? "text-[var(--data-success-500)]" : "text-primary") : "text-[var(--text-tertiary)]")}>{m === "whatsapp" ? "WhatsApp" : "Checkout"}</span>
-            </button>
-          ))}
-        </div>
-      </SectionCard>
-
-      {/* Business identity */}
-      <SectionCard title="Identidad del Negocio" desc="Datos legales y de contacto">
+      {/* Business identity — el modo de tienda es un campo más (antes, una tarjeta para 2 botones) */}
+      <SectionCard title="Identidad del negocio" desc="Datos legales y de contacto, y cómo te piden tus clientes: por WhatsApp o con checkout en la tienda.">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div><FieldLabel icon={<Store className="h-3.5 w-3.5" />} htmlFor="settings-businessName">Nombre comercial</FieldLabel><TextInput id="settings-businessName" value={businessName} onChange={setBusinessName} />
             {!businessName.trim() && branding.name && (
@@ -555,6 +530,22 @@ export default function SettingsModule({
             <SelectInput id="settings-currency" value={currency} onChange={setCurrency} options={[
               { value: "PEN", label: "S/ — Sol peruano" }, { value: "USD", label: "$ — Dólar" },
             ]} />
+          </div>
+          <div role="group" aria-labelledby="settings-mode-label" className="sm:col-span-2">
+            <span id="settings-mode-label" className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-muted mb-1.5">
+              <ShoppingCart className="h-3.5 w-3.5" />Cómo te piden tus clientes
+            </span>
+            <div className="grid grid-cols-2 gap-2">
+              {(["whatsapp", "checkout"] as const).map(m => (
+                <button key={m} type="button" aria-pressed={mode === m} onClick={() => setMode(m)} className={cn(
+                  "flex items-center justify-center gap-1.5 h-11 px-2 rounded-xl border-2 transition-all",
+                  mode === m ? (m === "whatsapp" ? "border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15" : "border-primary bg-primary/5") : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-[var(--text-tertiary)]"
+                )}>
+                  {m === "whatsapp" ? <MessageCircle className={cn("h-4 w-4 shrink-0", mode === m ? "text-[var(--data-success-500)]" : "text-[var(--text-tertiary)]")} /> : <ShoppingCart className={cn("h-4 w-4 shrink-0", mode === m ? "text-primary" : "text-[var(--text-tertiary)]")} />}
+                  <span className={cn("font-bold text-sm truncate", mode === m ? (m === "whatsapp" ? "text-[var(--data-success-500)]" : "text-primary") : "text-[var(--text-tertiary)]")}>{m === "whatsapp" ? "WhatsApp" : "Checkout"}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </SectionCard>
@@ -602,6 +593,17 @@ export default function SettingsModule({
       <SectionCard
         title="Identidad visual"
         desc="Sube 3 imágenes que definen cómo se ve tu negocio en el marketplace y en tu panel"
+        accion={
+          <button
+            type="button"
+            onClick={() => setVerMaquetas(v => !v)}
+            aria-expanded={verMaquetas}
+            className="inline-flex items-center gap-1.5 h-9 px-2.5 rounded-lg text-xs font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-[var(--surface-sunken)] transition-colors"
+          >
+            {verMaquetas ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+            {verMaquetas ? "Ocultar dónde aparecen" : "Ver dónde aparecen"}
+          </button>
+        }
       >
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div id="settings-logo">
@@ -616,6 +618,7 @@ export default function SettingsModule({
             uploading={uploadingField === "logo"}
             onUpload={handleFileUpload(setLogoUrl, "logo", "branding")}
             mockup={<MockHeader logoUrl={logoUrl} />}
+            verMaqueta={verMaquetas}
           />
           </div>
           <ImageDropCard
@@ -629,6 +632,7 @@ export default function SettingsModule({
             uploading={uploadingField === "portada"}
             onUpload={handleFileUpload(setCoverUrl, "portada", "branding")}
             mockup={<MockStoreCard coverUrl={coverUrl} logoUrl={logoUrl} businessName={businessName} />}
+            verMaqueta={verMaquetas}
           />
           <ImageDropCard
             label="Banner"
@@ -641,6 +645,7 @@ export default function SettingsModule({
             uploading={uploadingField === "banner"}
             onUpload={handleFileUpload(setBannerUrl, "banner", "branding")}
             mockup={<MockStorefront bannerUrl={bannerUrl} logoUrl={logoUrl} businessName={businessName} />}
+            verMaqueta={verMaquetas}
           />
         </div>
       </SectionCard>
@@ -665,7 +670,6 @@ export default function SettingsModule({
 
   const renderCobros = () => (
     <div className="space-y-6">
-      {renderTeFalta(faltanCobros)}
       <SectionCard title="Métodos de pago" desc="Configura los métodos que aceptas">
         <div className="space-y-3">
           <Toggle enabled={cashEnabled} onChange={setCashEnabled} label="Efectivo" desc="Pago contra entrega" />
@@ -743,8 +747,7 @@ export default function SettingsModule({
 
   const renderDelivery = () => (
     <div className="space-y-6">
-      {renderTeFalta(faltanDelivery)}
-      <SectionCard title="Zonas de delivery" desc="Define zonas con tarifas y tiempos diferentes">
+      <SectionCard title="Zonas de delivery" desc="Define zonas con tarifas y tiempos diferentes, y desde qué monto el envío es gratis.">
         <div className="space-y-2">
           {deliveryZones.map((zone, idx) => (
             <div key={idx} className="flex items-center gap-2 p-3 bg-[var(--surface-sunken)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
@@ -764,10 +767,8 @@ export default function SettingsModule({
           ))}
           <button onClick={() => setDeliveryZones(p => [...p, { name: "", fee: 0, estimatedMin: 30 }])} className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80"><Plus className="h-3.5 w-3.5" /> Agregar zona</button>
         </div>
-      </SectionCard>
-
-      <SectionCard title="Envío gratis">
-        <div className="sm:max-w-xs"><FieldLabel htmlFor="settings-freeDeliveryMin" icon={<DollarSign className="h-3.5 w-3.5" />}>Envío gratis desde</FieldLabel><NumberInput id="settings-freeDeliveryMin" value={freeDeliveryMin} onChange={setFreeDeliveryMin} min={0} suffix="soles (0 = no aplica)" /></div>
+        {/* Envío gratis: era una tarjeta aparte para un solo campo */}
+        <div className="pt-4 border-t border-[var(--rule-soft)]"><div className="sm:max-w-xs"><FieldLabel htmlFor="settings-freeDeliveryMin" icon={<DollarSign className="h-3.5 w-3.5" />}>Envío gratis desde</FieldLabel><NumberInput id="settings-freeDeliveryMin" value={freeDeliveryMin} onChange={setFreeDeliveryMin} min={0} suffix="soles (0 = no aplica)" /></div></div>
       </SectionCard>
 
       <SaveButton saving={saving} saved={savedSection === "delivery"} onClick={() => patch({ deliveryZones, freeDeliveryMin })} />
@@ -779,7 +780,6 @@ export default function SettingsModule({
 
   const renderTienda = () => (
     <div className="space-y-6">
-      {renderTeFalta(faltanTienda)}
       <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
       {/* Maintenance mode */}
       <SectionCard title="Modo vacaciones / mantenimiento" desc="Bloquea compras mostrando un banner">
@@ -851,10 +851,9 @@ export default function SettingsModule({
 
       <SaveButton saving={saving} saved={savedSection === "tienda"} label="Guardar colores y mensaje" onClick={() => patch({ primaryColor, secondaryColor, slogan, maintenanceMessage: maintenanceMsg })} />
 
-      <div className="pt-2 border-t border-[var(--rule-soft)]">
-        <BlockTitle>Secciones y menú de la tienda</BlockTitle>
-      </div>
-      <StorefrontEditor />
+      <Plegable clave="tienda-secciones-menu" titulo="Secciones y menú de la tienda" resumen="Qué bloques salen en el inicio de tu tienda y en qué orden">
+        <StorefrontEditor />
+      </Plegable>
     </div>
   );
 
@@ -1046,7 +1045,6 @@ export default function SettingsModule({
   };
 
   const meta = TABS.find((s) => s.id === activeSection) ?? TABS[0];
-  const MetaIcon = meta.icon;
 
   // ══════════════════════════════════════════════════════════════════════════════
   // LAYOUT — menú agrupado a la izquierda (fila deslizable en el celular)
@@ -1080,88 +1078,22 @@ export default function SettingsModule({
         </div>
       </AdminModuleHeader>
 
-      {/* Celular: las secciones en una fila que se desliza */}
-      <nav aria-label="Secciones de configuración" className="lg:hidden flex gap-2 overflow-x-auto pb-1">
-        {encontradas.map(s => {
-          const Icon = s.icon;
-          const activa = s.id === activeSection;
-          return (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => irASeccion(s.id)}
-              aria-current={activa ? "page" : undefined}
-              className={cn(
-                "shrink-0 inline-flex items-center gap-1.5 h-10 px-3 rounded-xl border text-sm font-semibold transition-colors",
-                activa
-                  ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                  : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)]",
-              )}
-            >
-              <Icon className="h-4 w-4" /> {s.label}
-              {(pendientes[s.id] ?? 0) > 0 && (
-                <span className="rounded-full border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)]">{pendientes[s.id]}</span>
-              )}
-            </button>
-          );
-        })}
-      </nav>
+      <MenuSeccionesMovil secciones={encontradas} activa={activeSection} pendientes={pendientes} onIr={irASeccion} />
 
       {encontradas.length === 0 && (
         <p className="text-sm text-[var(--text-secondary)]">Ningún ajuste coincide con «{searchQuery}».</p>
       )}
 
       <div className="lg:grid lg:grid-cols-[16.5rem_minmax(0,1fr)] lg:gap-6 lg:items-start">
-        {/* Escritorio: el menú agrupado por lo que vienes a hacer */}
-        <nav aria-label="Secciones de configuración" className="hidden lg:block space-y-4 lg:sticky lg:top-4">
-          {GRUPOS_AJUSTES.map(g => {
-            const items = encontradas.filter(s => s.grupo === g);
-            if (items.length === 0) return null;
-            return (
-              <div key={g}>
-                <p className="px-3 mb-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">{g}</p>
-                <div className="space-y-0.5">
-                  {items.map(s => {
-                    const Icon = s.icon;
-                    const activa = s.id === activeSection;
-                    return (
-                      <button
-                        key={s.id}
-                        type="button"
-                        onClick={() => irASeccion(s.id)}
-                        aria-current={activa ? "page" : undefined}
-                        title={s.desc}
-                        className={cn(
-                          "w-full flex items-center gap-2.5 px-3 h-10 rounded-xl text-left text-sm transition-colors",
-                          activa
-                            ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] font-bold"
-                            : "text-[var(--text-secondary)] font-semibold hover:bg-[var(--surface-sunken)]",
-                        )}
-                      >
-                        <Icon className="h-4 w-4 shrink-0" />
-                        <span className="truncate">{s.label}</span>
-                        {(pendientes[s.id] ?? 0) > 0 && (
-                          <span className="ml-auto shrink-0 rounded-full border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)]" title={`Te faltan ${pendientes[s.id]} datos`}>{pendientes[s.id]}</span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </nav>
+        <MenuSeccionesEscritorio secciones={encontradas} activa={activeSection} pendientes={pendientes} onIr={irASeccion} />
 
         <section aria-labelledby={tituloSeccionId} className="min-w-0 mt-4 lg:mt-0">
-          <div className="flex items-center gap-3 mb-5">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
-              <MetaIcon className="h-5 w-5" />
-            </span>
-            <div className="min-w-0">
-              <CardTitle id={tituloSeccionId} className="text-base font-extrabold text-[var(--text-primary)]">{meta.label}</CardTitle>
-              <p className="text-xs text-[var(--text-secondary)]">{meta.desc}</p>
-            </div>
-          </div>
+          <CabeceraSeccion
+            meta={meta}
+            tituloId={tituloSeccionId}
+            faltan={cargaFallida && SECCIONES_CON_DATOS.has(activeSection) ? [] : (faltanPorSeccion[activeSection] ?? [])}
+            onIrACampo={irAFalta}
+          />
           <AnimatePresence mode="wait">
             <m.div
               key={activeSection}

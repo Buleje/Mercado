@@ -4,7 +4,6 @@
  * Tarjeta para subir Logo / Portada / Banner con su mini-maqueta. Salió de
  * `SettingsModule` tal cual estaba.
  */
-import { useState } from "react";
 import Image from "next/image";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { BlockTitle } from "@buleje/design-system";
@@ -31,6 +30,8 @@ interface ImageDropCardProps {
   uploading: boolean;
   onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   mockup: React.ReactNode;
+  /** La maqueta de «dónde aparece»: la abre un solo botón para las tres imágenes (ley de la vista, 2026-10-08). */
+  verMaqueta: boolean;
 }
 
 export function ImageDropCard({
@@ -44,10 +45,9 @@ export function ImageDropCard({
   uploading,
   onUpload,
   mockup,
+  verMaqueta,
 }: ImageDropCardProps) {
   const safeUrl = value && !value.startsWith("data:") ? value : "";
-  // La maqueta de «dónde aparece» medía la mitad de la tarjeta: ahora se abre a pedido.
-  const [verMaqueta, setVerMaqueta] = useState(false);
   return (
     <div className="rounded-2xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 flex flex-col gap-3">
       {/* Header */}
@@ -112,14 +112,6 @@ export function ImageDropCard({
         />
       </div>
 
-      <button
-        type="button"
-        onClick={() => setVerMaqueta((v) => !v)}
-        aria-expanded={verMaqueta}
-        className="self-start text-xs font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:underline"
-      >
-        {verMaqueta ? "Ocultar dónde aparece" : "Ver dónde aparece"}
-      </button>
       {verMaqueta && (
         <div className="rounded-xl bg-[var(--surface-sunken)] p-3 border border-[var(--rule-soft)]">
           {mockup}

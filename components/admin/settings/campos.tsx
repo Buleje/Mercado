@@ -5,7 +5,8 @@
  * de guardar. Salieron de `SettingsModule` (2.365 líneas) tal cual estaban.
  */
 import { cn } from "@/lib/utils";
-import { BlockTitle } from "@buleje/design-system";
+import { CardTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { Check, ChevronDown, Loader2, Save } from "@buleje/design-system/icons";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 
@@ -98,12 +99,20 @@ export function Toggle({ enabled, onChange, label, desc, danger }: {
   );
 }
 
-export function SectionCard({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) {
+/**
+ * Tarjeta de un bloque de Ajustes. Ley de la vista (2026-10-08): el título es
+ * `CardTitle` (la sección ya tiene su `SectionTitle`), la explicación va en un
+ * ⓘ y no en un párrafo, y `accion` cabe en la misma fila del título.
+ */
+export function SectionCard({ title, desc, accion, children }: {
+  title: string; desc?: string; accion?: React.ReactNode; children: React.ReactNode;
+}) {
   return (
     <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
-      <div className="px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-        <BlockTitle>{title}</BlockTitle>
-        {desc && <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5">{desc}</p>}
+      <div className="flex items-center gap-2 px-5 min-h-12 py-2.5 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+        <CardTitle>{title}</CardTitle>
+        {desc && <InfoTip title={title} what={desc} />}
+        {accion && <div className="ml-auto shrink-0">{accion}</div>}
       </div>
       <div className="px-5 py-4 space-y-4">{children}</div>
     </div>
@@ -140,7 +149,7 @@ export function Plegable({ clave, titulo, resumen, children }: {
   const [abierto, setAbierto] = useLocalStorage<boolean>(`ajustes-plegable-${clave}`, false);
   return (
     <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden">
-      <BlockTitle as="h3">
+      <CardTitle>
         <button
           type="button"
           aria-expanded={abierto}
@@ -153,7 +162,7 @@ export function Plegable({ clave, titulo, resumen, children }: {
           </span>
           <ChevronDown className={cn("h-4 w-4 shrink-0 text-[var(--text-tertiary)] transition-transform", abierto && "rotate-180")} aria-hidden />
         </button>
-      </BlockTitle>
+      </CardTitle>
       {abierto && <div className="px-5 pb-5 pt-4 border-t border-[var(--rule-soft)]">{children}</div>}
     </div>
   );
