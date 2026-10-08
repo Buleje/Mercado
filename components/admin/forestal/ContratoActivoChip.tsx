@@ -35,6 +35,7 @@ import {
   TriangleAlert,
 } from "@buleje/design-system/icons";
 import { useContratoActivo, type ContratoActivo } from "@/contexts/contrato-activo-context";
+import { usePublicarFranjaLibro } from "@/components/admin/shared/libro-franja-permiso";
 import { useContratos } from "@/hooks/use-contratos";
 import { useSemaforoPermiso } from "@/hooks/use-semaforo-permiso";
 import { abrirFichaDelPermiso } from "./ficha-del-permiso-url";
@@ -58,7 +59,7 @@ export default function ContratoActivoChip({
    */
   enGrupo?: boolean;
 } = {}) {
-  const { activo, fijar, listo } = useContratoActivo();
+  const { activo, fijar, listo, soloEste, setSoloEste } = useContratoActivo();
   const [abierto, setAbierto] = useState(false);
   const caja = useRef<HTMLDivElement>(null);
   const boton = useRef<HTMLButtonElement>(null);
@@ -158,6 +159,15 @@ export default function ContratoActivoChip({
       document.removeEventListener("keydown", escape);
     };
   }, [abierto]);
+
+  /* La franja «Viendo solo …» del chrome (Brandon 08-10): sólo en el CTP (`enGrupo`),
+     que es el único libro donde «Solo este permiso» filtra de verdad, y sólo con
+     el interruptor prendido. «Ver todos» lo apaga. */
+  const textoFranja =
+    enGrupo && listo && activo && soloEste
+      ? `el permiso ${activo.codigo}${activo.titular ? ` · ${activo.titular}` : ""}`
+      : null;
+  usePublicarFranjaLibro(textoFranja, () => setSoloEste(false));
 
   const elegir = (c: ContratoActivo | null) => {
     fijar(c);

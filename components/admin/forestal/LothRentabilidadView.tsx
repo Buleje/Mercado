@@ -29,7 +29,7 @@ import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
 import { Btn } from "./ctp-shared";
 import { useLothRentabilidad } from "./hooks/use-loth-rentabilidad";
 import { FlujoCuerpo, RankingPanel, fm } from "./loth-analitica-piezas";
-import LothRentabilidadArboles from "./loth-rentabilidad-arboles";
+import LothRentabilidadArboles, { useKpisArboles } from "./loth-rentabilidad-arboles";
 import LothRentabilidadAvisos from "./loth-rentabilidad-avisos";
 import BloquePlegable from "./loth-rentabilidad-bloque";
 import { soles } from "./loth-rentabilidad-celdas";
@@ -73,6 +73,18 @@ export default function LothRentabilidadView({
     return entries.filter((e) => ids.has(e.id));
   }, [entries, idsDelPlan]);
 
+  // El margen bajado al árbol: el promedio por especie esconde justo al fuste
+  // que no convino tumbar. Se calcula acá porque el libro ya está en memoria.
+  // Con un plan elegido entre varios, sólo las líneas de ESE plan (la atribución de Extracción llega hecha del servidor).
+  // Va ANTES del `return` de carga: el hook de «Indicadores» no puede quedar condicionado.
+  const filasCosteo = d?.costeo && d.costeo.rows.length > 0 ? d.costeo.rows : null;
+  const arboles = useMemo(
+    () => (filasCosteo ? margenPorArbol(buildTraceOperations(entriesDelPlan), filasCosteo) : []),
+    [filasCosteo, entriesDelPlan],
+  );
+  const resArboles = useMemo(() => resumirMargenArbol(arboles), [arboles]);
+  const kpisArboles = useKpisArboles(arboles, resArboles);
+
   const titulo = <SectionTitle>Rentabilidad y rendimiento</SectionTitle>;
   if (!d) {
     // Sin cifras PARA ESTE plan (cargando o falló): el selector sigue a la vista para poder cambiar o reintentar.
@@ -96,11 +108,6 @@ export default function LothRentabilidadView({
   }
 
   const costeo = d.costeo && d.costeo.rows.length > 0 ? d.costeo : null;
-  // El margen bajado al árbol: el promedio por especie esconde justo al fuste
-  // que no convino tumbar. Se calcula acá porque el libro ya está en memoria.
-  // Con un plan elegido entre varios, sólo las líneas de ESE plan (la atribución de Extracción llega hecha del servidor).
-  const arboles = costeo ? margenPorArbol(buildTraceOperations(entriesDelPlan), costeo.rows) : [];
-  const resArboles = resumirMargenArbol(arboles);
   const nombrePlan = d.plan ? nombreDePlan({ planNumber: d.plan.planNumber, titularName: d.plan.titularName }) : null;
 
   const acciones: MenuAccion[] = [
@@ -177,7 +184,13 @@ export default function LothRentabilidadView({
               affects: "El VEN sale del plan por especie; extracción, transformación y flete, de «Costos operativos». Movilizado = lo que salió con guía. Por árbol: hereda el precio de su especie, y sólo cuenta la troza despachada.",
               example: "Shihuahuaco a S/ 850 con S/ 620 de costo deja S/ 230 por m³ (27 %).",
             }}
-            extra={entries.length > 0 && costeo ? <Conmutador porArbol={porArbol} onCambiar={setPorArbol} /> : undefined}
+            extra={entries.length > 0 && costeo ? (
+              <>
+                {/* «Indicadores» en la fila del conmutador, no en otra sobre la tabla (Brandon 08-10). */}
+                {porArbol && kpisArboles.boton}
+                <Conmutador porArbol={porArbol} onCambiar={setPorArbol} />
+              </>
+            ) : undefined}
           >
             {!costeo ? (
               <WarningAlert
@@ -187,7 +200,7 @@ export default function LothRentabilidadView({
                   : "Registra o activa un Plan de Manejo con precios por especie para calcular el margen."}
               />
             ) : porArbol ? (
-              <LothRentabilidadArboles filas={arboles} resumen={resArboles} />
+              <LothRentabilidadArboles filas={arboles} kpis={kpisArboles} />
             ) : (
               <LothRentabilidadMargen filas={costeo.rows} />
             )}

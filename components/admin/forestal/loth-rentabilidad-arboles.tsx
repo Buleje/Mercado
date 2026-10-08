@@ -32,15 +32,17 @@ const COLUMNAS_ARBOLES: ColumnaFiltro<FilaArbol>[] = [
   { id: "margen", label: "Margen", tipo: "rango", numero: (f) => (f.margen > 0 ? f.margen : null), unidad: "S/", paso: 100 },
 ];
 
-export default function LothRentabilidadArboles({
-  filas,
-  resumen,
-}: {
-  filas: ReturnType<typeof margenPorArbol>;
-  resumen: ReturnType<typeof resumirMargenArbol>;
-}) {
-  /* Las tres cifras se pliegan (Brandon 05-10): el botón y las cifras, arriba de la tabla. */
-  const kpis = useKpisPlegables({
+type FilasArbol = ReturnType<typeof margenPorArbol>;
+type ResumenArbol = ReturnType<typeof resumirMargenArbol>;
+export type KpisArboles = ReturnType<typeof useKpisPlegables>;
+
+/**
+ * Las tres cifras plegables (Brandon 05-10). Es un hook aparte para que la vista
+ * pueda poner su botón «Indicadores» en la fila del encabezado del bloque, junto
+ * a «Por especie / Por árbol», y no en una fila propia sobre la tabla (08-10).
+ */
+export function useKpisArboles(filas: FilasArbol, resumen: ResumenArbol): KpisArboles {
+  return useKpisPlegables({
     claveMemoria: "loth-rentabilidad-arboles",
     resumen: filas.length === 0
       ? undefined
@@ -79,6 +81,16 @@ export default function LothRentabilidadArboles({
         />,
     ],
   });
+}
+
+export default function LothRentabilidadArboles({
+  filas,
+  kpis,
+}: {
+  filas: FilasArbol;
+  /** El hook `useKpisArboles` vive en la vista: acá sólo se dibuja el panel (el botón va en el encabezado del bloque). */
+  kpis: KpisArboles;
+}) {
   const f = useFiltrosTabla(filas, COLUMNAS_ARBOLES);
   if (filas.length === 0) {
     return (
@@ -90,7 +102,6 @@ export default function LothRentabilidadArboles({
   const maxAbs = Math.max(...filas.map((a) => Math.abs(a.margen)), 1);
   return (
     <div className="space-y-3">
-      {kpis.boton}
       {kpis.panel}
       <BarraFiltrosTabla f={f} />
 

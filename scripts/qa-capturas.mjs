@@ -14,7 +14,9 @@
  *     [--pasos '<json>' | --pasos-archivo pasos.json] [--salida <dir>] \
  *     [--nombre base] [--anchos 1280,400] [--temas claro,oscuro] [--completa] \
  *     [--preset cubicador-lote,resumenes-rolliza]   (recorridos de scripts/qa-pasos/, van antes) \
- *     [--resumen]   (stdout sólo con lo esencial; el JSON completo igual queda en <salida>/reporte.json)
+ *     [--resumen]   (stdout sólo con lo esencial; el JSON completo igual queda en <salida>/reporte.json) \
+ *     [--candado]   (toma /tmp/bsm-pesado.lock por su cuenta y avisa por stderr cuánto lleva esperándolo;
+ *                    NO usar si ya lo corres con `flock /tmp/bsm-pesado.lock node …`: se trabaría a sí mismo)
  *
  * Pasos (array JSON, una clave por paso; los selectores son de Playwright,
  * p. ej. `text=Guardar`, `role=button[name="Dueños"]`, `#id`):
@@ -68,6 +70,7 @@
  *
  * Reporte: SIEMPRE se escribe `<salida>/reporte.json` (el JSON completo) y su ruta va en `reporte`. Con `--resumen`
  * stdout trae sólo ok, falla, nº de capturas, errores y la ruta del reporte (evals y reglas se leen en el archivo).
+ * El primer login espera hasta 120 s (dev server cargado/compilando) y avisa por stderr cada 15 s cuánto lleva.
  * Si el login responde ≠200 la falla trae el mensaje del servidor (campo error/message o el cuerpo), no sólo el código.
  *
  * Sale un JSON: capturas, respuestas ≥400 (con ruta), errores de consola (nº y textos),
@@ -75,8 +78,9 @@
  * Código 1 si hubo `pageerror` o falló un paso.
  */
 import { chromium } from "playwright";
-import { mkdirSync, readFileSync, existsSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, existsSync, writeFileSync, unlinkSync } from "node:fs";
 import path from "node:path";
+import { spawn } from "node:child_process";
 import { resolverChromium } from "./dev-helpers/chromium-path.mjs";
 
 if (process.argv.includes("--help") || process.argv.includes("-h")) {
@@ -84,6 +88,31 @@ if (process.argv.includes("--help") || process.argv.includes("-h")) {
   const cab = fuente.slice(fuente.indexOf("/**"), fuente.indexOf("*/") );
   console.log(cab.split("\n").map((l) => l.replace(/^\s?\/?\*+ ?/, "")).join("\n").trim());
   process.exit(0);
+}
+
+/* `--candado`: el candado de lo pesado (RAM: earlyoom mata chrome/tsc si van 3 a la vez) lo toma el
+   propio script y avisa cuánto lleva esperando; el hijo corre ya con el candado y crea la marca. */
+const ARCHIVO_CANDADO = "/tmp/bsm-pesado.lock";
+if (process.argv.includes("--candado") && !process.env.QA_CANDADO_MARCA) {
+  const marca = `/tmp/qa-candado-${process.pid}.marca`;
+  const desde = Date.now();
+  const hijo = spawn(
+    "flock",
+    [ARCHIVO_CANDADO, process.execPath, process.argv[1], ...process.argv.slice(2).filter((a) => a !== "--candado")],
+    { stdio: "inherit", env: { ...process.env, QA_CANDADO_MARCA: marca } },
+  );
+  const reloj = setInterval(() => {
+    if (existsSync(marca)) return;
+    console.error(`[qa-capturas] esperando el candado ${ARCHIVO_CANDADO}: ${Math.round((Date.now() - desde) / 1000)} s`);
+  }, 10_000);
+  hijo.on("error", (e) => { console.error(`[qa-capturas] no pude usar flock: ${e.message}`); process.exit(1); });
+  hijo.on("exit", (codigo) => { clearInterval(reloj); process.exit(codigo ?? 1); });
+  await new Promise(() => {});
+}
+if (process.env.QA_CANDADO_MARCA) {
+  try { writeFileSync(process.env.QA_CANDADO_MARCA, String(Date.now())); } catch { /* sin /tmp */ }
+  process.on("exit", () => { try { unlinkSync(process.env.QA_CANDADO_MARCA); } catch { /* ya no está */ } });
+  console.error("[qa-capturas] candado tomado");
 }
 
 const BASE = process.env.QA_BASE ?? "http://localhost:3000";
@@ -457,6 +486,8 @@ try {
     // `page.request` queda en el contexto.
     /* Hasta 3 intentos (05-10): con varios agentes compilando, el dev tarda >60 s o se está
        reiniciando tras earlyoom; cortar al primer timeout tiraba la corrida entera. */
+    const inicioLogin = Date.now();
+    const latido = setInterval(() => console.error(`[qa-capturas] esperando al servidor para entrar: ${Math.round((Date.now() - inicioLogin) / 1000)} s (tope 120 s por pedido)`), 15_000);
     for (let intento = 1; ; intento++) {
       try { await page.request.get(`${BASE}/api/health`, { timeout: 60_000 }); break; }
       catch (e) { if (intento >= 3) throw e; await page.waitForTimeout(10_000); }
@@ -465,7 +496,8 @@ try {
     const r = await page.request.post(`${BASE}/api/auth/login`, {
       headers: { "content-type": "application/json", "x-tenant-id": tenant, "x-csrf-token": csrf },
       data: { username: usuario, password: clave, tenantSlug: tenant },
-    });
+      timeout: 120_000,
+    }).finally(() => clearInterval(latido));
     if (r.status() !== 200) {
       /* El mensaje del servidor (error/message/detalle del JSON, o el cuerpo crudo): un 500 sin
          texto obligaba a abrir el log del dev server para saber qué falló (08-10). */
