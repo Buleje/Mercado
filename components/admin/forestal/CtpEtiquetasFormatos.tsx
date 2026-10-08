@@ -82,37 +82,58 @@ function Miniatura({ f, conFicha }: { f: FormatoEtiquetaInfo; conFicha: boolean 
   );
 }
 
+/** El marcador A4 de la cámara (ADR-480): un cuadrado ArUco grande en una hoja vertical. */
+function MiniaturaMarcador() {
+  return (
+    <span aria-hidden className="flex h-12 w-9 flex-col items-center gap-0.5 rounded-sm border border-[var(--rule-strong)] bg-[var(--surface-raised)] p-1">
+      <span className="grid aspect-square w-full grid-cols-3 gap-px bg-[var(--text-primary)] p-px">
+        {[1, 0, 1, 0, 1, 1, 1, 0, 0].map((b, i) => (
+          <span key={i} className={b ? "bg-[var(--surface-raised)]" : "bg-[var(--text-primary)]"} />
+        ))}
+      </span>
+      <span className="h-1 w-3/4 rounded-[1px] bg-[var(--text-primary)]" />
+    </span>
+  );
+}
+
+const CLASE_TARJETA = "relative flex cursor-pointer flex-col items-center gap-1.5 rounded-xl border-2 px-2 py-2.5 text-center transition-colors focus-within:ring-2 focus-within:ring-[var(--accent)]/40";
+const claseTarjeta = (activo: boolean) =>
+  `${CLASE_TARJETA} ${activo ? "border-[var(--accent)] bg-primary/10 dark:bg-[var(--accent)]/12" : "border-[var(--rule-base)] hover:bg-[var(--surface-sunken)]"}`;
+
 export default function CtpEtiquetasFormatos({
   valor,
   onCambio,
   conFicha = true,
+  marcadorA4,
 }: {
   valor: FormatoEtiqueta;
   onCambio: (f: FormatoEtiqueta) => void;
   /** La etiqueta lleva el QR de la ficha + el chico del sistema. */
   conFicha?: boolean;
+  /**
+   * La quinta tarjeta: el marcador A4 que lee la cámara del patio (ADR-480).
+   * No es un formato de etiqueta (va por otro camino: asigna el marcador e
+   * imprime una hoja por troza), por eso viaja aparte.
+   */
+  marcadorA4?: { activo: boolean; onCambio: (activo: boolean) => void };
 }) {
   return (
     <fieldset>
       <legend className="mb-2 text-sm font-bold text-[var(--text-primary)]">Formato</legend>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className={`grid grid-cols-2 gap-2 ${marcadorA4 ? "sm:grid-cols-5" : "sm:grid-cols-4"}`}>
         {FORMATOS_ETIQUETA.map((f) => {
-          const activo = valor === f.id;
+          const activo = valor === f.id && !marcadorA4?.activo;
           return (
-            <label
-              key={f.id}
-              className={`relative flex cursor-pointer flex-col items-center gap-1.5 rounded-xl border-2 px-2 py-2.5 text-center transition-colors focus-within:ring-2 focus-within:ring-[var(--accent)]/40 ${
-                activo
-                  ? "border-[var(--accent)] bg-primary/10 dark:bg-[var(--accent)]/12"
-                  : "border-[var(--rule-base)] hover:bg-[var(--surface-sunken)]"
-              }`}
-            >
+            <label key={f.id} className={claseTarjeta(activo)}>
               <input
                 type="radio"
                 name="formato-etiqueta"
                 value={f.id}
                 checked={activo}
-                onChange={() => onCambio(f.id)}
+                onChange={() => {
+                  marcadorA4?.onCambio(false);
+                  onCambio(f.id);
+                }}
                 className="sr-only"
               />
               <span className="flex h-14 items-center justify-center">
@@ -123,6 +144,23 @@ export default function CtpEtiquetasFormatos({
             </label>
           );
         })}
+        {marcadorA4 && (
+          <label className={claseTarjeta(marcadorA4.activo)}>
+            <input
+              type="radio"
+              name="formato-etiqueta"
+              value="marcador-a4"
+              checked={marcadorA4.activo}
+              onChange={() => marcadorA4.onCambio(true)}
+              className="sr-only"
+            />
+            <span className="flex h-14 items-center justify-center">
+              <MiniaturaMarcador />
+            </span>
+            <span className="text-sm font-bold leading-tight text-[var(--text-primary)]">Marcador A4 · cámara</span>
+            <span className="text-xs leading-snug text-[var(--text-secondary)]">Cuadro de 18 cm que lee la cámara del patio</span>
+          </label>
+        )}
       </div>
     </fieldset>
   );

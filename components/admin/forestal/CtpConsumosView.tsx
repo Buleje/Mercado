@@ -9,7 +9,7 @@
  * vista, y un error del cuadro no tumba el patio.
  */
 
-import { useCallback, useId, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 import { SectionTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
@@ -51,6 +51,12 @@ export default function CtpConsumosView({
   const { activo, ir } = useApartado("consumos", PESTANAS);
   /* El lote que manda Lotes lleva al patio: quedarse en el cuadro no mostraría nada. */
   const irAlPatio = useCallback(() => ir("patio"), [ir]);
+  /* «Consumir» de Cámaras (ADR-480) también: el paso «Desde la cámara» vive en el
+     Patio. Se mira al montar (el Patio saca los parámetros de la URL al leerlos). */
+  const [desdeCamara] = useState(() => typeof window !== "undefined" && new URLSearchParams(window.location.search).has("desdeCamara"));
+  useEffect(() => {
+    if (desdeCamara) irAlPatio();
+  }, [desdeCamara, irAlPatio]);
   const s2 = useConsumosSeccion2(period);
   /* El botón de indicadores va en el encabezado del cuadro, al lado de
      «Opciones»; el panel, debajo del título (2026-09-24). */

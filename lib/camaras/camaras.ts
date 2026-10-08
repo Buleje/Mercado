@@ -84,6 +84,11 @@ export interface Camara {
    */
   vigilaPila?: boolean;
   /**
+   * Esta cámara lee los marcadores ArUco de la testa de las trozas (ADR-480):
+   * «Contar ahora» la ofrece primero y, con el mosaico abierto, pide HD.
+   */
+  leeMarcadores?: boolean;
+  /**
    * De dónde salen sus imágenes (ADR-466). Informativo para la pantalla: la
    * entrada es la misma para todas. `puente_pc` = una PC que tiene abierta la
    * app del fabricante (Hik-Connect en BlueStacks o iVMS-4200) captura esa

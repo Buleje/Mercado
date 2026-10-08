@@ -276,6 +276,9 @@ public/tesseract/
 # Video de Hik-Connect (ADR-471): decodificadores de ezuikit-js copiados por scripts/copy-ezuikit-assets.mjs
 public/ezuikit_static/
 
+# Marcadores de troza (ADR-480): OpenCV.js (13 MB) copiado por scripts/copy-opencv-assets.mjs
+public/opencv/
+
 # Túnel de la cámara (npm run camaras:tunel): dirección pública que cambia en cada reinicio
 .camaras-tunel.json
 

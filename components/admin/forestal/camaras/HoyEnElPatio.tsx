@@ -23,7 +23,10 @@ import { useKpisPlegables } from "../kpis-plegables";
 import GentePorHora from "./GentePorHora";
 import { ActividadYCamaras, CamionesDelDia, ChalecosDelDia, PilaDelDia } from "./ListasDelDia";
 import { useResumenPatio } from "./use-resumen-patio";
+import { useResumenPersonas } from "./use-resumen-personas";
+import ResumenPersonasHoy from "./ResumenPersonasHoy";
 import SelectorDia from "./SelectorDia";
+import TrozasALaVista from "./TrozasALaVista";
 import { BLOQUE, diaLegible } from "./camaras-ui";
 
 interface Props {
@@ -37,6 +40,9 @@ export default function HoyEnElPatio({ activo, recarga, onAsignarChaleco }: Prop
   const hoy = limaDateKey();
   const [fecha, setFecha] = useState(hoy);
   const { resumen: r, cargando, error, recargar } = useResumenPatio(fecha, activo);
+  /* Personas DISTINTAS (por la ropa, ADR-479): la pastilla lleva a «Personas». */
+  const personas = useResumenPersonas(fecha, activo);
+  const recargarPersonas = personas.recargar;
 
   /* Sólo cuando se aprieta «Actualizar»: el día nuevo ya lo pide el hook, y al
      montar también (sin esto, volver a la vista pedía el día dos veces). */
@@ -44,8 +50,10 @@ export default function HoyEnElPatio({ activo, recarga, onAsignarChaleco }: Prop
   useEffect(() => {
     if (recargaVista.current === recarga) return;
     recargaVista.current = recarga;
-    if (activo) void recargar();
-  }, [recarga, activo, recargar]);
+    if (!activo) return;
+    void recargar();
+    void recargarPersonas();
+  }, [recarga, activo, recargar, recargarPersonas]);
 
   const esHoy = fecha === hoy;
   const titulo = esHoy ? "Hoy en el patio" : `El patio el ${diaLegible(fecha)}`;
@@ -112,6 +120,7 @@ export default function HoyEnElPatio({ activo, recarga, onAsignarChaleco }: Prop
             </span>
           )}
         </SectionTitle>
+        <ResumenPersonasHoy resumen={personas.resumen} esHoy={esHoy} enlace />
         {kpis.boton}
         <SelectorDia fecha={fecha} hoy={hoy} onCambiar={setFecha} etiqueta="Día del resumen" />
       </div>
@@ -154,6 +163,9 @@ export default function HoyEnElPatio({ activo, recarga, onAsignarChaleco }: Prop
           </div>
         </>
       )}
+
+      {/* Los marcadores de la testa (ADR-480): no dependen de las fotos del día. */}
+      <TrozasALaVista fecha={fecha} esHoy={esHoy} activo={activo} />
     </div>
   );
 }

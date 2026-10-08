@@ -40,6 +40,8 @@ import { ultimoAvisoDe } from "@/lib/camaras/contacto";
  *          `{ id, accion: "ptz", x, y, zoom, ms? }`: mueve la cámara y la frena.
  *          `{ id, accion: "vigila-pila", activa }`: compara cada foto con la
  *            anterior y avisa si la pila bajó sin movimiento en el libro.
+ *          `{ id, accion: "lee-marcadores", activa }`: la cámara que lee los
+ *            marcadores de troza (ADR-480).
  *          `{ id, accion: "puente", fuente?, recorte?, vivo? }`: el puente de
  *            pantalla (ADR-466). `fuente` "isapi"|"webhook"|"puente_pc";
  *            `recorte` {x,y,w,h} en fracciones 0–1; `vivo` {umbralPct?,
@@ -359,6 +361,16 @@ export const PATCH = withApiHandler("camaras-patch", (req: NextRequest) =>
             message: "Indica si la cámara vigila la pila (sí o no).",
           };
         const r = await CamarasDB.configurarVigilaPila(tenantId, id, p.data.activa, user);
+        if (!r.ok) return { error: "rechazado", message: r.motivo };
+        return { camaras: camarasParaPantalla(r.camaras), mensaje: r.mensaje };
+      }
+
+      if (d.accion === "lee-marcadores") {
+        /* Misma forma que la pila: `{ activa: boolean }`. */
+        const p = vigilaPilaSchema.safeParse(body);
+        if (!p.success)
+          return { error: "validation_error", message: "Indica si la cámara lee marcadores (sí o no)." };
+        const r = await CamarasDB.configurarLeeMarcadores(tenantId, id, p.data.activa, user);
         if (!r.ok) return { error: "rechazado", message: r.motivo };
         return { camaras: camarasParaPantalla(r.camaras), mensaje: r.mensaje };
       }

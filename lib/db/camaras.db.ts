@@ -45,6 +45,7 @@ import {
 import { diasRetencionDe, diasRetencionValidos } from "@/lib/camaras/personas-retencion";
 import { configurarPuente, type CambiosPuente } from "@/lib/camaras/vivo";
 import { configurarZonasIgnorar, type ZonaIgnorada } from "@/lib/camaras/zonas-ignorar";
+import { configurarLeeMarcadores } from "@/lib/camaras/marcadores-camara";
 
 /**
  * CamarasDB — las cámaras del negocio y lo que mandan.
@@ -336,6 +337,22 @@ export const CamarasDB = {
         tenantId,
       ).catch((err) => logger.error("[camaras] no se pudo auditar la pila", { error: String(err), tenantId }));
     }
+    return r;
+  },
+
+  /** Marca la cámara que lee los marcadores de troza (ADR-480). Gemela de la pila. */
+  async configurarLeeMarcadores(tenantId: string, camaraId: string, activa: boolean, user: string): Promise<ResultadoCamaras> {
+    const r = await mutarCamaras(tenantId, user, (camaras) => configurarLeeMarcadores(camaras, camaraId, activa));
+    if (r.ok)
+      logActivity(
+        "camara.lee_marcadores",
+        "camara",
+        `${activa ? "Prendió" : "Apagó"} la lectura de marcadores en «${r.camaras.find((c) => c.id === camaraId)?.nombre ?? camaraId}»`,
+        camaraId,
+        user,
+        undefined,
+        tenantId,
+      ).catch((err) => logger.error("[camaras] no se pudo auditar los marcadores", { error: String(err), tenantId }));
     return r;
   },
 

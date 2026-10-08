@@ -8,15 +8,36 @@
  * mismo patrón que `useSeccion2Kpis`).
  */
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Combine } from "@buleje/design-system/icons";
 import { useMiRol } from "@/hooks/use-mi-rol";
 import CtpLoteMixtoModal from "./CtpLoteMixtoModal";
+import CtpLoteMixtoDesdeCamara, { type PedidoDesdeCamara } from "./CtpLoteMixtoDesdeCamara";
 import CtpLoteMixtoTarjeta from "./CtpLoteMixtoTarjeta";
 import CtpVincularMixtoModal, { puedeFirmarVinculo } from "./CtpVincularMixtoModal";
 import { useLotesMixtos } from "./hooks/use-lotes-mixtos";
 import type { EstadoPatioConsumos } from "./hooks/use-patio-consumos";
 import type { LoteAProducir } from "./CtpLotesView";
+
+/** Los parámetros de «Consumir» desde Cámaras (ADR-480): se leen una vez y se sacan de la URL. */
+const PARAMS_CAMARA = ["desdeCamara", "pasada", "m"] as const;
+
+function pedidoDeLaUrl(): PedidoDesdeCamara | null {
+  const sp = new URLSearchParams(window.location.search);
+  const dia = sp.get("desdeCamara");
+  if (!dia || !/^\d{4}-\d{2}-\d{2}$/.test(dia)) return null;
+  const marcadores = (sp.get("m") ?? "")
+    .split(",")
+    .map(Number)
+    .filter((n) => Number.isInteger(n) && n >= 0 && n <= 249);
+  return { dia, pasada: sp.get("pasada"), marcadores };
+}
+
+function sacarDeLaUrl(): void {
+  const url = new URL(window.location.href);
+  for (const p of PARAMS_CAMARA) url.searchParams.delete(p);
+  window.history.replaceState(window.history.state, "", url.toString());
+}
 
 export function useLoteMixtoEnConsumos({
   estado,
@@ -31,6 +52,14 @@ export function useLoteMixtoEnConsumos({
   const firma = puedeFirmarVinculo(useMiRol());
   const [abierto, setAbierto] = useState(false);
   const [vinculando, setVinculando] = useState(false);
+  const [desdeCamara, setDesdeCamara] = useState<PedidoDesdeCamara | null>(null);
+  /* Una vez, al montar: «Consumir» de Cámaras › Trozas a la vista. */
+  useEffect(() => {
+    const p = pedidoDeLaUrl();
+    if (!p) return;
+    sacarDeLaUrl();
+    setDesdeCamara(p);
+  }, []);
   const { recargar: releerPatio } = estado.lotes;
   const { setLoteCarga } = estado.carga;
 
@@ -87,6 +116,19 @@ export function useLoteMixtoEnConsumos({
                 }
               : undefined
           }
+        />
+      )}
+      {desdeCamara && (
+        <CtpLoteMixtoDesdeCamara
+          pedido={desdeCamara}
+          mixtos={mixtos}
+          onClose={() => setDesdeCamara(null)}
+          onApartadas={(msg) => {
+            setDesdeCamara(null);
+            onAviso(msg);
+            void releerPatio();
+            setAbierto(true);
+          }}
         />
       )}
       {vinculando && (

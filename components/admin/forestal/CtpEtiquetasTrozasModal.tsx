@@ -26,6 +26,7 @@ import { diaDeEtiqueta, type TrozaEtiquetable } from "@/lib/forestal/ctp-troza-e
 import { TAB_LIBRO_CTP } from "@/lib/forestal/ctp-troza-url";
 import CtpEtiquetasFormatos, { useFormatoEtiquetaRecordado } from "./CtpEtiquetasFormatos";
 import { Btn, ModalFooter } from "./ctp-shared";
+import { useImprimirMarcadores } from "./hooks/use-imprimir-marcadores";
 
 export interface CtpEtiquetasTrozasModalProps {
   /** Las trozas candidatas (lo tildado, o las piezas de una guía). */
@@ -59,7 +60,12 @@ export default function CtpEtiquetasTrozasModal({ ids, contexto, onClose, onList
   const [fichaEnQr, setFichaEnQr] = useState(true);
   const [asignar, setAsignar] = useState(true);
   const [soloSinEtiqueta, setSoloSinEtiqueta] = useState(false);
-  const { errorCarga, resumen, generar, generando, errorGenerar, resultado } = useGenerarEtiquetasTrozas(ids, soloSinEtiqueta);
+  const { errorCarga, resumen, generar, generando: generandoEtiquetas, errorGenerar: errorEtiquetas, resultado } = useGenerarEtiquetasTrozas(ids, soloSinEtiqueta);
+  /* «Marcador A4 · cámara» (ADR-480): otra salida para las mismas trozas. */
+  const [marcadorA4, setMarcadorA4] = useState(false);
+  const marcadores = useImprimirMarcadores();
+  const generando = generandoEtiquetas || marcadores.imprimiendo;
+  const errorGenerar = marcadorA4 ? marcadores.error : errorEtiquetas;
 
   /* «Solo las nuevas» arranca prendido cuando hay de las dos: reimprimir lo que
      ya está pegado en la madera es gastar stickers. Si TODAS ya tienen, se deja
@@ -73,6 +79,10 @@ export default function CtpEtiquetasTrozasModal({ ids, contexto, onClose, onList
   }, [resumen]);
 
   const alGenerar = async () => {
+    if (marcadorA4) {
+      if (resumen) await marcadores.imprimir(resumen.aImprimir);
+      return;
+    }
     const r = await generar({ formato, barras, fichaEnQr, asignarCodigo: asignar, soloSinEtiqueta });
     if (!r) return;
     onListo?.(r.trozas);
@@ -104,7 +114,7 @@ export default function CtpEtiquetasTrozasModal({ ids, contexto, onClose, onList
           <Btn onClick={onClose}>Cerrar</Btn>
           <Btn variant="primary" disabled={!resumen || n === 0 || generando} onClick={() => void alGenerar()}>
             {generando ? <Loader2 className="h-4 w-4 animate-spin" /> : <QrCode className="h-4 w-4" />}
-            Generar etiquetas{n > 0 ? ` (${n})` : ""}
+            {marcadorA4 ? "Imprimir marcadores" : "Generar etiquetas"}{n > 0 ? ` (${n})` : ""}
           </Btn>
         </ModalFooter>
       }
@@ -197,7 +207,12 @@ export default function CtpEtiquetasTrozasModal({ ids, contexto, onClose, onList
               </Casilla>
             </div>
 
-            <CtpEtiquetasFormatos valor={formato} onCambio={setFormato} conFicha={fichaEnQr} />
+            <CtpEtiquetasFormatos
+              valor={formato}
+              onCambio={setFormato}
+              conFicha={fichaEnQr}
+              marcadorA4={{ activo: marcadorA4, onCambio: setMarcadorA4 }}
+            />
           </>
         )}
 

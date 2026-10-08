@@ -3,10 +3,12 @@ import { withCronAuth } from "@/lib/cron-auth";
 import { DocumentsDB } from "@/lib/db/documents.db";
 import { CamarasDB } from "@/lib/db/camaras.db";
 import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
+import { CamarasMarcadoresDB } from "@/lib/db/camaras-marcadores.db";
 import { logActivity } from "@/lib/activity-logger";
 import { corteRetencionPersonas } from "@/lib/camaras/personas-retencion";
 import { IDS_POR_LOTE } from "@/lib/documents/bulk-limits";
 import { logger } from "@/lib/logger";
+import { limaDateKey } from "@/lib/utils";
 
 /**
  * Retención de las fotos del detector de personas (2026-10-08).
@@ -36,9 +38,18 @@ export const GET = withCronAuth("camaras-personas-retencion", async () => {
   let enPapelera = 0;
   let conRestos = 0;
   let fallidos = 0;
+  let diasMarcadores = 0;
+  const hoy = limaDateKey(ahora);
 
   for (const tenantId of tenants) {
     revisados += 1;
+    /* «Trozas a la vista» (ADR-480): las claves de días viejos se borran. Aparte:
+       si falla, las fotos se limpian igual. */
+    try {
+      diasMarcadores += await CamarasMarcadoresDB.purgarDias(tenantId, hoy);
+    } catch (err) {
+      logger.warn("[cron/camaras-personas-retencion] días de marcadores sin borrar", { tenantId, err: String(err).slice(0, 300) });
+    }
     try {
       const dias = await CamarasDB.retencionPersonas(tenantId);
       const corte = corteRetencionPersonas(ahora, dias);
@@ -78,5 +89,5 @@ export const GET = withCronAuth("camaras-personas-retencion", async () => {
     }
   }
 
-  return NextResponse.json({ ok: true, revisados, enPapelera, conRestos, fallidos });
+  return NextResponse.json({ ok: true, revisados, enPapelera, conRestos, fallidos, diasMarcadores });
 });

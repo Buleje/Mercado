@@ -41,6 +41,7 @@ import {
   retenerMotorDfine,
   type RecortePedido,
 } from "./motor-dfine";
+import type { LectorMarcadoresVivo } from "./lector-marcadores-vivo";
 
 const ANCHO_GRILLA = 192;
 const MAX_RECORTES = 4;
@@ -86,7 +87,11 @@ function sinRepetidas(cajas: DeteccionPersona[]): DeteccionPersona[] {
 const seTocan = (a: CajaFraccion, b: CajaFraccion) =>
   a.x < b.x + b.ancho && b.x < a.x + a.ancho && a.y < b.y + b.alto && b.y < a.y + a.alto;
 
-export function crearVigia(): Vigia {
+/**
+ * `marcadores` (ADR-480): si la cámara lee marcadores de troza, el mismo
+ * cuadro se le ofrece al lector cuando no hay movimiento. Sin él, nada cambia.
+ */
+export function crearVigia(opciones: { marcadores?: LectorMarcadoresVivo } = {}): Vigia {
   let motor: MotorDetector | null = null;
   let soltarMotor: (() => void) | null = null;
   let soltado = false;
@@ -156,6 +161,7 @@ export function crearVigia(): Vigia {
       const g = leerGris(l);
       const mov = g && fondo ? compararConFondo(fondo, g) : { manchas: [], reiniciado: true };
       const movimiento = mov.manchas;
+      opciones.marcadores?.ofrecer(l.foto, movimiento.length === 0 && !mov.reiniciado);
 
       if (motor === "mediapipe") {
         const r = await detectarPersonas(l.chico);
@@ -205,6 +211,7 @@ export function crearVigia(): Vigia {
 
     soltar() {
       soltado = true;
+      opciones.marcadores?.soltar();
       soltarMotor?.();
       soltarMotor = null;
       gris.width = 0;
