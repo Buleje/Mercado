@@ -8,38 +8,29 @@
  *
  * Agrupa lo que deja pasar el filtro de la tabla «Suelto» (las tarjetas de
  * arriba filtran igual en los dos formatos). La cuenta es pura
- * (`lib/forestal/loth-despacho-por-guia`).
+ * (`lib/forestal/loth-despacho-por-guia`). Cada guía imprime su hoja de
+ * despacho con un QR a su lista pública (QR3, `LothDespachoPorGuiaPartes`).
  */
 
 import { useMemo, useState } from "react";
 import { DataTable } from "@buleje/design-system";
-import { ArrowRight, ChevronRight, FileText } from "@buleje/design-system/icons";
+import { ChevronRight, FileText } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { LothEntryDTO } from "@/lib/forestal/loth-constants";
 import { diaCorto } from "@/lib/forestal/loth-aprovechamiento";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
-import { medidasDeLinea } from "@/lib/forestal/loth-despacho-medidas";
 import { despachosPorGuia, filaAnulada, type FilaPorGuia, type GuiaDelDespacho } from "@/lib/forestal/loth-despacho-por-guia";
-import { ingresarGtfAlCtp } from "./LothGtfCtp";
-
-const TH = "px-3 py-2.5 font-bold text-[var(--text-primary)] whitespace-nowrap";
-const TD = "px-3 py-2.5 align-top";
-const DER = "text-right font-mono tabular-nums";
-const m = (v: string | null, dp: number) => (v == null ? "—" : Number(v).toFixed(dp));
-
-const CHIP = "inline-flex whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-bold";
-const TONO = {
-  error: "bg-[var(--data-error-500)]/12 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
-  ok: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
-  aviso: "bg-[var(--data-warning-500)]/12 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]",
-  neutro: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
-} as const;
+import type { PermisoDeLaHoja } from "@/lib/forestal/loth-despacho-hoja";
+import type { PlanTablero } from "@/lib/forestal/loth-tablero-permiso";
+import { BotonHojaDespacho, DER, Desglose, EstadoGuia, TD, TH } from "./LothDespachoPorGuiaPartes";
 
 export default function LothDespachoPorGuia({
   lineas,
   guias,
   guiasError,
   hayCtp,
+  planes,
+  caratula,
   onDetalle,
   onVerGuia,
 }: {
@@ -49,10 +40,21 @@ export default function LothDespachoPorGuia({
   guiasError?: string | null;
   /** El negocio lleva Libro CTP: ofrece «Ingresar al CTP». */
   hayCtp: boolean;
+  /** Los permisos del libro: la hoja de cada guía dice el suyo. */
+  planes: readonly PlanTablero[];
+  caratula: { titularName: string | null; tituloHabilitante: string | null } | null;
   onDetalle: (e: LothEntryDTO) => void;
   onVerGuia: (gtf: string) => void;
 }) {
   const filas = useMemo(() => despachosPorGuia(lineas, guias), [lineas, guias]);
+  const permisoDe = (f: FilaPorGuia): PermisoDeLaHoja => {
+    const p = planes.find((x) => x.id === f.planId);
+    return {
+      tituloHabilitante: p?.tituloHabilitante ?? caratula?.tituloHabilitante ?? null,
+      planNumber: p?.planNumber ?? null,
+      titular: p?.titularName ?? caratula?.titularName ?? null,
+    };
+  };
   /* Una sola guía se abre sola: no hay nada que elegir. */
   const [abiertas, setAbiertas] = useState<Set<string> | null>(null);
   const abierta = (k: string) => (abiertas ? abiertas.has(k) : filas.length === 1);
@@ -98,6 +100,7 @@ export default function LothDespachoPorGuia({
               abierta={abierta(f.clave)}
               onAlternar={() => alternar(f.clave)}
               hayCtp={hayCtp}
+              permiso={permisoDe(f)}
               onDetalle={onDetalle}
               onVerGuia={onVerGuia}
             />
@@ -128,6 +131,7 @@ function FilaGuia({
   abierta,
   onAlternar,
   hayCtp,
+  permiso,
   onDetalle,
   onVerGuia,
 }: {
@@ -135,6 +139,7 @@ function FilaGuia({
   abierta: boolean;
   onAlternar: () => void;
   hayCtp: boolean;
+  permiso: PermisoDeLaHoja;
   onDetalle: (e: LothEntryDTO) => void;
   onVerGuia: (gtf: string) => void;
 }) {
@@ -201,90 +206,10 @@ function FilaGuia({
         <tr id={idDesglose} className="bg-[var(--surface-canvas)]/40">
           <td className={TD} />
           <td className={`${TD} pb-4`} colSpan={8}>
-            <Desglose f={f} onDetalle={onDetalle} />
+            <Desglose f={f} onDetalle={onDetalle} hoja={f.gtfNumber ? <BotonHojaDespacho f={f} permiso={permiso} /> : null} />
           </td>
         </tr>
       )}
     </>
-  );
-}
-
-function EstadoGuia({ f, hayCtp }: { f: FilaPorGuia; hayCtp: boolean }) {
-  if (filaAnulada(f)) return <span className={`${CHIP} ${TONO.error}`}>Anulada</span>;
-  const ctp = f.guia?.ctp ?? null;
-  if (!f.guia) return <span className={`${CHIP} ${TONO.neutro}`}>Guía no encontrada</span>;
-  if (ctp === "ingresada") return <span className={`${CHIP} ${TONO.ok}`}>En el CTP</span>;
-  if (ctp === "otra_empresa") return <span className={`${CHIP} ${TONO.neutro}`}>Va a otra empresa</span>;
-  if (ctp === "por_ingresar") {
-    return (
-      <span className="inline-flex flex-col items-start gap-1">
-        <span className={`${CHIP} ${TONO.aviso}`}>Por ingresar al CTP</span>
-        {hayCtp && f.gtfNumber && (
-          <button
-            type="button"
-            onClick={() => ingresarGtfAlCtp(f.gtfNumber as string)}
-            className="inline-flex min-h-6 items-center gap-1 text-xs font-bold text-[var(--accent-ink)] hover:underline dark:text-[var(--accent)]"
-          >
-            Ingresar al CTP <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-          </button>
-        )}
-      </span>
-    );
-  }
-  return <span className={`${CHIP} ${TONO.neutro}`}>Emitida</span>;
-}
-
-/** Las trozas de una guía con sus medidas (las del trozado) y el total. */
-function Desglose({ f, onDetalle }: { f: FilaPorGuia; onDetalle: (e: LothEntryDTO) => void }) {
-  const anulada = filaAnulada(f);
-  return (
-    <table className="w-full text-sm" aria-label={`Trozas de la guía ${f.gtfNumber ?? "sin número"}`}>
-      <thead>
-        <tr className="text-xs text-[var(--text-secondary)]">
-          <th className={TH}>Cód. troza</th>
-          <th className={TH}>Especie</th>
-          <th className={`${TH} text-right`}>D1</th>
-          <th className={`${TH} text-right`}>D2</th>
-          <th className={`${TH} text-right`}>Largo</th>
-          <th className={`${TH} text-right`}>m³</th>
-        </tr>
-      </thead>
-      <tbody>
-        {f.lineas.map((e) => {
-          const md = medidasDeLinea(e);
-          const tachada = e.status === "anulado";
-          return (
-            <tr key={e.id} className={tachada && !anulada ? "opacity-60" : undefined}>
-              <td className={TD}>
-                <button
-                  type="button"
-                  onClick={() => onDetalle(e)}
-                  title="Abre el detalle del despacho"
-                  className={`font-mono font-bold text-[var(--accent-ink)] hover:underline dark:text-[var(--accent)] ${tachada ? "line-through" : ""}`}
-                >
-                  {e.trozaCode ?? "—"}
-                </button>
-              </td>
-              <td className={TD}>{md.especie ?? "—"}</td>
-              <td className={`${TD} ${DER}`}>{m(md.d1, 2)}</td>
-              <td className={`${TD} ${DER}`}>{m(md.d2, 2)}</td>
-              <td className={`${TD} ${DER}`}>{m(md.largo, 2)}</td>
-              <td className={`${TD} ${DER} font-bold`}>{m(md.m3, 4)}</td>
-            </tr>
-          );
-        })}
-      </tbody>
-      <tfoot>
-        <tr className="border-t border-[var(--rule-base)]">
-          <td className={TD} colSpan={5}>
-            <span className="text-xs font-black uppercase tracking-widest text-[var(--text-secondary)]">
-              Total · {anulada ? f.anuladas : f.trozas} troza{(anulada ? f.anuladas : f.trozas) === 1 ? "" : "s"}
-            </span>
-            {!anulada && f.anuladas > 0 && <span className="ml-2 text-xs text-[var(--text-tertiary)]">({f.anuladas} anuladas, no suman)</span>}
-          </td>
-          <td className={`${TD} ${DER} font-black`}>{anulada ? <span className="line-through">{fmtM3(f.m3Anuladas)}</span> : fmtM3(f.m3)}</td>
-        </tr>
-      </tfoot>
-    </table>
   );
 }

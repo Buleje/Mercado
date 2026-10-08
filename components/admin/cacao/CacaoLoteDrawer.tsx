@@ -33,6 +33,8 @@ import {
 } from "@/lib/cacao/cacao-quality";
 import { printCacaoRecibo } from "@/lib/cacao/cacao-recibo";
 import { formatDate } from "@/lib/format";
+import { useBaseVerificacion } from "@/hooks/use-base-verificacion";
+import { urlVerificarCacao } from "@/lib/tenant-url-publica";
 
 interface LoteFull {
   id: string;
@@ -118,16 +120,16 @@ export default function CacaoLoteDrawer({
   const [publicUrl, setPublicUrl] = useState("");
   const [copied, setCopied] = useState(false);
 
-  // QR de trazabilidad pública — apunta a /verificar-cacao/{loteCode} en el
-  // dominio actual (el tenant se resuelve por Host).
+  // QR público /verificar-cacao/{loteCode} con la base del negocio (servidor), no el host del navegador.
+  const { base } = useBaseVerificacion();
   useEffect(() => {
-    if (!lote?.loteCode || typeof window === "undefined") return;
-    const url = `${window.location.origin}/verificar-cacao/${encodeURIComponent(lote.loteCode)}`;
+    if (!lote?.loteCode || !base) return;
+    const url = urlVerificarCacao(base, lote.loteCode);
     setPublicUrl(url);
     QRCode.toDataURL(url, { width: 220, margin: 1, color: { dark: "#451a03", light: "#ffffff" } })
       .then(setQrUrl)
       .catch(() => setQrUrl(null));
-  }, [lote?.loteCode]);
+  }, [lote?.loteCode, base]);
 
   useEffect(() => {
     let cancel = false;

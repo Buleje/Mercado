@@ -15,6 +15,14 @@
  * ficha y sus íconos (single source con el CTP: si el formato cambia ahí,
  * cambia acá también).
  *
+ * Etiqueta UNIFICADA (08-10, QR5): el «Etiquetas QR» de Tala/Trozado
+ * (`loth-labels.ts`) imprime esta misma, en blanco y negro para la térmica. El
+ * QR chico lleva el id de la línea y el código (`/verificar/troza/<id>?c=…`,
+ * `lib/tenant-url-publica.ts`) con la base pública del negocio, no la del
+ * navegador. Si en el formato el QR chico quedaría con menos de 2 puntos de
+ * impresora por módulo, la etiqueta lleva UN solo QR —el del sistema, que
+ * también trae el código para la pistola— en el lugar del grande.
+ *
  * PURO salvo `imprimirEtiquetasTrozasLoth` (abre la ventana de impresión).
  */
 
@@ -32,6 +40,8 @@ import {
 } from "./ctp-troza-etiquetas";
 import { codigoDeEtiquetaLoth, partesDeMedidasLoth, textoFichaDeTrozaLoth } from "./ficha-texto-troza";
 import { fmtM3 } from "./cubicacion-formato";
+import { urlVerificarTroza } from "@/lib/tenant-url-publica";
+import { obtenerBaseVerificacion } from "@/lib/base-verificacion-cliente";
 
 /** Las líneas de la sección Trozado que tienen algo que imprimir: código de troza o del árbol. */
 export function trozasEtiquetablesLoth(entries: readonly LothEntryDTO[]): LothEntryDTO[] {
@@ -40,9 +50,57 @@ export function trozasEtiquetablesLoth(entries: readonly LothEntryDTO[]): LothEn
   );
 }
 
+/** Cualquier sección (Tala, Trozado…): las vigentes con código de troza o de árbol. */
+export function lineasEtiquetablesLoth(entries: readonly LothEntryDTO[]): LothEntryDTO[] {
+  return entries.filter((e) => e.status !== "anulado" && Boolean((e.trozaCode ?? e.treeCode ?? "").trim()));
+}
+
+/**
+ * Puntos de impresora por formato: las térmicas de rollo son de 203 dpi; la
+ * hoja A4 se cuenta a 300 (la impresora de oficina más modesta).
+ */
+const DPI_DEL_FORMATO: Record<FormatoEtiqueta, number> = {
+  "a4-3x7": 300,
+  "rollo-50x30": 203,
+  "rollo-100x50": 203,
+  "testa-a6": 203,
+};
+
+/** Por debajo de 2 puntos por módulo la térmica redondea los bordes y el celular no lo lee. */
+export const MIN_PUNTOS_POR_MODULO = 2;
+
+/** Puntos de impresora por módulo de un QR de `modulos` de lado (+1 de margen por lado, como se dibuja). */
+export function puntosPorModulo(ladoMm: number, modulos: number, dpi: number): number {
+  return Math.round(((ladoMm / 25.4) * dpi * 100) / (modulos + 2)) / 100;
+}
+
+/**
+ * ¿La etiqueta lleva dos QR (ficha + sistema) o uno solo (sistema, en el lugar
+ * del grande)? Uno solo cuando el chico quedaría bajo `MIN_PUNTOS_POR_MODULO`.
+ */
+export function qrsDeLaEtiqueta(formato: FormatoEtiqueta, modulosDelChico: number): {
+  dos: boolean;
+  puntosChico: number;
+} {
+  const f = infoFormato(formato);
+  const puntosChico = puntosPorModulo(f.qrChicoMm, modulosDelChico, DPI_DEL_FORMATO[formato]);
+  return { dos: puntosChico >= MIN_PUNTOS_POR_MODULO, puntosChico };
+}
+
 export interface OpcionesEtiquetaLoth {
-  /** `window.location.origin`: el QR chico apunta al certificado público de ESTE tenant. */
-  origin: string;
+  /**
+   * Base pública del negocio (`lib/tenant-url-publica.ts`). Sin ella se pide al
+   * servidor y la hoja ESPERA: nunca se arma con el host del navegador.
+   */
+  base?: string;
+  /** Tala y demás secciones, no sólo Trozado («Etiquetas QR» de la sección). */
+  todasLasSecciones?: boolean;
+  /**
+   * El permiso de CADA línea (su `planId`): con «Todos» o una troza de otro
+   * permiso, el pie decía el permiso elegido y no el suyo. Si devuelve `null`
+   * (línea sin permiso), cae a `tituloHabilitante`/`planNumber` (`permisoDelPie`).
+   */
+  permisoDeLinea?: (e: LothEntryDTO) => { tituloHabilitante?: string | null; planNumber?: string | null } | null;
   tituloHabilitante?: string | null;
   planNumber?: string | null;
   formato?: FormatoEtiqueta;
@@ -84,21 +142,35 @@ export function htmlEtiquetaLoth(
   </div>`;
 }
 
+type PermisoDelPie = { tituloHabilitante?: string | null; planNumber?: string | null };
+
+/**
+ * El permiso del pie de una etiqueta. Con el de la línea resuelto, sólo lo
+ * suyo: un campo vacío NO se rellena con el del permiso por el que está
+ * filtrado el libro (es otro permiso: el mismo error que se quería evitar).
+ * Sin permiso de la línea, el del libro.
+ */
+export function permisoDelPie(suyo: PermisoDelPie | null, libro: PermisoDelPie): PermisoDelPie {
+  const p = suyo ?? libro;
+  return { tituloHabilitante: p.tituloHabilitante ?? null, planNumber: p.planNumber ?? null };
+}
+
 /**
  * Abre la hoja de etiquetas del Libro TH con QR real (SVG): grande con la
  * ficha en texto (se lee sin internet, con el mismo formato del CTP) y chico
- * con el certificado público `/verificar/<código>`. Devuelve cuántas se
- * imprimieron — 0 si ninguna de las líneas pasadas tiene código.
+ * con el certificado público `/verificar/troza/<id>?c=<código>`. Devuelve
+ * cuántas se imprimieron — 0 si ninguna de las líneas pasadas tiene código.
  */
 export async function imprimirEtiquetasTrozasLoth(
   entries: readonly LothEntryDTO[],
   opts: OpcionesEtiquetaLoth,
 ): Promise<number> {
-  const imprimibles = trozasEtiquetablesLoth(entries);
+  const imprimibles = opts.todasLasSecciones ? lineasEtiquetablesLoth(entries) : trozasEtiquetablesLoth(entries);
   if (imprimibles.length === 0) return 0;
   const formato = opts.formato ?? FORMATO_ETIQUETA_DEFAULT;
   const barras = opts.barras ?? true;
   const { grande } = correccionDeQr(formato);
+  const base = opts.base ?? (await obtenerBaseVerificacion());
 
   const QR = (await import("qrcode")).default;
   const svg = (contenido: string, errorCorrectionLevel: "L" | "M") =>
@@ -107,18 +179,14 @@ export async function imprimirEtiquetasTrozasLoth(
   const tarjetas = await Promise.all(
     imprimibles.map(async (e) => {
       const codigo = codigoDeEtiquetaLoth(e);
-      const url = `${opts.origin}/verificar/${encodeURIComponent(codigo)}`;
-      const [ficha, chico] = await Promise.all([
-        svg(textoFichaDeTrozaLoth(e, opts), grande),
-        svg(url, "L"),
-      ]);
-      return htmlEtiquetaLoth(e, ficha, {
-        formato,
-        barras,
-        tituloHabilitante: opts.tituloHabilitante,
-        planNumber: opts.planNumber,
-        qrChicoSvg: chico,
-      });
+      /* La troza despachada se imprime «como su trozado»: el QR va a SU línea de trozado. */
+      const url = urlVerificarTroza(base, { lineaId: e.trozado?.lineaId ?? e.id, codigo });
+      const { dos } = qrsDeLaEtiqueta(formato, QR.create(url, { errorCorrectionLevel: "L" }).modules.size);
+      const permiso = permisoDelPie(opts.permisoDeLinea?.(e) ?? null, opts);
+      const datos = { formato, barras, ...permiso };
+      if (!dos) return htmlEtiquetaLoth(e, await svg(url, grande), datos);
+      const [ficha, chico] = await Promise.all([svg(textoFichaDeTrozaLoth(e, permiso), grande), svg(url, "L")]);
+      return htmlEtiquetaLoth(e, ficha, { ...datos, qrChicoSvg: chico });
     }),
   );
 

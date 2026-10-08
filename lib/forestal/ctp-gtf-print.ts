@@ -47,6 +47,8 @@ import { COPIAS_GTF, faltantesGtf, gtfDatosVacio, type GtfDatos } from "@/lib/fo
 import { CSS_GTF_OFICIAL, cuerpoGtfOficial, fechaGtf, filasDeLaGuia, type LineaProducto } from "@/lib/forestal/ctp-gtf-formato";
 import { revisarTiposGTF, type AvisoTipo } from "@/lib/forestal/gtf-validador-tipo";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { urlVerificarDespacho } from "@/lib/tenant-url-publica";
+import { obtenerBaseVerificacion } from "@/lib/base-verificacion-cliente";
 import { aplicarPiezasGuia } from "@/lib/extensiones/guia-impresa";
 
 /** `unitLabel` no siempre es m³ (kg/pt/unidad, según la corrida): los tres
@@ -143,7 +145,8 @@ export async function documentoGtfSalida(
     );
   }
 
-  const verifyUrl = `${window.location.origin}/verificar/despacho/${encodeURIComponent(despacho.id)}`;
+  // Base pública del negocio (servidor), nunca el host del navegador: el QR lo abre el puesto de control.
+  const verifyUrl = urlVerificarDespacho(await obtenerBaseVerificacion(), despacho.id);
   const QR = (await import("qrcode")).default;
   const qrDataUrl = await QR.toDataURL(verifyUrl, { margin: 1, width: 180, errorCorrectionLevel: "M" });
 

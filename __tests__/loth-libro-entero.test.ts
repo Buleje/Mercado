@@ -104,7 +104,7 @@ describe("Excel del LO-TH (ruta real)", () => {
     }));
     // Las medidas del despacho (`conTrozado`) se prueban en forestal-loth-despacho-impreso.
     vi.doMock("@/lib/db/forest-loth-despacho.db", () => ({
-      ForestLothDespachoDB: { trozadosDeCodigos: async () => [] },
+      ForestLothDespachoDB: { conTrozado: async (_t: string, entries: unknown[]) => entries },
     }));
   });
   afterEach(() => {
@@ -148,8 +148,10 @@ describe("Excel del LO-TH (ruta real)", () => {
 });
 
 describe("Excel del LO-TH con más de 2000 trozas despachadas", () => {
-  // La lectura de trozados corta en 2000 códigos (`TOPE_CODIGOS`); el Excel lleva
-  // el libro entero: 2500 despachos tienen que salir con su m³, no 2000.
+  // La lectura de trozados pide de a 2000 códigos (`TANDA_CODIGOS`, las tandas
+  // viven en `trozadosDeCodigos` desde el 08-10); el Excel lleva el libro
+  // entero: 2500 despachos tienen que salir con su m³, no 2000. Camino real:
+  // ruta → `conTrozado` → `trozadosDeCodigos` → prisma (falso).
   const despachos = Array.from({ length: 2500 }, (_, i) => ({
     id: `d${String(i).padStart(4, "0")}`,
     tenantId: "t-qa",
@@ -165,8 +167,8 @@ describe("Excel del LO-TH con más de 2000 trozas despachadas", () => {
     volumeM3: null,
   }));
   const list = paginador(despachos as unknown as ReturnType<typeof libroDe>);
-  const trozadosDeCodigos = vi.fn(async (_t: string, codigos: readonly string[]) =>
-    codigos.slice(0, 2000).map((c, i) => ({
+  const findMany = vi.fn(async (args: { where: { trozaCode: { in: string[] } } }) =>
+    args.where.trozaCode.in.map((c, i) => ({
       id: `t-${c}`,
       planId: null,
       trozaCode: c,
@@ -186,17 +188,17 @@ describe("Excel del LO-TH con más de 2000 trozas despachadas", () => {
 
   beforeEach(() => {
     vi.resetModules();
-    trozadosDeCodigos.mockClear();
+    findMany.mockClear();
     vi.doMock("@/lib/require-admin", () => ({ requireAdmin: async () => ({ tenantId: "t-qa", role: "admin" }) }));
     vi.doMock("@/lib/rate-limit", () => ({ applyRateLimit: () => null }));
     vi.doMock("@/lib/specializations", () => ({ isSpecializationEnabled: async () => true }));
     vi.doMock("@/lib/logger", () => ({ logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn() } }));
     vi.doMock("@/lib/db/forest-loth.db", () => ({ ForestLothDB: { list, getActiveCaratula: async () => null } }));
-    vi.doMock("@/lib/db/forest-loth-despacho.db", () => ({ ForestLothDespachoDB: { trozadosDeCodigos } }));
+    vi.doMock("@/lib/prisma", () => ({ prisma: { forestLothEntry: { findMany } } }));
   });
   afterEach(() => {
     vi.doUnmock("@/lib/db/forest-loth.db");
-    vi.doUnmock("@/lib/db/forest-loth-despacho.db");
+    vi.doUnmock("@/lib/prisma");
   });
 
   it("pide los trozados de a 2000 y las 2500 líneas salen con su m³ (Resumen = 1250)", async () => {
@@ -204,7 +206,7 @@ describe("Excel del LO-TH con más de 2000 trozas despachadas", () => {
     const res = await GET(new NextRequest("http://localhost/api/admin/forestal/loth/export?format=xlsx"));
     expect(res.status).toBe(200);
     expect(res.headers.get("X-Libro-Lineas")).toBe("2500/2500");
-    expect(trozadosDeCodigos.mock.calls.map((c) => c[1].length)).toEqual([2000, 500]);
+    expect(findMany.mock.calls.map((c) => c[0].where.trozaCode.in.length)).toEqual([2000, 500]);
 
     const ExcelJS = (await import("exceljs")).default;
     const wb = new ExcelJS.Workbook();

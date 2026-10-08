@@ -15,6 +15,8 @@
 
 import { CSS_CERTIFICADO_TRAZABILIDAD } from "@/lib/forestal/ctp-certificado-css";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { urlVerificarLote } from "@/lib/tenant-url-publica";
+import { obtenerBaseVerificacion } from "@/lib/base-verificacion-cliente";
 
 const esc = (v: unknown) =>
   String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -54,7 +56,8 @@ export interface LoteCertEmisor {
 }
 
 async function qrPara(id: string): Promise<{ url: string; dataUrl: string }> {
-  const url = `${window.location.origin}/verificar/lote/${encodeURIComponent(id)}`;
+  // Base pública del negocio (servidor), nunca el host del navegador.
+  const url = urlVerificarLote(await obtenerBaseVerificacion(), id);
   const QR = (await import("qrcode")).default;
   const dataUrl = await QR.toDataURL(url, { margin: 1, width: 180, errorCorrectionLevel: "M" });
   return { url, dataUrl };

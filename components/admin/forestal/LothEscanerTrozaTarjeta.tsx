@@ -94,7 +94,6 @@ export default function LothEscanerTrozaTarjeta({
     import("@/lib/forestal/loth-troza-etiquetas")
       .then(({ imprimirEtiquetasTrozasLoth }) =>
         imprimirEtiquetasTrozasLoth([trozado], {
-          origin: window.location.origin,
           tituloHabilitante: tituloHabilitante ?? null,
           planNumber: fila.plan,
           ventana,

@@ -12,6 +12,7 @@
  * puede testear sin navegador.
  */
 import type { DdsData, DdsPlot } from "./eudr-types";
+import { urlVerificarDespacho } from "@/lib/tenant-url-publica";
 
 export interface EmisorExpediente {
   razonSocial?: string;
@@ -139,7 +140,8 @@ export function cadenaCsv(dds: DdsData): string {
 
 /**
  * Arma el expediente. `baseUrl` sólo se usa para el enlace de verificación
- * pública (el mismo que lleva el QR del certificado).
+ * pública (el mismo que lleva el QR del certificado): la base pública del
+ * negocio (`obtenerBaseVerificacion`), no el host del navegador.
  */
 export function construirExpedienteEudr(
   dds: DdsData,
@@ -150,9 +152,7 @@ export function construirExpedienteEudr(
   const hoy = opts.hoy ?? new Date().toISOString().slice(0, 10);
   const vencidos = (emisor.titulos ?? []).filter((t) => (t.vencimiento ?? "").trim() && (t.vencimiento as string) < hoy);
   const negligible = dds.riesgo === "negligible";
-  const verifyUrl = opts.baseUrl
-    ? `${opts.baseUrl.replace(/\/+$/, "")}/verificar/despacho/${encodeURIComponent(dds.despachoId)}`
-    : null;
+  const verifyUrl = opts.baseUrl ? urlVerificarDespacho(opts.baseUrl, dds.despachoId) : null;
 
   const leeme = [
     "EXPEDIENTE DE DILIGENCIA DEBIDA — EUDR (Reglamento UE 2023/1115)",

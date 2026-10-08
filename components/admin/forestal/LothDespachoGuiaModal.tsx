@@ -29,7 +29,7 @@ import CtpDocumentoVisor, { type DocumentoImprimible } from "./CtpDocumentoVisor
 import LothGuiaDatos from "./LothGuiaDatos";
 import LothGuiaTrozas from "./LothGuiaTrozas";
 import LothGuiaRegistrada, { useCapaEncimaDelModal } from "./LothGuiaRegistrada";
-import AvisoTrozasDeAntes, { useTrozasDeAntes } from "./LothGuiaTrozasDeAntes";
+import AvisoTrozasDeAntes, { useTrozasDeAntes, type TrozasIniciales } from "./LothGuiaTrozasDeAntes";
 import { Btn } from "./ctp-shared";
 
 type Pestana = "guia" | "trozas";
@@ -51,8 +51,8 @@ const aGuardada = (p: Parte | undefined) =>
       }
     : null;
 
-/** `trozasIniciales`: códigos que llegan elegidos (Control del permiso, ADR-459). */
-export default function LothDespachoGuiaModal({ onClose, onRegistrada, trozasIniciales }: { onClose: () => void; onRegistrada: () => void; trozasIniciales?: readonly string[] }) {
+/** `trozasIniciales`: códigos que llegan elegidos y sus permisos (Control del permiso, ADR-459; escaneo al camión). */
+export default function LothDespachoGuiaModal({ onClose, onRegistrada, trozasIniciales }: { onClose: () => void; onRegistrada: () => void; trozasIniciales?: TrozasIniciales }) {
   const directorio = useDirectorioForestal();
   /* La libreta cuenta los usos recién al registrar: lo que se eligió y se
      cambió antes no sube en el orden. */

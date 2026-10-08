@@ -148,7 +148,7 @@ export function useEscanerTrozaLoth(filas: readonly TrozaTablero[]) {
         avisar("no", "Esa etiqueta es de una troza del Libro CTP, no de este permiso.");
         return false;
       }
-      const r = buscarEnTablero(filas, lectura.codigo);
+      const r = buscarEnTablero(filas, lectura.codigo, lectura.linea);
       if (r.estado === "una") {
         /* Una troza reconocida por un código que NO es ficha (Code128, QR
            chico): la pistola ya está en otra etiqueta y la ficha anterior

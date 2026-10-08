@@ -100,7 +100,6 @@ export function useLothTableroAcciones({
     const plan = ids.length === 1 && ids[0] ? (planes.find((p) => p.id === ids[0]) ?? null) : null;
     setImprimiendo(true);
     void imprimirEtiquetasTrozasLoth(lineas, {
-      origin: window.location.origin,
       tituloHabilitante: plan?.tituloHabilitante ?? tituloDelLibro,
       planNumber: plan?.planNumber ?? null,
       ventana,

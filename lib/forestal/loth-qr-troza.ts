@@ -6,7 +6,8 @@
  * TRES lecturas de la misma pieza:
  *   · el QR grande, con la ficha en texto que se lee sin internet:
  *     `TROZA 111-A\n🌳 Shihuahuaco\n…` — vale su primera línea;
- *   · el QR chico del sistema: `https://<host>/verificar/111-A`;
+ *   · el QR chico del sistema: `https://<base>/verificar/troza/<id de la línea>?c=111-A`
+ *     (hasta el 08-10, `https://<host>/verificar/111-A`, que se sigue leyendo);
  *   · el Code128 con el código pelado: `111-A`.
  * Y el que no tiene cámara tipea el código a mano (o la pistola lo tipea por
  * él, línea por línea). Las cuatro las entiende `leerEscaneo` del CTP (single
@@ -25,8 +26,8 @@ import { diasEnPatioDe } from "./loth-tablero-columnas";
 import { ESTADOS_META, type TrozaTablero } from "./loth-tablero-trozas";
 
 export type LecturaQrLoth =
-  /** Un código de troza (de cualquiera de los QR, del Code128 o tipeado). */
-  | { tipo: "codigo"; codigo: string }
+  /** Un código de troza (de cualquiera de los QR, del Code128 o tipeado); `linea` si el QR trae el id. */
+  | { tipo: "codigo"; codigo: string; linea?: string }
   /** Una línea suelta de la ficha que la pistola sigue tipeando: se calla. */
   | { tipo: "linea-ficha" }
   /** `TROZA —`: la ficha de una pieza que se imprimió sin código. */
@@ -48,7 +49,9 @@ export function leerQrTrozaLoth(texto: string | null | undefined): LecturaQrLoth
   const lectura = leerEscaneo(crudo);
   if (!lectura) return esFichaDeTroza(crudo) ? { tipo: "sin-codigo" } : null;
   if (lectura.tipo === "id") return { tipo: "otro-libro" };
-  return { tipo: "codigo", codigo: lectura.codigo };
+  return lectura.linea
+    ? { tipo: "codigo", codigo: lectura.codigo, linea: lectura.linea }
+    : { tipo: "codigo", codigo: lectura.codigo };
 }
 
 export type ResultadoQrLoth =
@@ -64,11 +67,14 @@ export type ResultadoQrLoth =
   | { estado: "ninguna"; codigo: string };
 
 /**
- * Busca un código en el tablero. Primero el código de troza, EXACTO («118»
- * no es «1180»), sin importar mayúsculas, tildes ni espacios; si ninguna
- * troza lo tiene, el código de árbol.
+ * Busca un código en el tablero. Si el QR trajo el id de la línea (`linea`),
+ * ése decide: el mismo código en dos permisos son dos trozas. Si no, el
+ * código de troza, EXACTO («118» no es «1180»), sin importar mayúsculas,
+ * tildes ni espacios; si ninguna troza lo tiene, el código de árbol.
  */
-export function buscarEnTablero(filas: readonly TrozaTablero[], codigo: string): ResultadoQrLoth {
+export function buscarEnTablero(filas: readonly TrozaTablero[], codigo: string, linea?: string | null): ResultadoQrLoth {
+  const porLinea = linea ? filas.find((f) => f.trozadoId === linea) : undefined;
+  if (porLinea) return { estado: "una", fila: porLinea };
   const clave = claveDeCodigo(codigo);
   if (!clave) return { estado: "ninguna", codigo };
   const porTroza = filas.filter((f) => claveDeCodigo(f.code) === clave);

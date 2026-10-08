@@ -21,6 +21,7 @@ import {
   Printer,
   FileSpreadsheet,
   QrCode,
+  ScanBarcode,
   Map as MapIcon,
   MapPin,
   Layers,
@@ -40,8 +41,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import LothPermisoChip, { useContratoDelPlan } from "./LothPermisoChip";
 import { downloadLothExcel, printLothLibro } from "@/lib/forestal/loth-print";
 import { printLothInforme } from "@/lib/forestal/loth-informe-print";
-import { printTrozaLabels } from "@/lib/forestal/loth-labels";
-import { imprimirEtiquetasTrozasLoth } from "@/lib/forestal/loth-troza-etiquetas";
+import { useEtiquetasLibroLoth } from "./hooks/use-etiquetas-libro-loth";
 import {
   LOTH_SECTIONS,
   type LothSection,
@@ -84,6 +84,7 @@ import LothEtiquetasRecienTrozadas from "./LothEtiquetasRecienTrozadas";
 import LothTalaTandaModal from "./LothTalaTandaModal";
 import type { TandaTalaInicial } from "./hooks/use-tala-en-tanda";
 import LothDespachoGuiaModal from "./LothDespachoGuiaModal";
+import LothDespachoEscaneo from "./LothDespachoEscaneo";
 import { mensajeErrorFilaImport, type FilaImport } from "@/lib/forestal/loth-import-lineas";
 import { lineasToCsv, mapaCorrecciones, type OrdenCampo, type OrdenDir } from "@/lib/forestal/loth-seccion";
 import { LINEAS_POR_PAGINA, useLothSeccionTabla } from "./hooks/use-loth-seccion-tabla";
@@ -281,8 +282,9 @@ export default function LothLibroOperaciones() {
   const [trozasEnSesionForm, setTrozasEnSesionForm] = useState<LothEntry[]>([]);
   /** «Despachar con guía»: la GTF completa y sus líneas de despacho en un registro. */
   const [showDespachoGuia, setShowDespachoGuia] = useState(false);
-  /** Trozas que llegan elegidas a la guía desde el Control del permiso (ADR-459). */
-  const [despachoElegidas, setDespachoElegidas] = useState<string[] | null>(null);
+  /** Trozas que llegan elegidas a la guía desde el Control del permiso (ADR-459) o escaneadas al camión (QR4). */
+  const [despachoElegidas, setDespachoElegidas] = useState<{ codigos: string[]; planes: (string | null)[] } | null>(null);
+  const [escaneoCamion, setEscaneoCamion] = useState(false);
   /** Censo del permiso elegido (o del plan activo con «Todos») — alimenta el cuadro "censo vs realidad". */
   const [censoArboles, setCensoArboles] = useState<
     { treeCode: string; speciesCommon: string; dapM: number | null; volumenEstimadoM3: number | null; estado: string }[]
@@ -365,69 +367,13 @@ export default function LothLibroOperaciones() {
     setArbolInicial(treeCode);
     setShowForm(true);
   }
-  const [printingLabels, setPrintingLabels] = useState(false);
-
-  /** Etiquetas de las líneas indicadas; sin argumento, las de la sección visible. */
-  async function doPrintLabels(lineas?: LothEntry[]) {
-    setPrintingLabels(true);
-    setError(null);
-    try {
-      const count = await printTrozaLabels(lineas ?? entries, {
-        origin: window.location.origin,
-        titular: caratula?.titularName ?? null,
-        planNumber: caratula?.tituloHabilitante ?? null,
-      });
-      if (count === 0) setError("No hay códigos imprimibles en esta sección: las etiquetas salen de Tala y Trozado.");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setPrintingLabels(false);
-    }
-  }
-
-  const [printingLabelsCtp, setPrintingLabelsCtp] = useState(false);
-
-  /**
-   * «Imprimir etiquetas» de Trozado (28-09): la ficha en el QR usa el MISMO
-   * formato que ya lee la recepción del Libro CTP (ADR-436) — así una troza
-   * que sale del TH y entra al CTP se reconoce con la misma pistola. La
-   * ventana se abre YA, en el clic: después de un `await` el navegador la
-   * bloquea como pop-up (mismo gotcha que las etiquetas del CTP).
-   */
-  async function doPrintLabelsCtp(lineas: LothEntry[], ventana: Window | null) {
-    if (!ventana) {
-      setError("El navegador bloqueó la ventana de impresión. Permite ventanas emergentes para este sitio.");
-      return;
-    }
-    setPrintingLabelsCtp(true);
-    setError(null);
-    try {
-      const count = await imprimirEtiquetasTrozasLoth(lineas, {
-        origin: window.location.origin,
-        tituloHabilitante: caratula?.tituloHabilitante ?? null,
-        planNumber: permiso.plan?.planNumber ?? planNumeroActivo,
-        ventana,
-      });
-      if (count === 0) {
-        setError("Ninguna de estas líneas tiene código de troza o de árbol todavía.");
-        ventana.close();
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-      try { ventana.close(); } catch { /* ya cerrada */ }
-    } finally {
-      setPrintingLabelsCtp(false);
-    }
-  }
-
-  /** Abre la ventana en el clic (sincrónico) y recién ahí arma la hoja. */
-  function alImprimirEtiquetasCtp(lineas: LothEntry[]) {
-    const ventana = window.open("", "_blank", "width=980,height=760");
-    ventana?.document.write(
-      '<!doctype html><meta charset="utf-8"><title>Generando etiquetas…</title><p style="font:16px system-ui;padding:24px">Generando etiquetas…</p>',
-    );
-    void doPrintLabelsCtp(lineas, ventana);
-  }
+  /** «Etiquetas QR» (cualquier sección) e «Imprimir etiquetas» (Trozado): la misma etiqueta (QR5). */
+  const etiquetas = useEtiquetasLibroLoth({
+    tituloHabilitante: caratula?.tituloHabilitante ?? null,
+    planNumber: permiso.plan?.planNumber ?? planNumeroActivo,
+    planes: permiso.planes,
+    setError,
+  });
 
   /* El PDF y el Excel salen del permiso elegido desde CUALQUIER vista: el
      selector ahora vive en la banda (02-10-2026) y se ve en todas. */
@@ -990,6 +936,9 @@ export default function LothLibroOperaciones() {
 
   /** Lo que se hace de vez en cuando en una sección: plegado en «Opciones». */
   const opcionesSeccion: LibroAction[] = [
+    ...(section === "despacho_troza"
+      ? [{ id: "escanear-camion", label: "Escanear lo que sube al camión", hint: "Escaneas cada troza que sube y armas la guía con esa lista", icon: ScanBarcode, onSelect: () => setEscaneoCamion(true) }]
+      : []),
     ...(section === "trozado"
       ? [
           {
@@ -1020,9 +969,9 @@ export default function LothLibroOperaciones() {
       label: "Etiquetas QR",
       hint: "Imprime el QR de origen de cada código en pantalla",
       icon: QrCode,
-      busy: printingLabels,
+      busy: etiquetas.imprimiendoEtiquetas,
       disabled: visibles.length === 0,
-      onSelect: () => void doPrintLabels(visibles),
+      onSelect: () => etiquetas.imprimirEtiquetas(visibles),
     },
     {
       id: "csv",
@@ -1184,8 +1133,8 @@ export default function LothLibroOperaciones() {
               entries={allEntries}
               caratula={caratula}
               reloadSignal={reloadSignal}
-              onDespacharConGuia={(codigos) => {
-                setDespachoElegidas(codigos);
+              onDespacharConGuia={(codigos, planes) => {
+                setDespachoElegidas({ codigos, planes });
                 setShowDespachoGuia(true);
               }}
               nav={{
@@ -1344,8 +1293,8 @@ export default function LothLibroOperaciones() {
       {trozasParaImprimir.length > 0 && (
         <LothEtiquetasRecienTrozadas
           trozas={trozasParaImprimir}
-          imprimiendo={printingLabelsCtp}
-          onImprimir={() => alImprimirEtiquetasCtp(trozasParaImprimir)}
+          imprimiendo={etiquetas.imprimiendoTrozado}
+          onImprimir={() => etiquetas.imprimirEtiquetasTrozado(trozasParaImprimir)}
           onCerrar={() => setTrozasParaImprimir([])}
         />
       )}
@@ -1358,8 +1307,8 @@ export default function LothLibroOperaciones() {
           </span>
           <button
             type="button"
-            onClick={() => doPrintLabels(seleccionadas)}
-            disabled={printingLabels}
+            onClick={() => etiquetas.imprimirEtiquetas(seleccionadas)}
+            disabled={etiquetas.imprimiendoEtiquetas}
             className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
           >
             <QrCode className="h-4 w-4" /> Etiquetas QR
@@ -1367,8 +1316,8 @@ export default function LothLibroOperaciones() {
           {section === "trozado" && (
             <button
               type="button"
-              onClick={() => alImprimirEtiquetasCtp(seleccionadas)}
-              disabled={printingLabelsCtp}
+              onClick={() => etiquetas.imprimirEtiquetasTrozado(seleccionadas)}
+              disabled={etiquetas.imprimiendoTrozado}
               title="La ficha del QR se lee con la misma pistola que recibe trozas en el Libro CTP"
               className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-ink)] hover:bg-[var(--accent)]/12 disabled:opacity-50 dark:text-[var(--accent)]"
             >
@@ -1422,6 +1371,8 @@ export default function LothLibroOperaciones() {
           guias={despachoGuias.guias}
           guiasError={despachoGuias.error}
           hayCtp={hayLibroCtp}
+          planes={permiso.planes}
+          caratula={caratula}
           onDetalle={(e) => setDetalle(e)}
           onVerGuia={verGuia}
         />
@@ -1571,6 +1522,16 @@ export default function LothLibroOperaciones() {
         />
       )}
 
+      {escaneoCamion && (
+        <LothDespachoEscaneo
+          onCerrar={() => setEscaneoCamion(false)}
+          onArmarGuia={(codigos, planes) => {
+            setEscaneoCamion(false);
+            setDespachoElegidas({ codigos, planes });
+            setShowDespachoGuia(true);
+          }}
+        />
+      )}
       {showDespachoGuia && (
         <LothDespachoGuiaModal
           trozasIniciales={despachoElegidas ?? undefined}
@@ -1697,7 +1658,7 @@ export default function LothLibroOperaciones() {
         corregidaPorLineNo={detalle ? (correcciones.corregidaPor.get(detalle.lineNo) ?? null) : null}
         onClose={() => setDetalle(null)}
         onVerCadena={(code) => setCadenaCode(code)}
-        onImprimirEtiqueta={(linea) => alImprimirEtiquetasCtp([linea])}
+        onImprimirEtiqueta={(linea) => etiquetas.imprimirEtiquetasTrozado([linea])}
         despacho={{ guias: despachoGuias.guias, hayCtp: hayLibroCtp, onVerGuia: verGuia }}
       />
 

@@ -13,6 +13,8 @@
 import { esc, idRow, openCtpReport } from "./ctp-print-shared";
 import { buildEudrMapFigure, eudrMapFigureCss, eudrSignatureBlock } from "./eudr-map-figure";
 import type { TraceOperation } from "./loth-trace";
+import { urlVerificarTroza } from "@/lib/tenant-url-publica";
+import { obtenerBaseVerificacion } from "@/lib/base-verificacion-cliente";
 
 export interface PasaporteCaratula {
   titularName?: string | null;
@@ -55,8 +57,9 @@ const plural = (n: number, sing: string, plur: string) => `${n} ${n === 1 ? sing
 export async function qrDe(code: string): Promise<string | null> {
   try {
     const QR = (await import("qrcode")).default;
-    const origin = typeof window === "undefined" ? "" : window.location.origin;
-    return await QR.toDataURL(`${origin}/verificar/${encodeURIComponent(code)}`, { margin: 1, width: 132, errorCorrectionLevel: "M" });
+    // La base pública del negocio (no el host del navegador): sin ella, sin QR.
+    const base = await obtenerBaseVerificacion();
+    return await QR.toDataURL(urlVerificarTroza(base, { codigo: code }), { margin: 1, width: 132, errorCorrectionLevel: "M" });
   } catch (err) {
     // Sin QR el pasaporte sigue siendo válido: es un atajo, no el documento.
     console.warn("[pasaporte] no se pudo generar el QR", err);

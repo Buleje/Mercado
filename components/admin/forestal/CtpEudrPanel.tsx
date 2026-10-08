@@ -22,6 +22,7 @@ const GeolocationPickerModal = dynamic(() => import("@/components/marketplace/Ge
 import { csrfHeaders } from "@/lib/csrf-client";
 import { buildDdsHtml, imprimirDds, type DdsEmisor } from "@/lib/forestal/eudr-print";
 import { construirExpedienteEudr, nombreExpediente } from "@/lib/forestal/eudr-expediente";
+import { obtenerBaseVerificacion } from "@/lib/base-verificacion-cliente";
 import { origenGeolocalizado, computeCtpEudrReadiness, buildOriginsGeoJson, type DdsData, type OrigenGeo } from "@/lib/forestal/eudr-types";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 import type { CtpIngresosFiltroRapido } from "./ctp-shared";
@@ -140,7 +141,7 @@ export default function CtpEudrPanel({
       // jszip pesa: se carga sólo cuando alguien pide el expediente.
       const { default: JSZip } = await import("jszip");
       const zip = new JSZip();
-      for (const f of construirExpedienteEudr(dds, emisor, { ddsHtml: buildDdsHtml(dds, emisor), baseUrl: window.location.origin })) {
+      for (const f of construirExpedienteEudr(dds, emisor, { ddsHtml: buildDdsHtml(dds, emisor), baseUrl: await obtenerBaseVerificacion() })) {
         zip.file(f.nombre, f.contenido);
       }
       const blob = await zip.generateAsync({ type: "blob" });

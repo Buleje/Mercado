@@ -21,6 +21,8 @@ vi.mock("@/hooks/use-enabled-specs", () => ({
   }),
 }));
 vi.mock("qrcode", () => ({ default: { toDataURL: async () => "data:image/png;base64,QR" } }));
+// El QR sale con la base pública del negocio (servidor), no con el host del navegador.
+vi.mock("@/lib/base-verificacion-cliente", () => ({ obtenerBaseVerificacion: async () => "https://bodega.pe" }));
 
 // Al registro real se le suman piezas «malas» para probar las barreras.
 vi.mock("@/extensiones/registro.cliente", async (real) => {

@@ -14,6 +14,8 @@
  */
 
 import { CSS_CERTIFICADO_TRAZABILIDAD } from "@/lib/forestal/ctp-certificado-css";
+import { urlVerificarDespacho } from "@/lib/tenant-url-publica";
+import { obtenerBaseVerificacion } from "@/lib/base-verificacion-cliente";
 
 const esc = (v: unknown) =>
   String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -65,7 +67,8 @@ export async function printCertificadoTrazabilidad(
   // QR → /verificar/despacho/[id]: el receptor escanea y contrasta la cadena
   // EN VIVO contra el libro, sin confiar en el papel (mismo patrón que las
   // etiquetas de trozas). QR real vía `qrcode`, como loth-labels.
-  const verifyUrl = `${window.location.origin}/verificar/despacho/${encodeURIComponent(despacho.id)}`;
+  // Base pública del negocio (servidor), nunca el host del navegador: el QR lo abre otro celular.
+  const verifyUrl = urlVerificarDespacho(await obtenerBaseVerificacion(), despacho.id);
   const QR = (await import("qrcode")).default;
   const qrDataUrl = await QR.toDataURL(verifyUrl, { margin: 1, width: 180, errorCorrectionLevel: "M" });
 

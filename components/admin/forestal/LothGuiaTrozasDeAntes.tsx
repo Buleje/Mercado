@@ -13,21 +13,42 @@
  *      hook corre antes que éste en el mismo pase, así que lo que se elige acá
  *      queda encima de su `setElegidas(new Set())`.
  * Lo que el servidor ya no ofrece (salió, se consumió) se avisa, no se calla.
+ *
+ * El mismo código puede estar en dos permisos (el QR por línea existe por eso):
+ * si quien abre ya sabe de qué permiso son —el escaneo lo fijó con la primera
+ * troza, el Control con su selección—, el código en OTRO permiso es otra
+ * troza y no cuenta (si no, salía «son de 2 permisos» con un solo permiso).
  */
 
 import { useEffect, useRef, useState } from "react";
 import { AlertTriangle } from "@buleje/design-system/icons";
 import type { DespachoGuiaLoth } from "./hooks/use-despacho-guia-loth";
 
-export function useTrozasDeAntes(g: DespachoGuiaLoth, codigos: readonly string[] | undefined): string | null {
+/** Lo que llega elegido. `planes` ausente = no se sabe de qué permiso son. */
+export interface TrozasIniciales {
+  codigos: readonly string[];
+  planes?: readonly (string | null)[];
+}
+
+/** Las pedidas que el servidor todavía ofrece, sólo de los permisos de lo elegido (si se saben). */
+export function trozasPedidas<T extends { codigo: string; planId?: string | null }>(
+  trozas: readonly T[],
+  pedido: TrozasIniciales,
+): T[] {
+  const codigos = new Set(pedido.codigos);
+  const planes = pedido.planes ? new Set(pedido.planes) : null;
+  return trozas.filter((t) => codigos.has(t.codigo) && (!planes || planes.has(t.planId ?? null)));
+}
+
+export function useTrozasDeAntes(g: DespachoGuiaLoth, pedido: TrozasIniciales | undefined): string | null {
   const hecho = useRef(false);
   const [aviso, setAviso] = useState<string | null>(null);
   const { prep, planId, identidad, talonario, setPlanId, setElegidas } = g;
 
   useEffect(() => {
-    if (hecho.current || !codigos || codigos.length === 0 || !prep) return;
-    const pedidas = new Set(codigos);
-    const halladas = prep.trozas.filter((t) => pedidas.has(t.codigo));
+    if (hecho.current || !pedido || pedido.codigos.length === 0 || !prep) return;
+    const { codigos } = pedido;
+    const halladas = trozasPedidas(prep.trozas, pedido);
     const planes = [...new Set(halladas.map((t) => t.planId ?? null))];
     if (halladas.length === 0 || planes.length !== 1) {
       hecho.current = true;
@@ -48,7 +69,7 @@ export function useTrozasDeAntes(g: DespachoGuiaLoth, codigos: readonly string[]
     setElegidas(new Set(halladas.map((t) => t.codigo)));
     const faltan = codigos.length - halladas.length;
     if (faltan > 0) setAviso(`${faltan} de las ${codigos.length} trozas que elegiste ya no están para despachar.`);
-  }, [codigos, prep, planId, identidad, talonario, setPlanId, setElegidas]);
+  }, [pedido, prep, planId, identidad, talonario, setPlanId, setElegidas]);
 
   return aviso;
 }

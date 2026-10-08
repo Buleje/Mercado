@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { headers } from "next/headers";
+import { tenantIdPublico } from "@/lib/resolve-tenant";
 import { ForestLoteDB } from "@/lib/db/forest-lote.db";
 
 /**
@@ -43,7 +44,8 @@ export default function VerificarLotePage({ params }: { params: Promise<{ id: st
 async function LoteContenido({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const h = await headers();
-  const tenantId = h.get("x-tenant-id");
+  // Slug / dominio propio / `/t/<slug>` → el id real (las DB classes filtran por CUID).
+  const tenantId = await tenantIdPublico(h.get("x-tenant-id"));
   const data = tenantId ? await ForestLoteDB.verificacionPublica(tenantId, decodeURIComponent(id)).catch(() => null) : null;
   const unitLabel = data?.lote.unit ? (UNIT_LABELS[data.lote.unit] ?? data.lote.unit) : "";
 

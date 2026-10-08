@@ -2925,7 +2925,7 @@ export class ForestLothDB {
    * árbol (85-TOR) o de troza (85-TOR-A), reconstruye toda la cadena del árbol +
    * el plan/título que lo autoriza. Solo info de origen legal (sin costos/precios).
    */
-  static async traceByCode(tenantId: string, code: string) {
+  static async traceByCode(tenantId: string, code: string, opts: { planId?: string | null } = {}) {
     if (!tenantId) throw new Error("tenantId is required");
     const norm = code.trim();
     if (!norm) return null;
@@ -2937,6 +2937,9 @@ export class ForestLothDB {
     const entries = await prisma.forestLothEntry.findMany({
       where: {
         tenantId, deletedAt: null, status: "registrado",
+        // El QR con el id de la línea (`/verificar/troza/<id>`) sabe su permiso:
+        // el mismo código en otro permiso es OTRA troza y no entra en la cadena.
+        ...(opts.planId ? { planId: opts.planId } : {}),
         OR: [
           { treeCode: { in: [...raices, norm] } },
           { trozaCode: { in: [...raices, norm] } },
@@ -2978,6 +2981,27 @@ export class ForestLothDB {
         quantity: e.quantity ? Number(e.quantity) : null, unit: e.unit, gtfNumber: e.gtfNumber,
       })),
     };
+  }
+
+  /**
+   * Trazabilidad por el QR nuevo (`/verificar/troza/<id>?c=<código>`, 08-10):
+   * la línea dice su código ACTUAL y su permiso —aunque esté anulada o borrada:
+   * deshacer una importación y volver a hacerla cambia los ids, no el código—
+   * y la cadena se arma sólo con ese permiso (el mismo código en otro permiso
+   * es otra troza). Sin línea (id de otro negocio o inventado) queda el código
+   * del QR, como el QR viejo.
+   */
+  static async traceByLinea(tenantId: string, lineaId: string, codigoDelQr?: string | null) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const linea = lineaId
+      ? await prisma.forestLothEntry.findFirst({
+          where: { tenantId, id: lineaId },
+          select: { trozaCode: true, treeCode: true, planId: true },
+        })
+      : null;
+    const code = linea?.trozaCode?.trim() || linea?.treeCode?.trim() || codigoDelQr?.trim() || "";
+    if (!code) return null;
+    return ForestLothDB.traceByCode(tenantId, code, linea ? { planId: linea.planId } : {});
   }
 
   // ─── Carátula ────────────────────────────────────────────────────────

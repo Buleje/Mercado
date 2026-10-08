@@ -9,7 +9,10 @@
  *   · el QR chico de la etiqueta: `https://<host>/admin/q/<trozaId>`;
  *   · el QR chico de la etiqueta del LIBRO TH (ADR-450 R3):
  *     `https://<host>/verificar/<código de troza>` — el código, no un id: al
- *     recibir la guía la troza todavía no existe en el CTP;
+ *     recibir la guía la troza todavía no existe en el CTP. Desde el 08-10
+ *     `…/verificar/troza/<id de la línea>?c=<código>`: el código sigue viajando
+ *     (`?c=`, lo que vale sin internet) y el id de la línea va en `linea`
+ *     para quien tenga las líneas del libro. La base puede llevar `/t/<slug>`;
  *   · el QR grande, con la ficha en texto (`TROZA 118\nEspecie: …`,
  *     `ficha-texto-troza.ts`): vale su primera línea, el código;
  *   · el QR viejo: `…/admin?tab=…&vista=trozas&troza=<trozaId>`;
@@ -27,7 +30,13 @@ import { codigoDeFichaTexto, esFichaDeTroza, esLineaDeFicha } from "./ficha-text
 
 export { esFichaDeTroza, esLineaDeFicha };
 
-export type LecturaEscaneo = { tipo: "id"; id: string } | { tipo: "codigo"; codigo: string };
+export type LecturaEscaneo =
+  | { tipo: "id"; id: string }
+  /** `linea`: el id de la línea del Libro TH, cuando el QR lo trae (no se repite entre permisos). */
+  | { tipo: "codigo"; codigo: string; linea?: string };
+
+/** La ruta de verificación, con o sin el prefijo `/t/<slug>` de la base pública. */
+const RUTA_VERIFICAR = /^(?:\/t\/[^/]+)?\/verificar\/(.+)$/;
 
 /** Lo mínimo que hace falta de una troza para reconocerla por su código. */
 export interface TrozaEscaneable {
@@ -69,7 +78,8 @@ export function leerEscaneo(texto: string | null | undefined): LecturaEscaneo | 
      daba «ninguna troza con el código TROZA — ESPECIE: …». */
   if (esFichaDeTroza(crudo)) return null;
 
-  const esDireccion = /^[a-z][a-z0-9+.-]*:\/\//i.test(crudo) || crudo.startsWith("/admin") || crudo.startsWith("/verificar/");
+  const esDireccion =
+    /^[a-z][a-z0-9+.-]*:\/\//i.test(crudo) || crudo.startsWith("/admin") || crudo.startsWith("/verificar/") || crudo.startsWith("/t/");
   if (esDireccion) {
     let url: URL;
     try {
@@ -78,8 +88,21 @@ export function leerEscaneo(texto: string | null | undefined): LecturaEscaneo | 
       return null;
     }
     /* ADR-450 R3: el QR chico del Libro TH lleva el CÓDIGO de la troza.
-       `/verificar/lote/…` y `/verificar/despacho/…` son de otra cosa. */
-    const delTh = /^\/verificar\/([^/?#]+)\/?$/.exec(url.pathname);
+       `/verificar/lote/…`, `/despacho/…` y `/guia/…` son de otra cosa. */
+    const ruta = RUTA_VERIFICAR.exec(url.pathname)?.[1] ?? "";
+    const porLinea = /^troza\/([^/?#]+)\/?$/.exec(ruta);
+    if (porLinea?.[1]) {
+      const codigo = (url.searchParams.get("c") ?? "").trim();
+      if (!codigo) return null;
+      let linea: string;
+      try {
+        linea = decodeURIComponent(porLinea[1]);
+      } catch {
+        return null;
+      }
+      return { tipo: "codigo", codigo: codigo.replace(/\s+/g, " ").toUpperCase(), linea };
+    }
+    const delTh = /^([^/?#]+)\/?$/.exec(ruta);
     if (delTh?.[1]) {
       let codigo: string;
       try {
@@ -87,7 +110,7 @@ export function leerEscaneo(texto: string | null | undefined): LecturaEscaneo | 
       } catch {
         return null;
       }
-      if (!codigo || /^(lote|despacho)$/i.test(codigo)) return null;
+      if (!codigo || /^(lote|despacho|guia|troza)$/i.test(codigo)) return null;
       return { tipo: "codigo", codigo: codigo.replace(/\s+/g, " ").toUpperCase() };
     }
     const corta = /\/admin\/q\/([^/?#]+)/.exec(url.pathname);
@@ -121,6 +144,12 @@ export function buscarTrozaEscaneada<T extends TrozaEscaneable>(
   if (lectura.tipo === "id") {
     const t = trozas.find((x) => x.id === lectura.id);
     return t ? { estado: "una", troza: t } : { estado: "ninguna" };
+  }
+  /* El QR por línea del Libro TH: si la lista es de líneas del libro (el
+     despacho escaneando), el id decide aunque el código esté dos veces. */
+  if (lectura.linea) {
+    const t = trozas.find((x) => x.id === lectura.linea);
+    if (t) return { estado: "una", troza: t };
   }
 
   const clave = claveDeCodigo(lectura.codigo);

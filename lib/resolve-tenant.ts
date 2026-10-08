@@ -100,6 +100,23 @@ export async function resolveTenantSlugToId(slugOrId: string): Promise<string> {
 }
 
 /**
+ * tenantIdPublico — el id REAL del negocio para las páginas públicas sin
+ * sesión (`/verificar/**`, `/verificar-cacao/**`), a partir del `x-tenant-id`
+ * que puso el proxy: slug del subdominio, `custom--<dominio>`, el slug de
+ * `/t/<slug>/…` o el negocio por defecto. Las DB classes filtran por el CUID:
+ * con el slug crudo, ningún QR de un negocio ≠ el principal se encontraba
+ * (medido 08-10, contrato K4 (d)). `null` = dominio propio desconocido o sin
+ * cabecera: la página dice «no encontrado», nunca cae en otro negocio.
+ */
+export async function tenantIdPublico(rawXTenantId: string | null): Promise<string | null> {
+  const crudo = (rawXTenantId ?? "").trim();
+  if (!crudo) return null;
+  const slug = await resolveTenantSlug(crudo);
+  if (!slug) return null;
+  return (await resolveTenantSlugToId(slug)) || null;
+}
+
+/**
  * resolveTenantIdForRoute — resolución segura de tenantId para route handlers
  * que sirven tanto a admin (autenticado) como anónimos (storefront público).
  *

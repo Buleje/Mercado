@@ -94,7 +94,7 @@ export default function LothTableroTrozas({
   /** Sube tras cada escritura del libro: vuelve a leer planes y saldo. */
   reloadSignal?: number;
   /** Abre «Despachar con guía» con estas trozas ya elegidas. */
-  onDespacharConGuia?: (codigos: string[]) => void;
+  onDespacharConGuia?: (codigos: string[], planes: (string | null)[]) => void;
   /**
    * Lo que va entre la cabecera y «Estado de las trozas»: la ficha del permiso,
    * el saldo por especie y el cuadre por guía. El tablero no sabe qué es; le
@@ -288,7 +288,7 @@ export default function LothTableroTrozas({
                 ocultas={t.ocultasElegidas}
                 planes={planesDe(t.seleccion).length}
                 imprimiendo={acc.imprimiendo}
-                onDespachar={onDespacharConGuia ? () => onDespacharConGuia(t.seleccion.map((f) => f.code)) : undefined}
+                onDespachar={onDespacharConGuia ? () => onDespacharConGuia(t.seleccion.map((f) => f.code), planesDe(t.seleccion)) : undefined}
                 onImprimir={acc.imprimirEtiquetas}
                 onExportar={() => void acc.exportarSeleccion()}
                 onQuitar={t.limpiarSeleccion}

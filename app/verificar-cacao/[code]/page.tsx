@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { headers } from "next/headers";
+import { tenantIdPublico } from "@/lib/resolve-tenant";
 import { CacaoDB } from "@/lib/db/cacao.db";
 import { GRADO_LABEL, type CacaoGrado } from "@/lib/cacao/cacao-quality";
 
@@ -42,7 +43,8 @@ export default async function VerificarCacaoPage({ params }: { params: Promise<{
 
 async function TraceBody({ code }: { code: string }) {
   const h = await headers();
-  const tenantId = h.get("x-tenant-id");
+  // Slug / dominio propio / `/t/<slug>` → el id real (las DB classes filtran por CUID).
+  const tenantId = await tenantIdPublico(h.get("x-tenant-id"));
   const t = tenantId ? await CacaoDB.traceByCode(tenantId, code).catch(() => null) : null;
 
   if (!t) {

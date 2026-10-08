@@ -4,7 +4,6 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { ForestLothDB } from "@/lib/db/forest-loth.db";
 import { ForestLothDespachoDB } from "@/lib/db/forest-loth-despacho.db";
 import { buildLothWorkbook } from "@/lib/forestal/loth-export";
-import { codigosDespachados, conTrozado, type TrozadoCandidato } from "@/lib/forestal/loth-despacho-medidas";
 import { leerLibroEntero } from "@/lib/forestal/loth-libro-entero";
 import { encabezadoDelPermiso, nombreArchivoLibro } from "@/lib/forestal/loth-filtro-permiso";
 import { permisoDelPedido } from "@/lib/forestal/loth-permiso-pedido";
@@ -30,28 +29,6 @@ import { withApiHandler } from "@/lib/api-handler";
  * medidas (especie, Ø, largo, m³) son las de SU trozado, pegadas con
  * `conTrozado` —la misma elección que la lista y el impreso—.
  */
-
-/**
- * Códigos por consulta de trozados. `ForestLothDespachoDB.trozadosDeCodigos`
- * corta en 2000 (su `TOPE_CODIGOS`, pensado para una página de 500 de la
- * lista); el Excel lleva el libro ENTERO (hasta 40 × 500 líneas) y lo que
- * pasara del tope saldría sin especie, medidas ni m³, sumando 0 en el
- * Resumen. Por eso se pide de a tandas. Tiene que ser ≤ ese tope.
- */
-const TANDA_CODIGOS = 2000;
-
-async function despachosConTrozado<T extends { section: string; planId: string | null; trozaCode: string | null }>(
-  tenantId: string,
-  entries: readonly T[],
-) {
-  const codigos = codigosDespachados(entries);
-  let candidatos: TrozadoCandidato[] = [];
-  for (let i = 0; i < codigos.length; i += TANDA_CODIGOS) {
-    const tanda = await ForestLothDespachoDB.trozadosDeCodigos(tenantId, codigos.slice(i, i + TANDA_CODIGOS));
-    candidatos = candidatos.concat(tanda);
-  }
-  return conTrozado(entries, candidatos);
-}
 
 export const GET = withApiHandler("forestal-loth-export-get", async (req: NextRequest) => {
   const auth = await requireAdmin(req, ["admin", "almacenero", "owner"]);
@@ -80,7 +57,8 @@ export const GET = withApiHandler("forestal-loth-export-get", async (req: NextRe
     }
     const generatedAtISO = new Date().toISOString();
     const encabezado = encabezadoDelPermiso(permiso.filtro, permiso.plan);
-    const entries = await despachosConTrozado(auth.tenantId, libro.entries);
+    // El libro ENTERO (hasta 40 × 500 líneas): las tandas las hace `trozadosDeCodigos`.
+    const entries = await ForestLothDespachoDB.conTrozado(auth.tenantId, libro.entries);
     const buffer = await buildLothWorkbook({
       caratula: caratula as Record<string, unknown> | null,
       entries: entries as unknown as Record<string, unknown>[],
