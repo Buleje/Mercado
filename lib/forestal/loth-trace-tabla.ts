@@ -22,6 +22,7 @@ import type { ArbolFicha, ArbolFlag } from "./loth-arbol";
 import { FLAG_LABEL, FLAG_TONE } from "./loth-arbol";
 import type { TraceOperation } from "./loth-trace";
 import type { VeredictoMerma } from "./loth-trace-umbrales";
+import { textoDestino, type DestinoArbol } from "./loth-trace-aserradero";
 
 export interface TraceFila {
   tree: string;
@@ -63,6 +64,12 @@ export interface TraceFila {
   motivos: string[];
   /** El peor nivel entre ambas fuentes. */
   nivel: "error" | "warn" | null;
+  /**
+   * Qué pasó con sus trozas en el Libro CTP (L13, por el enlace de ADR-450).
+   * `undefined` = todavía no se sabe (cargando, error o sin Libro CTP): no es
+   * «sin enlace». Lo pone la vista después de `construirFilasTrace`.
+   */
+  aserradero?: DestinoArbol;
 }
 
 export const movilizadoDe = (op: TraceOperation): number => {
@@ -186,7 +193,7 @@ export function filasToCsv(filas: TraceFila[]): string {
     "Censo m³", "DAP cm", "DMC cm", "Talado m³", "Precisión censo %",
     "Trozado m³", "Rendimiento %", "Merma m³", "Merma %", "Veredicto merma",
     "Movilizado m³", "En patio m³", "Etapas", "Días tala→salida", "Días parado", "Líneas fuera de plazo",
-    "GTFs", "Observaciones",
+    "GTFs", "Observaciones", "En el aserradero",
   ];
   const rows = filas.map((f) => [
     f.tree, f.especie ?? "", f.cites ? "Sí" : "No", f.enPie ? "En pie" : (f.op?.chain ?? ""),
@@ -196,7 +203,7 @@ export function filasToCsv(filas: TraceFila[]): string {
     f.mermaM3?.toFixed(4) ?? "", f.mermaPct?.toFixed(1) ?? "", f.mermaVeredicto ?? "",
     f.movilizadoM3 > 0 ? f.movilizadoM3.toFixed(4) : "", f.patioM3 > 0 ? f.patioM3.toFixed(4) : "",
     f.op ? `${f.etapas}/6` : "", f.diasTalaSalida ?? "", f.diasParado ?? "", f.tardias,
-    f.gtfs.join(" | "), f.motivos.join(" | "),
+    f.gtfs.join(" | "), f.motivos.join(" | "), textoDestino(f.aserradero),
   ]);
   return [header, ...rows].map((r) => r.map(esc).join(",")).join("\n");
 }

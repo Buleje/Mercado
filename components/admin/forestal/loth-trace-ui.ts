@@ -219,3 +219,14 @@ export function etapasDe(op: TraceOperation) {
     { n: 6, label: "Desp. PT", rows: op.despachoPT, fecha: op.etapaFechas[5] },
   ];
 }
+
+/**
+ * El chip del estado de una pieza en el Libro CTP («En el aserradero», L13),
+ * por el `tono` de `ESTADO_META` del patio: el mismo estado, el mismo color.
+ */
+export const CHIP_TONO_CTP: Record<"ok" | "info" | "warn" | "muted", string> = {
+  ok: "bg-[var(--data-success-500)]/15 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
+  info: "bg-[var(--data-info-500)]/15 text-[var(--data-info-700)] dark:text-[var(--data-info-500)]",
+  warn: "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]",
+  muted: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
+};

@@ -21,12 +21,13 @@ import {
 import { ForestLothPoaDB } from "@/lib/db/forest-loth-poa.db";
 import { defaultPoaConfig } from "@/lib/forestal/loth-poa";
 import { lineasDelPlan as lineasDelPlanFn } from "@/lib/forestal/loth-analitica-plan";
-import { ESTADOS_SIN_INGRESO } from "@/lib/db/gtf-numero.db";
+import { WoodEntriesDB } from "@/lib/db/wood-entries.db";
 import {
   PLAN_ID_SIN_PLAN, SECCIONES_EXTRACCION, TOPE_ARBOLES, TOPE_LINEAS,
-  armarExtraccion, diaUtc, permisoDelPlan,
+  armarExtraccion, diaUtc, permisoDelPlan, recepcionesDePiezas,
   type PlanDeExtraccion,
 } from "@/lib/forestal/loth-extraccion";
+import { piezaDeFilaCtp } from "@/lib/forestal/loth-trace-aserradero";
 import type { ExtraccionFiltro, ExtraccionResponse } from "@/lib/forestal/loth-extraccion-tipos";
 import { planDeUpsert, type ItemAutorizar } from "@/lib/forestal/loth-autorizar-lote";
 import { findSpeciesByCommonName } from "@/data/forestry-species";
@@ -1085,12 +1086,20 @@ export class ForestPlanDB {
     return r.count;
   }
 
-  static async softDeleteTree(tenantId: string, id: string) {
+  static async softDeleteTree(tenantId: string, id: string, actor = "sistema") {
     const row = await prisma.forestCensusTree.update({
       where: { id, tenantId } satisfies Prisma.ForestCensusTreeWhereUniqueInput,
       data: { deletedAt: new Date() },
     });
     try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+    auditCtp({
+      tenantId,
+      action: "ctp_plan_censo_baja",
+      entity: "ForestPlan",
+      entityId: row.planId ?? id,
+      detail: `Borró (soft-delete) 1 árbol del censo: ${row.treeCode ?? id}.`,
+      user: actor,
+    });
     return row;
   }
 
@@ -1104,6 +1113,7 @@ export class ForestPlanDB {
     tenantId: string,
     planId: string,
     sel: { ids?: string[]; todos?: boolean },
+    actor = "sistema",
   ) {
     if (!tenantId) throw new Error("tenantId is required");
     if (!planId) throw new Error("planId is required");
@@ -1118,6 +1128,17 @@ export class ForestPlanDB {
     ]);
     if (r.count > 0) {
       try { invalidateByPrefix(`${CACHE_PREFIX}:${tenantId}`); } catch {}
+      auditCtp({
+        tenantId,
+        action: "ctp_plan_censo_baja",
+        entity: "ForestPlan",
+        entityId: planId,
+        detail:
+          `Borró (soft-delete) ${r.count} árbol(es) del censo del plan ${planId}` +
+          (sel.todos ? " con «borrar todos»" : ` (elegidos: ${sel.ids?.length ?? 0})`) +
+          (taladosConservados > 0 ? `; ${taladosConservados} talado(s) se conservaron.` : "."),
+        user: actor,
+      });
     }
     return { borrados: r.count, taladosConservados };
   }
@@ -1397,22 +1418,10 @@ export class ForestPlanDB {
         where: { tenantId, deletedAt: null },
         select: { id: true, codigo: true, codigoNorm: true, planId: true },
       }),
-      // Recibida en planta (ADR-450): la troza guarda su línea de Trozado; ingreso vivo, no anulado ni rechazado.
-      prisma.woodEntryTroza.findMany({
-        where: {
-          tenantId,
-          lothTrozadoId: { not: null },
-          noRecepcionada: false,
-          entry: { tenantId, deletedAt: null, status: { notIn: [...ESTADOS_SIN_INGRESO] } },
-        },
-        select: {
-          lothTrozadoId: true,
-          volumenM3: true,
-          consumidaEn: { select: { tenantId: true, deletedAt: true, status: true } },
-          entry: { select: { fechaRecepcion: true, entryDate: true } },
-        },
-        take: TOPE_LINEAS + 1,
-      }),
+      /* Recibida en planta (ADR-450): las piezas que guardan su línea de
+         Trozado, con la MISMA lectura y regla que «Por árbol» (L13): la guía en
+         la bandeja, el descarte y la madre partida no son «recibida». */
+      WoodEntriesDB.trozasConEnlaceTh(tenantId, TOPE_LINEAS + 1),
     ]);
 
     const truncado = arbolesRaw.length > TOPE_ARBOLES || lineasRaw.length > TOPE_LINEAS || trozasCtp.length > TOPE_LINEAS;
@@ -1497,16 +1506,11 @@ export class ForestPlanDB {
         condicion: a.condicion,
       })),
       lineas: lineasLeidas.map((l) => ({ ...l, volumeM3: num(l.volumeM3), quantity: num(l.quantity) })),
-      recepciones: trozasCtp.flatMap((t) =>
-        t.lothTrozadoId
-          ? [{
-              lothTrozadoId: t.lothTrozadoId,
-              volumenM3: num(t.volumenM3),
-              aserrada: !!t.consumidaEn && t.consumidaEn.tenantId === tenantId && t.consumidaEn.deletedAt == null && t.consumidaEn.status !== "anulado",
-              // Fecha date-only: el día UTC, como el resto del libro.
-              dia: (t.entry?.fechaRecepcion ?? t.entry?.entryDate ?? null)?.toISOString().slice(0, 10) ?? null,
-            }]
-          : [],
+      recepciones: recepcionesDePiezas(
+        trozasCtp.flatMap((t) => {
+          const p = piezaDeFilaCtp(tenantId, t);
+          return p ? [p] : [];
+        }),
       ),
       desde: f.desde ?? null,
       hasta: f.hasta ?? null,

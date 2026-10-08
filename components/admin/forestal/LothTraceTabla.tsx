@@ -30,13 +30,14 @@ import { fmtPct, type TraceOrden } from "./loth-trace-ui";
 import type { FiltrosTabla } from "./filtros-tabla-forestal";
 import { CAJA_TABLA, FilaPie, TABLA_PIE_FIJO } from "./loth-seccion-celdas";
 import { ColumnasRecordadas, soloEnOrden, useOrdenRecordado } from "./loth-seccion-columnas";
-import { COLUMNAS, EN_PATIO, HEAD, cabeceras, Fila } from "./loth-trace-celdas";
+import { COLUMNAS, EN_PATIO, HEAD, OCULTAS_DE_FABRICA, cabeceras, Fila } from "./loth-trace-celdas";
+import type { EstadoAserradero } from "./hooks/use-loth-trace-aserradero";
 import { GRUPO_META } from "./LothTraceGrupo";
 
 const TOTAL = "whitespace-nowrap font-mono text-base font-black tabular-nums text-[var(--text-primary)]";
 
 const DE_FABRICA: string[] = COLUMNAS.map((c) => c.key);
-const ELEGIBLES = COLUMNAS.map((c) => ({ id: c.key, label: HEAD[c.key] }));
+const ELEGIBLES = COLUMNAS.map((c) => ({ id: c.key, label: HEAD[c.key], ocultaPorDefecto: OCULTAS_DE_FABRICA.has(c.key) }));
 const NUMERICAS = new Set<string>(COLUMNAS.filter((c) => c.num).map((c) => c.key));
 
 /** Las columnas elegidas de «Por árbol», recordadas en este navegador. Envuelve la cabecera de la lista y la tabla. */
@@ -65,6 +66,7 @@ export default function LothTraceTabla({
   orden,
   onOrden,
   filtros,
+  estadoCtp,
 }: {
   grupos: GrupoDeTabla[];
   /** Los talados que deja el filtro, todas las páginas: el pie suma éstos. */
@@ -77,6 +79,8 @@ export default function LothTraceTabla({
   onOrden: (o: TraceOrden) => void;
   /** El autofiltro de cada columna, pegado a su título (Brandon 07-10). */
   filtros?: FiltrosTabla<TraceFila>;
+  /** «En el aserradero»: si se pudo preguntar al Libro CTP (L13). */
+  estadoCtp?: EstadoAserradero;
 }) {
   const { orden: cols, refCabecera } = useOrdenRecordado(DE_FABRICA);
   if (grupos.every((g) => g.filas.length === 0)) return null;
@@ -104,7 +108,7 @@ export default function LothTraceTabla({
               </th>
             </tr>
             {g.filas.map((f) => (
-              <Fila key={f.tree} f={f} cols={cols} seleccionada={seleccion.has(f.tree)} onSeleccionar={onSeleccionar} onAbrir={onAbrir} />
+              <Fila key={f.tree} f={f} cols={cols} seleccionada={seleccion.has(f.tree)} onSeleccionar={onSeleccionar} onAbrir={onAbrir} estadoCtp={estadoCtp} />
             ))}
           </tbody>
         ))}

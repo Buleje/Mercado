@@ -95,12 +95,32 @@ export interface FichaTroza {
 /* ── Estado y días ────────────────────────────────────────────────────── */
 
 /**
+ * Lo mínimo de una ficha para saber su estado. La ficha entera lo cumple; el
+ * «Por árbol» del Libro TH (`loth-trace-aserradero`, L13) arma sólo esto para
+ * varias trozas de una vez y pasa por la MISMA regla: las tres lecturas de una
+ * troza (patio, ficha, árbol) no pueden decir cosas distintas.
+ */
+export interface FichaParaEstado {
+  troza: Pick<
+    FichaTroza["troza"],
+    "id" | "especieComun" | "volumenM3" | "fechaRecepcion" | "noRecepcionada" | "descarte" | "codificacion" | "codigoPlanta"
+  >;
+  ingreso: Pick<FichaTroza["ingreso"], "gtfNumber" | "entryDate" | "fechaRecepcion" | "status" | "proveedor" | "permiso">;
+  corrida: Pick<NonNullable<FichaTroza["corrida"]>, "id" | "vigente"> | null;
+  despacho: Pick<NonNullable<FichaTroza["despacho"]>, "id" | "vigente"> | null;
+  /** Sólo se cuenta: una madre con pedazos está «Partida en pedazos». */
+  retrozos: { readonly length: number };
+  madre: { id: string } | null;
+  lote: { code: string } | null;
+}
+
+/**
  * La ficha en la forma del patio, con las MISMAS reglas que el endpoint de
  * `/trozas/patio`: una corrida o un despacho anulado no cuenta (la madera
  * volvió), la fecha de recepción es la de la pieza, y la guía «recibida» es
  * `guiaRecibida` (validada/procesada, o con fecha propia o de la guía).
  */
-export function trozaPatioDeFicha(f: FichaTroza): TrozaPatio {
+export function trozaPatioDeFicha(f: FichaParaEstado): TrozaPatio {
   return {
     id: f.troza.id,
     especieComun: f.troza.especieComun,
@@ -127,7 +147,7 @@ export function trozaPatioDeFicha(f: FichaTroza): TrozaPatio {
   };
 }
 
-export const estadoDeFicha = (f: FichaTroza): EstadoTroza => estadoDeTroza(trozaPatioDeFicha(f));
+export const estadoDeFicha = (f: FichaParaEstado): EstadoTroza => estadoDeTroza(trozaPatioDeFicha(f));
 
 /** «Hoy» como lo cuenta el libro: el día de Lima, a mediodía UTC. */
 export const hoyDelLibro = (limaKey: string): Date => new Date(`${limaKey}T12:00:00.000Z`);

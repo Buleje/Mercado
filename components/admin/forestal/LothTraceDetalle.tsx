@@ -17,9 +17,23 @@ import type { TraceOperation } from "@/lib/forestal/loth-trace";
 import { MODAL_GUTTER } from "@/components/admin/shared/AdminModal";
 import LothTraceEmbudo from "./LothTraceEmbudo";
 import LothTraceTimeline from "./LothTraceTimeline";
+import LothTraceAserradero from "./LothTraceAserradero";
+import type { DestinoArbol } from "@/lib/forestal/loth-trace-aserradero";
+import type { EstadoAserradero } from "./hooks/use-loth-trace-aserradero";
 import type { TraceNav } from "./loth-trace-ui";
 
-export default function LothTraceDetalle({ op, nav }: { op: TraceOperation; nav?: TraceNav }) {
+export default function LothTraceDetalle({
+  op,
+  nav,
+  aserradero,
+  estadoCtp = "listo",
+}: {
+  op: TraceOperation;
+  nav?: TraceNav;
+  /** L13: qué pasó con sus trozas en el Libro CTP; `undefined` = no se sabe todavía. */
+  aserradero?: DestinoArbol;
+  estadoCtp?: EstadoAserradero;
+}) {
   return (
     <div className="divide-y divide-[var(--rule-soft)]">
       {op.alerts.length > 0 && (
@@ -45,6 +59,12 @@ export default function LothTraceDetalle({ op, nav }: { op: TraceOperation; nav?
       <Bloque titulo="Dónde se fue la madera">
         <LothTraceEmbudo op={op} />
       </Bloque>
+
+      {op.trozado.length > 0 && estadoCtp !== "sin_ctp" && (
+        <Bloque titulo="Del bosque al aserradero">
+          <LothTraceAserradero op={op} destino={aserradero} estado={estadoCtp} />
+        </Bloque>
+      )}
 
       <Bloque titulo="Las seis secciones del libro">
         <LothTraceTimeline op={op} nav={nav} />

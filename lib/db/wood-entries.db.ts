@@ -1449,6 +1449,56 @@ async function contratoDelTenant(tenantId: string, contratoId: string): Promise<
   );
 }
 
+/**
+ * Lo que «Por árbol» y «Extracción» leen de una pieza enlazada a su Trozado
+ * (ADR-450): la forma de `FilaCtpDeTrozado`, que `piezaDeFilaCtp` lee con la
+ * regla del patio y de la ficha. UN select para las dos vistas.
+ */
+const SELECT_TROZA_DE_TROZADO = {
+  id: true,
+  lothTrozadoId: true,
+  arbolCodigo: true,
+  codificacion: true,
+  codigoPlanta: true,
+  especieComun: true,
+  volumenM3: true,
+  noRecepcionada: true,
+  fechaRecepcion: true,
+  descarte: true,
+  trozaOrigenId: true,
+  _count: { select: { retrozos: true } },
+  entry: {
+    select: {
+      id: true,
+      libroNro: true,
+      gtfNumber: true,
+      providerName: true,
+      entryDate: true,
+      fechaRecepcion: true,
+      status: true,
+      originCode: true,
+    },
+  },
+  loteAserrio: { select: { code: true, status: true } },
+  consumidaEn: {
+    select: {
+      id: true,
+      tenantId: true,
+      lineNo: true,
+      entryDate: true,
+      status: true,
+      deletedAt: true,
+      productType: true,
+      presentacion: true,
+      quantity: true,
+      unit: true,
+    },
+  },
+  despachadaEn: {
+    select: { id: true, tenantId: true, lineNo: true, entryDate: true, status: true, deletedAt: true, gtfNumber: true },
+  },
+} satisfies Prisma.WoodEntryTrozaSelect;
+
 export class WoodEntriesDB {
   /**
    * Crea un nuevo ingreso de madera al CTP.
@@ -4067,6 +4117,47 @@ export class WoodEntriesDB {
           },
         },
       },
+    });
+  }
+
+  /**
+   * Las piezas del Libro CTP que guardan su línea de Trozado del Libro TH
+   * (ADR-450), para «Por árbol → En el aserradero» (L13). UNA consulta por
+   * tanda de ids, con el MISMO `where` del patio (`wherePatio`: ingreso vivo,
+   * ni anulado ni rechazado) y los mismos datos de corrida/despacho que la
+   * ficha (`fichaDeTroza`): el estado se decide afuera con `estadoDeFicha`.
+   *
+   * Vienen también los pedazos de un retrozo (heredan el enlace de su madre)
+   * y la madre: quien cuenta salta a la madre, como el consumo por pieza (T1).
+   * Las corridas y despachos viajan con estado, `deletedAt` y `tenantId`: una
+   * anulada devolvió la madera al patio.
+   */
+  static async trozasDeTrozados(tenantId: string, lothTrozadoIds: readonly string[], tope = 2000) {
+    if (!tenantId) throw new Error("tenantId is required");
+    const ids = [...new Set(lothTrozadoIds.map((x) => x.trim()).filter(Boolean))];
+    if (ids.length === 0) return [];
+    return prisma.woodEntryTroza.findMany({
+      where: { ...WoodEntriesDB.wherePatio(tenantId), lothTrozadoId: { in: ids } },
+      orderBy: [{ lothTrozadoId: "asc" }, { orden: "asc" }],
+      take: tope,
+      select: SELECT_TROZA_DE_TROZADO,
+    });
+  }
+
+  /**
+   * TODAS las piezas del negocio que guardan su línea de Trozado, para
+   * «Extracción» (ADR-454): el mismo `where` y el mismo select que
+   * `trozasDeTrozados` —la vista del árbol—, así las dos leen el enlace con
+   * una sola regla (`piezaDeFilaCtp` + `trozadoEnPlanta`). Sin filtrar lo no
+   * recibido acá: eso lo decide la regla.
+   */
+  static async trozasConEnlaceTh(tenantId: string, tope: number) {
+    if (!tenantId) throw new Error("tenantId is required");
+    return prisma.woodEntryTroza.findMany({
+      where: { ...WoodEntriesDB.wherePatio(tenantId), lothTrozadoId: { not: null } },
+      orderBy: [{ lothTrozadoId: "asc" }, { orden: "asc" }, { id: "asc" }],
+      take: tope,
+      select: SELECT_TROZA_DE_TROZADO,
     });
   }
 

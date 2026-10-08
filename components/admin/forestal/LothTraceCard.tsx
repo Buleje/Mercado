@@ -19,11 +19,12 @@
  * todavía» en vez de «0,0 %» y «100 %» pintados de verde.
  */
 
-import { AlertTriangle, CheckCircle2, ChevronRight, Clock, MapPin, TreePine, Warehouse } from "@buleje/design-system/icons";
+import { AlertTriangle, CheckCircle2, ChevronRight, Clock, MapPin, Package, TreePine, Warehouse } from "@buleje/design-system/icons";
 import { Kicker } from "@buleje/design-system";
 import type { TraceFila } from "@/lib/forestal/loth-trace-tabla";
 import { etapasDe, fmtDias, fmtFecha, fmtPct, fmtRecorrido, tonoDe } from "./loth-trace-ui";
 import { formatNumber } from "@/lib/format";
+import { fraseDeEstados } from "@/lib/forestal/loth-trace-aserradero";
 
 export const CHAIN_META: Record<"completa" | "parcial" | "iniciada", { label: string; cls: string }> = {
   completa: { label: "Cadena completa", cls: "border-[var(--data-success-500)] bg-[var(--data-success-500)]/10 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" },
@@ -112,6 +113,12 @@ export default function LothTraceCard({
             {(op?.trozasEnPatio ?? 0) > 0 && (
               <span className={AVISO_PILL}>
                 <Warehouse className="h-3.5 w-3.5" aria-hidden="true" /> {op?.trozasEnPatio} en patio
+              </span>
+            )}
+            {/* L13: lo que el Libro CTP dice de sus trozas, sólo si alguna guarda el enlace (sin enlace lo dice el detalle). */}
+            {fila.aserradero && fila.aserradero.enlazadas > 0 && (
+              <span className={`${PILL} border-[var(--data-info-500)] bg-[var(--data-info-500)]/10 text-[var(--data-info-700)] dark:text-[var(--data-info-500)]`} title="En el aserradero (Libro CTP)">
+                <Package className="h-3.5 w-3.5" aria-hidden="true" /> {fraseDeEstados(fila.aserradero.porEstado)}
               </span>
             )}
             {fila.tardias > 0 && (

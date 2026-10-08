@@ -412,6 +412,10 @@ export type CtpAuditAction =
   // El volumen de la especie es el techo del despacho (T6): quién lo subió y de
   // cuánto a cuánto es lo primero que pregunta un fiscalizador.
   | "ctp_plan_alta"
+  // Baja de árboles del censo (uno, varios o «borrar todos»), 08-10: hasta acá
+  // no dejaba rastro y 65 árboles del censo de una plantación quedaron borrados
+  // sin que el historial dijera quién ni cuándo.
+  | "ctp_plan_censo_baja"
   | "ctp_plan_especie_alta"
   | "ctp_plan_especie_editar"
   | "ctp_plan_especie_baja"

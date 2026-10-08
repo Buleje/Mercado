@@ -165,14 +165,14 @@ export const DELETE = withApiHandler("forestal-plan-census-delete", async (req: 
     if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "id_required" }, { status: 400 });
     try {
       const { planId, ids, todos } = parsed.data;
-      return NextResponse.json({ ok: true, ...(await ForestPlanDB.softDeleteTrees(auth.tenantId, planId, { ids, todos })) });
+      return NextResponse.json({ ok: true, ...(await ForestPlanDB.softDeleteTrees(auth.tenantId, planId, { ids, todos }, auth.username ?? "admin")) });
     } catch (err) {
       logger.error("[plan.census.DELETE bulk] failed", { error: String(err), tenantId: auth.tenantId });
       return NextResponse.json({ error: "internal_error" }, { status: 500 });
     }
   }
   try {
-    await ForestPlanDB.softDeleteTree(auth.tenantId, id);
+    await ForestPlanDB.softDeleteTree(auth.tenantId, id, auth.username ?? "admin");
     return NextResponse.json({ ok: true });
   } catch (err) {
     logger.error("[plan.census.DELETE] failed", { error: String(err), tenantId: auth.tenantId });

@@ -20,6 +20,7 @@ import type { TraceFila } from "@/lib/forestal/loth-trace-tabla";
 import { printTrozaPasaporte, type PasaporteCaratula } from "@/lib/forestal/loth-pasaporte-print";
 import { printHojaArbol } from "@/lib/forestal/loth-hoja-arbol-print";
 import LothTraceDetalle from "./LothTraceDetalle";
+import type { EstadoAserradero } from "./hooks/use-loth-trace-aserradero";
 import { CHAIN_META } from "./LothTraceCard";
 import { fmtPct, fmtRecorrido, type TraceNav } from "./loth-trace-ui";
 
@@ -28,6 +29,7 @@ const BOTON =
 
 export default function LothTraceDetalleModal({
   fila,
+  estadoCtp,
   caratula,
   nav,
   onClose,
@@ -37,6 +39,8 @@ export default function LothTraceDetalleModal({
   siguiente,
 }: {
   fila: TraceFila | null;
+  /** «Del bosque al aserradero» (L13): si se pudo preguntar al Libro CTP. */
+  estadoCtp?: EstadoAserradero;
   caratula?: PasaporteCaratula | null;
   nav?: TraceNav;
   onClose: () => void;
@@ -126,7 +130,7 @@ export default function LothTraceDetalleModal({
         )
       }
     >
-      {op && <LothTraceDetalle op={op} nav={navCerrando} />}
+      {op && <LothTraceDetalle op={op} nav={navCerrando} aserradero={fila?.aserradero} estadoCtp={estadoCtp} />}
     </AdminModal>
   );
 }

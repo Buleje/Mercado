@@ -57,6 +57,7 @@ import {
   type Suma,
   type VentanaExtraccion,
 } from "./loth-extraccion-tipos";
+import { piezasPorTrozado, trozadoEnPlanta, type PiezaCtp } from "./loth-trace-aserradero";
 
 // ─── Constantes ──────────────────────────────────────────────────────────────
 
@@ -147,19 +148,38 @@ export interface LineaDeExtraccion {
   gtfNumber: string | null;
 }
 
-/** Una troza del Libro CTP que guarda su línea de Trozado (ADR-450), ya filtrada: recibida y de un ingreso vivo. */
+/**
+ * Una troza del Trozado que llegó al Libro CTP (ADR-450), ya filtrada: recibida
+ * y de un ingreso vivo. Sale de `recepcionesDePiezas`: la MISMA regla que «Por
+ * árbol» (`trozadoEnPlanta`).
+ */
 export interface RecepcionDeExtraccion {
   lothTrozadoId: string;
+  /** Suma de los m³ de GTF de sus piezas que bajaron del camión. */
   volumenM3: number | null;
-  /** Consumida por una corrida viva (`ForestCtpEntry` sin borrar ni anular). */
+  /** Alguna de sus piezas que cuentan entró a una corrida viva (los pedazos de una madre partida, no la madre). */
   aserrada: boolean;
   /**
-   * Día en que llegó a la planta (`fechaRecepcion`, o el asiento del ingreso),
-   * `YYYY-MM-DD`. Lo recibido también es acumulado HASTA `hasta`: sin esto, una
-   * vista al 28-09 contaba como recibida una troza que llegó el 29-09 —y como
-   * su despacho (29-09) quedaba afuera, la avisaba «recibida sin despacho»—.
+   * Día en que llegó a la planta (el de la pieza; si no, su guía; si no, el
+   * asiento del ingreso), `YYYY-MM-DD`. Lo recibido también es acumulado HASTA
+   * `hasta`: sin esto, una vista al 28-09 contaba como recibida una troza que
+   * llegó el 29-09 —y como su despacho (29-09) quedaba afuera, la avisaba
+   * «recibida sin despacho»—.
    */
   dia?: string | null;
+}
+
+/**
+ * Las piezas del Libro CTP enlazadas a un Trozado (`piezaDeFilaCtp`) → una
+ * recepción por troza del Trozado, sólo las que bajaron del camión. La guía en
+ * la bandeja, la que no llegó y el descarte no son «recibidas»; la madre
+ * retrozada no cuenta (van sus pedazos).
+ */
+export function recepcionesDePiezas(piezas: readonly PiezaCtp[]): RecepcionDeExtraccion[] {
+  return [...piezasPorTrozado(piezas)]
+    .map(([id, ps]) => trozadoEnPlanta(id, ps))
+    .filter((t) => t.recibida)
+    .map((t) => ({ lothTrozadoId: t.trozadoId, volumenM3: t.m3Guia, aserrada: t.aserrada, dia: t.dia }));
 }
 
 export interface EntradaExtraccion {

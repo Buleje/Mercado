@@ -51,6 +51,8 @@ import LothTraceUmbralesModal from "./LothTraceUmbralesModal";
 import { BarraFiltrosTabla } from "./filtros-tabla-forestal";
 import { useLothTraceVista } from "./hooks/use-loth-trace-vista";
 import { fmtFecha, type TraceNav } from "./loth-trace-ui";
+import { TOPE_PIEZAS_ASERRADERO } from "@/lib/forestal/loth-trace-aserradero";
+import { formatNumber } from "@/lib/format";
 
 const GRUPOS = ["movimiento", "terminado"] as const;
 const BOTON =
@@ -83,7 +85,7 @@ export default function LothTraceView({
   const cabecera = (
     <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
       <SectionTitle id={`${id}-vista`}>Por árbol</SectionTitle>
-      <span className="text-sm text-[var(--text-tertiary)]">La historia de cada árbol, del censo hasta su despacho</span>
+      <span className="text-sm text-[var(--text-tertiary)]">La historia de cada árbol, del censo al aserradero</span>
     </div>
   );
 
@@ -201,6 +203,7 @@ export default function LothTraceView({
             orden={v.orden}
             onOrden={v.setOrden}
             filtros={v.filtros}
+            estadoCtp={v.estadoAserradero}
           />
         ) : (
           GRUPOS.map((g) => (
@@ -214,6 +217,13 @@ export default function LothTraceView({
               onAbrir={v.abrirDetalle}
             />
           ))
+        )}
+
+        {v.aserraderoTruncado && (
+          <p role="status" className="text-xs text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+            El Libro CTP devolvió sólo las primeras {formatNumber(TOPE_PIEZAS_ASERRADERO, 0)} piezas de una tanda: en «En el aserradero»
+            a algún árbol le pueden faltar trozas.
+          </p>
         )}
 
         {v.totalPaginas > 1 && (
@@ -254,6 +264,7 @@ export default function LothTraceView({
       />
       <LothTraceDetalleModal
         fila={v.detalle}
+        estadoCtp={v.estadoAserradero}
         caratula={caratula}
         nav={nav}
         onClose={v.cerrarDetalle}

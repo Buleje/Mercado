@@ -40,7 +40,9 @@ import {
   type TraceModo,
   type TraceOrden,
 } from "../loth-trace-ui";
+import { destinoDelArbol, trozadoIdsDe } from "@/lib/forestal/loth-trace-aserradero";
 import { useFiltrosTabla } from "../filtros-tabla-forestal";
+import { useLothTraceAserradero } from "./use-loth-trace-aserradero";
 import {
   coincideArbol,
   estadosElegidos,
@@ -97,10 +99,19 @@ export function useLothTraceVista({
   const [detalle, setDetalle] = useState<string | null>(null);
   const [modalUmbrales, setModalUmbrales] = useState(false);
 
-  const filas = useMemo(() => {
+  const filasDelLibro = useMemo(() => {
     const ops = buildTraceOperations(entries, { hoy, umbrales, gtfEmitidas: gtfEmitidas ?? undefined });
     return construirFilasTrace(ops, construirFichasArbol({ censo, entries, hoy }));
   }, [entries, censo, hoy, umbrales, gtfEmitidas]);
+  /* L13: lo que el Libro CTP sabe de cada troza (enlace de ADR-450). Mientras
+     no se sabe, la fila queda sin `aserradero` —no es «sin enlace»—. */
+  const idsTrozado = useMemo(() => filasDelLibro.flatMap((f) => trozadoIdsDe(f.op)), [filasDelLibro]);
+  const aserradero = useLothTraceAserradero(idsTrozado);
+  const filas = useMemo(() => {
+    const porTrozado = aserradero.porTrozado;
+    if (!porTrozado) return filasDelLibro;
+    return filasDelLibro.map((f) => (f.op && trozadoIdsDe(f.op).length > 0 ? { ...f, aserradero: destinoDelArbol(f.op, porTrozado) } : f));
+  }, [filasDelLibro, aserradero.porTrozado]);
 
   const especies = useMemo<OpcionEspecie[]>(() => {
     const grupos = new Map<string, Map<string, number>>();
@@ -204,6 +215,10 @@ export function useLothTraceVista({
 
   return {
     filas,
+    /** Si se pudo preguntar al Libro CTP (cargando, listo, error, sin libro). */
+    estadoAserradero: aserradero.estado,
+    /** El Libro CTP devolvió el tope de piezas en alguna tanda: puede faltar alguna. */
+    aserraderoTruncado: aserradero.truncado,
     especies,
     resumen,
     grupos,

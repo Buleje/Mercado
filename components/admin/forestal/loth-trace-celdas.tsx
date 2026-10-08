@@ -16,6 +16,16 @@ import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { fmtDias, fmtFecha, fmtPct, tonoDe, type TraceOrden } from "./loth-trace-ui";
 import { FiltroEnCabecera, type FiltrosTabla } from "./filtros-tabla-forestal";
 import { soloEnOrden } from "./loth-seccion-columnas";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import {
+  fraseDeEstados,
+  fraseSinPieza,
+  notaSinPieza,
+  SIN_DESPACHO,
+  sinPiezaUnica,
+  trozadoIdsDe,
+} from "@/lib/forestal/loth-trace-aserradero";
+import type { EstadoAserradero } from "./hooks/use-loth-trace-aserradero";
 
 /* El padding lo pone `DataTable` (sus variantes descendientes le ganan a una
    clase en la celda): acá sólo tamaño y alineación. */
@@ -39,6 +49,7 @@ export const HEAD = {
   rend: "Rend.",
   merma: "Merma",
   movilizado: "Salió m³",
+  aserradero: "En el aserradero",
   etapas: "Etapas",
   ultima: "Última",
   obs: "Observaciones",
@@ -56,6 +67,7 @@ export const COLUMNAS: { key: ColArbol; orden?: TraceOrden; num?: boolean }[] = 
   { key: "rend", orden: "rendimiento", num: true },
   { key: "merma", orden: "merma", num: true },
   { key: "movilizado", num: true },
+  { key: "aserradero" },
   { key: "etapas", orden: "etapas", num: true },
   { key: "ultima", orden: "fecha", num: true },
   { key: "obs" },
@@ -67,7 +79,11 @@ const HEAD_TITLE: Partial<Record<ColArbol, string>> = {
   rend: "Trozado ÷ talado. «—» = todavía sin trozar",
   merma: "Talado − trozado, sólo de los árboles ya trozados",
   movilizado: "Salió del patio: trozas despachadas o al aserrío",
+  aserradero: "Qué pasó con sus trozas en el Libro CTP: recibidas, en patio, aserradas (enlace guardado desde el 29-09)",
 };
+
+/** Columnas que arrancan ocultas: «En el aserradero» pregunta al Libro CTP y recarga la fila. */
+export const OCULTAS_DE_FABRICA: ReadonlySet<ColArbol> = new Set<ColArbol>(["aserradero"]);
 
 /** Los `<th>` movibles (con `data-col`: el arrastre los reconoce por ahí). */
 export function cabeceras(orden: TraceOrden, onOrden: (o: TraceOrden) => void, filtros?: FiltrosTabla<TraceFila>): Record<string, ReactNode> {
@@ -104,12 +120,15 @@ export function Fila({
   seleccionada,
   onSeleccionar,
   onAbrir,
+  estadoCtp = "listo",
 }: {
   f: TraceFila;
   cols: readonly string[];
   seleccionada: boolean;
   onSeleccionar: (tree: string) => void;
   onAbrir?: (tree: string) => void;
+  /** Si se pudo preguntar al Libro CTP: sin respuesta, la celda no acusa «sin enlace». */
+  estadoCtp?: EstadoAserradero;
 }) {
   const tono = tonoDe(f.mermaVeredicto);
   const fondo = f.nivel === "error" ? "bg-[var(--data-error-500)]/10" : f.nivel === "warn" ? "bg-[var(--data-warning-500)]/10" : "";
@@ -157,6 +176,11 @@ export function Fila({
         {f.patioM3 > 0 && <span className={EN_PATIO}>{fmtM3(f.patioM3)} en patio</span>}
       </td>
     ),
+    aserradero: (
+      <td className={CELL}>
+        <CeldaAserradero f={f} estado={estadoCtp} />
+      </td>
+    ),
     etapas: <td className={NUM}>{f.op ? `${f.etapas}/6` : "—"}</td>,
     ultima: (
       <td className={`${NUM} text-[var(--text-secondary)]`}>
@@ -184,6 +208,65 @@ export function Fila({
       </td>
       <EnOrden orden={cols} celdas={soloEnOrden(cols, celdas)} />
     </tr>
+  );
+}
+
+const AVISO_CTP: Record<EstadoAserradero, string> = {
+  cargando: "Preguntando al Libro CTP…",
+  listo: "",
+  error: "No se pudo leer el Libro CTP: vuelve a abrir la vista",
+  sin_ctp: "Este negocio no lleva el Libro CTP",
+};
+
+/**
+ * «2 aserradas · 1 en patio» + «3 de 4 en el CTP · corrida 12». Sin ninguna
+ * pieza enlazada, manda el despacho de cada troza: sin despacho «—»; desde el
+ * 29-09 «Por recibir»; antes, «Sin enlace» con su ⓘ.
+ */
+function CeldaAserradero({ f, estado }: { f: TraceFila; estado: EstadoAserradero }) {
+  if (trozadoIdsDe(f.op).length === 0) return <span className="text-[var(--text-tertiary)]">—</span>;
+  const d = f.aserradero;
+  if (!d) {
+    return (
+      <span className="text-[var(--text-tertiary)]" title={AVISO_CTP[estado] || undefined}>
+        {estado === "cargando" ? "…" : "—"}
+      </span>
+    );
+  }
+  const resto = fraseSinPieza(d.sinPieza);
+  if (d.enlazadas === 0) {
+    const nota = notaSinPieza(d.sinPieza);
+    if (!nota) {
+      return (
+        <span className="text-[var(--text-tertiary)]" title={SIN_DESPACHO}>
+          —<span className="sr-only">{SIN_DESPACHO}</span>
+        </span>
+      );
+    }
+    const una = sinPiezaUnica(d.sinPieza);
+    return (
+      <span className="block min-w-[10rem] text-[var(--text-tertiary)]">
+        <span className="inline-flex items-center gap-1 whitespace-nowrap">
+          {d.sinPieza.por_recibir > 0 ? "Por recibir en el CTP" : "Sin enlace"}
+          <InfoTip
+            title={d.sinPieza.por_recibir > 0 ? "Por recibir en el CTP" : "Sin enlace al Libro CTP"}
+            what={nota}
+            ariaLabel={`Qué pasa con las trozas del árbol ${f.tree} en el Libro CTP`}
+          />
+        </span>
+        {!una && <span className="block text-xs">{resto}</span>}
+      </span>
+    );
+  }
+  const corridas = d.corridas.map((c) => c.lineNo);
+  return (
+    <span className="block min-w-[10rem]">
+      <span className="block font-semibold text-[var(--text-primary)]">{fraseDeEstados(d.porEstado) || "—"}</span>
+      <span className="block text-xs text-[var(--text-tertiary)]" title={resto || undefined}>
+        {d.enlazadas} de {d.trozadas} en el CTP
+        {corridas.length > 0 && ` · corrida${corridas.length === 1 ? "" : "s"} ${corridas.join(", ")}`}
+      </span>
+    </span>
   );
 }
 

@@ -47,13 +47,14 @@ describe("DELETE /plan/census en bloque", () => {
     const r = await borrar({ planId: "P1", ids: ["a", "b", "c"], tenantId: "otro" });
     expect(r.status).toBe(200);
     expect(await r.json()).toMatchObject({ ok: true, borrados: 2, taladosConservados: 1 });
-    expect(spy).toHaveBeenCalledWith("t1", "P1", { ids: ["a", "b", "c"], todos: undefined });
+    expect(spy).toHaveBeenCalledWith("t1", "P1", { ids: ["a", "b", "c"], todos: undefined }, expect.any(String));
   });
 
   it("«Borrar todos» manda todos: true sin ids", async () => {
     const spy = vi.spyOn(ForestPlanDB, "softDeleteTrees").mockResolvedValue({ borrados: 40, taladosConservados: 0 });
     expect((await borrar({ planId: "P1", todos: true })).status).toBe(200);
-    expect(spy).toHaveBeenCalledWith("t1", "P1", { ids: undefined, todos: true });
+    /* El 4.º argumento es quién borra: va al historial (`ctp_plan_censo_baja`, 08-10). */
+    expect(spy).toHaveBeenCalledWith("t1", "P1", { ids: undefined, todos: true }, expect.any(String));
   });
 
   it("sin árboles elegidos → 400 y no borra nada", async () => {
