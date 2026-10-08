@@ -104,6 +104,8 @@ interface Props {
   /** ADR-481: «Desde tu Libro TH» — la guía elegida quedó guardada; la vista
    *  cierra el alta y abre «Recibir» con todo relleno. Sin esto, no hay 3.ª opción. */
   onDesdeLibroTh?: (a: GuiaThAlistada) => void;
+  /** Abrir el alta ya en «Desde tu Libro TH» (el aviso de guías por ingresar). Sólo vale con `onDesdeLibroTh`. */
+  modoInicial?: "libro_th";
 }
 
 // Guía emitida (ForestGtf) — para importar sus datos al ingreso.
@@ -293,7 +295,7 @@ import CtpIngresoDesdeLibroTh from "./CtpIngresoDesdeLibroTh";
 import type { GuiaThAlistada } from "@/lib/forestal/guias-th-por-ingresar";
 import type { FotoCarga } from "@/lib/forestal/fotos-carga";
 
-export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, preset, guiaGuardada, onDesdeLibroTh }: Props) {
+export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, preset, guiaGuardada, onDesdeLibroTh, modoInicial }: Props) {
   /* El picker ofrece las de fábrica MÁS las del catálogo de esta planta
      (ADR-410): «Panguana» y «Yacuchapana» entran por la GTF todas las semanas y
      el código no las conoce — sin esto hay que elegir «Otro» y tipearlas cada
@@ -389,6 +391,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
    * el que no depende de nadie—, pero después respeta lo último que se usó.
    */
   const [modo, setModo] = useState<"manual" | "serfor" | "libro_th">(() => {
+    if (modoInicial === "libro_th" && onDesdeLibroTh && !preset && !guiaGuardada) return "libro_th";
     if (typeof window === "undefined") return "manual";
     try {
       return localStorage.getItem(MODO_CARGA_KEY) === "serfor" ? "serfor" : "manual";

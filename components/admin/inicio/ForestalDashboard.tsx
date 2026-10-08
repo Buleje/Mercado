@@ -19,6 +19,7 @@ import { cantidadDelPeriodo, type InicioForestal } from "@/lib/forestal/inicio-f
 import { describeRange, type DateRange } from "./DashboardDateRange";
 import { BulejeDashboardSkeleton, KPI_GRID_5, KPI_GRID_6 } from "./_shared";
 import { ForestalCharts } from "./ForestalCharts";
+import { ForestalAvisoPapeles } from "./ForestalAvisoPapeles";
 import { ForestalPermisos } from "./ForestalPermisos";
 import { useForestalInicio } from "./use-forestal-inicio";
 
@@ -78,6 +79,8 @@ export default function ForestalDashboard({ dateRange, conAdelantos }: Props) {
         />
         {error && <span className="text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">· {error}</span>}
       </p>
+
+      <ForestalAvisoPapeles activo={!!data.ctp} onIr={() => router.push(`${CTP}&vista=ingresos`)} />
 
       <div className={tarjetas.length >= 6 ? KPI_GRID_6 : KPI_GRID_5}>{tarjetas}</div>
 

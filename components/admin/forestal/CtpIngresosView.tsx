@@ -31,6 +31,7 @@ import {
 import { ingresosACsv, nombreArchivoIngresos } from "@/lib/forestal/ctp-ingresos-csv";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
 import WoodEntryForm, { type WoodEntryPreset } from "./WoodEntryForm";
+import CtpAvisoGuiasTh from "./CtpAvisoGuiasTh";
 import SpeciesAggregateChart from "./SpeciesAggregateChart";
 import CtpEntryDetailModal from "./CtpEntryDetailModal";
 import CtpDocumentoVisor, { type DocumentoImprimible } from "./CtpDocumentoVisor";
@@ -279,6 +280,11 @@ export default function CtpIngresosView({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  /* El chip «guías de tu Libro TH por ingresar» abre el alta ya en ese modo; al cerrarla se olvida. */
+  const [formDesdeTh, setFormDesdeTh] = useState(false);
+  useEffect(() => {
+    if (!showForm) setFormDesdeTh(false);
+  }, [showForm]);
   const { toasts, push: pushToast, dismiss: dismissToast } = useActionToasts();
   const [showDashboard, setShowDashboard] = useState(false);
   // Bandeja monte→planta: guía elegida para pre-cargar el form + key para refrescarla tras guardar.
@@ -1076,6 +1082,11 @@ export default function CtpIngresosView({
       onDashboard={() => setShowDashboard((v) => !v)}
       onReload={() => void reload()}
       onNuevo={() => { setFormGtf(null); setFormPreset(undefined); setGuiaGuardadaForm(null); setShowForm(true); }}
+      avisoLibroTh={
+        <CtpAvisoGuiasTh
+          onAbrir={() => { setFormGtf(null); setFormPreset(undefined); setGuiaGuardadaForm(null); setFormDesdeTh(true); setShowForm(true); }}
+        />
+      }
       onGuardarGuia={() => setModalGuardadas({ tipo: "guia", id: null })}
       onGuiasGuardadas={() => setModalGuardadas({ tipo: "lista" })}
       onDescargar={() => void descargar()}
@@ -1392,6 +1403,7 @@ export default function CtpIngresosView({
           initialGtfNumber={formGtf ?? undefined}
           preset={formPreset}
           guiaGuardada={guiaGuardadaForm}
+          modoInicial={formDesdeTh ? "libro_th" : undefined}
           /* ADR-481: «Desde tu Libro TH» — la guía quedó guardada: se cierra el alta y se recibe rellena. */
           onDesdeLibroTh={(a) => {
             setShowForm(false);

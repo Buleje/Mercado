@@ -10,6 +10,7 @@
  * con su volumen), así que ningún filtro devuelve vacío por adivinar mal.
  */
 
+import type { ReactNode } from "react";
 import { ArrowLeftRight, BarChart3, Coins, Download, FileStack, FolderOpen, FolderPlus, Plus, RefreshCw, Search, X } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import CtpFiltrosPanel, { BotonFiltros, BTN_FILTRO, usePanelFiltros } from "./ctp-filtros-panel";
@@ -65,6 +66,8 @@ export interface CtpIngresosFiltrosProps {
   onDashboard: () => void;
   onReload: () => void;
   onNuevo: () => void;
+  /** Atajo «N guías de tu Libro TH por ingresar», junto a «Nuevo ingreso». */
+  avisoLibroTh?: ReactNode;
   onDescargar: () => void;
   descargando: boolean;
   /** Cuántos registros bajaría el CSV (el total del filtro actual). */
@@ -129,6 +132,7 @@ export default function CtpIngresosFiltros({
   onDashboard,
   onReload,
   onNuevo,
+  avisoLibroTh,
   onDescargar,
   descargando,
   totalFiltrado,
@@ -345,6 +349,7 @@ export default function CtpIngresosFiltros({
           controles de la tabla de abajo y separados costaban dos renglones en
           cada carga de la vista. */}
       <div className="flex flex-wrap items-center gap-2">
+        {avisoLibroTh}
         {recepcionFiltro}
         <StatusChip label="Todos" count={stats?.totalCount} active={statusFilter === ""} tone="accent" onClick={() => onStatus("")} />
         {/* Sólo los estados que EXISTEN en el período.

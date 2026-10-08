@@ -131,4 +131,16 @@ export class CtpGuiaDocumentosDB {
     }
     return null;
   }
+
+  /** Los N° de guía de los ingresos vivos del tenant, sin repetir (para el aviso de papeles del Inicio). */
+  static async gtfsDeIngresos(tenantId: string): Promise<string[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const filas = await prisma.woodEntry.findMany({
+      where: { tenantId, deletedAt: null },
+      select: { gtfNumber: true },
+      distinct: ["gtfNumber"],
+      take: 500,
+    });
+    return filas.map((f) => f.gtfNumber.trim()).filter(Boolean);
+  }
 }
