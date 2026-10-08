@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import type { VendorDashboardData } from "@/components/admin/vendor-dashboard/vendor-dashboard.types";
 import { usePlanTier } from "@/hooks/use-plan-tier";
 import { useEnabledSpecs } from "@/hooks/use-enabled-specs";
 import { useMiRol } from "@/hooks/use-mi-rol";
+import { CLAVE_ELIGIO_A_MANO, vistaInicialDelInicio, type VentasDelPeriodo } from "@/lib/admin/vista-inicial-inicio";
 import { puedeVerInicioForestal } from "@/lib/forestal/inicio-forestal";
 import { useAdminTemplateOverlay } from "@/app/admin/_hooks/useAdminTemplateOverlay";
 import type { Tab } from "@/app/admin/_lib/tabs.types";
@@ -163,6 +164,39 @@ export default function VendorDashboardModule() {
   // Si el sub-tab activo dejó de estar disponible, volver a Resumen. Mientras
   // las especializaciones cargan, «Forestal» todavía no se sabe: un link con
   // `?vista=forestal` no tiene que rebotar a Resumen por llegar antes.
+  // Pestaña por defecto (N24): negocio forestal sin ventas en el período abre en
+  // «Forestal». Lo elegido a mano (click o ?vista=) manda; ver `vista-inicial-inicio`.
+  // Sin consultas nuevas: el Resumen ya pide /api/admin/overview y avisa el resultado.
+  const [ventas, setVentas] = useState<VentasDelPeriodo>("desconocido");
+  const vistaEnUrlRef = useRef<boolean | null>(null);
+  if (vistaEnUrlRef.current === null && typeof window !== "undefined") {
+    vistaEnUrlRef.current = new URLSearchParams(window.location.search).has("vista");
+  }
+  const eligioAMano = useRef(false);
+  const yaDecidida = useRef(false);
+  useEffect(() => {
+    try { eligioAMano.current = localStorage.getItem(CLAVE_ELIGIO_A_MANO) === "1"; } catch { /* sin memoria */ }
+  }, []);
+  useEffect(() => {
+    if (yaDecidida.current || cargandoSpecs || rol == null) return;
+    const destino = vistaInicialDelInicio({
+      vistaActual: tab,
+      vistaEnUrl: vistaEnUrlRef.current === true,
+      eligioAMano: eligioAMano.current,
+      tieneForestal,
+      ventas,
+    });
+    if (destino) {
+      yaDecidida.current = true;
+      setTab(destino);
+    }
+  }, [tab, tieneForestal, ventas, cargandoSpecs, rol, setTab]);
+  const elegirPestana = useCallback((t: string) => {
+    eligioAMano.current = true;
+    try { localStorage.setItem(CLAVE_ELIGIO_A_MANO, "1"); } catch { /* sin memoria */ }
+    setTab(t as InicioTab);
+  }, [setTab]);
+
   useEffect(() => {
     if (tab === "forestal" && (cargandoSpecs || rol == null)) return;
     if (!availableTabs.some((t) => t.id === tab)) setTab("general");
@@ -279,7 +313,7 @@ export default function VendorDashboardModule() {
         }}
         tabs={availableTabs}
         activeTab={tab}
-        onTabChange={(t) => setTab(t as InicioTab)}
+        onTabChange={elegirPestana}
         onTabHover={(id) => TAB_PREFETCH[id as InicioTab]?.()}
         moduleId={MODULE_ID}
       >
@@ -302,7 +336,7 @@ export default function VendorDashboardModule() {
             <MorningBriefingCard />
             {/* 3) Dashboard denso: meta del mes + compound charts. Su hero se
                    removió para complementar a TodayHub (no duplica KPIs). */}
-            <InicioDashboardV2 dateRange={dateRange} onChangeRange={setDateRange} />
+            <InicioDashboardV2 dateRange={dateRange} onChangeRange={setDateRange} onSinVentas={(sin) => setVentas(sin ? "sin" : "con")} />
           </div>
         )}
         {tab === "forestal" && tieneForestal && (

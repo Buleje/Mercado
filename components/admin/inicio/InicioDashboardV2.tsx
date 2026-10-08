@@ -12,6 +12,7 @@ import { useChartRegistration } from "@/lib/admin/charts-visibility";
 import { SkeletonEditorial } from "@/components/ui-system";
 import { InicioMultiCharts } from "./InicioMultiCharts";
 import EmptyDateRangeState from "./EmptyDateRangeState";
+import { periodoSinVentas } from "@/lib/admin/vista-inicial-inicio";
 import { formatNumber } from "@/lib/format";
 
 /**
@@ -29,6 +30,8 @@ import { formatNumber } from "@/lib/format";
 interface Props {
   dateRange?: DateRange;
   onChangeRange?: (r: DateRange) => void;
+  /** Avisa si el período no trae ventas (el Inicio decide su pestaña por defecto). */
+  onSinVentas?: (sinVentas: boolean) => void;
 }
 
 interface OverviewData {
@@ -72,7 +75,7 @@ const PRESET_PROYECCION: Record<string, string> = {
   personalizado: "Proyección período",
 };
 
-export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
+export default function InicioDashboardV2({ dateRange, onChangeRange, onSinVentas }: Props) {
   const [data, setData] = useState<OverviewData | null>(null);
   const [loading, setLoading] = useState(true);
   // Brandon 2026-05-16 (audit P1): estado separado para errores de red /
@@ -92,6 +95,9 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
   const dayOfMonthRef = useRef<number | null>(null);
    
   if (dayOfMonthRef.current === null) dayOfMonthRef.current = new Date().getDate();
+
+  const onSinVentasRef = useRef(onSinVentas);
+  onSinVentasRef.current = onSinVentas;
 
   const rangeQuery = useMemo(() => {
     if (!dateRange) return "";
@@ -123,6 +129,8 @@ export default function InicioDashboardV2({ dateRange, onChangeRange }: Props) {
         if (cancelled) return;
         if (json && !json.error) {
           setData(json as OverviewData);
+          const o = json as OverviewData;
+          onSinVentasRef.current?.(periodoSinVentas(o.hero?.totalRange ?? o.hero?.totalToday, o.contextual?.ordersInRange ?? o.contextual?.ordersToday));
         } else if (json?.error) {
           setFetchError(typeof json.error === "string" ? json.error : "Respuesta inválida.");
         }
