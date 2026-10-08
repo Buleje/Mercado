@@ -25,6 +25,8 @@
  * molesto, no grave— y se rota desde el panel sin tocar nada más.
  */
 
+import type { ZonaIgnorada } from "./zonas-ignorar";
+
 /** Qué disparó la captura. `manual` = la subió una persona desde el panel. */
 export const EVENTOS = ["movimiento", "persona", "vehiculo", "manual", "programada", "otro"] as const;
 export type EventoCamara = (typeof EVENTOS)[number];
@@ -97,6 +99,12 @@ export interface Camara {
   recorte?: RecorteCamara | null;
   /** Cuándo un cuadro del puente pasa al historial (ADR-466). Sin dato = los valores por defecto. */
   vivo?: AjustesVivo | null;
+  /**
+   * Rectángulos (fracciones 0-1 del cuadro) que el detector de personas del
+   * mosaico NO mira: el poste o la casaca que el modelo confunde con alguien
+   * (2026-10-08). Sin dato = mira todo. Regla en `lib/camaras/zonas-ignorar.ts`.
+   */
+  zonasIgnorar?: ZonaIgnorada[] | null;
 }
 
 export const FUENTES_CAMARA = ["isapi", "webhook", "puente_pc"] as const;

@@ -2,12 +2,12 @@
 
 /**
  * «Más» de una cámara: subir a mano (cámara del celular), subir desde la
- * galería y quitar. Salió de `CamaraFila` el 05-10 sin cambiar el DOM: la fila
+ * galería, las zonas que el detector de personas ignora (08-10) y quitar. Salió de `CamaraFila` el 05-10 sin cambiar el DOM: la fila
  * pasaba de 300 líneas con «En vivo» y «Último aviso».
  */
 
 import { useRef } from "react";
-import { MoreHorizontal, Trash2, Upload } from "@buleje/design-system/icons";
+import { EyeOff, MoreHorizontal, Trash2, Upload } from "@buleje/design-system/icons";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 
@@ -17,9 +17,12 @@ interface Props {
   subiendo: boolean;
   onSubir: (archivo: File) => void;
   onQuitar: () => void;
+  /** Cuántas zonas ignora hoy el detector de personas de esta cámara. */
+  zonas: number;
+  onZonas: () => void;
 }
 
-export default function MenuMasCamara({ nombre, guardando, subiendo, onSubir, onQuitar }: Props) {
+export default function MenuMasCamara({ nombre, guardando, subiendo, onSubir, onQuitar, zonas, onZonas }: Props) {
   const { confirm } = useConfirm();
   const archivoRef = useRef<HTMLInputElement>(null);
   /* Sin `capture`: abre la galería, para subir una captura de pantalla de la
@@ -43,6 +46,15 @@ export default function MenuMasCamara({ nombre, guardando, subiendo, onSubir, on
       icon: Upload,
       busy: subiendo,
       onSelect: () => galeriaRef.current?.click(),
+    },
+    {
+      id: "zonas",
+      label: zonas ? `Zonas que el detector ignora (${zonas})` : "Zonas que el detector ignora",
+      hint: zonas
+        ? "El detector de personas del mosaico no mira ahí"
+        : "Marca el poste o la casaca que el detector confunde con alguien",
+      icon: EyeOff,
+      onSelect: onZonas,
     },
     {
       id: "quitar",

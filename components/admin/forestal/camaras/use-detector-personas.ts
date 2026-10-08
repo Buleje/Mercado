@@ -21,6 +21,7 @@ import {
   type MetaFotoPersona,
   type RespuestaFotoPersona,
 } from "@/lib/camaras/personas";
+import { filtrarCajasIgnoradas, type ZonaIgnorada } from "@/lib/camaras/zonas-ignorar";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
 import {
@@ -56,12 +57,20 @@ export interface OpcionesDetectorPersonas {
   tomarCuadro?: () => Promise<string | null>;
   /** Cada foto que se guardó (para el contador de la burbuja). */
   onFoto?: (foto: UltimaFotoPersona) => void;
+  /**
+   * Zonas del cuadro que no se miran (fracciones 0-1): una caja de persona con
+   * ≥60 % de su área adentro no cuenta (`lib/camaras/zonas-ignorar.ts`). Se
+   * leen en cada mirada: cambiarlas no reinicia el detector.
+   */
+  zonasIgnorar?: readonly ZonaIgnorada[];
 }
 
 export interface DetectorPersonas {
   estado: EstadoDetectorPersonas;
-  /** Personas en cuadro en la última mirada. */
+  /** Personas en cuadro en la última mirada (sin las que caen en una zona ignorada). */
   personasAhora: number;
+  /** Cajas de «persona» que la última mirada descartó por caer en una zona ignorada. */
+  ignoradasAhora: number;
   /** Fotos guardadas desde que se abrió. */
   fotosTomadas: number;
   ultimaFoto: UltimaFotoPersona | null;
@@ -122,6 +131,7 @@ export function useDetectorPersonas(opciones: OpcionesDetectorPersonas): Detecto
   const [fase, setFase] = useState<Exclude<EstadoDetectorPersonas, "apagado">>("cargando");
   const [error, setError] = useState<string | null>(null);
   const [personasAhora, setPersonasAhora] = useState(0);
+  const [ignoradasAhora, setIgnoradasAhora] = useState(0);
   const [fotosTomadas, setFotosTomadas] = useState(0);
   const [ultimaFoto, setUltimaFoto] = useState<UltimaFotoPersona | null>(null);
 
@@ -179,9 +189,24 @@ export function useDetectorPersonas(opciones: OpcionesDetectorPersonas): Detecto
       /* Trabado (mismo cuadro una y otra vez): ni se mira ni se decide, si no
          saldría una «sigue» por minuto de una imagen quieta. */
       if (cuadro !== "nuevo" || !vivo) return;
-      const r = await detectarPersonas(lienzos.chico);
+      const crudo = await detectarPersonas(lienzos.chico);
       if (!vivo) return;
+      /* Zonas a ignorar ANTES de decidir: una caja descartada no confirma
+         «apareció», no suma a «llegó otra» ni sostiene «sigue en cuadro». Las
+         cajas vienen en píxeles de `chico`; las zonas, en fracciones. */
+      const { quedan, ignoradas } = filtrarCajasIgnoradas(
+        crudo.cajas,
+        lienzos.chico.width,
+        lienzos.chico.height,
+        ultimas.current.zonasIgnorar ?? [],
+      );
+      const r = {
+        personas: quedan.length,
+        confianza: quedan.reduce((m, k) => Math.max(m, k.confianza), 0),
+        cajas: quedan,
+      };
       setPersonasAhora(r.personas);
+      setIgnoradasAhora(ignoradas.length);
       const at = Date.now();
       const d = decidirFotoPersona(decision, r.personas, at);
       if (d.foto && subiendo) {
@@ -240,12 +265,14 @@ export function useDetectorPersonas(opciones: OpcionesDetectorPersonas): Detecto
       soltar();
       soltarLienzosCuadro(lienzos);
       setPersonasAhora(0);
+      setIgnoradasAhora(0);
     };
   }, [activo, camaraId]);
 
   return {
     estado: activo ? fase : "apagado",
     personasAhora: activo ? personasAhora : 0,
+    ignoradasAhora: activo ? ignoradasAhora : 0,
     fotosTomadas,
     ultimaFoto,
     error: activo ? error : null,

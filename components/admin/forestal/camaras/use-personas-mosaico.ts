@@ -4,7 +4,8 @@
  * Lo que el mosaico junta de sus cuadros para la burbuja (2026-10-07): la
  * última foto de persona (su miniatura), cuántas llegaron desde que se
  * minimizó, un cuadro del video como miniatura de respaldo y la carpeta
- * «Personas» del Drive.
+ * «Personas» del Drive. La miniatura lleva su hora: la burbuja dice cuánto
+ * hace y se atenúa desde los 30 min (08-10), para no parecer actual.
  *
  * El cuadro de respaldo se toma con `tomarCuadroQuieto` de cada visor: NO
  * cuenta como un toque, así el reloj de 5 min sigue corriendo minimizado.
@@ -32,7 +33,8 @@ interface Opciones {
 export function usePersonasMosaico({ minimizado, conCarpeta }: Opciones) {
   const [ultima, setUltima] = useState<UltimaFotoPersona | null>(null);
   const [desdeMinimizar, setDesdeMinimizar] = useState(0);
-  const [cuadro, setCuadro] = useState<string | null>(null);
+  /* El cuadro de respaldo con su hora: la burbuja dice cuánto hace (08-10). */
+  const [cuadro, setCuadro] = useState<{ src: string; at: number } | null>(null);
   const [carpetaId, setCarpetaId] = useState<string | null>(null);
   const minimizadoRef = useRef(minimizado);
   const cuadros = useRef(new Map<string, TomarCuadro>());
@@ -58,7 +60,7 @@ export function usePersonasMosaico({ minimizado, conCarpeta }: Opciones) {
       try {
         const b64 = await tomar();
         if (b64) {
-          setCuadro(comoImagen(b64));
+          setCuadro({ src: comoImagen(b64), at: Date.now() });
           return;
         }
       } catch (err) {
@@ -108,7 +110,11 @@ export function usePersonasMosaico({ minimizado, conCarpeta }: Opciones) {
     registrarCuadro,
     alMinimizar,
     desdeMinimizar,
-    miniatura: ultima?.miniatura ?? cuadro,
+    miniatura: ultima?.miniatura ?? cuadro?.src ?? null,
+    /** Cuándo se tomó lo que muestra la miniatura (ms), para «hace 3 min». */
+    miniaturaAt: ultima ? ultima.at : (cuadro?.at ?? null),
+    /** `true` = la miniatura es una foto de persona; `false` = un cuadro del video. */
+    miniaturaEsPersona: ultima !== null,
     carpetaId,
   };
 }

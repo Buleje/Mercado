@@ -22,6 +22,7 @@ import type { AvisosCamara, Captura } from "@/lib/camaras/camaras";
 import type { CamaraConConexion } from "./ConectarCamaraModal";
 import { API_CAMARAS, type ChalecosPantalla, type ColaboradorOpcion } from "./camaras-ui";
 import type { CamposPuente } from "./puente-pc";
+import { anotarZonasDeLista } from "./zonas-detector";
 
 interface RespuestaGet {
   camaras?: CamaraConConexion[];
@@ -68,6 +69,8 @@ export function useCamaras() {
   const [aviso, setAviso] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
   const cargasRef = useRef({ ultima: 0, cambios: 0 });
+  /* Las zonas a ignorar viajan con la lista: el detector del mosaico las lee del almacén. */
+  useEffect(() => anotarZonasDeLista(camaras), [camaras]);
 
   const cargar = useCallback(async (opciones?: { silenciosa?: boolean }) => {
     const esta = ++cargasRef.current.ultima;

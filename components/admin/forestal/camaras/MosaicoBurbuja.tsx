@@ -7,7 +7,9 @@
  *
  * Muestra la última foto de persona (o un cuadro del video), el punto «en
  * vivo», cuántas cámaras y cuántas fotos de personas llegaron desde que se
- * minimizó. Se arrastra y se pega al borde (`use-burbuja-arrastre`). La ✕
+ * minimizó. Encima, cuánto hace de la miniatura («hace 3 min»); desde los
+ * 30 min se atenúa para no parecer actual (08-10: una foto de persona vieja
+ * quedaba a todo color horas). Se arrastra y se pega al borde (`use-burbuja-arrastre`). La ✕
  * pide una confirmación de una línea: cortar todas gasta un toque más que
  * volver a pedirlas.
  */
@@ -16,8 +18,10 @@ import { useEffect, useRef, useState } from "react";
 import { m } from "framer-motion";
 import { Pause, Users, Video, X } from "@buleje/design-system/icons";
 import { DURATION, EASE, tapPress } from "@/components/ui-system";
+import { edadMiniatura, MINIATURA_FRESCA_MS } from "@/lib/camaras/personas";
 import { cn } from "@/lib/utils";
 import { useBurbujaArrastre } from "./use-burbuja-arrastre";
+import { useAhora } from "./use-plataforma";
 
 interface Props {
   camaras: number;
@@ -26,6 +30,10 @@ interface Props {
   /** El reloj de 5 min las pausó. */
   pausado: boolean;
   miniatura: string | null;
+  /** Cuándo se tomó la miniatura (ms). */
+  miniaturaAt: number | null;
+  /** `true` = foto de persona; `false` = cuadro del video de respaldo. */
+  miniaturaEsPersona: boolean;
   /** Fotos de personas desde que se minimizó. */
   fotos: number;
   onExpandir: () => void;
@@ -35,8 +43,24 @@ interface Props {
 const PASTILLA =
   "absolute top-1/2 flex -translate-y-1/2 items-center gap-2 whitespace-nowrap rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-1.5 text-sm font-semibold text-[var(--text-primary)] shadow-[var(--shadow-lg)]";
 
-export default function MosaicoBurbuja({ camaras, viendo, pausado, miniatura, fotos, onExpandir, onCerrar }: Props) {
+export default function MosaicoBurbuja({
+  camaras,
+  viendo,
+  pausado,
+  miniatura,
+  miniaturaAt,
+  miniaturaEsPersona,
+  fotos,
+  onExpandir,
+  onCerrar,
+}: Props) {
   const a = useBurbujaArrastre();
+  const ahora = useAhora();
+  const edad = miniatura && miniaturaAt !== null ? edadMiniatura(miniaturaAt, ahora) : null;
+  /* La foto de persona siempre dice su edad; el cuadro del video, sólo si se quedó viejo
+     (con video se renueva cada minuto y «recién» fijo sería ruido). */
+  const conEdad =
+    edad !== null && miniaturaAt !== null && (miniaturaEsPersona || ahora - miniaturaAt >= MINIATURA_FRESCA_MS);
   const [confirmando, setConfirmando] = useState(false);
   const boton = useRef<HTMLButtonElement>(null);
   const noCortar = useRef<HTMLButtonElement>(null);
@@ -62,6 +86,7 @@ export default function MosaicoBurbuja({ camaras, viendo, pausado, miniatura, fo
     `En vivo minimizado: ${camaras} ${camaras === 1 ? "cámara" : "cámaras"}`,
     pausado ? "pausado, toca para seguir" : `${viendo} con video`,
     fotos ? `${fotos} ${fotos === 1 ? "foto" : "fotos"} de personas desde que minimizaste` : null,
+    conEdad && edad ? `${miniaturaEsPersona ? "Última foto de persona" : "Último cuadro"} ${edad.texto}` : null,
     pausado ? null : "Toca para abrir",
   ]
     .filter(Boolean)
@@ -94,7 +119,16 @@ export default function MosaicoBurbuja({ camaras, viendo, pausado, miniatura, fo
       >
         {miniatura ? (
           // eslint-disable-next-line @next/next/no-img-element -- cuadro local (data URL) del video
-          <img src={miniatura} alt="" draggable={false} className="absolute inset-0 h-full w-full object-cover" />
+          <img
+            src={miniatura}
+            alt=""
+            draggable={false}
+            className={cn(
+              "absolute inset-0 h-full w-full object-cover motion-safe:transition-[opacity,filter] motion-safe:duration-500",
+              edad?.vieja && "opacity-40 grayscale",
+            )}
+            data-miniatura-vieja={edad?.vieja ? "si" : "no"}
+          />
         ) : (
           <Video className="absolute inset-0 m-auto h-6 w-6" strokeWidth={1.75} aria-hidden />
         )}
@@ -112,6 +146,27 @@ export default function MosaicoBurbuja({ camaras, viendo, pausado, miniatura, fo
           {camaras}
         </span>
       </m.button>
+
+      {/* Cuánto hace de la miniatura: arriba, porque abajo a la derecha está la burbuja del chat. */}
+      {conEdad && edad && !confirmando && (
+        <span
+          aria-hidden
+          data-edad-miniatura={edad.vieja ? "vieja" : "nueva"}
+          className={cn(
+            "pointer-events-none absolute bottom-full mb-2.5 inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-0.5 text-xs font-semibold tabular-nums shadow-[var(--shadow-sm)]",
+            /* Pegada al borde de la pantalla y creciendo hacia adentro: centrada se salía a 400 px. */
+            a.lado === "der" ? "right-0" : "left-0",
+            edad.vieja ? "text-[var(--text-tertiary)]" : "text-[var(--text-secondary)]",
+          )}
+        >
+          {miniaturaEsPersona ? (
+            <Users className="h-3 w-3" strokeWidth={2.25} />
+          ) : (
+            <Video className="h-3 w-3" strokeWidth={2.25} />
+          )}
+          {edad.texto}
+        </span>
+      )}
 
       {/* Punto «en vivo»: rojo y latiendo con video; gris pausado o sin señal. */}
       <span

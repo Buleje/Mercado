@@ -38,6 +38,9 @@ import RenombrarCamara from "./RenombrarCamara";
 import { BTN } from "./camaras-ui";
 import BotonEnVivo from "./BotonEnVivo";
 import MenuMasCamara from "./MenuMasCamara";
+import { textoHace } from "./puente-pc";
+import { useZonasIgnorar } from "./zonas-detector";
+import ZonasDetectorModal from "./ZonasDetectorModal";
 import { lineaDeAviso } from "./ultimo-aviso";
 import { useAhora } from "./use-plataforma";
 
@@ -63,6 +66,8 @@ interface Props {
   onErrorCopia: () => void;
   /** Con puente de pantalla: la última lectura de la IA, debajo del visor. */
   lecturaPuente?: ReactNode;
+  /** La última foto del historial: sobre ella se marcan las zonas que el detector ignora. */
+  ultimaFoto?: { url: string; at: string } | null;
 }
 
 export default function CamaraFila({
@@ -83,10 +88,13 @@ export default function CamaraFila({
   onFotoGuardada,
   onErrorCopia,
   lecturaPuente,
+  ultimaFoto = null,
 }: Props) {
   const est = estadoDeConexion(c);
   const [copiado, setCopiado] = useState(false);
   const [visorOculto, setVisorOculto] = useState(false);
+  const [zonasAbierto, setZonasAbierto] = useState(false);
+  const zonas = useZonasIgnorar(c.id);
   const ahora = useAhora();
   /* Puente de pantalla (ADR-466): la pastilla y el visor leen el mismo cuadro. */
   const puente = usePuenteDeFila(c, visorOculto);
@@ -184,6 +192,8 @@ export default function CamaraFila({
           subiendo={subiendo}
           onSubir={onSubir}
           onQuitar={onQuitar}
+          zonas={zonas.length}
+          onZonas={() => setZonasAbierto(true)}
         />
       </div>
 
@@ -231,6 +241,16 @@ export default function CamaraFila({
           />
           {est.conexion.soportaPtz && <ControlPtz onMover={onMover} disabled={guardando} />}
         </div>
+      )}
+      {zonasAbierto && (
+        <ZonasDetectorModal
+          camaraId={c.id}
+          nombre={c.nombre}
+          cargarImagen={async () => ultimaFoto?.url ?? null}
+          origen={ultimaFoto ? `Última foto · ${textoHace(Math.max(0, ahora - Date.parse(ultimaFoto.at)))}` : ""}
+          sinImagen="Esta cámara todavía no tiene fotos. Ábrela en «Ver todas en vivo» y toca el ojo tachado de su cuadro."
+          onCerrar={() => setZonasAbierto(false)}
+        />
       )}
       {subiendo && (
         <p className="mt-2 flex items-center gap-2 text-sm text-[var(--text-tertiary)]">

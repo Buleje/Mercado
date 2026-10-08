@@ -153,6 +153,7 @@ export default function VistaCamaras({
               onErrorCopia={() =>
                 d.setError("El navegador no dejó copiar. Selecciona la dirección a mano.")
               }
+              ultimaFoto={ultimaCapturaDe(d.capturas, c.id)}
               lecturaPuente={
                 esPuente(c) ? (
                   <LecturaUltimaFoto

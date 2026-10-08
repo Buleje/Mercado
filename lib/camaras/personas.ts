@@ -131,3 +131,32 @@ export function decidirFotoPersona(
   if (desdeFoto >= INTERVALO_FOTO_PERSONA_MS) return foto("sigue");
   return sinFoto;
 }
+
+/* ── La miniatura de la burbuja envejece (2026-10-08) ─────────────────────── */
+
+/** Desde esta edad la miniatura de la burbuja se atenúa: ya no es «lo que pasa ahora». */
+export const MINIATURA_VIEJA_MS = 30 * 60_000;
+/** Un cuadro del video más nuevo que esto no dice su edad (se renueva cada minuto). */
+export const MINIATURA_FRESCA_MS = 2 * 60_000;
+
+export interface EdadMiniatura {
+  /** «recién» · «hace 3 min» · «hace 2 h» · «hace 1 día». */
+  texto: string;
+  /** ≥ `MINIATURA_VIEJA_MS`: la burbuja la atenúa. */
+  vieja: boolean;
+}
+
+/** Cuánto hace de la miniatura. Un `at` en el futuro (relojes que no coinciden) cuenta como «recién». */
+export function edadMiniatura(at: number, ahora: number): EdadMiniatura {
+  const ms = Math.max(0, ahora - at);
+  const min = Math.floor(ms / 60_000);
+  let texto: string;
+  if (min < 1) texto = "recién";
+  else if (min < 60) texto = `hace ${min} min`;
+  else if (min < 24 * 60) texto = `hace ${Math.floor(min / 60)} h`;
+  else {
+    const d = Math.floor(min / (24 * 60));
+    texto = d === 1 ? "hace 1 día" : `hace ${d} días`;
+  }
+  return { texto, vieja: ms >= MINIATURA_VIEJA_MS };
+}

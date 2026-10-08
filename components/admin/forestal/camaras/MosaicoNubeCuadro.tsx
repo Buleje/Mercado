@@ -10,11 +10,12 @@
  * Vigilancia (2026-10-07): con `detectar`, el detector de personas mira el
  * lienzo de EZUIKit mientras hay video — también con el mosaico minimizado,
  * porque el cuadro sigue montado — y su pastilla dice cuántas ve y cuántas
- * fotos guardó.
+ * fotos guardó. El ojo tachado abre «Zonas que el detector ignora» sobre el
+ * cuadro en vivo (08-10): lo que cae ahí no cuenta como persona.
  */
 
-import { useCallback, useEffect } from "react";
-import { Maximize2, Sparkles, Users, Volume2, VolumeX } from "@buleje/design-system/icons";
+import { useCallback, useEffect, useState } from "react";
+import { EyeOff, Maximize2, Sparkles, Users, Volume2, VolumeX } from "@buleje/design-system/icons";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import { useApiCamaras } from "./api-camaras";
 import { BTN, CHIP_BASE, CHIP_TONO, ICONO_TONO } from "./camaras-ui";
@@ -30,6 +31,8 @@ import type { TomarCuadro } from "./use-personas-mosaico";
 import { useVisorNube, type Calidad, type EstadoVisor } from "./use-visor-nube";
 import VisorNubeAnalisis from "./VisorNubeAnalisis";
 import VisorNubeCapas, { ChipEstadoVivo } from "./VisorNubeCapas";
+import { useZonasIgnorar } from "./zonas-detector";
+import ZonasDetectorModal from "./ZonasDetectorModal";
 
 export interface CamaraMosaico {
   id: string;
@@ -72,6 +75,8 @@ export default function MosaicoNubeCuadro({
   const viendo = v.estado === "viendo";
   const { contenedorId, estado, tomarCuadroQuieto } = v;
   const leerFuente = useCallback(() => fuenteDelVideo(document.getElementById(contenedorId)), [contenedorId]);
+  const zonas = useZonasIgnorar(camara.id);
+  const [zonasAbierto, setZonasAbierto] = useState(false);
   const personas = useDetectorPersonas({
     camaraId: camara.id,
     nombre: camara.nombre,
@@ -79,6 +84,7 @@ export default function MosaicoNubeCuadro({
     leerFuente,
     tomarCuadro: tomarCuadroQuieto,
     onFoto: onFotoPersona,
+    zonasIgnorar: zonas,
   });
 
   useEffect(() => {
@@ -180,6 +186,19 @@ export default function MosaicoNubeCuadro({
             <Sparkles className="h-4 w-4" aria-hidden /> Analizar
           </button>
         )}
+        {!soloMirar && (
+          <button
+            type="button"
+            onClick={() => setZonasAbierto(true)}
+            className={`${BTN} max-sm:h-11 ${zonas.length ? "" : "w-9 justify-center px-0 max-sm:w-11"}`}
+            title="Zonas que el detector de personas ignora (un poste, una casaca colgada)"
+            aria-label={`Zonas que el detector ignora en ${camara.nombre}${zonas.length ? `: ${zonas.length}` : ""}`}
+            data-zonas-boton={camara.id}
+          >
+            <EyeOff className="h-4 w-4" aria-hidden />
+            {zonas.length > 0 && <span className="tabular-nums">{zonas.length}</span>}
+          </button>
+        )}
         <button
           type="button"
           onClick={v.pantallaCompleta}
@@ -193,6 +212,18 @@ export default function MosaicoNubeCuadro({
       </div>
 
       {!soloMirar && <VisorNubeAnalisis a={a} onVerFotos={onVerFotos} />}
+      {zonasAbierto && (
+        <ZonasDetectorModal
+          camaraId={camara.id}
+          nombre={camara.nombre}
+          cargarImagen={tomarCuadroQuieto}
+          origen="Cuadro en vivo"
+          sinImagen="Sin video todavía: espera a que la cámara se vea y toca «Otro cuadro»."
+          renovable
+          aboveModals
+          onCerrar={() => setZonasAbierto(false)}
+        />
+      )}
     </li>
   );
 }
@@ -216,11 +247,16 @@ function ChipPersonas({ d }: { d: DetectorPersonas }) {
   return (
     <span
       className={`${CHIP_BASE} ${hay ? CHIP_TONO.aviso : CHIP_TONO.neutro}`}
-      title="Personas en cuadro ahora · fotos guardadas en la carpeta «Personas»"
+      title="Personas en cuadro ahora (sin las de las zonas ignoradas) · fotos guardadas en la carpeta «Personas»"
       aria-live="polite"
     >
       <Users className={`h-3.5 w-3.5 ${hay ? ICONO_TONO.aviso : ICONO_TONO.neutro}`} aria-hidden />
       {hay ? `${d.personasAhora} ${d.personasAhora === 1 ? "persona" : "personas"}` : "Nadie"}
+      {d.ignoradasAhora > 0 && (
+        <span className="text-[var(--text-tertiary)]">
+          · {d.ignoradasAhora} {d.ignoradasAhora === 1 ? "ignorada" : "ignoradas"}
+        </span>
+      )}
       {d.fotosTomadas > 0 && (
         <span className="text-[var(--text-tertiary)]">
           · {d.fotosTomadas} {d.fotosTomadas === 1 ? "foto" : "fotos"}

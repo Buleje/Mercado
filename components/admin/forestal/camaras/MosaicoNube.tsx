@@ -193,6 +193,8 @@ export default function MosaicoNube({
           viendo={viendo}
           pausado={m.cortado}
           miniatura={p.miniatura}
+          miniaturaAt={p.miniaturaAt}
+          miniaturaEsPersona={p.miniaturaEsPersona}
           fotos={p.desdeMinimizar}
           onExpandir={expandir}
           onCerrar={onCerrar}

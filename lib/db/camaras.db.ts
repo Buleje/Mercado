@@ -44,6 +44,7 @@ import {
 } from "@/lib/camaras/cruces";
 import { diasRetencionDe, diasRetencionValidos } from "@/lib/camaras/personas-retencion";
 import { configurarPuente, type CambiosPuente } from "@/lib/camaras/vivo";
+import { configurarZonasIgnorar, type ZonaIgnorada } from "@/lib/camaras/zonas-ignorar";
 
 /**
  * CamarasDB — las cámaras del negocio y lo que mandan.
@@ -334,6 +335,32 @@ export const CamarasDB = {
         undefined,
         tenantId,
       ).catch((err) => logger.error("[camaras] no se pudo auditar la pila", { error: String(err), tenantId }));
+    }
+    return r;
+  },
+
+  /**
+   * Zonas que el detector de personas del mosaico no mira (2026-10-08): 0-4
+   * rectángulos en fracciones del cuadro. Va en la lista de cámaras (sin
+   * schema), bajo el mismo candado que los avisos.
+   */
+  async configurarZonasIgnorar(
+    tenantId: string,
+    camaraId: string,
+    zonas: readonly ZonaIgnorada[],
+    user: string,
+  ): Promise<ResultadoCamaras> {
+    const r = await mutarCamaras(tenantId, user, (camaras) => configurarZonasIgnorar(camaras, camaraId, zonas));
+    if (r.ok) {
+      logActivity(
+        "camara.zonas_ignorar",
+        "camara",
+        `Marcó ${zonas.length} ${zonas.length === 1 ? "zona" : "zonas"} a ignorar en «${r.camaras.find((c) => c.id === camaraId)?.nombre ?? camaraId}»`,
+        camaraId,
+        user,
+        undefined,
+        tenantId,
+      ).catch((err) => logger.error("[camaras] no se pudo auditar las zonas", { error: String(err), tenantId }));
     }
     return r;
   },
