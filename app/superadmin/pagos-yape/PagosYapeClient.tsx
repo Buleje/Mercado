@@ -944,7 +944,7 @@ export default function PagosYapeClient(_: Props) {
           <div className="hidden lg:block lg:col-span-7 xl:col-span-8">
             {!selected ? (
               <div className="flex items-center justify-center h-64 rounded-xl border border-dashed border-[var(--rule-base)] text-sm text-[var(--text-tertiary)]">
-                Selecciona un pago para revisar (o presioná{" "}
+                Selecciona un pago para revisar (o presiona{" "}
                 <kbd className="mx-1 px-1 rounded bg-[var(--surface-sunken)] font-mono text-xs">
                   J
                 </kbd>
@@ -1036,7 +1036,7 @@ export default function PagosYapeClient(_: Props) {
             <textarea
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
-              placeholder="Ej: El monto no coincide con el pedido. Por favor, subí la captura correcta."
+              placeholder="Ej: El monto no coincide con el pedido. Por favor, sube la captura correcta."
               rows={4}
               // eslint-disable-next-line jsx-a11y/no-autofocus -- se abre para escribir el motivo del rechazo de inmediato
               autoFocus

@@ -18,7 +18,7 @@ export function HistoryTable({ history }: { history: HistoryMonth[] }) {
   if (withData.length === 0) {
     return (
       <p className="text-sm text-[var(--text-tertiary)]">
-        Aún no hay gasto registrado. Los meses se van congelando a medida que registrás gastos.
+        Aún no hay gasto registrado. Los meses se van congelando a medida que registras gastos.
       </p>
     );
   }

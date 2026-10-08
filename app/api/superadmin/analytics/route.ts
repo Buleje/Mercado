@@ -82,13 +82,26 @@ async function getAnalyticsData(fromISO?: string, toISO?: string) {
   // importar trial → si los 6 tenants estaban en trial, MRR salía
   // S/1834 cuando el real era S/0 (todavía no pagan). Ahora excluimos
   // tenants cuyo trialEndsAt > now (siguen en trial, plan no se cobra).
-  const mrr = allTenants.reduce((sum, t) => {
-    if (!t.active) return sum;
-    // Si el trial aún no expira, el tenant no paga → no suma a MRR
-    if (t.trialEndsAt && new Date(t.trialEndsAt) > now) return sum;
-    const price = PLAN_PRICES[t.plan as keyof typeof PLAN_PRICES] ?? 0;
-    return sum + price;
-  }, 0);
+  //
+  // 2026-10-08: el mismo criterio vale para TODAS las series de ingresos y
+  // para «de pago». Antes sólo el MRR excluía el trial: el dashboard decía
+  // «MRR S/0 · 9 de pago» y la «Visión mensual» sumaba S/15,192 en 6 meses
+  // con los 9 tenants activos en trial hasta 2027 (0 pagan, como dice Billing).
+  // `at` se recorta a `now`: un mes que todavía no terminó se mide hoy.
+  const pagaEn = (t: (typeof allTenants)[number], at: Date) => {
+    const corte = at > now ? now : at;
+    return (
+      t.active &&
+      new Date(t.createdAt) <= corte &&
+      !(t.trialEndsAt && new Date(t.trialEndsAt) > corte)
+    );
+  };
+  const mrrAt = (at: Date) =>
+    allTenants.reduce(
+      (s, t) => (pagaEn(t, at) ? s + (PLAN_PRICES[t.plan as keyof typeof PLAN_PRICES] ?? 0) : s),
+      0,
+    );
+  const mrr = mrrAt(now);
 
   // Growth metrics
   const tenantGrowthPct = tenantsLastMonth > 0
@@ -121,12 +134,7 @@ async function getAnalyticsData(fromISO?: string, toISO?: string) {
   for (let i = 5; i >= 0; i--) {
     const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59, 999);
     const label = end.toLocaleDateString("es-PE", { month: "short", year: "2-digit" });
-    const revenue = allTenants
-      .filter((t) => new Date(t.createdAt) <= end && t.active)
-      .reduce(
-        (s, t) => s + (PLAN_PRICES[t.plan as keyof typeof PLAN_PRICES] ?? 0),
-        0,
-      );
+    const revenue = mrrAt(end);
     monthlyRevenue.push({ month: label, revenue });
   }
 
@@ -186,12 +194,7 @@ async function getAnalyticsData(fromISO?: string, toISO?: string) {
       periodRevenue.push({
         bucket: label,
         iso,
-        revenue: allTenants
-          .filter((t2) => new Date(t2.createdAt) <= bEnd && t2.active)
-          .reduce(
-            (s, t2) => s + (PLAN_PRICES[t2.plan as keyof typeof PLAN_PRICES] ?? 0),
-            0,
-          ),
+        revenue: mrrAt(bEnd),
       });
     }
   } else {
@@ -239,12 +242,7 @@ async function getAnalyticsData(fromISO?: string, toISO?: string) {
       periodRevenue.push({
         bucket: label,
         iso,
-        revenue: allTenants
-          .filter((t2) => new Date(t2.createdAt) <= bEnd && t2.active)
-          .reduce(
-            (s, t2) => s + (PLAN_PRICES[t2.plan as keyof typeof PLAN_PRICES] ?? 0),
-            0,
-          ),
+        revenue: mrrAt(bEnd),
       });
     }
   }
@@ -269,10 +267,15 @@ async function getAnalyticsData(fromISO?: string, toISO?: string) {
 
   // Trial conversion rate
   const activeTenants = allTenants.filter((t) => t.active);
-  const convertedFromTrial = activeTenants.filter(
-    (t) => t.plan !== "free" && t.trialEndsAt,
+  // Sólo cuentan los trials que YA terminaron: uno que sigue corriendo no
+  // convirtió ni dejó de convertir (antes daba 64 % con 9 trials hasta 2027).
+  const trialsTerminados = allTenants.filter(
+    (t) => t.trialEndsAt && new Date(t.trialEndsAt) <= now,
+  );
+  const convertedFromTrial = trialsTerminados.filter(
+    (t) => t.active && t.plan !== "free",
   ).length;
-  const totalTrials = allTenants.filter((t) => t.trialEndsAt).length;
+  const totalTrials = trialsTerminados.length;
   const trialConversionRate = totalTrials > 0
     ? Math.round((convertedFromTrial / totalTrials) * 100 * 10) / 10
     : 0;
@@ -282,7 +285,7 @@ async function getAnalyticsData(fromISO?: string, toISO?: string) {
       totalTenants,
       activeTenants: activeTenants.length,
       inactiveTenants,
-      payingTenants: activeTenants.filter((t) => t.plan !== "free").length,
+      payingTenants: allTenants.filter((t) => t.plan !== "free" && pagaEn(t, now)).length,
       mrr,
       arr: mrr * 12,
       arpu: totalTenants > 0 ? Math.round(mrr / totalTenants) : 0,

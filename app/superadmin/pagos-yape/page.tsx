@@ -48,7 +48,7 @@ export default async function PagosYapePage() {
                 <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
                   Plataforma · Yape
                 </p>
-                <div className="inline-flex items-center gap-2 flex-wrap"><h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">Pagos Yape pendientes</h1><InfoTip side="bottom" title="Pagos Yape pendientes" body="La IA lee cada captura: compara monto y operación detectados con los esperados. Atajos: / buscar · J/K navegar · A aprobar." what="Bandeja de comprobantes Yape que esperan tu aprobación manual." affects="Aprobar un comprobante confirma el pago del pedido o suscripción correspondiente." example="Un cliente paga por Yape y sube su captura → la revisás acá y la aprobás para liberar el pedido." /></div>
+                <div className="inline-flex items-center gap-2 flex-wrap"><h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--text-primary)]">Pagos Yape pendientes</h1><InfoTip side="bottom" title="Pagos Yape pendientes" body="La IA lee cada captura: compara monto y operación detectados con los esperados. Atajos: / buscar · J/K navegar · A aprobar." what="Bandeja de comprobantes Yape que esperan tu aprobación manual." affects="Aprobar un comprobante confirma el pago del pedido o suscripción correspondiente." example="Un cliente paga por Yape y sube su captura → la revisas aquí y la apruebas para liberar el pedido." /></div>
               </div>
             </div>
             {initialCount > 0 && (

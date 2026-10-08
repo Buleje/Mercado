@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   Minus,
+  Clock,
 } from "@buleje/design-system/icons";
 import {
   ErrorAlert,
@@ -155,7 +156,7 @@ export default function DashboardPage() {
         fetchSuperadmin(`/api/superadmin/dashboard/widgets?range=${widgetsRange}`),
       ]);
       if (!aRes.ok) {
-        setError("No se pudo cargar el dashboard. Reintentá.");
+        setError("No se pudo cargar el dashboard. Vuelve a intentarlo.");
         return;
       }
       const json = (await aRes.json()) as AnalyticsData;
@@ -540,11 +541,15 @@ function ExecutiveSummary({ data }: { data: AnalyticsData }) {
   const mrrPct = data.growth.mrrGrowthPct;
   const riskRatio = total > 0 ? atRisk / total : 0;
 
+  // 2026-10-08: con tiendas y MRR S/0 (todas en trial) no es «saludable»:
+  // todavía no entra plata. El riesgo alto sigue mandando.
+  const sinIngresos = data.overview.mrr === 0 && total > 0;
   const health =
-    riskRatio >= 0.6 ? "attention" : riskRatio >= 0.3 ? "watch" : "healthy";
+    riskRatio >= 0.6 ? "attention" : riskRatio >= 0.3 ? "watch" : sinIngresos ? "sinIngresos" : "healthy";
   const HEALTH = {
     healthy: { label: "Negocio saludable", icon: CheckCircle2, chip: "bg-[var(--data-success-50)] text-[var(--data-success-700)]", border: "border-[var(--data-success-500)]/30", iconc: "text-[var(--data-success-500)]" },
-    watch: { label: "Salud estable — vigilá el riesgo", icon: AlertTriangle, chip: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300", border: "border-amber-400/30", iconc: "text-amber-500" },
+    sinIngresos: { label: "Aún sin tiendas que paguen", icon: Clock, chip: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]", border: "border-[var(--rule-base)]", iconc: "text-[var(--text-secondary)]" },
+    watch: { label: "Salud estable — vigila el riesgo", icon: AlertTriangle, chip: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300", border: "border-amber-400/30", iconc: "text-amber-500" },
     attention: { label: "Requiere atención", icon: AlertTriangle, chip: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300", border: "border-amber-400/40", iconc: "text-amber-500" },
   }[health];
   const Icon = HEALTH.icon;
@@ -569,7 +574,7 @@ function ExecutiveSummary({ data }: { data: AnalyticsData }) {
             · <strong className="text-[var(--text-primary)]">{paying}</strong> de pago de{" "}
             <strong className="text-[var(--text-primary)]">{total}</strong> tiendas ·{" "}
             {atRisk > 0
-              ? <strong className={health === "healthy" ? "text-[var(--text-primary)]" : "text-amber-600 dark:text-amber-400"}>{atRisk} en riesgo</strong>
+              ? <strong className={health === "healthy" || health === "sinIngresos" ? "text-[var(--text-primary)]" : "text-amber-600 dark:text-amber-400"}>{atRisk} en riesgo</strong>
               : <span className="text-[var(--data-success-500)] font-semibold">sin riesgos</span>}{" "}
             · <strong className="text-[var(--text-primary)] tabular-nums">{orders.toLocaleString("es-PE")}</strong> pedidos este mes
           </p>

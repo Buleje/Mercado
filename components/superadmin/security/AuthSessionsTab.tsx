@@ -497,7 +497,7 @@ export function AuthSessionsTab() {
             <p className="text-xs text-[var(--text-tertiary)] mt-1">
               {sessions.length === 0
                 ? "No hay logins exitosos sin logout en las últimas 8 horas."
-                : "Ajustá la búsqueda."}
+                : "Ajusta la búsqueda."}
             </p>
             {search && (
               <button
@@ -775,7 +775,7 @@ export function AuthSessionsTab() {
                   tener que volver a iniciar sesión inmediatamente.
                 </AlertDialog.Description>
                 <p className="mt-2 text-xs text-[var(--text-tertiary)]">
-                  Usalo ante un incidente sospechoso (cookie filtrado, equipo
+                  Úsalo ante un incidente sospechoso (cookie filtrado, equipo
                   robado, etc.). La acción queda registrada en el audit log.
                 </p>
               </div>

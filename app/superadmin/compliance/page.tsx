@@ -41,7 +41,7 @@ export default async function CompliancePage() {
                   title="Ley 29733 — Protección de Datos Personales"
                   what="El registro de auditoría que exige la ley peruana: quién accedió o modificó datos personales (clientes, ventas, fiados), cuándo y desde qué IP. Lo marca el sistema con la etiqueta [L29733]."
                   affects="Solo lectura. Es tu evidencia de cumplimiento ante la APDP; exportable a CSV."
-                  example="Si un cliente pide saber qué se hizo con sus datos (derecho de acceso), filtras por su negocio y exportás el registro."
+                  example="Si un cliente pide saber qué se hizo con sus datos (derecho de acceso), filtras por su negocio y exportas el registro."
                 /></div>
             </div>
           </div>

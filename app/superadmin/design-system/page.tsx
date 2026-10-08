@@ -703,7 +703,7 @@ function GalleryView({
               what: "Tu biblioteca de temas guardados desde el editor. Los puedes reactivar, duplicar o borrar cuando quieras.",
               affects: "Reactivar uno reemplaza el tema vigente del panel admin de los negocios.",
               example:
-                "Guardaste 'Navidad 2026' en diciembre → en enero reactivas 'Default' con un clic y volvés al tema normal.",
+                "Guardaste 'Navidad 2026' en diciembre → en enero reactivas 'Default' con un clic y vuelves al tema normal.",
             }}
           />
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -862,7 +862,7 @@ function EditorView({
     meta: {
       what: "Nombre y datos de identidad del preset que estás armando.",
       affects: "Cómo se identifica/guarda el tema (no cambia el look).",
-      example: "Lo llamás 'Verano Pucallpa' para reconocerlo en Mis presets.",
+      example: "Lo llamas 'Verano Pucallpa' para reconocerlo en Mis presets.",
     },
     colors: {
       what: "La paleta: primario, acento, fondos, texto y estados (éxito/error).",
@@ -872,7 +872,7 @@ function EditorView({
     typography: {
       what: "Fuente, tamaños de títulos y cuerpo, y peso del texto.",
       affects: "Todo el texto del panel admin de los negocios.",
-      example: "Subís el tamaño del cuerpo → el admin se lee más grande en toda pantalla.",
+      example: "Subes el tamaño del cuerpo → el admin se lee más grande en toda pantalla.",
     },
     spacing: {
       what: "Radio de las esquinas (cuadrado ↔ redondeado) y grosor de bordes.",

@@ -415,9 +415,14 @@ export function ControlCenterClient({
   };
 
   // Quick stats — overview del estado del Control Center
+  // «Sin datos» NO es incidencia: sólo cuenta lo que un chequeo marcó mal.
   const operationalCount = PLATFORMS.filter(
     (p) => (healthMap[p.id]?.status ?? "unknown") === "operational",
   ).length;
+  const incidentCount = PLATFORMS.filter((p) => {
+    const st = healthMap[p.id]?.status;
+    return st === "degraded" || st === "maintenance";
+  }).length;
   const configuredCreds = CREDENTIALS.filter((c) => envStatus[c.envKey]).length;
 
   // Search filter — busca en name, description y href.
@@ -485,13 +490,15 @@ export function ControlCenterClient({
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <SAStatChip
           icon={Activity}
-          label="Plataformas activas"
-          value={`${operationalCount}/${PLATFORMS.length}`}
+          label={operationalCount > 0 ? "Plataformas activas" : "Páginas"}
+          value={operationalCount > 0 ? `${operationalCount}/${PLATFORMS.length}` : String(PLATFORMS.length)}
           tone="teal"
           hint={
-            operationalCount === PLATFORMS.length
-              ? "Todas operativas"
-              : `${PLATFORMS.length - operationalCount} con incidencias`
+            incidentCount > 0
+              ? `${incidentCount} con incidencias`
+              : operationalCount === PLATFORMS.length
+                ? "Todas operativas"
+                : "Sin chequeo automático"
           }
         />
         <SAStatChip
@@ -583,7 +590,7 @@ export function ControlCenterClient({
         <div className="space-y-6">
           {platformsByCategory.map((group) => (
             <div key={group.category}>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">
                 {group.category}
                 <span className="ml-2 text-[var(--text-tertiary)]/60 font-semibold">
                   · {group.items.length}
@@ -650,13 +657,13 @@ export function ControlCenterClient({
                       )}
                       aria-hidden
                     />
-                    <p className="text-[13px] font-bold text-[var(--text-primary)] truncate">
+                    <p className="text-sm font-bold text-[var(--text-primary)] truncate">
                       {group}
                     </p>
                   </div>
                   <span
                     className={cn(
-                      "shrink-0 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider",
+                      "shrink-0 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider",
                       allOk
                         ? "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]"
                         : "bg-teal-500/10 text-teal-500",

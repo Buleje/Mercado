@@ -137,7 +137,7 @@ export function FinancialResults({
       {configOpen && total > 0 && (
         <div className="mb-4 rounded-xl bg-[var(--surface-sunken)] p-3">
           <p className="mb-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-            Marcá qué categorías son <span className="font-bold text-[var(--text-secondary)]">costo de servir</span> (el
+            Marca qué categorías son <span className="font-bold text-[var(--text-secondary)]">costo de servir</span> (el
             resto cuenta como operativo). Se guarda en este dispositivo.
           </p>
           <div className="flex flex-wrap gap-1.5">
@@ -190,7 +190,7 @@ export function FinancialResults({
                 </p>
                 <p className="inline-flex items-center gap-1.5 text-sm font-bold" style={{ color: resultColor }}>
                   {profitable ? <TrendingUp className="h-4 w-4" aria-hidden /> : <TrendingDown className="h-4 w-4" aria-hidden />}
-                  {profitable ? "Ganás" : "Perdés"}
+                  {profitable ? "Ganas" : "Pierdes"}
                   {netMargin !== null && ` · margen ${netMargin.toFixed(0)}%`}
                 </p>
                 {netDelta !== null && <DeltaVsPrev delta={netDelta} />}
@@ -308,7 +308,7 @@ function ProjectionBreakEven({
           <Target className="h-3 w-3" aria-hidden /> Break-even
         </p>
         {profitable ? (
-          <p className="text-sm font-bold text-[var(--data-success-700,#047857)]">Ya cubrís el gasto ✓</p>
+          <p className="text-sm font-bold text-[var(--data-success-700,#047857)]">Ya cubres el gasto ✓</p>
         ) : gap > 0 ? (
           <p className="text-sm text-[var(--text-secondary)]">
             Falta <span className="font-extrabold tabular-nums text-[var(--text-primary)]">{fmtPenShort(gap)}</span> de MRR

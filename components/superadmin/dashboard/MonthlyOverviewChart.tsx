@@ -77,7 +77,8 @@ export function MonthlyOverviewChart({ data, description }: Props) {
   const totalRev = data.reduce((s, d) => s + d.revenue, 0);
   const totalSign = data.reduce((s, d) => s + d.signups, 0);
   const peakRev = data.reduce((m, d) => Math.max(m, d.revenue), 0);
-  const peakMonth = data.find((d) => d.revenue === peakRev)?.month ?? "—";
+  // Sin ingresos no hay «mejor mes» (antes elegía el primero de seis ceros).
+  const peakMonth = peakRev > 0 ? (data.find((d) => d.revenue === peakRev)?.month ?? "—") : "—";
 
   return (
     <ChartWrapper

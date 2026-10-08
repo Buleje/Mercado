@@ -113,7 +113,7 @@ export default function IntelligenceClient() {
       const data = (await res.json()) as DemandReport;
       setReport(data);
     } catch {
-      setError("Error de red — revisá tu conexión e intentá de nuevo.");
+      setError("Error de red — revisa tu conexión e inténtalo de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -205,7 +205,7 @@ export default function IntelligenceClient() {
   return (
     <AdminTabShell
       title="Inteligencia de Barrio"
-      description="Demanda real de todas tus bodegas — detectá tendencias, quiebres y oportunidades."
+      description="Demanda real de todas tus bodegas — detecta tendencias, quiebres y oportunidades."
       icon={Activity}
       kicker="Plataforma · Inteligencia"
       stats={

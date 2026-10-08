@@ -1036,7 +1036,7 @@ function BannerCard({
       {expanded && (
         <div className="border-t border-[var(--rule-soft)] p-5 sm:p-6 space-y-5 bg-[var(--surface-canvas)]">
           {/* ── Type switch — define qué campos se muestran abajo ── */}
-          <Field label="Tipo de banner" hint="Definí cómo se ve y qué hace al hacer click">
+          <Field label="Tipo de banner" hint="Define cómo se ve y qué hace al hacer click">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {(
                 [
@@ -1178,7 +1178,7 @@ function BannerCard({
               }
               hint={
                 banner.type === "image"
-                  ? "Resolución recomendada: 1600×400 (4:1) · subí PNG/JPG/WebP de buena calidad"
+                  ? "Resolución recomendada: 1600×400 (4:1) · sube PNG/JPG/WebP de buena calidad"
                   : "Tamaño recomendado: 1600×400 (4:1) · si no hay imagen se usan los colores de abajo"
               }
             >

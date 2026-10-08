@@ -346,7 +346,7 @@ export function useSuperAdminDocuments(): UseSuperAdminDocuments {
           const data = (await res.json().catch(() => ({}))) as { error?: string };
           setError(
             data.error === "mime_not_allowed"
-              ? "Para escanear, subí una imagen (foto del documento)."
+              ? "Para escanear, sube una imagen (foto del documento)."
               : "No se pudo escanear el documento.",
           );
         }

@@ -557,7 +557,7 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
                       {!resetResult.startsWith("Error") && t.ownerPhone && (
                         <a
                           href={`https://wa.me/${t.ownerPhone.replace(/\D/g, "")}?text=${encodeURIComponent(
-                            `Hola ${t.name} 👋 Soy del equipo de Buleje. Reseteamos tu acceso al panel.\n\nUsuario: ${resetUsername ?? "admin"}\nContraseña temporal: ${resetResult}\n\nEntrá a ${typeof window !== "undefined" ? window.location.origin : "https://www.buleje.pe"}/admin/login y al ingresar te pedirá crear tu propia contraseña. Esta temporal es de un solo uso.`,
+                            `Hola ${t.name} 👋 Soy del equipo de Buleje. Reseteamos tu acceso al panel.\n\nUsuario: ${resetUsername ?? "admin"}\nContraseña temporal: ${resetResult}\n\nEntra a ${typeof window !== "undefined" ? window.location.origin : "https://www.buleje.pe"}/admin/login y al ingresar te pedirá crear tu propia contraseña. Esta temporal es de un solo uso.`,
                           )}`}
                           target="_blank"
                           rel="noopener noreferrer"
@@ -730,7 +730,7 @@ export function TenantDetailModal({ tenant, onClose, onUpdated }: TenantDetailMo
                     onClick={() =>
                       secAction(
                         "logout-all",
-                        "¿Cerrar TODAS las sesiones activas de este negocio? Tendrán que volver a iniciar sesión. Útil si sospechás un acceso indebido.",
+                        "¿Cerrar TODAS las sesiones activas de este negocio? Tendrán que volver a iniciar sesión. Útil si sospechas un acceso indebido.",
                       )
                     }
                     disabled={!!secBusy}

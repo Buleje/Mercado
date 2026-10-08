@@ -166,7 +166,7 @@ export default function ImageCropEditor({
               Editor de imagen
             </p>
             <h2 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">
-              Ajustá tu imagen
+              Ajusta tu imagen
             </h2>
           </div>
           <span className="ml-auto flex items-center gap-1 shrink-0">
@@ -202,7 +202,7 @@ export default function ImageCropEditor({
           {/* Hint pan */}
           <div className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-lg bg-white/90 backdrop-blur px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-primary)]">
             <MousePointer className="h-3 w-3" strokeWidth={2.25} />
-            Arrastrá para mover
+            Arrastra para mover
           </div>
         </div>
 

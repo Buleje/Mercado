@@ -28,7 +28,7 @@ export default function SupportPage() {
         }}
         title="Soporte"
         kicker="Plataforma · Tiendas"
-        description="Solicitudes de ayuda de todas las tiendas. Respondé y gestioná su estado."
+        description="Solicitudes de ayuda de todas las tiendas. Responde y gestiona su estado."
         icon={Inbox}
       >
         <SupportInbox />

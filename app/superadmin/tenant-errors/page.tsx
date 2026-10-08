@@ -43,7 +43,7 @@ export default async function TenantErrorsPage() {
                   title="Soporte proactivo"
                   what="Muestra en vivo los errores que sufre el panel admin de cada negocio (los reporta el error boundary de su panel)."
                   affects="Solo el superadmin. Te deja entrar a reproducir (impersonar), contactar al dueño y marcar resuelto."
-                  example="Una bodega tropieza con un bug al cargar un producto → lo ves acá antes de que te llame, entrás a su panel y la ayudás."
+                  example="Una bodega tropieza con un bug al cargar un producto → lo ves acá antes de que te llame, entras a su panel y la ayudas."
                 /></div>
             </div>
           </div>

@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   XCircle,
+  Info,
   Clock,
   Wifi,
   HardDrive,
@@ -27,6 +28,31 @@ import { SuperAdminModuleTabs, SALUD_TABS } from "@/components/superadmin/_share
 const TenantMonitorPanel = dynamic(() => import("@/components/superadmin/TenantMonitorPanel"), {
   ssr: false,
 });
+
+// Tono por severidad del incidente (API /api/admin/health: critical|warning|info).
+const INCIDENT_TONE = {
+  critical: {
+    icon: XCircle,
+    border: "border-[var(--data-error-500)]",
+    bg: "bg-[var(--data-error-50)]",
+    chip: "bg-[var(--data-error-500)]/15 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
+    text: "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
+  },
+  warning: {
+    icon: AlertTriangle,
+    border: "border-[var(--data-warning-500)]/50",
+    bg: "bg-[var(--data-warning-50)]",
+    chip: "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]",
+    text: "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]",
+  },
+  info: {
+    icon: Info,
+    border: "border-[var(--rule-base)]",
+    bg: "bg-[var(--surface-raised)]",
+    chip: "bg-[var(--data-info-500)]/12 text-[var(--data-info-700)] dark:text-[var(--data-info-500)]",
+    text: "text-[var(--text-primary)]",
+  },
+} as const;
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -75,13 +101,13 @@ const STATUS_META: Record<HealthCheck["status"], { label: string; cls: string; d
   },
   degraded: {
     label: "Degradado",
-    cls: "border-teal-300/60 bg-teal-50/60 text-teal-700 dark:border-teal-700/40 dark:bg-teal-950/30 dark:text-teal-300",
-    dot: "bg-teal-500",
+    cls: "border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]",
+    dot: "bg-[var(--data-warning-500)]",
   },
   error: {
     label: "Error",
-    cls: "border-[var(--data-error-500)] bg-rose-50/60 text-[var(--accent)] dark:border-[var(--data-error-500)] dark:bg-rose-950/30 dark:text-[var(--accent)]",
-    dot: "bg-rose-500",
+    cls: "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
+    dot: "bg-[var(--data-error-500)]",
   },
   checking: {
     label: "Verificando…",
@@ -346,13 +372,13 @@ export default function SystemHealthPage() {
     degraded: {
       icon: AlertTriangle,
       label: "Algunos servicios degradados",
-      bg: "border-teal-300/60 bg-teal-50/40 dark:border-teal-700/40 dark:bg-teal-950/20",
-      iconCls: "text-teal-600 dark:text-teal-400",
+      bg: "border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)]",
+      iconCls: "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]",
     },
     error: {
       icon: XCircle,
       label: "Problemas detectados",
-      bg: "border-[var(--data-error-500)] bg-rose-50/40 dark:border-[var(--data-error-500)] dark:bg-rose-950/20",
+      bg: "border-[var(--data-error-500)] bg-[var(--data-error-50)]",
       iconCls: "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
     },
     checking: {
@@ -483,27 +509,42 @@ export default function SystemHealthPage() {
         {activeTab === "system" && (
           <>
             {/* ─── Active incidents ──────────────────────────────── */}
-            {incidents.length > 0 && (
-              <section className="rounded-2xl border-2 border-[var(--data-error-500)] bg-rose-50/40 dark:border-[var(--data-error-500)] dark:bg-rose-950/30 overflow-hidden">
-                <header className="flex items-center gap-3 border-b border-[var(--data-error-500)] dark:border-[var(--data-error-500)] px-5 py-3.5">
-                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--data-error-50)] text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]">
-                    <AlertTriangle className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+            {incidents.length > 0 && (() => {
+              // 2026-10-08: el tono sale de la severidad. Antes todo incidente
+              // (hasta un `info` como «Redis no configurado») salía en caja roja
+              // con texto teal (accent) y XCircle, debajo de «Todos los sistemas
+              // operativos»: alarma y color que no decían lo mismo.
+              const peor = incidents.some((i) => i.severity === "critical")
+                ? "critical"
+                : incidents.some((i) => i.severity === "warning")
+                  ? "warning"
+                  : "info";
+              const caja = INCIDENT_TONE[peor];
+              const CajaIcon = caja.icon;
+              return (
+              <section className={`rounded-2xl border-2 ${caja.border} ${caja.bg} overflow-hidden`}>
+                <header className={`flex items-center gap-3 border-b ${caja.border} px-5 py-3.5`}>
+                  <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${caja.chip}`}>
+                    <CajaIcon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
                   </span>
                   <div>
-                    <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--accent)] dark:text-[var(--accent)]">
-                      Incidentes activos · {incidents.length}
+                    <h3 className={`font-display text-base font-extrabold tracking-tight ${caja.text}`}>
+                      {peor === "info" ? "Avisos" : "Incidentes activos"} · {incidents.length}
                     </h3>
                   </div>
                 </header>
-                <ul className="divide-y divide-rose-200/60 dark:divide-rose-800/40">
-                  {incidents.map((inc) => (
+                <ul className="divide-y divide-[var(--rule-soft)]">
+                  {incidents.map((inc) => {
+                    const tono = INCIDENT_TONE[inc.severity as keyof typeof INCIDENT_TONE] ?? INCIDENT_TONE.warning;
+                    const IncIcon = tono.icon;
+                    return (
                     <li
                       key={inc.id}
-                      className="flex items-center gap-3 px-5 py-3 text-sm text-[var(--accent)] dark:text-[var(--accent)]"
+                      className={`flex items-center gap-3 px-5 py-3 text-sm ${tono.text}`}
                     >
-                      <XCircle className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden />
+                      <IncIcon className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden />
                       <span className="font-semibold flex-1">{inc.title}</span>
-                      <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]/80 dark:text-[var(--accent)]/80 shrink-0">
+                      <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] shrink-0">
                         {(() => {
                           // Brandon 2026-05-21 audit fix #9: guard contra
                           // "Invalid Date" cuando inc.since es null/undefined
@@ -515,10 +556,12 @@ export default function SystemHealthPage() {
                         })()}
                       </span>
                     </li>
-                  ))}
+                    );
+                  })}
                 </ul>
               </section>
-            )}
+              );
+            })()}
 
             {/* ─── Admin metrics (KPIs) ───────────────────────────── */}
             {adminMetrics.length > 0 && (
@@ -528,16 +571,16 @@ export default function SystemHealthPage() {
                     m.status === "ok" ? "accent" : m.status === "warning" ? "warning" : "danger";
                   const iconBg = {
                     accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
-                    warning: "bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300",
+                    warning: "bg-[var(--data-warning-50)] text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]",
                     danger:
-                      "bg-[var(--data-error-50)] text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]",
+                      "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
                   }[tone];
                   const valueTone =
                     m.status === "ok"
                       ? "text-[var(--text-primary)]"
                       : m.status === "warning"
-                        ? "text-teal-700 dark:text-teal-300"
-                        : "text-[var(--accent)] dark:text-[var(--accent)]";
+                        ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+                        : "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]";
                   return (
                     <div
                       key={m.label}
@@ -624,9 +667,9 @@ export default function SystemHealthPage() {
                         <span
                           className={`font-mono text-sm font-extrabold tabular-nums ${
                             check.latency > 1000
-                              ? "text-[var(--accent)] dark:text-[var(--accent)]"
+                              ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
                               : check.latency > 500
-                                ? "text-teal-600 dark:text-teal-400"
+                                ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
                                 : "text-[var(--text-secondary)]"
                           }`}
                         >

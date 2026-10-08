@@ -183,7 +183,7 @@ export default function AlertsPage() {
         info={{
           what: "Junta las señales que necesitan tu atención ahora: churn, fallos de pago, caídas de uso y tiendas inactivas, en todas las tiendas.",
           affects:
-            "Solo lo ves vos en el superadmin. Es monitoreo; no cambia nada en las tiendas hasta que actúes.",
+            "Solo lo ves tú en el superadmin. Es monitoreo; no cambia nada en las tiendas hasta que actúes.",
           example:
             "Si una tienda no vende hace 7 días, aparece una alerta de inactividad para que la contactes.",
         }}

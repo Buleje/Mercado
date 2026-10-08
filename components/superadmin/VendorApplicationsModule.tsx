@@ -984,7 +984,7 @@ export default function VendorApplicationsModule() {
               Sin aplicaciones que mostrar
             </p>
             <p className="text-sm text-[var(--text-tertiary)] mt-1">
-              Ajustá los filtros para ver más.
+              Ajusta los filtros para ver más.
             </p>
             {(search ||
               categoryFilter !== "all" ||

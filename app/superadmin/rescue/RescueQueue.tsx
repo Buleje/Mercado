@@ -21,9 +21,9 @@ import { csrfHeaders } from "@/lib/csrf-client";
 
 const RESCUE_INFO = {
   title: "Cola de rescate",
-  what: "Junta los negocios a punto de irse y los ordena por urgencia × valor (riesgo, días sin vender/entrar, trial por vencer, plan). Actuás primero sobre el de arriba.",
+  what: "Junta los negocios a punto de irse y los ordena por urgencia × valor (riesgo, días sin vender/entrar, trial por vencer, plan). Actúas primero sobre el de arriba.",
   affects: "Solo el superadmin. Acciones de retención: contactar, impersonar, ver ficha 360 y extender trial (esto último SÍ escribe en la DB).",
-  example: "Una pollería enterprise lleva 49 días sin vender y está crítica → la ves arriba de la cola y la contactás o le extendés el trial antes de perderla.",
+  example: "Una pollería enterprise lleva 49 días sin vender y está crítica → la ves arriba de la cola y la contactas o le extiendes el trial antes de perderla.",
 } as const;
 
 type Row = { id: string; name: string; slug: string; plan: string; active: boolean; score: number | null; riskLevel: string; daysSinceLastOrder: number; daysSinceLastLogin: number; trialDaysLeft: number | null; loginsLast7d: number; ordersLast7d: number; reasons: string[]; priority: number };

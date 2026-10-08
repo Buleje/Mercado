@@ -80,7 +80,7 @@ export function SpendHealthBanner({
           <div className="min-w-0">
             <p className="text-sm font-bold text-[var(--text-primary)]">Salud del gasto</p>
             <p className="mt-0.5 text-sm text-[var(--text-secondary)]">
-              Gastás <span className="font-bold text-[var(--text-primary)]">{fmtPen(runRatePen)}</span>/mes ·{" "}
+              Gastas <span className="font-bold text-[var(--text-primary)]">{fmtPen(runRatePen)}</span>/mes ·{" "}
               <span className="inline-flex items-center gap-1 font-bold" style={{ color: trendColor }}>
                 <TrendIcon className="h-3.5 w-3.5" aria-hidden />
                 {trendText}

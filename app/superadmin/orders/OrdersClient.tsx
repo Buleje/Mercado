@@ -1329,7 +1329,7 @@ function EmptyState({
       </p>
       <p className="text-sm text-[var(--text-tertiary)] mt-1">
         {isFiltered
-          ? "Ajustá los filtros o la búsqueda."
+          ? "Ajusta los filtros o la búsqueda."
           : "Cuando los clientes hagan pedidos, aparecerán aquí."}
       </p>
       {isFiltered && (

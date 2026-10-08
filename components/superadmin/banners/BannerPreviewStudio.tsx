@@ -1397,7 +1397,7 @@ function PromoTab({ banner, onPatch, uploadFolder, theme }: { banner: StudioBann
     <div className={cn("space-y-3", theme === "dark" ? "text-[rgb(var(--st-fg))]" : "text-[var(--text-primary)]")}>
       <div className={cn("rounded-lg p-2.5 border text-[length:var(--ts-2xs)] leading-snug",
         theme === "dark" ? "bg-[rgb(var(--st-fg)/0.05)] border-[rgb(var(--st-fg)/0.1)] text-[rgb(var(--st-fg)/0.7)]" : "bg-black/5 border-black/10 text-black/70")}>
-        Banner con <strong>{items.length}</strong> producto{items.length === 1 ? "" : "s"} · Si agregás más de uno se renderizan en grilla horizontal scrolleable.
+        Banner con <strong>{items.length}</strong> producto{items.length === 1 ? "" : "s"} · Si agregas más de uno se renderizan en grilla horizontal scrolleable.
       </div>
 
       {items.map((it, idx) => (
@@ -1851,7 +1851,7 @@ function AnchorControl({
         )}
         {!isFree && (
           <p className={cn("text-[length:var(--ts-2xs)] leading-snug", dark ? "text-[rgb(var(--st-fg)/0.5)]" : "text-black/50")}>
-            Tip: presiona uno de los presets de arriba o usá <strong>Centro</strong> para liberar el slider X/Y.
+            Tip: presiona uno de los presets de arriba o usa <strong>Centro</strong> para liberar el slider X/Y.
           </p>
         )}
       </div>

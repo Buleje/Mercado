@@ -939,7 +939,7 @@ function TypographySection({
           Pucallpa entera en una app
         </p>
         <p className="text-base text-[var(--text-secondary)]">
-          Pedí a tu bodega favorita y recibí en 25 minutos. Pago al recibir, sin tarjeta.
+          Pide a tu bodega favorita y recibe en 25 minutos. Pago al recibir, sin tarjeta.
         </p>
       </div>
     </SectionShell>

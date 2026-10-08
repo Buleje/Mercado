@@ -130,20 +130,23 @@ export function PlatformCard({
         >
           <Icon className="h-5 w-5" strokeWidth={2.25} aria-hidden />
         </div>
-        <span
-          className={cn(
-            "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-bold uppercase tracking-wider",
-            statusMeta.bg,
-            statusMeta.text,
-          )}
-          aria-label={statusMeta.label}
-        >
+        {/* Sin chequeo no hay chip: 135 «SIN DATOS» con punto latiendo eran ruido. */}
+        {status !== "unknown" && (
           <span
-            className={cn("h-1.5 w-1.5 rounded-full animate-pulse", statusMeta.dot)}
-            aria-hidden
-          />
-          {statusMeta.label}
-        </span>
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-bold uppercase tracking-wider",
+              statusMeta.bg,
+              statusMeta.text,
+            )}
+            aria-label={statusMeta.label}
+          >
+            <span
+              className={cn("h-1.5 w-1.5 rounded-full animate-pulse", statusMeta.dot)}
+              aria-hidden
+            />
+            {statusMeta.label}
+          </span>
+        )}
       </header>
 
       {/* Nombre + categoría + descripción */}

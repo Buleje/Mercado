@@ -493,7 +493,7 @@ export function VendorHealthDashboard() {
               Último run hace {Math.round(ageMinutes / 60)}h — el cron debería correr cada 24h.
             </p>
             <p className="text-xs text-teal-800 dark:text-teal-200 mt-0.5">
-              Disparalo manualmente o revisá <code className="font-mono">/api/cron/health</code>.
+              Dispáralo manualmente o revisa <code className="font-mono">/api/cron/health</code>.
             </p>
           </div>
         </div>

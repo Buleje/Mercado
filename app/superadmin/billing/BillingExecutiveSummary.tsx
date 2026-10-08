@@ -37,7 +37,7 @@ export function BillingExecutiveSummary({
 
   const meta = {
     healthy: { label: "Billing sano", color: "var(--data-success-700,#047857)", Icon: CheckCircle, border: "var(--data-success-500)" },
-    watch: { label: "Vigilá el riesgo", color: "var(--data-warning-700,#b45309)", Icon: AlertTriangle, border: "var(--data-warning-500)" },
+    watch: { label: "Vigila el riesgo", color: "var(--data-warning-700,#b45309)", Icon: AlertTriangle, border: "var(--data-warning-500)" },
     attention: { label: "Requiere atención", color: "var(--data-error-700,#b91c1c)", Icon: AlertTriangle, border: "var(--data-error-500)" },
   }[health];
 

@@ -815,7 +815,7 @@ export default function PagosPendientesClient() {
             <p className="mt-1 text-sm text-[var(--text-tertiary)]">
               {filter === "pending"
                 ? "Cuando un cliente suba un comprobante de Yape/Plin, aparecerá aquí."
-                : "Ajustá los filtros o limpiá la búsqueda."}
+                : "Ajusta los filtros o limpia la búsqueda."}
             </p>
             {(search || methodFilter !== "all" || planFilter !== "all") && (
               <button
@@ -1183,7 +1183,7 @@ function ProofModal({
                 <div>
                   <p className="text-base font-extrabold text-[var(--text-primary)]">Registro de plan gratis</p>
                   <p className="mt-1 text-sm text-[var(--text-secondary)] leading-relaxed">
-                    No hay comprobante: el primer mes es gratis (S/ 0). Aprobá para crear la tienda.
+                    No hay comprobante: el primer mes es gratis (S/ 0). Aprueba para crear la tienda.
                   </p>
                 </div>
               </div>

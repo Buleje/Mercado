@@ -91,7 +91,7 @@ export function CommandCenterStrip() {
       icon: AlertTriangle,
     },
     {
-      href: "/superadmin/churn",
+      href: "/superadmin/rescue",
       label: "Churn estimado",
       value: `${churn?.churnRateEstimated ?? 0}%`,
       subValue: "high + critical / total",
@@ -120,7 +120,7 @@ export function CommandCenterStrip() {
             <Megaphone className="h-4 w-4" /> Chat masivo
           </Link>
           <Link
-            href="/superadmin/churn"
+            href="/superadmin/rescue"
             className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-9 text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--rule-strong)] transition-colors"
           >
             <Activity className="h-4 w-4" /> Anti-churn
