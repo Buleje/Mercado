@@ -18,6 +18,7 @@ import {
   AlertTriangle,
   CalendarClock,
   Printer,
+  Info,
 } from "@buleje/design-system/icons";
 import { LoadingState, ErrorAlert, CardTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -55,10 +56,13 @@ function currentMonth(): string {
 export default function LothCierrePanel({
   entries = [],
   caratula,
+  etiquetasPlan,
 }: {
   /** El libro completo: de acá sale la foto del mes que se está por congelar. */
   entries?: LothEntryDTO[];
   caratula?: ActaCaratula | null;
+  /** `planId` → «PMFI 123», para decir de qué permiso es el saldo. */
+  etiquetasPlan?: ReadonlyMap<string, string>;
 } = {}) {
   const [cierres, setCierres] = useState<Cierre[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -137,7 +141,7 @@ export default function LothCierrePanel({
   const activos = (cierres ?? []).filter((c) => !c.reabierto);
   /** Qué se está por congelar. Cerrar a ciegas un libro que va a fiscalización
    *  es la clase de acción que después no se deshace sin dejar rastro. */
-  const resumen = resumirPeriodo(entries, period, estaFueraDePlazo);
+  const resumen = resumirPeriodo(entries, period, estaFueraDePlazo, etiquetasPlan);
 
   return (
     <div className="space-y-4">
@@ -235,7 +239,7 @@ export default function LothCierrePanel({
                   <p className="text-xs font-black uppercase tracking-wide text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
                     Se cerraría con esto adentro
                   </p>
-                  {resumen.pendientes.map((p) => (
+                  {resumen.pendientes.filter((p) => p.nivel !== "info").map((p) => (
                     <p
                       key={p.clave}
                       className={`flex items-start gap-1.5 text-sm ${
@@ -253,6 +257,17 @@ export default function LothCierrePanel({
                   </p>
                 </div>
               )}
+
+              {/* El saldo no es una falla: es lo que el mes siguiente hereda. */}
+              {resumen.pendientes.filter((p) => p.nivel === "info").map((p) => (
+                <p
+                  key={p.clave}
+                  className="mt-3 flex items-start gap-1.5 rounded-lg border border-[var(--data-info-500)]/40 bg-[var(--data-info-500)]/10 px-3 py-2 text-sm text-[var(--text-primary)]"
+                >
+                  <Info className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-info-500)]" />
+                  {p.detalle}
+                </p>
+              ))}
             </>
           )}
         </div>
@@ -318,7 +333,7 @@ export default function LothCierrePanel({
                         <Btn
                           variant="secondary"
                           size="sm"
-                          onClick={() => printActaCierre(resumirPeriodo(entries, c.periodKey, estaFueraDePlazo), c, caratula)}
+                          onClick={() => printActaCierre(resumirPeriodo(entries, c.periodKey, estaFueraDePlazo, etiquetasPlan), c, caratula)}
                         >
                           <Printer className="h-3.5 w-3.5" /> Acta
                         </Btn>

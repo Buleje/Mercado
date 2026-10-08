@@ -979,6 +979,7 @@ export default function LothLibroOperaciones() {
   const lineasTabla = libroLeido ? lineasSeccion : entries;
   /* «Permiso · titular» sólo si la sección mezcla planes (ver loth-seccion-permiso). */
   const planesPorId = useMemo(() => mapaDePermisos(permiso.planes), [permiso.planes]);
+  const etiquetasPlan = useMemo(() => new Map([...planesPorId].map(([id, p]) => [id, p.permiso])), [planesPorId]);
   const variosPlanes = useMemo(() => mezclaPlanes(lineasTabla), [lineasTabla]);
   const cols = useMemo(
     () => (variosPlanes ? conColumnaPermiso(COLS[section], planesPorId) : COLS[section]),
@@ -1187,7 +1188,7 @@ export default function LothLibroOperaciones() {
       )}
 
       {/* Vista Cierre — cerrar el mes → acta inmutable (invariante P1) */}
-      {view === "cierre" && <LothCierrePanel entries={allEntries} caratula={caratula} />}
+      {view === "cierre" && <LothCierrePanel entries={allEntries} caratula={caratula} etiquetasPlan={etiquetasPlan} />}
 
       {/* Vista Mapa — dónde se taló cada árbol (GPS de campo, EUDR) */}
       {view === "mapa" && (

@@ -64,12 +64,35 @@ export function printActaCierre(
     )
     .join("");
 
-  const observaciones = resumen.pendientes.length
+  // El saldo va en su propio bloque: no es una observación (`info`).
+  const obs = resumen.pendientes.filter((p) => p.nivel !== "info");
+  const observaciones = obs.length
     ? `<h2>Observaciones incluidas en el cierre</h2>
-       <div class="obs">${resumen.pendientes
+       <div class="obs">${obs
          .map((p) => `<div class="ob ${p.nivel}">${p.nivel === "error" ? "⚠" : "•"} ${esc(p.detalle)}</div>`)
          .join("")}</div>`
     : `<h2>Observaciones</h2><p class="ok">El período se cerró sin observaciones pendientes.</p>`;
+
+  const saldo = resumen.saldoAlCierre;
+  const saldoHtml = `<h2>Saldo al cierre</h2>${
+    saldo.filas.length
+      ? `<table class="sec">
+        <thead><tr><th>Permiso</th><th>Especie</th><th class="num">Talado sin trozar m³</th><th class="num">En patio m³</th></tr></thead>
+        <tbody>${saldo.filas
+          .map(
+            (f) =>
+              `<tr><td>${esc(f.permiso)}</td><td>${esc(f.especie)}</td><td class="num">${
+                f.taladoSinTrozarM3 > 0 ? fmtM3(f.taladoSinTrozarM3) : "—"
+              }</td><td class="num">${f.enPatioM3 > 0 ? fmtM3(f.enPatioM3) : "—"}</td></tr>`,
+          )
+          .join("")}</tbody>
+        <tfoot><tr><td colspan="2">Total${
+          saldo.arbolesSinTrozar > 0 ? ` · ${saldo.arbolesSinTrozar} árbol(es) sin trozar` : ""
+        }</td><td class="num">${fmtM3(saldo.taladoSinTrozarM3)}</td><td class="num">${fmtM3(saldo.enPatioM3)}</td></tr></tfoot>
+      </table>
+      <p class="foot">Acumulado del permiso hasta el último día del período (kárdex del permiso); lo que está en patio pasa al mes siguiente.</p>`
+      : `<p class="ok">Sin madera talada pendiente de trozar ni trozas en patio al cierre.</p>`
+  }`;
 
   const reapertura = cierre?.reabierto
     ? `<div class="reab"><b>Período reabierto</b> el ${fdate(cierre.reabierto.at)} por ${esc(cierre.reabierto.by)} — ${esc(
@@ -122,6 +145,7 @@ export function printActaCierre(
         )}</td><td class="num">${resumen.porSeccion.reduce((a, s) => a + s.cantidad, 0).toFixed(4)}</td></tr></tfoot>
       </table>
       ${resumen.especies.length ? `<p class="foot">Especies del período: ${esc(resumen.especies.join(", "))}.</p>` : ""}
+      ${saldoHtml}
       ${observaciones}
       ${reapertura}
       <p class="foot">Las líneas de este período quedan inmutables mientras el cierre esté vigente. Reabrirlo exige motivo y queda
