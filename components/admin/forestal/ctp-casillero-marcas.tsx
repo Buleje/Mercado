@@ -44,7 +44,16 @@ const BORDE: Record<TonoDeMarca, string> = {
 };
 
 /** Un cuadradito con el ícono de la marca. `role="img"`: el lector dice la frase entera. */
-export function MarcaIcono({ marca, etiqueta }: { marca: Marca; etiqueta: string }) {
+export function MarcaIcono({
+  marca,
+  etiqueta,
+  conTexto = false,
+}: {
+  marca: Marca;
+  etiqueta: string;
+  /** Desde `xl` agrega la palabra corta junto al ícono (a 400 px, sólo ícono). */
+  conTexto?: boolean;
+}) {
   const { Icono } = marca;
   return (
     <span
@@ -53,12 +62,21 @@ export function MarcaIcono({ marca, etiqueta }: { marca: Marca; etiqueta: string
       title={etiqueta}
       data-tono={marca.tono}
       className={cn(
-        "grid size-[1.125rem] shrink-0 place-items-center rounded-[5px] border bg-[var(--surface-raised)]",
+        "flex h-[1.125rem] min-w-[1.125rem] max-w-full shrink-0 items-center justify-center gap-1 rounded-[5px] border bg-[var(--surface-raised)]",
+        conTexto && "xl:min-w-0 xl:shrink xl:gap-0.5 xl:px-0.5",
         TINTA[marca.tono],
         BORDE[marca.tono],
       )}
     >
-      <Icono className="size-3.5" aria-hidden />
+      <Icono className="size-3.5 shrink-0" aria-hidden />
+      {conTexto && (
+        <span
+          data-marca-texto
+          className="hidden truncate text-[length:var(--ts-2xs)] font-bold leading-none xl:inline"
+        >
+          {marca.corto}
+        </span>
+      )}
     </span>
   );
 }
@@ -68,9 +86,13 @@ export function MarcasDelCasillero({ os }: { os: OrigenYSalida }) {
   const origen = MARCA_ORIGEN[origenVisibleDelDia(os)];
   const salida = MARCA_SALIDA[os.salida.estado];
   return (
-    <span className="mt-0.5 flex items-center justify-center gap-0.5" data-marcas-del-dia>
-      <MarcaIcono marca={origen} etiqueta={`Origen: ${origen.largo}`} />
+    <span
+      className="mt-0.5 flex min-w-0 max-w-full items-center justify-center gap-0.5 xl:w-full"
+      data-marcas-del-dia
+    >
+      <MarcaIcono marca={origen} etiqueta={`Origen: ${origen.largo}`} conTexto />
       <MarcaIcono
+        conTexto
         marca={salida}
         etiqueta={`Salida: ${fraseDeSalida(os.salida.estado, os.salida.guias)}`}
       />

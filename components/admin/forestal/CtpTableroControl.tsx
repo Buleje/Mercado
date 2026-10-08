@@ -47,6 +47,7 @@ import { pieTablarDe } from "@/lib/forestal/lotes-aserrio";
 import { Btn, VistaHeader, useKpisPlegables } from "./ctp-shared";
 import CtpPuestaEnMarcha from "./CtpPuestaEnMarcha";
 import { formatNumber } from "@/lib/format";
+import { cantidadDelPeriodo } from "@/lib/forestal/inicio-forestal";
 
 const m3 = (n: number) => `${n.toFixed(2)} m³`;
 const NOMBRE_PASO: Record<MovimientoDelLibro["paso"], string> = {
@@ -219,7 +220,7 @@ export default function CtpTableroControl({ period, onIr }: { period: CtpPeriod;
     abiertoPorDefecto: true,
     sinDatosAun: cargando && !mov,
     resumen: t
-      ? `${m3(t.ingresoM3)} entró · ${m3(t.consumoM3)} a la sierra · ${t.producido.toFixed(2)} producido · ${t.despachado.toFixed(2)} despachado${t.rendimiento > 0 ? ` · rend. ${t.rendimiento.toFixed(1)}%` : ""}`
+      ? `${m3(t.ingresoM3)} entró · ${m3(t.consumoM3)} a la sierra · ${cantidadDelPeriodo(t.producido, t.unidadProducido)} producido · ${cantidadDelPeriodo(t.despachado, t.unidadDespachado)} despachado${t.rendimiento > 0 ? ` · rend. ${t.rendimiento.toFixed(1)}%` : ""}`
       : undefined,
     tarjetas: t
       ? [
@@ -245,8 +246,8 @@ export default function CtpTableroControl({ period, onIr }: { period: CtpPeriod;
                 key="producido"
                 icon={TrendingUp}
                 label="Producido"
-                valor={t.producido.toFixed(2)}
-                pie="producto declarado"
+                valor={cantidadDelPeriodo(t.producido, t.unidadProducido)}
+                pie={t.unidadProducido == null ? "producto declarado · varias unidades" : "producto declarado"}
                 delta={previo ? variacionPct(t.producido, previo.producido) : null}
                 hayPrevio={previo != null}
               />,
@@ -254,8 +255,8 @@ export default function CtpTableroControl({ period, onIr }: { period: CtpPeriod;
                 key="despachado"
                 icon={Truck}
                 label="Despachado"
-                valor={t.despachado.toFixed(2)}
-                pie="salidas del período"
+                valor={cantidadDelPeriodo(t.despachado, t.unidadDespachado)}
+                pie={t.unidadDespachado == null ? "salidas del período · varias unidades" : "salidas del período"}
                 delta={previo ? variacionPct(t.despachado, previo.despachado) : null}
                 hayPrevio={previo != null}
               />,
