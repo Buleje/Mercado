@@ -300,6 +300,23 @@
   animation-iteration-count: infinite !important;
 }
 
+/* Cargadores: girar es la señal de «sigue trabajando». Con «reducir movimiento»
+   la regla del principio los dejaba quietos y la página parecía trabada
+   (Brandon 2026-10-08, Windows con animaciones apagadas). Girar en el lugar no
+   desplaza nada en pantalla: se exceptúan, igual que .animate-ping. */
+@keyframes cargando-gira {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.animate-cargando {
+  animation: cargando-gira 0.8s linear infinite !important;
+}
+.animate-spin {
+  animation-duration: 1s !important;
+  animation-iteration-count: infinite !important;
+}
+
 * {
   min-width: 0;
 }

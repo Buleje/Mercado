@@ -72,6 +72,29 @@ let listo: Cargado | null = null;
 let usuarios = 0;
 let relojSoltar: ReturnType<typeof setTimeout> | undefined;
 
+/**
+ * MediaPipe (emscripten) guarda `console.error.bind(console)` al crear cada
+ * detector, y por ahí avisa «INFO: Created TensorFlow Lite XNNPACK delegate for
+ * CPU.» en la primera detección: Next lo pintaba como error rojo (Brandon
+ * 2026-10-08). Mientras se crea, `console.error` es un filtro que descarta sólo
+ * las líneas «INFO:»; MediaPipe se queda con el filtro y el resto de la app
+ * vuelve al original al terminar. Medido en Chromium: un filtro puesto recién
+ * en la detección no ve nada (la copia ya estaba hecha).
+ */
+async function sinAvisosInfo<T>(fn: () => Promise<T>): Promise<T> {
+  const original = console.error;
+  const filtro = (...args: unknown[]) => {
+    if (typeof args[0] === "string" && args[0].startsWith("INFO:")) return;
+    original.apply(console, args);
+  };
+  console.error = filtro;
+  try {
+    return await fn();
+  } finally {
+    if (console.error === filtro) console.error = original;
+  }
+}
+
 /** Un cuadro chico para probar que el delegado de verdad corre (la GPU puede crearse y fallar al primer uso). */
 function calentar(detector: ObjectDetector): void {
   const c = document.createElement("canvas");
@@ -98,7 +121,7 @@ async function crear(): Promise<Cargado> {
   for (const delegado of DELEGADOS) {
     let detector: ObjectDetector | null = null;
     try {
-      detector = await con(delegado);
+      detector = await sinAvisosInfo(() => con(delegado));
       calentar(detector);
       return {
         detector,

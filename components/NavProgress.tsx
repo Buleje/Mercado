@@ -19,11 +19,11 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
-import { PaicheMascot } from "@/components/ui-system/illustrations/PaicheMascot";
+import { usePathname, useSearchParams } from "next/navigation";
+import { LoadingSpinner } from "@/components/ui-system/LoadingSpinner";
 
-// Si la navegación tarda más que esto, mostramos el overlay del Paiche nadando.
-const PAICHE_DELAY_MS = 400;
+// Si la navegación tarda más que esto, mostramos el aro que gira encima de la página.
+const OVERLAY_DELAY_MS = 400;
 // Si la navegación NO termina en este tiempo (RSC/chunk que falla o cuelga),
 // el overlay ofrece una SALIDA visible. Sin esto, `done()` sólo dispara al
 // cambiar el pathname → una navegación que nunca completa dejaba al usuario
@@ -32,21 +32,31 @@ const ESCAPE_DELAY_MS = 5000;
 
 export default function NavProgress() {
   const pathname = usePathname();
+  // Un enlace que sólo cambia `?tab=` deja el pathname igual: sin mirar la
+  // búsqueda, `done()` nunca disparaba y el overlay quedaba encima para siempre.
+  const search = useSearchParams()?.toString() ?? "";
   const [width, setWidth] = useState(0);
   const [active, setActive] = useState(false);
-  const [showPaiche, setShowPaiche] = useState(false);
+  const [showOverlay, setShowOverlay] = useState(false);
   // Salida de emergencia cuando la navegación se cuelga (>5s sin completar).
   const [showEscape, setShowEscape] = useState(false);
+  // Segundos desde el clic: un número que avanza prueba que no está trabado.
+  const [segundos, setSegundos] = useState(0);
+  const inicioRef = useRef(0);
+  const activoRef = useRef(false);
   const rafRef = useRef<number | null>(null);
   const trickleRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hideRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const paicheTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const overlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const escapeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Arranca la barra (con trickle hacia 90%) + arma el overlay del Paiche
+  // Arranca la barra (con trickle hacia 90%) + arma el overlay del aro
   // para navegaciones que tarden >400ms + el escape si se cuelga (>5s).
   const start = () => {
     if (hideRef.current) clearTimeout(hideRef.current);
+    inicioRef.current = Date.now();
+    activoRef.current = true;
+    setSegundos(0);
     setActive(true);
     setWidth(8);
     setShowEscape(false);
@@ -54,18 +64,19 @@ export default function NavProgress() {
     trickleRef.current = setInterval(() => {
       setWidth((w) => (w < 90 ? w + Math.max(0.5, (90 - w) * 0.08) : w));
     }, 200);
-    if (paicheTimerRef.current) clearTimeout(paicheTimerRef.current);
-    paicheTimerRef.current = setTimeout(() => setShowPaiche(true), PAICHE_DELAY_MS);
+    if (overlayTimerRef.current) clearTimeout(overlayTimerRef.current);
+    overlayTimerRef.current = setTimeout(() => setShowOverlay(true), OVERLAY_DELAY_MS);
     if (escapeTimerRef.current) clearTimeout(escapeTimerRef.current);
     escapeTimerRef.current = setTimeout(() => setShowEscape(true), ESCAPE_DELAY_MS);
   };
 
-  // Completa: 100% y fade out + oculta el Paiche + el escape.
+  // Completa: 100% y fade out + oculta el overlay + el escape.
   const done = () => {
+    activoRef.current = false;
     if (trickleRef.current) clearInterval(trickleRef.current);
-    if (paicheTimerRef.current) clearTimeout(paicheTimerRef.current);
+    if (overlayTimerRef.current) clearTimeout(overlayTimerRef.current);
     if (escapeTimerRef.current) clearTimeout(escapeTimerRef.current);
-    setShowPaiche(false);
+    setShowOverlay(false);
     setShowEscape(false);
     setWidth(100);
     hideRef.current = setTimeout(() => {
@@ -74,11 +85,19 @@ export default function NavProgress() {
     }, 260);
   };
 
-  // Completar en cada cambio de ruta.
+  // Completar en cada cambio de ruta (pathname o búsqueda).
   useEffect(() => {
     done();
-     
-  }, [pathname]);
+  }, [pathname, search]);
+
+  // Contador de segundos mientras se ofrece la salida.
+  useEffect(() => {
+    if (!showEscape) return;
+    const tick = () => setSegundos(Math.round((Date.now() - inicioRef.current) / 1000));
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [showEscape]);
 
   // Interceptar clics en links internos.
   useEffect(() => {
@@ -111,11 +130,36 @@ export default function NavProgress() {
       start();
     };
     document.addEventListener("click", onClick, { capture: true });
+
+    // Next confirma cada navegación con pushState (URL nueva) o replaceState
+    // (la MISMA URL: p. ej. una redirección que vuelve a donde estabas). Medido
+    // 2026-10-08: ninguna se llama antes de que la página nueva esté lista
+    // (715 ms y 230 ms tras el push). Cerrar ahí cubre lo que pathname y
+    // búsqueda no ven: sin esto el cargador quedaba encima para siempre.
+    // setTimeout: Next las llama dentro de un useInsertionEffect, donde React
+    // no admite actualizar estado.
+    const originales = { push: history.pushState, replace: history.replaceState };
+    const alConfirmar = () => {
+      if (activoRef.current) setTimeout(done, 0);
+    };
+    const push: History["pushState"] = function (this: History, ...args) {
+      originales.push.apply(this, args);
+      alConfirmar();
+    };
+    const replace: History["replaceState"] = function (this: History, ...args) {
+      originales.replace.apply(this, args);
+      alConfirmar();
+    };
+    history.pushState = push;
+    history.replaceState = replace;
+
     return () => {
       document.removeEventListener("click", onClick, { capture: true });
+      if (history.pushState === push) history.pushState = originales.push;
+      if (history.replaceState === replace) history.replaceState = originales.replace;
       if (trickleRef.current) clearInterval(trickleRef.current);
       if (hideRef.current) clearTimeout(hideRef.current);
-      if (paicheTimerRef.current) clearTimeout(paicheTimerRef.current);
+      if (overlayTimerRef.current) clearTimeout(overlayTimerRef.current);
       if (escapeTimerRef.current) clearTimeout(escapeTimerRef.current);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
@@ -143,44 +187,37 @@ export default function NavProgress() {
         </div>
       )}
 
-      {/* Overlay del Paiche nadando — solo si la navegación tarda >400ms.
-          Fondo blanco OPACO (antes era translúcido) + paiche grande centrado. */}
-      {showPaiche && (
+      {/* Overlay con el aro que gira — sólo si la navegación tarda >400ms.
+          Brandon 2026-10-08: el paiche quedaba quieto con «reducir movimiento»
+          y parecía página trabada. El aro gira siempre (.animate-cargando) y la
+          página se ve detrás, borrosa: se nota que algo está en curso. */}
+      {showOverlay && (
         <div
           role="status"
+          aria-live="polite"
           aria-label="Cargando"
-          className="fixed inset-0 z-[9998] flex flex-col items-center justify-center"
+          className="fixed inset-0 z-[9998] flex flex-col items-center justify-center px-4 backdrop-blur-[3px]"
           style={{
-            background: "var(--surface-canvas)",
+            background: "color-mix(in oklab, var(--surface-canvas) 78%, transparent)",
             animation: "navp-fade-in .2s ease both",
           }}
         >
-          {/* Aura radial teal sutil detrás del paiche */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background:
-                "radial-gradient(ellipse at center, color-mix(in oklab, var(--accent) 10%, transparent) 0%, transparent 60%)",
-            }}
-          />
-          <div className="relative text-[var(--accent)]">
-            <PaicheMascot size={300} animated strokeWidth={1.75} />
+          <div className="flex flex-col items-center gap-4 rounded-3xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-10 py-8 shadow-[var(--shadow-lg)]">
+            <LoadingSpinner size={56} />
+            <p className="text-base font-bold text-[var(--text-primary)]">Cargando…</p>
           </div>
-          <p className="relative mt-6 text-2xl font-black tracking-[-0.02em] text-[var(--text-primary)]">
-            Un toque
-            <span className="ml-1.5 italic font-serif text-[var(--accent)]">ya viene</span>
-          </p>
 
           {/* Salida de emergencia — aparece si la navegación se cuelga (>5s).
               Usa window.location (navegación DURA) a propósito: si el router
               cliente quedó trabado (RSC/chunk que falló), un <Link>/router.push
-              también se colgaría. La recarga/redirección dura siempre escapa.
-              Antes NO existía → el usuario quedaba atrapado sin menú ni botón. */}
+              también se colgaría. La recarga/redirección dura siempre escapa. */}
           {showEscape && (
-            <div className="relative mt-8 flex flex-col items-center gap-3 animate-[navp-fade-in_.3s_ease_both]">
+            <div className="mt-6 flex max-w-sm flex-col items-center gap-3 text-center animate-[navp-fade-in_.3s_ease_both]">
               <p className="text-sm font-semibold text-[var(--text-secondary)]">
-                Esto está tardando más de lo normal.
+                Lleva <span className="tabular-nums">{segundos}</span> s.{" "}
+                {process.env.NODE_ENV === "development"
+                  ? "En tu PC la primera vez que abres una página se prepara: tarda más solo esa vez."
+                  : "Está tardando más de lo normal."}
               </p>
               <div className="flex flex-wrap items-center justify-center gap-2.5">
                 <button

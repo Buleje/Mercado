@@ -204,4 +204,58 @@ async function repararRutasViejas() {
   console.log("\x1b[31m[dev] las rutas /api siguen en 404: corre `npm run dev:nuke` (borra .next).\x1b[0m");
 }
 
-if (!process.env.DEV_SIN_SONDA) void repararRutasViejas();
+// ── Panel precompilado al arrancar (Brandon 2026-10-08) ────────────────────
+// Medido: tras reiniciar, el primer GET /admin tardó 43 s (41 s compilando) y el
+// cargador decía «tardando más de lo normal». Sin sesión, proxy.ts redirige
+// /admin al login y Turbopack nunca compila el panel: se entra con el usuario
+// de QA local (el mismo del arranque de Claude) y se pide /admin una vez, en
+// segundo plano. Apagar con DEV_SIN_CALENTAR=1.
+async function calentarPanel() {
+  const base = `http://localhost:${PUERTO}`;
+  const t0 = Date.now();
+  for (let intento = 0; intento < 90; intento++) {
+    try {
+      // Sin la cookie csrf-token el login responde 200 pero no abre sesión
+      // (medido: /admin seguía en 307 al login). Se siembra desde /api/health.
+      const salud = await fetch(`${base}/api/health`, { signal: AbortSignal.timeout(120_000) });
+      const csrf = salud.headers.getSetCookie().find((c) => c.startsWith("csrf-token="))?.split(";")[0] ?? "";
+      const login = await fetch(`${base}/api/auth/login`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-tenant-id": "main",
+          "x-csrf-token": csrf.slice("csrf-token=".length),
+          cookie: csrf,
+        },
+        body: JSON.stringify({
+          username: process.env.BSM_QA_USER || "qaadmin",
+          password: process.env.BSM_QA_PASS || "Qa-admin-1234",
+          tenantSlug: "main",
+        }),
+        signal: AbortSignal.timeout(120_000),
+      });
+      const cookie = [csrf, ...login.headers.getSetCookie().map((c) => c.split(";")[0])].filter(Boolean).join("; ");
+      if (!login.ok || !/sess/.test(cookie)) {
+        console.log(`[dev] panel sin precompilar: el login de QA dio ${login.status} sin sesión.`);
+        return;
+      }
+      const res = await fetch(`${base}/admin`, {
+        headers: { cookie },
+        redirect: "manual",
+        signal: AbortSignal.timeout(300_000),
+      });
+      console.log(`[dev] panel precompilado (/admin → ${res.status}) en ${Math.round((Date.now() - t0) / 1000)} s.`);
+      return;
+    } catch {
+      await esperar(2000);
+    }
+  }
+  console.log("[dev] panel sin precompilar: el servidor no contestó en 3 min.");
+}
+
+async function alArrancar() {
+  if (!process.env.DEV_SIN_SONDA) await repararRutasViejas();
+  if (!process.env.DEV_SIN_CALENTAR) await calentarPanel();
+}
+
+void alArrancar();

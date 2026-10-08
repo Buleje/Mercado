@@ -61,11 +61,35 @@ function client(): Redis | null {
 }
 
 /** ¿Está esta IP bloqueada? Fail-open (false) si no hay Redis o hay error. */
+// Caché local del «¿está bloqueada?». Medido 2026-10-08: cada request pagaba un
+// EXISTS a Upstash (~210 ms desde la PC; proxy.ts tardaba 221-238 ms en TODAS
+// las rutas, páginas y APIs). La respuesta vale 30 s por IP en la memoria del
+// módulo: un ban o desbloqueo hecho desde otra instancia (otra lambda, o una
+// ruta /api que no comparte módulo con proxy.ts) tarda ≤30 s en verse; las
+// firmas críticas se bloquean inline igual. blockIp/unblockIp actualizan la
+// caché de su propia instancia al momento.
+const CACHE_BLOQUEO_MS = 30_000;
+const CACHE_BLOQUEO_MAX = 5_000;
+const cacheBloqueo = new Map<string, { bloqueada: boolean; hasta: number }>();
+
+function recordarBloqueo(ip: string, bloqueada: boolean): void {
+  cacheBloqueo.delete(ip);
+  if (cacheBloqueo.size >= CACHE_BLOQUEO_MAX) {
+    const masVieja = cacheBloqueo.keys().next().value;
+    if (masVieja !== undefined) cacheBloqueo.delete(masVieja);
+  }
+  cacheBloqueo.set(ip, { bloqueada, hasta: Date.now() + CACHE_BLOQUEO_MS });
+}
+
 export async function isIpBlocked(ip: string): Promise<boolean> {
   const c = client();
   if (!c || !ip || ip === "unknown") return false;
+  const enCache = cacheBloqueo.get(ip);
+  if (enCache && enCache.hasta > Date.now()) return enCache.bloqueada;
   try {
-    return (await c.exists(`${BLOCK_PREFIX}${ip}`)) === 1;
+    const bloqueada = (await c.exists(`${BLOCK_PREFIX}${ip}`)) === 1;
+    recordarBloqueo(ip, bloqueada);
+    return bloqueada;
   } catch {
     return false;
   }
@@ -81,6 +105,7 @@ export async function blockIp(ip: string, reason: string, ttlSec = DEFAULT_BLOCK
       JSON.stringify({ reason: reason.slice(0, 200), at: new Date().toISOString() }),
       { ex: ttlSec },
     );
+    recordarBloqueo(ip, true);
   } catch {
     /* fail-open */
   }
@@ -92,6 +117,7 @@ export async function unblockIp(ip: string): Promise<void> {
   if (!c || !ip) return;
   try {
     await c.del(`${BLOCK_PREFIX}${ip}`);
+    recordarBloqueo(ip, false);
   } catch {
     /* fail-open */
   }
