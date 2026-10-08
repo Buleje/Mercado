@@ -54,7 +54,7 @@ function Bloque({ titulo, meta, acciones, children }: { titulo: string; meta?: s
     <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div className="min-w-0">
-          <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">
+          <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
             {titulo}
           </CardTitle>
           {meta && <p className="text-sm tabular-nums text-[var(--text-secondary)]">{meta}</p>}

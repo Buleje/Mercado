@@ -76,7 +76,7 @@ function Grupo({ titulo, total, aproximado, items }: { titulo: string; total: nu
   return (
     <section aria-labelledby={id} className="min-w-0">
       <div className="flex items-baseline justify-between gap-3 border-b border-[var(--rule-base)] px-2 pb-2">
-        <CardTitle as="h4" id={id}>
+        <CardTitle className="text-sm font-bold" as="h4" id={id}>
           {titulo}
         </CardTitle>
         <span className="text-base font-extrabold tabular-nums text-[var(--text-primary)]">{montoTexto(total, { aproximado })}</span>
@@ -111,7 +111,7 @@ export default function LoQueViene({ viene }: { viene: Viene }) {
   return (
     <div className="@container rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-4 sm:px-4">
       <div className="mb-3 flex items-center gap-1.5 px-2">
-        <CardTitle as="h3">Lo que viene</CardTitle>
+        <CardTitle className="text-sm font-bold" as="h3">Lo que viene</CardTitle>
         <InfoTip
           title="Lo que viene"
           what="Lo que te deben y lo que debes hoy, con los nombres que más pesan."

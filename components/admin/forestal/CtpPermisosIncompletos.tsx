@@ -236,7 +236,7 @@ export default function CtpPermisosIncompletos({
 
   return (
     <section className="rounded-2xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 p-4">
-      <CardTitle as="h3" className="flex items-center gap-2">
+      <CardTitle as="h3" className="text-sm font-bold flex items-center gap-2">
         <AlertTriangle className="h-5 w-5 shrink-0 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" aria-hidden />
         {peor.n} de {total} {total === 1 ? "permiso" : "permisos"} {peor.h.frase}
       </CardTitle>

@@ -323,7 +323,7 @@ export default function ReceivingTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+          <SectionTitle className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             Recepción de Mercadería
           </SectionTitle>
         </div>
@@ -578,7 +578,7 @@ export default function ReceivingTab() {
           >
             <div {...ventanaDetalle.asaProps} className="flex items-start justify-between">
               <div>
-                <CardTitle id={detailTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.ref}</CardTitle>
+                <CardTitle id={detailTitleId} className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.ref}</CardTitle>
                 <p className="text-xs text-[var(--text-tertiary)] mt-0.5">OC: {detail.orderRef} · {detail.supplier}</p>
                 {detail.inspector && <p className="text-xs text-[var(--text-tertiary)]">Inspector: {detail.inspector}</p>}
               </div>
@@ -669,7 +669,7 @@ export default function ReceivingTab() {
             onClick={e => e.stopPropagation()}
           >
             <div {...ventanaNueva.asaProps} className="flex items-center justify-between">
-              <CardTitle id={newTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Nueva recepción de mercadería</CardTitle>
+              <CardTitle id={newTitleId} className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Nueva recepción de mercadería</CardTitle>
               <span className="ml-auto flex items-center gap-1">
                 <ControlesDeVentana ventana={ventanaNueva} />
                 <button aria-label="Cerrar" onClick={() => setShowNew(false)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>

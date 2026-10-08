@@ -81,7 +81,7 @@ export default function Anexo04ConfirmarCuadre({
         aria-describedby={idTexto}
         className="w-full max-w-[34rem] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-lg)]"
       >
-        <CardTitle as="h3" id={idTitulo} className="flex items-center gap-2 text-base font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+        <CardTitle as="h3" id={idTitulo} className="flex items-center gap-2 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
           <AlertTriangle className="h-5 w-5 shrink-0" aria-hidden /> La distribución no cuadra
         </CardTitle>
         <p id={idTexto} className="mt-2 text-sm font-semibold text-[var(--text-primary)]">{cuadre.frase}</p>

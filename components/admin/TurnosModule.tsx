@@ -679,7 +679,7 @@ export default function TurnosModule() {
           <div className="space-y-6">
             {/* 1. Grid de cajeros */}
             <div>
-              <CardTitle className="text-base font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
+              <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
                 <User className="h-5 w-5 text-primary" />
                 Equipo de Cajeros
               </CardTitle>
@@ -758,7 +758,7 @@ export default function TurnosModule() {
             {/* 2. Ranking table */}
             {cajeroStats.length > 0 && (
               <div>
-                <CardTitle className="text-base font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
+                <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
                   <Trophy className="h-5 w-5 text-[var(--data-warning-500)]" />
                   Ranking de Cajeros
                 </CardTitle>
@@ -813,7 +813,7 @@ export default function TurnosModule() {
             {/* 3. Chart: ventas por cajero este mes */}
             {chartData.length > 0 && (
               <div>
-                <CardTitle className="text-base font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
+                <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
                   <BarChart3 className="h-5 w-5 text-primary" />
                   Ventas por Cajero (este mes)
                 </CardTitle>
@@ -969,7 +969,7 @@ export default function TurnosModule() {
                 <Clock className="h-6 w-6 text-primary" strokeWidth={1.75} aria-hidden />
               </div>
               <div className="min-w-0 flex-1">
-                <CardTitle className="text-lg font-bold text-[var(--text-primary)]">No hay turno abierto</CardTitle>
+                <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">No hay turno abierto</CardTitle>
                 <p className="text-sm text-[var(--text-tertiary)] mt-1">Abre un turno para empezar a registrar ventas en caja.</p>
               </div>
             </div>
@@ -1189,7 +1189,7 @@ export default function TurnosModule() {
           <>
             {hasWeekData ? (
             <div>
-              <CardTitle className="text-base font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
+              <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
                 <CalendarDays className="h-5 w-5 text-primary" />
                 Calendario Semanal
               </CardTitle>
@@ -1328,7 +1328,7 @@ export default function TurnosModule() {
               <div className="h-12 w-12 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center mx-auto mb-3">
                 <Clock className="h-6 w-6 text-[var(--text-tertiary)]" strokeWidth={1.5} aria-hidden />
               </div>
-              <CardTitle className="text-base font-semibold text-[var(--text-primary)] mb-1">Sin turnos registrados</CardTitle>
+              <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-1">Sin turnos registrados</CardTitle>
               <p className="text-sm text-[var(--text-secondary)] max-w-md mx-auto">Abre tu primer turno para empezar a registrar ventas.</p>
             </div>
           ) : historialView === "timeline" ? (
@@ -1451,7 +1451,7 @@ export default function TurnosModule() {
                     <User className="h-5 w-5 text-primary" strokeWidth={2} />
                   </div>
                   <div>
-                    <CardTitle id={createCajeroTitleId} className="text-lg font-bold">Nueva cajera</CardTitle>
+                    <CardTitle id={createCajeroTitleId} className="text-[length:var(--ts-xl)] font-bold">Nueva cajera</CardTitle>
                     <p className="text-sm text-[var(--text-tertiary)]">Se crea con rol Cajero y queda disponible al instante</p>
                   </div>
                 </div>
@@ -1563,7 +1563,7 @@ export default function TurnosModule() {
                     <Square className="h-5 w-5 text-[var(--data-error-500)]" strokeWidth={2} />
                   </div>
                   <div>
-                    <CardTitle id={cierreTitleId} className="text-lg font-bold">Cerrar turno</CardTitle>
+                    <CardTitle id={cierreTitleId} className="text-[length:var(--ts-xl)] font-bold">Cerrar turno</CardTitle>
                     <p className="text-sm text-[var(--text-tertiary)]">Cuenta el efectivo final y confirma el cierre</p>
                   </div>
                 </div>
@@ -1837,7 +1837,7 @@ export default function TurnosModule() {
                     <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)]" strokeWidth={2} />
                   </div>
                   <div>
-                    <CardTitle id={diffConfirmTitleId} className="text-lg font-bold text-[var(--data-error-500)]">Diferencia alta</CardTitle>
+                    <CardTitle id={diffConfirmTitleId} className="text-[length:var(--ts-xl)] font-bold text-[var(--data-error-500)]">Diferencia alta</CardTitle>
                     <p className="text-sm text-[var(--text-secondary)]">Antes de cerrar, anota qué pasó</p>
                   </div>
                   <span className="ml-auto flex items-center gap-1">
@@ -1946,7 +1946,7 @@ export default function TurnosModule() {
               className="relative w-full max-w-lg bg-[var(--surface-raised)] rounded-2xl shadow-[var(--shadow-xl)] ring-1 ring-[var(--rule-base)] p-6 space-y-4 max-h-[92vh] overflow-y-auto" id="turno-resumen"
             >
                 <div {...ventanaResumen.asaProps} className="flex items-center justify-between">
-                  <CardTitle id={resumenTitleId} className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+                  <CardTitle id={resumenTitleId} className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] flex items-center gap-2">
                     <Trophy className="h-5 w-5 text-[var(--data-warning-500)]" />
                     Resumen del Turno
                   </CardTitle>

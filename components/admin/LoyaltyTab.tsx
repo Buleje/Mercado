@@ -239,7 +239,7 @@ export default function LoyaltyTab() {
   return (
     <div className="space-y-3 sm:space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><Heart className="h-6 w-6 text-primary" />Programa de Fidelización</SectionTitle>
+        <SectionTitle className="text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><Heart className="h-6 w-6 text-primary" />Programa de Fidelización</SectionTitle>
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <Clock className="h-4 w-4 text-[var(--text-tertiary)]" />

@@ -287,7 +287,7 @@ function Encabezado({
       <div className="flex items-center gap-1.5">
         <CardTitle
           as="h3"
-          className="text-base font-extrabold tracking-tight text-[var(--text-primary)]"
+          className="text-sm font-bold tracking-tight text-[var(--text-primary)]"
         >
           Cómo se movió el patio, {NOMBRE_PASO[paso]}
         </CardTitle>

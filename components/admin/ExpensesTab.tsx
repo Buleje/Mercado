@@ -147,7 +147,7 @@ export default function ExpensesTab() {
   return (
     <div className="space-y-3 sm:space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><Wallet className="h-6 w-6 text-primary" />Control de Gastos</SectionTitle>
+        <SectionTitle className="text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><Wallet className="h-6 w-6 text-primary" />Control de Gastos</SectionTitle>
         <button onClick={() => setShowForm(true)} className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition flex flex-wrap items-center gap-2"><Plus className="h-4 w-4" />Nuevo Gasto</button>
       </div>
 
@@ -209,7 +209,7 @@ export default function ExpensesTab() {
           <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 ">
             <div className="flex flex-wrap items-center gap-2 mb-4">
               <BarChart2 className="h-4 w-4 text-primary" />
-              <CardTitle className="font-extrabold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">Gastos mensuales (6 meses)</CardTitle>
+              <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Gastos mensuales (6 meses)</CardTitle>
             </div>
             <div className="flex flex-wrap items-end gap-2 h-28">
               {monthlyExpenseData.map((m, i) => {

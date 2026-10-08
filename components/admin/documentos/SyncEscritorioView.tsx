@@ -205,7 +205,7 @@ export default function SyncEscritorioView({
       <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <SectionTitle as="h2" className="flex items-center gap-2 text-lg font-bold text-[var(--text-primary)]">
+            <SectionTitle as="h2" className="flex items-center gap-2 text-[var(--text-primary)]">
               <FolderSync className="h-5 w-5 text-primary" aria-hidden="true" />
               Tu carpeta de la PC, acá
             </SectionTitle>

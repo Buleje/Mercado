@@ -10,7 +10,7 @@ export default function ResumenSinActividad({ onGoTab }: { onGoTab: (tab: string
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
           <Coins className="h-8 w-8 text-primary" />
         </div>
-        <SectionTitle className="text-2xl">Empieza a registrar adelantos</SectionTitle>
+        <SectionTitle>Empieza a registrar adelantos</SectionTitle>
         <p className="mt-2 text-base text-[var(--text-secondary)]">
           Un adelanto es plata que le das a alguien y se va liquidando con lo que te entrega (producto o servicio).
         </p>

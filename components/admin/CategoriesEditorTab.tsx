@@ -414,7 +414,7 @@ export default function CategoriesEditorTab() {
                 <p className="text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-0.5">
                   Catálogo
                 </p>
-                <CardTitle as="h2" id="new-cat-title" className="text-xl leading-tight">
+                <CardTitle as="h2" id="new-cat-title" className="text-[length:var(--ts-xl)] font-bold leading-tight">
                   Nueva categoría
                 </CardTitle>
                 <p className="mt-1 text-sm text-[var(--text-secondary)] leading-relaxed">
@@ -507,7 +507,7 @@ export default function CategoriesEditorTab() {
             <Layers className="h-7 w-7" strokeWidth={2} />
           </span>
           <div className="space-y-1">
-            <CardTitle className="text-lg">
+            <CardTitle className="text-[length:var(--ts-xl)] font-bold">
               Todavía no tienes categorías
             </CardTitle>
             <p className="mx-auto max-w-sm text-sm text-[var(--text-secondary)]">

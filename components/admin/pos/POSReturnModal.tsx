@@ -234,7 +234,7 @@ export default function POSReturnModal({
         <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="relative w-full max-w-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl max-h-[90vh] flex flex-col overflow-hidden">
           {/* Header */}
           <div {...ventana.asaProps} className="flex items-center justify-between p-4 border-b border-[var(--rule-soft)]">
-            <CardTitle id={titleId} className="text-base font-extrabold text-[var(--text-primary)] flex items-center gap-2">
+            <CardTitle id={titleId} className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
               <RotateCcw className="h-4 w-4 text-secondary" />
               Devolucion
               {step < 3 && <span className="text-xs font-normal text-[var(--text-tertiary)]">Paso {step}/2</span>}

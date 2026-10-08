@@ -791,7 +791,7 @@ export default function CashRegisterTab() {
                     <Lock className="h-6 w-6 text-primary" strokeWidth={1.75} aria-hidden />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Caja cerrada</CardTitle>
+                    <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">Caja cerrada</CardTitle>
                     <p className="text-sm text-[var(--text-tertiary)] mt-1">Abre una caja para registrar ventas en efectivo del día.</p>
                   </div>
                 </div>
@@ -1112,7 +1112,7 @@ export default function CashRegisterTab() {
               <div className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden">
                 <div className="px-5 py-4 border-b border-[var(--rule-soft)] flex flex-wrap items-center gap-3">
                   <History className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-base font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex-1">Movimientos</CardTitle>
+                  <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex-1">Movimientos</CardTitle>
                   {/* Method filter pills */}
                   <div className="flex gap-1.5 overflow-x-auto scrollbar-none">
                     {(["all", "efectivo", "yape", "plin", "tarjeta", "transferencia"] as const).map(m => (
@@ -1280,7 +1280,7 @@ export default function CashRegisterTab() {
       {view === "auditoria" && (
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden">
           <div className="px-5 py-4 border-b border-[var(--rule-base)]">
-            <CardTitle className="text-[var(--text-primary)]">Quién tocó la caja</CardTitle>
+            <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Quién tocó la caja</CardTitle>
             <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
               Aperturas, cierres e ingresos o egresos manuales, con el usuario que los hizo. Es un registro de auditoría: no se edita
               ni se borra.
@@ -1382,7 +1382,7 @@ export default function CashRegisterTab() {
             {/* Weekly Cash Flow Chart */}
             <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
               <div className="flex items-center justify-between mb-3">
-                <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
+                <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
                   <History className="h-4 w-4 text-primary" />
                   Flujo de Caja Semanal
                 </CardTitle>
@@ -1512,7 +1512,7 @@ export default function CashRegisterTab() {
                   <Unlock className="h-5 w-5 text-primary" strokeWidth={2} />
                 </div>
                 <div>
-                  <CardTitle id={openTitleId} className="text-lg font-bold">Abrir caja</CardTitle>
+                  <CardTitle id={openTitleId} className="text-[length:var(--ts-xl)] font-bold">Abrir caja</CardTitle>
                   <p className="text-sm text-[var(--text-tertiary)]">Registra el efectivo inicial del día</p>
                 </div>
               </div>
@@ -1644,7 +1644,7 @@ export default function CashRegisterTab() {
                   <Lock className="h-5 w-5 text-[var(--data-error-500)]" strokeWidth={2} />
                 </div>
                 <div>
-                  <CardTitle id={closeTitleId} className="text-lg font-bold">Cerrar caja</CardTitle>
+                  <CardTitle id={closeTitleId} className="text-[length:var(--ts-xl)] font-bold">Cerrar caja</CardTitle>
                   <p className="text-sm text-[var(--text-tertiary)]">Cuenta el efectivo final y cierra el día</p>
                 </div>
               </div>
@@ -1827,7 +1827,7 @@ export default function CashRegisterTab() {
                     : <ArrowDown className="h-5 w-5 text-[var(--data-error-500)]" strokeWidth={2} />}
                 </div>
                 <div>
-                  <CardTitle id={movementTitleId} className="text-lg font-bold">
+                  <CardTitle id={movementTitleId} className="text-[length:var(--ts-xl)] font-bold">
                     {mvType === "ingreso" ? "Registrar ingreso" : "Registrar egreso"}
                   </CardTitle>
                   <p className="text-sm text-[var(--text-tertiary)]">
@@ -1965,7 +1965,7 @@ export default function CashRegisterTab() {
                     <Scan className="h-5 w-5 text-[var(--data-success-500)]" strokeWidth={2} />
                   </div>
                   <div>
-                    <CardTitle id={arqueoTitleId} className="text-lg font-bold">Arqueo Express</CardTitle>
+                    <CardTitle id={arqueoTitleId} className="text-[length:var(--ts-xl)] font-bold">Arqueo Express</CardTitle>
                     <p className="text-sm text-[var(--text-tertiary)]">Verificación rápida sin cerrar caja</p>
                   </div>
                 </div>
@@ -2150,7 +2150,7 @@ export default function CashRegisterTab() {
                   <Calculator className="h-5 w-5 text-primary" strokeWidth={2} />
                 </div>
                 <div>
-                  <CardTitle id={arqueoGuiadoTitleId} className="text-lg font-bold">Arqueo guiado</CardTitle>
+                  <CardTitle id={arqueoGuiadoTitleId} className="text-[length:var(--ts-xl)] font-bold">Arqueo guiado</CardTitle>
                   <p className="text-sm text-[var(--text-tertiary)]">Cuenta billetes, monedas y métodos de pago</p>
                 </div>
               </div>
@@ -2448,7 +2448,7 @@ export default function CashRegisterTab() {
           <div ref={detailModalRef} role="dialog" aria-modal="true" aria-labelledby={detailTitleId} tabIndex={-1} className="relative bg-[var(--surface-raised)] rounded-xl max-w-lg w-full max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()}>
             <div {...ventanaDetail.asaProps} className="px-2 sm:px-4 py-2 sm:py-3 border-b flex items-center justify-between">
               <div>
-                <CardTitle id={detailTitleId} className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Detalle de caja</CardTitle>
+                <CardTitle id={detailTitleId} className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Detalle de caja</CardTitle>
                 <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{fmtDate(detailRegister.openedAt)} → {detailRegister.closedAt ? fmtDate(detailRegister.closedAt) : "—"}</p>
               </div>
               <div className="ml-auto flex items-center gap-1">

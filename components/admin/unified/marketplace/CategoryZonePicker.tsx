@@ -135,7 +135,7 @@ function SectionCard({
           <Icon className="h-4 w-4" strokeWidth={2.25} />
         </span>
         <div className="min-w-0 flex-1">
-          <CardTitle className="text-sm sm:text-base font-extrabold leading-tight">{title}</CardTitle>
+          <CardTitle className="text-sm font-bold leading-tight">{title}</CardTitle>
           {hint && <p className="text-xs text-[var(--text-secondary)] mt-0.5 leading-snug">{hint}</p>}
         </div>
         {rightSlot && <div className="shrink-0">{rightSlot}</div>}
@@ -255,7 +255,7 @@ function CustomCategoryEditor({
       />
       <div className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl bg-[var(--surface-canvas)] border border-[var(--rule-base)] shadow-[var(--shadow-xl)]">
         <header className="flex items-center justify-between px-6 py-4 border-b-2 border-[var(--rule-base)] sticky top-0 bg-[var(--surface-canvas)] z-dropdown">
-          <CardTitle as="h3" className="text-lg font-extrabold text-[var(--text-primary)]">
+          <CardTitle as="h3" className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">
             {initial ? "Editar categoría propia" : "Nueva categoría propia"}
           </CardTitle>
           <button

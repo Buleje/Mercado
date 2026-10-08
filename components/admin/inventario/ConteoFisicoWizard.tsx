@@ -237,7 +237,7 @@ export default function ConteoFisicoWizard() {
       {paso === 1 && (
         <div className="space-y-6">
           <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-6">
-            <CardTitle className="text-lg font-bold text-[var(--text-primary)] mb-4">Nuevo Conteo Fisico</CardTitle>
+            <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] mb-4">Nuevo Conteo Fisico</CardTitle>
 
             <div className="space-y-6">
               <div>
@@ -398,9 +398,9 @@ export default function ConteoFisicoWizard() {
                     </div>
                   )}
                   <div className="text-center">
-                    <h4 className="font-bold text-[var(--text-primary)]">
+                    <BlockTitle className="text-[var(--text-primary)]">
                       {selected.product?.name ?? `Producto #${selected.productId}`}
-                    </h4>
+                    </BlockTitle>
                     {selected.product?.barcode && (
                       <p className="text-xs text-[var(--text-secondary)] mt-1">Codigo: {selected.product.barcode}</p>
                     )}
@@ -472,7 +472,7 @@ export default function ConteoFisicoWizard() {
         <div className="space-y-6">
           <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-4">
             <div className="flex items-center justify-between mb-4">
-              <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Diferencias encontradas</CardTitle>
+              <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">Diferencias encontradas</CardTitle>
               <span className="text-sm text-[var(--text-secondary)]">
                 {itemsConDiferencia.length} productos con diferencia
               </span>
@@ -549,7 +549,7 @@ export default function ConteoFisicoWizard() {
             </svg>
           </div>
 
-          <CardTitle className="text-xl font-bold text-[var(--text-primary)]">Conteo Cerrado</CardTitle>
+          <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">Conteo Cerrado</CardTitle>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-[var(--surface-sunken)] rounded-lg p-4">

@@ -164,7 +164,7 @@ function ShiftCloseModal({
       >
         {/* Header */}
         <div className="bg-primary px-6 py-4">
-          <CardTitle id={tituloId} className="text-lg font-extrabold text-white">Cerrar Turno</CardTitle>
+          <CardTitle id={tituloId} className="text-[length:var(--ts-xl)] font-bold text-white">Cerrar Turno</CardTitle>
           <p className="text-sm text-white/80">Resumen del día antes de cerrar</p>
         </div>
 

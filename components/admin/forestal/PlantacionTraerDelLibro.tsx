@@ -104,7 +104,7 @@ export default function PlantacionTraerDelLibro({
       <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-3">
         <div className="min-w-0">
           <span className="flex items-center gap-1.5">
-            <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">Producción del Libro TH</CardTitle>
+            <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">Producción del Libro TH</CardTitle>
             <InfoTip
               title="Producción del Libro TH"
               what="La producción de cada especie es lo TALADO en el Libro TH: la madera rolliza que dio tu plantación, en m³. Se llena sin tipearla."

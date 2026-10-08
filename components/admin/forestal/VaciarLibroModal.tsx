@@ -82,7 +82,7 @@ export default function VaciarLibroModal({ onClose, onVaciado }: { onClose: () =
         className="relative flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
       >
         <div {...ventana.asaProps} className="flex shrink-0 items-start justify-between gap-3 px-6 pb-3 pt-5">
-          <SectionTitle as="h2" className="text-lg font-extrabold text-[var(--text-primary)]">Vaciar el Libro de Operaciones</SectionTitle>
+          <SectionTitle as="h2" className="text-[var(--text-primary)]">Vaciar el Libro de Operaciones</SectionTitle>
           <span className="ml-auto flex items-center gap-1">
             <ControlesDeVentana ventana={ventana} />
           </span>

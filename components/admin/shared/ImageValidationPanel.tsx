@@ -143,7 +143,7 @@ export function ImageRequirementsGuide({ className }: { className?: string }) {
     >
       <div className="flex items-center gap-2 mb-3">
         <Info className="h-4 w-4 text-[var(--text-tertiary)]" strokeWidth={1.75} />
-        <CardTitle as="h3" className="text-sm font-semibold text-[var(--text-primary)]">
+        <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
           Requisitos de foto de producto
         </CardTitle>
       </div>

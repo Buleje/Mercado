@@ -44,7 +44,7 @@ export default function PatioArmarLote({
       </button>
 
       <header className="flex items-center gap-2">
-        <PageTitle className="flex items-center gap-2 text-xl font-bold text-[var(--text-primary)]">
+        <PageTitle className="flex items-center gap-2 text-[length:var(--ts-xl)] sm:text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">
           <Layers className="h-6 w-6 text-[var(--accent)]" aria-hidden /> Armar lotes escaneando
         </PageTitle>
         <InfoTip

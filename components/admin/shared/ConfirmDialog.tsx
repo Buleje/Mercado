@@ -189,7 +189,7 @@ export function ConfirmDialogProvider({ children }: { children: ReactNode }) {
                   <Icon className={cn("h-5 w-5", styles.color)} strokeWidth={1.75} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <AlertDialog.Title className="text-base font-semibold leading-snug text-[var(--text-primary)]">
+                  <AlertDialog.Title className="font-display text-base sm:text-lg font-semibold leading-snug tracking-tight text-[var(--text-primary)]">
                     {params?.title}
                   </AlertDialog.Title>
                   {params?.description && (

@@ -54,7 +54,7 @@ export default function SinControl({
     >
       <div className={`flex flex-wrap items-center justify-between gap-2 ${abierto ? "mb-3" : ""}`}>
         <div className="flex items-center gap-2">
-          <CardTitle className="flex items-center gap-2 text-base font-extrabold text-[var(--text-primary)]">
+          <CardTitle className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
             <AlertTriangle className="h-5 w-5 shrink-0 text-[var(--data-warning)]" aria-hidden />
             {n} adelanto{n === 1 ? "" : "s"} sin control · {fmtMonedas(datos.porMoneda)}
           </CardTitle>

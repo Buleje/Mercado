@@ -95,7 +95,7 @@ export default function BCGMatrixTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
+          <SectionTitle className="text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <Star className="h-6 w-6 text-[var(--data-warning-500)]" /> Matriz BCG
           </SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-1">Clasifica productos por crecimiento y participación de mercado</p>
@@ -125,7 +125,7 @@ export default function BCGMatrixTab() {
 
       {/* Visual Matrix */}
       <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 sm:p-6">
-        <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4">Mapa Visual BCG</CardTitle>
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4">Mapa Visual BCG</CardTitle>
         <div className="relative w-full aspect-square max-w-[500px] mx-auto" style={{ minHeight: 400 }}>
           {/* Axes */}
           <div className="absolute inset-0 grid grid-cols-1 sm:grid-cols-2 grid-rows-2 rounded-xl overflow-hidden">
@@ -163,7 +163,7 @@ export default function BCGMatrixTab() {
       {/* Product Table */}
       <div className="bg-[var(--surface-raised)]">
         <div className="px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-          <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Detalle de Productos ({filtered.length})</CardTitle>
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Detalle de Productos ({filtered.length})</CardTitle>
         </div>
         <DataTable className="min-w-[600px]">
             <thead><tr>
@@ -219,7 +219,7 @@ export default function BCGMatrixTab() {
         <div className="modal-backdrop p-4" onClick={(e) => { if (e.target === e.currentTarget && !ventanaDetalle.fijado) cerrarDetail(); }}>
           <div ref={detailModalRef} role="dialog" aria-modal="true" aria-labelledby={detailTitleId} tabIndex={-1} className="relative bg-[var(--surface-raised)] rounded-xl w-full max-w-md">
             <div {...ventanaDetalle.asaProps} className="px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex items-center justify-between">
-              <CardTitle id={detailTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.name}</CardTitle>
+              <CardTitle id={detailTitleId} className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.name}</CardTitle>
               <span className="ml-auto flex items-center gap-1">
                 <ControlesDeVentana ventana={ventanaDetalle} />
               </span>

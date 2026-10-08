@@ -186,7 +186,7 @@ export function QuotaAlertModal({ snapshot, onClose, upgradeHref = "/admin/billi
             <div>
               <SectionTitle
                 id={titleId}
-                className="text-lg font-semibold text-[var(--text-primary)]"
+                className="text-[var(--text-primary)]"
               >
                 Uso de cuota — detalles
               </SectionTitle>

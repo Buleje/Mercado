@@ -91,7 +91,7 @@ export default function PatioConteo({ onVolver }: { onVolver: () => void }) {
       </button>
 
       <header className="flex items-center gap-2">
-        <PageTitle className="flex items-center gap-2 text-2xl font-bold text-[var(--text-primary)]">
+        <PageTitle className="flex items-center gap-2 text-[length:var(--ts-xl)] sm:text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">
           <ClipboardList className="h-7 w-7 text-[var(--accent)]" aria-hidden /> Contar el patio
         </PageTitle>
         <InfoTip

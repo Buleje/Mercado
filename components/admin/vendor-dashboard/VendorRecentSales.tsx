@@ -23,7 +23,7 @@ export function VendorRecentSales({ sales }: Props) {
   if (sales.length === 0) {
     return (
       <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-6 ">
-        <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4 flex items-center gap-2">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4 flex items-center gap-2">
           <Receipt className="h-5 w-5 text-primary" />
           Ventas recientes de hoy
         </CardTitle>
@@ -44,7 +44,7 @@ export function VendorRecentSales({ sales }: Props) {
 
   return (
     <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-6 ">
-      <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4 flex items-center gap-2">
+      <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4 flex items-center gap-2">
         <Receipt className="h-5 w-5 text-primary" />
         Ventas recientes de hoy
       </CardTitle>

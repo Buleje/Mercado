@@ -41,7 +41,7 @@ export default function PantallasVinculadas({ camaras, p }: Props) {
   return (
     <section className="space-y-2 border-t border-[var(--rule-soft)] pt-3" aria-labelledby="tv-vinculadas-titulo">
       <div className="flex items-center gap-2">
-        <CardTitle as="h3" id="tv-vinculadas-titulo" className="flex-1 text-base font-bold">
+        <CardTitle as="h3" id="tv-vinculadas-titulo" className="flex-1 text-sm font-bold">
           Pantallas vinculadas ({p.pantallas.length})
         </CardTitle>
         <button type="button" onClick={() => void p.recargar()} className={`${BTN} w-9 justify-center px-0`} aria-label="Actualizar la lista">

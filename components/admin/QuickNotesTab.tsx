@@ -173,7 +173,6 @@ export default function QuickNotesTab() {
         title="Notas Rápidas"
         description="Apuntes, recordatorios y pendientes del día a día"
         icon={StickyNote}
-        noBorder
       >
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative">

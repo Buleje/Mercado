@@ -66,7 +66,7 @@ export default function LothMapaPlanPanel({ plan, onCerrar }: Props) {
     >
       <header className="flex items-center gap-1.5 border-b border-[var(--rule-soft)] px-3 py-2">
         <Wand2 className="h-4 w-4 flex-none text-[var(--accent)]" aria-hidden="true" />
-        <CardTitle id="loth-plan-titulo" className="min-w-0 flex-1 truncate">
+        <CardTitle id="loth-plan-titulo" className="text-sm font-bold min-w-0 flex-1 truncate">
           Planificar la extracción
         </CardTitle>
         <InfoTip

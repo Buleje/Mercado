@@ -612,7 +612,7 @@ export default function PromotionsTab() {
       {/* Header + toolbar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)]">Promociones y campañas</SectionTitle>
+          <SectionTitle className="text-[var(--text-primary)]">Promociones y campañas</SectionTitle>
           <p className="text-sm text-[var(--text-secondary)]">
             {active.length} activas · {inactive.length} inactivas · {campaigns.length} campañas
           </p>
@@ -673,7 +673,7 @@ export default function PromotionsTab() {
               <Calendar className="h-5 w-5 text-[var(--surface-canvas)]" />
             </div>
             <div>
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Campañas Programadas</CardTitle>
+              <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Campañas Programadas</CardTitle>
               <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Automatiza tus campañas de marketing</p>
             </div>
           </div>
@@ -784,7 +784,7 @@ export default function PromotionsTab() {
             <Gift className="h-7 w-7" strokeWidth={2} />
           </span>
           <div className="space-y-1">
-            <CardTitle className="text-[var(--text-primary)]">Todavía no tienes promociones</CardTitle>
+            <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Todavía no tienes promociones</CardTitle>
             <p className="mx-auto max-w-sm text-sm text-[var(--text-secondary)]">
               Crea tu primera oferta y mándala por WhatsApp a tus clientes — o pídele ideas a la IA según tu negocio.
             </p>
@@ -903,7 +903,7 @@ export default function PromotionsTab() {
         <div className="fixed inset-0 flex items-end sm:items-center justify-center bg-black/50" style={{ zIndex: 100 }} onClick={e => { if (e.target === e.currentTarget && !ventanaForm.fijado) closeFormModal(); }}>
           <div ref={formModalRef} role="dialog" aria-modal="true" aria-labelledby={formTitleId} tabIndex={-1} className="relative bg-[var(--surface-raised)] rounded-t-2xl sm:rounded-xl w-full max-w-2xl max-h-[92vh] flex flex-col">
             <div {...ventanaForm.asaProps} className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
-              <CardTitle id={formTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">{editingId ? "Editar promoción" : "Nueva promoción"}</CardTitle>
+              <CardTitle id={formTitleId} className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{editingId ? "Editar promoción" : "Nueva promoción"}</CardTitle>
               <span className="ml-auto flex items-center gap-1">
                 <ControlesDeVentana ventana={ventanaForm} />
               </span>
@@ -1026,7 +1026,7 @@ export default function PromotionsTab() {
         <div className="fixed inset-0 flex items-center justify-center p-4 bg-black/50" style={{ zIndex: 100 }} onClick={e => { if (e.target === e.currentTarget && !ventanaDetail.fijado) closeDetailModal(); }}>
           <div ref={detailModalRef} role="dialog" aria-modal="true" aria-labelledby={detailTitleId} tabIndex={-1} className="relative bg-[var(--surface-raised)] rounded-xl w-full max-w-lg max-h-[90vh] flex flex-col">
             <div {...ventanaDetail.asaProps} className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
-              <CardTitle id={detailTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">{detailPromo.name}</CardTitle>
+              <CardTitle id={detailTitleId} className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detailPromo.name}</CardTitle>
               <span className="ml-auto flex items-center gap-1">
                 <ControlesDeVentana ventana={ventanaDetail} />
               </span>
@@ -1117,7 +1117,7 @@ export default function PromotionsTab() {
           <div ref={sendModalRef} role="dialog" aria-modal="true" aria-labelledby={sendTitleId} tabIndex={-1} className="relative bg-[var(--surface-raised)] rounded-t-2xl sm:rounded-xl w-full max-w-2xl max-h-[92vh] flex flex-col">
             <div {...ventanaSend.asaProps} className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
               <div>
-                <CardTitle id={sendTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Enviar por WhatsApp</CardTitle>
+                <CardTitle id={sendTitleId} className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Enviar por WhatsApp</CardTitle>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{sendPromo.name}</p>
               </div>
               <span className="ml-auto flex items-center gap-1">
@@ -1202,7 +1202,7 @@ export default function PromotionsTab() {
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(to bottom right, #8b5cf6, #9333ea)' }}>
                   <MessageCircle className="h-4 w-4 text-white" />
                 </div>
-                <CardTitle id={aiTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Sugerencias IA</CardTitle>
+                <CardTitle id={aiTitleId} className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Sugerencias IA</CardTitle>
               </div>
               <span className="ml-auto flex items-center gap-1">
                 <ControlesDeVentana ventana={ventanaAi} />
@@ -1239,7 +1239,7 @@ export default function PromotionsTab() {
                 <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)]" />
               </div>
               <div>
-                <CardTitle id={deleteTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">¿Eliminar promoción?</CardTitle>
+                <CardTitle id={deleteTitleId} className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">¿Eliminar promoción?</CardTitle>
                 <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Esta acción no se puede deshacer.</p>
               </div>
             </div>
@@ -1257,7 +1257,7 @@ export default function PromotionsTab() {
           <div ref={templatesModalRef} role="dialog" aria-modal="true" aria-labelledby={templatesTitleId} tabIndex={-1} className="relative bg-[var(--surface-raised)] rounded-xl w-full max-w-lg max-h-[85vh] flex flex-col">
             <div {...ventanaTemplates.asaProps} className="flex items-center justify-between px-5 py-4 border-b dark:border-[var(--rule-base)] shrink-0">
               <div>
-                <CardTitle id={templatesTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Plantillas de Campaña</CardTitle>
+                <CardTitle id={templatesTitleId} className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Plantillas de Campaña</CardTitle>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Selecciona una plantilla y personalízala</p>
               </div>
               <span className="ml-auto flex items-center gap-1">
@@ -1295,7 +1295,7 @@ export default function PromotionsTab() {
         <div className="fixed inset-0 flex items-end sm:items-center justify-center bg-black/50" style={{ zIndex: 100 }} onClick={e => { if (e.target === e.currentTarget && !ventanaCampaignForm.fijado) closeCampaignFormModal(); }}>
           <div ref={campaignFormModalRef} role="dialog" aria-modal="true" aria-labelledby={campaignFormTitleId} tabIndex={-1} className="relative bg-[var(--surface-raised)] rounded-t-2xl sm:rounded-xl w-full max-w-2xl max-h-[92vh] flex flex-col">
             <div {...ventanaCampaignForm.asaProps} className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
-              <CardTitle id={campaignFormTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">{editingCampaignId ? "Editar Campaña" : "Nueva Campaña Programada"}</CardTitle>
+              <CardTitle id={campaignFormTitleId} className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{editingCampaignId ? "Editar Campaña" : "Nueva Campaña Programada"}</CardTitle>
               <span className="ml-auto flex items-center gap-1">
                 <ControlesDeVentana ventana={ventanaCampaignForm} />
               </span>

@@ -198,7 +198,7 @@ export default function PresupuestoMensualTab() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <CardTitle className="text-base font-bold text-[var(--text-primary)]">
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)]">
             Presupuesto Mensual — {mesLabel(data.mes)}
           </CardTitle>
         </div>

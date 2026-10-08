@@ -79,7 +79,7 @@ export function BusinessOverviewHero({
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-bold text-[var(--text-secondary)] ">{eyebrow}</p>
-            <SectionTitle className="text-xl font-extrabold mt-1">{title}</SectionTitle>
+            <SectionTitle className="mt-1">{title}</SectionTitle>
             <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-2xl">{description}</p>
           </div>
           <div className="h-12 w-12 rounded-xl bg-white/80 dark:bg-zinc-900/60 border border-white/70 dark:border-zinc-800 flex items-center justify-center shrink-0">
@@ -120,7 +120,7 @@ export function BusinessOverviewHero({
         <div className="flex items-start justify-between gap-3 mb-4">
           <div>
             <p className="text-xs font-bold text-[var(--text-secondary)] ">Foco inmediato</p>
-            <CardTitle className="text-lg font-extrabold mt-1">{actionsTitle}</CardTitle>
+            <CardTitle className="text-[length:var(--ts-xl)] font-bold mt-1">{actionsTitle}</CardTitle>
             <p className="text-sm text-[var(--text-secondary)] mt-1">{actionsDescription}</p>
           </div>
           <AlertTriangle className="h-5 w-5 text-[var(--data-warning-500)] shrink-0" />

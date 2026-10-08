@@ -55,7 +55,7 @@ export default function TandaMedida({
   return (
     <section className="space-y-2" aria-label="Lo medido en esta tanda" data-tanda-medida>
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <CardTitle as="h2" className="text-base font-bold text-[var(--text-primary)]">
+        <CardTitle as="h2" className="text-sm font-bold text-[var(--text-primary)]">
           Medidas de esta tanda
         </CardTitle>
         <span className="text-base font-bold tabular-nums text-[var(--text-primary)]" data-total-tanda>

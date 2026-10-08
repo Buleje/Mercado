@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useId, useCallback, useMemo, type ReactNode } from "react";
+import { useState, useRef, useEffect, useId, useCallback, useMemo, useSyncExternalStore, type ReactNode } from "react";
 import { isEditableTarget, isModalOpen } from "@/lib/keyboard-guards";
 import { ChevronLeft, ChevronRight, GripVertical } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -8,7 +8,42 @@ import { insertarFaltantes, leerOrdenGuardado } from "./orden-pestanas";
 import type { LucideIcon } from "lucide-react";
 import { useModuleTabs } from "@/contexts/module-tabs-context";
 import { ModuleDepthProvider, useModuleDepth } from "@/components/admin/shared/module-depth";
-import { PageTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { BANDA_MODULO, FILA_TITULO_MODULO, TituloModulo } from "./titulo-modulo";
+import { rotuloDelMenu } from "./rotulo-del-menu";
+
+/**
+ * Pestañas en tres estilos: `linea` (barra sin título, la de siempre), y las
+ * dos de la banda del Libro TH — `fase` (caja hundida en la fila del título) y
+ * `vista` (riel debajo). Las clases son las de libro-chrome.tsx.
+ */
+type EstiloPestana = "linea" | "fase" | "vista";
+const PESTANA: Record<EstiloPestana, { base: string; activa: string; inactiva: string }> = {
+  linea: {
+    // Mobile: tap target accesible (min ~44px alto via py-2.5 + texto sm).
+    base: "flex shrink-0 items-center gap-2 whitespace-nowrap border-b-[3px] px-3 py-2.5 text-sm transition-all duration-[var(--dur-base)] sm:gap-1.5 sm:px-4 sm:py-2.5 sm:text-sm",
+    activa: "border-primary bg-primary/5 font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)]",
+    inactiva: "border-transparent font-normal text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] hover:text-[var(--text-primary)]",
+  },
+  fase: {
+    base: "relative inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 text-sm font-bold transition-colors duration-[var(--dur-base)]",
+    activa: "bg-[var(--surface-raised)] text-[var(--accent-dark)] shadow-[var(--shadow-sm)] dark:text-[var(--accent)]",
+    inactiva: "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]",
+  },
+  vista: {
+    base: "inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 text-sm transition-colors duration-[var(--dur-base)] sm:px-3",
+    activa: "bg-primary/10 font-bold text-[var(--accent-ink)] dark:bg-primary/20 dark:text-[var(--accent)]",
+    inactiva: "font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
+  },
+};
+
+/** La pestaña del panel (`?tab=`), para el rótulo. Cambia de pestaña = otro módulo montado. */
+const suscribirUrl = (avisar: () => void) => {
+  window.addEventListener("popstate", avisar);
+  return () => window.removeEventListener("popstate", avisar);
+};
+const leerTabDeUrl = () => new URLSearchParams(window.location.search).get("tab");
+const sinTabEnServidor = () => null;
 
 export interface AdminTab {
   id: string;
@@ -58,7 +93,13 @@ interface AdminTabBarProps {
    */
   heading?: {
     title: string;
-    description?: string;
+    /**
+     * Rótulo chico arriba del título. Sin él se arma con la sección y la
+     * categoría del menú lateral (rotulo-del-menu.ts); `""` lo apaga.
+     */
+    eyebrow?: string;
+    /** Va al ⓘ junto al título, no debajo. */
+    description?: ReactNode;
     icon?: LucideIcon;
     /** Nivel semántico. `h1` salvo que el módulo cuelgue de otro título. */
     as?: "h1" | "h2";
@@ -119,6 +160,9 @@ export default function AdminTabBar({
   const profundidad = useModuleDepth();
   const bandaConTitulo = Boolean(heading) && profundidad === 0;
   const tituloEnLinea = bandaConTitulo && tabs.length <= (heading?.actions ? 3 : 5);
+  const estilo: EstiloPestana = !bandaConTitulo ? "linea" : tituloEnLinea ? "fase" : "vista";
+  const tabDeLaUrl = useSyncExternalStore(suscribirUrl, leerTabDeUrl, sinTabEnServidor);
+  const rotulo = heading ? (heading.eyebrow ?? rotuloDelMenu(tabDeLaUrl, heading.title)) : undefined;
 
   /**
    * Cuando el contenedor se angosta y las pestañas bajan a su propia fila
@@ -129,8 +173,8 @@ export default function AdminTabBar({
   const acciones = bandaConTitulo && heading?.actions ? (
     <div
       className={cn(
-        "ml-auto flex shrink-0 flex-wrap items-center gap-2 pb-2 @max-[60rem]:max-w-full",
-        tituloEnLinea ? "order-3 @max-[60rem]:order-2" : "self-center",
+        "ml-auto flex shrink-0 flex-wrap items-center gap-2 @max-[60rem]/banda:max-w-full",
+        tituloEnLinea && "order-2",
       )}
     >
       {heading.actions}
@@ -427,72 +471,8 @@ export default function AdminTabBar({
     );
   }
 
-  return (
-    <>
-    {/* `data-admin-tabbar`: lo lee el AdminModuleHeader que va JUSTO ARRIBA
-        (`:has(+ …)`) para soltar su borde inferior. Sin esto quedaban dos
-        reglas horizontales a 40px una de otra. */}
-    <div
-      data-admin-tabbar=""
-      className={cn(
-        "@container relative",
-        // Con `heading`, la identidad del módulo y las pestañas comparten una
-        // sola banda y una sola regla. Los chevrons de scroll son `absolute`,
-        // así que el tablist puede ser hermano del título sin más.
-        bandaConTitulo && "flex flex-wrap items-end justify-between gap-x-6 gap-y-1 border-b border-[var(--rule-base)]",
-        className,
-      )}
-    >
-      {bandaConTitulo && heading && (
-        // Angosto: las acciones bajan a su fila. Sin `flex-wrap`, «Gráficos» +
-        // rango de fechas (shrink-0) aplastaban el título del Inicio a 0 px a
-        // 400 px (08-10). Sólo bajo 60rem: arriba la descripción es visible y
-        // su ancho mandaría las acciones abajo sin necesidad.
-        <div
-          className={cn(
-            "flex min-w-0 items-start gap-2.5 pb-2",
-            tituloEnLinea ? "flex-1" : "basis-full @max-[60rem]:flex-wrap",
-          )}
-        >
-          {heading.icon && (
-            <heading.icon
-              className="mt-1 h-5 w-5 shrink-0 text-[var(--text-tertiary)] "
-              strokeWidth={1.5}
-              aria-hidden
-            />
-          )}
-          <div className="min-w-0">
-            <PageTitle as={heading.as ?? "h1"} className="font-display tracking-tight leading-[1.05]">
-              {heading.title}
-            </PageTitle>
-            {/* `div`, no `p`: la descripción acepta JSX del que llama. Se
-                esconde sólo con el contenedor angosto —ahí lo que importa es
-                el título y las pestañas—. En pantallas bajas se queda: Brandon
-                2026-09-07 la quiere ver en su laptop de 768. */}
-            {heading.description && (
-              <div
-                data-tabbar-desc=""
-                className="mt-0.5 hidden truncate text-[length:var(--ts-sm)] text-[var(--text-secondary)] @min-[60rem]:block "
-              >
-                {heading.description}
-              </div>
-            )}
-          </div>
-          {!tituloEnLinea && acciones}
-        </div>
-      )}
-      {!bandaConTitulo && canScrollLeft && (
-        <button
-          onClick={() => scrollTabs("left")}
-          className="absolute left-0 top-0 bottom-0 z-10 flex w-10 items-center bg-linear-to-r from-[var(--surface-canvas)] via-[var(--surface-canvas)]/90 to-transparent transition-opacity duration-[var(--dur-base)]"
-          aria-label="Ver tabs anteriores"
-        >
-          <ChevronLeft className="h-4 w-4 text-[var(--text-secondary)]" />
-        </button>
-      )}
-
-      {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- ver el
-          comentario de la rama vertical: el foco va en las pestañas, no acá. */}
+  const rielDePestanas = (
+    // eslint-disable-next-line jsx-a11y/interactive-supports-focus -- ver el comentario de la rama vertical: el foco va en las pestañas, no acá.
       <div
         ref={tabsRef}
         onScroll={checkScroll}
@@ -500,18 +480,16 @@ export default function AdminTabBar({
         aria-orientation="horizontal"
         onKeyDown={teclasDeBarra}
         className={cn(
-          "-mx-1 flex gap-0.5 px-1 sm:gap-1",
-          // La regla es del tablist salvo que la comparta con el título: con
-          // `heading` la dibuja la banda de afuera, y dos reglas pegadas leen
-          // como un borde doble.
-          bandaConTitulo
-            ? cn(
-                "min-w-0",
-                tituloEnLinea
-                  ? "order-2 max-w-full flex-none @max-[60rem]:order-3 @max-[60rem]:basis-full @max-[60rem]:justify-start"
-                  : "basis-full",
-              )
-            : "border-b border-[var(--rule-base)]",
+          "flex",
+          // Con `heading` las pestañas van DENTRO de la banda, como en el
+          // Libro TH (referencia de Brandon 08-10): en línea con el título, en
+          // la caja hundida de las fases; con seis o más, en el riel de abajo
+          // como las vistas. Sin `heading`, la línea de siempre.
+          estilo === "fase"
+            ? "order-1 min-w-0 max-w-full flex-none items-center gap-0.5 rounded-xl bg-[var(--surface-sunken)] p-1 sm:ml-1 @max-[60rem]/banda:order-3 @max-[60rem]/banda:basis-full"
+            : estilo === "vista"
+              ? "min-w-0 items-center gap-1"
+              : "-mx-1 gap-0.5 border-b border-[var(--rule-base)] px-1 sm:gap-1",
           // Angosto: una sola fila que se desliza (recupera ~90px verticales
           // que las 3 filas del wrap le robaban al contenido). Desde 48rem de
           // CONTENEDOR —no de viewport, que ignora el ancho del sidebar—
@@ -523,7 +501,9 @@ export default function AdminTabBar({
             ? "overflow-x-auto scroll-smooth scrollbar-none @min-[48rem]:flex-wrap @min-[48rem]:gap-y-1 @min-[48rem]:overflow-x-visible"
             : "overflow-x-auto scroll-smooth scrollbar-none",
         )}
-        style={{ scrollbarWidth: "none" }}
+        /* `contain`: el desliz de la caja hundida no se filtra al ancho de la
+           página a 400 px (mismo arreglo que la fila de fases del libro). */
+        style={estilo === "fase" ? { scrollbarWidth: "none", contain: "layout paint" } : { scrollbarWidth: "none" }}
       >
         {orderedTabs.map((tab) => {
           const Icon = tab.icon;
@@ -553,18 +533,14 @@ export default function AdminTabBar({
               disabled={tab.disabled}
               title={tab.title ?? tab.label}
               className={cn(
-                // Mobile: tap target accesible (min ~44px alto via py-2.5 + texto sm).
-                // Desktop: layout original más compacto.
-                "flex shrink-0 items-center gap-2 whitespace-nowrap border-b-[3px] px-3 py-2.5 text-sm transition-all duration-[var(--dur-base)] sm:gap-1.5 sm:px-4 sm:py-2.5 sm:text-sm",
+                PESTANA[estilo].base,
                 // El `grow` de antes (tabs estiradas para justificar las filas
                 // en móvil) ya no aplica: en angosto la barra es una sola fila
                 // deslizable, no un wrap de varias filas. Se conserva sólo el
                 // padding compacto.
-                wrap && "max-sm:px-2",
+                wrap && estilo === "linea" && "max-sm:px-2",
                 draggable && "cursor-grab active:cursor-grabbing",
-                activeTab === tab.id
-                  ? "border-primary bg-primary/5 font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                  : "border-transparent font-normal text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] hover:text-[var(--text-primary)]",
+                activeTab === tab.id ? PESTANA[estilo].activa : PESTANA[estilo].inactiva,
                 tab.disabled && "cursor-not-allowed opacity-40",
                 draggedTab === tab.id && "scale-95 opacity-40",
                 dragOverTab === tab.id && draggedTab !== tab.id && "rounded-t-lg ring-2 ring-primary ring-offset-1",
@@ -572,7 +548,7 @@ export default function AdminTabBar({
             >
               {/* El handle de reorden por drag solo aplica en desktop (en touch
                   el drag de sub-tabs no es un gesto usable y el ⋮⋮ es ruido). */}
-              {draggable && <GripVertical className="hidden lg:inline-block h-3 w-3 shrink-0 opacity-30" />}
+              {draggable && estilo === "linea" && <GripVertical className="hidden lg:inline-block h-3 w-3 shrink-0 opacity-30" />}
               {Icon && <Icon className="h-4 w-4 shrink-0 sm:h-3.5 sm:w-3.5" />}
               <span>{tab.shortLabel || tab.label}</span>
               {tab.badge != null && (
@@ -603,13 +579,75 @@ export default function AdminTabBar({
           </div>
         )}
       </div>
-      {tituloEnLinea && acciones}
+  );
+
+  return (
+    <>
+    {/* `data-admin-tabbar`: lo lee el AdminModuleHeader que va JUSTO ARRIBA
+        (`:has(+ …)`) para soltar su borde inferior. Sin esto quedaban dos
+        reglas horizontales a 40px una de otra. */}
+    <div
+      data-admin-tabbar=""
+      className={cn(
+        // Con `heading`, la identidad del módulo y las pestañas comparten la
+        // MISMA tarjeta que la banda del Libro TH (titulo-modulo.tsx). Los
+        // chevrons de scroll son `absolute`: el tablist puede ir en cualquier
+        // fila mientras `relative` siga en esta caja.
+        bandaConTitulo ? cn(BANDA_MODULO, "relative") : "@container relative",
+        className,
+      )}
+    >
+      {bandaConTitulo && heading && (
+        // Fila de identidad, igual a la del libro: título · pestañas · acciones.
+        // Angosto (<60rem de banda): las acciones suben junto al título y las
+        // pestañas bajan a su fila. La descripción va al ⓘ, no debajo
+        // (regla «explicar con ⓘ», Brandon 09-24 y 01-10).
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2.5 sm:px-4">
+          <div className={FILA_TITULO_MODULO}>
+            <TituloModulo
+              icon={heading.icon}
+              eyebrow={rotulo}
+              title={heading.title}
+              as={heading.as ?? "h1"}
+              ayuda={
+                heading.description ? (
+                  <InfoTip side="bottom" title={heading.title} what={heading.description} />
+                ) : undefined
+              }
+            />
+          </div>
+          {estilo === "fase" && rielDePestanas}
+          {acciones}
+        </div>
+      )}
+      {!bandaConTitulo && canScrollLeft && (
+        <button
+          onClick={() => scrollTabs("left")}
+          className="absolute left-0 top-0 bottom-0 z-10 flex w-10 items-center bg-linear-to-r from-[var(--surface-canvas)] via-[var(--surface-canvas)]/90 to-transparent transition-opacity duration-[var(--dur-base)]"
+          aria-label="Ver tabs anteriores"
+        >
+          <ChevronLeft className="h-4 w-4 text-[var(--text-secondary)]" />
+        </button>
+      )}
+
+      {estilo === "linea" && rielDePestanas}
+      {estilo === "vista" && (
+        // Riel de vistas del libro: debajo de la identidad, fondo del lienzo.
+        <div className="rounded-b-2xl border-t border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-2 py-2 sm:px-3">
+          {rielDePestanas}
+        </div>
+      )}
 
       {canScrollRight && (
         <button
           onClick={() => scrollTabs("right")}
           style={bandaConTitulo && riel ? { top: riel.top, height: riel.alto, right: riel.derecha } : undefined}
-          className="absolute right-0 top-0 bottom-0 z-10 flex w-10 items-center justify-end bg-linear-to-l from-[var(--surface-canvas)] via-[var(--surface-canvas)]/90 to-transparent transition-opacity duration-[var(--dur-base)]"
+          className={cn(
+            "absolute right-0 top-0 bottom-0 z-10 flex w-10 items-center justify-end bg-linear-to-l to-transparent transition-opacity duration-[var(--dur-base)]",
+            estilo === "fase"
+              ? "rounded-r-xl from-[var(--surface-sunken)] via-[var(--surface-sunken)]/90"
+              : "from-[var(--surface-canvas)] via-[var(--surface-canvas)]/90",
+          )}
           aria-label="Ver más tabs"
         >
           <ChevronRight className="h-4 w-4 text-[var(--text-secondary)]" />

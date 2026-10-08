@@ -76,7 +76,7 @@ export default function ComplianceTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
+          <SectionTitle className="text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <Scale className="h-6 w-6 text-primary" /> Cumplimiento Regulatorio
             {isDemo && <span className="text-xs font-normal text-[var(--data-warning)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning)]/20 px-2 py-0.5 rounded-full">datos demo</span>}
           </SectionTitle>
@@ -180,7 +180,7 @@ export default function ComplianceTab() {
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{o.title}</CardTitle>
+                      <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{o.title}</CardTitle>
                       <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5", S.color)}>
                         <SIcon className="h-2.5 w-2.5" /> {S.label}
                       </span>

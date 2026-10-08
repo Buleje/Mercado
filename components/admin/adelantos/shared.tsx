@@ -258,7 +258,7 @@ export function ModalShell({
       >
         <div {...ventana.asaProps} className="flex shrink-0 items-start justify-between gap-3 px-6 pb-3 pt-5">
           <div className="min-w-0">
-            <CardTitle className="text-lg font-extrabold text-[var(--text-primary)]">{title}</CardTitle>
+            <CardTitle className="text-[length:var(--ts-xl)] font-bold tracking-tight text-[var(--text-primary)]">{title}</CardTitle>
             {subtitle && <div className="mt-0.5 text-sm font-medium text-[var(--text-tertiary)]">{subtitle}</div>}
           </div>
           <span className="ml-auto flex shrink-0 items-center gap-1">

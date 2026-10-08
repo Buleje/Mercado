@@ -60,7 +60,7 @@ export function VendorWeeklyChart({ data }: Props) {
   return (
     <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-6 ">
       <div className="flex items-center justify-between mb-1">
-        <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
           <TrendingUp className="h-5 w-5 text-primary" />
           Ingresos — últimos 7 días
         </CardTitle>

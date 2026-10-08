@@ -28,7 +28,7 @@ import {
   Volume2,
   VolumeX,
 } from "@buleje/design-system/icons";
-import { CardTitle, LoadingState } from "@buleje/design-system";
+import { CardTitle, LoadingState, BlockTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import POSCustomerSearch from "./POSCustomerSearch";
 import POSSplitPayment from "./POSSplitPayment";
@@ -198,7 +198,7 @@ function CustomerListPanel({ onSelect, onClose }: { onSelect: (phone: string, na
             <ClipboardList className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h4 className="text-lg font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Todos los clientes</h4>
+            <BlockTitle className="text-[length:var(--ts-xl)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">Todos los clientes</BlockTitle>
             <p className="text-sm text-[var(--text-tertiary)] dark:text-muted">Selecciona un cliente existente</p>
           </div>
         </div>

@@ -99,7 +99,7 @@ export default function ProyeccionSemanas({ d }: { d: ProyeccionDeCaja }) {
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
         <div>
           <div className="flex items-center gap-1.5">
-            <CardTitle as="h3">
+            <CardTitle className="text-sm font-bold" as="h3">
               {saldo?.fuente === "neto_30_dias" ? "Saldo de hoy, estimado" : saldo ? "Saldo de hoy en tus cuentas" : "Saldo de hoy"}
             </CardTitle>
             <InfoTip

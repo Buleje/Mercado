@@ -71,7 +71,7 @@ export default function FiltroColumna({
         className="relative flex max-h-[80vh] w-full max-w-[24rem] flex-col overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)] outline-none"
       >
         <div {...ventana.asaProps} className="flex items-center justify-between border-b-2 border-[var(--rule-base)] px-4 py-3">
-          <CardTitle as="h2">Filtrar por la columna {etiqueta}</CardTitle>
+          <CardTitle className="text-sm font-bold" as="h2">Filtrar por la columna {etiqueta}</CardTitle>
           <span className="flex items-center gap-1">
             <ControlesDeVentana ventana={ventana} />
             <button type="button" onClick={onCerrar} title="Cerrar"

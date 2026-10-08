@@ -308,7 +308,7 @@ export default function CobranzaView({
       </div>
 
       <div className="rounded-xl bg-[var(--surface-raised)] p-3 ring-1 ring-[var(--rule-soft)]">
-        <CardTitle className="mb-1 px-1 text-base font-extrabold text-[var(--text-primary)]">
+        <CardTitle className="mb-1 px-1 text-sm font-bold text-[var(--text-primary)]">
           {filtrados.length} deudor{filtrados.length === 1 ? "" : "es"}
           {tramo !== "todos" && <span className="font-semibold text-[var(--text-tertiary)]"> de {deudores.length}</span>}
         </CardTitle>

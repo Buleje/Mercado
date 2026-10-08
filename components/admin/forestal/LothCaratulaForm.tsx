@@ -241,7 +241,7 @@ export default function LothCaratulaForm({ current, transformaEnElTh = null, pas
               <FileText className="h-5 w-5" strokeWidth={1.75} aria-hidden="true" />
             </span>
             <span className="flex min-w-0 items-center gap-1.5">
-              <CardTitle as="h2" className="truncate text-base font-bold text-[var(--text-primary)]">Carátula del libro</CardTitle>
+              <CardTitle as="h2" className="truncate text-sm font-bold text-[var(--text-primary)]">Carátula del libro</CardTitle>
               <InfoTip
                 title="Carátula del libro"
                 what="Los datos del titular y del documento de gestión (Anexo 1 SERFOR): se imprimen en cada hoja del LO-TH. Se guarda con sólo el titular; lo demás se completa después."

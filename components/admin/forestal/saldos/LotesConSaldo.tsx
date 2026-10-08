@@ -81,7 +81,7 @@ export default function LotesConSaldo({
     if (!vacioMotivo && !avisoMezcla) return null;
     return (
       <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] py-3">
-        <CardTitle as="h3" className="px-4 text-base font-bold text-[var(--text-primary)]">
+        <CardTitle as="h3" className="px-4 text-sm font-bold text-[var(--text-primary)]">
           Lo que resta en cada lote
         </CardTitle>
         {vacioMotivo && (
@@ -136,7 +136,7 @@ export default function LotesConSaldo({
             <CardTitle
               as="h3"
               id={ID_TITULO}
-              className="text-base font-bold text-[var(--text-primary)]"
+              className="text-sm font-bold text-[var(--text-primary)]"
             >
               Lo que resta en cada lote
             </CardTitle>

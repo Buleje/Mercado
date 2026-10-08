@@ -204,7 +204,7 @@ export default function PlantacionWizard({
               )}
             </div>
             <span className="mt-2 flex items-center gap-1.5">
-              <CardTitle as="h3" className="text-2xl font-bold leading-tight text-[var(--text-primary)]">Registro de Plantación Forestal</CardTitle>
+              <CardTitle as="h3" className="text-[length:var(--ts-xl)] font-bold leading-tight text-[var(--text-primary)]">Registro de Plantación Forestal</CardTitle>
               <InfoTip
                 title="Registro de Plantación Forestal"
                 what={`${datos.tipoTramite === "actualizacion" ? "Actualización" : "Inscripción"} ante SERFOR.`}

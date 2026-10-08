@@ -333,7 +333,7 @@ export default function CobranzaView({
             se usan una vez por ronda: van al «⋯»; «Modo llamada» queda a la
             vista porque ES la forma de cobrar. */}
         <div className="mb-2 flex flex-wrap items-center gap-2 px-1">
-          <CardTitle className="mr-auto text-base font-extrabold text-[var(--text-primary)]">
+          <CardTitle className="mr-auto text-sm font-bold text-[var(--text-primary)]">
             {filtrados.length} deudor{filtrados.length === 1 ? "" : "es"}
             {tramo !== "todos" && <span className="font-semibold text-[var(--text-tertiary)]"> de {deudores.length}</span>}
           </CardTitle>

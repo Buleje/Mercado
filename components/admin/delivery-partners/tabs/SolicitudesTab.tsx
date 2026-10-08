@@ -90,7 +90,7 @@ export function SolicitudesTab() {
               <FileText className="h-5 w-5" />
             </span>
             <div>
-              <CardTitle className="font-display text-xl leading-tight">
+              <CardTitle className="text-[length:var(--ts-xl)] font-bold leading-tight">
                 Solicitudes de repartidores
               </CardTitle>
               <p className="text-sm text-[var(--text-secondary)] mt-1 leading-snug">

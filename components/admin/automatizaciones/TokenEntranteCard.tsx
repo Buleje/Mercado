@@ -31,7 +31,7 @@ export default function TokenEntranteCard({ token, ejemploCurl, copiado, onCopia
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           <KeyRound className="h-4 w-4 text-[var(--text-secondary)]" />
-          <CardTitle className="font-extrabold">Token para n8n</CardTitle>
+          <CardTitle className="text-sm font-bold">Token para n8n</CardTitle>
         </div>
         <button
           type="button"

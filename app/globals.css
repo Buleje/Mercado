@@ -3811,7 +3811,6 @@ body.tenant-storefront > nav[aria-label="Breadcrumb"] {
   :root:has([data-area="admin"]) [data-admin-module-header],
   :root:has([data-area="superadmin"]) [data-admin-module-header] {
     margin-bottom: 0.5rem;
-    padding-bottom: 0.375rem;
   }
   :root:has([data-area="admin"]) [data-admin-tabbar],
   :root:has([data-area="superadmin"]) [data-admin-tabbar] {

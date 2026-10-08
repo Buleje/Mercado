@@ -104,7 +104,7 @@ export function PasoEtiquetas({
         <div className="min-w-0 flex-1 space-y-1">
           {/* El ⓘ va AL LADO del título, no adentro (un botón dentro de un h2: guardián infotip-no-anidado). */}
           <div className="flex items-center gap-1.5">
-            <CardTitle as="h2" className="text-xl font-bold text-[var(--text-primary)]">Etiquetas</CardTitle>
+            <CardTitle as="h2" className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">Etiquetas</CardTitle>
             <InfoTip
               title="¿Por qué etiquetar antes?"
               what="Con la etiqueta QR pegada, la cámara del celular lee cada troza de un toque, sin tipear."

@@ -251,7 +251,7 @@ export default function SuppliersTab() {
     <div className="space-y-3 sm:space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Proveedores</SectionTitle>
+          <SectionTitle className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">Proveedores</SectionTitle>
         </div>
         <div className="flex flex-wrap gap-2">
           <button
@@ -270,7 +270,7 @@ export default function SuppliersTab() {
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-2 mb-2">
                 <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)]" />
-                <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Alertas de Pagos</CardTitle>
+                <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Alertas de Pagos</CardTitle>
               </div>
               <div className="flex flex-wrap gap-2 sm:gap-4 text-sm">
                 {overduePayables.length > 0 && (
@@ -697,7 +697,7 @@ export default function SuppliersTab() {
         <div className="fixed inset-0 z-modal flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowAdd(false)}>
           <div className="bg-[var(--surface-raised)] w-full sm:max-w-lg sm:rounded-xl rounded-t-2xl overflow-y-auto max-h-[90dvh]">
             <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-[var(--surface-raised)] z-10">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Nuevo proveedor</CardTitle>
+              <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Nuevo proveedor</CardTitle>
               <button aria-label="Cerrar" onClick={() => setShowAdd(false)} className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)] transition-colors"><X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" /></button>
             </div>
             <form onSubmit={addSupplier} className="p-5 space-y-4">

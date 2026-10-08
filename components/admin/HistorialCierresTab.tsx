@@ -99,7 +99,7 @@ export default function HistorialCierresTab() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <CardTitle className="text-lg font-bold text-[var(--text-primary)] dark:text-foreground">
+          <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] dark:text-foreground">
             Historial de Cierres
           </CardTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted">

@@ -39,7 +39,7 @@ function RevenueChart({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
         <div>
-          <CardTitle as="h2" className="text-sm font-semibold">
+          <CardTitle as="h2" className="text-sm font-bold">
             {title}
           </CardTitle>
           <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{period}</p>

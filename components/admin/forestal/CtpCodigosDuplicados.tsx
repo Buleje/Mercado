@@ -147,7 +147,7 @@ export default function CtpCodigosDuplicados() {
     <section className="overflow-hidden rounded-2xl border border-[var(--data-warning-500)]/50 bg-[var(--surface-raised)]">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 px-3 py-2">
         <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--data-warning-600)]" aria-hidden />
-        <CardTitle as="h3" className="text-sm">
+        <CardTitle as="h3" className="text-sm font-bold">
           {lista.length} {lista.length === 1 ? "código de planta repetido" : "códigos de planta repetidos"}
         </CardTitle>
         {/* Se recorta para que el aviso entre en un renglón, pero la frase

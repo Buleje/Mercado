@@ -94,7 +94,7 @@ export default function PlantacionPasoBloques({
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <CardTitle as="h3" className="font-display text-xl leading-tight text-[var(--text-primary)]">Bloques de plantación</CardTitle>
+            <CardTitle as="h3" className="text-[length:var(--ts-xl)] font-bold leading-tight text-[var(--text-primary)]">Bloques de plantación</CardTitle>
             <p className="mt-1 text-sm text-[var(--text-secondary)]">
               {bloques.length} {bloques.length === 1 ? "bloque" : "bloques"} · {numEspecies} {numEspecies === 1 ? "especie" : "especies"} ·{" "}
               {formatNumber(superficieBloques, { max: 2 })} ha declaradas en bloques

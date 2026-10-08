@@ -143,7 +143,7 @@ export default function ExpandedStockModal({ products, movements, onClose }: Pro
         {/* Header */}
         <div {...ventana.asaProps} className="flex items-center justify-between px-6 py-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] shrink-0">
           <div>
-            <SectionTitle id={titleId} className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Inventario completo</SectionTitle>
+            <SectionTitle id={titleId} className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">Inventario completo</SectionTitle>
             <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{filtered.length} productos activos</p>
           </div>
           <div className="flex items-center gap-3">

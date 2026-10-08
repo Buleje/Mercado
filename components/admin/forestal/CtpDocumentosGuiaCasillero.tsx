@@ -138,7 +138,7 @@ export default function CtpDocumentosGuiaCasillero({
       }`}
     >
       <header className="flex items-center gap-1.5">
-        <CardTitle id={`${idBase}-titulo`} className="min-w-0 flex-1 truncate">
+        <CardTitle id={`${idBase}-titulo`} className="text-sm font-bold min-w-0 flex-1 truncate">
           {casillero.label}
         </CardTitle>
         <InfoTip

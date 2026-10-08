@@ -69,7 +69,7 @@ export default function LothMapaRutaFicha({ ruta, punto, onCerrar, onCentrar }: 
           )}
         </span>
         <div className="min-w-0 flex-1">
-          <CardTitle id="loth-ficha-ruta-titulo" ref={tituloRef} tabIndex={-1} className="font-black leading-tight focus:outline-none">
+          <CardTitle id="loth-ficha-ruta-titulo" ref={tituloRef} tabIndex={-1} className="text-sm font-bold leading-tight focus:outline-none">
             {nombre}
           </CardTitle>
           <p className="text-sm text-[var(--text-secondary)]">{ruta?.tipoLabel ?? punto?.tipoLabel}</p>

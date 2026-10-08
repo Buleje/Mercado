@@ -159,7 +159,7 @@ export default function CarpetaPanel({
             <button type="button" className={BOTON_SUAVE} onClick={() => setRenombrando(false)}>Cancelar</button>
           </div>
         ) : (
-          <CardTitle as="h4" className="min-w-0 flex-1 truncate" title={carpeta.nombre}>
+          <CardTitle as="h4" className="text-sm font-bold min-w-0 flex-1 truncate" title={carpeta.nombre}>
             {carpeta.nombre}
           </CardTitle>
         )}

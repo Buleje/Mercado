@@ -130,7 +130,7 @@ export default function ConversionFunnel() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">
+          <SectionTitle className="text-[var(--text-primary)]">
             Embudo de conversion
           </SectionTitle>
           <p className="text-sm text-[var(--text-tertiary)]">

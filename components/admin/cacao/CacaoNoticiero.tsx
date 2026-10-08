@@ -291,7 +291,7 @@ export default function CacaoNoticiero() {
 
           {/* Análisis */}
           <div className="rounded-2xl border border-l-[6px] border-[var(--rule-base)] border-l-[var(--accent)] bg-[var(--surface-canvas)]/40 p-5">
-            <CardTitle className="mb-3 flex items-center gap-2"><TrendingUp className="h-4 w-4 text-[var(--accent)]" /> Lectura de mercado</CardTitle>
+            <CardTitle className="text-sm font-bold mb-3 flex items-center gap-2"><TrendingUp className="h-4 w-4 text-[var(--accent)]" /> Lectura de mercado</CardTitle>
             {insights.length ? <ul className="space-y-2.5 text-sm text-[var(--text-secondary)]">{insights.map((s, i) => <li key={i} className="flex gap-2"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--accent)]" />{s}</li>)}</ul> : <p className="text-sm text-[var(--text-tertiary)]">Sin datos de precio para analizar.</p>}
             <p className="mt-3 border-t border-[var(--rule-soft)] pt-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
               Lectura de las {data?.generatedAt ? formatTime(data.generatedAt) : "—"} · se renueva sola cada 5 min{auto ? "" : " (auto en pausa)"}.

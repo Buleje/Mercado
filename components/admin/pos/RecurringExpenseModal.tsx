@@ -259,7 +259,7 @@ export default function RecurringExpenseModal({ open, onClose, onCreated, tenant
             <SelectedIcon className={cn("h-6 w-6", colorCls.text)} strokeWidth={2} />
           </span>
           <div className="flex-1 min-w-0">
-            <SectionTitle as="h2" id="recurring-expense-title" className="text-lg font-extrabold text-[var(--text-primary)]">
+            <SectionTitle as="h2" id="recurring-expense-title" className="text-[var(--text-primary)]">
               Nuevo gasto recurrente
             </SectionTitle>
             <p className="text-sm text-[var(--text-secondary)] truncate">

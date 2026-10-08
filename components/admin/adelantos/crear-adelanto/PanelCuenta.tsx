@@ -33,7 +33,7 @@ export default function PanelCuenta({ alta }: { alta: AltaAdelanto }) {
   return (
     <section aria-labelledby="alta-cuenta-titulo" className="overflow-hidden rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] shadow-[var(--shadow-sm)]">
       <div className="flex items-center gap-2 border-b border-[var(--rule-soft)] px-5 py-3.5">
-        <CardTitle as="h3" id="alta-cuenta-titulo" className="min-w-0 flex-1 text-lg font-bold">
+        <CardTitle as="h3" id="alta-cuenta-titulo" className="min-w-0 flex-1 text-[length:var(--ts-xl)] font-bold">
           {persona ? `La cuenta de ${persona.nombre}` : "La cuenta"}
         </CardTitle>
         <InfoTip

@@ -120,7 +120,7 @@ export default function ExcepcionesSaldo({
       aria-label="Qué revisar"
     >
       <div className="flex flex-wrap items-baseline justify-between gap-2 border-b-2 border-[var(--rule-base)] px-4 py-3">
-        <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">
+        <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
           Qué revisar ({excepciones.length})
         </CardTitle>
         {/* En angosto la frase baja a su propio renglón: apretada entre el

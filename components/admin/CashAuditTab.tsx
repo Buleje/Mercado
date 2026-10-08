@@ -588,7 +588,7 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
             <div className="h-12 w-12 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center mx-auto mb-3">
               <Calculator className="h-6 w-6 text-[var(--text-tertiary)]" strokeWidth={1.5} aria-hidden />
             </div>
-            <CardTitle className="text-base font-semibold text-[var(--text-primary)] mb-1">Sin cuadres registrados</CardTitle>
+            <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-1">Sin cuadres registrados</CardTitle>
             <p className="text-sm text-[var(--text-secondary)] max-w-md mx-auto">Los cuadres se generan al cerrar turnos en Control de turnos.</p>
             {onNavigateToTurnos && (
               <button onClick={onNavigateToTurnos} className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline">
@@ -626,7 +626,7 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
           <div ref={detailPanelRef} role="dialog" aria-modal="true" aria-labelledby={detailTitleId} tabIndex={-1} className="relative bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-md space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
             <div {...ventanaDetalle.asaProps} className="flex items-center justify-between">
               <div>
-                <CardTitle id={detailTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Cuadre — {detail.date} {detail.shift}</CardTitle>
+                <CardTitle id={detailTitleId} className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Cuadre — {detail.date} {detail.shift}</CardTitle>
                 <p className="text-xs text-[var(--text-tertiary)]">{detail.cashier}{detail.closedBy ? ` · Cerrado por: ${detail.closedBy}` : " · Turno abierto"}</p>
               </div>
               <span className="ml-auto flex items-center gap-1">

@@ -57,7 +57,7 @@ function Aviso({
       <span aria-hidden className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-[var(--accent)]/12 text-[var(--accent-ink)]">
         <Icono className="h-7 w-7" />
       </span>
-      <CardTitle as="h1" className="mt-4 text-xl font-bold">
+      <CardTitle as="h1" className="mt-4 text-[length:var(--ts-xl)] font-bold">
         {titulo}
       </CardTitle>
       <p className="mx-auto mt-2 max-w-[26rem] text-base text-[var(--text-secondary)]">{texto}</p>

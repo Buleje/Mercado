@@ -139,7 +139,7 @@ export function BloqueFicha({
     >
       <header className={`flex flex-wrap items-center gap-x-2 gap-y-1 px-4 py-3 ${abierto ? "border-b border-[var(--rule-soft)]" : ""}`}>
         {/* Disclosure = botón DENTRO del heading; el ⓘ queda afuera (no se anida un botón en otro). */}
-        <CardTitle id={`${id}-t`} className="min-w-0">
+        <CardTitle id={`${id}-t`} className="text-sm font-bold min-w-0">
           {plegable ? (
             <button
               type="button"

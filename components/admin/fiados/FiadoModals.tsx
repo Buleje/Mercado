@@ -163,7 +163,7 @@ export default function FiadoModals({
             >
               <div ref={pagoPanelRef} role="dialog" aria-modal="true" aria-labelledby={pagoTitleId} tabIndex={-1}
                 className="w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4">
-                <CardTitle id={pagoTitleId} className="text-lg font-bold text-[var(--text-primary)]">Registrar Pago</CardTitle>
+                <CardTitle id={pagoTitleId} className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">Registrar Pago</CardTitle>
                 <p className="text-sm text-[var(--text-secondary)]">
                   Saldo pendiente: <span className="font-bold text-[var(--data-error-500)]">{formatCurrency(selected.saldo)}</span>
                 </p>
@@ -275,7 +275,7 @@ export default function FiadoModals({
               <div ref={cobroPanelRef} role="dialog" aria-modal="true" aria-labelledby={cobroTitleId} tabIndex={-1}
                 className="relative w-full max-w-md bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 max-h-[80vh] overflow-y-auto">
                 <div {...ventanaCobro.asaProps} className="flex items-center justify-between">
-                  <CardTitle id={cobroTitleId} className="text-lg font-bold text-[var(--text-primary)]">Cobro Masivo</CardTitle>
+                  <CardTitle id={cobroTitleId} className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">Cobro Masivo</CardTitle>
                   <span className="ml-auto flex items-center gap-1">
                     <ControlesDeVentana ventana={ventanaCobro} />
                     <button aria-label="Cerrar" onClick={() => setShowCobroMasivo(false)} className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)]">
@@ -382,7 +382,7 @@ export default function FiadoModals({
                   <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2 print:hidden">
                     <CheckCircle2 className="h-6 w-6 text-[var(--data-success-500)]" />
                   </div>
-                  <CardTitle id={reciboTitleId} className="text-base font-extrabold text-[var(--text-primary)] print:text-lg">RECIBO DE PAGO</CardTitle>
+                  <CardTitle id={reciboTitleId} className="text-sm font-bold text-[var(--text-primary)] print:text-lg">RECIBO DE PAGO</CardTitle>
                   <p className="text-xs text-[var(--text-tertiary)] print:text-sm print:font-bold">Buleje</p>
                 </div>
 
@@ -492,7 +492,7 @@ export default function FiadoModals({
               <div id="compromiso-printable" ref={compromisoPanelRef} role="dialog" aria-modal="true" aria-labelledby={compromisoTitleId} tabIndex={-1}
                 className="relative w-full max-w-md bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 max-h-[90vh] overflow-y-auto print:shadow-none print:border print:max-h-none">
                 <div {...ventanaCompromiso.asaProps} className="flex items-center justify-between print:hidden">
-                  <CardTitle id={compromisoTitleId} className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+                  <CardTitle id={compromisoTitleId} className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] flex items-center gap-2">
                     <PenTool className="h-5 w-5 text-primary" /> Compromiso de Pago
                   </CardTitle>
                   <span className="ml-auto flex items-center gap-1">
@@ -727,7 +727,7 @@ export default function FiadoModals({
               <div ref={debtorsMapPanelRef} role="dialog" aria-modal="true" aria-labelledby={debtorsMapTitleId} tabIndex={-1}
                 className="relative w-full max-w-lg bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl max-h-[85vh] flex flex-col">
                 <div {...ventanaMapa.asaProps} className="px-5 py-4 border-b border-[var(--rule-base)] flex items-center justify-between">
-                  <CardTitle id={debtorsMapTitleId} className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+                  <CardTitle id={debtorsMapTitleId} className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] flex items-center gap-2">
                     <MapPin className="h-5 w-5 text-primary" /> Mapa de deudores
                   </CardTitle>
                   <div className="flex items-center gap-2">

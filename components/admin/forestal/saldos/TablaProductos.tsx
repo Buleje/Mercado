@@ -152,7 +152,7 @@ export default function TablaProductos({
           <CardTitle
             as="h3"
             id="saldos-productos-titulo"
-            className="text-base font-bold text-[var(--text-primary)]"
+            className="text-sm font-bold text-[var(--text-primary)]"
           >
             Stock de productos transformados
           </CardTitle>

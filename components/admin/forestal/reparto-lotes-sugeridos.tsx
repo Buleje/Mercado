@@ -141,7 +141,7 @@ function ModalLotesSugeridos({ bloques, codigoDeLote, onCreados, lotesCargados, 
       <div ref={cajaRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Crear lotes sugeridos" className="relative flex max-h-[94vh] w-full max-w-4xl flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-lg)]">
         <div className="flex shrink-0 items-start justify-between gap-3">
           <div className="flex items-center gap-2">
-            <CardTitle as="h3" className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
+            <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
               <PackagePlus className="h-5 w-5 text-[var(--accent)]" aria-hidden /> Crear lotes sugeridos
             </CardTitle>
             <InfoTip

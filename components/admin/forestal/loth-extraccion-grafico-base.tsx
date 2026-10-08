@@ -63,7 +63,7 @@ export function Marco({
   return (
     <figure className="min-w-0 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-4">
       <figcaption className="mb-2 flex items-center gap-1.5">
-        <CardTitle>{titulo}</CardTitle>
+        <CardTitle className="text-sm font-bold">{titulo}</CardTitle>
         <InfoTip title={titulo} {...ayuda} side="bottom" />
       </figcaption>
       {children}

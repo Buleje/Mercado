@@ -77,7 +77,7 @@ export default function LothTraceAvance({
     <section aria-labelledby={`${id}-titulo`} className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]" data-avance>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 pt-3">
         <div className="flex min-w-0 flex-wrap items-center gap-x-2">
-          <CardTitle id={`${id}-titulo`}>Avance del permiso</CardTitle>
+          <CardTitle className="text-sm font-bold" id={`${id}-titulo`}>Avance del permiso</CardTitle>
           <InfoTip
             title="Avance del permiso"
             what="Cada paso es parte del anterior: de lo censado se taló una parte, de lo talado se trozó una parte y de eso salió una parte."

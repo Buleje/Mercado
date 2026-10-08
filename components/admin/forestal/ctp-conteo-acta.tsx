@@ -72,7 +72,7 @@ function Cifra({ n, texto, pide }: { n: number; texto: string; pide: boolean }) 
 function Lista({ titulo, n, children }: { titulo: string; n: number; children: React.ReactNode }) {
   return (
     <section className="space-y-2">
-      <CardTitle as="h3" className="text-lg font-bold text-[var(--text-primary)]">
+      <CardTitle as="h3" className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">
         {titulo} <span className="tabular-nums text-[var(--text-secondary)]">({n})</span>
       </CardTitle>
       {n === 0 ? <p className="text-base text-[var(--text-secondary)]">Ninguna.</p> : children}

@@ -60,7 +60,7 @@ export default function GentePorHora({
   return (
     <section className={BLOQUE} aria-labelledby={tituloId}>
       <div className="mb-3 flex items-center gap-1.5">
-        <CardTitle as="h3" id={tituloId} className="text-base font-bold">
+        <CardTitle as="h3" id={tituloId} className="text-sm font-bold">
           {titulo}
         </CardTitle>
         <InfoTip title={titulo} what={info.what} affects={info.affects} example={info.example} />

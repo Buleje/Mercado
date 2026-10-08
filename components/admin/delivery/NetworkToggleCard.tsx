@@ -83,7 +83,7 @@ export default function NetworkToggleCard() {
         <div className="min-w-0">
           <SectionTitle
             id="network-toggle-title"
-            className="sm:text-xl text-[var(--text-primary)]"
+            className="text-[var(--text-primary)]"
           >
             Red de repartidores Buleje
           </SectionTitle>

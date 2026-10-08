@@ -407,7 +407,7 @@ export default function SugerenciasCompraTab() {
             con el selector de ventana al lado. Con un `basis` real, el selector
             y "Recalcular" bajan de línea en tablet. */}
         <div className="flex-1 basis-64">
-          <SectionTitle className="text-lg font-extrabold text-[var(--text-primary)]">
+          <SectionTitle className="text-[var(--text-primary)]">
             Sugerencias de compra
           </SectionTitle>
           <p className="text-sm text-[var(--text-secondary)]">
@@ -457,7 +457,7 @@ export default function SugerenciasCompraTab() {
           <span className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--data-warning-500)]/15">
             <AlertTriangle className="h-8 w-8 text-[var(--data-warning-500)]" strokeWidth={2.5} aria-hidden />
           </span>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)]">
+          <SectionTitle className="text-[var(--text-primary)]">
             Todavía no puedo sugerirte compras
           </SectionTitle>
           <p className="mx-auto mt-2 max-w-lg text-sm text-[var(--text-secondary)]">
@@ -484,7 +484,7 @@ export default function SugerenciasCompraTab() {
           <span className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--data-success-100)] dark:bg-[var(--data-success-500)]/20">
             <Check className="h-8 w-8 text-[var(--data-success-ink)]" strokeWidth={2.5} />
           </span>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)]">Nada que reponer</SectionTitle>
+          <SectionTitle className="text-[var(--text-primary)]">Nada que reponer</SectionTitle>
           <p className="mx-auto mt-2 max-w-lg text-sm text-[var(--text-secondary)]">
             Ningún producto llega a su punto de pedido: con lo que se vendió en los últimos{" "}
             {ventanaDias} días, el stock alcanza hasta la próxima entrega.

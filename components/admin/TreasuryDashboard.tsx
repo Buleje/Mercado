@@ -132,7 +132,7 @@ export default function TreasuryDashboard() {
       {lista.length > 0 && (
         <section className="space-y-3" aria-labelledby="tesoreria-movimientos">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <CardTitle id="tesoreria-movimientos">
+            <CardTitle className="text-sm font-bold" id="tesoreria-movimientos">
               {cuentaElegida ? `Movimientos de ${cuentaElegida.nombre}` : "Movimientos"}
             </CardTitle>
             {cuentaElegida && (

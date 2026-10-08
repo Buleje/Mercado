@@ -227,7 +227,7 @@ export default function PerfScoreHero() {
           {/* Desglose por métrica */}
           <div>
             <div className="flex items-center gap-1.5">
-              <CardTitle className="text-base font-bold text-[var(--text-primary)]">
+              <CardTitle className="text-sm font-bold text-[var(--text-primary)]">
                 ¿Qué tan rápida se siente tu tienda?
               </CardTitle>
               <InfoTip

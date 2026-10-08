@@ -111,7 +111,7 @@ export function QuotationComparator({ orders, suppliers }: {
     <div className="modal-backdrop p-4" onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) setOpen(false); }}>
       <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="relative bg-[var(--surface-raised)] rounded-xl w-full max-w-3xl max-h-[85vh] overflow-y-auto p-5 space-y-4" onClick={e => e.stopPropagation()}>
         <div {...ventana.asaProps} className="flex items-center justify-between">
-          <CardTitle id={titleId} className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
+          <CardTitle id={titleId} className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-[var(--text-secondary)]" /> Comparar cotizaciones completas
           </CardTitle>
           <span className="ml-auto flex items-center gap-1">

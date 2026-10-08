@@ -47,7 +47,7 @@ export default function ABCAnalysisTab() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
+          <SectionTitle className="text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <BarChart2 className="h-6 w-6 text-primary" /> Análisis ABC
           </SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Clasificación de productos por impacto en ingresos (principio de Pareto)</p>

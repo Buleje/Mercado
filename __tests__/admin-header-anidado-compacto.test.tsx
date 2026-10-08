@@ -21,7 +21,7 @@ import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { ModuleDepthProvider } from "@/components/admin/shared/module-depth";
 
 describe("AdminModuleHeader — nivel raíz", () => {
-  it("dibuja el editorial completo: h1, eyebrow y borde inferior", () => {
+  it("dibuja la identidad del Libro TH: h1, rótulo y banda con borde", () => {
     render(
       <AdminModuleHeader
         eyebrow="Análisis · Negocio"
@@ -34,10 +34,13 @@ describe("AdminModuleHeader — nivel raíz", () => {
     expect(titulo).toBeTruthy();
     expect(screen.getByText("Análisis · Negocio")).toBeTruthy();
 
-    const header = titulo.closest("header")!;
-    expect(header.className).toContain("border-b");
+    // Misma banda que el libro (titulo-modulo.tsx): tarjeta con borde dentro del header.
+    const banda = titulo.closest("[class*='@container/banda']")!;
+    expect(banda.closest("header")).toBeTruthy();
+    expect(banda.className).toContain("rounded-2xl");
+    expect(banda.className).toContain("border");
     // La regla de acento a la izquierda es exclusiva del modo compacto.
-    expect(header.className).not.toContain("border-l-2");
+    expect(titulo.closest("header")!.className).not.toContain("border-l-2");
   });
 });
 
@@ -84,7 +87,7 @@ describe("AdminModuleHeader — anidado", () => {
     );
 
     const titulo = screen.getByRole("heading", { level: 1, name: "Pantalla propia" });
-    expect(titulo.closest("header")!.className).toContain("border-b");
+    expect(titulo.closest("[class*='@container/banda']")!.className).toContain("rounded-2xl");
   });
 });
 

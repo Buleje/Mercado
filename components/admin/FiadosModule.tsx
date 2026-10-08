@@ -1223,7 +1223,7 @@ export default function FiadosModule() {
               <div className="p-4 sm:p-6 space-y-4">
                 {/* Sheet header — UX Mejora 16: Width toggle */}
                 <div className="flex items-center justify-between">
-                  <CardTitle id={sheetTitleId} className="text-lg font-bold text-[var(--text-primary)]">Detalle del fiado</CardTitle>
+                  <CardTitle id={sheetTitleId} className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">Detalle del fiado</CardTitle>
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => { const next = !isPanelWide; setIsPanelWide(next); try { localStorage.setItem(tenantCacheKey("panel-width-preference"), next ? "wide" : "normal"); } catch {} }}

@@ -144,7 +144,7 @@ export function MarketplaceFidelidadTab() {
             <Gift className="h-4 w-4" />
           </span>
           <div>
-            <CardTitle className="text-sm font-extrabold text-[var(--text-primary)]">Buscar cliente</CardTitle>
+            <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Buscar cliente</CardTitle>
             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Por número de WhatsApp para ver y gestionar puntos</p>
           </div>
         </header>
@@ -237,7 +237,7 @@ export function MarketplaceFidelidadTab() {
                 <CheckCircle className="h-4 w-4" />
               </span>
               <div>
-                <CardTitle className="text-sm font-extrabold text-[var(--text-primary)]">Asignar puntos manualmente</CardTitle>
+                <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Asignar puntos manualmente</CardTitle>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Para premios fuera de compra (eventos, referidos, fidelidad)</p>
               </div>
             </header>
@@ -273,7 +273,7 @@ export function MarketplaceFidelidadTab() {
             <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden">
               <header className="flex items-center gap-2 px-5 py-3 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)]">
                 <Clock className="h-4 w-4 text-[var(--text-tertiary)]" />
-                <CardTitle className="text-sm font-extrabold text-[var(--text-primary)]">Historial reciente</CardTitle>
+                <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Historial reciente</CardTitle>
                 <span className="ml-auto text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] tabular-nums">{data.transactions.length} movs</span>
               </header>
               <ul className="divide-y divide-[var(--rule-soft)] max-h-80 overflow-y-auto">

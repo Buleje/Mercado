@@ -432,7 +432,7 @@ export default function ProfitabilityTab() {
             onKeyDown={e => e.stopPropagation()}
           >
             <div {...ventanaDetalle.asaProps} className="flex items-center justify-between">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm">Detalle de producto</CardTitle>
+              <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Detalle de producto</CardTitle>
               <span className="ml-auto flex items-center gap-1">
                 <ControlesDeVentana ventana={ventanaDetalle} />
               </span>

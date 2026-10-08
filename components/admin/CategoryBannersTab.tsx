@@ -154,7 +154,7 @@ export default function CategoryBannersTab({
                       <Tag className="h-5 w-5" />
                     </div>
                     <div className="min-w-0">
-                      <CardTitle className="text-[var(--text-primary)] truncate">{cat.label}</CardTitle>
+                      <CardTitle className="text-sm font-bold text-[var(--text-primary)] truncate">{cat.label}</CardTitle>
                       <p className="text-xs text-muted">{cat.count} producto{cat.count !== 1 ? "s" : ""}{hasImage ? " · banner configurado" : " · sin banner"}</p>
                     </div>
                   </div>

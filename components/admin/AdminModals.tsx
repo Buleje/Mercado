@@ -253,7 +253,7 @@ export function ClearDataModal({
                 <Trash2 className="h-6 w-6 text-[var(--data-error-500)]" />
               </div>
               <div>
-                <CardTitle className="text-lg font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Borrar datos</CardTitle>
+                <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Borrar datos</CardTitle>
                 <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Selecciona qué datos eliminar</p>
               </div>
             </div>
@@ -316,7 +316,7 @@ export function ClearDataModal({
             <div className="bg-[var(--data-error-50)] dark:bg-red-950/30 border-2 border-[var(--data-error-500)] dark:border-[var(--data-error-500)] rounded-xl p-5 space-y-3">
               <div className="flex items-center gap-3">
                 <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)] shrink-0" />
-                <CardTitle className="text-lg font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">Advertencia</CardTitle>
+                <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">Advertencia</CardTitle>
               </div>
               <ul className="space-y-2 text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
                 <li className="flex items-start gap-2"><X className="h-4 w-4 shrink-0 mt-0.5" /> Esta acción <strong>NO se puede deshacer</strong></li>

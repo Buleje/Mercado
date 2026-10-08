@@ -51,7 +51,7 @@ export default function HistorialEntregas({
   }, [cubicacion]);
   return (
     <div>
-      <CardTitle className="mb-2 text-base font-extrabold text-[var(--text-primary)]">
+      <CardTitle className="mb-2 text-sm font-bold text-[var(--text-primary)]">
         {recibido ? "Lo que le diste" : "Historial de entregas"} ({entregas.length})
       </CardTitle>
       {entregas.length === 0 ? (

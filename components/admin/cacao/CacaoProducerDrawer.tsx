@@ -293,7 +293,7 @@ export default function CacaoProducerDrawer({
                 Productor {producer?.codigo ? `· ${producer.codigo}` : ""}
                 {inactive && " · inactivo"}
               </p>
-              <SectionTitle as="h2" className="text-base font-extrabold text-[var(--text-primary)]">
+              <SectionTitle as="h2" className="text-sm font-bold text-[var(--text-primary)]">
                 {producer?.nombre ?? "…"}
               </SectionTitle>
             </div>
@@ -633,7 +633,7 @@ export default function CacaoProducerDrawer({
               <HandCoins className="h-6 w-6" />
             </span>
             <div className="min-w-0">
-              <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">
+              <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
                 Registrar pago — lote {payLote.loteCode}
               </CardTitle>
               <p className="mt-0.5 text-sm text-[var(--text-tertiary)]">

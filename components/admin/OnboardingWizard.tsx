@@ -421,7 +421,7 @@ export default function OnboardingWizard({ tenantSlug, onClose }: OnboardingWiza
               <div className="min-w-0">
                 <SectionTitle
                   id={titleId}
-                  className="text-base font-bold text-[var(--text-primary)] leading-tight truncate"
+                  className="text-sm font-bold text-[var(--text-primary)] leading-tight truncate"
                 >
                   {allDone ? "¡Tu tienda está lista!" : "Configura tu tienda"}
                 </SectionTitle>

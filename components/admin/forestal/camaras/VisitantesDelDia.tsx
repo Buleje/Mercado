@@ -105,7 +105,7 @@ export default function VisitantesDelDia({ resumen: r, error, elegido, onElegir 
   return (
     <section className={BLOQUE} aria-labelledby={tituloId} data-testid="visitantes-del-dia">
       <div className="mb-3 flex flex-wrap items-center gap-1.5">
-        <CardTitle as="h3" id={tituloId} className="text-base font-bold">
+        <CardTitle as="h3" id={tituloId} className="text-sm font-bold">
           Visitantes del día
         </CardTitle>
         <InfoTip

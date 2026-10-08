@@ -34,7 +34,7 @@ export default function QuienTeDebe({
   return (
     <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
       <div className="mb-3 flex items-center justify-between">
-        <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">Quién te debe ({deudores.length})</CardTitle>
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Quién te debe ({deudores.length})</CardTitle>
         <button onClick={() => onGoTab("cobranza")} className="inline-flex items-center gap-1 text-base font-bold text-primary hover:underline">
           Ver todos <ChevronRight className="h-4 w-4" />
         </button>

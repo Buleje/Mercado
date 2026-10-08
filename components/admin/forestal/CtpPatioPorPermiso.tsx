@@ -115,7 +115,7 @@ export default function CtpPatioPorPermiso({
       <header className="flex flex-wrap items-end justify-between gap-2">
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
-            <CardTitle as="h3" id={idTitulo} className="text-base font-bold text-[var(--text-primary)]">
+            <CardTitle as="h3" id={idTitulo} className="text-sm font-bold text-[var(--text-primary)]">
               {titulo}
             </CardTitle>
             <InfoTip title={titulo} what={NOTA} />

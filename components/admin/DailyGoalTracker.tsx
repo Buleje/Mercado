@@ -436,7 +436,7 @@ export default function DailyGoalTracker({ dailyGoal: initialGoal = DEFAULT_DAIL
         <div className="flex items-center gap-3">
           <Target className="w-5 h-5 text-primary" />
           <div>
-            <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">Meta del dia</SectionTitle>
+            <SectionTitle className="text-[var(--text-primary)]">Meta del dia</SectionTitle>
             <p className="text-xs text-[var(--text-tertiary)]">
               {lastUpdated ? `Actualizado ${formatTime(lastUpdated)}` : "Cargando..."}
             </p>

@@ -45,7 +45,7 @@ export function RankingTab() {
               <Trophy className="h-5 w-5" />
             </span>
             <div>
-              <CardTitle className="font-display text-xl leading-tight">
+              <CardTitle className="text-[length:var(--ts-xl)] font-bold leading-tight">
                 Ranking de repartidores
               </CardTitle>
               <p className="flex items-start gap-1 text-sm text-[var(--text-secondary)] mt-1 leading-snug">

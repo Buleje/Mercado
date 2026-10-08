@@ -120,7 +120,7 @@ export function MarketplaceTiendaTab() {
                 <Store className="h-5 w-5" />
               </span>
               <div className="min-w-0">
-                <CardTitle className="text-base font-bold text-[var(--text-primary)]">Identidad</CardTitle>
+                <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Identidad</CardTitle>
                 <p className="text-sm text-[var(--text-secondary)] mt-1 leading-relaxed">
                   Cómo te encuentran los clientes en el marketplace.
                 </p>
@@ -221,7 +221,7 @@ export function MarketplaceTiendaTab() {
                 <DollarSign className="h-5 w-5" />
               </span>
               <div className="min-w-0">
-                <CardTitle className="text-base font-bold text-[var(--text-primary)]">Comisión Buleje</CardTitle>
+                <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Comisión Buleje</CardTitle>
                 <p className="text-sm text-[var(--text-secondary)] mt-1 leading-relaxed">
                   Lo que Buleje cobra por cada venta. La fija la plataforma — para revisarla, contáctanos por WhatsApp.
                 </p>
@@ -246,7 +246,7 @@ export function MarketplaceTiendaTab() {
                 <Star className="h-5 w-5" />
               </span>
               <div className="min-w-0">
-                <CardTitle className="text-base font-bold text-[var(--text-primary)]">Imagen de la tienda</CardTitle>
+                <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Imagen de la tienda</CardTitle>
                 <p className="text-sm text-[var(--text-secondary)] mt-1 leading-relaxed">
                   Logo cuadrado 200×200 — aparece en la tarjeta de tu tienda en /tiendas y en cada pedido.
                 </p>
@@ -296,7 +296,7 @@ export function MarketplaceTiendaTab() {
                 <Eye className="h-5 w-5" />
               </span>
               <div className="min-w-0">
-                <CardTitle className="text-base font-bold text-[var(--text-primary)]">Vista previa</CardTitle>
+                <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Vista previa</CardTitle>
                 <p className="text-sm text-[var(--text-secondary)] mt-1 leading-relaxed">
                   Cómo te ven los clientes en el listado.
                 </p>
@@ -349,7 +349,7 @@ export function MarketplaceTiendaTab() {
                 <Zap className="h-5 w-5" />
               </span>
               <div className="min-w-0">
-                <CardTitle className="text-base font-bold text-[var(--text-primary)]">Estado</CardTitle>
+                <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Estado</CardTitle>
                 <p className="text-sm text-[var(--text-secondary)] mt-1 leading-relaxed">
                   Controla la visibilidad de tu tienda.
                 </p>

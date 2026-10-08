@@ -1006,7 +1006,7 @@ function ModalShell({ title, subtitle, onClose, children, icon: Icon = Construct
           <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Icon className="h-6 w-6" strokeWidth={2.1} /></span>
           <div className="min-w-0 flex-1">
             <p className="text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Activos & Maquinaria</p>
-            <CardTitle as="h2" className="text-xl leading-tight">{title}</CardTitle>
+            <CardTitle as="h2" className="text-[length:var(--ts-xl)] font-bold leading-tight tracking-tight">{title}</CardTitle>
             <p className="mt-0.5 text-sm text-[var(--text-secondary)]">{subtitle}</p>
           </div>
           <span className="ml-auto flex shrink-0 items-center gap-1">

@@ -275,7 +275,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
         <div {...ventana.asaProps} className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] bg-[var(--surface-raised)] rounded-t-2xl">
           <div className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
-            <SectionTitle id={titleId} className="text-base font-semibold text-[var(--text-primary)]">
+            <SectionTitle id={titleId} className="text-sm font-bold text-[var(--text-primary)]">
               Escanear Factura
             </SectionTitle>
           </div>

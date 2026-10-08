@@ -345,7 +345,7 @@ export default function EInvoiceTab() {
 
       {/* IGV summary card */}
       <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-5">
-        <CardTitle className="font-extrabold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2 mb-3">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2 mb-3">
           <FileText className="h-4 w-4 text-primary" /> Resumen tributario del mes
         </CardTitle>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 text-sm">
@@ -522,7 +522,7 @@ export default function EInvoiceTab() {
         <div className="modal-backdrop p-4" role="presentation" onClick={e => e.target === e.currentTarget && !ventanaDetalle.fijado && setDetail(null)}>
           <div ref={detailModalRef} role="dialog" aria-modal="true" aria-labelledby={detailTitleId} tabIndex={-1} className="relative bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-lg space-y-4">
             <div {...ventanaDetalle.asaProps} className="flex items-center justify-between">
-              <CardTitle id={detailTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.serie}-{detail.number}</CardTitle>
+              <CardTitle id={detailTitleId} className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.serie}-{detail.number}</CardTitle>
               <span className="ml-auto flex items-center gap-1">
                 <ControlesDeVentana ventana={ventanaDetalle} />
               </span>
@@ -570,7 +570,7 @@ export default function EInvoiceTab() {
         <div className="modal-backdrop p-4" role="presentation" onClick={e => e.target === e.currentTarget && !emitLoading && !ventanaEmit.fijado && setEmitForm(null)}>
           <div ref={emitModalRef} role="dialog" aria-modal="true" aria-labelledby={emitTitleId} tabIndex={-1} className="relative bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-6 w-full max-w-md space-y-4">
             <div {...ventanaEmit.asaProps} className="flex items-center justify-between">
-              <CardTitle id={emitTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
+              <CardTitle id={emitTitleId} className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
                 <Send className="h-4 w-4 text-primary" /> Emitir comprobante SUNAT
               </CardTitle>
               <span className="ml-auto flex items-center gap-1">

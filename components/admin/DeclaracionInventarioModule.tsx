@@ -580,7 +580,7 @@ export default function DeclaracionInventarioModule() {
           <div className="h-16 w-16 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center mx-auto mb-4">
             <BarChart3 className="h-8 w-8 text-[var(--text-tertiary)] dark:text-muted" />
           </div>
-          <CardTitle className="text-lg font-semibold text-[var(--text-primary)] mb-2">Sin declaraciones</CardTitle>
+          <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] mb-2">Sin declaraciones</CardTitle>
           <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-md mx-auto">Genera un snapshot de tu inventario actual</p>
           <button onClick={handleGenerar} className="bg-primary text-white px-6 min-h-11 rounded-xl font-medium hover:bg-primary-dark">Generar declaración</button>
         </div>

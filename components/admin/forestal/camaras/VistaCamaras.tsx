@@ -79,7 +79,7 @@ export default function VistaCamaras({
       <section className={BLOQUE} aria-labelledby="camaras-lista-titulo">
         <div className="mb-3 flex flex-wrap items-center gap-1.5">
           <Camera className="h-4 w-4 text-[var(--accent-ink)]" aria-hidden />
-          <CardTitle as="h3" id="camaras-lista-titulo" className="text-base font-bold">
+          <CardTitle as="h3" id="camaras-lista-titulo" className="text-sm font-bold">
             Cámaras del patio ({d.camaras.length})
           </CardTitle>
           <InfoTip
@@ -190,7 +190,7 @@ export default function VistaCamaras({
         <div className="flex flex-wrap items-center gap-2">
           <span className="mr-auto flex items-center gap-1.5">
             <Hash className="h-4 w-4 text-[var(--accent-ink)]" aria-hidden />
-            <CardTitle as="h3" id="camaras-chalecos-titulo" className="text-base font-bold">
+            <CardTitle as="h3" id="camaras-chalecos-titulo" className="text-sm font-bold">
               Chalecos del personal ({asignados.length})
             </CardTitle>
             <InfoTip

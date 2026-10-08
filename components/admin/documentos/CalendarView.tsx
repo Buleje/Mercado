@@ -70,7 +70,7 @@ export function CalendarView({ docs, onOpenDoc }: { docs: DbDocument[]; onOpenDo
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <CalendarDays className="h-5 w-5 text-primary" />
-          <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">
+          <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
             {MONTHS[cursor.getMonth()]} {cursor.getFullYear()}
           </CardTitle>
           <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] tabular-nums">{monthDocsCount} vencen</span>

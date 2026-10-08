@@ -296,7 +296,7 @@ export default function PhysicalCountTab() {
       <div className="space-y-6">
         <div className="flex items-center gap-2 mb-2">
           <ClipboardList className="h-5 w-5 text-primary" />
-          <SectionTitle className="text-lg font-bold text-[var(--text-primary)]">
+          <SectionTitle className="text-[var(--text-primary)]">
             Conteo físico
           </SectionTitle>
         </div>
@@ -361,7 +361,7 @@ export default function PhysicalCountTab() {
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <SectionTitle className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+            <SectionTitle className="text-[var(--text-primary)] flex items-center gap-2">
               <ClipboardList className="h-5 w-5 text-primary" />
               Conteo: {session.date}
             </SectionTitle>
@@ -477,7 +477,7 @@ export default function PhysicalCountTab() {
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <SectionTitle className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+            <SectionTitle className="text-[var(--text-primary)] flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-secondary" />
               Reconciliación — {session.date}
             </SectionTitle>
@@ -577,7 +577,7 @@ export default function PhysicalCountTab() {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between gap-3">
-          <SectionTitle className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+          <SectionTitle className="text-[var(--text-primary)] flex items-center gap-2">
             <History className="h-5 w-5 text-primary" />
             Historial de conteos
           </SectionTitle>

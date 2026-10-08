@@ -295,7 +295,7 @@ function ChannelCard({
           >
             <Brand className="h-5 w-5" />
           </span>
-          <SectionTitle as="h2" className="text-base font-extrabold text-[var(--text-primary)]">{name}</SectionTitle>
+          <SectionTitle as="h2" className="text-sm font-bold text-[var(--text-primary)]">{name}</SectionTitle>
           <InfoTip
             title={`Qué desbloquea ${name}`}
             ancho="w-96"

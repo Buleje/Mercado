@@ -166,7 +166,7 @@ export default function PatioConsumo() {
   return (
     <section className="space-y-3">
       <span className="flex items-center gap-1.5">
-        <SectionTitle as="h2" className="text-base font-bold text-[var(--text-primary)]">
+        <SectionTitle as="h2" className="text-sm font-bold text-[var(--text-primary)]">
           Cargar piezas a una corrida
         </SectionTitle>
         <InfoTip

@@ -226,7 +226,7 @@ export default function CacaoLoteDrawer({
               <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
                 Ficha de lote
               </p>
-              <SectionTitle as="h2" className="font-mono text-base font-extrabold text-[var(--text-primary)]">
+              <SectionTitle as="h2" className="font-mono text-sm font-bold text-[var(--text-primary)]">
                 {lote?.loteCode ?? "…"}
               </SectionTitle>
             </div>

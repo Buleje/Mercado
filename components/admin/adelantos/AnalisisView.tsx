@@ -195,7 +195,7 @@ export function AnalisisView({
     <div className="space-y-5">
       {/* Header + toggle de moneda + export */}
       <div className="flex items-center justify-between gap-2 flex-wrap">
-        <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">Análisis del módulo</CardTitle>
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Análisis del módulo</CardTitle>
         <div className="flex items-center gap-2">
           {monedas.length > 1 && (
             <div className="inline-flex rounded-xl border border-[var(--rule-base)] overflow-hidden">
@@ -231,7 +231,7 @@ export function AnalisisView({
 
       {/* Aging de saldos */}
       <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-        <CardTitle className="text-base font-extrabold text-[var(--text-primary)] mb-1 inline-flex items-center gap-2">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-1 inline-flex items-center gap-2">
           <Clock className="h-5 w-5 text-[var(--data-warning)]" /> Atraso de lo que te deben
         </CardTitle>
         <p className="text-sm text-[var(--text-tertiary)] mb-4">A quién hay que cobrarle primero — mientras más atrasado, más prioridad.</p>
@@ -250,7 +250,7 @@ export function AnalisisView({
 
       {/* Evolución mensual */}
       <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-        <CardTitle className="text-base font-extrabold text-[var(--text-primary)] mb-4">Adelantado vs Liquidado (6 meses)</CardTitle>
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">Adelantado vs Liquidado (6 meses)</CardTitle>
         {hayMov ? (
           <ResponsiveContainer minWidth={0} width="100%" height={240}>
             <AreaChart data={meses}>
@@ -271,7 +271,7 @@ export function AnalisisView({
 
       <div className="grid gap-5 lg:grid-cols-2">
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-          <CardTitle className="text-base font-extrabold text-[var(--text-primary)] mb-2">Por modalidad</CardTitle>
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-2">Por modalidad</CardTitle>
           {porModalidad.length > 0 ? (
             <>
               <ResponsiveContainer minWidth={0} width="100%" height={170}>
@@ -285,7 +285,7 @@ export function AnalisisView({
         </div>
 
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-          <CardTitle className="text-base font-extrabold text-[var(--text-primary)] mb-2">Top 5 deudores</CardTitle>
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-2">Top 5 deudores</CardTitle>
           {topDeudores.length > 0 ? (
             <ResponsiveContainer minWidth={0} width="100%" height={200}>
               <BarChart data={topDeudores} layout="vertical">
@@ -304,7 +304,7 @@ export function AnalisisView({
           que el negocio recibió y le debe a otro, lo opuesto de un adelanto. */}
       {hayRecibido && (
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-          <CardTitle className="text-base font-extrabold text-[var(--text-primary)] mb-1">Lo que recibiste</CardTitle>
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-1">Lo que recibiste</CardTitle>
           <p className="text-sm text-[var(--text-tertiary)] mb-4">
             Plata que te prestaron o te pagaron antes de un servicio — la devuelves tú, no al revés.
           </p>

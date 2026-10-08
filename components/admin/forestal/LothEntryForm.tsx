@@ -1194,7 +1194,7 @@ export default function LothEntryForm({ section, caratulaId, onClose, onSaved, p
               <TreePine className="h-5 w-5" strokeWidth={1.75} />
             </span>
             <div className="min-w-0">
-              <CardTitle as="h2" className="truncate text-base font-bold text-[var(--text-primary)]">
+              <CardTitle as="h2" className="truncate text-sm font-bold text-[var(--text-primary)]">
                 Nueva línea · {meta.label}
               </CardTitle>
               <p className="truncate text-xs text-[var(--text-tertiary)]">

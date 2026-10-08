@@ -75,7 +75,7 @@ export default function VincularHikConnect({
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <span className="mr-auto flex items-center gap-1.5">
             <Video className="h-4 w-4 text-[var(--accent-ink)]" aria-hidden />
-            <CardTitle as="h3" id="camaras-hik-titulo" className="text-base font-bold">
+            <CardTitle as="h3" id="camaras-hik-titulo" className="text-sm font-bold">
               Video de Hik-Connect
             </CardTitle>
             <InfoTip

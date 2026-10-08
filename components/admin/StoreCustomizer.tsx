@@ -541,7 +541,7 @@ function StyleSection({
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <CardTitle className="text-[var(--text-primary)]">{title}</CardTitle>
+            <CardTitle className="text-sm font-bold text-[var(--text-primary)]">{title}</CardTitle>
             <InfoTip title={title} what={<span>{description}</span>} />
           </div>
         </div>
@@ -1906,7 +1906,7 @@ export default function StoreCustomizer() {
         {/* Tab header with active tab info — usa SectionTitle del DS */}
         <div className="flex items-center gap-3 px-6 py-4 border-b-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)]/40 shrink-0">
           {activeTabMeta && <activeTabMeta.icon className="h-5 w-5 text-primary" />}
-          <SectionTitle className="text-base">{activeTabMeta?.label}</SectionTitle>
+          <SectionTitle className="text-sm font-bold">{activeTabMeta?.label}</SectionTitle>
         </div>
 
         {/* Contenido del tab activo */}

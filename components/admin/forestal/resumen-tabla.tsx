@@ -59,7 +59,7 @@ export function SeccionResumen({ id, icon: Icono, titulo, etiqueta, hint, ayuda,
     >
       <div className="mb-3 flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
         <div className="min-w-0">
-          <CardTitle as="h4" className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
+          <CardTitle as="h4" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
             {Icono && <Icono className="h-4 w-4 shrink-0 text-[var(--accent)]" aria-hidden />}
             {titulo}
             {ayuda && (

@@ -94,7 +94,7 @@ export default function CacaoPreciosRegionales({
 function Header({ fino, setFino, present }: { fino: boolean; setFino: (v: boolean) => void; present?: ReactNode }) {
   return (
     <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
-      <CardTitle className="flex items-center gap-2">
+      <CardTitle className="text-sm font-bold flex items-center gap-2">
         <Scale className="h-4 w-4 text-[var(--accent)]" /> A cuánto se vende
       </CardTitle>
       <div className="flex items-center gap-2">

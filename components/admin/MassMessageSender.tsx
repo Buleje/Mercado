@@ -208,7 +208,7 @@ export default function MassMessageSender({
       <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
         <div className="mb-3 flex items-center gap-2">
           <Filter className="h-4 w-4 text-primary" />
-          <CardTitle className="text-sm font-semibold text-[var(--text-primary)]">
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)]">
             Segmento de clientes
           </CardTitle>
         </div>
@@ -270,7 +270,7 @@ export default function MassMessageSender({
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
           <div className="mb-3 flex items-center gap-2">
             <MessageSquare className="h-4 w-4 text-primary" />
-            <CardTitle className="text-sm font-semibold text-[var(--text-primary)]">
+            <CardTitle className="text-sm font-bold text-[var(--text-primary)]">
               Mensaje
             </CardTitle>
           </div>
@@ -323,7 +323,7 @@ export default function MassMessageSender({
         {/* Preview */}
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
           <div className="mb-3 flex items-center justify-between">
-            <CardTitle className="text-sm font-semibold text-[var(--text-primary)]">
+            <CardTitle className="text-sm font-bold text-[var(--text-primary)]">
               Vista previa
             </CardTitle>
             {filtered.length > 0 && (

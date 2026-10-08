@@ -91,7 +91,7 @@ function AnalyticsCard({ title, subtitle, icon: Icon, children, className }: {
           {Icon && (
             <Icon className="h-4 w-4 shrink-0 text-[var(--accent)]" strokeWidth={2} aria-hidden />
           )}
-          <CardTitle className="text-[length:var(--ts-lg)] font-semibold leading-tight text-[var(--text-primary)]">
+          <CardTitle className="text-[length:var(--ts-xl)] font-bold leading-tight text-[var(--text-primary)]">
             {title}
           </CardTitle>
         </div>
@@ -111,7 +111,7 @@ function AnalyticsCard({ title, subtitle, icon: Icon, children, className }: {
 function _SectionHeader({ title, description }: { title: string; description: string }) {
   return (
     <div className="mb-2">
-      <SectionTitle className="text-xl font-bold text-[var(--text-primary)]">{title}</SectionTitle>
+      <SectionTitle className="text-[var(--text-primary)]">{title}</SectionTitle>
       <div className="w-12 h-1 bg-primary rounded-full mt-2" />
       <p className="text-sm text-[var(--text-secondary)] mt-2">{description}</p>
     </div>
@@ -298,7 +298,7 @@ function TabbedCard({ title, subtitle, icon, tabs, className }: {
             </div>
           )}
           <div className="flex-1">
-            <CardTitle className="text-lg font-semibold text-[var(--text-primary)] leading-tight">{title}</CardTitle>
+            <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] leading-tight">{title}</CardTitle>
             {subtitle && <p className="text-sm text-[var(--text-secondary)] mt-0.5">{subtitle}</p>}
           </div>
         </div>

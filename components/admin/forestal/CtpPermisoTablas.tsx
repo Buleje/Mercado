@@ -81,7 +81,7 @@ export function TablaPorEspecie({
   return (
     <section aria-labelledby="permiso-por-especie" className="space-y-2">
       <div className="flex items-center gap-1.5">
-        <CardTitle id="permiso-por-especie">Por especie</CardTitle>
+        <CardTitle className="text-sm font-bold" id="permiso-por-especie">Por especie</CardTitle>
         <InfoTip
           title="Por especie"
           what="El recorrido de cada especie bajo este permiso: lo que entró por guía, lo que se consumió, lo que se produjo y lo que salió."
@@ -236,7 +236,7 @@ export function TablaPorTipo({
     .reduce((n, f) => n + f.corridas, 0);
   return (
     <section aria-labelledby="permiso-por-tipo" className="space-y-2">
-      <CardTitle id="permiso-por-tipo">Producción por tipo</CardTitle>
+      <CardTitle className="text-sm font-bold" id="permiso-por-tipo">Producción por tipo</CardTitle>
       <DataTable>
         <thead>
           <tr>

@@ -104,7 +104,7 @@ export default function IASaludPanel() {
     <section className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 space-y-4">
       <div className="flex items-center gap-2 flex-wrap">
         <Activity className="h-4 w-4 text-[var(--text-secondary)]" />
-        <CardTitle className="font-extrabold">Estado de la IA</CardTitle>
+        <CardTitle className="text-sm font-bold">Estado de la IA</CardTitle>
         <BadgeStatus variant={badge.variant} size="sm" label={badge.label} />
         <button
           type="button"

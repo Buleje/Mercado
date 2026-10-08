@@ -162,7 +162,7 @@ export default function CtpSaldosGraficos({
               Composición
             </p>
             <div className="flex items-center gap-1.5">
-              <CardTitle as="h3" className="text-base font-extrabold tracking-tight text-[var(--text-primary)]">
+              <CardTitle as="h3" className="text-sm font-bold tracking-tight text-[var(--text-primary)]">
                 {enPiezas ? "De qué especie son las trozas paradas" : "De qué especie está hecho el saldo"}
               </CardTitle>
               <InfoTip
@@ -265,7 +265,7 @@ export default function CtpSaldosGraficos({
             Estado del volumen
           </p>
           <div className="flex items-center gap-1.5">
-            <CardTitle as="h3" className="text-base font-extrabold tracking-tight text-[var(--text-primary)]">
+            <CardTitle as="h3" className="text-sm font-bold tracking-tight text-[var(--text-primary)]">
               Cada especie, tramo por tramo (m³)
             </CardTitle>
             {/* El pie explicaba «Disponible» aunque ese tramo no estuviera en

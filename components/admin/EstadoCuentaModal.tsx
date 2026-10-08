@@ -182,7 +182,7 @@ export default function EstadoCuentaModal({ customerPhone, customerName, onClose
         {/* Header */}
         <div {...ventana.asaProps} className="flex items-center justify-between p-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
           <div>
-            <CardTitle id={titleId} className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
+            <CardTitle id={titleId} className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
               <CreditCard className="h-5 w-5 text-primary" />
               Estado de Cuenta
             </CardTitle>

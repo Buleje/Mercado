@@ -120,7 +120,7 @@ export default function CacaoAjusteModal({ variedades, onClose, onSaved }: Props
               <SlidersHorizontal className="h-5 w-5" strokeWidth={1.75} />
             </span>
             <div>
-              <CardTitle as="h2" className="text-base font-bold text-[var(--text-primary)]">
+              <CardTitle as="h2" className="text-sm font-bold text-[var(--text-primary)]">
                 Ajustar stock
               </CardTitle>
               <p className="text-xs text-[var(--text-tertiary)]">

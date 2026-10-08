@@ -220,7 +220,7 @@ export function MeteringCardClient({ snapshot, onUpgrade }: MeteringCardClientPr
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3">
-          <SectionTitle className="text-base font-semibold text-[var(--text-primary)]">
+          <SectionTitle className="text-sm font-bold text-[var(--text-primary)]">
             Uso facturable
           </SectionTitle>
           <PlanBadge plan={snapshot.plan} />

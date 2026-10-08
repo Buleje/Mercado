@@ -97,7 +97,7 @@ export default function StorePublicationsManager() {
           <Megaphone className="h-6 w-6" strokeWidth={2} aria-hidden />
         </span>
         <div>
-          <PageTitle className="text-[var(--text-primary)]">Publicaciones</PageTitle>
+          <PageTitle className="text-[length:var(--ts-xl)] sm:text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">Publicaciones</PageTitle>
           <p className="text-sm text-[var(--text-secondary)]">
             Contales a tus vecinos las novedades. Aparece en tu tienda del marketplace.
           </p>

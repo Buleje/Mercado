@@ -61,7 +61,7 @@ export default function CuentasPorPersona({ onGoTab }: { onGoTab: (tab: string) 
     <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
-          <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">Cuenta por persona</CardTitle>
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Cuenta por persona</CardTitle>
           <InfoTip
             title="Cuenta por persona"
             what="Adelantos, aserríos, ventas de madera y pagos de cada uno, en una sola cuenta."

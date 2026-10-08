@@ -50,7 +50,7 @@ export default function ResultadoEstado({
       <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--rule-base)] px-4 py-3 sm:px-5">
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
-            <CardTitle as="h3">Resultado de {nombre}</CardTitle>
+            <CardTitle className="text-sm font-bold" as="h3">Resultado de {nombre}</CardTitle>
             <InfoTip
               title="Resultado del mes"
               what="Lo que ganaste en el mes: lo que vendiste y cobraste por aserrío, menos lo que te costó."

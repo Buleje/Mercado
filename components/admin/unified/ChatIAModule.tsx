@@ -338,7 +338,7 @@ function SettingsPanel({
           <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
             Configuración
           </p>
-          <CardTitle className="font-extrabold leading-tight">
+          <CardTitle className="text-sm font-bold leading-tight">
             Personaliza tu IA
           </CardTitle>
         </div>

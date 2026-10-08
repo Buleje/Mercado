@@ -655,7 +655,7 @@ export default function DevolucionesProveedorModule() {
       {mostrarFormulario && (
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 space-y-4">
           <div className="flex items-center justify-between">
-            <CardTitle className="font-semibold text-[var(--text-primary)] text-sm">Nueva devolución</CardTitle>
+            <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Nueva devolución</CardTitle>
             <button aria-label="Cerrar"
               onClick={() => setMostrarFormulario(false)}
               className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"

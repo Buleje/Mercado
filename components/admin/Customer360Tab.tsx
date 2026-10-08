@@ -747,7 +747,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           <User className="h-5 w-5 text-primary" />
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Cliente 360°</SectionTitle>
+          <SectionTitle className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">Cliente 360°</SectionTitle>
         </div>
         {onClose && (
           <button aria-label="Cerrar" onClick={onClose} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
@@ -774,7 +774,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
           {/* Info */}
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2 mb-2">
-              <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{customer.name}</CardTitle>
+              <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{customer.name}</CardTitle>
               {/* Mejora 16: Dias como cliente */}
               {firstOrder && (() => {
                 const dias = Math.floor((Date.now() - new Date(firstOrder.createdAt).getTime()) / 86400000);

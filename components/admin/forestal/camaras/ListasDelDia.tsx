@@ -43,7 +43,7 @@ function Bloque({
     <section className={BLOQUE}>
       <div className="mb-2 flex items-center gap-1.5">
         <Icono className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
-        <CardTitle as="h3" className="text-base font-bold">
+        <CardTitle as="h3" className="text-sm font-bold">
           {titulo}
         </CardTitle>
         {tip}

@@ -406,7 +406,7 @@ export default function CtpSerforImportModal({ onClose, onImportado }: { onClose
       >
         <div {...ventana.asaProps} className="flex shrink-0 items-start justify-between gap-3 px-6 pb-3 pt-5">
           <div className="flex items-center gap-1.5">
-            <SectionTitle as="h2" className="text-lg font-extrabold text-[var(--text-primary)]">
+            <SectionTitle as="h2" className="text-[var(--text-primary)]">
               Importar el libro
             </SectionTitle>
             <InfoTip

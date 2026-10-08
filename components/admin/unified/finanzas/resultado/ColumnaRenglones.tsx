@@ -105,7 +105,7 @@ export default function ColumnaRenglones({
   return (
     <section aria-labelledby={id} className="min-w-0">
       <div className="flex items-baseline justify-between gap-3 border-b border-[var(--rule-base)] px-2 pb-2">
-        <CardTitle as="h4" id={id}>
+        <CardTitle className="text-sm font-bold" as="h4" id={id}>
           {titulo}
         </CardTitle>
         <span className="text-base font-extrabold tabular-nums text-[var(--text-primary)]">

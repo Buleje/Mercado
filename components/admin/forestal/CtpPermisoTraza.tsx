@@ -31,7 +31,7 @@ const FILA =
 function Titulo({ id, texto, n, what }: { id: string; texto: string; n: number; what: string }) {
   return (
     <div className="flex items-center gap-1.5">
-      <CardTitle id={id}>
+      <CardTitle className="text-sm font-bold" id={id}>
         {texto} <span className="font-mono text-[var(--text-tertiary)] tabular-nums">({n})</span>
       </CardTitle>
       <InfoTip title={texto} what={what} />

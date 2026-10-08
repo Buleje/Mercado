@@ -110,7 +110,7 @@ export function SectionCard({ title, desc, accion, children }: {
   return (
     <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl overflow-hidden">
       <div className="flex items-center gap-2 px-5 min-h-12 py-2.5 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-        <CardTitle>{title}</CardTitle>
+        <CardTitle className="text-sm font-bold">{title}</CardTitle>
         {desc && <InfoTip title={title} what={desc} />}
         {accion && <div className="ml-auto shrink-0">{accion}</div>}
       </div>
@@ -149,7 +149,7 @@ export function Plegable({ clave, titulo, resumen, children }: {
   const [abierto, setAbierto] = useLocalStorage<boolean>(`ajustes-plegable-${clave}`, false);
   return (
     <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden">
-      <CardTitle>
+      <CardTitle className="text-sm font-bold">
         <button
           type="button"
           aria-expanded={abierto}

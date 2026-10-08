@@ -177,7 +177,7 @@ export default function SunatConexionTab() {
       </p>
 
       <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-        <CardTitle as="h3" className="mb-4 text-base font-extrabold text-[var(--text-primary)]">
+        <CardTitle as="h3" className="mb-4 text-sm font-bold text-[var(--text-primary)]">
           Datos fiscales del negocio
         </CardTitle>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -214,7 +214,7 @@ export default function SunatConexionTab() {
       </section>
 
       <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-        <CardTitle as="h3" className="mb-4 text-base font-extrabold text-[var(--text-primary)]">
+        <CardTitle as="h3" className="mb-4 text-sm font-bold text-[var(--text-primary)]">
           Conexión con Nubefact
         </CardTitle>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -249,7 +249,7 @@ export default function SunatConexionTab() {
       </section>
 
       <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-        <CardTitle as="h3" className="mb-1 text-base font-extrabold text-[var(--text-primary)]">
+        <CardTitle as="h3" className="mb-1 text-sm font-bold text-[var(--text-primary)]">
           Series y numeración
         </CardTitle>
         {/* El correlativo se muestra pero no se edita: lo mueve la emisión, y

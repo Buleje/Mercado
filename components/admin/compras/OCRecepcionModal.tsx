@@ -163,7 +163,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
         {/* Header */}
         <div {...ventana.asaProps} className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
           <div>
-            <SectionTitle id={titleId} className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+            <SectionTitle id={titleId} className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">
               Recepcion de Pedido
             </SectionTitle>
             <p className="text-xs text-[var(--text-secondary)] dark:text-muted">

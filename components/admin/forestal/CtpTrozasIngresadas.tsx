@@ -169,7 +169,7 @@ export default function CtpTrozasIngresadas({
       <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <CardTitle as="h3" id={idTitulo} className="flex flex-wrap items-center gap-2 text-base font-bold text-[var(--text-primary)]">
+            <CardTitle as="h3" id={idTitulo} className="flex flex-wrap items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
               <PackageOpen className="h-4 w-4 text-[var(--accent-ink)] dark:text-[var(--accent)]" aria-hidden />
               {titulo ?? "Trozas en el patio"}
             </CardTitle>

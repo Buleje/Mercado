@@ -37,7 +37,7 @@ export default function ProximosVencimientos({ adelantos }: { adelantos: DbAdela
   return (
     <div className="rounded-xl bg-[var(--data-info)]/8 p-5 ring-1 ring-[var(--data-info)]/25">
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <CardTitle className="flex items-center gap-2 text-base font-extrabold text-[var(--text-primary)]">
+        <CardTitle className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
           <CalendarClock className="h-5 w-5 shrink-0 text-[var(--data-info)]" aria-hidden />
           Vence esta semana ({proximos.length})
         </CardTitle>

@@ -158,7 +158,7 @@ export default function RepartoCuadreModal({ cuadre, inicial, onCerrar }: {
         <div className="flex shrink-0 flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-            <CardTitle as="h3" className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
+            <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
               <Scale className="h-5 w-5 text-[var(--accent)]" aria-hidden /> Cuadre de la distribución
             </CardTitle>
               <InfoTip

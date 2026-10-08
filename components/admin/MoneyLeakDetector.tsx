@@ -127,7 +127,7 @@ export default function MoneyLeakDetector() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <ShieldAlert className="w-5 h-5 text-primary" />
-          <SectionTitle className="text-lg font-semibold text-[var(--text-primary)]">
+          <SectionTitle className="text-[var(--text-primary)]">
             Detector de Fugas de Dinero
           </SectionTitle>
         </div>

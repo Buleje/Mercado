@@ -68,7 +68,7 @@ export default function CtpParteBitacora({
 
       {notas.length > 0 && (
         <div className="mt-3">
-          <CardTitle className="mb-2 text-sm">Lo anotado antes</CardTitle>
+          <CardTitle className="mb-2 text-sm font-bold">Lo anotado antes</CardTitle>
           <ul className="max-h-48 space-y-2 overflow-y-auto rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3">
             {notas.map((n, i) => (
               <li key={`${n.fecha}-${i}`} className="border-l-2 border-[var(--rule-base)] pl-2.5">

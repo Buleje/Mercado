@@ -85,7 +85,7 @@ export default function RFMTab() {
     <div className="space-y-3 sm:space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] flex items-center gap-2">
+          <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] flex items-center gap-2">
             <Target className="h-5 w-5 text-primary" /> Análisis RFM
           </CardTitle>
           <p className="text-sm text-[var(--text-secondary)] mt-0.5">

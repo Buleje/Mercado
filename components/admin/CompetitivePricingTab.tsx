@@ -99,7 +99,7 @@ function PriceComparisonChart({ products }: { products: PricingProduct[] }) {
             <BarChart2 className="h-5 w-5" />
           </span>
           <div>
-            <CardTitle className="font-display text-xl leading-tight">
+            <CardTitle className="text-[length:var(--ts-xl)] font-bold leading-tight">
               Mi precio vs promedio
             </CardTitle>
             <p className="text-sm text-[var(--text-secondary)] mt-1 leading-snug">
@@ -277,7 +277,7 @@ export default function CompetitivePricingTab() {
               <Target className="h-5 w-5" />
             </span>
             <div>
-              <CardTitle className="font-display text-xl leading-tight">
+              <CardTitle className="text-[length:var(--ts-xl)] font-bold leading-tight">
                 Precios competitivos
               </CardTitle>
               <p className="text-sm text-[var(--text-secondary)] mt-1 leading-snug">
@@ -359,7 +359,7 @@ export default function CompetitivePricingTab() {
               <BarChart2 className="h-5 w-5" />
             </span>
             <div>
-              <CardTitle className="font-display text-xl leading-tight">
+              <CardTitle className="text-[length:var(--ts-xl)] font-bold leading-tight">
                 Análisis por producto
               </CardTitle>
               <p className="text-sm text-[var(--text-secondary)] mt-1">

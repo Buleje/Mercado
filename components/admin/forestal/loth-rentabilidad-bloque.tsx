@@ -45,7 +45,7 @@ export default function BloquePlegable({
   return (
     <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-sm)]" data-bloque={clave}>
       <header className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5">
-        <CardTitle as="h3" className="min-w-0 text-base text-[var(--text-primary)]">
+        <CardTitle as="h3" className="min-w-0 text-sm font-bold text-[var(--text-primary)]">
           <button
             type="button"
             onClick={() => setGuardado(!abierto)}

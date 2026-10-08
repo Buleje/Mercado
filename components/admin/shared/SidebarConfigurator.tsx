@@ -604,7 +604,7 @@ export default function SidebarConfigurator({
       <div className="px-5 pt-4 pb-3 border-b border-zinc-800 shrink-0">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <CardTitle as="h2" className="text-base font-bold text-white leading-tight">
+            <CardTitle as="h2" className="text-sm font-bold text-white leading-tight">
               Personaliza tu navegación
             </CardTitle>
             <p className="text-xs text-zinc-400 mt-1 leading-relaxed">

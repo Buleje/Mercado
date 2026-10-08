@@ -88,7 +88,7 @@ export default function HistorialFotos({
           <CardTitle
             as="h3"
             id="camaras-historial-titulo"
-            className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]"
+            className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"
           >
             <ImageIcon className="h-4 w-4 text-[var(--accent-ink)]" aria-hidden /> Lo que mandaron (
             {visibles.length})

@@ -63,7 +63,7 @@ function HoldedKPI({
                 )}
               />
             )}
-            <CardTitle className="text-sm font-semibold">
+            <CardTitle className="text-sm font-bold">
               {title}
             </CardTitle>
           </div>

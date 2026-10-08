@@ -44,7 +44,7 @@ export default function LothMapaBloque({ clave, titulo, icono: Icono, resumen, e
       className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]"
     >
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-3">
-        <CardTitle as="h3" id={`${id}-titulo`} className="shrink-0">
+        <CardTitle as="h3" id={`${id}-titulo`} className="text-sm font-bold shrink-0">
           <button
             type="button"
             onClick={() => setAbierto(!abierto)}

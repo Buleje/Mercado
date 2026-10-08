@@ -291,7 +291,7 @@ export default function SectionsTab({ slug = "main" }: { slug?: string }) {
           <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-4">
             <Layers className="h-7 w-7" strokeWidth={1.75} />
           </span>
-          <CardTitle className="text-[var(--text-primary)] mb-1">
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-1">
             Tu página pública aún no tiene secciones
           </CardTitle>
           <p className="text-sm text-[var(--text-secondary)] max-w-md mx-auto mb-5">

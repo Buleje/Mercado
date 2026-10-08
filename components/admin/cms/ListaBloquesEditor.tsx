@@ -24,7 +24,7 @@ export default function ListaBloquesEditor({ bloques, elegido, onElegir, onAgreg
     <div className="w-full lg:w-64 shrink-0 bg-[var(--surface-sunken)] border-b lg:border-b-0 lg:border-r border-[var(--rule-base)] lg:overflow-y-auto">
       <div className="p-4">
         <div className="flex items-center gap-1.5 mb-3">
-          <CardTitle className="text-base font-bold">Agregar un bloque</CardTitle>
+          <CardTitle className="text-sm font-bold">Agregar un bloque</CardTitle>
           <InfoTip title="Bloques" what="Cada bloque es una sección de la página. Se agregan al final; luego los subes o bajas con las flechas." />
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-1 gap-2">
@@ -43,7 +43,7 @@ export default function ListaBloquesEditor({ bloques, elegido, onElegir, onAgreg
       </div>
 
       <div className="border-t border-[var(--rule-base)] p-4">
-        <CardTitle className="text-base font-bold mb-3">En esta página</CardTitle>
+        <CardTitle className="text-sm font-bold mb-3">En esta página</CardTitle>
         {bloques.length === 0 ? (
           <p className="text-sm text-[var(--text-secondary)]">Aún no hay bloques. Agrega el primero arriba.</p>
         ) : (

@@ -34,7 +34,7 @@ export default function PanelPropiedadesBloque({ bloque, guardando, onGuardar }:
   return (
     <aside className="w-full lg:w-80 shrink-0 bg-[var(--surface-raised)] border-t lg:border-t-0 lg:border-l border-[var(--rule-base)] overflow-y-auto flex flex-col" aria-label="Editar bloque">
       <div className="px-4 py-3 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] sticky top-0 z-10">
-        <CardTitle className="text-base font-bold">Editar «{nombreDeBloque(bloque.type)}»</CardTitle>
+        <CardTitle className="text-sm font-bold">Editar «{nombreDeBloque(bloque.type)}»</CardTitle>
       </div>
 
       <div className="p-4 space-y-4 flex-1">

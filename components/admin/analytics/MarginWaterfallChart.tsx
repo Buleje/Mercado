@@ -199,7 +199,7 @@ export default function MarginWaterfallChart() {
 
   return (
     <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-      <CardTitle className="text-sm font-semibold text-[var(--text-primary)] mb-4">
+      <CardTitle className="text-sm font-bold text-[var(--text-primary)] mb-4">
         Cascada de Margenes
       </CardTitle>
 

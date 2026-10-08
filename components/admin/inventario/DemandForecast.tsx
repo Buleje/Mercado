@@ -1,6 +1,6 @@
 'use client';
 
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, BlockTitle } from "@buleje/design-system";
 
 import { useState, useEffect } from 'react';
 import {
@@ -104,7 +104,7 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <CardTitle className="text-lg font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+        <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
           Pronostico: {data.product.name}
         </CardTitle>
         {onClose && (
@@ -122,7 +122,7 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
 
       {/* Chart — se oculta si no hay ventas registradas en los últimos 30 días */}
       {hasChartData && (<div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
-        <h4 className="text-sm font-medium text-[var(--text-primary)] dark:text-muted mb-3">Ventas diarias (últimos 30 días)</h4>
+        <BlockTitle className="text-[var(--text-primary)] dark:text-muted mb-3">Ventas diarias (últimos 30 días)</BlockTitle>
         <div className="h-48">
           <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} minWidth={0} width="100%" height="100%">
             <BarChart data={chartData}>

@@ -122,7 +122,7 @@ export default function WhatsAppAnotarPanel() {
     <section className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 space-y-4">
       <div className="flex items-center gap-2 flex-wrap">
         <MessageCircle className="h-4 w-4 text-[var(--text-secondary)]" />
-        <CardTitle className="font-extrabold">Anotar por WhatsApp</CardTitle>
+        <CardTitle className="text-sm font-bold">Anotar por WhatsApp</CardTitle>
         {estado?.activo && estado.comoSeLlama && (
           <BadgeStatus variant="success" size="sm" label={estado.comoSeLlama} />
         )}

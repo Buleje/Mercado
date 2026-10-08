@@ -139,7 +139,7 @@ export default function DisponiblePorTipo({
 
   return (
     <section aria-labelledby="disponible-titulo" className="space-y-4">
-      <CardTitle as="h3" id="disponible-titulo" className="text-base font-bold">
+      <CardTitle as="h3" id="disponible-titulo" className="text-sm font-bold">
         Cuánta madera hay y de qué
       </CardTitle>
       <Pestanas

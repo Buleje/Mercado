@@ -173,7 +173,7 @@ export default function LivesAdminModule() {
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] text-lg">¿Listo para transmitir?</CardTitle>
+              <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">¿Listo para transmitir?</CardTitle>
               <InfoTip
                 title="Transmitir en vivo"
                 what="Empieza una transmisión ahora mismo o programa una para más tarde."

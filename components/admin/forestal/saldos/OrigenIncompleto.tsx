@@ -46,7 +46,7 @@ export default function OrigenIncompleto({
       <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
         <CardTitle
           as="h3"
-          className="text-base font-extrabold tracking-tight text-[var(--text-primary)]"
+          className="text-sm font-bold tracking-tight text-[var(--text-primary)]"
         >
           Origen completo, salvo la existencia de apertura
         </CardTitle>
@@ -70,7 +70,7 @@ export default function OrigenIncompleto({
           <div className="flex items-center gap-1.5">
             <CardTitle
               as="h3"
-              className="text-base font-extrabold tracking-tight text-[var(--text-primary)]"
+              className="text-sm font-bold tracking-tight text-[var(--text-primary)]"
             >
               {fmtM3(m3SinCertificar)} m³ del depósito no se pueden certificar
             </CardTitle>

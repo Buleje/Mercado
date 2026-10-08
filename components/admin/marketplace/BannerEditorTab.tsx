@@ -482,7 +482,7 @@ export default function BannerEditorTab({ storeSlug }: BannerEditorTabProps) {
       {sections.map((section) => (
         <div key={section}>
           <div className="flex items-center justify-between mb-3">
-            <CardTitle className="text-sm font-semibold text-[var(--text-primary)]">
+            <CardTitle className="text-sm font-bold text-[var(--text-primary)]">
               {SECTION_LABELS[section]}
               <span className="ml-2 text-xs font-normal text-[var(--text-tertiary)]">
                 ({bannersBySection[section].length} banners)

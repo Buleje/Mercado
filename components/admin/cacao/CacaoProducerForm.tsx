@@ -73,7 +73,7 @@ export default function CacaoProducerForm({ onClose, onSaved }: { onClose: () =>
         >
           <div className="flex items-center gap-3">
             <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Users className="h-5 w-5" strokeWidth={1.75} /></span>
-            <div><CardTitle as="h2" className="text-base font-bold text-[var(--text-primary)]">Nuevo productor</CardTitle><p className="text-xs text-[var(--text-tertiary)]">Proveedor de cacao · maestro</p></div>
+            <div><CardTitle as="h2" className="text-sm font-bold text-[var(--text-primary)]">Nuevo productor</CardTitle><p className="text-xs text-[var(--text-tertiary)]">Proveedor de cacao · maestro</p></div>
           </div>
         </CabeceraPropia>
 

@@ -10,6 +10,7 @@ import type { PlantacionInput } from "@/lib/forestal/plantacion-tramite";
 import { TIPOS_DOCUMENTO_IDENTIDAD, TIPOS_VIA, type TipoPersona } from "@/lib/forestal/plantacion-catalogo";
 import { CampoGrid, Field, I } from "./ctp-shared";
 import CtpUbigeoSelects from "./CtpUbigeoSelects";
+import { BlockTitle } from "@buleje/design-system";
 
 type Patch = Partial<PlantacionInput>;
 
@@ -33,7 +34,7 @@ function Seccion({
         <div className="flex items-center gap-2.5">
           <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-primary/10 text-sm font-black text-[var(--accent-ink)] dark:text-[var(--accent)]">{numero}</span>
           <div className="min-w-0">
-            <h4 className="text-base font-bold leading-tight text-[var(--text-primary)]">{titulo}</h4>
+            <BlockTitle className="leading-tight text-[var(--text-primary)]">{titulo}</BlockTitle>
             {hint && <p className="text-xs text-[var(--text-tertiary)]">{hint}</p>}
           </div>
         </div>

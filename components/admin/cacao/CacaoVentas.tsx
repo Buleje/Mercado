@@ -449,7 +449,7 @@ export default function CacaoVentas() {
                     <Wallet className="h-6 w-6" />
                   </span>
                   <div className="min-w-0">
-                    <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">
+                    <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
                       Registrar cobro · {cobro.ventaCode}
                     </CardTitle>
                     <p className="mt-0.5 text-sm text-[var(--text-tertiary)]">
@@ -519,7 +519,7 @@ export default function CacaoVentas() {
                 <AlertTriangle className="h-6 w-6" />
               </span>
               <div className="min-w-0">
-                <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">
+                <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
                   Anular venta {items.find((v) => v.id === annulId)?.ventaCode ?? ""}
                 </CardTitle>
                 <p className="mt-0.5 text-sm text-[var(--text-tertiary)]">

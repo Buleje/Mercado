@@ -65,7 +65,7 @@ export default function CtpPatioAging({
     >
       <div className="border-b-2 border-[var(--rule-base)] px-4 py-3">
         <div className="flex items-center gap-1.5">
-          <CardTitle as="h3" id={idTitulo} className="flex items-center gap-2 text-base font-bold">
+          <CardTitle as="h3" id={idTitulo} className="flex items-center gap-2 text-sm font-bold">
             <Clock className="h-4 w-4 shrink-0" aria-hidden /> Antigüedad por guía · m³ del libro (no
             piezas)
           </CardTitle>

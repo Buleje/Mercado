@@ -811,7 +811,7 @@ export default function PurchaseOrdersTab() {
           <FileText className="h-6 w-6 text-primary" strokeWidth={2.2} />
         </span>
         <div className="flex-1 min-w-0">
-          <SectionTitle className="text-lg font-extrabold">Órdenes de Compra</SectionTitle>
+          <SectionTitle>Órdenes de Compra</SectionTitle>
           <p className="text-sm text-[var(--text-secondary)]">
             {orders.length === 0
               ? "Crea la primera orden a un proveedor. Después puedes duplicarla o hacerla recurrente."
@@ -1160,7 +1160,7 @@ export default function PurchaseOrdersTab() {
       {showRecurringModal && (
         <div className="modal-backdrop p-4" role="presentation" onClick={(e) => e.target === e.currentTarget && closeRecurringModal()}>
           <div ref={recurringModalRef} role="dialog" aria-modal="true" aria-labelledby={recurringTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-xl w-full max-w-sm p-6 space-y-4">
-            <CardTitle id={recurringTitleId} className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Hacer recurrente</CardTitle>
+            <CardTitle id={recurringTitleId} className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Hacer recurrente</CardTitle>
             <p className="text-sm text-[var(--text-secondary)] dark:text-muted">
               OC para {suppliers.find(s => s.id === showRecurringModal.supplierId)?.name} · {showRecurringModal.items.length} productos
             </p>
@@ -1234,7 +1234,7 @@ export default function PurchaseOrdersTab() {
                 <div className="p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
-                      <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
+                      <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
                         <History className="h-5 w-5 text-primary" />
                         {supplier.name}
                       </CardTitle>
@@ -1356,7 +1356,7 @@ export default function PurchaseOrdersTab() {
                 <FileText className="h-6 w-6 text-primary" strokeWidth={2.2} />
               </span>
               <div className="flex-1 min-w-0">
-                <SectionTitle id="create-oc-title" className="text-lg font-extrabold">Nueva orden de compra</SectionTitle>
+                <SectionTitle id="create-oc-title">Nueva orden de compra</SectionTitle>
                 <p className="text-sm text-[var(--text-secondary)]">Elige proveedor, suma productos y guarda. Después puedes marcarla como recibida cuando llegue la mercadería.</p>
               </div>
               <span className="ml-auto flex items-center gap-1 shrink-0">
@@ -1740,7 +1740,7 @@ export default function PurchaseOrdersTab() {
           </span>
           {/* Buscar sin resultados no es lo mismo que no tener órdenes: en el
               primer caso ofrecer "crear la primera" desorienta. */}
-          <CardTitle className="text-xl font-extrabold">
+          <CardTitle className="text-[length:var(--ts-xl)] font-bold">
             {f.hayFiltros ? "Ninguna orden coincide" : "Sin órdenes de compra"}
           </CardTitle>
           <p className="text-sm text-[var(--text-secondary)] mt-2 max-w-md mx-auto">
@@ -2091,7 +2091,7 @@ export default function PurchaseOrdersTab() {
         >
           <div ref={addItemModalRef} role="dialog" aria-modal="true" aria-label="Agregar producto" tabIndex={-1} className="relative bg-[var(--surface-raised)] w-full sm:max-w-lg sm:rounded-xl rounded-t-2xl max-h-[85dvh] flex flex-col overflow-hidden">
             <div {...ventanaAddItem.asaProps} className="flex items-center justify-between px-5 py-4 border-b">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
+              <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
                 <Plus className="h-5 w-5 text-primary" /> Agregar producto
               </CardTitle>
               <span className="ml-auto flex items-center gap-1">
@@ -2312,7 +2312,7 @@ export default function PurchaseOrdersTab() {
         <div className="fixed inset-0 z-modal flex items-end sm:items-center justify-center bg-black/50" role="presentation" onClick={(e) => e.target === e.currentTarget && !ventanaScanner.fijado && setShowScanner(false)}>
           <div ref={scannerModalRef} role="dialog" aria-modal="true" aria-label="Escanear código de barras" tabIndex={-1} className="relative bg-[var(--surface-raised)] w-full sm:max-w-md sm:rounded-xl rounded-t-2xl overflow-hidden">
             <div {...ventanaScanner.asaProps} className="flex items-center justify-between px-5 py-4 border-b">
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Escanear código de barras</CardTitle>
+              <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Escanear código de barras</CardTitle>
               <span className="ml-auto flex items-center gap-1">
                 <ControlesDeVentana ventana={ventanaScanner} />
                 <button aria-label="Cerrar" onClick={() => setShowScanner(false)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors"><X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" /></button>

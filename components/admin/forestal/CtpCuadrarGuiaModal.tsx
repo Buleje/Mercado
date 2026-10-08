@@ -287,7 +287,7 @@ export default function CtpCuadrarGuiaModal({
 
             {asientos.map((a) => (
               <section key={a.entryId} className="rounded-xl border border-[var(--rule-base)]">
-                <CardTitle as="h3" className="flex flex-wrap items-baseline justify-between gap-2 rounded-t-xl bg-[var(--surface-sunken)] px-3 py-2">
+                <CardTitle as="h3" className="text-sm font-bold flex flex-wrap items-baseline justify-between gap-2 rounded-t-xl bg-[var(--surface-sunken)] px-3 py-2">
                   <span className="text-sm font-bold text-[var(--text-primary)]">
                     {a.descuadre.especie ?? "Sin especie"}
                   </span>

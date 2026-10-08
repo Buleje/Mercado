@@ -137,7 +137,7 @@ export default function CtpLoteCard({
               />
             </label>
           )}
-          <CardTitle as="h3" className="font-mono text-base font-bold text-[var(--text-primary)]">
+          <CardTitle as="h3" className="font-mono text-sm font-bold text-[var(--text-primary)]">
             {lote.code}
           </CardTitle>
           {esLoteDeInventario(lote) && (

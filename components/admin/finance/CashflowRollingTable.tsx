@@ -87,7 +87,7 @@ export default function CashflowRollingTable() {
           </span>
           <div>
             <div className="flex items-center gap-1.5">
-              <SectionTitle className="text-lg font-bold text-[var(--text-primary)]">Caja del negocio</SectionTitle>
+              <SectionTitle className="text-[var(--text-primary)]">Caja del negocio</SectionTitle>
               <InfoTip
                 title="Caja del negocio"
                 what="Arriba, la plata que entró y salió en el mes y lo que te deben o debes. Abajo, cómo seguiría tu caja las próximas 13 semanas."

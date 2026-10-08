@@ -226,7 +226,7 @@ export default function ShrinkageTab() {
     <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col gap-2 sm:gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <SectionTitle className="flex flex-wrap items-center gap-2 text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+          <SectionTitle className="flex flex-wrap items-center gap-2 text-[var(--text-primary)] dark:text-[var(--text-primary)]">
             <Package className="h-6 w-6 text-[var(--data-error-500)]" /> Pérdidas <ModuleTooltip />
           </SectionTitle>
           <p className="mt-1 text-sm text-[var(--text-secondary)] dark:text-muted">Registra lo que se perdió y cuánto costó</p>
@@ -369,7 +369,7 @@ export default function ShrinkageTab() {
             className="relative w-full max-w-lg rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-6 dark:border-[var(--rule-base)] ">
             <div {...ventanaDetalle.asaProps} className="mb-4 flex items-start justify-between">
               <div>
-                <CardTitle id={detailTitleId} className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Detalle de la pérdida</CardTitle>
+                <CardTitle id={detailTitleId} className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Detalle de la pérdida</CardTitle>
                 <p className="text-sm text-[var(--text-secondary)] dark:text-muted">{detail.product}</p>
               </div>
               <span className="ml-auto flex items-center gap-1">
@@ -396,7 +396,7 @@ export default function ShrinkageTab() {
         <div className="flex flex-wrap items-start gap-3 rounded-xl border border-[var(--data-warning-500)] bg-[var(--data-warning-50)] p-3 sm:p-5 dark:border-[var(--data-warning-500)] dark:bg-amber-950/20">
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[var(--data-warning-500)]" />
           <div>
-            <CardTitle className="text-sm font-extrabold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">Impacto acumulado</CardTitle>
+            <CardTitle className="text-sm font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">Impacto acumulado</CardTitle>
             <p className="mt-1 text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">Las pérdidas registradas acumulan {fmt(stats.totalLoss)}. Usa esta sección para detectar causas repetidas y reducir lo que se pierde.</p>
           </div>
         </div>

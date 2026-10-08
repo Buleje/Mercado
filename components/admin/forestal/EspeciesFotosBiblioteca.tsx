@@ -148,7 +148,7 @@ export default function EspeciesFotosBiblioteca() {
         </span>
         <div className="min-w-0 flex-1">
           <span className="flex items-center gap-1.5">
-            <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">
+            <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
               Fotos de referencia por especie
             </CardTitle>
             <InfoTip

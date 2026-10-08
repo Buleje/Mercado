@@ -100,7 +100,7 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
           <Clock className="h-4 w-4 text-primary" /> Horas Pico de Venta
         </CardTitle>
         <div className="flex bg-[var(--surface-sunken)] dark:bg-accent rounded-lg p-0.5">

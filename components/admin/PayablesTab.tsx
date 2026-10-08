@@ -335,7 +335,7 @@ export default function PayablesTab() {
       <div className="fixed inset-0 z-modal flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && !ventanaAdd.fijado && setShowAdd(false)}>
         <div ref={addPanelRef} role="dialog" aria-modal="true" aria-labelledby={addTitleId} tabIndex={-1} className="relative bg-[var(--surface-raised)] w-full sm:max-w-lg sm:rounded-xl rounded-t-2xl overflow-y-auto max-h-[90dvh]">
           <div {...ventanaAdd.asaProps} className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-[var(--surface-raised)] z-10">
-            <CardTitle id={addTitleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><CreditCard className="h-5 w-5 text-primary" /> Nueva cuenta por pagar</CardTitle>
+            <CardTitle id={addTitleId} className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><CreditCard className="h-5 w-5 text-primary" /> Nueva cuenta por pagar</CardTitle>
             <span className="ml-auto flex items-center gap-1">
               <ControlesDeVentana ventana={ventanaAdd} />
               <button aria-label="Cerrar" onClick={() => setShowAdd(false)} className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)] transition-colors"><X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" /></button>

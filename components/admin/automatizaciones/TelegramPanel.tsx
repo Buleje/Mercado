@@ -100,7 +100,7 @@ export default function TelegramPanel() {
     <section className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 space-y-4">
       <div className="flex items-center gap-2 flex-wrap">
         <Send className="h-4 w-4 text-[var(--text-secondary)]" />
-        <CardTitle className="font-extrabold">Bot de Telegram</CardTitle>
+        <CardTitle className="text-sm font-bold">Bot de Telegram</CardTitle>
         {estado?.bot?.username && (
           <BadgeStatus variant="success" size="sm" label={`@${estado.bot.username}`} />
         )}

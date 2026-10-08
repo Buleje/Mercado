@@ -351,7 +351,7 @@ export default function DeliveryPartnersLiveMap() {
               <MapPin className="h-5 w-5" />
             </span>
             <div>
-              <CardTitle className="font-display text-xl leading-tight">
+              <CardTitle className="text-[length:var(--ts-xl)] font-bold leading-tight">
                 Repartidores en vivo
               </CardTitle>
               <p className="text-sm text-[var(--text-secondary)] mt-1 leading-snug">
@@ -473,7 +473,7 @@ export default function DeliveryPartnersLiveMap() {
                 <MapPin className="h-4.5 w-4.5" />
               </span>
               <div>
-                <CardTitle className="font-display text-base leading-tight">
+                <CardTitle className="text-sm font-bold leading-tight">
                   Mapa en tiempo real
                 </CardTitle>
                 <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
@@ -505,7 +505,7 @@ export default function DeliveryPartnersLiveMap() {
                 <Truck className="h-4 w-4" />
               </span>
               <div>
-                <CardTitle className="font-display text-base leading-tight">
+                <CardTitle className="text-sm font-bold leading-tight">
                   Repartidores
                 </CardTitle>
                 <p className="text-xs text-[var(--text-tertiary)] mt-0.5">

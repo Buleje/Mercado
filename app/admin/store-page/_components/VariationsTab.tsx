@@ -523,7 +523,7 @@ function ProductModifierEditor({
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <CardTitle className="text-[var(--text-primary)] truncate">
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)] truncate">
             {product.name}
           </CardTitle>
           <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">

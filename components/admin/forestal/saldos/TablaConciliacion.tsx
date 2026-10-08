@@ -79,7 +79,7 @@ export default function TablaConciliacion({
           <CardTitle
             as="h3"
             id="saldos-conciliacion-titulo"
-            className="text-base font-bold text-[var(--text-primary)]"
+            className="text-sm font-bold text-[var(--text-primary)]"
           >
             Conciliación del período · apertura → cierre
           </CardTitle>

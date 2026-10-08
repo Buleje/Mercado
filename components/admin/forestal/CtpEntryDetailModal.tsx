@@ -146,7 +146,7 @@ export default function CtpEntryDetailModal({ entry, onClose, onCompletar, onCam
         <div className="rounded-2xl border border-[var(--rule-base)] bg-primary/10 p-4 dark:bg-primary/15">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <CardTitle as="h2" className="truncate text-xl font-bold text-[var(--text-primary)]">{entry.speciesCommonName}</CardTitle>
+              <CardTitle as="h2" className="truncate text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">{entry.speciesCommonName}</CardTitle>
               {entry.speciesScientificName && (
                 <p className="truncate text-sm italic text-[var(--text-tertiary)]">{entry.speciesScientificName}</p>
               )}

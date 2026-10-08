@@ -132,7 +132,7 @@ export default function LothResumenStrip({ onNavigate, reloadSignal }: { onNavig
           abierto ? "border-b border-[var(--rule-soft)] bg-[var(--surface-sunken)]" : ""
         }`}
       >
-        <CardTitle id={`${cuerpoId}-titulo`} as="h2" className="flex shrink-0 items-center gap-2">
+        <CardTitle id={`${cuerpoId}-titulo`} as="h2" className="text-sm font-bold flex shrink-0 items-center gap-2">
           <BarChart3 className="h-4 w-4 text-[var(--accent)]" aria-hidden="true" />
           Aprovechamiento
         </CardTitle>

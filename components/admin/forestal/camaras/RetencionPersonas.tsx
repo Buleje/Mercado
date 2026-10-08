@@ -29,7 +29,7 @@ export default function RetencionPersonas() {
       <div className="flex flex-wrap items-center gap-2">
         <span className="mr-auto flex items-center gap-1.5">
           <Users className="h-4 w-4 text-[var(--accent-ink)]" aria-hidden />
-          <CardTitle as="h3" id="camaras-retencion-titulo" className="text-base font-bold">
+          <CardTitle as="h3" id="camaras-retencion-titulo" className="text-sm font-bold">
             Fotos de personas: cuánto se guardan
           </CardTitle>
           <InfoTip

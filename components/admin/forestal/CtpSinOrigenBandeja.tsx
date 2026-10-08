@@ -110,7 +110,7 @@ export default function CtpSinOrigenBandeja({
   return (
     <div data-vista="ctp-sin-origen" className="space-y-2">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-        <CardTitle as="h4" className="text-base font-bold text-[var(--text-primary)]">
+        <CardTitle as="h4" className="text-sm font-bold text-[var(--text-primary)]">
           {de(r.corridas, "corrida sin origen", "corridas sin origen")}
         </CardTitle>
         <span className="text-sm tabular-nums text-[var(--text-secondary)]">

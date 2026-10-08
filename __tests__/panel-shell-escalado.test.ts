@@ -262,16 +262,16 @@ describe("panel — encabezado del módulo en la misma banda que las pestañas",
     // la dibuja la banda de afuera y el tablist cede la suya.
     const bar = readFileSync(join(process.cwd(), "components/admin/shared/AdminTabBar.tsx"), "utf8");
     expect(bar, "AdminTabBar no acepta `heading`").toContain("heading?:");
-    // Dos comprobaciones en vez de un regex sobre el ternario entero, que se
-    // rompe cada vez que cambia el formato de la rama verdadera:
-    // (1) la clase base del tablist no lleva regla…
-    expect(bar, "el tablist volvió a dibujar su regla siempre").toContain(
-      '"-mx-1 flex gap-0.5 px-1 sm:gap-1"',
-    );
+    // 08-10: con heading las pestañas van DENTRO de la banda (estilos `fase` y
+    // `vista`, como el Libro TH); sin heading, la línea de siempre (`linea`).
+    // (1) las ramas con heading no llevan regla…
+    const fase = bar.indexOf('estilo === "fase"');
+    const linea = bar.indexOf(': "-mx-1 gap-0.5 border-b', fase);
+    expect(fase, "AdminTabBar perdió los estilos de la banda").toBeGreaterThan(-1);
+    expect(linea, "la regla del tablist dejó de vivir en la rama SIN heading").toBeGreaterThan(fase);
+    expect(bar.slice(fase, linea), "el tablist volvió a dibujar su regla con heading").not.toContain("border-b");
     // (2) …y la regla vive en la rama SIN heading.
-    expect(bar, "la regla del tablist dejó de ser condicional al heading").toContain(
-      ': "border-b border-[var(--rule-base)]"',
-    );
+    expect(bar).toContain(': "-mx-1 gap-0.5 border-b border-[var(--rule-base)] px-1 sm:gap-1"');
   });
 });
 

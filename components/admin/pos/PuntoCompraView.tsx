@@ -1131,7 +1131,7 @@ export default function PuntoCompraView() {
                 gastos fijos: combustible, internet y alquiler no son artículos,
                 y el propio subtítulo lo desmentía. */}
             <div className="flex items-center gap-1.5">
-              <SectionTitle as="h2" className="text-base font-extrabold text-[var(--text-primary)] truncate">
+              <SectionTitle as="h2" className="text-sm font-bold text-[var(--text-primary)] truncate">
                 Gastos fijos del negocio
               </SectionTitle>
               <InfoTip
@@ -2286,7 +2286,7 @@ export default function PuntoCompraView() {
           >
             <div {...ventanaNuevoProveedor.asaProps} className="flex items-start justify-between">
               <div>
-                <CardTitle as="h3" id="punto-compra-nuevo-proveedor" className="text-lg font-extrabold text-[var(--text-primary)]">Nuevo proveedor</CardTitle>
+                <CardTitle as="h3" id="punto-compra-nuevo-proveedor" className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">Nuevo proveedor</CardTitle>
                 <p className="text-xs text-[var(--text-secondary)] mt-0.5">
                   Se guarda en tu lista de proveedores y se selecciona en esta orden.
                 </p>

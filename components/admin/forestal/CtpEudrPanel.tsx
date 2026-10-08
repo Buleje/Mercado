@@ -252,7 +252,7 @@ export default function CtpEudrPanel({
           <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Globe className="h-5 w-5" /></span>
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">Geolocalización de orígenes (EUDR)</CardTitle>
+              <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">Geolocalización de orígenes (EUDR)</CardTitle>
               <InfoTip
                 title="Geolocalización de orígenes"
                 what="La UE exige la geolocalización de la parcela de cosecha (Reg. 2023/1115)."
@@ -324,7 +324,7 @@ export default function CtpEudrPanel({
       {/* DDS por despacho */}
       <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
         <div className="flex items-center gap-1.5">
-          <CardTitle as="h3" className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]"><FileText className="h-4 w-4" /> Generar Declaración de Diligencia Debida (DDS)</CardTitle>
+          <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><FileText className="h-4 w-4" /> Generar Declaración de Diligencia Debida (DDS)</CardTitle>
           <InfoTip
             title="Declaración de Diligencia Debida"
             what="El DDS camina la cadena de custodia del despacho elegido, adjunta la geolocalización de cada origen y evalúa el riesgo."

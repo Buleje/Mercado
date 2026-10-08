@@ -212,7 +212,7 @@ export default function ComparativeReportsTab() {
             <BarChart3 className="h-5 w-5" />
           </div>
           <div>
-            <SectionTitle className="text-lg font-bold text-[var(--text-primary)]">Reportes Comparativos</SectionTitle>
+            <SectionTitle className="text-[var(--text-primary)]">Reportes Comparativos</SectionTitle>
             <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Comparación de métricas entre períodos</p>
           </div>
         </div>

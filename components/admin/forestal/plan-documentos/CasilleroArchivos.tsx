@@ -96,7 +96,7 @@ export default function CasilleroArchivos({
       }`}
     >
       <header className="flex flex-wrap items-center gap-1.5">
-        <CardTitle as="h5" id={`${domId}-titulo`} className="line-clamp-2 min-w-0 flex-1 break-words text-sm leading-snug" title={titulo}>
+        <CardTitle as="h5" id={`${domId}-titulo`} className="line-clamp-2 min-w-0 flex-1 break-words text-sm font-bold leading-snug" title={titulo}>
           {titulo}
         </CardTitle>
         {casillero?.descripcion && <InfoTip title={titulo} what={casillero.descripcion} example="Frente y dorso en dos fotos, o todo en un PDF." />}

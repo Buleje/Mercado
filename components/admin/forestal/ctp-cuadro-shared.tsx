@@ -117,7 +117,7 @@ export function Cuadro({
           {/* El subtítulo va en el ⓘ (2026-09-24): en los seis cuadros era un
               renglón de explicación encima de la tabla oficial. */}
           <div className="flex min-w-0 items-center gap-1.5">
-            <CardTitle as="h3" id={idTitulo} className="text-base font-bold text-[var(--text-primary)]">{titulo}</CardTitle>
+            <CardTitle as="h3" id={idTitulo} className="text-sm font-bold text-[var(--text-primary)]">{titulo}</CardTitle>
             <InfoTip title={titulo} what={subtitulo} />
           </div>
           {accion}

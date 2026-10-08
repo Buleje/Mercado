@@ -36,7 +36,7 @@ export function VendorPendingOrders({ orders }: Props) {
   if (orders.length === 0) {
     return (
       <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-6 ">
-        <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4 flex items-center gap-2">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4 flex items-center gap-2">
           <Package className="h-5 w-5 text-[var(--data-warning-500)]" />
           Pedidos sin atender
         </CardTitle>
@@ -58,7 +58,7 @@ export function VendorPendingOrders({ orders }: Props) {
   return (
     <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-6 ">
       <div className="flex items-center justify-between mb-4">
-        <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
           <Package className="h-5 w-5 text-[var(--data-warning-500)]" />
           Pedidos sin atender
           <span className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--data-warning-500)] text-white text-xs font-bold">

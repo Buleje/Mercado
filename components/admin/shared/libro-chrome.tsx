@@ -20,7 +20,8 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Keyboard, SlidersHorizontal, X, type LucideIcon } from "@buleje/design-system/icons";
-import { Kicker, PageTitle } from "@buleje/design-system";
+import { Kicker } from "@buleje/design-system";
+import { TituloModulo } from "./titulo-modulo";
 import ActionMenu, { marcoDeFixed, type MenuAccion } from "./action-menu";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { isEditableTarget, isModalOpen } from "@/lib/keyboard-guards";
@@ -236,24 +237,16 @@ export default function LibroChrome({
             Se mide la BANDA y no la ventana: la barra lateral abierta o
             cerrada cambia 300 px el ancho real, y un `min-[1800px]` mentía. */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2.5 sm:px-4 lg:gap-x-2 @min-[78rem]/banda:flex-nowrap">
-          <span
-            aria-hidden="true"
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] text-white shadow-[var(--shadow-sm)]"
-          >
-            <Icon className="h-5 w-5" />
-          </span>
-          <div className="min-w-0 @min-[78rem]/banda:shrink-0">
-            {/* `libro-kicker`/`libro-title`: tamaño propio del título de libro
-                y kicker legible (globals.css, bloque «PANEL ADMIN —
-                Tipografía»). El título usa `--ts-libro-title` para que no lo
-                encoja el `max-height` de las laptops; en una banda de menos de
-                88rem baja a 20 px para dejarle lugar al permiso en la misma
-                fila (se pisa la variable, no la regla de globals). */}
-            <Kicker className="libro-kicker block leading-none">{eyebrow}</Kicker>
-            <PageTitle className="libro-title font-display text-[length:var(--ts-xl)] font-normal sm:text-[length:var(--ts-2xl)] @max-[88rem]/banda:[--ts-libro-title:1.25rem]">
-              {title}
-            </PageTitle>
-          </div>
+          {/* Identidad: la misma que usan TODAS las pestañas (titulo-modulo.tsx,
+              Brandon 08-10 «todos iguales, como esta pestaña»). En una banda de
+              menos de 88rem el título baja a 20 px para dejarle lugar al permiso
+              en la misma fila (se pisa la variable, no la regla de globals). */}
+          <TituloModulo
+            icon={Icon}
+            eyebrow={eyebrow}
+            title={title}
+            className="@min-[78rem]/banda:shrink-0"
+          />
           {/* La FASE del libro comparte fila con el título (misma banda que
               el resto del panel, Brandon 2026-09-07): las cuatro fases siempre
               a la vista; las vistas de la activa, en el riel de abajo. Siguen

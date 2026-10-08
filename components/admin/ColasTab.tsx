@@ -91,7 +91,7 @@ function QueueCard({ queue }: { queue: QueueStats }) {
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Activity className="h-5 w-5 text-[var(--accent)]" />
-          <CardTitle className="text-base font-semibold text-[var(--text-primary)]">
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)]">
             {formatQueueName(queue.name)}
           </CardTitle>
         </div>
@@ -220,7 +220,7 @@ export default function ColasTab() {
     return (
       <div className="flex min-h-[300px] flex-col items-center justify-center gap-3 text-center">
         <Inbox className="h-12 w-12 text-[var(--text-tertiary)]" />
-        <CardTitle className="text-lg font-semibold text-[var(--text-secondary)]">
+        <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-secondary)]">
           Colas deshabilitadas
         </CardTitle>
         <p className="max-w-md text-sm text-[var(--text-tertiary)]">
@@ -242,7 +242,7 @@ export default function ColasTab() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <SectionTitle className="text-xl font-bold text-[var(--text-primary)]">
+          <SectionTitle className="text-[var(--text-primary)]">
             Monitor de Colas
           </SectionTitle>
           <p className="mt-1 text-sm text-[var(--text-tertiary)]">

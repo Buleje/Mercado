@@ -116,7 +116,7 @@ export default function LothCadenaModal({ code, onClose }: { code: string; onClo
               <TreePine className="h-5 w-5" strokeWidth={1.75} />
             </span>
             <div className="min-w-0">
-              <CardTitle as="h2" className="truncate text-base font-bold text-[var(--text-primary)]">
+              <CardTitle as="h2" className="truncate text-sm font-bold text-[var(--text-primary)]">
                 Cadena de custodia · {code}
               </CardTitle>
               <p className="truncate text-xs text-[var(--text-tertiary)]">Del árbol al despacho, con su autorización</p>

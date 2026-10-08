@@ -2321,7 +2321,7 @@ export default function POSView() {
                 <AlertTriangle className="h-5 w-5" aria-hidden />
               </span>
               <div>
-                <CardTitle className="text-[var(--text-primary)]">
+                <CardTitle className="text-sm font-bold text-[var(--text-primary)]">
                   {turnoAbierto === false && cashRegisterOpen === false
                     ? "Sin turno ni caja abiertos"
                     : turnoAbierto === false
@@ -2660,7 +2660,7 @@ export default function POSView() {
             <div className="h-10 w-10 rounded-full bg-[var(--data-error-50)] flex items-center justify-center mx-auto mb-3">
               <Package className="h-5 w-5 text-[var(--data-error-500)]" />
             </div>
-            <CardTitle className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">Sin stock</CardTitle>
+            <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1">Sin stock</CardTitle>
             <p className="text-xs text-[var(--text-secondary)] dark:text-muted mb-4">
               <span className="font-semibold">{showZeroStockConfirm.name}</span> no tiene stock disponible. Agregar de todos modos?
             </p>

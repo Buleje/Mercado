@@ -166,7 +166,7 @@ export default function PredictiveAnalyticsTab() {
       {/* Header + refresh */}
       <div className="flex items-center justify-between">
         <div>
-          <SectionTitle className="text-base font-extrabold text-[var(--text-primary)]">Predicciones IA</SectionTitle>
+          <SectionTitle className="text-sm font-bold text-[var(--text-primary)]">Predicciones IA</SectionTitle>
           <p className="text-xs text-[var(--text-tertiary)]">
             Basado en historial de 28 dias · {formatTime(data.generatedAt)}
           </p>

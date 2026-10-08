@@ -110,7 +110,7 @@ export default function LothMapaArbolFicha({ arbol, desdeTi, fuera, leyendoLibro
           <LothMapaArbolSimbolo clase={clase} estado={arbol.estado} etapa={arbol.etapa} aviso={arbol.conAviso} lado={22} />
         </span>
         <div className="min-w-0 flex-1">
-          <CardTitle id="loth-ficha-arbol-titulo" ref={tituloRef} tabIndex={-1} className="font-black leading-tight focus:outline-none">
+          <CardTitle id="loth-ficha-arbol-titulo" ref={tituloRef} tabIndex={-1} className="text-sm font-bold leading-tight focus:outline-none">
             Árbol {arbol.code}
             {arbol.cites && <span className="ml-1.5 text-xs font-bold text-[var(--data-error-ink)]">CITES</span>}
           </CardTitle>

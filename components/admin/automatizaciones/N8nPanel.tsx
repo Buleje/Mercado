@@ -162,7 +162,7 @@ export default function N8nPanel() {
       <section className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 space-y-4">
         <div className="flex items-center gap-2">
           <Webhook className="h-4 w-4 text-[var(--text-secondary)]" />
-          <CardTitle className="font-extrabold">Tus flujos de n8n</CardTitle>
+          <CardTitle className="text-sm font-bold">Tus flujos de n8n</CardTitle>
           {config && config.flujos.length > 0 && (
             <span className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)] tabular-nums">
               {config.flujos.filter((f) => f.activo).length} activos de {config.flujos.length}

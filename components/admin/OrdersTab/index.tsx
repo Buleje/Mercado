@@ -399,7 +399,7 @@ export default function OrdersTab() {
       <div className="hidden print:block print-orders-summary">
         {/* `as="h2"`: este título sólo existe para la impresión; como h1
             duplicaba el encabezado de la página para los lectores de pantalla. */}
-        <PageTitle as="h2" className="text-lg font-bold mb-1">Resumen de pedidos activos</PageTitle>
+        <PageTitle as="h2" className="text-[length:var(--ts-xl)] sm:text-[length:var(--ts-xl)] font-bold mb-1">Resumen de pedidos activos</PageTitle>
         <p className="text-xs text-[var(--text-secondary)] mb-4">
           {formatDateTime(new Date())} · {activeOrders.length} pedidos · {formatCurrency(total)} total
         </p>

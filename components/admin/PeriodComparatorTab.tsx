@@ -124,7 +124,7 @@ export default function PeriodComparatorTab() {
     <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><GitCompareArrows className="h-6 w-6 text-primary" /> Comparador de Periodos</SectionTitle>
+          <SectionTitle className="text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><GitCompareArrows className="h-6 w-6 text-primary" /> Comparador de Periodos</SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Compara métricas clave entre dos rangos de fecha</p>
         </div>
         <button onClick={() => exportToCSV(data.map(m => ({ metrica: m.label, [current.aLabel]: fmtNum(m.periodA, m.format), [current.bLabel]: fmtNum(m.periodB, m.format), cambio: `${((m.periodA - m.periodB) / m.periodB * 100).toFixed(1)}%` })), `comparador-${preset}`)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"><Download className="h-3.5 w-3.5" /> Exportar CSV</button>
@@ -141,7 +141,7 @@ export default function PeriodComparatorTab() {
       {/* Summary */}
       <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 sm:p-5">
         <div className="flex items-center justify-between mb-4">
-          <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><BarChart3 className="h-4 w-4 text-primary" /> Resumen</CardTitle>
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><BarChart3 className="h-4 w-4 text-primary" /> Resumen</CardTitle>
           <span className="text-xs font-semibold text-[var(--data-success-500)]">{improvements}/{data.length} métricas mejoraron</span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-center text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-3">

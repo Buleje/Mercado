@@ -156,7 +156,6 @@ export default function TasksTab() {
         title="Tareas & Asignaciones"
         description="Coordina el trabajo del equipo"
         icon={ClipboardList}
-        noBorder
       >
         <button onClick={openCreate} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
           <Plus className="h-4 w-4" /> Nueva Tarea

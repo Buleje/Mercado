@@ -187,7 +187,7 @@ export default function QuickStockCounter() {
       <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 dark:border-[var(--rule-base)] ">
         <div className="mb-4 flex items-center gap-2">
           <Barcode className="h-5 w-5 text-primary" />
-          <CardTitle className="text-sm font-semibold text-[var(--text-primary)]">
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)]">
             Escanear o ingresar código
           </CardTitle>
         </div>
@@ -321,7 +321,7 @@ export default function QuickStockCounter() {
       {counted.length > 0 && (
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] dark:border-[var(--rule-base)] ">
           <div className="border-b border-[var(--rule-soft)] px-5 py-3 dark:border-[var(--rule-base)]">
-            <CardTitle className="text-sm font-semibold text-[var(--text-primary)]">
+            <CardTitle className="text-sm font-bold text-[var(--text-primary)]">
               Productos contados ({counted.length})
             </CardTitle>
           </div>

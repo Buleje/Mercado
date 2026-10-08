@@ -220,7 +220,7 @@ export default function ImportExportTab() {
     <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><Upload className="h-6 w-6 text-primary" /> Subir / Descargar Datos</SectionTitle>
+          <SectionTitle className="text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><Upload className="h-6 w-6 text-primary" /> Subir / Descargar Datos</SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Descarga tus datos a Excel o sube archivos para cargar productos de golpe</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -243,7 +243,7 @@ export default function ImportExportTab() {
                 <div className="flex flex-wrap items-center gap-3 mb-4">
                   <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center"><Icon className="h-5 w-5 text-[var(--accent-ink)] dark:text-[var(--accent)]" /></div>
                   <div>
-                    <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{mod.label}</CardTitle>
+                    <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{mod.label}</CardTitle>
                     <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Datos reales desde la base de datos</p>
                   </div>
                 </div>
@@ -275,7 +275,7 @@ export default function ImportExportTab() {
         <div className="space-y-6">
           {/* Module selector */}
           <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 sm:p-5">
-            <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3">1. Elige a dónde van los datos</CardTitle>
+            <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3">1. Elige a dónde van los datos</CardTitle>
             <div className="flex flex-wrap gap-2">
               {EXPORT_MODULES.map(m => (
                 <button key={m.id} onClick={() => setSelectedModule(m.id)} className={cn("px-3 py-2 rounded-xl text-xs font-bold transition-colors border", selectedModule === m.id ? "bg-primary text-white border-primary" : "bg-[var(--surface-alt)] text-[var(--text-secondary)] dark:text-muted border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary")}>
@@ -287,7 +287,7 @@ export default function ImportExportTab() {
 
           {/* Upload zone */}
           <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 sm:p-5">
-            <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3">2. Sube tu archivo</CardTitle>
+            <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3">2. Sube tu archivo</CardTitle>
             <div
               onDragOver={e => { e.preventDefault(); setDragOver(true); }}
               onDragLeave={() => setDragOver(false)}

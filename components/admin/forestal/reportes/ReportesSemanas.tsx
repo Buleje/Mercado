@@ -65,7 +65,7 @@ export default function ReportesSemanas({ reporte }: { reporte: ReporteDeProducc
   return (
     <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <div className="mb-3 flex items-center gap-1.5">
-        <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">
+        <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
           Resumen por semana
         </CardTitle>
         <InfoTip

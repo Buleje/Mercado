@@ -105,7 +105,7 @@ export default function PriceHistoryTab({ productId }: PriceHistoryTabProps) {
     <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
+        <SectionTitle className="text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
           <TrendingUp className="h-6 w-6 text-primary" />
           Historial de Precios
         </SectionTitle>

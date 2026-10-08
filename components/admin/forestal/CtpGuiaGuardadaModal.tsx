@@ -236,7 +236,7 @@ export default function CtpGuiaGuardadaModal({
       <div className={`${MODAL_BODY} flex flex-col gap-5`} data-testid="guia-guardada">
         <section aria-labelledby="guia-guardada-datos" className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <CardTitle id="guia-guardada-datos" as="h3" className="text-base font-bold">
+            <CardTitle id="guia-guardada-datos" as="h3" className="text-sm font-bold">
               La guía
             </CardTitle>
             <AyudaDeGuia />
@@ -312,7 +312,7 @@ export default function CtpGuiaGuardadaModal({
         )}
 
         <section aria-labelledby="guia-guardada-docs" className="flex flex-col gap-3">
-          <CardTitle id="guia-guardada-docs" as="h3" className="text-base font-bold">
+          <CardTitle id="guia-guardada-docs" as="h3" className="text-sm font-bold">
             Documentos
           </CardTitle>
           {vista ? (

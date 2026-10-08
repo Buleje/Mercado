@@ -182,7 +182,7 @@ export default function PatioModo() {
   return (
     <main className="mx-auto min-h-dvh max-w-[48rem] space-y-4 p-4">
       <header className="flex items-center justify-between gap-3">
-        <PageTitle className="flex items-center gap-2 text-xl font-bold text-[var(--text-primary)]">
+        <PageTitle className="flex items-center gap-2 text-[length:var(--ts-xl)] sm:text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">
           <TreePine className="h-6 w-6 text-[var(--accent)]" aria-hidden /> Patio
         </PageTitle>
         {!cola.online && (
@@ -232,7 +232,7 @@ export default function PatioModo() {
 
       {/* Pregunta 2: llegó el camión, ¿qué le falta a esta guía? */}
       <section className="space-y-2">
-        <SectionTitle as="h2" className="text-base font-bold text-[var(--text-primary)]">
+        <SectionTitle as="h2" className="text-sm font-bold text-[var(--text-primary)]">
           Guías para recibir
           {guiasDeCache && (
             <span className="ml-2 font-normal text-[var(--text-tertiary)]">

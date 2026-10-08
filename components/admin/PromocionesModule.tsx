@@ -394,7 +394,7 @@ export default function PromocionesModule() {
       {/* Formulario nueva promo */}
       {showForm && (
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5  space-y-4">
-          <SectionTitle className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
+          <SectionTitle className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
             <Tag className="h-4 w-4 text-[var(--data-warning-500)]" />
             Nueva promoción
           </SectionTitle>

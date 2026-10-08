@@ -258,7 +258,7 @@ export function OrdersDetailPanel({
               <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-0.5">
                 Pedido · #{order.id.slice(-8)}
               </p>
-              <CardTitle className="text-base font-bold text-[var(--text-primary)] truncate">
+              <CardTitle className="text-sm font-bold text-[var(--text-primary)] truncate">
                 {order.customer.name}
               </CardTitle>
               <div className="text-xs text-[var(--text-tertiary)] mt-1 flex items-center gap-1.5 flex-wrap">

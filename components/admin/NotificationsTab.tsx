@@ -70,7 +70,7 @@ export default function NotificationsTab() {
   return (
     <div className="space-y-3 sm:space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><Bell className="h-6 w-6 text-primary" />Notificaciones WhatsApp</SectionTitle>
+        <SectionTitle className="text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><Bell className="h-6 w-6 text-primary" />Notificaciones WhatsApp</SectionTitle>
       </div>
 
       {/* Stats */}
@@ -92,7 +92,7 @@ export default function NotificationsTab() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Send notification */}
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-5 space-y-4">
-          <CardTitle className="font-extrabold flex flex-wrap items-center gap-2"><MessageCircle className="h-5 w-5 text-[var(--data-success-500)]" />Enviar Notificación</CardTitle>
+          <CardTitle className="text-sm font-bold flex flex-wrap items-center gap-2"><MessageCircle className="h-5 w-5 text-[var(--data-success-500)]" />Enviar Notificación</CardTitle>
 
           {/* Order picker */}
           <div className="relative">
@@ -157,7 +157,7 @@ export default function NotificationsTab() {
 
         {/* Notification log */}
         <div className="space-y-3">
-          <CardTitle className="font-extrabold flex flex-wrap items-center gap-2"><Clock className="h-5 w-5 text-[var(--text-tertiary)]" />Historial de Envíos</CardTitle>
+          <CardTitle className="text-sm font-bold flex flex-wrap items-center gap-2"><Clock className="h-5 w-5 text-[var(--text-tertiary)]" />Historial de Envíos</CardTitle>
           {logs.length === 0 ? (
             <div className="text-center py-12 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl">
               <Bell className="h-12 w-12 text-[var(--text-tertiary)] mx-auto mb-3" />

@@ -196,7 +196,7 @@ export default function VentasHeatmap() {
     <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       {/* Header + period pills */}
       <div className="flex items-center justify-between mb-4">
-        <CardTitle className="text-sm font-semibold text-[var(--text-primary)]">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)]">
           Mapa de Calor de Ventas
         </CardTitle>
         <div className="flex items-center gap-1">

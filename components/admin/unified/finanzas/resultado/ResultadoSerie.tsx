@@ -36,7 +36,7 @@ export default function ResultadoSerie({
   return (
     <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:p-5">
       <div className="mb-3 flex items-center gap-1.5">
-        <CardTitle as="h3">Últimos {serie.length} meses</CardTitle>
+        <CardTitle className="text-sm font-bold" as="h3">Últimos {serie.length} meses</CardTitle>
         <InfoTip
           title="Resultado mes a mes"
           what="Cada barra es lo que ganaste o perdiste en ese mes. Hacia arriba, ganancia; hacia abajo, pérdida."

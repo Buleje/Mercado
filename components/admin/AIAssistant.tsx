@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, BlockTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
@@ -632,7 +632,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
     return content.split("\n").map((line, i) => {
       // Headers
       if (line.startsWith("### ")) return <h4 key={i} className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mt-3 mb-1">{line.slice(4)}</h4>;
-      if (line.startsWith("## ")) return <CardTitle key={i} className="font-extrabold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mt-3 mb-1">{line.slice(3)}</CardTitle>;
+      if (line.startsWith("## ")) return <CardTitle key={i} className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mt-3 mb-1">{line.slice(3)}</CardTitle>;
 
       // Mejora 40: Progress bar detection — e.g. [PROGRESS:75|Stock]
       const progressMatch = line.match(/\[PROGRESS:(\d+)\|(.+?)\]/);
@@ -1154,9 +1154,9 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
           {/* Stats panel */}
           {showPanel === "stats" && (
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-              <h4 className="font-extrabold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
+              <BlockTitle className="text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
                 <BarChart3 className="h-4 w-4 text-[var(--text-secondary)]" /> Estadísticas de Uso
-              </h4>
+              </BlockTitle>
               {(() => {
                 const stats = getUsageStats();
                 return (
@@ -1206,9 +1206,9 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
           {/* History panel */}
           {showPanel === "history" && (
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
-              <h4 className="font-extrabold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
+              <BlockTitle className="text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
                 <Clock className="h-4 w-4 text-[var(--text-secondary)]" /> Sesiones Anteriores
-              </h4>
+              </BlockTitle>
               {(() => {
                 const sessions = getSessions();
                 if (sessions.length === 0) return <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">No hay sesiones guardadas.</p>;

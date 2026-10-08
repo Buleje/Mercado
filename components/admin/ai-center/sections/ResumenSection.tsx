@@ -515,7 +515,7 @@ export default function ResumenSection({ data }: Props) {
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-lg p-4">
           <div className="flex items-center gap-2 mb-3">
             <AlertTriangle className="w-4 h-4 text-[var(--text-tertiary)]" />
-            <CardTitle className="text-sm font-semibold text-[var(--text-secondary)]">
+            <CardTitle className="text-sm font-bold text-[var(--text-secondary)]">
               Alertas activas
             </CardTitle>
             {alerts.length > 0 && (
@@ -564,7 +564,7 @@ export default function ResumenSection({ data }: Props) {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-[var(--text-tertiary)]" />
-              <CardTitle className="text-sm font-semibold text-[var(--text-secondary)]">
+              <CardTitle className="text-sm font-bold text-[var(--text-secondary)]">
                 Ultimos 7 dias
               </CardTitle>
             </div>

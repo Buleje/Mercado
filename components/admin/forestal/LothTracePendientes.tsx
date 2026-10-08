@@ -56,7 +56,7 @@ export default function LothTracePendientes({
       data-pendientes
     >
       <div className="flex flex-wrap items-baseline gap-x-2">
-        <CardTitle id={`${id}-titulo`}>Qué falta hacer</CardTitle>
+        <CardTitle className="text-sm font-bold" id={`${id}-titulo`}>Qué falta hacer</CardTitle>
         <span className="text-sm tabular-nums text-[var(--text-tertiary)]">{formatNumber(p.total)}</span>
       </div>
 

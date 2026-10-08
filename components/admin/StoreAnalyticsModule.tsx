@@ -277,7 +277,7 @@ export default function StoreAnalyticsModule() {
       {advanced ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] p-5">
-            <CardTitle className="text-sm mb-3">Ingresos diarios</CardTitle>
+            <CardTitle className="text-sm font-bold mb-3">Ingresos diarios</CardTitle>
             <div className="text-[var(--accent)] h-12 mb-2">
               <Sparkline values={revenueSeries} height={48} />
             </div>
@@ -287,7 +287,7 @@ export default function StoreAnalyticsModule() {
           </div>
 
           <div className="rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] p-5">
-            <CardTitle className="text-sm mb-4">Funnel de conversión</CardTitle>
+            <CardTitle className="text-sm font-bold mb-4">Funnel de conversión</CardTitle>
             <div className="space-y-3">
               <FunnelBar label="Vistas" value={kpis.views} max={funnelMax} pctTotal={1} color="bg-[var(--text-secondary)]" />
               <FunnelBar
@@ -317,7 +317,7 @@ export default function StoreAnalyticsModule() {
       {/* Top tables */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] p-5">
-          <CardTitle className="text-sm mb-3">Más vistos</CardTitle>
+          <CardTitle className="text-sm font-bold mb-3">Más vistos</CardTitle>
           {topByViews.length === 0 ? (
             <p className="text-sm text-[var(--text-tertiary)]">Sin datos.</p>
           ) : (
@@ -329,7 +329,7 @@ export default function StoreAnalyticsModule() {
 
         {advanced ? (
           <div className="rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] p-5">
-            <CardTitle className="text-sm mb-3">Más ingresos</CardTitle>
+            <CardTitle className="text-sm font-bold mb-3">Más ingresos</CardTitle>
             {topByRevenue.length === 0 ? (
               <p className="text-sm text-[var(--text-tertiary)]">Sin datos.</p>
             ) : (

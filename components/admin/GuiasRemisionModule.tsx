@@ -891,7 +891,7 @@ export default function GuiasRemisionModule() {
         ) : guias.length === 0 ? (
           <div className="text-center py-16 px-4">
             <Truck className="h-14 w-14 mb-4 text-[var(--text-tertiary)] mx-auto" />
-            <CardTitle className="text-lg font-semibold text-[var(--text-primary)] mb-2">Sin guías de remisión</CardTitle>
+            <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] mb-2">Sin guías de remisión</CardTitle>
             <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-md mx-auto">Documenta tus envíos de mercadería</p>
             <button onClick={() => { setShowNew(true); setCreateError(null); }} className="bg-primary text-white px-6 min-h-11 rounded-xl font-medium hover:bg-primary-dark">Crear guía</button>
           </div>
@@ -981,7 +981,7 @@ export default function GuiasRemisionModule() {
                 {/* Header */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle id={detailTitleId} className="text-lg font-bold text-[var(--text-primary)] font-mono">{selected.numero}</CardTitle>
+                    <CardTitle id={detailTitleId} className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] font-mono">{selected.numero}</CardTitle>
                     <p className="text-xs text-[var(--text-tertiary)]">Creada: {formatDateTime(selected.createdAt)}</p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -1218,7 +1218,7 @@ export default function GuiasRemisionModule() {
                 className="relative w-full max-w-3xl bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl flex flex-col max-h-[90vh] my-8">
                 {/* UX Mejora 12: Sticky header */}
                 <div {...ventanaNew.asaProps} className="sticky top-0 z-10 bg-[var(--surface-raised)] border-b border-[var(--rule-base)] px-6 py-4 flex items-center justify-between rounded-t-2xl">
-                  <CardTitle id={newTitleId} className="text-lg font-semibold text-[var(--text-primary)]">Nueva Guía de Remisión</CardTitle>
+                  <CardTitle id={newTitleId} className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">Nueva Guía de Remisión</CardTitle>
                   <span className="ml-auto flex items-center gap-1">
                     <ControlesDeVentana ventana={ventanaNew} />
                   </span>

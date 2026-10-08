@@ -479,7 +479,7 @@ export default function BudgetVsRealTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
-          <SectionTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)]">
+          <SectionTitle className="text-[var(--text-primary)]">
             Meta vs Real
           </SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] mt-1">

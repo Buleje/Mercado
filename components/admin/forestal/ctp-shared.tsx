@@ -712,7 +712,7 @@ export function Seccion({
               {numero}
             </span>
           )}
-          <CardTitle as="h3" className="min-w-0 text-base font-bold leading-snug text-[var(--text-primary)]">
+          <CardTitle as="h3" className="min-w-0 text-sm font-bold leading-snug text-[var(--text-primary)]">
             {title}
           </CardTitle>
           {hint && <InfoTip title={title} what={hint} ariaLabel={`Ayuda: ${title}`} />}

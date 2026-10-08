@@ -334,7 +334,7 @@ function AdelantosView({
           tabla, y «Descuentos de planilla» y «CSV» dos botones con texto que se
           usan una vez por período. */}
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-        <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)]">
           {adelantos.length} adelanto{adelantos.length === 1 ? "" : "s"}
         </CardTitle>
         {adelantos.length > 0 && (
@@ -549,7 +549,7 @@ function PersonasView({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)]">
           {beneficiarios.length} persona{beneficiarios.length === 1 ? "" : "s"}
           {conSaldo > 0 && <span className="font-semibold text-[var(--text-tertiary)]"> · {conSaldo} con saldo</span>}
         </CardTitle>
@@ -797,7 +797,7 @@ function RecurrentesView({ beneficiarios, onChange }: { beneficiarios: Beneficia
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">{recs.length} recurrente{recs.length === 1 ? "" : "s"}</CardTitle>
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)]">{recs.length} recurrente{recs.length === 1 ? "" : "s"}</CardTitle>
         <button onClick={() => setShowCreate(true)} disabled={beneficiarios.length === 0} className="inline-flex items-center gap-2 h-12 px-5 rounded-2xl bg-primary text-white text-base font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50">
           <Plus className="h-5 w-5" /> Nueva recurrente
         </button>

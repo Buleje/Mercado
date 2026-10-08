@@ -41,7 +41,7 @@ export default function RegistrarEntrega({
   return (
     <div className="space-y-3 rounded-2xl border border-[var(--rule-base)] p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <CardTitle className="text-base font-extrabold text-[var(--text-primary)]">{titulo}</CardTitle>
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)]">{titulo}</CardTitle>
         {f.pactada && (
           <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm font-bold text-[var(--accent-ink)]">
             Cumple la cuota {f.pactada.numero}

@@ -233,7 +233,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
             <Sparkles className="h-5 w-5" />
           </div>
           <div className="flex-1 min-w-0">
-            <SectionTitle id={titleId} as="h2" className="text-base sm:text-lg font-extrabold text-[var(--text-primary)]">Asignar imágenes en bloque</SectionTitle>
+            <SectionTitle id={titleId} as="h2" className="text-[var(--text-primary)]">Asignar imágenes en bloque</SectionTitle>
             <p className="text-xs sm:text-sm text-[var(--text-secondary)]">
               Arrastra una imagen del banco al producto sin foto. Se guarda automático.
             </p>
@@ -265,7 +265,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
           <section className="flex flex-col overflow-hidden border-b sm:border-b-0 sm:border-r border-[var(--rule-soft)] bg-[var(--surface-raised)]">
             <header className="shrink-0 px-4 py-3 border-b border-[var(--rule-soft)] space-y-2">
               <div className="flex items-center justify-between gap-2">
-                <CardTitle as="h3" className="text-sm font-extrabold text-[var(--text-primary)] flex items-center gap-2">
+                <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
                   <ImageIcon className="h-4 w-4 text-primary" />
                   Banco de Imágenes
                   <span className="text-xs font-medium text-[var(--text-tertiary)]">({totalBankItems})</span>
@@ -379,7 +379,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
           <section className="flex flex-col overflow-hidden bg-[var(--surface-raised)]">
             <header className="shrink-0 px-4 py-3 border-b border-[var(--rule-soft)] space-y-2">
               <div className="flex items-center justify-between gap-2">
-                <CardTitle as="h3" className="text-sm font-extrabold text-[var(--text-primary)] flex items-center gap-2">
+                <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
                   <Package className="h-4 w-4 text-[var(--data-warning-500)]" />
                   Productos sin imagen
                   <span className="text-xs font-medium text-[var(--text-tertiary)]">({totalPending})</span>

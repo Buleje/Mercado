@@ -1,5 +1,5 @@
 "use client";
-import { CardTitle, StatCard } from "@buleje/design-system";
+import { CardTitle, StatCard, BlockTitle } from "@buleje/design-system";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
 import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
@@ -272,7 +272,7 @@ function NewCouponModal({
             <Ticket className="h-3.5 w-3.5" />
             Nuevo cupón marketplace
           </div>
-          <CardTitle className="text-xl font-extrabold text-[var(--text-primary)] tracking-tight">Configura tu descuento</CardTitle>
+          <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] tracking-tight">Configura tu descuento</CardTitle>
           <p className="text-sm text-[var(--text-secondary)] mt-1">Aparecerá en el carrito de los clientes que entren al marketplace.</p>
 
           {/* Preview ticket */}
@@ -301,7 +301,7 @@ function NewCouponModal({
           <section className="space-y-4">
             <header className="flex items-center gap-2">
               <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-extrabold">1</span>
-              <h4 className="text-sm font-extrabold text-[var(--text-primary)]">Identificación</h4>
+              <BlockTitle className="text-[var(--text-primary)]">Identificación</BlockTitle>
             </header>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -337,7 +337,7 @@ function NewCouponModal({
           <section className="space-y-4">
             <header className="flex items-center gap-2">
               <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-extrabold">2</span>
-              <h4 className="text-sm font-extrabold text-[var(--text-primary)]">Tipo de descuento</h4>
+              <BlockTitle className="text-[var(--text-primary)]">Tipo de descuento</BlockTitle>
             </header>
 
             {/* Toggle tipo: percent vs fixed */}
@@ -421,7 +421,7 @@ function NewCouponModal({
           <section className="space-y-4">
             <header className="flex items-center gap-2">
               <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-extrabold">3</span>
-              <h4 className="text-sm font-extrabold text-[var(--text-primary)]">Límites</h4>
+              <BlockTitle className="text-[var(--text-primary)]">Límites</BlockTitle>
             </header>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

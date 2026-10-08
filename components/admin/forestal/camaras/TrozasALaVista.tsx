@@ -87,7 +87,7 @@ export default function TrozasALaVista({ fecha, esHoy, activo }: { fecha: string
     <section className={`${BLOQUE} space-y-3`} data-testid="trozas-a-la-vista">
       <div className="flex flex-wrap items-center gap-2">
         <div className="mr-auto flex items-center gap-1.5">
-          <CardTitle>Trozas a la vista</CardTitle>
+          <CardTitle className="text-sm font-bold">Trozas a la vista</CardTitle>
           <InfoTip
             title="Trozas a la vista"
             what="Las trozas cuyo marcador (el cuadro negro de 18 cm en la testa) leyó la cámara este día. El marcador se imprime en Etiquetas › «Marcador A4 · cámara»."

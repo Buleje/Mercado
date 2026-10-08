@@ -298,7 +298,7 @@ export default function SupplierComparator({ onCreateOC }: SupplierComparatorPro
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
         <div className="flex items-center gap-3">
           <div>
-            <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)]">Comparador de Proveedores</SectionTitle>
+            <SectionTitle className="text-[var(--text-primary)]">Comparador de Proveedores</SectionTitle>
           </div>
         </div>
         <button

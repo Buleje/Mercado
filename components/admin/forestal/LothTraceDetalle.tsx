@@ -76,7 +76,7 @@ export default function LothTraceDetalle({
 function Bloque({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
     <section className={`py-4 ${MODAL_GUTTER}`}>
-      <CardTitle className="mb-2">{titulo}</CardTitle>
+      <CardTitle className="text-sm font-bold mb-2">{titulo}</CardTitle>
       {children}
     </section>
   );

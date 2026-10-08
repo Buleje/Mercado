@@ -151,7 +151,7 @@ export function DetalleConteo({ acta }: { acta: ActaConteoDetalle }) {
   return (
     <div className="space-y-4" data-detalle-conteo={r.id}>
       <div className="space-y-1">
-        <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">
+        <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
           Conteo del {diaDelConteo(r.fecha)}
         </CardTitle>
         <p className="text-sm text-[var(--text-secondary)]">

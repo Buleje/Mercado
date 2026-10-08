@@ -873,14 +873,14 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                   // afuera, esto NO es lo que se muestra (ver más abajo).
                   <div className="text-center py-16">
                     <FileText className="h-12 w-12 text-[var(--text-tertiary)] mx-auto mb-3" />
-                    <CardTitle className="text-lg font-semibold text-[var(--text-primary)] mb-2">Sin contratos</CardTitle>
+                    <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] mb-2">Sin contratos</CardTitle>
                     <p className="text-sm text-[var(--text-secondary)] mb-6">Crea tu primer contrato desde una plantilla</p>
                     <button onClick={() => setActiveTab("plantillas")} className="bg-primary text-white px-6 min-h-11 rounded-xl font-medium hover:bg-primary-dark">Ver Plantillas</button>
                   </div>
                 ) : viewMode === "cards" && filteredContratos.length === 0 ? (
                   <div className="text-center py-16">
                     <FileText className="h-12 w-12 text-[var(--text-tertiary)] mx-auto mb-3" />
-                    <CardTitle className="text-lg font-semibold text-[var(--text-primary)] mb-2">Ningún contrato coincide con el filtro</CardTitle>
+                    <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] mb-2">Ningún contrato coincide con el filtro</CardTitle>
                     <p className="text-sm text-[var(--text-secondary)] mb-6">Prueba con otro tipo o estado, o limpia la búsqueda.</p>
                     <button onClick={clearContratosFilters} className="bg-primary text-white px-6 min-h-11 rounded-xl font-medium hover:bg-primary-dark">Quitar filtros</button>
                   </div>
@@ -1022,7 +1022,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                 {!selectedTemplate ? (
                   <div className="text-center py-16">
                     <BookOpen className="h-12 w-12 text-[var(--text-tertiary)] mx-auto mb-3" />
-                    <CardTitle className="text-lg font-semibold text-[var(--text-primary)] mb-2">Selecciona una plantilla</CardTitle>
+                    <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] mb-2">Selecciona una plantilla</CardTitle>
                     <p className="text-sm text-[var(--text-secondary)] mb-6">Ve a la pestana &quot;Plantillas&quot; para elegir una plantilla legal</p>
                     <button onClick={() => setActiveTab("plantillas")} className="bg-primary text-white px-6 min-h-11 rounded-xl font-medium hover:bg-primary-dark">Ver Plantillas</button>
                   </div>
@@ -1291,7 +1291,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                         {/* Full Document Preview — with highlighted filled fields */}
                         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-6 sm:p-8 max-h-[60vh] overflow-y-auto">
                           <div className="max-w-[680px] mx-auto font-serif" ref={printRef}>
-                            <SectionTitle className="text-center text-base font-bold mb-1">
+                            <SectionTitle className="text-center text-sm font-bold mb-1">
                               CONTRATO DE {selectedTemplate.name.toUpperCase()}
                             </SectionTitle>
                             <p className="text-center text-xs text-[var(--text-tertiary)] mb-6">{selectedTemplate.legalBasis}</p>
@@ -1344,7 +1344,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                               <CheckCircle className="h-6 w-6" />
                             </div>
                             <div>
-                              <h4 className="text-base font-bold text-[var(--text-primary)]">Confirmar Contrato</h4>
+                              <BlockTitle className="text-[var(--text-primary)]">Confirmar Contrato</BlockTitle>
                               <p className="text-xs text-[var(--text-secondary)]">{selectedTemplate.name} — {selectedTemplate.legalBasis}</p>
                             </div>
                           </div>
@@ -1548,7 +1548,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                 {/* Header */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle id={panelTitleId} className="text-lg font-bold text-[var(--text-primary)]">Contrato {selected.numero}</CardTitle>
+                    <CardTitle id={panelTitleId} className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">Contrato {selected.numero}</CardTitle>
                     <p className="text-xs text-[var(--text-tertiary)]">{TIPO_LABELS[selected.tipo] || selected.tipo}</p>
                   </div>
                   <button aria-label="Cerrar" onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] ">

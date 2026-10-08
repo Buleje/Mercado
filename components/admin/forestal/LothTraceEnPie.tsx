@@ -56,7 +56,7 @@ export default function LothTraceEnPie({
     <section aria-labelledby={`${id}-titulo`} className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]" data-en-pie>
       {/* Patrón acordeón: el título ENVUELVE al botón (un título dentro de un
           botón deja de ser título para el lector de pantalla). */}
-      <CardTitle as="h4" id={`${id}-titulo`}>
+      <CardTitle className="text-sm font-bold" as="h4" id={`${id}-titulo`}>
         <button
           type="button"
           onClick={alternar}

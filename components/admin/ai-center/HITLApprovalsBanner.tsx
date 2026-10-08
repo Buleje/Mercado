@@ -217,7 +217,7 @@ export default function HITLApprovalsBanner() {
                 <AlertTriangle className="w-5 h-5 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" />
               </div>
               <div className="flex-1">
-                <SectionTitle id={detalleTituloId} className="text-lg font-bold text-[var(--text-primary)]">
+                <SectionTitle id={detalleTituloId} className="text-[var(--text-primary)]">
                   Aprobar acción del agente
                 </SectionTitle>
                 <p className="text-xs text-[var(--text-tertiary)] mt-0.5">

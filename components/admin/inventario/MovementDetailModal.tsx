@@ -144,7 +144,7 @@ export default function MovementDetailModal({
       <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="relative max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl sm:max-w-lg sm:rounded-2xl">
         <div {...ventana.asaProps} className="sticky top-0 z-dropdown flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]/95 px-6 py-4 backdrop-blur">
           <div className="min-w-0">
-            <SectionTitle id={titleId} as="h2" className="truncate text-lg font-bold leading-tight text-[var(--text-primary)]">{m.productName}</SectionTitle>
+            <SectionTitle id={titleId} as="h2" className="truncate leading-tight text-[var(--text-primary)]">{m.productName}</SectionTitle>
             <p className="text-sm text-[var(--text-secondary)]">
               {formatDateLong(fecha)}
               {" · "}

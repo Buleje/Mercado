@@ -149,7 +149,7 @@ export default function MiPerfilTab() {
               </div>
             </div>
             <div className="pb-1">
-              <SectionTitle className="text-lg font-bold text-[var(--text-primary)] capitalize">{profile.username || "Usuario"}</SectionTitle>
+              <SectionTitle className="text-[var(--text-primary)] capitalize">{profile.username || "Usuario"}</SectionTitle>
               <span className={cn(
                 "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold",
                 profile.role === "admin" ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" :

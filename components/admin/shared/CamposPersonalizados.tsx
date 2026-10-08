@@ -165,7 +165,7 @@ export default function CamposPersonalizados({
     <div className={`rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3 ${className}`}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
-          <CardTitle className="flex items-center gap-1.5">
+          <CardTitle className="text-sm font-bold flex items-center gap-1.5">
             Campos personalizados
             {total > 0 && (
               <span className="rounded-full bg-[var(--surface-sunken)] px-1.5 text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--text-secondary)]">

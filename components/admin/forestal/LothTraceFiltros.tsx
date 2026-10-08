@@ -58,7 +58,7 @@ export function LothTraceListaCabecera({
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
       <div className="flex min-w-0 flex-wrap items-baseline gap-x-2">
-        <CardTitle id={tituloId}>Árboles</CardTitle>
+        <CardTitle className="text-sm font-bold" id={tituloId}>Árboles</CardTitle>
         <span className="text-sm tabular-nums text-[var(--text-tertiary)]" data-contador>
           {visibles === total ? `${formatNumber(total)}` : `${formatNumber(visibles)} de ${formatNumber(total)}`}
           {totalPaginas > 1 && ` · página ${pagina + 1} de ${totalPaginas}`}

@@ -1720,7 +1720,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   <AlertTriangle className="h-5 w-5 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" />
                 </div>
                 <div>
-                  <CardTitle className="text-lg font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
+                  <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
                     Alertas de Orden de Compra
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)] text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] text-xs font-bold">
                       {lowStockProducts.length}
@@ -2537,7 +2537,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                     <span aria-hidden className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-3">
                       <PackagePlus className="h-7 w-7" strokeWidth={1.9} />
                     </span>
-                    <CardTitle className="text-[var(--text-primary)]">
+                    <CardTitle className="text-sm font-bold text-[var(--text-primary)]">
                       {products.length === 0 ? "Tu catálogo está vacío" : "Sin resultados"}
                     </CardTitle>
                     <p className="mt-1 max-w-xs text-sm text-[var(--text-secondary)]">
@@ -3720,7 +3720,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   <Camera className="h-5 w-5 text-[var(--data-warning-500)]" />
                 </div>
                 <div>
-                  <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Quitar imágenes</CardTitle>
+                  <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">Quitar imágenes</CardTitle>
                   <p className="text-sm text-muted">Solo borra la imagen, no el producto</p>
                 </div>
               </div>
@@ -3775,7 +3775,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   <Trash2 className="h-5 w-5 text-[var(--data-error-500)]" />
                 </div>
                 <div>
-                  <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Eliminar productos</CardTitle>
+                  <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">Eliminar productos</CardTitle>
                   <p className="text-sm text-muted">Esta acción no se puede deshacer</p>
                 </div>
               </div>
@@ -3807,7 +3807,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
         <div className="modal-backdrop flex items-center justify-center p-4">
           <div ref={bulkModalRef} role="dialog" aria-modal="true" aria-label="Edición masiva" tabIndex={-1} className="relative bg-[var(--surface-raised)] rounded-xl max-w-sm w-full overflow-hidden">
             <div {...ventanaBulk.asaProps} className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-              <CardTitle className="text-lg font-bold text-[var(--text-primary)]">Edición masiva — {selectedIds.size} producto{selectedIds.size > 1 ? "s" : ""}</CardTitle>
+              <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">Edición masiva — {selectedIds.size} producto{selectedIds.size > 1 ? "s" : ""}</CardTitle>
               <span className="ml-auto flex items-center gap-1">
                 <ControlesDeVentana ventana={ventanaBulk} />
                 <button aria-label="Cerrar" onClick={() => setBulkModal(false)} className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5"><X className="h-5 w-5" /></button>

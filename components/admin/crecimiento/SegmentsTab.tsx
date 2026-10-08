@@ -78,7 +78,7 @@ export default function SegmentsTab({ onCreateCampaign }: { onCreateCampaign: (s
   return (
     <div className="space-y-3 sm:space-y-5">
       <div>
-        <CardTitle className="text-lg font-extrabold text-[var(--text-primary)] flex items-center gap-2">
+        <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] flex items-center gap-2">
           <Users className="h-5 w-5 text-primary" /> Segmentos de clientes
         </CardTitle>
         <p className="text-sm text-[var(--text-secondary)] mt-0.5">

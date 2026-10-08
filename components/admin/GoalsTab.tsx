@@ -658,7 +658,7 @@ export default function GoalsTab() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)]">Metas & Objetivos</SectionTitle>
+          <SectionTitle className="text-[var(--text-primary)]">Metas & Objetivos</SectionTitle>
           <p className="text-sm text-[var(--text-secondary)]">Trackea el progreso del negocio en tiempo real — auto-sync desde ventas, pedidos y clientes</p>
         </div>
         <button

@@ -93,7 +93,7 @@ export default function CtpPermisoPuestaAlDia({
     >
       <header className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-[var(--rule-soft)] px-3 py-2.5 sm:px-4">
         <ListChecks className="h-5 w-5 shrink-0 text-[var(--accent-ink)]" aria-hidden />
-        <CardTitle as="h3" id="puesta-al-dia-titulo" className="text-base">
+        <CardTitle as="h3" id="puesta-al-dia-titulo" className="text-sm font-bold">
           Para poner al día
         </CardTitle>
         {actual && (

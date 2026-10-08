@@ -33,7 +33,8 @@
  *   </AdminModuleHeader>
  */
 
-import { PageTitle, Kicker } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { BANDA_MODULO, FILA_TITULO_MODULO, TituloModulo } from "./titulo-modulo";
 import { cn } from "@/lib/utils";
 import { useModuleDepth } from "@/components/admin/shared/module-depth";
 import type { LucideIcon } from "@buleje/design-system/icons";
@@ -62,8 +63,6 @@ interface AdminModuleHeaderProps {
   iconColorClass?: string;
   /** Slot para acciones: botones, dropdowns, date pickers, etc. */
   children?: React.ReactNode;
-  /** Si true, omite el border-bottom (útil cuando el módulo empieza con filtros pegados). */
-  noBorder?: boolean;
   /**
    * `"auto"` (default) — anidado bajo otro módulo que ya puso su título (lo
    * detecta `useModuleDepth`), el header NO se dibuja: la pestaña marcada
@@ -82,7 +81,6 @@ export default function AdminModuleHeader({
   icon: Icon,
   children,
   as,
-  noBorder = false,
   variant = "auto",
   className,
 }: AdminModuleHeaderProps) {
@@ -127,56 +125,39 @@ export default function AdminModuleHeader({
          del encabezado en pantallas de poca altura. Ver «Densidad por ALTURA». */
       data-admin-module-header=""
       className={cn(
-        "@container mb-4 pb-3",
-        !noBorder && "border-b border-[var(--rule-soft)]",
-        // Cuando el hermano de abajo es la barra de pestañas, su propia regla
-        // y su aire ya separan: el borde del header quedaba 40px arriba del
-        // borde del tab bar — dos líneas horizontales para el mismo corte.
-        // `:has(+ …)` mira al hermano SIGUIENTE; si entre medio hay otra cosa
-        // (una fila de KPIs, un aviso) no aplica y el borde se queda.
-        "has-[+_[data-admin-tabbar]]:mb-3 has-[+_[data-admin-tabbar]]:pb-0 has-[+_[data-admin-tabbar]]:border-b-0",
+        "mb-4",
+        // Con la barra de pestañas justo abajo, un poco menos de aire.
+        // `:has(+ …)` mira al hermano SIGUIENTE.
+        "has-[+_[data-admin-tabbar]]:mb-3",
         className,
       )}
     >
-      <div className="flex flex-col gap-4 @min-[48rem]:flex-row @min-[48rem]:items-end @min-[48rem]:justify-between">
-        <div className="flex gap-3 min-w-0">
-          {Icon && (
-            <Icon
-              // Antes hidden sm:block — en mobile el header perdia ancla
-              // visual. Ahora se muestra desde mobile, un poco mas chico.
-              className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--text-tertiary)] shrink-0 mt-1 sm:mt-1.5"
-              strokeWidth={1.5}
-              aria-hidden
-            />
-          )}
-          <div className="min-w-0">
-            {eyebrow && <Kicker className="mb-1">{eyebrow}</Kicker>}
-            <PageTitle
-              as={nivel}
-              className="font-display tracking-tight leading-[1.05]"
-            >
-              {title}
-            </PageTitle>
-            {/* En angosto la descripción se oculta (Brandon 2026-07-22): en una
-                pantalla chica lo que importa es el título y las acciones, no el
-                subtítulo explicativo.
-                Con `hidden`, no con `sr-only` + `not-sr-only`: la utilidad
-                `sr-only` gana por orden en el CSS generado y el texto quedaba
-                oculto SIEMPRE, también en escritorio (verificado en navegador). */}
-            {description && (
-              <div className="hidden @min-[32rem]:block mt-1.5 text-sm text-[var(--text-secondary)] max-w-2xl leading-relaxed">
-                {description}
-              </div>
-            )}
-          </div>
+      {/* La misma banda e identidad que el Libro TH (titulo-modulo.tsx,
+          Brandon 08-10: «todos los títulos iguales, como esta pestaña»). La
+          descripción va al ⓘ junto al título (regla «explicar con ⓘ»). El
+          relleno va en esta caja y no en el <header>: la densidad por altura
+          de globals.css le pisa el `padding-bottom` al header. */}
+      <div className={BANDA_MODULO}>
+        {/* La consulta de contenedor mide la BANDA: va en una caja de adentro
+            (un contenedor no se consulta a sí mismo). */}
+        <div className="flex flex-col gap-3 px-3 py-2.5 sm:px-4 @min-[48rem]/banda:flex-row @min-[48rem]/banda:items-center @min-[48rem]/banda:justify-between">
+        <div className={FILA_TITULO_MODULO}>
+          <TituloModulo
+            icon={Icon}
+            eyebrow={eyebrow}
+            title={title}
+            as={nivel}
+            ayuda={description ? <InfoTip side="bottom" title={title} what={description} /> : undefined}
+          />
         </div>
         {children && (
           // Sin `shrink-0`: cuando entran en la misma fila no deben aplastar al
           // título; cuando no entran, bajan y se envuelven entre ellas.
-          <div className="flex flex-wrap items-center gap-2 @min-[48rem]:justify-end">
+          <div className="flex flex-wrap items-center gap-2 @min-[48rem]/banda:justify-end">
             {children}
           </div>
         )}
+        </div>
       </div>
     </header>
   );

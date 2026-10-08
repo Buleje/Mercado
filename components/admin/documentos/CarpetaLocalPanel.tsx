@@ -107,7 +107,7 @@ export default function CarpetaLocalPanel({
   if (!c.vinculo) {
     return (
       <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-        <CardTitle as="h3" className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
+        <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
           <FolderOpen className="h-5 w-5 text-primary" aria-hidden="true" />
           Vincular una carpeta de tu PC
         </CardTitle>
@@ -147,7 +147,7 @@ export default function CarpetaLocalPanel({
     <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <CardTitle as="h3" className="flex items-center gap-2 text-base font-bold text-[var(--text-primary)]">
+          <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
             <FolderOpen className="h-5 w-5 text-primary" aria-hidden="true" />
             <span className="truncate">{c.vinculo.nombre}</span>
             {c.vinculo.pausado && (

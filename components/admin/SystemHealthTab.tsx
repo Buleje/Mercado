@@ -97,7 +97,7 @@ export default function SystemHealthTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
+          <SectionTitle className="text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <Activity className="h-6 w-6 text-primary" /> Salud del Sistema
           </SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">

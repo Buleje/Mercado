@@ -42,7 +42,7 @@ export default function CajaDelMes({ caja, onAbrir }: { caja: Caja; onAbrir: (f:
       <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--rule-base)] px-4 py-3 sm:px-5">
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
-            <CardTitle as="h3">Caja de {nombre}</CardTitle>
+            <CardTitle className="text-sm font-bold" as="h3">Caja de {nombre}</CardTitle>
             <InfoTip
               title="Lo que entró y salió de verdad"
               what="La plata que entró y salió en el mes, por de dónde vino. Cada sol se cuenta una vez."

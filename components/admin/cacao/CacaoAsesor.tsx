@@ -120,7 +120,7 @@ export default function CacaoAsesor() {
                   <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest" style={{ color: cfg.accent }}>Recomendación</span>
                   <span className="rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider" style={{ background: cfg.ring, color: "white" }}>señal {a.fuerza}</span>
                 </div>
-                <SectionTitle as="h2" className="mt-0.5 text-xl font-extrabold" style={{ color: cfg.text }}>{a.titulo}</SectionTitle>
+                <SectionTitle as="h2" className="mt-0.5" style={{ color: cfg.text }}>{a.titulo}</SectionTitle>
                 <p className="mt-1.5 text-sm leading-relaxed" style={{ color: cfg.text }}>{a.resumen}</p>
                 {a.signal === "vender" && a.metrics.pos52 != null && a.metrics.pos52 <= 40 && (
                   <p className="mt-1.5 text-xs leading-relaxed" style={{ color: cfg.accent }}>

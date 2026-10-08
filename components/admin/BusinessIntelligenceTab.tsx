@@ -87,7 +87,7 @@ export default function BusinessIntelligenceTab() {
     <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <PageTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
+          <PageTitle className="text-[length:var(--ts-xl)] sm:text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <Brain className="h-6 w-6 text-primary" /> Business Intelligence
           </PageTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">KPIs, proyección de ventas y alertas de anomalías</p>
@@ -125,7 +125,7 @@ export default function BusinessIntelligenceTab() {
       {/* Forecast — próxima semana, dato real (/api/analytics/predictions) */}
       {predictions && (
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-5">
-          <CardTitle className="font-extrabold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2 mb-4"><Target className="h-4 w-4 text-primary" /> Proyección de ventas — próximos 7 días</CardTitle>
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2 mb-4"><Target className="h-4 w-4 text-primary" /> Proyección de ventas — próximos 7 días</CardTitle>
           <div className="flex flex-wrap items-baseline gap-3 mb-4">
             <p className="text-2xl font-extrabold text-primary">{fmt(predictions.salesForecast)}</p>
             <span className={cn("inline-flex items-center gap-1 text-xs font-bold", predictions.trendPct >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
@@ -152,7 +152,7 @@ export default function BusinessIntelligenceTab() {
       {/* Anomaly alerts */}
       {anomalias && (
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-5">
-          <CardTitle className="font-extrabold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2 mb-4"><AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)]" /> Alertas de anomalías {anomalias.length > 0 && `(${anomalias.length})`}</CardTitle>
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2 mb-4"><AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)]" /> Alertas de anomalías {anomalias.length > 0 && `(${anomalias.length})`}</CardTitle>
           {anomalias.length === 0 ? (
             <p className="text-sm text-[var(--text-tertiary)]">Sin anomalías detectadas — todo marcha bien.</p>
           ) : (

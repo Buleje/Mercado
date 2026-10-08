@@ -185,7 +185,7 @@ export default function ContarAlBajar({ conteo }: { conteo: ConteoGuiaTh }) {
     <section aria-labelledby="conteo-th-titulo" className="flex flex-col gap-3 rounded-2xl border border-[var(--rule-base)] p-3 sm:p-4" data-testid="contar-al-bajar">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <span className="inline-flex items-center gap-1.5">
-          <BlockTitle id="conteo-th-titulo" as="h3" className="text-base">Contar al bajar</BlockTitle>
+          <BlockTitle id="conteo-th-titulo" as="h3">Contar al bajar</BlockTitle>
           <InfoTip
             title="Contar al bajar"
             ariaLabel="Cómo se cuentan las trozas"

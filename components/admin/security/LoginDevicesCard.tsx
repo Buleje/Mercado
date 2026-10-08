@@ -122,7 +122,7 @@ export default function LoginDevicesCard({ embebido = false }: { embebido?: bool
     <div className={embebido ? "pt-4 border-t border-[var(--rule-soft)]" : "rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5"}>
       <div className="flex items-center gap-2">
         <ShieldCheck className="h-5 w-5 text-[var(--accent)]" aria-hidden />
-        <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">Dispositivos y accesos</CardTitle>
+        <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">Dispositivos y accesos</CardTitle>
       </div>
       <p className="mt-1 text-[length:var(--ts-xs)] text-[var(--text-secondary)]">
         Desde dónde entraste a tu panel. Si ves un acceso que no reconoces, cambia tu contraseña.

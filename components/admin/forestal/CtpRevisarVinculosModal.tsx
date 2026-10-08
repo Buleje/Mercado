@@ -146,7 +146,7 @@ export default function CtpRevisarVinculosModal({
         ) : (
           <div className="space-y-3">
             <div>
-              <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">
+              <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
                 N.º {c.lineNo ?? "—"} · {c.especie}
               </CardTitle>
               <p className="text-sm text-[var(--text-secondary)]">

@@ -256,7 +256,7 @@ export default function ComisionesTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div>
-          <SectionTitle className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
+          <SectionTitle className="text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <Award className="h-6 w-6 text-primary" /> Comisiones del Equipo
           </SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Seguimiento de ventas por cajero y cálculo de comisiones</p>
@@ -318,7 +318,7 @@ export default function ComisionesTab() {
       {/* Rate config panel */}
       {showConfig && (
         <div className="bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/10 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 rounded-xl p-3 sm:p-5 space-y-4">
-          <CardTitle className="font-extrabold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] flex flex-wrap items-center gap-2">
+          <CardTitle className="text-sm font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] flex flex-wrap items-center gap-2">
             <Settings className="h-4 w-4" /> Reglas de comisión por tramos
           </CardTitle>
 
@@ -401,7 +401,7 @@ export default function ComisionesTab() {
       {/* Table */}
       <div className="bg-[var(--surface-raised)]">
         <div className="p-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-          <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
             <Users className="h-4 w-4 text-primary" /> Detalle por empleado
           </CardTitle>
         </div>

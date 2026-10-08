@@ -35,7 +35,7 @@ export function BloquePlan({ id, titulo, sub, acciones, children, className = ""
         {/* `grow basis-*` y no `flex-1`: con base 0 el título nunca pide
             renglón y se monta sobre las acciones a 400 px. */}
         <div className="min-w-0 grow basis-[14rem]">
-          <CardTitle id={`${id}-titulo`}>{titulo}</CardTitle>
+          <CardTitle className="text-sm font-bold" id={`${id}-titulo`}>{titulo}</CardTitle>
           {sub && <p className="mt-0.5 text-sm text-[var(--text-tertiary)]">{sub}</p>}
         </div>
         {acciones && <div className="flex shrink-0 flex-wrap items-center gap-2">{acciones}</div>}

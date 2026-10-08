@@ -173,7 +173,7 @@ function PlanCard({
         <div>
           <div className="flex flex-wrap items-center gap-2">
             {(def.id === "business" || def.id === "enterprise") && <Crown className={`w-4 h-4 ${def.id === "enterprise" ? "text-[var(--data-warning-500)]" : "text-[var(--text-secondary)]"}`} />}
-            <CardTitle className="font-bold text-base">{def.name}</CardTitle>
+            <CardTitle className="text-sm font-bold">{def.name}</CardTitle>
           </div>
           <div className="mt-1">
             {def.priceMonthly === 0 ? (
@@ -483,7 +483,7 @@ export default function PlanTab() {
       {/* Current plan header */}
       <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-4">
         <div>
-          <SectionTitle className="text-base sm:text-xl font-bold flex flex-wrap items-center gap-2">
+          <SectionTitle className="flex flex-wrap items-center gap-2">
             <Zap className="w-5 h-5 text-primary" />
             Plan actual
           </SectionTitle>
@@ -497,7 +497,7 @@ export default function PlanTab() {
 
       {/* Usage meters */}
       <div className="bg--(--color-card) border border-(--color-card-border) rounded-xl p-3 sm:p-6 space-y-3 sm:space-y-6">
-        <CardTitle className="font-semibold text-sm text-muted">Uso del mes actual</CardTitle>
+        <CardTitle className="text-sm font-bold text-muted">Uso del mes actual</CardTitle>
         <UsageBar
           label="Productos"
           icon={<ShoppingBag className="w-4 h-4 text-muted" />}
@@ -523,7 +523,7 @@ export default function PlanTab() {
 
       {/* Features enabled */}
       <div className="bg--(--color-card) border border-(--color-card-border) rounded-xl p-3 sm:p-6 space-y-3">
-        <CardTitle className="font-semibold text-sm text-muted flex items-center gap-1.5">
+        <CardTitle className="text-sm font-bold text-muted flex items-center gap-1.5">
           <BarChart2 className="w-4 h-4" /> Funcionalidades incluidas
         </CardTitle>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -539,7 +539,7 @@ export default function PlanTab() {
 
       {/* Custom domain management */}
       <div className="bg--(--color-card) border border-(--color-card-border) rounded-xl p-3 sm:p-6 space-y-4">
-        <CardTitle className="font-semibold text-sm text-muted flex items-center gap-1.5">
+        <CardTitle className="text-sm font-bold text-muted flex items-center gap-1.5">
           <Globe className="w-4 h-4" /> Dominio personalizado
         </CardTitle>
         {!limits.customDomain ? (
@@ -643,7 +643,7 @@ export default function PlanTab() {
 
       {/* Plan comparison cards */}
       <div>
-        <CardTitle className="font-semibold text-base mb-4">Comparar planes</CardTitle>
+        <CardTitle className="text-sm font-bold mb-4">Comparar planes</CardTitle>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
           {(Object.values(PLANS) as PlanDef[]).map((def) => (
             <PlanCard

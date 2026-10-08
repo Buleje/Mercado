@@ -234,7 +234,7 @@ export default function CouponsTab() {
               <Sparkles className="h-5 w-5 text-[var(--surface-canvas)]" />
             </div>
             <div>
-              <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Reglas Automáticas</CardTitle>
+              <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Reglas Automáticas</CardTitle>
               <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Genera cupones automáticamente</p>
             </div>
           </div>
@@ -297,7 +297,7 @@ export default function CouponsTab() {
       {/* ── Cupones Generados Automáticamente ─────────────────────────────── */}
       {generatedLogs.length > 0 && (
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6">
-          <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4 flex flex-wrap items-center gap-2">
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4 flex flex-wrap items-center gap-2">
             <Calendar className="h-5 w-5 text-primary" />
             Historial de cupones auto-generados
           </CardTitle>
@@ -324,7 +324,7 @@ export default function CouponsTab() {
 
       {/* ── Cupones Manuales ──────────────────────────────────────────────── */}
       <div className="flex items-center justify-between">
-        <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><Ticket className="h-6 w-6 text-primary" />Cupones</SectionTitle>
+        <SectionTitle className="text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><Ticket className="h-6 w-6 text-primary" />Cupones</SectionTitle>
         <button onClick={() => setShowForm(v => !v)} className="flex flex-wrap items-center gap-2 bg-primary text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold hover:bg-primary/90 transition">
           <Plus className="h-4 w-4" />Nuevo Cupón
         </button>
@@ -461,7 +461,7 @@ export default function CouponsTab() {
           <div ref={cajaRegla} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Configurar regla" className="relative bg-[var(--surface-raised)] rounded-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <div>
-                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Configurar Regla</CardTitle>
+                <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Configurar Regla</CardTitle>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{ruleConfigs[editingRule.type].label}</p>
               </div>
               <div className="flex items-center gap-1"><ControlesDeVentana ventana={ventanaRegla} />
@@ -522,7 +522,7 @@ export default function CouponsTab() {
           <div ref={cajaWhatsapp} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Enviar cupón por WhatsApp" className="relative bg-[var(--surface-raised)] rounded-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <div>
-                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Enviar cupon por WhatsApp</CardTitle>
+                <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Enviar cupon por WhatsApp</CardTitle>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Codigo: <span className="font-mono font-bold text-primary">{whatsappCoupon.code}</span></p>
               </div>
               <div className="flex items-center gap-1"><ControlesDeVentana ventana={ventanaWhatsapp} />
@@ -579,7 +579,7 @@ export default function CouponsTab() {
           <div ref={cajaPlantilla} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Constructor de plantilla" className="relative bg-[var(--surface-raised)] rounded-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <div>
-                <CardTitle className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Constructor de Plantilla</CardTitle>
+                <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Constructor de Plantilla</CardTitle>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Define el patrón de códigos automáticos</p>
               </div>
               <div className="flex items-center gap-1"><ControlesDeVentana ventana={ventanaPlantilla} />

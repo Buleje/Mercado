@@ -139,7 +139,7 @@ export default function ReporteMensualTab() {
           <FileText className="h-5 w-5 text-primary" />
         </div>
         <div>
-          <SectionTitle className="font-bold text-[var(--text-primary)]">Reporte Mensual</SectionTitle>
+          <SectionTitle className="text-[var(--text-primary)]">Reporte Mensual</SectionTitle>
           <p className="text-xs text-[var(--text-secondary)]">
             Genera el reporte PDF con ingresos, gastos, top productos y fiados.
             Se envía automáticamente el día 1 de cada mes.
@@ -255,7 +255,7 @@ export default function ReporteMensualTab() {
       {/* Historial de reportes generados en esta sesión */}
       {history.length > 0 && (
         <div>
-          <CardTitle className="text-sm font-semibold text-[var(--text-secondary)] mb-3 flex items-center gap-2">
+          <CardTitle className="text-sm font-bold text-[var(--text-secondary)] mb-3 flex items-center gap-2">
             <Users className="h-4 w-4" />
             Reportes generados en esta sesión
           </CardTitle>

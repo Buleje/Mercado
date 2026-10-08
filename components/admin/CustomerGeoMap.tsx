@@ -310,7 +310,7 @@ export default function CustomerGeoMap({ className }: Props) {
       {/* Header + controls */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <SectionTitle className="text-xl font-bold text-[var(--text-primary)]">
+          <SectionTitle className="text-[var(--text-primary)]">
             Mapa Geografico de Clientes
           </SectionTitle>
           <p className="text-sm text-[var(--text-secondary)]">
@@ -420,7 +420,7 @@ export default function CustomerGeoMap({ className }: Props) {
       {/* Top zones breakdown */}
       {showStats && !loading && topZones.length > 1 && (
         <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-          <CardTitle className="mb-3 text-sm font-semibold text-[var(--text-primary)]">
+          <CardTitle className="mb-3 text-sm font-bold text-[var(--text-primary)]">
             Top 5 zonas
           </CardTitle>
           <div className="space-y-2">

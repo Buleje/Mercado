@@ -227,7 +227,7 @@ function PlanCard({
           Recomendado
         </span>
       )}
-      <CardTitle>{name}</CardTitle>
+      <CardTitle className="text-sm font-bold">{name}</CardTitle>
       <p className="mt-1 text-xs font-semibold text-[var(--text-tertiary)]">{tagline}</p>
       <div className="mt-4 flex items-baseline gap-1">
         <span className="text-3xl font-extrabold text-[var(--text-primary)]">{price}</span>

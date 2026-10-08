@@ -65,7 +65,7 @@ export default function CtpConsumosPatioResumen({
     >
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <div className="flex min-w-0 items-center gap-1.5">
-          <CardTitle as="h3" id={idTitulo} className="text-base font-bold text-[var(--text-primary)]">
+          <CardTitle as="h3" id={idTitulo} className="text-sm font-bold text-[var(--text-primary)]">
             Qué queda en el patio
           </CardTitle>
           <InfoTip

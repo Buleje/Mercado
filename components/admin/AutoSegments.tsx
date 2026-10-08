@@ -178,7 +178,7 @@ export default function AutoSegments() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <SectionTitle className="text-xl font-bold text-[var(--text-primary)]">
+          <SectionTitle className="text-[var(--text-primary)]">
             Segmentacion Automatica
           </SectionTitle>
           <p className="text-sm text-[var(--text-tertiary)]">

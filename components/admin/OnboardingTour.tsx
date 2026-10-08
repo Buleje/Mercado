@@ -190,7 +190,7 @@ export function OnboardingTour({
               <step.Icon className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
             </div>
             <div>
-              <CardTitle className="text-base font-extrabold tracking-tight text-[var(--text-primary)]">
+              <CardTitle className="text-sm font-bold tracking-tight text-[var(--text-primary)]">
                 {step.title}
               </CardTitle>
               <p className="text-sm text-[var(--text-secondary)] leading-relaxed mt-1.5">

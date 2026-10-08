@@ -97,7 +97,7 @@ export default function BalanceDeCapacidad({
       <div className="flex items-center gap-1.5">
         <CardTitle
           as="h3"
-          className="text-base font-extrabold tracking-tight text-[var(--text-primary)]"
+          className="text-sm font-bold tracking-tight text-[var(--text-primary)]"
         >
           Cuánto producto puede salir de todo lo que hay hoy
         </CardTitle>

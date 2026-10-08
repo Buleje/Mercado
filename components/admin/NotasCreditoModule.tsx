@@ -1154,7 +1154,7 @@ export default function NotasCreditoModule() {
             <div className="mx-auto mb-4 h-14 w-14 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-base)] flex items-center justify-center">
               <FileText className="h-7 w-7 text-[var(--text-tertiary)]" strokeWidth={1.5} aria-hidden />
             </div>
-            <CardTitle className="text-lg font-semibold text-[var(--text-primary)] mb-2">Sin notas de crédito</CardTitle>
+            <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] mb-2">Sin notas de crédito</CardTitle>
             <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-md mx-auto">Las notas de crédito se crean al hacer devoluciones, anulaciones o ajustes a documentos existentes</p>
             <button onClick={() => { setShowNew(true); setCreateError(null); setWizardStep(0); }} className="bg-primary text-white px-6 min-h-11 rounded-xl font-medium hover:bg-primary-dark">Crear NC</button>
           </div>
@@ -1285,7 +1285,7 @@ export default function NotasCreditoModule() {
               <div className="p-4 sm:p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle id={detailTitleId} className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+                    <CardTitle id={detailTitleId} className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] flex items-center gap-2">
                       <span className="text-xl">{getDocIcon(selected.numero)}</span>
                       NC {selected.numero}
                     </CardTitle>
@@ -1429,7 +1429,7 @@ export default function NotasCreditoModule() {
                 {/* Wizard Header */}
                 <div className="px-5 pt-5 pb-0">
                   <div {...ventanaWizard.asaProps} className="flex items-center justify-between mb-4">
-                    <CardTitle id={wizardTitleId} className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+                    <CardTitle id={wizardTitleId} className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] flex items-center gap-2">
                       <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                         <CreditCard className="h-4 w-4 text-primary" />
                       </div>

@@ -57,7 +57,7 @@ export default function CtpTrozasBarra({
   return (
     <>
       <div className="flex flex-wrap items-center gap-2 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2">
-        <CardTitle as="h3" className="text-sm">Piezas</CardTitle>
+        <CardTitle as="h3" className="text-sm font-bold">Piezas</CardTitle>
         <span data-conteo="lista" className="text-xs font-bold text-[var(--text-secondary)]">
           {leyendo ? (
             "Leyendo el patio…"

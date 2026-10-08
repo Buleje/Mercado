@@ -37,7 +37,7 @@ function Encabezado({
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <CardTitle as="h3" className="text-lg font-bold text-[var(--text-primary)]">
+      <CardTitle as="h3" className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">
         {titulo}
       </CardTitle>
       <InfoTip title={titulo} {...ayuda} />

@@ -130,7 +130,7 @@ export default function NPSTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <SectionTitle className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><Star className="h-6 w-6 text-primary" /> NPS & Satisfacción</SectionTitle>
+          <SectionTitle className="text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><Star className="h-6 w-6 text-primary" /> NPS & Satisfacción</SectionTitle>
           <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Net Promoter Score y análisis de satisfacción del cliente</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
