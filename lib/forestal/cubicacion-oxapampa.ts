@@ -98,6 +98,25 @@ export function ptOxapampa(m: MedidaOxapampa): number | null {
 }
 
 /**
+ * El PT del **Cubicador de trozas** (Herramientas, sin libro), con UNO o DOS
+ * diámetros: con uno solo es el Ø medido al medio de la troza (Dp = ese Ø); con
+ * dos, el promedio de las puntas — la misma cuenta que `ptOxapampa`. Mismo
+ * redondeo que ADR-440: cada medida a 2 decimales antes de la fórmula y el PT a 2.
+ *
+ * NO es la regla del pago: la plata de la guía y el flete siguen exigiendo las
+ * dos puntas (`ptOxapampa`). Sin `d2` (o en cero) la troza se toma pareja, igual
+ * que `cubicarTroza` de la Smalian. `null` = falta el Ø o el largo.
+ *
+ * 20″ × 12′ → 195.92 · 18″ y 22″ × 12′ → Dp 20″ → 195.92.
+ */
+export function ptOxapampaDelCubicador(dPulg: number, largoPies: number, d2Pulg?: number | null): number | null {
+  if (!(typeof dPulg === "number" && Number.isFinite(dPulg) && dPulg > 0)) return null;
+  const d2 = typeof d2Pulg === "number" && Number.isFinite(d2Pulg) && d2Pulg > 0 ? d2Pulg : dPulg;
+  if (!(typeof largoPies === "number" && Number.isFinite(largoPies))) return null;
+  return ptOxapampa({ d1Pulg: redondearPt(dPulg), d2Pulg: redondearPt(d2), largoPies: redondearPt(largoPies) });
+}
+
+/**
  * El pt de una pieza ya guardada: el CONGELADO (`oxPt`) si existe; si no, el
  * que dan sus medidas. `null` = sin cubicar.
  */

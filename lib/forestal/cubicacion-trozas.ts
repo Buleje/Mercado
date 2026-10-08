@@ -22,8 +22,11 @@ export interface TrozaCubicada {
   /** Largo (m). */
   largo: number;
   especie?: string;
-  /** m³ Smalian de ESTA troza. */
+  /** m³ Smalian de ESTA troza. En el lote Oxapampina va en 0: ahí no hay m³ (ver `pt`). */
   m3: number;
+  /** PT Oxapampa de ESTA troza — sólo en el lote Oxapampina del cubicador
+   *  (`cubicacion-trozas-formula.ts`), donde `d1`/`d2` van en pulgadas y `largo` en pies. */
+  pt?: number;
   /** Categoría por diámetro forzada a mano — `undefined` = la decide `d1` (ver `tipoDeTroza`). */
   tipo?: TipoTroza;
 }
