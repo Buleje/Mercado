@@ -85,7 +85,7 @@
  * Código 1 si hubo `pageerror` o falló un paso.
  */
 import { chromium } from "playwright";
-import { mkdirSync, readFileSync, existsSync, writeFileSync, unlinkSync } from "node:fs";
+import { mkdirSync, readFileSync, existsSync, writeFileSync, unlinkSync, readdirSync, readlinkSync } from "node:fs";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { resolverChromium } from "./dev-helpers/chromium-path.mjs";
@@ -541,6 +541,29 @@ async function recorrido(t, primero) {
   }
 }
 
+/**
+ * ¿El `next dev` que escucha está en pánico? Lee el log al que escribe su
+ * stdout (/proc/<pid>/fd/1) y busca «panicked» después del último «Ready in».
+ * `null` = no se pudo saber o está sano.
+ */
+function panicoDelDev() {
+  try {
+    for (const pid of readdirSync("/proc").filter((d) => /^\d+$/.test(d))) {
+      let cmd = "";
+      try { cmd = readFileSync(`/proc/${pid}/cmdline`, "utf8"); } catch { continue; }
+      if (!/next\0dev|next dev|next-server/.test(cmd)) continue;
+      let log = "";
+      try { log = readlinkSync(`/proc/${pid}/fd/1`); } catch { continue; }
+      if (!log.startsWith("/") || !existsSync(log)) continue;
+      const texto = readFileSync(log, "utf8");
+      const desde = texto.lastIndexOf("Ready in");
+      const i = texto.indexOf("panicked", Math.max(0, desde));
+      if (i >= 0) return `${log}: ${texto.slice(i, i + 120).split("\n")[0]}`;
+    }
+  } catch { /* sin /proc (no Linux): sin diagnóstico */ }
+  return null;
+}
+
 let falla = null;
 try {
   // Login como la app: la cookie `csrf-token` sale de cualquier GET, y
@@ -582,6 +605,13 @@ try {
   for (const [k, t] of temas.entries()) await recorrido(t, k === 0);
 } catch (e) {
   falla = String(e?.message ?? e);
+  // 08-10: Turbopack entró en pánico compilando /admin y 4 agentes gastaron
+  // 25-35 min cada uno reintentando un goto de 90 s contra un servidor que ya
+  // no iba a responder. El timeout ahora dice por qué y qué hacer.
+  if (/Timeout \d+ms exceeded/.test(falla)) {
+    const panico = panicoDelDev();
+    if (panico) falla = `servidor de dev colgado (${panico}): no reintentes, reinícialo (npm run dev:clean). ${falla}`;
+  }
 } finally {
   await browser.close().catch(() => {});
 }
