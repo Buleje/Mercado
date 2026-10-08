@@ -33,7 +33,8 @@ import CtpTrasladoPuntos from "./CtpTrasladoPuntos";
 import CtpParteBarra, { type ValorParte } from "./CtpParteBarra";
 import { ESTADO_LABEL } from "./contratos-ui";
 import { Bloque, DocsDeParte, UbicacionDeParte } from "./ctp-guia-bloques";
-import { CLASE_FALTA, CLASE_NO_APLICA, Casillero, ResumenDatos, faltantesPorBloque } from "./ctp-guia-piezas";
+import { CLASE_NO_APLICA, Casillero, ResumenDatos, faltantesPorBloque } from "./ctp-guia-piezas";
+import { claseFalta } from "./TramiteRelacionGuiaFila";
 import { BloqueDestinatario, BloqueTransporte, type SeccionObjeto } from "./ctp-guia-bloques-partes";
 import { Btn, Field, FormularioClaro, I } from "./ctp-shared";
 
@@ -103,7 +104,7 @@ function CampoTituloHabilitante({
      cargado (puede ser un papel que todavía nadie registró). */
   const desconocido = consultado && Boolean(elegido.trim()) && !opcion;
   /* Sin título la guía no se imprime (`faltantesGtf`): el casillero se marca. */
-  const claseFalta = titulos.some((t) => t.trim()) ? "" : CLASE_FALTA;
+  const sinTitulo = !titulos.some((t) => t.trim());
   const modoLibre = !hayOpciones || modo === "libre" || (modo === "auto" && desconocido);
 
   function elegir(valor: string) {
@@ -149,7 +150,7 @@ function CampoTituloHabilitante({
       {modoLibre ? (
         <input
           type="text"
-          className={`${I} ${claseFalta}`}
+          className={sinTitulo ? claseFalta(I) : I}
           aria-label="Título habilitante"
           aria-required
           placeholder="Escríbelo tal cual está en el papel"
@@ -167,7 +168,7 @@ function CampoTituloHabilitante({
         />
       ) : (
         <select
-          className={`${I} ${claseFalta}`}
+          className={sinTitulo ? claseFalta(I) : I}
           aria-label="Título habilitante"
           aria-required
           value={opcion ? opcion.codigo : ""}
@@ -318,7 +319,8 @@ export default function CtpGuiaDatosTab({
   /* Lo que falta, por bloque (misma regla que el pie del modal) y por casillero. */
   const faltan = useMemo(() => faltantesPorBloque(datos, emision), [datos, emision]);
   const vacio = (v: string | null | undefined) => !v?.trim();
-  const falta = (v: string | null | undefined) => (vacio(v) ? CLASE_FALTA : "");
+  /* `claseFalta` (no la clase pelada): en oscuro el borde ámbar se perdía. */
+  const clase = (v: string | null | undefined) => (vacio(v) ? claseFalta(I) : I);
 
   /**
    * El propietario que ES este CTP se lee como resumen: sus datos salen de la
@@ -373,7 +375,7 @@ export default function CtpGuiaDatosTab({
             }
           >
             <Field span={4} label="Fecha de emisión" required>
-              <input type="date" className={`${I} ${falta(emision)}`} value={emision} onChange={(e) => onEmision(e.target.value)} />
+              <input type="date" className={clase(emision)} value={emision} onChange={(e) => onEmision(e.target.value)} />
             </Field>
             <Field span={4} label="Vencimiento" hint="Fecha de vencimiento de la guía: la fija la ARFFS.">
               <input type="date" className={I} value={datos.traslado.fechaFin} onChange={(e) => set("traslado", { fechaFin: e.target.value })} />
@@ -454,7 +456,7 @@ export default function CtpGuiaDatosTab({
             ) : (
               <>
                 <Field span={6} label="Nombre o razón social" required>
-                  <input type="text" className={`${I} ${falta(prop.nombre)}`} value={prop.nombre} onChange={(e) => set("propietario", { nombre: e.target.value })} />
+                  <input type="text" className={clase(prop.nombre)} value={prop.nombre} onChange={(e) => set("propietario", { nombre: e.target.value })} />
                 </Field>
                 <DocsDeParte parte={prop} onChange={(v) => set("propietario", v)} />
                 <Field span={12} label="Domicilio">

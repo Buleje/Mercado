@@ -25,6 +25,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { toast } from "sonner";
 import { Check, ChevronDown, Filter, TriangleAlert } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useContratoActivo } from "@/contexts/contrato-activo-context";
@@ -38,6 +39,7 @@ import {
   type PlanTablero,
   type TonoVigencia,
 } from "@/lib/forestal/loth-tablero-permiso";
+import { usePublicarFranjaLibro } from "@/components/admin/shared/libro-franja-permiso";
 import { useLothPermiso } from "./hooks/use-loth-libro-permiso";
 
 const TONO_VIGENCIA: Record<TonoVigencia, string> = {
@@ -147,6 +149,15 @@ export default function LothPermisoChip() {
     };
   }, [abierto]);
 
+  /* La franja «Viendo solo …» del chrome: con un permiso elegido el libro está filtrado. */
+  const planVisto = libro?.listo ? libro.plan : null;
+  const textoFranja = planVisto
+    ? `el permiso ${nombreDelPlan(planVisto)}${planVisto.titularName && planVisto.titularName !== nombreDelPlan(planVisto) ? ` · ${planVisto.titularName}` : ""}`
+    : libro?.listo && libro.planSel === PERMISO_SIN_PLAN
+      ? "las líneas sin permiso"
+      : null;
+  usePublicarFranjaLibro(textoFranja, () => libro?.elegirPlan(null));
+
   if (!libro) return null;
   if (!libro.listo) {
     // Reserva el alto exacto: sin esto la banda salta cuando llega el valor.
@@ -156,6 +167,18 @@ export default function LothPermisoChip() {
   const { planes, planSel, plan, seCayo, elegirPlan, errorLista, reintentar } = libro;
   const sinPlan = planSel === PERMISO_SIN_PLAN;
   const elegir = (id: string | null) => {
+    if (id !== planSel) {
+      /* Un aviso breve: el cambio filtra TODAS las vistas del libro, no sólo la que estás mirando. */
+      const p = planes.find((x) => x.id === id);
+      toast(
+        id == null
+          ? "Ahora ves todos los permisos"
+          : id === PERMISO_SIN_PLAN
+            ? "Ahora ves sólo las líneas sin permiso"
+            : `Ahora ves sólo el permiso ${p ? nombreDelPlan(p) : ""}`.trim(),
+        { duration: 2500 },
+      );
+    }
     elegirPlan(id);
     setAbierto(false);
   };
@@ -174,23 +197,25 @@ export default function LothPermisoChip() {
         aria-haspopup="listbox"
         aria-expanded={abierto}
         title={titulo}
-        /* Con un permiso elegido el libro está FILTRADO: eso se tiene que ver
-           (borde de acento). Con «Todos», punteado: no filtra nada. El titular
-           cede primero cuando la banda aprieta (mismo criterio que la carátula). */
-        className={`inline-flex h-10 min-w-0 max-w-[24rem] items-center gap-2 rounded-xl px-3 text-sm transition-colors hover:bg-[var(--surface-canvas)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
+        /* Con un permiso elegido el libro está FILTRADO: eso se tiene que ver de
+           lejos (Brandon 08-10: el punteado de 2 px de «Todos» se veía más
+           fuerte que el filtro). Elegido = fondo lleno de acento; «Todos» = un
+           borde fino y callado, porque no filtra nada. El titular cede primero
+           cuando la banda aprieta (mismo criterio que la carátula). */
+        className={`inline-flex h-10 min-w-0 max-w-[24rem] items-center gap-2 rounded-xl px-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 ${
           plan || sinPlan
-            ? "border border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--text-primary)]"
-            : "border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)]"
+            ? "border border-[var(--accent-dark)] bg-[var(--accent-dark)] font-semibold text-white hover:brightness-90"
+            : "border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
         }`}
       >
-        <Filter className="h-4 w-4 shrink-0 text-[var(--accent-ink)]" aria-hidden="true" />
+        <Filter className={`h-4 w-4 shrink-0 ${plan || sinPlan ? "text-white" : "text-[var(--accent-ink)]"}`} aria-hidden="true" />
         {plan ? (
           <>
             <span className="min-w-0 shrink truncate font-mono text-xs font-bold tabular-nums">
               {nombreDelPlan(plan)}
             </span>
             {plan.titularName && plan.titularName !== nombreDelPlan(plan) && (
-              <span className="min-w-0 flex-1 basis-0 truncate text-[var(--text-tertiary)] max-lg:hidden @max-[46rem]/acciones:hidden">
+              <span className="min-w-0 flex-1 basis-0 truncate font-normal text-white/85 max-lg:hidden @max-[46rem]/acciones:hidden">
                 {plan.titularName}
               </span>
             )}
@@ -202,7 +227,7 @@ export default function LothPermisoChip() {
           <span
             role="img"
             aria-label="El permiso que elegiste se dio de baja"
-            className="h-2 w-2 shrink-0 rounded-full bg-[var(--data-warning-500)]"
+            className="h-2 w-2 shrink-0 rounded-full bg-[var(--data-warning-500)] ring-2 ring-white"
           />
         )}
         <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden="true" />

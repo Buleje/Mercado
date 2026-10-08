@@ -111,6 +111,8 @@ export default function LothExtraccionView({
           )}
         </div>
         <div className="ml-auto flex flex-wrap items-center gap-2">
+          {/* «Indicadores» en la fila de los controles, no en una propia (08-10). */}
+          {d && d.permisos.length > 0 && kpis.boton}
           <label className="sr-only" htmlFor="extraccion-permiso">
             Permiso
           </label>
@@ -174,10 +176,7 @@ export default function LothExtraccionView({
       ) : (
         <>
           <LothExtraccionAvisos avisos={d.avisos} />
-          <div className="space-y-2">
-            {kpis.boton}
-            {kpis.panel}
-          </div>
+          {kpis.panel}
           <div aria-busy={e.cargando} className={e.cargando ? "opacity-60 transition-opacity" : "transition-opacity"}>
             <LothExtraccionTabla datos={d} especie={e.especie} onEspecie={e.elegirEspecie} />
           </div>

@@ -28,6 +28,7 @@
  */
 
 import { useId } from "react";
+import { createPortal } from "react-dom";
 import { SectionTitle } from "@buleje/design-system";
 import {
   AlertCircle,
@@ -47,6 +48,7 @@ import { formatNumber } from "@/lib/format";
 import CtpKpi, { DesgloseSimple } from "./CtpKpi";
 import { SECTION_META } from "./LothEntryForm";
 import type { FiltrosTabla } from "./filtros-tabla-forestal";
+import { useHuecoIndicadores } from "./loth-indicadores-slot";
 import { ESTADO_LINEA } from "./loth-seccion-filtros";
 import { alternarSolo, cifrasDeLineas, filtraSolo } from "./loth-seccion-cifras";
 
@@ -79,6 +81,7 @@ export default function LothSeccionKpis({
   const [abierto, setAbierto] = useLocalStorage<boolean>(CLAVE_KPIS_SECCION, false);
   const panelId = useId();
   const meta = SECTION_META[section];
+  const hueco = useHuecoIndicadores();
 
   /* Sin filtro, las cifras de la API (como siempre). Con filtro, las de lo que
      deja el filtro: las mismas líneas y la misma cuenta que el pie de la tabla. */
@@ -119,43 +122,56 @@ export default function LothSeccionKpis({
     ? (v: string) => filtros.setTexto("gtf", filtros.textos.gtf === v ? "" : v)
     : undefined;
 
+  /* Plegados, las cifras siguen a la vista en una línea: las mismas cuentas que
+     las tarjetas, nunca otras (y dicen si están filtradas). El botón y esa línea
+     van en la fila de los botones de la barra (`loth-indicadores-slot`); sin
+     barra, en la del título como siempre. */
+  const resumenPlegado = !abierto && (
+    <p className="flex flex-wrap items-center gap-x-2 text-sm tabular-nums text-[var(--text-secondary)]">
+      {filtrando && (
+        <>
+          <span className="font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">filtrado</span>
+          <span aria-hidden="true">·</span>
+        </>
+      )}
+      <span>{plural(count, "línea", "líneas")}</span>
+      <span aria-hidden="true">·</span>
+      <span>{segunda.corto}</span>
+      <span aria-hidden="true">·</span>
+      <span
+        className={
+          c.tardias > 0 ? "font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" : undefined
+        }
+      >
+        {formatNumber(c.tardias)} fuera de plazo
+      </span>
+    </p>
+  );
+  const botonIndicadores = (
+    <BotonIndicadores
+      abierto={abierto}
+      onAlternar={() => setAbierto(!abierto)}
+      controla={`${panelId}-panel`}
+      ayudaAbierto="Oculta los indicadores. Se recuerda en este navegador para las seis secciones."
+      ayudaCerrado="Muestra los indicadores de la sección"
+      className={hueco ? "" : "ml-auto"}
+    />
+  );
+
   return (
     <section aria-labelledby={`${panelId}-titulo`} className="space-y-3">
+      {hueco && createPortal(<>{botonIndicadores}{resumenPlegado}</>, hueco)}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <div className="flex min-w-0 flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
           <SectionTitle id={`${panelId}-titulo`}>{meta.label}</SectionTitle>
           <span className="text-sm text-[var(--text-tertiary)]">{meta.help}</span>
         </div>
-        {/* Plegados, las cifras siguen a la vista en una línea: las mismas
-            cuentas que las tarjetas, nunca otras (y dicen si están filtradas). */}
-        {!abierto && (
-          <p className="flex flex-wrap items-center gap-x-2 text-sm tabular-nums text-[var(--text-secondary)]">
-            {filtrando && (
-              <>
-                <span className="font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">filtrado</span>
-                <span aria-hidden="true">·</span>
-              </>
-            )}
-            <span>{plural(count, "línea", "líneas")}</span>
-            <span aria-hidden="true">·</span>
-            <span>{segunda.corto}</span>
-            <span aria-hidden="true">·</span>
-            <span
-              className={
-                c.tardias > 0 ? "font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" : undefined
-              }
-            >
-              {formatNumber(c.tardias)} fuera de plazo
-            </span>
-          </p>
+        {hueco ? null : (
+          <>
+            {resumenPlegado}
+            {botonIndicadores}
+          </>
         )}
-        <BotonIndicadores
-          abierto={abierto}
-          onAlternar={() => setAbierto(!abierto)}
-          controla={`${panelId}-panel`}
-          ayudaAbierto="Oculta los indicadores. Se recuerda en este navegador para las seis secciones."
-          ayudaCerrado="Muestra los indicadores de la sección"
-        />
       </div>
 
       <div id={`${panelId}-panel`} hidden={!abierto} className="grid grid-cols-1 items-start gap-3 sm:grid-cols-3">
@@ -224,6 +240,7 @@ export function BotonIndicadores({
   controla,
   ayudaAbierto,
   ayudaCerrado,
+  className = "ml-auto",
 }: {
   abierto: boolean;
   onAlternar: () => void;
@@ -231,6 +248,8 @@ export function BotonIndicadores({
   controla: string;
   ayudaAbierto: string;
   ayudaCerrado: string;
+  /** Dónde cae en su fila: `ml-auto` (a la derecha, de siempre) o nada (a la par de los botones). */
+  className?: string;
 }) {
   return (
     <button
@@ -239,7 +258,7 @@ export function BotonIndicadores({
       aria-expanded={abierto}
       aria-controls={controla}
       title={abierto ? ayudaAbierto : ayudaCerrado}
-      className={`ml-auto inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border px-3 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 ${
+      className={`${className} inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border px-3 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 ${
         abierto
           ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
           : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"

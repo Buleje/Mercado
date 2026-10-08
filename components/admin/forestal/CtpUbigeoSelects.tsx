@@ -26,7 +26,7 @@ import {
   listDistritos,
   listProvincias,
 } from "@/lib/peru-ubigeo";
-import { CLASE_FALTA } from "./ctp-guia-piezas";
+import { claseFalta } from "./TramiteRelacionGuiaFila";
 import { Field, I } from "./ctp-shared";
 
 /** Lo que el bloque necesita leer y escribir. */
@@ -80,7 +80,8 @@ export default function CtpUbigeoSelects({
   /** Los que están vacíos se pintan como «falta» (una guía que pide el ubigeo completo). */
   marcarFaltas?: boolean;
 }) {
-  const falta = (v: string | undefined) => (marcarFaltas && !v?.trim() ? ` ${CLASE_FALTA}` : "");
+  /* `claseFalta` y no la clase pelada: en oscuro el ámbar no se veía (globals.css pisa el borde). */
+  const clase = (v: string | undefined) => (marcarFaltas && !v?.trim() ? claseFalta(I) : I);
   const depCode = useMemo(
     () => (valor.departamento ? findDepartamentoByName(valor.departamento)?.code ?? null : null),
     [valor.departamento],
@@ -105,7 +106,7 @@ export default function CtpUbigeoSelects({
     <>
       <Field span={span} label="Departamento">
         <select
-          className={`${I}${falta(valor.departamento)}`}
+          className={clase(valor.departamento)}
           value={opcionElegida(opDep, valor.departamento)}
           /* Cambiar de departamento INVALIDA provincia y distrito: dejarlos
              sería declarar un distrito que no existe en el departamento nuevo. */
@@ -123,7 +124,7 @@ export default function CtpUbigeoSelects({
         hint={valor.departamento ? undefined : "Elige primero el departamento"}
       >
         <select
-          className={`${I}${falta(valor.provincia)}`}
+          className={clase(valor.provincia)}
           value={opcionElegida(opProv, valor.provincia)}
           disabled={!valor.departamento}
           onChange={(e) => onChange({ provincia: e.target.value, distrito: "" })}
@@ -140,7 +141,7 @@ export default function CtpUbigeoSelects({
         hint={valor.provincia ? undefined : "Elige primero la provincia"}
       >
         <select
-          className={`${I}${falta(valor.distrito)}`}
+          className={clase(valor.distrito)}
           value={opcionElegida(opDist, valor.distrito)}
           disabled={!valor.provincia}
           onChange={(e) => onChange({ distrito: e.target.value })}

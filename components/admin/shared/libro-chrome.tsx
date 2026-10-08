@@ -25,6 +25,7 @@ import ActionMenu, { marcoDeFixed, type MenuAccion } from "./action-menu";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { isEditableTarget, isModalOpen } from "@/lib/keyboard-guards";
 import { useModuleTabs } from "@/contexts/module-tabs-context";
+import { FranjaDelLibro, FranjaLibroContext, type FranjaLibro } from "./libro-franja-permiso";
 import {
   useAdminShortcuts,
   useRegisterShortcuts,
@@ -110,6 +111,8 @@ export default function LibroChrome({
   children,
 }: LibroChromeProps) {
   const { registerSubTabs, registerOnChange, clearSubTabs } = useModuleTabs();
+  /* La franja «Viendo solo <permiso>» la publica el chip del permiso (libro-franja-permiso). */
+  const [franja, setFranja] = useState<FranjaLibro | null>(null);
   const flat = useMemo(() => groups.flatMap((g) => g.views), [groups]);
   const activeGroup = useMemo(
     () => groups.find((g) => g.views.some((v) => v.key === view)) ?? groups[0],
@@ -217,6 +220,7 @@ export default function LibroChrome({
     g.views.reduce((n, v) => n + (alerts?.[v.key] ?? 0), 0);
 
   return (
+    <FranjaLibroContext.Provider value={setFranja}>
     <div className="space-y-4">
       <section
         data-module={moduleId}
@@ -413,9 +417,12 @@ export default function LibroChrome({
         )}
       </section>
 
+      <FranjaDelLibro franja={franja} />
+
       {children}
 
     </div>
+    </FranjaLibroContext.Provider>
   );
 }
 

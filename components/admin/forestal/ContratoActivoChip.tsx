@@ -194,9 +194,9 @@ export default function ContratoActivoChip({
            entero (un «C…» suelto no dice nada). El código se corta último. */
         className={`inline-flex min-w-0 max-w-[24rem] items-center gap-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
           enGrupo
-            ? `h-full rounded-l-[11px] px-2.5 hover:bg-[var(--surface-canvas)] ${activo ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}`
+            ? `h-full rounded-l-[11px] px-2.5 ${activo ? "bg-[var(--accent-dark)] font-semibold text-white hover:brightness-90" : "text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"}`
             : activo
-              ? "h-10 rounded-xl border border-[var(--rule-base)] px-3 bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+              ? "h-10 rounded-xl border border-[var(--accent)] px-3 bg-[var(--accent-dark)] font-semibold text-white hover:brightness-90"
               : "h-10 rounded-xl border-2 border-dashed px-3 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
         }`}
       >
@@ -206,15 +206,20 @@ export default function ContratoActivoChip({
             <span className="min-w-0 shrink truncate font-mono text-xs font-bold tabular-nums">
               {activo.codigo}
             </span>
-            {semaforo && <PermisoSemaforoBoton semaforo={semaforo} />}
+            {semaforo && (
+              /* Sobre el acento lleno, el texto verde/ámbar del semáforo no se lee: va en su pastilla. */
+              <span className="shrink-0 rounded-md bg-[var(--surface-raised)] px-1.5 py-0.5">
+                <PermisoSemaforoBoton semaforo={semaforo} />
+              </span>
+            )}
             {activo.titular && (
-              <span className="min-w-0 flex-1 basis-0 truncate text-[var(--text-tertiary)] max-lg:hidden @max-[46rem]/acciones:hidden">
+              <span className="min-w-0 flex-1 basis-0 truncate font-normal text-white/85 max-lg:hidden @max-[46rem]/acciones:hidden">
                 {activo.titular}
               </span>
             )}
             {vencidoElActivo && (
               <TriangleAlert
-                className="h-3.5 w-3.5 shrink-0 text-[var(--data-warning-600)]"
+                className="h-3.5 w-3.5 shrink-0 text-white"
                 aria-label="El permiso está vencido"
               />
             )}

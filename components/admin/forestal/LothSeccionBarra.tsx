@@ -25,6 +25,7 @@ import { Plus } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import { BotonesColumnasSeccion } from "./loth-seccion-columnas";
+import { registrarHuecoIndicadores } from "./loth-indicadores-slot";
 
 /** Despacho de trozas (08-10): una fila por guía o una por troza. */
 export type FormatoDespacho = "guia" | "suelto";
@@ -56,7 +57,7 @@ export default function LothSeccionBarra({
   formato?: { valor: FormatoDespacho; onCambiar: (f: FormatoDespacho) => void };
 }) {
   return (
-    <div className={`flex flex-wrap items-start gap-2 ${formato ? "justify-between" : "justify-end"}`}>
+    <div className="flex flex-wrap items-center gap-2">
       {formato && (
         <SegmentedControl
           value={formato.valor}
@@ -67,7 +68,13 @@ export default function LothSeccionBarra({
           className="max-sm:w-full max-sm:justify-between"
         />
       )}
-      <div className="flex shrink-0 items-center gap-2 max-sm:w-full">
+      {/* Acá cae «Indicadores» (y su resumen plegado): en la fila de los botones,
+          no en la del título (Brandon 08-10). Vacío no ocupa lugar. */}
+      <div
+        ref={registrarHuecoIndicadores}
+        className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 empty:hidden max-sm:basis-full"
+      />
+      <div className="ml-auto flex shrink-0 items-center gap-2 max-sm:w-full">
         {formato?.valor !== "guia" && <BotonesColumnasSeccion />}
         <ActionMenu
           label="Opciones"
