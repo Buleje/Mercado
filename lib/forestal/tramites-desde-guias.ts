@@ -18,6 +18,7 @@ import { FORMATOS_TRAMITE, formatoPorId, type DatosTramite, type FormatoTramite 
 import {
   filaDesdeGtfLoth,
   filaDesdeGuiaEmitida,
+  listaDeTrozas,
   parseGuiasInforme,
   serializeGuiasInforme,
   type FilaGuiaInforme,
@@ -26,6 +27,7 @@ import {
 import { claveNumeroGtf } from "./gtf-talonario";
 import { leerGtfDatos } from "./ctp-gtf-datos";
 import { m3DesdePt } from "./cubicacion";
+import { clavePermisoOficio, permisosDeLasGuias, type GrupoPermiso } from "./tramites-permiso";
 
 // ─── La anulación de «Deshacer la importación» ───────────────────────────────
 
@@ -88,6 +90,8 @@ export interface GuiaParaFormato {
   volumenTotalM3: number | null;
   piezasTotal: number | null;
   items: ItemGtfLoth[];
+  /** N° de la «Lista de trozas» que trae la guía (`gtfDatos.guia.listaTrozasNro`), o `null`. */
+  listaTrozasNro?: string | null;
   /**
    * Anulada cuyo N° tiene una guía EMITIDA vigente en el libro (se volvió a
    * registrar: medido en Blas 07-10, la 019-001-0000001 anulada por
@@ -116,6 +120,8 @@ export interface FilaGtfCruda {
   volumenTotalM3?: { toString(): string } | number | string | null;
   piezasTotal?: number | null;
   items?: unknown;
+  /** JSON crudo de `gtfDatos` (sólo se lee el N° de la lista de trozas). */
+  gtfDatos?: unknown;
 }
 
 const texto = (v: unknown): string | null =>
@@ -171,6 +177,7 @@ export function guiaParaFormato(g: FilaGtfCruda): GuiaParaFormato {
     volumenTotalM3: vol,
     piezasTotal: g.piezasTotal ?? null,
     items: Array.isArray(g.items) ? g.items.map(itemDe).filter((x): x is ItemGtfLoth => x !== null) : [],
+    listaTrozasNro: g.gtfDatos != null ? texto(leerGtfDatos(g.gtfDatos).guia.listaTrozasNro) : null,
   };
 }
 
@@ -244,6 +251,7 @@ export function guiaCtpParaFormato(f: FilaDespachoCruda): GuiaParaFormato {
     volumenTotalM3: unidad === "m3" ? cantidad : null,
     piezasTotal: unidad === "unidad" && cantidad != null ? Math.round(cantidad) : null,
     items: [],
+    listaTrozasNro: texto(datos.guia.listaTrozasNro),
     despacho: {
       lineNo: f.lineNo ?? null,
       especie: texto(f.speciesCommon),
@@ -435,6 +443,13 @@ export interface OpcionesDesdeGuias {
   incluirAnuladasReemitidas?: boolean;
   /** Razón social de la Ficha CTP: si el titular de las guías es otro, se avisa (RUC y representante salen de la ficha). */
   razonSocialFicha?: string | null;
+  /**
+   * El permiso del oficio (su código): las guías de OTRO permiso quedan fuera,
+   * con aviso (Brandon 08-10: «un oficio por permiso»). Sin él, van todas.
+   */
+  permiso?: string | null;
+  /** «Incluirlas igual»: mete en el oficio las guías de otro permiso. */
+  incluirOtrosPermisos?: boolean;
 }
 
 export interface DatosDesdeGuias {
@@ -447,6 +462,10 @@ export interface DatosDesdeGuias {
    * importación». El botón «Incluirla igual» las mete (`incluirAnuladasReemitidas`).
    */
   reemitidasExcluidas: string[];
+  /** Los permisos de TODAS las guías elegidas (relación): con dos o más, un oficio por permiso. */
+  permisos?: GrupoPermiso[];
+  /** N° de las guías que quedaron fuera por ser de otro permiso («Incluirlas igual» las mete). */
+  fueraDePermiso?: string[];
 }
 
 /** `2026-09-03` → `03/09/2026` (fecha sin hora: no pasa por la zona horaria). */
@@ -518,6 +537,7 @@ function filaDeGuia(g: GuiaParaFormato): FilaGuiaInforme {
       }),
       motivo: g.status === "anulada" ? (g.annulledReason ?? "") : "",
       permiso: g.tituloHabilitante ?? "",
+      listaTrozasNro: g.listaTrozasNro ?? "",
     };
   }
   return filaDesdeGtfLoth(`gtf-${g.id}`, {
@@ -529,6 +549,7 @@ function filaDeGuia(g: GuiaParaFormato): FilaGuiaInforme {
     status: g.status,
     annulledReason: g.annulledReason,
     tituloHabilitante: g.tituloHabilitante,
+    listaTrozasNro: g.listaTrozasNro ?? "",
     items: g.items,
   });
 }
@@ -594,9 +615,40 @@ function filasDeGuias(quedan: GuiaParaFormato[]): { filas: FilaGuiaInforme[]; av
   return { filas, avisos };
 }
 
-/** Relación de guías: todas a la tabla, sin declarar dos veces la misma ni una anulación que no existió. */
-function datosRelacion(guias: GuiaParaFormato[], op: OpcionesDesdeGuias): DatosDesdeGuias {
+/**
+ * El permiso manda (Brandon 08-10): con un permiso elegido, las guías que dicen
+ * OTRO quedan fuera del oficio, con aviso y «Incluirlas igual». Se compara el
+ * CÓDIGO normalizado, nunca el nombre del titular. Las que no dicen ninguno se
+ * quedan (no hay con qué compararlas) y se avisa.
+ */
+function delPermiso(guias: GuiaParaFormato[], op: OpcionesDesdeGuias): { quedan: GuiaParaFormato[]; fuera: string[]; avisos: string[] } {
+  const elegido = clavePermisoOficio(op.permiso);
+  if (!elegido) return { quedan: guias, fuera: [], avisos: [] };
   const avisos: string[] = [];
+  const sinPermiso = unicos(guias.filter((g) => !clavePermisoOficio(g.tituloHabilitante)).map((g) => g.gtfNumber));
+  if (sinPermiso.length) {
+    const n = sinPermiso.length;
+    avisos.push(`${plural(n, "La GTF", "Las GTF")} ${sinPermiso.join(", ")} no ${plural(n, "dice", "dicen")} su permiso: ${plural(n, "va", "van")} en este oficio, revísalo.`);
+  }
+  const deOtro = guias.filter((g) => {
+    const k = clavePermisoOficio(g.tituloHabilitante);
+    return k !== null && k !== elegido;
+  });
+  const numeros = unicos(deOtro.map((g) => g.gtfNumber));
+  if (numeros.length === 0) return { quedan: guias, fuera: [], avisos };
+  const codigos = unicos(deOtro.map((g) => g.tituloHabilitante)).join(", ");
+  if (op.incluirOtrosPermisos) {
+    avisos.push(`Incluiste ${numeros.join(", ")}, del permiso ${codigos}: confirma que van en el oficio del ${op.permiso?.trim()}.`);
+    return { quedan: guias, fuera: [], avisos };
+  }
+  const n = numeros.length;
+  avisos.push(`${plural(n, "La GTF", "Las GTF")} ${numeros.join(", ")} ${plural(n, "es", "son")} de otro permiso (${codigos}): ${plural(n, "queda", "quedan")} fuera de este oficio.`);
+  return { quedan: guias.filter((g) => !deOtro.includes(g)), fuera: numeros, avisos };
+}
+
+/** Relación de guías: las del permiso a la tabla, sin declarar dos veces la misma ni una anulación que no existió. */
+function datosRelacion(todas: GuiaParaFormato[], op: OpcionesDesdeGuias): DatosDesdeGuias {
+  const { quedan: guias, fuera: fueraDePermiso, avisos } = delPermiso(todas, op);
   const emitidas = new Set(guias.filter((g) => g.status === "emitida").map(claveEnLibro));
   const reemitidasExcluidas: string[] = [];
   const reemitidasIncluidas: string[] = [];
@@ -674,12 +726,28 @@ function datosRelacion(guias: GuiaParaFormato[], op: OpcionesDesdeGuias): DatosD
   const series = unicos(quedan.map((g) => serieDe(g.gtfNumber)));
   if (series.length) datos.serieGtfInforme = series.join(", ");
 
+  const permiso = op.permiso?.trim();
+  if (permiso) datos.permisoCodigo = permiso;
   const titulares = unicos(quedan.map((g) => g.titularName));
-  if (titulares.length === 1) {
+  const ficha = op.razonSocialFicha?.trim();
+  if (permiso && titulares.length > 0) {
+    /* Titular, RUC y representante los pone el permiso elegido en el formulario
+       (`datosDelPermiso`); mientras tanto (o si el permiso no está cargado como
+       contrato) el titular de las guías, y el RUC y el representante de la
+       Ficha NO quedan bajo otro nombre: se vacían para llenarlos. */
+    datos.entidadNombre = titulares[0];
+    if (titulares.length > 1) {
+      avisos.push(`Las guías escriben al titular de ${titulares.length} formas (${titulares.join(" / ")}): va «${titulares[0]}», corrígelo si hace falta.`);
+    }
+    if (ficha && normalizar(ficha) !== normalizar(titulares[0])) {
+      datos.entidadRuc = "";
+      datos.entidadRepresentante = "";
+      avisos.push(`El titular de las guías (${titulares[0]}) no es el de tu Ficha CTP (${ficha}): el RUC y el representante salen del permiso; revisa RUC y representante.`);
+    }
+  } else if (titulares.length === 1) {
     /* PISA al titular que el formulario llena de la Ficha CTP; RUC y
        representante siguen siendo los de la Ficha → de ahí el aviso. */
     datos.entidadNombre = titulares[0];
-    const ficha = op.razonSocialFicha?.trim();
     if (ficha && normalizar(ficha) !== normalizar(titulares[0])) {
       avisos.push(`El titular de las guías (${titulares[0]}) no es el de tu Ficha CTP (${ficha}): revisa RUC y representante.`);
     }
@@ -688,22 +756,37 @@ function datosRelacion(guias: GuiaParaFormato[], op: OpcionesDesdeGuias): DatosD
   }
   /* Sólo las del Libro TH: la guía del CTP ampara producto y no imprime lista de trozas medidas. */
   const sinTrozas = filas.filter((f) => f.origen === "loth" && !f.anulada && !f.trozas.trim()).length;
-  if (sinTrozas) avisos.push(`${sinTrozas} ${plural(sinTrozas, "guía no trae", "guías no traen")} su lista de trozas en el libro: complétala a mano.`);
-  return { datos, avisos, reemitidasExcluidas: [...reemitidasExcluidas, ...deshechasExcluidas] };
+  if (sinTrozas) avisos.push(`${sinTrozas} ${plural(sinTrozas, "guía no trae", "guías no traen")} el detalle de sus trozas en el libro: complétalo a mano si imprimes el detalle.`);
+  const sinNroLista = filas.filter((f) => listaDeTrozas(f)?.derivada).length;
+  if (sinNroLista) {
+    avisos.push(`${sinNroLista} ${plural(sinNroLista, "guía no trae", "guías no traen")} el N° de su lista de trozas: va el N° de la GTF (marcado en el papel), revísalo.`);
+  }
+  return {
+    datos,
+    avisos,
+    reemitidasExcluidas: [...reemitidasExcluidas, ...deshechasExcluidas],
+    permisos: permisosDeLasGuias(todas),
+    fueraDePermiso,
+  };
+}
+
+/** Las filas de `despuesJson` que no estaban en `antesJson` (por `uid`): lo que sumó «Incluirla igual». */
+export function filasNuevas(antesJson: string | undefined, despuesJson: string | undefined): string {
+  const antes = new Set(parseGuiasInforme(antesJson).map((f) => f.uid));
+  return serializeGuiasInforme(parseGuiasInforme(despuesJson).filter((f) => !antes.has(f.uid)));
 }
 
 /**
- * «Incluirla igual» con la relación ya abierta: a la tabla ACTUAL le suma sólo
- * las filas anuladas de los N° que habían quedado afuera (`numeros`), cada una
- * en su lugar por fecha. Lo tipeado y las filas que el operador quitó quedan
- * como están: no se rearma el formulario.
+ * «Incluirla igual» con la relación ya abierta: a la tabla ACTUAL le suma las
+ * filas nuevas (`filasNuevas`), cada una en su lugar por fecha. Lo tipeado y
+ * las filas que el operador quitó quedan como están: no se rearma el formulario.
  */
-export function sumarFilasExcluidas(actualJson: string | undefined, nuevoJson: string | undefined, numeros: readonly string[]): string {
+export function sumarFilas(actualJson: string | undefined, nuevasJson: string | undefined): string {
   const filas = parseGuiasInforme(actualJson);
-  const claves = new Set(numeros.map(claveDe));
   const ya = new Set(filas.map((f) => f.uid));
-  const nuevas = parseGuiasInforme(nuevoJson).filter((f) => f.anulada && claves.has(claveDe(f.numero)) && !ya.has(f.uid));
-  for (const f of nuevas) {
+  for (const f of parseGuiasInforme(nuevasJson)) {
+    if (ya.has(f.uid)) continue;
+    ya.add(f.uid);
     const i = filas.findIndex((x) => Boolean(x.fecha && f.fecha) && x.fecha > f.fecha);
     filas.splice(i < 0 ? filas.length : i, 0, f);
   }

@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import type { DatosTramite } from "@/lib/forestal/tramites-catalogo";
-import type { DatosDesdeGuias } from "@/lib/forestal/tramites-desde-guias";
+import { filasNuevas, type DatosDesdeGuias } from "@/lib/forestal/tramites-desde-guias";
 import type { TramiteRegistro } from "@/lib/forestal/tramites-registro";
 
-export type SumarGuias = { instancia: number; guiasJson: string; numeros: string[] };
+/** Filas a SUMAR al formulario abierto (sólo las nuevas, por `uid`). */
+export type SumarGuias = { instancia: number; guiasJson: string };
 
 type Args = {
   /** Resultado de `useTramiteDesdeGuias` (lo que pidió `?formato=&guias=`). */
@@ -22,9 +23,10 @@ type Args = {
 };
 
 /**
- * Llegó con guías elegidas: abre su formato con lo que traen (y otra vez si
- * pide incluir una anulada reemitida: «Incluirla igual» le suma las filas al
- * formulario abierto sin rearmarlo, lo tipeado queda).
+ * Llegó con guías elegidas: abre su formato con lo que traen. «Incluirla
+ * igual» (una anulada reemitida o una guía de otro permiso) le SUMA las filas
+ * nuevas al formulario abierto sin rearmarlo, lo tipeado queda. Elegir otro
+ * permiso («un oficio por permiso») es otro oficio: se abre de nuevo.
  */
 export function useTramiteDesdeUrl(a: Args): SumarGuias | null {
   const { resultadoGuias, formatoGuias, formatoId, instancia } = a;
@@ -37,9 +39,10 @@ export function useTramiteDesdeUrl(a: Args): SumarGuias | null {
     if (!resultadoGuias || !formatoGuias) return;
     const previo = aplicadoGuias.current;
     if (previo?.resultado === resultadoGuias) return;
-    if (previo && formatoId === formatoGuias && previo.instancia === instancia) {
+    const mismoPermiso = (previo?.resultado.datos.permisoCodigo ?? "") === (resultadoGuias.datos.permisoCodigo ?? "");
+    if (previo && mismoPermiso && formatoId === formatoGuias && previo.instancia === instancia) {
       aplicadoGuias.current = { resultado: resultadoGuias, instancia };
-      setSumarGuias({ instancia, guiasJson: resultadoGuias.datos.guiasJson ?? "", numeros: previo.resultado.reemitidasExcluidas });
+      setSumarGuias({ instancia, guiasJson: filasNuevas(previo.resultado.datos.guiasJson, resultadoGuias.datos.guiasJson) });
       return;
     }
     aplicadoGuias.current = { resultado: resultadoGuias, instancia: instancia + 1 };

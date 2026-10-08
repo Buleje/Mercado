@@ -10,10 +10,17 @@
  *
  * Espera a `listo` (la Ficha CTP cargada): sin ella no se puede avisar que el
  * titular de las guías no es el de la ficha, y el formulario abriría sin RUC.
+ *
+ * Un oficio por permiso (Brandon 08-10): con guías de 2+ permisos se arma el
+ * del permiso activo del chip si está entre ellos (si no, el de más guías) y
+ * el aviso ofrece armar el de cada uno (`elegirPermiso`). El permiso se fija
+ * cuando llegan las guías: cambiar el chip después no rearma el formulario.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { datosDesdeGuias, type DatosDesdeGuias, type GuiaParaFormato } from "@/lib/forestal/tramites-desde-guias";
+import { permisoPorDefecto, permisosDeLasGuias } from "@/lib/forestal/tramites-permiso";
+import { useContratoActivo } from "@/contexts/contrato-activo-context";
 import { borrarPedidoGuias, idsPorLibro, leerPedidoGuias, type LibroGuia, type PedidoGuias } from "../tramite-guias-url";
 
 /** Cómo se pide cada libro y qué se dice si no está habilitado. */
@@ -55,6 +62,12 @@ export interface TramiteDesdeGuias {
   resultado: DatosDesdeGuias | null;
   /** Mete en la relación las anuladas que también están emitidas (por defecto NO van). */
   incluirReemitidas: () => void;
+  /** El permiso (código) con el que se arma el oficio. */
+  permiso: string | null;
+  /** Armar el oficio de OTRO permiso de las guías elegidas (sólo con sus guías). */
+  elegirPermiso: (codigo: string) => void;
+  /** Mete en el oficio las guías de otro permiso (por defecto quedan fuera). */
+  incluirOtrosPermisos: () => void;
   /** Cierra el aviso: lo traído ya está en el formulario. */
   descartar: () => void;
 }
@@ -66,6 +79,11 @@ export function useTramiteDesdeGuias(listo: boolean, razonSocialFicha: string | 
   const [faltan, setFaltan] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [incluir, setIncluir] = useState(false);
+  const [permiso, setPermiso] = useState<string | null>(null);
+  const [incluirOtros, setIncluirOtros] = useState(false);
+  const { activo } = useContratoActivo();
+  const codigoActivo = useRef<string | null>(null);
+  codigoActivo.current = activo?.codigo ?? null;
 
   useEffect(() => {
     if (!pedido) return;
@@ -74,7 +92,9 @@ export function useTramiteDesdeGuias(listo: boolean, razonSocialFicha: string | 
     const ids = idsPorLibro(pedido.ids);
     Promise.all([pedirAlLibro("loth", ids.loth, ac.signal), pedirAlLibro("ctp", ids.ctp, ac.signal)])
       .then(([loth, ctp]) => {
-        setGuias([...loth.guias, ...ctp.guias]);
+        const todas = [...loth.guias, ...ctp.guias];
+        setPermiso(permisoPorDefecto(permisosDeLasGuias(todas), codigoActivo.current));
+        setGuias(todas);
         setFaltan(loth.faltan + ctp.faltan);
       })
       .catch((err: unknown) => {
@@ -87,9 +107,14 @@ export function useTramiteDesdeGuias(listo: boolean, razonSocialFicha: string | 
   const resultado = useMemo(
     () =>
       pedido && guias && listo
-        ? datosDesdeGuias(pedido.formatoId, guias, { incluirAnuladasReemitidas: incluir, razonSocialFicha })
+        ? datosDesdeGuias(pedido.formatoId, guias, {
+            incluirAnuladasReemitidas: incluir,
+            razonSocialFicha,
+            permiso,
+            incluirOtrosPermisos: incluirOtros,
+          })
         : null,
-    [pedido, guias, listo, incluir, razonSocialFicha],
+    [pedido, guias, listo, incluir, razonSocialFicha, permiso, incluirOtros],
   );
 
   const libros = useMemo<LibroGuia[]>(() => {
@@ -107,10 +132,19 @@ export function useTramiteDesdeGuias(listo: boolean, razonSocialFicha: string | 
     faltan,
     resultado,
     incluirReemitidas: () => setIncluir(true),
+    permiso,
+    elegirPermiso: (codigo) => {
+      setPermiso(codigo);
+      setIncluir(false);
+      setIncluirOtros(false);
+    },
+    incluirOtrosPermisos: () => setIncluirOtros(true),
     descartar: () => {
       setPedido(null);
       setGuias(null);
       setError(null);
+      setPermiso(null);
+      setIncluirOtros(false);
     },
   };
 }

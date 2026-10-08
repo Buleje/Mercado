@@ -8,14 +8,16 @@ import { describe, expect, it } from "vitest";
 import {
   datosDesdeGuias,
   esImportacionDeshecha,
+  filasNuevas,
   formatosQueAceptan,
   guiaParaFormato,
   marcarReemitidas,
   motivoImportacionDeshecha,
-  sumarFilasExcluidas,
+  sumarFilas,
   type GuiaParaFormato,
 } from "@/lib/forestal/tramites-desde-guias";
-import { parseGuiasInforme, tablaGuiasHtml } from "@/lib/forestal/tramites-relacion-guias";
+import { parseGuiasInforme } from "@/lib/forestal/tramites-relacion-guias";
+import { tablaGuiasHtml } from "@/lib/forestal/tramites-relacion-papel";
 
 function guia(over: Partial<GuiaParaFormato> & { id: string; gtfNumber: string }): GuiaParaFormato {
   return {
@@ -157,7 +159,7 @@ describe("datosDesdeGuias — relación de guías", () => {
     const [f1] = parseGuiasInforme(antes.datos.guiasJson);
     const tipeado = JSON.stringify([{ ...f1, destinatario: "Corregido a mano" }]);
     const despues = datosDesdeGuias("relacion-guias-serfor", [...emitidas, anulada], { incluirAnuladasReemitidas: true })!;
-    const filas = parseGuiasInforme(sumarFilasExcluidas(tipeado, despues.datos.guiasJson, antes.reemitidasExcluidas));
+    const filas = parseGuiasInforme(sumarFilas(tipeado, filasNuevas(antes.datos.guiasJson, despues.datos.guiasJson)));
     expect(filas.map((f) => f.numero)).toEqual(["019-001-0000001", "019-001-0000003"]);
     expect(filas[0].destinatario).toBe("Corregido a mano");
     expect(filas[1].anulada).toBe(true);

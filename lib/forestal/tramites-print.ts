@@ -26,91 +26,71 @@ import {
   type DatosTramite,
   type FormatoTramite,
 } from "./tramites-catalogo";
-import { parseGuiasInforme, resumenNumeradoHtml, tablaGuiasHtml } from "./tramites-relacion-guias";
+import { parseGuiasInforme } from "./tramites-relacion-guias";
+import { detalleTrozasHtml, resumenNumeradoHtml, tablaGuiasHtml } from "./tramites-relacion-papel";
 
 /**
- * Rediseño 2026-08-20 (Brandon: "el formato de los documentos está feo... los
- * subtítulos con letras alargadas se ven feos"): el membrete y el "doc-tipo"
- * usaban el patrón dashboard (mayúscula + letter-spacing ancho) que en un
- * papel se lee estirado, no elegante. El acento pasó de un texto angosto a un
- * TAB de color (como una etiqueta de carpeta) y el membrete gana una regla
- * doble para leerse como membrete impreso, no como encabezado de tabla.
- * `.anexo-guias h2` ya NO se pisa acá: hereda el `h2` rediseñado de
- * `CTP_REPORT_BASE_CSS` — un solo lugar para el estilo de subtítulo.
+ * Formato minimalista (Brandon 08-10, los 29 formatos): negro y grises, UNA
+ * raya fina bajo el membrete, sin fondos ni pastillas de color. Pisa el verde
+ * del CSS base de los reportes CTP sólo en los trámites (se suma después).
+ *
+ * Lo que hay que llenar o revisar se resalta en amarillo suave SÓLO en la
+ * vista del papel dentro de la app (`editable`): el papel que se imprime y el
+ * PDF del Drive salen sin marcas (`@media print` y `editable` apagado).
  */
 const TRAMITE_CSS = `
-  /* Doble filete (ronda 2, "bordes elegantes y personalizados de la empresa"):
-     una regla gruesa + una fina 5px debajo, el motivo clásico de un membrete
-     impreso — no un simple \`border-bottom\` de dashboard. Vive en \`::after\`
-     (no \`position:fixed\`) porque viaja con el bloque, no con la página. */
-  .membrete{position:relative;border-bottom:3px solid #0f5132;padding-bottom:14px;margin-bottom:10px}
-  .membrete::after{content:"";position:absolute;left:0;right:0;bottom:-6px;height:1px;background:#bdd0c6}
+  body{color:#111;border:none;border-radius:0}
+  @media screen{body{box-shadow:none}}
+  h1,h2{color:#111}
+  h2{display:block;font-size:14px;font-weight:700;margin:24px 0 8px;padding:0;border:none}
+  h2::before{display:none}
+  th,td{border:1px solid #bbb}
+  th{background:none;color:#111;font-size:10.5px;font-weight:700;text-transform:none;letter-spacing:0;border-bottom:1px solid #777}
+  tbody tr:nth-child(even) td{background:none}
+  .membrete{border-bottom:1px solid #111;padding-bottom:12px;margin-bottom:10px}
   .membrete-top{display:flex;align-items:flex-start;gap:14px}
-  .membrete-logo{max-height:56px;max-width:150px;object-fit:contain;flex-shrink:0}
+  .membrete-logo{max-height:56px;max-width:150px;object-fit:contain;flex-shrink:0;filter:grayscale(1)}
   .membrete-id{min-width:0;flex:1}
-  .membrete .razon{font-size:21px;font-weight:800;color:#0f5132;letter-spacing:-.2px;line-height:1.22}
-  .membrete .linea2{margin-top:4px;font-size:11.5px;color:#5c6864}
-  .membrete .linea2 span+span:before{content:" · ";color:#c3cec8}
-  .doc-tipo{display:inline-block;margin-top:16px;padding:5px 12px;border-radius:20px;background:#eaf3ee;color:#0f5132;font-size:12px;font-weight:700}
-  /* Código del expediente (Brandon 2026-08-26): reemplaza la vieja marca de
-     agua genérica ("Generado por sistema Buleje CTP") por el dato que de
-     verdad sirve — el código con el que se busca ESTE documento puntual. */
-  .doc-codigo{margin-top:7px;font-size:10.5px;color:#8b968f;font-variant-numeric:tabular-nums}
-  .doc-codigo span{color:#a8b2ac}
-  /* Ronda 7 (Brandon 2026-08-20: "mejora el diseño de la hoja... mejor
-     formato"): destinatario y meta pasan de líneas sueltas a una ficha con
-     fondo propio — el mismo lenguaje visual que ya usa \`.id\` en los otros
-     reportes CTP — para que el bloque de "datos" se lea distinto del
-     \`.cuerpo\` en prosa, no como un párrafo más. */
-  .dest{margin:18px 0 4px;padding:11px 14px;border:1px solid #eef2f0;border-radius:8px;background:#fafcfb;font-size:13.5px;line-height:1.6}
-  .dest .cargo{font-weight:800;color:#26332c}
-  .dest .ent{color:#5c6864}
-  .meta{margin:14px 0 19px;padding:12px 15px;border:1px solid #e2e9e5;border-radius:10px;background:#fafcfb;font-size:12.5px}
+  .membrete .razon{font-size:20px;font-weight:700;color:#111;line-height:1.22}
+  .membrete .linea2{margin-top:4px;font-size:11.5px;color:#555}
+  .membrete .linea2 span+span:before{content:" · ";color:#999}
+  .doc-tipo{margin-top:14px;font-size:12.5px;font-weight:700;color:#111}
+  .doc-codigo{margin-top:4px;font-size:10.5px;color:#777;font-variant-numeric:tabular-nums}
+  .dest{margin:18px 0 4px;font-size:13.5px;line-height:1.6}
+  .dest .cargo{font-weight:700}
+  .dest .ent{color:#444}
+  .meta{margin:12px 0 18px;font-size:12.5px}
   .meta div{margin:3px 0}
-  .meta .k{color:#8b968f;display:inline-block;min-width:82px}
+  .meta .k{color:#666;display:inline-block;min-width:82px}
   .cuerpo p{margin:0 0 12px;text-align:justify}
   .cuerpo .lead{font-weight:600}
-  .legal{margin-top:20px;font-size:11.5px;color:#5c6864}
+  .por-guia{margin:0 0 12px;padding-left:20px}
+  .por-guia li{margin:2px 0}
+  .anulada{font-weight:700;letter-spacing:.3px}
+  .legal{margin-top:20px;font-size:11.5px;color:#555}
   .legal li{margin:3px 0}
   .anexos li{margin:4px 0;font-size:12px}
   .firma-uno{margin-top:58px;font-size:12px;text-align:center;width:58%}
-  .firma-uno .linea{border-top:1.5px solid #9aa39e;padding-top:7px;font-weight:700;font-size:13px;color:#26332c}
-  .lugar{margin-top:28px;font-size:12.5px;color:#444}
-  .aviso{margin-top:18px;padding:10px 13px;border-left:3px solid #b45309;border-radius:0 8px 8px 0;background:#fffbeb;color:#7c2d12;font-size:11.5px}
-  @media print{.aviso{display:none}}
-  /* Campos rellenables (ADR-364 ronda 7): un subrayado punteado avisa "esto
-     se toca" sin que la hoja impresa se vea con líneas de formulario — el
-     print/PDF nunca los recibe (\`editable\` viaja apagado ahí), pero por las
-     dudas se limpia también acá. */
-  .campo-editable{border-bottom:1.5px dashed #b9cdc2;border-radius:2px;padding:0 1px;transition:background .15s,border-color .15s}
-  .campo-editable:hover{background:#eef6f1}
-  .campo-editable:focus{outline:none;background:#f2fbf6;border-bottom-color:#2f9e6e}
-  .campo-vacio{color:#98a29c;font-style:italic}
-  @media print{.campo-editable{border-bottom:none;background:none!important}}
-  /* Brandon 2026-08-20: "que se vea de una sola hoja" — el corte de página
-     forzado ANTES del anexo dejaba la mitad de la hoja 1 en blanco en un
-     trámite chico (pocas guías). Ahora fluye natural: si entra en una hoja,
-     entra; si no, pagina donde de verdad haga falta (el CSS base ya evita
-     cortar una fila de tabla o dejar un título colgado al pie de página). */
+  .firma-uno .linea{border-top:1px solid #111;padding-top:7px;font-weight:700;font-size:13px}
+  .firma-uno .firma-dato{color:#555;font-size:11.5px}
+  .lugar{margin-top:28px;font-size:12.5px;color:#333}
+  .aviso{margin-top:18px;padding:8px 12px;border-left:2px solid #999;color:#444;font-size:11.5px}
+  .campo-editable{border-bottom:1px dashed #999;padding:0 1px}
+  .campo-editable:hover{background:#f2f2f2}
+  .campo-editable:focus{outline:none;border-bottom-color:#111}
+  .campo-vacio,.campo-falta{color:#777;font-style:italic}
+  @media screen{.campo-vacio,.campo-falta,.revisar{background:#fff3bf;border-radius:2px}}
+  @media print{.aviso{display:none}.campo-editable{border-bottom:none;background:none!important}.campo-vacio,.campo-falta,.revisar{background:none!important}}
   .anexo-guias{margin-top:24px}
-  .anexo-guias h2:not(:first-child){margin-top:26px}
-  .anexo-guias h3{margin:16px 0 7px;font-size:12px;font-weight:700;color:#3d4a43}
+  .anexo-guias h3{margin:14px 0 6px;font-size:12px;font-weight:700}
   .tabla-guias{width:100%;border-collapse:collapse;font-size:11px;page-break-inside:auto}
-  .tabla-guias th{background:#eef4f0;text-align:left;padding:6px 7px;border:1px solid #e2e9e5;text-transform:uppercase;letter-spacing:.2px;font-size:10px;color:#3d4a43}
-  .tabla-guias td{padding:6px 7px;border:1px solid #e2e9e5;vertical-align:top}
-  .tabla-guias tbody tr:nth-child(even) td{background:#fafbfa}
-  .tabla-guias .sin-dato{color:#999;font-style:italic}
-  .tabla-trozas th:first-child,.tabla-trozas td:first-child{width:110px;white-space:nowrap;font-weight:700}
-  .anexo-guias .vacio{font-style:italic;color:#777;font-size:12px;margin:0 0 4px}
-  /* Ronda 8: el Anexo 2 (anuladas) con el mismo verde de "Emitidas" se puede
-     leer como válido a un vistazo rápido — el tinte rojo (mismo semántico
-     que "anulada"/error en el resto del módulo) lo marca sin mezclar filas
-     ni inventar una columna de estado. */
-  .anexo-anuladas{margin-top:22px;padding:14px 16px 4px;border:1px solid #f6d4ce;border-radius:10px;background:#fffaf9}
-  .anexo-anuladas h2{color:#b91c1c}
-  .anexo-anuladas h2::before{background:#b91c1c}
-  .anexo-anuladas .tabla-guias th{background:#fdeeec;color:#8a2c22}
-  .anexo-anuladas .tabla-guias tbody tr:nth-child(even) td{background:#fdf6f5}
+  .tabla-guias th,.tabla-guias td{padding:5px 7px;vertical-align:top}
+  .tabla-guias tfoot td{font-weight:700;border-top:1px solid #111}
+  .tabla-guias .sin-dato{color:#777;font-style:italic}
+  .tabla-trozas th:first-child,.tabla-trozas td:first-child{width:120px;white-space:nowrap;font-weight:700}
+  .tabla-totales{width:auto;min-width:50%}
+  .anexo-guias .vacio{font-style:italic;color:#666;font-size:12px;margin:0 0 4px}
+  .hoja-aparte{break-before:page;page-break-before:always;margin-top:28px}
 `;
 
 export interface TramitePrintOpts {
@@ -158,6 +138,25 @@ function campoSpan(editable: boolean | undefined, id: string, texto: string, vac
   return `<span class="campo-editable${vacio ? " campo-vacio" : ""}" data-campo="${id}" contenteditable="true" tabindex="0">${esc(texto)}</span>`;
 }
 
+/**
+ * En el papel de la app, un OBLIGATORIO vacío se ve dentro del cuerpo redactado
+ * con el nombre de su casillero, resaltado (Brandon 08-10: «campos vacíos
+ * resaltados»). Los marcadores son caracteres de uso privado que `esc()` no
+ * toca; `pintarFaltas` los vuelve un `<span>` después de escapar.
+ */
+const FALTA_INI = "\uE000";
+const FALTA_FIN = "\uE001";
+
+function datosConFaltas(formato: FormatoTramite, datos: DatosTramite): DatosTramite {
+  const out: DatosTramite = { ...datos };
+  for (const c of formato.campos) {
+    if (c.requerido && !(datos[c.id] ?? "").trim()) out[c.id] = `${FALTA_INI}${c.label}${FALTA_FIN}`;
+  }
+  return out;
+}
+
+const pintarFaltas = (html: string): string => html.replace(/\uE000([^\uE001]*)\uE001/g, `<span class="campo-falta">$1</span>`);
+
 const hoyLargo = (): string =>
   new Date().toLocaleDateString("es-PE", {
     day: "2-digit",
@@ -170,7 +169,7 @@ const hoyLargo = (): string =>
 export function buildTramiteHtml(o: TramitePrintOpts): string {
   const { formato, datos, ficha, editable } = o;
   const asunto = asuntoDe(formato, datos);
-  const parrafos = cuerpoDe(formato, datos);
+  const parrafos = cuerpoDe(formato, editable ? datosConFaltas(formato, datos) : datos).map((p) => pintarFaltas(esc(p)));
   const autoridad = AUTORIDADES[formato.autoridad];
   const firmante = (datos.firmante ?? "").trim();
   const dni = (datos.firmanteDni ?? "").trim();
@@ -201,10 +200,12 @@ export function buildTramiteHtml(o: TramitePrintOpts): string {
   // después del primer párrafo — es lo que un fiscalizador lee de un vistazo,
   // antes del anexo con el detalle completo. Los demás formatos (sin
   // `tablaGuias`) no cambian: mismo mapeo de siempre.
-  const resumenGuiasHtml = formato.tablaGuias ? resumenNumeradoHtml(parseGuiasInforme(datos.guiasJson)) : "";
+  const filasGuias = formato.tablaGuias ? parseGuiasInforme(datos.guiasJson) : [];
+  const papelGuias = { marcar: Boolean(editable) };
+  const resumenGuiasHtml = formato.tablaGuias ? resumenNumeradoHtml(filasGuias, papelGuias) : "";
   const cuerpoHtml = formato.tablaGuias
-    ? `<p>${esc(parrafos[0] ?? "")}</p>${resumenGuiasHtml}${parrafos.slice(1).map((p) => `<p>${esc(p)}</p>`).join("")}`
-    : parrafos.map((p) => `<p>${esc(p)}</p>`).join("");
+    ? `<p>${parrafos[0] ?? ""}</p>${resumenGuiasHtml}${parrafos.slice(1).map((p) => `<p>${p}</p>`).join("")}`
+    : parrafos.map((p) => `<p>${p}</p>`).join("");
   const cuerpo = `<div class="cuerpo">
     <p class="lead">Tengo el agrado de dirigirme a usted para saludarlo(a) cordialmente y, a la vez, exponer lo siguiente:</p>
     ${cuerpoHtml}
@@ -213,7 +214,9 @@ export function buildTramiteHtml(o: TramitePrintOpts): string {
 
   // El anexo con la tabla de guías va ANTES de la lista de anexos declarados:
   // ES el anexo, no una promesa de adjuntarlo aparte.
-  const tablaGuias = formato.tablaGuias ? tablaGuiasHtml(parseGuiasInforme(datos.guiasJson)) : "";
+  const tablaGuias = formato.tablaGuias ? tablaGuiasHtml(filasGuias, papelGuias) : "";
+  /* «Con detalle de trozas»: cada troza en una hoja aparte, al final. */
+  const detalleTrozas = formato.tablaGuias && datos.conDetalleTrozas === "si" ? detalleTrozasHtml(filasGuias) : "";
 
   const anexos = formato.anexos.length
     ? `<h2>Anexos</h2><ol class="anexos">${formato.anexos.map((a) => `<li>${esc(a)}</li>`).join("")}</ol>`
@@ -258,8 +261,8 @@ export function buildTramiteHtml(o: TramitePrintOpts): string {
 
   const firma = `<div class="lugar">${campoSpan(editable, "lugar", lugar, false)}, ${esc(hoyLargo())}</div>
   <div class="firma-uno"><div class="linea">${campoSpan(editable, "firmante", firmante || "Firma del titular o representante legal", !firmante)}</div>
-  ${dni || editable ? `<div style="color:#666;font-size:11.5px">DNI ${campoSpan(editable, "firmanteDni", dni || "12345678", !dni)}</div>` : ""}
-  ${(empresaReal || editable) && !firmaRepiteEmpresa ? `<div style="color:#666;font-size:11.5px">${campoSpan(editable, "membreteEmpresa", membreteFirmaTexto, !empresaReal)}</div>` : ""}</div>`;
+  ${dni || editable ? `<div class="firma-dato">DNI ${campoSpan(editable, "firmanteDni", dni || "12345678", !dni)}</div>` : ""}
+  ${(empresaReal || editable) && !firmaRepiteEmpresa ? `<div class="firma-dato">${campoSpan(editable, "membreteEmpresa", membreteFirmaTexto, !empresaReal)}</div>` : ""}</div>`;
 
   const aviso = formato.advertencia
     ? `<div class="aviso"><strong>Antes de presentar:</strong> ${esc(formato.advertencia)}</div>`
@@ -339,7 +342,8 @@ export function buildTramiteHtml(o: TramitePrintOpts): string {
   ${tablaGuias}
   ${anexos}
   ${legal}
-  ${aviso}`;
+  ${aviso}
+  ${detalleTrozas}`;
 }
 
 /** Abre el documento en una ventana imprimible (guardar como PDF). */

@@ -668,7 +668,7 @@ export const FORMATOS_TRAMITE: FormatoTramite[] = [
       "Copias de las guías físicas del talonario correspondiente",
     ],
     cuerpo: (d) => [
-      `Que, en mi calidad de ${v(d, "entidadRepresentante", "representante legal")} de ${v(d, "entidadNombre", "el titular")}${d.entidadRuc?.trim() ? `, con RUC ${v(d, "entidadRuc")}` : ""}, pongo en conocimiento de su Despacho la relación de Guías de Transporte Forestal y Lista de Trozas emitidas.`,
+      `Que, en mi calidad de ${v(d, "entidadRepresentante", "representante legal")} de ${v(d, "entidadNombre", "el titular")}${d.entidadRuc?.trim() ? `, con RUC ${v(d, "entidadRuc")}` : ""}, pongo en conocimiento de su Despacho la relación de Guías de Transporte Forestal y Lista de Trozas emitidas${d.permisoCodigo?.trim() ? ` al amparo del permiso ${v(d, "permisoCodigo")}` : ""}.`,
       "Adjunto el anexo con el detalle de las guías correspondientes al período.",
       d.observaciones?.trim() ? `Observaciones: ${v(d, "observaciones")}.` : "",
       "Solicito a su Despacho disponer el registro de las guías detalladas en el Sistema Nacional de Información y Fiscalización Forestal y de Fauna Silvestre (SNIFFS), conforme a la información que se declara.",

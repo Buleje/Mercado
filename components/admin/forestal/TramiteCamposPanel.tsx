@@ -13,13 +13,16 @@
  * Sin estado propio: todo (`datos`, `estado`, `expediente`…) vive en el padre.
  */
 
-import { useRef, type Dispatch, type SetStateAction } from "react";
-import { ImageIcon } from "@buleje/design-system/icons";
+import type { Dispatch, SetStateAction } from "react";
 import { ESTADOS_TRAMITE, type TramiteRegistro } from "@/lib/forestal/tramites-registro";
 import type { DatosTramite, FormatoTramite } from "@/lib/forestal/tramites-catalogo";
 import type { GtfDuplicada } from "@/lib/forestal/tramites-relacion-guias";
 import type { LogoTramite } from "@/lib/forestal/tramites-logo";
+import type { FichaDelOficio } from "@/lib/forestal/tramites-permiso";
 import { Field, I } from "./ctp-shared";
+import { claseFalta } from "./TramiteRelacionGuiaFila";
+import TramiteLogoMembrete from "./TramiteLogoMembrete";
+import TramitePermisoBloque from "./TramitePermisoBloque";
 import TramiteEntidadPicker, { type EntidadElegida } from "./TramiteEntidadPicker";
 import TramiteHistorialRelaciones from "./TramiteHistorialRelaciones";
 import TramiteRelacionGuias from "./TramiteRelacionGuias";
@@ -73,63 +76,6 @@ function datosDeEmisor(campos: FormatoTramite["campos"], e: EntidadElegida): Rec
     if (rol && e[rol]) out[c.id] = String(e[rol]);
   }
   return out;
-}
-
-/**
- * Logo del membrete (ADR-364 ronda 6): botón-preview grande, igual patrón que
- * `Anexo04Campos.ImagenGuardada` — una caja de 20px de alto no deja juzgar un
- * logo. Vive acá (no en `tramites-logo.ts`, que es sólo lectura/escritura de
- * localStorage) porque es puramente presentacional.
- */
-function LogoMembrete({
-  logo,
-  onArchivo,
-  onQuitar,
-}: {
-  logo: LogoTramite | null;
-  onArchivo: (f?: File) => void;
-  onQuitar: () => void;
-}) {
-  const ref = useRef<HTMLInputElement>(null);
-  return (
-    <div className="flex items-center gap-2">
-      <input
-        ref={ref}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(e) => {
-          onArchivo(e.target.files?.[0]);
-          e.target.value = "";
-        }}
-      />
-      <button
-        type="button"
-        onClick={() => ref.current?.click()}
-        title={logo ? "Cambiar logo" : "Subir logo"}
-        aria-label={logo ? "Cambiar logo del membrete" : "Subir logo del membrete"}
-        className={`flex h-11 w-16 items-center justify-center overflow-hidden rounded-xl border-2 bg-[var(--surface-raised)] p-1 transition ${logo ? "border-[var(--data-success-500)]/50" : "border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"}`}
-      >
-        {logo ? (
-          // eslint-disable-next-line @next/next/no-img-element -- dataURL local, no pasa por el optimizador
-          <img src={logo.src} alt="Logo del membrete" className="max-h-full max-w-full object-contain" />
-        ) : (
-          <ImageIcon className="h-5 w-5" />
-        )}
-      </button>
-      <div className="flex flex-col gap-0.5">
-        <span className="text-xs font-bold text-[var(--text-primary)]">Logo del membrete</span>
-        <div className="flex items-center gap-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-          <span>Va arriba de la hoja, al lado de la razón social</span>
-          {logo && (
-            <button type="button" onClick={onQuitar} className="font-bold underline hover:text-[var(--data-error-700)]">
-              Quitar
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
 }
 
 /**
@@ -188,6 +134,7 @@ export default function TramiteCamposPanel({
   logo,
   onLogoArchivo,
   onLogoQuitar,
+  ficha,
 }: {
   formato: FormatoTramite;
   datos: DatosTramite;
@@ -213,13 +160,17 @@ export default function TramiteCamposPanel({
   logo: LogoTramite | null;
   onLogoArchivo: (f?: File) => void;
   onLogoQuitar: () => void;
+  /** La Ficha CTP: el permiso sólo hereda su RUC/representante si el titular es el propio CTP. */
+  ficha: FichaDelOficio | null;
 }) {
+  /* Obligatorio vacío = borde ámbar (Brandon 08-10); se apaga al llenarlo o al enfocarlo. */
+  const clase = (c: FormatoTramite["campos"][number], base: string) => (c.requerido && !(datos[c.id] ?? "").trim() ? claseFalta(base) : base);
   const campoInput = (c: FormatoTramite["campos"][number]) => (
     <>
       {c.tipo === "textarea" ? (
         <textarea
           rows={3}
-          className={`${I} h-auto py-2`}
+          className={`${clase(c, I)} h-auto py-2`}
           value={datos[c.id] ?? ""}
           placeholder={c.placeholder}
           onChange={(e) => set(c.id, e.target.value)}
@@ -227,7 +178,7 @@ export default function TramiteCamposPanel({
       ) : (
         <input
           type={c.tipo === "numero" ? "number" : c.tipo === "fecha" ? "date" : "text"}
-          className={I}
+          className={clase(c, I)}
           value={datos[c.id] ?? ""}
           placeholder={c.placeholder}
           onChange={(e) => set(c.id, e.target.value)}
@@ -273,6 +224,9 @@ export default function TramiteCamposPanel({
                 ) : undefined
               }
             />
+            {g.id === "datos" && formato.tablaGuias && (
+              <TramitePermisoBloque datos={datos} setDatos={setDatos} ficha={ficha} editando={Boolean(existente)} />
+            )}
             <div className="grid gap-4 sm:grid-cols-2">
               {campos.map((c) => (
                 <Field
@@ -293,7 +247,7 @@ export default function TramiteCamposPanel({
             </div>
             {g.id === "firma" && (
               <div className="mt-4 border-t-2 border-[var(--rule-soft)] pt-4">
-                <LogoMembrete logo={logo} onArchivo={onLogoArchivo} onQuitar={onLogoQuitar} />
+                <TramiteLogoMembrete logo={logo} onArchivo={onLogoArchivo} onQuitar={onLogoQuitar} />
               </div>
             )}
           </section>
@@ -311,6 +265,9 @@ export default function TramiteCamposPanel({
           periodoDesde={datos.periodoDesde}
           periodoHasta={datos.periodoHasta}
           duplicadosCruzados={duplicadosCruzados}
+          permisoCodigo={datos.permisoCodigo}
+          conDetalle={datos.conDetalleTrozas === "si"}
+          onConDetalle={(v) => set("conDetalleTrozas", v ? "si" : "")}
         />
       )}
 

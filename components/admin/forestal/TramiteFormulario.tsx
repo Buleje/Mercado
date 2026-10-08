@@ -23,12 +23,10 @@ import {
   Download,
   Eye,
   FileDown,
-  FileText,
   HardDrive,
   Loader2,
   Maximize2,
   Save,
-  SlidersHorizontal,
 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -45,7 +43,7 @@ import {
   type FormatoTramite,
 } from "@/lib/forestal/tramites-catalogo";
 import type { TramiteRegistro } from "@/lib/forestal/tramites-registro";
-import { sumarFilasExcluidas } from "@/lib/forestal/tramites-desde-guias";
+import { sumarFilas } from "@/lib/forestal/tramites-desde-guias";
 import type { CtpReportFicha } from "@/lib/forestal/ctp-print-shared";
 import {
   gtfDuplicadaEntreRelaciones,
@@ -66,6 +64,7 @@ import TramiteArchivadorOffscreen, { type TramiteArchivadorHandle } from "./Tram
 import TramiteCamposPanel from "./TramiteCamposPanel";
 import TramiteDocumentoModal from "./TramiteDocumentoModal";
 import TramitePreview from "./TramitePreview";
+import TramitePanelMovil from "./TramitePanelMovil";
 import type { GuardarTramiteInput } from "@/hooks/use-forest-tramites";
 
 /** Carpeta del Drive donde se archivan los trámites — distinta de la de guías GTF. */
@@ -152,8 +151,8 @@ export default function TramiteFormulario({
    *  titular distinto). Se ignora al editar o duplicar. */
   prellenado?: DatosTramite | null;
   /** «Incluirla igual» con el formulario ya abierto: filas de guías a SUMAR a
-   *  la tabla actual (`sumarFilasExcluidas`), sin rearmarlo ni borrar lo tipeado. */
-  sumarGuias?: { guiasJson: string; numeros: readonly string[] } | null;
+   *  la tabla actual (`sumarFilas`), sin rearmarlo ni borrar lo tipeado. */
+  sumarGuias?: { guiasJson: string } | null;
   /** Todo el expediente del tenant — sólo se usa en formatos con `correlativo`
    *  (continuidad de período, historial, duplicados cruzados; ADR-364 ronda 4). */
   tramites: TramiteRegistro[];
@@ -235,7 +234,7 @@ export default function TramiteFormulario({
 
   useEffect(() => {
     if (!sumarGuias) return;
-    setDatos((p) => ({ ...p, guiasJson: sumarFilasExcluidas(p.guiasJson, sumarGuias.guiasJson, sumarGuias.numeros) }));
+    setDatos((p) => ({ ...p, guiasJson: sumarFilas(p.guiasJson, sumarGuias.guiasJson) }));
   }, [sumarGuias]);
 
   const set = (id: string, valor: string) => setDatos((p) => ({ ...p, [id]: valor }));
@@ -529,6 +528,7 @@ export default function TramiteFormulario({
       logo={logo}
       onLogoArchivo={onLogoArchivo}
       onLogoQuitar={onLogoQuitar}
+      ficha={auto.ficha}
     />
   );
 
@@ -685,31 +685,7 @@ export default function TramiteFormulario({
       )}
 
       {/* Móvil: alternar entre llenar y ver el papel. */}
-      <div className="flex gap-2 xl:hidden">
-        {(
-          [
-            { key: "formulario", label: "Llenar", icon: SlidersHorizontal },
-            { key: "documento", label: "Ver documento", icon: FileText },
-          ] as const
-        ).map((t) => {
-          const Icono = t.icon;
-          return (
-            <button
-              key={t.key}
-              type="button"
-              onClick={() => setPanelMovil(t.key)}
-              aria-pressed={panelMovil === t.key}
-              className={`inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border-2 text-sm font-semibold transition ${
-                panelMovil === t.key
-                  ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                  : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)]"
-              }`}
-            >
-              <Icono className="h-4 w-4" /> {t.label}
-            </button>
-          );
-        })}
-      </div>
+      <TramitePanelMovil panel={panelMovil} onPanel={setPanelMovil} />
 
       {/* `pb-20`: la barra de acciones es sticky y sin esto tapaba el último
           campo (el firmante quedaba detrás del botón de imprimir). */}

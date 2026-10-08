@@ -13,22 +13,16 @@
  * las del CTP no (el despacho no la guarda a ese nivel) y quedan para
  * completar a mano. **Fila manual** es para lo que ningún libro tiene: una
  * guía anulada antes de registrarse, o de una comunidad sin libro digital.
+ *
+ * El permiso manda (Brandon 08-10): «Traer» trae sólo las del permiso del
+ * oficio, y una fila que dice otro permiso se marca, con «Quitarlas».
+ * «Con detalle de trozas» suma al papel una hoja aparte con cada troza.
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  AlertTriangle,
-  Ban,
-  Download,
-  Loader2,
-  Plus,
-  Trash2,
-  Truck,
-} from "@buleje/design-system/icons";
+import { AlertTriangle, Download, Loader2, Plus, Truck } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
-  filaDesdeGtfLoth,
-  filaDesdeGuiaEmitida,
   nuevaFilaGuia,
   numerosGuiaRepetidos,
   parseGuiasInforme,
@@ -36,24 +30,14 @@ import {
   serializeGuiasInforme,
   type FilaGuiaInforme,
   type GtfDuplicada,
-  type GtfLothLike,
 } from "@/lib/forestal/tramites-relacion-guias";
-import type { GuiaEmitida } from "@/lib/forestal/guias-emitidas";
+import { filasDeOtroPermiso } from "@/lib/forestal/tramites-permiso";
 import { Btn } from "./ctp-shared";
+import TramiteRelacionGuiaFila from "./TramiteRelacionGuiaFila";
+import { uidNueva, useTramiteTraerGuias } from "./hooks/use-tramite-traer-guias";
 
-const ORIGEN_LABEL: Record<FilaGuiaInforme["origen"], string> = {
-  ctp: "Libro CTP",
-  loth: "Libro TH",
-  manual: "",
-};
-
-/** Input compacto: estas filas ya tienen 6 celdas, un `h-11` las hace gigantes. */
-const IC =
-  "h-9 w-full rounded-lg border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 text-xs text-[var(--text-primary)] outline-none transition-[border-color,box-shadow] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] placeholder:text-[var(--text-tertiary)]";
-
-let contador = 0;
-/** Uid client-only para la key de React — no viaja a ningún lado. */
-const uidNueva = () => `fila-${Date.now()}-${(contador += 1)}`;
+const AVISO =
+  "mb-3 flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] p-3 text-xs font-medium text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]";
 
 export default function TramiteRelacionGuias({
   value,
@@ -62,6 +46,9 @@ export default function TramiteRelacionGuias({
   periodoHasta,
   numero,
   duplicadosCruzados,
+  permisoCodigo,
+  conDetalle,
+  onConDetalle,
 }: {
   value: string;
   onChange: (json: string) => void;
@@ -72,10 +59,13 @@ export default function TramiteRelacionGuias({
   /** N° de GTF que ya aparecen en OTRA relación guardada (ADR-364 ronda 4) —
    *  lo calcula el padre, que es quien conoce el resto del expediente. */
   duplicadosCruzados?: GtfDuplicada[];
+  /** El permiso del oficio: «Traer» trae sólo las suyas y las de otro se marcan. */
+  permisoCodigo?: string;
+  conDetalle: boolean;
+  onConDetalle: (v: boolean) => void;
 }) {
   const [filas, setFilas] = useState<FilaGuiaInforme[]>(() => parseGuiasInforme(value));
-  const [trayendo, setTrayendo] = useState(false);
-  const [avisoTraer, setAvisoTraer] = useState<string | null>(null);
+  const { trayendo, aviso: avisoTraer, traer } = useTramiteTraerGuias();
 
   /**
    * `TramiteFormulario` arranca `datos` vacío y lo llena recién en su propio
@@ -107,68 +97,12 @@ export default function TramiteRelacionGuias({
   const editarFila = (uid: string, cambios: Partial<FilaGuiaInforme>) =>
     actualizar(filas.map((f) => (f.uid === uid ? { ...f, ...cambios } : f)));
 
-  async function traerDeCtp(): Promise<{ filas: FilaGuiaInforme[]; aviso: string | null }> {
-    const qs = new URLSearchParams({ desde: periodoDesde!, hasta: periodoHasta! });
-    const res = await fetch(`/api/admin/forestal/ctp/guias-emitidas?${qs}`, { credentials: "include", cache: "no-store" });
-    if (!res.ok) {
-      return {
-        filas: [],
-        aviso: res.status === 403 ? "Libro CTP no habilitado" : `Libro CTP: error ${res.status}`,
-      };
-    }
-    const { guias } = (await res.json()) as { guias: GuiaEmitida[] };
-    return { filas: (guias ?? []).map((g) => filaDesdeGuiaEmitida(uidNueva(), g)), aviso: null };
-  }
-
-  async function traerDeLoth(): Promise<{ filas: FilaGuiaInforme[]; aviso: string | null }> {
-    const res = await fetch("/api/admin/forestal/gtf", { credentials: "include", cache: "no-store" });
-    if (!res.ok) {
-      return {
-        filas: [],
-        aviso: res.status === 403 ? "Libro TH no habilitado" : `Libro TH: error ${res.status}`,
-      };
-    }
-    const { gtfs } = (await res.json()) as { gtfs: GtfLothLike[] };
-    const desde = periodoDesde!;
-    const hasta = periodoHasta!;
-    const enPeriodo = (gtfs ?? []).filter((g) => {
-      if (!g.gtfDate) return false;
-      const f = new Date(g.gtfDate).toISOString().slice(0, 10);
-      return f >= desde && f <= hasta;
-    });
-    return { filas: enPeriodo.map((g) => filaDesdeGtfLoth(uidNueva(), g)), aviso: null };
-  }
+  const deOtroPermiso = useMemo(() => new Set(filasDeOtroPermiso(filas, permisoCodigo).map((f) => f.uid)), [filas, permisoCodigo]);
 
   async function traerDelLibro() {
-    if (!periodoDesde || !periodoHasta) {
-      setAvisoTraer("Elige el período (desde / hasta) antes de traer las guías de los libros.");
-      return;
-    }
-    setTrayendo(true);
-    setAvisoTraer(null);
-    try {
-      const [ctp, loth] = await Promise.all([traerDeCtp(), traerDeLoth()]);
-      const yaTraidas = new Set(filas.filter((f) => f.origen !== "manual").map((f) => f.numero));
-      const traidas = [...ctp.filas, ...loth.filas].filter((f) => !yaTraidas.has(f.numero));
-
-      const avisos = [ctp.aviso, loth.aviso].filter(Boolean);
-      if (traidas.length === 0) {
-        setAvisoTraer(
-          avisos.length === 2
-            ? `Ningún libro respondió (${avisos.join(" · ")}). Agrega las guías a mano.`
-            : avisos.length === 1
-              ? `${avisos[0]}. El otro libro no tiene guías nuevas en el período.`
-              : "Ningún libro tiene guías nuevas en ese período.",
-        );
-        return;
-      }
-      actualizar([...filas, ...traidas]);
-      if (avisos.length > 0) setAvisoTraer(`Se trajeron ${traidas.length}. ${avisos.join(" · ")}.`);
-    } catch (err) {
-      setAvisoTraer(err instanceof Error ? err.message : String(err));
-    } finally {
-      setTrayendo(false);
-    }
+    const yaTraidas = new Set(filas.filter((f) => f.origen !== "manual").map((f) => f.numero));
+    const nuevas = await traer({ desde: periodoDesde, hasta: periodoHasta, permisoCodigo, yaTraidas });
+    if (nuevas.length > 0) actualizar([...filas, ...nuevas]);
   }
 
   return (
@@ -193,7 +127,17 @@ export default function TramiteRelacionGuias({
             </span>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex h-8 items-center gap-1.5 text-xs font-semibold text-[var(--text-secondary)]">
+            <label className="inline-flex items-center gap-1.5">
+              <input type="checkbox" className="h-4 w-4 accent-[var(--accent)]" checked={conDetalle} onChange={(e) => onConDetalle(e.target.checked)} />
+              Con detalle de trozas
+            </label>
+            <InfoTip
+              title="Detalle de trozas"
+              what="En la carta y el anexo cada guía va con el N° de su lista de trozas. Marcado, el papel suma una hoja aparte con cada troza (código, especie, medidas, volumen)."
+            />
+          </span>
           <Btn size="sm" variant="secondary" disabled={trayendo} onClick={() => void traerDelLibro()}>
             {trayendo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
             Traer de los libros
@@ -224,14 +168,31 @@ export default function TramiteRelacionGuias({
       )}
 
       {avisoTraer && (
-        <p className="mb-3 flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] p-3 text-xs font-medium text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
+        <p className={AVISO}>
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           {avisoTraer}
         </p>
       )}
 
+      {/* El permiso manda: una guía de otro permiso no va en este oficio (se arma el suyo). */}
+      {deOtroPermiso.size > 0 && (
+        <p className={AVISO}>
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <span className="flex-1">
+            {deOtroPermiso.size === 1 ? "1 guía es" : `${deOtroPermiso.size} guías son`} de otro permiso: no {deOtroPermiso.size === 1 ? "va" : "van"} en el oficio del {permisoCodigo}.
+          </span>
+          <button
+            type="button"
+            onClick={() => actualizar(filas.filter((f) => !deOtroPermiso.has(f.uid)))}
+            className="shrink-0 font-bold underline underline-offset-2"
+          >
+            Quitar{deOtroPermiso.size === 1 ? "la" : "las"}
+          </button>
+        </p>
+      )}
+
       {repetidos.length > 0 && (
-        <p className="mb-3 flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] p-3 text-xs font-medium text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]">
+        <p className={AVISO}>
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           N° repetido entre las vigentes: {repetidos.join(", ")}. Revísalo antes de presentar.
         </p>
@@ -255,139 +216,16 @@ export default function TramiteRelacionGuias({
       ) : (
         <ul className="space-y-2">
           {filas.map((f) => (
-            <FilaEditable key={f.uid} fila={f} onEditar={(c) => editarFila(f.uid, c)} onQuitar={() => quitarFila(f.uid)} />
+            <TramiteRelacionGuiaFila
+              key={f.uid}
+              fila={f}
+              otroPermiso={deOtroPermiso.has(f.uid)}
+              onEditar={(c) => editarFila(f.uid, c)}
+              onQuitar={() => quitarFila(f.uid)}
+            />
           ))}
         </ul>
       )}
     </section>
-  );
-}
-
-function FilaEditable({
-  fila,
-  onEditar,
-  onQuitar,
-}: {
-  fila: FilaGuiaInforme;
-  onEditar: (cambios: Partial<FilaGuiaInforme>) => void;
-  onQuitar: () => void;
-}) {
-  return (
-    <li
-      className={`rounded-xl border p-3 transition-colors ${
-        fila.anulada
-          ? "border-[var(--rule-base)] bg-[var(--surface-sunken)] opacity-80"
-          : "border-[var(--rule-base)] bg-[var(--surface-canvas)]"
-      }`}
-    >
-      {/* Tres filas en 12 columnas (la columna del formulario mide ~450 px a
-          1280: en dos filas el N° y la fecha salían cortados): identidad
-          (N°, fecha, cantidad), de quién (permiso, destinatario) y qué
-          llevaba (especie, producto). «Permiso» (07-10) lo trae la guía del
-          Libro TH; en una fila manual se tipea. */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-12">
-        <input
-          className={`${IC} sm:col-span-4`}
-          placeholder="N° de GTF"
-          aria-label="N° de GTF"
-          value={fila.numero}
-          onChange={(e) => onEditar({ numero: e.target.value })}
-        />
-        <input
-          type="date"
-          className={`${IC} sm:col-span-4`}
-          value={fila.fecha}
-          onChange={(e) => onEditar({ fecha: e.target.value })}
-          aria-label="Fecha de la guía"
-        />
-        <input
-          className={`${IC} sm:col-span-2`}
-          placeholder="Cantidad"
-          aria-label="Cantidad"
-          value={fila.cantidad}
-          onChange={(e) => onEditar({ cantidad: e.target.value })}
-        />
-        <input
-          className={`${IC} sm:col-span-2`}
-          placeholder="Unidad"
-          aria-label="Unidad"
-          value={fila.unidad}
-          onChange={(e) => onEditar({ unidad: e.target.value })}
-        />
-        <input
-          className={`${IC} col-span-2 sm:col-span-6`}
-          placeholder="Permiso / título habilitante"
-          aria-label="Permiso o título habilitante"
-          value={fila.permiso ?? ""}
-          onChange={(e) => onEditar({ permiso: e.target.value })}
-        />
-        <input
-          className={`${IC} col-span-2 sm:col-span-6`}
-          placeholder="Destinatario"
-          aria-label="Destinatario"
-          value={fila.destinatario}
-          onChange={(e) => onEditar({ destinatario: e.target.value })}
-        />
-        <input
-          className={`${IC} sm:col-span-6`}
-          placeholder="Especie"
-          aria-label="Especie"
-          value={fila.especie}
-          onChange={(e) => onEditar({ especie: e.target.value })}
-        />
-        <input
-          className={`${IC} sm:col-span-6`}
-          placeholder="Producto"
-          aria-label="Producto"
-          value={fila.producto}
-          onChange={(e) => onEditar({ producto: e.target.value })}
-        />
-      </div>
-
-      <textarea
-        rows={Math.min(6, Math.max(2, fila.trozas.split("\n").length))}
-        aria-label="Lista de trozas"
-        className={`${IC} mt-2 h-auto py-1.5 font-mono`}
-        placeholder="Lista de trozas: código único y medida, una por línea"
-        value={fila.trozas}
-        onChange={(e) => onEditar({ trozas: e.target.value })}
-      />
-
-      <div className="mt-2 flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onClick={() => onEditar({ anulada: !fila.anulada, motivo: fila.anulada ? "" : fila.motivo })}
-          aria-pressed={fila.anulada}
-          className={`inline-flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-xs font-bold transition ${
-            fila.anulada
-              ? "border-[var(--text-tertiary)] bg-[var(--surface-raised)] text-[var(--text-primary)]"
-              : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)] hover:border-[var(--rule-strong)]"
-          }`}
-        >
-          <Ban className="h-3.5 w-3.5" /> Anulada
-        </button>
-        {fila.anulada && (
-          <input
-            className={`${IC} max-w-xs flex-1`}
-            placeholder="Motivo de la anulación"
-            value={fila.motivo}
-            onChange={(e) => onEditar({ motivo: e.target.value })}
-          />
-        )}
-        {fila.origen !== "manual" && (
-          <span className="rounded-full bg-[var(--data-info-500)]/12 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-info-700)] dark:text-[var(--data-info-500)]">
-            {ORIGEN_LABEL[fila.origen]}
-          </span>
-        )}
-        <button
-          type="button"
-          onClick={onQuitar}
-          aria-label={`Quitar la guía ${fila.numero || "sin número"}`}
-          className="ml-auto inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-700)] dark:hover:text-[var(--data-error-500)]"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
-      </div>
-    </li>
   );
 }

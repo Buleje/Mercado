@@ -13,8 +13,8 @@
  * del trámite (`datos.guiasJson`), mismo mecanismo que el resto del formulario.
  */
 
-import { esc } from "./ctp-print-shared";
 import { codigoImpreso } from "./loth-guia-despacho";
+import { leerGtfDatos } from "./ctp-gtf-datos";
 import type { GuiaEmitida } from "./guias-emitidas";
 import type { TramiteRegistro } from "./tramites-registro";
 
@@ -38,6 +38,14 @@ export interface FilaGuiaInforme {
   /** Permiso / título habilitante de la guía (vacío en filas viejas o manuales). */
   permiso?: string;
   /**
+   * N° de la «Lista de trozas» que acompaña a la guía (`gtfDatos.guia.
+   * listaTrozasNro`). Vacío = la guía no lo trae: el papel pone el N° de la
+   * GTF y la pantalla lo marca para revisar (`listaDeTrozas`).
+   */
+  listaTrozasNro?: string;
+  /** Desglose por especie, sólo si la guía lleva más de una (de sus ítems): con una, la fila ya lo dice. */
+  porEspecie?: EspecieDeGuia[];
+  /**
    * De dónde salió la fila — para que el operador sepa qué está verificado
    * contra un libro y qué tipeó a mano:
    * `"ctp"` = despacho del Libro CTP (`guias-emitidas.ts`, ADR-321).
@@ -45,6 +53,14 @@ export interface FilaGuiaInforme {
    * `"manual"` = la tipeó el operador.
    */
   origen: "ctp" | "loth" | "manual";
+}
+
+/** Trozas y m³ de una especie dentro de una guía (o del total de la relación). */
+export interface EspecieDeGuia {
+  especie: string;
+  trozas: number;
+  /** `null` = no declarado en m³ (pt, unidades). */
+  m3: number | null;
 }
 
 export const nuevaFilaGuia = (
@@ -122,7 +138,24 @@ export interface GtfLothLike {
   annulledReason?: string | null;
   /** El permiso / título habilitante que cita la guía. */
   tituloHabilitante?: string | null;
+  /** N° de la lista de trozas, ya leído; si no viene, se lee de `gtfDatos` (la fila cruda de `/gtf`). */
+  listaTrozasNro?: string | null;
+  gtfDatos?: unknown;
   items: ItemGtfLoth[];
+}
+
+/** Trozas y m³ por especie de los ítems, sólo si hay más de una especie. */
+function porEspecieDe(items: readonly ItemGtfLoth[]): EspecieDeGuia[] | undefined {
+  const mapa = new Map<string, EspecieDeGuia>();
+  for (const it of items) {
+    const especie = (it.species ?? "").trim();
+    if (!especie) continue;
+    const ya = mapa.get(especie.toUpperCase()) ?? { especie, trozas: 0, m3: null };
+    ya.trozas += 1;
+    if (it.volumeM3 != null) ya.m3 = Math.round(((ya.m3 ?? 0) + it.volumeM3) * 1000) / 1000;
+    mapa.set(especie.toUpperCase(), ya);
+  }
+  return mapa.size > 1 ? [...mapa.values()] : undefined;
 }
 
 /**
@@ -153,6 +186,8 @@ export function filaDesdeGtfLoth(uid: string, g: GtfLothLike): FilaGuiaInforme {
   const items = g.items ?? [];
   const especies = [...new Set(items.map((i) => i.species).filter((s): s is string => Boolean(s)))];
   const fecha = g.gtfDate ? new Date(g.gtfDate).toISOString().slice(0, 10) : "";
+  const lista = g.listaTrozasNro ?? (g.gtfDatos != null ? leerGtfDatos(g.gtfDatos).guia.listaTrozasNro : "");
+  const porEspecie = porEspecieDe(items);
   return nuevaFilaGuia(uid, {
     numero: g.gtfNumber,
     fecha,
@@ -165,6 +200,8 @@ export function filaDesdeGtfLoth(uid: string, g: GtfLothLike): FilaGuiaInforme {
     anulada: g.status === "anulada",
     motivo: g.annulledReason ?? "",
     permiso: g.tituloHabilitante?.trim() ?? "",
+    listaTrozasNro: (lista ?? "").trim(),
+    ...(porEspecie ? { porEspecie } : {}),
     origen: "loth",
   });
 }
@@ -207,6 +244,19 @@ export function serializeGuiasInforme(filas: FilaGuiaInforme[]): string {
 
 const s = (v: unknown): string => (typeof v === "string" ? v : "");
 
+function porEspecieGuardado(v: unknown): EspecieDeGuia[] | undefined {
+  if (!Array.isArray(v)) return undefined;
+  const out = v
+    .map((x) => (x ?? {}) as Record<string, unknown>)
+    .map((x) => ({
+      especie: s(x.especie),
+      trozas: typeof x.trozas === "number" && Number.isFinite(x.trozas) ? x.trozas : 0,
+      m3: typeof x.m3 === "number" && Number.isFinite(x.m3) ? x.m3 : null,
+    }))
+    .filter((x) => x.especie.trim());
+  return out.length ? out : undefined;
+}
+
 /** Tolerante a basura: un JSON roto o viejo vuelve `[]`, nunca tira. */
 export function parseGuiasInforme(json: string | undefined | null): FilaGuiaInforme[] {
   if (!json) return [];
@@ -219,6 +269,7 @@ export function parseGuiasInforme(json: string | undefined | null): FilaGuiaInfo
   if (!Array.isArray(raw)) return [];
   return raw.map((r, i) => {
     const o = (r ?? {}) as Record<string, unknown>;
+    const porEspecie = porEspecieGuardado(o.porEspecie);
     return {
       uid: s(o.uid) || `fila-${i}`,
       numero: s(o.numero),
@@ -232,143 +283,80 @@ export function parseGuiasInforme(json: string | undefined | null): FilaGuiaInfo
       anulada: Boolean(o.anulada),
       motivo: s(o.motivo),
       permiso: s(o.permiso),
+      listaTrozasNro: s(o.listaTrozasNro),
+      ...(porEspecie ? { porEspecie } : {}),
       origen: o.origen === "ctp" || o.origen === "loth" ? o.origen : "manual",
     } satisfies FilaGuiaInforme;
   });
 }
 
-const fmtFechaCorta = (iso: string): string => {
-  if (!iso) return "—";
-  const d = new Date(`${iso}T12:00:00Z`);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" });
-};
+// ─── Lista de trozas y totales (Brandon 08-10) ───────────────────────────────
 
-const HEAD_GUIAS = ["N° de GTF", "Fecha", "Destinatario", "Especie / producto", "Cantidad"];
-const HEAD_TROZAS = ["N° de GTF", "Detalle de trozas"];
-
-function filaHtml(f: FilaGuiaInforme, conMotivo: boolean, conPermiso: boolean): string {
-  const cantidad = f.cantidad.trim() ? esc(`${f.cantidad} ${f.unidad}`.trim()) : "—";
-  return `<tr>
-    <td>${esc(f.numero || "—")}</td>
-    <td>${esc(fmtFechaCorta(f.fecha))}</td>
-    ${conPermiso ? `<td>${esc(f.permiso?.trim() || "—")}</td>` : ""}
-    <td>${esc(f.destinatario || "—")}</td>
-    <td>${esc([f.especie, f.producto].filter(Boolean).join(" · ") || "—")}</td>
-    <td>${cantidad}</td>
-    ${conMotivo ? `<td>${esc(f.motivo || "—")}</td>` : ""}
-  </tr>`;
-}
-
-function filaTrozasHtml(f: FilaGuiaInforme): string {
-  const trozas = f.trozas.trim()
-    ? esc(f.trozas).replace(/\n/g, "<br/>")
-    : `<span class="sin-dato">sin lista cargada</span>`;
-  return `<tr><td>${esc(f.numero || "—")}</td><td>${trozas}</td></tr>`;
-}
-
-/** Tabla de identidad de la guía (sin trozas) — N°/fecha/destinatario/especie/cantidad. */
-function tablaGuias(filas: FilaGuiaInforme[], conMotivo: boolean, vacio: string): string {
-  /* «Permiso» sólo si alguna fila lo trae: las relaciones viejas o manuales se imprimen como antes. */
-  const conPermiso = filas.some((f) => f.permiso?.trim());
-  const base = conPermiso ? [...HEAD_GUIAS.slice(0, 2), "Permiso", ...HEAD_GUIAS.slice(2)] : HEAD_GUIAS;
-  const head = conMotivo ? [...base, "Motivo de anulación"] : base;
-  return filas.length
-    ? `<table class="tabla-guias"><thead><tr>${head.map((h) => `<th>${esc(h)}</th>`).join("")}</tr></thead>
-       <tbody>${filas.map((f) => filaHtml(f, conMotivo, conPermiso)).join("")}</tbody></table>`
-    : `<p class="vacio">${esc(vacio)}</p>`;
-}
-
-/** Tabla del detalle de trozas — separada de la de identidad: leer un GTF con
- *  seis columnas y una lista de piezas dentro de la última es leer una hoja
- *  torcida; acá cada tabla contesta UNA pregunta. */
-function tablaTrozas(filas: FilaGuiaInforme[], vacio: string): string {
-  return filas.length
-    ? `<table class="tabla-guias tabla-trozas"><thead><tr>${HEAD_TROZAS.map((h) => `<th>${esc(h)}</th>`).join("")}</tr></thead>
-       <tbody>${filas.map(filaTrozasHtml).join("")}</tbody></table>`
-    : `<p class="vacio">${esc(vacio)}</p>`;
-}
-
-/** El código de una línea de troza: lo que va antes del primer " · " (la
- *  medida no importa acá, sólo el código — `lineaDeItem` arma "código · Ø... · L... · m³"). */
-function codigoDeLineaTroza(linea: string): string {
-  const i = linea.indexOf(" · ");
-  return (i === -1 ? linea : linea.slice(0, i)).trim();
-}
-
-const numerosGuia = (filas: FilaGuiaInforme[]): string[] => filas.map((f) => f.numero.trim()).filter(Boolean);
-
-const codigosDeTrozas = (filas: FilaGuiaInforme[]): string[] =>
-  filas.flatMap((f) => f.trozas.split("\n").map((l) => l.trim()).filter(Boolean).map(codigoDeLineaTroza));
-
-const listaOGuion = (items: string[]): string => (items.length ? `${items.join(" ; ")}.` : "—");
-
-/** "Emitidas"/"Anuladas": los N° de GTF y los códigos de troza EN LÍNEA, sin
- *  tabla — lo que pide Brandon leer de un vistazo dentro del cuerpo de la
- *  carta, sin abrir el anexo. Sin filas, muestra "—" (no desaparece): mismo
- *  criterio que el Anexo 1, que siempre se ve aunque esté vacío. */
-function bloqueNumerado(titulo: string, filas: FilaGuiaInforme[]): string {
-  const permisos = [...new Set(filas.map((f) => f.permiso?.trim() ?? "").filter(Boolean))];
-  return `<p><strong>${esc(titulo)}:</strong></p>
-    ${permisos.length ? `<p><strong>Permiso:</strong> ${esc(listaOGuion(permisos))}</p>` : ""}
-    <p><strong>Guía de Transporte Forestal:</strong> ${esc(listaOGuion(numerosGuia(filas)))}</p>
-    <p><strong>Lista de trozas:</strong> ${esc(listaOGuion(codigosDeTrozas(filas)))}</p>`;
-}
+/** ¿La fila es de trozas? La del CTP ampara producto (madera aserrada…): no lleva lista de trozas. */
+const esDeTrozas = (f: FilaGuiaInforme): boolean => f.origen !== "ctp" || /troza/i.test(f.producto);
 
 /**
- * El resumen que va DENTRO del cuerpo de la carta (no en el anexo): Brandon
- * pidió (2026-08-20) reemplazar la prosa "se emitieron N guías" por los
- * números reales, agrupados Emitidas/Anuladas — es lo primero que lee un
- * fiscalizador, antes de tener que abrir el anexo con el detalle completo.
- *
- * "Emitidas" SIEMPRE se ve (con "—" si todavía no hay guías cargadas, igual
- * que el Anexo 1) — así el operador ve el formato nuevo desde el primer
- * momento, sin confundirlo con "no cambió nada" por tener el trámite vacío.
- * "Anuladas" sólo aparece si de verdad hay alguna (igual que el Anexo 2).
+ * El N° de la «Lista de trozas» de la guía, como va al papel. Si la guía no lo
+ * trae, el N° de la GTF (`derivada`: la pantalla lo marca para revisar, el papel
+ * no). `null` si la guía no es de trozas o no tiene ningún número.
  */
-export function resumenNumeradoHtml(filas: FilaGuiaInforme[]): string {
-  const emitidas = filas.filter((f) => !f.anulada);
-  const anuladas = filas.filter((f) => f.anulada);
-  return `${bloqueNumerado("Emitidas", emitidas)}${anuladas.length > 0 ? bloqueNumerado("Anuladas", anuladas) : ""}`;
+export function listaDeTrozas(f: FilaGuiaInforme): { nro: string; derivada: boolean } | null {
+  const nro = (f.listaTrozasNro ?? "").trim();
+  if (nro) return { nro, derivada: false };
+  if (!esDeTrozas(f) || !f.numero.trim()) return null;
+  return { nro: f.numero.trim(), derivada: true };
 }
 
+const r3 = (n: number): number => Math.round(n * 1000) / 1000;
+
+const lineasDe = (t: string): number => t.split("\n").filter((l) => l.trim()).length;
+
+/** El m³ que declara la fila: sólo si su unidad es m³ y la cantidad es un número («1.43»; «1,43» también). */
+export function m3DeFila(f: Pick<FilaGuiaInforme, "cantidad" | "unidad">): number | null {
+  if (f.unidad.trim().toLowerCase().replace("³", "3") !== "m3") return null;
+  const c = f.cantidad.trim().replace(/\s/g, "");
+  const n = Number(/^\d+,\d+$/.test(c) ? c.replace(",", ".") : c);
+  return c && Number.isFinite(n) ? n : null;
+}
+
+export interface TotalesRelacion {
+  /** Por especie, en orden alfabético. `m3` nulo = ninguna de sus guías declara m³ (pt, unidades). */
+  especies: EspecieDeGuia[];
+  guias: number;
+  trozas: number;
+  m3: number | null;
+}
+
+const claveEspecieFila = (s: string): string => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toUpperCase();
+
 /**
- * El anexo completo: emitidas y anuladas por separado (mezclarlas obligaría a
- * leer una columna extra fila por fila para saber si esa guía todavía vale),
- * y dentro de cada una, la identidad de la guía separada de su lista de
- * trozas — dos preguntas distintas, dos tablas.
+ * Trozas y m³ por especie de las guías EMITIDAS (las anuladas no movieron
+ * madera). Una guía de varias especies suma su desglose (`porEspecie`); la de
+ * una sola, su cantidad declarada y sus líneas de trozas. Es la suma de lo que
+ * dice la propia tabla: un derivado del anexo, no un dato del libro.
  */
-export function tablaGuiasHtml(filas: FilaGuiaInforme[]): string {
-  if (filas.length === 0) return "";
-  const emitidas = filas.filter((f) => !f.anulada);
-  const anuladas = filas.filter((f) => f.anulada);
-
-  const seccionEmitidas = `
-    <h2>Anexo 1 · Guías emitidas</h2>
-    ${tablaGuias(emitidas, false, "Sin guías emitidas declaradas en este período.")}
-    <h3>Lista de trozas</h3>
-    ${tablaTrozas(emitidas, "Sin guías emitidas para listar trozas.")}
-  `;
-
-  // `anexo-anuladas` (ronda 8, Brandon: "mejora la tabla de guías"): las
-  // anuladas ya viven en su propia sección — pero con el mismo verde de
-  // "Emitidas" un fiscalizador que hojea rápido puede leerlas como válidas.
-  // El tinte rojo (mismo semántico que el resto del módulo usa para
-  // "anulada"/"error") las marca de un vistazo, sin mezclar filas ni
-  // inventar una columna de estado que la tabla ya no necesita.
-  const seccionAnuladas = anuladas.length > 0
-    ? `
-    <div class="anexo-anuladas">
-    <h2>Anexo 2 · Anuladas</h2>
-    <h3>Guías de transporte forestal</h3>
-    ${tablaGuias(anuladas, true, "")}
-    <h3>Lista de trozas</h3>
-    ${tablaTrozas(anuladas, "")}
-    </div>
-  `
-    : "";
-
-  return `<div class="anexo-guias">${seccionEmitidas}${seccionAnuladas}</div>`;
+export function totalesPorEspecie(filas: readonly FilaGuiaInforme[]): TotalesRelacion {
+  const mapa = new Map<string, EspecieDeGuia>();
+  let guias = 0;
+  let trozas = 0;
+  let m3: number | null = null;
+  for (const f of filas) {
+    if (f.anulada) continue;
+    guias += 1;
+    const partes = f.porEspecie?.length
+      ? f.porEspecie
+      : [{ especie: f.especie.trim() || "Sin especie", trozas: lineasDe(f.trozas), m3: m3DeFila(f) }];
+    for (const p of partes) {
+      const k = claveEspecieFila(p.especie);
+      const ya = mapa.get(k) ?? { especie: p.especie.trim(), trozas: 0, m3: null };
+      ya.trozas += p.trozas;
+      if (p.m3 != null) ya.m3 = r3((ya.m3 ?? 0) + p.m3);
+      mapa.set(k, ya);
+      trozas += p.trozas;
+      if (p.m3 != null) m3 = r3((m3 ?? 0) + p.m3);
+    }
+  }
+  return { especies: [...mapa.values()].sort((a, b) => a.especie.localeCompare(b.especie)), guias, trozas, m3 };
 }
 
 // ─── Ronda 4 (2026-08-20) — continuidad de período, historial, duplicados ────
