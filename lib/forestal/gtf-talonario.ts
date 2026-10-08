@@ -132,6 +132,27 @@ export function mismoNumeroGtf(a: string | null | undefined, b: string | null | 
 }
 
 /**
+ * ¿PUEDE ser la misma guía? La regla de los FRENOS de plata («una guía, un
+ * cobro»), más amplia que `mismoNumeroGtf`: además iguala un N° escrito corto
+ * con la cola de uno completo (`065` ≡ `019-001-0000065`, `1-65` ≡ `19-1-65`).
+ * Cuál es no se adivina, pero frenar y pedir que se revise es mejor que cobrar
+ * la misma madera dos veces (revisión 08-10: el candado ya las juntaba y el
+ * freno no). Dos números COMPLETOS de series distintas (`19-1-65`, `19-2-65`)
+ * siguen siendo dos guías: ninguno es la cola del otro.
+ *
+ * Si da `true`, la cola es la misma y por eso también `claveCandadoGtf`: el
+ * freno nunca iguala dos guías que el candado no pone en fila.
+ */
+export function puedeSerLaMismaGtf(a: string | null | undefined, b: string | null | undefined): boolean {
+  const ta = tramosDe(a)?.map(canon);
+  const tb = tramosDe(b)?.map(canon);
+  if (!ta || !tb) return false;
+  const [corto, largo] = ta.length <= tb.length ? [ta, tb] : [tb, ta];
+  const cola = largo.slice(largo.length - corto.length);
+  return corto.every((t, i) => t === cola[i]);
+}
+
+/**
  * El último tramo sin sus ceros (`…-0000065` → `65`): lo que se le pide a la
  * base (`endsWith`) para traer las candidatas y compararlas después con
  * `mismoNumeroGtf`. Es un filtro amplio a propósito: nunca deja afuera una

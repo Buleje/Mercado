@@ -319,7 +319,7 @@ export const ResultadoNegocioDB = {
         where: { tenantId, deletedAt: null, fecha: enRango, OR: [{ concepto: { in: ["pago", "pago_hecho", "compensacion"] } }, { liquidacionId: { not: null } }] },
         select: {
           id: true, parteId: true, parteNombre: true, fecha: true, tipo: true, concepto: true, monto: true, moneda: true,
-          referencia: true, ctpEntryId: true, liquidacionId: true, gtfNumber: true,
+          referencia: true, ctpEntryId: true, liquidacionId: true, gtfNumber: true, notas: true,
         },
       }),
       // Los dos sentidos a propósito (ADR-448): lo DADO sale, lo RECIBIDO entra.

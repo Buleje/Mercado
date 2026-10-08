@@ -34,6 +34,16 @@ const H = vi.hoisted(() => {
   const norm = (v: unknown): unknown =>
     v && typeof v === "object" && typeof (v as { toNumber?: unknown }).toNumber === "function" ? (v as { toNumber: () => number }).toNumber() : v;
 
+  /* La contención de jsonb (`@>`): cada elemento del patrón está en ALGÚN elemento del arreglo; un objeto, clave por clave; lo demás, igual. */
+  function contieneJsonb(actual: unknown, patron: unknown): boolean {
+    if (Array.isArray(patron)) return Array.isArray(actual) && patron.every((p) => actual.some((a) => contieneJsonb(a, p)));
+    if (patron !== null && typeof patron === "object") {
+      if (actual === null || typeof actual !== "object" || Array.isArray(actual)) return false;
+      return Object.entries(patron).every(([k, v]) => k in actual && contieneJsonb((actual as Fila)[k], v));
+    }
+    return actual === patron;
+  }
+
   function cumple(tabla: keyof typeof db, row: Fila, where: Fila | undefined): boolean {
     if (!where) return true;
     for (const [k, v] of Object.entries(where)) {
@@ -52,6 +62,11 @@ const H = vi.hoisted(() => {
         continue;
       }
       const actual = row[k] ?? null;
+      /* Un Decimal en el WHERE es igualdad por valor (vaciar el valor de venta sólo si sigue siendo el puesto). */
+      if (v !== null && typeof v === "object" && typeof (v as { toNumber?: unknown }).toNumber === "function") {
+        if (actual === null || Number(actual) !== (v as { toNumber: () => number }).toNumber()) return false;
+        continue;
+      }
       if (v !== null && typeof v === "object" && !(v instanceof Date)) {
         const op = v as Fila;
         if ("in" in op && !(op.in as unknown[]).includes(actual)) return false;
@@ -61,6 +76,8 @@ const H = vi.hoisted(() => {
         if ("startsWith" in op && !String(actual).startsWith(String(op.startsWith))) return false;
         /* `mode: "insensitive"` de Prisma: la cola del N° de guía (`filtroMismaGuia`). */
         if ("endsWith" in op && !String(actual ?? "").toUpperCase().endsWith(String(op.endsWith).toUpperCase())) return false;
+        /* `array_contains` de Prisma sobre Json en Postgres = `@>` de jsonb (`assertNoEsDeCubicacion`). */
+        if ("array_contains" in op && !contieneJsonb(actual, op.array_contains)) return false;
         continue;
       }
       if (actual !== v) return false;
@@ -147,7 +164,7 @@ const H = vi.hoisted(() => {
       throw e;
     }
   };
-  return { db, kv, pasos, prisma };
+  return { db, kv, pasos, prisma, mesCerrado: false };
 });
 
 vi.mock("server-only", () => ({}));
@@ -157,12 +174,31 @@ vi.mock("@/lib/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: 
 vi.mock("@/lib/forestal/ctp-audit", () => ({ auditCtp: vi.fn(), auditCtpEsperando: vi.fn(async () => {}) }));
 vi.mock("@/lib/db/forest-directorio.db", () => ({ ForestDirectorioDB: {} }));
 vi.mock("@/lib/db/forest-cubicaciones.db", () => ({ ForestCubicacionesDB: { list: async () => H.kv.map((x) => ({ ...x })) } }));
+vi.mock("@/lib/specializations", () => ({ isSpecializationEnabled: async () => true }));
+vi.mock("@/lib/db/forest-ctp-cierre.db", () => ({ ForestCtpCierreDB: { closedPeriodOf: async () => (H.mesCerrado ? { label: "octubre 2026" } : null) } }));
 vi.mock("@/lib/db/forest-cuenta.db", () => ({
   ForestCuentaDB: {
     bloquearGuiasEnTx: async (_tx: unknown, _t: string, gtfs: string[]) => {
       H.pasos.push(`lock:guia:${gtfs.join(",")}`);
       return gtfs;
     },
+    bloquearPartesEnTx: async (_tx: unknown, t: string, ids: string[]) => {
+      H.pasos.push(`lock:liq:${t}:parte:${ids.join(",")}`);
+    },
+    crearDeCubicacionEnTx: async (_tx: unknown, t: string, base: Record<string, unknown>, patas: Record<string, unknown>[]) =>
+      patas.map((p) => {
+        const id = `mov-${H.db.forestCuentaMov.length + 1}`;
+        H.db.forestCuentaMov.push({ id, tenantId: t, ...base, ...p, deletedAt: null, liquidacionId: null, createdAt: new Date() });
+        return id;
+      }),
+    bajaDeCubicacionEnTx: async (_tx: unknown, t: string, ids: string[]) => {
+      const vivas = H.db.forestCuentaMov.filter((m) => ids.includes(String(m.id)) && m.tenantId === t && m.deletedAt == null);
+      for (const m of vivas) m.deletedAt = new Date();
+      return vivas.length;
+    },
+    liquidacionPosteriorEnTx: async () => null,
+    saldoDeParteEnTx: async () => 0,
+    invalidar: () => {},
   },
 }));
 
@@ -170,6 +206,8 @@ import { CubicacionTrozasError, ForestCubicacionTrozasDB } from "@/lib/db/forest
 import { CubicacionComercialDB } from "@/lib/db/forest-cubicacion-comercial.db";
 import type { GuardarCubicacionInput } from "@/lib/forestal/cubicacion-cuenta";
 import type { GuardarAserradaInput } from "@/lib/forestal/cubicacion-comercial-tipos";
+import { ventasDeMadera, type DespachoEntrada } from "@/lib/finance/resultado-del-negocio";
+import { claveCandadoGtf, puedeSerLaMismaGtf } from "@/lib/forestal/gtf-talonario";
 
 const T = "t1";
 const actor = { usuario: "brandon", ip: "127.0.0.1" };
@@ -182,6 +220,10 @@ const codigoDe = async (p: Promise<unknown>) => {
   }
 };
 const saldo = (id: string) => Number(H.db.adelanto.find((a) => a.id === id)?.saldoPendiente);
+const valorVenta = (id: string) => {
+  const v = H.db.forestCtpEntry.find((d) => d.id === id)?.valorVenta;
+  return v == null ? null : Number(v);
+};
 const adelanto = (id: string, fecha: string, monto: number, direccion: "DADO" | "RECIBIDO") => ({
   id, tenantId: T, beneficiarioId: "b1", codigoOperacion: `ADL-${id}`, direccion, status: "ABIERTO",
   fechaAdelanto: new Date(`${fecha}T15:00:00.000Z`), montoAdelantado: monto, saldoPendiente: monto, moneda: "PEN", modalidad: "CUENTA_CORRIENTE",
@@ -230,6 +272,7 @@ beforeEach(() => {
   for (const k of Object.keys(H.db) as (keyof typeof H.db)[]) H.db[k].length = 0;
   H.kv.length = 0;
   H.pasos.length = 0;
+  H.mesCerrado = false;
   H.db.adelantoBeneficiario.push({ id: "b1", tenantId: T, nombre: "PRUEBA TEST - Cliente" });
   H.db.forestGtf.push(gtf("g1"), gtf("g-ajena", { tenantId: "t2" }), gtf("g-anulada", { status: "anulada" }));
   H.db.forestCtpEntry.push(
@@ -315,8 +358,12 @@ describe("(A) madera aserrada", () => {
     expect(H.pasos.indexOf("lock:cub:t1:despacho:d1")).toBeLessThan(H.pasos.indexOf("lock:liq:t1:benef:b1"));
     expect(await codigoDe(aplicar(b.id, 600))).toBe("409 DESPACHO_YA_VALORIZADO");
     expect(saldo("r1")).toBe(1500);
-    /* El despacho se anuló después de guardar: no se cobra. */
+    /* ADR-484 (2): la venta llenó el valor de venta vacío del despacho, y anularla lo vacía (sigue siendo el suyo). */
+    expect(valorVenta("d1")).toBe(500);
+    expect((await CubicacionComercialDB.prefillDespacho(T, "d1")).valorVentaDe).toBe(a.codigo);
     await ForestCubicacionTrozasDB.anular(T, a.id, "se midió mal", actor);
+    expect(valorVenta("d1")).toBeNull();
+    /* El despacho se anuló después de guardar: no se cobra. */
     const d1 = H.db.forestCtpEntry.find((d) => d.id === "d1");
     if (d1) d1.status = "anulado";
     expect(await codigoDe(aplicar(b.id, 600))).toBe("404 ORIGEN_NO_ENCONTRADO");
@@ -376,7 +423,8 @@ describe("(A) madera aserrada", () => {
   it("20 · aplicar una venta devuelve sus RECIBIDOS en orden; más que lo que se debe → 422; anular devuelve", async () => {
     H.db.adelanto.push(adelanto("r1", "2026-08-01", 300, "RECIBIDO"), adelanto("r2", "2026-09-01", 500, "RECIBIDO"));
     const mucha = await CubicacionComercialDB.guardarAserrada(T, rapida(1000), actor);
-    expect(await codigoDe(aplicar(mucha.id, 5000))).toBe("422 EXCEDE_LO_RECIBIDO");
+    /* ADR-484: más que lo que te adelantó → el resto queda debiéndote en su cuenta; sin ficha en el directorio, no hay dónde. */
+    expect(await codigoDe(aplicar(mucha.id, 5000))).toBe("422 SIN_CUENTA");
     const c = await CubicacionComercialDB.guardarAserrada(T, rapida(100), actor);
     const r = await aplicar(c.id, 500);
     expect(r.imputacion.map((i) => [i.adelantoId, i.monto])).toEqual([["r1", 300], ["r2", 200]]);
@@ -384,6 +432,45 @@ describe("(A) madera aserrada", () => {
     expect([saldo("r1"), saldo("r2")]).toEqual([0, 300]);
     await ForestCubicacionTrozasDB.anular(T, c.id, "no era esa madera", actor);
     expect([saldo("r1"), saldo("r2")]).toEqual([300, 500]);
+  });
+
+  it("20b · ADR-484: con ficha, lo que el RECIBIDO no cubre queda debiéndote; el valor del libro no se pisa; cambiado a mano o mes cerrado no se toca", async () => {
+    H.db.forestParty.push({ id: "p1", tenantId: T, nombre: "Cliente SAC", deletedAt: null });
+    const b = H.db.adelantoBeneficiario.find((x) => x.id === "b1");
+    if (b) b.forestPartyId = "p1";
+    H.db.adelanto.push(adelanto("r1", "2026-08-01", 300, "RECIBIDO"));
+    /* d2 + d3 (misma guía, 200 + 100 en el libro). */
+    const c = await CubicacionComercialDB.guardarAserrada(T, rapida(100, { origen: "despacho", origenId: "d2" }), actor);
+    const r = await aplicar(c.id, 500);
+    expect(r.imputacion.map((i) => [i.adelantoId, i.monto])).toEqual([["r1", 300]]);
+    expect(r.cubicacion.aCuenta).toMatchObject({ parteId: "p1", monto: 200, sentido: "venta" });
+    const vivos = () => H.db.forestCuentaMov.filter((m) => m.deletedAt == null);
+    expect(vivos().map((m) => [m.tipo, m.concepto, m.monto, m.gtfNumber])).toEqual([
+      ["cargo", "venta", 500, "019-002-0000009"],
+      ["abono", "compensacion", 300, "019-002-0000009"],
+    ]);
+    expect(r.cubicacion.valorVenta).toMatchObject({ estado: "ya_tenia", previo: 300, diferencia: 200 });
+    expect([valorVenta("d2"), valorVenta("d3")]).toEqual([200, 100]);
+    await ForestCubicacionTrozasDB.anular(T, c.id, "mal", actor);
+    expect(vivos()).toHaveLength(0);
+    expect([saldo("r1"), valorVenta("d2"), valorVenta("d3")]).toEqual([300, 200, 100]);
+
+    /* Lo llenó la cubicación y después alguien lo cambió a mano: anular no lo vacía. */
+    H.db.forestCtpEntry.push(despacho("d5", { lineNo: 5 }));
+    const d = await CubicacionComercialDB.guardarAserrada(T, rapida(10, { origen: "despacho", origenId: "d5" }), actor);
+    await aplicar(d.id, 50);
+    expect(valorVenta("d5")).toBe(50);
+    const d5 = H.db.forestCtpEntry.find((x) => x.id === "d5");
+    if (d5) d5.valorVenta = 55;
+    await ForestCubicacionTrozasDB.anular(T, d.id, "mal", actor);
+    expect(valorVenta("d5")).toBe(55);
+
+    /* Mes cerrado: el despacho vacío se queda vacío. */
+    H.mesCerrado = true;
+    const m = await CubicacionComercialDB.guardarAserrada(T, rapida(10, { origen: "despacho", origenId: "d1" }), actor);
+    const rm = await aplicar(m.id, 50);
+    expect(rm.cubicacion.valorVenta?.estado).toBe("mes_cerrado");
+    expect(valorVenta("d1")).toBeNull();
   });
 });
 
@@ -420,5 +507,202 @@ describe("lo genérico", () => {
     const leida = await ForestCubicacionTrozasDB.get(T, a.id);
     expect([leida?.formula, leida?.unidad, leida?.lineas?.[0]?.pt]).toEqual(["tablar", "PT", 33.33]);
     expect((await ForestCubicacionTrozasDB.list(T, { material: "aserrada" }))[0]).toMatchObject({ formula: "tablar", unidad: "PT", modo: "total" });
+  });
+});
+
+/* Revisión 08-10 de ADR-484: llenar el valor de venta enciende «Anotar la venta de la guía» (`CtpVentaDeLaGuia`), cuyo
+   freno sólo veía un cargo con el texto exacto de la guía. La cuenta REAL para anotar: el mock de arriba trae sólo las
+   primitivas de «aplicar». */
+describe("ADR-484 · una venta, un solo cobro", () => {
+  const cuentaReal = () => vi.importActual<typeof import("@/lib/db/forest-cuenta.db")>("@/lib/db/forest-cuenta.db");
+  const anotar = async (gtfNumber: string, total = 500) =>
+    (await cuentaReal()).ForestCuentaDB.anotarVentaDeGuia(T, { parteId: "p1", parteNombre: "Cliente SAC", fecha: "2026-10-08", gtfNumber, total }, "brandon");
+  const errorDe = async (p: Promise<unknown>) => {
+    try {
+      await p;
+      return "sin error";
+    } catch (e) {
+      return e instanceof Error ? `${e.name}: ${e.message}` : String(e);
+    }
+  };
+  const vivos = () => H.db.forestCuentaMov.filter((m) => m.deletedAt == null);
+  /* Lo que el resultado del negocio suma como venta de madera (ADR-451) con ese despacho y la cuenta. */
+  const ventaEnResultado = (despachoId: string) =>
+    ventasDeMadera(
+      H.db.forestCtpEntry
+        .filter((d) => d.id === despachoId)
+        .map((d) => ({ id: d.id, lineNo: d.lineNo, gtfSalida: d.gtfNumber ?? null, valorVenta: d.valorVenta ?? null, cogs: 100, moneda: "PEN", motivo: null, fecha: "2026-10-07" }) as unknown as DespachoEntrada),
+      vivos().map((m) => ({
+        id: String(m.id), parteId: String(m.parteId), parteNombre: String(m.parteNombre), fecha: "2026-10-08", tipo: String(m.tipo), concepto: String(m.concepto),
+        monto: Number(m.monto), moneda: "PEN", referencia: (m.referencia as string | null) ?? null, ctpEntryId: null, liquidacionId: null, gtfNumber: (m.gtfNumber as string | null) ?? null,
+      })),
+    ).reduce((t, g) => t + (g.venta ?? 0), 0);
+  const emitirGuia = (id: string, gtfNumber: string) => {
+    const d = H.db.forestCtpEntry.find((x) => x.id === id);
+    if (d) d.gtfNumber = gtfNumber;
+  };
+
+  beforeEach(() => {
+    H.db.forestParty.push({ id: "p1", tenantId: T, nombre: "Cliente SAC", deletedAt: null });
+    const b = H.db.adelantoBeneficiario.find((x) => x.id === "b1");
+    if (b) b.forestPartyId = "p1";
+  });
+
+  it("A · sin guía y con resto a la cuenta: no llena el valor de venta, la venta sale UNA vez; la guía emitida después ya no se anota (409)", async () => {
+    H.db.adelanto.push(adelanto("r1", "2026-08-01", 300, "RECIBIDO"));
+    const c = await CubicacionComercialDB.guardarAserrada(T, rapida(100, { origen: "despacho", origenId: "d1" }), actor);
+    const r = await aplicar(c.id, 500);
+    expect(r.cubicacion.valorVenta?.estado).toBe("sin_guia");
+    expect(valorVenta("d1")).toBeNull();
+    expect(vivos().map((m) => [m.tipo, m.concepto, m.monto, m.referencia ?? null])).toEqual([
+      ["cargo", "venta", 500, null],
+      ["abono", "compensacion", 300, null],
+    ]);
+    expect(ventaEnResultado("d1")).toBe(500);
+
+    emitirGuia("d1", "019-002-0000077");
+    expect(ventaEnResultado("d1")).toBe(500);
+    H.pasos.length = 0;
+    const e = await errorDe(anotar("19-2-77"));
+    expect(e).toMatch(/^GuiaCobradaPorCubicacionError: /);
+    expect(e).toContain(c.codigo);
+    /* Los candados de «aplicar», en su orden: guía → sus líneas de despacho → persona. */
+    expect(H.pasos[0]).toMatch(/^lock:guia-plata:t1:/);
+    expect(H.pasos.slice(1)).toEqual(["lock:cub:t1:despacho:d1", "lock:liq:t1:parte:p1"]);
+    expect(vivos()).toHaveLength(2);
+
+    /* Una venta suelta con esa guía tampoco la cobra otra vez. */
+    const suelta = await CubicacionComercialDB.guardarAserrada(T, rapida(100, { gtfNumber: "019-002-0000077" }), actor);
+    expect(await codigoDe(aplicar(suelta.id, 500))).toBe("409 DESPACHO_YA_VALORIZADO");
+  });
+
+  it("B · el adelanto cubrió todo (sin cargo): el valor de venta se llena y anotar la guía → 409; anulada la cubicación, se anota una vez", async () => {
+    H.db.adelanto.push(adelanto("r1", "2026-08-01", 2000, "RECIBIDO"));
+    const c = await CubicacionComercialDB.guardarAserrada(T, rapida(100, { origen: "despacho", origenId: "d1" }), actor);
+    const r = await aplicar(c.id, 500);
+    expect(r.cubicacion.aCuenta ?? null).toBeNull();
+    expect(valorVenta("d1")).toBe(500);
+    emitirGuia("d1", "019-002-0000077");
+    expect(await errorDe(anotar("019-002-0000077"))).toContain(c.codigo);
+    expect(vivos()).toHaveLength(0);
+    expect(ventaEnResultado("d1")).toBe(500);
+
+    H.pasos.length = 0;
+    await ForestCubicacionTrozasDB.anular(T, c.id, "se cobra por la guía", actor);
+    /* Anular toma la guía de HOY del despacho y sus líneas, como «aplicar». */
+    expect(H.pasos.slice(0, 2)).toEqual(["lock:guia:019-002-0000077", "lock:cub:t1:despacho:d1"]);
+    expect(valorVenta("d1")).toBeNull();
+    expect(await errorDe(anotar("019-002-0000077"))).toBe("sin error");
+    expect(vivos().map((m) => [m.tipo, m.concepto, m.monto, m.referencia])).toEqual([["cargo", "venta", 500, "019-002-0000077"]]);
+    /* La misma guía escrita corta ya está anotada: se compara el N°, no el texto. */
+    expect(await errorDe(anotar("19-2-77"))).toMatch(/^GuiaYaAnotadaError: /);
+  });
+
+  it("C · el cargo lleva la guía como la escribe HOY el despacho: con su valor de venta, el resultado los junta (no 1000)", async () => {
+    emitirGuia("d1", "019-002-0000077");
+    H.db.adelanto.push(adelanto("r1", "2026-08-01", 300, "RECIBIDO"));
+    const c = await CubicacionComercialDB.guardarAserrada(T, rapida(100, { origen: "despacho", origenId: "d1" }), actor);
+    expect(c.gtfNumber).toBe("019-002-0000077");
+    /* El libro corrige cómo está escrita la guía: el N° es el mismo. */
+    emitirGuia("d1", "19-2-77");
+    await aplicar(c.id, 500);
+    expect(valorVenta("d1")).toBe(500);
+    expect(vivos().map((m) => [m.tipo, m.referencia, m.gtfNumber])).toEqual([
+      ["cargo", "19-2-77", "19-2-77"],
+      ["abono", "19-2-77", "19-2-77"],
+    ]);
+    expect(ventaEnResultado("d1")).toBe(500);
+
+    /* Una venta suelta con la guía tipeada como otra línea: el cargo lleva el N° como lo escribe el despacho (su primera línea). */
+    const suelta = await CubicacionComercialDB.guardarAserrada(T, rapida(10, { gtfNumber: "19-2-9" }), actor);
+    expect(suelta.gtfNumber).toBe("19-2-9");
+    await aplicar(suelta.id, 50);
+    expect(vivos().filter((m) => String(m.notas).includes(suelta.codigo)).map((m) => [m.tipo, m.referencia])).toEqual([["cargo", "019-002-0000009"]]);
+  });
+
+  it("D · la guía escrita corta («065») y completa («019-001-0000065») es la misma para el freno (la regla del candado)", async () => {
+    /* Anotada completa → la venta suelta corta no la cobra otra vez. */
+    expect(await errorDe(anotar("019-001-0000065"))).toBe("sin error");
+    const corta = await CubicacionComercialDB.guardarAserrada(T, rapida(100, { gtfNumber: "065" }), actor);
+    expect(corta.gtfNumber).toBe("065");
+    expect(await codigoDe(aplicar(corta.id, 500))).toBe("409 GUIA_YA_ANOTADA");
+
+    /* Al revés: la venta suelta corta se cobra primero → anotar la completa es 409 con su código. */
+    for (const m of vivos()) m.deletedAt = new Date();
+    H.db.adelanto.push(adelanto("r1", "2026-08-01", 2000, "RECIBIDO"));
+    await aplicar(corta.id, 500);
+    const e = await errorDe(anotar("019-001-0000065"));
+    expect(e).toMatch(/^GuiaCobradaPorCubicacionError: /);
+    expect(e).toContain(corta.codigo);
+    /* «065» también calza con otra serie: el freno no adivina cuál es y frena (mejor revisar que cobrar dos veces). */
+    expect(await errorDe(anotar("019-002-0000065"))).toMatch(/^GuiaCobradaPorCubicacionError: /);
+    /* Dos números completos de series distintas nunca son la misma guía; el candado es el mismo (la cola). */
+    expect([puedeSerLaMismaGtf("065", "019-001-0000065"), puedeSerLaMismaGtf("1-65", "19-001-0000065"), puedeSerLaMismaGtf("19-1-65", "19-2-65")]).toEqual([true, true, false]);
+    expect(claveCandadoGtf("065")).toBe(claveCandadoGtf("019-001-0000065"));
+  });
+
+  it("E · con la venta en la cuenta, el valor de venta sólo va a las líneas escritas como el cargo; el resultado la cuenta UNA vez (no 1500)", async () => {
+    /* d2 «019-002-0000009» y d3 «19-2-9»: la misma guía escrita distinto, las dos vacías y repartibles (Tornillo, m³). */
+    for (const id of ["d2", "d3"]) {
+      const d = H.db.forestCtpEntry.find((x) => x.id === id);
+      if (d) Object.assign(d, { valorVenta: null, speciesCommon: "Tornillo", unit: "m3", quantity: 0.5 });
+    }
+    H.db.adelanto.push(adelanto("r1", "2026-08-01", 300, "RECIBIDO"));
+    const c = await CubicacionComercialDB.guardarAserrada(T, rapida(200, { origen: "despacho", origenId: "d2" }), actor);
+    await aplicar(c.id, 1000);
+    expect(vivos().find((m) => m.concepto === "venta")?.referencia).toBe("019-002-0000009");
+    expect([valorVenta("d2"), valorVenta("d3")]).toEqual([1000, null]);
+    const grupos = ventasDeMadera(
+      H.db.forestCtpEntry
+        .filter((d) => d.id === "d2" || d.id === "d3")
+        .map((d) => ({ id: d.id, lineNo: d.lineNo, gtfSalida: d.gtfNumber ?? null, valorVenta: d.valorVenta ?? null, cogs: 100, moneda: "PEN", motivo: null, fecha: "2026-10-07" }) as unknown as DespachoEntrada),
+      vivos().map((m) => ({
+        id: String(m.id), parteId: String(m.parteId), parteNombre: String(m.parteNombre), fecha: "2026-10-08", tipo: String(m.tipo), concepto: String(m.concepto),
+        monto: Number(m.monto), moneda: "PEN", referencia: (m.referencia as string | null) ?? null, ctpEntryId: null, liquidacionId: null, gtfNumber: (m.gtfNumber as string | null) ?? null,
+      })),
+    );
+    expect(grupos.map((g) => [g.venta, g.origenVenta, g.costo])).toEqual([[1000, "cuenta", 200]]);
+  });
+
+  it("F · ventasDeMadera junta por el N°: «19-2-9» con «019-002-0000009», «065» con la única completa; dos series no se juntan", () => {
+    const d = (id: string, gtfSalida: string, valor: number) =>
+      ({ id, lineNo: 1, gtfSalida, valorVenta: valor, cogs: 10, moneda: "PEN", motivo: null, fecha: "2026-10-07" }) as unknown as DespachoEntrada;
+    const cargo = (id: string, referencia: string, monto: number) => ({
+      id, parteId: "p1", parteNombre: "Cliente SAC", fecha: "2026-10-08", tipo: "cargo", concepto: "venta", monto, moneda: "PEN", referencia, ctpEntryId: null, liquidacionId: null, gtfNumber: referencia,
+    });
+    const suma = (gs: ReturnType<typeof ventasDeMadera>) => gs.reduce((t, g) => t + (g.venta ?? 0), 0);
+    expect(suma(ventasDeMadera([d("a", "19-2-9", 400)], [cargo("c1", "019-002-0000009", 1000)]))).toBe(1000);
+    expect(suma(ventasDeMadera([d("a", "065", 400)], [cargo("c1", "019-001-0000065", 1000)]))).toBe(1000);
+    /* «065» calza con dos series: no se adivina, y las dos completas siguen siendo dos ventas. */
+    const tres = ventasDeMadera([d("a", "019-001-0000065", 100), d("b", "019-002-0000065", 200), d("c", "065", 50)], []);
+    expect(tres).toHaveLength(3);
+    expect(suma(tres)).toBe(350);
+  });
+
+  it("G · una pata de cubicación aplicada no se borra suelta (`array_contains` sobre la imputación); con «CUB-» en la nota pero ajena, sí", async () => {
+    H.db.adelanto.push(adelanto("r1", "2026-08-01", 300, "RECIBIDO"));
+    const c = await CubicacionComercialDB.guardarAserrada(T, rapida(100), actor);
+    await aplicar(c.id, 500);
+    const patas = vivos();
+    expect(patas.map((m) => m.concepto)).toEqual(["venta", "compensacion"]);
+    const { ForestCuentaDB, MovimientoDeCubicacionError } = await cuentaReal();
+    for (const m of patas) {
+      const e = await ForestCuentaDB.eliminar(T, String(m.id), "brandon").catch((x: unknown) => x);
+      expect(e).toBeInstanceOf(MovimientoDeCubicacionError);
+      expect(String((e as Error).message)).toContain(c.codigo);
+    }
+    H.db.forestCuentaMov.push({ id: "mov-suelto", tenantId: T, parteId: "p1", parteNombre: "Cliente SAC", tipo: "abono", concepto: "pago", monto: 50, notas: `Pago a cuenta de ${c.codigo}`, deletedAt: null, liquidacionId: null });
+    expect(await ForestCuentaDB.eliminar(T, "mov-suelto", "brandon")).toBe(true);
+    expect(vivos()).toHaveLength(2);
+  });
+
+  it("H · el cruce de la cuenta se reconoce como de cubicación (no suma otra vez en «nunca fue caja»)", async () => {
+    const { esCruceDeCubicacion } = await import("@/lib/finance/resultado-del-negocio");
+    const { patasDeCuenta } = await import("@/lib/forestal/cubicacion-a-cuenta");
+    for (const sentido of ["venta", "compra"] as const) {
+      const patas = patasDeCuenta({ sentido, total: 500, resto: 200, codigo: "CUB-2026-0007", detalle: "Madera · CUB-2026-0007 · 2 trozas", adelantos: ["ADL-1"] });
+      expect(patas.map((p) => esCruceDeCubicacion(p))).toEqual([false, true]);
+    }
+    expect(esCruceDeCubicacion({ concepto: "compensacion", notas: "Cruce a mano con su deuda" })).toBe(false);
   });
 });

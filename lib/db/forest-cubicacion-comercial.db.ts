@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { auditCtp } from "@/lib/forestal/ctp-audit";
 import { ForestCubicacionesDB } from "@/lib/db/forest-cubicaciones.db";
-import { filtroMismaGuia } from "@/lib/db/guia-cubicacion.db";
+import { cubicacionQueVendioLaGuia, despachosDeLaGuiaDeSalida, filtroMismaGuia } from "@/lib/db/guia-cubicacion.db";
 import { mismoNumeroGtf } from "@/lib/forestal/gtf-talonario";
 import { cubicarLineasComercial, cubicarPiezasComercial, piesDeMetros, pulgadasDeMetros } from "@/lib/forestal/cubicacion-comercial";
 import {
@@ -18,6 +18,7 @@ import {
   type PrefillTrozaGtf,
 } from "@/lib/forestal/cubicacion-comercial-tipos";
 import type { CubicacionTrozasDTO } from "@/lib/forestal/cubicacion-cuenta";
+import { separarImputacion } from "@/lib/forestal/cubicacion-a-cuenta";
 import type { CubicacionRegistro } from "@/lib/forestal/cubicacion-registro";
 import {
   CubicacionTrozasError,
@@ -81,7 +82,7 @@ async function existentesDe(
   const filtro = gtf ? filtroMismaGuia(gtf) : null;
   const filas = await prisma.forestCubicacionTrozas.findMany({
     where: { tenantId, deletedAt: null, OR: [{ origen, origenId: { in: [...ids] } }, ...(filtro ? [{ gtfNumber: filtro }] : [])] },
-    select: { id: true, codigo: true, estado: true, monto: true, personaNombre: true, gtfNumber: true, origen: true, origenId: true },
+    select: { id: true, codigo: true, estado: true, monto: true, personaNombre: true, gtfNumber: true, origen: true, origenId: true, imputacion: true },
     orderBy: { createdAt: "desc" },
     take: 50,
   });
@@ -93,7 +94,14 @@ async function existentesDe(
       estado: f.estado === "aplicada" || f.estado === "anulada" ? f.estado : "borrador",
       monto: f.monto == null ? null : Number(f.monto),
       personaNombre: f.personaNombre,
+      /* ADR-484: las líneas del despacho que llenó al aplicarse (para decir de dónde salió el valor de venta). */
+      ...(f.estado === "aplicada" ? lineasPuestas(f.imputacion) : {}),
     }));
+}
+
+function lineasPuestas(imputacion: Prisma.JsonValue | null): { valorVentaPuesto?: { despachoId: string; valor: number }[] } {
+  const v = separarImputacion(imputacion).valorVenta;
+  return v?.estado === "puesto" && v.lineas.length ? { valorVentaPuesto: v.lineas } : {};
 }
 
 /** El nombre del destinatario de la GTF de salida (`gtfDatos`), o el destino del libro. */
@@ -275,6 +283,17 @@ export const CubicacionComercialDB = {
       .slice(0, 60);
 
     const conValor = filas.every((f) => f.valorVenta != null);
+    const existentes = await existentesDe(tenantId, "despacho", ids, gtf);
+    /* ADR-484: la cubicación de VENTA aplicada que ya cobró la guía, con la MISMA consulta que frena «Anotar la venta»
+       (su N° con `puedeSerLaMismaGtf` o una de sus líneas): la pantalla esconde el botón en vez de esperar el 409. */
+    const cobradaPor = gtf
+      ? ((await cubicacionQueVendioLaGuia(prisma, tenantId, gtf, [...new Set([...ids, ...(await despachosDeLaGuiaDeSalida(prisma, tenantId, gtf, true)).map((l) => l.id)])]))?.codigo ?? null)
+      : null;
+    /* El valor de venta salió de una cubicación si TODAS las líneas siguen con lo que ella puso (ADR-484). */
+    const valorDe = new Map(filas.map((f) => [f.id, f.valorVenta == null ? null : Number(f.valorVenta)]));
+    const puso = conValor
+      ? existentes.find((e) => e.valorVentaPuesto?.length === filas.length && e.valorVentaPuesto.every((l) => valorDe.get(l.despachoId) === l.valor))
+      : undefined;
     return {
       tipo: "despacho",
       despachoId: d.id,
@@ -291,7 +310,9 @@ export const CubicacionComercialDB = {
       })),
       guardadas,
       valorVentaLibro: conValor ? r2(filas.reduce((t, f) => t + Number(f.valorVenta), 0)) : null,
-      existentes: await existentesDe(tenantId, "despacho", ids, gtf),
+      valorVentaDe: puso?.codigo ?? null,
+      cobradaPor,
+      existentes,
     };
   },
 

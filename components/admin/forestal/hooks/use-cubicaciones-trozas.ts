@@ -73,10 +73,12 @@ export function mensajeDeError(codigo: string | null, extra: Record<string, unkn
       return "Alguien cambió esta cubicación mientras la mirabas. Ábrela de nuevo.";
     case "YA_APLICADA":
       return "Ya se descontó de la cuenta: no se edita. Anúlala y vuelve a hacerla.";
-    case "SIN_ADELANTO_ABIERTO":
-      return "Esta persona no tiene adelantos abiertos: la cubicación queda guardada, sin descontar.";
-    case "EXCEDE_LO_RECIBIDO":
-      return "Vale más de lo que le debes devolver: baja el precio o descuenta sólo una parte aparte.";
+    case "SIN_CUENTA":
+      return "Lo que el adelanto no cubre va a su cuenta, y esta persona no tiene ficha en el Directorio forestal: créasela y vuelve a aplicar.";
+    case "GUIA_YA_ANOTADA":
+      return "La venta de esa guía ya está anotada en una cuenta: no se cobra dos veces.";
+    case "MONEDA_NO_SOPORTADA":
+      return "Esta cubicación no está en soles: la cuenta se lleva sólo en soles.";
     case "FALTA_PRECIO":
       return `Falta el precio de ${String(extra.especie ?? "una especie")}.`;
     case "LIQUIDADA_DESPUES":
@@ -186,29 +188,46 @@ export function useCubicacionesTrozas(
   return { lista, cargando: activo && lista === null && !error, error, recargar };
 }
 
-/** Una cubicación con sus medidas. */
+/** La cuenta forestal de la persona de una cubicación (ADR-484): adonde va lo que el adelanto no cubre. */
+export interface CuentaDeLaPersona {
+  parteId: string;
+  nombre: string;
+  /** + te debe · − le debes. */
+  saldo: number;
+}
+
+/** El detalle (`GET …/[id]`): la cubicación y, si tu rol ve la plata, su cuenta forestal. */
+const unDetalle = (j: unknown): { cub: CubicacionTrozas; cuenta: CuentaDeLaPersona | null } => {
+  const o = (j ?? {}) as { cuenta?: CuentaDeLaPersona | null };
+  return { cub: unaCubicacion(j), cuenta: o.cuenta && typeof o.cuenta.saldo === "number" ? o.cuenta : null };
+};
+
+/** Una cubicación con sus medidas (y la cuenta forestal de su persona). */
 export function useCubicacionTrozas(id: string | null) {
   const [cub, setCub] = useState<CubicacionTrozas | null>(null);
+  const [cuenta, setCuenta] = useState<CuentaDeLaPersona | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [vuelta, setVuelta] = useState(0);
   useEffect(() => {
     if (!id) return;
     let vivo = true;
     setError(null);
-    void leerCubicacionTrozas(id).then((r) => {
+    void pedir(`${RUTA_CUBICACIONES_TROZAS}/${id}`, {}, unDetalle).then((r) => {
       if (!vivo) return;
-      if (r.ok) setCub(r.data);
+      if (r.ok) { setCub(r.data.cub); setCuenta(r.data.cuenta); }
       else setError(r.mensaje);
     });
     return () => { vivo = false; };
   }, [id, vuelta]);
   const recargar = useCallback(() => setVuelta((v) => v + 1), []);
-  return { cub, setCub, cargando: !!id && !cub && !error, error, recargar };
+  return { cub, setCub, cuenta, cargando: !!id && !cub && !error, error, recargar };
 }
 
 export type PersonaCuenta = Pick<CuentaPersona, "clave" | "nombre" | "beneficiarioId" | "parteId"> & {
   /** `undefined` = tu rol no ve la plata (`conSaldos: false`): sólo el nombre. */
   adelantos?: CuentaPersona["adelantos"];
+  /** Saldo de su cuenta forestal (+ te debe); null = sin ficha en el directorio (ADR-484). */
+  cuenta?: number | null;
   liquidacionesVivas?: number;
 };
 
@@ -250,7 +269,7 @@ export function urlAdelantosAbiertos(beneficiarioId: string, sentido: SentidoCub
 }
 
 /**
- * Los adelantos ABIERTOS/EXCEDIDOS de la persona del lado que toca: comprar
+ * Los adelantos ABIERTOS de la persona del lado que toca (ADR-484: un excedido ya no toma madera): comprar
  * madera paga lo DADO; venderla devuelve lo RECIBIDO (ADR-448). Sólo para la
  * vista previa del reparto: el servidor vuelve a elegirlos con candado. En
  * soles y sin cuotas pactadas, como el servidor (`abiertosDe`).
@@ -269,7 +288,7 @@ export function useAdelantosAbiertos(beneficiarioId: string | null, sentido: Sen
           ? r.data.filter(
               (a) =>
                 a.direccion === direccion &&
-                (a.status === "ABIERTO" || a.status === "EXCEDIDO") &&
+                a.status === "ABIERTO" &&
                 a.moneda === "PEN" &&
                 a.modalidad !== "ENTREGAS_PACTADAS" &&
                 (a.entregasPactadas?.length ?? 0) === 0,

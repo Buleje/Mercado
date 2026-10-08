@@ -9,8 +9,10 @@ import {
   CargoDeCorridaError,
   ForestCuentaDB,
   FleteYaCargadoError,
+  GuiaCobradaPorCubicacionError,
   GuiaYaAnotadaError,
   MaderaDeGuiaError,
+  MovimientoDeCubicacionError,
   MovimientoDeLiquidacionError,
 } from "@/lib/db/forest-cuenta.db";
 import { CONCEPTOS_MANUALES, movimientoInputSchema } from "@/lib/forestal/cuenta-corriente";
@@ -104,7 +106,8 @@ export const POST = withApiHandler("forestal-cuenta-post", async (req: NextReque
       return NextResponse.json(r);
     } catch (err) {
       if (err instanceof GuiaYaAnotadaError) {
-        return NextResponse.json({ error: "guia_ya_anotada", message: err.message }, { status: 409 });
+        const codigo = err instanceof GuiaCobradaPorCubicacionError ? "guia_cobrada_por_cubicacion" : "guia_ya_anotada";
+        return NextResponse.json({ error: codigo, message: err.message }, { status: 409 });
       }
       if (err instanceof Error && /tiene que|obligatoria/.test(err.message)) {
         return NextResponse.json({ error: "validation_error", message: err.message }, { status: 422 });
@@ -140,6 +143,10 @@ export const POST = withApiHandler("forestal-cuenta-post", async (req: NextReque
     if (err instanceof MovimientoDeLiquidacionError) {
       return NextResponse.json({ error: "movimiento_de_liquidacion", message: err.message }, { status: 409 });
     }
+    /* Una pata de una cubicación aplicada (ADR-484) se corrige anulando la cubicación. */
+    if (err instanceof MovimientoDeCubicacionError) {
+      return NextResponse.json({ error: "movimiento_de_cubicacion", message: err.message, codigo: err.codigo }, { status: 409 });
+    }
     /* El abono de madera de una guía (ADR-437 §4) se corrige desde la guía. */
     if (err instanceof MaderaDeGuiaError) {
       return NextResponse.json({ error: "madera_de_guia", message: err.message, gtfNumber: err.gtfNumber }, { status: 409 });
@@ -171,6 +178,10 @@ export const DELETE = withApiHandler("forestal-cuenta-delete", async (req: NextR
     }
     if (err instanceof MovimientoDeLiquidacionError) {
       return NextResponse.json({ error: "movimiento_de_liquidacion", message: err.message }, { status: 409 });
+    }
+    /* Una pata de una cubicación aplicada (ADR-484) se corrige anulando la cubicación. */
+    if (err instanceof MovimientoDeCubicacionError) {
+      return NextResponse.json({ error: "movimiento_de_cubicacion", message: err.message, codigo: err.codigo }, { status: 409 });
     }
     if (err instanceof MaderaDeGuiaError) {
       return NextResponse.json({ error: "madera_de_guia", message: err.message, gtfNumber: err.gtfNumber }, { status: 409 });

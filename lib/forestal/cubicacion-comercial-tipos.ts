@@ -215,6 +215,8 @@ export interface CubicacionExistente {
   estado: EstadoCubicacionComercial;
   monto: number | null;
   personaNombre: string | null;
+  /** ADR-484: las líneas del despacho cuyo valor de venta llenó al aplicarse (sólo aplicada). */
+  valorVentaPuesto?: { despachoId: string; valor: number }[];
 }
 
 /** GET …/cubicaciones-trozas/origen?tipo=loth&id= */
@@ -255,6 +257,10 @@ export interface PrefillOrigenDespacho {
   guardadas: Array<{ id: string; nombre: string; fecha: string; pt: number; piezas: number; ligada: boolean }>;
   /** `ForestCtpEntry.valorVenta` sumado de las líneas: null = alguna sin valor (nunca 0). */
   valorVentaLibro: number | null;
+  /** ADR-484: el código de la cubicación de venta aplicada que puso ese valor (y sigue igual), o null. */
+  valorVentaDe?: string | null;
+  /** ADR-484: el código de la cubicación de venta aplicada que ya COBRÓ esta guía (la regla del freno de «Anotar la venta»), o null. */
+  cobradaPor?: string | null;
   existentes: CubicacionExistente[];
 }
 export type PrefillOrigen = PrefillOrigenLoth | PrefillOrigenDespacho;

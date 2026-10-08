@@ -37,6 +37,7 @@
 import { formatCurrency } from "@/lib/currency";
 import { INGRESO_ORDER_STATUSES } from "@/lib/finance/finance-kpis";
 import type { FilaPnl } from "@/lib/forestal/ctp-pnl";
+import { claveNumeroGtf, puedeSerLaMismaGtf } from "@/lib/forestal/gtf-talonario";
 import { limaDateKey } from "@/lib/utils";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -454,7 +455,17 @@ export interface MovCuentaEntrada {
   ctpEntryId: string | null;
   liquidacionId: string | null;
   gtfNumber: string | null;
+  /** Sólo hace falta en el flujo: reconoce el cruce que puso una cubicación (`esCruceDeCubicacion`). */
+  notas?: string | null;
 }
+
+/**
+ * El cruce que deja una cubicación aplicada en la cuenta (ADR-484, `patasDeCuenta`:
+ * «Cruce con ADL-… · CUB-2026-0003»): es la MISMA plata que la entrega de madera
+ * del adelanto, que ya cuenta como «nunca fue caja». Contar los dos la duplica.
+ */
+export const esCruceDeCubicacion = (m: Pick<MovCuentaEntrada, "concepto" | "notas">): boolean =>
+  m.concepto === "compensacion" && /^Cruce con .*·\s*CUB-\d{4}-\d+/.test(m.notas ?? "");
 
 /** La corrida de un cargo de aserrío: de dónde sale el PT. */
 export interface CorridaEntrada {
@@ -586,9 +597,31 @@ export interface GrupoVentaMadera {
 const normGtf = (s: string | null | undefined) => (s ?? "").trim().replace(/\s+/g, " ").toUpperCase();
 
 /**
+ * La llave de grupo de cada guía escrita: por su N° (`claveNumeroGtf`:
+ * «019-002-0000009» ≡ «19-2-9»), y un N° escrito corto («065») se suma al
+ * ÚNICO número completo de la lista que termina igual (`puedeSerLaMismaGtf`,
+ * la regla de los frenos). Si calza con dos series distintas no se adivina:
+ * queda solo. Dos series completas nunca se juntan.
+ */
+function llavesDeGuia(textos: readonly string[]): Map<string, string> {
+  const llaveDe = new Map(textos.map((t) => [t, claveNumeroGtf(t) ?? t]));
+  const llaves = [...new Set(llaveDe.values())];
+  const tramos = (k: string) => k.split("-").length;
+  const grupoDe = new Map<string, string>();
+  for (const k of llaves) {
+    const mayores = llaves.filter((o) => tramos(o) > tramos(k) && puedeSerLaMismaGtf(o, k));
+    const completas = mayores.filter((o) => !mayores.some((p) => tramos(p) > tramos(o) && puedeSerLaMismaGtf(p, o)));
+    grupoDe.set(k, completas.length === 1 ? completas[0] : k);
+  }
+  return new Map(textos.map((t) => [t, grupoDe.get(llaveDe.get(t) ?? t) ?? t]));
+}
+
+/**
  * Junta la madera vendida por guía de salida. La misma guía puede estar en el
  * despacho (`valorVenta`) y en la cuenta del cliente (cargo `venta`, ADR-437):
  * se cuenta UNA vez y, si están las dos, manda la cuenta (es lo que se le cobra).
+ * Se junta por el N° de la guía, no por el texto (`llavesDeGuia`): «19-2-9» en
+ * el despacho y «019-002-0000009» en la cuenta son la misma venta.
  */
 export function ventasDeMadera(despachos: readonly DespachoEntrada[], cuenta: readonly MovCuentaEntrada[]): GrupoVentaMadera[] {
   const grupos = new Map<string, { gtf: string | null; ds: DespachoEntrada[]; cs: MovCuentaEntrada[] }>();
@@ -597,14 +630,16 @@ export function ventasDeMadera(despachos: readonly DespachoEntrada[], cuenta: re
     grupos.set(clave, g);
     return g;
   };
-  for (const c of cuenta) {
-    if (c.concepto !== "venta" || c.tipo !== "cargo") continue;
-    const gtf = normGtf(c.referencia) || normGtf(c.gtfNumber);
-    grupo(gtf ? `gtf:${gtf}` : `cuenta:${c.id}`, gtf || null).cs.push(c);
+  const cargos = cuenta.filter((c) => c.concepto === "venta" && c.tipo === "cargo");
+  const textoDe = (c: MovCuentaEntrada) => normGtf(c.referencia) || normGtf(c.gtfNumber);
+  const llave = llavesDeGuia([...cargos.map(textoDe), ...despachos.map((d) => normGtf(d.gtfSalida))].filter(Boolean));
+  for (const c of cargos) {
+    const gtf = textoDe(c);
+    grupo(gtf ? `gtf:${llave.get(gtf) ?? gtf}` : `cuenta:${c.id}`, gtf || null).cs.push(c);
   }
   for (const d of despachos) {
     const gtf = normGtf(d.gtfSalida);
-    grupo(gtf ? `gtf:${gtf}` : `despacho:${d.id}`, gtf || null).ds.push(d);
+    grupo(gtf ? `gtf:${llave.get(gtf) ?? gtf}` : `despacho:${d.id}`, gtf || null).ds.push(d);
   }
 
   const out: GrupoVentaMadera[] = [];
@@ -1186,6 +1221,8 @@ function calcularCaja(mes: string, e: EntradaCaja): CalculoCaja {
     // `pagoMonto` de la cabecera y lo cruzado es su `montoCompensado`, una vez cada uno.
     if (m.liquidacionId) continue;
     if (m.concepto === "compensacion") {
+      // El cruce de una cubicación es la entrega de su adelanto, que ya suma abajo (ADR-484).
+      if (esCruceDeCubicacion(m)) continue;
       nunca.cuantos += 1;
       nunca.monto = r2(nunca.monto + num(m.monto));
       continue;

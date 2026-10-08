@@ -19,6 +19,7 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useMiRol } from "@/hooks/use-mi-rol";
 import { formatCurrency } from "@/lib/currency";
 import { fmtVolumen } from "@/lib/forestal/cubicacion-cuenta";
+import { etiquetaPersonaCubicacion } from "@/lib/forestal/cubicacion-a-cuenta";
 import { claveEspecie } from "@/lib/forestal/loth-constants";
 import { fechaConDia } from "@/lib/forestal/loth-tablero-reporte";
 import { limaDateKey } from "@/lib/utils";
@@ -80,6 +81,11 @@ export default function CtpCubicacionComercialModal({
   );
   const persona = ordenadas.find((p) => p.clave === clave) ?? null;
   const aplicada = prefill?.existentes.find((e) => e.estado === "aplicada") ?? null;
+  /* El libro ya tenía su valor y no salió de la cubicación aplicada: cuánto difieren (ADR-484). */
+  const diferencia =
+    prefill?.valorVentaLibro != null && aplicada?.monto != null && !prefill.valorVentaDe && Math.abs(aplicada.monto - prefill.valorVentaLibro) >= 0.005
+      ? Math.round((aplicada.monto - prefill.valorVentaLibro) * 100) / 100
+      : null;
   const neto = vista && "netas" in vista ? vista.neto : null;
   const listo = !!prefill && !!persona && neto != null && neto > 0 && (f.modo === "total" || !!f.refId) && !enviando;
 
@@ -147,7 +153,12 @@ export default function CtpCubicacionComercialModal({
                 <span className="text-[var(--text-tertiary)]">{fechaConDia(prefill.fecha.slice(0, 10))}</span>
                 <span className="ml-auto inline-flex items-center gap-1 text-[var(--text-secondary)]" data-dato="valor-venta-libro">
                   Valor de venta del libro: <b className="tabular-nums text-[var(--text-primary)]">{prefill.valorVentaLibro != null ? formatCurrency(prefill.valorVentaLibro) : "sin valor"}</b>
-                  <InfoTip what="Lo que anotaste como venta en el libro." affects="Esta cubicación no lo cambia: la cuenta del cliente y el libro van aparte." />
+                  {prefill.valorVentaDe && <span className="text-[var(--text-tertiary)]">· salió de {prefill.valorVentaDe}</span>}
+                  {diferencia != null && <span className="font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">· la cubicación da {formatCurrency(Math.abs(diferencia))} {diferencia > 0 ? "más" : "menos"}</span>}
+                  <InfoTip
+                    what="Lo que anotaste como venta en el libro."
+                    affects="Al aplicar una venta, si el libro no tenía valor, se llena con el total de la cubicación; si ya tenía, no se toca y aquí ves la diferencia. Al anularla se vacía, salvo que alguien lo haya cambiado."
+                  />
                 </span>
               </div>
               {prefill.lineas.length > 0 && (
@@ -208,7 +219,7 @@ export default function CtpCubicacionComercialModal({
                 <select id="cubc-persona" className={CAMPO_CUENTA} value={clave} onChange={(e) => setClave(e.target.value)} disabled={cargandoPersonas}>
                   <option value="">{cargandoPersonas ? "Cargando cuentas…" : "Elige la persona"}</option>
                   {ordenadas.map((p) => (
-                    <option key={p.clave} value={p.clave}>{p.beneficiarioId ? p.nombre : `${p.nombre} · sólo directorio (no descuenta)`}</option>
+                    <option key={p.clave} value={p.clave}>{etiquetaPersonaCubicacion(p, f.sentido)}</option>
                   ))}
                 </select>
                 {errorPersonas && <p className={`mt-1 ${ERROR}`}>{errorPersonas}</p>}

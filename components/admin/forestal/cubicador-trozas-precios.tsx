@@ -4,8 +4,9 @@
  * «Valorizar y descontar» (ADR-478): precio por especie en la unidad del lote
  * (S/ por PT en Oxapampina y en la aserrada, S/ por m³ en Smalian) o un precio
  * GENERAL para las especies sin precio propio (ADR-483), el total y a qué
- * adelantos va —el más antiguo primero— ANTES de confirmar. Las líneas son las
- * NETAS: después de los descuentos del lote, como las valoriza el servidor.
+ * adelantos va —el más antiguo primero— ANTES de confirmar; lo que no cubren
+ * va a su cuenta forestal (ADR-484). Las líneas son las NETAS: después de los
+ * descuentos del lote, como las valoriza el servidor.
  *
  * Todo lo de acá es vista previa con las mismas funciones puras que usa el
  * servidor (`lib/forestal/cubicacion-cuenta.ts`). El servidor vuelve a
@@ -16,13 +17,14 @@ import { AlertTriangle, Coins, Loader2 } from "@buleje/design-system/icons";
 import { formatCurrency } from "@/lib/currency";
 import { formatDate } from "@/lib/format";
 import {
-  decimalesDe, ExcedeLoRecibidoError, FaltaPrecioError, fmtVolumen, repartirFifo, SinAdelantoAbiertoError,
-  unidadDe, valorizar, type AdelantoAbierto, type Imputacion, type LineaEspecie,
+  decimalesDe, FaltaPrecioError, fmtVolumen, repartirConCuenta,
+  unidadDe, valorizar, type AdelantoAbierto, type LineaEspecie,
 } from "@/lib/forestal/cubicacion-cuenta";
 import { aplicarDescuentoLote, lineasDeEspecie } from "@/lib/forestal/cubicacion-comercial";
 import { BOTON_PRIMARIO } from "./ctp-lotes-modal-marco";
+import { ACuentaPrevia } from "./cubicador-trozas-a-cuenta";
 import {
-  aplicarCubicacionTrozas, medidasDe, useAdelantosAbiertos, useCubicacionesTrozas, ultimosPrecios, type CubicacionTrozas,
+  aplicarCubicacionTrozas, medidasDe, useAdelantosAbiertos, useCubicacionesTrozas, ultimosPrecios, type CubicacionTrozas, type CuentaDeLaPersona,
 } from "./hooks/use-cubicaciones-trozas";
 
 const nuevaClave = () =>
@@ -40,7 +42,14 @@ function lineasNetas(cub: CubicacionTrozas): LineaEspecie[] {
   catch { return brutas; /* el servidor ya lo validó al guardar; si no cuadra, responde 422 al aplicar */ }
 }
 
-export default function ValorizarPrecios({ cub, onAplicada }: { cub: CubicacionTrozas; onAplicada: (c: CubicacionTrozas) => void }) {
+export default function ValorizarPrecios({
+  cub, cuenta, onAplicada,
+}: {
+  cub: CubicacionTrozas;
+  /** Su cuenta forestal: adonde va lo que el adelanto no cubre (null = sin ficha en el directorio). */
+  cuenta: CuentaDeLaPersona | null;
+  onAplicada: (c: CubicacionTrozas) => void;
+}) {
   const unidad = unidadDe(cub.formula);
   const aserrada = cub.material === "aserrada";
   const lineas = useMemo(() => lineasNetas(cub), [cub]);
@@ -81,18 +90,17 @@ export default function ValorizarPrecios({ cub, onAplicada }: { cub: CubicacionT
   }, [lineas, propios, precioGeneral]);
   const monto = "monto" in vista ? vista.monto : null;
 
-  const reparto = useMemo((): { partes: Imputacion[] } | { aviso: string } | null => {
-    if (monto == null || !(monto > 0) || adelantos === null) return null;
-    try { return { partes: repartirFifo(monto, cub.volumen, elegidos, decimalesDe(cub.formula)) }; }
-    catch (e) {
-      if (e instanceof SinAdelantoAbiertoError) return { aviso: "No hay adelantos abiertos elegidos: queda guardada sin descontar." };
-      if (e instanceof ExcedeLoRecibidoError) return { aviso: `Vale más de lo que le debes devolver (${formatCurrency(e.debe)}).` };
-      return { aviso: "No se pudo repartir." };
-    }
-  }, [monto, adelantos, elegidos, cub.volumen, cub.formula]);
-  const partes = reparto && "partes" in reparto ? reparto.partes : null;
+  /* Cada adelanto hasta su saldo; el resto, a su cuenta (ADR-484). */
+  const reparto = useMemo(
+    () => (monto == null || !(monto > 0) || adelantos === null ? null : repartirConCuenta(monto, cub.volumen, elegidos, decimalesDe(cub.formula))),
+    [monto, adelantos, elegidos, cub.volumen, cub.formula],
+  );
+  const partes = reparto?.partes ?? null;
+  const aCuenta = reparto?.aCuenta ?? null;
   const persona = cub.personaNombre ?? "esta persona";
-  const listo = monto != null && monto > 0 && !!partes?.length && confirmado && !enviando;
+  const sePuede = !!reparto && (!aCuenta || !!cuenta);
+  const listo = monto != null && monto > 0 && sePuede && confirmado && !enviando;
+  const verbo = !aCuenta ? "Descontar" : partes?.length ? "Aplicar" : "Anotar en su cuenta";
 
   const aplicar = async () => {
     if (!listo || monto == null) return;
@@ -171,15 +179,13 @@ export default function ValorizarPrecios({ cub, onAplicada }: { cub: CubicacionT
         <span className="text-xl font-extrabold tabular-nums text-[var(--text-primary)]">{monto != null ? formatCurrency(monto) : "—"}</span>
       </div>
 
-      {!cub.beneficiarioId ? (
-        <p className="text-sm text-[var(--text-tertiary)]">Esta persona no tiene cuenta de adelantos: no hay de dónde descontar.</p>
-      ) : adelantos === null ? (
+      {!cub.beneficiarioId ? null : adelantos === null ? (
         <p className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Buscando sus adelantos…</p>
       ) : (
         <div>
           <p className="mb-1.5 text-sm font-semibold text-[var(--text-secondary)]">Se descuenta de (el más antiguo primero)</p>
           {abiertos.length === 0 ? (
-            <p className="text-sm text-[var(--text-tertiary)]">No tiene adelantos abiertos de este lado.</p>
+            <p className="text-sm text-[var(--text-tertiary)]">No tiene adelantos abiertos de este lado: todo va a su cuenta.</p>
           ) : (
             <ul className="space-y-1.5">
               {[...abiertos].sort((a, b) => a.fecha.localeCompare(b.fecha)).map((a) => {
@@ -193,18 +199,17 @@ export default function ValorizarPrecios({ cub, onAplicada }: { cub: CubicacionT
                     <span className="text-[var(--text-tertiary)]">{formatDate(a.fecha)} · saldo {formatCurrency(a.saldo)}</span>
                     <span className="ml-auto font-bold tabular-nums text-[var(--text-primary)]">
                       {parte ? `− ${formatCurrency(parte.monto)}` : "—"}
-                      {parte?.excedido && <span className="ml-1.5 rounded-full bg-[var(--data-warning-50)] px-2 py-0.5 text-xs text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]" title="Queda a favor suyo: págaselo aparte, la liquidación de la cuenta no lo salda">le debes la diferencia: págala aparte</span>}
                     </span>
                   </li>
                 );
               })}
             </ul>
           )}
-          {reparto && "aviso" in reparto && <p className="mt-1.5 text-sm font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">{reparto.aviso}</p>}
         </div>
       )}
+      {aCuenta && <ACuentaPrevia sentido={cub.sentido} resto={aCuenta.monto} cuenta={cuenta} nombre={persona} hayAdelanto={!!partes?.length} />}
 
-      {partes?.length ? (
+      {sePuede ? (
         <label className="flex items-center gap-2 text-base text-[var(--text-primary)]">
           <input type="checkbox" className="h-5 w-5 accent-[var(--accent)]" checked={confirmado} onChange={(e) => setConfirmado(e.target.checked)} data-accion="confirmar-persona" />
           <span>Sí, es la madera de <b>{persona}</b></span>
@@ -217,7 +222,7 @@ export default function ValorizarPrecios({ cub, onAplicada }: { cub: CubicacionT
       )}
       <button type="button" className={`${BOTON_PRIMARIO} w-full`} disabled={!listo} onClick={() => void aplicar()} data-accion="aplicar-cubicacion">
         {enviando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Coins className="h-4 w-4" />}
-        {monto != null ? `Descontar ${formatCurrency(monto)}` : "Descontar"}
+        {monto != null ? `${verbo} ${formatCurrency(monto)}` : verbo}
       </button>
     </div>
   );

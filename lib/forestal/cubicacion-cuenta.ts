@@ -28,6 +28,7 @@ import {
   type PiezaCongelada,
   type TrozaCongeladaComercial,
 } from "./cubicacion-comercial-tipos";
+import type { CuentaDeCubicacion, ValorVentaDeCubicacion } from "./cubicacion-a-cuenta";
 
 export const PREFIJO_CUBICACION = "CUB";
 export type EstadoCubicacion = "borrador" | "aplicada" | "anulada";
@@ -98,8 +99,9 @@ export const aplicarCubicacionSchema = z.object({
   montoVisto: z.number().positive().max(9_999_999),
   idempotencyKey: z.string().trim().min(8).max(80),
   version: z.number().int().positive(),
-  /** (B2) Elegir a qué adelantos va; sin el campo, todos los abiertos de la persona, el más antiguo primero. */
-  adelantoIds: z.array(z.string().trim().min(1).max(40)).min(1).max(50).optional(),
+  /** (B2) Elegir a qué adelantos va; sin el campo, todos los abiertos de la persona, el más antiguo primero.
+   *  ADR-484: `[]` = ninguno (todo a su cuenta). */
+  adelantoIds: z.array(z.string().trim().min(1).max(40)).max(50).optional(),
 }).refine((d) => d.precios.length > 0 || d.precioGeneral != null, { message: "Pon el precio de cada especie o un precio general.", path: ["precios"] });
 export type AplicarCubicacionInput = z.infer<typeof aplicarCubicacionSchema>;
 
@@ -134,7 +136,7 @@ export interface Imputacion {
   codigoOperacion: string | null;
   monto: number;
   volumen: number;
-  /** Se cargó más que su saldo: queda EXCEDIDO («le debes la diferencia»). */
+  /** Se cargó más que su saldo (sólo cubicaciones de antes de ADR-484: desde ahí el resto va a la cuenta). */
   excedido: boolean;
 }
 export interface ImputacionGuardada extends Imputacion {
@@ -176,6 +178,10 @@ export interface CubicacionTrozasResumen extends CamposComerciales {
   aplicadaAt: string | null;
   aplicadaPor: string | null;
   imputacion: ImputacionGuardada[] | null;
+  /** Lo que el adelanto no cubrió y quedó en su cuenta forestal (ADR-484); null = nada. */
+  aCuenta: CuentaDeCubicacion | null;
+  /** Qué pasó con el valor de venta del despacho al aplicar una venta (ADR-484); null = no aplica. */
+  valorVenta: ValorVentaDeCubicacion | null;
   anuladaAt: string | null;
   anuladaPor: string | null;
   motivoAnulacion: string | null;
@@ -203,18 +209,6 @@ export class FaltaPrecioError extends Error {
   constructor(readonly especie: string) {
     super(`Falta el precio de ${especie}.`);
     this.name = "FaltaPrecioError";
-  }
-}
-export class SinAdelantoAbiertoError extends Error {
-  constructor(mensaje = "Esta persona no tiene adelantos abiertos: la cubicación queda guardada sin descontar.") {
-    super(mensaje);
-    this.name = "SinAdelantoAbiertoError";
-  }
-}
-export class ExcedeLoRecibidoError extends Error {
-  constructor(readonly debe: number) {
-    super(`Le debes S/ ${debe.toFixed(2)} por lo que te adelantó: la madera no puede pasar de eso.`);
-    this.name = "ExcedeLoRecibidoError";
   }
 }
 
@@ -315,21 +309,21 @@ export function valorizar(
 
 /**
  * Reparte el monto entre los adelantos abiertos de la persona, el más antiguo
- * primero (B2). Cada uno toma hasta su saldo; el sobrante:
- *   - DADO: se carga al ÚLTIMO (por fecha), que queda EXCEDIDO (B1);
- *   - RECIBIDO: no se puede devolver más de lo que se debe → `ExcedeLoRecibidoError`.
- * El volumen se prorratea por el monto con redondeo acumulado: la suma cierra.
+ * primero (B2): cada uno toma hasta su saldo, NUNCA más (ADR-484 cierra B1:
+ * ningún adelanto queda excedido por madera). Lo que no cubren —todo, si no
+ * hay adelantos— es `aCuenta`: va a la cuenta forestal de la persona (venta →
+ * te debe; compra → le debes). El volumen se prorratea por el monto con
+ * redondeo acumulado (la cuenta toma la última porción): la suma cierra.
  */
-export function repartirFifo(
+export function repartirConCuenta(
   monto: number,
   volumen: number,
   abiertos: readonly AdelantoAbierto[],
   decimales = 4,
-): Imputacion[] {
-  if (abiertos.length === 0) throw new SinAdelantoAbiertoError();
-  const orden = [...abiertos].sort((a, b) => a.fecha.localeCompare(b.fecha) || a.id.localeCompare(b.id));
-  const direccion = orden[0].direccion;
+): { partes: Imputacion[]; aCuenta: { monto: number; volumen: number } | null } {
   const total = aCentimos(monto);
+  if (!(total > 0)) return { partes: [], aCuenta: null };
+  const orden = [...abiertos].sort((a, b) => a.fecha.localeCompare(b.fecha) || a.id.localeCompare(b.id));
   let resto = total;
   const asignado = new Map<string, number>();
   for (const a of orden) {
@@ -340,15 +334,7 @@ export function repartirFifo(
     asignado.set(a.id, x);
     resto -= x;
   }
-  if (resto > 0) {
-    if (direccion === "RECIBIDO") {
-      const debe = orden.reduce((t, a) => t + Math.max(0, aCentimos(a.saldo)), 0);
-      throw new ExcedeLoRecibidoError(debe / 100);
-    }
-    const ultimo = orden[orden.length - 1];
-    asignado.set(ultimo.id, (asignado.get(ultimo.id) ?? 0) + resto);
-  }
-  const out: Imputacion[] = [];
+  const partes: Imputacion[] = [];
   let acumulado = 0;
   let volPrevio = 0;
   for (const a of orden) {
@@ -356,16 +342,16 @@ export function repartirFifo(
     if (!c) continue;
     acumulado += c;
     const volHasta = redondear((volumen * acumulado) / total, decimales);
-    out.push({
+    partes.push({
       adelantoId: a.id,
       codigoOperacion: a.codigoOperacion,
       monto: c / 100,
       volumen: redondear(volHasta - volPrevio, decimales),
-      excedido: c > aCentimos(a.saldo),
+      excedido: false,
     });
     volPrevio = volHasta;
   }
-  return out;
+  return { partes, aCuenta: resto > 0 ? { monto: resto / 100, volumen: redondear(volumen - volPrevio, decimales) } : null };
 }
 
 /**
@@ -378,7 +364,9 @@ export function huellaAplicar(input: AplicarCubicacionInput): string {
     .map((p) => `${claveEspecie(p.clave) || p.clave.trim().toLowerCase()}=${p.precio.toFixed(4)}`)
     .sort()
     .join(",");
-  const partes = ["aplicar", precios, input.montoVisto.toFixed(2), `v${input.version}`, (input.adelantoIds ?? []).join(",")];
+  /* `[]` (ninguno, ADR-484) no es lo mismo que sin el campo (todos): otra huella. */
+  const elegidos = input.adelantoIds && input.adelantoIds.length === 0 ? "ninguno" : (input.adelantoIds ?? []).join(",");
+  const partes = ["aplicar", precios, input.montoVisto.toFixed(2), `v${input.version}`, elegidos];
   if (input.precioGeneral != null) partes.push(`general=${input.precioGeneral.toFixed(4)}`);
   return partes.join("|");
 }

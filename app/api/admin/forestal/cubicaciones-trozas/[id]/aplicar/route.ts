@@ -7,9 +7,12 @@ import { ROLES_PLATA, guardCubicacion, invalido, leerJson, noStore, responderErr
  * POST /api/admin/forestal/cubicaciones-trozas/[id]/aplicar (ADR-478) — DINERO.
  * Sólo admin y dueño (el bypass de `manager` se corta). El servidor valoriza;
  * `montoVisto` distinto → 409 `MONTO_CAMBIO {monto, porEspecie}`.
- * 200 `{ cubicacion, imputacion }` (con `repetido: true` si es el mismo intento)
- * · 409 `GUIA_YA_VALORIZADA` / `DESACTUALIZADA` / `YA_APLICADA`
- * · 422 `SIN_ADELANTO_ABIERTO` / `EXCEDE_LO_RECIBIDO {debe}` / `FALTA_PRECIO {especie}` / `IDEMPOTENCIA_DISTINTA`.
+ * Lo que los adelantos no cubren va a la cuenta forestal de la persona y la
+ * venta de un despacho llena su valor de venta vacío (ADR-484).
+ * 200 `{ cubicacion, imputacion }` (con `repetido: true` si es el mismo intento;
+ * `cubicacion.aCuenta` y `cubicacion.valorVenta` dicen qué más movió)
+ * · 409 `GUIA_YA_VALORIZADA` / `GUIA_YA_ANOTADA` / `DESACTUALIZADA` / `YA_APLICADA`
+ * · 422 `SIN_CUENTA {resto}` / `MONEDA_NO_SOPORTADA` / `FALTA_PRECIO {especie}` / `IDEMPOTENCIA_DISTINTA`.
  */
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

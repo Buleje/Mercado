@@ -5,7 +5,8 @@
  * los descuentos): quién, cuándo, cuánto y sus medidas congeladas —trozas,
  * piezas o líneas por especie—, y lo que se puede hacer según su estado:
  *   - borrador → «Valorizar y descontar» (dueño/admin) o borrarla;
- *   - aplicada → a qué adelantos fue y «Anular» (vuelve el saldo);
+ *   - aplicada → a qué adelantos fue, lo que quedó en su cuenta y el valor de
+ *     venta del despacho (ADR-484), y «Anular» (todo vuelve como estaba);
  *   - anulada  → el motivo.
  * `soloLectura` es lo que abre «Ver medidas» desde la entrega del adelanto.
  */
@@ -21,6 +22,7 @@ import { BOTON_SECUNDARIO } from "./ctp-lotes-modal-marco";
 import { MedidasAserrada, ResumenDescuentos } from "./cubicacion-comercial-medidas";
 import MedidasCongeladas from "./cubicador-trozas-medidas";
 import ValorizarPrecios from "./cubicador-trozas-precios";
+import { ACuentaHecha } from "./cubicador-trozas-a-cuenta";
 import { anularCubicacionTrozas, borrarCubicacionTrozas, ESTADO_CUB, medidasDe, useCubicacionTrozas, type CubicacionTrozas } from "./hooks/use-cubicaciones-trozas";
 
 const ERROR = "flex items-start gap-1.5 text-sm font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]";
@@ -37,7 +39,7 @@ export default function ValorizarCubicacionModal({
   onCambio?: (c: CubicacionTrozas | null) => void;
   onCerrar: () => void;
 }) {
-  const { cub, setCub, cargando, error: errorCarga } = useCubicacionTrozas(id);
+  const { cub, setCub, cuenta: cuentaPersona, cargando, error: errorCarga } = useCubicacionTrozas(id);
   const [anulando, setAnulando] = useState(false);
   const [motivo, setMotivo] = useState("");
   const [enviando, setEnviando] = useState(false);
@@ -130,7 +132,7 @@ export default function ValorizarCubicacionModal({
             {cub.notas && <p className="text-sm text-[var(--text-secondary)]">{cub.notas}</p>}
             <ResumenDescuentos bruto={cub.volumenBruto} neto={cub.volumen} descuentos={cub.descuentos} formula={cub.formula} nombres={nombres} antesDelLote={antesDelLote} />
 
-            {cub.estado === "borrador" && acciones && <ValorizarPrecios cub={cub} onAplicada={cambio} />}
+            {cub.estado === "borrador" && acciones && <ValorizarPrecios cub={cub} cuenta={cuentaPersona} onAplicada={cambio} />}
             {cub.estado === "borrador" && !acciones && !soloLectura && (
               <p className="rounded-2xl bg-[var(--surface-sunken)] px-3 py-2 text-sm text-[var(--text-secondary)]">
                 Guardada sin descontar. El precio y el descuento del adelanto los pone el dueño o el admin.
@@ -171,16 +173,18 @@ export default function ValorizarCubicacionModal({
               </div>
             ) : null}
 
+            {cub.estado !== "borrador" && <ACuentaHecha cub={cub} />}
+
             {cub.estado === "anulada" && (
               <p className="text-sm text-[var(--text-secondary)]">
-                Anulada{cub.anuladaAt ? ` el ${fechaConDia(cub.anuladaAt.slice(0, 10))}` : ""}{cub.motivoAnulacion ? `: ${cub.motivoAnulacion}` : ""}. El saldo de los adelantos volvió a como estaba.
+                Anulada{cub.anuladaAt ? ` el ${fechaConDia(cub.anuladaAt.slice(0, 10))}` : ""}{cub.motivoAnulacion ? `: ${cub.motivoAnulacion}` : ""}. {cub.aCuenta ? "Sus adelantos y su cuenta volvieron" : "El saldo de los adelantos volvió"} a como estaba.
               </p>
             )}
 
             {anulando && (
               <div className="space-y-2 rounded-2xl border border-[var(--data-error-500)]/40 p-3">
                 <label htmlFor="cub-motivo" className="block text-sm font-semibold text-[var(--text-secondary)]">
-                  ¿Por qué la anulas? El saldo de sus adelantos vuelve a como estaba.
+                  ¿Por qué la anulas? {cub.aCuenta ? "Sus adelantos y su cuenta vuelven" : "El saldo de sus adelantos vuelve"} a como estaba{cub.valorVenta?.estado === "puesto" ? ", y el valor de venta del despacho se vacía si nadie lo cambió" : ""}.
                 </label>
                 <input id="cub-motivo" autoFocus value={motivo} maxLength={300} onChange={(e) => setMotivo(e.target.value)} placeholder="Ej.: el precio estaba mal"
                   className="h-12 w-full rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-base text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]" />

@@ -12,8 +12,9 @@ import {
   mensajeCargoDeCorrida,
 } from "@/lib/forestal/aserrio-cobro";
 import { RELACIONES_PARTE, type RelacionParte, type SaldoConsolidado } from "@/lib/forestal/vinculos-parte";
-import { claveCandadoGtf } from "@/lib/forestal/gtf-talonario";
+import { claveCandadoGtf, puedeSerLaMismaGtf } from "@/lib/forestal/gtf-talonario";
 import { exigirParteDelTenant } from "./forest-parte-tarifa.db";
+import { bloquearLineasDeDespachoEnTx, cubicacionQueVendioLaGuia, despachosDeLaGuiaDeSalida, filtroMismaGuia } from "./guia-cubicacion.db";
 
 /**
  * ForestCuentaDB — la cuenta corriente con las partes del directorio (ADR-322).
@@ -27,7 +28,6 @@ import { exigirParteDelTenant } from "./forest-parte-tarifa.db";
 
 const CACHE_PREFIX = "forest-cuenta";
 
-/** Se intentó cargar dos veces el mismo flete. */
 /** La guía ya está anotada en la cuenta: anotarla de nuevo duplicaría la deuda. */
 export class GuiaYaAnotadaError extends Error {
   constructor(gtfNumber: string, parteNombre: string) {
@@ -36,6 +36,16 @@ export class GuiaYaAnotadaError extends Error {
   }
 }
 
+/** La venta de la guía ya se cobró con una cubicación aplicada (ADR-484): anotarla la cobraría dos veces. */
+export class GuiaCobradaPorCubicacionError extends GuiaYaAnotadaError {
+  constructor(gtfNumber: string, readonly codigo: string) {
+    super(gtfNumber, "");
+    this.message = `La venta de la guía ${gtfNumber} ya se cobró con la cubicación ${codigo}: anotarla aquí la cobraría dos veces. Si hay que cambiarla, anula esa cubicación (Herramientas › Cubicador de trozas).`;
+    this.name = "GuiaCobradaPorCubicacionError";
+  }
+}
+
+/** Se intentó cargar dos veces el mismo flete. */
 export class FleteYaCargadoError extends Error {
   constructor(readonly fleteId: string) {
     super("Ese flete ya está cargado en una cuenta corriente. No se puede cobrar dos veces.");
@@ -97,6 +107,19 @@ export class GuiaConPagosError extends Error {
   }
 }
 
+/**
+ * La pata salió de una cubicación aplicada (ADR-484): se corrige anulando la
+ * cubicación. Editarla o borrarla acá dejaría al adelanto, la cuenta y la
+ * cubicación contando tres historias de la misma madera. → 409.
+ */
+export class MovimientoDeCubicacionError extends Error {
+  readonly code = "MOVIMIENTO_DE_CUBICACION";
+  constructor(readonly codigo: string) {
+    super(`Este movimiento salió de la cubicación ${codigo}: se corrige anulándola (Herramientas › Cubicador de trozas).`);
+    this.name = "MovimientoDeCubicacionError";
+  }
+}
+
 type Row = Prisma.ForestCuentaMovGetPayload<Record<string, never>>;
 
 /** Tira `MaderaDeGuiaError` si el movimiento es el abono de madera de una guía. */
@@ -125,6 +148,20 @@ async function assertNoEsCargoDeCorrida(tenantId: string, row: Pick<Row, "ctpEnt
   throw new CargoDeCorridaError(row.ctpEntryId, corrida?.lineNo ?? lineNoDeReferencia(row.referencia));
 }
 
+/**
+ * Tira `MovimientoDeCubicacionError` si el movimiento es una pata de una
+ * cubicación APLICADA (su id está en la `imputacion` de la cubicación). Las
+ * patas llevan «CUB-» en la nota: sin eso no se consulta nada.
+ */
+async function assertNoEsDeCubicacion(tenantId: string, row: Pick<Row, "id" | "notas">): Promise<void> {
+  if (!row.notas?.includes("CUB-")) return;
+  const cub = await prisma.forestCubicacionTrozas.findFirst({
+    where: { tenantId, estado: "aplicada", deletedAt: null, imputacion: { array_contains: [{ movIds: [row.id] }] } },
+    select: { codigo: true },
+  });
+  if (cub) throw new MovimientoDeCubicacionError(cub.codigo);
+}
+
 function aMov(r: Row): MovimientoCuenta {
   return {
     id: r.id,
@@ -143,6 +180,18 @@ function aMov(r: Row): MovimientoCuenta {
     gtfNumber: r.gtfNumber ?? null,
     contratoId: r.contratoId ?? null,
   };
+}
+
+/** El movimiento `venta` vivo que ya nombra esa guía (por `referencia` o `gtfNumber`, con `puedeSerLaMismaGtf`: «065» = «019-001-0000065», la regla del candado), o null. */
+async function ventaAnotadaEnTx(tx: Prisma.TransactionClient, tenantId: string, gtf: string): Promise<{ parteNombre: string } | null> {
+  const filtro = filtroMismaGuia(gtf) ?? gtf;
+  const filas = await tx.forestCuentaMov.findMany({
+    where: { tenantId, deletedAt: null, concepto: "venta", OR: [{ referencia: filtro }, { gtfNumber: filtro }] },
+    select: { referencia: true, gtfNumber: true, parteNombre: true },
+    take: 200,
+  });
+  const esLaGuia = (t: string | null) => t != null && (t.trim() === gtf || puedeSerLaMismaGtf(t, gtf));
+  return filas.find((f) => esLaGuia(f.referencia) || esLaGuia(f.gtfNumber)) ?? null;
 }
 
 /** `YYYY-MM-DD` → UTC: fecha date-only como el resto del libro. */
@@ -171,8 +220,15 @@ export const ForestCuentaDB = {
    *
    * **Idempotente por número de guía.** El operador toca «anotar», no ve
    * respuesta y vuelve a tocar: sin este guard la deuda se duplica. Se mira por
-   * `referencia` —el campo que existe para eso— en vez de una columna nueva con
-   * su migración; el número de guía es único en el talonario.
+   * `referencia` o `gtfNumber` con `puedeSerLaMismaGtf` («065» = «019-001-0000065»),
+   * en vez de una columna nueva con su migración.
+   *
+   * **Una venta, un cobro (ADR-484).** Si una cubicación de VENTA aplicada ya
+   * cobró esa guía —por su N° o por una de sus líneas de despacho—, 409: pudo
+   * aplicarse cuando el despacho no tenía guía (su cargo no la nombra) o con el
+   * adelanto cubriendo todo (sin cargo), y anotarla dejaría al cliente debiendo
+   * dos veces. Bajo los candados de «aplicar», en su orden: guía → sus líneas
+   * de despacho → persona.
    */
   async anotarVentaDeGuia(
     tenantId: string,
@@ -194,37 +250,52 @@ export const ForestCuentaDB = {
     if (!gtf) throw new Error("La guía tiene que tener número para anotarse en la cuenta.");
     if (!(v.total > 0)) throw new Error("El total de la venta tiene que ser mayor a cero.");
     const cobrado = Math.max(0, Math.min(v.cobrado ?? 0, v.total));
-
-    const ya = await prisma.forestCuentaMov.findFirst({
-      where: { tenantId, deletedAt: null, concepto: "venta", referencia: gtf },
-      select: { id: true, parteNombre: true },
-    });
-    if (ya) throw new GuiaYaAnotadaError(gtf, ya.parteNombre);
+    const fecha = fechaUtc(v.fecha);
+    if (!fecha) throw new Error("La fecha del movimiento es obligatoria (YYYY-MM-DD).");
 
     const base = {
-      parteId: v.parteId,
-      parteNombre: v.parteNombre,
-      fecha: v.fecha,
+      tenantId,
+      parteId: v.parteId.trim(),
+      parteNombre: v.parteNombre.trim(),
+      fecha,
       referencia: gtf,
       moneda: "PEN",
+      createdBy: usuario || "unknown",
     };
-    const movimientos: MovimientoCuenta[] = [
-      await this.guardar(
-        tenantId,
-        { ...base, tipo: "cargo", concepto: "venta", monto: v.total, notas: v.notas ?? `Guía ${gtf}` },
-        usuario,
-      ),
+    const patas: { tipo: TipoMov; concepto: Concepto; monto: number; notas: string }[] = [
+      { tipo: "cargo", concepto: "venta", monto: v.total, notas: v.notas?.trim() || `Guía ${gtf}` },
+      ...(cobrado > 0 ? [{ tipo: "abono" as const, concepto: "pago" as const, monto: cobrado, notas: `Cobrado de la guía ${gtf}` }] : []),
     ];
-    if (cobrado > 0) {
-      movimientos.push(
-        await this.guardar(
-          tenantId,
-          { ...base, tipo: "abono", concepto: "pago", monto: cobrado, notas: `Cobrado de la guía ${gtf}` },
-          usuario,
-        ),
-      );
+    const rows = await prisma.$transaction(
+      async (tx) => {
+        await this.bloquearGuiasEnTx(tx, tenantId, [gtf]);
+        const lineas = await bloquearLineasDeDespachoEnTx(tx, tenantId, (await despachosDeLaGuiaDeSalida(tx, tenantId, gtf, true)).map((d) => d.id));
+        await this.bloquearPartesEnTx(tx, tenantId, [base.parteId]);
+        const cub = await cubicacionQueVendioLaGuia(tx, tenantId, gtf, lineas);
+        if (cub) throw new GuiaCobradaPorCubicacionError(gtf, cub.codigo);
+        const ya = await ventaAnotadaEnTx(tx, tenantId, gtf);
+        if (ya) throw new GuiaYaAnotadaError(gtf, ya.parteNombre);
+        const out = [];
+        for (const p of patas) {
+          out.push(await tx.forestCuentaMov.create({ data: { ...base, tipo: p.tipo, concepto: p.concepto, monto: new Prisma.Decimal(p.monto), notas: p.notas } }));
+        }
+        return out;
+      },
+      { timeout: 20_000, maxWait: 10_000 },
+    );
+
+    for (const row of rows) {
+      auditCtp({
+        tenantId,
+        action: "ctp_cuenta_create",
+        entity: "ForestCuentaMov",
+        entityId: row.id,
+        detail: `Registró ${row.tipo} de S/ ${Number(row.monto).toFixed(2)} (${row.concepto}) en la cuenta de ${row.parteNombre}`,
+        user: usuario,
+      });
     }
-    return { movimientos, saldoDeLaGuia: Math.round((v.total - cobrado) * 100) / 100 };
+    this.invalidar(tenantId);
+    return { movimientos: rows.map(aMov), saldoDeLaGuia: Math.round((v.total - cobrado) * 100) / 100 };
   },
 
   /** Movimientos del tenant, o de una parte. Sin tope de fecha: una deuda no
@@ -274,6 +345,7 @@ export const ForestCuentaDB = {
       assertNoEsMaderaDeGuia(existente);
       await assertNoEsCargoDeCorrida(tenantId, existente);
       await assertNoEsDeLiquidacion(tenantId, existente);
+      await assertNoEsDeCubicacion(tenantId, existente);
     }
 
     const row = existente
@@ -300,6 +372,7 @@ export const ForestCuentaDB = {
     assertNoEsMaderaDeGuia(row);
     await assertNoEsCargoDeCorrida(tenantId, row);
     await assertNoEsDeLiquidacion(tenantId, row);
+    await assertNoEsDeCubicacion(tenantId, row);
     await prisma.forestCuentaMov.update({ where: { id }, data: { deletedAt: new Date() } });
     auditCtp({
       tenantId,
@@ -532,6 +605,75 @@ export const ForestCuentaDB = {
       data: { deletedAt: new Date() },
     });
     return count;
+  },
+
+  // ── Cubicación aplicada (ADR-484): lo que el adelanto no cubre ──
+
+  /**
+   * Escribe las patas de una cubicación aplicada dentro de SU transacción, que
+   * ya tomó los candados de guía y de persona (`bloquearGuiasEnTx` →
+   * `bloquearPartesEnTx`). Sólo en soles. Sin auditoría suelta: la cubicación
+   * deja UN renglón por acto. Devuelve los ids, que la cubicación guarda para
+   * darlos de baja al anularla.
+   */
+  async crearDeCubicacionEnTx(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    base: { parteId: string; parteNombre: string; fecha: Date; referencia: string | null; gtfNumber: string | null; contratoId: string | null; createdBy: string },
+    patas: ReadonlyArray<{ tipo: TipoMov; concepto: Concepto; monto: number; notas: string }>,
+  ): Promise<string[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const ids: string[] = [];
+    for (const p of patas) {
+      if (!(p.monto >= 0.01)) continue;
+      const row = await tx.forestCuentaMov.create({
+        data: {
+          tenantId,
+          parteId: base.parteId,
+          parteNombre: base.parteNombre,
+          fecha: base.fecha,
+          tipo: p.tipo,
+          concepto: p.concepto,
+          monto: new Prisma.Decimal(p.monto.toFixed(2)),
+          moneda: "PEN",
+          referencia: base.referencia,
+          gtfNumber: base.gtfNumber,
+          contratoId: base.contratoId,
+          notas: p.notas,
+          createdBy: base.createdBy || "unknown",
+        },
+        select: { id: true },
+      });
+      ids.push(row.id);
+    }
+    return ids;
+  },
+
+  /** Baja lógica de las patas de una cubicación al anularla: por id y negocio; las que ya no están vivas no cuentan. */
+  async bajaDeCubicacionEnTx(tx: Prisma.TransactionClient, tenantId: string, ids: readonly string[]): Promise<number> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (ids.length === 0) return 0;
+    const { count } = await tx.forestCuentaMov.updateMany({
+      where: { tenantId, id: { in: [...ids] }, deletedAt: null },
+      data: { deletedAt: new Date() },
+    });
+    return count;
+  },
+
+  /**
+   * La liquidación viva de la parte posterior a `desde`, o null. Una
+   * liquidación se calculó con el saldo de ese momento: anular la cubicación
+   * debajo la dejaría cuadrando contra una deuda que ya no existe.
+   */
+  async liquidacionPosteriorEnTx(tx: Prisma.TransactionClient, tenantId: string, parteId: string, desde: Date): Promise<string | null> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const m = await tx.forestCuentaMov.findFirst({
+      where: { tenantId, parteId, deletedAt: null, liquidacionId: { not: null }, createdAt: { gt: desde } },
+      select: { liquidacionId: true },
+    });
+    if (!m?.liquidacionId) return null;
+    const liq = await tx.liquidacionCuenta.findFirst({ where: { id: m.liquidacionId, tenantId }, select: { codigo: true } });
+    return liq?.codigo ?? "una liquidación";
   },
 
   // ── La madera de una guía de compra (ADR-437 §4): primitivas dentro de la tx de otro ──

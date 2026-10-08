@@ -24,6 +24,7 @@ import { useTenant } from "@/contexts/tenant-context";
 import { formatCurrency } from "@/lib/currency";
 import { cubicarEnServidor, fmtVolumen, MedidaFueraDeRangoError } from "@/lib/forestal/cubicacion-cuenta";
 import { cubicarTrozasComercial, DescuentoInvalidoError } from "@/lib/forestal/cubicacion-comercial";
+import { etiquetaPersonaCubicacion } from "@/lib/forestal/cubicacion-a-cuenta";
 import type { DescuentoLote, DescuentoTroza } from "@/lib/forestal/cubicacion-comercial-tipos";
 import { limaDateKey } from "@/lib/utils";
 import { UNIDADES_FORMULA, totalesSegun, type DiametrosPorTroza, type FormulaTrozas } from "@/lib/forestal/cubicacion-trozas-formula";
@@ -45,14 +46,6 @@ function abiertosDe(p: PersonaCuenta, sentido: SentidoCubicacion): { n: number; 
   return sentido === "venta" ? { n: a.recibidosAbiertos, monto: a.recibidoPendiente } : { n: a.abiertos, monto: a.teDebe };
 }
 
-function etiquetaPersona(p: PersonaCuenta, sentido: SentidoCubicacion): string {
-  if (!p.beneficiarioId) return `${p.nombre} · sólo directorio (no descuenta)`;
-  if (p.adelantos === undefined) return p.nombre; // tu rol no ve la plata
-  const { n, monto } = abiertosDe(p, sentido);
-  if (!n) return `${p.nombre} · sin adelantos abiertos`;
-  const quien = sentido === "venta" ? "le debes" : "te debe";
-  return `${p.nombre} · ${n} ${n === 1 ? "adelanto" : "adelantos"} · ${quien} ${formatCurrency(monto)}`;
-}
 
 /** Las trozas salen de una guía (K7): la guía fija y los descuentos, alineados por índice con `rows`. */
 export interface VinculoCubicacion {
@@ -210,11 +203,11 @@ export default function GuardarEnLaCuentaModal({
           <label htmlFor="cub-persona" className={ETIQUETA}>¿De quién es la madera?</label>
           <select id="cub-persona" className={CAMPO_CUENTA} value={clave} onChange={(e) => setClave(e.target.value)} disabled={cargando}>
             <option value="">{cargando ? "Cargando cuentas…" : "Elige la persona"}</option>
-            {ordenadas.map((p) => <option key={p.clave} value={p.clave}>{etiquetaPersona(p, sentido)}</option>)}
+            {ordenadas.map((p) => <option key={p.clave} value={p.clave}>{etiquetaPersonaCubicacion(p, sentido)}</option>)}
           </select>
           {errorPersonas && <p className="mt-1 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{errorPersonas}</p>}
           {persona && !persona.beneficiarioId && (
-            <p className="mt-1 text-sm text-[var(--text-tertiary)]">Queda guardada a su nombre; para descontar, necesita un adelanto.</p>
+            <p className="mt-1 text-sm text-[var(--text-tertiary)]">No tiene adelantos: al valorizarla, todo va a su cuenta.</p>
           )}
         </div>
 

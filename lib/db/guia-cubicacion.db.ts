@@ -1,6 +1,6 @@
 import "server-only";
 import type { Prisma } from "@/lib/generated/prisma/client";
-import { colaDeGtf, mismoNumeroGtf } from "@/lib/forestal/gtf-talonario";
+import { colaDeGtf, mismoNumeroGtf, puedeSerLaMismaGtf } from "@/lib/forestal/gtf-talonario";
 
 /**
  * Una guía, una sola plata (ADR-478 §7) — la regla al revés, en UN lugar. Si la
@@ -25,9 +25,10 @@ import { colaDeGtf, mismoNumeroGtf } from "@/lib/forestal/gtf-talonario";
  * Se llama DENTRO de la tx y bajo el lock de la guía
  * (`ForestCuentaDB.bloquearGuiasEnTx`), el mismo que toma «aplicar».
  *
- * La guía se compara con `mismoNumeroGtf` («10-1-5» = «010-001-0000005»), nunca
- * por el texto exacto: la base trae las candidatas por la cola del número y el
- * filtro fino es la regla única del libro.
+ * La guía se compara con `puedeSerLaMismaGtf` («10-1-5» = «010-001-0000005», y
+ * «065» escrito corto = «019-001-0000065»), nunca por el texto exacto: la base
+ * trae las candidatas por la cola del número (la misma que el candado,
+ * `claveCandadoGtf`) y el filtro fino es la regla de los frenos de plata.
  */
 
 /** El filtro amplio por N° de guía: lo que termina igual. `null` = no hay número. */
@@ -51,8 +52,79 @@ export async function cubicacionQuePagoLaGuia(
     select: { codigo: true, gtfNumber: true },
     take: 200,
   });
-  const igual = filas.find((f) => mismoNumeroGtf(f.gtfNumber, gtf));
+  const igual = filas.find((f) => puedeSerLaMismaGtf(f.gtfNumber, gtf));
   return igual ? { codigo: igual.codigo } : null;
+}
+
+/**
+ * Las líneas de despacho vivas con esa GTF de salida (la cola del N° y
+ * `mismoNumeroGtf`), con el N° como está en el libro: la guía puede juntar
+ * varias líneas (`mismaGuiaQue`), y una cubicación de venta de una cobra la
+ * madera de todas. `paraElFreno`: con `puedeSerLaMismaGtf` («065» trae también
+ * las de «019-001-0000065»), para los candados y frenos de plata; sin eso, la
+ * regla estricta (nombrar la guía como la escribe el despacho no adivina serie).
+ */
+export async function despachosDeLaGuiaDeSalida(
+  db: Pick<Prisma.TransactionClient, "forestCtpEntry">,
+  tenantId: string,
+  gtf: string,
+  paraElFreno = false,
+): Promise<{ id: string; gtfNumber: string }[]> {
+  if (!tenantId) throw new Error("tenantId is required");
+  const filas = await db.forestCtpEntry.findMany({
+    where: { tenantId, section: "despacho", deletedAt: null, status: { not: "anulado" }, gtfNumber: filtroMismaGuia(gtf) ?? gtf },
+    select: { id: true, gtfNumber: true },
+    orderBy: [{ entryDate: "asc" }, { lineNo: "asc" }, { id: "asc" }],
+    take: 200,
+  });
+  return filas.flatMap((f) => (f.gtfNumber && (f.gtfNumber === gtf || (paraElFreno ? puedeSerLaMismaGtf : mismoNumeroGtf)(f.gtfNumber, gtf)) ? [{ id: f.id, gtfNumber: f.gtfNumber.trim() }] : []));
+}
+
+/**
+ * Los candados `cub:{tenant}:despacho:{id}` de esas líneas, en orden de id
+ * (sin orden, dos cobros se abrazan en deadlock). Siempre DESPUÉS de los de la
+ * guía y ANTES de los de la persona (ADR-483 §7): los toman «aplicar» una
+ * cubicación y «Anotar la venta de la guía».
+ */
+export async function bloquearLineasDeDespachoEnTx(
+  tx: Pick<Prisma.TransactionClient, "$executeRaw">,
+  tenantId: string,
+  ids: readonly string[],
+): Promise<string[]> {
+  if (!tenantId) throw new Error("tenantId is required");
+  const orden = [...new Set(ids)].sort();
+  for (const l of orden) await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`cub:${tenantId}:despacho:${l}`}))`;
+  return orden;
+}
+
+/**
+ * La cubicación de VENTA aplicada que ya cobró esa guía de salida, o `null`
+ * (ADR-484): por su N° (`puedeSerLaMismaGtf`) o por una de sus líneas de despacho
+ * —la cubicación pudo aplicarse cuando el despacho aún no tenía guía, o cuando
+ * el adelanto cubrió todo y no dejó cargo en la cuenta—. Bajo el candado de la
+ * guía y el de sus líneas.
+ */
+export async function cubicacionQueVendioLaGuia(
+  db: Pick<Prisma.TransactionClient, "forestCubicacionTrozas">,
+  tenantId: string,
+  gtf: string,
+  lineasIds: readonly string[],
+  exceptoId?: string,
+): Promise<{ codigo: string } | null> {
+  if (!tenantId) throw new Error("tenantId is required");
+  const cuales: Prisma.ForestCubicacionTrozasWhereInput[] = [
+    { sentido: "venta", gtfNumber: filtroMismaGuia(gtf) ?? gtf },
+    ...(lineasIds.length > 0 ? [{ origen: "despacho", origenId: { in: [...lineasIds] } }] : []),
+  ];
+  const filas = await db.forestCubicacionTrozas.findMany({
+    where: { tenantId, estado: "aplicada", deletedAt: null, OR: cuales, ...(exceptoId ? { NOT: { id: exceptoId } } : {}) },
+    select: { codigo: true, sentido: true, gtfNumber: true, origen: true, origenId: true },
+    take: 200,
+  });
+  const cobro = filas.find(
+    (f) => (f.origen === "despacho" && f.origenId != null && lineasIds.includes(f.origenId)) || (f.sentido === "venta" && (f.gtfNumber?.trim() === gtf || puedeSerLaMismaGtf(f.gtfNumber, gtf))),
+  );
+  return cobro ? { codigo: cobro.codigo } : null;
 }
 
 /** El mensaje, igual en las cinco puertas. */

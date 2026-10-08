@@ -123,7 +123,7 @@ export default function CtpGuiaRegistrada({
       {/* La plata de la guía, acá: es el único momento en que el operador tiene
           junto el total, el cliente y la guía recién registrada. Se dibuja sola
           sólo si la lista salió con precio (ADR-322 + ADR-141). */}
-      <CtpVentaDeLaGuia filas={filas} datos={datos} gtfNumber={gtfNumber} fecha={emision} />
+      <CtpVentaDeLaGuia filas={filas} datos={datos} gtfNumber={gtfNumber} fecha={emision} despachoId={cabecera?.id} />
 
       <div className="rounded-2xl border-2 border-[var(--data-success-500)]/40 bg-[var(--data-success-50)] p-5 dark:bg-[var(--data-success-500)]/10">
         <p className="flex items-center gap-2 text-base font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">

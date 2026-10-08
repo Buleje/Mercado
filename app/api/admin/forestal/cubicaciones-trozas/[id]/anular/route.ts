@@ -5,7 +5,8 @@ import { ROLES_PLATA, guardCubicacion, invalido, leerJson, noStore, responderErr
 
 /**
  * POST /api/admin/forestal/cubicaciones-trozas/[id]/anular (ADR-478) — DINERO.
- * Sólo admin y dueño. Da de baja sus entregas y recalcula los saldos.
+ * Sólo admin y dueño. Da de baja sus entregas y recalcula los saldos; también
+ * las patas de su cuenta forestal y el valor de venta que puso si sigue igual (ADR-484).
  * 200 `{ cubicacion }` (anular dos veces = 200 `repetido`) · 409 `LIQUIDADA_DESPUES {liquidacion}` · 409 `NO_APLICADA`.
  */
 

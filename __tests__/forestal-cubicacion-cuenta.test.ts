@@ -4,10 +4,8 @@
  */
 import { describe, expect, it } from "vitest";
 import {
-  ExcedeLoRecibidoError,
   FaltaPrecioError,
   MedidaFueraDeRangoError,
-  SinAdelantoAbiertoError,
   agruparPorEspecie,
   aplicarCubicacionSchema,
   cubicarEnServidor,
@@ -15,7 +13,7 @@ import {
   fmtVolumen,
   guardarCubicacionSchema,
   huellaAplicar,
-  repartirFifo,
+  repartirConCuenta,
   valorizar,
   type AdelantoAbierto,
   type LineaEspecie,
@@ -89,48 +87,46 @@ describe("valorizar", () => {
   });
 });
 
-describe("repartirFifo", () => {
-  it("1 adelanto, monto exacto", () => {
-    const r = repartirFifo(1000, 50, [ad("a1", "2026-09-01", 1000)]);
-    expect(r).toEqual([{ adelantoId: "a1", codigoOperacion: "ADL-a1", monto: 1000, volumen: 50, excedido: false }]);
+describe("repartirConCuenta (ADR-484: cada adelanto hasta su saldo, el resto a la cuenta)", () => {
+  it("1 adelanto, monto exacto: nada a la cuenta", () => {
+    const r = repartirConCuenta(1000, 50, [ad("a1", "2026-09-01", 1000)]);
+    expect(r.partes).toEqual([{ adelantoId: "a1", codigoOperacion: "ADL-a1", monto: 1000, volumen: 50, excedido: false }]);
+    expect(r.aCuenta).toBeNull();
   });
 
   it("caso Wasaco: 3 adelantos (S/ 6 248), el más antiguo primero", () => {
     const abiertos = [ad("a3", "2026-09-20", 1248), ad("a1", "2026-08-01", 2000), ad("a2", "2026-09-01", 3000)];
-    const r = repartirFifo(4500, 2140, abiertos, 2);
-    expect(r.map((i) => [i.adelantoId, i.monto])).toEqual([["a1", 2000], ["a2", 2500]]);
-    expect(r.reduce((t, i) => t + i.volumen, 0)).toBeCloseTo(2140, 6);
-    expect(r.every((i) => !i.excedido)).toBe(true);
+    const r = repartirConCuenta(4500, 2140, abiertos, 2);
+    expect(r.partes.map((i) => [i.adelantoId, i.monto])).toEqual([["a1", 2000], ["a2", 2500]]);
+    expect(r.partes.reduce((t, i) => t + i.volumen, 0)).toBeCloseTo(2140, 6);
+    expect(r.aCuenta).toBeNull();
   });
 
-  it("DADO con sobrante: va al ÚLTIMO, que queda excedido", () => {
+  it("B1 cerrado: DADO con sobrante → ninguno queda excedido, el resto va a la cuenta con su parte del volumen", () => {
     const abiertos = [ad("a1", "2026-08-01", 2000), ad("a2", "2026-09-01", 3000), ad("a3", "2026-09-20", 1248)];
-    const r = repartirFifo(7000, 3333.33, abiertos, 2);
-    expect(r.map((i) => [i.adelantoId, i.monto, i.excedido])).toEqual([
-      ["a1", 2000, false],
-      ["a2", 3000, false],
-      ["a3", 2000, true],
-    ]);
-    expect(Math.round(r.reduce((t, i) => t + i.volumen, 0) * 100) / 100).toBe(3333.33);
-    expect(Math.round(r.reduce((t, i) => t + i.monto, 0) * 100) / 100).toBe(7000);
+    const r = repartirConCuenta(7000, 3333.33, abiertos, 2);
+    expect(r.partes.map((i) => [i.adelantoId, i.monto, i.excedido])).toEqual([["a1", 2000, false], ["a2", 3000, false], ["a3", 1248, false]]);
+    expect(r.aCuenta?.monto).toBe(752);
+    expect(Math.round((r.partes.reduce((t, i) => t + i.volumen, 0) + (r.aCuenta?.volumen ?? 0)) * 100) / 100).toBe(3333.33);
+    expect(Math.round((r.partes.reduce((t, i) => t + i.monto, 0) + (r.aCuenta?.monto ?? 0)) * 100) / 100).toBe(7000);
   });
 
-  it("RECIBIDO con más madera que lo que se debe → error con lo que se debe", () => {
-    expect(() => repartirFifo(1500, 10, [ad("r1", "2026-09-01", 1000, "RECIBIDO")])).toThrow(ExcedeLoRecibidoError);
-    try {
-      repartirFifo(1500, 10, [ad("r1", "2026-09-01", 1000, "RECIBIDO")]);
-    } catch (e) {
-      expect((e as ExcedeLoRecibidoError).debe).toBe(1000);
-    }
+  it("RECIBIDO con más madera que lo que te adelantó → se devuelve todo y el resto queda debiéndote", () => {
+    const r = repartirConCuenta(1500, 10, [ad("r1", "2026-09-01", 1000, "RECIBIDO")]);
+    expect(r.partes.map((i) => [i.adelantoId, i.monto])).toEqual([["r1", 1000]]);
+    expect(r.aCuenta).toEqual({ monto: 500, volumen: 3.3333 });
   });
 
-  it("sin adelantos abiertos → SinAdelantoAbiertoError", () => {
-    expect(() => repartirFifo(10, 1, [])).toThrow(SinAdelantoAbiertoError);
+  it("sin adelantos → todo a la cuenta; un adelanto sin saldo no toma nada", () => {
+    expect(repartirConCuenta(10, 1, [])).toEqual({ partes: [], aCuenta: { monto: 10, volumen: 1 } });
+    expect(repartirConCuenta(10, 1, [ad("x", "2026-01-01", -5)])).toEqual({ partes: [], aCuenta: { monto: 10, volumen: 1 } });
+    expect(repartirConCuenta(0, 1, [])).toEqual({ partes: [], aCuenta: null });
   });
 
   it("el volumen prorrateado (m³, 4 decimales) suma el total exacto", () => {
-    const r = repartirFifo(100, 1.2345, [ad("a", "2026-01-01", 33.33), ad("b", "2026-01-02", 33.33), ad("c", "2026-01-03", 33.34)], 4);
-    expect(Math.round(r.reduce((t, i) => t + i.volumen, 0) * 10000) / 10000).toBe(1.2345);
+    const r = repartirConCuenta(100, 1.2345, [ad("a", "2026-01-01", 33.33), ad("b", "2026-01-02", 33.33), ad("c", "2026-01-03", 33.34)], 4);
+    expect(Math.round(r.partes.reduce((t, i) => t + i.volumen, 0) * 10000) / 10000).toBe(1.2345);
+    expect(r.aCuenta).toBeNull();
   });
 });
 

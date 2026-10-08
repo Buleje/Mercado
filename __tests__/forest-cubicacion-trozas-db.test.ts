@@ -20,6 +20,8 @@ const H = vi.hoisted(() => {
     forestCuentaMov: [] as Fila[],
     woodEntry: [] as Fila[],
     liquidacionCuenta: [] as Fila[],
+    /* Las líneas de despacho de una guía de venta (ADR-484: el texto de la guía y el freno de una venta ya cobrada). */
+    forestCtpEntry: [] as Fila[],
   };
   const pasos: string[] = [];
   let seq = 0;
@@ -34,6 +36,10 @@ const H = vi.hoisted(() => {
       if (v === undefined) continue;
       if (k === "NOT") {
         if (cumple(tabla, row, v as Fila)) return false;
+        continue;
+      }
+      if (k === "OR") {
+        if (!(v as Fila[]).some((w) => cumple(tabla, row, w))) return false;
         continue;
       }
       if (k === "adelanto" && tabla === "adelantoEntrega") {
@@ -146,12 +152,35 @@ vi.mock("@/lib/cache", () => ({ getOrSet: async (_k: string, _t: number, fn: () 
 vi.mock("@/lib/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() } }));
 vi.mock("@/lib/forestal/ctp-audit", () => ({ auditCtp: vi.fn(), auditCtpEsperando: vi.fn(async () => {}) }));
 vi.mock("@/lib/db/forest-directorio.db", () => ({ ForestDirectorioDB: {} }));
+vi.mock("@/lib/specializations", () => ({ isSpecializationEnabled: async () => true }));
+vi.mock("@/lib/db/forest-ctp-cierre.db", () => ({ ForestCtpCierreDB: { closedPeriodOf: async () => null } }));
+/* La cuenta forestal (ADR-484): las primitivas escriben en la tabla en memoria, así anular se puede afirmar. */
 vi.mock("@/lib/db/forest-cuenta.db", () => ({
   ForestCuentaDB: {
     bloquearGuiasEnTx: async (_tx: unknown, _t: string, gtfs: string[]) => {
       H.pasos.push(`lock:guia:${gtfs.join(",")}`);
       return gtfs;
     },
+    bloquearPartesEnTx: async (_tx: unknown, t: string, ids: string[]) => {
+      H.pasos.push(`lock:liq:${t}:parte:${ids.join(",")}`);
+    },
+    crearDeCubicacionEnTx: async (_tx: unknown, t: string, base: Record<string, unknown>, patas: Record<string, unknown>[]) =>
+      patas.map((p) => {
+        const id = `mov-${H.db.forestCuentaMov.length + 1}`;
+        H.db.forestCuentaMov.push({ id, tenantId: t, ...base, ...p, deletedAt: null, liquidacionId: null, createdAt: new Date() });
+        return id;
+      }),
+    bajaDeCubicacionEnTx: async (_tx: unknown, t: string, ids: string[]) => {
+      const vivas = H.db.forestCuentaMov.filter((m) => ids.includes(String(m.id)) && m.tenantId === t && m.deletedAt == null);
+      for (const m of vivas) m.deletedAt = new Date();
+      return vivas.length;
+    },
+    liquidacionPosteriorEnTx: async (_tx: unknown, t: string, parteId: string, desde: Date) =>
+      H.db.forestCuentaMov.some((m) => m.tenantId === t && m.parteId === parteId && m.deletedAt == null && m.liquidacionId != null && (m.createdAt as Date) > desde)
+        ? "LIQ-2026-0009"
+        : null,
+    saldoDeParteEnTx: async () => 0,
+    invalidar: () => {},
   },
 }));
 
@@ -194,6 +223,14 @@ const codigoDe = async (p: Promise<unknown>) => {
   }
 };
 const saldo = (id: string) => Number(H.db.adelanto.find((a) => a.id === id)?.saldoPendiente);
+/* ADR-484: la ficha de Juan en el directorio, vinculada a su cuenta de adelantos. */
+const conFicha = () => {
+  H.db.forestParty.push({ id: "p1", tenantId: T, nombre: "Juan Perez", deletedAt: null });
+  const b = H.db.adelantoBeneficiario.find((x) => x.id === "b1");
+  if (b) b.forestPartyId = "p1";
+};
+const movs = () => H.db.forestCuentaMov.filter((m) => m.deletedAt == null && m.liquidacionId == null);
+const saldoCuenta = () => movs().reduce((t, m) => t + (m.tipo === "cargo" ? Number(m.monto) : -Number(m.monto)), 0);
 const estado = (id: string) => H.db.adelanto.find((a) => a.id === id)?.status;
 
 beforeEach(() => {
@@ -268,12 +305,77 @@ describe("ForestCubicacionTrozasDB", () => {
     expect(H.db.adelantoEntrega).toHaveLength(0);
   });
 
-  it("con más madera que lo adelantado (DADO) el sobrante va al último, que queda EXCEDIDO", async () => {
+  it("B1 cerrado (ADR-484): más madera que lo adelantado → cada adelanto hasta su saldo, ninguno excedido, el resto a su cuenta", async () => {
+    conFicha();
     const c = await ForestCubicacionTrozasDB.guardar(T, entrada, actor);
     const caros = [{ clave: "tornillo", precio: 15 }, { clave: "cumala", precio: 6 }];
-    const r = await aplicarCon(c.id, { precios: caros, montoVisto: montoDe(caros) });
-    expect(r.imputacion.at(-1)).toMatchObject({ adelantoId: "a3", excedido: true });
-    expect(estado("a3")).toBe("EXCEDIDO");
+    const monto = montoDe(caros);
+    H.pasos.length = 0;
+    const r = await aplicarCon(c.id, { precios: caros, montoVisto: monto });
+    expect(r.imputacion.map((i) => [i.adelantoId, i.monto, i.excedido])).toEqual([["a1", 2000, false], ["a2", 3000, false], ["a3", 1248, false]]);
+    expect([estado("a1"), estado("a2"), estado("a3")]).toEqual(["LIQUIDADO", "LIQUIDADO", "LIQUIDADO"]);
+    const resto = Math.round((monto - 6248) * 100) / 100;
+    expect(r.cubicacion.aCuenta).toMatchObject({ parteId: "p1", monto: resto, sentido: "compra" });
+    /* La madera entera de abono y el cruce con lo adelantado de cargo: el saldo baja sólo el resto (le debes). */
+    expect(movs().map((m) => [m.tipo, m.concepto, m.monto, m.gtfNumber])).toEqual([["abono", "madera", monto, null], ["cargo", "compensacion", 6248, null]]);
+    expect(saldoCuenta()).toBeCloseTo(-resto, 6);
+    /* Persona de adelantos → su cuenta forestal → la fila (el orden de la liquidación, ADR-413). */
+    expect(H.pasos.filter((p) => !p.startsWith("lock:cub:")).slice(0, 3)).toEqual(["lock:liq:t1:benef:b1", "lock:liq:t1:parte:p1", "for-update:cubicacion"]);
+
+    /* Anular devuelve todo en la misma transacción. */
+    await ForestCubicacionTrozasDB.anular(T, c.id, "precio mal", actor);
+    expect([saldo("a1"), saldo("a2"), saldo("a3")]).toEqual([2000, 3000, 1248]);
+    expect(movs()).toHaveLength(0);
+  });
+
+  it("ningún adelanto elegido (`adelantoIds: []`) → todo a su cuenta, los adelantos quedan como estaban", async () => {
+    conFicha();
+    const c = await ForestCubicacionTrozasDB.guardar(T, entrada, actor);
+    const r = await aplicarCon(c.id, { adelantoIds: [] });
+    expect(r.imputacion).toEqual([]);
+    expect(movs().map((m) => [m.tipo, m.concepto, m.monto])).toEqual([["abono", "madera", 4008.13]]);
+    expect([saldo("a1"), saldo("a2"), saldo("a3")]).toEqual([2000, 3000, 1248]);
+  });
+
+  it("sin ficha en el directorio, lo que el adelanto no cubre → 422 SIN_CUENTA sin escribir nada", async () => {
+    const c = await ForestCubicacionTrozasDB.guardar(T, entrada, actor);
+    const caros = [{ clave: "tornillo", precio: 15 }, { clave: "cumala", precio: 6 }];
+    expect(await codigoDe(aplicarCon(c.id, { precios: caros, montoVisto: montoDe(caros) }))).toBe("422 SIN_CUENTA");
+    expect(H.db.adelantoEntrega).toHaveLength(0);
+    expect(H.db.forestCubicacionTrozas[0].estado).toBe("borrador");
+  });
+
+  it("compra sin adelantos (sólo directorio) → todo a su cuenta (le debes); anular lo da de baja; otra en USD → 422", async () => {
+    conFicha();
+    H.db.adelanto.length = 0;
+    const c = await ForestCubicacionTrozasDB.guardar(T, { ...entrada, beneficiarioId: undefined, parteId: "p1" }, actor);
+    const r = await aplicarCon(c.id);
+    expect(r.imputacion).toEqual([]);
+    expect(movs().map((m) => [m.tipo, m.concepto, m.monto, m.parteNombre])).toEqual([["abono", "madera", 4008.13, "Juan Perez"]]);
+    expect(String(movs()[0].notas)).toMatch(/CUB-2026-0001/);
+    expect(await codigoDe(ForestCubicacionTrozasDB.anular(T, c.id, "no era suya", actor))).toBe("sin error");
+    expect(movs()).toHaveLength(0);
+
+    const usd = await ForestCubicacionTrozasDB.guardar(T, { ...entrada, beneficiarioId: undefined, parteId: "p1" }, actor);
+    const fila = H.db.forestCubicacionTrozas.find((x) => x.id === usd.id);
+    if (fila) fila.moneda = "USD";
+    expect(await codigoDe(aplicarCon(usd.id, { idempotencyKey: "clave-usd-9" }))).toBe("422 MONEDA_NO_SOPORTADA");
+  });
+
+  it("venta sin adelanto → te debe; anular tras una liquidación posterior de su cuenta → 409; la venta ya anotada de la guía → 409", async () => {
+    conFicha();
+    const v = await ForestCubicacionTrozasDB.guardar(T, { ...entrada, sentido: "venta", gtfNumber: "019-002-0000009" }, actor);
+    const r = await aplicarCon(v.id);
+    expect(r.cubicacion.aCuenta).toMatchObject({ monto: 4008.13, sentido: "venta" });
+    /* La venta lleva la guía: el resultado del negocio la cuenta una vez (ADR-451). */
+    expect(movs().map((m) => [m.tipo, m.concepto, m.monto, m.referencia, m.gtfNumber])).toEqual([["cargo", "venta", 4008.13, "019-002-0000009", "019-002-0000009"]]);
+    H.db.forestCuentaMov.push({ id: "liq-pata", tenantId: T, parteId: "p1", tipo: "abono", concepto: "pago", monto: 100, deletedAt: null, liquidacionId: "liq9", createdAt: new Date(Date.now() + 60_000) });
+    expect(await codigoDe(ForestCubicacionTrozasDB.anular(T, v.id, "mal", actor))).toBe("409 LIQUIDADA_DESPUES");
+
+    /* La venta de otra guía ya anotada a mano en una cuenta («Anotar en la cuenta», escrita de otra forma): no se cobra dos veces. */
+    H.db.forestCuentaMov.push({ id: "mv", tenantId: T, parteId: "p9", parteNombre: "Maderas del Sur", tipo: "cargo", concepto: "venta", referencia: "019-002-0000033", gtfNumber: null, deletedAt: null });
+    const otra = await ForestCubicacionTrozasDB.guardar(T, { ...entrada, sentido: "venta", gtfNumber: "19-2-33" }, actor);
+    expect(await codigoDe(aplicarCon(otra.id, { idempotencyKey: "clave-otra-venta" }))).toBe("409 GUIA_YA_ANOTADA");
   });
 
   it("anular deja los saldos como antes; tras una liquidación posterior → 409 LIQUIDADA_DESPUES", async () => {
@@ -332,10 +434,10 @@ describe("revisión M (08-10)", () => {
     expect(r.imputacion.map((i) => [i.adelantoId, i.monto])).toEqual([["a9", 4008.13]]);
     expect([saldo("u1"), saldo("p1"), saldo("a9")]).toEqual([5000, 5000, 1991.87]);
 
-    /* Sólo le queda el de USD: no hay a qué descontar (no se descuentan soles de dólares). */
+    /* Sólo le queda el de USD: no se descuentan soles de dólares, y sin ficha en el directorio no hay cuenta donde dejarlo. */
     H.db.adelanto.splice(H.db.adelanto.findIndex((a) => a.id === "a9"), 1);
     const otra = await ForestCubicacionTrozasDB.guardar(T, entrada, actor);
-    expect(await codigoDe(aplicarCon(otra.id, { idempotencyKey: "clave-aplicar-usd-2" }))).toBe("422 SIN_ADELANTO_ABIERTO");
+    expect(await codigoDe(aplicarCon(otra.id, { idempotencyKey: "clave-aplicar-usd-2" }))).toBe("422 SIN_CUENTA");
   });
 
   it("la guía tipeada «10-1-5» se guarda como la del libro y su abono madera la frena; sin ingreso → 422 en compra, tal cual en venta", async () => {

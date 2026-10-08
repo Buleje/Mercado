@@ -32,6 +32,7 @@ import { useMemo, useState } from "react";
 import { CheckCircle2, HandCoins, Loader2, UserPlus } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
+import { useGuiaCobradaPorCubicacion } from "@/hooks/use-guia-cobrada-por-cubicacion";
 import type { GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import type { FilaDespacho } from "@/lib/forestal/despacho-lista";
 import { parteDelDestinatario } from "@/lib/forestal/cliente-de-la-guia";
@@ -49,12 +50,15 @@ export default function CtpVentaDeLaGuia({
   datos,
   gtfNumber,
   fecha,
+  despachoId,
 }: {
   filas: readonly FilaDespacho[];
   datos: GtfDatos;
   gtfNumber: string;
   /** Fecha de emisión de la guía (YYYY-MM-DD). */
   fecha: string;
+  /** Una línea del despacho de la guía: con ella se pregunta si una cubicación ya la cobró (ADR-484). */
+  despachoId?: string | null;
 }) {
   const directorio = useDirectorioForestal();
   const [cobro, setCobro] = useState<Cobro>("cuenta");
@@ -86,6 +90,9 @@ export default function CtpVentaDeLaGuia({
     const parte = parteDelDestinatario(directorio.partes, d);
     return { nombre, doc: (d.docNumero ?? "").trim(), docTipo: d.docTipo, parte };
   }, [datos.destinatario, directorio.partes]);
+
+  /* Sólo se pregunta si hay algo que anotar (con total y cliente). */
+  const cobradaPor = useGuiaCobradaPorCubicacion(total > 0 && cliente ? despachoId : null);
 
   /** Cuántas líneas se valorizaron con el precio pactado con el cliente (ADR-430). */
   const conSuPrecio = filas.filter(
@@ -153,6 +160,23 @@ export default function CtpVentaDeLaGuia({
             <>la guía de {soles(total)} quedó saldada.</>
           )}
         </span>
+      </div>
+    );
+  }
+
+  /* Una venta, un cobro (ADR-484): si una cubicación ya la cobró, anotarla la dejaría debiendo dos veces. */
+  if (cobradaPor) {
+    return (
+      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3 text-sm">
+        <CheckCircle2 className="h-4 w-4 shrink-0 text-[var(--data-success-600)]" aria-hidden />
+        <span className="mr-auto text-[var(--text-primary)]">
+          Esta guía ya se cobró con la cubicación <b>{cobradaPor}</b>: no se anota otra vez en su cuenta.
+        </span>
+        <InfoTip
+          title="Ya cobrada por una cubicación"
+          what="La venta de esta guía ya entró a la cuenta (o al adelanto) del cliente al aplicar esa cubicación."
+          affects="Para cobrarla desde aquí, primero anula la cubicación en Herramientas › Cubicador de trozas."
+        />
       </div>
     );
   }
