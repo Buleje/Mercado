@@ -1437,6 +1437,20 @@ function costoEnGuiaDeServicio(gtfNumber: string, dueno: string | null): CtpInva
 }
 
 /**
+ * El freno de «una guía, una sola plata» (ADR-478 §7) cuando un costo entra a
+ * una guía cuya madera ya pagó una cubicación de trozas aplicada: el mismo
+ * código, motivo y mensaje en las tres puertas de este archivo (`create`, la
+ * mudanza de guía de `update` y `setCosto`).
+ */
+function guiaPagadaPorCubicacion(gtfNumber: string, codigo: string): CtpInvariantError {
+  return new CtpInvariantError(mensajeGuiaPagadaPorCubicacion(gtfNumber, codigo), "ESTADO_NO_EDITABLE", {
+    motivo: "GUIA_PAGADA_POR_CUBICACION",
+    gtfNumber,
+    cubicacion: codigo,
+  });
+}
+
+/**
  * El permiso que manda la pantalla tiene que ser de ESTE negocio. `contratoId`
  * es una FK global: sin esto, un id de otro tenant quedaba aceptado y el
  * ingreso imputado a un contrato ajeno (hallazgo de la revisión de ADR-442,
@@ -1606,6 +1620,13 @@ export class WoodEntriesDB {
       await ForestCuentaDB.bloquearGuiasEnTx(tx, tenantId, [gtfAlta]);
       const plataGuia = await plataDeLaGuiaEnTx(tx, tenantId, gtfAlta);
       if (plataGuia?.maderaDeTercero && input.costoTotal != null) throw costoEnGuiaDeServicio(gtfAlta, plataGuia.duenoNombre);
+      /* Una guía, una sola plata (ADR-478 §7): bajo el mismo lock, una especie
+         que entra CON costo a una guía cuya madera ya pagó una cubicación la
+         valorizaría dos veces. Sin costo entra igual (no pone plata). */
+      if (input.costoTotal != null) {
+        const porCubicacion = await cubicacionQuePagoLaGuia(tx, tenantId, gtfAlta);
+        if (porCubicacion) throw guiaPagadaPorCubicacion(gtfAlta, porCubicacion.codigo);
+      }
       const max = await tx.woodEntry.aggregate({
         where: { tenantId },
         _max: { libroNro: true },
@@ -5480,7 +5501,16 @@ export class WoodEntriesDB {
         : await prisma.$transaction(async (tx) => {
             await ForestCuentaDB.bloquearGuiasEnTx(tx, tenantId, [gtfViejo, gtfNuevo]);
             const destino = await plataDeLaGuiaEnTx(tx, tenantId, gtfNuevo, id);
-            if (destino?.maderaDeTercero && actual.costoTotal != null) throw costoEnGuiaDeServicio(gtfNuevo, destino.duenoNombre);
+            /* El costo viaja con el asiento. Releído BAJO el lock: un `setCosto`
+               que entró entre la lectura de `actual` y el lock ya está a la vista. */
+            const costo = (await tx.woodEntry.findFirst({ where: { id, tenantId }, select: { costoTotal: true } }))?.costoTotal ?? null;
+            if (destino?.maderaDeTercero && costo != null) throw costoEnGuiaDeServicio(gtfNuevo, destino.duenoNombre);
+            /* Una guía, una sola plata (ADR-478 §7): llevar un asiento con costo
+               a una guía que ya pagó una cubicación es ponerle costo otra vez. */
+            if (costo != null) {
+              const porCubicacion = await cubicacionQuePagoLaGuia(tx, tenantId, gtfNuevo);
+              if (porCubicacion) throw guiaPagadaPorCubicacion(gtfNuevo, porCubicacion.codigo);
+            }
             const e = await tx.woodEntry.update({ where: { id }, data: { ...data, ...(destino ?? {}) } });
             for (const gtf of [gtfViejo, gtfNuevo].sort()) {
               const cuenta = await ForestCuentaDB.resincronizarMaderaDeGuiaEnTx(tx, tenantId, gtf);
@@ -5582,17 +5612,29 @@ export class WoodEntriesDB {
     const { entry, cuenta } = await prisma.$transaction(async (tx) => {
       /* Una guía, una sola plata (ADR-478 §7): bajo el lock de la guía —el que
          toma «aplicar» una cubicación—, si su madera ya se pagó con una
-         cubicación, ponerle costo la valoriza dos veces. Quitarlo (null) sí. */
+         cubicación, ponerle costo la valoriza dos veces. Quitarlo (null) sí.
+         La guía se RELEE bajo el lock: `actual` se leyó antes de la tx, y una
+         mudanza de guía (`update`) que terminó en el medio dejaba el lock y la
+         consulta sobre la guía vieja. Si cambió, se toma también el lock de la
+         nueva —sigue siendo guía primero: antes de escribir y de los locks de
+         persona de la cuenta—; si volvió a cambiar, se pide reintentar. */
       await ForestCuentaDB.bloquearGuiasEnTx(tx, tenantId, [actual.gtfNumber]);
-      if (input.costoTotal != null) {
-        const porCubicacion = await cubicacionQuePagoLaGuia(tx, tenantId, actual.gtfNumber);
-        if (porCubicacion) {
-          throw new CtpInvariantError(mensajeGuiaPagadaPorCubicacion(actual.gtfNumber, porCubicacion.codigo), "ESTADO_NO_EDITABLE", {
-            motivo: "GUIA_PAGADA_POR_CUBICACION",
-            gtfNumber: actual.gtfNumber,
-            cubicacion: porCubicacion.codigo,
-          });
+      const guiaHoy = async () =>
+        ((await tx.woodEntry.findFirst({ where: { id, tenantId, deletedAt: null }, select: { gtfNumber: true } }))?.gtfNumber ?? actual.gtfNumber).trim();
+      const gtf = await guiaHoy();
+      if (gtf !== actual.gtfNumber.trim()) {
+        await ForestCuentaDB.bloquearGuiasEnTx(tx, tenantId, [gtf]);
+        if ((await guiaHoy()) !== gtf) {
+          throw new CtpInvariantError(
+            `El ingreso cambió de guía mientras lo valorizabas: vuelve a abrirlo y ponle el costo otra vez.`,
+            "ESTADO_NO_EDITABLE",
+            { motivo: "CAMBIO_DE_GUIA", gtfNumber: gtf },
+          );
         }
+      }
+      if (input.costoTotal != null) {
+        const porCubicacion = await cubicacionQuePagoLaGuia(tx, tenantId, gtf);
+        if (porCubicacion) throw guiaPagadaPorCubicacion(gtf, porCubicacion.codigo);
       }
       const res = await tx.woodEntry.updateMany({
         where: { id, tenantId, deletedAt: null, ...FILTRO_REQUIERE_COSTO },
@@ -5606,9 +5648,9 @@ export class WoodEntriesDB {
       });
       if (res.count !== 1) {
         throw new CtpInvariantError(
-          `La guía ${actual.gtfNumber} cambió mientras la valorizabas (pasó a madera de servicio o se dio de baja).`,
+          `La guía ${gtf} cambió mientras la valorizabas (pasó a madera de servicio o se dio de baja).`,
           "ESTADO_NO_EDITABLE",
-          { motivo: "ES_MADERA_DE_SERVICIO", gtfNumber: actual.gtfNumber },
+          { motivo: "ES_MADERA_DE_SERVICIO", gtfNumber: gtf },
         );
       }
       const entry = await tx.woodEntry.findFirstOrThrow({ where: { id, tenantId } });
@@ -5617,18 +5659,18 @@ export class WoodEntriesDB {
          sin que nadie lo vea. Se frena acá, con el camino (revisión 2026-09-26). */
       if (entry.costoTotal != null && (entry.moneda ?? "PEN") !== "PEN") {
         const anotada = await tx.forestCuentaMov.findFirst({
-          where: { tenantId, gtfNumber: actual.gtfNumber.trim(), concepto: "madera", deletedAt: null },
+          where: { tenantId, gtfNumber: gtf, concepto: "madera", deletedAt: null },
           select: { parteNombre: true },
         });
         if (anotada) {
           throw new CtpInvariantError(
-            `La guía ${actual.gtfNumber} está anotada en soles en la cuenta de ${anotada.parteNombre}: su costo tiene que ir en soles (PEN). Conviértelo con el tipo de cambio de la factura.`,
+            `La guía ${gtf} está anotada en soles en la cuenta de ${anotada.parteNombre}: su costo tiene que ir en soles (PEN). Conviértelo con el tipo de cambio de la factura.`,
             "VALIDACION",
-            { motivo: "MONEDA_DE_LA_CUENTA", moneda: entry.moneda, gtfNumber: actual.gtfNumber },
+            { motivo: "MONEDA_DE_LA_CUENTA", moneda: entry.moneda, gtfNumber: gtf },
           );
         }
       }
-      const cuenta = await ForestCuentaDB.resincronizarMaderaDeGuiaEnTx(tx, tenantId, actual.gtfNumber);
+      const cuenta = await ForestCuentaDB.resincronizarMaderaDeGuiaEnTx(tx, tenantId, gtf);
       return { entry, cuenta };
     });
 
@@ -5639,7 +5681,7 @@ export class WoodEntriesDB {
       action: "ctp_ingreso_costo",
       entity: "WoodEntry",
       entityId: entry.id,
-      detail: `Valorizó el ingreso ${actual.gtfNumber} · ${antes} → ${despues}${
+      detail: `Valorizó el ingreso ${entry.gtfNumber} · ${antes} → ${despues}${
         cuenta === "actualizada"
           ? " · se actualizó la madera de la guía en la cuenta del proveedor"
           : cuenta === "baja"
@@ -5875,15 +5917,35 @@ export class WoodEntriesDB {
   static async validate(tenantId: string, id: string, validatorId: string) {
     if (!tenantId) throw new Error("tenantId is required");
     await WoodEntriesDB.assertPeriodoAbierto(tenantId, id, "validar");
-    const entry = await prisma.woodEntry.update({
-      where: { id, tenantId } satisfies Prisma.WoodEntryWhereUniqueInput,
-      data: {
-        status: "validado",
-        validatedBy: validatorId,
-        validatedAt: new Date(),
-        rejectionReason: null,
-      },
-    });
+    /* Validar NO revive (ADR-478 §7, revisión 08-10): un ingreso rechazado o
+       anulado ya soltó sus códigos de planta, sus reservas y su parte de la
+       cuenta del proveedor, y su costo dejó de contar — «aplicar» una
+       cubicación de trozas mira sólo los asientos vivos con costo. Volverlo
+       `validado` traía ese costo de vuelta a una guía que pudo haberse pagado
+       entre tanto con una cubicación: doble pago. El camino es registrarlo de
+       nuevo, igual que en `update`. El estado va también en el WHERE: un
+       anular que entra entre la lectura y la escritura no se pisa. */
+    const muerto = (status: string) => new CtpInvariantError(
+      `Un ingreso ${status} no se vuelve a validar: regístralo de nuevo.`,
+      "ESTADO_NO_EDITABLE",
+      { status },
+    );
+    const previo = await prisma.woodEntry.findFirst({ where: { id, tenantId }, select: { status: true } });
+    if (previo?.status === "rechazado" || previo?.status === "anulado") throw muerto(previo.status);
+    const entry = await prisma.woodEntry
+      .update({
+        where: { id, tenantId, status: { notIn: ["rechazado", "anulado"] } } satisfies Prisma.WoodEntryWhereUniqueInput,
+        data: {
+          status: "validado",
+          validatedBy: validatorId,
+          validatedAt: new Date(),
+          rejectionReason: null,
+        },
+      })
+      .catch((err: unknown) => {
+        if (previo && err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2025") throw muerto("anulado o rechazado");
+        throw err;
+      });
     // El evento con más peso del módulo: validar convierte madera declarada en
     // materia prima computable (entra al saldo y se puede transformar).
     auditCtp({

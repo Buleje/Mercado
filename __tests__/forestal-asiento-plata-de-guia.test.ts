@@ -22,6 +22,8 @@ const H = vi.hoisted(() => {
     locks: [] as string[],
     updates: [] as { where: Record<string, unknown>; data: Record<string, unknown> }[],
     creates: [] as Record<string, unknown>[],
+    /* ADR-478 §7: las cubicaciones de trozas APLICADAS (la base ya filtra el estado). */
+    cubicaciones: [] as { codigo: string; gtfNumber: string }[],
   };
   const vivo = (f: Record<string, unknown>) => f.deletedAt == null && !["anulado", "rechazado"].includes(String(f.status));
   const tx: Record<string, unknown> = {
@@ -64,6 +66,7 @@ const H = vi.hoisted(() => {
       },
       count: async () => 0,
     },
+    forestCubicacionTrozas: { findMany: async () => estado.cubicaciones },
     forestCuentaMov: {
       findFirst: async (args: { where: { gtfNumber: string } }) => estado.abonos.get(args.where.gtfNumber) ?? null,
       update: async (args: { where: { id: string }; data: { monto?: { toString(): string }; deletedAt?: Date } }) => {
@@ -136,6 +139,7 @@ beforeEach(() => {
   H.estado.locks = [];
   H.estado.updates = [];
   H.estado.creates = [];
+  H.estado.cubicaciones = [];
 });
 
 describe("update que cambia la guía de un asiento", () => {
@@ -211,5 +215,83 @@ describe("create en una guía existente", () => {
     await WoodEntriesDB.create("tenant-qa", alta("GTF-A", { costoTotal: 250 }) as never);
     expect(H.estado.creates[0]).toMatchObject({ maderaDeTercero: false, proveedorParteId: "nelly" });
     expect(H.estado.abonosEscritos).toEqual([{ id: "mov-a", monto: "750" }]);
+  });
+});
+
+describe("una guía, una sola plata (ADR-478 §7): las puertas que se le escapaban a la cubicación", () => {
+  const alta = (gtfNumber: string, extra: Record<string, unknown> = {}) => ({
+    gtfNumber,
+    providerName: "Nelly",
+    speciesCommonName: "Cumala",
+    volumeM3: 3,
+    createdBy: "qaadmin",
+    ...extra,
+  });
+  /* «1-201» es la misma guía que «001-0000201» (`mismoNumeroGtf`). */
+  const pagada = () => {
+    H.estado.cubicaciones = [{ codigo: "CUB-2026-0007", gtfNumber: "1-201" }];
+  };
+
+  it("alta CON costo en una guía que ya pagó una cubicación → 422 que nombra la CUB, sin crear; sin costo entra", async () => {
+    H.estado.filas = [fila("n1", "001-0000201")];
+    pagada();
+    const err = await WoodEntriesDB.create("tenant-qa", alta("001-0000201", { costoTotal: 250 }) as never).catch((e) => e);
+    expect(err).toBeInstanceOf(CtpInvariantError);
+    expect(err).toMatchObject({ code: "ESTADO_NO_EDITABLE", detail: { motivo: "GUIA_PAGADA_POR_CUBICACION", cubicacion: "CUB-2026-0007" } });
+    expect(String(err.message)).toMatch(/001-0000201.*CUB-2026-0007/);
+    expect(H.estado.creates).toEqual([]);
+    /* Bajo el lock de la guía: el mismo que toma «aplicar». */
+    expect(H.estado.locks).toContain("guia-plata:tenant-qa:001-0000201");
+
+    await WoodEntriesDB.create("tenant-qa", alta("001-0000201") as never);
+    expect(H.estado.creates).toHaveLength(1);
+  });
+
+  it("mudar a una guía pagada por una cubicación un asiento CON costo → 422, sin escribir; sin costo se muda", async () => {
+    H.estado.filas = [
+      fila("d1", "001-0000201"),
+      fila("c1", "GTF-C", { costoTotal: "100.00" }),
+      fila("x1", "GTF-X"),
+    ];
+    pagada();
+    const err = await WoodEntriesDB.update("tenant-qa", "c1", { gtfNumber: "001-0000201" }, "qaadmin").catch((e) => e);
+    expect(err).toBeInstanceOf(CtpInvariantError);
+    expect(err).toMatchObject({ detail: { motivo: "GUIA_PAGADA_POR_CUBICACION", gtfNumber: "001-0000201", cubicacion: "CUB-2026-0007" } });
+    expect(H.estado.updates).toEqual([]);
+    expect(H.estado.locks).toEqual(["guia-plata:tenant-qa:001-0000201", "guia-plata:tenant-qa:GTF-C"]);
+
+    await WoodEntriesDB.update("tenant-qa", "x1", { gtfNumber: "001-0000201" }, "qaadmin");
+    expect(H.estado.updates[0].data).toMatchObject({ gtfNumber: "001-0000201" });
+  });
+
+  it("el costo del asiento a mudar se lee BAJO el lock, no el de antes de la tx", async () => {
+    /* `actual` (afuera) sin costo; un setCosto entró antes del lock. */
+    H.estado.filas = [fila("d1", "001-0000201"), fila("c1", "GTF-C")];
+    pagada();
+    const findFirst = H.tx.woodEntry as { findFirst: (a: { where: Record<string, unknown>; select?: Record<string, unknown> }) => Promise<unknown> };
+    const original = findFirst.findFirst;
+    findFirst.findFirst = async (a) => (a.select?.costoTotal ? { costoTotal: "80.00" } : original(a));
+    try {
+      await expect(WoodEntriesDB.update("tenant-qa", "c1", { gtfNumber: "001-0000201" }, "qaadmin")).rejects.toMatchObject({
+        detail: { motivo: "GUIA_PAGADA_POR_CUBICACION" },
+      });
+    } finally {
+      findFirst.findFirst = original;
+    }
+    expect(H.estado.updates).toEqual([]);
+  });
+
+  it("validar no revive un asiento anulado o rechazado (su costo volvería a la guía)", async () => {
+    for (const status of ["anulado", "rechazado"]) {
+      H.estado.filas = [fila("m1", "001-0000201", { status, costoTotal: "300.00" })];
+      const err = await WoodEntriesDB.validate("tenant-qa", "m1", "qaadmin").catch((e) => e);
+      expect(err).toBeInstanceOf(CtpInvariantError);
+      expect(err).toMatchObject({ code: "ESTADO_NO_EDITABLE", detail: { status } });
+    }
+    expect(H.estado.updates).toEqual([]);
+
+    H.estado.filas = [fila("p1", "001-0000201")];
+    await WoodEntriesDB.validate("tenant-qa", "p1", "qaadmin");
+    expect(H.estado.updates[0]).toMatchObject({ where: { id: "p1", status: { notIn: ["rechazado", "anulado"] } }, data: { status: "validado" } });
   });
 });

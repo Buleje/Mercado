@@ -188,11 +188,23 @@ async function beneficiarioDe(db: Db, tenantId: string, c: { beneficiarioId: str
 }
 
 /**
- * Los adelantos a los que puede ir la madera: ABIERTO/EXCEDIDO del lado del
- * sentido, en SOLES y sin cuotas pactadas — el mismo criterio que
- * `clasificarAdelantos` de la liquidación (lib/cuentas/liquidacion.ts): la
- * cubicación vale en soles (S/ 586,36 no son $ 586,36) y una entrega suelta no
- * marca la cuota de un adelanto con entregas pactadas.
+ * Los adelantos a los que puede ir la madera: estado ABIERTO **o EXCEDIDO**
+ * (`ABIERTOS`), del lado del sentido (compra → DADO, venta → RECIBIDO), en
+ * SOLES y sin cuotas pactadas.
+ *
+ * Con `clasificarAdelantos` de la liquidación (lib/cuentas/liquidacion.ts)
+ * comparte SÓLO dos filtros: soles (la cubicación vale en soles: S/ 586,36 no
+ * son $ 586,36) y sin cuotas (una entrega suelta no marca la cuota de un
+ * adelanto con entregas pactadas). En el estado NO coincide: la liquidación
+ * deja el EXCEDIDO fuera («acá no hay cómo saldarlo»), y acá entra.
+ *
+ * Por qué entra: un EXCEDIDO no tiene saldo (≤ 0) y `repartirFifo` lo salta,
+ * salvo que sea el ÚLTIMO por fecha de un DADO: ahí recibe el sobrante y queda
+ * más excedido (B1, ADR-478 §6). En RECIBIDO nunca toma plata: el sobrante es
+ * 422 `EXCEDE_LO_RECIBIDO`. La pantalla lo lista como candidato por lo mismo.
+ * B1 está pendiente de decisión de Brandon (tope al saldo, abono en la cuenta
+ * forestal o que la liquidación pague lo excedido); si cambia, este filtro es
+ * el que se toca.
  */
 async function abiertosDe(
   db: Db,

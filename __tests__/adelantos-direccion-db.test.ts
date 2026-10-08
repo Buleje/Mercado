@@ -26,6 +26,8 @@ const H = vi.hoisted(() => {
     activityLog: { create: vi.fn() },
     product: { findFirst: vi.fn(), updateMany: vi.fn() },
     adelantoEntregaPactada: { updateMany: vi.fn() },
+    liquidacionCuenta: { findFirst: vi.fn() },
+    forestCubicacionTrozas: { findFirst: vi.fn() },
   };
   const prisma = {
     $transaction: vi.fn(async (fn: (t: typeof tx) => unknown) => fn(tx)),
@@ -598,6 +600,20 @@ describe("corregirDireccion", () => {
     const e = await AdelantosDB.corregirDireccion("t1", "a1", pedido).catch((x: unknown) => x);
     expect(e).toBeInstanceOf(DireccionNoCorregibleError);
     expect(e).toMatchObject({ status: 409, code: "con_entregas" });
+    expect(H.tx.adelanto.update).not.toHaveBeenCalled();
+  });
+
+  it("con madera de una cubicación de trozas descontada: 409 que nombra la CUB a anular (no «anúlalas»)", async () => {
+    H.tx.adelanto.findFirst.mockResolvedValueOnce(actual());
+    H.tx.adelantoEntrega.count.mockResolvedValue(1);
+    H.tx.adelantoEntrega.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce({ cubicacionId: "cub1" });
+    H.tx.forestCubicacionTrozas.findFirst.mockResolvedValueOnce({ codigo: "CUB-2026-0007" });
+    const e = await AdelantosDB.corregirDireccion("t1", "a1", pedido).catch((x: unknown) => x);
+    expect(e).toMatchObject({ status: 409, code: "con_entregas" });
+    expect((e as Error).message).toBe(
+      "Tiene madera de la cubicación CUB-2026-0007 descontada: anula esa cubicación (Herramientas › Cubicador de trozas) antes de cambiar de lado la plata.",
+    );
+    expect(H.tx.forestCubicacionTrozas.findFirst.mock.calls[0][0].where).toEqual({ id: "cub1", tenantId: "t1" });
     expect(H.tx.adelanto.update).not.toHaveBeenCalled();
   });
 

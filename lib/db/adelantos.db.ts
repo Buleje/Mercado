@@ -1594,10 +1594,23 @@ export const AdelantosDB = {
         const liq = deLiq?.liquidacionId
           ? await tx.liquidacionCuenta.findFirst({ where: { id: deLiq.liquidacionId, tenantId }, select: { codigo: true } })
           : null;
+        /* ADR-478: la entrega de madera de una cubicación de trozas no se anula
+           suelta; se anula la cubicación (como el 409 de `cancel`). Se nombra. */
+        const deCub = liq
+          ? null
+          : await tx.adelantoEntrega.findFirst({
+              where: { adelantoId: id, anuladaAt: null, cubicacionId: { not: null } },
+              select: { cubicacionId: true },
+            });
+        const cub = deCub?.cubicacionId
+          ? await tx.forestCubicacionTrozas.findFirst({ where: { id: deCub.cubicacionId, tenantId }, select: { codigo: true } })
+          : null;
         throw new DireccionNoCorregibleError(
           liq
             ? `Está cruzado en la liquidación ${liq.codigo}: anúlala en Cuenta por persona › Liquidaciones antes de cambiar de lado la plata.`
-            : `Ya tiene ${vivas} ${vivas === 1 ? "entrega registrada" : "entregas registradas"}: anúlalas antes de cambiar de lado la plata.`,
+            : deCub
+              ? `Tiene madera de la cubicación ${cub?.codigo ?? "de trozas"} descontada: anula esa cubicación (Herramientas › Cubicador de trozas) antes de cambiar de lado la plata.`
+              : `Ya tiene ${vivas} ${vivas === 1 ? "entrega registrada" : "entregas registradas"}: anúlalas antes de cambiar de lado la plata.`,
           409,
           "con_entregas",
         );

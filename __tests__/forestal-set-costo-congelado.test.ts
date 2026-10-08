@@ -16,13 +16,17 @@ const H = vi.hoisted(() => ({
   locks: [] as string[],
   updates: [] as unknown[],
   consultasCongelado: [] as unknown[],
+  /* La guía que se lee DENTRO de la tx (`select: { gtfNumber }`): `null` = la misma de afuera. */
+  gtfEnTx: null as string | null,
 }));
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/prisma", () => {
   const prisma: Record<string, unknown> = {
     woodEntry: {
-      findFirst: vi.fn(async () => H.entry),
+      findFirst: vi.fn(async (args?: { select?: Record<string, unknown> }) =>
+        args?.select?.gtfNumber && H.gtfEnTx ? { ...H.entry, gtfNumber: H.gtfEnTx } : H.entry,
+      ),
       /* `setCosto` escribe con `updateMany` dentro de una tx (ADR-437: la marca
          de servicio va en el WHERE) y relee la fila. */
       updateMany: vi.fn(async (args: { where: Record<string, unknown>; data: Record<string, unknown> }) => {
@@ -83,6 +87,7 @@ beforeEach(() => {
   H.locks = [];
   H.updates = [];
   H.consultasCongelado = [];
+  H.gtfEnTx = null;
 });
 
 describe("WoodEntriesDB.setCosto — mismo freno que la tanda", () => {
@@ -134,6 +139,18 @@ describe("WoodEntriesDB.setCosto — mismo freno que la tanda", () => {
     expect(H.updates).toEqual([]);
     await WoodEntriesDB.setCosto("tenant-qa", "w1", { costoTotal: null }, "qaadmin");
     expect(H.updates).toHaveLength(1);
+  });
+
+  it("la guía se relee BAJO el lock: si el ingreso se mudó antes de la tx, bloquea y consulta la NUEVA", async () => {
+    /* `actual` dice 001-0000201; un `update` lo mudó a 001-0000300 (pagada por una CUB) antes del lock. */
+    H.entry = guia({ costoTotal: null });
+    H.gtfEnTx = "001-0000300";
+    H.cubicaciones = [{ codigo: "CUB-2026-0009", gtfNumber: "1-300" }];
+    const err = await WoodEntriesDB.setCosto("tenant-qa", "w1", { costoTotal: 100 }, "qaadmin").catch((e) => e);
+    expect(err).toBeInstanceOf(CtpInvariantError);
+    expect(err).toMatchObject({ detail: { motivo: "GUIA_PAGADA_POR_CUBICACION", gtfNumber: "001-0000300", cubicacion: "CUB-2026-0009" } });
+    expect(H.locks).toEqual(["guia-plata:tenant-qa:001-0000201", "guia-plata:tenant-qa:001-0000300"]);
+    expect(H.updates).toEqual([]);
   });
 
   it("anulada o rechazada no lleva costo, igual que en la tanda", async () => {
