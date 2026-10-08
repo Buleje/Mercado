@@ -41,6 +41,10 @@ const arg = (k, d) => {
 const ARBOL = arg("arbol", "85-TOR");
 const GTF = arg("gtf", "019-001-0000066");
 const ASERRAR = Number(arg("aserrar", "0")) || 0;
+/* ADR-481: sólo despacha y QUITA la guardada (como una guía importada o de
+   antes del 28-09, que nunca pasó al CTP): el ingreso se hace por la pantalla,
+   «Nuevo ingreso › Desde tu Libro TH». `--deshacer` busca sus ingresos por N°. */
+const SIN_RECIBIR = args.includes("--sin-recibir");
 const ESTADO = arg("estado", join(tmpdir(), "qa-sembrar-arbol-ctp.json"));
 const hoy = new Date(Date.now() - 5 * 3600e3).toISOString().slice(0, 10); // día de Lima
 
@@ -126,6 +130,13 @@ async function sembrar() {
   save();
   console.log(`+ GTF ${GTF} del TH con ${d.lineas} trozas (${trozas.map((t) => t.codigo).join(", ")}) · pase al CTP: ${d.ctp?.estado}`);
   if (!estado.guardadaId) throw new Error(`La guía no pasó a la bandeja del CTP: ${JSON.stringify(d.ctp)}`);
+  if (SIN_RECIBIR) {
+    await ok("quitar la guardada", "DELETE", `/api/admin/forestal/guias/guardadas/${estado.guardadaId}`);
+    estado.guardadaId = null;
+    save();
+    console.log(`+ guardada quitada: la GTF ${GTF} queda en el TH sin pasar al CTP. Ingrésala por la pantalla; deshacer: --deshacer`);
+    return;
+  }
 
   const { preparado } = await ok("preparar recibir", "GET", `/api/admin/forestal/guias/guardadas/${estado.guardadaId}/recibir`);
   const conteo = preparado.lineas.flatMap((l) => l.trozas.map((t) => ({ orden: t.orden, llego: true, como: "a_mano" })));
@@ -176,6 +187,13 @@ async function deshacer() {
     await paso("borrar corrida", "DELETE", `/api/admin/forestal/ctp?id=${e.corridaId}`);
   }
   if (e.loteId) await paso("borrar lote", "DELETE", `/api/admin/forestal/lotes-aserrio?id=${e.loteId}`);
+  /* Con --sin-recibir el ingreso lo hizo la pantalla: se buscan por N° de guía. */
+  if (!e.ingresos?.length && e.gtfNumber) {
+    const r = await c("GET", `/api/admin/forestal/wood-entries?gtf=${encodeURIComponent(e.gtfNumber)}&limit=50`);
+    const filas = r.j?.entries ?? r.j?.items ?? r.j?.data ?? [];
+    e.ingresos = filas.filter((x) => x.status !== "anulado").map((x) => x.id);
+    console.log(`- ingresos de la GTF ${e.gtfNumber} hechos por la pantalla: ${e.ingresos.length}`);
+  }
   for (const id of e.ingresos ?? []) {
     if (!(await paso(`borrar ingreso ${id}`, "PATCH", `/api/admin/forestal/wood-entries/${id}`, { action: "delete" }))) {
       await paso(`anular ingreso ${id}`, "PATCH", `/api/admin/forestal/wood-entries/${id}`, { action: "annul", reason: "QA L13 deshacer siembra" });

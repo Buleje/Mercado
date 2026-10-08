@@ -110,6 +110,7 @@ import CtpGuiasBandeja from "./CtpGuiasBandeja";
 import CtpGuiasGuardadasBandeja from "./CtpGuiasGuardadasBandeja";
 import CtpGuiasGuardadasCapa, { type ModalGuardadas } from "./CtpGuiasGuardadasCapa";
 import CtpRecibirGuiaThModal from "./CtpRecibirGuiaThModal";
+import { alistarGuiaTh } from "./hooks/use-guias-th-por-ingresar";
 import { buscarGuiaGuardada, detalleDeGuia } from "@/hooks/use-guias-guardadas";
 import type { GuiaGuardadaDetalle, GuiaGuardadaVista } from "@/lib/forestal/guias-guardadas";
 import CtpIngresosPaginacion from "./CtpIngresosPaginacion";
@@ -393,16 +394,28 @@ export default function CtpIngresosView({
     const gtf = openGtf;
     // Consumir ya: el handoff no se repite aunque la búsqueda tarde.
     onOpenConsumed?.();
-    void buscarGuiaGuardada(gtf).then((g) => {
+    void buscarGuiaGuardada(gtf).then(async (g) => {
       if (g?.libroTh?.recibible && !g.ingreso) {
         setRecibirTh({ id: g.id, gtfNumber: g.gtfNumber });
         return;
+      }
+      /* ADR-481: la guía del TH que no pasó al CTP (importada, de antes del
+         28-09 o cuya guardada se quitó) también entra rellena: se guarda y se
+         abre «Recibir». Si no se puede, se dice por qué y queda el alta. */
+      if (!g?.ingreso) {
+        const r = await alistarGuiaTh({ gtfNumber: gtf });
+        if (r.ok) {
+          setGuardadasKey((k) => k + 1);
+          setRecibirTh({ id: r.alistada.guardadaId, gtfNumber: r.alistada.gtfNumber });
+          return;
+        }
+        if (r.codigo !== "SIN_GUIA_TH") pushToast({ tono: "warning", msg: `La GTF ${gtf} no entra sola`, detail: r.mensaje });
       }
       setFormGtf(gtf);
       setFormPreset(undefined);
       setShowForm(true);
     });
-  }, [openGtf, onOpenConsumed]);
+  }, [openGtf, onOpenConsumed, pushToast]);
 
   /**
    * El legajo: portada con el índice + cada guía (y su lista) en hoja nueva.
@@ -906,7 +919,7 @@ export default function CtpIngresosView({
    */
   /* ADR-438: el «3/6 docs» de las guías en pantalla, en UN pedido, y el modal. */
   const conteoDocs = useConteoDocumentosGuias(guias.map((g) => g.gtfNumber));
-  const ctxDocs = useMemo(() => ({ llenos: conteoDocs.llenos, abrir: setDocsGuia }), [conteoDocs.llenos]);
+  const ctxDocs = useMemo(() => ({ llenos: conteoDocs.llenos, faltan: conteoDocs.faltan, abrir: setDocsGuia }), [conteoDocs.llenos, conteoDocs.faltan]); // ADR-482: «Papeles 3/4»
 
   /* ADR-442: «Ingresar» una guía guardada abre el alta ya llena con ella (el
      formulario necesita la ficha: si la lista no la trae, se pide). */
@@ -1379,6 +1392,15 @@ export default function CtpIngresosView({
           initialGtfNumber={formGtf ?? undefined}
           preset={formPreset}
           guiaGuardada={guiaGuardadaForm}
+          /* ADR-481: «Desde tu Libro TH» — la guía quedó guardada: se cierra el alta y se recibe rellena. */
+          onDesdeLibroTh={(a) => {
+            setShowForm(false);
+            setFormGtf(null);
+            setFormPreset(undefined);
+            setGuiaGuardadaForm(null);
+            setGuardadasKey((k) => k + 1);
+            setRecibirTh({ id: a.guardadaId, gtfNumber: a.gtfNumber });
+          }}
           onClose={() => { setShowForm(false); setFormGtf(null); setFormPreset(undefined); setGuiaGuardadaForm(null); }}
           onSaved={(o) => {
             setShowForm(false);

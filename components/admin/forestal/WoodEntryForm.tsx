@@ -101,6 +101,9 @@ interface Props {
   /** La guía guardada antes de que llegue el camión (ADR-442): la vista de
    *  Ingresos la pasa al tocar «Ingresar». Sus datos llegan puestos. */
   guiaGuardada?: GuiaGuardadaDetalle | null;
+  /** ADR-481: «Desde tu Libro TH» — la guía elegida quedó guardada; la vista
+   *  cierra el alta y abre «Recibir» con todo relleno. Sin esto, no hay 3.ª opción. */
+  onDesdeLibroTh?: (a: GuiaThAlistada) => void;
 }
 
 // Guía emitida (ForestGtf) — para importar sus datos al ingreso.
@@ -286,9 +289,11 @@ const INITIAL: DraftData = {
 // ═════════════════════════════════════════════════════════════════════════
 
 import CtpFotosDelIngreso from "./CtpFotosDelIngreso";
+import CtpIngresoDesdeLibroTh from "./CtpIngresoDesdeLibroTh";
+import type { GuiaThAlistada } from "@/lib/forestal/guias-th-por-ingresar";
 import type { FotoCarga } from "@/lib/forestal/fotos-carga";
 
-export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, preset, guiaGuardada }: Props) {
+export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, preset, guiaGuardada, onDesdeLibroTh }: Props) {
   /* El picker ofrece las de fábrica MÁS las del catálogo de esta planta
      (ADR-410): «Panguana» y «Yacuchapana» entran por la GTF todas las semanas y
      el código no las conoce — sin esto hay que elegir «Otro» y tipearlas cada
@@ -383,7 +388,7 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
    * manual la primera vez —si el servicio no responde, el camino de siempre es
    * el que no depende de nadie—, pero después respeta lo último que se usó.
    */
-  const [modo, setModo] = useState<"manual" | "serfor">(() => {
+  const [modo, setModo] = useState<"manual" | "serfor" | "libro_th">(() => {
     if (typeof window === "undefined") return "manual";
     try {
       return localStorage.getItem(MODO_CARGA_KEY) === "serfor" ? "serfor" : "manual";
@@ -392,12 +397,16 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
     }
   });
   useEffect(() => {
+    // «Desde tu Libro TH» no se recuerda (ADR-481): la próxima alta arranca en el modo de siempre.
+    if (modo === "libro_th") return;
     try {
       localStorage.setItem(MODO_CARGA_KEY, modo);
     } catch {
       // modo privado: sin memoria, sin bug
     }
   }, [modo]);
+  /* ADR-481: la 3.ª opción, sólo en un alta nueva (no al duplicar ni al ingresar una guardada). */
+  const conLibroTh = !!onDesdeLibroTh && !preset && !guiaGuardada;
   /* `sinClave`: falta la IA de la plataforma — va el aviso único (`AvisoClaveIa`), no la alerta roja. */
   const [gtfMsg, setGtfMsg] = useState<{ ok: boolean; text: string; sinClave?: { instrucciones: boolean } } | null>(null);
   const [gtfItems, setGtfItems] = useState<GtfItem[]>([]);
@@ -1031,6 +1040,8 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
 
   // Validación — campos obligatorios pendientes (para checklist + footer)
   const missing = useMemo(() => {
+    // ADR-481: en «Desde tu Libro TH» no se registra desde este pie: entra por «Recibir».
+    if (modo === "libro_th") return ["Elegir la guía de tu Libro TH y tocar «Traer con todo»"];
     const m: string[] = [];
     if (!data.gtfNumber.trim()) m.push("N° de GTF");
     if (!data.entryDate) m.push("Fecha de ingreso");
@@ -1457,7 +1468,9 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                siguen siendo el default del formulario — la especie precargada
                entraba al libro sin que nadie la eligiera. */
             <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
-              {isValid ? (
+              {modo === "libro_th" ? (
+                <span>Elige la guía y toca «Traer con todo»: entra por «Recibir».</span>
+              ) : isValid ? (
                 <span className="flex items-center gap-1.5">
                   <Check className="h-3.5 w-3.5 text-[var(--data-success-600)]" />
                   Listo para guardar
@@ -1527,10 +1540,15 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
           ) : (
           <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
             <Btn variant="ghost" onClick={onClose} disabled={submitting}>Cancelar</Btn>
-            <Btn variant="secondary" onClick={(e) => handleSubmit(e, true)} disabled={!isValid || submitting}>Guardar y otro</Btn>
-            <Btn variant="primary" type="submit" form="wood-entry-form" disabled={!isValid || submitting}>
-              {submitting ? <><Loader2 className="h-4 w-4 animate-spin" />Guardando</> : "Registrar ingreso"}
-            </Btn>
+            {/* ADR-481: desde tu Libro TH se registra en «Recibir» (abre al traer la guía), no acá. */}
+            {modo !== "libro_th" && (
+              <>
+                <Btn variant="secondary" onClick={(e) => handleSubmit(e, true)} disabled={!isValid || submitting}>Guardar y otro</Btn>
+                <Btn variant="primary" type="submit" form="wood-entry-form" disabled={!isValid || submitting}>
+                  {submitting ? <><Loader2 className="h-4 w-4 animate-spin" />Guardando</> : "Registrar ingreso"}
+                </Btn>
+              </>
+            )}
           </div>
           )}
         </ModalFooter>
@@ -1648,6 +1666,8 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
                 options={[
                   { value: "manual", label: "Carga manual" },
                   { value: "serfor", label: "Desde SERFOR" },
+                  /* ADR-481: la guía que salió de tu Libro TH entra con todo, sin tipear. */
+                  ...(conLibroTh ? [{ value: "libro_th" as const, label: "Desde tu Libro TH" }] : []),
                 ]}
               />
               {/* En el celular va debajo del selector: al costado le quedaban
@@ -1655,9 +1675,13 @@ export default function WoodEntryForm({ onClose, onSaved, initialGtfNumber, pres
               <p className="w-full min-w-0 text-xs text-[var(--text-secondary)] sm:w-auto sm:flex-1">
                 {modo === "manual"
                   ? "Llenas la guía a mano, campo por campo."
-                  : "Se pide la guía a SERFOR por su N° de registro y se registra lo que dice el documento oficial."}
+                  : modo === "libro_th"
+                    ? "Eliges la guía que salió de tu Libro TH y entra con sus trozas, su resumen y su titular."
+                    : "Se pide la guía a SERFOR por su N° de registro y se registra lo que dice el documento oficial."}
               </p>
             </div>
+
+            {modo === "libro_th" && onDesdeLibroTh && <CtpIngresoDesdeLibroTh onAlistada={onDesdeLibroTh} />}
 
             {modo === "serfor" && (
               <div className="grid grid-cols-1 gap-4">
