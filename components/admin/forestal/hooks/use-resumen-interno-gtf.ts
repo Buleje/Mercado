@@ -2,19 +2,18 @@
 
 /**
  * useResumenInternoGtf — «Imprimir resumen interno» de una GTF del Libro TH
- * (Brandon 08-10): lee el libro, el permiso y el Libro CTP
- * (`gtf-resumen-interno-datos`), arma R1-R4 (`gtf-resumen-interno`) y la hoja
+ * (Brandon 08-10): pide R1-R4 ya calculados al servidor
+ * (`/api/admin/forestal/gtf/resumen-interno`, regla 6), arma la hoja
  * (`gtf-resumen-interno-print`) y se la entrega al visor de documentos de la
  * vista, el mismo de la hoja SERFOR (ver, imprimir, PDF, archivar).
  *
- * Lo que no se pudo leer no frena la hoja: sale «sin dato» y se avisa.
+ * Lo que el servidor no pudo leer no frena la hoja: sale «sin dato» y se avisa.
  */
 
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { obtenerBaseVerificacion } from "@/lib/base-verificacion-cliente";
-import { resumenInterno } from "@/lib/forestal/gtf-resumen-interno";
-import { leerResumenInterno, listaTrozasDeLaGuia } from "@/lib/forestal/gtf-resumen-interno-datos";
+import { listaTrozasDeLaGuia, type RespuestaResumenInterno } from "@/lib/forestal/gtf-resumen-interno-datos";
 import { hojaResumenInterno, contenidoQrResumen, type HojaResumenInterno } from "@/lib/forestal/gtf-resumen-interno-print";
 import { permisoDeLaGuiaGtf } from "../gtf-acciones-menu";
 import type { Gtf } from "../gtf-tabla-columnas";
@@ -28,8 +27,11 @@ export function useResumenInternoGtf(onListo: (g: Gtf, hoja: HojaResumenInterno)
       setCargando(g.id);
       const aviso = toast.loading(`Armando el resumen interno de la GTF ${g.gtfNumber}…`);
       try {
-        const datos = await leerResumenInterno(g);
-        const r = resumenInterno(datos.entrada);
+        const res = await fetch(`/api/admin/forestal/gtf/resumen-interno?id=${encodeURIComponent(g.id)}`, { credentials: "include" });
+        const j = (await res.json().catch(() => ({}))) as Partial<RespuestaResumenInterno> & { message?: string };
+        if (!res.ok || !j.resumen) throw new Error(j.message ?? `HTTP ${res.status}`);
+        const datos = { lineaDespachoId: j.lineaDespachoId ?? null, avisos: j.avisos ?? [] };
+        const r = j.resumen;
         /* QR: la lista pública de la guía con la base del negocio (dominio propio > subdominio > /t/slug);
            sin despacho en el Libro o sin base, la cadena de verificación interna de siempre. */
         let qr = "";

@@ -11,24 +11,34 @@
  * con las MISMAS condiciones que tenían los botones de la fila:
  *   · Datos           → sólo si la guía guardó su ficha de SERFOR (importada)
  *   · Hoja SERFOR     → siempre (anulada: con su sello)
- *   · Resumen interno → siempre
+ *   · Resumen interno → siempre (R1-R4, `gtf-resumen-interno`)
+ *   · Documentos del permiso → siempre; apagada si la guía no tiene permiso
+ *     (ADR-467: las carpetas del plan, por `planId`; ver, descargar,
+ *     imprimir y enviar por WhatsApp — 08-10)
  *   · Ver ingresos    → la guía ya entró al Libro CTP
  *   · Deshacer la importación → viva e importada
  *   · Anular          → viva
- * `soloLectura` (la pestaña «Anuladas y otras»): sólo Datos, Hoja y Resumen.
+ * `soloLectura` (la pestaña «Anuladas y otras»): sólo Datos, Hoja, Resumen y
+ * Documentos del permiso.
  *
- * Los modales de «Datos» y «Deshacer» se montan sólo abiertos (uno por fila).
+ * Los modales de «Datos», «Documentos» y «Deshacer» se montan sólo abiertos (uno por fila).
  */
 
 import { useMemo, useState } from "react";
-import { Ban, Eye, FileText, LogIn, Printer, Undo2 } from "@buleje/design-system/icons";
+import { Ban, Eye, FileText, FolderOpen, LogIn, Printer, Undo2 } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { importacionDeLaGuia } from "@/lib/forestal/loth-importar-guia-deshacer";
 import { fichaDeGuiaImportada } from "@/lib/forestal/loth-importar-guia-ficha";
+import { leerGtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 import type { Gtf } from "./gtf-tabla-columnas";
 import ModalFichaImportada from "./LothImportarGuiasFicha";
 import { ModalDeshacer } from "./LothImportarGuiasDeshacer";
 import { verIngresosDelCtp } from "./LothGtfCtp";
+import GtfDocumentosModal from "./GtfDocumentosModal";
+
+/** El código del permiso de la guía: el título que guardó o, en una plantación, el (5) de sus casilleros. */
+export const permisoDeLaGuiaGtf = (g: Pick<Gtf, "tituloHabilitante" | "gtfDatos">): string | null =>
+  g.tituloHabilitante?.trim() || (g.gtfDatos ? leerGtfDatos(g.gtfDatos).titulos[0]?.trim() : "") || null;
 
 export interface AccionesGtfProps {
   g: Gtf;
@@ -50,6 +60,7 @@ export function opcionesGtf(
     soloLectura = false,
     abrirDatos,
     abrirDeshacer,
+    abrirDocumentos,
     onHoja,
     onResumen,
     onAnular,
@@ -57,6 +68,7 @@ export function opcionesGtf(
     soloLectura?: boolean;
     abrirDatos: () => void;
     abrirDeshacer: () => void;
+    abrirDocumentos?: () => void;
     onHoja: (g: Gtf) => void;
     onResumen: (g: Gtf) => void;
     onAnular?: (id: string) => void;
@@ -75,7 +87,23 @@ export function opcionesGtf(
     tone: "dark",
     onSelect: () => onHoja(g),
   });
-  a.push({ id: "resumen", label: "Imprimir resumen interno", hint: "Con su lista de trozas y el QR de verificación", icon: FileText, onSelect: () => onResumen(g) });
+  a.push({
+    id: "resumen",
+    label: "Imprimir resumen interno",
+    hint: "Por especie y árbol, cuadre, dónde está cada troza y saldo del permiso",
+    icon: FileText,
+    onSelect: () => onResumen(g),
+  });
+  if (abrirDocumentos) {
+    a.push({
+      id: "documentos",
+      label: "Documentos del permiso",
+      hint: g.planId ? "Las carpetas del plan: ver, descargar, imprimir o enviar por WhatsApp" : "La guía no está atada a un permiso",
+      icon: FolderOpen,
+      disabled: !g.planId,
+      onSelect: abrirDocumentos,
+    });
+  }
   if (viva && g.ctp === "ingresada") {
     a.push({ id: "ingresos", label: "Ver sus ingresos en el CTP", hint: "Abre Ingresos del Libro CTP", icon: LogIn, onSelect: verIngresosDelCtp });
   }
@@ -98,13 +126,14 @@ export function opcionesGtf(
 export default function AccionesGtf({
   g, porIngresar = false, soloLectura = false, onIngresarCtp, onHoja, onResumen, onAnular, onRecargar,
 }: AccionesGtfProps) {
-  const [abierto, setAbierto] = useState<"datos" | "deshacer" | null>(null);
+  const [abierto, setAbierto] = useState<"datos" | "deshacer" | "documentos" | null>(null);
   const acciones = useMemo(
     () =>
       opcionesGtf(g, {
         soloLectura,
         abrirDatos: () => setAbierto("datos"),
         abrirDeshacer: () => setAbierto("deshacer"),
+        abrirDocumentos: () => setAbierto("documentos"),
         onHoja,
         onResumen,
         onAnular,
@@ -126,6 +155,9 @@ export default function AccionesGtf({
       <ActionMenu label={`Acciones de la GTF ${g.gtfNumber}`} title="Más acciones" actions={acciones} soloIcono size="xs" />
       {abierto === "datos" && (
         <ModalFichaImportada gtfDatos={g.gtfDatos} gtfNumber={g.gtfNumber} items={g.items} onClose={() => setAbierto(null)} />
+      )}
+      {abierto === "documentos" && g.planId && (
+        <GtfDocumentosModal planId={g.planId} permiso={permisoDeLaGuiaGtf(g)} gtfNumber={g.gtfNumber} onClose={() => setAbierto(null)} />
       )}
       {abierto === "deshacer" && (
         <ModalDeshacer

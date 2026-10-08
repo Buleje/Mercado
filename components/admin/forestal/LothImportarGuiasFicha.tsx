@@ -13,8 +13,10 @@
  * Sólo se ofrece en las guías que guardaron la ficha (`gtfDatos.fichaSerfor`,
  * desde el 02-10 noche): una anotada a mano no tiene una «ficha de SERFOR».
  *
- * ADR-474 (07-10): la lista dice el «Código único» de cada troza en el libro y,
- * si alguna se renombró al importar («12A (0000002)»), también «En la guía».
+ * ADR-474 (07-10): la lista dice el «Código único» de cada troza en el libro y
+ * su «Código en la guía» — las DOS columnas siempre (Brandon 08-10), aunque
+ * coincidan: así se ve de un vistazo cuál se renombró al importar. El N° de la
+ * Lista de trozas (35) que trajo la guía va en el título de la lista.
  */
 
 import { useId, useMemo, useState } from "react";
@@ -25,6 +27,7 @@ import { formatNumber } from "@/lib/format";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { piezasDeItems } from "@/lib/forestal/loth-guia-despacho";
 import { fichaDeGuiaImportada } from "@/lib/forestal/loth-importar-guia-ficha";
+import { listaTrozasDeLaGuia } from "@/lib/forestal/gtf-resumen-interno-datos";
 import LothImportarGuiasBloques from "./LothImportarGuiasBloques";
 import CtpApartados, { CtpApartadoPanel, type Apartado } from "./ctp-apartados";
 
@@ -58,8 +61,8 @@ export default function ModalFichaImportada({
     () => piezas.map((p) => ({ comun: p.comun, cientifico: p.cientifico, m3: p.volumeM3 })),
     [piezas],
   );
-  /* «En la guía» sólo si alguna troza entró con otro código que el impreso. */
-  const conCodigoGuia = piezas.some((p) => p.codigoGuia && p.codigoGuia !== p.codigo);
+  /* El (35) que guardó la guía al importarla (`gtfDatos.guia.listaTrozasNro`). */
+  const nroLista = useMemo(() => listaTrozasDeLaGuia(gtfDatos), [gtfDatos]);
   const [pestana, setPestana] = useState<"gtf" | "trozas">("gtf");
   const idBase = useId();
   if (!leida) return null;
@@ -107,11 +110,19 @@ export default function ModalFichaImportada({
                   <caption className="px-3 py-2 text-left text-sm font-bold text-[var(--text-primary)]">
                     Trozas de la guía ({piezas.length}) ·{" "}
                     <span className="font-mono tabular-nums">{fmtM3(volumen)} m³</span>
+                    {" · "}
+                    {nroLista ? (
+                      <span>
+                        Lista de trozas N° <span className="font-mono">{nroLista}</span>
+                      </span>
+                    ) : (
+                      <span className="font-normal text-[var(--text-tertiary)]">sin N° de lista de trozas</span>
+                    )}
                   </caption>
                   <thead className="bg-[var(--surface-sunken)]">
                     <tr>
+                      <th className={TH}>Código en la guía</th>
                       <th className={TH}>Código único</th>
-                      {conCodigoGuia && <th className={TH}>En la guía</th>}
                       <th className={TH}>Especie</th>
                       <th className={`${TH} text-right`}>D1 (m)</th>
                       <th className={`${TH} text-right`}>D2 (m)</th>
@@ -122,10 +133,8 @@ export default function ModalFichaImportada({
                   <tbody className="divide-y divide-[var(--rule-soft)]">
                     {piezas.map((p, i) => (
                       <tr key={`${p.codigo}-${i}`}>
+                        <td className={`${TD} font-mono text-[var(--text-secondary)]`}>{p.codigoGuia || p.codigo || "—"}</td>
                         <td className={`${TD} font-mono font-semibold text-[var(--text-primary)]`}>{p.codigo || "—"}</td>
-                        {conCodigoGuia && (
-                          <td className={`${TD} font-mono text-[var(--text-secondary)]`}>{p.codigoGuia ?? p.codigo}</td>
-                        )}
                         <td className={`${TD} text-[var(--text-secondary)]`}>{p.comun ?? "—"}</td>
                         <td className={`${TD} text-right font-mono tabular-nums`}>{m(p.diamMayorM)}</td>
                         <td className={`${TD} text-right font-mono tabular-nums`}>{m(p.diamMenorM)}</td>

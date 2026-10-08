@@ -6,14 +6,24 @@
  * aceptan guías (`GuiasAFormatoBarra`, la misma que usa «Guías emitidas» del
  * CTP). Los ids del Libro TH viajan SIN prefijo: así eran las URLs desde el
  * primer día (`tramite-guias-url`).
+ *
+ * Con guías de 2+ permisos avisa antes de salir del libro «van N permisos → N
+ * oficios» (08-10): la Relación arma un oficio por permiso.
  */
 
+import { useMemo } from "react";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { avisoDePermisos, permisosDeLasGuias } from "@/lib/forestal/tramites-permiso";
+import { permisoDeLaGuiaGtf } from "./gtf-acciones-menu";
 import type { CifraSeleccion } from "./ctp-barra-seleccion";
 import type { Gtf } from "./gtf-tabla-columnas";
 import GuiasAFormatoBarra from "./GuiasAFormatoBarra";
 
 export default function LothGtfSeleccionBarra({ elegidas, onLimpiar }: { elegidas: readonly Gtf[]; onLimpiar: () => void }) {
+  const aviso = useMemo(
+    () => avisoDePermisos(permisosDeLasGuias(elegidas.map((g) => ({ gtfNumber: g.gtfNumber, status: g.status, tituloHabilitante: permisoDeLaGuiaGtf(g) })))),
+    [elegidas],
+  );
   if (elegidas.length === 0) return null;
 
   const anuladas = elegidas.filter((g) => g.status === "anulada").length;
@@ -26,5 +36,5 @@ export default function LothGtfSeleccionBarra({ elegidas, onLimpiar }: { elegida
     { label: "Piezas", valor: String(piezas) },
   ];
 
-  return <GuiasAFormatoBarra elegidas={elegidas} refs={elegidas.map((g) => g.id)} cifras={cifras} onLimpiar={onLimpiar} />;
+  return <GuiasAFormatoBarra elegidas={elegidas} refs={elegidas.map((g) => g.id)} cifras={cifras} onLimpiar={onLimpiar} aviso={aviso} />;
 }

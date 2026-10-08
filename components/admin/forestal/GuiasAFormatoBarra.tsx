@@ -39,12 +39,15 @@ export default function GuiasAFormatoBarra({
   refs,
   cifras,
   onLimpiar,
+  aviso,
 }: {
   elegidas: readonly GuiaElegida[];
   /** Los ids como viajan en `?guias=` (`refGuia`): el del Libro TH sin prefijo, el del CTP con `ctp:`. */
   refs: readonly string[];
   cifras: CifraSeleccion[];
   onLimpiar: () => void;
+  /** Lo que conviene saber antes de salir del libro (ámbar, no frena): «van 2 permisos → 2 oficios». */
+  aviso?: string | null;
 }) {
   const opciones = useMemo(() => formatosQueAceptan(elegidas), [elegidas]);
   if (elegidas.length === 0) return null;
@@ -65,6 +68,8 @@ export default function GuiasAFormatoBarra({
     <CtpBarraSeleccion
       cifras={cifras}
       onLimpiar={onLimpiar}
+      aviso={aviso}
+      avisoTono="aviso"
       accionLabel="Relación de guías"
       accionIcon={FileText}
       accionDisabled={!relacion?.habilitado}

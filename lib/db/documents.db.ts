@@ -2150,6 +2150,10 @@ export class DocumentsDB {
    * Filtra a los documentos que existen en el tenant porque `documentId` es
    * una FK: un id inventado tumbaría el `createMany` entero, mientras que los
    * `create` sueltos solo perdían esa fila.
+   *
+   * `estricto` (envío por WhatsApp, 08-10): la auditoría ES la condición del
+   * acto. Falla en vez de tragarse el error, y también si falta algún
+   * documento: quien llama deshace lo que hizo (revoca los enlaces).
    */
   static async logMany(
     tenantId: string,
@@ -2159,7 +2163,8 @@ export class DocumentsDB {
       action: DocAction;
       metadata?: Record<string, unknown>;
       ipAddress?: string;
-    }
+    },
+    opts: { estricto?: boolean } = {}
   ): Promise<void> {
     if (documentIds.length === 0) return;
     try {
@@ -2167,6 +2172,9 @@ export class DocumentsDB {
         where: { id: { in: documentIds }, tenantId },
         select: { id: true },
       });
+      if (opts.estricto && existentes.length !== new Set(documentIds).size) {
+        throw new Error(`audit: ${new Set(documentIds).size - existentes.length} documento(s) no están en el tenant`);
+      }
       if (existentes.length === 0) return;
       await prisma.documentAuditLog.createMany({
         data: existentes.map((d) => ({
@@ -2180,6 +2188,7 @@ export class DocumentsDB {
       });
     } catch (err) {
       logger.warn("documents.audit.fail", { err: String(err) });
+      if (opts.estricto) throw err;
     }
   }
 

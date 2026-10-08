@@ -83,6 +83,8 @@ export class GtfSpeciesNotAuthorizedError extends Error {
 
 export interface GtfItem {
   code?: string | null;
+  /** ADR-474: el código impreso en la guía, si difiere de `code` (el único del libro). */
+  codigoGuia?: string | null;
   species?: string | null;
   scientific?: string | null;
   cites?: boolean;

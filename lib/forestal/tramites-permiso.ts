@@ -123,6 +123,16 @@ export function permisosDeLasGuias(guias: readonly GuiaConPermiso[]): GrupoPermi
 }
 
 /**
+ * El aviso de la barra de guías elegidas, ANTES de salir del libro (Brandon
+ * 08-10: «un oficio por permiso»): con guías de 2+ permisos, la Relación arma
+ * un oficio por cada uno. `null` con uno solo (o ninguno).
+ */
+export function avisoDePermisos(grupos: readonly GrupoPermiso[]): string | null {
+  if (grupos.length < 2) return null;
+  return `Van ${grupos.length} permisos → ${grupos.length} oficios: la Relación arma uno por permiso.`;
+}
+
+/**
  * Con qué permiso se arma el oficio al llegar con guías: el del chip si está
  * entre ellas (es el permiso con el que se está trabajando), si no el de más
  * guías. Devuelve el CÓDIGO (va al papel); `null` si ninguna guía dice permiso.

@@ -74,7 +74,7 @@ describe("Acciones de la guía: menú ⋯", () => {
     expect(tiene(o, "Anular la guía")).toBe(true);
   });
 
-  it("anulada o en sólo lectura: sólo ver e imprimir", () => {
+  it("anulada o en sólo lectura: sólo ver, imprimir y sus documentos", () => {
     render(
       <AccionesGtf
         g={guia("3", { status: "anulada", annulledReason: "Error de tipeo", gtfDatos: DATOS, observations: observacionGuia("1-10-0474633", true) })}
@@ -83,9 +83,10 @@ describe("Acciones de la guía: menú ⋯", () => {
     );
     expect(screen.queryByRole("button", { name: /Ingresar al CTP/ })).toBeNull();
     abrirMenu("3");
-    expect(opciones()).toHaveLength(3);
+    /* «Documentos del permiso» (08-10) también: leer los papeles del permiso no depende del estado de la guía. */
+    expect(opciones()).toHaveLength(4);
     const o = opciones();
-    expect(tiene(o, "Datos") && tiene(o, "Imprimir hoja SERFOR") && tiene(o, "Imprimir resumen interno")).toBe(true);
+    expect(tiene(o, "Datos") && tiene(o, "Imprimir hoja SERFOR") && tiene(o, "Imprimir resumen interno") && tiene(o, "Documentos del permiso")).toBe(true);
     expect(tiene(o, "Anular") || tiene(o, "Deshacer")).toBe(false);
   });
 });
@@ -101,7 +102,10 @@ describe("Modal «Datos»", () => {
     expect(screen.queryByText(/Trozas de la guía \(2\)/)).toBeNull();
     fireEvent.click(tabs[1]);
     expect(screen.getByText(/Trozas de la guía \(2\)/)).toBeTruthy();
-    expect(screen.getByText("A-2")).toBeTruthy();
+    /* Los dos códigos SIEMPRE (08-10): «Código en la guía» y «Código único» (acá coinciden). */
+    expect(screen.getAllByText("A-2")).toHaveLength(2);
+    expect(screen.getByRole("columnheader", { name: "Código en la guía" })).toBeTruthy();
+    expect(screen.getByRole("columnheader", { name: "Código único" })).toBeTruthy();
     expect(screen.getByRole("dialog").className).toContain("sm:max-w-[min(96vw,1400px)]");
     expect(screen.getByRole("dialog").className).toContain("sm:h-[90vh]");
   });

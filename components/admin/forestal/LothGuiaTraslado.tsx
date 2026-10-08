@@ -21,13 +21,16 @@ import { llegadaDelDestinatario, mismaUbicacion, type GuiaParaOrigen } from "@/l
 import { FILAS_POR_LISTA } from "@/lib/forestal/loth-lista-numero";
 import type { DespachoGuiaLoth } from "./hooks/use-despacho-guia-loth";
 import { Bloque } from "./ctp-guia-bloques";
-import { CLASE_FALTA, CLASE_NO_APLICA } from "./ctp-guia-piezas";
+import { CLASE_NO_APLICA } from "./ctp-guia-piezas";
+import { claseFalta } from "./TramiteRelacionGuiaFila";
 import PuntoTraslado from "./PuntoTraslado";
 import { Btn, Field, I } from "./ctp-shared";
 import { parcheDe } from "./LothGuiaBloques";
 
 const vacio = (v: string | null | undefined) => !v?.trim();
-const falta = (v: string | null | undefined) => (vacio(v) ? CLASE_FALTA : "");
+/* El ámbar de «falta» con `claseFalta()` (08-10): en oscuro, el `CLASE_FALTA`
+   pegado al lado de `border-[var(--rule-base)]` lo pisaba `globals.css` y no se veía. */
+const conFalta = (v: string | null | undefined, base: string) => (vacio(v) ? claseFalta(base) : base);
 
 const TEXTAREA =
   "w-full rounded-xl border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5 py-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] placeholder:text-[var(--text-tertiary)]";
@@ -83,7 +86,7 @@ export function BloqueTrasladoLoth({ g, faltan, className }: { g: DespachoGuiaLo
           <input
             type="text"
             aria-label="N° de la lista de trozas (35)"
-            className={`${I} font-mono tabular-nums ${g.piezas.length > 0 ? falta(datos.guia.listaTrozasNro) : ""}`}
+            className={g.piezas.length > 0 ? conFalta(datos.guia.listaTrozasNro, `${I} font-mono tabular-nums`) : `${I} font-mono tabular-nums`}
             placeholder={g.hojas > 1 ? "N° de la 1.ª hoja" : "N° de la lista"}
             value={datos.guia.listaTrozasNro}
             onChange={(e) => g.setListaTexto(e.target.value)}
@@ -104,7 +107,7 @@ export function BloqueTrasladoLoth({ g, faltan, className }: { g: DespachoGuiaLo
       <Field span={4} label="Permiso CITES" hint={llevaCites ? "Una troza es de especie protegida: va el N° de permiso CITES." : "No aplica: ninguna troza de esta guía es de especie protegida."}>
         <input
           type="text"
-          className={`${I} ${llevaCites ? falta(datos.citesPermiso) : CLASE_NO_APLICA}`}
+          className={llevaCites ? conFalta(datos.citesPermiso, I) : `${I} ${CLASE_NO_APLICA}`}
           placeholder={llevaCites ? undefined : "no aplica"}
           value={datos.citesPermiso}
           onChange={(e) => setDatos((p) => ({ ...p, citesPermiso: e.target.value }))}
@@ -177,7 +180,7 @@ function OrigenDeLaGuia({
           <input
             type="text"
             aria-label="N° de la GTF de origen"
-            className={`${I} font-mono tabular-nums ${falta(valor)}`}
+            className={conFalta(valor, `${I} font-mono tabular-nums`)}
             placeholder="019-001-0000064"
             value={valor}
             onChange={(e) => onChange(e.target.value)}

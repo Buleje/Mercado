@@ -6,7 +6,7 @@
 import { describe, expect, it } from "vitest";
 import { resumenInterno, r1, r2, r3, r4Saldo, diametroDe, type EntradaResumenInterno, type LineaDelResumen, type PiezaDelResumen } from "@/lib/forestal/gtf-resumen-interno";
 import { contenidoQrResumen, hojaResumenInterno, qrResumenInterno } from "@/lib/forestal/gtf-resumen-interno-print";
-import { declaradoDeLaGuia, lineaDelResumen, pasosCtp, permisoDeLaGuia, piezasDelResumen } from "@/lib/forestal/gtf-resumen-interno-datos";
+import { declaradoDeLaGuia, lineaDelResumen, lineasPropiasDeLaGuia, pasosCtp, permisoDeLaGuia, piezasDelResumen } from "@/lib/forestal/gtf-resumen-interno-datos";
 
 const pieza = (codigo: string, extra: Partial<PiezaDelResumen> = {}): PiezaDelResumen => ({
   codigo, codigoGuia: null, arbol: null, especie: "TORNILLO", d1M: 0.5, d2M: 0.4, largoM: 3, m3: 0.5, ...extra,
@@ -165,7 +165,13 @@ describe("de la API al resumen", () => {
       section: "despacho_troza", treeCode: null,
       trozado: { lineaId: "tz1", lineNo: 4, treeCode: "12", speciesCommon: "TORNILLO", speciesScientific: null, cites: false, diamMayorM: "0.6", diamMenorM: "0.4", lengthM: "4", volumeM3: "0.7854", anulada: false },
     });
-    expect(l).toEqual({ gtfNumber: GUIA, dia: "2026-10-05", trozaCode: "12A", m3: 0.7854, arbol: "12", trozadoId: "tz1" });
+    expect(l).toEqual({ gtfNumber: GUIA, dia: "2026-10-05", trozaCode: "12A", m3: 0.7854, arbol: "12", trozadoId: "tz1", esProducto: false });
+    /* Como llega de Prisma (servidor): Date y Decimal. */
+    const deLaBase = lineaDelResumen({
+      gtfNumber: GUIA, entryDate: new Date("2026-10-05T00:00:00.000Z"), trozaCode: "12B", volumeM3: { valueOf: () => "0.5" }, quantity: null, unit: null,
+      section: "despacho_troza", treeCode: "12",
+    });
+    expect(deLaBase).toMatchObject({ dia: "2026-10-05", m3: 0.5, arbol: "12", trozadoId: null });
   });
 
   it("producto en m³ cuenta su cantidad; en pt no se convierte", () => {
@@ -202,6 +208,61 @@ describe("de la API al resumen", () => {
       { recibida: "2026-10-06", aserrada: null, salioEntera: null },
       { recibida: "2026-10-06", aserrada: "2026-10-08", salioEntera: null },
     ]);
+  });
+});
+
+describe("las líneas de ESTA guía (la anulada y la reemitida con el mismo N°)", () => {
+  /* Blas 08-10: `019-001-0000001` está dos veces. La anulada lleva piezas «1», «10»…;
+     la reemitida, «1-0001», «10-0001»… con sus 22 líneas vivas en el libro. */
+  const N = "019-001-0000001";
+  const vivas = [
+    { id: "l1", section: "despacho_troza", gtfNumber: N, trozaCode: "1-0001", planId: "p1", entryDate: "2026-10-01", volumeM3: "0.9", quantity: null, unit: null, treeCode: "1" },
+    { id: "l2", section: "despacho_troza", gtfNumber: "19-001-1", trozaCode: "10-0001", planId: "p1", entryDate: "2026-10-01", volumeM3: "1.1", quantity: null, unit: null, treeCode: "10" },
+    { id: "l3", section: "despacho_producto", gtfNumber: N, trozaCode: null, planId: "p1", entryDate: "2026-10-01", volumeM3: null, quantity: "0.5", unit: "m3", treeCode: null },
+    { id: "l4", section: "despacho_troza", gtfNumber: "019-001-0000002", trozaCode: "2-0001", planId: "p1", entryDate: "2026-10-02", volumeM3: "2", quantity: null, unit: null, treeCode: "2" },
+  ];
+  const guia = (status: string, codigos: string[]) => ({
+    gtfNumber: N, planId: null, titularName: "BLAS", status, deletedAt: null,
+    items: codigos.map((code) => ({ code, species: "TORNILLO", volumeM3: 1 })),
+  });
+  /* El N° es de dos guías y ésta no cita plan: los productos van por el titular de su plan. */
+  const X = { otrasConElNumero: 1, titularDePlan: () => "BLAS" };
+  const entrada = (g: ReturnType<typeof guia>) =>
+    base({
+      guia: { gtfNumber: N, gtfDate: "2026-10-01", declaradoM3: 2, declaradoTrozas: 2, fuenteDeclarado: "registro" },
+      piezas: piezasDelResumen(g.items),
+      lineasDeLaGuia: lineasPropiasDeLaGuia(g, vivas, X).map(lineaDelResumen),
+    });
+
+  it("la anulada no tiene líneas propias: libro 0 trozas y R3 dice «sin despacho» de todas", () => {
+    const anulada = guia("anulada", ["1", "10"]);
+    expect(lineasPropiasDeLaGuia(anulada, vivas, X)).toEqual([]);
+    /* Aunque la reemitida conserve los mismos códigos, la anulada no se los queda. */
+    expect(lineasPropiasDeLaGuia(guia("anulada", ["1-0001"]), vivas, X)).toEqual([]);
+    expect(lineasPropiasDeLaGuia({ ...guia("emitida", ["1-0001"]), deletedAt: "2026-10-07" }, vivas, X)).toEqual([]);
+    const r = resumenInterno(entrada(anulada));
+    expect(r.cuadre.libro).toEqual({ m3: 0, trozas: 0, sinMedida: 0 });
+    expect(r.donde.despachadas).toBe(0);
+    expect(r.donde.filas.map((f) => f.estado)).toEqual(["sin_despacho", "sin_despacho"]);
+  });
+
+  it("la reemitida: sus trozas por código (el N° se compara por valor) y su producto; no las de otra guía", () => {
+    const vigente = guia("emitida", ["1-0001", "10-0001"]);
+    expect(lineasPropiasDeLaGuia(vigente, vivas, X).map((l) => l.id)).toEqual(["l1", "l2", "l3"]);
+    const r = resumenInterno(entrada(vigente));
+    /* El producto suma sus m³ pero no es una troza (R2 = R3: 2 trozas despachadas). */
+    expect(r.cuadre.libro).toEqual({ m3: 2.5, trozas: 2, sinMedida: 0 });
+    expect(r.donde.despachadas).toBe(r.cuadre.libro.trozas);
+  });
+
+  it("un producto con el mismo código que una troza no la marca como despachada", () => {
+    const r = r3({
+      piezas: [pieza("5A")],
+      lineasDeLaGuia: [linea(GUIA, "2026-10-05", "5A", 1, { esProducto: true })],
+      ctp: null,
+    });
+    expect(r.filas[0].estado).toBe("sin_despacho");
+    expect(r2({ ...base(), lineasDeLaGuia: [linea(GUIA, "2026-10-05", "5A", 1, { esProducto: true })] }).libro.trozas).toBe(0);
   });
 });
 

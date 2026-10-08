@@ -20,6 +20,8 @@ import { guiaParaFormato, marcarReemitidas } from "@/lib/forestal/tramites-desde
 
 const itemSchema = z.object({
   code: z.string().trim().max(60).nullable().optional(),
+  /* ADR-474: el código impreso en la guía, si difiere del único (`code`). Sin esto, Zod lo quitaba. */
+  codigoGuia: z.string().trim().max(60).nullable().optional(),
   species: z.string().trim().max(120).nullable().optional(),
   scientific: z.string().trim().max(150).nullable().optional(),
   cites: z.boolean().optional(),
