@@ -8,6 +8,10 @@ import {
   Search, X, Package, Users, ShoppingCart, FileText, ShoppingBasket, Tag, AlertTriangle, TrendingUp, Loader2, LayoutDashboard, Monitor, Boxes, Shield, Zap, ArrowRight,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { destinoDelResultado } from "@/lib/admin/destino-busqueda";
+import { hrefDeDestino } from "@/lib/admin/enlaces-panel";
+import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
+import { ResultadoEnlazable } from "@/components/admin/shared/ResultadoEnlazable";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -428,6 +432,19 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
   const flatResults = GROUP_ORDER.flatMap(g => grouped[g]);
   const totalResults = flatResults.length;
 
+  /* Elegir un resultado: un producto, cliente o pedido abre SU ficha si ya abre
+     por enlace (lib/admin/destino-busqueda; sin recargar: el video de las
+     cámaras sigue); si no, su módulo. Antes sólo navegaban los resultados con
+     `navigateTo` y los de /api/search (que traen `tab`) no hacían nada. */
+  const elegir = (r: SearchResult) => {
+    if (r.action) { r.action(); return; }
+    const destino = destinoDelResultado(r);
+    if (!destino) return;
+    if (destino.abreFicha) irAEnlace(destino.href);
+    else onNavigate(destino.tab, r.vista, r.sub);
+    onClose();
+  };
+
   // Navegación por teclado
   useEffect(() => {
     if (!open) return;
@@ -436,8 +453,14 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
       if (e.key === "ArrowUp")   { e.preventDefault(); setSelected(s => Math.max(s - 1, 0)); }
       if (e.key === "Enter" && flatResults[selected]) {
         const r = flatResults[selected];
-        if (r.action) { r.action(); }
-        else if (r.navigateTo) { onNavigate(r.navigateTo, r.vista, r.sub); onClose(); }
+        /* Ctrl/Cmd + Enter: en otra pestaña, como el ctrl + clic del enlace. */
+        const destino = r.action ? null : destinoDelResultado(r);
+        if ((e.ctrlKey || e.metaKey) && destino) {
+          e.preventDefault();
+          window.open(destino.href, "_blank", "noopener");
+          return;
+        }
+        elegir(r);
       }
       if (e.key === "Escape") { onClose(); }
     };
@@ -445,11 +468,6 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
     return () => window.removeEventListener("keydown", handler);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, flatResults, selected, totalResults]);
-
-  const handleSelect = (r: SearchResult) => {
-    if (r.action) { r.action(); }
-    else if (r.navigateTo) { onNavigate(r.navigateTo, r.vista, r.sub); onClose(); }
-  };
 
   if (!open) return null;
 
@@ -584,10 +602,12 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
                       return action?.icon ?? Zap;
                     })();
 
+                    const destino = r.action ? null : destinoDelResultado(r);
                     return (
-                      <button
+                      <ResultadoEnlazable
                         key={r.id}
-                        onClick={() => handleSelect(r)}
+                        href={destino?.href ?? null}
+                        onElegir={() => elegir(r)}
                         className={cn(
                           // Separador `--rule-soft`: con `--rule-base` cada fila
                           // quedaba subrayada y la lista se leía como una tabla
@@ -625,7 +645,7 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
                             <ArrowRight className="h-3.5 w-3.5 text-primary" />
                           )}
                         </div>
-                      </button>
+                      </ResultadoEnlazable>
                     );
                   })}
                 </div>
@@ -644,9 +664,10 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
               {QUICK_ACCESS.map(item => {
                 const Icon = item.icon;
                 return (
-                  <button
+                  <ResultadoEnlazable
                     key={item.tab}
-                    onClick={() => { onNavigate(item.tab); onClose(); }}
+                    href={hrefDeDestino({ tab: item.tab, params: {} })}
+                    onElegir={() => { onNavigate(item.tab); onClose(); }}
                     className="flex items-center gap-3 p-3 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40 hover:bg-[var(--surface-sunken)] transition-colors text-left"
                   >
                     <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0", item.color)}>
@@ -655,7 +676,7 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
                     <span className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] leading-tight">
                       {item.label}
                     </span>
-                  </button>
+                  </ResultadoEnlazable>
                 );
               })}
             </div>
