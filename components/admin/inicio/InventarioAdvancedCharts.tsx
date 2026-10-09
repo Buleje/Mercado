@@ -24,9 +24,12 @@ import {
   BulejeComparisonOverlay,
   type WaterfallStep,
 } from "@/components/ui-system/charts";
-import { DashboardSection } from "./_shared";
+import { DashboardSection, MicroList } from "./_shared";
+import { AltoPropioEnUnaColumna, Arriba, ColoresSerie } from "./InventarioCharts";
+import { hayFilas, hayTendencia, modoRanking } from "@/lib/admin/inicio/hay-datos";
+import { COLOR_CONCEPTO, cantidad, fechaCorta, numeroEje, soles, solesEje } from "@/lib/admin/inicio/formato-tablero";
 import { DraggableSections, type DraggableItem } from "./DraggableSections";
-import { formatDateShort, formatNumber } from "@/lib/format";
+import { formatNumber } from "@/lib/format";
 import { enStockBajo } from "@/lib/inventario/stock-minimo";
 import { useStockMinimoGlobal } from "@/lib/inventario/use-stock-minimo-global";
 
@@ -78,7 +81,7 @@ function dayKey(iso: string) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 function dayLabel(dk: string) {
-  return formatDateShort(dk + "T12:00:00");
+  return fechaCorta(dk);
 }
 
 export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts() {
@@ -102,17 +105,17 @@ export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts()
       }
       const s = json.summary;
       if (s.total === 0) {
-        toast("Sin data de demanda", {
-          description: "Necesitas historial de ventas para calcular EOQ.",
+        toast("Todavía no hay ventas", {
+          description: "Hace falta historial de ventas para sugerir cuánto pedir.",
         });
       } else {
-        toast.success("EOQ calculado", {
-          description: `${s.total} SKUs analizados · ${s.urgent} urgentes · monto sugerido S/ ${formatNumber(s.totalSuggestedAmount)}`,
+        toast.success("Cantidades sugeridas", {
+          description: `${s.total} productos revisados · ${s.urgent} urgentes · compra sugerida ${soles(s.totalSuggestedAmount)}`,
           duration: 5000,
         });
       }
     } catch (err) {
-      toast.error("No se pudo calcular EOQ", {
+      toast.error("No se pudo sugerir cuánto pedir", {
         description: err instanceof Error ? err.message : String(err),
       });
     } finally {
@@ -287,11 +290,12 @@ export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts()
     // Stock hace 30 días = stock actual + salidas - entradas
     const stockInicio = stockActual + salidasOrders + salidasSales - entradasPurch;
     const steps: WaterfallStep[] = [
-      { label: "Stock hace 30d", value: Math.max(0, Math.round(stockInicio)), type: "baseline" },
-      { label: "Entradas (compras)", value: Math.round(entradasPurch), type: "positive" },
-      { label: "Salidas (pedidos)", value: -Math.round(salidasOrders), type: "negative" },
-      { label: "Salidas (POS)", value: -Math.round(salidasSales), type: "negative" },
-      { label: "Stock actual", value: Math.round(stockActual), type: "total" },
+      // Rótulos cortos: en media columna los largos se pisaban entre sí.
+      { label: "Hace 30 d", value: Math.max(0, Math.round(stockInicio)), type: "baseline" },
+      { label: "Compras", value: Math.round(entradasPurch), type: "positive" },
+      { label: "Pedidos", value: -Math.round(salidasOrders), type: "negative" },
+      { label: "Caja", value: -Math.round(salidasSales), type: "negative" },
+      { label: "Hoy", value: Math.round(stockActual), type: "total" },
     ];
     const delta = stockActual - stockInicio;
     return { steps, stockActual: Math.round(stockActual), stockInicio: Math.round(stockInicio), delta: Math.round(delta), salidas: salidasOrders + salidasSales, entradas: entradasPurch };
@@ -388,101 +392,90 @@ export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts()
     return buckets;
   }, [orders, sales]);
 
-  const fmtU = (v: number) => `${formatNumber(v)} u`;
+  const fmtU = (v: number) => `${cantidad(v)} u`;
+
+  // ¿Cada gráfico tiene algo que mostrar? (regla R2: sin información → oculto).
+  const modoRotacion = modoRanking(rotacion.rows, "rotacion");
+  const peakName =
+    heatmapCatDia.peakCat.idx >= 0
+      ? CAT_LABEL[heatmapCatDia.cats[heatmapCatDia.peakCat.idx]] ?? heatmapCatDia.cats[heatmapCatDia.peakCat.idx]
+      : null;
+  const saludColor = salud.pct >= 75 ? COLOR_CONCEPTO.ventas : COLOR_CONCEPTO.alerta;
 
   const sections: DraggableItem[] = [
     {
       id: "abc-analysis",
       span: "full",
+      title: "Productos que concentran el valor",
       render: () => (
         <DashboardSection
           chartId="inventario.advanced.abc-analysis"
-          hasData={true}
+          hasData={modoRanking(abc.top, "valor") === "grafico"}
           defaultVisible={false}
-          kicker="ABC analysis · concentración del valor"
-          title="Top 15 SKUs y curva 80/20"
+          kicker="Análisis ABC · regla 80/20"
+          title="Los productos que concentran tu plata"
+          description="Barras: valor del stock de cada producto. Línea: cuánto del valor total suman hasta ese producto. Los de clase A son los que no pueden faltar ni sobrar."
           kpis={[
-            { label: "Valor total", value: `S/ ${formatNumber(abc.total)}`, tone: "primary" },
-            { label: "SKUs clase A", value: String(abc.aCount), tone: "success" },
-            { label: "SKUs clase B", value: String(abc.bCount), tone: "primary" },
-            { label: "SKUs clase C", value: String(abc.cCount), tone: "neutral" },
+            { label: "Clase A", value: cantidad(abc.aCount), sub: "hacen el 80% del valor" },
+            { label: "Clase B", value: cantidad(abc.bCount), sub: "el 15% siguiente" },
+            { label: "Clase C", value: cantidad(abc.cCount), sub: "el último 5%" },
           ]}
         >
-          <BulejeComposedChart
-            data={abc.top}
-            xKey="producto"
-            bars={[{ key: "valor", label: "Valor S/", color: "primary", yAxis: "left" }]}
-            lines={[
-              { key: "acumuladoPct", label: "Acumulado %", color: "accent", yAxis: "right" },
-            ]}
-            leftAxisFormat={(v) => `S/${(v / 1000).toFixed(0)}k`}
-            rightAxisFormat={(v) => `${v}%`}
-            tooltipFormat={(v, name) =>
-              name?.toLowerCase().includes("acumulado")
-                ? `${Number(v).toFixed(1)}%`
-                : `S/ ${formatNumber(Number(v))}`
-            }
-            height={320}
-            minDataPoints={1}
-          />
+          {/* Doble eje a propósito: el Pareto necesita S/ por producto y % acumulado. */}
+          <ColoresSerie colores={{ primary: COLOR_CONCEPTO.stock, accent: COLOR_CONCEPTO.ventas }}>
+            <BulejeComposedChart
+              data={abc.top}
+              xKey="producto"
+              bars={[{ key: "valor", label: "Valor del stock", color: "primary", yAxis: "left" }]}
+              lines={[{ key: "acumuladoPct", label: "Acumulado", color: "accent", yAxis: "right" }]}
+              leftAxisFormat={solesEje}
+              rightAxisFormat={(v) => `${v}%`}
+              tooltipFormat={(v, name) =>
+                name?.toLowerCase().includes("acumulado") ? `${formatNumber(Number(v), 1)}%` : soles(Number(v))
+              }
+              height={300}
+              minDataPoints={3}
+            />
+          </ColoresSerie>
         </DashboardSection>
       ),
     },
     {
       id: "salud-inventario",
+      title: "Salud del inventario",
       render: () => (
         <DashboardSection
           chartId="inventario.advanced.salud-inventario"
-          hasData={true}
+          hasData={salud.total > 0}
           defaultVisible={false}
-kicker="Salud general · % SKUs sin problema"
-          title="Estado actual del inventario"
+          kicker="Salud · productos sin problema"
+          title="Cómo está tu stock hoy"
           rightSlot={
             <button
               type="button"
               onClick={handleEoqSuggest}
               disabled={loadingEoq}
-              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-bold bg-[var(--surface-sunken)] text-[var(--text-primary)] border border-[var(--rule-base)] hover:border-primary hover:text-primary transition-all disabled:opacity-50"
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 text-xs font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--text-primary)] disabled:opacity-60"
             >
-              <Calculator className="h-3.5 w-3.5" />
-              {loadingEoq ? "Calculando..." : "Sugerencias EOQ"}
+              <Calculator className="h-3.5 w-3.5" aria-hidden />
+              {loadingEoq ? "Calculando…" : "Cuánto pedir"}
             </button>
           }
           kpis={[
-            {
-              label: "SKUs ok",
-              value: String(salud.ok),
-              tone: "success",
-            },
-            {
-              label: "SKUs en alerta",
-              value: String(salud.warn),
-              tone: salud.warn > 0 ? "warning" : "success",
-            },
-            {
-              label: "Agotados",
-              value: String(salud.bad),
-              tone: salud.bad > 0 ? "warning" : "success",
-            },
-            { label: "Total activos", value: String(salud.total), tone: "neutral" },
+            { label: "Bien", value: cantidad(salud.ok), sub: "sobre su mínimo" },
+            { label: "Bajo el mínimo", value: cantidad(salud.warn), tone: salud.warn > 0 ? "warning" : undefined },
+            { label: "Agotados", value: cantidad(salud.bad), tone: salud.bad > 0 ? "warning" : undefined },
           ]}
         >
           <div className="flex items-center justify-center py-2">
             <BulejeGaugeChart
               value={salud.pct}
               max={100}
-              label="Salud del inventario"
-              sublabel={
-                salud.pct >= 90
-                  ? "Excelente"
-                  : salud.pct >= 75
-                    ? "Saludable"
-                    : salud.pct >= 50
-                      ? "Atención"
-                      : "Crítico"
-              }
+              color={saludColor}
+              label="Productos sin problema"
+              sublabel={salud.pct >= 90 ? "Excelente" : salud.pct >= 75 ? "Saludable" : salud.pct >= 50 ? "Atención" : "Crítico"}
               format="percentage"
-              size={260}
+              size={240}
             />
           </div>
         </DashboardSection>
@@ -490,246 +483,193 @@ kicker="Salud general · % SKUs sin problema"
     },
     {
       id: "rotacion-categoria",
+      title: "Rotación por categoría",
       render: () => (
         <DashboardSection
           chartId="inventario.advanced.rotacion-categoria"
-          hasData={true}
+          hasData={modoRotacion !== "oculto"}
           defaultVisible={false}
-kicker="Rotación · rango activo"
-          title="Velocidad y cobertura por categoría"
+          kicker="Rotación · últimos 30 días"
+          title="Qué categorías se mueven"
+          description="Veces que vendiste el stock de la categoría en 30 días. En la ayuda de cada barra, para cuántos días alcanza."
           kpis={[
             {
-              label: "Cat más rotación",
-              value: rotacion.topRot?.categoria ?? "—",
-              tone: "success",
+              label: "Rota más",
+              value: rotacion.topRot?.categoria ?? null,
+              sub: rotacion.topRot ? `${formatNumber(rotacion.topRot.rotacion, 2)}× · ${rotacion.topRot.diasCobertura} días` : undefined,
             },
             {
-              label: "Rotación top",
-              value: rotacion.topRot ? `${rotacion.topRot.rotacion}x` : "—",
-              tone: "primary",
-            },
-            {
-              label: "Cat menos rotación",
-              value: rotacion.lowRot?.categoria ?? "—",
+              label: "Rota menos",
+              value: rotacion.lowRot?.categoria ?? null,
+              sub: rotacion.lowRot ? `${formatNumber(rotacion.lowRot.rotacion, 2)}×` : undefined,
               tone: "warning",
-            },
-            {
-              label: "Cobertura baja",
-              value: rotacion.lowRot ? `${rotacion.lowRot.diasCobertura}d` : "—",
-              tone: "neutral",
             },
           ]}
         >
-          <BulejeComposedChart
-            data={rotacion.rows}
-            xKey="categoria"
-            bars={[{ key: "rotacion", label: "Rotación (x)", color: "primary", yAxis: "left" }]}
-            lines={[
-              { key: "diasCobertura", label: "Días cobertura", color: "accent", yAxis: "right" },
-            ]}
-            leftAxisFormat={(v) => `${v}x`}
-            rightAxisFormat={(v) => `${v}d`}
-            tooltipFormat={(v, name) =>
-              name?.toLowerCase().includes("días")
-                ? `${v} días`
-                : `${Number(v).toFixed(2)}x`
-            }
-            height={300}
-            minDataPoints={1}
-          />
+          {modoRotacion === "lista" ? (
+            <Arriba><MicroList
+              items={rotacion.rows
+                .filter((r) => r.rotacion > 0)
+                .map((r) => ({ name: r.categoria, value: r.rotacion, label: `${formatNumber(r.rotacion, 2)}×`, sublabel: `alcanza ${r.diasCobertura} días` }))}
+              barColor={COLOR_CONCEPTO.ventas}
+            /></Arriba>
+          ) : (
+            <ColoresSerie colores={{ primary: COLOR_CONCEPTO.ventas }}>
+              <BulejeComposedChart
+                data={rotacion.rows}
+                xKey="categoria"
+                bars={[{ key: "rotacion", label: "Rotación", color: "primary", yAxis: "left" }]}
+                leftAxisFormat={(v) => `${v}×`}
+                tooltipFormat={(v) => `${formatNumber(Number(v), 2)}×`}
+                tooltipExtras={(e) => <span>Alcanza {String(e.diasCobertura)} días</span>}
+                showLegend={false}
+                height={280}
+                minDataPoints={1}
+              />
+            </ColoresSerie>
+          )}
         </DashboardSection>
       ),
     },
     {
       id: "salidas-stacked",
       span: "full",
+      title: "Vendido por categoría y día",
       render: () => (
         <DashboardSection
           chartId="inventario.advanced.salidas-stacked"
-          hasData={true}
+          hasData={hayFilas(salidasStacked.rows, 2)}
           defaultVisible={false}
-          kicker="Salidas por categoría · rango activo"
-          title="Composición diaria de unidades salidas"
+          kicker="Salidas · últimos 14 días"
+          title="Qué categorías vendes cada día"
           kpis={[
-            { label: "Días con data", value: String(salidasStacked.rows.length), tone: "neutral" },
-            {
-              label: "Salidas totales",
-              value: fmtU(salidasStacked.total),
-              tone: "primary",
-            },
-            {
-              label: "Cat líder",
-              value: CAT_LABEL[salidasStacked.topCats[0] ?? ""] ?? salidasStacked.topCats[0] ?? "—",
-              tone: "success",
-            },
-            {
-              label: "Categorías",
-              value: String(salidasStacked.topCats.length),
-              tone: "neutral",
-            },
+            { label: "Vendidas", value: fmtU(salidasStacked.total), sub: `en ${salidasStacked.rows.length} días con venta` },
+            { label: "Categoría líder", value: CAT_LABEL[salidasStacked.topCats[0] ?? ""] ?? salidasStacked.topCats[0] ?? null },
           ]}
         >
-          {salidasStacked.rows.length > 0 ? (
-            <BulejeStackedBar
-              data={salidasStacked.rows}
-              xKey="day"
-              stacks={salidasStacked.stacks}
-              yAxisFormat={(v) => v.toString()}
-              tooltipFormat={(v) => fmtU(Number(v))}
-              height={300}
-            />
-          ) : (
-            <div className="rounded-lg border border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-tertiary)]">
-              Sin datos en los rango activo.
-            </div>
-          )}
+          <BulejeStackedBar
+            data={salidasStacked.rows}
+            xKey="day"
+            stacks={salidasStacked.stacks}
+            yAxisFormat={numeroEje}
+            tooltipFormat={(v) => fmtU(Number(v))}
+            height={280}
+          />
         </DashboardSection>
       ),
     },
     {
       id: "waterfall-inventario",
+      title: "De stock inicial a stock actual",
       render: () => (
         <DashboardSection
           chartId="inventario.advanced.waterfall-inventario"
-          hasData={true}
+          hasData={waterfall.salidas + waterfall.entradas > 0}
           defaultVisible={false}
-kicker="Δ Inventario · rango activo"
-          title="De stock inicio a stock actual"
+          kicker="Unidades · últimos 30 días"
+          title="Cómo cambió tu stock"
           kpis={[
-            { label: "Stock inicio", value: fmtU(waterfall.stockInicio), tone: "neutral" },
-            { label: "Entradas", value: fmtU(waterfall.entradas), tone: "success" },
-            { label: "Salidas", value: fmtU(waterfall.salidas), tone: "warning" },
-            {
-              label: "Stock actual",
-              value: fmtU(waterfall.stockActual),
-              tone: waterfall.delta >= 0 ? "success" : "warning",
-            },
+            { label: "Hace 30 días", value: fmtU(waterfall.stockInicio) },
+            { label: "Hoy", value: fmtU(waterfall.stockActual), delta: waterfall.stockInicio > 0 ? Math.round((waterfall.delta / waterfall.stockInicio) * 100) : null, deltaPolarity: "neutral" },
           ]}
         >
-          <BulejeWaterfallChart steps={waterfall.steps} currency="u" height={280} />
+          <ColoresSerie colores={{ primary: COLOR_CONCEPTO.stock, accent: COLOR_CONCEPTO.compras }}>
+            <BulejeWaterfallChart steps={waterfall.steps} formatValue={(v) => `${cantidad(v)} u`} height={260} />
+          </ColoresSerie>
         </DashboardSection>
       ),
     },
     {
       id: "heatmap-cat-dia",
       span: "full",
-      render: () => {
-        const peakName = heatmapCatDia.peakCat.idx >= 0
-          ? CAT_LABEL[heatmapCatDia.cats[heatmapCatDia.peakCat.idx]] ?? heatmapCatDia.cats[heatmapCatDia.peakCat.idx]
-          : "—";
-        return (
-          <DashboardSection
-            chartId="inventario.advanced.heatmap-cat-dia"
-            hasData={true}
-            defaultVisible={false}
-            kicker="Heatmap · categoría × día · rango activo"
-            title="Cuándo rota cada categoría"
-            kpis={[
-              { label: "Categorías", value: String(heatmapCatDia.cats.length), tone: "neutral" },
-              { label: "Pico categoría", value: peakName, tone: "success" },
-              { label: "Pico unidades", value: fmtU(heatmapCatDia.peakCat.value), tone: "primary" },
-              { label: "Total SKUs", value: String(active.length), tone: "neutral" },
-            ]}
-          >
-            {heatmapCatDia.cats.length > 0 ? (
-              <div className="overflow-x-auto">
-                <div className="min-w-[520px]">
-                  <div className="grid" style={{ gridTemplateColumns: "120px repeat(7, 1fr)" }}>
-                    <div />
-                    {heatmapCatDia.days.map((d) => (
-                      <div
-                        key={d}
-                        className="text-center text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] pb-2"
-                      >
-                        {d}
-                      </div>
-                    ))}
-                    {heatmapCatDia.cats.map((cat, catIdx) => (
-                      <React.Fragment key={cat}>
-                        <div className="text-xs font-semibold text-[var(--text-secondary)] pr-3 py-1 flex items-center truncate">
-                          {CAT_LABEL[cat] ?? cat}
+      title: "Cuándo se vende cada categoría",
+      render: () => (
+        <DashboardSection
+          chartId="inventario.advanced.heatmap-cat-dia"
+          hasData={heatmapCatDia.peakCat.value > 0}
+          defaultVisible={false}
+          kicker="Categoría × día de la semana · 30 días"
+          title="Qué día se vende cada categoría"
+          kpis={[
+            { label: "Categoría pico", value: peakName },
+            { label: "Su mejor día", value: heatmapCatDia.peakCat.value > 0 ? fmtU(heatmapCatDia.peakCat.value) : null },
+          ]}
+        >
+          <div className="overflow-x-auto">
+            <div className="min-w-[32rem]">
+              <div className="grid" style={{ gridTemplateColumns: "7.5rem repeat(7, 1fr)" }}>
+                <div />
+                {heatmapCatDia.days.map((d) => (
+                  <div key={d} className="pb-2 text-center text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                    {d}
+                  </div>
+                ))}
+                {heatmapCatDia.cats.map((cat, catIdx) => (
+                  <React.Fragment key={cat}>
+                    <div className="flex items-center truncate py-1 pr-3 text-xs font-semibold text-[var(--text-secondary)]">{CAT_LABEL[cat] ?? cat}</div>
+                    {heatmapCatDia.matrix[catIdx].map((v, dayIdx) => {
+                      const intensity = v / heatmapCatDia.max;
+                      return (
+                        <div
+                          key={dayIdx}
+                          className="relative m-0.5 flex min-h-8 items-center justify-center rounded-md text-xs font-bold tabular-nums"
+                          style={{
+                            background: v === 0 ? "var(--surface-sunken)" : `color-mix(in srgb, ${COLOR_CONCEPTO.ventas} ${Math.max(12, intensity * 100)}%, transparent)`,
+                            color: intensity > 0.55 ? "var(--text-inverse)" : "var(--text-secondary)",
+                          }}
+                          title={`${CAT_LABEL[cat] ?? cat} · ${heatmapCatDia.days[dayIdx]}: ${cantidad(v)} u`}
+                        >
+                          {v > 0 ? cantidad(v) : ""}
                         </div>
-                        {heatmapCatDia.matrix[catIdx].map((v, dayIdx) => {
-                          const intensity = v / heatmapCatDia.max;
-                          const bg =
-                            v === 0
-                              ? "var(--surface-sunken)"
-                              : `color-mix(in srgb, var(--accent) ${Math.max(10, intensity * 100)}%, transparent)`;
-                          return (
-                            <div
-                              key={dayIdx}
-                              className="relative m-0.5 rounded-md flex items-center justify-center text-[length:var(--ts-2xs)] font-bold transition-transform hover:scale-105 cursor-default"
-                              style={{
-                                background: bg,
-                                color: intensity > 0.55 ? "#fff" : "var(--text-secondary)",
-                                minHeight: 32,
-                              }}
-                              title={`${CAT_LABEL[cat] ?? cat} · ${heatmapCatDia.days[dayIdx]}: ${v} u`}
-                            >
-                              {v > 0 ? v : ""}
-                            </div>
-                          );
-                        })}
-                      </React.Fragment>
-                    ))}
-                  </div>
-                  <div className="flex items-center justify-end gap-2 mt-3 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                    <span>Menos</span>
-                    {[0.15, 0.35, 0.6, 0.85, 1].map((i) => (
-                      <div
-                        key={i}
-                        className="w-4 h-4 rounded"
-                        style={{
-                          background: `color-mix(in srgb, var(--accent) ${i * 100}%, transparent)`,
-                        }}
-                      />
-                    ))}
-                    <span>Más</span>
-                  </div>
-                </div>
+                      );
+                    })}
+                  </React.Fragment>
+                ))}
               </div>
-            ) : (
-              <div className="rounded-lg border border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-tertiary)]">
-                Sin datos en los rango activo.
+              <div className="mt-3 flex items-center justify-end gap-2 text-xs text-[var(--text-tertiary)]" aria-hidden>
+                <span>Menos</span>
+                {[0.15, 0.35, 0.6, 0.85, 1].map((i) => (
+                  <div key={i} className="h-4 w-4 rounded" style={{ background: `color-mix(in srgb, ${COLOR_CONCEPTO.ventas} ${i * 100}%, transparent)` }} />
+                ))}
+                <span>Más</span>
               </div>
-            )}
-          </DashboardSection>
-        );
-      },
+            </div>
+          </div>
+        </DashboardSection>
+      ),
     },
     {
       id: "comparativa-semana",
+      title: "Esta semana vs la pasada",
       render: () => (
         <DashboardSection
           chartId="inventario.advanced.comparativa-semana"
-          hasData={true}
+          hasData={hayTendencia(comp, ["current", "previous"])}
           defaultVisible={false}
-kicker="Comparativa · salidas semana a semana"
-          title="Unidades salidas · esta semana vs pasada"
+          kicker="Unidades vendidas · 7 días vs 7 anteriores"
+          title="Esta semana vs la pasada"
         >
-          <BulejeComparisonOverlay
-            data={comp}
-            xKey="day"
-            currentKey="current"
-            previousKey="previous"
-            currentLabel="Esta semana"
-            previousLabel="Semana pasada"
-            yAxisFormat={(v) => v.toString()}
-            tooltipFormat={(v) => `${v} u`}
-            height={280}
-          />
+          <ColoresSerie colores={{ primary: COLOR_CONCEPTO.ventas, tertiary: COLOR_CONCEPTO.anterior }}>
+            <BulejeComparisonOverlay
+              data={comp}
+              xKey="day"
+              currentKey="current"
+              previousKey="previous"
+              currentLabel="Esta semana"
+              previousLabel="Semana pasada"
+              yAxisFormat={numeroEje}
+              tooltipFormat={(v) => fmtU(Number(v))}
+              height={260}
+            />
+          </ColoresSerie>
         </DashboardSection>
       ),
     },
   ];
 
   return (
-    <DraggableSections
-      items={sections}
-      storageKey="inventario-advanced-order"
-      layout="grid"
-      gap={4}
-      minColumnWidth="22rem"
-    />
+    <AltoPropioEnUnaColumna>
+      <DraggableSections items={sections} storageKey="inventario-advanced-order" layout="grid" gap={4} minColumnWidth="22rem" />
+    </AltoPropioEnUnaColumna>
   );
 });
