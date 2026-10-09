@@ -1,179 +1,146 @@
-"use client";
-
-import { useState, useEffect, useMemo } from "react";
-import { Target, Pencil, Check, X, Trophy } from "@buleje/design-system/icons";
+/**
+ * WeeklyGoalCard — la semana de lunes a domingo contra la meta semanal de
+ * ventas de la base (ADR-488).
+ *
+ * Antes la meta semanal vivía en el localStorage de cada PC y el lunes se
+ * calculaba con la zona del navegador. Ahora la ventana es la de la meta
+ * (`ventanaDeMeta("semanal")`, día de Lima), la meta es la de «Metas» y los
+ * días salen de `/api/goals/serie` (los pasa el calendario). Cada día va en
+ * verde si cumplió la meta diaria; sin meta diaria, con intensidad según lo
+ * vendido.
+ */
+import { CardTitle } from "@buleje/design-system";
+import { CalendarDays } from "@buleje/design-system/icons";
+import { BarraAvance } from "@/components/admin/metas/BarraAvance";
+import { BOTON_SECUNDARIO, TEXTO_TONO, TONO_ESTADO } from "@/components/admin/metas/clases-meta";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import {
+  CLASE_TONO,
+  INICIALES_SEMANA,
+  diasDeLaSemana,
+  montoCorto,
+  tonoDelDia,
+} from "@/components/admin/metas/calendario/calendario-calculos";
+import { estadoDeMeta, ritmoEsperado, ventanaDeMeta } from "@/lib/admin/metas-periodo";
+import type { VentasPorDia } from "@/lib/metas/logros-reglas";
+import { cifraDeMeta } from "@/components/admin/metas/formato-meta";
+import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { Sale } from "@/types/erp";
-import { formatCurrency, formatNumber } from "@/lib/format";
 
-interface WeeklyGoalCardProps {
-  sales: Sale[];
-}
+const soles = (n: number) => cifraDeMeta(n, "S/");
 
-const MAX_WEEKLY_GOAL = 50_000_000; // S/50M cap defensa contra inputs absurdos
-
-// FIX 2026-05-07: tenant-scoped localStorage key — mismo patrón que daily/monthly.
-function getWeeklyGoalKey(): string {
-  if (typeof window === "undefined") return "weekly-goal:main";
-  const m = window.location.pathname.match(/^\/t\/([^/]+)/);
-  return `weekly-goal:${m ? decodeURIComponent(m[1]) : "main"}`;
-}
-
-function getMonday(): Date {
-  const now = new Date();
-  const day = now.getDay();
-  const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-  const monday = new Date(now);
-  monday.setHours(0, 0, 0, 0);
-  monday.setDate(diff);
-  return monday;
-}
-
-export default function WeeklyGoalCard({ sales }: WeeklyGoalCardProps) {
-  const [goal, setGoal] = useState(5000);
-  const [editing, setEditing] = useState(false);
-  const [tempGoal, setTempGoal] = useState("");
-  const [editError, setEditError] = useState<string | null>(null);
-
-  // FIX 2026-05-07 (B1): tenant-scoped + migración soft del valor viejo.
-  useEffect(() => {
-    try {
-      const tenantKey = getWeeklyGoalKey();
-      const stored = localStorage.getItem(tenantKey) ?? localStorage.getItem("weekly-goal");
-      if (stored) {
-        const parsed = Number(stored);
-        if (parsed > 0) {
-          setGoal(parsed);
-          if (!localStorage.getItem(tenantKey)) {
-            localStorage.setItem(tenantKey, String(parsed));
-            localStorage.removeItem("weekly-goal");
-          }
-        }
-      }
-    } catch { /* ignore */ }
-  }, []);
-
-  const weeklySales = useMemo(() => {
-    const monday = getMonday();
-    return sales
-      .filter((s) => {
-        try {
-          return new Date(s.createdAt) >= monday;
-        } catch {
-          return false;
-        }
-      })
-      .reduce((acc, s) => acc + (s.total ?? 0), 0);
-  }, [sales]);
-
-  const percentage = goal > 0 ? Math.min(100, (weeklySales / goal) * 100) : 0;
-  const exceeded = weeklySales > goal;
-  const extra = weeklySales - goal;
-
-  // FIX 2026-05-07 (B10): thresholds consistentes con daily/monthly (50/80/100)
-  const barColor =
-    percentage >= 100 ? "bg-[var(--data-success-500)]" :
-    percentage >= 80  ? "bg-primary" :
-    percentage >= 50  ? "bg-[var(--data-warning-500)]" :
-    "bg-[var(--data-error-500)]";
-
-  // FIX 2026-05-07 (B8): validación visible con cap.
-  const handleSave = () => {
-    const val = Number(tempGoal);
-    if (!Number.isFinite(val) || val <= 0) {
-      setEditError("Ingresa un monto mayor a 0");
-      return;
-    }
-    if (val > MAX_WEEKLY_GOAL) {
-      setEditError(`Máximo: S/${formatNumber(MAX_WEEKLY_GOAL)}`);
-      return;
-    }
-    setEditError(null);
-    setGoal(val);
-    try { localStorage.setItem(getWeeklyGoalKey(), String(val)); } catch { /* ignore */ }
-    setEditing(false);
-  };
+export default function WeeklyGoalCard({
+  hoy,
+  dias,
+  metaSemanal,
+  metaDiaria,
+  onPonerMeta,
+}: {
+  hoy: string;
+  /** Ventas por día de Lima; tiene que cubrir la semana de `hoy`. */
+  dias: VentasPorDia;
+  metaSemanal: number | null;
+  metaDiaria: number | null;
+  onPonerMeta: () => void;
+}) {
+  const v = ventanaDeMeta("semanal", hoy);
+  const semana = diasDeLaSemana(hoy);
+  const total = Math.round(semana.reduce((a, f) => a + (dias[f]?.total ?? 0), 0) * 100) / 100;
+  const maximo = Math.max(0, ...semana.map((f) => dias[f]?.total ?? 0));
+  const esperado = metaSemanal !== null ? ritmoEsperado(metaSemanal, v, "sube") : null;
+  const estado =
+    metaSemanal !== null
+      ? estadoDeMeta({
+          avance: total,
+          target: metaSemanal,
+          esperado,
+          sentido: "sube",
+          cerrada: false,
+        })
+      : null;
+  const falta = metaSemanal !== null ? Math.max(0, metaSemanal - total) : 0;
 
   return (
-    <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-4 col-span-2 sm:col-span-4">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">
-            <Target className="w-4 h-4 text-primary" />
-          </span>
-          <div>
-            <span className="text-xs font-medium text-[var(--text-secondary)] ">
-              Meta de la semana
-            </span>
-          </div>
-        </div>
-        {!editing ? (
-          <button
-            onClick={() => { setTempGoal(String(goal)); setEditing(true); }}
-            className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] hover:text-primary transition-colors px-2 py-1 rounded-lg hover:bg-[var(--surface-sunken)] "
-          >
-            <Pencil className="w-3 h-3" />
-            Editar meta
-          </button>
-        ) : (
-          <div className="flex flex-col items-end gap-1">
-            <div className="flex items-center gap-1">
-              <span className="text-xs text-[var(--text-secondary)] mr-1">S/</span>
-              <input
-                type="number"
-                value={tempGoal}
-                onChange={(e) => { setTempGoal(e.target.value); if (editError) setEditError(null); }}
-                onKeyDown={(e) => e.key === "Enter" && handleSave()}
-                min={1}
-                max={MAX_WEEKLY_GOAL}
-                autoFocus
-                aria-label="Meta de la semana en soles"
-                aria-invalid={!!editError}
-                aria-describedby={editError ? "weekly-goal-error" : undefined}
-                className={cn(
-                  "w-24 px-2 py-1 text-xs rounded-xl border bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none",
-                  editError ? "border-[var(--data-error-500)] focus:border-[var(--data-error-500)]" : "border-[var(--rule-base)] focus:border-primary",
-                )}
-              />
-              <button onClick={handleSave} aria-label="Guardar" className="p-1 rounded-xl hover:bg-primary/10 dark:hover:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
-                <Check className="w-3.5 h-3.5" />
-              </button>
-              <button onClick={() => { setEditing(false); setEditError(null); }} aria-label="Cancelar" className="p-1 rounded-xl hover:bg-[var(--data-error-500)]/10 text-[var(--data-error-500)]">
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-            {editError && (
-              <p id="weekly-goal-error" role="alert" className="text-xs font-semibold text-[var(--data-error-500)]">
-                {editError}
-              </p>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Progress bar — D2: tokens DS en vez de gray-100 */}
-      <div className="h-4 rounded-full bg-[var(--surface-sunken)] overflow-hidden mb-2">
-        <div
-          className={cn("h-full rounded-full transition-all duration-[var(--dur-slower)] ease-out", barColor)}
-          style={{ width: `${percentage}%` }}
+    <section
+      aria-labelledby="metas-semana"
+      className="space-y-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4"
+    >
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <CalendarDays
+          aria-hidden="true"
+          className="h-4 w-4 text-[var(--accent-ink)] dark:text-[var(--accent)]"
         />
+        <CardTitle id="metas-semana" className="text-sm font-bold">
+          Esta semana
+        </CardTitle>
+        <InfoTip
+          title="Esta semana"
+          what={`De lunes a domingo (${v.etiqueta}), lo vendido contra tu meta semanal de ventas.`}
+          body={
+            metaDiaria !== null
+              ? `Un día en verde vendió al menos tu meta diaria (${soles(metaDiaria)}).`
+              : "Sin meta diaria, el color más fuerte es el día que más vendiste."
+          }
+        />
+        <span className="ml-auto text-sm tabular-nums text-[var(--text-secondary)]">
+          <b className="text-[var(--text-primary)]">{soles(total)}</b>
+          {metaSemanal !== null && <> de {soles(metaSemanal)}</>}
+        </span>
       </div>
 
-      {/* Values */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-bold text-[var(--text-primary)] ">
-          {formatCurrency(weeklySales)}{" "}
-          <span className="text-xs font-normal text-[var(--text-tertiary)] ">
-            de {formatCurrency(goal)} ({percentage.toFixed(0)}%)
-          </span>
-        </p>
-        {exceeded && (
-          <span className="flex items-center gap-1 text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 px-2 py-1 rounded-full">
-            <Trophy className="w-3.5 h-3.5" />
-            Meta alcanzada! +{formatCurrency(extra)}
-          </span>
-        )}
-      </div>
-    </div>
+      {metaSemanal !== null && estado ? (
+        <div className="space-y-1.5">
+          <BarraAvance
+            avance={total}
+            target={metaSemanal}
+            esperado={esperado}
+            estado={estado}
+            etiqueta={`${soles(total)} de ${soles(metaSemanal)}`}
+            ritmo={esperado !== null ? soles(esperado) : undefined}
+          />
+          <p className={cn("text-sm font-semibold", TEXTO_TONO[TONO_ESTADO[estado]])}>
+            {estado === "cumplida"
+              ? `Meta de la semana cumplida (+${soles(total - metaSemanal)})`
+              : esperado !== null && total < esperado
+                ? `Te faltan ${soles(falta)} hasta el domingo · vas ${soles(esperado - total)} abajo del ritmo`
+                : `Te faltan ${soles(falta)} hasta el domingo`}
+          </p>
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-center gap-2 text-sm text-[var(--text-secondary)]">
+          <span>Sin meta semanal de ventas.</span>
+          <button type="button" className={BOTON_SECUNDARIO} onClick={onPonerMeta}>
+            Ponle una meta a la semana
+          </button>
+        </div>
+      )}
+
+      <ol className="grid grid-cols-7 gap-1.5" aria-label="Días de esta semana">
+        {semana.map((f, i) => {
+          const t = dias[f];
+          const tono = tonoDelDia(f, t, hoy, metaDiaria, maximo);
+          const texto = `${INICIALES_SEMANA[i]} ${f.slice(8, 10)}/${f.slice(5, 7)}: ${formatCurrency(t?.total ?? 0)}`;
+          return (
+            <li
+              key={f}
+              title={texto}
+              className={cn(
+                "flex flex-col items-center gap-0.5 rounded-lg py-1.5 text-xs",
+                CLASE_TONO[tono],
+                f === hoy && "outline outline-2 outline-offset-1 outline-[var(--accent)]",
+              )}
+            >
+              <span className="sr-only">{texto}</span>
+              <span aria-hidden="true" className="font-bold">
+                {INICIALES_SEMANA[i]}
+              </span>
+              <span aria-hidden="true" className="tabular-nums">
+                {f > hoy ? "·" : montoCorto(t?.total ?? 0)}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
   );
 }
