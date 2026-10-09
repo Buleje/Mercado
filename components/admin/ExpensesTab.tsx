@@ -1,53 +1,45 @@
 "use client";
 
 import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
-import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+import { toast } from "sonner";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useMemo } from "react";
-import {
-  Wallet, Loader2, Plus, Trash2, Calendar, TrendingUp, BarChart2,
-  Home, Lightbulb, Users, Truck, Sparkles, Megaphone, Wrench, Package,
-  type LucideIcon,
-} from "@buleje/design-system/icons";
+import { Wallet, Plus, Trash2, Calendar, TrendingUp, BarChart2, Receipt, Camera } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { decodeExpenseDescription } from "@/lib/expense-meta";
-import SelectorContrato from "@/components/admin/forestal/SelectorContrato";
 import { formatCurrency, formatDateNumeric, formatMonth } from "@/lib/format";
+import GastoNuevoModal from "@/components/admin/gastos/GastoNuevoModal";
+import { iconoDeCategoria } from "@/components/admin/gastos/categorias";
+import type { GastoGuardado } from "@/components/admin/gastos/use-gasto-nuevo";
 
-type Expense = { id: string; category: string; description: string; amount: number; date: string; recurring: boolean };
-type Summary = { category: string; total: number; count: number };
+type Expense = {
+  id: string; category: string; description: string; amount: number; date: string; recurring: boolean;
+  documentType?: string | null; documentNumber?: string | null; igvAmount?: number | null; attachmentUrl?: string | null;
+};
 
-const CATEGORIES = [
-  { value: "alquiler", label: "Alquiler" },
-  { value: "servicios", label: "Servicios" },
-  { value: "personal", label: "Personal" },
-  { value: "transporte", label: "Transporte" },
-  { value: "limpieza", label: "Limpieza" },
-  { value: "marketing", label: "Marketing" },
-  { value: "mantenimiento", label: "Mantenimiento" },
-  { value: "otros", label: "Otros" },
-];
-
-function catIcon(category: string): LucideIcon {
-  const map: Record<string, LucideIcon> = {
-    alquiler: Home,
-    servicios: Lightbulb,
-    personal: Users,
-    transporte: Truck,
-    limpieza: Sparkles,
-    marketing: Megaphone,
-    mantenimiento: Wrench,
-    otros: Package,
-  };
-  return map[category] ?? Package;
+/** «Factura F001-123 · IGV S/ 18.00» — lo que dice el papel del gasto, si tiene. */
+function papelDelGasto(e: Expense): string | null {
+  if (!e.documentType || e.documentType === "sin_comprobante") return null;
+  const tipo = e.documentType.charAt(0).toUpperCase() + e.documentType.slice(1);
+  const igv = e.documentType === "factura" && e.igvAmount != null
+    ? e.igvAmount > 0 ? ` · IGV ${formatCurrency(e.igvAmount)}` : " · exonerada"
+    : "";
+  return `${tipo}${e.documentNumber ? ` ${e.documentNumber}` : ""}${igv}`;
 }
+
+/** Lo que se le cuenta a la persona después de guardar. */
+function avisoGuardado(r: GastoGuardado): void {
+  if (!r.caja) toast.success(`Gasto de ${formatCurrency(r.monto)} guardado`);
+  else if (r.caja.sinCaja) toast.warning("Gasto guardado. No había caja abierta: la caja no se tocó.");
+  else toast.success(`Gasto guardado y ${formatCurrency(r.monto)} salieron de la caja`);
+}
+type Summary = { category: string; total: number; count: number };
 
 export default function ExpensesTab() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [summary, setSummary] = useState<Summary[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [tick, setTick] = useState(0);
   const [historicExpenses, setHistoricExpenses] = useState<Expense[]>([]);
   // Los gastos fijos configurados (Expense.recurring=true) son PLANTILLAS: el
@@ -63,14 +55,6 @@ export default function ExpensesTab() {
     return d.toISOString().slice(0, 10);
   });
   const [to, setTo] = useState(() => new Date().toISOString().slice(0, 10));
-
-  // form
-  const [form, setForm] = useState<{
-    category: string; description: string; amount: string; date: string; recurring: boolean;
-    /** El permiso al que se le imputa (ADR-421). No hay código que sugerir acá:
-     *  arranca "Sin contrato" y lo elige quien registra. */
-    contratoId: string | null;
-  }>({ category: "otros", description: "", amount: "", date: new Date().toISOString().slice(0, 10), recurring: false, contratoId: null });
 
   useEffect(() => {
     let active = true;
@@ -117,24 +101,17 @@ export default function ExpensesTab() {
     });
   }, [historicExpenses]);
 
-  const add = async () => {
-    if (!form.description || !form.amount || Number(form.amount) <= 0) return;
-    setSaving(true);
-    const res = await fetch("/api/expenses", {
-      method: "POST",
-      headers: csrfHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ ...form, amount: Number(form.amount) }),
-    });
-    if (res.ok) {
-      setForm({ category: "otros", description: "", amount: "", date: new Date().toISOString().slice(0, 10), recurring: false, contratoId: null });
-      setShowForm(false);
-      setTick(v => v + 1);
-    }
-    setSaving(false);
-  };
-
   const remove = async (id: string) => {
-    await fetch(`/api/expenses/${id}`, { method: "DELETE", headers: csrfHeaders() });
+    try {
+      const res = await fetch(`/api/expenses/${id}`, { method: "DELETE", headers: csrfHeaders() });
+      const body = (await res.json().catch(() => ({}))) as { error?: string; caja?: { retiro: string; aviso: string } };
+      if (!res.ok) toast.error(body.error ?? "No se pudo borrar el gasto");
+      // Si el gasto había salido de la caja: la plata volvió, o quedó en una caja ya cerrada.
+      else if (body.caja?.retiro === "cerrada") toast.warning(body.caja.aviso);
+      else if (body.caja) toast.success(body.caja.aviso);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "No se pudo borrar el gasto");
+    }
     setTick(v => v + 1);
   };
 
@@ -234,35 +211,11 @@ export default function ExpensesTab() {
         );
       })()}
 
-      {/* Form modal */}
-      <AdminModal open={showForm} onClose={() => setShowForm(false)} title="Registrar Gasto">
-        <div className={cn(MODAL_BODY, "space-y-4")}>
-          <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} aria-label="Categoría del gasto" className="w-full px-3 h-10 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm">
-            {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-          </select>
-          <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Descripción del gasto" className="w-full px-3 h-10 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm" />
-          <SelectorContrato
-            id="gasto-contrato"
-            value={form.contratoId}
-            onChange={(contratoId) => setForm(f => ({ ...f, contratoId }))}
-            hint="No hay un permiso sugerido para un gasto: elígelo si corresponde a uno."
-          />
-          <div className="flex flex-wrap gap-3">
-            <div className="relative flex-1">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm">S/</span>
-              <input type="number" step="0.01" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} placeholder="0.00" className="w-full pl-8 pr-3 h-10 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm" />
-            </div>
-            <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} aria-label="Fecha del gasto" className="px-3 h-10 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm" />
-          </div>
-          <label className="flex flex-wrap items-center gap-2 text-sm">
-            <input type="checkbox" checked={form.recurring} onChange={e => setForm(f => ({ ...f, recurring: e.target.checked }))} className="rounded" />
-            Gasto recurrente (mensual)
-          </label>
-          <button onClick={add} disabled={saving || !form.description || !form.amount} className="w-full min-h-11 bg-primary text-white rounded-xl font-semibold text-sm hover:bg-primary/90 transition disabled:opacity-50 flex flex-wrap items-center justify-center gap-2">
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}Guardar Gasto
-          </button>
-        </div>
-      </AdminModal>
+      <GastoNuevoModal
+        open={showForm}
+        onClose={() => setShowForm(false)}
+        onGuardado={(r) => { setShowForm(false); setTick(v => v + 1); avisoGuardado(r); }}
+      />
 
       {/* Expenses list */}
       {expenses.length === 0 ? (
@@ -274,7 +227,8 @@ export default function ExpensesTab() {
       ) : (
         <div className="space-y-2 max-h-100 overflow-y-auto">
           {expenses.map(e => {
-            const CatIcon = catIcon(e.category);
+            const CatIcon = iconoDeCategoria(e.category);
+            const papel = papelDelGasto(e);
             return (
             <div key={e.id} className="flex flex-wrap items-center gap-3 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-2 sm:px-4 py-2 sm:py-3">
               <div className="h-8 w-8 rounded-lg bg-[var(--surface-canvas)] border border-[var(--rule-base)] flex items-center justify-center text-[var(--text-secondary)] shrink-0">
@@ -283,6 +237,16 @@ export default function ExpensesTab() {
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{decodeExpenseDescription(e.description).description || "—"}</p>
                 <p className="text-xs text-[var(--text-tertiary)]">{formatDateNumeric(e.date)} · <span className="capitalize">{e.category}</span>{e.recurring && " · Recurrente"}</p>
+                {papel && (
+                  <p className="mt-0.5 flex items-center gap-1 text-xs text-[var(--text-secondary)]">
+                    <Receipt className="h-3 w-3 shrink-0" aria-hidden />{papel}
+                    {e.attachmentUrl && (
+                      <a href={e.attachmentUrl} target="_blank" rel="noreferrer" aria-label="Ver la foto del comprobante" className="ml-1 inline-flex items-center text-[var(--accent-dark)] hover:underline">
+                        <Camera className="h-3 w-3" />
+                      </a>
+                    )}
+                  </p>
+                )}
               </div>
               <p className="font-extrabold text-[var(--data-error-500)] shrink-0">-{formatCurrency(Number(e.amount))}</p>
               <button aria-label="Eliminar" onClick={() => remove(e.id)} className="text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition"><Trash2 className="h-4 w-4" /></button>

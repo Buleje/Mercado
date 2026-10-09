@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { ExpensesDB } from "@/lib/jsondb";
+import { GastoConCajaDB } from "@/lib/db/gasto-con-caja.db";
+import { revisarComprobante } from "@/lib/gastos/comprobante-del-gasto";
+import { esDeHoyEnLima, pedidoInvalido, saleDeCaja, SOLO_EFECTIVO_SALE_DE_CAJA, SOLO_HOY_SALE_DE_CAJA } from "@/lib/caja/egreso-de-caja";
 import { requireAdmin } from "@/lib/require-admin";
 import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 import { toErrorPayload } from "@/lib/api-error";
@@ -23,10 +26,11 @@ const BodySchema = z.object({
   supplierName: z.string().max(200).optional(),
   supplierId: z.string().max(64).optional(),
   documentType: z.enum(["boleta", "factura", "recibo", "ticket", "sin_comprobante"]).optional(),
-  documentNumber: z.string().max(64).optional(),
-  supplierRuc: z.string().max(20).optional(),
-  igvAmount: z.coerce.number().min(0).optional(),
-  afectoIgv: z.boolean().optional().default(false),
+  documentNumber: z.string().max(64).nullish(),
+  supplierRuc: z.string().max(20).nullish(),
+  igvAmount: z.coerce.number().min(0).nullish(),
+  /** Sin mandar = «no sé»; para una factura hay que elegir (ver `revisarComprobante`). */
+  afectoIgv: z.boolean().nullish(),
   attachmentUrl: z.string().max(2000).optional(),
   costCenter: z.string().max(100).optional(),
   notes: z.string().max(2000).optional(),
@@ -35,6 +39,8 @@ const BodySchema = z.object({
   /** El permiso bajo el que se hizo el gasto (ADR-421). Opcional a propósito:
    *  un gasto de la oficina no pertenece a ningún contrato. */
   contratoId: z.string().max(64).nullish(),
+  /** Contrato «sale de la caja» (`lib/caja/egreso-de-caja.ts`): sólo con efectivo. */
+  salidaDeCaja: z.boolean().optional().default(false),
 });
 
 export async function GET(req: NextRequest) {
@@ -93,7 +99,26 @@ export async function POST(req: NextRequest) {
       );
     }
     const body = parsed.data;
-    const expense = await ExpensesDB.add(auth.tenantId, {
+    if (pedidoInvalido(body.salidaDeCaja, body.paymentMethod)) {
+      return NextResponse.json({ error: SOLO_EFECTIVO_SALE_DE_CAJA }, { status: 400 });
+    }
+    if (body.salidaDeCaja && body.recurring) {
+      return NextResponse.json(
+        { error: "Un gasto fijo configurado no saca plata todavía: márcalo cuando registres el pago." },
+        { status: 400 },
+      );
+    }
+    // Un gasto de la semana pasada no puede sacar plata del cajón de HOY: el
+    // arqueo de hoy no cuadraría y el de aquel día ya se contó.
+    if (body.salidaDeCaja && !esDeHoyEnLima(body.date)) {
+      return NextResponse.json({ error: SOLO_HOY_SALE_DE_CAJA, campo: "date" }, { status: 400 });
+    }
+    // El comprobante y su IGV los decide el servidor: el formulario sólo muestra.
+    const comprobante = revisarComprobante(body.amount, body);
+    if (!comprobante.ok) {
+      return NextResponse.json({ error: comprobante.error, campo: comprobante.campo }, { status: 400 });
+    }
+    const { gasto: expense, caja } = await GastoConCajaDB.registrarGasto(auth.tenantId, {
       category: body.category,
       description: body.description ?? "",
       amount: body.amount,
@@ -105,11 +130,7 @@ export async function POST(req: NextRequest) {
       paymentMethod: body.paymentMethod ?? null,
       supplierName: body.supplierName ?? null,
       supplierId: body.supplierId ?? null,
-      documentType: body.documentType ?? null,
-      documentNumber: body.documentNumber ?? null,
-      supplierRuc: body.supplierRuc ?? null,
-      igvAmount: body.igvAmount ?? null,
-      afectoIgv: body.afectoIgv,
+      ...comprobante.datos,
       attachmentUrl: body.attachmentUrl ?? null,
       costCenter: body.costCenter ?? null,
       // Quién lo registró sale de la sesión, no del body: si lo mandara el
@@ -119,7 +140,8 @@ export async function POST(req: NextRequest) {
       templateId: body.templateId ?? null,
       paidAt: body.paidAt ?? null,
       contratoId: body.contratoId ?? null,
-    });
+    }, { salidaDeCaja: saleDeCaja(body.salidaDeCaja, body.paymentMethod) });
+    if (caja) return NextResponse.json({ ...expense, caja }, { status: 201 });
     return NextResponse.json(expense, { status: 201 });
   } catch (err) {
     const { payload, status } = toErrorPayload(err);

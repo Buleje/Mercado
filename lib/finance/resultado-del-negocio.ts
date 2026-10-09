@@ -39,6 +39,16 @@ import { INGRESO_ORDER_STATUSES } from "@/lib/finance/finance-kpis";
 import type { FilaPnl } from "@/lib/forestal/ctp-pnl";
 import { claveNumeroGtf, puedeSerLaMismaGtf } from "@/lib/forestal/gtf-talonario";
 import { limaDateKey } from "@/lib/utils";
+import { decodeExpenseDescription } from "@/lib/expense-meta";
+
+/**
+ * El nombre del gasto, sin el bloque `\n---META---\n{json}` que los gastos
+ * viejos llevan pegado (ADR-374, `lib/expense-meta.ts`): en main 2 gastos
+ * pagados mostraban el JSON de la plantilla en el resultado y en la caja.
+ */
+function queDelGasto(g: { description?: string | null; category: string }): string {
+  return decodeExpenseDescription(g.description ?? "").description.trim() || g.category;
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Contrato (lo consumen las rutas y la pantalla)
@@ -926,7 +936,7 @@ function calcularResultado(mes: string, e: EntradaResultado): CalculoResultado {
       continue;
     }
     filas.gastos.push({
-      id: g.id, fecha: dia, quien: g.supplierName?.trim() || null, que: g.description?.trim() || g.category,
+      id: g.id, fecha: dia, quien: g.supplierName?.trim() || null, que: queDelGasto(g),
       monto: r2(num(g.amount)), pt: null, m3: null, certeza: "medido", enlace: { tab: "plata", params: { vista: "gastos" } },
     });
   }
@@ -1317,7 +1327,7 @@ function calcularCaja(mes: string, e: EntradaCaja): CalculoCaja {
     const dia = diaDeFecha(g.paidAt ?? g.date);
     if (!del(dia)) continue;
     filas.gastos_pagados.push({
-      id: g.id, fecha: dia, quien: g.supplierName?.trim() || null, que: g.description?.trim() || g.category,
+      id: g.id, fecha: dia, quien: g.supplierName?.trim() || null, que: queDelGasto(g),
       monto: r2(num(g.amount)), pt: null, m3: null, certeza: "medido", enlace: { tab: "plata", params: { vista: "gastos" } },
     });
   }

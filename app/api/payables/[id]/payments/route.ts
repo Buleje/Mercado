@@ -6,6 +6,8 @@ import { requireActiveSubscription } from "@/lib/billing/require-active-subscrip
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { exceedsRemaining, remainingBalance } from "@/lib/payables/payment-validation";
+import { GastoConCajaDB, PagoExcedeSaldoError } from "@/lib/db/gasto-con-caja.db";
+import { pedidoInvalido, saleDeCaja, SOLO_EFECTIVO_SALE_DE_CAJA } from "@/lib/caja/egreso-de-caja";
 
 
 const AddPaymentSchema = z.object({
@@ -22,6 +24,11 @@ const AddPaymentSchema = z.object({
    * contra el extracto del banco.
    */
   reference: z.string().max(120).optional(),
+  /**
+   * Contrato «sale de la caja» (`lib/caja/egreso-de-caja.ts`): el pago en
+   * efectivo sale del cajón abierto, en la misma transacción. Sólo con efectivo.
+   */
+  salidaDeCaja: z.boolean().optional().default(false),
 });
 
 export async function GET(
@@ -63,7 +70,10 @@ export async function POST(
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
     }
-    const { amount, method, notes, reference } = parsed.data;
+    const { amount, method, notes, reference, salidaDeCaja } = parsed.data;
+    if (pedidoInvalido(salidaDeCaja, method)) {
+      return NextResponse.json({ error: SOLO_EFECTIVO_SALE_DE_CAJA }, { status: 400 });
+    }
 
     // Verify payable belongs to tenant before adding payment
     const existing = await PayablesDB.getById(auth.tenantId, id);
@@ -82,7 +92,7 @@ export async function POST(
     }
 
     const paymentId = `pmnt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-    const updated = await PayablesDB.addPayment(auth.tenantId, id, {
+    const { cuenta: updated, caja } = await GastoConCajaDB.pagarCuenta(auth.tenantId, id, {
       id: paymentId,
       amount,
       method: method as import("@/lib/db/misc.db").PaymentMethod,
@@ -90,13 +100,17 @@ export async function POST(
       // El Nº de operación manda; `notes` queda de reserva para los clientes
       // viejos que mandaban la referencia por ese campo.
       ...((reference || notes) && { reference: reference || notes }),
-    });
+    }, { salidaDeCaja: saleDeCaja(salidaDeCaja, method) });
 
     if (!updated) {
       return NextResponse.json({ error: "No se pudo registrar el pago" }, { status: 500 });
     }
-    return NextResponse.json(updated, { status: 201 });
+    return NextResponse.json(caja ? { ...updated, caja } : updated, { status: 201 });
   } catch (e) {
+    // Otro pago entró mientras tanto y éste ya no cabe en el saldo.
+    if (e instanceof PagoExcedeSaldoError) {
+      return NextResponse.json({ error: `${e.message}: alguien pagó antes que tú` }, { status: 409 });
+    }
     logger.error("[payables/id/payments] POST error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }

@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { getOrSet } from "@/lib/cache";
+import { getOrSet, invalidateByPrefix } from "@/lib/cache";
+import { logger } from "@/lib/logger";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { rangoDelMesLima } from "@/lib/finance/ingresos-del-periodo";
 
@@ -30,7 +31,26 @@ import { rangoDelMesLima } from "@/lib/finance/ingresos-del-periodo";
 export interface IgvRegistrado {
   mes: string;
   ventas: { igv: number; comprobantes: number };
-  compras: { igv: number; conIgv: number; gastos: number };
+  /**
+   * `exoneradas`: facturas del mes guardadas con IGV 0 (Ley 27037, Amazonía).
+   * Sin este número, «S/ 0 de IGV en compras» no distingue «no hay facturas»
+   * de «las facturas no cobran IGV».
+   */
+  compras: { igv: number; conIgv: number; gastos: number; exoneradas: number };
+}
+
+const PREFIJO = (tenantId: string) => `finanzas:igv-del-mes:${tenantId}:`;
+
+/**
+ * Tras guardar un gasto: el IGV del mes se cacheaba 2 min y un gasto con
+ * factura recién cargado no aparecía en «IGV del mes › compras».
+ */
+export function invalidarIgvDelMes(tenantId: string): void {
+  try {
+    invalidateByPrefix(PREFIJO(tenantId));
+  } catch (err) {
+    logger.warn("[igv-del-mes] no se pudo invalidar", { error: String(err), tenantId });
+  }
 }
 
 const r2 = (v: number) => Math.round(v * 100) / 100;
@@ -48,8 +68,8 @@ export const IgvDelMesDB = {
         { NOT: { date: fechaSolaDelSiguiente } },
       ],
     };
-    return getOrSet(`finanzas:igv-del-mes:${tenantId}:${mes}`, 120, async () => {
-      const [emitidos, notas, conIgv, gastos] = await Promise.all([
+    return getOrSet(`${PREFIJO(tenantId)}${mes}`, 120, async () => {
+      const [emitidos, notas, conIgv, gastos, exoneradas] = await Promise.all([
         prisma.sunatInvoice.aggregate({
           _sum: { igv: true },
           _count: { _all: true },
@@ -65,11 +85,14 @@ export const IgvDelMesDB = {
           where: { tenantId, ...fechaDeGasto, recurring: false, igvAmount: { gt: 0 } },
         }),
         prisma.expense.count({ where: { tenantId, ...fechaDeGasto, recurring: false } }),
+        prisma.expense.count({
+          where: { tenantId, ...fechaDeGasto, recurring: false, documentType: "factura", afectoIgv: false, igvAmount: 0 },
+        }),
       ]);
       return {
         mes,
         ventas: { igv: r2(toNumOrZero(emitidos._sum.igv) - toNumOrZero(notas._sum.igv)), comprobantes: emitidos._count._all },
-        compras: { igv: r2(toNumOrZero(conIgv._sum.igvAmount)), conIgv: conIgv._count._all, gastos },
+        compras: { igv: r2(toNumOrZero(conIgv._sum.igvAmount)), conIgv: conIgv._count._all, gastos, exoneradas },
       };
     });
   },

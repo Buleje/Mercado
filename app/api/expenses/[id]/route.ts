@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { ExpensesDB } from "@/lib/jsondb";
+import { GastoConCajaDB, RetiroEnCajaError } from "@/lib/db/gasto-con-caja.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 import { assertCsrf } from "@/lib/auth/csrf";
@@ -94,7 +95,9 @@ export async function PUT(req: NextRequest, ctx: { params: Promise<{ id: string 
     // auditoría tiene que poder decir de cuánto a cuánto, no sólo que hubo un
     // cambio (Ley 29733 y, más terrenal, «¿quién le puso 850 al alquiler?»).
     const antes = await ExpensesDB.getById(auth.tenantId, id);
-    const expense = await ExpensesDB.update(auth.tenantId, id, parsed.data);
+    // Si el gasto sacó plata de la caja, su retiro se corrige con él (caja
+    // abierta) o la respuesta avisa que quedó en una caja ya cerrada.
+    const { gasto: expense, caja } = await GastoConCajaDB.corregirGasto(auth.tenantId, id, parsed.data);
     if (!expense) {
       return NextResponse.json({ error: "Gasto no encontrado en este tenant" }, { status: 404 });
     }
@@ -104,8 +107,11 @@ export async function PUT(req: NextRequest, ctx: { params: Promise<{ id: string 
         "update", "Expense", cambios, id, auth.username ?? "admin", undefined, auth.tenantId,
       ).catch((err) => logger.warn("[expenses/:id] activity log falló", { error: String(err) }));
     }
-    return NextResponse.json(expense);
+    return NextResponse.json(caja ? { ...expense, caja } : expense);
   } catch (err) {
+    if (err instanceof RetiroEnCajaError) {
+      return NextResponse.json({ error: err.message, campo: "paymentMethod" }, { status: 409 });
+    }
     logger.error("[expenses/:id] PUT error", { err: err instanceof Error ? err.message : String(err) });
     const { payload, status } = toErrorPayload(err);
     return NextResponse.json(payload, { status });
@@ -133,7 +139,8 @@ export async function DELETE(req: NextRequest, ctx: { params: Promise<{ id: stri
     // Se devuelve el registro borrado: es lo que necesita el «deshacer» de la
     // UI para volver a crearlo igual, con los campos que ninguna pantalla
     // muestra incluidos.
-    const borrado = await ExpensesDB.delete(auth.tenantId, id);
+    // Si sacó plata de una caja que sigue abierta, la plata vuelve con él.
+    const { borrado, caja } = await GastoConCajaDB.borrarGasto(auth.tenantId, id);
     if (!borrado) {
       return NextResponse.json({ error: "Gasto no encontrado en este tenant" }, { status: 404 });
     }
@@ -142,7 +149,7 @@ export async function DELETE(req: NextRequest, ctx: { params: Promise<{ id: stri
       `Borró el gasto «${borrado.description}» de ${borrado.amount}`,
       id, auth.username ?? "admin", undefined, auth.tenantId,
     ).catch((err) => logger.warn("[expenses/:id] activity log falló", { error: String(err) }));
-    return NextResponse.json({ ok: true, deleted: borrado });
+    return NextResponse.json({ ok: true, deleted: borrado, ...(caja ? { caja } : {}) });
   } catch (err) {
     const { payload, status } = toErrorPayload(err);
     return NextResponse.json(payload, { status });

@@ -20,6 +20,7 @@ import { SOLO_DADOS } from "@/lib/adelantos/direccion";
 import { decodeExpenseDescription, type ExpenseMeta } from "@/lib/expense-meta";
 import { FILTRO_REQUIERE_COSTO } from "@/lib/forestal/madera-de-servicio";
 import { estadoDePagoDeGuias, type EstadoPagoGuia } from "@/lib/forestal/plata-de-guia";
+import { invalidarIgvDelMes } from "./igv-del-mes.db";
 
 // perf audit P1: invalidación de caché tras writes. `revalidateTag` lanza si se
 // llama fuera de un contexto de request de Next (ej. unit tests que invocan la
@@ -44,6 +45,9 @@ function revalidateExpenses(tenantId: string): void {
   } catch (err) {
     logger.warn("[finance.db] no se pudo invalidar el resultado del negocio", { error: String(err), tenantId });
   }
+  // «IGV del mes › compras» cachea 2 min: corregir o borrar una factura tiene
+  // que verse ya, no sólo crearla.
+  invalidarIgvDelMes(tenantId);
 }
 
 // ── Local Types ───────────────────────────────────────────────────────────────
@@ -253,7 +257,9 @@ export const PayablesDB = {
         data: { id: payment.id, payableId: id, amount: payment.amount, method: payment.method, date: new Date(payment.date), reference: payment.reference },
       });
 
-      const status = sumPaid >= currentAmountNum ? "pagado" : sumPaid > 0 ? "parcial" : "pendiente";
+      // La misma tolerancia de 0,01 que arriba (y que `GastoConCajaDB.pagarCuenta`):
+      // 10.1 + 20.2 = 30.299999999999997 dejaba «parcial» una cuenta pagada entera.
+      const status = sumPaid >= currentAmountNum - 0.01 ? "pagado" : sumPaid > 0 ? "parcial" : "pendiente";
       // Audit 2026-05-17 B-P0-3: updateMany con tenantId (defense-in-depth).
       // Antes `update({ where: { id } })` sin tenantId. El guard previo via
       // `findFirst({ id, tenantId })` cubre HOY, pero si alguien refactoriza
