@@ -533,22 +533,27 @@ export function propietarioTitular(id: IdentidadDelTitulo): Partial<GtfDatos["pr
  * declarar DNI. Tampoco hereda el punto de partida — cada bosque sale de su
  * parcela — ni el título ni la autoridad: salen del plan de las trozas.
  */
-export function rellenarGuiaLoth(datos: GtfDatos, f: Omit<FuentesDeRelleno, "ficha">): GtfDatos {
+export function rellenarGuiaLoth(datos: GtfDatos, f: Omit<FuentesDeRelleno, "ficha"> & { mismoPermiso?: boolean }): GtfDatos {
+  const { mismoPermiso, ...fuentes } = f;
   const previa = f.ultimaGuia
     ? {
         destinatario: f.ultimaGuia.destinatario,
         transportista: f.ultimaGuia.transportista,
         vehiculo: f.ultimaGuia.vehiculo,
         comprobante: f.ultimaGuia.comprobante,
-        /* Ni el texto ni los casilleros de la partida: cada bosque sale de su parcela. */
+        /* La partida de OTRO permiso no: cada bosque sale de su parcela. La del
+           MISMO permiso sí (FOR-2, 09-10), y sólo si el plan no dice la suya
+           (`rellenarGuia` llena lo vacío; la del plan ya viene puesta). */
         traslado: f.ultimaGuia.traslado
-          ? { ...f.ultimaGuia.traslado, puntoPartida: "", partida: { direccion: "", departamento: "", provincia: "", distrito: "" } }
+          ? mismoPermiso
+            ? f.ultimaGuia.traslado
+            : { ...f.ultimaGuia.traslado, puntoPartida: "", partida: { direccion: "", departamento: "", provincia: "", distrito: "" } }
           : undefined,
       }
     : null;
   const r = rellenarGuia(
     { ...datos, propietario: { ...datos.propietario, esElCtp: false } },
-    { ...f, ficha: null, ultimaGuia: previa },
+    { ...fuentes, ficha: null, ultimaGuia: previa },
   ).datos;
   return { ...r, propietario: datos.propietario, traslado: sembrarLlegada(r) };
 }

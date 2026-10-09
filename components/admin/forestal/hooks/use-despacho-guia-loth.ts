@@ -4,8 +4,10 @@
  * useDespachoGuiaLoth — el estado de «Despachar con guía» del Libro TH.
  *
  * Trae de una vez lo que la guía ya sabe (carátula, planes, trozas que no
- * salieron, los N° de guía ya usados con su titular y la última guía), arma los
- * datos iniciales con `datosInicialesLoth` y registra guía + despachos en un POST.
+ * salieron, los N° de guía ya usados con su titular y la última guía de cada
+ * plan), arma los datos iniciales con `datosInicialesLoth` y registra guía +
+ * despachos en un POST. La guía nueva hereda de la anterior del MISMO permiso
+ * (FOR-2, 09-10; `guiaAnteriorDelDespacho`).
  *
  * La identidad sale del PLAN de las trozas: al cambiar de plan se vuelve a
  * sembrar, la selección se limpia y el talonario se recalcula (29-09-2026:
@@ -24,29 +26,15 @@ import {
   identidadDelTitulo,
   rellenarGuiaLoth,
   talonarioDelPlan,
-  type CaratulaParaGuia,
-  type GtfUsadaLoth,
   type IdentidadDelTitulo,
-  type PermisoParaGuia,
-  type PlanParaGuia,
   type TrozaDelLibro,
 } from "@/lib/forestal/loth-guia-despacho";
+import { guiaAnteriorDelDespacho, loCopiadoDelDespacho } from "@/lib/forestal/loth-guia-anterior";
 import { hoyEnLima } from "@/lib/forestal/semana-de-registro";
-import type { PaseAlCtp, PlantaPropia } from "@/lib/forestal/guia-th-al-ctp";
+import type { PaseAlCtp } from "@/lib/forestal/guia-th-al-ctp";
 import { useNumeroGuiaLoth } from "./use-numero-guia-loth";
 import { useTrasladoGuiaLoth } from "./use-traslado-guia-loth";
-
-export interface PreparadoGuiaLoth {
-  caratula: (CaratulaParaGuia & { id: string }) | null;
-  planes: (PlanParaGuia & { id: string; isActive: boolean })[];
-  permisos: Record<string, PermisoParaGuia | null>;
-  trozas: TrozaDelLibro[];
-  /** Los N° que ya gastaron un talonario (este libro + guías de SERFOR guardadas), con su dueño. */
-  talonario: { usadas: GtfUsadaLoth[] };
-  ultimaGuia: GtfDatos | null;
-  /** La planta propia (Ficha del CTP) si el negocio lleva Libro CTP: una guía a ese RUC pasa allá. */
-  ctpPropio: PlantaPropia | null;
-}
+import { usePreparadoGuiaLoth } from "./use-preparado-guia-loth";
 
 export interface RegistradaLoth {
   gtfNumber: string;
@@ -75,33 +63,7 @@ export interface PreguntaNumero {
 
 export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void } = {}) {
   const { onRegistrada } = opts;
-  const [prep, setPrep] = useState<PreparadoGuiaLoth | null>(null);
-  const [cargando, setCargando] = useState(true);
-  const [errorCarga, setErrorCarga] = useState<string | null>(null);
-
-  const cargar = useCallback(async () => {
-    setCargando(true);
-    setErrorCarga(null);
-    try {
-      const r = await fetch("/api/admin/forestal/loth/despacho-guia", { credentials: "include", cache: "no-store" });
-      const j = (await r.json().catch(() => ({}))) as Partial<PreparadoGuiaLoth> & { message?: string };
-      if (!r.ok) throw new Error(j.message ?? `No se pudo preparar la guía (${r.status})`);
-      setPrep({
-        caratula: j.caratula ?? null,
-        planes: j.planes ?? [],
-        permisos: j.permisos ?? {},
-        trozas: j.trozas ?? [],
-        talonario: { usadas: j.talonario?.usadas ?? [] },
-        ultimaGuia: j.ultimaGuia ?? null,
-        ctpPropio: j.ctpPropio ?? null,
-      });
-    } catch (e) {
-      setErrorCarga(e instanceof Error ? e.message : String(e));
-    } finally {
-      setCargando(false);
-    }
-  }, []);
-  useEffect(() => void cargar(), [cargar]);
+  const { prep, cargando, errorCarga, cargar } = usePreparadoGuiaLoth();
 
   /** Planes con trozas para despachar. */
   const planesConTrozas = useMemo(() => {
@@ -121,6 +83,10 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void } = {}) {
         : undefined;
 
   const plan = useMemo(() => prep?.planes.find((p) => p.id === planId) ?? null, [prep, planId]);
+  const previa = useMemo(
+    () => (prep ? guiaAnteriorDelDespacho({ porPlan: prep.ultimasPorPlan, general: prep.ultimaGuia, generalNumero: prep.ultimaGuiaNumero }, planId) : null),
+    [prep, planId],
+  );
   const identidad: IdentidadDelTitulo | null = useMemo(
     () =>
       prep && planId !== undefined
@@ -147,6 +113,8 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void } = {}) {
 
   const [emision, setEmision] = useState(hoyEnLima);
   const [datos, setDatos] = useState<GtfDatos>(gtfDatosVacio);
+  /** Qué trajo de verdad la guía anterior al sembrar (la línea «Copiado de…»). */
+  const [copiados, setCopiados] = useState<string[]>([]);
   const [elegidas, setElegidas] = useState<Set<string>>(new Set());
   const piezas = useMemo(() => trozasDelPlan.filter((t) => elegidas.has(t.codigo)), [trozasDelPlan, elegidas]);
   /** El N° de lista y la llegada que se llenan solos (`use-traslado-guia-loth`). */
@@ -160,12 +128,14 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void } = {}) {
   useEffect(() => {
     if (!prep || !identidad || !talonario || planId === undefined || sembradoPara.current === planId) return;
     sembradoPara.current = planId;
-    const d = rellenarGuiaLoth(datosInicialesLoth(identidad, emision), { ultimaGuia: prep.ultimaGuia, emision });
+    const base = datosInicialesLoth(identidad, emision);
+    const d = rellenarGuiaLoth(base, { ultimaGuia: previa?.datos ?? null, mismoPermiso: previa?.delPermiso, emision });
+    setCopiados(previa ? loCopiadoDelDespacho(rellenarGuiaLoth(base, { ultimaGuia: null, emision }), d) : []);
     alSembrar(d);
     setDatos(d);
     setElegidas(new Set());
     sembrarNumero(talonario);
-  }, [prep, identidad, talonario, planId, emision, sembrarNumero, alSembrar]);
+  }, [prep, identidad, talonario, planId, emision, sembrarNumero, alSembrar, previa]);
 
   const gtfNumber = numero.gtfNumber;
   const repetida = numero.revision?.repetida ?? null;
@@ -181,9 +151,9 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void } = {}) {
   /** «Rellenar con la libreta»: lo más usado del Directorio, sólo en lo vacío. */
   const rellenar = useCallback(
     (libreta: LibretaParaRellenar) => {
-      setDatos((d) => rellenarGuiaLoth(d, { ultimaGuia: prep?.ultimaGuia ?? null, emision, ...libreta }));
+      setDatos((d) => rellenarGuiaLoth(d, { ultimaGuia: previa?.datos ?? null, mismoPermiso: previa?.delPermiso, emision, ...libreta }));
     },
-    [prep, emision],
+    [previa, emision],
   );
 
   const [enviando, setEnviando] = useState(false);
@@ -287,6 +257,7 @@ export function useDespachoGuiaLoth(opts: { onRegistrada?: () => void } = {}) {
     guiasOrigen,
     faltan,
     rellenar,
+    copiadaDe: previa && copiados.length ? { gtfNumber: previa.gtfNumber, delPermiso: previa.delPermiso, copiados } : null,
     registrar,
     enviando,
     error,

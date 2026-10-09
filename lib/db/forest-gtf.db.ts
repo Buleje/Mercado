@@ -131,6 +131,36 @@ export function dondeDelPermiso(tenantId: string, permiso?: FiltroPermiso | null
   return { ...base, planId: permiso.planId };
 }
 
+/** La guía dice destinatario, transportista o placa: hay algo que la siguiente puede heredar. */
+function tieneAlgoQueHeredar(raw: unknown): boolean {
+  const d = leerGtfDatos(raw);
+  return Boolean(d.destinatario.nombre.trim() || d.transportista.nombre.trim() || d.vehiculo.placa.trim());
+}
+
+/**
+ * La guía emitida más nueva que tiene algo que heredar, buscada de a tandas
+ * (revisión 09-10): con una sola ventana de N filas, las guías en blanco o las
+ * de OTRO plan la dejaban afuera y el despacho avisaba «de otro permiso» sin
+ * serlo. Se lee de a `LOTE` (el cuerpo `gtfDatos` pesa) hasta `TOPE` filas.
+ */
+async function ultimaQueHereda(tenantId: string, planId?: string): Promise<{ gtfNumber: string; gtfDatos: unknown } | null> {
+  const LOTE = 15;
+  const TOPE = 150;
+  for (let skip = 0; skip < TOPE; skip += LOTE) {
+    const filas = await prisma.forestGtf.findMany({
+      where: { tenantId, ...(planId ? { planId } : {}), deletedAt: null, status: "emitida", gtfDatos: { not: Prisma.DbNull } },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      skip,
+      take: LOTE,
+      select: { gtfNumber: true, gtfDatos: true },
+    });
+    const g = filas.find((x) => tieneAlgoQueHeredar(x.gtfDatos));
+    if (g) return { gtfNumber: g.gtfNumber, gtfDatos: g.gtfDatos };
+    if (filas.length < LOTE) return null;
+  }
+  return null;
+}
+
 export class ForestGtfDB {
   /**
    * Emite (registra) una GTF. Guard de UNICIDAD: no se puede anotar dos veces la
@@ -376,14 +406,26 @@ export class ForestGtfDB {
    * se heredan el destinatario, el transportista, el camión y el chofer, que
    * casi nunca cambian de un viaje al siguiente.
    */
-  static async ultimaConDatos(tenantId: string): Promise<unknown | null> {
+  static async ultimaConDatos(tenantId: string): Promise<{ gtfNumber: string; gtfDatos: unknown } | null> {
     if (!tenantId) throw new Error("tenantId is required");
-    const g = await prisma.forestGtf.findFirst({
-      where: { tenantId, deletedAt: null, status: "emitida", gtfDatos: { not: Prisma.DbNull } },
-      orderBy: { createdAt: "desc" },
-      select: { gtfDatos: true },
-    });
-    return g?.gtfDatos ?? null;
+    /* La que tiene algo que heredar: una guía con los casilleros en blanco no
+       aporta nada y no se cita como origen («Copiado de la guía N»). */
+    return ultimaQueHereda(tenantId);
+  }
+
+  /**
+   * Lo mismo, pero la última de CADA plan (Brandon 09-10, FOR-2): la guía nueva
+   * de un permiso hereda de la anterior de ese permiso, no de la de otro. Una
+   * búsqueda por plan: con una ventana común, un plan con muchas guías tapaba
+   * la última de otro plan con guías más viejas.
+   */
+  static async ultimasConDatosPorPlan(tenantId: string, planIds: readonly string[]): Promise<Map<string, { gtfNumber: string; gtfDatos: unknown }>> {
+    if (!tenantId) throw new Error("tenantId is required");
+    const ids = [...new Set(planIds.filter(Boolean))];
+    const halladas = await Promise.all(ids.map(async (planId) => [planId, await ultimaQueHereda(tenantId, planId)] as const));
+    const out = new Map<string, { gtfNumber: string; gtfDatos: unknown }>();
+    for (const [planId, g] of halladas) if (g) out.set(planId, g);
+    return out;
   }
 
   /**

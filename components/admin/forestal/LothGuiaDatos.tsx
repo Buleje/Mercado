@@ -25,6 +25,7 @@ import { Btn, Field, FormularioClaro, I } from "./ctp-shared";
 import { BloquePropietarioLoth, parcheDe, type PropsGuiaLoth } from "./LothGuiaBloques";
 import { BloqueTrasladoLoth } from "./LothGuiaTraslado";
 import LothDestinoCtp from "./LothDestinoCtp";
+import LothGuiaLineaCopiada from "./LothGuiaLineaCopiada";
 
 const vacio = (v: string | null | undefined) => !v?.trim();
 const falta = (v: string | null | undefined) => (vacio(v) ? CLASE_FALTA : "");
@@ -43,6 +44,7 @@ export default function LothGuiaDatos(props: PropsGuiaLoth) {
 
   return (
     <FormularioClaro>
+      {g.copiadaDe && <LothGuiaLineaCopiada {...g.copiadaDe} />}
       <div data-guia-datos className="grid gap-3 xl:grid-cols-2 xl:items-start">
         <div className="grid gap-3">
           <BloqueDocumento g={g} />

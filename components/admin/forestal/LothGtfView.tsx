@@ -192,7 +192,7 @@ export default function LothGtfView({
         icon={Truck}
         variant="info"
       >
-        {showForm && <LothGtfForm onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); void load(); }} />}
+        {showForm && <LothGtfForm guias={gtfs} onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); void load(); }} />}
       </AdminModal>
 
       {/* Anular: pide motivo obligatorio y explica que la guía NO se borra. */}

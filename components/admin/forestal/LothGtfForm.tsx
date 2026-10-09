@@ -13,20 +13,24 @@
 
 import { useEffect, useState } from "react";
 import { DataTable } from "@buleje/design-system";
-import { Loader2, Plus, ShieldCheck, Trash2, Truck } from "@buleje/design-system/icons";
+import { Copy, Loader2, Plus, ShieldCheck, Trash2, Truck } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { findSpeciesByCommonName } from "@/data/forestry-species";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+import { listaEnFrase } from "@/lib/forestal/loth-guia-anterior";
 import { leerPlaca } from "@/lib/forestal/placa-peru";
 import VerificarGtfSerfor from "./VerificarGtfSerfor";
-import { CampoPlaca } from "./ctp-campo-placa";
+import { Field, I, TransporteDeGuiaCorta } from "./loth-gtf-form-transporte";
+import { useGuiaCortaInicial } from "./hooks/use-guia-corta-inicial";
 import { useLothPermiso } from "./hooks/use-loth-libro-permiso";
-import type { GtfItem } from "./gtf-tabla-columnas";
+import type { Gtf, GtfItem } from "./gtf-tabla-columnas";
 
 const smalian = (dM: number, dm: number, L: number) =>
   dM > 0 && dm > 0 && L > 0 ? Math.round(0.7854 * Math.pow((dM + dm) / 2, 2) * L * 10000) / 10000 : 0;
 
-export default function LothGtfForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+/** `guias`: la lista de la vista (la más nueva primero): de ahí sale la última guía del permiso. */
+export default function LothGtfForm({ onClose, onSaved, guias = [] }: { onClose: () => void; onSaved: () => void; guias?: readonly Gtf[] }) {
   const permiso = useLothPermiso();
   const planElegido = permiso?.plan ?? null;
   const [busy, setBusy] = useState(false);
@@ -91,24 +95,8 @@ export default function LothGtfForm({ onClose, onSaved }: { onClose: () => void;
   );
   const hasInvalidItems = invalidCodes.size > 0;
 
-  // Prefill titular/título: el plan ELEGIDO en el libro si hay uno; si no, el plan activo.
-  useEffect(() => {
-    if (planElegido) {
-      setF((s) => ({ ...s, titularName: planElegido.titularName ?? "", tituloHabilitante: planElegido.tituloHabilitante ?? "" }));
-      /* La parcela de corta no viaja en la lista del libro: se lee del plan elegido, como con el plan activo. */
-      const ac = new AbortController();
-      fetch(`/api/admin/forestal/plan?planId=${encodeURIComponent(planElegido.id)}`, { credentials: "include", signal: ac.signal })
-        .then((r) => (r.ok ? r.json() : null))
-        .then((j) => { const pc = j?.plan?.parcelaCorta; if (typeof pc === "string" && pc) setF((s) => ({ ...s, parcelaCorta: pc })); })
-        .catch((err) => { if (!ac.signal.aborted) console.warn("[loth-gtf] no se pudo precargar la parcela del plan elegido", err); });
-      return () => ac.abort();
-    }
-    fetch("/api/admin/forestal/plan?active=1", { credentials: "include" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => { const p = j?.active; if (p) setF((s) => ({ ...s, titularName: p.titularName ?? "", tituloHabilitante: p.tituloHabilitante ?? "", parcelaCorta: p.parcelaCorta ?? "" })); })
-      // Prefill best-effort: si no hay plan activo, el usuario completa a mano.
-      .catch((err) => console.warn("[loth-gtf] no se pudo precargar el plan activo", err));
-  }, [planElegido]);
+  // Titular/título del plan ELEGIDO (o el activo) + lo vacío de la última guía del permiso.
+  const copiada = useGuiaCortaInicial(planElegido, guias, f, setF);
 
   const autoVol = smalian(Number(it.diamMayorM), Number(it.diamMenorM), Number(it.lengthM));
   function addItem() {
@@ -174,18 +162,25 @@ export default function LothGtfForm({ onClose, onSaved }: { onClose: () => void;
           Hay trozas que no figuran en el Libro de Operaciones. Registralas en Trozado/Despacho antes de emitir la GTF.
         </div>
       )}
+      {copiada && (
+        <p role="status" className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
+          <Copy className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+          <span>Copiado de la guía <span className="font-mono font-semibold text-[var(--text-primary)]">{copiada.gtfNumber}</span>: {listaEnFrase(copiada.copiados)}.</span>
+          <InfoTip
+            title="Lo que viene de la guía anterior"
+            what="Sale de la última guía de este permiso, para que el titular, el origen y el destino se escriban igual en todas. Sólo llena lo vacío; edítalo si cambió."
+            example="Si la anterior dice «CONSTITUCION, OXAPAMPA, PASCO», ésta arranca igual y no con una tercera forma."
+            ariaLabel="De dónde sale lo copiado"
+          />
+        </p>
+      )}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Field label="N° GTF *"><input value={f.gtfNumber} onChange={(e) => set("gtfNumber", e.target.value)} placeholder="001-0000125" className={I} /></Field>
         <Field label="Fecha"><input type="date" value={f.gtfDate} onChange={(e) => set("gtfDate", e.target.value)} className={I} /></Field>
         <Field label="Tipo"><select value={f.tipo} onChange={(e) => set("tipo", e.target.value)} className={I}><option value="trozas">Trozas</option><option value="producto">Producto</option></select></Field>
         <Field label="Titular"><input value={f.titularName} onChange={(e) => set("titularName", e.target.value)} className={I} /></Field>
       </div>
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Field label="Transportista *"><input value={f.transportista} onChange={(e) => set("transportista", e.target.value)} className={I} /></Field>
-        <Field label="Doc. transportista"><input value={f.transportistaDoc} onChange={(e) => set("transportistaDoc", e.target.value)} className={I} /></Field>
-        <Field label="Conductor *"><input value={f.conductor} onChange={(e) => set("conductor", e.target.value)} className={I} /></Field>
-        <CampoPlaca label="Placa vehículo" required valor={f.placaVehiculo} onCambio={(v) => set("placaVehiculo", v)} />
-      </div>
+      <TransporteDeGuiaCorta valor={f} onCambio={(c) => setF((p) => ({ ...p, ...c }))} />
 
       <VerificarGtfSerfor
         gtfNumber={f.gtfNumber}
@@ -282,9 +277,4 @@ export default function LothGtfForm({ onClose, onSaved }: { onClose: () => void;
       </div>
     </form>
   );
-}
-
-const I = "w-full h-10 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent-muted)] placeholder:text-[var(--text-tertiary)]";
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <label className="block"><span className="mb-1 block text-xs font-medium text-[var(--text-secondary)]">{label}</span>{children}</label>;
 }

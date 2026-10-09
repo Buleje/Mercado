@@ -88,7 +88,7 @@ function TrozoSunarp({ respuesta, marcaPuesta }: { respuesta: Extract<EstadoBusq
 }
 
 /** La línea de la búsqueda: qué se llenó y de dónde, o por qué no se llenó nada. */
-function LineaDeBusqueda({ estado, aplicados }: { estado: EstadoBusquedaPlaca; aplicados: readonly DatoAplicado[] }) {
+export function LineaDeBusqueda({ estado, aplicados }: { estado: EstadoBusquedaPlaca; aplicados: readonly DatoAplicado[] }) {
   const caja = "flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg px-2.5 py-1.5 text-sm sm:col-span-12";
   if (estado.fase === "quieto") return null;
   if (estado.fase === "buscando") {

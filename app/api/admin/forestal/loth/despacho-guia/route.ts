@@ -145,11 +145,16 @@ export const GET = withApiHandler("forestal-loth-despacho-guia-get", async (req:
     ]);
     /* La planta propia: si el destinatario lleva este RUC, la guía pasa al
        Libro CTP para recibirla. Sin Libro CTP no se ofrece nada. */
-    const ctpPropio = libroCtp ? await GuiaThAlCtpDB.rucPropio(auth.tenantId) : null;
+    const conTrozas = new Set(trozas.map((t) => t.planId));
+    /* La última guía de CADA plan con trozas (FOR-2, 09-10): la nueva hereda de
+       la de su permiso; la del negocio queda sólo para el plan sin guías. */
+    const [ctpPropio, ultimasPorPlan] = await Promise.all([
+      libroCtp ? GuiaThAlCtpDB.rucPropio(auth.tenantId) : Promise.resolve(null),
+      ForestGtfDB.ultimasConDatosPorPlan(auth.tenantId, [...conTrozas].filter((id): id is string => Boolean(id))),
+    ]);
 
     /* El permiso de cada plan: por el vínculo del plan o, si no lo tiene, por el
        código del título. Sólo de los planes que tienen trozas para despachar. */
-    const conTrozas = new Set(trozas.map((t) => t.planId));
     const permisos: Record<string, Contrato | null> = {};
     await Promise.all(
       planes
@@ -180,7 +185,9 @@ export const GET = withApiHandler("forestal-loth-despacho-guia-get", async (req:
       permisos,
       trozas,
       talonario: { usadas },
-      ultimaGuia: ultima ? leerGtfDatos(ultima) : null,
+      ultimaGuia: ultima ? leerGtfDatos(ultima.gtfDatos) : null,
+      ultimaGuiaNumero: ultima?.gtfNumber ?? null,
+      ultimasPorPlan: Object.fromEntries([...ultimasPorPlan].map(([planId, g]) => [planId, { gtfNumber: g.gtfNumber, datos: leerGtfDatos(g.gtfDatos) }])),
       ctpPropio,
     });
   } catch (err) {

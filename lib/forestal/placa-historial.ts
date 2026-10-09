@@ -220,6 +220,8 @@ export interface DatoAplicado {
   /** Cómo se nombra en la línea: «conductor», «DNI 07705709»… */
   texto: string;
   origen: OrigenAplicado;
+  /** Qué casillero llenó: la guía corta del Libro TH no tiene todos y filtra por éste. */
+  campo?: CampoPlaca;
 }
 
 export interface Relleno {
@@ -247,54 +249,90 @@ export function rellenarDesdePlaca(
 
   if (vacio(actual.vehiculo.tipo) && d.tipo && o.tipo) {
     out.vehiculo.tipo = d.tipo;
-    out.aplicados.push({ texto: d.tipo.toLowerCase(), origen: o.tipo });
+    out.aplicados.push({ texto: d.tipo.toLowerCase(), origen: o.tipo, campo: "tipo" });
   }
   if (vacio(actual.vehiculo.marca)) {
     if (d.marca && o.marca) {
       out.vehiculo.marca = d.marca;
-      out.aplicados.push({ texto: `marca ${d.marca}`, origen: o.marca });
+      out.aplicados.push({ texto: `marca ${d.marca}`, origen: o.marca, campo: "marca" });
     } else if (externo?.marca) {
       out.vehiculo.marca = externo.marca.slice(0, 40);
-      out.aplicados.push({ texto: `marca ${externo.marca}`, origen: { fuente: "externo" } });
+      out.aplicados.push({ texto: `marca ${externo.marca}`, origen: { fuente: "externo" }, campo: "marca" });
     }
   }
   if (leerPlaca(actual.vehiculo.placaRemolque).estado === "vacia" && d.placaRemolque && o.placaRemolque) {
     out.vehiculo.placaRemolque = d.placaRemolque;
-    out.aplicados.push({ texto: `remolque ${d.placaRemolque}`, origen: o.placaRemolque });
+    out.aplicados.push({ texto: `remolque ${d.placaRemolque}`, origen: o.placaRemolque, campo: "placaRemolque" });
   }
 
   // Transportista: nombre y documento como bloque.
   const trNombre = con(actual.transportista.nombre);
   if (!trNombre && d.transportista && o.transportista) {
     out.transportista.nombre = d.transportista;
-    out.aplicados.push({ texto: `transportista ${d.transportista}`, origen: o.transportista });
+    out.aplicados.push({ texto: `transportista ${d.transportista}`, origen: o.transportista, campo: "transportista" });
   }
   const trEsElMismo = !trNombre || (d.transportista ? mismoNombre(trNombre, d.transportista) : false);
   if (vacio(actual.transportista.docNumero) && trEsElMismo && d.transportistaDoc && o.transportistaDoc) {
     const tipo = d.transportistaDocTipo && DOC_TIPOS.includes(d.transportistaDocTipo) ? (d.transportistaDocTipo as DocTipoGuia) : null;
     out.transportista.docNumero = d.transportistaDoc;
     if (tipo) out.transportista.docTipo = tipo;
-    out.aplicados.push({ texto: `${tipo ?? "doc."} ${d.transportistaDoc}`, origen: o.transportistaDoc });
+    out.aplicados.push({ texto: `${tipo ?? "doc."} ${d.transportistaDoc}`, origen: o.transportistaDoc, campo: "transportistaDoc" });
   }
 
   // Conductor: nombre, DNI y licencia como bloque.
   const coNombre = con(actual.vehiculo.conductor);
   if (!coNombre && d.conductor && o.conductor) {
     out.vehiculo.conductor = d.conductor;
-    out.aplicados.push({ texto: `conductor ${d.conductor}`, origen: o.conductor });
+    out.aplicados.push({ texto: `conductor ${d.conductor}`, origen: o.conductor, campo: "conductor" });
   }
   const coEsElMismo = !coNombre || (d.conductor ? mismoNombre(coNombre, d.conductor) : false);
   if (coEsElMismo) {
     if (vacio(actual.vehiculo.conductorDni) && d.conductorDni && o.conductorDni) {
       out.vehiculo.conductorDni = d.conductorDni;
-      out.aplicados.push({ texto: `DNI ${d.conductorDni}`, origen: o.conductorDni });
+      out.aplicados.push({ texto: `DNI ${d.conductorDni}`, origen: o.conductorDni, campo: "conductorDni" });
     }
     if (vacio(actual.vehiculo.licencia) && d.licencia && o.licencia) {
       out.vehiculo.licencia = d.licencia;
-      out.aplicados.push({ texto: `licencia ${d.licencia}`, origen: o.licencia });
+      out.aplicados.push({ texto: `licencia ${d.licencia}`, origen: o.licencia, campo: "licencia" });
     }
   }
   return out;
+}
+
+/**
+ * «Anotar una guía» del Libro TH (`LothGtfForm`): la guía corta guarda sólo
+ * transportista, su documento, conductor y licencia (`ForestGtf` no tiene
+ * tipo, marca, remolque ni DNI del conductor). Misma regla que la guía
+ * completa —sólo lo vacío, el documento sólo con el MISMO nombre—, y la línea
+ * nombra sólo lo que de verdad se llenó.
+ */
+export interface TransporteCorto {
+  transportista: string;
+  transportistaDoc: string;
+  conductor: string;
+  conductorLicencia: string;
+}
+
+const DE_LA_GUIA_CORTA: ReadonlySet<CampoPlaca> = new Set<CampoPlaca>(["transportista", "transportistaDoc", "conductor", "licencia"]);
+
+export function rellenarGuiaCorta(
+  actual: TransporteCorto,
+  sistema: LoQueSabeElSistema | null,
+): { cambios: Partial<TransporteCorto>; aplicados: DatoAplicado[] } {
+  const r = rellenarDesdePlaca(
+    {
+      vehiculo: { tipo: "", marca: "", placaRemolque: "", conductor: actual.conductor, conductorDni: "", licencia: actual.conductorLicencia },
+      transportista: { nombre: actual.transportista, docTipo: "RUC", docNumero: actual.transportistaDoc },
+    },
+    sistema,
+    null,
+  );
+  const cambios: Partial<TransporteCorto> = {};
+  if (r.transportista.nombre) cambios.transportista = r.transportista.nombre;
+  if (r.transportista.docNumero) cambios.transportistaDoc = r.transportista.docNumero;
+  if (r.vehiculo.conductor) cambios.conductor = r.vehiculo.conductor;
+  if (r.vehiculo.licencia) cambios.conductorLicencia = r.vehiculo.licencia;
+  return { cambios, aplicados: r.aplicados.filter((a) => a.campo && DE_LA_GUIA_CORTA.has(a.campo)) };
 }
 
 /** «tu guía del Libro TH 001-0000127», «el Directorio», «SUNARP». */
