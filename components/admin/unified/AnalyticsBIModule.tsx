@@ -31,7 +31,7 @@ const SalesTrendChart = lazy(() => import("@/components/admin/analytics/SalesTre
 const VentasHeatmap = lazy(() => import("@/components/admin/analytics/VentasHeatmap"));
 const MarginWaterfallChart = lazy(() => import("@/components/admin/analytics/MarginWaterfallChart"));
 const FiadoAnalyticsPanel = lazy(() => import("@/components/admin/analytics/FiadoAnalyticsPanel"));
-const FiadosSection = lazy(() => import("@/components/admin/ai-center/sections/FiadosSection"));
+const FiadosRiesgoIA = lazy(() => import("@/components/admin/fiados/FiadosRiesgoIA"));
 const AnomalyDetector = lazy(() => import("@/components/admin/analytics/AnomalyDetector"));
 const RFMSegmentationPanel = lazy(() => import("@/components/admin/analytics/RFMSegmentationPanel"));
 
@@ -805,12 +805,12 @@ export default function AnalyticsBIModule() {
           {
             id: "fiados-analytics",
             label: "Fiados — Deuda y Cobranza",
-            description: "Resumen de deudas y analisis de riesgo IA",
+            description: "Resumen de deudas y quién te debe",
             component: (
-              <TabbedCard title="Fiados — Deuda y Cobranza" subtitle="Cuánto te deben, quién paga y quién no · Análisis de riesgo IA" icon={CreditCard}
+              <TabbedCard title="Fiados — Deuda y Cobranza" subtitle="Cuánto te deben, quién paga y quién no" icon={CreditCard}
                 tabs={[
                   { id: "resumen-fiados", label: "Resumen", content: <div className="min-h-75"><Suspense fallback={<S />}><FiadoAnalyticsPanel /></Suspense></div> },
-                  { id: "ia-fiados", label: "Riesgo IA", content: <div className="min-h-75"><Suspense fallback={<S />}><FiadosSection /></Suspense></div> },
+                  { id: "ia-fiados", label: "Quién te debe", content: <div className="min-h-75"><Suspense fallback={<S />}><FiadosRiesgoIA /></Suspense></div> },
                 ]}
               />
             ),

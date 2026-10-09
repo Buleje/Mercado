@@ -62,7 +62,7 @@ export interface ToolDefinition {
    * Excel Agentes IA práctica #10 "Human-in-the-Loop para acciones críticas":
    * cuando el LLM selecciona un tool marcado con `requiresApproval: true`, el
    * orchestrator NO debe ejecutarlo inmediatamente; debe emitir un evento
-   * `pendingApproval` que el frontend (AICommandCenter.tsx) muestra como modal
+   * `pendingApproval` que el frontend (Comandos IA › Lo que hizo la IA) muestra como modal
    * "¿Aprobar esta acción? [Sí] [No]". Solo tras la confirmación humana el
    * orchestrator ejecuta el tool.
    *

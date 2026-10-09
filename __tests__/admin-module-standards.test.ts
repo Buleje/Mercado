@@ -23,10 +23,14 @@ const UNIFIED_DIR = path.resolve(
 );
 
 // Módulos que son proxies o tienen excepciones documentadas
-const PROXY_MODULES = ["AnalyticsProModule.tsx"];
+const PROXY_MODULES = [
+  "AnalyticsProModule.tsx",
+  // Comandos IA (Brandon 2026-10-09): monta components/admin/comandos-ia/ComandosIA.tsx,
+  // que trae su AdminTabBar anidado bajo el hub «Asistente IA» (el hub pone el título).
+  "AICommandModule.tsx",
+];
 // Módulos sin tabs (single-view): excluídos del check AdminTabBar y MODULE_ID
 const NO_TABS_MODULES = [
-  "AICommandModule.tsx",
   "AnalyticsProModule.tsx",
   "ChatIAModule.tsx",
   // GiftCards y Lives son single-view — no tienen sub-tabs, no necesitan AdminTabBar
