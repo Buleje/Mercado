@@ -20,6 +20,22 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
 
+// La regla del pedido «olvidado» vive en lib/admin/pedidos-olvidados.ts: la
+// lista de Pedidos la aplica igual en el navegador.
+import { ESTADOS_PEDIDO_VIVO, HORAS_PEDIDO_OLVIDADO } from "@/lib/admin/pedidos-olvidados";
+export { HORAS_PEDIDO_OLVIDADO };
+
+/** Conteos del catálogo activo — misma regla que `lib/inventario/catalogo-incompleto.ts`. */
+export interface CatalogoDeInicio {
+  /** Productos con stock gestionado en o bajo su mínimo (5 si no tiene) — el «Bajo stock» de Inventario. */
+  bajoStock: number;
+  sinCosto: number;
+  sinCodigo: number;
+  sinMinimo: number;
+  /** Les falta al menos uno de los tres. */
+  incompletos: number;
+}
+
 export interface OverviewQueryOpts {
   tenantId: string;
   rangeFrom: Date;
@@ -38,6 +54,9 @@ export interface OverviewRawData {
   criticalStockCount: number;
   expiringCount: number;
   overdueCreditCount: number;
+  /** Pedidos vivos sin tocar hace más de `HORAS_PEDIDO_OLVIDADO` (sólo lectura). */
+  pedidosOlvidados: { cuantos: number; monto: number; desde: Date | null };
+  catalogo: CatalogoDeInicio;
   topProducts: Array<{ productId: number | null; _sum: { quantity: number | null } }>;
   newCustomersInRange: number;
 }
@@ -60,7 +79,7 @@ export const OverviewDB = {
       prevOrders,
       activeOrders,
       last30dOrders,
-      criticalStockCount,
+      catalogoFilas,
       expiringCount,
       overdueCreditCount,
       topProducts,
@@ -68,6 +87,7 @@ export const OverviewDB = {
       rangeSales,
       prevSales,
       last30dSales,
+      olvidados,
     ] = await Promise.all([
       // 1. Pedidos entregados en el rango — para revenue, ticket promedio, uniqueCustomers.
       // Brandon mayo 2026 v7: solo `entregado` cuenta como venta real.
@@ -104,11 +124,25 @@ export const OverviewDB = {
         take: 5000,
       }),
 
-      // 5. Stock crítico — productos activos entre 1 y 5 unidades.
-       
-      prisma.product.count({
-        where: { tenantId, stock: { lte: 5, gt: 0 }, active: true },
-      }),
+      // 5. Catálogo en UNA pasada: «Bajo stock» con la regla de Inventario
+      // (`stock <= stockMin ?? 5`, agotados incluidos; antes contaba sólo 1-5 y
+      // el aviso no coincidía con lo que el filtro mostraba) y los datos que le
+      // faltan (`lib/inventario/catalogo-incompleto.ts`). Sin borrados ni
+      // servicios. Parámetros por plantilla de Prisma, nunca interpolados.
+      prisma.$queryRaw<CatalogoDeInicio[]>`
+        SELECT
+          count(*) FILTER (WHERE stock IS NOT NULL AND stock <= COALESCE("stockMin", 5))::int AS "bajoStock",
+          count(*) FILTER (WHERE type <> 'service' AND COALESCE("costPrice", 0) <= 0)::int AS "sinCosto",
+          count(*) FILTER (WHERE type <> 'service' AND COALESCE(btrim(barcode), '') = '')::int AS "sinCodigo",
+          count(*) FILTER (WHERE type <> 'service' AND stock IS NOT NULL AND "stockMin" IS NULL)::int AS "sinMinimo",
+          count(*) FILTER (WHERE type <> 'service' AND (
+            COALESCE("costPrice", 0) <= 0
+            OR COALESCE(btrim(barcode), '') = ''
+            OR (stock IS NOT NULL AND "stockMin" IS NULL)
+          ))::int AS "incompletos"
+        FROM "Product"
+        WHERE "tenantId" = ${tenantId} AND active = true AND "deletedAt" IS NULL
+      `,
 
       // 6. Vencimientos próximos — productos cuyo expiresAt está dentro de 7 días.
        
@@ -120,6 +154,7 @@ export const OverviewDB = {
             lte: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
           },
           active: true,
+          deletedAt: null,
         },
       }),
 
@@ -170,7 +205,24 @@ export const OverviewDB = {
         select: { createdAt: true },
         take: 5000,
       }),
+
+      // 13. Pedidos olvidados: vivos y sin tocar hace más de HORAS_PEDIDO_OLVIDADO.
+      // Sólo lectura (orders.db es la máquina de estados; acá no se mueve nada).
+      prisma.order.aggregate({
+        where: {
+          tenantId,
+          status: { in: [...ESTADOS_PEDIDO_VIVO] },
+          updatedAt: { lt: new Date(now.getTime() - HORAS_PEDIDO_OLVIDADO * 60 * 60 * 1000) },
+        },
+        _count: { _all: true },
+        _sum: { total: true },
+        _min: { updatedAt: true },
+      }),
     ]);
+
+    const catalogo: CatalogoDeInicio = catalogoFilas[0] ?? {
+      bajoStock: 0, sinCosto: 0, sinCodigo: 0, sinMinimo: 0, incompletos: 0,
+    };
 
     // Brandon 2026-05-17 (audit tsc): Order.total es Decimal en Prisma 7 pero
     // el interface OverviewRawData declara number. Sin coerción explícita los
@@ -198,9 +250,15 @@ export const OverviewDB = {
       ],
       activeOrders,
       last30dOrders: [...last30dOrders, ...last30dSales],
-      criticalStockCount,
+      criticalStockCount: catalogo.bajoStock,
       expiringCount,
       overdueCreditCount,
+      pedidosOlvidados: {
+        cuantos: olvidados._count._all,
+        monto: toNumOrZero(olvidados._sum.total),
+        desde: olvidados._min.updatedAt,
+      },
+      catalogo,
       topProducts,
       newCustomersInRange,
     };

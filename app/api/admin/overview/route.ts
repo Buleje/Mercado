@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { getOrSet } from "@/lib/cache";
+import { formatCurrency } from "@/lib/format";
+import type { AlertaDeInicio } from "@/lib/admin/overview-tipos";
 
 // Brandon 2026-05-16 P1 (audit): force-dynamic obligatorio. Sin esto, Next 16
 // puede inferir el endpoint como estático en build y servir KPIs cacheados
@@ -159,7 +161,7 @@ export async function GET(req: NextRequest) {
   const { tenantId } = auth;
 
   const { logger } = await import("@/lib/logger");
-  const { OverviewDB } = await import("@/lib/db/overview.db");
+  const { OverviewDB, HORAS_PEDIDO_OLVIDADO } = await import("@/lib/db/overview.db");
 
   // ── Parse query params ─────────────────────────────────────────────────────
   const url = new URL(req.url);
@@ -189,6 +191,8 @@ export async function GET(req: NextRequest) {
       criticalStockCount,
       expiringCount,
       overdueCreditCount,
+      pedidosOlvidados,
+      catalogo,
       topProducts,
       newCustomersInRange,
     } = await getOrSet(cacheKey, 30, () => OverviewDB.fetchOverview({
@@ -212,6 +216,8 @@ export async function GET(req: NextRequest) {
         criticalStockCount: 0,
         expiringCount: 0,
         overdueCreditCount: 0,
+        pedidosOlvidados: { cuantos: 0, monto: 0, desde: null },
+        catalogo: { bajoStock: 0, sinCosto: 0, sinCodigo: 0, sinMinimo: 0, incompletos: 0 },
         topProducts: [],
         newCustomersInRange: 0,
       };
@@ -264,12 +270,19 @@ export async function GET(req: NextRequest) {
     }
 
     // ── Alerts accionables (siempre "ahora") ───────────────────────────────
-    const alerts: Array<{ id: string; severity: "info" | "warning" | "danger"; text: string; href?: string }> = [];
+    // Cada `href` abre el destino YA filtrado: Inventario y Fiados leen
+    // `?filter=` al montar (`hooks/use-filtro-de-url.ts`). Antes nadie lo
+    // leía y el aviso caía en la vista genérica. Pedidos filtra
+    // `filter=olvidados` sólo donde OrdersTab aplica `esPedidoOlvidado`
+    // (lib/admin/pedidos-olvidados.ts); sin eso abre todos los activos.
+    // `enlaces` = atajos a una
+    // parte del aviso (el catálogo: sin costo / sin código / sin mínimo).
+    const alerts: AlertaDeInicio[] = [];
     if (criticalStockCount > 0) {
       alerts.push({
         id: "stock-critical",
         severity: "warning",
-        text: `${criticalStockCount} ${criticalStockCount === 1 ? "producto" : "productos"} con stock crítico`,
+        text: `${criticalStockCount} ${criticalStockCount === 1 ? "producto en su mínimo o agotado" : "productos en su mínimo o agotados"}`,
         href: "/admin?tab=inventario&filter=critical",
       });
     }
@@ -302,17 +315,54 @@ export async function GET(req: NextRequest) {
         id: "overdue",
         severity: "danger",
         text: `${overdueCreditCount} ${overdueCreditCount === 1 ? "fiado atrasado" : "fiados atrasados"}`,
-        href: "/admin?tab=fiados&filter=overdue",
+        href: "/admin?tab=fiados&sub=deudores&filter=overdue",
       });
     }
-    if (activeOrders > 0) {
+    // Pedidos olvidados: vivos y sin tocar hace más de un día. Van aparte de
+    // «en curso» para no contar el mismo pedido dos veces.
+    const olvidados = pedidosOlvidados.cuantos;
+    if (olvidados > 0) {
+      const dias = pedidosOlvidados.desde
+        ? Math.floor((now.getTime() - new Date(pedidosOlvidados.desde).getTime()) / 86_400_000)
+        : 0;
+      alerts.push({
+        id: "stale-orders",
+        severity: "warning",
+        text:
+          `${olvidados} ${olvidados === 1 ? "pedido espera" : "pedidos esperan"} hace más de ${HORAS_PEDIDO_OLVIDADO} h` +
+          ` · ${formatCurrency(pedidosOlvidados.monto)}` +
+          (dias >= 2 ? ` · el más viejo, hace ${dias} días` : ""),
+        href: "/admin?tab=pedidos&filter=olvidados",
+      });
+    }
+    const enCurso = Math.max(0, activeOrders - olvidados);
+    if (enCurso > 0) {
       alerts.push({
         id: "active-orders",
         severity: "info",
-        text: `${activeOrders} ${activeOrders === 1 ? "pedido en curso" : "pedidos en curso"}`,
+        text: `${enCurso} ${enCurso === 1 ? "pedido en curso" : "pedidos en curso"}`,
         href: "/admin?tab=pedidos&filter=active",
       });
     }
+    if (catalogo.incompletos > 0) {
+      const partes: Array<{ n: number; label: string; filtro: string }> = [
+        { n: catalogo.sinCosto, label: "sin costo", filtro: "sin-costo" },
+        { n: catalogo.sinCodigo, label: "sin código", filtro: "sin-codigo" },
+        { n: catalogo.sinMinimo, label: "sin mínimo", filtro: "sin-minimo" },
+      ];
+      alerts.push({
+        id: "catalog-incomplete",
+        severity: "info",
+        text: `Completa tu catálogo: ${catalogo.incompletos} ${catalogo.incompletos === 1 ? "producto" : "productos"} con datos por llenar`,
+        href: "/admin?tab=inventario&filter=incompleto",
+        enlaces: partes
+          .filter((p) => p.n > 0)
+          .map((p) => ({ label: `${p.n} ${p.label}`, href: `/admin?tab=inventario&filter=${p.filtro}` })),
+      });
+    }
+    // Lo urgente arriba: rojo, ámbar, informativo (estable dentro de cada nivel).
+    const RANGO_SEVERIDAD = { danger: 0, warning: 1, info: 2 } as const;
+    alerts.sort((a, b) => RANGO_SEVERIDAD[a.severity] - RANGO_SEVERIDAD[b.severity]);
 
     // ── Insight heurístico según rango + comparativa ──────────────────────
     const presetLabel: Record<Preset, string> = {
@@ -349,8 +399,8 @@ export async function GET(req: NextRequest) {
     } else if (criticalStockCount > 3) {
       insight = {
         type: "warning",
-        text: `${criticalStockCount} productos tienen stock crítico. Los clientes ya no los pueden comprar — repón pronto.`,
-        cta: { label: "Ver inventario", href: "/admin?tab=inventario" },
+        text: `${criticalStockCount} productos están en su mínimo o agotados. Repón antes de que tus clientes no los encuentren.`,
+        cta: { label: "Ver cuáles", href: "/admin?tab=inventario&filter=critical" },
       };
     } else if (ordersCount === 0 && preset === "diario" && now.getHours() > 11) {
       insight = {

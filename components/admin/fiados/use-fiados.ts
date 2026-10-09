@@ -11,6 +11,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { tenantCacheKey } from "@/lib/tenant-cache";
+import { useFiltroDeUrl } from "@/hooks/use-filtro-de-url";
 import { PER_PAGE, type ColumnaOrden, type Densidad, type Fiado, type FiadoStatus } from "./tipos";
 
 function leerDensidad(): Densidad {
@@ -29,6 +30,11 @@ export function useFiados() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<FiadoStatus | "">("");
+  // «N fiados atrasados» de Inicio lleva a `?sub=deudores&filter=overdue`:
+  // la tabla abre con el chip «Vencido» puesto (el mismo VENCIDO que cuenta el aviso).
+  useFiltroDeUrl((valor) => {
+    if (valor === "overdue") setStatusFilter("VENCIDO");
+  });
   const [page, setPage] = useState(1);
   const [sortBy, setSortBy] = useState<ColumnaOrden>("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");

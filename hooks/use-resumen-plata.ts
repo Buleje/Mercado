@@ -8,15 +8,16 @@
  * el comportamiento para que el tablero quede en dibujar.
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
-  fetchFinanzas, invalidateFinanzasCache, n, MESES,
+  fetchFinanzas, invalidateFinanzasCache, n,
   type ExpenseRaw, type HealthData,
   ingresosDelMes, gastosDelMes, claveDeMes,
 } from "@/components/admin/finanzas/shared";
-import { formatMonthYear } from "@/lib/format";
 import { gastoDelMes, mesDeGasto, type IngresoDelMes } from "@/lib/finance/ingresos-del-periodo";
 import { limaDateKey } from "@/lib/utils";
+import type { RespuestaResultado } from "@/lib/finance/resultado-del-negocio";
+import { derivarDelResultado, type BaseDelMes } from "@/hooks/resumen-plata-del-resultado";
 import type {
   MesResumen, Porcion, DiaFlujo, Deudor, Proyeccion, Fiscal,
 } from "@/components/admin/unified/finanzas/resumen/tipos";
@@ -49,21 +50,26 @@ export interface ResumenPlata {
    */
   deudas: DeudasDelNegocio;
   lastRefresh: Date;
+  /**
+   * El resultado del servidor (Ingresos, Gastos, Utilidad, Margen y las
+   * barras) todavía no llegó: esas cifras son las de la cuenta vieja hasta
+   * que llegue. Se pide aparte para no frenar al resto (~2 s contra 0,1 s).
+   */
+  resultadoCargando: boolean;
   /** Vuelve a pedir todo, saltando la caché de 30 s del módulo. */
   recargar: () => void;
 }
 
 export function useResumenPlata(): ResumenPlata {
-  const [kpis, setKpis] = useState<Record<string, number>>({});
-  const [monthlyData, setMonthlyData] = useState<MesResumen[]>([]);
+  const [base, setBase] = useState<BaseDelMes | null>(null);
+  const [resultado, setResultado] = useState<RespuestaResultado | null>(null);
+  const [resultadoCargando, setResultadoCargando] = useState(true);
   const [expensesByCategory, setExpensesByCategory] = useState<Porcion[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<Porcion[]>([]);
   const [cashFlow, setCashFlow] = useState<DiaFlujo[]>([]);
   const [topPayables, setTopPayables] = useState<Deudor[]>([]);
   const [topFiados, setTopFiados] = useState<Deudor[]>([]);
-  const [projection, setProjection] = useState<Proyeccion | null>(null);
   const [fiscal, setFiscal] = useState<Fiscal | null>(null);
-  const [healthData, setHealthData] = useState<Omit<HealthData, "efectivo"> | null>(null);
   const [deudas, setDeudas] = useState<DeudasDelNegocio>(SIN_DEUDAS);
   const [loading, setLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState(new Date());
@@ -74,6 +80,24 @@ export function useResumenPlata(): ResumenPlata {
     invalidateFinanzasCache();
     setVuelta((v) => v + 1);
   }, []);
+
+  // La ganancia del mes y de cada barra: el MISMO número de «Ganancias y
+  // pérdidas» (resta el costo de lo vendido, no sólo los gastos). Va aparte:
+  // tarda ~2 s con la caché caliente y el resto 0,04-0,1 s; dentro del
+  // `allSettled` hacía esperar a toda la pantalla. Un 403 (el encargado no ve
+  // el resultado) vuelve `null` y queda la cuenta vieja. No rechaza nunca.
+  useEffect(() => {
+    let vivo = true;
+    setResultadoCargando(true);
+    void fetchFinanzas<RespuestaResultado | null>(
+      `/api/finanzas/resultado?mes=${claveDeMes(new Date())}&meses=6`, null,
+    ).then((r) => {
+      if (!vivo) return;
+      setResultado(r);
+      setResultadoCargando(false);
+    });
+    return () => { vivo = false; };
+  }, [vuelta]);
 
   useEffect(() => {
     let vivo = true;
@@ -145,58 +169,41 @@ export function useResumenPlata(): ResumenPlata {
         ? expensesRaw
         : ((expensesRaw as { expenses?: unknown[] } | null)?.expenses ?? [])) as ExpenseRaw[];
 
-      // ── KPIs ──
+      // ── Lo de la cuenta vieja (ventas y gastos registrados) ──
+      // Queda de respaldo: el resultado del servidor manda cuando llega (ver
+      // el `useMemo` de abajo). El IGV y el punto de equilibrio siguen acá.
       const ingresos = ingresosDelMes(kpisData, monthlySummary, now);
       const gastosMes = gastosDelMes(expSummary, itemsGasto, now);
-      const utilidad = ingresos - gastosMes;
-      const margen = ingresos > 0 ? Math.round(((ingresos - gastosMes) / ingresos) * 100) : 0;
-      /* Lo que se debe es amount − paidAmount (`netoPorPagar`): una cuenta de
-         S/ 1 000 con S/ 700 pagados sumaba 1 000. Tarjeta y lista «Debo a
-         proveedores» salen de la misma lista con la misma regla. */
-      const deuda = totalQueDebes(payablesRaw);
-      /* Lo que deben es el SALDO (el total incluye lo ya cobrado: medido en
-         datos reales, se fiaron S/496.30, quedaban S/345.50 y el panel decía
-         S/461). La tarjeta y la lista «Me deben» salen de la MISMA lista con
-         la MISMA regla (`deudores.ts`); antes la tarjeta preguntaba primero a
-         kpis-v2 por un campo que no manda, y la lista sumaba el total. */
-      const fiados = totalQueTeDeben(fiadosRaw);
       const diasTranscurridos = Math.max(1, Number(hoyLima.slice(8, 10)) || 1);
-      const puntoEq = diasTranscurridos > 0 ? Math.round(gastosMes / diasTranscurridos) : 0;
-      setKpis({
-        ingresos: Math.round(ingresos), gastos: Math.round(gastosMes), utilidad: Math.round(utilidad),
-        margen, deuda: Math.round(deuda), fiados: Math.round(fiados), puntoEq,
+      const [anioLima, mesLimaNum] = mesActual.split("-").map(Number);
+      setBase({
+        mesActual,
+        ingresos,
+        gastos: gastosMes,
+        /* Lo que se debe es amount − paidAmount (`netoPorPagar`): una cuenta de
+           S/ 1 000 con S/ 700 pagados sumaba 1 000. Tarjeta y lista «Debo a
+           proveedores» salen de la misma lista con la misma regla. */
+        deuda: totalQueDebes(payablesRaw),
+        /* Lo que deben es el SALDO (el total incluye lo ya cobrado: medido en
+           datos reales, se fiaron S/496.30, quedaban S/345.50 y el panel decía
+           S/461). La tarjeta y la lista «Me deben» salen de la MISMA lista con
+           la MISMA regla (`deudores.ts`). */
+        fiados: totalQueTeDeben(fiadosRaw),
+        puntoEq: Math.round(gastosMes / diasTranscurridos),
+        diasTranscurridos,
+        diasTotales: new Date(Date.UTC(anioLima, mesLimaNum, 0)).getUTCDate(),
+        // (el efectivo lo pone el tablero con la caja abierta real; antes se
+        // inventaba como `ingresos * 0.3`)
+        fiadosVencidos: n(kpisData?.fiadosVencidosMonto),
+        payablesVencidos: n(kpisData?.payablesVencidosMonto),
+        // Gastos de cada mes: de la lista de gastos reales con la misma
+        // partición de meses (se leían de `expSummary.monthly`, un campo que
+        // /api/expenses/summary no manda, y cada barra salía en 0).
+        meses: monthlySummary.map(({ month, ingresos: ing }) => ({ clave: month, ingresos: ing, gastos: gastoDelMes(month, itemsGasto) })),
       });
 
       // ── Fiscal ── (el IGV, sólo el registrado: ver resumen/igv.ts)
       setFiscal({ ventas: ingresos, compras: gastosMes, igv });
-
-      // ── Projection ──
-      const [anioLima, mesLimaNum] = mesActual.split("-").map(Number);
-      const diasTotales = new Date(Date.UTC(anioLima, mesLimaNum, 0)).getUTCDate();
-      setProjection({ ventasMes: ingresos, gastosMes, diasTranscurridos, diasTotales });
-
-      // ── Health ── (el efectivo lo pone el tablero con la caja abierta real;
-      // antes se inventaba como `ingresos * 0.3`)
-      const fiadosVencidos = n(kpisData?.fiadosVencidosMonto);
-      const payablesVencidos = n(kpisData?.payablesVencidosMonto);
-      setHealthData({ ingresos, gastos: gastosMes, gastosMensuales: gastosMes, fiadosVencidos, payablesVencidos });
-
-      // ── Monthly chart (últimos 6 meses) ──
-      // Ingresos vienen del endpoint server-side (monthlySummary, orden cronológico
-      // oldest→newest). Gastos, de la lista de gastos reales con la misma
-      // partición de meses: se leían de `expSummary.monthly`, un campo que
-      // /api/expenses/summary no manda (devuelve un array por categoría), y
-      // cada barra de gasto salía en 0 — la línea de utilidad copiaba a la de
-      // ingresos (medido en QA: setiembre S/ 385,50 de gastos, barra en 0).
-      const months = monthlySummary.map(({ month: monthKey, ingresos: ing }) => {
-        const [yy, mm] = monthKey.split("-").map(Number);
-        const d = new Date(yy, (mm ?? 1) - 1, 1);
-        const label = MESES[d.getMonth()];
-        const fullLabel = formatMonthYear(d, { largo: true });
-        const gas = gastoDelMes(monthKey, itemsGasto);
-        return { mes: label, fullMonth: fullLabel, ingresos: Math.round(ing), gastos: Math.round(gas), utilidad: Math.round(ing - gas) };
-      });
-      setMonthlyData(months);
 
       // ── Expenses by category (donut) ──
       const items = itemsGasto;
@@ -247,8 +254,11 @@ export function useResumenPlata(): ResumenPlata {
     return () => { vivo = false; };
   }, [vuelta]);
 
+  const { kpis, monthlyData, projection, healthData } = useMemo(() => derivarDelResultado(base, resultado), [base, resultado]);
+
   return {
     loading, kpis, monthlyData, expensesByCategory, paymentMethods, cashFlow,
-    topPayables, topFiados, projection, fiscal, healthData, deudas, lastRefresh, recargar,
+    topPayables, topFiados, projection, fiscal, healthData, deudas, lastRefresh,
+    resultadoCargando, recargar,
   };
 }

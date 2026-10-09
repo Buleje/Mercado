@@ -1,227 +1,124 @@
 "use client";
 
-import { LoadingState } from "@buleje/design-system";
-import { sinDato } from "@/lib/errores/sin-dato";
-import { useState, useEffect, useCallback } from "react";
-import { DollarSign, RefreshCw, TrendingUp, TrendingDown } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
-import { formatCurrency } from "@/lib/format";
+import { CardTitle, LoadingState } from "@buleje/design-system";
+import { ArrowRight, RefreshCw, TrendingDown, TrendingUp } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { montoTexto, nombreMes } from "@/components/admin/unified/finanzas/resultado/fuentes";
+import { useResultadoDelMes, useVeLaPlataDelNegocio } from "@/hooks/use-resultado-del-mes";
+import { cn, limaDateKey } from "@/lib/utils";
+import { irEnElPanel } from "@/lib/admin/ir-en-el-panel";
+import { margenDelResultado } from "@/lib/admin/margen-del-resultado";
 
-// ── Types ──────────────────────────────────────────────────────────────────────
-
-type DailyReport = {
-  totalSales?: number;
-  [key: string]: unknown;
-};
-
-type ExpenseSummary = {
-  total?: number;
-  byCategory?: Record<string, number>;
-  [key: string]: unknown;
-};
-
-type Sale = {
-  id: string;
-  createdAt: string;
-  total: number;
-  items?: { price: number; quantity: number; costPrice?: number }[];
-};
-
-type PLRow = {
-  label: string;
-  amount: number;
-  isSubtract?: boolean;
-  isFinal?: boolean;
-  indent?: boolean;
-};
-
-// ── Helpers ────────────────────────────────────────────────────────────────────
-
-function fmt(n: number) {
-  return `${formatCurrency(Math.abs(n))}`;
-}
-
-function getCurrentMonthRange(): { start: Date; end: Date } {
-  const now = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth(), 1);
-  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-  return { start, end };
-}
-
-function estimateCOGS(sales: Sale[]): number {
-  // Si hay costPrice en items, usar ese; si no, estimar 60% del precio de venta
-  let cogs = 0;
-  for (const s of sales) {
-    for (const item of s.items ?? []) {
-      const cost = item.costPrice != null
-        ? item.costPrice * item.quantity
-        : item.price * item.quantity * 0.6;
-      cogs += cost;
-    }
-  }
-  return cogs;
-}
-
-// ── Main Component ─────────────────────────────────────────────────────────────
-
+/**
+ * «Resultado del mes» en los Resúmenes automáticos de Mi Plata.
+ *
+ * Es el MISMO número que «Ganancias y pérdidas» (`useResultadoDelMes` → GET
+ * /api/finanzas/resultado): el servidor suma ingresos y costos con sus reglas
+ * (costo real de lo vendido, gastos, planilla, madera) y esta tarjeta sólo lo
+ * pinta. Antes bajaba TODAS las ventas de /api/sales, las sumaba en el
+ * navegador, estimaba el costo al 60 % y restaba un total de gastos sin fecha:
+ * dos «ganancias» distintas en el mismo módulo.
+ */
 export default function ProfitLossAutoCard() {
-  const [_report, setReport] = useState<DailyReport | null>(null);
-  const [expenses, setExpenses] = useState<ExpenseSummary | null>(null);
-  const [monthlySales, setMonthlySales] = useState<Sale[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchAll = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [dashRes, expRes, salesRes] = await Promise.all([
-        fetch("/api/daily-report").then(r => r.ok ? r.json() : null).catch(sinDato("Ganancias del mes /api/daily-report")),
-        fetch("/api/expenses/summary").then(r => r.ok ? r.json() : null).catch(sinDato("Ganancias del mes /api/expenses/summary")),
-        fetch("/api/sales").then(r => r.ok ? r.json() : []).catch(() => []),
-      ]);
-
-      setReport(dashRes);
-      setExpenses(expRes);
-
-      const { start, end } = getCurrentMonthRange();
-      const all: Sale[] = Array.isArray(salesRes) ? salesRes : [];
-      setMonthlySales(all.filter(s => {
-        const d = new Date(s.createdAt);
-        return d >= start && d <= end;
-      }));
-    } catch {
-      setError("No se pudo cargar el estado de resultados.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchAll();
-  }, [fetchAll]);
-
-  // Calculos P&L
-  const revenue = monthlySales.reduce((sum, s) => sum + (s.total ?? 0), 0);
-  const cogs = estimateCOGS(monthlySales);
-  const grossProfit = revenue - cogs;
-  const operatingExpenses = expenses?.total ?? 0;
-  const netProfit = grossProfit - operatingExpenses;
-  const netMargin = revenue > 0 ? (netProfit / revenue) * 100 : 0;
-
-  const rows: PLRow[] = [
-    { label: "Ingresos (ventas del mes)", amount: revenue },
-    { label: "Costo de productos (COGS)", amount: cogs, isSubtract: true, indent: true },
-    { label: "Gastos operativos", amount: operatingExpenses, isSubtract: true, indent: true },
-    { label: "UTILIDAD NETA", amount: netProfit, isFinal: true },
-  ];
-
-  const now = new Date();
-  const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-  const periodLabel = `${MONTHS[now.getMonth()]} ${now.getFullYear()}`;
-
-  // ── Render ──────────────────────────────────────────────────────────────────
+  const mes = limaDateKey().slice(0, 7);
+  const ve = useVeLaPlataDelNegocio();
+  const { datos, cargando, error, sinPermiso, recargar } = useResultadoDelMes(ve === "si" ? mes : null, 1);
+  const actual = datos && datos.actual.mes === mes ? datos.actual : null;
+  const noLoVe = ve === "no" || sinPermiso;
+  const aprox = actual?.estimado ?? false;
+  // Margen = resultado ÷ ingresos, sobre los dos totales del servidor (no se suma nada acá).
+  // Con ingresos casi en cero el margen se dispara (S/ 0,10 vendidos y S/ 18 de costo = −18 190 %):
+  // pasado ±999 % no dice nada y no se muestra.
+  const margen = actual ? margenDelResultado(actual.resultado, actual.totalIngresos) : null;
 
   return (
-    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]  overflow-hidden">
-      {/* Header */}
-      <div className="bg-primary px-5 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <DollarSign className="h-5 w-5 text-white" />
-          <span className="text-white font-semibold text-sm">Estado de Resultados</span>
+    <section
+      className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5"
+      aria-labelledby="resultado-auto-titulo"
+    >
+      <header className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-1.5">
+          <CardTitle as="h3" id="resultado-auto-titulo" className="text-sm font-bold">
+            Resultado de {nombreMes(mes)}
+          </CardTitle>
+          <InfoTip
+            title="Resultado del mes"
+            what="Lo que entró menos lo que costó, con el mismo cálculo de Ganancias y pérdidas."
+            affects="Si algún costo es estimado o le falta un dato, la cifra sale con ≈."
+            example="Ingresos S/ 4,000 − costos S/ 3,100 = resultado S/ 900."
+          />
         </div>
         <button
-          onClick={fetchAll}
-          disabled={loading}
-          className="text-white/70 hover:text-white transition-colors"
-          aria-label="Actualizar"
+          type="button"
+          onClick={recargar}
+          disabled={cargando || ve !== "si"}
+          aria-label="Actualizar el resultado"
+          title="Actualizar"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] disabled:opacity-50"
         >
-          <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+          <RefreshCw className={cn("h-4 w-4", cargando && "animate-spin")} aria-hidden />
         </button>
-      </div>
+      </header>
 
-      {/* Periodo */}
-      <div className="px-5 pt-3 pb-0">
-        <p className="text-xs text-[var(--text-tertiary)]">{periodLabel}</p>
-      </div>
-
-      {/* Body */}
-      <div className="p-5">
-        {loading ? (
-          <LoadingState />
+      <div className="mt-3">
+        {noLoVe ? (
+          <p className="py-4 text-sm text-[var(--text-secondary)]">El resultado del negocio lo ve sólo el dueño.</p>
         ) : error ? (
-          <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)] text-center py-6">{error}</p>
+          <p className="py-4 text-sm text-[var(--data-error-500)]">{error}</p>
+        ) : !actual ? (
+          <LoadingState />
         ) : (
-          <div className="space-y-2">
-            {/* Tabla P&L */}
-            {rows.map((row, i) => (
-              <div
-                key={i}
+          <dl className="space-y-2 text-sm">
+            <div className="flex items-center justify-between border-b border-[var(--rule-soft)] py-2">
+              <dt className="text-[var(--text-secondary)]">Ingresos</dt>
+              <dd className="font-semibold tabular-nums text-[var(--text-primary)]">{montoTexto(actual.totalIngresos)}</dd>
+            </div>
+            <div className="flex items-center justify-between border-b border-[var(--rule-soft)] py-2">
+              <dt className="pl-3 text-[var(--text-tertiary)]">− Costos y gastos</dt>
+              <dd className="font-semibold tabular-nums text-[var(--data-error-500)]">
+                {montoTexto(actual.totalCostos, { aproximado: aprox })}
+              </dd>
+            </div>
+            <div className="flex items-center justify-between pt-2">
+              <dt className="font-bold text-[var(--text-primary)]">Resultado</dt>
+              <dd
                 className={cn(
-                  "flex items-center justify-between py-2",
-                  row.isFinal
-                    ? "border-t-2 border-[var(--rule-base)] pt-3 mt-2"
-                    : i < rows.length - 2
-                    ? "border-b border-[var(--rule-base)]"
-                    : ""
+                  "text-base font-bold tabular-nums",
+                  actual.resultado >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]",
                 )}
               >
-                <span
-                  className={cn(
-                    "text-sm",
-                    row.indent && "pl-3 text-[var(--text-tertiary)]",
-                    row.isFinal && "font-bold text-[var(--text-primary)]",
-                    !row.indent && !row.isFinal && "text-[var(--text-secondary)]"
-                  )}
-                >
-                  {row.isSubtract && (
-                    <span className="text-[var(--text-tertiary)] mr-1">-</span>
-                  )}
-                  {row.label}
-                </span>
-                <span
-                  className={cn(
-                    "text-sm font-semibold tabular-nums",
-                    row.isFinal
-                      ? netProfit >= 0
-                        ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)] text-base"
-                        : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)] text-base"
-                      : row.isSubtract
-                      ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
-                      : "text-[var(--text-primary)]"
-                  )}
-                >
-                  {row.isSubtract ? `- ${fmt(row.amount)}` : fmt(row.amount)}
-                </span>
-              </div>
-            ))}
-
-            {/* Margen neto */}
-            <div className="mt-3 pt-3 border-t border-[var(--rule-base)]">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-[var(--text-tertiary)]">Margen neto</span>
-                <div className={cn(
-                  "flex items-center gap-1 text-sm font-bold",
-                  netMargin >= 0
-                    ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
-                    : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
-                )}>
-                  {netMargin >= 0
-                    ? <TrendingUp className="h-4 w-4" />
-                    : <TrendingDown className="h-4 w-4" />
-                  }
-                  {netMargin >= 0 ? "+" : ""}{netMargin.toFixed(1)}%
-                </div>
-              </div>
+                {montoTexto(actual.resultado, { aproximado: aprox, signo: true })}
+              </dd>
             </div>
-
-            {/* Aviso COGS estimado */}
-            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-2">
-              COGS calculado sobre costo registrado o estimado al 60% si no hay precio de costo.
-            </p>
-          </div>
+            {margen != null && (
+              <div className="flex items-center justify-between border-t border-[var(--rule-soft)] pt-2">
+                <dt className="text-xs text-[var(--text-tertiary)]">Margen</dt>
+                <dd
+                  className={cn(
+                    "inline-flex items-center gap-1 text-sm font-bold tabular-nums",
+                    margen >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]",
+                  )}
+                >
+                  {margen >= 0 ? <TrendingUp className="h-4 w-4" aria-hidden /> : <TrendingDown className="h-4 w-4" aria-hidden />}
+                  {aprox ? "≈ " : ""}
+                  {margen >= 0 ? "+" : ""}
+                  {margen.toFixed(1)}%
+                </dd>
+              </div>
+            )}
+          </dl>
         )}
       </div>
-    </div>
+
+      {!noLoVe && (
+        <a
+          href="/admin?tab=plata&vista=pl"
+          onClick={irEnElPanel}
+          className="mt-3 inline-flex min-h-9 items-center gap-1 text-sm font-bold text-[var(--accent-dark)] hover:underline dark:text-[var(--accent)]"
+        >
+          Ver de dónde sale <ArrowRight className="h-4 w-4" aria-hidden />
+        </a>
+      )}
+    </section>
   );
 }

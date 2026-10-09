@@ -27,7 +27,9 @@ import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { useUndoToast } from "@/components/admin/shared/UndoToast";
 import Image from "next/image";
 import QRCode from "qrcode";
-import { cn, exportToCSV } from "@/lib/utils";
+import { cn, exportToCSV, limaDateKey } from "@/lib/utils";
+import { useFiltroDeUrl } from "@/hooks/use-filtro-de-url";
+import { ETIQUETA_FALTA, esFaltaDeCatalogo, leFalta, type FaltaDeCatalogo } from "@/lib/inventario/catalogo-incompleto";
 import { StockLevelBar } from "@/components/admin/inventario/StockLevelBar";
 import { StockTrackToggle } from "@/components/admin/inventario/StockTrackToggle";
 import { InventoryContextMenu } from "@/components/admin/inventario/InventoryContextMenu";
@@ -151,6 +153,20 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
   const [vencRango, setVencRango] = useState<Rango<string>>({ min: null, max: null });
   // Mejora 8R2: Filtro sin imagen
   const [noImageOnly, setNoImageOnly] = useState(false);
+  // «Completa tu catálogo» (aviso de Inicio): productos sin costo, sin código
+  // o sin mínimo — la regla vive en `lib/inventario/catalogo-incompleto.ts`.
+  const [faltaDato, setFaltaDato] = useState<FaltaDeCatalogo | null>(null);
+  // Los avisos de Inicio llegan con `?filter=`: abrir ya filtrado lo que avisan.
+  useFiltroDeUrl((valor) => {
+    if (valor === "critical") setLowOnly(true);
+    else if (valor === "expiring") {
+      // Los mismos 7 días que cuenta el aviso de Inicio.
+      const hoy = limaDateKey();
+      const en7 = new Date(`${hoy}T12:00:00Z`);
+      en7.setUTCDate(en7.getUTCDate() + 7);
+      setVencRango({ min: hoy, max: en7.toISOString().slice(0, 10) });
+    } else if (esFaltaDeCatalogo(valor)) setFaltaDato(valor);
+  });
   const [showFilters, setShowFilters] = useState(false);
   // View mode toggle (table vs cards) — persistido en localStorage
   const [viewMode, setViewMode] = useState<"table" | "cards">(() => {
@@ -1146,7 +1162,10 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
     Boolean(p.active) && p.stock != null && p.stock <= (p.stockMin ?? 5);
 
   const isExpiringSoon = (p: DbProduct) => {
-    const expiry = (p as DbProduct & { expiryDate?: string }).expiryDate;
+    // GET /api/products manda `expiresAt` (columna de Prisma); `expiryDate` es
+    // el nombre del form. Leyendo sólo `expiryDate` el KPI quedaba en 0.
+    const expiry = (p as DbProduct & { expiryDate?: string; expiresAt?: string | null }).expiryDate
+      ?? (p as DbProduct & { expiresAt?: string | null }).expiresAt;
     if (!expiry) return false;
     const expiryDate = new Date(expiry);
     const now = new Date();
@@ -1315,7 +1334,14 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
   // ── Filtered ───────────────────────────────────────────────────────────────
 
   const noImageCount = products.filter(p => !p.image || p.image === "").length;
-  const expiryOf = (p: DbProduct) => (p as DbProduct & { expiryDate?: string }).expiryDate ?? null;
+  const expiryOf = (p: DbProduct) => {
+    const conFechas = p as DbProduct & { expiryDate?: string; expiresAt?: string | null };
+    // Sólo el día: `expiresAt` llega con hora («2026-10-16T00:00:00.000Z») y
+    // comparado como texto contra «2026-10-16» quedaba fuera del rango; el que
+    // vence el día +7 no salía en la lista aunque Inicio sí lo contaba.
+    const fecha = conFechas.expiryDate ?? conFechas.expiresAt ?? null;
+    return fecha ? fecha.slice(0, 10) : null;
+  };
 
   const filteredProducts = products.filter(p => {
     // Único filtro de Estado (antes: booleano `showInactive` + este mismo
@@ -1328,6 +1354,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
     if (!enRango(expiryOf(p), vencRango)) return false;
     // Mejora 8R2: Filtro sin imagen
     if (noImageOnly && p.image && p.image !== "") return false;
+    if (faltaDato && !leFalta(p, faltaDato)) return false;
     if (search) {
       const q = search.toLowerCase();
       return p.name.toLowerCase().includes(q) || (p.barcode && p.barcode.includes(q));
@@ -1379,7 +1406,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
   const pgMovements = usePagination(filteredMovements, 50);
 
   // Reset pagination when filters change
-  useEffect(() => { pgProducts.reset(); }, [search, catFilter, estadoFiltro, stockRango, vencRango, lowOnly, noImageOnly]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { pgProducts.reset(); }, [search, catFilter, estadoFiltro, stockRango, vencRango, lowOnly, noImageOnly, faltaDato]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { pgMovements.reset(); }, [search]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -1478,12 +1505,23 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
         >
           <Camera className="h-3.5 w-3.5" /> Sin foto ({noImageCount})
         </button>
-        {(lowOnly || showInactive || noImageOnly || catFilter.length > 0 || stockRango.min != null || stockRango.max != null || vencRango.min != null || vencRango.max != null) && (
+        {faltaDato && (
+          <button
+            type="button"
+            onClick={() => setFaltaDato(null)}
+            aria-label={`Quitar el filtro ${ETIQUETA_FALTA[faltaDato]}`}
+            className="flex items-center gap-1 px-3 h-10 rounded-xl text-xs font-bold border border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--text-primary)] transition-colors whitespace-nowrap hover:bg-[var(--accent-muted)]"
+          >
+            {ETIQUETA_FALTA[faltaDato]} <X className="h-3.5 w-3.5" aria-hidden />
+          </button>
+        )}
+        {(lowOnly || showInactive || noImageOnly || faltaDato || catFilter.length > 0 || stockRango.min != null || stockRango.max != null || vencRango.min != null || vencRango.max != null) && (
           <button
             onClick={() => {
               setLowOnly(false);
               setEstadoFiltro(["Activo"]);
               setNoImageOnly(false);
+              setFaltaDato(null);
               setCatFilter([]);
               setStockRango({ min: null, max: null });
               setVencRango({ min: null, max: null });
