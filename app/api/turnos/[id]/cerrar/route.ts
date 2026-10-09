@@ -147,8 +147,17 @@ export async function POST(
     logActivity(
       "Cerrar", "turno",
       `Turno ${id.slice(-6)} cerrado — ventas: S/${totalVentas.toFixed(2)}, diferencia: S/${diferencia.toFixed(2)}`,
-      id, auth.username,
+      id, auth.username, undefined, auth.tenantId,
     ).catch((err) => logger.warn("[turnos/id/cerrar] activity log failed", { id, err: String(err) }));
+    // La caja que se cerró con el turno también deja su «Cerrar»: es lo que lee
+    // Cuadrar caja para decir quién la cerró (sin esto, la columna salía vacía).
+    if (cashRegister) {
+      logActivity(
+        "Cerrar", "caja",
+        `Cierre con S/${parsed.data.cierreEfectivo.toFixed(2)} al cerrar el turno ${id.slice(-6)} (esperado S/${Number(cashRegister.expectedAmount ?? 0).toFixed(2)}, diferencia S/${Number(cashRegister.difference ?? 0).toFixed(2)})`,
+        cashRegister.id, auth.username, undefined, auth.tenantId,
+      ).catch((err) => logger.warn("[turnos/id/cerrar] activity log caja failed", { id, err: String(err) }));
+    }
 
     return NextResponse.json({
       ...updated,

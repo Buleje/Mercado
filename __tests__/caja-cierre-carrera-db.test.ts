@@ -333,4 +333,38 @@ describe.skipIf(!HAS_DB)("F4 · el cierre de caja y los movimientos que entran a
     expect(correo.openingAmount + correo.salesEfectivo + correo.totalIn - correo.totalOut).toBe(250);
     expect(correo.difference).toBe(0);
   }, 60_000);
+
+  it("cierre SIN conteo (null): espera al ingreso en curso y anota como contado el esperado calculado bajo el lock", async (ctx) => {
+    if (otrasAbiertas > 0) return ctx.skip();
+    const caja = await CashRegistersDB.open(T, 20, NOTA);
+    await prisma.$transaction(async (tx) => {
+      await moverCajaEnTx(tx, T, { tipo: "egreso", monto: 70, metodo: "yape", etiqueta: `${NOTA} egreso yape` });
+    });
+
+    const listo = diferido<number>();
+    const soltar = diferido();
+    const mover = prisma.$transaction(
+      async (tx) => {
+        const r = await moverCajaEnTx(tx, T, { tipo: "ingreso", monto: 35, metodo: "efectivo", etiqueta: `${NOTA} ingreso` });
+        listo.resolve(await pidDe(tx));
+        await soltar.promise;
+        return r;
+      },
+      { timeout: 30_000, maxWait: 10_000 },
+    );
+    const pid = await listo.promise;
+    /* Lo que hacen el cron y «Cerrar turno» sin monto: una cuenta hecha ANTES
+       del lock habría dado 20 y una diferencia de −35 que nadie contó. */
+    const cierre = CashRegistersDB.close(T, caja.id, null, `${NOTA} Cierre automático (prueba)`);
+    const espero = await alguienEsperaA(pid, 3_000);
+    soltar.resolve();
+    const [, c] = await Promise.all([mover, cierre]);
+
+    expect(espero, "el cierre sin conteo no esperó al movimiento en curso").toBe(true);
+    expect(c?.expectedAmount, "el egreso por Yape no sale del cajón; el ingreso en curso sí entra").toBe(55);
+    expect(c?.closingAmount).toBe(55);
+    expect(c?.difference).toBe(0);
+    const movs = await movimientosDe(caja.id);
+    expect(movs.filter((x) => x.type === "cierre").map((x) => Number(x.amount))).toEqual([55]);
+  }, 60_000);
 });

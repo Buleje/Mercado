@@ -12,6 +12,7 @@ import { CardTitle, EmptyState } from "@buleje/design-system";
 import { History, Search } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { cn } from "@/lib/utils";
+import { esCierreAutomatico } from "@/lib/caja/arqueo-veredicto";
 import { fmt, fmtDate, fmtDateShort, type CashRegister } from "./tipos";
 
 const CashRegisterChart = dynamic(() => import("../cash-register/CashRegisterChart"), {
@@ -87,7 +88,9 @@ export function CajaHistorial({ cerradas, tolerancia, onVer }: { cerradas: CashR
               <tbody className="divide-y divide-[var(--rule-soft)]">
                 {filtradas.map((r) => {
                   const diff = r.difference ?? 0;
-                  const ok = Math.abs(diff) <= tolerancia;
+                  /* Cierre automático = nadie contó: la diferencia 0 no es un cuadre. */
+                  const sinConteo = esCierreAutomatico(r.notes);
+                  const ok = !sinConteo && Math.abs(diff) <= tolerancia;
                   return (
                     <tr key={r.id} onClick={() => onVer(r)} className="cursor-pointer hover:bg-[var(--surface-alt)] transition-colors">
                       <td className="px-4 sm:px-5 py-2.5">
@@ -98,14 +101,13 @@ export function CajaHistorial({ cerradas, tolerancia, onVer }: { cerradas: CashR
                       <td className="px-2 py-2.5 text-right tabular-nums text-[var(--text-secondary)]">{r.movements.length}</td>
                       <td className="px-2 py-2.5 text-right tabular-nums text-[var(--text-secondary)]">{fmt(r.openingAmount)}</td>
                       <td className="px-2 py-2.5 text-right tabular-nums text-[var(--text-secondary)]">{fmt(r.expectedAmount ?? 0)}</td>
-                      <td className="px-2 py-2.5 text-right tabular-nums font-bold text-[var(--text-primary)]">{fmt(r.closingAmount ?? 0)}</td>
-                      <td className={cn("px-2 py-2.5 text-right tabular-nums font-bold", ok ? "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : diff > 0 ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]")}>
-                        {diff > 0 ? "+" : ""}
-                        {fmt(diff)}
+                      <td className="px-2 py-2.5 text-right tabular-nums font-bold text-[var(--text-primary)]">{sinConteo ? "—" : fmt(r.closingAmount ?? 0)}</td>
+                      <td className={cn("px-2 py-2.5 text-right tabular-nums font-bold", sinConteo ? "text-[var(--text-tertiary)]" : ok ? "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : diff > 0 ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]")}>
+                        {sinConteo ? "—" : <>{diff > 0 ? "+" : ""}{fmt(diff)}</>}
                       </td>
                       <td className="px-4 sm:px-5 py-2.5">
-                        <span className={cn("inline-flex whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-bold", ok ? "bg-primary/10 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)]")}>
-                          {ok ? `Dentro de tolerancia (±S/${tolerancia})` : "Fuera de tolerancia"}
+                        <span className={cn("inline-flex whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-bold", sinConteo ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)]" : ok ? "bg-primary/10 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)]")}>
+                          {sinConteo ? "Cerrada sin conteo" : ok ? `Dentro de tolerancia (±S/${tolerancia})` : "Fuera de tolerancia"}
                         </span>
                       </td>
                     </tr>

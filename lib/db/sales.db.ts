@@ -393,7 +393,15 @@ export const CashRegistersDB = {
     invalidarVentasOverview(tenantId);
     return mapCashRegister(row);
   },
-  async close(tenantId: string, id: string, closingAmount: number, notes?: string): Promise<DbCashRegister | null> {
+  /**
+   * Cierra la caja. `closingAmount` es lo que alguien CONTÓ en el cajón; con
+   * `null` es un cierre SIN conteo (cron, «Cerrar turno» sin contar): se anota
+   * el esperado como contado, calculado acá BAJO el lock, así la diferencia
+   * queda en 0 por construcción y no la inventa una cuenta hecha antes del lock.
+   * Quien llama con `null` marca la nota con «Cierre automático» para que el
+   * arqueo la muestre «Cerrada sin conteo» (`esCierreAutomatico`).
+   */
+  async close(tenantId: string, id: string, closingAmount: number | null, notes?: string): Promise<DbCashRegister | null> {
     // Y4 FIX 2026-05-07: updateMany + cashMovement.create ahora en la MISMA
     // $transaction. Antes si el proceso moría entre ambas llamadas la caja
     // quedaba cerrada sin movimiento de cierre, rompiendo el cuadre contable.
@@ -421,19 +429,20 @@ export const CashRegistersDB = {
         toNumOrZero(reg.openingAmount),
         reg.movements.map((m) => ({ type: m.type, method: m.method, amount: toNumOrZero(m.amount) })),
       ).esperado;
-      const difference = Math.round((closingAmount - expectedAmount) * 100) / 100;
+      const contado = closingAmount ?? expectedAmount;
+      const difference = Math.round((contado - expectedAmount) * 100) / 100;
 
       // Optimistic lock: solo actualiza si closedAt sigue siendo null
       const result = await tx.cashRegister.updateMany({
         where: { id, tenantId, closedAt: null },
-        data: { status: "cerrada", closedAt: new Date(), closingAmount, expectedAmount, difference, notes },
+        data: { status: "cerrada", closedAt: new Date(), closingAmount: contado, expectedAmount, difference, notes },
       });
 
       if (result.count === 0) return null; // Otro request llegó primero
 
       // Movimiento de cierre en la MISMA tx: si falla, el update se revierte
       await tx.cashMovement.create({
-        data: { cashRegisterId: id, type: "cierre", amount: closingAmount, method: "efectivo", description: "Cierre de caja" },
+        data: { cashRegisterId: id, type: "cierre", amount: contado, method: "efectivo", description: "Cierre de caja" },
       });
 
       return tx.cashRegister.findUnique({

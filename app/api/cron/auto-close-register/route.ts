@@ -5,7 +5,6 @@ import { CashRegistersDB } from "@/lib/db/sales.db";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
-import { saldoEsperadoDeCaja } from "@/lib/caja/saldo-esperado";
 
 /**
  * GET /api/cron/auto-close-register
@@ -62,20 +61,22 @@ export async function GET(req: NextRequest) {
         // cuenta que el cierre (`saldoEsperadoDeCaja`, sólo efectivo). La copia
         // de antes sumaba también las ventas por Yape/tarjeta/fiado, y cada
         // cierre automático quedaba con un «sobrante» que nadie contó.
-        const expectedClosing = saldoEsperadoDeCaja(reg.openingAmount, reg.movements).esperado;
-
+        // Desde 2026-10-08 es un cierre SIN conteo (`null`): el esperado se
+        // calcula y se anota como contado DENTRO del lock del cierre; la nota
+        // «Cierre automático…» lo muestra «Cerrada sin conteo» en el arqueo.
         // Cada caja se cierra con SU tenantId: cerrar la de otro tenant con
         // "main" es escribir en el aislamiento de al lado.
         const updated = await CashRegistersDB.close(
           tenantId,
           reg.id,
-          expectedClosing,
+          null,
           "Cierre automático del sistema"
         );
 
         if (updated) {
           closed++;
           closedIds.push(reg.id);
+          const expectedClosing = Number(updated.expectedAmount ?? 0);
           logger.info("[cron/auto-close-register] Caja cerrada automáticamente", {
             registerId: reg.id,
             tenantId,
@@ -83,12 +84,17 @@ export async function GET(req: NextRequest) {
             openedAt: reg.openedAt,
             expectedClosing,
           });
+          // «Cerrar»/«caja» con el tenant: es lo que lee Cuadrar caja para decir
+          // quién la cerró. Antes iba como «auto-close»/«CashRegister» y SIN
+          // tenantId: no aparecía en ningún historial.
           logActivity(
-            "auto-close",
-            "CashRegister",
+            "Cerrar",
+            "caja",
             `Caja ${reg.id} cerrada automáticamente por inactividad (abierta desde ${reg.openedAt})`,
             reg.id,
-            "cron"
+            "sistema",
+            undefined,
+            tenantId,
           ).catch((err) => logger.error("[auto-close-register] logActivity failed", { error: String(err) }));
         }
       }

@@ -76,7 +76,7 @@ export async function generateNotifications(tenantId: string): Promise<number> {
         severity: "HIGH",
         title: "Turno sin cerrar",
         body: "Turno abierto hace más de 14 horas",
-        actionUrl: "/admin?tab=turnos",
+        actionUrl: "/admin?tab=ventas-caja&vista=turnos",
         actionLabel: "Cerrar turno",
         entityId: t.id,
       });
@@ -140,7 +140,8 @@ export async function generateNotifications(tenantId: string): Promise<number> {
           severity,
           title: `Diferencia de caja: ${diff >= 0 ? "+" : ""}S/${diff.toFixed(2)}`,
           body: `Caja cerrada el ${r.closedAt?.toLocaleDateString("es-PE") ?? "hoy"} con diferencia ${diff < 0 ? "negativa" : "positiva"} de S/${Math.abs(diff).toFixed(2)}`,
-          actionUrl: "/admin?tab=caja",
+          // `tab=caja` migraba a ventas-caja y abría «Vender»: la diferencia se revisa en Cuadrar caja.
+          actionUrl: "/admin?tab=ventas-caja&vista=arqueo",
           actionLabel: "Ver caja",
           entityId: r.id,
         });
@@ -171,7 +172,8 @@ export async function generateNotifications(tenantId: string): Promise<number> {
           severity,
           title: `Diferencia de caja diaria: ${diff >= 0 ? "+" : ""}S/${diff.toFixed(2)}`,
           body: `Resumen del ${s.fecha.toLocaleDateString("es-PE")} — Creado por: ${s.creadoPor}`,
-          actionUrl: "/admin?tab=caja",
+          // El resumen diario vive en Mi Plata › Reportes (Historial de cierres).
+          actionUrl: "/admin?tab=plata&vista=reportes",
           actionLabel: "Ver resumen",
           entityId: s.id,
         });

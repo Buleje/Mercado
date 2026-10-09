@@ -6,6 +6,7 @@ import { htmlReporteDeCaja } from "@/lib/caja/reporte-impreso";
 import { origenDeMovimiento } from "@/lib/caja/origen-movimiento";
 import { formatCurrency, formatDateLong, formatTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { esCierreAutomatico } from "@/lib/caja/arqueo-veredicto";
 import { MarcoModalCaja } from "./MarcoModalCaja";
 import { CajaCuadreDelDia } from "./CajaCuadreDelDia";
 import { useTenant } from "@/contexts/tenant-context";
@@ -27,6 +28,8 @@ export function ModalDetalleCaja({ caja, onCerrar }: { caja: CashRegister; onCer
     p.n += 1;
   }
   const diferencia = caja.difference ?? 0;
+  /* Cierre automático = nadie contó: la diferencia 0 no es un cuadre. */
+  const sinConteo = caja.status === "cerrada" && esCierreAutomatico(caja.notes);
 
   /* Antes: `window.print()` imprimía la página entera del panel. Ahora sale la
      hoja del reporte de esa caja, con su parte si ya llegó. */
@@ -68,11 +71,12 @@ export function ModalDetalleCaja({ caja, onCerrar }: { caja: CashRegister; onCer
       <p
         className={cn(
           "rounded-xl px-3 py-2 text-center text-sm font-bold",
-          diferencia >= 0 ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 text-[var(--data-error-500)]",
+          sinConteo
+            ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
+            : diferencia >= 0 ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 text-[var(--data-error-500)]",
         )}
       >
-        Diferencia: {diferencia > 0 ? "+" : ""}
-        {fmt(diferencia)}
+        {sinConteo ? "Cerrada sin conteo: nadie contó el efectivo" : <>Diferencia: {diferencia > 0 ? "+" : ""}{fmt(diferencia)}</>}
       </p>
 
       {Object.keys(porMedio).length > 0 && (

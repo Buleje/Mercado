@@ -11,6 +11,7 @@ import {
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { esCierreAutomatico } from "@/lib/caja/arqueo-veredicto";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { formatCurrency } from "@/lib/currency";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
@@ -711,7 +712,7 @@ function LogrosTab() {
       const goals   = goalsRes?.ok   ? await goalsRes.json()   as Array<{ target: number; current: number; period?: string }> : [];
       const salesR  = salesRes?.ok   ? await salesRes.json()   as unknown : [];
       const fiados  = fiadosRes?.ok  ? await fiadosRes.json()  as Array<{ amountPaid?: number; status?: string }> : [];
-      const cashR   = cashRes?.ok    ? await cashRes.json()    as Array<{ openedAt?: string; closedAt?: string; difference?: number }> : [];
+      const cashR   = cashRes?.ok    ? await cashRes.json()    as Array<{ openedAt?: string; closedAt?: string; difference?: number; notes?: string | null }> : [];
       const reviews = reviewsRes?.ok ? await reviewsRes.json() as Array<{ rating?: number; status?: string }> : [];
 
       const sales = (Array.isArray(salesR) ? salesR : []).filter(isValidSale) as SaleRecord[];
@@ -735,7 +736,8 @@ function LogrosTab() {
         .sort((a, b) => new Date(b.closedAt!).getTime() - new Date(a.closedAt!).getTime());
       let perfectClosures = 0;
       for (const r of closedSorted) {
-        if (Math.abs(Number(r.difference ?? 0)) < 0.01) perfectClosures += 1;
+        // Un cierre automático (turno olvidado) rompe la racha: nadie contó.
+        if (!esCierreAutomatico(r.notes) && Math.abs(Number(r.difference ?? 0)) < 0.01) perfectClosures += 1;
         else break; // racha consecutiva — primera diferencia rompe la cuenta
         if (perfectClosures >= 3) break;
       }

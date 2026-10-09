@@ -12,13 +12,10 @@ import { logger } from "@/lib/logger";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
 import { z } from "zod";
 import { METODOS_DE_CAJA, saldoEsperadoDeCaja } from "@/lib/caja/saldo-esperado";
+import { TOPE_CAJA, montoContado } from "@/lib/caja/monto-contado";
 
 // Umbral de anomalia en arqueo: diferencias mayores generan alerta admin.
 const ANOMALY_THRESHOLD_SOL = 50;
-
-/** Tope de un monto de caja: Decimal(12,2) aguanta más, pero un movimiento de diez millones es un error de tipeo. */
-const TOPE_CAJA = 10_000_000;
-const montoContado = z.number().finite().min(0, "El monto contado no puede ser negativo.").max(TOPE_CAJA, "Monto fuera de rango.");
 
 /**
  * F4 (revisión de seguridad): el cuerpo se validaba con un `as {…}`. Un cajero
@@ -83,6 +80,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         const closingAmount = body.closingAmount;
         const notes = body.notes ?? undefined;
         const reg = await CashRegistersDB.close(auth.tenantId, id, closingAmount, notes);
+        // Sin caja cerrada no hay «Cerrar» que anotar: el que perdió la carrera
+        // dejaba un «Cerrar» (esperado S/0.00) y Cuadrar caja lo mostraba como quien cerró.
+        if (!reg) return NextResponse.json({ error: "Register not found" }, { status: 404 });
         // Cerrar es el otro momento en que se fija el dinero: queda quién contó,
         // cuánto declaró y qué diferencia dio contra lo esperado.
         const esperado = Number(reg?.expectedAmount ?? reg?.openingAmount ?? 0);
@@ -96,7 +96,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           undefined,
           auth.tenantId,
         ).catch((err) => logger.warn("[cash-registers] activity log failed", { err: String(err) }));
-        if (!reg) return NextResponse.json({ error: "Register not found" }, { status: 404 });
 
         // Send summary email (fire and forget — do not block response).
         // Los renglones salen de la MISMA cuenta que el cierre
@@ -151,7 +150,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
                 severity: "HIGH",
                 title: isShort ? "Faltante en arqueo" : "Sobrante en arqueo",
                 body: `Caja ${id.slice(-6)} · ${auth.username}: ${isShort ? "faltan" : "sobran"} S/${Math.abs(diff).toFixed(2)} (esperado S/${expected.toFixed(2)} · contado S/${arqueoAmount.toFixed(2)})`,
-                actionUrl: `/admin?tab=ventas-caja#arqueo`,
+                // `#arqueo` no lo lee nadie: abría «Vender». La subvista va en `?vista=`.
+                actionUrl: `/admin?tab=ventas-caja&vista=arqueo`,
                 actionLabel: "Revisar arqueo",
                 entityId: id,
               }).catch((err) => logger.warn("[cash-registers/arqueo] anomaly notify failed", { err: String(err) }));
