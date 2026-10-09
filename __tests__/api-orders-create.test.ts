@@ -234,6 +234,9 @@ import {
   getCustomerPayload,
   getSeguimientoPedidos,
 } from "@/lib/auth/customer-session";
+import { calcularTotalPedido } from "@/lib/pricing/total-pedido";
+import { canjeDeLaVista } from "@/components/checkout/hooks/checkout-submit-helpers";
+import { LoyaltyInsufficientBalanceError } from "@/lib/db/loyalty.db";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -684,5 +687,122 @@ describe("GET /api/orders", () => {
     expect(res.status).toBe(500);
     const body = await res.json();
     expect(body.error).toBe("Internal server error");
+  });
+});
+
+// ── Canje de puntos (2026-10-08) ─────────────────────────────────────────────
+// 100 pts = S/ 1, tope 50 % del total sin puntos. Solo con sesión VERIFICADA
+// del mismo teléfono y negocio; el débito real va en OrdersDB.add (misma tx
+// que crea el pedido: tests en orders-db-canje-puntos.test.ts).
+describe("POST /api/orders — canje de puntos", () => {
+  const COOKIE = "buleje-customer-sess";
+  const TEL = "987654321";
+  const sesion = (telefono = TEL, tenantId = "main") =>
+    createCustomerToken({
+      customerId: telefono,
+      email: `${telefono}@x.pe`,
+      name: "Dueña del número",
+      tenantId,
+      provider: "phone",
+    });
+  const conSesion = (body: unknown, token?: string, extra: Record<string, string> = {}) =>
+    makePostReq(body, {
+      "x-tenant-id": "main",
+      ...(token && { cookie: `${COOKIE}=${encodeURIComponent(token)}` }),
+      ...extra,
+    });
+  /** El saldo que lee LoyaltyDB.getBalance (Customer.loyaltyPoints). */
+  const saldo = (puntos: number) =>
+    mockCustomerFindUnique.mockResolvedValue({ phone: TEL, tenantId: "main", loyaltyPoints: puntos });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockOrderFindFirst.mockResolvedValue(null);
+    mockOrderCount.mockResolvedValue(0);
+    mockTenantFindFirst.mockResolvedValue({ plan: "free" });
+    mockProductFindMany.mockResolvedValue([{ id: 1, price: dec(5.5), costPrice: dec(3.85), stock: null }]);
+    mockCustomerNotifCreate.mockResolvedValue(undefined);
+    mockOrdersAdd.mockResolvedValue(SAVED_ORDER);
+    mockOrdersGetByCustomerPhone.mockResolvedValue([SAVED_ORDER]);
+    mockCouponsGetByCode.mockResolvedValue(null);
+    mockPromotionsGetAll.mockResolvedValue([]);
+  });
+
+  it("canje válido: 201, total menor y OrdersDB.add descuenta en la misma tx; total = vista previa", async () => {
+    saldo(500);
+    // Vista previa del checkout (mismas funciones que el servidor).
+    const vista = canjeDeLaVista(
+      { points: 500, redemptionSoles: 5, sesionVerificada: true, telefono: TEL },
+      TEL,
+      calcularTotalPedido({ subtotal: 11 }),
+    );
+    const totalVista = calcularTotalPedido({ subtotal: 11, descuentoPuntos: vista.soles });
+    expect(vista).toMatchObject({ disponible: true, puntos: 500, soles: 5 });
+    expect(totalVista).toBe(6);
+
+    const res = await POST(
+      conSesion({ ...VALID_BODY, total: totalVista, puntosACanjear: vista.puntos }, await sesion()),
+      defaultCtx,
+    );
+    expect(res.status).toBe(201);
+    const [order, tenant, opts] = mockOrdersAdd.mock.calls[0];
+    expect(order.total).toBe(totalVista);
+    expect(order.notes).toContain("Canje de puntos: 500 pts");
+    expect(tenant).toBe("main");
+    expect(opts).toEqual({ canjePuntos: { clienteId: TEL, puntos: 500, soles: 5 } });
+    expect((await res.json()).puntosCanjeados).toEqual({ puntos: 500, soles: 5 });
+  });
+
+  it("canje mayor que el saldo: 409 y no se crea el pedido", async () => {
+    saldo(300);
+    const res = await POST(conSesion({ ...VALID_BODY, total: 6, puntosACanjear: 500 }, await sesion()), defaultCtx);
+    expect(res.status).toBe(409);
+    expect((await res.json()).code).toBe("PUNTOS_INSUFICIENTES");
+    expect(mockOrdersAdd).not.toHaveBeenCalled();
+  });
+
+  it("canje sobre el tope (50 % del total): 400 con el máximo", async () => {
+    saldo(5000);
+    const res = await POST(conSesion({ ...VALID_BODY, total: 5, puntosACanjear: 600 }, await sesion()), defaultCtx);
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ code: "PUNTOS_SOBRE_TOPE", maxPuntos: 550 });
+    expect(mockOrdersAdd).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["invitado (sin cookie)", undefined],
+    ["sesión de OTRO teléfono", "sesion-otro"],
+    ["sesión de OTRO negocio", "sesion-otro-negocio"],
+  ])("%s con puntosACanjear: 401 y los puntos no se leen ni se tocan", async (_caso, cual) => {
+    saldo(500);
+    const token =
+      cual === "sesion-otro" ? await sesion("912345678") : cual === "sesion-otro-negocio" ? await sesion(TEL, "otro") : undefined;
+    const res = await POST(conSesion({ ...VALID_BODY, total: 6, puntosACanjear: 500 }, token), defaultCtx);
+    expect(res.status).toBe(401);
+    expect((await res.json()).code).toBe("CANJE_REQUIERE_SESION");
+    expect(mockOrdersAdd).not.toHaveBeenCalled();
+    expect(mockCustomerFindUnique).not.toHaveBeenCalled();
+  });
+
+  it("otro pedido gastó los puntos entre la validación y el débito: 409, sin pedido", async () => {
+    saldo(500);
+    mockOrdersAdd.mockRejectedValueOnce(new LoyaltyInsufficientBalanceError(0, 500));
+    const res = await POST(conSesion({ ...VALID_BODY, total: 6, puntosACanjear: 500 }, await sesion()), defaultCtx);
+    expect(res.status).toBe(409);
+    expect((await res.json()).code).toBe("PUNTOS_INSUFICIENTES");
+  });
+
+  it("reintento simultáneo con la misma clave: 200 con el pedido del primero", async () => {
+    saldo(500);
+    mockOrderFindFirst.mockResolvedValueOnce(null).mockResolvedValueOnce(SAVED_ORDER);
+    mockOrdersAdd.mockRejectedValueOnce(
+      Object.assign(new Error("Unique constraint failed"), { code: "P2002", meta: { target: ["idempotencyKey"] } }),
+    );
+    const res = await POST(
+      conSesion({ ...VALID_BODY, total: 6, puntosACanjear: 500 }, await sesion(), { "x-idempotency-key": "clave-1" }),
+      defaultCtx,
+    );
+    expect(res.status).toBe(200);
+    expect((await res.json()).id).toBe(SAVED_ORDER.id);
   });
 });

@@ -44,7 +44,13 @@ const INITIAL_COUPON: CouponState = {
   validating: false,
 };
 
-const INITIAL_LOYALTY: LoyaltyState = { points: null, tier: null, redemptionSoles: 0 };
+const INITIAL_LOYALTY: LoyaltyState = {
+  points: null,
+  tier: null,
+  redemptionSoles: 0,
+  sesionVerificada: null,
+  telefono: null,
+};
 
 const INITIAL_PAYMENT: PaymentState = {
   method: null,

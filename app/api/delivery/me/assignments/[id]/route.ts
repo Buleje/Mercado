@@ -6,6 +6,7 @@ import { requirePartner } from "@/lib/delivery/partner-session";
 import { logger } from "@/lib/logger";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { DeliveryNotifyDB } from "@/lib/db/delivery.db";
+import { OrdersDB } from "@/lib/db/orders.db";
 
 /**
  * GET /api/delivery/me/assignments/[id]
@@ -183,7 +184,11 @@ export async function PATCH(
         cancelled: "cancelado",
       };
       const nextOrderStatus = ASSIGN_TO_ORDER_STATUS[parsed.data.status];
-      if (nextOrderStatus) {
+      // «cancelado» NO va por este update: pasa por `cancelarConReposicion`
+      // después del commit (devuelve stock y puntos canjeados una sola vez y
+      // nunca cancela un entregado). Adentro de esta tx se trabaría con ella:
+      // las dos tocan la misma fila del pedido.
+      if (nextOrderStatus && nextOrderStatus !== "cancelado") {
         await tx.order.update({
           where: { id: assignment.orderId },
           data: {
@@ -195,11 +200,29 @@ export async function PATCH(
         });
       }
 
-      return { ok: true, orderId: assignment.orderId, newStatus: parsed.data.status };
+      return {
+        ok: true,
+        orderId: assignment.orderId,
+        tenantId: assignment.tenantId,
+        newStatus: parsed.data.status,
+        cancelarPedido: nextOrderStatus === "cancelado",
+      };
     });
 
     if ("error" in result) {
       return NextResponse.json({ error: result.error }, { status: result.code });
+    }
+    if (result.cancelarPedido) {
+      await OrdersDB.cancelarConReposicion(
+        result.tenantId,
+        result.orderId,
+        "cancelado por el repartidor",
+      ).catch((err) =>
+        logger.error("[delivery/me/assignment-status] cancelar pedido falló", {
+          error: String(err),
+          orderId: result.orderId,
+        }),
+      );
     }
     logger.info("[delivery/me/assignment-status]", {
       partnerId: session.partnerId,

@@ -17,6 +17,17 @@
  * Archivo puro (sin DB ni `server-only`): lo importa el navegador.
  */
 
+import { PTS_PER_SOL } from "@/lib/loyalty-constants";
+
+/**
+ * Canje de puntos en el checkout (2026-10-08): 100 puntos = S/ 1
+ * (`PTS_PER_SOL`, la misma regla del marketplace y de los premios), o sea 1
+ * punto = 1 céntimo: cualquier cantidad entera de puntos cae justo en céntimos.
+ * Tope: los puntos pagan como mucho este % del total ya descontado (cupón,
+ * promoción y descuento automático); el resto se paga con plata.
+ */
+export const TOPE_CANJE_PCT = 50;
+
 /** Redondea a céntimos (2 decimales). */
 export function redondearCentimos(monto: number): number {
   return Math.round(monto * 100) / 100;
@@ -55,6 +66,8 @@ export function calcularTotalPedido(p: {
   descuentoCupon?: number;
   descuentoPromo?: number;
   descuentoAutomatico?: number;
+  /** Soles que pagan los puntos canjeados (`solesPorPuntos`), ya topados. */
+  descuentoPuntos?: number;
 }): number {
   return Math.max(
     0,
@@ -62,7 +75,27 @@ export function calcularTotalPedido(p: {
       p.subtotal -
         (p.descuentoCupon ?? 0) -
         (p.descuentoPromo ?? 0) -
-        (p.descuentoAutomatico ?? 0),
+        (p.descuentoAutomatico ?? 0) -
+        (p.descuentoPuntos ?? 0),
     ),
   );
+}
+
+/** Soles que valen `puntos` (100 pts = S/ 1), al céntimo. */
+export function solesPorPuntos(puntos: number): number {
+  if (!Number.isFinite(puntos) || puntos <= 0) return 0;
+  return redondearCentimos(Math.floor(puntos) / PTS_PER_SOL);
+}
+
+/**
+ * Cuántos puntos se pueden canjear en este pedido: lo que tiene el cliente,
+ * sin pasar del `TOPE_CANJE_PCT` % del total sin puntos. Entero; 0 si no hay
+ * saldo o total. Servidor y vista previa usan esta misma cuenta.
+ */
+export function maxPuntosCanjeables(saldo: number, totalSinPuntos: number): number {
+  if (!Number.isFinite(saldo) || saldo <= 0) return 0;
+  const topeSoles = porcentajeDe(Math.max(0, totalSinPuntos), TOPE_CANJE_PCT);
+  // `topeSoles` ya está en céntimos: ×100 da puntos enteros (1 pt = 1 céntimo).
+  const topePuntos = Math.floor(Math.round(topeSoles * 100) * (PTS_PER_SOL / 100));
+  return Math.max(0, Math.min(Math.floor(saldo), topePuntos));
 }

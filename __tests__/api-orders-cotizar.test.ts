@@ -27,10 +27,15 @@ vi.mock("@/lib/db/misc.db", () => ({
     return d.length >= 9 ? d.slice(-9) : d;
   },
 }));
-vi.mock("@/lib/auth/customer-session", () => ({
-  CUSTOMER_SESSION: { COOKIE_NAME: "customer-session" },
-  getCustomerPayload: mockPayload,
-}));
+vi.mock("@/lib/auth/customer-session", async (importOriginal) => {
+  const real = await importOriginal<typeof import("@/lib/auth/customer-session")>();
+  return {
+    CUSTOMER_SESSION: { COOKIE_NAME: "customer-session" },
+    getCustomerPayload: mockPayload,
+    // Real: qué sesión prueba el teléfono es justo lo que se prueba acá.
+    telefonoDeLaSesion: real.telefonoDeLaSesion,
+  };
+});
 vi.mock("@/lib/rate-limit", () => ({ applyRateLimitWithTenant: mockRate }));
 vi.mock("@/lib/resolve-tenant", () => ({
   // Negocio inexistente o dado de baja → null (lo decide tenantIdPublico).
@@ -172,7 +177,7 @@ describe("GET /api/orders/cotizar", () => {
 
   it("con la sesión de ESE teléfono usa su historial (primera compra)", async () => {
     mockContar.mockResolvedValue(0);
-    mockPayload.mockResolvedValue({ customerId: "51981506890" });
+    mockPayload.mockResolvedValue({ customerId: "981506890", provider: "phone" });
     const res = await GET(req("telefono=981506890&subtotal=11.9&unidades=1", "main", "tok"));
     const body = await res.json();
     expect(body.descuentoAutomatico).toEqual({
@@ -183,7 +188,7 @@ describe("GET /api/orders/cotizar", () => {
 
   it("sesión de OTRO teléfono → como invitado (no lee el historial ajeno)", async () => {
     mockContar.mockResolvedValue(0);
-    mockPayload.mockResolvedValue({ customerId: "999999999" });
+    mockPayload.mockResolvedValue({ customerId: "999999999", provider: "phone" });
     const res = await GET(req("telefono=981506890&subtotal=11.9&unidades=1", "main", "tok"));
     expect((await res.json()).descuentoAutomatico).toBeNull();
     expect(mockContar).not.toHaveBeenCalled();
@@ -210,5 +215,12 @@ describe("GET /api/orders/cotizar", () => {
   it("subtotal inválido → 400", async () => {
     const res = await GET(req("subtotal=abc&unidades=1"));
     expect(res.status).toBe(400);
+  });
+  it("sesión de Google con la ficha de ese teléfono → como invitado (Google no prueba el teléfono)", async () => {
+    mockContar.mockResolvedValue(0);
+    mockPayload.mockResolvedValue({ customerId: "981506890", provider: "google" });
+    const res = await GET(req("telefono=981506890&subtotal=11.9&unidades=1", "main", "tok"));
+    expect((await res.json()).descuentoAutomatico).toBeNull();
+    expect(mockContar).not.toHaveBeenCalled();
   });
 });

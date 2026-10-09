@@ -384,6 +384,12 @@ async function deleteOrder(
 ): Promise<NextResponse> {
   const { id } = await params;
   try {
+    // Antes de borrar: cancelar con reposición. Devuelve el stock y los puntos
+    // canjeados UNA vez (`cancelledAt`), y nunca de un pedido entregado o ya
+    // cancelado. «Rechazar Yape» del panel borra el pedido pendiente: sin esto
+    // el cliente perdía los puntos que había canjeado. El saldo en caché lo
+    // invalida `writeTransaction` (loyalty.db).
+    await OrdersDB.cancelarConReposicion(auth.tenantId, id, "eliminado");
     await OrdersDB.delete(auth.tenantId, id);
     const reqId = req.headers.get("x-request-id") ?? undefined;
     logActivity("Eliminar", "pedido", `Pedido ${id.slice(-6)} eliminado`, id, auth.username, reqId).catch((err) => logger.warn("[orders/id] background task failed", { orderId: id, err: String(err) }));

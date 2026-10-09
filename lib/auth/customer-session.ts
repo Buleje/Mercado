@@ -77,6 +77,48 @@ export function esSesionVerificada(p: { provider: string }): boolean {
   return PROVEEDORES_VERIFICADOS.has(p.provider);
 }
 
+/**
+ * Proveedores cuyo login PRUEBA un teléfono: el código por WhatsApp/SMS, y
+ * `e2e` solo fuera de producción (`esSesionVerificada`). Google y Facebook
+ * prueban un correo o una cuenta, nunca un teléfono (security 2026-10-08).
+ */
+const PROVEEDORES_DE_TELEFONO: ReadonlySet<string> = new Set(["phone", "e2e"]);
+
+/**
+ * El teléfono que esta sesión PRUEBA (9 dígitos), o null. Es la única llave
+ * para leer o gastar lo de un teléfono: historial, puntos, canje, fiado,
+ * notificaciones, juntas, chat.
+ *
+ * `customerId` tiene que ser EXACTAMENTE 9 dígitos: `normalizePhone` se queda
+ * con los últimos 9, así que «google_1177…987654321» se volvía el teléfono
+ * 987654321 de otra persona.
+ */
+export function telefonoDeLaSesion(
+  p: Pick<CustomerPayload, "customerId" | "provider"> | null | undefined,
+): string | null {
+  if (!p?.customerId || !esSesionVerificada(p) || !PROVEEDORES_DE_TELEFONO.has(p.provider)) {
+    return null;
+  }
+  return /^\d{9}$/.test(p.customerId) ? p.customerId : null;
+}
+
+/**
+ * Ficha propia de cada login social: Google y Facebook SIEMPRE crean y usan
+ * la ficha `google_<id>` / `facebook_<id>`. Un token de Google con otro
+ * `customerId` es de antes del 08-10, cuando el callback vinculaba por correo
+ * y ese correo podía haberlo escrito un invitado: no vale (se vuelve a entrar
+ * y queda en su ficha propia).
+ */
+const PREFIJO_FICHA_SOCIAL: Readonly<Record<string, string>> = {
+  google: "google_",
+  facebook: "facebook_",
+};
+
+function fichaSocialPropia(p: { customerId?: string; provider: string }): boolean {
+  const prefijo = PREFIJO_FICHA_SOCIAL[p.provider];
+  return !prefijo || (p.customerId?.startsWith(prefijo) ?? false);
+}
+
 // ── Internal crypto helpers (same pattern as lib/session.ts) ──
 
 /**
@@ -243,7 +285,7 @@ export async function getCustomerPayload(
   token: string,
 ): Promise<CustomerPayload | null> {
   const p = await leerToken(token);
-  if (!p || !esSesionVerificada(p)) return null;
+  if (!p || !esSesionVerificada(p) || !fichaSocialPropia(p)) return null;
   return p;
 }
 

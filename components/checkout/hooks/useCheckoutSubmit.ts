@@ -17,6 +17,7 @@ import {
   telefonoDelPedido,
 } from "./checkout-submit-helpers";
 import type { DescuentoAutomaticoVista } from "@/lib/pricing/total-pedido";
+import { PTS_PER_SOL } from "@/lib/loyalty-constants";
 
 /**
  * useCheckoutSubmit — orquesta el envío final del pedido.
@@ -45,6 +46,8 @@ type Args = {
   effectiveCustomer: Customer | null;
   promo: { id: string; discountPercent: number } | null;
   discount: number;
+  /** Puntos que canjea el pedido (`canjeDeLaVista`); 0 o ausente = sin canje. */
+  puntosACanjear?: number;
   dispatch: CheckoutDispatch;
   cartActions: {
     clear: () => void;
@@ -84,6 +87,7 @@ export function useCheckoutSubmit({
   effectiveCustomer,
   promo,
   discount,
+  puntosACanjear = 0,
   dispatch,
   cartActions,
   customerActions,
@@ -94,6 +98,7 @@ export function useCheckoutSubmit({
     telefono: telefonoDelPedido(resolveEffectiveValues(state, effectiveCustomer).phone),
     cupon: state.coupon.applied ? state.coupon.code.trim() : "",
     promoId: promo?.id ?? "",
+    puntos: puntosACanjear,
   });
   const [ajuste, setAjuste] = useState<(AjusteServidor & { firma: string }) | null>(null);
   // Si el cliente cambió el carrito, el teléfono, el cupón o la promo, el total
@@ -166,6 +171,7 @@ export function useCheckoutSubmit({
       promo,
       discount,
       juntaCode: getActiveJunta() ?? undefined,
+      puntosACanjear,
     });
 
     // 5. Retry con backoff — idempotency key garantiza que reintentos
@@ -235,6 +241,8 @@ export function useCheckoutSubmit({
             message?: string;
             code?: string;
             serverTotal?: number;
+            /** PUNTOS_SOBRE_TOPE: lo más que este pedido deja canjear. */
+            maxPuntos?: number;
             descuentoAutomatico?: DescuentoAutomaticoVista | null;
             issues?: { path: (string | number)[]; message: string }[];
           };
@@ -283,6 +291,27 @@ export function useCheckoutSubmit({
               descuentoAutomatico: errBody.descuentoAutomatico ?? null,
             });
             friendlyError = `El total se actualizó a S/ ${errBody.serverTotal.toFixed(2)}. Revisa el resumen y vuelve a confirmar.`;
+          } else if (
+            errBody?.code === "CANJE_REQUIERE_SESION" ||
+            errBody?.code === "PUNTOS_INSUFICIENTES" ||
+            errBody?.code === "PUNTOS_SOBRE_TOPE"
+          ) {
+            // El servidor no aceptó el canje: el pedido NO se creó y los
+            // puntos no se tocaron. Sobre el tope, el deslizador baja al
+            // máximo que mandó el servidor (no a 0); si no, se suelta y el
+            // resumen vuelve al total sin canje.
+            const maxSoles =
+              errBody.code === "PUNTOS_SOBRE_TOPE" && typeof errBody.maxPuntos === "number"
+                ? Math.max(0, Math.floor(errBody.maxPuntos / PTS_PER_SOL))
+                : 0;
+            dispatch({
+              type: "SET_LOYALTY",
+              patch:
+                errBody.code === "CANJE_REQUIERE_SESION"
+                  ? { redemptionSoles: 0, sesionVerificada: false, points: null, telefono: null }
+                  : { redemptionSoles: maxSoles },
+            });
+            friendlyError = errBody.error ?? "No pudimos canjear tus puntos. Vuelve a intentar.";
           } else if (errBody?.error === "tenant mismatch") {
             friendlyError =
               "Esta acción cruzó tiendas. Recarga la página e intenta de nuevo.";
@@ -315,6 +344,7 @@ export function useCheckoutSubmit({
     effectiveCustomer,
     promo,
     discount,
+    puntosACanjear,
     dispatch,
     cartActions,
     customerActions,

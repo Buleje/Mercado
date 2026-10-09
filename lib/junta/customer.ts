@@ -3,8 +3,8 @@ import type { NextRequest } from "next/server";
 import {
   CUSTOMER_SESSION,
   getCustomerPayload,
+  telefonoDeLaSesion,
 } from "@/lib/auth/customer-session";
-import { normalizePhone } from "@/lib/db/misc.db";
 
 /**
  * Phone NORMALIZADO del cliente logueado (la clave de identidad de la junta),
@@ -16,5 +16,6 @@ export async function customerPhoneFromReq(
   const token = req.cookies.get(CUSTOMER_SESSION.COOKIE_NAME)?.value;
   if (!token) return null;
   const payload = await getCustomerPayload(token);
-  return payload?.customerId ? normalizePhone(payload.customerId) : null;
+  // Solo el teléfono que la sesión PROBÓ (código), nunca un id de Google.
+  return telefonoDeLaSesion(payload);
 }

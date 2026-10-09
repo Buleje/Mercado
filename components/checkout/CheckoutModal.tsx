@@ -19,6 +19,7 @@ import { useCoupon } from "./hooks/useCoupon";
 import { useLoyalty } from "./hooks/useLoyalty";
 import { useDescuentoAutomatico } from "./hooks/useDescuentoAutomatico";
 import {
+  canjeDeLaVista,
   resolveEffectiveValues,
   telefonoDelPedido,
 } from "./hooks/checkout-submit-helpers";
@@ -103,23 +104,33 @@ export default function CheckoutModal() {
 
   // Descuento automático (primera compra, volumen, cliente frecuente): lo
   // cotiza el servidor con la misma función que cobra el pedido.
+  const telefonoPedido = telefonoDelPedido(resolveEffectiveValues(state, effectiveCustomer).phone);
   const autoDescuento = useDescuentoAutomatico({
-    telefono: telefonoDelPedido(resolveEffectiveValues(state, effectiveCustomer).phone),
+    telefono: telefonoPedido,
     subtotal: cartTotal,
     unidades: items.reduce((sum, i) => sum + i.quantity, 0),
     activo: checkoutOpen,
   });
 
   // Vista previa con la fórmula ÚNICA del servidor (lib/pricing/total-pedido).
-  // Sin el «tier» de lealtad ni el canje de puntos: el servidor no los cobra
-  // y todo pedido con ellos caía en 422. La propina NO entra: se da en mano
-  // al repartidor y el pedido no la guarda, así que Yape/Plin/efectivo y el
-  // pie cobran solo el total del pedido.
-  const totalVistaPrevia = calcularTotalPedido({
+  // Sin el «tier» de lealtad (el servidor no lo cobra). El canje de puntos sí
+  // entra, con el mismo tope que valida POST /api/orders y solo con sesión
+  // verificada del teléfono del pedido. La propina NO entra: se da en mano al
+  // repartidor y el pedido no la guarda.
+  const descuentosSinPuntos = {
     subtotal: cartTotal,
     descuentoCupon: state.coupon.discount,
     descuentoPromo: discount,
     descuentoAutomatico: autoDescuento.descuento?.monto ?? 0,
+  };
+  const canjeVista = canjeDeLaVista(
+    state.loyalty,
+    telefonoPedido,
+    calcularTotalPedido(descuentosSinPuntos),
+  );
+  const totalVistaPrevia = calcularTotalPedido({
+    ...descuentosSinPuntos,
+    descuentoPuntos: canjeVista.soles,
   });
 
   // ── Hooks de side effects ───────────────────────────────────────
@@ -141,6 +152,7 @@ export default function CheckoutModal() {
     effectiveCustomer,
     promo,
     discount,
+    puntosACanjear: canjeVista.puntos,
     dispatch,
     cartActions: { clear, closeCart, markOrderPending, removeItem },
     customerActions: { register, openOrderStatusModal },
@@ -284,6 +296,16 @@ export default function CheckoutModal() {
             descuentoAutomatico={descuentoMostrado}
             effectiveCustomer={effectiveCustomer}
             loyaltyPoints={state.loyalty.points}
+            canje={{
+              sesionVerificada: state.loyalty.sesionVerificada,
+              saldo: canjeVista.disponible ? state.loyalty.points : null,
+              maxSoles: canjeVista.maxSoles,
+              soles: canjeVista.soles,
+              onSolesChange: (soles) =>
+                dispatch({ type: "SET_LOYALTY", patch: { redemptionSoles: soles } }),
+              onIniciarSesion: () => dispatch({ type: "SET_STEP", step: "cuenta" }),
+            }}
+            descuentoPuntos={canjeVista.soles}
             yape={yape}
             cashEnabled={cashEnabled}
             onValidateCoupon={coupon.validate}
@@ -302,6 +324,7 @@ export default function CheckoutModal() {
             cartTotal={cartTotal}
             discount={discount}
             descuentoAutomatico={descuentoMostrado}
+            descuentoPuntos={canjeVista.soles}
             effectiveCustomer={effectiveCustomer}
             onEditAddress={() => dispatch({ type: "SET_STEP", step: "datos" })}
           />

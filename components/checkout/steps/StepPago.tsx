@@ -13,6 +13,7 @@ import LoyaltyTierProgressBar from "@/components/loyalty/LoyaltyTierProgressBar"
 import { useFiadoOption } from "../hooks/useFiadoOption";
 import { JuntaActiveBanner } from "../JuntaActiveBanner";
 import type { DescuentoAutomaticoVista } from "@/lib/pricing/total-pedido";
+import type { CanjePuntosProps } from "../parts/CanjePuntos";
 
 /**
  * StepPago — selector de método de pago + resumen del pedido.
@@ -32,6 +33,9 @@ export type StepPagoProps = {
   descuentoAutomatico: DescuentoAutomaticoVista | null;
   effectiveCustomer: Customer | null;
   loyaltyPoints: number | null;
+  /** Canje de puntos (`canjeDeLaVista`) y soles que ya restó del total. */
+  canje?: CanjePuntosProps;
+  descuentoPuntos?: number;
   yape: YapeConfig;
   cashEnabled: boolean;
   onValidateCoupon: () => Promise<void>;
@@ -50,6 +54,8 @@ export function StepPago({
   descuentoAutomatico,
   effectiveCustomer,
   loyaltyPoints,
+  canje,
+  descuentoPuntos,
   yape,
   cashEnabled,
   onValidateCoupon,
@@ -101,6 +107,8 @@ export function StepPago({
             promo={promo}
             descuentoAutomatico={descuentoAutomatico}
             loyaltyPoints={loyaltyPoints}
+            canje={canje}
+            descuentoPuntos={descuentoPuntos}
             paymentMethod={state.payment.method}
             onPaymentMethodChange={(method) => {
               dispatch({

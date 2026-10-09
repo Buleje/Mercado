@@ -56,6 +56,11 @@ const { db, mockPrisma } = vi.hoisted(() => {
       return 1;
     }),
     $executeRawUnsafe: vi.fn(async () => 0),
+    // Cancelar mira si el pedido canjeó puntos (2026-10-08): acá ninguno.
+    loyaltyTransaction: {
+      findMany: vi.fn(async () => []),
+      count: vi.fn(async () => 0),
+    },
   };
   const mockPrisma = {
     ...base,

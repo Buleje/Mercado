@@ -31,6 +31,8 @@ import {
   vistaSinTramo,
 } from "@/lib/pricing/descuento-automatico";
 import { calcularTotalPedido, porcentajeDe } from "@/lib/pricing/total-pedido";
+import { validarCanjePuntos, type CanjePuntos } from "@/lib/pricing/canje-puntos";
+import { LoyaltyInsufficientBalanceError } from "@/lib/db/loyalty.db";
 import { withApiHandler } from "@/lib/api-handler";
 
 const OrderItemModifierSchema = z.object({
@@ -50,6 +52,15 @@ const OrderItemSchema = z.object({
   /** Modifiers elegidos por el cliente — server re-valida y recomputa price. */
   modifiers: z.array(OrderItemModifierSchema).max(40).optional(),
 });
+
+/** P2002 sobre `idempotencyKey`: otro request con la misma clave ganó. */
+function esClaveRepetida(err: unknown): boolean {
+  const e = err as { code?: string; meta?: unknown; message?: string };
+  if (e?.code !== "P2002") return false;
+  // Con el adapter pg el campo viaja en `meta.target` o anidado en
+  // `meta.driverAdapterError`: se busca el nombre en todo el meta.
+  return `${JSON.stringify(e.meta ?? {})} ${e.message ?? ""}`.includes("idempotencyKey");
+}
 
 const OrderPostSchema = z.object({
   customer: z.object({
@@ -72,6 +83,9 @@ const OrderPostSchema = z.object({
   // Payment details
   yapeOperationNumber: z.string().max(50).optional(),
   deuda: z.boolean().optional(),
+  // Canje de puntos (100 pts = S/ 1, tope TOPE_CANJE_PCT): solo con sesión
+  // VERIFICADA del mismo teléfono y negocio (lib/pricing/canje-puntos.ts).
+  puntosACanjear: z.number().int().min(0).max(10_000_000).optional(),
 });
 
 export const GET = withApiHandler("orders-list", async (req) => {
@@ -97,9 +111,8 @@ export const GET = withApiHandler("orders-list", async (req) => {
     // Sesión VERIFICADA del teléfono → todo su historial. Token de
     // SEGUIMIENTO (lo deja un pedido de invitado, el teléfono vino en el
     // cuerpo y no prueba nada) → solo los pedidos cuyo id lleva adentro.
-    const { getCustomerPayload, getSeguimientoPedidos, CUSTOMER_SESSION } = await import(
-      "@/lib/auth/customer-session"
-    );
+    const { getCustomerPayload, getSeguimientoPedidos, telefonoDeLaSesion, CUSTOMER_SESSION } =
+      await import("@/lib/auth/customer-session");
     const { normalizePhone } = await import("@/lib/db/misc.db");
     const sessionToken = req.cookies.get(CUSTOMER_SESSION.COOKIE_NAME)?.value;
     const telefonoPedido = normalizePhone(phoneParam);
@@ -107,7 +120,9 @@ export const GET = withApiHandler("orders-list", async (req) => {
     let soloIds: string[] | undefined;
     if (sessionToken && telefonoPedido) {
       const payload = await getCustomerPayload(sessionToken);
-      if (payload?.customerId && normalizePhone(payload.customerId) === telefonoPedido) {
+      // Solo una sesión que PROBÓ este teléfono (código). Google/Facebook
+      // prueban un correo: su `customerId` nunca abre un historial por teléfono.
+      if (telefonoDeLaSesion(payload) === telefonoPedido) {
         authorized = true;
       } else {
         const seg = await getSeguimientoPedidos(sessionToken);
@@ -590,6 +605,31 @@ export const POST = withApiHandler("orders-create", async (req) => {
           conHistorial: false,
         });
 
+    // ── Canje de puntos ─────────────────────────────────────────────────────
+    // Se valida acá (sesión verificada del teléfono, saldo, tope) y se
+    // descuenta en la MISMA transacción que crea el pedido (OrdersDB.add).
+    // El tope se mide sobre el total sin puntos, el mismo de la vista previa.
+    let canje: CanjePuntos | null = null;
+    if ((body.puntosACanjear ?? 0) > 0) {
+      const v = await validarCanjePuntos(tenantId, req, {
+        telefono: body.customer.phone,
+        puntos: body.puntosACanjear ?? 0,
+        totalSinPuntos: calcularTotalPedido({
+          subtotal: itemsTotal,
+          descuentoCupon: serverCouponDiscount,
+          descuentoPromo: promoDiscount,
+          descuentoAutomatico: engineDiscount,
+        }),
+      });
+      if (!v.ok) {
+        return NextResponse.json(
+          { error: v.error, code: v.code, saldo: v.saldo, maxPuntos: v.maxPuntos },
+          { status: v.status },
+        );
+      }
+      canje = v.canje;
+    }
+
     // Fórmula única del total (lib/pricing/total-pedido.ts), la misma que
     // arma la vista previa del cliente.
     const totalCon = (descuentoAutomatico: number) =>
@@ -598,6 +638,7 @@ export const POST = withApiHandler("orders-create", async (req) => {
         descuentoCupon: serverCouponDiscount,
         descuentoPromo: promoDiscount,
         descuentoAutomatico,
+        descuentoPuntos: canje?.soles ?? 0,
       });
     const computedTotal = totalCon(engineDiscount);
     // Lo que un invitado puede saber del total (sin su historial). Con sesión
@@ -727,7 +768,14 @@ export const POST = withApiHandler("orders-create", async (req) => {
       total: computedTotal,
       status: "pendiente",
       paymentMethod: body.paymentMethod ?? "efectivo",
-      notes: body.notes,
+      // El pedido no tiene columna para el canje: va en una línea de la nota
+      // (como el marketplace) para que el panel vea por qué baja el total. El
+      // dato que manda (y el que devuelve la cancelación) es el libro de puntos.
+      notes: canje
+        ? [body.notes?.trim(), `Canje de puntos: ${canje.puntos} pts (−S/ ${canje.soles.toFixed(2)})`]
+            .filter(Boolean)
+            .join("\n")
+        : body.notes,
       deliverySlot: body.deliverySlot,
       yapeOperationNumber: body.yapeOperationNumber,
       deuda: body.deuda,
@@ -835,7 +883,10 @@ export const POST = withApiHandler("orders-create", async (req) => {
       saved = await runWithAuditContext(
         req,
         body.customer.phone || "anonymous",
-        () => withDbRetry(() => OrdersDB.add(order, tenantId)),
+        () =>
+          withDbRetry(() =>
+            canje ? OrdersDB.add(order, tenantId, { canjePuntos: canje }) : OrdersDB.add(order, tenantId),
+          ),
       );
     } catch (addErr) {
       // Compensating writes — the atomic guards above already decremented
@@ -890,6 +941,28 @@ export const POST = withApiHandler("orders-create", async (req) => {
           });
         }
       })().catch((err) => logger.error("[orders] operation failed", { error: String(err), tenantId }));
+      if (canje && addErr instanceof LoyaltyInsufficientBalanceError) {
+        // Otro pedido gastó los mismos puntos entre la validación y el débito:
+        // el guard atómico lo frenó y este pedido no quedó (rollback).
+        return NextResponse.json(
+          { error: "Tus puntos cambiaron mientras confirmabas. Revisa el canje y vuelve a intentar.", code: "PUNTOS_INSUFICIENTES" },
+          { status: 409 },
+        );
+      }
+      if (canje && idempotencyKey && esClaveRepetida(addErr)) {
+        // Reintento simultáneo con la misma clave: el primero ya creó el
+        // pedido y canjeó; este se deshizo entero. Mismo 200 que arriba.
+        // Solo el pedido de ESTE teléfono (el dueño del canje): la clave sola
+        // devolvería el pedido de otro cliente que usó la misma clave.
+        const existente = await prismaForTenant(tenantId).order.findFirst({
+          where: { idempotencyKey, tenantId, customerPhone: canje.clienteId },
+        });
+        if (existente) return NextResponse.json(existente, { status: 200 });
+        return NextResponse.json(
+          { error: "Esta clave de pedido ya se usó. Vuelve a confirmar.", code: "CLAVE_REPETIDA" },
+          { status: 409 },
+        );
+      }
       throw addErr;
     }
 
@@ -1211,6 +1284,7 @@ export const POST = withApiHandler("orders-create", async (req) => {
       {
         ...saved,
         descuentoAplicado: conSesion ? vistaPublica(descuentoAuto) : vistaSinTramo(descuentoAuto),
+        puntosCanjeados: canje ? { puntos: canje.puntos, soles: canje.soles } : null,
       },
       { status: 201 },
     );

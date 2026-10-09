@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { OrdersDB, normalizePhone } from "@/lib/jsondb";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { getTenantIdFromRequest } from "@/lib/tenant";
-import { getCustomerPayload, getSeguimientoPedidos, CUSTOMER_SESSION } from "@/lib/auth/customer-session";
+import {
+  getCustomerPayload,
+  getSeguimientoPedidos,
+  telefonoDeLaSesion,
+  CUSTOMER_SESSION,
+} from "@/lib/auth/customer-session";
 import { logger } from "@/lib/logger";
 import { z } from "zod";
 import { enqueueActivityLog } from "@/lib/queue";
@@ -50,7 +55,7 @@ export async function GET(
   let soloIds: string[] | null = null;
   if (sessionToken) {
     const payload = await getCustomerPayload(sessionToken);
-    if (payload?.customerId && normalizePhone(payload.customerId) === normalizedPhone) {
+    if (telefonoDeLaSesion(payload) === normalizedPhone) {
       authorized = true;
     } else {
       const seg = await getSeguimientoPedidos(sessionToken);

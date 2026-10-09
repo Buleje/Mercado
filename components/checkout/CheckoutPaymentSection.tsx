@@ -9,6 +9,7 @@ import {
   Loader2,
   CheckCircle2,
   X,
+  Gift,
   Truck,
   HandCoins,
   Sparkles,
@@ -20,6 +21,7 @@ import { CashChangeCalculator } from "./CashChangeCalculator";
 import { FiadoCheckoutOption } from "./FiadoCheckoutOption";
 import type { PaymentMethod } from "./types";
 import type { DescuentoAutomaticoVista } from "@/lib/pricing/total-pedido";
+import { CanjePuntos, muestraCanje, type CanjePuntosProps } from "./parts/CanjePuntos";
 
 interface Promo {
   id: string;
@@ -48,6 +50,10 @@ export interface CheckoutPaymentSectionProps {
    */
   descuentoAutomatico?: DescuentoAutomaticoVista | null;
   loyaltyPoints: number | null;
+  /** Canje de puntos (deslizador o «Inicia sesión»); sin esto no se dibuja. */
+  canje?: CanjePuntosProps;
+  /** Soles que pagan los puntos (ya en `finalTotal`); 0 = sin línea. */
+  descuentoPuntos?: number;
   paymentMethod: PaymentMethod | null;
   onPaymentMethodChange: (method: PaymentMethod) => void;
   yapeEnabled: boolean;
@@ -141,6 +147,8 @@ export function CheckoutPaymentSection({
   promo,
   descuentoAutomatico,
   loyaltyPoints,
+  canje,
+  descuentoPuntos = 0,
   paymentMethod,
   onPaymentMethodChange,
   yapeEnabled,
@@ -504,9 +512,14 @@ export function CheckoutPaymentSection({
         )}
       </section>
 
-      {/* Canje de puntos: retirado 2026-10-08. El servidor no lo descuenta ni
-          resta puntos, así que todo pedido con canje caía en 422 «El total no
-          coincide». Vuelve cuando POST /api/orders lo cobre. */}
+      {/* Canje de puntos: lo cobra POST /api/orders (misma fórmula, misma tx
+          que crea el pedido). Solo con sesión verificada. */}
+      {canje && muestraCanje(canje) && (
+        <>
+          <BrandHair />
+          <CanjePuntos {...canje} />
+        </>
+      )}
 
       {/* ═══ Resumen del pago — bloque brand-tinted ═══ */}
       <div
@@ -568,6 +581,21 @@ export function CheckoutPaymentSection({
               </span>
               <span className="tabular-nums font-bold shrink-0">
                 −{formatCurrency(descuentoAutomatico.monto)}
+              </span>
+            </div>
+          )}
+          {descuentoPuntos > 0 && (
+            <div
+              className="flex items-center justify-between"
+              style={{ color: "var(--color-primary-dark, var(--color-primary))" }}
+              data-testid="linea-puntos-canjeados"
+            >
+              <span className="flex items-center gap-1.5 truncate pr-2">
+                <Gift className="h-3.5 w-3.5 shrink-0" strokeWidth={2.25} />
+                <span className="truncate">Puntos canjeados</span>
+              </span>
+              <span className="tabular-nums font-bold shrink-0">
+                −{formatCurrency(descuentoPuntos)}
               </span>
             </div>
           )}

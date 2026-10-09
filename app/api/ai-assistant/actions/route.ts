@@ -81,6 +81,15 @@ async function executeAction(action: { type: string; payload: Record<string, unk
       if (!orderId || !validStatuses.includes(status)) {
         return { ok: false, message: `orderId y status válido (${validStatuses.join(", ")}) son requeridos.` };
       }
+      if (status === "cancelado") {
+        // Misma puerta que el panel: devuelve stock y puntos canjeados una
+        // sola vez y nunca cancela un pedido entregado.
+        const r = await OrdersDB.cancelarConReposicion(tenantId, orderId, "cancelado por el asistente");
+        if (!r.repuesto) {
+          return { ok: false, message: `Pedido ${orderId} no se canceló (no existe, ya estaba cancelado o fue entregado).` };
+        }
+        return { ok: true, message: `Pedido ${orderId} cancelado; stock y puntos devueltos.` };
+      }
       const order = await OrdersDB.update(tenantId, orderId, { status: status as "pendiente" });
       if (!order) return { ok: false, message: `Pedido ${orderId} no encontrado.` };
       return { ok: true, message: `Pedido ${orderId} actualizado a "${status}".` };

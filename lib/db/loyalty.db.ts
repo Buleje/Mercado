@@ -381,3 +381,77 @@ export async function loyaltyRedeemWithinTx(
   }
   return writeTransaction(tenantId, customerId, -amount, reason, metadata, tx);
 }
+
+/** `metadata.canal` del canje de un pedido de la tienda (no del marketplace). */
+export const CANAL_CANJE_TIENDA = "tienda";
+
+/**
+ * Devuelve los puntos que un pedido de la tienda canjeó, dentro de la `tx`
+ * que lo cancela (`OrdersDB.cancelarConReposicion`). Una sola vez: la
+ * cancelación solo llega acá si ESA llamada marcó `cancelledAt`, y además se
+ * mira si ya hay una devolución del pedido en el libro.
+ *
+ * La devolución va como `adjustment` con `metadata.canjeDelPedido` (no
+ * `orderId`): el auto-earn de «entregado» no da puntos dos veces si ve una fila
+ * positiva con `orderId` del pedido, y una devolución no es una compra.
+ * Solo canal `tienda`: el canje del marketplace tiene su propio flujo.
+ */
+export async function loyaltyDevolverCanjeWithinTx(
+  tx: Prisma.TransactionClient,
+  tenantId: string,
+  orderId: string,
+): Promise<{ puntos: number; clienteId: string | null }> {
+  const canjes = await tx.loyaltyTransaction.findMany({
+    where: {
+      tenantId,
+      reason: "redemption",
+      AND: [
+        { metadata: { path: ["orderId"], equals: orderId } },
+        { metadata: { path: ["canal"], equals: CANAL_CANJE_TIENDA } },
+      ],
+    },
+    select: { customerId: true, amount: true },
+  });
+  if (canjes.length === 0) return { puntos: 0, clienteId: null };
+  const yaDevuelto = await tx.loyaltyTransaction.count({
+    where: { tenantId, metadata: { path: ["canjeDelPedido"], equals: orderId } },
+  });
+  if (yaDevuelto > 0) return { puntos: 0, clienteId: null };
+
+  const porCliente = new Map<string, number>();
+  for (const c of canjes) {
+    porCliente.set(c.customerId, (porCliente.get(c.customerId) ?? 0) - c.amount);
+  }
+  let puntos = 0;
+  let clienteId: string | null = null;
+  for (const [cliente, monto] of porCliente) {
+    if (monto <= 0) continue;
+    // Ficha borrada (o de otro negocio): no hay a quién devolver. Se registra
+    // y la cancelación sigue — el stock tiene que volver igual. Se mira ANTES
+    // de escribir: un error dentro de la tx la aborta entera en Postgres.
+    const ficha = await tx.customer.findUnique({
+      where: { phone: cliente },
+      select: { tenantId: true },
+    });
+    if (!ficha || ficha.tenantId !== tenantId) {
+      logger.error("[loyalty/devolver-canje] ficha no encontrada; puntos sin devolver", {
+        tenantId,
+        orderId,
+        clienteId: cliente,
+        puntos: monto,
+      });
+      continue;
+    }
+    await writeTransaction(
+      tenantId,
+      cliente,
+      monto,
+      "adjustment",
+      { canjeDelPedido: orderId, motivo: "pedido cancelado", canal: CANAL_CANJE_TIENDA },
+      tx,
+    );
+    puntos += monto;
+    clienteId = cliente;
+  }
+  return { puntos, clienteId };
+}

@@ -25,6 +25,11 @@ import { findTenantByIdOrSlug } from "@/lib/tenant";
 import { checkAndIssueCoupons } from "@/lib/coupons/auto-coupon-triggers";
 import { logger } from "@/lib/logger";
 import { DropshipDB } from "./dropship.db";
+import {
+  CANAL_CANJE_TIENDA,
+  loyaltyDevolverCanjeWithinTx,
+  loyaltyRedeemWithinTx,
+} from "./loyalty.db";
 
 // ── Local Types ───────────────────────────────────────────────────────────────
 
@@ -330,7 +335,18 @@ export const OrdersDB = {
   // edge multi-tenant TD-040, stubs de Product vía $executeRaw + setval, y
   // cascada fire-and-forget post-create). Merece PR propio con checkout-squad
   // y QA dedicado. Bajo políticas fail-open sigue funcionando idéntico.
-  async add(order: DbOrder, tenantId: string): Promise<DbOrder> {
+  /**
+   * `opts.canjePuntos` (2026-10-08): el pedido se crea y los puntos se
+   * descuentan en UNA transacción (`loyaltyRedeemWithinTx`, guard atómico
+   * `saldo + débito >= 0`): si no alcanzan, el pedido no queda. La clave de
+   * idempotencia entra en el mismo INSERT: un reintento simultáneo con la
+   * misma clave choca con el `@unique` y no gasta los puntos dos veces.
+   */
+  async add(
+    order: DbOrder,
+    tenantId: string,
+    opts?: { canjePuntos?: { clienteId: string; puntos: number; soles: number } },
+  ): Promise<DbOrder> {
     // Ensure the customer exists in the DB before linking via FK
     const phone = order.customer.phone ? normalizePhone(order.customer.phone) : null;
     if (phone) {
@@ -413,10 +429,12 @@ export const OrdersDB = {
         await prisma.$executeRaw`SELECT setval(pg_get_serial_sequence('"Product"', 'id'), (SELECT MAX(id) FROM "Product"))`;
       }
     }
-    const row = await prisma.order.create({
+    const canje = opts?.canjePuntos;
+    const crearPedido = (db: Prisma.TransactionClient) => db.order.create({
       data: {
         id: order.id,
         tenantId,
+        ...(canje && order.idempotencyKey && { idempotencyKey: order.idempotencyKey }),
         customerName: order.customer.name,
         customerPhone: phone,
         customerLocation: order.customer.location ?? "",
@@ -439,8 +457,20 @@ export const OrdersDB = {
       },
       include: { items: true },
     });
+    const row = canje
+      ? await prisma.$transaction(async (tx) => {
+          const creado = await crearPedido(tx);
+          await loyaltyRedeemWithinTx(tx, tenantId, canje.clienteId, canje.puntos, "redemption", {
+            orderId: order.id,
+            soles: canje.soles,
+            canal: CANAL_CANJE_TIENDA,
+            ...(order.idempotencyKey && { idempotencyKey: order.idempotencyKey }),
+          });
+          return creado;
+        })
+      : await crearPedido(prisma);
     // Persist idempotency key via raw SQL (field added in migration 20260316; types update after prisma generate)
-    if (order.idempotencyKey) {
+    if (order.idempotencyKey && !canje) {
       await prisma.$executeRaw`UPDATE "Order" SET "idempotencyKey" = ${order.idempotencyKey} WHERE id = ${row.id}`.catch((err) => logger.error("[orders.db] persist idempotencyKey failed", { error: String(err), orderId: row.id }));
     }
     // PERF 2026-05-24: invalidar el lookup "última orden del customer" — sin
@@ -648,7 +678,8 @@ export const OrdersDB = {
   },
 
   /**
-   * Cancela un pedido y devuelve su stock UNA sola vez, en una transacción.
+   * Cancela un pedido y devuelve su stock (y los puntos que canjeó) UNA sola
+   * vez, en una transacción.
    * La usan todas las vías de cancelar (PATCH /api/orders/[id], cancelar en
    * lote, rechazo del pago Yape). Solo la llamada que marca `cancelledAt`
    * (condición en el WHERE) repone: dos cancelaciones simultáneas, o cancelar
@@ -659,13 +690,13 @@ export const OrdersDB = {
     tenantId: string,
     id: string,
     cancelReason: string | null,
-  ): Promise<{ repuesto: boolean; items: number }> {
+  ): Promise<{ repuesto: boolean; items: number; puntosDevueltos: number }> {
     const res = await withRlsTx(tenantId, async (tx) => {
       const marcado = await tx.order.updateMany({
         where: { id, tenantId, cancelledAt: null, status: { not: "entregado" } },
         data: { status: "cancelado", cancelReason, cancelledAt: new Date() },
       });
-      if (marcado.count === 0) return { repuesto: false, items: 0 };
+      if (marcado.count === 0) return { repuesto: false, items: 0, puntosDevueltos: 0 };
       const items = await tx.orderItem.findMany({
         where: { orderId: id },
         select: { productId: true, quantity: true },
@@ -679,10 +710,19 @@ export const OrdersDB = {
              AND "stock" IS NOT NULL
         `;
       }
-      return { repuesto: true, items: items.length };
+      // Puntos canjeados en el pedido: vuelven en la misma tx (una sola vez,
+      // por el `cancelledAt` de arriba). Los puntos GANADOS no se tocan: se
+      // acreditan al pasar a «entregado» y un entregado no se cancela.
+      const devueltos = await loyaltyDevolverCanjeWithinTx(tx, tenantId, id);
+      return { repuesto: true, items: items.length, puntosDevueltos: devueltos.puntos };
     });
     if (res.repuesto) {
-      logger.info("[orders/cancel] stock repuesto", { tenantId, orderId: id, items: res.items });
+      logger.info("[orders/cancel] stock repuesto", {
+        tenantId,
+        orderId: id,
+        items: res.items,
+        puntosDevueltos: res.puntosDevueltos,
+      });
     }
     return res;
   },

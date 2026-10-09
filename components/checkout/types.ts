@@ -56,8 +56,18 @@ export type CouponState = {
 export type LoyaltyState = {
   points: number | null;
   tier: string | null;
-  /** Soles a descontar por canje de puntos (50 pts = S/1). */
+  /**
+   * Soles a canjear con puntos (100 pts = S/ 1, `PTS_PER_SOL`). Lo que vale
+   * de verdad lo topa `canjeDeLaVista` (saldo y `TOPE_CANJE_PCT`).
+   */
   redemptionSoles: number;
+  /**
+   * ¿Hay sesión VERIFICADA del cliente? null = todavía no se sabe. Sin ella
+   * no hay canje: el checkout ofrece «Inicia sesión para usar tus puntos».
+   */
+  sesionVerificada: boolean | null;
+  /** Teléfono (9 dígitos) dueño de `points`: el canje solo vale para él. */
+  telefono: string | null;
 };
 
 export type PaymentState = {

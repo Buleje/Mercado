@@ -169,7 +169,9 @@ export async function POST(req: NextRequest) {
           location: data.address.line1,
           reference: data.address.reference ?? "",
           tenantId,
-          email: data.email,
+          // Sin `email`: el invitado no probó ese correo, y un correo en la
+          // ficha servía para que otro entrara con Google a la ficha de este
+          // teléfono (security 2026-10-08).
         },
       }),
     );

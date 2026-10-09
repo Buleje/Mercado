@@ -72,11 +72,12 @@ export async function sesionDelTelefono(
 ): Promise<boolean> {
   const tel = telefonoParaDescuento(telefono);
   if (!tel) return false;
-  const { getCustomerPayload, CUSTOMER_SESSION } = await import("@/lib/auth/customer-session");
+  const { getCustomerPayload, telefonoDeLaSesion, CUSTOMER_SESSION } = await import(
+    "@/lib/auth/customer-session"
+  );
   const token = req.cookies.get(CUSTOMER_SESSION.COOKIE_NAME)?.value;
   if (!token) return false;
-  const payload = await getCustomerPayload(token);
-  return !!payload?.customerId && normalizePhone(payload.customerId) === tel;
+  return telefonoDeLaSesion(await getCustomerPayload(token)) === tel;
 }
 
 export async function calcularDescuentoAutomatico(

@@ -44,6 +44,8 @@ export type StepConfirmarProps = {
   discount: number;
   /** Descuento automático cotizado por el servidor (primera compra, etc.). */
   descuentoAutomatico?: DescuentoAutomaticoVista | null;
+  /** Soles que pagan los puntos canjeados (ya restados de `finalTotal`). */
+  descuentoPuntos?: number;
   effectiveCustomer: Customer | null;
   onEditAddress?: () => void;
 };
@@ -120,6 +122,7 @@ export function StepConfirmar({
   cartTotal,
   discount,
   descuentoAutomatico,
+  descuentoPuntos = 0,
   effectiveCustomer,
   onEditAddress,
 }: StepConfirmarProps) {
@@ -439,6 +442,15 @@ export function StepConfirmar({
                 <span className="tabular-nums font-bold">
                   −{fmt(descuentoAutomatico.monto)}
                 </span>
+              </div>
+            )}
+            {descuentoPuntos > 0 && (
+              <div
+                className="flex items-center justify-between text-[var(--data-success-700)] dark:text-emerald-400"
+                data-testid="confirmar-puntos-canjeados"
+              >
+                <span>Puntos canjeados</span>
+                <span className="tabular-nums font-bold">−{fmt(descuentoPuntos)}</span>
               </div>
             )}
             {state.payment.tip > 0 && (

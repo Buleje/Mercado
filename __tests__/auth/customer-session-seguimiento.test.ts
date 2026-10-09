@@ -16,6 +16,7 @@ import {
   getSeguimientoPedidos,
   tokenTrasPedido,
   esSesionVerificada,
+  telefonoDeLaSesion,
   MAX_PEDIDOS_SEGUIMIENTO,
 } from "@/lib/auth/customer-session";
 
@@ -93,5 +94,46 @@ describe("token de seguimiento", () => {
       provider: "email",
     });
     expect(await getCustomerPayload(raro)).toBeNull();
+  });
+});
+
+describe("teléfono que la sesión PRUEBA (security 2026-10-08)", () => {
+  const base = { email: "x@y.pe", name: "Ana", tenantId: "t1" };
+
+  it("solo el código (phone) prueba el teléfono; Google/Facebook no", () => {
+    expect(telefonoDeLaSesion({ customerId: "987654321", provider: "phone" })).toBe("987654321");
+    expect(telefonoDeLaSesion({ customerId: "987654321", provider: "google" })).toBeNull();
+    expect(telefonoDeLaSesion({ customerId: "987654321", provider: "facebook" })).toBeNull();
+    expect(telefonoDeLaSesion({ customerId: "987654321", provider: "checkout" })).toBeNull();
+    expect(telefonoDeLaSesion(null)).toBeNull();
+  });
+
+  it("customerId de 9 dígitos EXACTOS: un id de Google nunca se vuelve teléfono", () => {
+    // normalizePhone("google_1177…987654321") daba 987654321.
+    expect(telefonoDeLaSesion({ customerId: "google_117712345987654321", provider: "phone" })).toBeNull();
+    expect(telefonoDeLaSesion({ customerId: "51987654321", provider: "phone" })).toBeNull();
+    expect(telefonoDeLaSesion({ customerId: "98765432", provider: "phone" })).toBeNull();
+  });
+
+  it("`e2e` prueba el teléfono fuera de producción y nunca en producción", () => {
+    const antes = process.env.VERCEL_ENV;
+    try {
+      delete process.env.VERCEL_ENV;
+      expect(telefonoDeLaSesion({ customerId: "987654321", provider: "e2e" })).toBe("987654321");
+      process.env.VERCEL_ENV = "production";
+      expect(telefonoDeLaSesion({ customerId: "987654321", provider: "e2e" })).toBeNull();
+    } finally {
+      if (antes === undefined) delete process.env.VERCEL_ENV;
+      else process.env.VERCEL_ENV = antes;
+    }
+  });
+
+  it("token de Google con la ficha de un teléfono (vínculo por correo de antes) ya no es sesión", async () => {
+    const legado = await createCustomerToken({ ...base, customerId: "987654321", provider: "google" });
+    expect(await getCustomerPayload(legado)).toBeNull();
+    const propio = await createCustomerToken({ ...base, customerId: "google_1177", provider: "google" });
+    expect((await getCustomerPayload(propio))?.customerId).toBe("google_1177");
+    const fb = await createCustomerToken({ ...base, customerId: "987654321", provider: "facebook" });
+    expect(await getCustomerPayload(fb)).toBeNull();
   });
 });

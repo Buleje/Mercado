@@ -6,6 +6,7 @@ import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { requireCustomer } from "@/lib/auth/require-customer";
+import { telefonoDeLaSesion } from "@/lib/auth/customer-session";
 import { requireAdmin } from "@/lib/require-admin";
 
 // ---------- helpers ----------
@@ -71,7 +72,7 @@ export const GET = withApiHandler("chat-marketplace-get", async (req, _ctx) => {
     }
 
     // Ownership check: el phone del query debe coincidir con el de la sesión
-    if (normalizePhone(customer.customerId) !== phone) {
+    if (telefonoDeLaSesion(customer) !== phone) {
       return NextResponse.json({ error: "forbidden" }, { status: 403 });
     }
 
@@ -139,10 +140,11 @@ export const POST = withApiHandler("chat-marketplace-post", async (req, _ctx) =>
       const customer = await requireCustomer(req);
       if (customer instanceof NextResponse) return customer;
 
-      if (!customer.customerId) {
+      const telSesion = telefonoDeLaSesion(customer);
+      if (!telSesion) {
         return NextResponse.json({ error: "Cuenta no vinculada a un teléfono" }, { status: 400 });
       }
-      customerPhone = normalizePhone(customer.customerId);
+      customerPhone = telSesion;
     } else {
       // senderType === "store" — requiere admin del tenant
       const admin = await requireAdmin(req, ["admin", "cajero", "tienda_owner"]);

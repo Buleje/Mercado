@@ -1,8 +1,13 @@
 import type { CartItem } from "@/contexts/cart-context";
 import type { Customer, SavedLocation } from "@/contexts/customer-context";
 import type { DbOrderItem } from "@/lib/jsondb";
-import type { CheckoutState, PaymentMethod } from "../types";
-import type { DescuentoAutomaticoVista } from "@/lib/pricing/total-pedido";
+import type { CheckoutState, LoyaltyState, PaymentMethod } from "../types";
+import {
+  maxPuntosCanjeables,
+  solesPorPuntos,
+  type DescuentoAutomaticoVista,
+} from "@/lib/pricing/total-pedido";
+import { PTS_PER_SOL } from "@/lib/loyalty-constants";
 
 /**
  * Helpers puros para el flow de submit del checkout.
@@ -78,6 +83,40 @@ export function telefonoDelPedido(phone: string): string | undefined {
   return phone.length >= 6 ? phone : undefined;
 }
 
+/** Canje de puntos tal como lo ve (y lo manda) el checkout. */
+export interface CanjeVista {
+  /** Sesión verificada del mismo teléfono del pedido, con saldo leído. */
+  disponible: boolean;
+  /** Máximo en soles enteros que deja el deslizador (saldo y tope). */
+  maxSoles: number;
+  /** Puntos que viajan en `puntosACanjear` (múltiplo de 100). */
+  puntos: number;
+  /** Soles que restan del total (`calcularTotalPedido`). */
+  soles: number;
+}
+
+/**
+ * Canje de la vista previa con las MISMAS reglas que el servidor
+ * (`maxPuntosCanjeables`, `solesPorPuntos`): solo si los puntos son del
+ * teléfono del pedido y hay sesión verificada; el deslizador va de a S/ 1.
+ */
+export function canjeDeLaVista(
+  loyalty: Pick<LoyaltyState, "points" | "redemptionSoles" | "sesionVerificada" | "telefono">,
+  telefonoPedido: string | undefined,
+  totalSinPuntos: number,
+): CanjeVista {
+  const tel = (telefonoPedido ?? "").replace(/\D/g, "").slice(-9);
+  const disponible =
+    loyalty.sesionVerificada === true &&
+    loyalty.points !== null &&
+    !!loyalty.telefono &&
+    tel === loyalty.telefono;
+  if (!disponible) return { disponible: false, maxSoles: 0, puntos: 0, soles: 0 };
+  const maxSoles = Math.floor(maxPuntosCanjeables(loyalty.points ?? 0, totalSinPuntos) / PTS_PER_SOL);
+  const puntos = Math.max(0, Math.min(Math.floor(loyalty.redemptionSoles), maxSoles)) * PTS_PER_SOL;
+  return { disponible, maxSoles, puntos, soles: solesPorPuntos(puntos) };
+}
+
 /**
  * Firma de lo que decide el total en el servidor (productos, cantidades,
  * precios, teléfono, cupón y promo). Un total corregido por un 422 solo vale
@@ -88,12 +127,14 @@ export function firmaDelTotal(args: {
   telefono: string | undefined;
   cupon: string;
   promoId: string;
+  /** Puntos canjeados: cambiar el canje cambia el total. */
+  puntos?: number;
 }): string {
   const items = args.items
     .map((i) => `${i.id}:${i.quantity}:${i.price}`)
     .sort()
     .join(",");
-  return `${items}|${args.telefono ?? ""}|${args.cupon}|${args.promoId}`;
+  return `${items}|${args.telefono ?? ""}|${args.cupon}|${args.promoId}|${args.puntos ?? 0}`;
 }
 
 export function buildOrderPayload(args: {
@@ -108,8 +149,10 @@ export function buildOrderPayload(args: {
   promo: { id: string } | null;
   discount: number;
   juntaCode?: string;
+  /** Puntos a canjear (`canjeDeLaVista`); 0 o ausente = sin canje. */
+  puntosACanjear?: number;
 }): string {
-  const { state, effective, orderItems, totalPedido, promo, discount, juntaCode } =
+  const { state, effective, orderItems, totalPedido, promo, discount, juntaCode, puntosACanjear } =
     args;
   return JSON.stringify({
     customer: {
@@ -140,6 +183,7 @@ export function buildOrderPayload(args: {
         : undefined,
     deuda: effective.payment === "efectivo" ? true : undefined,
     ...(juntaCode && { juntaCode }),
+    ...(puntosACanjear && puntosACanjear > 0 && { puntosACanjear }),
     ...(promo && { appliedPromoId: promo.id, discountAmount: discount }),
     ...(state.coupon.applied &&
       state.coupon.code.trim() && {

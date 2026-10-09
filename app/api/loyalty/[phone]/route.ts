@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { LoyaltyDB, normalizePhone } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { requireCustomer } from "@/lib/auth/require-customer";
+import { CUSTOMER_SESSION, telefonoDeLaSesion } from "@/lib/auth/customer-session";
 import { rateLimit, getClientIp , applyRateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
@@ -24,20 +25,29 @@ export async function GET(
   const { allowed } = rateLimit(`loyalty-get:${ip}`, 60, 60);
   if (!allowed) return NextResponse.json({ error: "Demasiadas solicitudes" }, { status: 429 });
 
-  // Requiere sesion de customer activa
-  const customer = await requireCustomer(req);
-  if (customer instanceof NextResponse) return customer;
-
   const { phone } = await params;
   const requestedPhone = normalizePhone(phone);
 
-  // Ownership check: el customerId en sesion ES el phone normalizado del Customer
-  if (!customer.customerId || normalizePhone(customer.customerId) !== requestedPhone) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  // Quién lee nombre y puntos de un teléfono (Ley 29733, security 2026-10-08):
+  //  1. la sesión que PROBÓ ese teléfono (código), del mismo negocio
+  //     (`requireCustomer` compara el negocio de la sesión con el del pedido);
+  //  2. el panel admin del negocio (LoyaltyTab).
+  // Nadie más: 401 sin datos. Antes alcanzaba que los últimos 9 dígitos del
+  // `customerId` coincidieran («google_1177…987654321» abría el 987654321).
+  let tenantId: string | null = null;
+  if (req.cookies.get(CUSTOMER_SESSION.COOKIE_NAME)?.value) {
+    const customer = await requireCustomer(req);
+    if (!(customer instanceof NextResponse) && telefonoDeLaSesion(customer) === requestedPhone) {
+      tenantId = customer.tenantId;
+    }
   }
-
-  // tenantId viene de la sesion (ya validado por requireCustomer vs x-tenant-id header)
-  const tenantId = customer.tenantId;
+  if (!tenantId) {
+    const admin = await requireAdmin(req, ["admin", "cajero", "tienda_owner"]);
+    if (admin instanceof NextResponse) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
+    tenantId = admin.tenantId;
+  }
 
   try {
     const data = await LoyaltyDB.getByPhone(tenantId, requestedPhone);
