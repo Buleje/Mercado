@@ -72,7 +72,7 @@ export default function POSFrequentProducts({
             >
               <span className="truncate max-w-24">{p.name}</span>
               <span className="text-primary font-bold">{fmt(p.price)}</span>
-              <span className="text-[length:var(--ts-2xs)] text-[var(--data-warning-500)] font-bold">
+              <span className="text-[length:var(--ts-2xs)] text-[var(--data-warning-ink)] font-bold">
                 x{p.soldToday}
               </span>
             </button>

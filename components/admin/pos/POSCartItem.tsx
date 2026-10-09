@@ -44,7 +44,7 @@ export default function POSCartItem({ item, lastAddedId, editingDiscount, setEdi
                           )}
                           {/* Mejora 7: Stock bajo badge */}
                           {item.product.stock != null && item.product.stock > 0 && item.product.stock <= (item.product.stockMin || 5) && (
-                            <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-1 py-0.5 rounded">
+                            <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-ink)] bg-[var(--data-warning-50)] px-1 py-0.5 rounded">
                               Ultimas {item.product.stock}
                             </span>
                           )}

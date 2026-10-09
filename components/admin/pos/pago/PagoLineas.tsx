@@ -34,8 +34,8 @@ export default function PagoLineas({ p }: { p: PagoModal }) {
               <div className="mb-4 p-4 rounded-xl bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 flex items-start gap-3">
                 <AlertTriangle className="h-5 w-5 text-[var(--data-warning-500)] shrink-0 mt-0.5" />
                 <div className="min-w-0">
-                  <p className="text-sm font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">Modo Fiado</p>
-                  <p className="text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-1" data-pos-fiado-aviso>
+                  <p className="text-sm font-bold text-[var(--data-warning-ink)]">Modo Fiado</p>
+                  <p className="text-sm text-[var(--data-warning-ink)] mt-1" data-pos-fiado-aviso>
                     {avisoFiado({ customerPhone, customerName, total, deuda })}
                   </p>
                 </div>
@@ -129,7 +129,7 @@ export default function PagoLineas({ p }: { p: PagoModal }) {
                           className={cn(
                             "w-full pl-7 pr-2 h-10 rounded-xl border text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary",
                             isFiado
-                              ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-amber-950/20 text-[var(--data-warning-500)] cursor-not-allowed"
+                              ? "border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-amber-950/20 text-[var(--data-warning-ink)] cursor-not-allowed"
                               : "border-[var(--rule-base)] dark:border-[var(--rule-base)]"
                           )}
                           // eslint-disable-next-line jsx-a11y/no-autofocus -- la primera línea de pago recibe el foco al abrir el modal
@@ -210,7 +210,7 @@ export default function PagoLineas({ p }: { p: PagoModal }) {
 
                 {/* Fiado info */}
                 {isFiado && (
-                  <p className="text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-3 text-center">
+                  <p className="text-sm text-[var(--data-warning-ink)] mt-3 text-center">
                     Deuda: {fmt(total)} — se registrará a nombre del cliente
                   </p>
                 )}

@@ -181,7 +181,7 @@ export default function POSFiadoPanel({
           {cobroResult && cobroResult.remaining > 0.01 && (
             <div role="status" className="flex items-start gap-1.5 p-2 rounded-md bg-[var(--data-warning-50)] border border-[var(--data-warning-500)]/40">
               <AlertTriangle className="h-3.5 w-3.5 text-[var(--data-warning-500)] shrink-0 mt-px" />
-              <p className="text-[length:var(--ts-xs)] font-semibold text-[var(--data-warning-500)]">
+              <p className="text-[length:var(--ts-xs)] font-semibold text-[var(--data-warning-ink)]">
                 Cobrado {fmt(cobroResult.cobrado)}. Sobran {fmt(cobroResult.remaining)} — devolver al cliente o usar para nuevo fiado.
               </p>
             </div>

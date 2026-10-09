@@ -90,7 +90,7 @@ export default function POSPaymentModal(props: POSPaymentModalProps) {
           {/* Pendiente warning */}
           {pendiente > 0.01 && (
             <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 rounded-lg p-3 text-center">
-              <span className="text-sm font-bold text-[var(--data-warning-500)]">
+              <span className="text-sm font-bold text-[var(--data-warning-ink)]">
                 Falta: {fmt(pendiente)}
               </span>
             </div>

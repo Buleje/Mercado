@@ -98,11 +98,11 @@ export default function POSOfflineBar({
       {!isOnline && (
         <div className="flex flex-wrap items-center gap-2 p-3 rounded-lg bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30">
           <WifiOff className="h-4 w-4 text-[var(--data-warning-500)] shrink-0" />
-          <p className="text-xs font-semibold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] flex-1">
+          <p className="text-xs font-semibold text-[var(--data-warning-ink)] flex-1">
             Sin conexion — Las ventas se guardan localmente
           </p>
           {pendingCount > 0 && (
-            <span className="text-[length:var(--ts-2xs)] font-bold bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] px-2 py-0.5 rounded-full">
+            <span className="text-[length:var(--ts-2xs)] font-bold bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-ink)] px-2 py-0.5 rounded-full">
               {pendingCount} pendientes
             </span>
           )}

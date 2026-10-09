@@ -121,7 +121,7 @@ export default function POSWhatsAppOrderModal({ showWhatsAppOrder, setShowWhatsA
                       </div>
                     ) : item.matches.length > 1 ? (
                       <div>
-                        <p className="text-xs text-[var(--data-warning-500)] font-bold mb-1.5">&quot;{item.search}&quot; — {item.matches.length} opciones:</p>
+                        <p className="text-xs text-[var(--data-warning-ink)] font-bold mb-1.5">&quot;{item.search}&quot; — {item.matches.length} opciones:</p>
                         <div className="flex flex-wrap gap-1.5">
                           {item.matches.map(m => (
                             <button

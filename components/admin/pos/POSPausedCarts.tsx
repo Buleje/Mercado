@@ -166,7 +166,7 @@ export default function POSPausedCarts({
                     setShowNameInput(true);
                   }
                 }}
-                className="flex items-center gap-1 text-xs font-semibold text-[var(--data-warning-500)] hover:text-[var(--data-warning-500)] transition-colors"
+                className="flex items-center gap-1 text-xs font-semibold text-[var(--data-warning-ink)] transition-colors"
                 title="Pausar carrito"
               >
                 <Pause className="h-3.5 w-3.5" />

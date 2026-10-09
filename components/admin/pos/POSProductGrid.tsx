@@ -76,7 +76,7 @@ export default function POSProductGrid({ products, filtered, expanded, cart, fav
                               strokeWidth={2}
                             />
                             {/* Tooltip */}
-                            <span className="pointer-events-none absolute right-0 top-5 z-20 hidden group-hover:flex whitespace-nowrap bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--data-warning-500)] shadow-[var(--shadow-sm)]">
+                            <span className="pointer-events-none absolute right-0 top-5 z-20 hidden group-hover:flex whitespace-nowrap bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-card-border rounded-lg px-2 py-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--data-warning-ink)] shadow-[var(--shadow-sm)]">
                               Stock bajo ({p.stock})
                             </span>
                           </div>
@@ -96,7 +96,7 @@ export default function POSProductGrid({ products, filtered, expanded, cart, fav
                       <div className="flex items-center justify-between mt-0.5">
                         <span className="text-xs font-extrabold text-primary tabular-nums">{fmt(p.price)}</span>
                         {p.stock != null && (
-                          <span className={cn("text-[length:var(--ts-2xs)] tabular-nums", p.stock <= (p.stockMin || 5) ? "text-[var(--data-warning-500)] font-semibold" : "text-[var(--text-tertiary)] dark:text-muted")}>
+                          <span className={cn("text-[length:var(--ts-2xs)] tabular-nums", p.stock <= (p.stockMin || 5) ? "text-[var(--data-warning-ink)] font-semibold" : "text-[var(--text-tertiary)] dark:text-muted")}>
                             {p.stock}
                           </span>
                         )}

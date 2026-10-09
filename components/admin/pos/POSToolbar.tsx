@@ -135,7 +135,7 @@ export default function POSToolbar(props: POSToolbarProps) {
               type="button"
               onClick={() => window.dispatchEvent(new CustomEvent("buleje:navigate-caja"))}
               title="Abrir la caja: lo que cobres entra al arqueo"
-              className="shrink-0 inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-semibold text-[var(--data-warning-500)] border border-[var(--data-warning-500)]/30 px-2.5 py-1 max-sm:min-h-9 rounded-lg hover:bg-[var(--data-warning-500)]/10 transition-colors"
+              className="shrink-0 inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-semibold text-[var(--data-warning-ink)] border border-[var(--data-warning-500)]/30 px-2.5 py-1 max-sm:min-h-9 rounded-lg hover:bg-[var(--data-warning-500)]/10 transition-colors"
             >
               <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-warning-500)]" aria-hidden />
               Sin caja<span className="max-sm:hidden"> · Abrir</span>
@@ -226,7 +226,7 @@ function ChipListaGuardada({ guardadoEn }: { guardadoEn: string }) {
   if (!edad.viejo) {
     return (
       <span
-        className="shrink-0 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--data-warning-500)]"
+        className="shrink-0 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--data-warning-ink)]"
         title="Sin conexión: vendes con la lista guardada; las ventas se guardan y se suben al volver internet"
       >
         <WifiOff className="h-3.5 w-3.5" aria-hidden /> Lista {edad.etiqueta}

@@ -155,7 +155,7 @@ export default function POSMetricsStrip({ refreshKey }: POSMetricsStripProps = {
       icon: TrendingUp,
       label: "Ticket",
       value: `S/ ${(data.ticketPromedio ?? 0).toFixed(1)}`,
-      color: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
+      color: "text-[var(--data-warning-ink)]",
     },
   ];
 

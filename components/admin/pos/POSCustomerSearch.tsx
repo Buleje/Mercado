@@ -268,8 +268,8 @@ export default function POSCustomerSearch({
           <div className="flex items-center gap-1.5 px-3 py-2 bg-[var(--data-warning-50)] dark:bg-yellow-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 rounded-lg">
             <span className={cn(
               "text-sm font-bold flex items-center gap-1.5",
-              reliabilityScore.score >= 4 ? "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" :
-              reliabilityScore.score >= 3 ? "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" :
+              reliabilityScore.score >= 4 ? "text-[var(--data-warning-ink)]" :
+              reliabilityScore.score >= 3 ? "text-[var(--data-warning-ink)]" :
               "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
             )}>
               Confiabilidad:
@@ -298,7 +298,7 @@ export default function POSCustomerSearch({
         {customerNotes && (
           <div className="flex items-center gap-1.5 px-3 py-2 bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 rounded-lg">
             <span className="text-xs shrink-0">&#128221;</span>
-            <span className="text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-medium truncate">
+            <span className="text-sm text-[var(--data-warning-ink)] font-medium truncate">
               Nota: {customerNotes.slice(0, 50)}{customerNotes.length > 50 ? "..." : ""}
             </span>
           </div>
@@ -308,7 +308,7 @@ export default function POSCustomerSearch({
           <div className="space-y-1">
             <div className="flex items-center gap-1.5 px-3 py-2 bg-[var(--data-warning-50)] dark:bg-yellow-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 rounded-lg">
               <Star className="h-3.5 w-3.5 text-[var(--data-warning-500)] shrink-0" />
-              <span className="text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-bold">
+              <span className="text-sm text-[var(--data-warning-ink)] font-bold">
                 {loyaltyPoints} puntos (= {formatCurrency(loyaltyPoints * POINTS_RATE)} en descuento)
               </span>
               {loyaltyPoints >= 100 && (

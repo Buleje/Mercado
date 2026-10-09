@@ -133,7 +133,7 @@ export default function POSExpressMode({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <Zap className="h-4 w-4 text-[var(--data-warning-500)]" />
-          <span className="text-xs font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] inline-flex items-center gap-1">
+          <span className="text-xs font-bold text-[var(--data-warning-ink)] inline-flex items-center gap-1">
             Modo Express
             <span className="text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] cursor-help" title="Escribe el código del producto + Enter para agregar rápido sin buscar">
               <HelpCircle className="h-3.5 w-3.5" />

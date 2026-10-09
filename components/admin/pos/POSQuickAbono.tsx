@@ -76,14 +76,14 @@ export default function QuickAbonoFromSale({ customerPhone, customerName }: { cu
   const quickAmounts = [10, 20, 50].filter(a => a <= fiado.saldo);
   return (
     <div className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] pt-4 space-y-3">
-      <p className="text-sm font-semibold text-[var(--data-warning-500)]">
+      <p className="text-sm font-semibold text-[var(--data-warning-ink)]">
         {customerName || customerPhone} tiene fiado de <span className="font-bold">{formatCurrency(Number(fiado.saldo))}</span>. ¿Abonar?
       </p>
       <MedioCobroCompacto valor={metodo} onCambiar={setMetodo} deshabilitado={paying} />
       <div className="flex flex-wrap gap-2">
         {quickAmounts.map(a => (
           <button key={a} onClick={() => abonar(a)} disabled={paying}
-            className="px-4 min-h-10 rounded-xl text-sm font-semibold bg-[var(--data-warning-100)] text-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)] hover:text-white transition-colors disabled:opacity-50">
+            className="px-4 min-h-10 rounded-xl text-sm font-semibold bg-[var(--data-warning-100)] text-[var(--data-warning-ink)] hover:bg-[var(--data-warning-500)] hover:text-white transition-colors disabled:opacity-50">
             S/{a}
           </button>
         ))}

@@ -61,7 +61,7 @@ function stockBadge(stock: number | undefined, type?: string | null) {
     );
   if (stock <= 10)
     return (
-      <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-[var(--data-warning-50)] dark:bg-amber-950/30 text-[var(--data-warning-500)]">
+      <span className="text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full bg-[var(--data-warning-50)] dark:bg-amber-950/30 text-[var(--data-warning-ink)]">
         {stock}
       </span>
     );

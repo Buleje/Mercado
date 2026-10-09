@@ -32,7 +32,7 @@ function SaleHistoryItem({ sale }: { sale: SaleRecord }) {
             sale.payment === "yape" ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)]" :
             sale.payment === "plin" ? "bg-teal-50 text-[var(--accent-dark)] dark:text-[var(--accent)]" :
             sale.payment === "tarjeta" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" :
-            sale.payment === "fiado" ? "bg-[var(--data-warning-50)] text-[var(--data-warning-500)]" :
+            sale.payment === "fiado" ? "bg-[var(--data-warning-50)] text-[var(--data-warning-ink)]" :
             "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
           )}>
             {sale.payment}
@@ -103,7 +103,7 @@ export default function POSSaleHistory({ showHistory, setShowHistory }: { showHi
                 </div>
               )}
               {r.devuelto && r.devuelto.cantidad > 0 && (
-                <p className="mt-1.5 text-[length:var(--ts-2xs)] text-[var(--data-warning-500)]">
+                <p className="mt-1.5 text-[length:var(--ts-2xs)] text-[var(--data-warning-ink)]">
                   Devuelto hoy: {fmt(r.devuelto.monto)} ({r.devuelto.cantidad}) · no se resta del total
                 </p>
               )}

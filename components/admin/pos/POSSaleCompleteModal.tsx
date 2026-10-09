@@ -170,8 +170,8 @@ export default function SaleCompleteModal({
         <div className="flex-1 overflow-y-auto px-6 pb-5 space-y-4">
           {saleComplete.change === -1 ? (
             <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)]/30 rounded-xl p-4 text-center">
-              <p className="text-sm font-semibold text-[var(--data-warning-500)] uppercase tracking-wide mb-1">Venta al fiado</p>
-              <p className="text-base text-[var(--data-warning-500)]">El cliente queda debiendo</p>
+              <p className="text-sm font-semibold text-[var(--data-warning-ink)] uppercase tracking-wide mb-1">Venta al fiado</p>
+              <p className="text-base text-[var(--data-warning-ink)]">El cliente queda debiendo</p>
             </div>
           ) : saleComplete.change > 0 ? (
             <div className="bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 rounded-xl p-5 text-center">

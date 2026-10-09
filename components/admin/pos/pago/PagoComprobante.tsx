@@ -62,7 +62,7 @@ export default function PagoComprobante({ p }: { p: PagoModal }) {
               )}
             </div>
             {(comprobanteTipo === "cotizacion" || comprobanteTipo === "proforma") && (
-              <p className="text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-2 font-medium">
+              <p className="text-sm text-[var(--data-warning-ink)] mt-2 font-medium">
                 Se generará {comprobanteTipo === "cotizacion" ? "cotización" : "proforma"} con los items del carrito
               </p>
             )}
