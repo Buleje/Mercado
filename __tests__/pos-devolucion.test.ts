@@ -9,6 +9,8 @@ import { NextRequest } from "next/server";
 import {
   coincideVenta,
   cuerpoNotaCredito,
+  huboDevolucionAntes,
+  previaReembolso,
   mensajeErrorNc,
   fallaSeguraDeRepetir,
   type ReturnItem,
@@ -28,6 +30,7 @@ vi.mock("@/lib/db", () => ({
   NotasCreditoDB: { sumActiveForSale: mockSum, siguienteNumero: mockNumero, create: mockCreate, getAll: vi.fn() },
 }));
 vi.mock("@/lib/db/sales.db", () => ({ SalesDB: { getById: mockGetSale } }));
+vi.mock("@/lib/db/settings.db", () => ({ SettingsDB: { get: vi.fn(() => Promise.resolve({ taxRate: 18 })) } }));
 vi.mock("@/lib/audit-logger", () => ({ logAudit: vi.fn() }));
 vi.mock("@/lib/rate-limit", () => ({ applyRateLimit: vi.fn(() => null) }));
 vi.mock("@/lib/admin-cache", () => ({ invalidateAdminCache: { afterDocument: vi.fn() } }));
@@ -86,6 +89,50 @@ describe("cuerpoNotaCredito", () => {
     expect(c.motivoCodigo).toBe("06");
     expect(c.motivoDesc.length).toBe(500);
   });
+  it("con algo ya devuelto antes, completar el resto es 07 (maxQty = lo que queda, el monto es parcial)", () => {
+    // Venta de 3 leches, ya volvió 1: maxQty = 2 y se devuelven las 2 → antes «06 total» por S/ 7,86.
+    const items = [item({ productId: 2, name: "Leche Gloria", price: 3.93, maxQty: 2, returnQty: 2, selected: true })];
+    expect(cuerpoNotaCredito(VENTA.id, items, 7.86).motivoCodigo).toBe("06");
+    expect(cuerpoNotaCredito(VENTA.id, items, 7.86, true).motivoCodigo).toBe("07");
+  });
+});
+
+describe("huboDevolucionAntes", () => {
+  it("unidades o plata devueltas = sí; vacío o en 0 = no", () => {
+    expect(huboDevolucionAntes({ unidades: new Map(), plata: 0 })).toBe(false);
+    expect(huboDevolucionAntes({ unidades: new Map([[2, 0]]), plata: 0 })).toBe(false);
+    expect(huboDevolucionAntes({ unidades: new Map([[2, 1]]), plata: 0 })).toBe(true);
+    expect(huboDevolucionAntes({ unidades: new Map(), plata: 3.93 })).toBe(true);
+  });
+});
+
+describe("previaReembolso (la misma cuenta que el servidor)", () => {
+  // El mismo producto en dos líneas a precios distintos: el servidor cobra desde la primera que queda.
+  const DOS_LINEAS = {
+    total: 15,
+    items: [
+      { productId: 7, name: "Aceite", price: 10, quantity: 1, unit: "und" },
+      { productId: 7, name: "Aceite", price: 5, quantity: 1, unit: "und" },
+    ],
+  };
+  const NADA = { unidades: new Map<number, number>(), plata: 0 };
+
+  it("elegir la 2.ª línea (S/ 5) muestra S/ 10, lo que devuelve el servidor (antes mostraba 5)", () => {
+    const items = [
+      { productId: 7, name: "Aceite", price: 10, maxQty: 1, returnQty: 0, selected: false },
+      { productId: 7, name: "Aceite", price: 5, maxQty: 1, returnQty: 1, selected: true },
+    ];
+    expect(previaReembolso(DOS_LINEAS, items, NADA)).toBe(10);
+  });
+
+  it("con la 1.ª ya devuelta, la que queda vale S/ 5 y no pasa de lo que falta reembolsar", () => {
+    const items = [{ productId: 7, name: "Aceite", price: 5, maxQty: 1, returnQty: 1, selected: true }];
+    expect(previaReembolso(DOS_LINEAS, items, { unidades: new Map([[7, 1]]), plata: 10 })).toBe(5);
+  });
+
+  it("nada elegido = 0", () => {
+    expect(previaReembolso(DOS_LINEAS, [], NADA)).toBe(0);
+  });
 });
 
 describe("POST /api/notas-credito con el cuerpo del POS (Zod real)", () => {
@@ -115,6 +162,50 @@ describe("POST /api/notas-credito con el cuerpo del POS (Zod real)", () => {
     expect(typeof data.error).toBe("object");
     expect(mensajeErrorNc(res.status, data)).toBe("No se pudo crear la Nota de Crédito.");
     expect(mockCreate).not.toHaveBeenCalled();
+  });
+
+  it("con `totalConIgv` (lo devuelto) la NC suma exacto: 11,80 = 10,00 + 1,80", async () => {
+    const { POST } = await import("@/app/api/notas-credito/route");
+    const res = await POST(postNc({ ...cuerpoNotaCredito(VENTA.id, [item({ selected: true, returnQty: 1 })], 11.8), totalConIgv: 11.8 }));
+    expect(res.status).toBe(201);
+    expect(mockCreate.mock.calls[0][1]).toMatchObject({ monto: 10, igv: 1.8, total: 11.8 });
+  });
+
+  it("IGV al céntimo: base 8,47 guarda 1,52 y 9,99 (antes 9,9946)", async () => {
+    const { POST } = await import("@/app/api/notas-credito/route");
+    await POST(postNc({ saleId: VENTA.id, motivoCodigo: "07", motivoDesc: "x", monto: 8.47 }));
+    expect(mockCreate.mock.calls[0][1]).toMatchObject({ monto: 8.47, igv: 1.52, total: 9.99 });
+  });
+
+  it("tope en base: una venta de S/ 23,60 con IGV no admite una nota de base 23,60 (18 % de más)", async () => {
+    const { POST } = await import("@/app/api/notas-credito/route");
+    const pasada = await POST(postNc({ saleId: VENTA.id, motivoCodigo: "06", motivoDesc: "x", monto: 23.6 }));
+    expect(pasada.status).toBe(400);
+    const data = await pasada.json();
+    expect(data).toMatchObject({ disponible: 20, disponibleConIgv: 23.6 });
+    expect(mockCreate).not.toHaveBeenCalled();
+    const justa = await POST(postNc({ saleId: VENTA.id, motivoCodigo: "06", motivoDesc: "x", monto: 20 }));
+    expect(justa.status).toBe(201);
+  });
+
+  it("con la base entera ya acreditada, una NC de S/ 0,01 da 400 (antes el céntimo de tolerancia las dejaba sin fin)", async () => {
+    const { POST } = await import("@/app/api/notas-credito/route");
+    mockSum.mockResolvedValue(20); // base de 23,60 = 20,00, ya emitida entera
+    const res = await POST(postNc({ saleId: VENTA.id, motivoCodigo: "07", motivoDesc: "x", monto: 0.01 }));
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ disponible: 0, disponibleConIgv: 0 });
+    const conIgv = await POST(postNc({ saleId: VENTA.id, motivoCodigo: "07", motivoDesc: "x", totalConIgv: 0.01 }));
+    expect(conIgv.status).toBe(400);
+    expect(mockCreate).not.toHaveBeenCalled();
+  });
+
+  it("si todavía queda algo, el céntimo de redondeo sigue entrando (queda 0,01 → pasa 0,02, no 0,03)", async () => {
+    const { POST } = await import("@/app/api/notas-credito/route");
+    mockSum.mockResolvedValue(19.99);
+    const pasada = await POST(postNc({ saleId: VENTA.id, motivoCodigo: "07", motivoDesc: "x", monto: 0.03 }));
+    expect(pasada.status).toBe(400);
+    const justa = await POST(postNc({ saleId: VENTA.id, motivoCodigo: "07", motivoDesc: "x", monto: 0.02 }));
+    expect(justa.status).toBe(201);
   });
 
   it("errores con texto se muestran; 403 dice quién la emite", () => {

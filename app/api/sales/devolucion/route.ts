@@ -2,11 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidateTenantTag } from "@/lib/cache";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
-import { toNumOrZero } from "@/lib/decimal-utils";
-import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { DevolucionError, DevolucionesPosDB } from "@/lib/db/devoluciones-pos.db";
 
 const ReturnItemSchema = z.object({
   productId: z.number().int().positive(),
@@ -18,30 +17,54 @@ const DevolucionSchema = z.object({
   saleId: z.string().min(1),
   items: z.array(ReturnItemSchema).min(1).max(50),
   refundType: z.enum(["efectivo", "credito"]),
+  /** uuid que el POS crea al abrir el paso 2: el reintento responde lo mismo sin devolver dos veces. */
+  idempotencyKey: z.string().trim().min(8).max(80).optional(),
 });
+
+const ROLES = ["admin", "owner", "manager", "cajero"] as const;
+
+/**
+ * GET /api/sales/devolucion?saleId=…
+ * Lo ya devuelto de una venta (unidades por producto y plata), para que el POS
+ * no ofrezca devolver lo que ya volvió y su vista previa use el mismo tope.
+ */
+export async function GET(req: NextRequest) {
+  const auth = await requireAdmin(req, ROLES);
+  if (auth instanceof NextResponse) return auth;
+  if (!auth.tenantId) return NextResponse.json({ error: "Sesión sin tenant válido" }, { status: 401 });
+
+  const saleId = req.nextUrl.searchParams.get("saleId")?.trim();
+  if (!saleId) return NextResponse.json({ error: "Falta saleId" }, { status: 400 });
+  try {
+    const estado = await DevolucionesPosDB.estado(auth.tenantId, saleId);
+    if (!estado) return NextResponse.json({ error: "Venta no encontrada" }, { status: 404 });
+    return NextResponse.json(estado);
+  } catch (e) {
+    logger.error("[sales/devolucion] GET error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "No se pudo leer la venta" }, { status: 500 });
+  }
+}
 
 /**
  * POST /api/sales/devolucion
- * Process a product return from an existing sale.
- * Restores stock, creates InventoryMovement records, and optionally
- * applies credit to the customer's account.
+ * Devuelve productos de una venta: repone stock, deja el `Return` y, si es a
+ * crédito, lo suma al cliente. La plata sale de `lib/pos/reembolso.ts`: lo que
+ * se cobró de verdad (descuento global y trueque prorrateados), nunca más que
+ * `Sale.total` sumando todas las devoluciones de la venta.
  */
 export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "sales-devolucion"); if (_rl) return _rl;
-  const auth = await requireAdmin(req, ["admin", "owner", "manager", "cajero"]);
+  const auth = await requireAdmin(req, ROLES);
   if (auth instanceof NextResponse) return auth;
 
   // SECURITY 2026-05-17 (audit C1): nunca fallback a "main".
-  // Un JWT canónico sin tenantId aplicaba devoluciones contra el tenant "main"
-  // por defecto — vector de cross-tenant write. Tampoco se permitía owner/manager
-  // devolver (A13: solo admin+cajero), se incluyen ahora para alinear con /sales POST.
   if (!auth.tenantId) {
     return NextResponse.json({ error: "Sesión sin tenant válido" }, { status: 401 });
   }
   const tenantId = auth.tenantId;
 
   try {
-    const raw = await req.json();
+    const raw = await req.json().catch(() => null);
     const parsed = DevolucionSchema.safeParse(raw);
     if (!parsed.success) {
       return NextResponse.json(
@@ -50,12 +73,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { saleId, items, refundType } = parsed.data;
+    const { saleId, items, refundType, idempotencyKey } = parsed.data;
 
-    // SECURITY 2026-05-05 (audit POS #4): refund efectivo requiere admin.
-    // Antes cajero solo podía hacer refund efectivo sin aprobación —
-    // vector de fraude (vender a familiar, devolver cash, queda con dinero).
-    // Ahora cajero solo puede hacer refund "crédito"; admin puede ambos.
+    // SECURITY 2026-05-05 (audit POS #4): refund efectivo requiere admin o dueño;
+    // el cajero solo devuelve a crédito.
     if (refundType === "efectivo" && auth.role !== "admin" && auth.role !== "owner") {
       return NextResponse.json(
         { error: "Refund en efectivo requiere autorización del admin" },
@@ -63,157 +84,51 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Verify sale exists
-    const sale = await prisma.sale.findFirst({
-      where: { id: saleId, tenantId },
-      include: { items: true },
+    const r = await DevolucionesPosDB.registrar(tenantId, {
+      saleId,
+      items,
+      refundType,
+      idempotencyKey,
+      usuario: auth.username,
     });
 
-    if (!sale) {
-      return NextResponse.json({ error: "Venta no encontrada" }, { status: 404 });
+    if (!r.repetida) {
+      logActivity(
+        "Devolucion", "venta",
+        `Devolucion de S/${r.totalRefund.toFixed(2)} para venta ${saleId.slice(0, 8)} (${refundType})`,
+        saleId, auth.username,
+      ).catch((err) => logger.warn("[sales/devolucion] activity log failed", { err: String(err) }));
+
+      // El stock se repone por la transacción, salteando ProductsDB: sin esto el
+      // Inventario sigue mostrando el stock de antes de que la mercadería volviera.
+      revalidateTenantTag(tenantId, "products");
     }
-
-    let totalRefund = 0;
-    const returnItems: { productId: number; name: string; quantity: number; price: number }[] = [];
-
-    // SECURITY 2026-05-06 (pentest H4): tope acumulado de qty devuelta por
-    // saleItem. Antes una devolución de 50 unidades sobre venta de 1 daba
-    // refund infinito (creditBalance × 50) + stock inflado al producto.
-    // Buscar devoluciones previas de esta misma venta (Return scoped por tenant).
-    const previousReturns = await prisma.return.findMany({
-      where: { saleId, tenantId },
-      select: { items: { select: { productId: true, quantity: true } } },
-    });
-    const previousReturnsFlat = previousReturns.flatMap((r) => r.items);
-    const returnedSoFar = new Map<number, number>();
-    for (const r of previousReturnsFlat) {
-      if (r.productId == null) continue;
-      returnedSoFar.set(r.productId, (returnedSoFar.get(r.productId) ?? 0) + r.quantity);
-    }
-
-    await prisma.$transaction(async (tx) => {
-      for (const item of items) {
-        // Find original sale item to get price
-        const saleItem = sale.items.find(si => si.productId === item.productId);
-        if (!saleItem) continue;
-
-        // SECURITY (pentest H4): qty devuelta no puede exceder qty vendida menos lo ya devuelto.
-        const alreadyReturned = returnedSoFar.get(item.productId) ?? 0;
-        const remaining = saleItem.quantity - alreadyReturned;
-        if (item.qty > remaining) {
-          throw new Error(
-            `Qty solicitada (${item.qty}) excede disponible (${remaining}) para producto ${saleItem.name}`,
-          );
-        }
-
-        // TD-018: saleItem.price es Decimal
-        const saleItemPriceNum = toNumOrZero(saleItem.price);
-        const itemTotal = saleItemPriceNum * item.qty;
-        totalRefund += itemTotal;
-
-        // SECURITY (pentest H3): findFirst con tenantId. Antes findUnique
-        // sin scope permitía restaurar stock al producto del tenant víctima.
-        const product = await tx.product.findFirst({
-          where: { id: item.productId, tenantId },
-        });
-        if (product && product.stock != null) {
-          const previousStock = product.stock;
-          const newStock = previousStock + item.qty;
-
-          await tx.product.updateMany({
-            where: { id: item.productId, tenantId },
-            data: { stock: newStock },
-          });
-
-          // Create InventoryMovement
-          await tx.inventoryMovement.create({
-            data: {
-              productId: item.productId,
-              type: "devolucion",
-              quantity: item.qty,
-              previousStock,
-              newStock,
-              reference: saleId,
-              notes: item.motivo || "Devolucion desde POS",
-              createdBy: auth.username,
-              tenantId,
-            },
-          });
-        }
-
-        returnItems.push({
-          productId: item.productId,
-          name: saleItem.name,
-          quantity: item.qty,
-          price: saleItemPriceNum,
-        });
-      }
-
-      // Create Return record
-      await tx.return.create({
-        data: {
-          saleId,
-          reason: items[0]?.motivo || "Devolucion POS",
-          total: totalRefund,
-          customerPhone: sale.customerPhone,
-          creditApplied: refundType === "credito",
-          tenantId,
-          items: {
-            create: returnItems.map(ri => ({
-              productId: ri.productId,
-              name: ri.name,
-              quantity: ri.quantity,
-              price: ri.price,
-              unit: "unidad",
-            })),
-          },
-        },
-      });
-
-      // If credit type, add to customer's credit balance.
-      // SECURITY 2026-05-07 (Z4): updateMany con tenantId scope. Customer.phone
-      // es @unique global → un update({phone}) sin tenantId podia acreditar
-      // creditBalance al primer Customer encontrado en cualquier tenant.
-      if (refundType === "credito" && sale.customerPhone) {
-        await tx.customer.updateMany({
-          where: { phone: sale.customerPhone, tenantId: auth.tenantId },
-          data: { creditBalance: { increment: totalRefund } },
-        });
-      }
-    });
-
-    logActivity(
-      "Devolucion", "venta",
-      `Devolucion de S/${totalRefund.toFixed(2)} para venta ${saleId.slice(0, 8)} (${refundType})`,
-      saleId, auth.username,
-    ).catch((err) => logger.warn("[sales/devolucion] activity log failed", { err: String(err) }));
-
-    // La devolución repone stock con `tx.product.updateMany`, salteando
-    // ProductsDB y su invalidación: sin esto el Inventario sigue mostrando el
-    // stock de antes de que la mercadería volviera.
-    revalidateTenantTag(tenantId, "products");
 
     return NextResponse.json({
       success: true,
-      totalRefund,
-      refundType,
-      items: returnItems,
+      totalRefund: r.totalRefund,
+      brutoSinDescuento: r.brutoSinDescuento,
+      refundType: r.refundType,
+      items: r.items,
+      repetida: r.repetida,
     });
   } catch (e) {
+    if (e instanceof DevolucionError) {
+      return NextResponse.json({ error: e.message, code: e.code }, { status: e.status });
+    }
+    // La misma clave llegó dos veces a la vez sobre ventas distintas: el `Return.id` ya existe.
+    if ((e as { code?: string } | null)?.code === "P2002") {
+      return NextResponse.json(
+        { error: "Esta devolución ya se registró con otra venta. Cierra y vuelve a abrir la devolución.", code: "idempotencia_distinta" },
+        { status: 422 },
+      );
+    }
     const msg = e instanceof Error ? e.message : String(e);
     logger.error("[sales/devolucion] POST error", { err: msg });
-
-    // Errores de negocio conocidos (lanzados explícitamente dentro de la tx)
-    // son seguros de mostrar al cliente como 400.
-    const isBusinessError =
-      msg.startsWith("Qty solicitada") ||
-      msg.startsWith("Stock insuficiente");
-
-    if (isBusinessError) {
-      return NextResponse.json({ error: msg }, { status: 400 });
+    // Pool lleno: no se empezó nada. 503 → el POS reintenta una vez con la misma clave.
+    if (/Unable to start a transaction/i.test(msg)) {
+      return NextResponse.json({ error: "El sistema está ocupado. Vuelve a intentar en unos segundos." }, { status: 503 });
     }
-
-    // Errores infraestructurales (Prisma P-codes, FK violations, etc.) → mensaje genérico.
     return NextResponse.json(
       { error: "Error al procesar la devolucion" },
       { status: 500 },

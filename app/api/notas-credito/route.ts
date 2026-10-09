@@ -6,14 +6,27 @@ import { requireAdmin } from "@/lib/require-admin";
 import { logAudit } from "@/lib/audit-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { SettingsDB } from "@/lib/db/settings.db";
+import { igvRateFromSettings } from "@/lib/tax";
+import { sinDato } from "@/lib/errores/sin-dato";
+import { baseDisponibleNotaCredito, desgloseNotaCredito } from "@/lib/pos/reembolso";
 
 const CreateNotaCreditoSchema = z.object({
   orderId: z.string().optional(),
   saleId: z.string().optional(),
   motivoCodigo: z.string().min(1).max(10),
   motivoDesc: z.string().min(1).max(500),
-  monto: z.number().positive(),
+  /** Base SIN IGV (lo que escribe el contador en Notas de crédito). */
+  monto: z.number().positive().optional(),
+  /**
+   * Lo devuelto CON IGV (el POS cobra con IGV incluido). Si viene, manda: la
+   * base y el IGV salen de él y el total de la nota es exactamente lo devuelto.
+   */
+  totalConIgv: z.number().positive().optional(),
   notas: z.string().max(2000).optional(),
+}).refine((d) => d.monto != null || d.totalConIgv != null, {
+  message: "Falta el monto",
+  path: ["monto"],
 });
 
 export async function GET(req: NextRequest) {
@@ -40,7 +53,7 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "owner", "manager"]);
   if (auth instanceof NextResponse) return auth;
 
-  const raw = await req.json();
+  const raw = await req.json().catch(() => null);
   const parsed = CreateNotaCreditoSchema.safeParse(raw);
   if (!parsed.success) {
     return NextResponse.json(
@@ -51,12 +64,22 @@ export async function POST(req: NextRequest) {
   const data = parsed.data;
 
   try {
-    // SECURITY/CRITICAL 2026-05-06 (pentest H2): validar que la nota crédito
-    // no exceda el monto de la venta original ni acumule duplicados. Antes
-    // un atacante podía emitir N notas por S/99999 contra la misma venta de
-    // S/100 → fraude tributario directo SUNAT.
+    // IGV del negocio (Settings.taxRate en %, 18 por defecto; 0 = exonerado).
+    const ajustes = await SettingsDB.get(auth.tenantId).catch(sinDato("notas-credito ajustes del negocio para el IGV"));
+    const tasa = igvRateFromSettings(ajustes?.taxRate);
+    // Base + IGV = total, al céntimo (antes `igv = monto × 0,18` sin redondear).
+    const { monto, igv, total } = data.totalConIgv != null
+      ? desgloseNotaCredito({ totalConIgv: data.totalConIgv }, tasa)
+      : desgloseNotaCredito({ base: data.monto ?? 0 }, tasa);
+    if (monto <= 0) {
+      return NextResponse.json({ error: "El monto debe ser de al menos S/ 0,01." }, { status: 400 });
+    }
+
+    // SECURITY/CRITICAL 2026-05-06 (pentest H2): la nota no pasa lo que queda de
+    // la venta. Base contra base: `Sale.total` trae IGV y las notas guardan la
+    // base (antes se comparaba base contra total con IGV: 18 % de más).
+    // 1 céntimo de tolerancia por el redondeo de partir el IGV nota por nota.
     if (data.saleId) {
-      // Audit project-wide 2026-05-19: migrado a SalesDB.getById + NotasCreditoDB.sumActiveForSale.
       const sale = await SalesDB.getById(auth.tenantId, data.saleId);
       if (!sale) {
         return NextResponse.json(
@@ -66,13 +89,20 @@ export async function POST(req: NextRequest) {
       }
       const yaEmitido = await NotasCreditoDB.sumActiveForSale(auth.tenantId, data.saleId);
       const saleTotal = Number(sale.total);
-      if (yaEmitido + data.monto > saleTotal) {
+      const disponible = baseDisponibleNotaCredito(saleTotal, yaEmitido, tasa);
+      const dispC = Math.round(disponible * 100);
+      // El céntimo de tolerancia, sólo si todavía queda algo: con 0 disponible «1 > 0 + 1» era
+      // falso y se emitían NC de S/ 0,01 sin fin contra una venta ya acreditada entera.
+      if (Math.round(monto * 100) > dispC + (dispC > 0 ? 1 : 0)) {
+        // Lo que queda con IGV sale del total de la venta (base→total redondeado perdía 1 céntimo: 0,10 → 0,09).
+        const disponibleConIgv = Math.max(0, Math.round(saleTotal * 100) - Math.round(yaEmitido * (1 + tasa) * 100)) / 100;
         return NextResponse.json(
           {
-            error: "El monto excede el total de la venta",
+            error: `El monto excede lo que queda de la venta: hasta S/ ${disponible.toFixed(2)} sin IGV (S/ ${disponibleConIgv.toFixed(2)} con IGV).`,
             saleTotal,
             yaEmitido,
-            disponible: Math.max(0, saleTotal - yaEmitido),
+            disponible,
+            disponibleConIgv,
           },
           { status: 400 }
         );
@@ -81,17 +111,13 @@ export async function POST(req: NextRequest) {
 
     const numero = await NotasCreditoDB.siguienteNumero(auth.tenantId);
 
-    // Calculate IGV over the monto
-    const igv = data.monto * 0.18;
-    const total = data.monto + igv;
-
     const nota = await NotasCreditoDB.create(auth.tenantId, {
       numero,
       orderId: data.orderId,
       saleId: data.saleId,
       motivoCodigo: data.motivoCodigo,
       motivoDesc: data.motivoDesc,
-      monto: data.monto,
+      monto,
       igv,
       total,
       notas: data.notas,

@@ -1,5 +1,6 @@
 import { formatCurrency, formatDateTimeShort } from "@/lib/format";
 import { extractIgv } from "@/lib/tax";
+import { calcularReembolso, planDevolucion } from "@/lib/pos/reembolso";
 
 /** Tipos, motivos y formato de la devolución del POS (partido de POSReturnModal, 09-10). */
 
@@ -76,10 +77,17 @@ export interface CuerpoNotaCredito {
  * `monto` es la BASE sin IGV (el servidor le suma 18 %, como en Notas de crédito): el POS cobra con
  * IGV incluido, así que se le quita antes para que el total de la NC sea lo devuelto.
  * SUNAT: 06 = devolución total, 07 = devolución por ítem.
+ * `maxQty` es lo que QUEDA por devolver: si antes ya se devolvió algo de la venta, completar el
+ * resto es una NC por un monto parcial → siempre 07 (antes salía 06 «total» por lo que faltaba).
  */
-export function cuerpoNotaCredito(saleId: string, items: ReturnItem[], devueltoConIgv: number): CuerpoNotaCredito {
+export function cuerpoNotaCredito(
+  saleId: string,
+  items: ReturnItem[],
+  devueltoConIgv: number,
+  yaHabiaDevolucion = false,
+): CuerpoNotaCredito {
   const devueltos = items.filter((i) => i.selected && i.returnQty > 0);
-  const todo = items.length > 0 && items.every((i) => i.selected && i.returnQty === i.maxQty);
+  const todo = !yaHabiaDevolucion && items.length > 0 && items.every((i) => i.selected && i.returnQty === i.maxQty);
   const detalle = devueltos.map((i) => `${i.returnQty}x ${i.name}`).join(", ");
   return {
     saleId,
@@ -87,6 +95,43 @@ export function cuerpoNotaCredito(saleId: string, items: ReturnItem[], devueltoC
     motivoDesc: `Devolución de mercadería: ${detalle}`.slice(0, 500),
     monto: Math.round(extractIgv(devueltoConIgv).base * 100) / 100,
   };
+}
+
+/** Lo ya devuelto de la venta (GET /api/sales/devolucion): unidades por producto y plata. */
+export interface YaDevuelto {
+  unidades: ReadonlyMap<number, number>;
+  plata: number;
+}
+
+/**
+ * Vista previa del reembolso con la MISMA cuenta que el servidor (`DevolucionesPosDB`): lo cobrado de
+ * verdad (descuento global y trueque prorrateados), nunca más que lo que queda, y las líneas del PLAN
+ * (el mismo producto en dos líneas se cobra desde la primera que queda; elegir la 2.ª de S/ 5 mostraba
+ * S/ 5 y el servidor devolvía S/ 10). Antes `price × cantidad`: S/ 0,10 con trueque mostraba S/ 24,90.
+ */
+export function previaReembolso(
+  sale: Pick<SaleRecord, "total" | "items">,
+  items: readonly ReturnItem[],
+  ya: YaDevuelto,
+): number {
+  const elegidos = items.filter((i) => i.selected && i.returnQty > 0);
+  if (elegidos.length === 0) return 0;
+  const lineasVenta = (sale.items || []).map((i) => ({ productId: i.productId, price: Number(i.price), quantity: i.quantity }));
+  const plan = planDevolucion(lineasVenta, ya.unidades, elegidos.map((i) => ({ productId: i.productId, qty: i.returnQty })));
+  return calcularReembolso({
+    totalVenta: Number(sale.total),
+    lineasVenta,
+    devolver: plan.ok
+      ? plan.lineas.map((l) => ({ price: l.price, quantity: l.qty }))
+      : elegidos.map((i) => ({ price: i.price, quantity: i.returnQty })),
+    yaReembolsado: ya.plata,
+    completaLaVenta: plan.ok && plan.completaLaVenta,
+  }).total;
+}
+
+/** Si la venta ya tuvo devoluciones antes de ésta (unidades o plata): la NC que sigue nunca es «total». */
+export function huboDevolucionAntes(ya: YaDevuelto): boolean {
+  return ya.plata > 0 || [...ya.unidades.values()].some((u) => u > 0);
 }
 
 /** Texto del error de la NC: el 400 de Zod trae un objeto en `error` (antes salía «Error: [object Object]»). */

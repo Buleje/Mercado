@@ -30,6 +30,7 @@ const NotasCreditoChart = dynamic(() => import("./NotasCreditoChart"), {
   ),
 });
 import { cn } from "@/lib/utils";
+import { extractIgv } from "@/lib/tax";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -556,7 +557,9 @@ export default function NotasCreditoModule() {
 
   useEffect(() => {
     if (selectedVenta && autoMonto > 0) {
-      setForm(prev => ({ ...prev, monto: autoMonto.toFixed(2) }));
+      // Los precios de la venta ya traen IGV y `monto` es la BASE: sin esto la nota sumaba el 18 % encima
+      // y, con el tope del servidor (base contra base), la devolución total daba 400 (09-10).
+      setForm(prev => ({ ...prev, monto: (Math.round(extractIgv(autoMonto).base * 100) / 100).toFixed(2) }));
     }
   }, [autoMonto, selectedVenta]);
 
@@ -599,7 +602,8 @@ export default function NotasCreditoModule() {
 
   // ── Computed values ───────────────────────────────────────────────────────
   const montoNum = parseFloat(form.monto) || 0;
-  const computedIgv = montoNum * 0.18;
+  // Al céntimo, como lo guarda el servidor (la tasa la decide él).
+  const computedIgv = Math.round(montoNum * 18) / 100;
   const computedTotal = montoNum + computedIgv;
 
   const filteredNotas = useMemo(() => {
