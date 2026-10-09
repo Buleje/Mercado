@@ -42,6 +42,7 @@ import {
   motivoRepresentanteDniInvalido,
   normalizarDocumento,
   partesParecidas,
+  documentoEnElNombre,
   type CategoriaParte,
   type DocTipo,
   type Parte,
@@ -71,6 +72,7 @@ import CtpPartePrecios from "./CtpPartePrecios";
 import { guardarPreciosPendientes, type PrecioPendiente } from "@/lib/forestal/precio-cliente-borrador";
 import CtpParteVinculos from "./CtpParteVinculos";
 import CtpParteSaldo from "./CtpParteSaldo";
+import CtpParteNombreEsDocumento from "./ctp-parte-nombre-documento";
 import CtpTratoSinCobrar from "./CtpTratoSinCobrar";
 import { useTarifasCliente } from "@/hooks/use-tarifas-cliente";
 import { useSaldoParte } from "@/hooks/use-saldo-parte";
@@ -242,7 +244,12 @@ export default function CtpParteModal({
    * parecido y ser dos fichas legítimas.
    */
   const parecidas = useMemo(
-    () => (coincide ? [] : partesParecidas(b.nombre ?? "", existentes, { excluirId: b.id ?? null })),
+    /* Un nombre que es un RUC/DNI tiene su propio aviso, que busca por número
+       (`CtpParteNombreEsDocumento`): el «parecido» por nombre ahí sería ruido. */
+    () =>
+      coincide || documentoEnElNombre(b.nombre ?? "")
+        ? []
+        : partesParecidas(b.nombre ?? "", existentes, { excluirId: b.id ?? null }),
     [b.nombre, b.id, existentes, coincide],
   );
 
@@ -678,6 +685,14 @@ export default function CtpParteModal({
           <Field label="Nombre o razón social" required span={12}>
             <input type="text" className={I} value={b.nombre} onChange={(e) => set({ nombre: e.target.value })} />
           </Field>
+          <CtpParteNombreEsDocumento
+            nombre={b.nombre ?? ""}
+            idFicha={b.id ?? null}
+            roles={b.roles}
+            existentes={existentes}
+            onCambiar={(v) => set(v)}
+            onUsarExistente={onUsarExistente}
+          />
 
           {parecidas.length > 0 && (
             <div className="col-span-12 rounded-xl border border-[var(--data-warning-500)]/50 bg-[var(--data-warning-100)] px-3 py-2 text-xs text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]">

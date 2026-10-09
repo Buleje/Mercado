@@ -33,6 +33,7 @@ import {
   FormularioClaro,
 } from "./ctp-shared";
 import CtpIngresoPartesForm from "./CtpIngresoPartesForm";
+import CtpIngresoTitularEdit from "./CtpIngresoTitularEdit";
 import CamposPersonalizados from "@/components/admin/shared/CamposPersonalizados";
 import { leerGtfDatos, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
 
@@ -75,6 +76,7 @@ interface Borrador {
   fechaRecepcion: string;
   providerName: string;
   providerDocument: string;
+  providerDocumentType: string;
   originType: string;
   originCode: string;
   originSourceNumber: string;
@@ -104,6 +106,7 @@ const desde = (e: WoodEntry): Borrador => ({
   fechaRecepcion: aInput(e.fechaRecepcion ?? null),
   providerName: e.providerName,
   providerDocument: e.providerDocument ?? "",
+  providerDocumentType: e.providerDocumentType ?? "",
   originType: e.originType,
   originCode: e.originCode ?? "",
   originSourceNumber: e.originSourceNumber ?? "",
@@ -206,6 +209,14 @@ export default function CtpIngresoEditModal({
     if (data.providerName !== base.providerName) out.providerName = data.providerName.trim();
     if (data.providerDocument !== base.providerDocument)
       out.providerDocument = data.providerDocument.trim() || null;
+    /* El tipo viaja cuando cambió él o el número: elegir de la libreta trae
+       los dos juntos, y un número sin tipo no dice si es RUC o DNI. */
+    const tipoDoc = data.providerDocument.trim() ? data.providerDocumentType || "RUC" : null;
+    if (
+      tipoDoc !== (entry.providerDocumentType ?? null) &&
+      (out.providerDocument !== undefined || data.providerDocumentType !== base.providerDocumentType)
+    )
+      out.providerDocumentType = tipoDoc;
     if (data.originType !== base.originType) out.originType = data.originType;
     if (data.originCode !== base.originCode) out.originCode = data.originCode.trim() || null;
     if (data.originSourceNumber !== base.originSourceNumber) {
@@ -400,22 +411,7 @@ export default function CtpIngresoEditModal({
             </Seccion>
 
             <Seccion numero={2} title="Titular habilitante">
-              <Field span={12} label="Proveedor" required>
-                <input
-                  type="text"
-                  className={I}
-                  value={data.providerName}
-                  onChange={(e) => set("providerName", e.target.value)}
-                />
-              </Field>
-              <Field span={12} label="Documento del proveedor">
-                <input
-                  type="text"
-                  className={I}
-                  value={data.providerDocument}
-                  onChange={(e) => set("providerDocument", e.target.value)}
-                />
-              </Field>
+              <CtpIngresoTitularEdit valor={data} onCambiar={(v) => setData((p) => ({ ...p, ...v }))} />
             </Seccion>
 
             <Seccion numero={3} title="Origen del material">

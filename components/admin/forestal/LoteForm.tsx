@@ -7,7 +7,7 @@
  * y el operador decide cómo describirlo comercialmente.
  */
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Layers, Loader2 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -17,6 +17,9 @@ import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
 import { Btn, Field, I, ModalBody, ModalFooter, Seccion } from "./ctp-shared";
 import { avisosVentana } from "@/lib/forestal/lote-ventana";
 import LoteMiembrosEditor, { loteRowsValidas, type LoteRow } from "./LoteMiembrosEditor";
+import CampoDelDirectorio from "./CampoDelDirectorio";
+import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
+import { ordenarPorUso } from "@/lib/forestal/directorio";
 
 const PRODUCT_TYPES = ["Madera aserrada", "Madera escuadrada", "Madera cuartoneada", "Tablillas", "Tablones", "Listones", "Durmientes", "Leña", "Carbón vegetal", "Otro"];
 const UNIT_LABELS: Record<string, string> = { m3: "m³", kg: "Kg", pt: "pt", unidad: "unidad" };
@@ -30,6 +33,11 @@ export default function LoteForm({ onClose, onSaved }: { onClose: () => void; on
   const [unit, setUnit] = useState("m3");
   const [grade, setGrade] = useState("");
   const [destino, setDestino] = useState("");
+  /* Del Directorio (FOR-5): el comprador no tiene columna propia —queda el
+     nombre, escrito igual que en la ficha—; el titular sí se ata por id
+     (`ForestProdLote.titularId`) y su nombre queda copiado como acta. */
+  const [destinoParteId, setDestinoParteId] = useState<string | null>(null);
+  const [titularId, setTitularId] = useState<string | null>(null);
   // Ventana de trabajo y dueño de la madera (ADR-327).
   const [fechaInicio, setFechaInicio] = useState("");
   const [fechaFin, setFechaFin] = useState("");
@@ -42,6 +50,15 @@ export default function LoteForm({ onClose, onSaved }: { onClose: () => void; on
   /* El catálogo de especies de esta planta (ADR-410): las que el aserradero
      agregó también sugieren y también completan el científico. */
   const catalogoEspecies = useEspeciesCatalogo();
+
+  const directorio = useDirectorioForestal();
+  /* Quien recibe la madera: cliente o destinatario de guías. El titular puede
+     ser quien la vende (proveedor) o el cliente que la trae a maquilar. */
+  const compradores = directorio.receptores();
+  const titulares = useMemo(
+    () => ordenarPorUso(directorio.partes.filter((p) => p.activo && (p.roles.includes("proveedor") || p.roles.includes("cliente")))),
+    [directorio.partes],
+  );
 
   function onSpeciesBlur() {
     const match = findSpeciesByCommonName(speciesCommon);
@@ -74,12 +91,15 @@ export default function LoteForm({ onClose, onSaved }: { onClose: () => void; on
           destino: destino.trim() || null,
           fechaInicio: fechaInicio || null,
           fechaFin: fechaFin || null,
+          titularId: titularId ?? null,
           titularNombre: titularNombre.trim() || null,
           notes: notes.trim() || null,
           miembros: rows.filter((x) => Number(x.quantity) > 0).map((x) => ({ produccionEntryId: x.produccionEntryId, quantity: Number(x.quantity) })),
         }),
       });
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message ?? `HTTP ${r.status}`);
+      const usadas = [destinoParteId, titularId].filter((x): x is string => Boolean(x));
+      if (usadas.length > 0) directorio.marcarUso({ partes: usadas });
       onSaved();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -159,12 +179,32 @@ export default function LoteForm({ onClose, onSaved }: { onClose: () => void; on
                 </select>
               </Field>
               <Field span={12} label="Destino / comprador">
-                <input value={destino} onChange={(e) => setDestino(e.target.value)} placeholder="Maderera Ucayali EIRL" className={I} />
+                <CampoDelDirectorio
+                  etiqueta="Destino / comprador"
+                  valor={destino}
+                  parteId={destinoParteId}
+                  opciones={compradores}
+                  placeholder="Maderera Ucayali EIRL"
+                  onCambiar={(nombre, parte) => {
+                    setDestino(nombre);
+                    setDestinoParteId(parte?.id ?? null);
+                  }}
+                />
               </Field>
               {/* De QUIÉN es la madera. En un aserradero que asierra por encargo
                   el lote no es del centro, y el certificado tiene que decirlo. */}
-              <Field span={12} label="Titular de la madera" hint="Dejalo vacío si la madera es del propio centro">
-                <input value={titularNombre} onChange={(e) => setTitularNombre(e.target.value)} placeholder="CC.NN. San Luis · servicio de maquila" className={I} />
+              <Field span={12} label="Titular de la madera" hint="Déjalo vacío si la madera es del propio centro">
+                <CampoDelDirectorio
+                  etiqueta="Titular de la madera"
+                  valor={titularNombre}
+                  parteId={titularId}
+                  opciones={titulares}
+                  placeholder="CC.NN. San Luis · servicio de maquila"
+                  onCambiar={(nombre, parte) => {
+                    setTitularNombre(nombre);
+                    setTitularId(parte?.id ?? null);
+                  }}
+                />
               </Field>
               <Field span={6} label="Inicio de trabajo" hint="Cuándo la planta empieza con este lote">
                 <input type="date" value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} className={I} />

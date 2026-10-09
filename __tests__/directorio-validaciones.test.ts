@@ -13,6 +13,8 @@ import {
   nombresDelLibroQueCoinciden,
   nucleoDelNombre,
   partesParecidas,
+  documentoEnElNombre,
+  fichaConDocumento,
 } from "@/lib/forestal/directorio";
 
 describe("rucChecksumOk — dígito verificador módulo 11", () => {
@@ -145,5 +147,48 @@ describe("nombresDelLibroQueCoinciden — el libro y la ficha escriben distinto"
   it("ignora vacíos y repetidos del libro", () => {
     const r = nombresDelLibroQueCoinciden("Maderera San Martin", ["Maderera San Martín SAC", "", null, "Maderera San Martín SAC"]);
     expect(r).toEqual(["Maderera San Martín SAC"]);
+  });
+});
+
+describe("documentoEnElNombre — el nombre que es un RUC o un DNI (FOR-4)", () => {
+  it("reconoce el RUC escrito en el nombre (caso real de Blas)", () => {
+    expect(documentoEnElNombre("20605859438")).toEqual({ docTipo: "RUC", numero: "20605859438" });
+    expect(documentoEnElNombre(" 206-0585-9438 ")).toEqual({ docTipo: "RUC", numero: "20605859438" });
+  });
+
+  it("reconoce un DNI de 8 dígitos", () => {
+    expect(documentoEnElNombre("47760115")).toEqual({ docTipo: "DNI", numero: "47760115" });
+  });
+
+  it("un nombre con números sigue siendo nombre", () => {
+    expect(documentoEnElNombre("Maderera 2020")).toBeNull();
+    expect(documentoEnElNombre("Transportes 20605859438 SAC")).toBeNull();
+  });
+
+  it("11 dígitos que no empiezan en 1 o 2 no son RUC, y otros largos tampoco", () => {
+    expect(documentoEnElNombre("30605859438")).toBeNull();
+    expect(documentoEnElNombre("1234567")).toBeNull();
+    expect(documentoEnElNombre("")).toBeNull();
+  });
+});
+
+describe("fichaConDocumento — la ficha que ya tiene ese número", () => {
+  const partes = [
+    { id: "dup", nombre: "20605859438", docNumero: null },
+    { id: "blas", nombre: "INVERSIONES AGROFORESTALES BLAS SOCIEDAD ANONIMA CERRADA", docNumero: "20605859438" },
+  ];
+
+  it("encuentra la ficha por documento, no por el nombre", () => {
+    expect(fichaConDocumento(partes, "20605859438")?.id).toBe("blas");
+    expect(fichaConDocumento(partes, "206 0585 9438")?.id).toBe("blas");
+  });
+
+  it("no se encuentra a sí misma", () => {
+    expect(fichaConDocumento(partes, "20605859438", { excluirId: "blas" })).toBeNull();
+  });
+
+  it("vacío o sin coincidencia da null", () => {
+    expect(fichaConDocumento(partes, "")).toBeNull();
+    expect(fichaConDocumento(partes, "20156698963")).toBeNull();
   });
 });

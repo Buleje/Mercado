@@ -382,6 +382,18 @@ export class ForestLoteDB {
         return Number.isFinite(n) && n > max ? n : max;
       }, 0);
       const loteCode = `${prefix}${String(maxN + 1).padStart(3, "0")}`;
+      /* El titular llega del Directorio por id (FOR-5). Se acepta sólo si la
+         ficha es de ESTE tenant y está viva: la FK sola admitiría la ficha de
+         otra planta. Sin ficha válida queda el nombre copiado, como antes. */
+      const titularPedido = input.titularId?.trim();
+      const titularId = titularPedido
+        ? ((
+            await tx.forestParty.findFirst({
+              where: { id: titularPedido, tenantId, deletedAt: null },
+              select: { id: true },
+            })
+          )?.id ?? null)
+        : null;
 
       return tx.forestProdLote.create({
         data: {
@@ -396,7 +408,7 @@ export class ForestLoteDB {
           destino: input.destino?.trim() || null,
           fechaInicio: input.fechaInicio ?? null,
           fechaFin: input.fechaFin ?? null,
-          titularId: input.titularId?.trim() || null,
+          titularId,
           // El nombre queda copiado: es acta. Si mañana se corrige la ficha del
           // directorio, lo que se certificó con este lote no cambia.
           titularNombre: input.titularNombre?.trim() || null,

@@ -498,6 +498,42 @@ export function partesParecidas<T extends { id?: string; nombre: string }>(
   });
 }
 
+/**
+ * El «nombre» que en realidad es un RUC o un DNI.
+ *
+ * Medido en Blas (2026-10-09): un transportista se llamaba «20605859438» —el
+ * RUC de la propia Blas— sin documento cargado, y quedaba como segunda ficha de
+ * una empresa que ya estaba en el Directorio con ese RUC. Sólo cuenta si el
+ * campo entero son dígitos (con espacios, puntos o guiones de copiar y pegar):
+ * «Maderera 2020» es un nombre.
+ */
+export function documentoEnElNombre(nombre: string): { docTipo: "RUC" | "DNI"; numero: string } | null {
+  const limpio = (nombre ?? "").trim();
+  if (!/^[\d\s.-]+$/.test(limpio)) return null;
+  const n = limpio.replace(/\D/g, "");
+  if (n.length === 11 && /^[12]/.test(n)) return { docTipo: "RUC", numero: n };
+  if (n.length === 8) return { docTipo: "DNI", numero: n };
+  return null;
+}
+
+/**
+ * La ficha que ya tiene ESTE número de documento, sin mirar el tipo: un RUC es
+ * de una sola empresa aunque la ficha lo haya guardado con otro tipo. La que se
+ * está editando no cuenta.
+ */
+export function fichaConDocumento<T extends { id?: string; docNumero?: string | null }>(
+  partes: readonly T[],
+  numero: string,
+  opts: { excluirId?: string | null } = {},
+): T | null {
+  const n = normalizarDocumento(numero);
+  if (!n) return null;
+  return (
+    partes.find((p) => (!opts.excluirId || p.id !== opts.excluirId) && normalizarDocumento(p.docNumero ?? "") === n) ??
+    null
+  );
+}
+
 // ── Esquemas ────────────────────────────────────────────────────────────────
 
 
