@@ -1,15 +1,10 @@
 "use client";
-import { CardTitle } from "@buleje/design-system";
-import { useEffect, useCallback, useId, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import {
-  ShoppingCart, Wallet, CreditCard, Scale, HandCoins,
-  Banknote, History, ArrowRight, Clock, Users,
-} from "@buleje/design-system/icons";
+import { ShoppingCart, Wallet, Scale, HandCoins, Clock, Users } from "@buleje/design-system/icons";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { cn } from "@/lib/utils";
 
 const MODULE_ID = "ventas-caja";
@@ -24,9 +19,22 @@ const TurnosModule           = dynamic(() => import("@/components/admin/TurnosMo
 const OfflineIndicator       = dynamic(() => import("@/components/admin/OfflineIndicator"),       { ssr: false });
 const CommissionCalculator   = dynamic(() => import("@/components/admin/CommissionCalculator"),   { loading: S });
 
+/**
+ * Las seis pestañas se bajan en segundo plano cuando el navegador queda libre:
+ * cada una es un chunk aparte (`next/dynamic`) y, sin esto, la primera vez que
+ * se abre cada pestaña se ve el cargador mientras baja (medido en dev: 330-470 ms
+ * por pestaña). Con «ahorro de datos» activo no se precarga nada.
+ */
+const PRECARGAS = [
+  () => import("@/components/admin/POSView"),
+  () => import("@/components/admin/TurnosModule"),
+  () => import("@/components/admin/CashRegisterTab"),
+  () => import("@/components/admin/FiadosModule"),
+  () => import("@/components/admin/CashAuditTab"),
+  () => import("@/components/admin/CommissionCalculator"),
+];
+
 import { usePOSOffline } from "@/components/admin/pos/usePOSOffline";
-import { csrfHeaders } from "@/lib/csrf-client";
-import { formatCurrency } from "@/lib/format";
 
 
 // ── Tabs reordenados en flujo lógico del día ──────────────────────────────────
@@ -39,236 +47,10 @@ const TABS = [
   { id: "comisiones"        as const, label: "Comisiones",        shortLabel: "Comisiones",  hint: "Cálculo comisiones",  icon: Users,         desc: "Calcula comisiones de vendedores" },
 ];
 
-// Índices tras los cuales insertar separador visual (entre grupos lógicos)
-const _SEPARATOR_AFTER_INDICES = [1, 3, 4]; // Después de Dashboard (idx 1), Turnos (idx 3), Caja Registradora (idx 4)
-
 type TabId = typeof TABS[number]["id"];
 
 /** Los ids, estables: el hook los usa como dependencia. */
 const TAB_IDS = TABS.map((t) => t.id);
-
-// ── Shift Close Modal Types ─────────────────────────────────────────────────
-
-interface ShiftSummary {
-  totalVendido: number;
-  numVentas: number;
-  efectivo: number;
-  yape: number;
-  plin: number;
-  tarjeta: number;
-  fiado: number;
-}
-
-function ShiftCloseModal({
-  onClose,
-  onConfirm,
-}: {
-  onClose: () => void;
-  onConfirm: () => void;
-}) {
-  const [summary, setSummary] = useState<ShiftSummary | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [confirming, setConfirming] = useState(false);
-  const panelRef = useRef<HTMLDivElement>(null);
-  const tituloId = useId();
-  // Sin Escape: es el corte del día, se decide con Cancelar/Confirmar, no
-  // se descarta sin querer con una tecla.
-  useModalAccesible(panelRef, { onCerrar: onClose, cerrarConEscape: false, activo: true });
-
-  const fetchSummary = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/sales?today=1&limit=1000");
-      if (!res.ok) throw new Error("No se pudo cargar las ventas");
-      const sales = await res.json();
-      const arr = Array.isArray(sales) ? sales : [];
-
-      const data: ShiftSummary = {
-        totalVendido: 0,
-        numVentas: arr.length,
-        efectivo: 0,
-        yape: 0,
-        plin: 0,
-        tarjeta: 0,
-        fiado: 0,
-      };
-
-      for (const sale of arr) {
-        const total = typeof sale.total === "number" ? sale.total : 0;
-        data.totalVendido += total;
-        const pm = (sale.payment ?? "").toLowerCase();
-        if (pm.includes("efectivo")) data.efectivo += total;
-        else if (pm.includes("yape")) data.yape += total;
-        else if (pm.includes("plin")) data.plin += total;
-        else if (pm.includes("tarjeta")) data.tarjeta += total;
-        else if (pm.includes("fiado")) data.fiado += total;
-        else data.efectivo += total; // default bucket
-      }
-
-      setSummary(data);
-    } catch {
-      setError("Error al cargar el resumen de ventas");
-    }
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    void fetchSummary();
-  }, [fetchSummary]);
-
-  const handleConfirm = async () => {
-    setConfirming(true);
-    setError(null);
-    /**
-     * Cerrar el turno NO es «best-effort»: es el corte del día.
-     *
-     * Antes cualquier fallo —403, 409 de un turno ya cerrado, 503— se tragaba
-     * en el `catch` y la pantalla llamaba a `onConfirm()` igual, así que el
-     * cajero veía «turno cerrado», se iba, y el turno seguía abierto en el
-     * sistema con las ventas del día siguiente cayendo adentro.
-     */
-    try {
-      const res = await fetch("/api/cash-registers/close-shift", { method: "POST", headers: csrfHeaders() });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        setError(
-          typeof body?.error === "string"
-            ? body.error
-            : `No se pudo cerrar el turno (error ${res.status}). Vuelve a intentar.`,
-        );
-        return;
-      }
-    } catch (err) {
-      console.warn("[POSCajaModule] cerrar turno falló", err);
-      setError("Sin conexión con el servidor — el turno NO se cerró.");
-      return;
-    } finally {
-      setConfirming(false);
-    }
-    onConfirm();
-  };
-
-  const fmt = (n: number) => `${formatCurrency(n)}`;
-
-  return (
-    <div className="modal-backdrop flex items-center justify-center p-4">
-      <div
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={tituloId}
-        tabIndex={-1}
-        className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl w-full max-w-md overflow-hidden"
-      >
-        {/* Header */}
-        <div className="bg-primary px-6 py-4">
-          <CardTitle id={tituloId} className="text-[length:var(--ts-xl)] font-bold text-white">Cerrar Turno</CardTitle>
-          <p className="text-sm text-white/80">Resumen del día antes de cerrar</p>
-        </div>
-
-        {/* Body */}
-        <div className="p-6 space-y-4">
-          {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : error ? (
-            <div className="text-sm text-[var(--data-error-500)] bg-[var(--data-error-50)] rounded-xl p-4 text-center">
-              {error}
-              <button onClick={fetchSummary} className="block mx-auto mt-2 text-xs font-bold underline">Reintentar</button>
-            </div>
-          ) : summary ? (
-            <>
-              {/* Big total */}
-              <div className="text-center pb-2 border-b border-[var(--rule-soft)]">
-                <p className="text-xs font-bold text-[var(--text-secondary)] mb-1">Total vendido en el turno</p>
-                <div className="flex items-center justify-center gap-2">
-                  <p className="text-4xl font-extrabold text-primary tracking-tight">{fmt(summary.totalVendido)}</p>
-                </div>
-                <div className="inline-flex items-center gap-1.5 mt-2 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-3 py-1 rounded-full text-xs font-bold">
-                  <History className="h-3.5 w-3.5" />
-                  {summary.numVentas} {summary.numVentas === 1 ? "operación" : "operaciones"} de venta
-                </div>
-              </div>
-
-              {/* Payment breakdown - Premium Grid */}
-              <div className="space-y-3">
-                <p className="text-xs font-extrabold text-[var(--text-tertiary)] pl-1">Desglose de ingresos</p>
-
-                <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                  <div className="col-span-2 bg-primary/10 border border-[var(--data-success-500)]/30 rounded-xl p-4 flex items-center justify-between group relative overflow-hidden">
-                    <div className="absolute -right-4 -top-4 h-16 w-16 bg-primary/10 rounded-full blur-xl group-hover:bg-primary/10 transition-all" />
-                    <div className="flex items-center gap-3 relative z-10">
-                      <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
-                        <Banknote className="h-5 w-5 text-[var(--data-success-500)]" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-[var(--data-success-500)]/80">Efectivo (Caja)</p>
-                        <p className="text-lg font-extrabold text-[var(--data-success-500)]">{fmt(summary.efectivo)}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-3 sm:p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="h-2 w-2 rounded-full bg-[var(--text-primary)]" />
-                      <p className="text-xs font-bold text-[var(--text-secondary)]/80">Yape</p>
-                    </div>
-                    <p className="text-base sm:text-lg font-extrabold text-[var(--text-secondary)]">{fmt(summary.yape)}</p>
-                  </div>
-
-                  <div className="bg-primary/10 border border-[var(--data-success-500)]/30 rounded-xl p-3 sm:p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="h-2 w-2 rounded-full bg-primary/10" />
-                      <p className="text-xs font-bold text-[var(--data-success-500)]/80">Plin</p>
-                    </div>
-                    <p className="text-base sm:text-lg font-extrabold text-[var(--data-success-500)]">{fmt(summary.plin)}</p>
-                  </div>
-
-                  <div className="bg-primary/10 border border-[var(--data-success-500)]/30 rounded-xl p-3 sm:p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <CreditCard className="h-3 w-3 text-[var(--data-success-500)]" />
-                      <p className="text-xs font-bold text-[var(--data-success-500)]/80">Tarjeta / POS</p>
-                    </div>
-                    <p className="text-base sm:text-lg font-extrabold text-[var(--data-success-500)]">{fmt(summary.tarjeta)}</p>
-                  </div>
-
-                  <div className="bg-[var(--data-warning-50)] border border-[var(--data-warning-500)] rounded-xl p-3 sm:p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Wallet className="h-3 w-3 text-[var(--data-warning-500)]" />
-                      <p className="text-xs font-bold text-[var(--data-warning-500)]/80">Fiado</p>
-                    </div>
-                    <p className="text-base sm:text-lg font-extrabold text-[var(--data-warning-500)]">{fmt(summary.fiado)}</p>
-                  </div>
-                </div>
-              </div>
-            </>
-          ) : null}
-        </div>
-
-        {/* Footer */}
-        <div className="flex gap-3 px-6 pb-6">
-          <button
-            onClick={onClose}
-            className="flex-1 min-h-11 rounded-xl border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={handleConfirm}
-            disabled={loading || !!error || confirming}
-            className="flex-1 min-h-11 rounded-xl bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] disabled:opacity-50 text-sm font-semibold text-white transition-colors flex items-center justify-center gap-2"
-          >
-            {confirming ? "Cerrando..." : "Confirmar Cierre"}
-            {!confirming && <ArrowRight className="h-4 w-4" />}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ── Main Module ─────────────────────────────────────────────────────────────
 
@@ -276,9 +58,11 @@ export default function POSCajaModule({ initialTab }: { initialTab?: string } = 
   // La sub-vista vive en `?vista=`: link compartible, atrás del navegador y
   // destino del buscador global. `initialTab` gana cuando el módulo se abre
   // desde un tab alias (ej. `?tab=turnos`).
-  const { vista: sub, irA: setSub } = useVistaModulo<TabId>(MODULE_ID, TAB_IDS, TAB_IDS[0], initialTab);
+  // `turno` (Cuadrar caja) y `cerrar` (Turnos) son de UNA vista: se borran al salir de ella.
+  const { vista: sub, irA: setSub } = useVistaModulo<TabId>(MODULE_ID, TAB_IDS, TAB_IDS[0], initialTab, {
+    paramsDeVista: { arqueo: ["turno"], turnos: ["cerrar"] },
+  });
   const { notice } = useConfirm();
-  const [showShiftClose, setShowShiftClose] = useState(false);
   const { pendingCount, isOnline: _isOnline } = usePOSOffline();
 
   // ── Estado de turno abierto ──────────────────────────────────────────────
@@ -290,9 +74,24 @@ export default function POSCajaModule({ initialTab }: { initialTab?: string } = 
     fetch("/api/turnos/activo")
       .then(res => res.ok ? res.json() : null)
       .then(data => { if (!cancelled && data) setTurnoAbierto(!!data.turnoActivo); })
-      .catch(() => { /* non-critical */ });
+      .catch((err) => console.warn("[POSCajaModule] turno activo", err));
     return () => { cancelled = true; };
   }, [sub]);
+
+  useEffect(() => {
+    const nav = navigator as Navigator & { connection?: { saveData?: boolean } };
+    if (nav.connection?.saveData) return;
+    const precargar = () => {
+      for (const cargar of PRECARGAS) cargar().catch((err) => console.warn("[POSCajaModule] precarga", err));
+    };
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
+    if (w.requestIdleCallback) {
+      const id = w.requestIdleCallback(precargar, { timeout: 4000 });
+      return () => w.cancelIdleCallback?.(id);
+    }
+    const t = setTimeout(precargar, 2500);
+    return () => clearTimeout(t);
+  }, []);
 
   // Escucha apertura/cierre desde TurnosModule (buleje:turno-changed)
   useEffect(() => {
@@ -319,6 +118,11 @@ export default function POSCajaModule({ initialTab }: { initialTab?: string } = 
     };
   }, []);
 
+  /**
+   * Cerrar el turno tiene UNA sola ventana: la de Turnos (conteo, diferencia y nota).
+   * Desde otra vista se navega con `?cerrar=1` (llega aunque Turnos aún no haya montado);
+   * si ya estás en Turnos, `irA` no toca la URL y se avisa por evento.
+   */
   const handleOpenCloseModal = () => {
     if (pendingCount > 0) {
       void notice({
@@ -328,16 +132,13 @@ export default function POSCajaModule({ initialTab }: { initialTab?: string } = 
       });
       return;
     }
-    setShowShiftClose(true);
-  };
-
-  const handleShiftClosed = () => {
-    setShowShiftClose(false);
-    setTurnoAbierto(false);
+    if (sub === "turnos") window.dispatchEvent(new CustomEvent("buleje:cerrar-turno"));
+    else setSub("turnos", { cerrar: "1" });
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-16 sm:pb-0">
+      {/* pb en móvil: el botón fijo «Abrir/Cerrar turno» no tapa la última fila. */}
       <OfflineIndicator />
 
       {/* El título va DENTRO de la barra de pestañas (patrón acordado con
@@ -386,10 +187,12 @@ export default function POSCajaModule({ initialTab }: { initialTab?: string } = 
         }
       >
 
+      {/* Se oculta en Turnos: ahí el formulario ya trae «Abrir/Cerrar turno» y el botón tapaba «Último turno» a 400 px. */}
       {/* ── Mobile Cerrar/Abrir Turno button — fixed at bottom ───────────
           Posicionado POR ENCIMA del bottom-nav (~72px + safe-area): antes con
           bottom-16 (64px) quedaba detrás del nav (z-50) y tapaba cards sin
           elevación. Sombra lg para separarlo del contenido que scrollea debajo. */}
+      {sub !== "turnos" && (
       <div className="sm:hidden fixed bottom-[calc(72px+env(safe-area-inset-bottom)+12px)] right-4 z-40">
         {turnoAbierto ? (
           <button
@@ -408,22 +211,16 @@ export default function POSCajaModule({ initialTab }: { initialTab?: string } = 
           </button>
         )}
       </div>
+      )}
 
       {/* ── CAMBIO 7: Renderizado de contenido por tab ───────────────── */}
       {sub === "pos"               && <POSView />}
       {sub === "turnos"            && <TurnosModule />}
       {sub === "caja-registradora" && <CashRegisterTab />}
       {sub === "cuentas-cobrar"    && <FiadosModule />}
-      {sub === "arqueo"            && <CashAuditTab onNavigateToTurnos={() => setSub("caja-registradora")} />}
+      {sub === "arqueo"            && <CashAuditTab onIrACaja={() => setSub("caja-registradora")} />}
       {sub === "comisiones"        && <CommissionCalculator />}
 
-      {/* Shift close modal */}
-      {showShiftClose && (
-        <ShiftCloseModal
-          onClose={() => setShowShiftClose(false)}
-          onConfirm={handleShiftClosed}
-        />
-      )}
       </AdminTabBar>
     </div>
   );
