@@ -1,457 +1,397 @@
 "use client";
 
 /**
- * VentasCharts — charts base del módulo Ventas.
+ * VentasCharts — gráficos base de Inicio › Ventas.
  *
- * Rediseñado con el pattern Section + primitivas Buleje DS para consistencia
- * total con Resumen y VentasAdvancedCharts.
- *
- * Secciones:
- *  1. Ventas y Utilidad 14d (ComposedChart)
- *  2. Ventas por día de semana (ComposedChart con bars highlighted)
- *  3. Ventas por hora (ComposedChart)
- *  4. Método de pago (DonutChart)
- *  5. Meta del periodo (GaugeChart)
- *  6. Pronóstico 7 días (BarChart)
- *
- * Todas las secciones van dentro de un DraggableSections wrapper.
+ * Rediseño Brandon 2026-10-09 («revisa los gráficos y KPIs y mejóralos… con
+ * buen diseño y formato»; «ocultar gráficos que no tienen ninguna información»):
+ *  1. Ventas por día (14 días): barras teal + utilidad + promedio punteado.
+ *  2. ¿Qué día vendes más? (día de la semana, rango elegido).
+ *  3. ¿A qué hora vendes más? (hoy) — un solo eje; los tickets van al tooltip.
+ *  4. ¿Cómo te pagan? — 1-2 medios = lista corta; 3+ = dona + lista.
+ *  5. Meta sugerida (oculta por defecto) · 6. Pronóstico 7 días (oculto por defecto).
+ * Cada sección se oculta sola si no tiene qué mostrar (`queSeMuestraVentas`, en VentasHero).
+ * Ninguna cifra se recalcula acá: todo viene de `VentasData`.
  */
 
-import { useMemo } from "react";
-import { cn } from "@/lib/utils";
-import type { VentasData } from "./VentasDashboard";
+import { BulejeGaugeChart } from "@/components/ui-system/charts";
+import { Flame } from "@buleje/design-system/icons";
 import {
-  BulejeComposedChart,
-  BulejeDonutChart,
-  BulejeGaugeChart,
-  BulejeBarChart,
-} from "@/components/ui-system/charts";
+  COLOR_CONCEPTO,
+  cantidad,
+  fechaConDia,
+  porcentaje,
+  soles,
+} from "@/lib/admin/inicio/formato-tablero";
 import { DashboardSection, MicroList } from "./_shared";
 import { DraggableSections, type DraggableItem } from "./DraggableSections";
-import { Flame, TrendingUp, TrendingDown, Sparkles } from "@buleje/design-system/icons";
-import { formatNumber } from "@/lib/format";
+import { ConTonoVentas, VentasBarras } from "./VentasBarras";
+import { indiceDelMayor, queSeMuestraVentas, variacionHoyVsAyer } from "./VentasHero";
+import type { VentasData } from "./VentasDashboard";
 
-function fmtS(v: number) {
-  return `S/ ${formatNumber(v, { max: 0 })}`;
+const DIA_COMPLETO: Record<string, string> = {
+  Lun: "Lunes",
+  Mar: "Martes",
+  Mié: "Miércoles",
+  Jue: "Jueves",
+  Vie: "Viernes",
+  Sáb: "Sábado",
+  Dom: "Domingo",
+};
+
+function Pct({ v, texto }: { v: number; texto: string }) {
+  if (!Number.isFinite(v) || Math.abs(v) < 1) return null;
+  return (
+    <p
+      className={
+        v >= 0 ? "font-bold text-[var(--data-success)]" : "font-bold text-[var(--data-error)]"
+      }
+    >
+      {v >= 0 ? "+" : ""}
+      {porcentaje(v)} {texto}
+    </p>
+  );
 }
 
 export default function VentasCharts({ data }: { data: VentasData }) {
-  // ── Meta del periodo ──────────────────────────────────────────────────────
-  const metaMes =
-    data.ventasNetas > 0
-      ? Math.max(data.ventasNetas * 1.2, data.ventasNetas + 500)
-      : 1000;
-  const pctMeta = metaMes > 0 ? (data.ventasNetas / metaMes) * 100 : 0;
-  const faltaMeta = Math.max(0, metaMes - data.ventasNetas);
+  const muestra = queSeMuestraVentas(data);
 
-  // ── Top 5 método de pago ──────────────────────────────────────────────────
-  const top5 = data.metodosPago.slice(0, 5).map((p) => ({
+  // ── 1. Ventas por día (14 días) ──
+  const diasConVenta = data.ventasDiarias.filter((d) => d.ventas > 0).length;
+  const iMejorDia = indiceDelMayor(data.ventasDiarias, (d) => d.ventas);
+  const mejorDia = iMejorDia >= 0 ? data.ventasDiarias[iMejorDia] : null;
+
+  // ── 2. Día de la semana ──
+  const iMejorDow = indiceDelMayor(data.ventasPorDia, (d) => d.total);
+  const mejorDow = iMejorDow >= 0 ? data.ventasPorDia[iMejorDow] : null;
+  const promedioDow = data.ventasPorDia[0]?.promedio ?? 0;
+  const hayPrevDow = data.ventasPorDia.some((d) => d.prev > 0);
+  const diasSemanaActivos = data.ventasPorDia.filter((d) => d.total > 0).length;
+
+  // ── 3. Hora ──
+  const iPico = indiceDelMayor(data.ventasPorHora, (h) => h.monto);
+  const pico = iPico >= 0 ? data.ventasPorHora[iPico] : null;
+  const deltaHoy = variacionHoyVsAyer(data.ventasHoy, data.ventasAyer);
+  const rangoHora = (hora: string) => {
+    const h = Number.parseInt(hora, 10);
+    return Number.isFinite(h) ? `${h}:00 – ${h + 1}:00` : hora;
+  };
+
+  // ── 4. Medio de pago ──
+  const itemsPago = data.metodosPago.map((p) => ({
     name: p.metodo,
     value: p.total,
-    label: fmtS(p.total),
+    label: soles(p.total),
+    sublabel: porcentaje(p.porcentaje),
     color: p.color,
   }));
 
-  // ── Ventas por día: detectar el día con más ventas para destacarlo ───────
-  const maxDowIdx = useMemo(() => {
-    let idx = -1;
-    let max = 0;
-    data.ventasPorDia.forEach((d, i) => {
-      if (d.total > max) {
-        max = d.total;
-        idx = i;
-      }
-    });
-    return idx;
-  }, [data.ventasPorDia]);
+  // ── 5. Meta sugerida (la calcula la pantalla: lo vendido + 20 %, mínimo + S/ 500) ──
+  const metaMes =
+    data.ventasNetas > 0 ? Math.max(data.ventasNetas * 1.2, data.ventasNetas + 500) : 1000;
+  const pctMeta = metaMes > 0 ? (data.ventasNetas / metaMes) * 100 : 0;
+  const faltaMeta = Math.max(0, metaMes - data.ventasNetas);
 
-  const maxDowDay = maxDowIdx >= 0 ? data.ventasPorDia[maxDowIdx].dia : "—";
-  const maxDowValue = maxDowIdx >= 0 ? data.ventasPorDia[maxDowIdx].total : 0;
+  // ── 6. Pronóstico ──
+  const totalForecast = data.forecast7.reduce((s, f) => s + f.estimado, 0);
+  const iMejorForecast = indiceDelMayor(data.forecast7, (f) => f.estimado);
 
-  // ── Ventas por hora: pico del día de hoy ─────────────────────────────────
-  const horaPicoObj = useMemo(() => {
-    return data.ventasPorHora.reduce(
-      (best, h) => (h.monto > best.monto ? h : best),
-      { hora: "—", ventas: 0, monto: 0 },
-    );
-  }, [data.ventasPorHora]);
-
-  // ── Secciones ────────────────────────────────────────────────────────────
   const sections: DraggableItem[] = [
     {
       id: "ventas-utilidad-14d",
+      span: "full",
       render: () => (
-        <DashboardSection
-          chartId="ventas.utilidad-promedio"
-          hasData={(data.ventasDiarias ?? []).length >= 3 && (data.ventasDiarias ?? []).some((d) => (d.ventas ?? 0) > 0)}
-          kicker="Evolución · rango activo"
-          title="Ventas, utilidad y promedio móvil"
-          rightSlot={
-            data.wowGrowth != null && (
-              <span
-                className={cn(
-                  "text-xs font-bold px-2 py-1 rounded-full whitespace-nowrap",
-                  data.wowGrowth >= 0
-                    ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15"
-                    : "bg-[var(--data-error-50)] text-[var(--data-error-500)] dark:bg-red-950/30",
-                )}
-              >
-                {data.wowGrowth >= 0 ? "↑" : "↓"} {Math.abs(data.wowGrowth).toFixed(1)}% sem/sem
-              </span>
-            )
-          }
-          kpis={[
-            { label: "Ventas periodo", value: fmtS(data.ventasNetas), tone: "primary" },
-            { label: "Utilidad bruta", value: fmtS(data.utilidadBruta), tone: "success" },
-            { label: "Margen", value: `${Number(data.margen).toFixed(1)}%`, tone: data.margen >= 25 ? "success" : data.margen >= 15 ? "neutral" : "warning" },
-            { label: "Tickets", value: String(data.tickets), tone: "neutral" },
-          ]}
-        >
-          <BulejeComposedChart
-            data={data.ventasDiarias}
-            xKey="dia"
-            bars={[{ key: "ventas", label: "Ventas S/", color: "primary", yAxis: "left" }]}
-            areas={[
-              { key: "utilidad", label: "Utilidad S/", color: "tertiary", yAxis: "left", opacity: 0.2 },
+        <ConTonoVentas>
+          <DashboardSection
+            chartId="ventas.utilidad-promedio"
+            hasData={muestra.porDia}
+            kicker="Últimos 14 días"
+            title="Ventas por día"
+            description="Cada barra es lo que vendiste ese día; la línea oscura, lo que te quedó de ganancia; la punteada, tu promedio de 7 días. Si la barra pasa la punteada, fue un buen día."
+            kpis={[
+              {
+                label: "Últimos 7 días",
+                value: soles(data.ventas7d),
+                tone: "primary",
+                delta: data.wowGrowth,
+                deltaLabel: "vs anterior",
+              },
+              {
+                label: "Mejor día",
+                value: mejorDia ? soles(mejorDia.ventas) : null,
+                sub: mejorDia ? fechaConDia(mejorDia.clave) : undefined,
+              },
+              { label: "Días con venta", value: `${diasConVenta} de ${data.ventasDiarias.length}` },
             ]}
-            lines={[{ key: "promedio7d", label: "Prom. 7d", color: "amber", yAxis: "left" }]}
-            leftAxisFormat={(v) => `S/${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`}
-            tooltipFormat={(v) => fmtS(Number(v))}
-            height={320}
-            minDataPoints={2}
-          />
-        </DashboardSection>
+          >
+            <VentasBarras
+              data={data.ventasDiarias}
+              xKey="dia"
+              barras={[{ key: "ventas", label: "Ventas", color: COLOR_CONCEPTO.ventas }]}
+              lineas={[
+                ...(muestra.utilidadEnPorDia
+                  ? [{ key: "utilidad", label: "Utilidad", color: COLOR_CONCEPTO.utilidad }]
+                  : []),
+                {
+                  key: "promedio7d",
+                  label: "Promedio 7 días",
+                  color: COLOR_CONCEPTO.referencia,
+                  punteada: true,
+                },
+              ]}
+              tituloTooltip={(f) => fechaConDia(String(f.clave ?? ""))}
+              alto={220}
+              ariaLabel={`Ventas por día de los últimos 14 días. Mejor día: ${mejorDia ? `${fechaConDia(mejorDia.clave)}, ${soles(mejorDia.ventas)}` : "ninguno"}.`}
+            />
+          </DashboardSection>
+        </ConTonoVentas>
       ),
     },
     {
       id: "ventas-por-dia-semana",
-      render: () => {
-        const activos = data.ventasPorDia.filter((d) => d.total > 0);
-        const promedio = data.ventasPorDia[0]?.promedio ?? 0;
-        // Inyectamos campos derivados para el tooltip rico:
-        //  - _vsAvg: % vs promedio (positivo = arriba, negativo = abajo)
-        //  - _vsPrev: % vs periodo previo
-        //  - tendencia: alias de total para dibujar la línea de subida/bajada
-        const dataEnriched = data.ventasPorDia.map((d) => {
-          const vsAvg = promedio > 0 ? ((d.total - promedio) / promedio) * 100 : 0;
-          const vsPrev = d.prev > 0 ? ((d.total - d.prev) / d.prev) * 100 : 0;
-          return { ...d, _vsAvg: vsAvg, _vsPrev: vsPrev, tendencia: d.total };
-        });
-        const hasPrev = data.ventasPorDia.some((d) => d.prev > 0);
-        return (
+      span: "full",
+      render: () => (
+        <ConTonoVentas>
           <DashboardSection
             chartId="ventas.por-dia-semana"
-            hasData={(data.ventasPorDia ?? []).some((d) => (d.total ?? 0) > 0)}
+            hasData={muestra.porDiaSemana}
             kicker={`Día de la semana · ${data.dateRangeLabel}`}
-            title="Distribución por día · Lun a Dom"
+            title="¿Qué día vendes más?"
+            description="Suma de lo vendido cada día de la semana en el período elegido. La barra fuerte es tu mejor día; la punteada, el promedio de los días con venta."
             kpis={[
-              { label: "Día ganador", value: maxDowDay, tone: "success" },
-              { label: "Ingreso día ganador", value: fmtS(maxDowValue), tone: "primary" },
               {
-                label: "Días activos",
-                value: String(activos.length),
-                tone: "neutral",
+                label: "Tu mejor día",
+                value: mejorDow ? (DIA_COMPLETO[mejorDow.dia] ?? mejorDow.dia) : null,
+                tone: "primary",
+                sub: mejorDow ? soles(mejorDow.total) : undefined,
               },
               {
-                label: "Promedio día",
-                value: fmtS(promedio),
-                tone: "neutral",
+                label: "Promedio",
+                value: soles(promedioDow),
+                sub: "por día con venta",
+                hint: "Promedio de los días de la semana que tuvieron venta.",
               },
+              data.nextDayPrediction
+                ? {
+                    label: "Mañana",
+                    value: `≈ ${soles(data.nextDayPrediction.estimado)}`,
+                    sub: `${data.nextDayPrediction.diaCompleto.toLowerCase()} · estimado`,
+                    hint: `Estimación: promedio de lo que vendiste los ${data.nextDayPrediction.diaCompleto.toLowerCase()} del período elegido.`,
+                  }
+                : { label: "Días con venta", value: `${diasSemanaActivos} de 7` },
             ]}
           >
-            <BulejeComposedChart
-              data={dataEnriched}
+            <VentasBarras
+              data={data.ventasPorDia}
               xKey="dia"
-              bars={
-                hasPrev
-                  ? [
-                      { key: "total", label: "Periodo actual S/", color: "primary", yAxis: "left" },
-                      { key: "prev", label: "Periodo previo S/", color: "tertiary", yAxis: "left" },
-                    ]
-                  : [{ key: "total", label: "Ventas S/", color: "primary", yAxis: "left" }]
-              }
-              lines={[
-                { key: "tendencia", label: "Tendencia", color: "accent", yAxis: "left" },
-                { key: "promedio", label: "Promedio", color: "amber", yAxis: "left" },
+              barras={[
+                { key: "total", label: "Este período", color: COLOR_CONCEPTO.ventas },
+                ...(hayPrevDow
+                  ? [{ key: "prev", label: "Período anterior", color: COLOR_CONCEPTO.anterior }]
+                  : []),
               ]}
-              referenceAreas={
-                data.weekendBand
-                  ? [{ x1: data.weekendBand.x1, x2: data.weekendBand.x2, fillKey: "amber", opacity: 0.07 }]
-                  : []
-              }
-              tooltipExtras={(entry) => {
-                const vsAvg = Number(entry._vsAvg);
-                const vsPrev = Number(entry._vsPrev);
-                const isWeekend = Boolean(entry.isWeekend);
-                const total = Number(entry.total);
-                if (total === 0) {
-                  return <span className="text-[var(--text-tertiary)]">Sin ventas registradas</span>;
-                }
+              lineas={[
+                {
+                  key: "promedio",
+                  label: "Promedio",
+                  color: COLOR_CONCEPTO.referencia,
+                  punteada: true,
+                },
+              ]}
+              destacar={iMejorDow}
+              tituloTooltip={(f) => DIA_COMPLETO[String(f.dia)] ?? String(f.dia)}
+              extraTooltip={(f) => {
+                const total = Number(f.total);
+                const prev = Number(f.prev);
+                if (!(total > 0))
+                  return <p className="text-[var(--text-tertiary)]">Sin ventas ese día</p>;
                 return (
-                  <div className="space-y-1.5">
-                    {Number.isFinite(vsAvg) && Math.abs(vsAvg) >= 1 && (
-                      <div className="flex items-center gap-1.5">
-                        {vsAvg >= 0 ? (
-                          <TrendingUp className="h-3.5 w-3.5 text-[color:var(--data-success-500)]" strokeWidth={2.5} />
-                        ) : (
-                          <TrendingDown className="h-3.5 w-3.5 text-[color:var(--data-warning-500)]" strokeWidth={2.5} />
-                        )}
-                        <span className={vsAvg >= 0 ? "text-[color:var(--data-success-500)] font-bold" : "text-[color:var(--data-warning-500)] font-bold"}>
-                          {vsAvg >= 0 ? "+" : ""}{vsAvg.toFixed(0)}% vs promedio
-                        </span>
-                      </div>
+                  <div className="space-y-0.5">
+                    {promedioDow > 0 && (
+                      <Pct v={((total - promedioDow) / promedioDow) * 100} texto="vs promedio" />
                     )}
-                    {Number.isFinite(vsPrev) && Math.abs(vsPrev) >= 1 && (
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[var(--text-tertiary)]">vs periodo previo:</span>
-                        <span className={vsPrev >= 0 ? "text-[color:var(--data-success-500)] font-bold" : "text-[color:var(--data-warning-500)] font-bold"}>
-                          {vsPrev >= 0 ? "+" : ""}{vsPrev.toFixed(0)}%
-                        </span>
-                      </div>
-                    )}
-                    {isWeekend && (
-                      <div className="text-[color:var(--data-warning-500)] font-bold uppercase tracking-wider text-[length:var(--ts-2xs)]">
-                        Fin de semana
-                      </div>
+                    {prev > 0 && (
+                      <Pct v={((total - prev) / prev) * 100} texto="vs período anterior" />
                     )}
                   </div>
                 );
               }}
-              leftAxisFormat={(v) => `S/${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`}
-              tooltipFormat={(v) => fmtS(Number(v))}
-              height={300}
-              minDataPoints={1}
+              alto={220}
+              ariaLabel={`Ventas por día de la semana. Mejor día: ${mejorDow ? DIA_COMPLETO[mejorDow.dia] : "ninguno"}.`}
             />
-            {/* Mini predicción del próximo día */}
-            {data.nextDayPrediction && (
-              <div className="mt-4 border border-dashed border-[color:var(--accent,var(--rule-base))] bg-primary/10 dark:bg-primary/15 p-4 flex items-center gap-3">
-                <div className="shrink-0 h-10 w-10 bg-[var(--surface-raised)] border border-[color:var(--accent,var(--rule-base))] flex items-center justify-center">
-                  <Sparkles className="h-5 w-5 text-[color:var(--accent,var(--text-primary))]" strokeWidth={2.25} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                    Mañana es {data.nextDayPrediction.diaCompleto}
-                  </p>
-                  <p className="text-sm sm:text-base font-bold text-[var(--text-primary)] leading-snug">
-                    Estimación: vas a vender alrededor de{" "}
-                    <span className="font-extrabold text-[color:var(--data-success-500)]">
-                      {fmtS(data.nextDayPrediction.estimado)}
-                    </span>
-                    <span className="text-[var(--text-secondary)] font-semibold"> · basado en {data.nextDayPrediction.diaCompleto.toLowerCase()}s del periodo</span>
-                  </p>
-                </div>
-              </div>
-            )}
           </DashboardSection>
-        );
-      },
+        </ConTonoVentas>
+      ),
     },
     {
       id: "ventas-por-hora",
-      render: () => {
-        const hasHotHour = horaPicoObj.monto > 0;
-        return (
+      span: muestra.medioDePago !== "oculto" ? "half" : "full",
+      render: () => (
+        <ConTonoVentas>
           <DashboardSection
             chartId="ventas.por-hora"
-            hasData={(data.ventasPorHora ?? []).some((d) => (d.monto ?? 0) > 0)}
-            kicker="Horario · hoy"
-            title="Volumen de tickets y monto por hora"
-            rightSlot={
-              hasHotHour ? (
-                <div className="inline-flex items-center gap-2 h-9 px-3 rounded-full border-2 border-[color:var(--data-warning-500)]/40 bg-[color:var(--data-warning-500)]/10 relative overflow-hidden">
-                  {/* Pulse ring detrás del badge */}
-                  <span className="absolute inset-0 rounded-full bg-[color:var(--data-warning-500)]/20 animate-ping" aria-hidden />
-                  <Flame className="relative h-4 w-4 text-[color:var(--data-warning-500)]" strokeWidth={2.5} aria-hidden />
-                  <span className="relative text-xs font-extrabold uppercase tracking-wider text-[color:var(--data-warning-500)] whitespace-nowrap">
-                    Hora caliente · {horaPicoObj.hora}
-                  </span>
-                </div>
-              ) : undefined
-            }
+            hasData={muestra.porHora}
+            kicker="Hoy"
+            title="¿A qué hora vendes más?"
+            description="Lo vendido hoy en cada hora. La barra fuerte es la hora pico; los tickets salen al pasar el mouse."
             kpis={[
-              { label: "Hora pico", value: horaPicoObj.hora, tone: "success" },
-              { label: "Monto hora pico", value: fmtS(horaPicoObj.monto), tone: "primary" },
-              { label: "Tickets hora pico", value: String(horaPicoObj.ventas), tone: "neutral" },
               {
-                label: "Total hoy",
-                value: fmtS(data.ventasHoy),
-                tone: data.ventasHoy >= data.ventasAyer ? "success" : "warning",
+                label: "Hora pico",
+                value: pico ? rangoHora(pico.hora) : null,
+                tone: "primary",
+                sub: pico
+                  ? `${soles(pico.monto)} · ${cantidad(pico.ventas)} ${pico.ventas === 1 ? "ticket" : "tickets"}`
+                  : undefined,
+              },
+              {
+                label: "Vendido hoy",
+                value: soles(data.ventasHoy),
+                delta: deltaHoy,
+                deltaLabel: "vs ayer",
               },
             ]}
           >
-            <BulejeComposedChart
-              data={data.ventasPorHora.map((h) => ({
-                ...h,
-                _isPico: h.hora === horaPicoObj.hora && h.monto > 0,
-              }))}
+            <VentasBarras
+              data={data.ventasPorHora}
               xKey="hora"
-              bars={[{ key: "ventas", label: "Tickets", color: "tertiary", yAxis: "left" }]}
-              lines={[{ key: "monto", label: "Monto S/", color: "primary", yAxis: "right" }]}
-              referenceAreas={
-                hasHotHour
-                  ? [{ x1: horaPicoObj.hora, x2: horaPicoObj.hora, fillKey: "amber", opacity: 0.15 }]
-                  : []
-              }
-              tooltipExtras={(entry) => {
-                const isPico = Boolean(entry._isPico);
-                if (!isPico) return null;
+              barras={[{ key: "monto", label: "Ventas", color: COLOR_CONCEPTO.ventas }]}
+              destacar={iPico}
+              tituloTooltip={(f) => rangoHora(String(f.hora))}
+              extraTooltip={(f) => {
+                const n = Number(f.ventas);
+                if (!(n > 0)) return null;
+                const esPico = pico !== null && f.hora === pico.hora;
                 return (
-                  <div className="flex items-center gap-1.5 text-[color:var(--data-warning-500)] font-extrabold uppercase tracking-wider text-[length:var(--ts-2xs)]">
-                    <Flame className="h-3.5 w-3.5" strokeWidth={2.5} />
-                    Hora caliente del día
+                  <div className="space-y-0.5">
+                    <p className="font-semibold text-[var(--text-secondary)]">
+                      {cantidad(n)} {n === 1 ? "ticket" : "tickets"}
+                    </p>
+                    {esPico && (
+                      <p className="flex items-center gap-1 font-bold text-[var(--data-warning-500)]">
+                        <Flame className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+                        Hora pico de hoy
+                      </p>
+                    )}
                   </div>
                 );
               }}
-              leftAxisFormat={(v) => v.toString()}
-              rightAxisFormat={(v) => `S/${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`}
-              tooltipFormat={(v, name) =>
-                name?.toLowerCase().includes("monto")
-                  ? fmtS(Number(v))
-                  : Number(v).toString()
-              }
-              height={260}
-              minDataPoints={3}
+              alto={200}
+              ariaLabel={`Ventas de hoy por hora. Hora pico: ${pico ? rangoHora(pico.hora) : "ninguna"}.`}
             />
           </DashboardSection>
-        );
-      },
+        </ConTonoVentas>
+      ),
     },
     {
       id: "metodo-pago",
+      span: muestra.porHora ? "half" : "full",
       render: () => (
-        <DashboardSection
-          chartId="ventas.metodo-pago"
-          hasData={(data.metodosPago ?? []).some((m) => (m.total ?? 0) > 0)}
-          defaultVisible={false}
-          kicker="Distribución de cobros"
-          title="Método de pago"
-          kpis={[
-            {
-              label: "Líder",
-              value: data.metodosPago[0]?.metodo ?? "—",
-              tone: "success",
-            },
-            {
-              label: "Share líder",
-              value: `${(data.metodosPago[0]?.porcentaje ?? 0).toFixed(0)}%`,
-              tone: "primary",
-            },
-            {
-              label: "Métodos usados",
-              value: String(data.metodosPago.length),
-              tone: "neutral",
-            },
-            {
-              label: "Total cobrado",
-              value: fmtS(data.metodosPago.reduce((s, p) => s + p.total, 0)),
-              tone: "primary",
-            },
-          ]}
-        >
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 items-center">
-            <div className="lg:col-span-2">
-              <BulejeDonutChart
-                data={data.metodosPago.map((p) => ({ name: p.metodo, value: p.total }))}
-                height={220}
-                format={(v) => fmtS(Number(v))}
-                label={
-                  <div className="text-center">
-                    <p className="text-[length:var(--ts-3xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                      Top
-                    </p>
-                    <p className="text-lg font-extrabold text-[var(--text-primary)]">
-                      {(data.metodosPago[0]?.porcentaje ?? 0).toFixed(0)}%
-                    </p>
-                    <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)]">
-                      {data.metodosPago[0]?.metodo ?? ""}
-                    </p>
-                  </div>
-                }
-              />
-            </div>
-            <div className="lg:col-span-3">
-              <MicroList items={top5} barColor="var(--brand-primary)" showRank />
-            </div>
-          </div>
-        </DashboardSection>
+        <ConTonoVentas>
+          <DashboardSection
+            chartId="ventas.metodo-pago"
+            hasData={muestra.medioDePago !== "oculto"}
+            kicker={`Medios de pago · ${data.dateRangeLabel}`}
+            title="¿Cómo te pagan?"
+          >
+            {/* Una barra partida por medio (el todo = lo cobrado) + la lista con montos:
+              se lee a 1 m y ocupa la mitad que la dona que había, que repetía la lista. */}
+            {data.metodosPago.length >= 2 && (
+              <div
+                className="mb-4 flex h-3 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)]"
+                role="img"
+                aria-label={data.metodosPago
+                  .map((p) => `${p.metodo} ${porcentaje(p.porcentaje)}`)
+                  .join(", ")}
+              >
+                {data.metodosPago.map((p) => (
+                  <span
+                    key={p.metodo}
+                    className="h-full"
+                    style={{ width: `${p.porcentaje}%`, backgroundColor: p.color }}
+                  />
+                ))}
+              </div>
+            )}
+            <MicroList items={itemsPago} showRank={false} />
+          </DashboardSection>
+        </ConTonoVentas>
       ),
     },
     {
       id: "meta-periodo",
       render: () => (
-        <DashboardSection
-          chartId="ventas.meta-periodo"
-          hasData={(data.ventasNetas ?? 0) > 0}
-          defaultVisible={false}
-          kicker="Objetivo vs real · periodo"
-          title="Meta del periodo"
-          kpis={[
-            { label: "Meta", value: fmtS(metaMes), tone: "neutral" },
-            { label: "Alcanzado", value: fmtS(data.ventasNetas), tone: "primary" },
-            {
-              label: "Progreso",
-              value: `${pctMeta.toFixed(0)}%`,
-              tone: pctMeta >= 100 ? "success" : pctMeta >= 60 ? "primary" : "warning",
-            },
-            {
-              label: pctMeta >= 100 ? "Excedente" : "Falta",
-              value: fmtS(pctMeta >= 100 ? data.ventasNetas - metaMes : faltaMeta),
-              tone: pctMeta >= 100 ? "success" : "warning",
-            },
-          ]}
-        >
-          <div className="flex items-center justify-center py-2">
-            <BulejeGaugeChart
-              value={Math.min(100, pctMeta)}
-              label="Avance del objetivo"
-              sublabel={pctMeta >= 100 ? "Meta superada" : `Faltan ${fmtS(faltaMeta)}`}
-              format="percentage"
-              size={260}
+        <ConTonoVentas>
+          <DashboardSection
+            chartId="ventas.meta-periodo"
+            hasData={muestra.meta}
+            defaultVisible={false}
+            kicker={`Objetivo · ${data.dateRangeLabel}`}
+            title="Meta sugerida del período"
+            description="La meta la propone el panel: lo vendido más 20 % (o S/ 500 más, lo que sea mayor). Es una referencia hasta que puedas fijar la tuya."
+            kpis={[
+              { label: "Meta sugerida", value: soles(metaMes) },
+              pctMeta >= 100
+                ? {
+                    label: "Superaste por",
+                    value: soles(data.ventasNetas - metaMes),
+                    tone: "success",
+                  }
+                : { label: "Te falta", value: soles(faltaMeta), tone: "warning" },
+            ]}
+          >
+            <div className="flex items-center justify-center py-2">
+              <BulejeGaugeChart
+                value={Math.min(100, pctMeta)}
+                label="Avance"
+                sublabel={pctMeta >= 100 ? "Meta superada" : `Faltan ${soles(faltaMeta)}`}
+                format="percentage"
+                size={240}
+              />
+            </div>
+          </DashboardSection>
+        </ConTonoVentas>
+      ),
+    },
+    {
+      id: "forecast-7d",
+      render: () => (
+        <ConTonoVentas>
+          <DashboardSection
+            chartId="ventas.forecast-7d"
+            hasData={muestra.pronostico}
+            defaultVisible={false}
+            kicker="Próximos 7 días"
+            title="Pronóstico de ventas"
+            description="Sigue la tendencia de los últimos 14 días en línea recta: no sabe de feriados, quincenas ni fin de mes. Úsalo como orientación."
+            kpis={[
+              { label: "Proyectado 7 días", value: soles(totalForecast), tone: "primary" },
+              {
+                label: "Mejor día estimado",
+                value: iMejorForecast >= 0 ? soles(data.forecast7[iMejorForecast].estimado) : null,
+                sub: iMejorForecast >= 0 ? data.forecast7[iMejorForecast].dia : undefined,
+              },
+            ]}
+          >
+            <VentasBarras
+              data={data.forecast7}
+              xKey="dia"
+              barras={[{ key: "estimado", label: "Estimado", color: COLOR_CONCEPTO.ventas }]}
+              alto={220}
+              ariaLabel={`Pronóstico de ventas de los próximos 7 días: ${soles(totalForecast)} en total.`}
             />
-          </div>
-        </DashboardSection>
+          </DashboardSection>
+        </ConTonoVentas>
       ),
     },
   ];
 
-  if (data.forecast7.length > 0 && data.forecast7.some((f) => f.estimado > 0)) {
-    const totalForecast = data.forecast7.reduce((s, f) => s + f.estimado, 0);
-    const promForecast = totalForecast / Math.max(1, data.forecast7.length);
-    sections.push({
-      id: "forecast-7d",
-      render: () => (
-        <DashboardSection
-          chartId="ventas.forecast-7d"
-          hasData={(data.forecast7 ?? []).length > 0}
-          defaultVisible={false}
-          kicker="Tendencia lineal · próximos 7 días"
-          title="Pronóstico de ventas"
-          kpis={[
-            { label: "Proyectado 7d", value: fmtS(totalForecast), tone: "primary" },
-            { label: "Prom. día", value: fmtS(promForecast), tone: "neutral" },
-            {
-              label: "Máx. día",
-              value: fmtS(Math.max(...data.forecast7.map((f) => f.estimado))),
-              tone: "success",
-            },
-            {
-              label: "Mín. día",
-              value: fmtS(Math.min(...data.forecast7.map((f) => f.estimado))),
-              tone: "warning",
-            },
-          ]}
-        >
-          <BulejeBarChart
-            data={data.forecast7}
-            xKey="dia"
-            series={[{ key: "estimado", label: "Estimado S/" }]}
-            format={(v) => fmtS(Number(v))}
-            height={220}
-          />
-        </DashboardSection>
-      ),
-    });
-  }
-
-  return <DraggableSections items={sections} storageKey="ventas-base-order" layout="column" gap={4} />;
+  return (
+    <DraggableSections
+      items={sections}
+      storageKey="ventas-base-order"
+      layout="grid"
+      minColumnWidth="26rem"
+      gap={1.5}
+    />
+  );
 }
