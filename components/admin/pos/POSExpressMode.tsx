@@ -17,6 +17,9 @@ interface Product {
 interface POSExpressModeProps {
   products: Product[];
   onAddToCart: (productId: number, quantity?: number) => void;
+  /** Controlado desde el menú «Más» del POS: sin botón propio, se muestra sólo encendido. */
+  enabled?: boolean;
+  onEnabledChange?: (enabled: boolean) => void;
 }
 
 function fmt(n: number) {
@@ -26,11 +29,15 @@ function fmt(n: number) {
 export default function POSExpressMode({
   products,
   onAddToCart,
+  enabled: enabledProp,
+  onEnabledChange,
 }: POSExpressModeProps) {
-  const [enabled, setEnabled] = useState(() => {
+  const [enabledLocal, setEnabledLocal] = useState(() => {
     if (typeof window === "undefined") return false;
     return localStorage.getItem("pos-express-mode") === "true";
   });
+  const enabled = enabledProp ?? enabledLocal;
+  const setEnabled = (v: boolean) => (onEnabledChange ? onEnabledChange(v) : setEnabledLocal(v));
   const [input, setInput] = useState("");
   const [recentExpress, setRecentExpress] = useState<
     { id: number; name: string; price: number }[]
@@ -109,6 +116,7 @@ export default function POSExpressMode({
   );
 
   if (!enabled) {
+    if (onEnabledChange) return null;
     return (
       <button
         onClick={() => setEnabled(true)}
