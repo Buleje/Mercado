@@ -169,6 +169,10 @@ export function marcarMenuAbierto(dialogo: Element | null, abierto: boolean) {
   else dialogo.removeAttribute("data-menu-abierto");
 }
 
+/* También con nombre (08-10): 5 agentes en paralelo escribieron `import { ActionMenu }` y el error
+   de compilación tumbó el login del dev server para todos dos veces. Las dos formas sirven. */
+export { ActionMenu };
+
 export default function ActionMenu({
   label,
   actions,

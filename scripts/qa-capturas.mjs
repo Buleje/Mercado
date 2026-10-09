@@ -100,7 +100,21 @@ if (process.argv.includes("--help") || process.argv.includes("-h")) {
 /* `--candado`: el candado de lo pesado (RAM: earlyoom mata chrome/tsc si van 3 a la vez) lo toma el
    propio script y avisa cuánto lleva esperando; el hijo corre ya con el candado y crea la marca. */
 const ARCHIVO_CANDADO = "/tmp/bsm-pesado.lock";
-if (process.argv.includes("--candado") && !process.env.QA_CANDADO_MARCA) {
+/* 08-10: `flock /tmp/bsm-pesado.lock node scripts/qa-capturas.mjs --candado` se esperaba a sí mismo
+   (el flock de afuera ya tiene el candado) y parecía el dev colgado (~6 llamadas perdidas). Si un
+   proceso de arriba ya es ese flock, el candado ya está tomado: se sigue sin pedirlo otra vez. */
+const candadoYaTomado = (() => {
+  try {
+    for (let pid = process.ppid, n = 0; pid > 1 && n < 6; n++) {
+      const cmd = readFileSync(`/proc/${pid}/cmdline`, "utf8").split("\0");
+      if (/(^|\/)flock$/.test(cmd[0] ?? "") && cmd.includes(ARCHIVO_CANDADO)) return true;
+      pid = Number(readFileSync(`/proc/${pid}/stat`, "utf8").split(") ")[1]?.split(" ")[1]);
+    }
+  } catch { /* sin /proc: se pide el candado como siempre */ }
+  return false;
+})();
+if (candadoYaTomado && process.argv.includes("--candado")) console.error("[qa-capturas] el candado ya lo tiene el flock de afuera; sigo sin --candado");
+if (process.argv.includes("--candado") && !process.env.QA_CANDADO_MARCA && !candadoYaTomado) {
   const marca = `/tmp/qa-candado-${process.pid}.marca`;
   const desde = Date.now();
   const hijo = spawn(
@@ -584,11 +598,22 @@ try {
       catch { console.error(`[qa-capturas] ${ruta} no contestó en ${tope / 1000} s`); }
     }
     const csrf = (await ctx.cookies()).find((c) => c.name === "csrf-token")?.value ?? "";
-    const r = await page.request.post(`${BASE}/api/auth/login`, {
+    const entrar = () => page.request.post(`${BASE}/api/auth/login`, {
       headers: { "content-type": "application/json", "x-tenant-id": tenant, "x-csrf-token": csrf },
       data: { username: usuario, password: clave, tenantSlug: tenant },
       timeout: 120_000,
-    }).finally(() => clearInterval(latido));
+    });
+    /* 08-10 (5 carriles a la vez): un import roto de OTRO agente deja la compilación en error y el
+       login responde 500 con la página de error en HTML. Se espera a que lo arreglen (4 × 20 s)
+       nombrando el archivo culpable, en vez de tirar la corrida («login 500» costó ~6 llamadas). */
+    let r = await entrar();
+    for (let i = 0; i < 4 && r.status() === 500 && /<html|<!DOCTYPE/i.test(await r.text()); i++) {
+      const culpable = (await r.text()).match(/(?:\.\/)?((?:app|components|lib|hooks|contexts|extensiones)\/[\w./\[\]-]+\.(?:tsx?|mjs))(?::(\d+))?/);
+      console.error(`[qa-capturas] login 500 por compilación rota${culpable ? ` en ${culpable[1]}${culpable[2] ? `:${culpable[2]}` : ""}` : ""}; reintento en 20 s (${i + 1}/4)`);
+      await new Promise((ok) => setTimeout(ok, 20_000));
+      r = await entrar();
+    }
+    clearInterval(latido);
     if (r.status() !== 200) {
       /* El mensaje del servidor (error/message/detalle del JSON, o el cuerpo crudo): un 500 sin
          texto obligaba a abrir el log del dev server para saber qué falló (08-10). */

@@ -95,7 +95,9 @@ export function useModalAccesible(
        `focoEnOtroFijado`. */
     const hayOtroDialogoEncima = () => {
       const dialogos = [...document.querySelectorAll<HTMLElement>('[role="dialog"], [role="alertdialog"]')].filter(
-        (d) => d === caja || !d.hasAttribute(ATRIBUTO_FIJADA),
+        /* Un diálogo oculto (el cajón móvil a 1280 px) no está «encima»: si quedaba después
+           en el DOM se tragaba el Escape de la ventana visible. */
+        (d) => d === caja || (!d.hasAttribute(ATRIBUTO_FIJADA) && (d.checkVisibility?.() ?? true)),
       );
       const ultimo = dialogos[dialogos.length - 1];
       if (!ultimo || ultimo === caja) return false;
