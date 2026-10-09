@@ -38,6 +38,7 @@ import {
 import { limpiarMotivo, motivoLegible } from "@/lib/forestal/motivo";
 import { formatCurrency } from "@/lib/currency";
 import { huellaDeAlta, huellaDeEntrega } from "@/lib/adelantos/idempotencia";
+import { CONCEPTO_PLANILLA } from "@/lib/adelantos/planilla-lote";
 import { invalidateByPrefix } from "@/lib/cache";
 import { claveCacheResultado } from "@/lib/finance/resultado-del-negocio";
 
@@ -1861,6 +1862,42 @@ export const AdelantosDB = {
       direccion: direccionDe(g.direccion),
       saldoPendiente: Math.round(toNum(g._sum.saldoPendiente) * 100) / 100,
       cantidad: g._count,
+    }));
+  },
+
+  /**
+   * Los descuentos de planilla en soles (entregas vivas cuyo concepto empieza
+   * con «Descuento por planilla») de estas personas, anotados desde `desde`.
+   * RRHH › Lo ganado los resta de «Queda por pagar»: sin eso, al descontar el
+   * adelanto la fila subía (`lib/rrhh/descuentos-planilla.ts`). Sólo lectura.
+   */
+  async descuentosDePlanilla(
+    tenantId: string,
+    beneficiarioIds: readonly string[],
+    desde: Date,
+  ): Promise<{ beneficiarioId: string; descripcion: string | null; fecha: Date; valor: number }[]> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (beneficiarioIds.length === 0) return [];
+    const filas = await prisma.adelantoEntrega.findMany({
+      where: {
+        anuladaAt: null,
+        fecha: { gte: desde },
+        descripcion: { startsWith: CONCEPTO_PLANILLA },
+        adelanto: {
+          tenantId,
+          beneficiarioId: { in: [...beneficiarioIds] },
+          moneda: "PEN",
+          status: { not: "CANCELADO" },
+          ...whereDireccion("DADO"),
+        },
+      },
+      select: { descripcion: true, fecha: true, valor: true, adelanto: { select: { beneficiarioId: true } } },
+    });
+    return filas.map((f) => ({
+      beneficiarioId: f.adelanto.beneficiarioId,
+      descripcion: f.descripcion,
+      fecha: f.fecha,
+      valor: Math.round(toNum(f.valor) * 100) / 100,
     }));
   },
 

@@ -3,15 +3,17 @@ import { ColaboradoresDB } from "@/lib/db/rrhh-colaboradores.db";
 import { AsistenciaDB } from "@/lib/db/rrhh-asistencia.db";
 import { AdelantosDB } from "@/lib/db/adelantos.db";
 import { calcularGanado } from "@/lib/rrhh/ganado";
-import { fechaKeyDeDate } from "@/lib/rrhh/fechas";
+import { dateDeFechaKey, fechaKeyDeDate, sumarDias } from "@/lib/rrhh/fechas";
+import { descuentoEsDelPeriodo } from "@/lib/rrhh/descuentos-planilla";
+import { limaDateKey } from "@/lib/utils";
 import type { EstadoAsistencia, FechaKey, GanadoDTO, Modalidad } from "@/lib/rrhh/tipos";
 
 /**
  * GanadoDB — orquesta lo ganado de referencia de TODO el período (ADR-414 §5).
  *
  * Sin `prisma` propio: compone `ColaboradoresDB` (personas + tarifas),
- * `AsistenciaDB` (marcas del período) y `AdelantosDB` (saldo abierto, sólo
- * para mostrarlo AL LADO — nunca restado, ver `lib/rrhh/ganado.ts`) y llama
+ * `AsistenciaDB` (marcas del período) y `AdelantosDB` (saldo abierto y lo ya
+ * descontado por planilla del período, que resta `calcularQuedaPorPagar`) y llama
  * al puro `calcularGanado` con los MISMOS argumentos que usaría la vista
  * previa (lección ADR-412: nunca una función de cálculo con dos firmas).
  */
@@ -34,10 +36,14 @@ export const GanadoDB = {
     const ids = filtrados.map((c) => c.id);
     if (ids.length === 0) return { desde: input.desde, hasta: input.hasta, hoy: input.hoy, personas: [], total: 0 };
 
-    const [tarifasPorId, marcas, saldos] = await Promise.all([
+    const beneficiarioIds = filtrados.flatMap((c) => (c.beneficiarioId ? [c.beneficiarioId] : []));
+    const [tarifasPorId, marcas, saldos, descuentos] = await Promise.all([
       ColaboradoresDB.tarifasDe(tenantId, ids),
       AsistenciaDB.delPeriodo(tenantId, input.desde, input.hasta, ids),
       AdelantosDB.saldosPorPersona(tenantId),
+      // 45 días antes de `desde`: un descuento de este período anotado por
+      // adelantado. El que se anota después (lo normal) no tiene tope.
+      AdelantosDB.descuentosDePlanilla(tenantId, beneficiarioIds, dateDeFechaKey(sumarDias(input.desde, -45))),
     ]);
 
     const marcasPorId = new Map<string, typeof marcas>();
@@ -56,6 +62,15 @@ export const GanadoDB = {
       acc.abiertos += g.cantidad;
       if ((g.moneda || "PEN") === "PEN") acc.abiertosPen = r2(acc.abiertosPen + g.saldoPendiente);
       saldosPorBeneficiario.set(g.beneficiarioId, acc);
+    }
+
+    // Lo ya descontado por planilla PARA ESTE PERÍODO: el adelanto que se
+    // descontó dejó de estar abierto, y sin sumarlo acá «Queda por pagar» subía
+    // al descontar (decisión 5 de `lib/rrhh/ganado.ts`).
+    const descontadoPorBeneficiario = new Map<string, number>();
+    for (const d of descuentos) {
+      if (!descuentoEsDelPeriodo({ descripcion: d.descripcion, dia: limaDateKey(d.fecha) }, input.desde, input.hasta)) continue;
+      descontadoPorBeneficiario.set(d.beneficiarioId, r2((descontadoPorBeneficiario.get(d.beneficiarioId) ?? 0) + d.valor));
     }
 
     const personas = filtrados.map((c) => {
@@ -87,7 +102,12 @@ export const GanadoDB = {
         nombre: c.nombre,
         puesto: c.puesto?.nombre ?? null,
         beneficiarioId: c.beneficiarioId,
-        adelantos: c.beneficiarioId ? (saldosPorBeneficiario.get(c.beneficiarioId) ?? { abiertosPen: 0, abiertos: 0 }) : null,
+        adelantos: c.beneficiarioId
+          ? {
+              ...(saldosPorBeneficiario.get(c.beneficiarioId) ?? { abiertosPen: 0, abiertos: 0 }),
+              descontadoPen: descontadoPorBeneficiario.get(c.beneficiarioId) ?? 0,
+            }
+          : null,
       };
     });
 

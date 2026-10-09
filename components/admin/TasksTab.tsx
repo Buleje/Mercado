@@ -2,36 +2,16 @@
 
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { ClipboardList, ListChecks, Plus, Check, Pencil, Trash2, User, Clock, AlertCircle, CheckCircle2, X } from "@buleje/design-system/icons";
+import { ClipboardList, ListChecks, Plus, Check, Pencil, Trash2, User, Clock, AlertCircle, CheckCircle2, X, Search } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { cn, limaDateKey } from "@/lib/utils";
 import { fechaParaMostrar } from "@/lib/admin/metas-tareas";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { toast } from "sonner";
 import { Field } from "@/components/admin/shared/Field";
-
-type Priority = "baja" | "media" | "alta" | "urgente";
-type TaskStatus = "pendiente" | "en_progreso" | "completada" | "cancelada";
-
-interface Task {
-  id: string;
-  title: string;
-  description?: string;
-  priority: Priority;
-  status: TaskStatus;
-  assignedTo?: string;
-  dueDate?: string;
-  module?: string;
-  createdAt: string;
-  completedAt?: string;
-}
-
-const PRIORITY_META: Record<Priority, { label: string; color: string; bg: string }> = {
-  baja:     { label: "Baja",    color: "text-[var(--text-secondary)]",   bg: "bg-[var(--rule-soft)]" },
-  media:    { label: "Media",   color: "text-[var(--data-success-500)]",   bg: "bg-primary/10" },
-  alta:     { label: "Alta",    color: "text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-50)]" },
-  urgente:  { label: "Urgente", color: "text-[var(--data-error-500)]",    bg: "bg-[var(--data-error-50)]" },
-};
+import { filtrarTareas } from "@/lib/admin/tareas-buscar";
+import SelectorEncargado from "@/components/admin/tareas/SelectorEncargado";
+import { CLASE_CAMPO_TAREA, CLASE_ROTULO_TAREA, EMPTY, MODULES, PRIORITY_META, type FormData, type Task, type TaskStatus, type Priority } from "@/components/admin/tareas/tareas-shared";
 
 const STATUS_META: Record<TaskStatus, { label: string; color: string; icon: React.ElementType }> = {
   pendiente:    { label: "Pendiente",    color: "text-[var(--text-secondary)]",   icon: Clock },
@@ -39,14 +19,6 @@ const STATUS_META: Record<TaskStatus, { label: string; color: string; icon: Reac
   completada:   { label: "Completada",   color: "text-[var(--data-success-500)]",icon: CheckCircle2 },
   cancelada:    { label: "Cancelada",    color: "text-[var(--data-error-500)]",    icon: X },
 };
-
-const MODULES = [
-  "Inventario", "Pedidos", "Clientes", "Caja", "Proveedores",
-  "Compras", "Promociones", "Reportes", "POS", "Otro",
-];
-
-interface FormData { title: string; description: string; priority: Priority; assignedTo: string; dueDate: string; module: string; }
-const EMPTY: FormData = { title: "", description: "", priority: "media", assignedTo: "", dueDate: "", module: "" };
 
 export default function TasksTab() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -56,6 +28,7 @@ export default function TasksTab() {
   const [form, setForm] = useState<FormData>(EMPTY);
   const [saving, setSaving] = useState(false);
   const [filterStatus, setFilterStatus] = useState<TaskStatus | "todas">("todas");
+  const [busqueda, setBusqueda] = useState("");
 
   // Una carga que salió antes de un cambio trae la lista vieja. Medido
   // 2026-09-14: el GET del doble montaje llegó 470 ms después del clic en
@@ -144,7 +117,7 @@ export default function TasksTab() {
     }
   };
 
-  const filtered = filterStatus === "todas" ? tasks : tasks.filter(t => t.status === filterStatus);
+  const filtered = filtrarTareas(tasks, filterStatus, busqueda);
   const counts = { pendiente: tasks.filter(t => t.status === "pendiente").length, en_progreso: tasks.filter(t => t.status === "en_progreso").length, completada: tasks.filter(t => t.status === "completada").length };
 
   return (
@@ -162,8 +135,8 @@ export default function TasksTab() {
         </button>
       </AdminModuleHeader>
 
-      {/* Status filter tabs */}
-      <div className="flex items-center gap-1.5">
+      {/* Estado + buscador, en una fila pegada a la lista que filtran. */}
+      <div className="flex flex-wrap items-center gap-1.5">
         {([["todas", "Todas"], ["pendiente", `Pendientes (${counts.pendiente})`], ["en_progreso", `En progreso (${counts.en_progreso})`], ["completada", `Completadas (${counts.completada})`]] as [string, string][]).map(([s, label]) => (
           <button
             key={s}
@@ -175,6 +148,17 @@ export default function TasksTab() {
             {label}
           </button>
         ))}
+        <label className="relative ml-auto w-full sm:w-72">
+          <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
+          <input
+            type="search"
+            value={busqueda}
+            onChange={e => setBusqueda(e.target.value)}
+            placeholder="Buscar por título o encargado"
+            aria-label="Buscar tareas por título o encargado"
+            className={cn(CLASE_CAMPO_TAREA, "h-9 pl-9 bg-[var(--surface-raised)]")}
+          />
+        </label>
       </div>
 
       {/* Task list */}
@@ -183,7 +167,9 @@ export default function TasksTab() {
       ) : filtered.length === 0 ? (
         <div className="bg-[var(--surface-raised)] border border-dashed border-[var(--rule-base)] dark:border-card-border rounded-xl p-12 text-center">
           <ListChecks className="h-12 w-12 text-[var(--text-tertiary)] dark:text-muted mx-auto mb-3" />
-          <p className="text-[var(--text-secondary)] dark:text-muted font-semibold">No hay tareas{filterStatus !== "todas" ? ` con estado "${filterStatus}"` : ""}</p>
+          <p className="text-[var(--text-secondary)] dark:text-muted font-semibold">
+            {busqueda.trim() ? `Ninguna tarea coincide con «${busqueda.trim()}»` : `No hay tareas${filterStatus !== "todas" ? ` con estado «${STATUS_META[filterStatus].label.toLowerCase()}»` : ""}`}
+          </p>
         </div>
       ) : (
         <div className="space-y-2.5">
@@ -266,24 +252,22 @@ export default function TasksTab() {
           <input type="text" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Título de la tarea" className="w-full px-3 h-11 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-sunken)] text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" />
           <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Descripción (opcional)" rows={2} className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-sunken)] text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all resize-none" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label="Prioridad" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-1 block">
-              <select value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value as Priority }))} className="w-full px-3 h-11 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-sunken)] text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary transition-all">
+            <Field label="Prioridad" labelClassName={CLASE_ROTULO_TAREA}>
+              <select value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value as Priority }))} className={CLASE_CAMPO_TAREA}>
                 {Object.entries(PRIORITY_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
               </select>
             </Field>
-            <Field label="Módulo" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-1 block">
-              <select value={form.module} onChange={e => setForm(f => ({ ...f, module: e.target.value }))} className="w-full px-3 h-11 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-sunken)] text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary transition-all">
+            <Field label="Módulo" labelClassName={CLASE_ROTULO_TAREA}>
+              <select value={form.module} onChange={e => setForm(f => ({ ...f, module: e.target.value }))} className={CLASE_CAMPO_TAREA}>
                 <option value="">Sin módulo</option>
                 {MODULES.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
             </Field>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label="Asignado a" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-1 block">
-              <input type="text" value={form.assignedTo} onChange={e => setForm(f => ({ ...f, assignedTo: e.target.value }))} placeholder="Nombre del encargado" className="w-full px-3 h-11 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-sunken)] text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary transition-all" />
-            </Field>
-            <Field label="Fecha límite" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-1 block">
-              <input type="date" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} className="w-full px-3 h-11 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-sunken)] text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary transition-all" />
+            <SelectorEncargado value={form.assignedTo} onChange={v => setForm(f => ({ ...f, assignedTo: v }))} />
+            <Field label="Fecha límite" labelClassName={CLASE_ROTULO_TAREA}>
+              <input type="date" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} className={CLASE_CAMPO_TAREA} />
             </Field>
           </div>
           <div className="flex flex-wrap gap-3 pt-1">

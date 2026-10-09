@@ -21,6 +21,10 @@
  * 3. **Si el adelanto es mayor que lo ganado, no hay pago negativo.** Queda
  *    deuda: `aPagar = 0` y `deuda = adelantos − ganado`. Un «S/ -120.00» en una
  *    columna de pagos se lee como que hay que cobrarle, y no es eso.
+ * 5. **Lo ya descontado por planilla para el período también se resta.** Al
+ *    descontar, el adelanto deja de estar abierto: restando sólo lo abierto,
+ *    la fila SUBÍA de 700 a 1000 y se pagaba el sueldo entero. Qué descuento
+ *    es de qué período: `lib/rrhh/descuentos-planilla.ts`.
  * 4. **Sin cuenta de Adelantos vinculada no se resta: da `null`.** No se asume
  *    cero — de esa persona no sabemos si debe algo, y un cero inventado se
  *    lee como «no debe nada». La celda queda «—» y la fila explica por qué.
@@ -330,8 +334,11 @@ export function explicarGanado(g: GanadoPersona): string[] {
 export interface PersonaParaNeto {
   /** Lo ganado del período (`GanadoPersona.total`). */
   total: number;
-  /** Saldo de Adelantos de la persona; `null` = sin cuenta vinculada (`beneficiarioId == null`). */
-  adelantos: { abiertosPen: number } | null;
+  /**
+   * Saldo de Adelantos de la persona; `null` = sin cuenta vinculada (`beneficiarioId == null`).
+   * `descontadoPen`: lo ya descontado por planilla PARA ESTE PERÍODO (decisión 5).
+   */
+  adelantos: { abiertosPen: number; descontadoPen?: number } | null;
 }
 
 export interface QuedaPorPagar {
@@ -339,7 +346,9 @@ export interface QuedaPorPagar {
   ganado: number;
   /** Saldo de adelantos ABIERTOS en soles, al día de HOY — no del período. */
   adelantos: number;
-  /** `ganado − adelantos` con signo. Negativo = el adelanto fue mayor que lo ganado. */
+  /** Lo ya descontado por planilla para este período (ya no está en `adelantos`). */
+  descontado: number;
+  /** `ganado − descontado − adelantos` con signo. Negativo = el adelanto fue mayor que lo ganado. */
   neto: number;
   /** Lo que queda por pagarle. Nunca negativo: si el adelanto fue mayor, es 0. */
   aPagar: number;
@@ -348,18 +357,21 @@ export interface QuedaPorPagar {
 }
 
 /**
- * Lo que queda por pagarle a UNA persona: lo ganado del período menos su saldo
- * de adelantos abiertos. `null` si no tiene cuenta de Adelantos vinculada —
- * ver decisiones 1-4 en la cabecera de este archivo.
+ * Lo que queda por pagarle a UNA persona: lo ganado del período menos lo ya
+ * descontado por planilla para él y menos su saldo de adelantos abiertos.
+ * `null` si no tiene cuenta de Adelantos vinculada — ver decisiones 1-5 en la
+ * cabecera de este archivo.
  */
 export function calcularQuedaPorPagar(persona: PersonaParaNeto): QuedaPorPagar | null {
   if (!persona.adelantos) return null;
   const ganado = r2(persona.total);
   const adelantos = r2(persona.adelantos.abiertosPen);
-  const neto = r2(ganado - adelantos);
+  const descontado = r2(persona.adelantos.descontadoPen ?? 0);
+  const neto = r2(ganado - descontado - adelantos);
   return {
     ganado,
     adelantos,
+    descontado,
     neto,
     aPagar: neto > 0 ? neto : 0,
     deuda: neto < 0 ? r2(-neto) : 0,
@@ -405,7 +417,8 @@ export function totalQuedaPorPagar(personas: readonly PersonaParaNeto[]): TotalQ
 
 /** Una línea para el desplegable «Cómo sale»: la resta escrita, con su fecha de corte. */
 export function explicarQuedaPorPagar(q: QuedaPorPagar): string {
-  const resta = `S/ ${fmt(q.ganado)} ganado − S/ ${fmt(q.adelantos)} de adelantos abiertos`;
+  const yaDescontado = q.descontado > 0 ? ` − S/ ${fmt(q.descontado)} ya descontado por planilla` : "";
+  const resta = `S/ ${fmt(q.ganado)} ganado${yaDescontado} − S/ ${fmt(q.adelantos)} de adelantos abiertos`;
   return q.deuda > 0
     ? `${resta}: el adelanto es mayor que lo ganado en este período, sigue debiendo S/ ${fmt(q.deuda)}.`
     : `${resta} = S/ ${fmt(q.aPagar)} por pagar.`;

@@ -23,7 +23,16 @@ import { cn } from "@/lib/utils";
 import type { GanadoDTO } from "@/lib/rrhh/tipos";
 import { formatNumber } from "@/lib/format";
 
-export default function FilaGanado({ persona }: { persona: GanadoDTO["personas"][number] }) {
+export default function FilaGanado({
+  persona,
+  onDescontar,
+  descontando = false,
+}: {
+  persona: GanadoDTO["personas"][number];
+  /** «Descontar adelantos» (OPER-2): sólo llega si tiene adelantos abiertos y le queda algo de lo ganado. */
+  onDescontar?: () => void;
+  descontando?: boolean;
+}) {
   const [abierto, setAbierto] = useState(false);
   // Días que SUMAN (el factor de cada tramo), no días de calendario: la
   // columna decía 14 a todos en un período de 14 días, trabajaran 6 o 14.
@@ -72,7 +81,28 @@ export default function FilaGanado({ persona }: { persona: GanadoDTO["personas"]
         <td className="text-right tabular-nums">{horas > 0 ? horas.toFixed(1) : "—"}</td>
         <td>{tarifaTexto}</td>
         <td className="text-right font-bold tabular-nums text-[var(--text-primary)]">{formatearPEN(persona.total)}</td>
-        <td className="text-right tabular-nums">{persona.adelantos ? formatearPEN(persona.adelantos.abiertosPen) : "—"}</td>
+        <td className="text-right tabular-nums">
+          {persona.adelantos ? formatearPEN(persona.adelantos.abiertosPen) : "—"}
+          {(persona.adelantos?.descontadoPen ?? 0) > 0 && (
+            <span className="block text-xs text-[var(--text-tertiary)]">
+              ya descontado {formatearPEN(persona.adelantos?.descontadoPen ?? 0)}
+            </span>
+          )}
+          {onDescontar && (
+            <button
+              type="button"
+              disabled={descontando}
+              /* La fila entera abre «cómo sale»: el clic y el Enter del botón no
+                 le llegan (su onKeyDown hace preventDefault y se comía el clic). */
+              onClick={(e) => { e.stopPropagation(); onDescontar(); }}
+              onKeyDown={(e) => e.stopPropagation()}
+              aria-label={`Descontar los adelantos de ${persona.nombre}`}
+              className="mt-0.5 block w-full min-h-8 text-right text-xs font-bold text-[var(--accent-dark)] underline-offset-2 hover:underline disabled:opacity-60 dark:text-[var(--accent)]"
+            >
+              {descontando ? "Trayendo…" : "Descontar adelantos"}
+            </button>
+          )}
+        </td>
         <td className="text-right tabular-nums">
           {queda == null ? (
             <span className="text-[var(--text-tertiary)]">—</span>

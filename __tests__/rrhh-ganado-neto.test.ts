@@ -26,7 +26,7 @@ describe("calcularQuedaPorPagar — una persona", () => {
 
   it("el adelanto es MENOR que lo ganado: queda por pagar la diferencia", () => {
     const q = calcularQuedaPorPagar(persona(1320, 200));
-    expect(q).toEqual({ ganado: 1320, adelantos: 200, neto: 1120, aPagar: 1120, deuda: 0 });
+    expect(q).toEqual({ ganado: 1320, adelantos: 200, descontado: 0, neto: 1120, aPagar: 1120, deuda: 0 });
   });
 
   it("el adelanto es MAYOR que lo ganado: no hay pago negativo, queda deuda", () => {
@@ -39,7 +39,7 @@ describe("calcularQuedaPorPagar — una persona", () => {
 
   it("adelanto en cero (cuenta vinculada, nada abierto): queda por pagar todo lo ganado", () => {
     const q = calcularQuedaPorPagar(persona(1320, 0));
-    expect(q).toEqual({ ganado: 1320, adelantos: 0, neto: 1320, aPagar: 1320, deuda: 0 });
+    expect(q).toEqual({ ganado: 1320, adelantos: 0, descontado: 0, neto: 1320, aPagar: 1320, deuda: 0 });
   });
 
   it("el adelanto es EXACTAMENTE lo ganado: no queda nada por pagar y tampoco deuda", () => {
@@ -56,6 +56,20 @@ describe("calcularQuedaPorPagar — una persona", () => {
     const q = calcularQuedaPorPagar(persona(1320.3, 0.1));
     expect(q!.neto).toBe(1320.2); // 1320.3 - 0.1 = 1320.1999999999998 en float
     expect(q!.aPagar).toBe(1320.2);
+  });
+
+  it("descontar el adelanto por planilla NO sube lo que queda por pagar (revisión 09-10)", () => {
+    // Ganó 1000 y debía 300 → 700. Tras descontarle los 300 ya no hay nada
+    // abierto: restando sólo lo abierto la fila decía 1000 y se le pagaba todo.
+    const antes = calcularQuedaPorPagar(persona(1000, 300))!;
+    const despues = calcularQuedaPorPagar({ total: 1000, adelantos: { abiertosPen: 0, descontadoPen: 300 } })!;
+    expect(antes.aPagar).toBe(700);
+    expect(despues).toMatchObject({ descontado: 300, adelantos: 0, aPagar: 700, deuda: 0 });
+  });
+
+  it("descuento parcial: lo descontado y lo que sigue abierto se restan los dos", () => {
+    const q = calcularQuedaPorPagar({ total: 1000, adelantos: { abiertosPen: 900, descontadoPen: 400 } })!;
+    expect(q).toMatchObject({ neto: -300, aPagar: 0, deuda: 300 });
   });
 });
 
@@ -94,6 +108,13 @@ describe("explicarQuedaPorPagar — la línea de «Cómo sale»", () => {
     const q = calcularQuedaPorPagar(persona(1320, 200))!;
     expect(explicarQuedaPorPagar(q)).toBe(
       "S/ 1,320.00 ganado − S/ 200.00 de adelantos abiertos = S/ 1,120.00 por pagar.",
+    );
+  });
+
+  it("nombra lo ya descontado por planilla cuando lo hay", () => {
+    const q = calcularQuedaPorPagar({ total: 1000, adelantos: { abiertosPen: 0, descontadoPen: 300 } })!;
+    expect(explicarQuedaPorPagar(q)).toBe(
+      "S/ 1,000.00 ganado − S/ 300.00 ya descontado por planilla − S/ 0.00 de adelantos abiertos = S/ 700.00 por pagar.",
     );
   });
 

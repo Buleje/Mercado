@@ -31,6 +31,9 @@ import { limaDateKey } from "@/lib/utils";
 import { AvisoRrhh, CLASE_CAMPO, claseChipFiltro } from "../rrhh-form";
 import { COPY_REFERENCIA, formatearFecha, formatearPEN, pluralizar } from "../rrhh-ui";
 import FilaGanado from "./FilaGanado";
+import DescuentoPlanillaModal from "@/components/admin/adelantos/DescuentoPlanillaModal";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
+import { useDescontarAdelantos } from "./use-descontar-adelantos";
 
 type Chip = "esta-semana" | "semana-pasada" | "este-mes" | "mes-pasado" | "rango";
 
@@ -84,6 +87,7 @@ export default function GanadoView() {
   }, [ganado]);
 
   const queda = useMemo(() => totalQuedaPorPagar(ganado?.personas ?? []), [ganado]);
+  const descuento = useDescontarAdelantos();
 
   const CHIPS: { id: Chip; label: string }[] = [
     { id: "esta-semana", label: "Esta semana" },
@@ -141,6 +145,33 @@ export default function GanadoView() {
         Del <strong className="text-[var(--text-primary)]">{formatearFecha(desde)}</strong> al <strong className="text-[var(--text-primary)]">{formatearFecha(hasta)}</strong>
       </p>
 
+      {descuento.error && (
+        <AvisoRrhh tono="error" accion={<button type="button" onClick={descuento.olvidarAviso} aria-label="Cerrar el aviso" className="text-sm font-bold underline">Cerrar</button>}>
+          {descuento.error}
+        </AvisoRrhh>
+      )}
+      {descuento.sinPlanilla && (
+        <AvisoRrhh
+          tono="neutro"
+          icono={Info}
+          accion={<button type="button" onClick={descuento.olvidarAviso} aria-label="Cerrar el aviso" className="text-sm font-bold underline">Cerrar</button>}
+        >
+          {pluralizar(descuento.sinPlanilla.abiertos, "adelanto abierto", "adelantos abiertos")} de {descuento.sinPlanilla.persona.nombre}, ninguno
+          {" "}«descuento por planilla»: se cruzan liquidando su cuenta.{" "}
+          <EnlacePanel cosa="cuenta-adelantos" id={descuento.sinPlanilla.persona.beneficiarioId}>Liquidar su cuenta</EnlacePanel>
+        </AvisoRrhh>
+      )}
+      {descuento.abierto && (
+        <DescuentoPlanillaModal
+          adelantos={descuento.abierto.adelantos}
+          periodoInicial={descuento.abierto.periodo}
+          topeInicial={descuento.abierto.tope}
+          subtitulo={descuento.abierto.persona.nombre}
+          onClose={descuento.cerrar}
+          onAplicado={recargar}
+        />
+      )}
+
       {loading && <LoadingState message="Calculando lo ganado..." />}
       {error && !loading && (
         <div className="rounded-xl border border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/5 p-4 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
@@ -182,7 +213,22 @@ export default function GanadoView() {
                 </tr>
               </thead>
               <tbody>
-                {ganado.personas.map((p) => <FilaGanado key={p.colaboradorId} persona={p} />)}
+                {ganado.personas.map((p) => {
+                  const benef = p.beneficiarioId;
+                  // Lo que queda de lo ganado para descontar: con todo ya
+                  // descontado (o nada ganado) no hay planilla de dónde sacar.
+                  const margen = Math.round((p.total - (p.adelantos?.descontadoPen ?? 0)) * 100) / 100;
+                  return (
+                    <FilaGanado
+                      key={p.colaboradorId}
+                      persona={p}
+                      descontando={benef != null && descuento.cargando === benef}
+                      onDescontar={benef != null && (p.adelantos?.abiertos ?? 0) > 0 && margen > 0
+                        ? () => void descuento.descontar({ nombre: p.nombre, beneficiarioId: benef }, desde, hasta, margen)
+                        : undefined}
+                    />
+                  );
+                })}
               </tbody>
               <tfoot>
                 <tr>
@@ -195,7 +241,7 @@ export default function GanadoView() {
               </tfoot>
             </DataTable>
             <p className="text-xs leading-relaxed text-[var(--text-tertiary)]">
-              «Queda por pagar» = lo ganado del período − los adelantos abiertos. Ese saldo de adelantos es el de hoy
+              «Queda por pagar» = lo ganado del período − lo ya descontado por planilla para este período − los adelantos abiertos. Ese saldo de adelantos es el de hoy
               {" "}({formatearFecha(ganado.hoy)}), no el de este período: si el adelanto se dio antes, igual se resta.
               {queda.personas === 0
                 ? ` Nadie tiene cuenta de Adelantos vinculada (${pluralizar(ganado.personas.length, "persona", "personas")} en el período), así que no hay nada que restar: vincula su cuenta desde Personal.`

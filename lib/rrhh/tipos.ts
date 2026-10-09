@@ -233,7 +233,8 @@ export interface GanadoDTO {
     nombre: string;
     puesto: string | null;
     beneficiarioId: string | null;
-    adelantos: { abiertosPen: number; abiertos: number } | null;
+    /** `descontadoPen`: descuentos de planilla de ESTE período (ya no están abiertos). */
+    adelantos: { abiertosPen: number; abiertos: number; descontadoPen: number } | null;
   })[];
   /** Σ personas[].total, exacta. */
   total: number;

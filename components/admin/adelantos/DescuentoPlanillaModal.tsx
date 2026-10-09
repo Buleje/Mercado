@@ -13,7 +13,7 @@
  * persona es exactamente lo que nadie quiere firmar.
  */
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { AlertTriangle, Check, Users } from "@buleje/design-system/icons";
 import { DataTable } from "@buleje/design-system";
 import { formatCurrency } from "@/lib/currency";
@@ -37,13 +37,28 @@ export default function DescuentoPlanillaModal({
   adelantos,
   onClose,
   onAplicado,
+  periodoInicial,
+  topeInicial,
+  subtitulo,
 }: {
   adelantos: DbAdelanto[];
   onClose: () => void;
   onAplicado: () => void;
+  /**
+   * El período ya puesto (RRHH › Lo ganado lo abre con el mes que estás
+   * mirando). Sólo precarga el campo: la regla y el envío son los mismos.
+   */
+  periodoInicial?: string;
+  /**
+   * El tope ya puesto: desde Lo ganado, lo que le queda de lo ganado del
+   * período — descontarle más que su sueldo no es un descuento de planilla.
+   */
+  topeInicial?: number;
+  /** De quién es el descuento, cuando se abre para una sola persona. */
+  subtitulo?: ReactNode;
 }) {
-  const [periodo, setPeriodo] = useState(periodoDeHoy);
-  const [tope, setTope] = useState("");
+  const [periodo, setPeriodo] = useState(() => periodoInicial ?? periodoDeHoy());
+  const [tope, setTope] = useState(() => (topeInicial != null && topeInicial > 0 ? String(topeInicial) : ""));
   const [aplicando, setAplicando] = useState(false);
   const [resultado, setResultado] = useState<{ hechos: number; fallidos: string[] } | null>(null);
 
@@ -60,8 +75,14 @@ export default function DescuentoPlanillaModal({
   const conMonto = lineas.filter((l) => l.descuento > 0);
   const totales = totalPorMoneda(lineas);
 
+  /** El tope es por línea: con dos adelantos de planilla la suma puede pasarlo. */
+  const pasaLoGanado = topeInicial != null && (totales.PEN ?? 0) > topeInicial;
+
   const aplicar = async () => {
-    if (conMonto.length === 0) return;
+    // Una sola pasada por modal: la lista de adelantos no se vuelve a pedir, y
+    // aplicar de nuevo mandaría otra vez los mismos descuentos (el servidor
+    // acepta entregas en un adelanto ya liquidado: quedaría EXCEDIDO).
+    if (conMonto.length === 0 || resultado) return;
     setAplicando(true);
     const fallidos: string[] = [];
     let hechos = 0;
@@ -97,7 +118,7 @@ export default function DescuentoPlanillaModal({
   };
 
   return (
-    <ModalShell title="Descuentos de planilla" onClose={onClose} wide>
+    <ModalShell title="Descuentos de planilla" subtitle={subtitulo} onClose={onClose} wide>
       {base.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-6 text-center">
           <Users className="mx-auto mb-3 h-10 w-10 text-[var(--text-tertiary)] opacity-40" />
@@ -196,6 +217,13 @@ export default function DescuentoPlanillaModal({
             </span>
           </div>
 
+          {pasaLoGanado && !resultado && (
+            <p className="flex items-start gap-1.5 text-sm font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+              Lo que se descuenta pasa lo que le queda de lo ganado ({formatCurrency(topeInicial ?? 0)}): baja alguna línea.
+            </p>
+          )}
+
           {resultado && (
             <div
               className={`rounded-2xl border-2 px-4 py-3 text-sm ${
@@ -210,8 +238,8 @@ export default function DescuentoPlanillaModal({
               {resultado.fallidos.length > 0 && (
                 <p className="mt-1 flex items-start gap-1.5">
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-                  No se pudo con: {resultado.fallidos.join(", ")}. Esos siguen debiendo lo mismo — se pueden
-                  reintentar sin duplicar nada.
+                  No se pudo con: {resultado.fallidos.join(", ")}. Esos siguen debiendo lo mismo: ciérrala y
+                  vuelve a abrirla para reintentarlos, con la lista al día.
                 </p>
               )}
             </div>
@@ -226,7 +254,7 @@ export default function DescuentoPlanillaModal({
             </button>
             <button
               onClick={() => void aplicar()}
-              disabled={aplicando || conMonto.length === 0}
+              disabled={aplicando || resultado != null || conMonto.length === 0}
               className="h-12 flex-1 rounded-2xl bg-primary text-base font-semibold text-white hover:bg-primary-dark disabled:opacity-50"
             >
               {aplicando ? "Aplicando…" : `Aplicar a ${conMonto.length}`}

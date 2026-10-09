@@ -87,6 +87,9 @@ export function ajustarLinea(linea: LineaDescuento, nuevo: number): LineaDescuen
 }
 
 /** El concepto que queda escrito en cada entrega. */
+/** El comienzo de todo concepto de descuento de planilla: RRHH › Lo ganado lo busca así. */
+export const CONCEPTO_PLANILLA = "Descuento por planilla";
+
 export function conceptoDelPeriodo(periodo: string): string {
-  return `Descuento por planilla · ${periodo}`;
+  return `${CONCEPTO_PLANILLA} · ${periodo}`;
 }
