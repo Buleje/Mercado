@@ -10,6 +10,7 @@ import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { Field } from "@/components/admin/shared/Field";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { formatCurrency, formatDate, formatDateNumeric, formatMonthYear } from "@/lib/format";
+import EnlacePanel from "@/components/admin/shared/EnlacePanel";
 
 const DevolucionesChart = dynamic(() => import("./DevolucionesChart"), {
   ssr: false,
@@ -55,6 +56,8 @@ interface Devolucion {
   createdAt:       string;
   updatedAt?:      string;
   proveedorNombre: string;
+  /** Lo guarda el alta (`proveedorId`); las viejas pueden no tenerlo → el nombre queda como texto. */
+  proveedorId?:    string | null;
   items:           ItemDevuelto[];
   motivo:          string;
   estado:          DevolucionEstado;
@@ -847,7 +850,7 @@ export default function DevolucionesProveedorModule() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm font-semibold text-[var(--text-primary)] truncate">
-                        {dev.proveedorNombre}
+                        <EnlacePanel cosa="proveedor" id={dev.proveedorId} apariencia="heredada">{dev.proveedorNombre}</EnlacePanel>
                       </span>
                       <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full shrink-0", ESTADO_STYLES[dev.estado])}>
                         {ESTADO_LABEL[dev.estado]}
@@ -935,7 +938,10 @@ export default function DevolucionesProveedorModule() {
                         {dev.items.map((item, i) => (
                           <div key={i} className="flex items-center gap-2 text-sm">
                             <Package className="h-3.5 w-3.5 text-[var(--text-tertiary)] shrink-0" />
-                            <span className="flex-1 text-[var(--text-primary)]">{item.nombre}</span>
+                            <span className="flex-1 text-[var(--text-primary)]">
+                              {/* Sin productId el ítem es texto libre (ADR-379): no hay ficha a la que ir. */}
+                              <EnlacePanel cosa="producto" id={item.productId != null ? String(item.productId) : null} apariencia="heredada">{item.nombre}</EnlacePanel>
+                            </span>
                             <span className="font-medium text-[var(--text-primary)] tabular-nums">
                               {item.cantidad} {item.unidad}
                             </span>

@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp, History, TrendingUp, BarChart3 } from "@buleje/
 import { formatCurrency, formatDate } from "@/lib/format";
 import type { OrdenesCompra } from "@/components/admin/ordenes-compra/hooks/use-ordenes-compra";
 import dynamic from "next/dynamic";
+import EnlacePanel from "@/components/admin/shared/EnlacePanel";
 
 const SupplierScorecard = dynamic(() => import("@/components/admin/compras/SupplierScorecard"), { ssr: false });
 const SupplierTimeline = dynamic(() => import("@/components/admin/compras/SupplierTimeline"), { ssr: false });
@@ -32,7 +33,7 @@ export default function OcHistorialProveedores({ oc }: { oc: OrdenesCompra }) {
                     <div className="flex-1">
                       <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
                         <History className="h-5 w-5 text-primary" />
-                        {supplier.name}
+                        <EnlacePanel cosa="proveedor" id={supplier.id} apariencia="heredada">{supplier.name}</EnlacePanel>
                       </CardTitle>
                       <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">
                         {supplier.ruc && `RUC: ${supplier.ruc}`}
@@ -76,10 +77,10 @@ export default function OcHistorialProveedores({ oc }: { oc: OrdenesCompra }) {
                       </p>
                       <div className="space-y-1.5">
                         {stats.topProducts.map((prod, idx) => (
-                          <div key={idx} className="flex items-center justify-between text-sm">
+                          <div key={prod.id} className="flex items-center justify-between text-sm">
                             <span className="text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-1.5">
                               <span className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted">#{idx + 1}</span>
-                              {prod.name}
+                              <EnlacePanel cosa="producto" id={prod.id} apariencia="heredada">{prod.name}</EnlacePanel>
                               <span className="text-[var(--text-tertiary)] dark:text-muted text-xs">({prod.count} und)</span>
                             </span>
                             <span className="font-semibold text-primary">{formatCurrency(Number(prod.total))}</span>

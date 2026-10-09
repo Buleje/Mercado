@@ -5,6 +5,7 @@ import { DollarSign, History, MoreHorizontal, Trash2 } from "@buleje/design-syst
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import EnlacePanel from "@/components/admin/shared/EnlacePanel";
 import PagarCuentaForm, { METODOS } from "./PagarCuentaForm";
 import { diaDeVencimiento, estaPagada, fechaConDia, saldo, vencimiento, type CuentaPorPagar, type TonoVence } from "./resumen-cuentas";
 import type { MetodoPago, PagoCuenta, ResultadoPago } from "./use-cuentas-por-pagar";
@@ -62,7 +63,10 @@ export default function TablaCuentas({ cuentas, hoy, abierto, setAbierto, saving
                     {/* Un solo hijo por celda: a 400 px la celda es «rótulo | contenido» y
                         dos hijos quedaban uno al lado del otro, montados. */}
                     <div className="min-w-0">
-                      <p className="font-semibold text-[var(--text-primary)]">{c.supplierName || "Sin nombre"}</p>
+                      <p className="font-semibold text-[var(--text-primary)]">
+                        {/* El proveedor lleva a su ficha (con sus órdenes); sin id, queda el texto. */}
+                        <EnlacePanel cosa="proveedor" id={c.supplierId} apariencia="heredada">{c.supplierName || "Sin nombre"}</EnlacePanel>
+                      </p>
                       {c.description && <p className="mt-0.5 line-clamp-2 text-xs text-[var(--text-secondary)]">{c.description}</p>}
                     </div>
                   </td>
@@ -146,7 +150,13 @@ function HistorialPagos({ cuenta }: { cuenta: CuentaPorPagar }) {
         ))
       )}
       <p className="pt-1 text-xs text-[var(--text-secondary)]">
-        Cuenta {cuenta.id}{cuenta.purchaseOrderId ? ` · Orden ${cuenta.purchaseOrderId}` : ""}
+        Cuenta {cuenta.id}
+        {cuenta.purchaseOrderId && (
+          <>
+            {" · "}
+            <EnlacePanel cosa="oc" id={cuenta.purchaseOrderId} apariencia="heredada">Orden {cuenta.purchaseOrderId}</EnlacePanel>
+          </>
+        )}
       </p>
     </div>
   );

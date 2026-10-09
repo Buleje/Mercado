@@ -20,6 +20,7 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import VenceLoteCampo from "@/components/admin/compras/VenceLoteCampo";
 import { errorDeVencimiento, pideLote, textoVence } from "@/lib/compras/lotes-recepcion";
 import { formatCurrency, formatDate } from "@/lib/format";
+import EnlacePanel from "@/components/admin/shared/EnlacePanel";
 import { enRango, rangoActivo, textoDeRango, type ChipFiltro, type FacetaOpcion, type Rango } from "@/lib/admin/filtros-columna";
 import { ChipsDeFiltros, FiltroColumnaMulti, FiltroColumnaRango } from "@/components/admin/shared/filtros-columna";
 import { useOrdenColumnas, EnOrden, BotonRestablecerColumnas } from "@/components/admin/shared/columnas-ordenables";
@@ -138,6 +139,9 @@ export default function ReceivingTab() {
   // del inventario (combobox con id/unidad) + proveedores (datalist).
   const [products, setProducts] = useState<ProductOption[]>([]);
   const [supplierNames, setSupplierNames] = useState<string[]>([]);
+  /* La recepción guarda el NOMBRE del proveedor: su id (para el enlace a la ficha) sale
+     de la lista. Un nombre repetido no se sabe de quién es: queda como texto. */
+  const [proveedorIdDe, setProveedorIdDe] = useState<ReadonlyMap<string, string | null>>(() => new Map());
 
   // Carga recepciones con cache localStorage stale-while-revalidate
   useEffect(() => {
@@ -203,8 +207,12 @@ export default function ReceivingTab() {
         .filter(p => !!p.name)
         .map(p => ({ id: p.id ?? p.name!, name: p.name!, stock: p.stock ?? null, unit: p.unit, barcode: p.barcode }));
       setProducts(prodList);
-      const supNames = (toArr(sups, "suppliers") as Array<{ name?: string }>).map(s => s.name).filter((n): n is string => !!n);
+      const supList = toArr(sups, "suppliers") as Array<{ id?: string; name?: string }>;
+      const supNames = supList.map(s => s.name).filter((n): n is string => !!n);
       setSupplierNames(Array.from(new Set(supNames)).sort());
+      const ids = new Map<string, string | null>();
+      for (const sp of supList) if (sp.name && sp.id) ids.set(sp.name, ids.has(sp.name) ? null : sp.id);
+      setProveedorIdDe(ids);
     });
     return () => { cancelled = true; };
   }, []);
@@ -538,7 +546,11 @@ export default function ReceivingTab() {
                               <div className="font-mono text-xs text-[var(--text-tertiary)]">{r.orderRef}</div>
                             </td>
                           ),
-                          proveedor: <td className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.supplier}</td>,
+                          proveedor: (
+                            <td className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+                              <EnlacePanel cosa="proveedor" id={proveedorIdDe.get(r.supplier)} apariencia="heredada">{r.supplier}</EnlacePanel>
+                            </td>
+                          ),
                           programada: <td className="text-[var(--text-secondary)] dark:text-muted text-xs">{fmtDate(r.scheduledDate)}</td>,
                           recibida: <td className="text-[var(--text-secondary)] dark:text-muted text-xs">{r.receivedDate ? fmtDate(r.receivedDate) : "—"}</td>,
                           inspector: <td className="text-xs text-[var(--text-secondary)] dark:text-muted">{r.inspector || "—"}</td>,
@@ -602,7 +614,10 @@ export default function ReceivingTab() {
             <div {...ventanaDetalle.asaProps} className="flex items-start justify-between">
               <div>
                 <CardTitle id={detailTitleId} className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.ref}</CardTitle>
-                <p className="text-xs text-[var(--text-tertiary)] mt-0.5">OC: {detail.orderRef} · {detail.supplier}</p>
+                <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
+                  OC: {detail.orderRef} ·{" "}
+                  <EnlacePanel cosa="proveedor" id={proveedorIdDe.get(detail.supplier)} apariencia="heredada">{detail.supplier}</EnlacePanel>
+                </p>
                 {detail.inspector && <p className="text-xs text-[var(--text-tertiary)]">Inspector: {detail.inspector}</p>}
               </div>
               <span className="ml-auto flex items-center gap-1">
@@ -637,7 +652,9 @@ export default function ReceivingTab() {
                 <tbody>
                   {detail.items.map((it, i) => (
                     <tr key={i} className={cn(it.condition !== "ok" && "bg-[var(--data-error-50)]/30 dark:bg-red-950/10")}>
-                      <td className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{it.product}</td>
+                      <td className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+                        <EnlacePanel cosa="producto" id={it.productId != null ? String(it.productId) : null} apariencia="heredada">{it.product}</EnlacePanel>
+                      </td>
                       <td className="text-[var(--text-secondary)] text-center">{it.expectedQty}</td>
                       <td className={cn("font-bold text-center",
                         it.receivedQty < it.expectedQty ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]"

@@ -4,6 +4,7 @@ import { CardTitle, DataTable } from "@buleje/design-system";
 import { useId, useRef, useState, useEffect } from "react";
 import { TrendingUp, TrendingDown, AlertTriangle, BarChart3, X, Check } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import EnlacePanel from "@/components/admin/shared/EnlacePanel";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
 import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
@@ -161,7 +162,7 @@ export function QuotationComparator({ orders, suppliers }: {
                   <th className="text-left py-2 px-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Producto</th>
                   {selectedOCs.map(oc => (
                     <th key={oc.id} className="text-right py-2 px-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
-                      {oc.supplierName}
+                      <EnlacePanel cosa="proveedor" id={oc.supplierId} apariencia="heredada">{oc.supplierName}</EnlacePanel>
                     </th>
                   ))}
                   <th className="text-center py-2 px-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Mejor</th>
@@ -172,7 +173,9 @@ export function QuotationComparator({ orders, suppliers }: {
                   const best = bestPerProduct[pid];
                   return (
                     <tr key={pid} className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]/50">
-                      <td className="py-2 px-2 text-[var(--text-primary)] dark:text-[var(--text-primary)] font-medium">{productNames[pid]}</td>
+                      <td className="py-2 px-2 text-[var(--text-primary)] dark:text-[var(--text-primary)] font-medium">
+                        <EnlacePanel cosa="producto" id={String(pid)} apariencia="heredada">{productNames[pid]}</EnlacePanel>
+                      </td>
                       {selectedOCs.map(oc => {
                         const item = oc.items.find(i => i.productId === pid);
                         const isBest = best && best.ocId === oc.id;
@@ -264,7 +267,10 @@ export default function SupplierPriceComparison({ productId, productName }: Supp
       <div className="text-center py-4">
         <AlertTriangle className="h-6 w-6 text-[var(--text-tertiary)] mx-auto mb-2" />
         <p className="text-sm text-[var(--text-secondary)] dark:text-muted">
-          No hay historial de compras para <strong>{productName}</strong>
+          No hay historial de compras para{" "}
+          <strong>
+            <EnlacePanel cosa="producto" id={String(productId)} apariencia="heredada">{productName}</EnlacePanel>
+          </strong>
         </p>
       </div>
     );
@@ -275,7 +281,8 @@ export default function SupplierPriceComparison({ productId, productName }: Supp
   return (
     <div className="space-y-2">
       <h4 className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
-        Comparacion de precios: {productName}
+        Comparacion de precios:{" "}
+        <EnlacePanel cosa="producto" id={String(productId)} apariencia="heredada">{productName}</EnlacePanel>
       </h4>
 
       {comparaciones.length === 1 && (
@@ -308,7 +315,7 @@ export default function SupplierPriceComparison({ productId, productName }: Supp
                   )}
                 >
                   <td className="py-2 px-2 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-                    {c.supplierName}
+                    <EnlacePanel cosa="proveedor" id={c.supplierId} apariencia="heredada">{c.supplierName}</EnlacePanel>
                     {c.isCheapest && (
                       <span className="ml-2 inline-flex items-center gap-0.5 text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 px-1.5 py-0.5 rounded-full">
                         <TrendingDown className="h-2.5 w-2.5" /> Mejor precio

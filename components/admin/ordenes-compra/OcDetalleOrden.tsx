@@ -6,6 +6,7 @@ import { TIPOS_COMPROBANTE } from "@/lib/compras/estados-oc";
 import { cn } from "@/lib/utils";
 import { formatCurrency, formatDate } from "@/lib/format";
 import SupplierPriceComparison from "@/components/admin/compras/SupplierPriceComparison";
+import EnlacePanel from "@/components/admin/shared/EnlacePanel";
 import FleteTardio from "@/components/admin/ordenes-compra/FleteTardio";
 import type { OrdenesCompra } from "@/components/admin/ordenes-compra/hooks/use-ordenes-compra";
 
@@ -44,7 +45,9 @@ export default function OcDetalleOrden({ oc, o }: { oc: OrdenesCompra; o: DbPurc
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-1.5">
                       <Package className="h-3.5 w-3.5 text-[var(--text-tertiary)] dark:text-muted" />
-                      {item.quantity}x {item.name} <span className="text-[var(--text-tertiary)] dark:text-muted">({item.unit})</span>
+                      {item.quantity}x{" "}
+                      <EnlacePanel cosa="producto" id={String(item.productId)} apariencia="heredada">{item.name}</EnlacePanel>{" "}
+                      <span className="text-[var(--text-tertiary)] dark:text-muted">({item.unit})</span>
                     </span>
                     <div className="text-right">
                       <span className="text-[var(--text-tertiary)] dark:text-muted text-xs mr-2">{formatCurrency(Number(item.unitCost))} c/u</span>

@@ -3,6 +3,7 @@
 import { DataTable, SectionTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useCallback, useMemo } from "react";
+import EnlacePanel from "@/components/admin/shared/EnlacePanel";
 import {
   ClipboardList,
   Search,
@@ -442,7 +443,10 @@ export default function PhysicalCountTab() {
                     className={`transition-colors ${hasDiff ? "bg-[var(--data-error-50)]/40" : "hover:bg-[var(--surface-sunken)]"}`}
                   >
                     <td className="px-3 py-2">
-                      <p className="font-medium text-[var(--text-primary)] leading-tight">{row.productName}</p>
+                      <p className="font-medium text-[var(--text-primary)] leading-tight">
+                        {/* A medio conteo lo tipeado no está guardado: la ficha va en otra pestaña. */}
+                        <EnlacePanel cosa="producto" id={String(row.productId)} target="_blank" rel="noopener" apariencia="heredada">{row.productName}</EnlacePanel>
+                      </p>
                       {row.sku && <p className="text-xs text-[var(--text-tertiary)]">{row.sku}</p>}
                     </td>
                     <td className="px-3 py-2 text-right font-mono text-[var(--text-secondary)]">
@@ -540,7 +544,9 @@ export default function PhysicalCountTab() {
                   return (
                     <tr key={row.productId}>
                       <td>
-                        <p className="font-medium text-[var(--text-primary)]">{row.productName}</p>
+                        <p className="font-medium text-[var(--text-primary)]">
+                          <EnlacePanel cosa="producto" id={String(row.productId)} target="_blank" rel="noopener" apariencia="heredada">{row.productName}</EnlacePanel>
+                        </p>
                         {row.sku && <p className="text-xs text-[var(--text-tertiary)]">{row.sku}</p>}
                       </td>
                       <td className="text-right font-mono text-[var(--text-secondary)]">{row.systemStock}</td>
@@ -669,7 +675,9 @@ export default function PhysicalCountTab() {
                                 const d = (r.realStock as number) - r.systemStock;
                                 return (
                                   <tr key={r.productId}>
-                                    <td className="text-[var(--text-primary)]">{r.productName}</td>
+                                    <td className="text-[var(--text-primary)]">
+                                      <EnlacePanel cosa="producto" id={String(r.productId)} apariencia="heredada">{r.productName}</EnlacePanel>
+                                    </td>
                                     <td className="text-right font-mono text-[var(--text-secondary)]">{r.systemStock}</td>
                                     <td className="text-right font-mono">{r.realStock}</td>
                                     <td className={`text-right font-bold font-mono ${diffColor(d)}`}>

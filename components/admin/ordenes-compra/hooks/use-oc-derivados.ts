@@ -54,12 +54,12 @@ export function useOcDerivados(previo: ReturnType<typeof useOcEstado> & ReturnTy
     const lastPurchase = supplierOrders.length > 0 ? supplierOrders[0].createdAt : null;
     
     // Top 3 products
-    const productCounts: Record<string, { name: string; count: number; total: number }> = {};
+    const productCounts: Record<string, { id: string; name: string; count: number; total: number }> = {};
     for (const order of supplierOrders) {
       for (const item of order.items) {
         const key = String(item.productId);
         if (!productCounts[key]) {
-          productCounts[key] = { name: item.name, count: 0, total: 0 };
+          productCounts[key] = { id: key, name: item.name, count: 0, total: 0 };
         }
         productCounts[key].count += item.quantity;
         productCounts[key].total += item.quantity * item.unitCost;

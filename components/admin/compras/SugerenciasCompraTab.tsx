@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { toast } from "sonner";
 import { formatCurrency, formatNumber } from "@/lib/format";
+import EnlacePanel from "@/components/admin/shared/EnlacePanel";
 
 type Urgency = "CRITICO" | "URGENTE" | "PLANIFICAR";
 
@@ -697,12 +698,21 @@ export default function SugerenciasCompraTab() {
                   const lineTotal = s.lastPrice != null ? s.lastPrice * s.suggestedQty : null;
                   return (
                     <div key={s.productId} className="flex flex-col gap-2">
-                    <button
-                      type="button"
+                    {/* Tarjeta elegible con enlaces adentro (producto, proveedor): un <a> no
+                        puede ir dentro de un <button>, por eso es un div con rol de botón.
+                        Las teclas sólo cuentan sobre la tarjeta, no sobre sus enlaces. */}
+                    <div
+                      role="button"
+                      tabIndex={0}
                       onClick={() => toggleSelect(s.productId)}
+                      onKeyDown={(e) => {
+                        if (e.target !== e.currentTarget || (e.key !== "Enter" && e.key !== " ")) return;
+                        e.preventDefault();
+                        toggleSelect(s.productId);
+                      }}
                       aria-pressed={isSelected}
                       className={cn(
-                        "text-left rounded-2xl border-2 p-4 transition-all flex items-start gap-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+                        "cursor-pointer text-left rounded-2xl border-2 p-4 transition-all flex items-start gap-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
                         isSelected
                           ? cn("border-primary ring-2 ring-primary/30 bg-primary/5 dark:bg-primary/10")
                           : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--text-tertiary)] hover:shadow-sm",
@@ -720,7 +730,7 @@ export default function SugerenciasCompraTab() {
                         {/* Producto + categoría */}
                         <div className="flex items-start gap-2">
                           <p className="text-base font-extrabold text-[var(--text-primary)] line-clamp-2 leading-tight flex-1">
-                            {s.productName}
+                            <EnlacePanel cosa="producto" id={String(s.productId)} apariencia="heredada">{s.productName}</EnlacePanel>
                           </p>
                           <span className="text-xs font-bold px-2 py-1 rounded-lg bg-[var(--surface-sunken)] text-[var(--text-secondary)] shrink-0 whitespace-nowrap">
                             {s.category}
@@ -760,7 +770,9 @@ export default function SugerenciasCompraTab() {
                           {s.suggestedSupplier ? (
                             <span className="inline-flex items-center gap-1 text-[var(--text-secondary)] font-medium truncate">
                               <span className="text-[var(--text-tertiary)]">Proveedor</span>
-                              <strong className="text-[var(--text-primary)] truncate">{s.suggestedSupplier.name}</strong>
+                              <strong className="text-[var(--text-primary)] truncate">
+                                <EnlacePanel cosa="proveedor" id={s.suggestedSupplier.id} apariencia="heredada">{s.suggestedSupplier.name}</EnlacePanel>
+                              </strong>
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 text-[var(--data-warning-500)] font-bold">
@@ -775,7 +787,7 @@ export default function SugerenciasCompraTab() {
                           )}
                         </div>
                       </div>
-                    </button>
+                    </div>
                     {/* Crear OC de esta sola sugerencia en 1 clic (reporte QA
                         Compras: "pasar de sugerencia a OC con un clic"). */}
                     <button
@@ -884,7 +896,9 @@ export default function SugerenciasCompraTab() {
             <ul className="divide-y divide-[var(--rule-soft)] border-t-2 border-[var(--rule-base)] bg-[var(--surface-raised)] ">
               {sinRotacion.slice(0, 40).map((s) => (
                 <li key={s.productId} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3">
-                  <span className="min-w-0 flex-1 truncate font-bold text-[var(--text-primary)]">{s.productName}</span>
+                  <span className="min-w-0 flex-1 truncate font-bold text-[var(--text-primary)]">
+                    <EnlacePanel cosa="producto" id={String(s.productId)} apariencia="heredada">{s.productName}</EnlacePanel>
+                  </span>
                   <span className="text-sm text-[var(--text-secondary)]">{s.motivo}</span>
                   <span className="text-sm tabular-nums text-[var(--text-secondary)]">
                     stock {s.currentStock} · mínimo {s.stockMin}

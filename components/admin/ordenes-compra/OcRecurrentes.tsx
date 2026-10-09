@@ -4,6 +4,7 @@ import { Plus, X, Calendar, Repeat, Pause, Play, ChevronDown } from "@buleje/des
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
+import EnlacePanel from "@/components/admin/shared/EnlacePanel";
 import type { OrdenesCompra } from "@/components/admin/ordenes-compra/hooks/use-ordenes-compra";
 
 /** Pedidos recurrentes próximos. Pieza de PurchaseOrdersTab: recibe `useOrdenesCompra` entero. */
@@ -60,7 +61,9 @@ export default function OcRecurrentes({ oc }: { oc: OrdenesCompra }) {
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">OC a</p>
-                      <p className="text-sm font-extrabold text-[var(--text-primary)] truncate">{r.supplierName}</p>
+                      <p className="text-sm font-extrabold text-[var(--text-primary)] truncate">
+                        <EnlacePanel cosa="proveedor" id={r.supplierId} apariencia="heredada">{r.supplierName}</EnlacePanel>
+                      </p>
                       <p className="text-xs text-[var(--text-secondary)] mt-0.5">
                         {r.items.length} producto{r.items.length === 1 ? "" : "s"} · {formatCurrency(r.items.reduce((s, i) => s + i.quantity * i.unitCost, 0))}
                       </p>
@@ -129,7 +132,12 @@ export default function OcRecurrentes({ oc }: { oc: OrdenesCompra }) {
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-bold text-[var(--text-primary)] truncate">{r.notes || r.supplierName}</p>
                       <p className="text-xs text-[var(--text-secondary)] truncate">
-                        {r.notes ? `${r.supplierName} · ` : ""}
+                        {r.notes && (
+                          <>
+                            <EnlacePanel cosa="proveedor" id={r.supplierId} apariencia="heredada">{r.supplierName}</EnlacePanel>
+                            {" · "}
+                          </>
+                        )}
                         {r.items.length} producto{r.items.length === 1 ? "" : "s"} · {formatCurrency(r.items.reduce((s, i) => s + i.quantity * i.unitCost, 0))} · cada {r.intervalDays} días
                       </p>
                     </div>

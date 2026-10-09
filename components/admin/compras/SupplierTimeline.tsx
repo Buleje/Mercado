@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import { Package, Undo2, Loader2, AlertCircle, RotateCw } from "@buleje/design-system/icons";
 import { formatCurrency } from "@/lib/format";
+import EnlacePanel from "@/components/admin/shared/EnlacePanel";
 
 type PurchaseStatus = "pendiente" | "recibido" | "parcial" | "cancelado" | "auto_generated";
 type ReturnEstado = "PENDIENTE" | "ENVIADA" | "RESUELTA";
@@ -196,7 +197,8 @@ export default function SupplierTimeline({ supplierId, supplierName }: SupplierT
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-sm font-semibold text-[var(--text-primary)]">
-                  {isPurchase ? "Orden de compra" : "Devolución"}
+                  {/* La orden lleva a su ficha en Órdenes de compra (texto mientras esa ficha no abra por URL). */}
+                  {isPurchase ? <EnlacePanel cosa="oc" id={entry.id} apariencia="heredada">Orden de compra</EnlacePanel> : "Devolución"}
                 </p>
                 <span
                   className={cn(
