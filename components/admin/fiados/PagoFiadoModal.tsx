@@ -113,7 +113,9 @@ export default function PagoFiadoModal({ abierto, titulo, saldo: saldoCrudo, pag
 
               <fieldset>
                 <legend className="mb-1 text-xs font-bold text-[var(--text-secondary)]">¿Cómo paga?</legend>
-                <div className="grid grid-cols-4 gap-1.5" role="radiogroup">
+                {/* `!`: en celular globals.css apila todo `form .grid` en 1 columna con !important;
+                    una utilidad con ! (capa utilities) le gana y quedan 2×2 en vez de 4 filas. */}
+                <div className="grid grid-cols-2! gap-1.5 sm:grid-cols-4!" role="radiogroup">
                   {MEDIOS.map(({ id, icon: Icono }) => (
                     <button key={id} type="button" role="radio" aria-checked={metodo === id} onClick={() => setMetodo(id)}
                       className={cn(

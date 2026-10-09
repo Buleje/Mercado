@@ -2159,7 +2159,13 @@ button,
   /* ── Layout ── */
   --container-xs: 560px;
   --container-sm: 720px;
-  --container-md: 960px;
+  /* md = 28rem (448 px), el valor de Tailwind. Estaba en 960px y como Tailwind 4
+     arma `max-w-md` con `var(--container-md)`, las 241 ventanas, cajones y
+     párrafos escritos con `max-w-md` (pensados angostos) salían de 960 px; los
+     modales de Adelantos «sm» quedaban MÁS anchos que los «md» (672). Ningún CSS
+     lee esta variable a mano y `@md:` (container query) usa el valor del tema,
+     no esta línea. xs/sm/lg/xl siguen con la escala vieja (noche 2026-10-09). */
+  --container-md: 28rem;
   --container-lg: 1200px;
   --container-xl: 1440px;
   --container-max: 1760px;
