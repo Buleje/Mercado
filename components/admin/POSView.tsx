@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { LoadingState } from "@buleje/design-system";
 import { Info, X } from "@buleje/design-system/icons";
@@ -29,9 +29,9 @@ import POSStockAlerts from "@/components/admin/pos/POSStockAlerts";
 import POSReturnModal from "@/components/admin/pos/POSReturnModal";
 import ShiftSummaryWidget from "@/components/admin/pos/POSShiftSummary";
 import type { PaymentMethod } from "@/components/admin/pos/pos-shared";
+import { precargarBilleteras } from "@/components/admin/pos/pago/useBilleteraNegocio";
 
 const BarcodeScanner = dynamic(() => import("@/components/admin/BarcodeScanner"), { ssr: false });
-const YapeQRPayment = dynamic(() => import("@/components/admin/YapeQRPayment"), { ssr: false });
 
 type TamanoLetra = "normal" | "large" | "xlarge";
 
@@ -55,7 +55,6 @@ export default function POSView() {
   const [showScanner, setShowScanner] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  const [showYapeQR, setShowYapeQR] = useState<"yape" | "plin" | null>(null);
   const [showReturn, setShowReturn] = useState(false);
   // QA Brandon 2026-06-10 #2: advertencia fuerte al cobrar sin caja o sin turno abiertos.
   const [showNoCajaWarning, setShowNoCajaWarning] = useState(false);
@@ -68,6 +67,8 @@ export default function POSView() {
   const paymentMethod: PaymentMethod = "efectivo";
 
   useScrollLock(showPayment || !!saleComplete || expanded);
+  // Yape/Plin del negocio (Ajustes › Cobros) listos antes de abrir el cobro.
+  useEffect(() => { precargarBilleteras(); }, []);
 
   const { handleBarcode, handleAddTopResult } = usePOSLectorCodigo({
     products,
@@ -90,7 +91,9 @@ export default function POSView() {
     onOpenPayment: openPaymentModal,
     onClearCart: () => { setCart([]); },
     onOpenLastTicket: () => { setShowHistory(true); },
-    onCancel: () => { setShowPayment(false); },
+    // Escape del cobro es de AdminModal (Radix): cierra sólo la capa de arriba (QR de Yape) y respeta
+    // «procesando». Este atajo además cerraba el cobro debajo del QR (09-10).
+    onCancel: () => {},
     onIncrement: () => { if (cart[0]) updateQuantity(cart[0].product.id, 1); },
     onDecrement: () => { if (cart[0]) updateQuantity(cart[0].product.id, -1); },
     onRemoveSelected: () => { if (cart[0]) removeFromCart(cart[0].product.id); },
@@ -187,7 +190,14 @@ export default function POSView() {
           />
         </div>
 
-        <POSCartPanel carrito={carrito} expanded={expanded} customerPhone={cobro.customerPhone} openPaymentModal={openPaymentModal} />
+        <POSCartPanel
+          carrito={carrito}
+          expanded={expanded}
+          customerPhone={cobro.customerPhone}
+          customerName={cobro.customerName}
+          onQuitarCliente={() => { cobro.setCustomerPhone(""); cobro.setCustomerName(""); }}
+          openPaymentModal={openPaymentModal}
+        />
       </div>
 
       {showNoCajaWarning && (
@@ -229,6 +239,10 @@ export default function POSView() {
           onCancel={() => setShowPayment(false)}
           processing={cobro.processing}
           onRepeatOrder={(items) => { carrito.handleRepeatOrder(items); setShowPayment(false); }}
+          customerPhone={cobro.customerPhone}
+          customerName={cobro.customerName}
+          onCustomerPhone={cobro.setCustomerPhone}
+          onCustomerName={cobro.setCustomerName}
         />
       )}
 
@@ -241,17 +255,6 @@ export default function POSView() {
           cart={cart}
           onNewSale={handleNewSale}
           onClose={() => { setSaleComplete(null); cobro.setLastSaleDetails(null); }}
-        />
-      )}
-
-      {showYapeQR && (
-        <YapeQRPayment
-          amount={cartTotal}
-          onConfirm={() => {
-            setShowYapeQR(null);
-            void handlePaymentConfirm([{ method: showYapeQR, amount: cartTotal }]);
-          }}
-          onCancel={() => setShowYapeQR(null)}
         />
       )}
 

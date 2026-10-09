@@ -17,7 +17,10 @@ interface UsePOSCobroOpciones {
 export function usePOSCobro({ carrito, fetchProducts, playSaleComplete, playError, posOffline }: UsePOSCobroOpciones) {
   const { cart, setCart, cartSubtotal, globalDiscount, setGlobalDiscount } = carrito;
   const [showPayment, setShowPayment] = useState(false);
+  // Cliente elegido en el cobro: vive aquí (no en el modal) para que el carrito muestre lo que
+  // debe (POSFiadoPanel) y para que cerrar el cobro no lo borre. Antes nadie lo llenaba.
   const [customerPhone, setCustomerPhone] = useState("");
+  const [customerName, setCustomerName] = useState("");
   const [processing, setProcessing] = useState(false);
   const [saleComplete, setSaleComplete] = useState<{ id: string; change: number } | null>(null);
   const [saleError, setSaleError] = useState<string | null>(null);
@@ -35,6 +38,13 @@ export function usePOSCobro({ carrito, fetchProducts, playSaleComplete, playErro
     return () => clearInterval(iv);
   }, [lastSaleInfo?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   const [lastSaleDetails, setLastSaleDetails] = useState<LastSaleDetails | null>(null);
+
+  // Carrito vacío (venta hecha, «Vaciar», pasar al siguiente de la cola) = otro cliente.
+  useEffect(() => {
+    if (cart.length > 0) return;
+    setCustomerPhone("");
+    setCustomerName("");
+  }, [cart.length]);
 
   // ── New Payment Modal handler (Upgrade 3) ─────────────────────────────────
 
@@ -72,6 +82,7 @@ export function usePOSCobro({ carrito, fetchProducts, playSaleComplete, playErro
       // Descuento global (ahora viene del modal de pago)
       descuentoMonto: effectiveDiscount > 0 ? effectiveDiscount : undefined,
       descuentoPorcentaje: effectiveDiscountPct > 0 ? effectiveDiscountPct : undefined,
+      trueque: extra?.trueque,
     };
 
     // Save sale details for WhatsApp button
@@ -80,7 +91,7 @@ export function usePOSCobro({ carrito, fetchProducts, playSaleComplete, playErro
       total: effectiveTotal,
       payment: effectivePayment,
       customerPhone: phone || customerPhone || undefined,
-      customerName: extra?.customerName,
+      customerName: extra?.customerName || customerName || undefined,
       discountAmount: effectiveDiscount > 0 ? effectiveDiscount : undefined,
       comprobanteTipo: extra?.comprobanteTipo || "ticket",
     };
@@ -124,6 +135,7 @@ export function usePOSCobro({ carrito, fetchProducts, playSaleComplete, playErro
         try { localStorage.setItem("pos-last-sale-items", JSON.stringify(cart.map(i => ({ productId: i.product.id, name: i.product.name, quantity: i.quantity, price: i.product.price, stock: i.product.stock })))); } catch { /* ignore */ }
         setCart([]);
         setCustomerPhone("");
+        setCustomerName("");
         setGlobalDiscount({ monto: 0, porcentaje: 0 });
         fetchProducts();
       } else {
@@ -140,6 +152,7 @@ export function usePOSCobro({ carrito, fetchProducts, playSaleComplete, playErro
         setLastSaleDetails(saleDetailsForWhatsApp);
         setCart([]);
         setCustomerPhone("");
+        setCustomerName("");
         setGlobalDiscount({ monto: 0, porcentaje: 0 });
       } catch {
         playError();
@@ -150,7 +163,7 @@ export function usePOSCobro({ carrito, fetchProducts, playSaleComplete, playErro
   };
 
   return {
-    showPayment, setShowPayment, customerPhone, processing, saleComplete, setSaleComplete, saleError, setSaleError,
+    showPayment, setShowPayment, customerPhone, setCustomerPhone, customerName, setCustomerName, processing, saleComplete, setSaleComplete, saleError, setSaleError,
     metricsRefreshKey, lastSaleInfo, lastSaleDetails, setLastSaleDetails, handlePaymentConfirm,
   };
 }

@@ -2,7 +2,7 @@
 
 import { CardTitle } from "@buleje/design-system";
 import { useState } from "react";
-import { ShoppingBasket, Banknote, X, Trash2 } from "@buleje/design-system/icons";
+import { ShoppingBasket, Banknote, X, Trash2, User } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { extractIgv } from "@/lib/tax";
 import POSFiadoPanel from "@/components/admin/pos/POSFiadoPanel";
@@ -18,11 +18,14 @@ interface POSCartPanelProps {
   carrito: POSCarrito;
   expanded: boolean;
   customerPhone: string;
+  /** Cliente elegido en el cobro (usePOSCobro): se ve aquí con lo que debe. */
+  customerName?: string;
+  onQuitarCliente?: () => void;
   openPaymentModal: () => void;
 }
 
 /** Columna del carrito: cola de clientes, líneas, total y Cobrar. */
-export default function POSCartPanel({ carrito, expanded, customerPhone, openPaymentModal }: POSCartPanelProps) {
+export default function POSCartPanel({ carrito, expanded, customerPhone, customerName, onQuitarCliente, openPaymentModal }: POSCartPanelProps) {
   const {
     cart, cartCount, cartTotal, clientQueues, enqueueClient, loadFromQueue, removeFromQueue, clearCart,
     handlePauseCart, handleResumeCart, handleAddFromSearch, lastAddedId, updateQuantity, updateDiscount, removeFromCart,
@@ -31,6 +34,9 @@ export default function POSCartPanel({ carrito, expanded, customerPhone, openPay
   // Confirmar antes de vaciar: los dos botones sólo se ven con cart.length > 0.
   const [confirmClear, setConfirmClear] = useState(false);
   const [editingDiscount, setEditingDiscount] = useState<number | null>(null);
+  // Otro carrito = otro cliente. Cambiar un carrito lleno por otro (cola o «Retomar») no lo vacía,
+  // así que el efecto de usePOSCobro no limpia: sin esto el fiado del carrito B se anotaba al cliente A (09-10).
+  const cambiarDeCarrito = (cargar: () => void) => { onQuitarCliente?.(); cargar(); };
 
   return (
         <div className={cn(
@@ -72,7 +78,7 @@ export default function POSCartPanel({ carrito, expanded, customerPhone, openPay
                           const qItems = q.reduce((s, i) => s + i.quantity, 0);
                           return (
                             <div key={idx} className="flex items-center gap-2 text-xs p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] ">
-                              <button onClick={() => { loadFromQueue(idx); setShowQueueDropdown(false); }} className="flex-1 text-left">
+                              <button onClick={() => { cambiarDeCarrito(() => loadFromQueue(idx)); setShowQueueDropdown(false); }} className="flex-1 text-left">
                                 <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Cliente {idx + 1}</span>
                                 <span className="text-[var(--text-tertiary)] dark:text-muted ml-1">{qItems} items · {fmt(qTotal)}</span>
                               </button>
@@ -124,7 +130,7 @@ export default function POSCartPanel({ carrito, expanded, customerPhone, openPay
                 currentCartItems={cart as { product: { id: number; name: string; price: number; unit: string; image?: string; [k: string]: unknown }; quantity: number; discount?: number }[]}
                 currentTotal={cartTotal}
                 onPause={handlePauseCart}
-                onResume={handleResumeCart}
+                onResume={(items) => cambiarDeCarrito(() => handleResumeCart(items))}
               />
             </div>
           </div>
@@ -175,9 +181,25 @@ export default function POSCartPanel({ carrito, expanded, customerPhone, openPay
               />
             )}
 
-            {/* Fiado panel (Upgrade 5) */}
+            {/* Cliente elegido en el cobro + lo que debe (Upgrade 5). */}
             {customerPhone && (
-              <div className="px-3 pb-1">
+              <div className="px-3 pb-1 space-y-1.5" data-pos-cliente-carrito>
+                <div className="flex items-center gap-2 min-w-0">
+                  <User className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+                  <span className="text-xs font-semibold text-[var(--text-primary)] truncate">{customerName || customerPhone}</span>
+                  {customerName && <span className="text-xs text-[var(--text-tertiary)] tabular-nums shrink-0">{customerPhone}</span>}
+                  {onQuitarCliente && (
+                    <button
+                      type="button"
+                      onClick={onQuitarCliente}
+                      aria-label="Quitar cliente de esta venta"
+                      title="Quitar cliente"
+                      className="ml-auto shrink-0 p-1 rounded-md text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--surface-sunken)] max-sm:min-h-10 max-sm:min-w-10 inline-flex items-center justify-center"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
                 <POSFiadoPanel customerPhone={customerPhone} cartTotal={cartTotal} />
               </div>
             )}

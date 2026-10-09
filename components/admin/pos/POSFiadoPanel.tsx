@@ -1,18 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { AlertTriangle, CheckCircle, HandCoins, Loader2, X } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { formatCurrency } from "@/lib/format";
 import type { MetodoCobro } from "@/lib/fiados/cobro-metodo";
 import { MedioCobroCompacto, avisarSiSinCaja, cuerpoCobroACaja } from "./POSMedioCobro";
-
-interface FiadoResumen {
-  montoPendiente: number;
-  cantidadFiados: number;
-  diasVencido: number;
-  hasFiadosVencidos: boolean;
-}
+import { useFiadoResumen } from "./pago/useFiadoResumen";
 
 interface POSFiadoPanelProps {
   customerPhone: string;
@@ -27,8 +21,8 @@ export default function POSFiadoPanel({
   customerPhone,
   cartTotal: _cartTotal,
 }: POSFiadoPanelProps) {
-  const [data, setData] = useState<FiadoResumen | null>(null);
-  const [loading, setLoading] = useState(false);
+  // Mismo GET que el aviso de Fiado del cobro: el hook junta las dos consultas.
+  const { data, loading, refrescar: fetchResumen } = useFiadoResumen(customerPhone);
   const [showCobrar, setShowCobrar] = useState(false);
   const [cobroMonto, setCobroMonto] = useState("");
   const [cobrando, setCobrando] = useState(false);
@@ -38,31 +32,6 @@ export default function POSFiadoPanel({
   // distinguimos: éxito + remaining (P2-6), conflict 409 (P1-3), error real.
   const [cobroError, setCobroError] = useState<string | null>(null);
   const [cobroResult, setCobroResult] = useState<{ cobrado: number; remaining: number } | null>(null);
-
-  const fetchResumen = useCallback(async () => {
-    if (!customerPhone || customerPhone.length < 6) {
-      setData(null);
-      return;
-    }
-    setLoading(true);
-    try {
-      const res = await fetch(
-        `/api/customers/${encodeURIComponent(customerPhone)}/fiado-resumen`
-      );
-      if (res.ok) {
-        setData(await res.json());
-      } else {
-        setData(null);
-      }
-    } catch {
-      setData(null);
-    }
-    setLoading(false);
-  }, [customerPhone]);
-
-  useEffect(() => {
-    fetchResumen();
-  }, [fetchResumen]);
 
   const handleCobrar = async () => {
     const monto = Number(cobroMonto);
@@ -89,7 +58,7 @@ export default function POSFiadoPanel({
         const remaining = Number(body.remaining ?? 0);
         setCobroResult({ cobrado, remaining });
         setCobroMonto("");
-        fetchResumen(); // Refresh
+        void fetchResumen(); // Refresh
         // Cierra el mini-modal solo si no hubo remaining (cero confusión)
         if (remaining <= 0.01) {
           setTimeout(() => { setShowCobrar(false); setCobroResult(null); }, 1500);

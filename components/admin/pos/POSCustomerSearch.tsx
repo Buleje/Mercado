@@ -478,11 +478,7 @@ export default function POSCustomerSearch({
                   <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[var(--data-error-50)] dark:bg-red-950/20 text-[var(--data-error-500)] shrink-0">
                     Fiado {formatCurrency(Number(c.creditBalance))}
                   </span>
-                ) : (
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] shrink-0">
-                    Sin deuda
-                  </span>
-                )}
+                ) : null /* Sin «Sin deuda»: creditBalance no sigue a los fiados (09-10: Cliente 4455 debía S/ 150 vencido y decía «Sin deuda»). Lo que debe se ve al elegirlo. */}
               </button>
             ))
           )}
