@@ -1,344 +1,207 @@
 "use client";
 
 /**
- * ClientesAdvancedCharts — charts especializados del módulo Clientes.
+ * ClientesAdvancedCharts — gráficos especializados de Inicio › Clientes (ocultos
+ * por defecto; se prenden desde «Gráficos»). Las cuentas viven en
+ * `clientes-avanzado.ts`; acá sólo se dibuja.
  *
- * 1. Cohort retention (matriz m0 → m3)
- * 2. RFM Quadrant — Recency × Frequency (con monetary como tamaño)
- * 3. Distribución de rating (Composed)
- * 4. Comparativa nuevos sem actual vs previa (ComparisonOverlay)
- * 5. Heatmap activity hora × día (30d)
- * 6. Churn risk — clientes en riesgo (lista ordenada por recency)
+ * 1. Cohortes: de los que llegaron cada mes, cuántos volvieron después
+ * 2. Grupos: qué tan seguido y qué tan reciente compra cada cliente
+ * 3. Reseñas por estrellas
+ * 4. Clientes nuevos: esta semana vs la pasada
+ * 5. Horario: franja × día (30 días)
+ * 6. Clientes valiosos que dejaron de venir
+ *
+ * Brandon 2026-10-09: cada uno se oculta si no tiene qué decir
+ * (`queSeMuestraAvanzado`), en español, con colores fijos y sin hex.
  */
 
-import React, { memo, useMemo } from "react";
+import React, { memo, useMemo, type CSSProperties } from "react";
 import { DataTable } from "@buleje/design-system";
-import { Trophy, HeartHandshake, AlertTriangle, Leaf, CheckCircle2 } from "@buleje/design-system/icons";
+import { Trophy, HeartHandshake, AlertTriangle, Leaf } from "@buleje/design-system/icons";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
-import {
-  BulejeComposedChart,
-  BulejeComparisonOverlay,
-} from "@/components/ui-system/charts";
-import { DashboardSection } from "./_shared";
+import { BulejeComparisonOverlay } from "@/components/ui-system/charts";
+import { DashboardSection, MicroList } from "./_shared";
 import { DraggableSections, type DraggableItem } from "./DraggableSections";
-import { formatMonth, formatNumber } from "@/lib/format";
+import { COLOR_CONCEPTO, cantidad, numeroEje, porcentaje, soles } from "@/lib/admin/inicio/formato-tablero";
+import { calcularAvanzado, queSeMuestraAvanzado, type ClientesAvanzado } from "./clientes-avanzado";
+import { COLOR_YA_CLIENTES, cifraONinguno, type ClientesCrudos } from "./clientes-tablero";
 
-type Customer = {
-  phone?: string;
-  name?: string;
-  createdAt?: string;
-  totalSpent?: number;
-};
-type Order = {
-  id: string | number;
-  createdAt: string;
-  status: string;
-  total: number;
-  customer?: { phone?: string; name?: string };
-};
-type Sale = {
-  id?: string | number;
-  createdAt: string;
-  total: number;
-  customerPhone?: string;
-};
-type Review = { rating: number; date?: string };
+const plural = (n: number, uno: string, varios: string) => `${cantidad(n)} ${n === 1 ? uno : varios}`;
+const promedio = (xs: number[]) => (xs.length ? Math.round(xs.reduce((s, x) => s + x, 0) / xs.length) : null);
+
+/** Esta semana = azul de clientes; la pasada = gris de «período anterior». */
+const COLORES_SEMANA = {
+  "--section-primary": COLOR_CONCEPTO.clientes,
+  "--section-tertiary": COLOR_CONCEPTO.anterior,
+} as CSSProperties;
+
+/** Celda con intensidad del azul de clientes; el texto se invierte sobre lo oscuro. */
+function celda(intensidad: number): CSSProperties {
+  return {
+    background: `color-mix(in srgb, ${COLOR_CONCEPTO.clientes} ${Math.max(10, Math.round(intensidad * 100))}%, transparent)`,
+    color: intensidad > 0.55 ? "var(--text-inverse)" : "var(--text-secondary)",
+  };
+}
+
+// ── 1. Cohortes ──────────────────────────────────────────────────────────────
+function TablaCohortes({ cohort }: { cohort: ClientesAvanzado["cohort"] }) {
+  const th = "pb-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]";
+  return (
+    <div className="overflow-x-auto">
+      <DataTable className="min-w-full text-sm">
+        <thead>
+          <tr>
+            <th className={`${th} pr-3 text-left`}>Llegaron en</th>
+            <th className={`${th} pr-3 text-right`}>Clientes</th>
+            {["Ese mes", "+1 mes", "+2 meses", "+3 meses"].map((m) => (
+              <th key={m} className={`${th} px-1 text-center`}>{m}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {cohort.map((c) => (
+            <tr key={c.cohorte} className="border-t border-[var(--rule-soft)]">
+              <td className="py-2 pr-3 text-sm font-semibold text-[var(--text-primary)]">{c.cohorte}</td>
+              <td className="py-2 pr-3 text-right text-sm tabular-nums text-[var(--text-secondary)]">{c.size > 0 ? cantidad(c.size) : "—"}</td>
+              {[c.m0, c.m1, c.m2, c.m3].map((p, i) =>
+                p < 0 || c.size === 0 ? (
+                  <td key={i} className="px-1 py-1 text-center text-xs text-[var(--text-tertiary)]">—</td>
+                ) : (
+                  <td key={i} className="px-1 py-1">
+                    <div className="rounded-md py-1.5 text-center text-xs font-bold tabular-nums" style={celda(p / 100)}>
+                      {porcentaje(p)}
+                    </div>
+                  </td>
+                ),
+              )}
+            </tr>
+          ))}
+        </tbody>
+      </DataTable>
+    </div>
+  );
+}
+
+// ── 2. Grupos (reciente × frecuente; tamaño = cuánto gastó) ─────────────────
+const GRUPOS = {
+  campeones: { label: "Campeones", Icono: Trophy, color: COLOR_CONCEPTO.clientes },
+  leales: { label: "Leales", Icono: HeartHandshake, color: COLOR_YA_CLIENTES },
+  riesgo: { label: "En riesgo", Icono: AlertTriangle, color: COLOR_CONCEPTO.alerta },
+  nuevos: { label: "Nuevos", Icono: Leaf, color: COLOR_CONCEPTO.anterior },
+} as const;
+
+function MapaGrupos({ rfm }: { rfm: ClientesAvanzado["rfm"] }) {
+  const maxF = Math.max(1, ...rfm.rows.map((x) => x.frequency));
+  const maxR = Math.max(1, ...rfm.rows.map((x) => x.recencyDays));
+  const maxM = Math.max(1, ...rfm.rows.map((x) => x.monetary));
+  // Los puntos van en 8-92 % × 14-84 %: los rótulos de las esquinas no los tapan.
+  const posX = (frecuencia: number) => 8 + (frecuencia / maxF) * 84;
+  const posY = (dias: number) => 14 + (dias / maxR) * 70;
+  // Las líneas van en la MEDIANA (la que decide el grupo), no al medio de la caja:
+  // antes un «campeón» podía caer en el cuadro de «Nuevos».
+  const corteX = posX(rfm.medianFreq);
+  const corteY = posY(rfm.medianRecency);
+  const rotulo = (g: keyof typeof GRUPOS, pos: string) => {
+    const { label, Icono, color } = GRUPOS[g];
+    return (
+      <span className={`absolute ${pos} inline-flex items-center gap-1 text-xs font-bold uppercase tracking-[var(--ls-wider)]`} style={{ color }}>
+        <Icono className="h-4 w-4" aria-hidden /> {label}
+      </span>
+    );
+  };
+  return (
+    <div>
+    <div
+      role="img"
+      aria-label={`Mapa de ${rfm.rows.length} clientes: ${rfm.counts.champions} campeones, ${rfm.counts.loyal} leales, ${rfm.counts.risk} en riesgo y ${rfm.counts.new} nuevos.`}
+      className="relative min-h-[320px] overflow-hidden rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-6"
+    >
+      <div className="absolute inset-y-0 border-l border-dashed border-[var(--rule-strong)] opacity-30" style={{ left: `${corteX}%` }} aria-hidden />
+      <div className="absolute inset-x-0 border-t border-dashed border-[var(--rule-strong)] opacity-30" style={{ top: `${corteY}%` }} aria-hidden />
+      {rotulo("nuevos", "top-2 left-3")}
+      {rotulo("campeones", "top-2 right-3")}
+      {rotulo("riesgo", "bottom-2 left-3")}
+      {rotulo("leales", "bottom-2 right-3")}
+      {rfm.rows.slice(0, 50).map((r, i) => {
+        const x = posX(r.frequency);
+        const y = posY(r.recencyDays);
+        const size = 8 + Math.min(14, (r.monetary / maxM) * 14);
+        const reciente = r.recencyDays <= rfm.medianRecency;
+        const frecuente = r.frequency >= rfm.medianFreq;
+        const g = reciente ? (frecuente ? "campeones" : "nuevos") : frecuente ? "leales" : "riesgo";
+        return (
+          <div
+            key={i}
+            className="absolute rounded-full border-2 border-[var(--surface-raised)] transition-transform hover:z-10 hover:scale-125"
+            style={{ left: `${x}%`, top: `${y}%`, width: size, height: size, background: GRUPOS[g].color, transform: "translate(-50%, -50%)" }}
+            title={`${r.name} · ${plural(r.frequency, "compra", "compras")} · última hace ${plural(r.recencyDays, "día", "días")} · ${soles(r.monetary)}`}
+          />
+        );
+      })}
+    </div>
+    <p className="mt-2 flex justify-between gap-3 text-xs font-semibold text-[var(--text-tertiary)]">
+      <span>↑ Arriba: compraron hace poco</span>
+      <span>Compran más seguido →</span>
+    </p>
+    </div>
+  );
+}
+
+// ── 5. Horario (franja × día, 30 días) ──────────────────────────────────────
+function MapaHorario({ heatmap }: { heatmap: ClientesAvanzado["heatmap"] }) {
+  return (
+    <div className="overflow-x-auto">
+      <div className="min-w-[30rem]">
+        <div className="grid" style={{ gridTemplateColumns: "6.5rem repeat(7, 1fr)" }}>
+          <div />
+          {heatmap.days.map((d) => (
+            <div key={d} className="pb-2 text-center text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">{d}</div>
+          ))}
+          {heatmap.buckets.map((bucket, bi) => (
+            <React.Fragment key={bucket.label}>
+              <div className="flex items-center pr-3 text-xs font-semibold text-[var(--text-secondary)]">{bucket.label}</div>
+              {heatmap.matrix[bi].map((v, di) => (
+                <div
+                  key={di}
+                  className="m-0.5 flex min-h-8 items-center justify-center rounded-md text-xs font-bold tabular-nums"
+                  style={v === 0 ? { background: "var(--surface-sunken)" } : celda(v / heatmap.max)}
+                  title={`${bucket.label} del ${heatmap.days[di].toLowerCase()}: ${plural(v, "compra", "compras")}`}
+                >
+                  {v > 0 ? v : ""}
+                </div>
+              ))}
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
   const { data } = useDashboardData();
 
-  const customers = (data?.customers ?? []) as Customer[];
-  const orders = (data?.orders ?? []) as Order[];
-  const sales = (data?.sales ?? []) as Sale[];
-  const reviews = (data?.reviews ?? []) as Review[];
+  const av = useMemo(() => {
+    const raw = {
+      customers: data?.customers ?? [],
+      orders: data?.orders ?? [],
+      sales: data?.sales ?? [],
+      reviews: data?.reviews ?? [],
+    } as unknown as ClientesCrudos;
+    return calcularAvanzado(raw);
+  }, [data]);
+  const muestra = queSeMuestraAvanzado(av);
+  const { cohort, rfm, ratingChart, comp, heatmap, churn } = av;
 
-  // ── 1. COHORT RETENTION (matriz m0-m3) ──────────────────────────────────
-  const cohort = useMemo(() => {
-    const now = new Date();
-    const rows: Array<{
-      cohorte: string;
-      size: number;
-      m0: number;
-      m1: number;
-      m2: number;
-      m3: number;
-    }> = [];
-    for (let c = 3; c >= 0; c--) {
-      const cStart = new Date(now.getFullYear(), now.getMonth() - c, 1);
-      const cEnd = new Date(now.getFullYear(), now.getMonth() - c + 1, 0, 23, 59, 59);
-      const label = formatMonth(cStart);
-      const allPhonesBefore = new Set<string>();
-      orders
-        .filter((o) => o.status === "entregado" && new Date(o.createdAt) < cStart)
-        .forEach((o) => {
-          if (o.customer?.phone) allPhonesBefore.add(o.customer.phone);
-        });
-      sales
-        .filter((s) => new Date(s.createdAt) < cStart)
-        .forEach((s) => {
-          if (s.customerPhone) allPhonesBefore.add(s.customerPhone);
-        });
-      const firstPurchase = new Set<string>();
-      orders
-        .filter(
-          (o) =>
-            o.status === "entregado" &&
-            new Date(o.createdAt) >= cStart &&
-            new Date(o.createdAt) <= cEnd,
-        )
-        .forEach((o) => {
-          if (o.customer?.phone && !allPhonesBefore.has(o.customer.phone))
-            firstPurchase.add(o.customer.phone);
-        });
-      sales
-        .filter((s) => new Date(s.createdAt) >= cStart && new Date(s.createdAt) <= cEnd)
-        .forEach((s) => {
-          if (s.customerPhone && !allPhonesBefore.has(s.customerPhone))
-            firstPurchase.add(s.customerPhone);
-        });
-      const cohortSize = firstPurchase.size;
-      if (cohortSize === 0) {
-        rows.push({ cohorte: label, size: 0, m0: 0, m1: 0, m2: 0, m3: 0 });
-        continue;
-      }
-      const mPcts = [100];
-      for (let m = 1; m <= 3; m++) {
-        const mS = new Date(now.getFullYear(), now.getMonth() - c + m, 1);
-        const mE = new Date(now.getFullYear(), now.getMonth() - c + m + 1, 0, 23, 59, 59);
-        if (mS > now) {
-          mPcts.push(-1);
-          continue;
-        }
-        let retained = 0;
-        firstPurchase.forEach((phone) => {
-          const hasPurchase =
-            orders.some(
-              (o) =>
-                o.status === "entregado" &&
-                o.customer?.phone === phone &&
-                new Date(o.createdAt) >= mS &&
-                new Date(o.createdAt) <= mE,
-            ) ||
-            sales.some(
-              (s) =>
-                s.customerPhone === phone &&
-                new Date(s.createdAt) >= mS &&
-                new Date(s.createdAt) <= mE,
-            );
-          if (hasPurchase) retained++;
-        });
-        mPcts.push(Math.round((retained / cohortSize) * 100));
-      }
-      rows.push({
-        cohorte: label,
-        size: cohortSize,
-        m0: mPcts[0],
-        m1: mPcts[1],
-        m2: mPcts[2],
-        m3: mPcts[3],
-      });
-    }
-    return rows;
-  }, [orders, sales]);
-
-  // ── 2. RFM Quadrant (Recency × Frequency, size = Monetary) ──────────────
-  const rfm = useMemo(() => {
-    const now = Date.now();
-    const m = new Map<
-      string,
-      { name: string; lastPurchase: number; frequency: number; monetary: number }
-    >();
-    const addOrder = (
-      phone: string | undefined,
-      name: string | undefined,
-      date: string,
-      total: number,
-    ) => {
-      if (!phone) return;
-      const t = new Date(date).getTime();
-      const cur = m.get(phone) ?? {
-        name: name ?? phone,
-        lastPurchase: 0,
-        frequency: 0,
-        monetary: 0,
-      };
-      cur.lastPurchase = Math.max(cur.lastPurchase, t);
-      cur.frequency += 1;
-      cur.monetary += total;
-      m.set(phone, cur);
-    };
-    orders
-      .filter((o) => o.status === "entregado")
-      .forEach((o) =>
-        addOrder(o.customer?.phone, o.customer?.name, o.createdAt, o.total),
-      );
-    sales.forEach((s) =>
-      addOrder(s.customerPhone, s.customerPhone, s.createdAt, s.total),
-    );
-    const rows = Array.from(m.values()).map((c) => ({
-      name: c.name,
-      recencyDays: Math.round((now - c.lastPurchase) / (24 * 60 * 60 * 1000)),
-      frequency: c.frequency,
-      monetary: c.monetary,
-    }));
-    if (rows.length === 0) {
-      return { rows: [], medianRecency: 0, medianFreq: 0, counts: { champions: 0, loyal: 0, risk: 0, new: 0 } };
-    }
-    const sortedR = [...rows].sort((a, b) => a.recencyDays - b.recencyDays);
-    const sortedF = [...rows].sort((a, b) => a.frequency - b.frequency);
-    const medianRecency = sortedR[Math.floor(sortedR.length / 2)]?.recencyDays ?? 0;
-    const medianFreq = sortedF[Math.floor(sortedF.length / 2)]?.frequency ?? 0;
-    const champions = rows.filter(
-      (r) => r.recencyDays <= medianRecency && r.frequency >= medianFreq,
-    ).length;
-    const loyal = rows.filter(
-      (r) => r.recencyDays > medianRecency && r.frequency >= medianFreq,
-    ).length;
-    const risk = rows.filter(
-      (r) => r.recencyDays > medianRecency && r.frequency < medianFreq,
-    ).length;
-    const newC = rows.filter(
-      (r) => r.recencyDays <= medianRecency && r.frequency < medianFreq,
-    ).length;
-    return { rows, medianRecency, medianFreq, counts: { champions, loyal, risk, new: newC } };
-  }, [orders, sales]);
-
-  // ── 3. DISTRIBUCIÓN DE RATING ─────────────────────────────────────────────
-  const ratingChart = useMemo(() => {
-    const arr = [1, 2, 3, 4, 5].map((r) => ({
-      rating: `${r}/5`,
-      cantidad: reviews.filter((rv) => Math.round(rv.rating) === r).length,
-    }));
-    const total = arr.reduce((s, x) => s + x.cantidad, 0);
-    const promedio =
-      reviews.length > 0
-        ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
-        : 0;
-    const buenos = arr.filter((x) => Number(x.rating[0]) >= 4).reduce((s, x) => s + x.cantidad, 0);
-    const malos = arr.filter((x) => Number(x.rating[0]) <= 2).reduce((s, x) => s + x.cantidad, 0);
-    return { arr, total, promedio, buenos, malos };
-  }, [reviews]);
-
-  // ── 4. COMPARATIVA NUEVOS CLIENTES SEM ACTUAL vs PREVIA ─────────────────
-  const comp = useMemo(() => {
-    const now = Date.now();
-    const DAYS_LABEL = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-    const buckets = Array.from({ length: 7 }).map(() => ({
-      day: "",
-      current: 0,
-      previous: 0,
-    }));
-    const curStart = now - 7 * 24 * 60 * 60 * 1000;
-    const prevStart = now - 14 * 24 * 60 * 60 * 1000;
-
-    // Nuevos = primera compra en la semana
-    const firstByPhone = new Map<string, number>();
-    const pushFirst = (phone: string | undefined, date: string) => {
-      if (!phone) return;
-      const t = new Date(date).getTime();
-      const cur = firstByPhone.get(phone);
-      if (cur == null || t < cur) firstByPhone.set(phone, t);
-    };
-    orders
-      .filter((o) => o.status === "entregado")
-      .forEach((o) => pushFirst(o.customer?.phone, o.createdAt));
-    sales.forEach((s) => pushFirst(s.customerPhone, s.createdAt));
-
-    firstByPhone.forEach((t) => {
-      if (t >= curStart) {
-        const daysAgo = Math.floor((now - t) / (24 * 60 * 60 * 1000));
-        if (daysAgo < 0 || daysAgo >= 7) return;
-        buckets[6 - daysAgo].current += 1;
-      } else if (t >= prevStart) {
-        const daysAgo = Math.floor((curStart - t) / (24 * 60 * 60 * 1000));
-        if (daysAgo < 0 || daysAgo >= 7) return;
-        buckets[6 - daysAgo].previous += 1;
-      }
-    });
-    const today = new Date();
-    buckets.forEach((r, i) => {
-      const d = new Date(today);
-      d.setDate(d.getDate() - (6 - i));
-      r.day = DAYS_LABEL[d.getDay()];
-    });
-    return buckets;
-  }, [orders, sales]);
-
-  // ── 5. HEATMAP activity hora × día (30d) ────────────────────────────────
-  const heatmap = useMemo(() => {
-    const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
-    const DAYS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
-    const BUCKETS = [
-      { label: "Mañana", range: [6, 11] },
-      { label: "Mediodía", range: [12, 14] },
-      { label: "Tarde", range: [15, 18] },
-      { label: "Noche", range: [19, 23] },
-    ];
-    const matrix = BUCKETS.map(() => [0, 0, 0, 0, 0, 0, 0]);
-    const add = (iso: string) => {
-      if (new Date(iso).getTime() < last30) return;
-      const d = new Date(iso);
-      const dow = (d.getDay() + 6) % 7;
-      const h = d.getHours();
-      const bi = BUCKETS.findIndex(({ range }) => h >= range[0] && h <= range[1]);
-      if (bi < 0) return;
-      matrix[bi][dow] += 1;
-    };
-    orders.filter((o) => o.status === "entregado").forEach((o) => add(o.createdAt));
-    sales.forEach((s) => add(s.createdAt));
-    const max = Math.max(1, ...matrix.flat());
-    const peak = matrix.reduce(
-      (best, row, idx) => {
-        const rowMax = Math.max(...row);
-        return rowMax > best.value ? { idx, value: rowMax } : best;
-      },
-      { idx: -1, value: 0 },
-    );
-    return { matrix, max, buckets: BUCKETS, days: DAYS, peak };
-  }, [orders, sales]);
-
-  // ── 6. CHURN RISK — clientes en riesgo ──────────────────────────────────
-  const churn = useMemo(() => {
-    const now = Date.now();
-    const lastByPhone = new Map<string, { name: string; last: number; total: number; freq: number }>();
-    const register = (
-      phone: string | undefined,
-      name: string | undefined,
-      date: string,
-      total: number,
-    ) => {
-      if (!phone) return;
-      const t = new Date(date).getTime();
-      const cur = lastByPhone.get(phone) ?? { name: name ?? phone, last: 0, total: 0, freq: 0 };
-      cur.last = Math.max(cur.last, t);
-      cur.total += total;
-      cur.freq += 1;
-      if (name) cur.name = name;
-      lastByPhone.set(phone, cur);
-    };
-    orders
-      .filter((o) => o.status === "entregado")
-      .forEach((o) => register(o.customer?.phone, o.customer?.name, o.createdAt, o.total));
-    sales.forEach((s) => register(s.customerPhone, s.customerPhone, s.createdAt, s.total));
-
-    const rows = Array.from(lastByPhone.values())
-      .map((c) => {
-        const days = Math.round((now - c.last) / (24 * 60 * 60 * 1000));
-        const riskScore =
-          days > 60 ? 3 : days > 30 ? 2 : days > 14 ? 1 : 0;
-        return { ...c, daysSinceLast: days, riskScore };
-      })
-      .filter((r) => r.riskScore >= 2 && r.freq >= 2)
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 10);
-
-    const high = rows.filter((r) => r.riskScore === 3).length;
-    const med = rows.filter((r) => r.riskScore === 2).length;
-    const valueAtRisk = rows.reduce((s, r) => s + r.total, 0);
-    return { rows, high, med, valueAtRisk };
-  }, [orders, sales]);
-
-  const fmtS = (v: number) => `S/ ${formatNumber(v, { max: 0 })}`;
+  const medidas = cohort.filter((c) => c.size > 0);
+  const vuelvenM1 = promedio(medidas.filter((c) => c.m1 >= 0).map((c) => c.m1));
+  const vuelvenM3 = promedio(medidas.filter((c) => c.m3 >= 0).map((c) => c.m3));
+  const nuevosSemana = comp.reduce((s, d) => s + d.current, 0);
+  const nuevosSemanaPasada = comp.reduce((s, d) => s + d.previous, 0);
+  const totalHorario = heatmap.matrix.flat().reduce((s, v) => s + v, 0);
+  const porDiaSemana = heatmap.days.map((_, di) => heatmap.matrix.reduce((s, row) => s + row[di], 0));
+  const diaFuerte = porDiaSemana.indexOf(Math.max(...porDiaSemana));
 
   const sections: DraggableItem[] = [
     {
@@ -347,107 +210,18 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
       render: () => (
         <DashboardSection
           chartId="clientes.advanced.cohort-retention"
-          hasData={true}
+          hasData={muestra.cohorte}
           defaultVisible={false}
-          kicker="Cohort analysis · retención mes a mes"
-          title="Cuántos vuelven después de la 1ra compra"
+          kicker="Últimos 4 meses"
+          title="Cuántos vuelven después de su primera compra"
+          description="Cada fila son los clientes que te compraron por primera vez ese mes; las columnas, qué parte volvió a comprarte 1, 2 y 3 meses después. Más color = más vuelven."
           kpis={[
-            { label: "Cohortes", value: String(cohort.length), tone: "neutral" },
-            {
-              label: "Promedio m1",
-              value: `${
-                cohort.filter((c) => c.m1 >= 0 && c.size > 0).length > 0
-                  ? Math.round(
-                      cohort
-                        .filter((c) => c.m1 >= 0 && c.size > 0)
-                        .reduce((s, c) => s + c.m1, 0) /
-                        cohort.filter((c) => c.m1 >= 0 && c.size > 0).length,
-                    )
-                  : 0
-              }%`,
-              tone: "primary",
-            },
-            {
-              label: "Promedio m3",
-              value: `${
-                cohort.filter((c) => c.m3 >= 0 && c.size > 0).length > 0
-                  ? Math.round(
-                      cohort
-                        .filter((c) => c.m3 >= 0 && c.size > 0)
-                        .reduce((s, c) => s + c.m3, 0) /
-                        cohort.filter((c) => c.m3 >= 0 && c.size > 0).length,
-                    )
-                  : 0
-              }%`,
-              tone: "success",
-            },
-            {
-              label: "Cohort size max",
-              value: String(Math.max(0, ...cohort.map((c) => c.size))),
-              tone: "neutral",
-            },
+            { label: "Vuelven al mes siguiente", value: vuelvenM1 === 0 ? "Nadie" : porcentaje(vuelvenM1), tone: "primary" },
+            { label: "Siguen a los 3 meses", value: vuelvenM3 === 0 ? "Nadie" : porcentaje(vuelvenM3) },
+            { label: "Llegaron en 4 meses", value: cantidad(medidas.reduce((s, c) => s + c.size, 0)), sub: "clientes nuevos" },
           ]}
         >
-          <div className="overflow-x-auto">
-            <DataTable className="min-w-full text-sm">
-              <thead>
-                <tr>
-                  <th className="text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] pb-2 pr-3">
-                    Cohorte
-                  </th>
-                  <th className="text-right text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] pb-2 pr-3">
-                    Tamaño
-                  </th>
-                  {["M0", "M1", "M2", "M3"].map((m) => (
-                    <th
-                      key={m}
-                      className="text-center text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] pb-2 px-1"
-                    >
-                      {m}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {cohort.map((c) => (
-                  <tr key={c.cohorte} className="border-t border-[var(--rule-soft)]">
-                    <td className="py-2 pr-3 text-sm font-semibold text-[var(--text-primary)]">
-                      {c.cohorte}
-                    </td>
-                    <td className="py-2 pr-3 text-right text-xs text-[var(--text-secondary)] tabular-nums">
-                      {c.size}
-                    </td>
-                    {[c.m0, c.m1, c.m2, c.m3].map((pct, i) => {
-                      if (pct < 0) {
-                        return (
-                          <td
-                            key={i}
-                            className="px-1 py-1 text-center text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]"
-                          >
-                            —
-                          </td>
-                        );
-                      }
-                      const bg = `color-mix(in srgb, var(--accent) ${Math.max(8, pct)}%, transparent)`;
-                      return (
-                        <td key={i} className="px-1 py-1">
-                          <div
-                            className="rounded-md py-1.5 text-center text-xs font-bold tabular-nums"
-                            style={{
-                              background: bg,
-                              color: pct > 50 ? "#fff" : "var(--text-secondary)",
-                            }}
-                          >
-                            {pct}%
-                          </div>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </DataTable>
-          </div>
+          <TablaCohortes cohort={cohort} />
         </DashboardSection>
       ),
     },
@@ -456,83 +230,19 @@ export const ClientesAdvancedCharts = memo(function ClientesAdvancedCharts() {
       render: () => (
         <DashboardSection
           chartId="clientes.advanced.rfm-quadrant"
-          hasData={true}
+          hasData={muestra.rfm}
           defaultVisible={false}
-kicker="RFM · recency × frequency · monetary = tamaño"
-          title="Segmentación estratégica de clientes"
+          kicker="Todas tus compras"
+          title="Tus clientes por grupo"
+          description="Cada punto es un cliente: arriba los que compraron hace poco, a la derecha los que compran más seguido; el tamaño es cuánto te gastó. Pasa el mouse para ver quién es."
           kpis={[
-            { label: "Champions", icon: Trophy, value: String(rfm.counts.champions), tone: "success" },
-            { label: "Leales", icon: HeartHandshake, value: String(rfm.counts.loyal), tone: "primary" },
-            { label: "En riesgo", icon: AlertTriangle, value: String(rfm.counts.risk), tone: "warning" },
-            { label: "Nuevos", icon: Leaf, value: String(rfm.counts.new), tone: "neutral" },
+            { label: "Campeones", icon: Trophy, value: cifraONinguno(rfm.counts.champions), tone: "primary", hint: "Compran seguido y hace poco: tus mejores clientes." },
+            { label: "Leales", icon: HeartHandshake, value: cifraONinguno(rfm.counts.loyal), hint: "Compran seguido, pero hace un tiempo que no vienen." },
+            { label: "En riesgo", icon: AlertTriangle, value: cifraONinguno(rfm.counts.risk), tone: rfm.counts.risk > 0 ? "warning" : "neutral", hint: "Compran poco y hace tiempo: escríbeles antes de perderlos." },
+            { label: "Nuevos", icon: Leaf, value: cifraONinguno(rfm.counts.new), hint: "Compraron hace poco, todavía pocas veces." },
           ]}
         >
-          {rfm.rows.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
-              Sin clientes con compras registradas.
-            </div>
-          ) : (
-            <div className="relative rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-soft)] p-6 min-h-[340px] overflow-hidden">
-              <div
-                className="absolute top-0 bottom-0 border-l-2 border-dashed border-[var(--rule-base)]"
-                style={{ left: "50%" }}
-              />
-              <div
-                className="absolute left-0 right-0 border-t-2 border-dashed border-[var(--rule-base)]"
-                style={{ top: "50%" }}
-              />
-              <span className="absolute top-2 left-3 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-primary">
-                <Leaf className="h-4 w-4" aria-hidden /> Nuevos
-              </span>
-              <span className="absolute top-2 right-3 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-success-500)]">
-                <Trophy className="h-4 w-4" aria-hidden /> Champions
-              </span>
-              <span className="absolute bottom-2 left-3 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-warning-500)]">
-                <AlertTriangle className="h-4 w-4" aria-hidden /> En riesgo
-              </span>
-              <span className="absolute bottom-2 right-3 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]">
-                <HeartHandshake className="h-4 w-4" aria-hidden /> Leales
-              </span>
-              <span className="absolute top-1/2 left-2 -translate-y-1/2 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)] -rotate-90">
-                ← Más reciente
-              </span>
-              <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)]">
-                Frecuencia →
-              </span>
-              {rfm.rows.slice(0, 50).map((r, i) => {
-                const maxF = Math.max(...rfm.rows.map((x) => x.frequency)) || 1;
-                const maxR = Math.max(...rfm.rows.map((x) => x.recencyDays)) || 1;
-                const maxM = Math.max(...rfm.rows.map((x) => x.monetary)) || 1;
-                const x = (r.frequency / maxF) * 92 + 4;
-                const y = 96 - ((maxR - r.recencyDays) / maxR) * 88;
-                const size = 6 + Math.min(14, (r.monetary / maxM) * 14);
-                const isChamp = r.recencyDays <= rfm.medianRecency && r.frequency >= rfm.medianFreq;
-                const isRisk = r.recencyDays > rfm.medianRecency && r.frequency < rfm.medianFreq;
-                const color = isChamp
-                  ? "var(--data-success)"
-                  : isRisk
-                    ? "var(--data-warning)"
-                    : r.frequency >= rfm.medianFreq
-                      ? "var(--brand-primary)"
-                      : "var(--text-tertiary)";
-                return (
-                  <div
-                    key={i}
-                    className="absolute rounded-full border-2 border-white dark:border-[var(--surface-sunken)] transition-transform hover:scale-125 hover:z-10 cursor-default"
-                    style={{
-                      left: `${x}%`,
-                      top: `${y}%`,
-                      width: size,
-                      height: size,
-                      background: color,
-                      transform: "translate(-50%, -50%)",
-                    }}
-                    title={`${r.name} · ${r.frequency} pedidos · ${r.recencyDays}d · ${fmtS(r.monetary)}`}
-                  />
-                );
-              })}
-            </div>
-          )}
+          <MapaGrupos rfm={rfm} />
         </DashboardSection>
       ),
     },
@@ -541,41 +251,24 @@ kicker="RFM · recency × frequency · monetary = tamaño"
       render: () => (
         <DashboardSection
           chartId="clientes.advanced.rating-distribution"
-          hasData={true}
+          hasData={muestra.rating}
           defaultVisible={false}
-kicker="Satisfacción · todos los periodos"
-          title="Distribución de reseñas por rating"
+          kicker="Todas tus reseñas"
+          title="Qué te dicen tus clientes"
           kpis={[
-            { label: "Total reseñas", value: String(ratingChart.total), tone: "primary" },
-            { label: "Promedio", value: Number(ratingChart.promedio).toFixed(1), tone: "success" },
-            {
-              label: "4 y 5 estrellas",
-              value: String(ratingChart.buenos),
-              tone: "success",
-            },
-            {
-              label: "1 y 2 estrellas",
-              value: String(ratingChart.malos),
-              tone: ratingChart.malos > 0 ? "warning" : "success",
-            },
+            { label: "Calificación", value: `${ratingChart.promedio.toFixed(1)} de 5`, sub: plural(ratingChart.total, "reseña", "reseñas"), tone: ratingChart.promedio >= 4 ? "success" : "neutral" },
+            { label: "Malas (1-2)", value: ratingChart.malos > 0 ? cantidad(ratingChart.malos) : "Ninguna", tone: ratingChart.malos > 0 ? "warning" : "success" },
           ]}
         >
-          {ratingChart.total > 0 ? (
-            <BulejeComposedChart
-              data={ratingChart.arr}
-              xKey="rating"
-              bars={[{ key: "cantidad", label: "Reseñas", color: "primary", yAxis: "left" }]}
-              leftAxisFormat={(v) => v.toString()}
-              tooltipFormat={(v) => `${v} reseñas`}
-              height={260}
-              showLegend={false}
-              minDataPoints={1}
-            />
-          ) : (
-            <div className="rounded-lg border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
-              Sin reseñas aún. Invita a tus clientes a dejar feedback.
-            </div>
-          )}
+          <MicroList
+            items={[...ratingChart.arr].reverse().map((x) => ({
+              name: `${x.rating[0]} ${x.rating[0] === "1" ? "estrella" : "estrellas"}`,
+              value: x.cantidad,
+              label: plural(x.cantidad, "reseña", "reseñas"),
+              color: Number(x.rating[0]) <= 2 ? COLOR_CONCEPTO.alerta : COLOR_CONCEPTO.clientes,
+            }))}
+            showRank={false}
+          />
         </DashboardSection>
       ),
     },
@@ -584,93 +277,57 @@ kicker="Satisfacción · todos los periodos"
       render: () => (
         <DashboardSection
           chartId="clientes.advanced.comparativa-nuevos"
-          hasData={true}
+          hasData={muestra.comparativa}
           defaultVisible={false}
-kicker="Comparativa · nuevos clientes semana a semana"
-          title="Adquisición · esta semana vs pasada"
+          kicker="Últimos 7 días"
+          title="Clientes nuevos: esta semana y la pasada"
+          kpis={[
+            {
+              label: "Esta semana",
+              value: cifraONinguno(nuevosSemana),
+              tone: "primary",
+              delta: nuevosSemanaPasada > 0 ? ((nuevosSemana - nuevosSemanaPasada) / nuevosSemanaPasada) * 100 : null,
+              deltaLabel: "vs la pasada",
+            },
+            { label: "Semana pasada", value: cifraONinguno(nuevosSemanaPasada) },
+          ]}
         >
-          <BulejeComparisonOverlay
-            data={comp}
-            xKey="day"
-            currentKey="current"
-            previousKey="previous"
-            currentLabel="Esta semana"
-            previousLabel="Semana pasada"
-            yAxisFormat={(v) => v.toString()}
-            tooltipFormat={(v) => `${v} nuevos`}
-            height={280}
-          />
+          <div style={COLORES_SEMANA}>
+            <BulejeComparisonOverlay
+              data={comp}
+              xKey="day"
+              currentKey="current"
+              previousKey="previous"
+              currentLabel="Esta semana"
+              previousLabel="Semana pasada"
+              yAxisFormat={(v) => numeroEje(v)}
+              tooltipFormat={(v) => plural(Number(v), "nuevo", "nuevos")}
+              height={240}
+            />
+          </div>
         </DashboardSection>
       ),
     },
     {
       id: "heatmap-actividad",
       span: "full",
-      render: () => {
-        const peakLabel =
-          heatmap.peak.idx >= 0
-            ? heatmap.buckets[heatmap.peak.idx].label
-            : "—";
-        return (
-          <DashboardSection
-            chartId="clientes.advanced.heatmap-actividad"
-            hasData={true}
-            defaultVisible={false}
-            kicker="Heatmap · franja × día · rango activo"
-            title="Cuándo compran tus clientes"
-            kpis={[
-              { label: "Total compras 30d", value: String(heatmap.matrix.flat().reduce((s, v) => s + v, 0)), tone: "primary" },
-              { label: "Franja pico", value: peakLabel, tone: "success" },
-              { label: "Pico compras", value: String(heatmap.peak.value), tone: "primary" },
-              { label: "Franjas", value: String(heatmap.buckets.length), tone: "neutral" },
-            ]}
-          >
-            <div className="overflow-x-auto">
-              <div className="min-w-[520px]">
-                <div className="grid" style={{ gridTemplateColumns: "120px repeat(7, 1fr)" }}>
-                  <div />
-                  {heatmap.days.map((d) => (
-                    <div
-                      key={d}
-                      className="text-center text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] pb-2"
-                    >
-                      {d}
-                    </div>
-                  ))}
-                  {heatmap.buckets.map((bucket, bucketIdx) => (
-                    <React.Fragment key={bucket.label}>
-                      <div className="text-xs font-semibold text-[var(--text-secondary)] pr-3 py-1 flex items-center">
-                        {bucket.label}
-                      </div>
-                      {heatmap.matrix[bucketIdx].map((v, dayIdx) => {
-                        const intensity = v / heatmap.max;
-                        const bg =
-                          v === 0
-                            ? "var(--surface-sunken)"
-                            : `color-mix(in srgb, var(--accent) ${Math.max(10, intensity * 100)}%, transparent)`;
-                        return (
-                          <div
-                            key={dayIdx}
-                            className="relative m-0.5 rounded-md flex items-center justify-center text-[length:var(--ts-2xs)] font-bold transition-transform hover:scale-105 cursor-default"
-                            style={{
-                              background: bg,
-                              color: intensity > 0.55 ? "#fff" : "var(--text-secondary)",
-                              minHeight: 32,
-                            }}
-                            title={`${bucket.label} · ${heatmap.days[dayIdx]}: ${v} compras`}
-                          >
-                            {v > 0 ? v : ""}
-                          </div>
-                        );
-                      })}
-                    </React.Fragment>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </DashboardSection>
-        );
-      },
+      render: () => (
+        <DashboardSection
+          chartId="clientes.advanced.heatmap-actividad"
+          hasData={muestra.mapaDeCalor}
+          defaultVisible={false}
+          kicker="Últimos 30 días"
+          title="Cuándo te compran"
+          description="Compras por franja del día y día de la semana (todas las ventas, con o sin cliente). Más color = más compras: ahí conviene tener la tienda lista."
+          kpis={[
+            { label: "Compras", value: cantidad(totalHorario), sub: "en 30 días" },
+            { label: "Franja más fuerte", value: heatmap.peak.idx >= 0 ? heatmap.buckets[heatmap.peak.idx].label : null, sub: heatmap.peak.value > 0 ? `hasta ${plural(heatmap.peak.value, "compra", "compras")}` : undefined },
+            { label: "Día más fuerte", value: totalHorario > 0 ? heatmap.days[diaFuerte] : null, sub: totalHorario > 0 ? plural(porDiaSemana[diaFuerte], "compra", "compras") : undefined },
+          ]}
+        >
+          <MapaHorario heatmap={heatmap} />
+        </DashboardSection>
+      ),
     },
     {
       id: "churn-risk",
@@ -678,76 +335,27 @@ kicker="Comparativa · nuevos clientes semana a semana"
       render: () => (
         <DashboardSection
           chartId="clientes.advanced.churn-risk"
-          hasData={true}
+          hasData={muestra.riesgo}
           defaultVisible={false}
-          kicker="Churn risk · clientes en peligro de abandono"
-          title="Clientes valiosos que no vuelven"
+          kicker="Para llamar"
+          title="Clientes valiosos que dejaron de venir"
+          description="Te compraron 2 veces o más y no vuelven hace más de 30 días. Ordenados por lo que te compraron: escríbeles primero a los de arriba."
           kpis={[
-            {
-              label: "Alto riesgo (>60d)",
-              value: String(churn.high),
-              tone: churn.high > 0 ? "warning" : "success",
-            },
-            {
-              label: "Medio (30-60d)",
-              value: String(churn.med),
-              tone: churn.med > 0 ? "primary" : "success",
-            },
-            {
-              label: "Valor en riesgo",
-              value: fmtS(churn.valueAtRisk),
-              tone: "warning",
-            },
-            { label: "Total clientes", value: String(customers.length), tone: "neutral" },
+            { label: "Hace más de 60 días", value: cifraONinguno(churn.high), tone: churn.high > 0 ? "warning" : "neutral" },
+            { label: "Entre 30 y 60 días", value: cifraONinguno(churn.med) },
+            { label: "Te compraron", value: soles(churn.valueAtRisk), sub: "en total, estos clientes" },
           ]}
         >
-          {churn.rows.length === 0 ? (
-            <div className="flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
-              <CheckCircle2 className="h-4 w-4 shrink-0 text-[var(--data-success-500)]" aria-hidden />
-              Sin clientes en riesgo — todos compraron recientemente.
-            </div>
-          ) : (
-            <ul className="space-y-2">
-              {churn.rows.map((c, i) => {
-                const maxM = churn.rows[0]?.total || 1;
-                const width = Math.round((c.total / maxM) * 100);
-                return (
-                  <li
-                    key={i}
-                    className="relative rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-3 overflow-hidden"
-                  >
-                    <div
-                      className="absolute inset-y-0 left-0 bg-[var(--data-warning-500)]/15 transition-all"
-                      style={{ width: `${width}%` }}
-                    />
-                    <div className="relative flex items-center gap-3">
-                      <span
-                        className={
-                          "flex h-6 w-6 items-center justify-center rounded-full text-[length:var(--ts-2xs)] font-bold shrink-0 " +
-                          (c.riskScore === 3
-                            ? "bg-[var(--data-warning-500)] text-white"
-                            : "bg-[var(--data-warning-50)] text-[var(--data-warning-500)]")
-                        }
-                      >
-                        {i + 1}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-[var(--text-primary)] truncate">
-                          {c.name}
-                        </p>
-                        <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
-                          {c.freq} pedidos · último hace {c.daysSinceLast} días
-                        </p>
-                      </div>
-                      <span className="text-sm font-bold text-[var(--text-secondary)] shrink-0">
-                        {fmtS(c.total)}
-                      </span>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
+          <MicroList
+            items={churn.rows.map((c) => ({
+              name: c.name,
+              value: c.total,
+              label: soles(c.total),
+              sublabel: `${plural(c.freq, "compra", "compras")} · última hace ${plural(c.daysSinceLast, "día", "días")}`,
+            }))}
+            barColor={COLOR_CONCEPTO.alerta}
+            showRank
+          />
         </DashboardSection>
       ),
     },
