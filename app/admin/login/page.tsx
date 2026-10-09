@@ -20,7 +20,7 @@ import {
   TrendingUp, ShoppingBag, Wallet, Clock,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import { getKeepAlive, setKeepAlive } from "@/lib/session-keepalive";
+import { getKeepAlive, motivoDeCierre, setKeepAlive, tomarUltimoCierre } from "@/lib/session-keepalive";
 import { formatCurrency } from "@/lib/format";
 
 // Brandon mayo 14 2026 v3: layout editorial con dashboard preview.
@@ -128,7 +128,10 @@ export default function AdminLoginPage() {
     fromRef.current = params.get("from");
     // Banner de contexto: si lo redirigieron desde una ruta protegida.
     const r = params.get("reason");
-    if (r === "expired") setReason("Tu sesión expiró. Ingresa de nuevo.");
+    /* Si el servidor la cerró, decir POR QUÉ (lo anota la puerta única de renovación). */
+    const cierre = tomarUltimoCierre();
+    if (cierre) setReason(`Tu sesión se cerró: ${motivoDeCierre(cierre.motivo)}`);
+    else if (r === "expired") setReason("Tu sesión expiró. Ingresa de nuevo.");
     else if (fromRef.current) setReason("Inicia sesión para continuar.");
 
     // Login universal (ADR-120): el backend resuelve el tenant por la

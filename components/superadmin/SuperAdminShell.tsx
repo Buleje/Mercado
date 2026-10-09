@@ -47,8 +47,8 @@ import {
 } from "@buleje/design-system/icons";
 import { BulejeMark } from "@/components/ui-system/illustrations";
 import { useSessionKeepAlive } from "@/hooks/use-session-keepalive";
-import { setKeepAlive } from "@/lib/session-keepalive";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { setKeepAlive } from "@/lib/session-keepalive";
 import { SessionExpiryGuard } from "@/components/shared/SessionExpiryGuard";
 import { FinanceAlertBanner } from "@/components/superadmin/FinanceAlertBanner";
 
@@ -712,12 +712,15 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
   const handleLogout = async () => {
     setLoggingOut(true);
     try {
-      await fetch("/api/superadmin/auth", { method: "DELETE", headers: csrfHeaders() });
+      const res = await fetch("/api/superadmin/auth", { method: "DELETE", headers: csrfHeaders() });
+      // Sin confirmación del servidor, la cookie puede seguir viva: apagar el keep-alive.
+      if (!res.ok) setKeepAlive(false);
     } finally {
-      // Mismo flag que el admin: un logout manual apaga "confiar en este
-      // equipo" (compartido entre ambos paneles) para que el resumen
-      // silencioso del login deje de intentarlo.
-      setKeepAlive(false);
+      // «Mantener sesión activa» es una preferencia de ESTE equipo y ya no se apaga
+      // al salir (Brandon 2026-10-09: «se quita y tengo que volver a activarla»; salir
+      // del superadmin lo apagaba también en el panel). El logout borra las cookies:
+      // el resumen silencioso del login falla solo y muestra el formulario. Se apaga
+      // destildando «confiar en este equipo» en el login o el switch de Ajustes.
       // Hard navigation: tras borrar la cookie de sesión, router.push (SPA) podía
       // colgarse al re-renderizar el layout sin sesión. window.location recarga
       // limpio y nunca se paraliza.

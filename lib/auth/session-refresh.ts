@@ -1,5 +1,7 @@
 "use client";
 
+import { anotarCierreInvoluntario } from "@/lib/session-keepalive";
+
 /**
  * session-refresh — única puerta de entrada a POST /api/auth/refresh.
  *
@@ -90,6 +92,8 @@ export async function refrescarSesion(opts: RefrescarOpts = {}): Promise<boolean
       if (res.ok) return true;
 
       if (res.status === 401) {
+        const cuerpo = (await res.json().catch(() => null)) as { error?: unknown } | null;
+        anotarCierreInvoluntario(typeof cuerpo?.error === "string" ? cuerpo.error : "401");
         const ruta = window.location.pathname;
         if (ruta.startsWith("/admin") || ruta.startsWith("/t/")) {
           window.location.href = "/admin/login";

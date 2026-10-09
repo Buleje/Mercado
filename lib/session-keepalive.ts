@@ -38,3 +38,48 @@ export function setKeepAlive(on: boolean): void {
   }
   window.dispatchEvent(new CustomEvent(KEEPALIVE_EVENT, { detail: on }));
 }
+
+/**
+ * El último cierre de sesión INVOLUNTARIO (Brandon 2026-10-09: «por alguna razón
+ * se cierra sesión»): lo anota la puerta única de renovación al recibir un 401 y
+ * lo muestra el login, para que el motivo deje de ser un misterio.
+ */
+const CLAVE_CIERRE = "bsm-ultimo-cierre";
+
+export interface UltimoCierre {
+  /** El `error` que devolvió /api/auth/refresh. */
+  motivo: string;
+  at: number;
+}
+
+export function anotarCierreInvoluntario(motivo: string): void {
+  try {
+    localStorage.setItem(CLAVE_CIERRE, JSON.stringify({ motivo, at: Date.now() } satisfies UltimoCierre));
+  } catch {
+    /* sin almacenamiento: el login muestra el aviso genérico */
+  }
+}
+
+/** Lo lee UNA vez (y lo borra) si pasó hace menos de un día. */
+export function tomarUltimoCierre(): UltimoCierre | null {
+  try {
+    const crudo = localStorage.getItem(CLAVE_CIERRE);
+    localStorage.removeItem(CLAVE_CIERRE);
+    if (!crudo) return null;
+    const c = JSON.parse(crudo) as Partial<UltimoCierre>;
+    if (typeof c.motivo !== "string" || typeof c.at !== "number" || Date.now() - c.at > 24 * 60 * 60 * 1000) return null;
+    return { motivo: c.motivo, at: c.at };
+  } catch {
+    return null;
+  }
+}
+
+/** El motivo en palabras del dueño. */
+export function motivoDeCierre(motivo: string): string {
+  if (/already used/i.test(motivo)) return "La sesión se usó desde otra copia del mismo acceso (otro navegador o equipo). Por seguridad se cerró aquí.";
+  if (/revoked/i.test(motivo)) return "Alguien cerró todas las sesiones de tu usuario.";
+  if (/expired|invalid/i.test(motivo)) return "La sesión guardada ya no era válida: más de 7 días sin usarla en este equipo, o se cambió la clave del sistema.";
+  if (/no activo|inactive/i.test(motivo)) return "Tu usuario está desactivado. Pídele al dueño que lo reactive.";
+  if (/no refresh token/i.test(motivo)) return "El navegador borró la sesión guardada (cookies limpiadas o modo incógnito).";
+  return "La sesión se cerró en el servidor.";
+}
