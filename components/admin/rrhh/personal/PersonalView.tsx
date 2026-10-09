@@ -17,7 +17,9 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useFichaEnUrl } from "@/hooks/use-ficha-en-url";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
+import { abreLaFicha } from "@/lib/admin/enlaces-panel";
 import { Plus, QrCode, Search, UserPlus, Users } from "@buleje/design-system/icons";
 import { DataTable, EmptyState, LoadingState, StatCard } from "@buleje/design-system";
 import { useRrhhColaboradores } from "@/hooks/use-rrhh-colaboradores";
@@ -31,6 +33,9 @@ import FotochecksVista from "./FotochecksVista";
 import FichaColaboradorModal from "./FichaColaboradorModal";
 import TraerDesdeAdelantosModal from "./TraerDesdeAdelantosModal";
 import type { EstadoColaborador, NivelRrhh } from "@/lib/rrhh/tipos";
+
+/** ¿El nombre de la fila es enlace a la ficha? (`EnlacePanel`, según la tabla de hipervínculos). */
+const NOMBRE_ES_ENLACE = abreLaFicha("colaborador");
 
 const CHIPS_ESTADO: { id: EstadoColaborador | "TODOS"; label: string }[] = [
   { id: "TODOS", label: "Todos" },
@@ -48,16 +53,13 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
   const [chip, setChip] = useState<EstadoColaborador | "TODOS">("ACTIVO");
   const [altaAbierta, setAltaAbierta] = useState(false);
   const [traerAbierta, setTraerAbierta] = useState(false);
-  const [fichaAbierta, setFichaAbierta] = useState<string | null>(null);
+  // La ficha abierta vive en `?persona=<id>`: la abre el QR del fotocheck
+  // (ADR-416), un enlace de otra pantalla o el clic en la fila; el «atrás» la
+  // cierra, y cerrarla saca el parámetro (si quedaba, volver a RRHH la reabría).
+  const ficha = useFichaEnUrl("persona");
   // «Que la tabla cambie a formato de fotocheck y LUEGO aparezca el botón de
   // descargar» (Brandon 2026-09-15): la lista se ve como tarjetas antes de imprimir.
   const [modoFotocheck, setModoFotocheck] = useState(false);
-
-  // El QR del fotocheck trae `?persona=<id>`: abre esa ficha (ADR-416).
-  const personaDelQr = useSearchParams().get("persona");
-  useEffect(() => {
-    if (personaDelQr) setFichaAbierta(personaDelQr);
-  }, [personaDelQr]);
 
   // El input nunca se desmonta: `qInput` cambia en cada tecla, `q` (lo que
   // dispara el fetch) recién 250ms después de la última tecla.
@@ -222,13 +224,20 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
                 return (
                   <tr
                     key={c.id}
-                    onClick={() => setFichaAbierta(c.id)}
-                    {...filaClicableProps(() => setFichaAbierta(c.id))}
-                    aria-label={`Abrir la ficha de ${c.nombre}`}
-                    className={cn("cursor-pointer", CLASE_FOCUS_FILA)}
+                    onClick={() => ficha.abrir(c.id)}
+                    /* El nombre ya es el enlace a la ficha (teclado y lector de
+                       pantalla llegan por ahí): la fila sólo es atajo del mouse.
+                       Una fila-botón con un enlace adentro = dos paradas de Tab
+                       y un enlace que el lector no anuncia (nested-interactive). */
+                    {...(NOMBRE_ES_ENLACE
+                      ? {}
+                      : { ...filaClicableProps(() => ficha.abrir(c.id)), "aria-label": `Abrir la ficha de ${c.nombre}` })}
+                    className={cn("cursor-pointer", !NOMBRE_ES_ENLACE && CLASE_FOCUS_FILA)}
                   >
                     <td className="font-semibold text-[var(--text-primary)]">
-                      {c.nombre}
+                      <EnlacePanel cosa="colaborador" id={c.id} apariencia="heredada">
+                        {c.nombre}
+                      </EnlacePanel>
                       {c.apodo && <span className="ml-1 font-normal text-[var(--text-tertiary)]">«{c.apodo}»</span>}
                     </td>
                     <td>{c.puesto?.nombre ?? <span className="text-[var(--text-tertiary)]">Sin puesto</span>}</td>
@@ -260,11 +269,11 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
           onCambio={recargar}
         />
       )}
-      {fichaAbierta && (
+      {ficha.id && (
         <FichaColaboradorModal
           open
-          colaboradorId={fichaAbierta}
-          onClose={() => setFichaAbierta(null)}
+          colaboradorId={ficha.id}
+          onClose={ficha.cerrar}
           nivel={nivel}
           onCambio={recargar}
         />

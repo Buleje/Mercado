@@ -64,6 +64,21 @@ export const PARAMS_DE_VISTA = [
   "troza",
   /* Las pilas elegidas en Libro CTP → Volumen disponible. */
   "fuentes",
+  /* La ficha abierta de cada cosa con enlace (`lib/admin/enlaces-panel.ts`,
+     `useFichaEnUrl`). Sin esto quedaban pegados al cambiar de módulo: un
+     `?persona=` del QR del fotocheck reabría la ficha al volver a RRHH. */
+  "persona",
+  "carpeta",
+  "cliente",
+  "pedido",
+  "producto",
+  "proveedor",
+  "oc",
+  "ingreso",
+  "parte",
+  "lote",
+  /* El turno de Ventas y Caja → Cuadrar caja (`DesdeTurno` lo lee al montar y no lo borra). */
+  "turno",
 ] as const;
 
 /** Lee la vista que pide la URL, validada contra las que el módulo declara. */
