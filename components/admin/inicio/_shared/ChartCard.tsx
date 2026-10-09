@@ -17,6 +17,9 @@
 
 import { CardTitle } from "@buleje/design-system";
 import { BarChart3 } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { fechaCorta } from "@/lib/admin/inicio/formato-tablero";
+import { formatCurrency, formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { ComponentType, ReactNode } from "react";
 
@@ -34,6 +37,9 @@ interface ChartCardProps {
    * Brandon mayo 2026 v7: bajada plain-language (Feynman) que explica
    * para qué sirve el chart, no qué muestra técnicamente. Pensada para
    * un bodeguero de 50 años sin jerga.
+   *
+   * 2026-10-09: más larga que ~48 caracteres va al ⓘ del título (ley de la
+   * vista); corta, queda como bajada de una línea.
    */
   description?: string;
   /** Si true, muestra empty state en lugar de children. */
@@ -57,12 +63,13 @@ export function ChartCard({
   subtitle,
   description,
   isEmpty = false,
-  emptyText = "Sin datos",
+  emptyText = "Sin datos todavía",
   EmptyIcon = BarChart3,
   className,
   chartClassName,
   children,
 }: ChartCardProps) {
+  const bajadaEnInfo = !!description && description.length > 48;
   return (
     <div
       className={cn(
@@ -78,16 +85,21 @@ export function ChartCard({
             <Icon className="h-5 w-5 text-[var(--text-tertiary)] dark:text-muted shrink-0 mt-0.5" />
           )}
           <div className="min-w-0">
-            <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate tracking-tight">
-              {title}
-            </CardTitle>
+            <div className="flex min-w-0 items-center gap-1.5">
+              <CardTitle className="min-w-0 text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate tracking-tight">
+                {title}
+              </CardTitle>
+              {bajadaEnInfo && (
+                <InfoTip title={title} what={description} className="shrink-0" ariaLabel={`Qué muestra «${title}»`} />
+              )}
+            </div>
             {subtitle && (
               <p className="text-sm font-medium text-[var(--text-tertiary)] dark:text-muted mt-1 truncate">
                 {subtitle}
               </p>
             )}
-            {description && (
-              <p className="mt-2 text-sm text-[var(--text-secondary)] leading-relaxed font-medium">
+            {description && !bajadaEnInfo && (
+              <p className="mt-1.5 text-sm text-[var(--text-secondary)] leading-snug font-medium">
                 {description}
               </p>
             )}
@@ -150,11 +162,13 @@ export function ChartTooltip({
   formatter?: (v: number) => string;
 }) {
   if (!active || !payload?.length) return null;
+  // Las series por día traen la clave «2026-10-01»: se lee «01 oct».
+  const titulo = typeof label === "string" && /^\d{4}-\d{2}-\d{2}$/.test(label) ? fechaCorta(label) : label;
   return (
     <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] px-4 py-3 text-sm shadow-sm min-w-[180px]">
-      {label && (
+      {titulo && (
         <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1.5 text-base">
-          {label}
+          {titulo}
         </p>
       )}
       {payload.map((p, i) => {
@@ -163,8 +177,8 @@ export function ChartTooltip({
             ? formatter
               ? formatter(p.value)
               : prefix === "S/"
-                ? `S/ ${Number(p.value).toFixed(2)}`
-                : `${prefix}${p.value.toLocaleString("es-PE")}`
+                ? formatCurrency(Number(p.value))
+                : `${prefix}${formatNumber(p.value)}`
             : `${p.value}`;
         return (
           <div key={i} className="flex items-center gap-2 py-0.5">

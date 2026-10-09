@@ -2,20 +2,18 @@
 
 import type { ReactNode } from "react";
 import { CardTitle } from "@buleje/design-system";
-import type { LucideIcon } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useChartRegistration } from "@/lib/admin/charts-visibility";
+import { KpiTile, gridDeKpis, type SectionKPI } from "./KpiTile";
 
-export interface SectionKPI {
-  label: string;
-  value: string;
-  tone?: "primary" | "warning" | "success" | "neutral";
-  // Brandon 2026-05-16 (audit P1 UI): hint opcional para tooltips/info
-  // explicando por qué un KPI muestra "—" o un asterisco (ej. faltan
-  // datos de costo). Se muestra como title="..." en el wrapper.
-  hint?: string;
-  /** Barrido emojis→íconos 2026-09-22: reemplaza un ★/🏆/⚠️ pegado al label. */
-  icon?: LucideIcon;
-}
+// El tipo vive con la tarjeta; se re-exporta acá para no romper los imports.
+export type { SectionKPI };
+
+/**
+ * Hasta este largo la bajada entra en UNA línea a 400 px y queda a la vista;
+ * más larga es un párrafo y pasa al ⓘ del título (ley de la vista, regla 9).
+ */
+const BAJADA_A_LA_VISTA_MAX = 48;
 
 interface Props {
   kicker: string;
@@ -26,6 +24,9 @@ interface Props {
    * un bodeguero de 50 años entienda sin jerga. Ej: "Acá ves quién es tu
    * mejor cliente del mes. Llamalo y agradecele — vuelven más cuando los
    * tratás como persona."
+   *
+   * 2026-10-09: si pasa de ~48 caracteres va al ⓘ al lado del título (ley de
+   * la vista: explicar con ⓘ, no con párrafos); corta, queda como bajada.
    */
   description?: string;
   kpis?: SectionKPI[];
@@ -46,9 +47,11 @@ interface Props {
    */
   chartId?: string;
   /**
-   * Indica si el chart tiene datos suficientes. Si false, se oculta por
-   * default (el user puede mostrarlo manualmente desde el modal). Solo
-   * aplica si `chartId` está presente.
+   * Indica si el chart tiene datos suficientes. Si false, se oculta (aunque
+   * el usuario lo haya prendido antes) hasta que llegue un dato; en el botón
+   * «Gráficos» figura como «Sin datos todavía» y se puede mostrar igual.
+   * Calcularlo con `lib/admin/inicio/hay-datos` (`hayDatosEnSerie`,
+   * `hayTendencia`, `hayFilas`). Solo aplica si `chartId` está presente.
    */
   hasData?: boolean;
   /**
@@ -86,16 +89,27 @@ export function DashboardSection({ kicker, title, description, kpis, rightSlot, 
   // pero vacío → huecos blancos enormes al lado de charts visibles
   // impares cuando los compañeros estaban ocultos por defaultVisible=false.
   if (chartId && !visible) {
-    return <div data-chart-hidden="true" style={{ display: "none" }} aria-hidden />;
+    return (
+      <div
+        data-chart-hidden="true"
+        data-chart-sin-datos={hasData ? undefined : "true"}
+        style={{ display: "none" }}
+        aria-hidden
+      />
+    );
   }
+  const bajadaEnInfo = !!description && description.length > BAJADA_A_LA_VISTA_MAX;
 
   return (
     <section
+      data-dashboard-section=""
+      data-chart-id={chartId}
       className={
         // h-full + flex-col asegura que el chart (children) se estire al alto
         // disponible cuando el padre usa gridAutoRows: 1fr. Sin huecos entre
         // secciones de la misma fila.
-        "border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6 h-full flex flex-col " +
+        // @container: la fila de KPIs elige columnas por el ancho de la SECCIÓN.
+        "@container border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6 h-full flex flex-col " +
         (className ?? "")
       }
     >
@@ -113,11 +127,16 @@ export function DashboardSection({ kicker, title, description, kpis, rightSlot, 
             <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5">
               {kicker}
             </p>
-            <CardTitle className="text-[length:var(--ts-xl)] font-bold tracking-tight text-[var(--text-primary)] leading-tight">
-              {title}
-            </CardTitle>
-            {description && (
-              <p className="mt-2 text-sm text-[var(--text-secondary)] leading-relaxed font-medium">
+            <div className="flex min-w-0 items-center gap-1.5">
+              <CardTitle className="min-w-0 text-[length:var(--ts-xl)] font-bold tracking-tight text-[var(--text-primary)] leading-tight">
+                {title}
+              </CardTitle>
+              {bajadaEnInfo && (
+                <InfoTip title={title} what={description} className="shrink-0" ariaLabel={`Qué muestra «${title}»`} />
+              )}
+            </div>
+            {description && !bajadaEnInfo && (
+              <p className="mt-1.5 text-sm text-[var(--text-secondary)] leading-snug font-medium">
                 {description}
               </p>
             )}
@@ -126,36 +145,9 @@ export function DashboardSection({ kicker, title, description, kpis, rightSlot, 
         </header>
       )}
       {kpis && kpis.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 shrink-0">
+        <div className={gridDeKpis(kpis.length) + " mb-6 shrink-0"}>
           {kpis.map((k) => (
-            <div
-              key={k.label}
-              className="border border-[var(--rule-soft)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3.5"
-              title={k.hint}
-            >
-              <p className="flex items-center gap-1 text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5">
-                {k.icon && <k.icon className="h-3.5 w-3.5 shrink-0" aria-hidden />}
-                {k.label}
-              </p>
-              <p
-                className={
-                  // tone=primary lee la CSS var scoped --section-primary
-                  // (fallback a --text-primary). Brandon v2: text-base sm:text-lg
-                  // (era text-sm), respiro vertical para que el número resalte.
-                  "text-base sm:text-lg font-extrabold tabular-nums truncate " +
-                  (k.tone === "warning"
-                    ? "text-[var(--data-warning-500)]"
-                    : k.tone === "success"
-                      ? "text-[var(--data-success-500)]"
-                      : k.tone === "primary"
-                        ? "text-[color:var(--section-primary,var(--text-primary))]"
-                        : "text-[var(--text-secondary)]")
-                }
-                title={k.value}
-              >
-                {k.value}
-              </p>
-            </div>
+            <KpiTile key={k.label} kpi={k} />
           ))}
         </div>
       )}

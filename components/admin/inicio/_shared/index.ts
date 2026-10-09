@@ -15,6 +15,7 @@ export { MicroList, type MicroListItem } from "./MicroList";
 export { MicroGauge } from "./MicroGauge";
 export { DashboardSectionHeader } from "./DashboardSectionHeader";
 export { DashboardSection, type SectionKPI } from "./DashboardSection";
+export { KpiTile, esKpiSinDato, gridDeKpis } from "./KpiTile";
 export { BulejeLoader, BulejeSkeleton, BulejeDashboardSkeleton } from "./BulejeLoader";
 export {
   ChartPresentationModal,

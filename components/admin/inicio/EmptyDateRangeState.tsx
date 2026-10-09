@@ -8,8 +8,25 @@ import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
  * Muestra:
  *   - Icono temático (paiche o el icono propio del módulo)
  *   - Headline con la métrica + el rango ("No hay ventas hoy")
- *   - Descripción con sugerencia útil
- *   - 3 chips para saltar a "Hoy / Esta semana / Este mes"
+ *   - Descripción con sugerencia útil (UNA frase)
+ *   - Chips «Prueba con» de los OTROS períodos (Hoy · Esta semana · Este mes ·
+ *     Este año, menos el actual)
+ *   - Botón principal de la pestaña (`action`)
+ *
+ * Regla R1 del tablero (2026-10-09): pestaña sin NINGÚN dato en el rango →
+ * sólo esto, sin KPIs en cero debajo. Decidirlo con `algunDato()` de
+ * `lib/admin/inicio/hay-datos`. Ejemplo (la imagen que pidió Brandon):
+ *
+ *   <EmptyDateRangeState
+ *     dateRange={dateRange}
+ *     metric="ventas"                      // título: «Sin ventas este mes»
+ *     onChangeRange={onChangeRange}        // sin esto no hay chips
+ *     action={{ label: "Registrar venta manual", href: "/admin?tab=ventas-caja" }}
+ *   />
+ *
+ * `title` y `description` pisan el texto armado; `icon` cambia el paiche por
+ * un ícono del módulo. El contenedor lleva `data-estado-vacio="rango"` para
+ * medirlo desde qa-capturas.
  *
  * Reutilizable en VentasDashboard, CajaDashboard, InventarioDashboard,
  * ComprasDashboard, ProductosDashboard, ClientesDashboard, InicioDashboardV2.
@@ -28,8 +45,11 @@ import { PaicheMascot } from "@/components/ui-system/illustrations/PaicheMascot"
 interface Props {
   /** Rango actual del dashboard. */
   dateRange: DateRange;
-  /** Etiqueta de la métrica vacía: "ventas", "compras", "clientes nuevos", etc. */
-  metric: string;
+  /**
+   * Etiqueta de la métrica vacía: "ventas", "compras", "clientes nuevos", etc.
+   * Arma el título «Sin <metric> <período>». Opcional si se pasa `title`.
+   */
+  metric?: string;
   /** Callback opcional para saltar a un preset. Si se da, muestra los chips. */
   onChangeRange?: (range: DateRange) => void;
   /** Icono específico del módulo (default Calendar). Reemplaza al paiche. */
@@ -79,7 +99,7 @@ function computeQuickRange(
 
 export default function EmptyDateRangeState({
   dateRange,
-  metric,
+  metric = "datos",
   onChangeRange,
   icon: Icon,
   title,
@@ -107,7 +127,10 @@ export default function EmptyDateRangeState({
   );
 
   return (
-    <div className="relative overflow-hidden border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-6 py-12 sm:py-16">
+    <div
+      data-estado-vacio="rango"
+      className="relative overflow-hidden border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-6 py-12 sm:py-16"
+    >
       {/* Aura sutil */}
       <div
         aria-hidden
