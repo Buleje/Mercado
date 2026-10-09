@@ -29,9 +29,24 @@ const ARCH = { x64: "x64", arm64: "arm64", arm: "arm", ppc64: "ppc64", s390x: "s
 const pkg = `@typescript/typescript-${process.platform}-${ARCH[process.arch] ?? process.arch}`;
 const native = path.join(root, "node_modules", pkg, "lib", "tsc");
 
+/**
+ * En fila (2026-10-09): cada corrida pide ~7 GB. Con varios agentes en paralelo
+ * corrían 4-5 a la vez y earlyoom mató 5 tsc y el servidor de desarrollo
+ * (11:02-11:04). Con `flock` (Linux) esperan su turno; el candado es propio y
+ * no el de `/tmp/bsm-pesado.lock` que toma el commit (que corre esto adentro).
+ * `TSC7_SIN_FILA=1` lo saltea.
+ */
+const CANDADO = "/tmp/bsm-tsc.lock";
+const enFila = !process.env.TSC7_SIN_FILA && spawnSync("flock", ["--version"], { stdio: "ignore" }).status === 0;
+
 if (existsSync(native)) {
   const t0 = Date.now();
-  const r = spawnSync(native, args, { stdio: "inherit", cwd: root });
+  if (enFila && spawnSync("flock", ["-n", CANDADO, "true"], { stdio: "ignore" }).status !== 0) {
+    console.log("⏳ otro typecheck está corriendo: espero mi turno (≈7 GB cada uno)…");
+  }
+  const r = enFila
+    ? spawnSync("flock", [CANDADO, native, ...args], { stdio: "inherit", cwd: root })
+    : spawnSync(native, args, { stdio: "inherit", cwd: root });
   if (r.status === 0) {
     console.log(`✅ tsc nativo (${pkg}) — ${((Date.now() - t0) / 1000).toFixed(1)}s`);
   }
