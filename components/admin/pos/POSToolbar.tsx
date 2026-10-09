@@ -109,7 +109,7 @@ export default function POSToolbar(props: POSToolbarProps) {
     { id: "express", seccion: "Agregar", label: "Modo Express", hint: "Escribe o escanea el código y entra al carrito en el acto", icon: Zap, activo: expressOn, onSelect: () => cambiarExpress(!expressOn) },
     { id: "whatsapp", seccion: "Agregar", label: "Pedido por WhatsApp", hint: "Pega el mensaje del cliente y arma el carrito", icon: MessageCircle, onSelect: props.onWhatsApp },
     ...(hayUltimaVenta ? [{ id: "repetir", seccion: "Agregar", label: "Repetir última venta", icon: RotateCcw, onSelect: () => void repetirUltimaVenta() }] : []),
-    { id: "trueque", seccion: "Cobrar", label: "Cobrar con trueque", hint: "El cliente paga con productos y la diferencia en efectivo", icon: RefreshCcw, disabled: carrito.cart.length === 0, onSelect: props.onTrueque },
+    { id: "trueque", seccion: "Cobrar", label: "Cobrar con trueque", hint: "Lo que te da el cliente descuenta la venta; la diferencia, en efectivo, Yape o Plin", icon: RefreshCcw, disabled: carrito.cart.length === 0, onSelect: props.onTrueque },
     { id: "historial", seccion: "Cobrar", label: "Ventas de hoy", hint: "Atajo F4", icon: History, onSelect: props.onHistorial },
     { id: "devolucion", seccion: "Cobrar", label: "Devolución", icon: RotateCcw, tone: "danger", onSelect: props.onDevolucion },
     { id: "pantalla", seccion: "Pantalla", label: expanded ? "Salir de pantalla completa" : "Pantalla completa", icon: expanded ? Minimize2 : Maximize2, onSelect: () => props.setExpanded(!expanded) },

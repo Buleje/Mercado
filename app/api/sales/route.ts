@@ -27,6 +27,8 @@ import { extractIgv, igvRateFromSettings } from "@/lib/tax";
 import { desglosarPago, type LineaDePago } from "@/lib/caja/desglosar-pago";
 import { anotarVentaEnCaja, type MotivoSinAnotar } from "@/lib/caja/anotar-venta";
 import { sinDato } from "@/lib/errores/sin-dato";
+import { MAX_RECIBIDO, notaTrueque } from "@/lib/pos/trueque";
+import { excedeTopeCajero, topeDescuentoCajero } from "@/lib/pos/descuento-cajero";
 
 const SaleItemSchema = z.object({
   productId: z.number().int().positive(),
@@ -54,6 +56,13 @@ const SaleSchema = z.object({
   // SECURITY 2026-05-07 (X2): idempotencyKey generada por el POS offline.
   // El server la usa para deduplicar; NUNCA toma el `id` del cliente.
   idempotencyKey: z.string().max(100).optional(),
+  // Trueque (09-10, lib/pos/trueque.ts): qué recibió el cliente y cuánto vale.
+  // El valor YA viaja como `descuentoMonto` (con el tope de rol de abajo: el
+  // trueque lo hereda); este campo sólo deja la nota en la venta.
+  trueque: z.object({
+    recibido: z.string().trim().min(1).max(MAX_RECIBIDO),
+    valor: z.number().positive().max(1_000_000),
+  }).optional(),
 }).strip(); // Strip unknown fields (e.g. _offlineId from offline queue)
 
 /**
@@ -268,12 +277,14 @@ async function salesHandler(
   // El descuento global se aplica SOBRE el subtotal ya reducido por ítem — sin
   // doble conteo (el ítem reduce price, el global reduce el total resultante).
   // `isPrivilegedRole` ya está declarado arriba (cap de descuento por ítem).
+  // El 15 % se compara en céntimos enteros con la MISMA función que usa el POS
+  // (`lib/pos/descuento-cajero.ts`): con decimales, 9 × 0,15 = 1,3499… y un
+  // descuento de S/ 1,35 sobre S/ 9,00 salía 403.
   const requestedDiscount = data.descuentoMonto ?? 0;
-  const maxCashierDiscount = total * 0.15;
   const discountAmount = isPrivilegedRole
     ? Math.min(requestedDiscount, total) // admin: hasta 100%
-    : Math.min(requestedDiscount, maxCashierDiscount); // cajero: hasta 15%
-  if (requestedDiscount > maxCashierDiscount && !isPrivilegedRole) {
+    : Math.min(requestedDiscount, topeDescuentoCajero(total)); // cajero: hasta 15%
+  if (!isPrivilegedRole && excedeTopeCajero(requestedDiscount, total)) {
     return NextResponse.json(
       { error: "Descuento excede 15% — requiere autorización del admin" },
       { status: 403 },
@@ -299,6 +310,15 @@ async function salesHandler(
       );
     }
   }
+
+  // Trueque: la nota va en `paymentDetails` (la venta no tiene columna de notas).
+  // Nunca con pago MIXTO: ahí ese campo es el desglose que lee el arqueo
+  // (`desglosarPago`); con un solo medio nadie lo parsea.
+  const notaDeTrueque = data.trueque ? notaTrueque(data.trueque.recibido, data.trueque.valor) : null;
+  const detallesDePago = data.paymentDetails
+    ?? (data.trueque && notaDeTrueque && payment.toUpperCase() !== "MIXTO"
+      ? JSON.stringify({ tipo: "TRUEQUE", recibido: data.trueque.recibido, valor: data.trueque.valor, nota: notaDeTrueque })
+      : undefined);
 
   // Validate customerPhone: only set it if the customer actually exists in DB
   // (the Sale.customerPhone is a FK → Customer.phone; passing an unknown phone throws a FK error)
@@ -456,7 +476,7 @@ async function salesHandler(
           comprobanteRuc: data.comprobanteRuc ?? null,
           descuentoMonto: data.descuentoMonto ?? null,
           descuentoPorcentaje: data.descuentoPorcentaje ?? null,
-          paymentDetails: data.paymentDetails ?? null,
+          paymentDetails: detallesDePago ?? null,
           idempotencyKey: data.idempotencyKey ?? null,
           items: validItems.length > 0
             ? { create: validItems.map(i => ({ productId: i.productId, name: i.name, price: i.price, costPrice: i.costPrice ?? null, quantity: i.quantity, unit: i.unit ?? "" })) }
@@ -637,7 +657,7 @@ async function salesHandler(
    */
   let cajaSinAnotar: { monto: number; metodo: string; motivo: MotivoSinAnotar | null; lineas: LineaDePago[] } | undefined;
   try {
-    const lineas = desglosarPago(data.payment, data.paymentDetails, finalTotal);
+    const lineas = desglosarPago(data.payment, detallesDePago, finalTotal);
     const anotado = await anotarVentaEnCaja(auth.tenantId, sale.id, lineas);
     if (anotado.sinAnotar.length > 0) {
       cajaSinAnotar = {
@@ -670,7 +690,7 @@ async function salesHandler(
     action: "CREATE",
     entity: "Sale",
     entityId: sale.id,
-    detail: `Venta POS creada por ${fmtCurrent(finalTotal)} con método ${data.payment ?? "efectivo"}${data.comprobanteTipo !== "ticket" ? ` (${data.comprobanteTipo})` : ""}.`,
+    detail: `Venta POS creada por ${fmtCurrent(finalTotal)} con método ${data.payment ?? "efectivo"}${data.comprobanteTipo !== "ticket" ? ` (${data.comprobanteTipo})` : ""}.${notaDeTrueque ? ` ${notaDeTrueque}.` : ""}`,
     user: cashierId || "system",
   });
 

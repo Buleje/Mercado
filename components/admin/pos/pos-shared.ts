@@ -122,4 +122,6 @@ export interface ExtraCobro {
   customerName?: string;
   discountAmount?: number;
   discountPercent?: number;
+  /** Lo que el cliente dio en trueque: la ruta lo guarda como nota de la venta. */
+  trueque?: { recibido: string; valor: number };
 }
