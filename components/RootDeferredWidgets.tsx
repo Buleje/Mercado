@@ -15,7 +15,7 @@
  */
 
 import dynamic from "next/dynamic";
-import { usePathname } from "next/navigation";
+import { usePathname, useSelectedLayoutSegment } from "next/navigation";
 
 const SmoothScrollProvider = dynamic(
   () => import("@/components/SmoothScrollProvider"),
@@ -63,6 +63,16 @@ export default function RootDeferredWidgets() {
   /* El Modo TV de las cámaras (`/tv`) se maneja con el control remoto y no
      scrollea: sin paleta, sin barra de scroll, sin «instalar la app». */
   const esTv = pathname === "/tv";
+  /* La tienda de un negocio (`/t/<slug>` y lo que cuelga, fuera de su panel)
+     no carga el scroll suave, la barra de progreso ni la paleta Ctrl+K: es la
+     vitrina del negocio, no Buleje. Lenis y la paleta eran ~140 kB de JS (dev)
+     que se bajaban junto a la foto de la portada (la que mide el LCP), la paleta
+     ofrecía atajos del panel a un comprador y Lenis peleaba con la barra
+     pegajosa y los carriles. Se miran las dos cosas: la ruta del navegador
+     (`/t/main/tienda` se reescribe a la tienda general) y el segmento real (con
+     subdominio o dominio propio la ruta es `/`, pero el árbol es `t/[slug]`). */
+  const segmento = useSelectedLayoutSegment();
+  const esTiendaDeNegocio = !esPanel && (/^\/t\//.test(pathname ?? "") || segmento === "t");
 
   return (
     <>
@@ -78,13 +88,13 @@ export default function RootDeferredWidgets() {
        * donde nadie pidió inercia. Acá no se monta: la rueda es del navegador,
        * y de paso el panel se ahorra los ~40 kB.
        */}
-      {!esPanel && !esTv && <SmoothScrollProvider />}
-      {!esTv && <ScrollProgressBar />}
+      {!esPanel && !esTv && !esTiendaDeNegocio && <SmoothScrollProvider />}
+      {!esTv && !esTiendaDeNegocio && <ScrollProgressBar />}
       <AutoTranslator />
       <ClientEffects />
       <ServiceWorkerRegistrar />
       {!esTv && <InstallPrompt />}
-      {!hasOwnPalette && !esTv && <CommandPalette />}
+      {!hasOwnPalette && !esTv && !esTiendaDeNegocio && <CommandPalette />}
     </>
   );
 }

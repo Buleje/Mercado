@@ -115,20 +115,25 @@ export const cargarMarco = cache(async (tenantId: string): Promise<DatosMarco> =
 });
 
 export const cargarVitrina = cache(async (tenantId: string, slug: string): Promise<DatosVitrina> => {
-  const [productos, catalogo] = await Promise.all([
-    leerProductos(tenantId),
-    StorePageDB.listCatalogWithVisibility(tenantId).catch(sinDato("página salón · visibilidad")),
-  ]);
-
-  const visibles = new Set((catalogo ?? []).filter((c) => c.visible && c.active).map((c) => c.productId));
-  const propios = (productos ?? []).filter(
-    (p) => p.active !== false && visibles.has(p.id) && (NOMBRES_BELLEZA.has(p.category) || p.category === CATEGORIA_SERVICIOS),
+  // Velocidad (08-10): la lista de productos ya está en caché, así que de ahí salen los
+  // candidatos y las dos lecturas que faltan van A LA VEZ (antes: visibilidad → historial,
+  // en fila, y la visibilidad volvía a traer todos los productos sin caché = 3 viajes a la
+  // base por visita; ahora 1). Oculto = un override con `visible: false` (Mi Tienda →
+  // Catálogo); sin override, se ve. Si la visibilidad no se pudo leer, no se muestra nada
+  // (como antes): mejor la vitrina vacía con su aviso que un producto que el dueño ocultó.
+  const productos = await leerProductos(tenantId);
+  const candidatos = (productos ?? []).filter(
+    (p) => p.active !== false && (NOMBRES_BELLEZA.has(p.category) || p.category === CATEGORIA_SERVICIOS),
   );
-
-  const historial = await PriceHistoryDB.getByProducts(
-    tenantId,
-    propios.map((p) => p.id),
-  ).catch(sinDato("página salón · historial de precios"));
+  const [overrides, historial] = await Promise.all([
+    StorePageDB.listOverrides(tenantId).catch(sinDato("página salón · visibilidad")),
+    PriceHistoryDB.getByProducts(
+      tenantId,
+      candidatos.map((p) => p.id),
+    ).catch(sinDato("página salón · historial de precios")),
+  ]);
+  const ocultos = new Set((overrides ?? []).filter((o) => !o.visible).map((o) => o.productId));
+  const propios = overrides ? candidatos.filter((p) => !ocultos.has(p.id)) : [];
 
   const base = `/t/${encodeURIComponent(slug)}/tienda`;
   const aSalon = (p: (typeof propios)[number]): ProductoSalon => {
