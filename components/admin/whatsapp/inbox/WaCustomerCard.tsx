@@ -1,4 +1,5 @@
 "use client";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 
 import { ShoppingBag, Wallet, UserCircle, ReceiptText } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -33,14 +34,14 @@ export default function WaCustomerCard({ context }: { context: WaCustomerContext
       ) : (
         <>
           {customer && (
-            <a
-              href={`/admin?tab=clientes&q=${encodeURIComponent(customer.name)}`}
+            <EnlacePanel apariencia="heredada"
+              href="/admin?tab=clientes&vista=crm"
               className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[length:var(--ts-xs)] font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] underline-offset-2 hover:underline"
-              title="Ver ficha completa en Clientes"
+              title="Abrir Mis clientes"
             >
               <UserCircle className="h-3.5 w-3.5" />
               {customer.name}
-            </a>
+            </EnlacePanel>
           )}
           <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--rule-soft)] px-2.5 py-1 text-[length:var(--ts-xs)] font-bold text-[var(--text-secondary)] ">
             <ShoppingBag className="h-3.5 w-3.5" />

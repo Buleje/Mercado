@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import Image from "next/image";
 import { m } from "@/components/admin/providers";
 import {
@@ -1478,13 +1479,13 @@ export const AdminSidebar = React.memo(function AdminSidebar({
                 <p className="text-xs text-[var(--text-tertiary)]">{verticalConfig.description}</p>
               </div>
             </div>
-            <Link
-              href="/admin?tab=config&section=industry"
+            <EnlacePanel apariencia="heredada"
+              href="/admin?tab=config&vista=negocio"
               onClick={() => setShowIndustryModal(false)}
-              className="flex w-full items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
+              className="flex w-full items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity hover:no-underline"
             >
               Cambiar tipo de negocio
-            </Link>
+            </EnlacePanel>
             <button
               onClick={() => setShowIndustryModal(false)}
               className="mt-2 w-full text-center text-sm text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors py-1.5"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
 import { StatCard } from "@buleje/design-system";
 import {
   AlertTriangle,
@@ -42,7 +42,6 @@ interface Props {
  * número para el mismo período.
  */
 export default function ForestalDashboard({ dateRange, conAdelantos }: Props) {
-  const router = useRouter();
   const { data, cargando, error, reintentar } = useForestalInicio(dateRange, conAdelantos);
 
   if (cargando && !data) return <BulejeDashboardSkeleton />;
@@ -63,7 +62,7 @@ export default function ForestalDashboard({ dateRange, conAdelantos }: Props) {
   }
   if (!data) return null;
 
-  const tarjetas = tarjetasForestales(data, (href) => router.push(href));
+  const tarjetas = tarjetasForestales(data, (href) => irAEnlace(href));
   return (
     <div className="space-y-6" aria-busy={cargando}>
       <p className="flex flex-wrap items-center gap-2 text-sm text-[var(--text-secondary)]">
@@ -80,12 +79,12 @@ export default function ForestalDashboard({ dateRange, conAdelantos }: Props) {
         {error && <span className="text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">· {error}</span>}
       </p>
 
-      <ForestalAvisoPapeles activo={!!data.ctp} onIr={() => router.push(`${CTP}&vista=ingresos`)} />
+      <ForestalAvisoPapeles activo={!!data.ctp} onIr={() => irAEnlace(`${CTP}&vista=ingresos`)} />
 
       <div className={tarjetas.length >= 6 ? KPI_GRID_6 : KPI_GRID_5}>{tarjetas}</div>
 
       {data.ctp && <ForestalCharts ctp={data.ctp} />}
-      {data.loth && <ForestalPermisos permisos={data.loth.permisos} onIr={() => router.push(`${LOTH}&vista=tablero`)} />}
+      {data.loth && <ForestalPermisos permisos={data.loth.permisos} onIr={() => irAEnlace(`${LOTH}&vista=tablero`)} />}
     </div>
   );
 }

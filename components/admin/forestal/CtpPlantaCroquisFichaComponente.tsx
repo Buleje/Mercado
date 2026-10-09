@@ -1,4 +1,5 @@
 "use client";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 
 /**
  * Lo que la ficha de una zona del croquis sabe por su COMPONENTE de la
@@ -15,17 +16,17 @@ import type { PlantaZona } from "@/lib/forestal/planta-zona-types";
 import { ICONO_CATEGORIA, MuestraFormato } from "./CtpPlantaCroquisLeyendaCategorias";
 import { useCroquisCamara } from "./hooks/use-croquis-camara";
 
-const ENLACE = "inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]";
+const ENLACE = "inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] hover:no-underline";
 
 function EnlaceCamara({ nombre }: { nombre: string }) {
   const { cargando, camara, total } = useCroquisCamara(nombre);
   const href = camara ? `/admin?tab=camaras&camara=${encodeURIComponent(camara.id)}` : "/admin?tab=camaras";
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <a href={href} className={ENLACE} data-enlace-camara={camara?.id ?? ""}>
+      <EnlacePanel apariencia="heredada" href={href} className={ENLACE} data-enlace-camara={camara?.id ?? ""}>
         <ExternalLink className="h-4 w-4" />
         {camara ? `Ver la cámara «${camara.nombre}»` : "Ver la cámara"}
-      </a>
+      </EnlacePanel>
       {!cargando && !camara && (
         <InfoTip
           title="Cámara del plano"
@@ -55,7 +56,7 @@ export default function CtpPlantaCroquisFichaComponente({ zona }: { zona: Planta
       </p>
       {comp.categoria !== "madera" && zona.notas && <p className="rounded-xl bg-[var(--surface-sunken)] px-3 py-2 text-sm text-[var(--text-secondary)]">{zona.notas}</p>}
       {comp.categoria === "maquinaria" && (
-        <a href="/admin?tab=activos" className={ENLACE}><ExternalLink className="h-4 w-4" />Ver en Activos y maquinaria</a>
+        <EnlacePanel apariencia="heredada" href="/admin?tab=activos" className={ENLACE}><ExternalLink className="h-4 w-4" />Ver en Activos y maquinaria</EnlacePanel>
       )}
       {comp.categoria === "seguridad" && <EnlaceCamara nombre={comp.nombre || zona.nombre || zona.codigo} />}
       {sinMadera && (

@@ -3,7 +3,7 @@
 import { CardTitle } from "@buleje/design-system";
 import type { VendorOrder } from "./vendor-dashboard.types";
 import { Package, Clock, CheckCircle2 } from "@buleje/design-system/icons";
-import Link from "next/link";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import { formatCurrency } from "@/lib/format";
 
 type Props = {
@@ -65,12 +65,12 @@ export function VendorPendingOrders({ orders }: Props) {
             {orders.length}
           </span>
         </CardTitle>
-        <Link
+        <EnlacePanel apariencia="heredada"
           href="/admin?tab=pedidos"
           className="text-xs font-semibold text-primary hover:underline"
         >
           Ver todos
-        </Link>
+        </EnlacePanel>
       </div>
 
       <ul className="divide-y divide-[var(--rule-soft)] dark:divide-card-border">

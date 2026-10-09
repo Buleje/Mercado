@@ -15,7 +15,8 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { tapPress, EASE, DURATION } from "@/components/ui-system";
-import Link from "next/link";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
+import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
 import { BTN } from "@/lib/copy";
 
 /**
@@ -53,19 +54,19 @@ const ACTIONS: QuickAction[] = [
   {
     Icon: Package,
     label: BTN.createProduct, // Nuevo producto
-    href: "/admin?tab=productos&action=new",
+    href: "/admin?tab=productos",
     shortcut: "P",
   },
   {
     Icon: CreditCard,
     label: BTN.createCredit, // Cobrar / dar fiado
-    href: "/admin?tab=fiados&action=new",
+    href: "/admin?tab=fiados",
     shortcut: "F",
   },
   {
     Icon: UserPlus,
     label: BTN.createCustomer, // Nuevo cliente
-    href: "/admin?tab=clientes&action=new",
+    href: "/admin?tab=clientes",
     shortcut: "C",
   },
 ];
@@ -157,7 +158,10 @@ export function QuickActionsFab() {
       if (e.key === "Escape") close();
       // Atajos rapidos con FAB abierto
       const match = ACTIONS.find((a) => a.shortcut?.toLowerCase() === e.key.toLowerCase());
-      if (match?.href) window.location.href = match.href;
+      if (match?.href) {
+        close();
+        irAEnlace(match.href);
+      }
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
@@ -223,10 +227,10 @@ export function QuickActionsFab() {
                   }}
                   transition={{ duration: DURATION.fast, ease: EASE.entrance }}
                 >
-                  <Link
-                    href={a.href || "#"}
+                  <EnlacePanel apariencia="heredada"
+                    href={a.href}
                     onClick={close}
-                    className="group flex items-center gap-3 rounded-full bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-xl pl-4 pr-5 py-2.5 hover:border-[var(--rule-strong)] transition-colors"
+                    className="group flex items-center gap-3 rounded-full bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-xl pl-4 pr-5 py-2.5 hover:border-[var(--rule-strong)] transition-colors hover:no-underline"
                   >
                     <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-[var(--text-primary)]">
                       <AIcon className="h-4 w-4" strokeWidth={1.75} />
@@ -239,7 +243,7 @@ export function QuickActionsFab() {
                         {a.shortcut}
                       </kbd>
                     )}
-                  </Link>
+                  </EnlacePanel>
                 </m.div>
               );
             })}

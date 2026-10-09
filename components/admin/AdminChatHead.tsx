@@ -1,4 +1,5 @@
 "use client";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 
 /**
  * AdminChatHead — chat flotante estilo Facebook para el PANEL ADMIN.
@@ -314,13 +315,13 @@ export default function AdminChatHead() {
               ))}
             </ul>
           )}
-          <a
+          <EnlacePanel apariencia="heredada" onClick={() => setOpenList(false)}
             href="/admin?tab=marketplace-chat"
-            className="flex shrink-0 items-center justify-center gap-1 border-t border-[var(--rule-soft,#f0f0f0)] bg-[var(--surface-raised,#fafafa)] py-2.5 text-xs font-extrabold uppercase tracking-wider text-[var(--accent,#00A0A0)] hover:underline"
+            className="flex shrink-0 items-center justify-center gap-1 border-t border-[var(--rule-soft)] bg-[var(--surface-raised)] py-2.5 text-xs font-extrabold uppercase tracking-wider text-[var(--accent-ink)] hover:underline dark:text-[var(--accent)]"
           >
             Ver panel completo de chats
             <ChevronRight className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
-          </a>
+          </EnlacePanel>
         </div>
       )}
 

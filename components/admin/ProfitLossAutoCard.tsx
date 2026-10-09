@@ -6,7 +6,7 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { montoTexto, nombreMes } from "@/components/admin/unified/finanzas/resultado/fuentes";
 import { useResultadoDelMes, useVeLaPlataDelNegocio } from "@/hooks/use-resultado-del-mes";
 import { cn, limaDateKey } from "@/lib/utils";
-import { irEnElPanel } from "@/lib/admin/ir-en-el-panel";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import { margenDelResultado } from "@/lib/admin/margen-del-resultado";
 
 /**
@@ -111,13 +111,12 @@ export default function ProfitLossAutoCard() {
       </div>
 
       {!noLoVe && (
-        <a
+        <EnlacePanel apariencia="heredada"
           href="/admin?tab=plata&vista=pl"
-          onClick={irEnElPanel}
           className="mt-3 inline-flex min-h-9 items-center gap-1 text-sm font-bold text-[var(--accent-dark)] hover:underline dark:text-[var(--accent)]"
         >
           Ver de dónde sale <ArrowRight className="h-4 w-4" aria-hidden />
-        </a>
+        </EnlacePanel>
       )}
     </section>
   );

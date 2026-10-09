@@ -1,4 +1,5 @@
 "use client";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import type { ReactNode } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { AlertCircle, CheckCircle, ChevronDown, Rocket } from "@buleje/design-system/icons";
@@ -189,9 +190,9 @@ export function ListaParaPublicar({
                   <span className="block text-sm text-[var(--text-secondary)]">{p.detalle}</span>
                 </span>
                 {p.accion?.href && (
-                  <a href={p.accion.href} className={BOTON}>
+                  <EnlacePanel apariencia="heredada" href={p.accion.href} className={cn(BOTON, "hover:no-underline")}>
                     {p.accion.label}
-                  </a>
+                  </EnlacePanel>
                 )}
                 {p.accion?.alHacer && (
                   <button type="button" onClick={p.accion.alHacer} disabled={publicando} className={cn(BOTON, "disabled:opacity-50")}>

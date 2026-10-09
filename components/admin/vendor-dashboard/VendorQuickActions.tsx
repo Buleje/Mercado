@@ -3,7 +3,7 @@
 import { CardTitle } from "@buleje/design-system";
 import { useEffect, useMemo, useState } from "react";
 import { Package, PlusSquare, Store, ExternalLink } from "@buleje/design-system/icons";
-import Link from "next/link";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
 import { esMarketplace } from "@/lib/tenancy/negocio-por-defecto";
 
@@ -67,11 +67,11 @@ export function VendorQuickActions() {
         {actions.map((action) => {
           const Icon = action.icon;
           return (
-            <Link
+            <EnlacePanel apariencia="heredada"
               key={action.label}
               href={action.href}
               {...(action.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-              className={`flex items-center gap-3 p-4 rounded-xl text-white transition-colors min-h-14 ${action.color}`}
+              className={`flex items-center gap-3 p-4 rounded-xl text-white transition-colors min-h-14 hover:no-underline ${action.color}`}
             >
               <Icon className="h-6 w-6 shrink-0" />
               <div className="min-w-0 flex-1">
@@ -79,7 +79,7 @@ export function VendorQuickActions() {
                 <p className="text-xs opacity-80 leading-tight mt-0.5 truncate">{action.description}</p>
               </div>
               {action.external && <ExternalLink className="h-4 w-4 shrink-0 opacity-60" />}
-            </Link>
+            </EnlacePanel>
           );
         })}
       </div>

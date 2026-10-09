@@ -1,4 +1,5 @@
 "use client";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 
 /**
  * El resumen de una o varias jornadas: qué salió, por especie y por producto.
@@ -232,12 +233,12 @@ export default function CtpResumenDeJornadasModal({
               Sólo lectura — para corregir una corrida, entra por ella en el libro.{" "}
               {/* El cierre del mes (revisar, cerrar, bajar el paquete oficial) ya
                   existe: este resumen es el paso previo natural, y nadie lo sabía. */}
-              <a
+              <EnlacePanel apariencia="heredada" onClick={onClose}
                 href="/admin?tab=ctp-libro-operaciones&vista=cierre"
                 className="font-bold text-[var(--accent-ink)] underline underline-offset-2 dark:text-[var(--accent)]"
               >
                 Cerrar el mes
-              </a>{" "}
+              </EnlacePanel>{" "}
               está en la pestaña Cierre.
             </>
           }

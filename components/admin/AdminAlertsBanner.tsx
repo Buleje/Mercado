@@ -25,7 +25,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
 import {
   AlertTriangle,
   Clock,
@@ -106,7 +106,6 @@ interface AdminAlertsBannerProps {
 }
 
 export default function AdminAlertsBanner({ userRole = null, authReady = false }: AdminAlertsBannerProps) {
-  const router = useRouter();
   const puede = authReady && puedePedir(RUTA, userRole);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
@@ -320,7 +319,7 @@ export default function AdminAlertsBanner({ userRole = null, authReady = false }
         {/* CTA primera alerta */}
         <button
           type="button"
-          onClick={() => router.push(first.href)}
+          onClick={() => irAEnlace(first.href)}
           className={cn(
             "shrink-0 inline-flex items-center gap-1 h-7 px-3 rounded-full text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider transition-all hover:gap-1.5",
             ctaCls,
@@ -376,7 +375,7 @@ export default function AdminAlertsBanner({ userRole = null, authReady = false }
               <AlertCard
                 key={a.id}
                 alert={a}
-                onAction={() => router.push(a.href)}
+                onAction={() => irAEnlace(a.href)}
                 onDismiss={() => handleDismiss(a.id)}
               />
             ))}

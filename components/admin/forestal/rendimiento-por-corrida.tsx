@@ -8,7 +8,7 @@
  */
 import { useState } from "react";
 import { DataTable } from "@buleje/design-system";
-import Link from "next/link";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import { ExternalLink, Link2 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -104,10 +104,10 @@ export default function RendimientoPorCorrida({ datos, onCambio }: { datos: Rend
                         <span className="sr-only">Ligar la corrida #{c.lineNo} con su compra</span>
                       </button>
                     )}
-                    <Link href={HREF_PRODUCCION} title={`Abrir la corrida #${c.lineNo} en el Libro CTP › Producción`} className={BOTON_ICONO}>
+                    <EnlacePanel apariencia="heredada" href={HREF_PRODUCCION} title={`Abrir la corrida #${c.lineNo} en el Libro CTP › Producción`} className={`${BOTON_ICONO} hover:no-underline`}>
                       <ExternalLink className="h-4 w-4" aria-hidden />
                       <span className="sr-only">Abrir la corrida #{c.lineNo} en el Libro CTP</span>
-                    </Link>
+                    </EnlacePanel>
                   </span>
                 </td>
               </tr>

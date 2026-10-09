@@ -1,4 +1,5 @@
 "use client";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 
 import { useMemo, useState } from "react";
 import { Bookmark as BookmarkIcon, ClipboardList, FileDown, Loader2, MessageCircle, Users } from "@buleje/design-system/icons";
@@ -210,9 +211,9 @@ export default function CompraCanastaTotales({ carrito, orden, plantillas, onPdf
             No se pudo crear la orden — plan/prueba vencido
           </p>
           <p className="text-xs text-[var(--text-secondary)] mt-1">{planBlockedMsg}</p>
-          <a href="/admin?tab=plan" className="inline-flex items-center gap-1 mt-2 text-xs font-bold text-primary hover:underline">
+          <EnlacePanel apariencia="heredada" href="/admin?tab=plan" className="inline-flex items-center gap-1 mt-2 text-xs font-bold text-primary hover:underline">
             Ver planes →
-          </a>
+          </EnlacePanel>
         </div>
       )}
 

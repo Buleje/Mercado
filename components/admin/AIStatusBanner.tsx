@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AlertTriangle, X } from "lucide-react";
-import Link from "next/link";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import { puedePedir } from "@/lib/auth/roles-rutas-panel";
 import type { AdminRole } from "@/lib/session";
 
@@ -108,12 +108,12 @@ export default function AIStatusBanner({ userRole = null, authReady = true }: AI
           )}
         </span>
       </div>
-      <Link
-        href="/admin?tab=settings"
-        className="shrink-0 rounded-md border border-[var(--data-warning-500)]/40 px-2.5 py-1 text-xs font-medium text-[var(--data-warning-700)] transition hover:bg-[var(--data-warning-500)]/20 dark:text-amber-300"
+      <EnlacePanel apariencia="heredada"
+        href="/admin?tab=asistente-ia"
+        className="shrink-0 rounded-md border border-[var(--data-warning-500)]/40 px-2.5 py-1 text-xs font-medium text-[var(--data-warning-700)] transition hover:bg-[var(--data-warning-500)]/20 dark:text-amber-300 hover:no-underline"
       >
-        Ver detalles
-      </Link>
+        Abrir el asistente
+      </EnlacePanel>
       <button
         onClick={dismiss}
         aria-label="Descartar 6 horas"

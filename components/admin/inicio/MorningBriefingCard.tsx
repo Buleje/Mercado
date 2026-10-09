@@ -1,4 +1,5 @@
 "use client";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 
 import { useEffect, useState } from "react";
 import { m } from "framer-motion";
@@ -228,9 +229,9 @@ export default function MorningBriefingCard() {
           const palette = TONE[tone];
           return (
             <li key={key}>
-              <a
+              <EnlacePanel apariencia="heredada"
                 href={href}
-                className="group flex items-center gap-4 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3.5 transition hover:border-[var(--accent)] hover:bg-[var(--surface-sunken)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
+                className="group flex items-center gap-4 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] p-3.5 transition hover:border-[var(--accent)] hover:bg-[var(--surface-sunken)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:ring-0 hover:no-underline"
               >
                 <span
                   className="grid h-11 w-11 shrink-0 place-items-center rounded-xl"
@@ -247,7 +248,7 @@ export default function MorningBriefingCard() {
                   {cta}
                   <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
                 </span>
-              </a>
+              </EnlacePanel>
             </li>
           );
         })}
@@ -270,19 +271,19 @@ export default function MorningBriefingCard() {
 
       {/* Atajos rápidos */}
       <div className="mt-5 flex flex-wrap items-center gap-2.5">
-        <a
+        <EnlacePanel apariencia="heredada"
           href="/admin?tab=ventas-caja"
-          className="inline-flex items-center gap-2 rounded-xl bg-[var(--text-primary)] px-4 py-2.5 text-sm font-extrabold text-[var(--surface-canvas)] transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+          className="inline-flex items-center gap-2 rounded-xl bg-[var(--text-primary)] px-4 py-2.5 text-sm font-extrabold text-[var(--surface-canvas)] transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] focus-visible:ring-0 hover:no-underline"
         >
           <Plus className="h-4 w-4" />
           Registrar venta
-        </a>
-        <a
+        </EnlacePanel>
+        <EnlacePanel apariencia="heredada"
           href="/admin?tab=pedidos"
-          className="inline-flex items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 py-2.5 text-sm font-bold text-[var(--text-secondary)] transition hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
+          className="inline-flex items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 py-2.5 text-sm font-bold text-[var(--text-secondary)] transition hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)] focus-visible:ring-0 hover:no-underline"
         >
           Ver pedidos
-        </a>
+        </EnlacePanel>
       </div>
     </m.section>
   );

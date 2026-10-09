@@ -1,4 +1,5 @@
 "use client";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 
 import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -431,12 +432,12 @@ export default function ExpiredBatchesWidget() {
           {/* Pie: botón Registrar merma */}
           {!loading && batches.length > 0 && (
             <div className="px-4 py-2.5 border-t border-[var(--rule-base)] bg-gray-50/50 dark:bg-surface/30 flex items-center justify-between gap-2">
-              <a
+              <EnlacePanel apariencia="heredada"
                 href="/admin?tab=inventario-almacenes"
                 className="text-xs font-semibold text-primary dark:text-[var(--data-success-500)] hover:underline"
               >
                 Ver todos los lotes
-              </a>
+              </EnlacePanel>
               <button
                 type="button"
                 onClick={openModal}

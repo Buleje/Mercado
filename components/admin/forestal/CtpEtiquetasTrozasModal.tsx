@@ -1,4 +1,5 @@
 "use client";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 
 /**
  * CtpEtiquetasTrozasModal — antes de imprimir las etiquetas QR de las trozas
@@ -157,9 +158,9 @@ export default function CtpEtiquetasTrozasModal({ ids, contexto, onClose, onList
                   <b>Códigos repetidos:</b>{" "}
                   {resumen.repetidos.slice(0, 6).map((r) => `${r.codigo} (${r.piezas} piezas)`).join(", ")}
                   {resumen.repetidos.length > 6 && ` y ${resumen.repetidos.length - 6} más`}. La etiqueta no distingue cuál es cuál.{" "}
-                  <a href={rutaRepetidos} className="font-bold text-[var(--accent-ink)] underline underline-offset-2 dark:text-[var(--accent)]">
+                  <EnlacePanel apariencia="heredada" onClick={onClose} href={rutaRepetidos} className="font-bold text-[var(--accent-ink)] underline underline-offset-2 dark:text-[var(--accent)]">
                     Corregir en Trozas
-                  </a>
+                  </EnlacePanel>
                 </p>
               </div>
             )}

@@ -1,4 +1,5 @@
 "use client";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 
 /**
  * EmptyDateRangeState — empty-state contextual cuando no hay datos
@@ -171,13 +172,13 @@ export default function EmptyDateRangeState({
         {action && (
           <div className="mt-6">
             {action.href ? (
-              <a
+              <EnlacePanel apariencia="heredada"
                 href={action.href}
-                className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent)] px-5 py-2.5 text-[length:var(--ts-sm)] font-extrabold text-white shadow-md hover:gap-2 transition-all"
+                className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent)] px-5 py-2.5 text-[length:var(--ts-sm)] font-extrabold text-white shadow-md hover:gap-2 transition-all hover:no-underline"
               >
                 {action.label}
                 <ArrowRight className="h-4 w-4" />
-              </a>
+              </EnlacePanel>
             ) : (
               <button
                 type="button"

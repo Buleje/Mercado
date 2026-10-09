@@ -1,4 +1,5 @@
 "use client";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 
 /**
  * Lo que va debajo de los siete casilleros de la tira del registro
@@ -183,12 +184,12 @@ export function DiasMarcados({
           ya existe entero (revisar pendientes, cerrar, bajar el paquete
           oficial) y estaba a cinco clics sin cartel. */}
       {marcados.length >= 5 && (
-        <a
+        <EnlacePanel apariencia="heredada"
           href="/admin?tab=ctp-libro-operaciones&vista=cierre"
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)] hover:no-underline"
         >
           <Lock className="h-3.5 w-3.5" aria-hidden /> ¿Cerrar el mes? Está en Cierre
-        </a>
+        </EnlacePanel>
       )}
     </div>
   );

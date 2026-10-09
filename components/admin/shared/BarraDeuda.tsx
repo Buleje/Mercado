@@ -1,4 +1,5 @@
 "use client";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 
 /**
  * Lo que falta hacer, en una línea de pastillas.
@@ -120,9 +121,9 @@ export default function BarraDeuda({
              abrirlo en otra pestaña tiene que poder. */
           if (i.href && !expandible) {
             return (
-              <a key={i.key} href={i.href} title={i.title} className={clase}>
+              <EnlacePanel apariencia="heredada" key={i.key} href={i.href} title={i.title} className={`${clase} hover:no-underline`}>
                 {dentro}
-              </a>
+              </EnlacePanel>
             );
           }
           return (

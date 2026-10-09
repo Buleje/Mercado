@@ -10,6 +10,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import { CardTitle } from "@buleje/design-system";
 import { Store, ExternalLink, Share2, Pencil, Check } from "@buleje/design-system/icons";
 
@@ -64,13 +65,13 @@ export default function StorePublicCard({ storeSlug }: { storeSlug: string }) {
               {copied ? "¡Copiado!" : "Compartir"}
             </button>
 
-            <Link
+            <EnlacePanel apariencia="heredada"
               href="/admin?tab=store-customizer"
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)]"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] hover:no-underline"
             >
               <Pencil className="h-4 w-4" strokeWidth={2} aria-hidden />
               Editar portada
-            </Link>
+            </EnlacePanel>
           </div>
         </div>
       </div>
