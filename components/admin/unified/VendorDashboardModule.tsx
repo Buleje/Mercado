@@ -30,22 +30,13 @@ import DashboardDateRange, { getDefaultRange, type DateRange } from "@/component
 import { ChartsVisibilityProvider, ChartsVisibilityButton } from "@/lib/admin/charts-visibility";
 import dynamic from "next/dynamic";
 import { BulejeLoader } from "@/components/admin/inicio/_shared";
-import EmptyDateRangeState from "@/components/admin/inicio/EmptyDateRangeState";
 import { formatTime } from "@/lib/format";
 
 // ── Lazy-loaded components (tab-gated, not immediately visible) ─────────────
 const DashboardLoading = () => <BulejeLoader variant="card" size={48} label="Cargando dashboard..." />;
-const VendorKPICards = dynamic(() => import("@/components/admin/vendor-dashboard/VendorKPICards").then(m => ({ default: m.VendorKPICards })), { ssr: false });
-const VendorPendingOrders = dynamic(() => import("@/components/admin/vendor-dashboard/VendorPendingOrders").then(m => ({ default: m.VendorPendingOrders })), { ssr: false });
-const VendorLowStockList = dynamic(() => import("@/components/admin/vendor-dashboard/VendorLowStockList").then(m => ({ default: m.VendorLowStockList })), { ssr: false });
-const VendorRecentSales = dynamic(() => import("@/components/admin/vendor-dashboard/VendorRecentSales").then(m => ({ default: m.VendorRecentSales })), { ssr: false });
-const VendorWeeklyChart = dynamic(() => import("@/components/admin/vendor-dashboard/VendorWeeklyChart").then(m => ({ default: m.VendorWeeklyChart })), { ssr: false });
-const VendorQuickActions = dynamic(() => import("@/components/admin/vendor-dashboard/VendorQuickActions").then(m => ({ default: m.VendorQuickActions })), { ssr: false });
-const StockoutPredictionWidget = dynamic(() => import("@/components/marketplace/StockoutPredictionWidget"), { ssr: false });
-const SponsoredAdminPanel = dynamic(() => import("@/components/marketplace/SponsoredAdminPanel"), { ssr: false });
-const SalesAnomalyAlert = dynamic(() => import("@/components/marketplace/SalesAnomalyAlert"), { ssr: false });
-const MarketplaceAdvancedCharts = dynamic(
-  () => import("@/components/admin/inicio/MarketplaceAdvancedCharts").then((m) => ({ default: m.MarketplaceAdvancedCharts })),
+// Pestaña Marketplace entera (KPIs, listas, gráficos y su vacío): 2026-10-09.
+const VendorMarketplaceTab = dynamic(
+  () => import("@/components/admin/vendor-dashboard/VendorMarketplaceTab").then((m) => ({ default: m.VendorMarketplaceTab })),
   { ssr: false, loading: DashboardLoading },
 );
 const VentasDashboard = dynamic(() => import("@/components/admin/inicio/VentasDashboard"), { ssr: false, loading: DashboardLoading });
@@ -298,15 +289,18 @@ export default function VendorDashboardModule() {
                 </div>
               )}
               {tab === "marketplace" && (
-                <button
-                  onClick={() => void fetchDashboard(false)}
-                  disabled={loading}
-                  className="flex min-h-11 min-w-11 items-center justify-center rounded-xl p-2 text-[var(--text-tertiary)] transition-colors hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] disabled:opacity-50"
-                  title="Actualizar marketplace"
-                  aria-label="Actualizar datos del marketplace"
-                >
-                  <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-                </button>
+                <div className="flex items-center gap-2">
+                  <ChartsVisibilityButton />
+                  <button
+                    onClick={() => void fetchDashboard(false)}
+                    disabled={loading}
+                    className="flex min-h-11 min-w-11 items-center justify-center rounded-xl p-2 text-[var(--text-tertiary)] transition-colors hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] disabled:opacity-50"
+                    title="Actualizar marketplace"
+                    aria-label="Actualizar datos del marketplace"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+                  </button>
+                </div>
               )}
             </>
           ),
@@ -356,7 +350,7 @@ export default function VendorDashboardModule() {
                 <p className="text-sm font-medium text-[var(--text-primary)] text-center">{error}</p>
                 <button
                   onClick={() => void fetchDashboard(false)}
-                  className="inline-flex items-center gap-2 px-4 min-h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/10 transition-colors"
+                  className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl bg-[var(--accent-dark)] text-white text-sm font-semibold hover:bg-[var(--accent-600)] transition-colors"
                 >
                   <RefreshCw className="h-4 w-4" /> Reintentar
                 </button>
@@ -367,48 +361,8 @@ export default function VendorDashboardModule() {
               <BulejeLoader variant="card" size={56} label="Cargando marketplace..." />
             )}
 
-            {!loading && data && (() => {
-              // Brandon mayo 2026: si el vendor marketplace no tiene
-              // actividad (sin ventas, pedidos ni weekly revenue), mostramos
-              // un solo empty-state en vez del wall de KPIs en cero.
-              const noActivity =
-                data.kpis.salesToday === 0 &&
-                data.kpis.salesYesterday === 0 &&
-                data.kpis.salesLastWeek === 0 &&
-                data.pendingOrders.length === 0 &&
-                data.recentSales.length === 0 &&
-                data.weeklyRevenue.every((d) => d.total === 0);
-              if (noActivity) {
-                return (
-                  <EmptyDateRangeState
-                    dateRange={dateRange}
-                    metric="actividad de marketplace"
-                    icon={Store}
-                    title="Tu tienda todavía no tiene ventas en el marketplace"
-                    description="Cuando tu primera venta entre desde el marketplace de Buleje, vas a ver acá ingresos por día, pedidos pendientes, top productos y predicción de quiebre de stock."
-                    action={{ label: "Ver mis productos", href: "/admin?tab=inventario" }}
-                  />
-                );
-              }
-              return (
-                <div className="space-y-6">
-                  <SalesAnomalyAlert storeSlug={storeSlug} />
-                  <VendorKPICards kpis={data.kpis} />
-                  <VendorQuickActions />
-                  <StockoutPredictionWidget storeSlug={storeSlug} />
-                  <VendorWeeklyChart data={data.weeklyRevenue} />
-                  <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                    <VendorPendingOrders orders={data.pendingOrders} />
-                    <VendorLowStockList products={data.lowStockProducts} />
-                  </div>
-                  <VendorRecentSales sales={data.recentSales} />
-                  <SponsoredAdminPanel storeSlug={storeSlug} />
-
-                  {/* ── Charts especializados marketplace (6 draggables: funnel, ingresos 6m, top productos, ratings, comparativa, heatmap) ── */}
-                  <MarketplaceAdvancedCharts />
-                </div>
-              );
-            })()}
+            {/* Con datos ya cargados, «Actualizar» no deja la pestaña en blanco: el giro va en el botón. */}
+            {data && <VendorMarketplaceTab data={data} storeSlug={storeSlug} />}
           </div>
         )}
       </AdminTabBar>

@@ -1,78 +1,87 @@
 "use client";
 
+/**
+ * Pedidos de hoy (pestaña Marketplace del Inicio): quién pidió, qué, cuánto y
+ * en qué estado va. El endpoint trae los 5 últimos del día EN CUALQUIER estado
+ * (`OrdersDB.getRecent`), por eso ya no se titula «Ventas recientes de hoy» ni
+ * se suma: un cancelado no es una venta.
+ *
+ * 2026-10-09: sin pedidos hoy no se dibuja (regla R2). Soles con el formato del
+ * tablero y el medio de pago con su nombre (antes sólo Yape y Efectivo).
+ */
+
 import { CardTitle } from "@buleje/design-system";
+import { Receipt } from "@buleje/design-system/icons";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
+import { formatTime } from "@/lib/format";
+import { cantidad, soles } from "@/lib/admin/inicio/formato-tablero";
 import type { VendorOrder } from "./vendor-dashboard.types";
-import { Receipt, ShoppingCart } from "@buleje/design-system/icons";
-import { formatCurrency, formatTime } from "@/lib/format";
 
 type Props = {
   sales: VendorOrder[];
 };
 
-function formatHour(iso: string): string {
-  return formatTime(iso);
-}
+const MEDIOS_DE_PAGO: Record<string, string> = {
+  yape: "Yape",
+  plin: "Plin",
+  efectivo: "Efectivo",
+  tarjeta: "Tarjeta",
+  transferencia: "Transferencia",
+  mercadopago: "Mercado Pago",
+};
 
-function paymentLabel(method?: string): string {
-  if (method === "yape") return "Yape";
-  if (method === "efectivo") return "Efectivo";
-  return "—";
+const ESTADOS: Record<string, string> = {
+  pendiente: "Pendiente",
+  confirmado: "Confirmado",
+  preparando: "Preparando",
+  en_camino: "En camino",
+  entregado: "Entregado",
+  cancelado: "Cancelado",
+};
+
+function medioDePago(method?: string): string | null {
+  if (!method) return null;
+  return MEDIOS_DE_PAGO[method.toLowerCase()] ?? method;
 }
 
 export function VendorRecentSales({ sales }: Props) {
-  if (sales.length === 0) {
-    return (
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-6 ">
-        <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4 flex items-center gap-2">
-          <Receipt className="h-5 w-5 text-primary" />
-          Ventas recientes de hoy
-        </CardTitle>
-        <div className="text-center py-8">
-          <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] mb-2">
-            <ShoppingCart className="h-5 w-5" strokeWidth={1.5} />
-          </div>
-          <p className="mt-2 text-sm font-semibold text-[var(--text-secondary)]">
-            Sin ventas hoy
-          </p>
-          <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
-            Aún no registraste ninguna venta hoy
-          </p>
-        </div>
-      </div>
-    );
-  }
+  if (sales.length === 0) return null;
 
   return (
-    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-6 ">
-      <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4 flex items-center gap-2">
-        <Receipt className="h-5 w-5 text-primary" />
-        Ventas recientes de hoy
-      </CardTitle>
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <CardTitle className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+          <Receipt className="h-5 w-5 text-[var(--text-tertiary)]" aria-hidden />
+          Pedidos de hoy
+        </CardTitle>
+        <EnlacePanel apariencia="heredada" href="/admin?tab=pedidos" className="text-xs font-semibold text-[var(--accent-ink)] hover:underline">
+          Ver pedidos
+        </EnlacePanel>
+      </div>
 
-      <ul className="divide-y divide-[var(--rule-soft)] dark:divide-card-border">
-        {sales.map((sale) => (
-          <li key={sale.id} className="py-3 flex items-start gap-3">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">
-                  {sale.customer.name}
-                </span>
-                <span className="text-xs text-[var(--text-tertiary)] shrink-0">
-                  {formatHour(sale.createdAt)}
-                </span>
+      <ul className="divide-y divide-[var(--rule-soft)]">
+        {sales.map((sale) => {
+          const detalle = [ESTADOS[sale.status] ?? sale.status, medioDePago(sale.paymentMethod)].filter(Boolean).join(" · ");
+          return (
+            <li key={sale.id} className="flex items-start gap-3 py-3">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="truncate text-sm font-semibold text-[var(--text-primary)]">{sale.customer.name}</span>
+                  <span className="shrink-0 text-xs tabular-nums text-[var(--text-tertiary)]">{formatTime(sale.createdAt)}</span>
+                </div>
+                <p className="mt-0.5 truncate text-xs text-[var(--text-secondary)]">
+                  {sale.items.map((i) => `${cantidad(i.quantity)}× ${i.name}`).join(", ")}
+                </p>
+                {detalle && <span className="text-xs text-[var(--text-tertiary)]">{detalle}</span>}
               </div>
-              <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5 truncate">
-                {sale.items.map((i) => `${i.quantity}× ${i.name}`).join(", ")}
+              <p
+                className={`shrink-0 text-sm font-extrabold tabular-nums ${sale.status === "cancelado" ? "text-[var(--text-tertiary)] line-through" : "text-[var(--text-primary)]"}`}
+              >
+                {soles(sale.total)}
               </p>
-              <span className="text-xs text-[var(--text-tertiary)]">{paymentLabel(sale.paymentMethod)}</span>
-            </div>
-            <div className="shrink-0">
-              <p className="font-bold text-sm text-primary">
-                {formatCurrency(Number(sale.total))}
-              </p>
-            </div>
-          </li>
-        ))}
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

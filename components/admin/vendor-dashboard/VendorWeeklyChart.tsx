@@ -1,108 +1,65 @@
 "use client";
 
-import { CardTitle } from "@buleje/design-system";
+/**
+ * Ventas entregadas de los últimos 7 días (pestaña Marketplace del Inicio).
+ *
+ * 2026-10-09: se oculta si no hay al menos 2 días con venta (regla R2:
+ * `hayTendencia`); antes dibujaba 7 barras en cero. Colores por concepto
+ * (teal = ventas, hoy resaltado) en vez de 3 hex; cifra encima de cada barra,
+ * días escritos a mano («vie 03») y «Mejor día» como KPI en vez de una barra coral.
+ */
+
+import { DashboardSection } from "@/components/admin/inicio/_shared";
+import { hayTendencia } from "@/lib/admin/inicio/hay-datos";
+import { COLOR_CONCEPTO, fechaConDia, partesDeFecha, soles, solesEje } from "@/lib/admin/inicio/formato-tablero";
+import { BarrasMarketplace } from "./BarrasMarketplace";
+import { diaCorto } from "./marketplace-metricas";
 import type { WeeklyRevenueDay } from "./vendor-dashboard.types";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
-import { TrendingUp } from "@buleje/design-system/icons";
 
 type Props = {
   data: WeeklyRevenueDay[];
 };
 
-const DAY_LABELS: Record<string, string> = {
-  "0": "Dom", "1": "Lun", "2": "Mar", "3": "Mié",
-  "4": "Jue", "5": "Vie", "6": "Sáb",
-};
-
-function formatDayLabel(dateStr: string): string {
-  const d = new Date(dateStr + "T12:00:00");
-  return DAY_LABELS[String(d.getDay())] ?? dateStr.slice(5);
-}
-
-function formatSolesTooltip(value: number): string {
-  return `S/ ${value.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
-}
-
-type TooltipPayloadEntry = { value: number };
-
-function CustomTooltip({
-  active,
-  payload,
-  label,
-}: {
-  active?: boolean;
-  payload?: TooltipPayloadEntry[];
-  label?: string;
-}) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 py-2 text-xs">
-      <p className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{label}</p>
-      <p className="text-primary font-bold">{formatSolesTooltip(payload[0].value)}</p>
-    </div>
-  );
+/** «vie 03» para la clave «2026-10-03»; el último día es «Hoy». */
+function rotuloDia(fecha: string, esHoy: boolean): string {
+  if (esHoy) return "Hoy";
+  const p = partesDeFecha(fecha);
+  if (!p) return fecha;
+  const dow = new Date(Date.UTC(p.anio, p.mes - 1, p.dia)).getUTCDay();
+  return `${diaCorto(dow)} ${String(p.dia).padStart(2, "0")}`;
 }
 
 export function VendorWeeklyChart({ data }: Props) {
-  if (!data || data.length === 0) return null;
-
-  const maxIdx = data.reduce((best, d, i) => (d.total > data[best].total ? i : best), 0);
-
-  const chartData = data.map((d, i) => ({
-    day: formatDayLabel(d.date),
-    total: d.total,
-    isMax: i === maxIdx,
-    isToday: i === data.length - 1,
-  }));
-
-  const weekTotal = data.reduce((s, d) => s + d.total, 0);
+  const dias = data ?? [];
+  const filas = dias.map((d, i) => ({ dia: rotuloDia(d.date, i === dias.length - 1), fecha: d.date, total: d.total, hoy: i === dias.length - 1 }));
+  const total = dias.reduce((s, d) => s + d.total, 0);
+  const mejor = dias.reduce<WeeklyRevenueDay | null>((best, d) => (d.total > (best?.total ?? 0) ? d : best), null);
+  const conVenta = dias.filter((d) => d.total > 0).length;
 
   return (
-    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-6 ">
-      <div className="flex items-center justify-between mb-1">
-        <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
-          <TrendingUp className="h-5 w-5 text-primary" />
-          Ingresos — últimos 7 días
-        </CardTitle>
-        <span className="text-sm font-extrabold text-primary">
-          S/ {weekTotal.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
-        </span>
-      </div>
-      <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mb-4">Solo pedidos entregados</p>
-
-      <ResponsiveContainer minWidth={0} width="100%" height={140}>
-        <BarChart data={chartData} barCategoryGap="30%">
-          <XAxis
-            dataKey="day"
-            tick={{ fontSize: 11, fill: "currentColor" }}
-            axisLine={false}
-            tickLine={false}
-            className="text-[var(--text-secondary)] dark:text-muted"
-          />
-          <YAxis hide />
-          <Tooltip content={<CustomTooltip />} cursor={{ fill: "color-mix(in oklab, var(--accent) 6%, transparent)" }} />
-          <Bar dataKey="total" radius={[6, 6, 0, 0]}>
-            {chartData.map((entry, index) => (
-              <Cell
-                key={`cell-${index}`}
-                fill={entry.isToday ? "var(--accent)" : entry.isMax ? "#ff6b5b" : "#d1fae5"}
-              />
-            ))}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
-
-      <div className="flex gap-4 mt-3 text-xs text-[var(--text-secondary)] dark:text-muted">
-        <span className="flex items-center gap-1">
-          <span className="w-2.5 h-2.5 rounded-sm bg-primary inline-block" /> Hoy
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="w-2.5 h-2.5 rounded-sm bg-[var(--data-warning-500)] inline-block" /> Mejor día
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="w-2.5 h-2.5 rounded-sm bg-primary/10 dark:bg-primary/15 inline-block" /> Otros días
-        </span>
-      </div>
-    </div>
+    <DashboardSection
+      chartId="marketplace.ventas-7-dias"
+      hasData={hayTendencia(dias, ["total"])}
+      kicker="Ventas entregadas · últimos 7 días"
+      title="Tus últimos 7 días"
+      description="Suma de los pedidos entregados de cada día; hoy va resaltado."
+      kpis={[
+        { label: "Total 7 días", value: soles(total) },
+        { label: "Mejor día", value: mejor ? soles(mejor.total) : null, sub: mejor ? fechaConDia(mejor.date) : undefined, tone: "success" },
+        { label: "Días con venta", value: `${conVenta} de ${dias.length}` },
+      ]}
+    >
+      <BarrasMarketplace
+        data={filas}
+        xKey="dia"
+        series={[{ key: "total", label: "Ventas", color: COLOR_CONCEPTO.ventas }]}
+        destacar={(f) => f.hoy === true}
+        formatoValor={soles}
+        formatoCorto={solesEje}
+        tituloTooltip={(f) => fechaConDia(String(f.fecha ?? ""))}
+        alto={200}
+        ariaLabel={`Ventas entregadas de los últimos 7 días: ${soles(total)}. Mejor día: ${mejor ? `${fechaConDia(mejor.date)}, ${soles(mejor.total)}` : "ninguno"}.`}
+      />
+    </DashboardSection>
   );
 }
