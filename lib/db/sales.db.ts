@@ -14,11 +14,14 @@ import {
   type DbSale,
 } from "./misc.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { startOfLimaDay } from "@/lib/utils";
 import { saldoEsperadoDeCaja } from "@/lib/caja/saldo-esperado";
 import { contarVentas, cuentaEfectivoCaja, type CuentaCaja } from "@/lib/caja/efectivo-esperado";
 import { CajaNoAbiertaError, CashRegistersMovementsDB } from "@/lib/db/cash-registers-movements.db";
 import { liquidacionDelMovimiento, medioCorregible, type PagoDeLiquidacion } from "@/lib/caja/cambiar-medio";
-import { invalidarVentasOverview } from "@/lib/caja/invalidar-ventas-overview";
+import { invalidarVentasOverview, tagVentasOverview } from "@/lib/caja/invalidar-ventas-overview";
+import { desglosarPago } from "@/lib/caja/desglosar-pago";
+import { cacheLife, cacheTag } from "next/cache";
 
 // ── Local Types ───────────────────────────────────────────────────────────────
 
@@ -119,6 +122,40 @@ function mapCashRegister(r: PCashRegister & { movements: PCashMovement[] }): DbC
   };
 }
 
+// ── «Hoy» del POS (2026-10-09) ────────────────────────────────────────────────
+
+/** Lo vendido por un medio en el día: monto y en cuántas ventas apareció. */
+export type MedioDelDia = { medio: string; monto: number; ventas: number };
+
+/**
+ * Resumen del día del POS, sumado en la base. Mismas filas que el Inicio y el
+ * Tablero de Ventas: toda `Sale` del tenant creada ese día (la venta no tiene
+ * estado; anular = borrarla). Las devoluciones NO se restan del total (tampoco
+ * en el Inicio): van aparte en `devuelto`.
+ */
+export type ResumenDelDiaPos = {
+  /** Día de Lima, «YYYY-MM-DD». */
+  dia: string;
+  ventas: number;
+  total: number;
+  ticketPromedio: number;
+  /** De mayor a menor monto; el mixto va repartido en sus medios (como la caja). */
+  porMedio: MedioDelDia[];
+  /** Devoluciones de ventas del POS hechas ese día; `null` cuando el alcance es de un cajero. */
+  devuelto: { monto: number; cantidad: number } | null;
+  /** «tuyas» = un cajero ve sólo sus ventas (la misma regla de GET /api/sales). */
+  alcance: "todas" | "tuyas";
+};
+
+/** Peruano sin horario de verano: el día de Lima es [00:00−05:00, +24 h). */
+export function ventanaDiaLima(dia: string): { desde: Date; hasta: Date } {
+  const desde = new Date(`${dia}T00:00:00.000-05:00`);
+  return { desde, hasta: new Date(desde.getTime() + 24 * 60 * 60 * 1000) };
+}
+
+const aCentimos = (v: Parameters<typeof toNumOrZero>[0]): number => Math.round(toNumOrZero(v) * 100);
+const normalizarMedio = (m: string | null | undefined): string => (m ?? "").trim().toLowerCase() || "efectivo";
+
 // ── POS Sales DB ──────────────────────────────────────────────────────────────
 
 export const SalesDB = {
@@ -179,9 +216,9 @@ export const SalesDB = {
 
     const createdAt: Record<string, Date> = {};
     if (opts.today) {
-      const startOfDay = new Date();
-      startOfDay.setHours(0, 0, 0, 0);
-      createdAt.gte = startOfDay;
+      // 00:00 de LIMA, no del servidor: en Vercel (UTC) `setHours(0)` caía a
+      // las 19:00 de Lima de ayer y «hoy» arrastraba las ventas de anoche.
+      createdAt.gte = new Date(startOfLimaDay());
     }
     if (opts.from) createdAt.gte = opts.from;
     if (opts.to) createdAt.lte = opts.to;
@@ -207,6 +244,99 @@ export const SalesDB = {
     );
 
     return { items: rows.map(mapSale), total };
+  },
+
+  /**
+   * «Hoy» del POS sumado en la base (2026-10-09). Antes la tira «Hoy» y el
+   * historial bajaban hasta 1.000 ventas CON sus ítems al navegador sólo para
+   * sumarlas; ahora viajan unas pocas cifras.
+   *
+   * Caché corta (30 s) bajo el tag del Tablero de Ventas: `POST /api/sales`,
+   * `add`/`delete` y los movimientos de caja ya lo purgan con
+   * `invalidarVentasOverview`, así que una venta nueva se ve en el siguiente GET.
+   * El día va en los argumentos: a medianoche de Lima la clave cambia sola.
+   *
+   * tenantId SIEMPRE 1er parámetro. `cashierId` = un cajero ve sólo lo suyo.
+   */
+  async resumenDelDia(
+    tenantId: string,
+    opts: { dia: string; cashierId?: string },
+  ): Promise<ResumenDelDiaPos> {
+    "use cache";
+    cacheLife({ stale: 30, revalidate: 30, expire: 120 });
+    cacheTag(tagVentasOverview(tenantId));
+
+    const { desde, hasta } = ventanaDiaLima(opts.dia);
+    const where = {
+      tenantId,
+      createdAt: { gte: desde, lt: hasta },
+      ...(opts.cashierId ? { cashierId: opts.cashierId } : {}),
+    };
+
+    const [grupos, mixtas, devoluciones] = await withRlsTx(tenantId, (tx) =>
+      Promise.all([
+        tx.sale.groupBy({ by: ["payment"], where, _sum: { total: true }, _count: { _all: true } }),
+        // Sólo las mixtas bajan fila por fila: hay que repartirlas en sus medios.
+        tx.sale.findMany({
+          where: { ...where, payment: { equals: "mixto", mode: "insensitive" } },
+          select: { payment: true, paymentDetails: true, total: true },
+        }),
+        opts.cashierId
+          ? Promise.resolve(null)
+          : tx.return.aggregate({
+              where: { tenantId, saleId: { not: null }, createdAt: { gte: desde, lt: hasta } },
+              _sum: { total: true },
+              _count: { _all: true },
+            }),
+      ]),
+    );
+
+    // Todo en céntimos enteros: es plata, no floats sueltos.
+    const medios = new Map<string, { centimos: number; ventas: number }>();
+    const sumar = (medio: string, centimos: number, ventas: number) => {
+      const m = medios.get(medio) ?? { centimos: 0, ventas: 0 };
+      m.centimos += centimos;
+      m.ventas += ventas;
+      medios.set(medio, m);
+    };
+
+    let ventas = 0;
+    let totalCentimos = 0;
+    for (const g of grupos) {
+      ventas += g._count._all;
+      totalCentimos += aCentimos(g._sum.total);
+      if (normalizarMedio(g.payment) !== "mixto") sumar(normalizarMedio(g.payment), aCentimos(g._sum.total), g._count._all);
+    }
+    for (const s of mixtas) {
+      const totalVenta = aCentimos(s.total);
+      // El mismo reparto que usa la caja (`desglosarPago`); lo que el detalle no
+      // explique queda en «mixto» para que la suma por medio cierre con el total.
+      const lineas = desglosarPago(s.payment, s.paymentDetails, totalVenta / 100);
+      let explicado = 0;
+      for (const l of lineas) {
+        const c = Math.round(l.amount * 100);
+        explicado += c;
+        sumar(normalizarMedio(l.method), c, 1);
+      }
+      if (totalVenta - explicado > 0) sumar("mixto", totalVenta - explicado, 0);
+    }
+
+    const porMedio: MedioDelDia[] = [...medios.entries()]
+      .map(([medio, m]) => ({ medio, monto: m.centimos / 100, ventas: m.ventas }))
+      .filter((m) => m.monto !== 0 || m.ventas > 0)
+      .sort((a, b) => b.monto - a.monto);
+
+    return {
+      dia: opts.dia,
+      ventas,
+      total: totalCentimos / 100,
+      ticketPromedio: ventas > 0 ? Math.round(totalCentimos / ventas) / 100 : 0,
+      porMedio,
+      devuelto: devoluciones
+        ? { monto: aCentimos(devoluciones._sum.total) / 100, cantidad: devoluciones._count._all }
+        : null,
+      alcance: opts.cashierId ? "tuyas" : "todas",
+    };
   },
 
   async getById(tenantId: string, id: string): Promise<DbSale | null> {

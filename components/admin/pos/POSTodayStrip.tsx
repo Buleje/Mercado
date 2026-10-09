@@ -1,53 +1,32 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { Receipt, TrendingUp } from "@buleje/design-system/icons";
 import { fmt } from "@/components/admin/pos/pos-shared";
+import { etiquetaMedio, useResumenHoy } from "@/components/admin/pos/use-resumen-hoy";
 
 // ── Feature 1: Resumen de hoy (strip compacto, read-only) ───────────────────
-// Fetchea GET /api/sales?today=1&limit=1000 una vez al montar.
+// Las cifras llegan sumadas del servidor (GET /api/sales/resumen-hoy, día de
+// Lima): antes se bajaban hasta 1.000 ventas con sus ítems para sumarlas acá.
 // Si falla o carga, el strip se oculta o muestra skeleton — nunca rompe el POS.
 
 export default function POSTodayStrip({ refreshKey = 0 }: { refreshKey?: number }) {
-  const [state, setState] = useState<
-    | { status: "loading" }
-    | { status: "error" }
-    | { status: "ok"; count: number; total: number }
-  >({ status: "loading" });
-
-  useEffect(() => {
-    const controller = new AbortController();
-    (async () => {
-      try {
-        const res = await fetch("/api/sales?today=1&limit=1000", {
-          signal: controller.signal,
-        });
-        if (!res.ok) { setState({ status: "error" }); return; }
-        const data = await res.json();
-        const records: { total: number }[] = Array.isArray(data) ? data : [];
-        const count = records.length;
-        const total = records.reduce((s, r) => s + (r.total || 0), 0);
-        setState({ status: "ok", count, total });
-      } catch (err) {
-        if ((err as { name?: string }).name !== "AbortError") {
-          setState({ status: "error" });
-        }
-      }
-    })();
-    return () => controller.abort();
-  }, [refreshKey]); // refreshKey sube con cada venta: «Hoy» ya no se queda en la cifra del arranque
+  // refreshKey sube con cada venta: «Hoy» ya no se queda en la cifra del arranque
+  const state = useResumenHoy(refreshKey);
 
   // Si falla, no mostrar nada (no romper el POS)
-  if (state.status === "error") return null;
+  if (state.estado === "error") return null;
 
-  const ticket =
-    state.status === "ok" && state.count > 0
-      ? state.total / state.count
-      : 0;
+  const r = state.estado === "ok" ? state.resumen : null;
+  const detalle = r
+    ? [
+        r.alcance === "tuyas" ? "Solo tus ventas de hoy" : "Ventas de hoy del local",
+        ...r.porMedio.map((m) => `${etiquetaMedio(m.medio)}: ${fmt(m.monto)}`),
+      ].join(" · ")
+    : undefined;
 
   return (
-    <div className="flex min-w-0 items-center gap-2 overflow-hidden">
-      {state.status === "loading" ? (
+    <div className="flex min-w-0 items-center gap-2 overflow-hidden" title={detalle} data-resumen-hoy>
+      {!r ? (
         /* Skeleton sutil mientras carga */
         <>
           {[56, 72, 60].map((w, i) => (
@@ -64,23 +43,23 @@ export default function POSTodayStrip({ refreshKey = 0 }: { refreshKey?: number 
             <Receipt className="h-3.5 w-3.5 text-[var(--text-tertiary)] max-sm:hidden" aria-hidden />
             <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Hoy:</span>
             <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-primary)]">
-              {state.count} venta{state.count !== 1 ? "s" : ""}
+              {r.ventas} venta{r.ventas !== 1 ? "s" : ""}
             </span>
           </div>
           <div className="h-3 w-px bg-[var(--rule-base)] dark:bg-card-border shrink-0" aria-hidden />
           <div className="flex items-center gap-1 shrink-0">
             <TrendingUp className="h-3.5 w-3.5 text-[var(--data-success-500)]" aria-hidden />
             <span className="text-[length:var(--ts-2xs)] font-extrabold text-[var(--data-success-500)]">
-              {fmt(state.total)}
+              {fmt(r.total)}
             </span>
           </div>
-          {state.count > 0 && (
+          {r.ventas > 0 && (
             <span className="hidden xl:contents">
               <div className="h-3 w-px bg-[var(--rule-base)] dark:bg-card-border shrink-0" aria-hidden />
               <div className="flex items-center gap-1 shrink-0">
                 <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Ticket prom.:</span>
                 <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]">
-                  {fmt(ticket)}
+                  {fmt(r.ticketPromedio)}
                 </span>
               </div>
             </span>
