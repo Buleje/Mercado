@@ -1554,6 +1554,46 @@ thead th[data-soltar="despues"] { box-shadow: inset -3px 0 0 var(--accent); }
   .modal-backdrop { animation: none; }
 }
 
+/* ── Cámaras al lado (2026-10-09) ──
+ * El mosaico «Ver todas en vivo» acoplado (`use-acople-mosaico.ts`) pone en
+ * <html> `data-mosaico-acoplado="izquierda|derecha"` y `--mosaico-ancho`. Acá
+ * se reparte la pantalla: el panel entero se corre al otro lado (la barra
+ * lateral también: es `fixed` sin `left`, así que cae donde arranca el shell)
+ * y los modales y sus velos se centran en lo que queda libre — la asistencia
+ * se marca mirando la cámara. Fuera de toda capa a propósito: tiene que
+ * ganarle a `sm:left-1/2` (@layer utilities) y a `.modal-backdrop` (@layer
+ * components). Una ventana que el usuario estiró trae su ancho en `style`. */
+html[data-mosaico-acoplado] {
+  --libre-izq: 0px;
+  --libre-der: 0px;
+  --libre-ancho: calc(100vw - var(--mosaico-ancho));
+}
+html[data-mosaico-acoplado="izquierda"] { --libre-izq: var(--mosaico-ancho); }
+html[data-mosaico-acoplado="derecha"] { --libre-der: var(--mosaico-ancho); }
+html[data-mosaico-acoplado] [data-admin-shell] {
+  padding-left: var(--libre-izq);
+  padding-right: var(--libre-der);
+}
+html[data-mosaico-acoplado] .modal-backdrop {
+  left: var(--libre-izq);
+  right: var(--libre-der);
+}
+html[data-mosaico-acoplado] :is(
+  [data-modal-variante="default"],
+  [data-modal-variante="centered-sm"],
+  [data-modal-variante="wide"],
+  [data-modal-variante="info"],
+  [data-modal-variante="pos"]
+) {
+  left: calc(var(--libre-izq) + var(--libre-ancho) / 2);
+  width: calc(var(--libre-ancho) - 2rem);
+}
+html[data-mosaico-acoplado] [data-modal-variante="fullscreen"] {
+  left: var(--libre-izq);
+  width: var(--libre-ancho);
+}
+html[data-mosaico-acoplado] [data-modal-variante="side"] { right: var(--libre-der); }
+
 /* ── Leaflet stacking (fix modal detrás del mapa) ──
  * Leaflet asigna z-index altos a sus panes/controles (controles 800, popup 700,
  * tooltip 650, marker 600…) pero `.leaflet-container` no crea stacking context

@@ -7,9 +7,14 @@
  * Fotos, detección, alarma) van encima del video: `ControlesCamara` (ADR-472).
  * A 400 px van en dos filas que no se parten: calidad + acciones arriba, la
  * grabación abajo; en el celular los botones miden 44 px.
+ *
+ * El mosaico (2026-10-09, Brandon: las funciones del «En vivo» también en
+ * «todas») usa estos mismos controles en cada cuadro, `compacto` (sólo ícono
+ * donde el nombre sobra) y con «Teatro» convertido en «Ampliar»: el cuadro
+ * toma el ancho entero del mosaico en vez de la ventana.
  */
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
   Download,
   Expand,
@@ -20,6 +25,7 @@ import {
   Video,
 } from "@buleje/design-system/icons";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
+import { cn } from "@/lib/utils";
 import BotonSonido from "./BotonSonido";
 import { BTN as BTN_BASE } from "./camaras-ui";
 import { hoyLocal, horaHaceUnaHora } from "./hik-connect-teams";
@@ -34,10 +40,22 @@ const CAMPO =
 export default function VisorNubeControles({
   v,
   analisis,
+  compacto = false,
+  nombre,
+  teatro = "ventana",
+  extra,
 }: {
   v: VisorNubeEstado;
   /** Sin esto (Modo TV, sólo mirar), no hay «Analizar». */
   analisis?: AnalisisCuadro;
+  /** Cuadro del mosaico: «Bajar», «Pantalla completa» y el sonido sólo con ícono. */
+  compacto?: boolean;
+  /** Para nombrar los botones de sólo ícono («Bajar el cuadro de Patio»). */
+  nombre?: string;
+  /** `ventana` = Teatro del visor; `mosaico` = Ampliar el cuadro; `null` = sin el botón. */
+  teatro?: "ventana" | "mosaico" | null;
+  /** Al lado de «Analizar» (las zonas del detector, en el mosaico). */
+  extra?: ReactNode;
 }) {
   const [abrirRango, setAbrirRango] = useState(false);
   const [fecha, setFecha] = useState(hoyLocal);
@@ -45,6 +63,9 @@ export default function VisorNubeControles({
   const [aviso, setAviso] = useState<string | null>(null);
   const viendo = v.estado === "viendo";
   const enGrabacion = v.modo.tipo === "grabacion";
+  const de = nombre ? ` de ${nombre}` : "";
+  const etiqueta = compacto ? "sr-only" : "max-sm:sr-only";
+  const icono = compacto ? "w-9 justify-center px-0" : "";
 
   const verGrabacion = () => {
     v.actividad();
@@ -66,22 +87,22 @@ export default function VisorNubeControles({
             v.setCalidad(c);
           }}
           size="sm"
-          label="Calidad del video"
+          label={`Calidad del video${de}`}
           options={[
             { value: "sd", label: "SD" },
             { value: "hd", label: "HD" },
           ]}
         />
-        <BotonSonido v={v} className={BTN} />
+        <BotonSonido v={v} className={cn(BTN, icono)} nombre={nombre} soloIcono={compacto} />
         <button
           type="button"
           onClick={v.foto}
           disabled={!viendo}
-          className={BTN}
+          className={cn(BTN, icono)}
           title="Bajar a tu equipo el cuadro que se ve"
         >
           <Download className="h-4 w-4" aria-hidden />
-          <span className="max-sm:sr-only">Bajar</span>
+          <span className={etiqueta}>Bajar{compacto && ` el cuadro${de}`}</span>
         </button>
         {analisis && (
           <button
@@ -94,30 +115,41 @@ export default function VisorNubeControles({
             <Sparkles className="h-4 w-4" aria-hidden /> Analizar
           </button>
         )}
-        <button
-          type="button"
-          onClick={v.alternarTeatro}
-          aria-pressed={v.teatro}
-          className={`${BTN} max-sm:hidden`}
-          title={v.teatro ? "Volver al tamaño normal" : "Teatro: el video a toda la ventana"}
-          data-control="teatro"
-        >
-          {v.teatro ? (
-            <Minimize2 className="h-4 w-4" aria-hidden />
-          ) : (
-            <Expand className="h-4 w-4" aria-hidden />
-          )}
-          {v.teatro ? "Normal" : "Teatro"}
-        </button>
+        {extra}
+        {teatro && (
+          <button
+            type="button"
+            onClick={v.alternarTeatro}
+            aria-pressed={v.teatro}
+            className={`${BTN} max-sm:hidden`}
+            title={
+              teatro === "mosaico"
+                ? v.teatro
+                  ? "Volver al tamaño de las demás"
+                  : "Ampliar: esta cámara a todo el ancho"
+                : v.teatro
+                  ? "Volver al tamaño normal"
+                  : "Teatro: el video a toda la ventana"
+            }
+            data-control="teatro"
+          >
+            {v.teatro ? (
+              <Minimize2 className="h-4 w-4" aria-hidden />
+            ) : (
+              <Expand className="h-4 w-4" aria-hidden />
+            )}
+            {teatro === "mosaico" ? (v.teatro ? "Achicar" : "Ampliar") : v.teatro ? "Normal" : "Teatro"}
+          </button>
+        )}
         <button
           type="button"
           onClick={v.pantallaCompleta}
           disabled={!viendo}
-          className={BTN}
+          className={cn(BTN, icono)}
           title="Pantalla completa (Esc para salir)"
         >
           <Maximize2 className="h-4 w-4" aria-hidden />
-          <span className="max-sm:sr-only">Pantalla completa</span>
+          <span className={etiqueta}>Pantalla completa{compacto && de}</span>
         </button>
         {enGrabacion ? (
           <button type="button" onClick={v.volverAlVivo} className={`${BTN} ml-auto`}>
@@ -130,7 +162,7 @@ export default function VisorNubeControles({
             aria-expanded={abrirRango}
             className={`${BTN} ml-auto`}
           >
-            <History className="h-4 w-4" aria-hidden /> Ver grabación
+            <History className="h-4 w-4" aria-hidden /> {compacto ? "Grabación" : "Ver grabación"}
           </button>
         )}
       </div>

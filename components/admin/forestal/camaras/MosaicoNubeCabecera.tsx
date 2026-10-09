@@ -7,7 +7,7 @@
  * un `AdminModal`: tiene que poder esconderse sin desmontar los videos).
  */
 
-import type { MouseEvent } from "react";
+import type { MouseEvent, ReactNode } from "react";
 import { BellRing, FolderOpen, LayoutGrid, Minimize2, Timer, X } from "@buleje/design-system/icons";
 import { MODAL_GUTTER } from "@/components/admin/shared/AdminModal";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -34,6 +34,8 @@ interface Props {
   /** Sin esto (fuera del panel) no hay burbuja: sólo cerrar. */
   onMinimizar?: () => void;
   onCerrar: () => void;
+  /** Antes de minimizar: «Al lado» (acoplar y abrir otra pantalla al otro lado). */
+  acciones?: ReactNode;
 }
 
 const BOTON_ICONO =
@@ -60,6 +62,7 @@ export default function MosaicoNubeCabecera(p: Props) {
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-0.5">
+          {p.acciones && <span className="mr-1.5">{p.acciones}</span>}
           {p.onMinimizar && (
             <button
               type="button"

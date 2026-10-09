@@ -21,6 +21,8 @@ import { AvisoRrhh, BOTON, CLASE_CHIP } from "../rrhh-form";
 import { ESTADO_ASISTENCIA_META, ORDEN_ESTADOS_ASISTENCIA, contarEstado, dentroDeVentana, estaIncluidoEseDia, motivoFueraDeVentana, motivoNoIncluido, pluralizar } from "../rrhh-ui";
 import AvisoDiasAbiertos from "./AvisoDiasAbiertos";
 import FilaMarcaDelDia from "./FilaMarcaDelDia";
+import { BarraFotoDeCamara, FotoDeLaMarca } from "./FotoDeCamara";
+import { useFotosAsistencia } from "./use-fotos-asistencia";
 import HistorialMarcaModal from "./HistorialMarcaModal";
 import LeyendaEstados from "./LeyendaEstados";
 import NavegadorPeriodo from "./NavegadorPeriodo";
@@ -57,6 +59,7 @@ export default function HojaDelDia({ fecha, onCambiarFecha, nivel, onCambioPerso
   // Ventana de corrección del rol (§4): almacenero/cajero sólo hoy-2..hoy. Vista
   // previa — el servidor la revalida siempre (403 `fuera_de_ventana`).
   const editable = hoja ? dentroDeVentana(fecha, hoja.ventana) : true;
+  const fotosCam = useFotosAsistencia(fecha, esHoy && editable);
 
   const { incluidos, noIncluidos, marcasDelDia, marcadosIncluidos, sinMarcar, conteo } = useMemo(() => {
     const colaboradores = hoja?.colaboradores ?? [];
@@ -196,22 +199,30 @@ export default function HojaDelDia({ fecha, onCambiarFecha, nivel, onCambioPerso
         </section>
 
         <LeyendaEstados />
+        <BarraFotoDeCamara f={fotosCam} />
 
         <div className="space-y-2">
-          {incluidos.map((c) => (
-            <FilaMarcaDelDia
-              key={c.id}
-              colaborador={c}
-              fecha={fecha}
-              marca={marcasDelDia.find((m) => m.colaboradorId === c.id)}
-              pendiente={pendientes.has(`${c.id}|${fecha}`)}
-              errorMsg={erroresPorCelda.get(`${c.id}|${fecha}`)}
-              soloLectura={!editable}
-              horario={c.puesto ? (horarioPorPuesto.get(c.puesto.id) ?? null) : null}
-              onMarcar={(input) => marcar({ colaboradorId: c.id, fecha, ...input })}
-              onVerHistorial={() => setHistorialDe(c)}
-            />
-          ))}
+          {incluidos.map((c) => {
+            const marca = marcasDelDia.find((m) => m.colaboradorId === c.id);
+            return (
+              <FilaMarcaDelDia
+                key={c.id}
+                colaborador={c}
+                fecha={fecha}
+                marca={marca}
+                pendiente={pendientes.has(`${c.id}|${fecha}`)}
+                errorMsg={erroresPorCelda.get(`${c.id}|${fecha}`)}
+                soloLectura={!editable}
+                horario={c.puesto ? (horarioPorPuesto.get(c.puesto.id) ?? null) : null}
+                onMarcar={(input) => {
+                  marcar({ colaboradorId: c.id, fecha, ...input });
+                  void fotosCam.alMarcar(c.id, marca?.estado ?? null, input.estado);
+                }}
+                onVerHistorial={() => setHistorialDe(c)}
+                foto={<FotoDeLaMarca fotos={fotosCam.fotosDe(c.id)} />}
+              />
+            );
+          })}
         </div>
 
         {noIncluidos.length > 0 && (

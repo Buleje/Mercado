@@ -355,8 +355,17 @@ export default function AdminModal({
             if (el?.isConnected) el.focus({ preventScroll: true });
           }}
           /* Con el modal fijado el clic afuera no cierra. La X sí, y Escape
-             con el foco adentro: fijar no puede dejar a nadie encerrado. */
-          onInteractOutside={ventana.onInteractOutside}
+             con el foco adentro: fijar no puede dejar a nadie encerrado.
+             Tampoco cierra un clic en una capa que convive con los modales
+             (`data-capa-libre`: las cámaras «al lado», 2026-10-09) — se
+             mueve la cámara sin perder la asistencia a medio marcar. */
+          onInteractOutside={(e) => {
+            if (e.target instanceof Element && e.target.closest("[data-capa-libre]")) {
+              e.preventDefault();
+              return;
+            }
+            ventana.onInteractOutside(e);
+          }}
           /* El asa es enfocable (para mover la ventana con las flechas) y vive
              primera en el DOM, así que Radix le daría el foco al abrir. Se
              saltean el asa y los botones de ventana: el foco arranca EXACTO
@@ -376,6 +385,8 @@ export default function AdminModal({
             primero.focus();
           }}
           data-ventana={ventana.activa ? "true" : undefined}
+          /* globals.css § «Cámaras al lado»: con el mosaico acoplado, cada variante se centra en lo que queda libre. */
+          data-modal-variante={variant}
         >
           {/* a11y fix 2026-05-09: Radix exige Dialog.Title presente. Cuando no
               hay title visible, lo renderizamos dentro de VisuallyHidden para

@@ -18,15 +18,18 @@
  * las cajas del detector (`CajasEnVivo`); cuando aparece gente el cuadro se
  * resalta con un anillo coral unos segundos y le pasa la aparición al mosaico
  * (`onAparicion`), que es el que suena y muestra el mensaje.
+ *
+ * Lo mismo que el «En vivo» de una cámara (2026-10-09): abajo van los MISMOS
+ * controles del visor (`VisorNubeControles`, compactos) — bajar el cuadro, ver
+ * la grabación de la microSD por fecha y hora, y «Ampliar» (el cuadro a todo
+ * el ancho del mosaico, lo que en el visor es Teatro). En la grabación no se
+ * buscan personas: guardaría fotos viejas con la hora de ahora.
  */
 
 import { useEffect } from "react";
-import { Maximize2, Sparkles } from "@buleje/design-system/icons";
-import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import type { AparicionPersona, CajaFraccion } from "@/lib/camaras/vigia";
 import { cn } from "@/lib/utils";
 import { useApiCamaras } from "./api-camaras";
-import BotonSonido from "./BotonSonido";
 import BotonZonasDetector from "./BotonZonasDetector";
 import CajasEnVivo from "./CajasEnVivo";
 import { BTN } from "./camaras-ui";
@@ -37,9 +40,10 @@ import { useAparicionReciente } from "./use-aviso-personas";
 import { useDetectorDelVisor } from "./use-detector-del-visor";
 import type { UltimaFotoPersona } from "./use-detector-personas";
 import type { TomarCuadro } from "./use-personas-mosaico";
-import { useVisorNube, type Calidad, type EstadoVisor } from "./use-visor-nube";
+import { useVisorNube, type EstadoVisor } from "./use-visor-nube";
 import VisorNubeAnalisis from "./VisorNubeAnalisis";
 import VisorNubeCapas, { ChipEstadoVivo } from "./VisorNubeCapas";
+import VisorNubeControles from "./VisorNubeControles";
 
 /** «Ver movimiento» apagado: la capa sigue (personas), sin los recuadros celestes. */
 const SIN_MOVIMIENTO: readonly CajaFraccion[] = Object.freeze([]);
@@ -69,6 +73,8 @@ interface Props {
   registrarCuadro?: (camaraId: string, tomar: TomarCuadro | null) => void;
   /** Apareció gente en este cuadro: el mosaico avisa (mensaje + pitido). */
   onAparicion?: (a: AparicionPersona) => void;
+  /** «Ampliar» (a todo el ancho): no con una sola cámara ni con el mosaico al lado (ya va en una columna). */
+  ampliable?: boolean;
 }
 
 export default function MosaicoNubeCuadro({
@@ -84,21 +90,25 @@ export default function MosaicoNubeCuadro({
   onEstado,
   registrarCuadro,
   onAparicion,
+  ampliable = false,
 }: Props) {
   const { base, soloMirar } = useApiCamaras(baseApi);
   const v = useVisorNube(camara.id, { activo, retrasoMs, onActividad, baseApi: base });
   const a = useAnalizarCuadro(camara.id, v.tomarCuadro);
   const viendo = v.estado === "viendo";
+  const enGrabacion = v.modo.tipo === "grabacion";
   const { contenedorId, estado, tomarCuadroQuieto } = v;
+  const vigilar = detectar && !soloMirar && !enGrabacion;
   const { personas, zonas } = useDetectorDelVisor({
     camaraId: camara.id,
     nombre: camara.nombre,
     v,
-    activo: detectar && !soloMirar,
+    activo: vigilar,
     onFoto: onFotoPersona,
   });
   const reciente = useAparicionReciente(personas.aparicion, onAparicion);
-  const marcar = detectar && viendo;
+  const marcar = vigilar && viendo;
+  const ampliado = ampliable && v.teatro;
 
   useEffect(() => {
     onEstado?.(camara.id, estado);
@@ -113,6 +123,7 @@ export default function MosaicoNubeCuadro({
     <li
       className={cn(
         "min-w-0 space-y-2 rounded-xl border bg-[var(--surface-raised)] p-2.5 transition-shadow",
+        ampliado && "md:order-first md:col-span-2",
         reciente
           ? "border-[var(--data-warning-500)] ring-2 ring-[var(--data-warning-500)]"
           : "border-[var(--rule-base)]",
@@ -123,6 +134,7 @@ export default function MosaicoNubeCuadro({
       <div className="flex items-center gap-2">
         <span className="min-w-0 flex-1 truncate text-sm font-bold text-[var(--text-primary)]">
           {camara.nombre}
+          {enGrabacion && <span className="font-normal text-[var(--text-tertiary)]"> · grabación</span>}
         </span>
         {marcar && <ChipPersonas d={personas} />}
         <ChipEstadoVivo estado={v.estado} />
@@ -172,57 +184,24 @@ export default function MosaicoNubeCuadro({
         )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <SegmentedControl<Calidad>
-          value={v.calidad}
-          onChange={(c) => {
-            v.actividad();
-            v.setCalidad(c);
-          }}
-          size="sm"
-          label={`Calidad del video de ${camara.nombre}`}
-          options={[
-            { value: "sd", label: "SD" },
-            { value: "hd", label: "HD" },
-          ]}
-        />
-        <BotonSonido
-          v={v}
-          className={`${BTN} w-9 justify-center px-0 max-sm:h-11 max-sm:w-11`}
-          nombre={camara.nombre}
-          soloIcono
-        />
-        {!soloMirar && (
-          <button
-            type="button"
-            onClick={() => void a.analizar()}
-            disabled={!viendo || a.ocupado}
-            className={BTN}
-            title="La IA mira este cuadro: personas, placa y chalecos"
-          >
-            <Sparkles className="h-4 w-4" aria-hidden /> Analizar
-          </button>
-        )}
-        {!soloMirar && (
-          <BotonZonasDetector
-            camaraId={camara.id}
-            nombre={camara.nombre}
-            zonas={zonas}
-            cargarImagen={tomarCuadroQuieto}
-            className={BTN}
-          />
-        )}
-        <button
-          type="button"
-          onClick={v.pantallaCompleta}
-          disabled={!viendo}
-          className={`${BTN} ml-auto w-9 justify-center px-0`}
-          title="Pantalla completa"
-          aria-label={`Ver ${camara.nombre} en pantalla completa`}
-        >
-          <Maximize2 className="h-4 w-4" aria-hidden />
-        </button>
-      </div>
+      <VisorNubeControles
+        v={v}
+        analisis={soloMirar ? undefined : a}
+        compacto
+        nombre={camara.nombre}
+        teatro={ampliable ? "mosaico" : null}
+        extra={
+          !soloMirar && (
+            <BotonZonasDetector
+              camaraId={camara.id}
+              nombre={camara.nombre}
+              zonas={zonas}
+              cargarImagen={tomarCuadroQuieto}
+              className={BTN}
+            />
+          )
+        }
+      />
 
       {!soloMirar && <VisorNubeAnalisis a={a} onVerFotos={onVerFotos} />}
     </li>

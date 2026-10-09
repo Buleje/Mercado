@@ -22,7 +22,7 @@ export type TomarCuadro = () => Promise<string | null>;
 const MINIATURA_CADA_MS = 60_000;
 
 /** `capturarCuadro` devuelve base64 pelado (EZUIKit) o un data URL (el lienzo). */
-const comoImagen = (b64: string) => (b64.startsWith("data:") ? b64 : `data:image/jpeg;base64,${b64}`);
+export const comoImagen = (b64: string) => (b64.startsWith("data:") ? b64 : `data:image/jpeg;base64,${b64}`);
 
 interface Opciones {
   minimizado: boolean;

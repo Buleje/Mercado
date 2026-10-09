@@ -17,7 +17,7 @@
  * en cualquier otro estado puesto a propósito, sólo se informa.
  */
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { AlertTriangle, Clock, History, Loader2, StickyNote } from "@buleje/design-system/icons";
 import { tardanzaDe } from "@/lib/rrhh/asistencia";
 import { cn } from "@/lib/utils";
@@ -43,9 +43,11 @@ interface Props {
   horario?: { horaEntrada: string; toleranciaMin: number } | null;
   onMarcar: (input: { estado: EstadoAsistencia | null; entrada?: string | null; salida?: string | null; nota?: string | null }) => void;
   onVerHistorial: () => void;
+  /** La foto de la cámara de esta marca («Marcar con foto», 2026-10-09). */
+  foto?: ReactNode;
 }
 
-export default function FilaMarcaDelDia({ colaborador, fecha, marca, pendiente, errorMsg, soloLectura, horario, onMarcar, onVerHistorial }: Props) {
+export default function FilaMarcaDelDia({ colaborador, fecha, marca, pendiente, errorMsg, soloLectura, horario, onMarcar, onVerHistorial, foto }: Props) {
   const [notaAbierta, setNotaAbierta] = useState(false);
   const estadoActual = marca?.estado ?? null;
   const metaActual = estadoActual ? ESTADO_ASISTENCIA_META[estadoActual] : null;
@@ -88,6 +90,7 @@ export default function FilaMarcaDelDia({ colaborador, fecha, marca, pendiente, 
       <div className="flex items-center justify-end gap-1 @min-[58rem]:order-4">
         {pendiente && <Loader2 className="h-4 w-4 animate-spin text-[var(--text-tertiary)]" aria-label="Guardando" />}
         {errorMsg && <AlertTriangle className="h-4 w-4 text-[var(--data-error-500)]" aria-hidden />}
+        {foto}
         {/* Sin estado todavía no hay marca que anotar: `Asistencia.estado` no
             admite null — una nota sin estado no tiene dónde vivir. */}
         {estadoActual && !soloLectura && (

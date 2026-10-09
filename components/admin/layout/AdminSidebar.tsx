@@ -14,6 +14,7 @@ import {
 import { cn } from "@/lib/utils";
 // resolveSessionStorefrontTarget removed — use activeTenantSlug directly
 import { useModuleTabs } from "@/contexts/module-tabs-context";
+import { useCamarasAcopladas } from "@/hooks/use-camaras-acopladas";
 import { useAdminTemplateOverlay } from "@/app/admin/_hooks/useAdminTemplateOverlay";
 import type { Tab } from "@/app/admin/_lib/tabs.types";
 import { preloadTab } from "@/app/admin/_lib/tab-preload";
@@ -635,7 +636,11 @@ export const AdminSidebar = React.memo(function AdminSidebar({
   // Ahora el modo compacto es SIEMPRE una decisión del usuario (el toggle del
   // pie del sidebar, que se recuerda en localStorage) o del modo foco.
   // Debajo de 768px no hay sidebar fijo: ahí manda el menú móvil.
-  const effectiveCompact = focusMode || isCompact;
+  // Brandon 2026-10-09: con las cámaras «al lado» la barra se encoge a íconos
+  // mientras dure (pedido explícito: el formulario de al lado ganaba 216 px) y
+  // vuelve sola al desacoplar. El toggle del usuario no se toca.
+  const camarasAcopladas = useCamarasAcopladas();
+  const effectiveCompact = focusMode || isCompact || camarasAcopladas;
 
   // Track which multi-tab categories are expanded (shows sub-tabs).
   // Acordeón ESTRICTO (single-open): solo 1 categoría abierta a la vez.
@@ -852,7 +857,14 @@ export const AdminSidebar = React.memo(function AdminSidebar({
              panel de configuración para que el usuario vea naturalmente de
              izquierda → derecha: edita en el Configurator y el resultado aparece
              inmediatamente al lado. */
-          left: configMode && !effectiveCompact ? "var(--admin-config-panel-w)" : 0,
+          /* `--libre-izq`: con las cámaras acopladas a la izquierda (globals.css
+             § «Cámaras al lado») la barra se corre lo que ellas ocupan. Sin
+             acoplar no existe y vale 0. `left` y no `translate`: un translate
+             vuelve a la barra el marco de sus tooltips `fixed`. */
+          left:
+            configMode && !effectiveCompact
+              ? "calc(var(--admin-config-panel-w) + var(--libre-izq, 0px))"
+              : "var(--libre-izq, 0px)",
         }}
       >
         {/* ── Header: tenant + user ── */}

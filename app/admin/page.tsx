@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { useNotifications } from "@/hooks/use-notifications";
+import { useCamarasAcopladas } from "@/hooks/use-camaras-acopladas";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { useTokenRefresh } from "@/hooks/use-token-refresh";
 import { useSessionKeepAlive } from "@/hooks/use-session-keepalive";
@@ -179,6 +180,7 @@ function AdminPage() {
     if (typeof window === "undefined") return false;
     try { return localStorage.getItem("admin-sidebar-compact") === "true"; } catch { return false; }
   });
+  const camarasAcopladas = useCamarasAcopladas();
   // Config mode: cuando editando barra lateral, sidebar se expande a 400px
   const [sidebarConfigMode, setSidebarConfigMode] = useState<boolean>(false);
   useEffect(() => {
@@ -409,7 +411,8 @@ function AdminPage() {
            sidebar aún no existe → contenido empujado y aplastado en tablets. */
         presentationMode ? "md:ml-0"
           : focusMode ? "md:ml-16"
-          : sidebarCompact ? "md:ml-[var(--admin-sidebar-w-compact,60px)]"
+          /* Cámaras «al lado»: la barra se encoge a íconos mientras dure (AdminSidebar). */
+          : sidebarCompact || camarasAcopladas ? "md:ml-[var(--admin-sidebar-w-compact,60px)]"
           /* configMode: sidebar + panel de config, sumados desde los tokens
              para que no puedan desincronizarse del ancho real. */
           : sidebarConfigMode ? "md:ml-[calc(var(--admin-sidebar-w)+var(--admin-config-panel-w))]"

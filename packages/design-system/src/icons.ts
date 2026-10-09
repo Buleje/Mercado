@@ -40,6 +40,8 @@ export {
   Home,
   PanelLeftClose,
   PanelLeftOpen,
+  PanelLeft,
+  PanelRight,
   MoreVertical,
   MoreHorizontal,
   ExternalLink,

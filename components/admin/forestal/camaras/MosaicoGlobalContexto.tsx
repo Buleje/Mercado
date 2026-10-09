@@ -13,6 +13,11 @@
  * entrar al panel. Sólo guarda qué cámaras abrir; el mosaico (`MosaicoNube`)
  * se baja recién cuando alguien toca «Ver todas en vivo» — que sólo existe en
  * la pantalla de Cámaras, así que un rol sin cámaras nunca pide nada.
+ *
+ * «Marcar con foto» (2026-10-09): cada cuadro del mosaico anota acá cómo sacar
+ * el cuadro que muestra (`conCuadro` + `tomarCuadro`), y la hoja de asistencia
+ * —que vive dentro de este proveedor— lo usa al marcar a alguien presente.
+ * Sirve también minimizado: los videos siguen montados en la burbuja.
  */
 
 import dynamic from "next/dynamic";
@@ -21,11 +26,13 @@ import {
   useCallback,
   useContext,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
 import type { CamaraMosaico } from "./MosaicoNubeCuadro";
 import { navegarEnElPanel } from "./navegar-panel";
+import { comoImagen, type TomarCuadro } from "./use-personas-mosaico";
 
 const MosaicoNube = dynamic(() => import("./MosaicoNube"), { ssr: false });
 
@@ -40,6 +47,10 @@ interface ValorMosaicoGlobal {
    * (su modal «Ver en otra pantalla» vive allá): se registra al montarse.
    */
   registrarVerEnTv: (fn: () => void) => () => void;
+  /** Las cámaras del mosaico que pueden dar su cuadro (abierto o en la burbuja). */
+  conCuadro: readonly { id: string; nombre: string }[];
+  /** El cuadro que muestra ahora esa cámara, o `null` si no hay video. */
+  tomarCuadro: (camaraId: string) => Promise<Blob | null>;
 }
 
 const Ctx = createContext<ValorMosaicoGlobal | null>(null);
@@ -53,6 +64,8 @@ export function MosaicoGlobalProvider({ children }: { children: ReactNode }) {
   const [camaras, setCamaras] = useState<readonly CamaraMosaico[] | null>(null);
   const [minimizado, setMinimizado] = useState(false);
   const [verEnTv, setVerEnTv] = useState<(() => void) | null>(null);
+  const tomadores = useRef(new Map<string, TomarCuadro>());
+  const [idsConCuadro, setIdsConCuadro] = useState<readonly string[]>([]);
 
   const abrir = useCallback((lista: readonly CamaraMosaico[]) => {
     setMinimizado(false);
@@ -68,9 +81,27 @@ export function MosaicoGlobalProvider({ children }: { children: ReactNode }) {
     return () => setVerEnTv((actual) => (actual === fn ? null : actual));
   }, []);
 
+  /** Lo llama cada cuadro al montarse (y con `null` al irse). */
+  const registrarCuadro = useCallback((id: string, tomar: TomarCuadro | null) => {
+    if (tomar) tomadores.current.set(id, tomar);
+    else tomadores.current.delete(id);
+    const ids = [...tomadores.current.keys()];
+    setIdsConCuadro((prev) => (prev.length === ids.length && prev.every((x, i) => x === ids[i]) ? prev : ids));
+  }, []);
+  const tomarCuadro = useCallback(async (id: string) => {
+    const tomar = tomadores.current.get(id);
+    const b64 = tomar ? await tomar() : null;
+    if (!b64) return null;
+    return (await fetch(comoImagen(b64))).blob();
+  }, []);
+  const conCuadro = useMemo(
+    () => (camaras ?? []).filter((c) => idsConCuadro.includes(c.id)).map(({ id, nombre }) => ({ id, nombre })),
+    [camaras, idsConCuadro],
+  );
+
   const valor = useMemo(
-    () => ({ abierto: camaras !== null, abrir, cerrar, registrarVerEnTv }),
-    [camaras, abrir, cerrar, registrarVerEnTv],
+    () => ({ abierto: camaras !== null, abrir, cerrar, registrarVerEnTv, conCuadro, tomarCuadro }),
+    [camaras, abrir, cerrar, registrarVerEnTv, conCuadro, tomarCuadro],
   );
 
   /* «Ver en Fotos» del aviso de «Analizar»: el mosaico se minimiza (no se
@@ -91,6 +122,7 @@ export function MosaicoGlobalProvider({ children }: { children: ReactNode }) {
           onExpandir={() => setMinimizado(false)}
           onCerrar={cerrar}
           onVerFotos={verFotos}
+          onCuadro={registrarCuadro}
           onVerEnTv={
             verEnTv
               ? () => {

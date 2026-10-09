@@ -40,15 +40,20 @@ export interface AvisoPersonas {
 /**
  * @param onVer «Ver» dentro del mensaje: sólo con el mosaico minimizado (lo
  *   expande). Se lee al avisar, no al crear `avisar`, para que éste no cambie.
+ * @param onAsistencia «Marcar asistencia» (2026-10-09): llegó alguien → la hoja
+ *   del día al lado de las cámaras. Va como acción principal; «Ver» pasa a ser
+ *   la secundaria.
  */
-export function useAvisoPersonas(onVer?: () => void): AvisoPersonas {
+export function useAvisoPersonas(onVer?: () => void, onAsistencia?: () => void): AvisoPersonas {
   const [sonido, setSonido] = useLocalStorage<boolean>("camaras-mosaico:aviso-sonido", true);
   const ultimo = useRef(new Map<string, number>());
   const sonidoRef = useRef(sonido);
   const verRef = useRef(onVer);
+  const asistenciaRef = useRef(onAsistencia);
   useEffect(() => {
     sonidoRef.current = sonido;
     verRef.current = onVer;
+    asistenciaRef.current = onAsistencia;
   });
 
   const avisar = useCallback((a: AparicionPersona) => {
@@ -56,11 +61,14 @@ export function useAvisoPersonas(onVer?: () => void): AvisoPersonas {
     if (antes !== undefined && a.at - antes < AVISO_POR_CAMARA_CADA_MS) return;
     ultimo.current.set(a.camaraId, a.at);
     const ver = verRef.current;
+    const asistencia = asistenciaRef.current;
+    const accionVer = ver ? { label: "Ver", onClick: ver } : undefined;
     toast.warning(textoAparicion(a), {
       /* Uno por cámara: el siguiente de la misma cámara reemplaza al anterior. */
       id: `persona-en-vivo-${a.camaraId}`,
       duration: 8_000,
-      action: ver ? { label: "Ver", onClick: ver } : undefined,
+      action: asistencia ? { label: "Marcar asistencia", onClick: asistencia } : accionVer,
+      cancel: asistencia ? accionVer : undefined,
     });
     if (sonidoRef.current) pitidoAviso();
   }, []);

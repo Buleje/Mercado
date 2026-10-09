@@ -17,26 +17,34 @@
  * Aviso de personas (2026-10-08): cada cuadro le pasa sus apariciones y acá
  * suenan el pitido y el mensaje (`useAvisoPersonas`) — también minimizado,
  * porque el mosaico sigue montado; ahí el mensaje trae «Ver» para expandirlo.
+ *
+ * Al lado (2026-10-09, `use-acople-mosaico`): acoplado a la izquierda o a la
+ * derecha deja de ser modal —sin velo, sin trampa de foco, Escape es de la
+ * página— y el panel se corre al otro lado, donde se marca la asistencia o se
+ * recepciona el camión mirando la cámara. `data-capa-libre` le dice a
+ * `AdminModal` que un clic acá no es «afuera» (no cierra el modal de al lado).
  */
 
 import { useCallback, useId, useRef, useState, type MouseEvent } from "react";
 import { createPortal } from "react-dom";
-import { Battery, Play, Tv } from "@buleje/design-system/icons";
+import { Play } from "@buleje/design-system/icons";
 import { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { usePanelTokens } from "@/components/admin/shared/use-panel-tokens";
-import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { cn } from "@/lib/utils";
 import { useApiCamaras } from "./api-camaras";
 import { BTN } from "./camaras-ui";
-import { DATOS_POR_HORA, MINUTOS_SIN_TOCAR } from "./hik-connect-teams";
+import { MINUTOS_SIN_TOCAR } from "./hik-connect-teams";
+import { AsaAcople, MenuAlLado } from "./MosaicoAcople";
+import AvisoDatos from "./MosaicoAvisoDatos";
 import MosaicoBurbuja from "./MosaicoBurbuja";
 import MosaicoNubeCabecera from "./MosaicoNubeCabecera";
 import MosaicoNubeCuadro, { type CamaraMosaico } from "./MosaicoNubeCuadro";
 import { navegarEnElPanel } from "./navegar-panel";
+import { HREF_ASISTENCIA_HOY, useAcopleMosaico, useRuedaLibre } from "./use-acople-mosaico";
 import { useAvisoPersonas } from "./use-aviso-personas";
-import { RETRASO_ENTRE_CUADROS_MS, useMosaicoNube, vecesMas } from "./use-mosaico-nube";
-import { usePersonasMosaico } from "./use-personas-mosaico";
+import { RETRASO_ENTRE_CUADROS_MS, useMosaicoNube } from "./use-mosaico-nube";
+import { usePersonasMosaico, type TomarCuadro } from "./use-personas-mosaico";
 import { useVerMovimiento } from "./use-ver-movimiento";
 import type { EstadoVisor } from "./use-visor-nube";
 
@@ -52,11 +60,20 @@ interface Props {
   minimizado?: boolean;
   onMinimizar?: () => void;
   onExpandir?: () => void;
+  /** Cada cuadro anota su captura también en el panel («Marcar con foto» de asistencia). */
+  onCuadro?: (camaraId: string, tomar: TomarCuadro | null) => void;
 }
 
-/* Las clases de `AdminModal` variante `info` + `sm:max-w-[96vw]` (lo que era antes). */
 const PANEL =
-  "fixed z-modal flex flex-col overflow-clip bg-[var(--surface-raised)] shadow-[var(--shadow-xl)] outline-none bottom-0 left-0 right-0 w-full rounded-t-2xl max-h-[92vh] sm:bottom-auto sm:right-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-[calc(100vw-2rem)] sm:max-w-[96vw] sm:rounded-2xl sm:max-h-[92vh]";
+  "fixed z-modal flex flex-col overflow-clip bg-[var(--surface-raised)] shadow-[var(--shadow-xl)] outline-none";
+/* Las clases de `AdminModal` variante `info` + `sm:max-w-[96vw]` (lo que era antes). */
+const AL_CENTRO =
+  "bottom-0 left-0 right-0 w-full rounded-t-2xl max-h-[92vh] sm:bottom-auto sm:right-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-[calc(100vw-2rem)] sm:max-w-[96vw] sm:rounded-2xl sm:max-h-[92vh]";
+/* `pointer-events-auto`: con un modal de Radix abierto al otro lado, el body queda sin clics. */
+const AL_LADO = {
+  izquierda: "inset-y-0 left-0 border-r border-[var(--rule-base)] pointer-events-auto",
+  derecha: "inset-y-0 right-0 border-l border-[var(--rule-base)] pointer-events-auto",
+} as const;
 
 const FOTOS_DE_PERSONAS = "/admin?tab=camaras&vista=personas";
 
@@ -69,6 +86,7 @@ export default function MosaicoNube({
   minimizado = false,
   onMinimizar,
   onExpandir,
+  onCuadro,
 }: Props) {
   const { soloMirar } = useApiCamaras(baseApi);
   const [detectar, setDetectar] = useState(!soloMirar);
@@ -81,6 +99,9 @@ export default function MosaicoNube({
   const tituloId = useId();
   /* Los tokens del panel se copian al EXPANDIR: si cambió el tema minimizado, se releen. */
   const tokens = usePanelTokens(!minimizado);
+  const acople = useAcopleMosaico(Boolean(onMinimizar), !minimizado);
+  const acoplado = acople.lado !== null;
+  useRuedaLibre(panel, acoplado && !minimizado);
 
   const { alMinimizar } = p;
   const minimizar = useCallback(() => {
@@ -90,7 +111,7 @@ export default function MosaicoNube({
   }, [alMinimizar, onMinimizar]);
   /* Escape y el velo minimizan (no cortan) si hay burbuja; si no, cierran como antes. */
   const salir = onMinimizar ? minimizar : onCerrar;
-  useModalAccesible(panel, { onCerrar: salir, activo: !minimizado });
+  useModalAccesible(panel, { onCerrar: salir, activo: !minimizado && !acoplado });
 
   const verFotos = useCallback(() => {
     if (onMinimizar) alMinimizar();
@@ -102,11 +123,33 @@ export default function MosaicoNube({
     else m.actividad();
     onExpandir?.();
   }, [m, onExpandir]);
-  const aviso = useAvisoPersonas(minimizado && onExpandir ? expandir : undefined);
+  /* «Marcar asistencia» del aviso: la hoja del día al lado de las cámaras. En
+     una pantalla angosta no hay «al lado»: se minimiza y la hoja queda entera. */
+  const { disponible: puedeAcoplar, lado, acoplar } = acople;
+  const marcarAsistencia = useCallback(() => {
+    if (!puedeAcoplar) minimizar();
+    else {
+      if (minimizado) expandir();
+      if (!lado) acoplar();
+    }
+    navegarEnElPanel(HREF_ASISTENCIA_HOY);
+  }, [puedeAcoplar, minimizar, minimizado, expandir, lado, acoplar]);
+  const aviso = useAvisoPersonas(
+    minimizado && onExpandir ? expandir : undefined,
+    onMinimizar && !soloMirar ? marcarAsistencia : undefined,
+  );
   const cambiarSinPausa = (v: boolean) => {
     setSinPausa(v);
     if (v && m.cortado) m.seguir();
   };
+  const { registrarCuadro: registrarEnMiniatura } = p;
+  const registrarCuadro = useCallback(
+    (id: string, tomar: TomarCuadro | null) => {
+      registrarEnMiniatura(id, tomar);
+      onCuadro?.(id, tomar);
+    },
+    [registrarEnMiniatura, onCuadro],
+  );
   const onEstado = useCallback((id: string, e: EstadoVisor) => {
     setEstados((prev) => (prev[id] === e ? prev : { ...prev, [id]: e }));
   }, []);
@@ -125,19 +168,25 @@ export default function MosaicoNube({
     <>
       {createPortal(
         <>
-          {!minimizado && <div className="modal-backdrop" onClick={salir} aria-hidden />}
+          {!minimizado && !acoplado && <div className="modal-backdrop" onClick={salir} aria-hidden />}
           <div
             ref={panel}
-            role={minimizado ? undefined : "dialog"}
-            aria-modal={minimizado ? undefined : true}
+            role={minimizado ? undefined : acoplado ? "region" : "dialog"}
+            aria-modal={minimizado || acoplado ? undefined : true}
             aria-labelledby={tituloId}
             aria-hidden={minimizado || undefined}
             inert={minimizado || undefined}
             tabIndex={-1}
-            style={tokens}
-            className={cn(PANEL, minimizado && "pointer-events-none opacity-0")}
-            data-mosaico-panel={minimizado ? "minimizado" : "abierto"}
+            style={acople.lado ? { ...tokens, width: `${acople.ancho}vw` } : tokens}
+            className={cn(
+              PANEL,
+              acople.lado ? AL_LADO[acople.lado] : AL_CENTRO,
+              minimizado && "pointer-events-none opacity-0",
+            )}
+            data-mosaico-panel={minimizado ? "minimizado" : acoplado ? "acoplado" : "abierto"}
+            data-capa-libre={acoplado || undefined}
           >
+            <AsaAcople acople={acople} panel={panel} />
             <MosaicoNubeCabecera
               tituloId={tituloId}
               camaras={camaras.length}
@@ -154,6 +203,7 @@ export default function MosaicoNube({
               onIrACarpeta={irACarpeta}
               onMinimizar={onMinimizar ? minimizar : undefined}
               onCerrar={onCerrar}
+              acciones={<MenuAlLado acople={acople} />}
             />
             <div
               className={`${MODAL_BODY} relative min-h-0 flex-1 space-y-3 overflow-y-auto`}
@@ -177,7 +227,7 @@ export default function MosaicoNube({
                 </div>
               )}
 
-              <ul className="grid gap-3 md:grid-cols-2">
+              <ul className={cn("grid gap-3", !acoplado && "md:grid-cols-2")}>
                 {camaras.map((c, i) => (
                   <MosaicoNubeCuadro
                     key={c.id}
@@ -191,8 +241,9 @@ export default function MosaicoNube({
                     verMovimiento={verMovimiento}
                     onFotoPersona={p.onFoto}
                     onEstado={onEstado}
-                    registrarCuadro={p.registrarCuadro}
+                    registrarCuadro={registrarCuadro}
                     onAparicion={aviso.avisar}
+                    ampliable={!acoplado && camaras.length > 1}
                   />
                 ))}
               </ul>
@@ -215,44 +266,5 @@ export default function MosaicoNube({
         />
       )}
     </>
-  );
-}
-
-/** El aviso de batería y datos; con «No pausar», el de datos por hora. */
-function AvisoDatos({
-  camaras,
-  sinPausa,
-  onVerEnTv,
-}: {
-  camaras: number;
-  sinPausa: boolean;
-  onVerEnTv?: () => void;
-}) {
-  return (
-    <p className="flex items-center gap-2 rounded-xl border border-[var(--data-warning-500)]/50 bg-[var(--data-warning-500)]/10 px-3 py-2 text-sm text-[var(--text-primary)]">
-      <Battery className="h-4 w-4 shrink-0 text-[var(--data-warning-ink)]" aria-hidden />
-      <span className="min-w-0 flex-1">
-        {sinPausa
-          ? `Sin pausa: cada cámara gasta ${DATOS_POR_HORA} de su chip hasta que cierres.`
-          : `Gasta ${vecesMas(camaras)} de batería y datos mientras está abierto.`}
-      </span>
-      <InfoTip
-        title="Batería y datos"
-        what={`Cada cámara transmite a la vez y gasta ${DATOS_POR_HORA} de su chip (SD gasta menos que HD).`}
-        affects={`Si nadie toca el mosaico por ${MINUTOS_SIN_TOCAR} minutos, se pausan todas (salvo con «No pausar»). Minimizar NO corta: cerrar sí.`}
-        example="Para mirar una sola con calma, cierra esto y usa «En vivo» de esa cámara."
-      />
-      {onVerEnTv && (
-        <button
-          type="button"
-          onClick={onVerEnTv}
-          className="inline-flex shrink-0 items-center gap-1.5 text-sm font-bold text-[var(--accent-ink)] underline-offset-4 hover:underline dark:text-[var(--accent)]"
-          title="El Modo TV muestra las cámaras en el navegador del televisor"
-        >
-          <Tv className="h-4 w-4" aria-hidden />
-          <span className="max-sm:sr-only">Verlo en el televisor</span>
-        </button>
-      )}
-    </p>
   );
 }
