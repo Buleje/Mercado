@@ -20,6 +20,7 @@
  * esa línea (y el archivo /tmp/buleje_app.env) → el dev vuelve a `postgres`.
  */
 import { spawn, spawnSync } from "node:child_process";
+import net from "node:net";
 import { existsSync, readFileSync, rmSync, utimesSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { iniciarTraerCambios } from "./dev-helpers/traer-cambios.mjs";
@@ -115,7 +116,25 @@ function conTecho(cmd, args) {
   return ["systemd-run", ["--user", "--scope", "--collect", "--quiet", "-p", `MemoryHigh=${techo}`, "--", resolve(cmd), ...args]];
 }
 
-const [cmd, args] = conTecho(bin, ["dev", "--turbopack"]);
+// ── Siempre el 3000 (2026-10-09) ──────────────────────────────────────────
+// Cuando earlyoom mata al server y el guardián lo relanza, el viejo todavía
+// suelta el puerto: Next se iba solo al 3001 y nadie lo veía (login caído para
+// Brandon y para qa-capturas, dos veces el mismo día). Se espera hasta 60 s a
+// que quede libre y se pide el puerto explícito.
+const PUERTO_DEV = process.env.PORT || "3000";
+const puertoLibre = (p) =>
+  new Promise((ok) => {
+    const s = net.createServer();
+    s.once("error", () => ok(false));
+    s.once("listening", () => s.close(() => ok(true)));
+    s.listen(Number(p));
+  });
+for (let i = 0; i < 30 && !(await puertoLibre(PUERTO_DEV)); i++) {
+  if (i === 0) console.log(`[dev] el puerto ${PUERTO_DEV} sigue ocupado: espero a que se libere (hasta 60 s)…`);
+  await new Promise((r) => setTimeout(r, 2000));
+}
+
+const [cmd, args] = conTecho(bin, ["dev", "--turbopack", "-p", PUERTO_DEV]);
 const child = spawn(cmd, args, { stdio: "inherit", env });
 child.on("exit", (code) => process.exit(code ?? 0));
 // Lo que otra sesión sube a GitHub en esta rama aparece solo en la página (07-10).
