@@ -1,8 +1,10 @@
 import { useState, useCallback, useRef } from "react";
+import { useFichaEnUrl } from "@/hooks/use-ficha-en-url";
+import { useAbrirFichaAlLlegar } from "@/hooks/use-abrir-ficha-al-llegar";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import type { DbPurchaseOrder, DbSupplier, DbProduct } from "@/lib/jsondb";
 import type { FormaDePago, TipoComprobante } from "@/lib/compras/estados-oc";
-import { useFiltrosOrdenesCompra } from "@/hooks/use-filtros-ordenes-compra";
+import { useFiltrosOrdenesCompra, POR_PAGINA } from "@/hooks/use-filtros-ordenes-compra";
 import { nuevaIdempotencyKey, type ItemDraft } from "@/components/admin/ordenes-compra/oc-compartido";
 
 /** Estado de Órdenes de compra: lista, filtros, formulario de la orden nueva y aviso. Parte de `useOrdenesCompra`. */
@@ -10,7 +12,15 @@ export function useOcEstado() {
   const { confirm } = useConfirm();
   const [orders, setOrders] = useState<DbPurchaseOrder[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expanded, setExpanded] = useState<string | null>(null);
+  const [expanded, setExpandida] = useState<string | null>(null);
+  /* La orden abierta en la URL (`?oc=<id>`, lib/admin/enlaces-panel): abrirla la escribe, el «atrás» la cierra. */
+  const ficha = useFichaEnUrl("oc");
+  const { abrir: abrirEnUrl, cerrar: cerrarEnUrl } = ficha;
+  const setExpanded = useCallback((id: string | null) => {
+    setExpandida(id);
+    if (id) abrirEnUrl(id);
+    else cerrarEnUrl();
+  }, [abrirEnUrl, cerrarEnUrl]);
   const [showCreate, setShowCreate] = useState(false);
   const [suppliers, setSuppliers] = useState<DbSupplier[]>([]);
   const [products, setProducts] = useState<DbProduct[]>([]);
@@ -69,6 +79,27 @@ export function useOcEstado() {
     if (timerAviso.current) clearTimeout(timerAviso.current);
     timerAviso.current = setTimeout(() => setToast(null), tone === "error" ? 6000 : 4000);
   }, []);
+
+  /* Llegar con `?oc=<id>`: la página donde cae (sin tocar los filtros), expandida y a la vista. */
+  useAbrirFichaAlLlegar<DbPurchaseOrder>({
+    idEnUrl: ficha.id,
+    idAbierto: expanded,
+    listo: !loading,
+    buscar: (id) => orders.find((o) => o.id === id),
+    abrir: (o) => {
+      const i = f.filtradas.findIndex((x) => x.id === o.id);
+      if (i >= 0) f.setPagina(Math.floor(i / POR_PAGINA) + 1);
+      setExpandida(o.id);
+      /* Después de que React pinte la página y la fila abierta. */
+      setTimeout(() => document.getElementById(`oc-${o.id}`)?.scrollIntoView({ block: "start", behavior: "smooth" }), 150);
+    },
+    cerrar: () => setExpandida(null),
+    noEsta: () => {
+      avisar("No encontramos esa orden de compra.", "error");
+      cerrarEnUrl();
+    },
+  });
+
   return {
     timerAviso,
     confirm, orders, setOrders, loading, setLoading, expanded, setExpanded, showCreate, setShowCreate,

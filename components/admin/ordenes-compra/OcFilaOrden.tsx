@@ -20,8 +20,9 @@ export default function OcFilaOrden({ oc, o, supplier, isExpanded }: { oc: Orden
     <>
       <div
         key={o.id}
+        id={`oc-${o.id}`}
         className={cn(
-          "bg-[var(--surface-raised)] border-2 rounded-2xl overflow-hidden transition-all",
+          "scroll-mt-24 bg-[var(--surface-raised)] border-2 rounded-2xl overflow-hidden transition-all",
           isExpanded ? "border-primary/40 ring-2 ring-primary/15 shadow-sm" : "border-[var(--rule-base)] hover:border-[var(--text-tertiary)]",
         )}
       >

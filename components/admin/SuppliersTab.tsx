@@ -15,6 +15,7 @@ import WhatsAppButton from "./WhatsAppButton";
 import SupplierScorecard from "./compras/SupplierScorecard";
 import SupplierTimeline from "./compras/SupplierTimeline";
 import ProveedorFormModal from "./proveedores/ProveedorFormModal";
+import { useFichaProveedorUrl } from "./proveedores/use-ficha-proveedor-url";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { formatCurrency, formatDateNumeric, formatMonth, formatNumber } from "@/lib/format";
 
@@ -84,6 +85,7 @@ export default function SuppliersTab() {
 
    
   useEffect(() => { load(); }, [load]);
+  const fichaProveedor = useFichaProveedorUrl({ suppliers, loading, editingSupplier, showProveedorModal, setEditingSupplier, setShowProveedorModal });
 
   const _startEdit = (s: DbSupplier) => {
     setEditingId(s.id);
@@ -574,7 +576,7 @@ export default function SuppliersTab() {
                       <div className="mt-2 flex items-center gap-2 rounded-lg border border-[var(--data-warning-500)]/30 bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/15 px-3 py-1.5">
                         <AlertTriangle className="h-3.5 w-3.5 text-[var(--data-warning-500)] shrink-0" aria-hidden />
                         <span className="text-xs text-[var(--text-secondary)] dark:text-muted flex-1">Perfil incompleto — falta contacto y dirección.</span>
-                        <button type="button" onClick={() => { setEditingSupplier(s); setShowProveedorModal(true); }} className="text-xs font-bold text-primary hover:underline shrink-0">
+                        <button type="button" onClick={() => fichaProveedor.abrirFicha(s)} className="text-xs font-bold text-primary hover:underline shrink-0">
                           Completar
                         </button>
                       </div>
@@ -661,7 +663,7 @@ export default function SuppliersTab() {
                         />
                       );
                     })()}
-                    <button onClick={() => { setEditingSupplier(s); setShowProveedorModal(true); }} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-primary hover:bg-primary/8 transition-colors" title="Editar ficha completa">
+                    <button onClick={() => fichaProveedor.abrirFicha(s)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-primary hover:bg-primary/8 transition-colors" title="Editar ficha completa">
                       <Pencil className="h-4 w-4" />
                     </button>
                     <button onClick={() => setDeleteTarget(s)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors" title="Eliminar">
@@ -735,8 +737,9 @@ export default function SuppliersTab() {
       {/* Proveedor Form Modal (ficha completa) */}
       <ProveedorFormModal
         isOpen={showProveedorModal}
-        onClose={() => { setShowProveedorModal(false); setEditingSupplier(null); }}
-        onSaved={() => { setShowProveedorModal(false); setEditingSupplier(null); load(); }}
+        onClose={fichaProveedor.cerrarFicha}
+        /* El formulario llama `onSaved(); onClose();`: cerrar acá también era un 2.º «atrás» que sacaba del módulo. */
+        onSaved={() => load()}
         supplier={editingSupplier as Record<string, unknown> | null}
       />
     </div>

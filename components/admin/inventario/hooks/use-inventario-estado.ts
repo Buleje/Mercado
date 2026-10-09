@@ -8,6 +8,7 @@ import { useUndoToast } from "@/components/admin/shared/UndoToast";
 import QRCode from "qrcode";
 import { limaDateKey } from "@/lib/utils";
 import { useFiltroDeUrl } from "@/hooks/use-filtro-de-url";
+import { useFichaEnUrl } from "@/hooks/use-ficha-en-url";
 import { esFaltaDeCatalogo, type FaltaDeCatalogo } from "@/lib/inventario/catalogo-incompleto";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
@@ -105,7 +106,16 @@ export function useInventarioEstado() {
   const [generatingOC, setGeneratingOC] = useState(false);
 
   // Product CRUD state
-  const [editModalProduct, setEditModalProduct] = useState<DbProduct | null>(null);
+  const [editModalProduct, setEditModalProductSinUrl] = useState<DbProduct | null>(null);
+  /* La ficha abierta en la URL (`?producto=<id>`, lib/admin/enlaces-panel): abrirla la escribe y
+     cerrarla la saca; el lector (llegar por enlace, «atrás») está en use-inventario-carga. */
+  const fichaProducto = useFichaEnUrl("producto");
+  const { abrir: abrirProductoEnUrl, cerrar: cerrarProductoEnUrl } = fichaProducto;
+  const setEditModalProduct = useCallback((p: DbProduct | null) => {
+    setEditModalProductSinUrl(p);
+    if (p) abrirProductoEnUrl(String(p.id));
+    else cerrarProductoEnUrl();
+  }, [abrirProductoEnUrl, cerrarProductoEnUrl]);
   const [editForm, setEditForm] = useState<Partial<DbProduct & { expiryDate?: string; isVariant?: boolean; variantOf?: string; variantAttr?: string; trackStock?: boolean }>>({});
   const [saving, setSaving] = useState(false);
   const editModalRef = useRef<HTMLDivElement>(null);
@@ -270,7 +280,7 @@ export function useInventarioEstado() {
     savedCategories, setSavedCategories, lowOnly, setLowOnly, estadoFiltro, setEstadoFiltro,
     showInactive, stockRango, setStockRango, vencRango, setVencRango, noImageOnly, setNoImageOnly,
     faltaDato, setFaltaDato, showFilters, setShowFilters, viewMode, setViewMode, expandedOC,
-    setExpandedOC, generatingOC, setGeneratingOC, editModalProduct, setEditModalProduct, editForm,
+    setExpandedOC, generatingOC, setGeneratingOC, editModalProduct, setEditModalProduct, setEditModalProductSinUrl, fichaProducto, editForm,
     setEditForm, saving, setSaving, editModalRef, ventanaEdit, showAdd, setShowAdd, addModalRef,
     ventanaAdd, showPicker, setShowPicker, pickerModalRef, ventanaPicker, pickerSearch,
     setPickerSearch, pickerCat, setPickerCat, EMPTY_ADD, addForm, setAddForm, addVariants,

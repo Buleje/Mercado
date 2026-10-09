@@ -1,8 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useLayoutEffect, useCallback, useRef, type SetStateAction } from "react";
+import { toast } from "sonner";
 import type { DbOrder } from "@/lib/jsondb";
 import { fetchAllOrders } from "@/lib/admin-helpers";
+import { useFichaEnUrl } from "@/hooks/use-ficha-en-url";
+import { useAbrirFichaAlLlegar } from "@/hooks/use-abrir-ficha-al-llegar";
 
 export interface OrdersDataState {
   orders: DbOrder[];
@@ -18,7 +21,22 @@ export interface OrdersDataActions {
   load: () => Promise<void>;
   setOrders: React.Dispatch<React.SetStateAction<DbOrder[]>>;
   setLoadError: React.Dispatch<React.SetStateAction<string | null>>;
-  setDetailOrder: React.Dispatch<React.SetStateAction<DbOrder | null>>;
+  /** Abre/cierra el panel del pedido Y escribe `?pedido=` (el «atrás» lo cierra). */
+  setDetailOrder: (accion: SetStateAction<DbOrder | null>) => void;
+}
+
+const ID_AVISO_ABRIR = "abrir-pedido-por-enlace";
+
+/** El pedido que pide el enlace y no está en la lista (archivado, de otro día): por id. */
+async function traerPedido(id: string): Promise<DbOrder | "no-existe" | "error"> {
+  try {
+    const res = await fetch(`/api/orders/${encodeURIComponent(id)}`);
+    if (res.status === 404) return "no-existe";
+    if (!res.ok) return "error";
+    return (await res.json()) as DbOrder;
+  } catch {
+    return "error";
+  }
 }
 
 export function useOrdersData(): OrdersDataState & OrdersDataActions {
@@ -28,7 +46,24 @@ export function useOrdersData(): OrdersDataState & OrdersDataActions {
   const [storeLat, setStoreLat] = useState<number | null>(null);
   const [storeLon, setStoreLon] = useState<number | null>(null);
   const [storeName, setStoreName] = useState("Buleje");
-  const [detailOrder, setDetailOrder] = useState<DbOrder | null>(null);
+  const [detailOrder, setDetalle] = useState<DbOrder | null>(null);
+
+  /* La ficha abierta también vive en la URL (`?pedido=<id>`, lib/admin/enlaces-panel):
+     llegar por enlace la abre, el «atrás» la cierra, abrirla a mano la escribe. */
+  const ficha = useFichaEnUrl("pedido");
+  const { abrir: abrirEnUrl, cerrar: cerrarEnUrl } = ficha;
+  const actual = useRef<DbOrder | null>(null);
+  useLayoutEffect(() => {
+    actual.current = detailOrder;
+  });
+  const setDetailOrder = useCallback((accion: SetStateAction<DbOrder | null>) => {
+    const previo = actual.current;
+    const siguiente = typeof accion === "function" ? accion(previo) : accion;
+    actual.current = siguiente;
+    setDetalle(siguiente);
+    if (siguiente && siguiente.id !== previo?.id) abrirEnUrl(siguiente.id);
+    else if (!siguiente && previo) cerrarEnUrl();
+  }, [abrirEnUrl, cerrarEnUrl]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -102,6 +137,27 @@ export function useOrdersData(): OrdersDataState & OrdersDataActions {
       try { es?.close(); } catch {}
     };
   }, [load]);
+
+  useAbrirFichaAlLlegar<DbOrder>({
+    idEnUrl: ficha.id,
+    idAbierto: detailOrder?.id ?? null,
+    listo: !loading,
+    buscar: (id) => orders.find((o) => o.id === id),
+    abrir: (o) => { actual.current = o; setDetalle(o); },
+    cerrar: () => { actual.current = null; setDetalle(null); },
+    noEsta: (id) => {
+      const aviso = setTimeout(() => toast.loading("Abriendo el pedido…", { id: ID_AVISO_ABRIR }), 400);
+      void traerPedido(id).then((r) => {
+        clearTimeout(aviso);
+        toast.dismiss(ID_AVISO_ABRIR);
+        /* Mientras llegaba, ¿te fuiste a otro pedido o volviste atrás? */
+        if (new URLSearchParams(window.location.search).get("pedido") !== id) return;
+        if (typeof r === "object") { actual.current = r; setDetalle(r); return; }
+        toast.error(r === "no-existe" ? "No encontramos ese pedido: quizá se borró." : "No se pudo abrir el pedido. Revisa tu conexión.");
+        cerrarEnUrl();
+      });
+    },
+  });
 
   useEffect(() => {
     fetch("/api/settings")

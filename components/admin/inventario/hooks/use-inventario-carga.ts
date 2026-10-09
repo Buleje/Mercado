@@ -1,5 +1,6 @@
 import { useEffect, useCallback } from "react";
 import { toast } from "sonner";
+import { useAbrirFichaAlLlegar } from "@/hooks/use-abrir-ficha-al-llegar";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { DbProduct } from "@/lib/jsondb";
 import { useInventarioEstado } from "@/components/admin/inventario/hooks/use-inventario-estado";
@@ -10,7 +11,7 @@ export function useInventarioCarga(previo: ReturnType<typeof useInventarioEstado
     setProducts, setMovements, setLoading, editModalProduct, setEditModalProduct, editForm,
     setEditForm, setSaving, setAddForm, editSpecs, setEditSpecs, editRich, setEditRich, setImgInfo,
     setImgError, dbQuery, setDbQuery, setDbResults, setDbSearching, csvImportRef, setCsvImporting,
-    setCsvResult,
+    setCsvResult, products, loading, fichaProducto, setEditModalProductSinUrl,
   } = previo;
 
   const handleDbSearch = async () => {
@@ -121,8 +122,8 @@ export function useInventarioCarga(previo: ReturnType<typeof useInventarioEstado
 
   // ── Product CRUD ───────────────────────────────────────────────────────────
 
-  const openEditModal = (p: DbProduct) => {
-    setEditModalProduct(p);
+  /** Llena la ventana de edición con el producto (sin tocar la URL). */
+  const llenarEdicion = (p: DbProduct) => {
     setImgInfo(null);
     setImgError(null);
     setEditForm({
@@ -139,7 +140,25 @@ export function useInventarioCarga(previo: ReturnType<typeof useInventarioEstado
       durationLabel: p.durationLabel ?? "", pricingUnit: p.pricingUnit ?? "fijo", notes: p.notes ?? "",
     });
   };
+  const openEditModal = (p: DbProduct) => {
+    setEditModalProduct(p);
+    llenarEdicion(p);
+  };
   const closeEditModal = () => { setEditModalProduct(null); setEditForm({}); setImgInfo(null); setImgError(null); setEditSpecs([]); setEditRich([]); };
+
+  /* Llegar con `?producto=<id>` abre su ficha; el «atrás» la cierra (lib/admin/enlaces-panel). */
+  useAbrirFichaAlLlegar<DbProduct>({
+    idEnUrl: fichaProducto.id,
+    idAbierto: editModalProduct ? String(editModalProduct.id) : null,
+    listo: !loading,
+    buscar: (id) => products.find((p) => String(p.id) === id),
+    abrir: (p) => { setEditModalProductSinUrl(p); llenarEdicion(p); },
+    cerrar: () => { setEditModalProductSinUrl(null); setEditForm({}); setImgInfo(null); setImgError(null); setEditSpecs([]); setEditRich([]); },
+    noEsta: () => {
+      toast.error("No encontramos ese producto en tu inventario.");
+      fichaProducto.cerrar();
+    },
+  });
 
   // Contenido rico: inicializar specs/bloques al abrir el modal (cualquier vía).
   useEffect(() => {

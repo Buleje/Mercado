@@ -1,8 +1,20 @@
 import { leerJson, sinDato } from "@/lib/errores/sin-dato";
 import { useState, useEffect, useCallback, useRef } from "react";
+import { toast } from "sonner";
+import { useFichaEnUrl } from "@/hooks/use-ficha-en-url";
+import { useAbrirFichaAlLlegar } from "@/hooks/use-abrir-ficha-al-llegar";
 import type { Rango } from "@/lib/admin/filtros-columna";
 import { useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
 import { COLS_CRM_CLIENTES, inferSegment, type Customer, type Segment, type FrequencyFilter } from "@/components/admin/crm/crm-compartido";
+
+/** Los últimos 9 dígitos: «+51 982 519 788», «51982519788» y «982519788» son el mismo celular. */
+const claveTelefono = (t: string) => t.replace(/\D/g, "").slice(-9);
+
+/** El teléfono (como lo guarda el CRM) del cliente que pide el enlace, si está en lo cargado. */
+function buscarTelefono(clientes: readonly Customer[], v: string): string | undefined {
+  const clave = claveTelefono(v);
+  return clientes.find((c) => c.phone === v || (clave.length >= 6 && claveTelefono(c.phone ?? "") === clave))?.phone;
+}
 
 /** Estado y carga del CRM: clientes con sus compras, filtros, edición de crédito y comparar. Parte de `useCrm`. */
 export function useCrmClientes() {
@@ -27,7 +39,7 @@ export function useCrmClientes() {
 
   const [filterTag, setFilterTag] = useState<string>("todos");
 
-  const [detail, setDetail] = useState<string | null>(null); // phone
+  const [detail, setDetalle] = useState<string | null>(null); // phone
   const [showNewClientModal, setShowNewClientModal] = useState(false);
   const [editingCreditLimit, setEditingCreditLimit] = useState<string | null>(null); // phone
   const [creditLimitInput, setCreditLimitInput] = useState("");
@@ -124,6 +136,32 @@ export function useCrmClientes() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  /* La ficha 360 en la URL (`?cliente=<teléfono>`, lib/admin/enlaces-panel): el teléfono es el
+     id del cliente en el panel (/api/customers no expone otro; ⌘K y la tabla usan el mismo). */
+  const ficha = useFichaEnUrl("cliente");
+  const { abrir: abrirEnUrl, cerrar: cerrarEnUrl } = ficha;
+  const setDetail = useCallback((telefono: string | null) => {
+    setDetalle(telefono);
+    if (telefono) abrirEnUrl(telefono);
+    else cerrarEnUrl();
+  }, [abrirEnUrl, cerrarEnUrl]);
+  useAbrirFichaAlLlegar<string>({
+    idEnUrl: ficha.id,
+    /* «+51 982…» en la URL y «982…» abierto son el mismo cliente. */
+    idAbierto: !detail ? null : ficha.id && buscarTelefono(customers, ficha.id) === detail ? ficha.id : detail,
+    listo: !loading && !error,
+    buscar: (v) => buscarTelefono(customers, v),
+    abrir: setDetalle,
+    cerrar: () => setDetalle(null),
+    noEsta: (v) => {
+      /* Fuera de los 500 que trae la lista: si parece teléfono, la 360 lo busca sola. */
+      if (/^\+?\d{6,15}$/.test(v.replace(/[\s-]/g, ""))) { setDetalle(v); return; }
+      toast.error("No encontramos ese cliente.");
+      cerrarEnUrl();
+    },
+  });
+
   return {
     customers, setCustomers, loading, setLoading, error, setError, search, setSearch, actividadFiltro,
     setActividadFiltro, creditoRango, setCreditoRango, filterSegment, setFilterSegment, page, setPage,

@@ -52,7 +52,10 @@ export default function ComprasModule({ initialTab }: { initialTab?: string } = 
   // La sub-vista vive en `?vista=`: link compartible, atrás del navegador y
   // destino del buscador global. `initialTab` gana cuando el módulo se abre
   // desde un tab alias (ver useVistaModulo).
-  const { vista: sub, irA: setSub } = useVistaModulo(MODULE_ID, TAB_IDS, TAB_IDS[0], initialTab);
+  // La orden y el proveedor abiertos (`?oc=`, `?proveedor=`) son de UNA vista: se borran al salir de ella.
+  const { vista: sub, irA: setSub } = useVistaModulo(MODULE_ID, TAB_IDS, TAB_IDS[0], initialTab, {
+    paramsDeVista: { "ordenes-compra": ["oc"], proveedores: ["proveedor"] },
+  });
 
   // Escuchar evento de navegación desde PuntoCompraView (botón "Ver en Órdenes")
   useEffect(() => {
