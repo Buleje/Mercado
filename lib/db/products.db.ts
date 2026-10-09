@@ -41,6 +41,22 @@ export type DbBundle = {
   items: DbBundleItem[];
 };
 
+/** Una fila de «Precios en bloque»: lo que el usuario vio (esperado) y lo que eligió. */
+export type FilaPrecioLote = {
+  productId: number;
+  precioEsperado: number;
+  costoEsperado: number | null;
+  precioNuevo: number;
+  /** undefined = el costo no se toca. */
+  costoNuevo?: number | null;
+};
+export type PrecioYCosto = { precio: number; costo: number | null };
+export type ResultadoPreciosLote = {
+  aplicadas: Array<{ productId: number; antes: PrecioYCosto; despues: PrecioYCosto }>;
+  rechazadas: Array<{ productId: number; motivo: "cambio" | "no-existe"; precioActual: number | null; costoActual: number | null }>;
+  reciboId: string | null;
+};
+
 // ── Mappers ───────────────────────────────────────────────────────────────────
 
 // Audit 2026-06-10 P2: select acotado a los campos que mapProduct consume.
@@ -439,6 +455,118 @@ export const ProductsDB = {
       },
     });
     revalidateTag(`tenant:${tenantId}:products`, "max");
+  },
+
+  /**
+   * Cambia precios (y costos) de muchos productos de una vez, con la vista
+   * previa como contrato — Comandos IA › Precios en bloque (aplicar y deshacer).
+   *
+   * En UNA transacción:
+   *  1. bloquea (`FOR UPDATE`) los productos del tenant por id: una venta o una
+   *     edición que llegue a la vez espera su turno;
+   *  2. rechaza la fila cuyo precio o costo de HOY no es el que vio el usuario
+   *     (al céntimo). Sin `parcial`, una sola rechazada = no se escribe nada y
+   *     la ruta responde 409 «cambió desde la vista previa»; con `parcial`
+   *     (deshacer) se aplican las que siguen igual y se informan las demás;
+   *  3. escribe precio/costo con UN `UPDATE … FROM unnest` (500 filas = 1
+   *     viaje, no 500), el `PriceHistory` de cada precio que cambió (la misma
+   *     regla que PATCH /api/products/bulk-price) y
+   *  4. el recibo en `ActivityLog` con `antes`/`despues`: sin recibo no hay
+   *     deshacer, así que nace en la misma transacción que el cambio.
+   *
+   * Después invalida `tenant:<id>:products` como bulk-price. Las cachés del
+   * tablero (dashboard/admin) las invalida la ruta.
+   *
+   * tenantId SIEMPRE 1er parámetro; un id de otro tenant cae en `no-existe`.
+   */
+  async aplicarPreciosEnLote(
+    tenantId: string,
+    filas: FilaPrecioLote[],
+    opts: {
+      parcial?: boolean;
+      recibo: { action: string; entityId?: string | null; user: string; detalle: Record<string, unknown> };
+    },
+  ): Promise<ResultadoPreciosLote> {
+    if (filas.length === 0) return { aplicadas: [], rechazadas: [], reciboId: null };
+    const ids = filas.map((f) => f.productId);
+    if (new Set(ids).size !== ids.length) throw new Error("aplicarPreciosEnLote: productId repetido");
+    const cent = (v: number) => Math.round(Math.round(v * 1e6) / 1e4);
+    const igual = (a: number | null, b: number | null) => (a == null || b == null ? a == null && b == null : cent(a) === cent(b));
+    const num = (v: unknown): number | null => (v == null ? null : Number(String(v)));
+
+    const resultado = await prisma.$transaction(
+      async (tx) => {
+        const hoy = await tx.$queryRaw<Array<{ id: number; price: unknown; costPrice: unknown }>>`
+          SELECT "id", "price", "costPrice" FROM "Product"
+          WHERE "tenantId" = ${tenantId} AND "id" = ANY(${ids}::int[]) AND "deletedAt" IS NULL
+          ORDER BY "id"
+          FOR UPDATE
+        `;
+        const porId = new Map(hoy.map((r) => [r.id, { precio: num(r.price) ?? 0, costo: num(r.costPrice) }]));
+        const aplicadas: ResultadoPreciosLote["aplicadas"] = [];
+        const rechazadas: ResultadoPreciosLote["rechazadas"] = [];
+        for (const f of filas) {
+          const actual = porId.get(f.productId);
+          if (!actual) {
+            rechazadas.push({ productId: f.productId, motivo: "no-existe", precioActual: null, costoActual: null });
+            continue;
+          }
+          if (!igual(actual.precio, f.precioEsperado) || !igual(actual.costo, f.costoEsperado)) {
+            rechazadas.push({ productId: f.productId, motivo: "cambio", precioActual: actual.precio, costoActual: actual.costo });
+            continue;
+          }
+          const despues = {
+            precio: cent(f.precioNuevo) / 100,
+            costo: f.costoNuevo === undefined ? actual.costo : f.costoNuevo === null ? null : cent(f.costoNuevo) / 100,
+          };
+          if (igual(despues.precio, actual.precio) && igual(despues.costo, actual.costo)) continue;
+          aplicadas.push({ productId: f.productId, antes: actual, despues });
+        }
+        if ((rechazadas.length > 0 && !opts.parcial) || aplicadas.length === 0) {
+          return { aplicadas: opts.parcial ? aplicadas : [], rechazadas, reciboId: null };
+        }
+
+        await tx.$executeRaw`
+          UPDATE "Product" AS p
+          SET "price" = v.precio, "costPrice" = v.costo
+          FROM unnest(
+            ${aplicadas.map((a) => a.productId)}::int[],
+            ${aplicadas.map((a) => a.despues.precio)}::numeric[],
+            ${aplicadas.map((a) => a.despues.costo)}::numeric[]
+          ) AS v(id, precio, costo)
+          WHERE p."id" = v.id AND p."tenantId" = ${tenantId}
+        `;
+        const historial = aplicadas
+          .filter((a) => !igual(a.antes.precio, a.despues.precio))
+          .map((a) => ({ tenantId, productId: a.productId, oldPrice: a.antes.precio, newPrice: a.despues.precio }));
+        if (historial.length > 0) await tx.priceHistory.createMany({ data: historial });
+
+        const recibo = await tx.activityLog.create({
+          data: {
+            tenantId,
+            action: opts.recibo.action,
+            entity: "comando-ia",
+            entityId: opts.recibo.entityId ?? null,
+            user: opts.recibo.user,
+            detail: JSON.stringify({
+              v: 1,
+              ...opts.recibo.detalle,
+              filas: aplicadas.length,
+              antes: aplicadas.map((a) => ({ productId: a.productId, ...a.antes })),
+              despues: aplicadas.map((a) => ({ productId: a.productId, ...a.despues })),
+            }),
+          },
+          select: { id: true },
+        });
+        return { aplicadas, rechazadas, reciboId: String(recibo.id) };
+      },
+      { maxWait: 10_000, timeout: 20_000 },
+    );
+
+    // `expire: 0`: con "max" el plan pedido justo después leía el precio viejo
+    // (24,9 a +0 ms, 25,15 a +1500 ms) y aplicarlo daba 409 en todas las filas.
+    if (resultado.reciboId) revalidateTag(`tenant:${tenantId}:products`, { expire: 0 });
+    return resultado;
   },
 };
 
