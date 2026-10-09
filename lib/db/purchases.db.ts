@@ -169,6 +169,20 @@ export const PurchasesDB = {
     const where: Record<string, unknown> = { tenantId };
     return (await prisma.purchaseOrder.findMany({ where, include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapPurchaseOrder);
   },
+  /**
+   * La última compra NO cancelada con ese N.º de comprobante, sin ítems: para avisar
+   * antes de duplicarla (Comandos IA › Lee un papel). Índice (tenantId, invoiceNumber).
+   */
+  async findByInvoiceNumber(tenantId: string, numero: string): Promise<Pick<DbPurchaseOrder, "id" | "total" | "createdAt" | "supplierName"> | null> {
+    const n = numero.trim();
+    if (!n) return null;
+    const po = await prisma.purchaseOrder.findFirst({
+      where: { tenantId, invoiceNumber: { equals: n, mode: "insensitive" }, status: { not: "cancelado" } },
+      select: { id: true, total: true, createdAt: true, supplierName: true },
+      orderBy: { createdAt: "desc" },
+    });
+    return po ? { id: po.id, total: toNumOrZero(po.total), createdAt: toISO(po.createdAt), supplierName: po.supplierName } : null;
+  },
   async getById(tenantId: string, id: string): Promise<DbPurchaseOrder | null> {
     const row = await prisma.purchaseOrder.findFirst({ where: { id, tenantId }, include: { items: true } });
     return row ? mapPurchaseOrder(row) : null;

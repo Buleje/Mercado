@@ -41,6 +41,12 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
+    // `?numero=` (Comandos IA › Lee un papel): «¿ya está cargada?», una fila sin ítems ni canceladas.
+    const numero = req.nextUrl.searchParams.get("numero")?.trim().slice(0, 60);
+    if (numero) {
+      const compra = await withDbRetry(() => PurchasesDB.findByInvoiceNumber(auth.tenantId, numero));
+      return NextResponse.json({ compra });
+    }
     const data = await withDbRetry(() => PurchasesDB.getAll(auth.tenantId));
     return NextResponse.json(data);
   } catch (e) {
