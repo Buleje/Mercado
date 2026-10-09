@@ -1,319 +1,286 @@
 "use client";
 
 /**
- * ComprasCharts — charts base del módulo Compras.
+ * ComprasCharts — los gráficos base de la pestaña Compras del Inicio.
  *
- * Rediseñado con DashboardSection + primitivas Buleje DS + DraggableSections.
- *
- * Secciones:
- *  1. Compras diarias (rango activo)
- *  2. Tendencia mensual (rango activo)
- *  3. Top proveedores del periodo (monto + órdenes)
- *  4. Estado de cuentas por pagar (Donut)
- *  5. Cuentas por vencer (Composed con umbrales)
- *  6. Top proveedores histórico (MicroList)
+ * Rehecho 2026-10-09 (Brandon: «ocultar gráficos que no tienen ninguna
+ * información… revisa los gráficos y KPIs y mejóralos»). Cada bloque responde
+ * UNA pregunta del dueño y se oculta solo si no tiene con qué contestarla
+ * (`lib/admin/inicio/hay-datos`):
+ *  1. ¿Cuándo compré? — por día (o semana) en TODO el calendario del rango.
+ *  2. ¿Cuánto debo y qué vence primero? — tramos sin doble conteo + próximas cuentas.
+ *  3. ¿A quién le compro? — 1-2 proveedores = lista; 3+ = barras horizontales.
+ *  4. ¿Compro más o menos que antes? — 12 meses con el mismo mes del año pasado
+ *     (antes eran dos gráficos: «Tendencia mensual» y «Año actual vs año pasado»).
+ * Compras siempre en morado (`COLOR_CONCEPTO.compras`), un solo eje en soles.
  */
 
-import { useMemo } from "react";
-import type { ComprasData } from "./ComprasDashboard";
-import {
-  BulejeComposedChart,
-  BulejeDonutChart,
-} from "@/components/ui-system/charts";
+import type { CSSProperties } from "react";
+import { BulejeComposedChart } from "@/components/ui-system/charts";
 import { DashboardSection, MicroList } from "./_shared";
 import { DraggableSections, type DraggableItem } from "./DraggableSections";
-import { formatNumber } from "@/lib/format";
+import { hayDatosEnSerie, hayTendencia, modoRanking } from "@/lib/admin/inicio/hay-datos";
+import { cantidad, COLOR_CONCEPTO, fechaConDia, numeroEje, soles } from "@/lib/admin/inicio/formato-tablero";
+import { cuandoVence, textoParticipacion, type ComprasData, type CuentaPorPagar } from "./compras-presentacion";
 
-function fmtS(v: number) {
-  return `S/ ${formatNumber(v, { max: 0 })}`;
+/** El gris del «año pasado» no rota con la posición del bloque (`--section-*` lo pisa DraggableSections). */
+const VARS_ANTERIOR = { "--section-tertiary": COLOR_CONCEPTO.anterior } as CSSProperties;
+
+const TRAMOS = [
+  { key: "vencido", label: "Vencida", color: "var(--data-error-500)" },
+  { key: "urgente", label: "Vence en 7 días", color: "var(--data-warning-500)" },
+  { key: "pendiente", label: "Más adelante", color: "var(--data-3)" },
+] as const;
+const COLOR_TRAMO: Record<CuentaPorPagar["status"], string> = {
+  vencido: TRAMOS[0].color,
+  urgente: TRAMOS[1].color,
+  pendiente: TRAMOS[2].color,
+};
+
+/** Eje Y en «16 mil» sin «S/»: el eje mide 60 px y «S/ 16 mil» se partía en dos líneas. La «S/» va en el tooltip y las cifras. */
+const ejeSoles = (v: number) => numeroEje(v).replace(/ /g, "\u00a0");
+const corto = (s: string, n = 28) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
+const veces = (n: number, una: string, varias: string) => `${cantidad(n)} ${n === 1 ? una : varias}`;
+
+/** Una barra partida en tramos de deuda + su leyenda con montos (se lee a 1 m, entra a 400 px). */
+function BarraTramos({ tramos, total }: { tramos: ComprasData["tramosDeuda"]; total: number }) {
+  const conMonto = TRAMOS.filter((t) => tramos[t.key].monto > 0);
+  return (
+    <div>
+      <div
+        className="flex h-4 w-full overflow-hidden rounded-full bg-[var(--surface-sunken)]"
+        role="img"
+        aria-label={conMonto.map((t) => `${t.label}: ${soles(tramos[t.key].monto)}`).join(" · ")}
+      >
+        {conMonto.map((t) => (
+          <div key={t.key} style={{ width: `${(tramos[t.key].monto / total) * 100}%`, backgroundColor: t.color }} />
+        ))}
+      </div>
+      <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-sm">
+        {conMonto.map((t) => (
+          <li key={t.key} className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: t.color }} aria-hidden />
+            <span className="font-medium text-[var(--text-secondary)]">{t.label}</span>
+            <span className="font-extrabold tabular-nums text-[var(--text-primary)]">{soles(tramos[t.key].monto)}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
 
-export default function ComprasCharts({ data }: { data: ComprasData }) {
-  const diariasKpis = useMemo(() => {
-    const total = data.comprasDiarias.reduce((s, d) => s + d.total, 0);
-    const dias = data.comprasDiarias.length || 1;
-    const prom = total / dias;
-    const pico = data.comprasDiarias.reduce(
-      (best, d) => (d.total > best.total ? d : best),
-      { dia: "—", total: 0 },
-    );
-    return { total, prom, pico };
-  }, [data.comprasDiarias]);
+/** Ranking de 3+ proveedores: barras horizontales con el nombre entero (las verticales lo cortaban a 13 letras). */
+function BarrasProveedores({ filas, total }: { filas: ComprasData["comprasPorProveedor"]; total: number }) {
+  const max = Math.max(...filas.map((f) => f.total), 1);
+  return (
+    <ol className="space-y-3" aria-label="Compras por proveedor">
+      {filas.map((f) => (
+        <li key={f.nombre}>
+          <div className="mb-1 flex items-baseline justify-between gap-3 text-sm">
+            <span className="min-w-0 truncate font-semibold text-[var(--text-primary)]">{f.nombre}</span>
+            <span className="shrink-0 font-extrabold tabular-nums text-[var(--text-primary)]">{soles(f.total)}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-2.5 flex-1 rounded-full bg-[var(--surface-sunken)]">
+              <div className="h-full rounded-full" style={{ width: `${(f.total / max) * 100}%`, backgroundColor: COLOR_CONCEPTO.compras }} />
+            </div>
+            <span className="w-28 shrink-0 text-right text-xs font-medium tabular-nums text-[var(--text-tertiary)]">
+              {veces(f.ordenes, "compra", "compras")} · {textoParticipacion(f.total, total)}
+            </span>
+          </div>
+        </li>
+      ))}
+    </ol>
+  );
+}
 
-  const mensualKpis = useMemo(() => {
-    const total = data.comprasMensuales.reduce((s, m) => s + m.total, 0);
-    const prom = total / Math.max(1, data.comprasMensuales.length);
-    const best = [...data.comprasMensuales].sort((a, b) => b.total - a.total)[0];
-    const worst = [...data.comprasMensuales].sort((a, b) => a.total - b.total)[0];
-    return { total, prom, best, worst };
-  }, [data.comprasMensuales]);
+export default function ComprasCharts({ data, periodo }: { data: ComprasData; periodo: string }) {
+  const { filas, granularidad } = data.serie;
+  const porSemana = granularidad === "semana";
+  const conCompra = filas.filter((f) => f.total !== 0);
+  const pico = conCompra.reduce<(typeof filas)[number] | null>((m, f) => (!m || f.total > m.total ? f : m), null);
+  const sumaSerie = conCompra.reduce((s, f) => s + f.total, 0);
 
-  const topProvRows = data.topProveedores.slice(0, 10).map((p) => ({
-    name: p.nombre.length > 22 ? p.nombre.slice(0, 21) + "…" : p.nombre,
-    value: p.total,
-    label: `${fmtS(p.total)} · ${p.ordenes} OC`,
-  }));
+  const provs = data.comprasPorProveedor;
+  const modoProv = modoRanking(provs, "total");
+  const lider = provs[0];
+  const deuda = data.deudaPendiente;
+  const tramos = data.tramosDeuda;
 
-  const cuentasChart = data.cuentasPorVencer.slice(0, 10).map((c) => ({
-    proveedor: c.nombre.length > 14 ? c.nombre.slice(0, 13) + "…" : c.nombre,
-    dias: c.diasRestantes,
-    monto: c.monto,
-    umbralVencido: 0,
-    umbralUrgente: 7,
-  }));
-
-  const cuentasKpis = useMemo(() => {
-    const vencidos = data.cuentasPorVencer.filter((c) => c.status === "vencido").length;
-    const urgentes = data.cuentasPorVencer.filter((c) => c.status === "urgente").length;
-    const totalMonto = data.cuentasPorVencer.reduce((s, c) => s + c.monto, 0);
-    const worst = data.cuentasPorVencer[0];
-    return { vencidos, urgentes, totalMonto, worst };
-  }, [data.cuentasPorVencer]);
+  const meses = data.comprasMensuales;
+  const mesesConCompra = meses.filter((m) => m.total !== 0);
+  const mesAlto = mesesConCompra.reduce<(typeof meses)[number] | null>((m, f) => (!m || f.total > m.total ? f : m), null);
+  const hayAnioPasado = hayDatosEnSerie(meses, ["anterior"]);
+  const esteMes = meses[meses.length - 1];
 
   const sections: DraggableItem[] = [
     {
-      id: "compras-diarias",
-      span: "full",
+      id: "compras-por-dia",
+      title: porSemana ? "Compras por semana" : "Compras por día",
       render: () => (
         <DashboardSection
-          hideHeader
-          kicker="Compras · rango activo"
-          title="Monto de compras por día"
+          chartId="compras.por-dia"
+          hasData={hayTendencia(filas, ["total"])}
+          kicker={`Compras · ${periodo}`}
+          title={porSemana ? "Compras por semana" : "Compras por día"}
+          description={`Cuánto le compraste a tus proveedores ${porSemana ? "cada semana" : "cada día"} del período. Los días sin barra no hubo compras.`}
           kpis={[
-            { label: "Total periodo", value: fmtS(diariasKpis.total), tone: "primary" },
-            { label: "Promedio/día", value: fmtS(diariasKpis.prom), tone: "neutral" },
-            { label: "Día pico", value: diariasKpis.pico.dia, tone: "success" },
-            { label: "Monto pico", value: fmtS(diariasKpis.pico.total), tone: "primary" },
+            // Rótulos cortos: a 400 px la tarjeta mide ~150 px y cortaba «DÍAS CON COMP…».
+            {
+              label: porSemana ? "Semanas" : "Días",
+              value: `${cantidad(conCompra.length)} de ${cantidad(filas.length)}`,
+              sub: "con compras",
+            },
+            {
+              label: porSemana ? "Mejor semana" : "Mejor día",
+              value: pico ? soles(pico.total) : null,
+              sub: pico ? (porSemana ? `semana del ${pico.etiqueta}` : fechaConDia(pico.clave)) : undefined,
+            },
+            {
+              label: "Promedio",
+              value: conCompra.length ? soles(sumaSerie / conCompra.length) : null,
+              sub: porSemana ? "por semana con compras" : "por día con compras",
+              hint: `Lo comprado dividido entre ${porSemana ? "las semanas" : "los días"} en que sí compraste.`,
+            },
           ]}
         >
           <BulejeComposedChart
-            data={data.comprasDiarias}
-            xKey="dia"
-            bars={[{ key: "total", label: "Compras S/", color: "primary", yAxis: "left" }]}
-            leftAxisFormat={(v) => `S/${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`}
-            tooltipFormat={(v) => fmtS(Number(v))}
-            height={280}
+            data={filas}
+            xKey="etiqueta"
+            bars={[{ key: "total", label: "Compras", color: "purple", yAxis: "left" }]}
+            leftAxisFormat={ejeSoles}
+            tooltipFormat={(v) => soles(v)}
+            tooltipExtras={porSemana ? (f) => `Semana del ${fechaConDia(String(f.clave))}` : undefined}
             showLegend={false}
+            showValues={filas.length <= 16}
+            valueFormat={(v) => numeroEje(v)}
+            maxXTicks={12}
             minDataPoints={1}
+            height={260}
           />
         </DashboardSection>
       ),
     },
     {
-      id: "tendencia-mensual",
-      span: "full",
-      render: () => (
-        <DashboardSection
-          hideHeader
-          kicker="Compras · rango activo"
-          title="Tendencia mensual"
-          kpis={[
-            { label: "Total 6m", value: fmtS(mensualKpis.total), tone: "primary" },
-            { label: "Promedio mes", value: fmtS(mensualKpis.prom), tone: "neutral" },
-            { label: "Mejor mes", value: mensualKpis.best?.mes ?? "—", tone: "success" },
-            { label: "Mes mínimo", value: mensualKpis.worst?.mes ?? "—", tone: "warning" },
-          ]}
-        >
-          <BulejeComposedChart
-            data={data.comprasMensuales}
-            xKey="mes"
-            bars={[{ key: "total", label: "Compras S/", color: "primary", yAxis: "left" }]}
-            leftAxisFormat={(v) => `S/${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`}
-            tooltipFormat={(v) => fmtS(Number(v))}
-            height={280}
-            showLegend={false}
-            minDataPoints={2}
-          />
-        </DashboardSection>
-      ),
-    },
-    {
-      id: "top-proveedores-periodo",
-      render: () => (
-        <DashboardSection
-          chartId="compras.top-proveedores-periodo"
-          hasData={true}
-          kicker="Proveedores · periodo"
-          title="Top 10 proveedores por monto y órdenes"
-          kpis={[
-            {
-              label: "Líder",
-              value: data.comprasPorProveedor[0]?.nombre ?? "—",
-              tone: "success",
-            },
-            {
-              label: "Monto líder",
-              value: fmtS(data.comprasPorProveedor[0]?.total ?? 0),
-              tone: "primary",
-            },
-            {
-              label: "OC líder",
-              value: String(data.comprasPorProveedor[0]?.ordenes ?? 0),
-              tone: "neutral",
-            },
-            {
-              label: "Proveedores activos",
-              value: String(data.comprasPorProveedor.length),
-              tone: "neutral",
-            },
-          ]}
-        >
-          <BulejeComposedChart
-            data={data.comprasPorProveedor.map((p) => ({
-              proveedor: p.nombre.length > 14 ? p.nombre.slice(0, 13) + "…" : p.nombre,
-              total: Math.round(p.total),
-              ordenes: p.ordenes,
-            }))}
-            xKey="proveedor"
-            bars={[{ key: "total", label: "Monto S/", color: "primary", yAxis: "left" }]}
-            lines={[{ key: "ordenes", label: "Órdenes", color: "accent", yAxis: "right" }]}
-            leftAxisFormat={(v) => `S/${(v / 1000).toFixed(0)}k`}
-            rightAxisFormat={(v) => v.toString()}
-            tooltipFormat={(v, name) =>
-              name?.toLowerCase().includes("órdenes")
-                ? Number(v).toString()
-                : fmtS(Number(v))
-            }
-            height={300}
-            minDataPoints={1}
-          />
-        </DashboardSection>
-      ),
-    },
-    {
-      id: "estado-cuentas",
+      id: "compras-deudas",
+      title: "Lo que debes a proveedores",
       render: () => (
         <DashboardSection
           chartId="compras.estado-cuentas"
-          hasData={true}
-          kicker="Cuentas por pagar · estado"
-          title="Distribución por estado de cuenta"
+          hasData={deuda > 0 && data.cuentasPorVencer.length > 0}
+          kicker="Cuentas por pagar · hoy"
+          title="Lo que debes a proveedores"
+          description="Cada cuenta cae en un solo tramo: vencida, vence en los próximos 7 días o más adelante. Abajo, las que vencen primero."
           kpis={[
-            {
-              label: "Deuda total",
-              value: fmtS(data.deudaPendiente),
-              tone: data.deudaPendiente > 0 ? "warning" : "success",
-            },
+            { label: "Le debes", value: soles(deuda), sub: veces(tramos.vencido.n + tramos.urgente.n + tramos.pendiente.n, "cuenta", "cuentas") },
             {
               label: "Vencidas",
-              value: String(data.cuentasVencidas),
-              tone: data.cuentasVencidas > 0 ? "warning" : "success",
+              value: tramos.vencido.n > 0 ? soles(tramos.vencido.monto) : "Ninguna",
+              sub: tramos.vencido.n > 0 ? veces(tramos.vencido.n, "cuenta", "cuentas") : undefined,
+              tone: tramos.vencido.n > 0 ? "warning" : "neutral",
             },
             {
-              label: "Estados activos",
-              value: String(data.estadoCuentas.length),
-              tone: "neutral",
-            },
-            {
-              label: "Monto pendiente",
-              value: fmtS(data.estadoCuentas.reduce((s, e) => s + e.monto, 0)),
-              tone: "primary",
+              label: "Por vencer",
+              value: tramos.urgente.n > 0 ? soles(tramos.urgente.monto) : "Ninguna",
+              sub: tramos.urgente.n > 0 ? `${veces(tramos.urgente.n, "cuenta", "cuentas")} · 7 días` : "en los próximos 7 días",
             },
           ]}
         >
-          <div className="flex items-center justify-center py-2">
-            <div className="w-full max-w-md">
-              <BulejeDonutChart
-                data={data.estadoCuentas.map((e) => ({ name: e.estado, value: e.monto }))}
-                height={260}
-                format={(v) => fmtS(Number(v))}
-                label={
-                  <div className="text-center">
-                    <p className="text-[length:var(--ts-3xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                      Total
-                    </p>
-                    <p className="text-lg font-extrabold text-[var(--text-primary)]">
-                      {fmtS(data.deudaPendiente)}
-                    </p>
-                    <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)]">pendiente</p>
-                  </div>
-                }
-              />
-            </div>
-          </div>
-        </DashboardSection>
-      ),
-    },
-    {
-      id: "cuentas-por-vencer",
-      render: () => (
-        <DashboardSection
-          chartId="compras.cuentas-por-vencer"
-          hasData={true}
-          kicker="Cuentas · próximos vencimientos"
-          title="Días restantes para pagar"
-          kpis={[
-            {
-              label: "Vencidas",
-              value: String(cuentasKpis.vencidos),
-              tone: cuentasKpis.vencidos > 0 ? "warning" : "success",
-            },
-            {
-              label: "Urgentes (<7d)",
-              value: String(cuentasKpis.urgentes),
-              tone: cuentasKpis.urgentes > 0 ? "primary" : "success",
-            },
-            { label: "Total monto", value: fmtS(cuentasKpis.totalMonto), tone: "primary" },
-            {
-              label: "Más urgente",
-              value: cuentasKpis.worst?.nombre?.slice(0, 18) ?? "—",
-              tone: "warning",
-            },
-          ]}
-        >
-          <BulejeComposedChart
-            data={cuentasChart}
-            xKey="proveedor"
-            bars={[{ key: "dias", label: "Días restantes", color: "primary", yAxis: "left" }]}
-            lines={[
-              { key: "monto", label: "Monto S/", color: "accent", yAxis: "right" },
-            ]}
-            leftAxisFormat={(v) => `${v}d`}
-            rightAxisFormat={(v) => `S/${(v / 1000).toFixed(0)}k`}
-            tooltipFormat={(v, name) =>
-              name?.toLowerCase().includes("monto")
-                ? fmtS(Number(v))
-                : `${v} días`
-            }
-            height={280}
-            minDataPoints={1}
+          <BarraTramos tramos={tramos} total={deuda} />
+          <p className="mb-2 mt-5 text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+            Vencen primero
+          </p>
+          <MicroList
+            showRank={false}
+            items={data.cuentasPorVencer.slice(0, 5).map((c) => ({
+              name: c.nombre,
+              value: c.monto,
+              label: soles(c.monto),
+              sublabel: cuandoVence(c),
+              color: COLOR_TRAMO[c.status],
+            }))}
           />
         </DashboardSection>
       ),
     },
     {
-      id: "top-proveedores-historico",
+      id: "compras-proveedores",
+      title: "A quién le compras",
       render: () => (
         <DashboardSection
-          chartId="compras.top-proveedores-historico"
-          hasData={true}
-          defaultVisible={false}
-          kicker="Proveedores · histórico total"
-          title="Top 10 proveedores acumulados"
+          chartId="compras.top-proveedores-periodo"
+          hasData={modoProv !== "oculto"}
+          kicker={`Proveedores · ${periodo}`}
+          title="A quién le compras"
+          description="Tus proveedores ordenados por lo que les compraste en el período. Si uno solo se lleva casi todo, un atraso suyo te deja sin mercadería."
+          kpis={
+            lider
+              ? [
+                  { label: "Principal", value: corto(lider.nombre), sub: veces(lider.ordenes, "compra", "compras") },
+                  { label: "Se lleva", value: textoParticipacion(lider.total, data.totalCompras), sub: "de lo que compraste" },
+                ]
+              : undefined
+          }
+        >
+          {modoProv === "grafico" ? (
+            <BarrasProveedores filas={provs} total={data.totalCompras} />
+          ) : (
+            <MicroList
+              showRank={false}
+              barColor={COLOR_CONCEPTO.compras}
+              items={provs.map((p) => ({
+                name: p.nombre,
+                value: p.total,
+                label: soles(p.total),
+                sublabel: `${veces(p.ordenes, "compra", "compras")} · ${textoParticipacion(p.total, data.totalCompras)} del total`,
+              }))}
+            />
+          )}
+        </DashboardSection>
+      ),
+    },
+    {
+      id: "compras-por-mes",
+      title: "Compras por mes",
+      render: () => (
+        <DashboardSection
+          chartId="compras.por-mes"
+          hasData={hayTendencia(meses, ["total"])}
+          kicker="Últimos 12 meses"
+          title="Compras por mes"
+          description={
+            hayAnioPasado
+              ? "Las barras son este año; la línea gris, el mismo mes del año pasado."
+              : "Desde el primer mes con compras. Cuando tengas un año de historia, aparece la comparación con el año pasado."
+          }
           kpis={[
-            { label: "Proveedores", value: String(data.totalProveedores), tone: "neutral" },
+            { label: "Este mes", value: esteMes && esteMes.total !== 0 ? soles(esteMes.total) : null, sub: "lo que va del mes", sinDatoHint: "Todavía no compraste este mes." },
             {
-              label: "Líder histórico",
-              value: data.topProveedores[0]?.nombre.slice(0, 20) ?? "—",
-              tone: "success",
+              label: "Promedio",
+              value: mesesConCompra.length ? soles(mesesConCompra.reduce((s, m) => s + m.total, 0) / mesesConCompra.length) : null,
+              sub: `por mes · ${veces(mesesConCompra.length, "mes con compras", "meses con compras")}`,
             },
-            {
-              label: "Compras líder",
-              value: fmtS(data.topProveedores[0]?.total ?? 0),
-              tone: "primary",
-            },
-            {
-              label: "OC líder",
-              value: String(data.topProveedores[0]?.ordenes ?? 0),
-              tone: "neutral",
-            },
+            { label: "Más alto", value: mesAlto ? mesAlto.nombre : null, sub: mesAlto ? soles(mesAlto.total) : undefined },
           ]}
         >
-          <MicroList items={topProvRows} barColor="var(--brand-primary)" showRank />
+          <div style={VARS_ANTERIOR}>
+            <BulejeComposedChart
+              data={meses}
+              xKey="etiqueta"
+              bars={[{ key: "total", label: "Este año", color: "purple", yAxis: "left" }]}
+              lines={hayAnioPasado ? [{ key: "anterior", label: "Mismo mes, año pasado", color: "tertiary", yAxis: "left" }] : []}
+              leftAxisFormat={ejeSoles}
+              tooltipFormat={(v) => soles(v)}
+              showLegend={hayAnioPasado}
+              valueFormat={(v) => numeroEje(v)}
+              minDataPoints={1}
+              height={260}
+            />
+          </div>
         </DashboardSection>
       ),
     },
   ];
 
-  return <DraggableSections items={sections} storageKey="compras-base-order" layout="column" gap={4} />;
+  return <DraggableSections items={sections} storageKey="compras-base-v2" layout="column" gap={1.5} />;
 }
