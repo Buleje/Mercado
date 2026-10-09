@@ -318,11 +318,15 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
         const mostPaid = pagosEstaSemana.pagaron > pagosEstaSemana.total / 2;
         const tone = allPaid ? "success" : mostPaid ? "success" : "neutral";
         const intensity = allPaid ? "18%" : mostPaid ? "10%" : "0%";
+        /* «Abonó», no «al día»: decía «¡Todos al día!» con un cliente que pagó S/ 5 de S/ 150 y
+           llevaba 69 días vencido (08-10). Esto cuenta quién abonó, no quién terminó de pagar. */
         const text = allPaid
-          ? `Todos al dia! (${pagosEstaSemana.total} clientes)`
+          ? pagosEstaSemana.total === 1
+            ? "Tu único cliente con deuda abonó esta semana"
+            : `Los ${pagosEstaSemana.total} clientes con deuda abonaron esta semana`
           : mostPaid
-            ? `Mas de la mitad ya pago! ${pagosEstaSemana.pagaron} de ${pagosEstaSemana.total} clientes esta semana`
-            : `${pagosEstaSemana.pagaron} de ${pagosEstaSemana.total} clientes ya pagaron esta semana`;
+            ? `Más de la mitad ya abonó: ${pagosEstaSemana.pagaron} de ${pagosEstaSemana.total} clientes esta semana`
+            : `${pagosEstaSemana.pagaron} de ${pagosEstaSemana.total} clientes abonaron esta semana`;
         const bgVar = tone === "success" ? `color-mix(in oklch, var(--data-success) ${intensity}, transparent)` : "var(--surface-sunken)";
         const textColor = tone === "success" ? "var(--data-success)" : "var(--text-secondary)";
         return (
