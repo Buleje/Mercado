@@ -12,8 +12,8 @@
  *    que nunca entró a la caja.
  *
  * El descuento pasa por el MISMO tope de rol que cualquier descuento global de
- * `POST /api/sales`: cajero hasta el 15 % del total; admin y dueño, hasta el
- * total. El trueque lo hereda: la cuenta es UNA, en `lib/pos/descuento-cajero.ts`,
+ * `POST /api/sales`: cajero hasta el tope de Ajustes (15 % del total de
+ * fábrica); admin y dueño, hasta el total. El trueque lo hereda: la cuenta es UNA, en `lib/pos/descuento-cajero.ts`,
  * y la ruta la importa (un guardián en `__tests__/pos-trueque.test.ts` lo vigila).
  *
  * Sin `"use client"`: lo usan el modal del POS y la ruta de ventas.
@@ -22,6 +22,7 @@
 import {
   excedeTopeCajero,
   rolDescuentaSinTope,
+  TOPE_DESCUENTO_CAJERO_PCT,
   topeDescuentoCajero,
 } from "@/lib/pos/descuento-cajero";
 
@@ -55,11 +56,17 @@ export interface CalculoTrueque {
   sobra: number;
   /** Descuento máximo que el servidor le acepta a un cajero en esta venta. */
   topeCajero: number;
+  /** El % de Ajustes con el que se calculó `topeCajero` (15 de fábrica). */
+  topeCajeroPct: number;
   /** El descuento supera el tope de cajero (sólo frena si el rol no es admin ni dueño). */
   pasaTopeCajero: boolean;
 }
 
-export function calcularTrueque(totalVenta: number, valorRecibido: number): CalculoTrueque {
+export function calcularTrueque(
+  totalVenta: number,
+  valorRecibido: number,
+  topePct: number = TOPE_DESCUENTO_CAJERO_PCT,
+): CalculoTrueque {
   const total = centimos(positivo(totalVenta));
   const valor = centimos(positivo(valorRecibido));
   const descuento = Math.min(valor, total);
@@ -70,8 +77,9 @@ export function calcularTrueque(totalVenta: number, valorRecibido: number): Calc
     aCobrar: centimos(total - descuento),
     sobra: centimos(valor - descuento),
     // La misma cuenta en céntimos que usa la ruta: el POS frena donde ella.
-    topeCajero: topeDescuentoCajero(total),
-    pasaTopeCajero: excedeTopeCajero(descuento, total),
+    topeCajero: topeDescuentoCajero(total, topePct),
+    topeCajeroPct: topePct,
+    pasaTopeCajero: excedeTopeCajero(descuento, total, topePct),
   };
 }
 

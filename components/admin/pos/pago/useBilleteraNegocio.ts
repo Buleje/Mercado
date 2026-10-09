@@ -30,7 +30,8 @@ export function tieneQR(b: BilleteraNegocio | null | undefined): b is BilleteraN
 }
 
 const URL_BILLETERAS = "/api/settings?_t=pos-billetera";
-const pedirBilleteras = () => cachedJson<Record<string, unknown>>(URL_BILLETERAS, 60_000, { cache: "no-store" });
+/** GET /api/settings del POS (una sola llamada): también la lee `useTopeDescuentoCajero`. */
+export const pedirBilleteras = () => cachedJson<Record<string, unknown>>(URL_BILLETERAS, 60_000, { cache: "no-store" });
 
 /** El POS lo pide al montar: así, al abrir el cobro y tocar Yape, el QR ya está (si no, no se abría). */
 export function precargarBilleteras(): void {

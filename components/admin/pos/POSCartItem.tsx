@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { Field } from "@/components/admin/shared/Field";
 import { fmt, type CartItem } from "@/components/admin/pos/pos-shared";
 import PromoBadge from "@/components/admin/pos/POSPromoBadge";
+import { excedeTopeItemCajero, pctLegible } from "@/lib/pos/descuento-cajero";
 
 interface POSCartItemProps {
   item: CartItem;
@@ -15,11 +16,20 @@ interface POSCartItemProps {
   updateQuantity: (productId: number, delta: number) => void;
   updateDiscount: (productId: number, discount: number) => void;
   removeFromCart: (productId: number) => void;
+  /**
+   * % máximo de descuento por producto que `POST /api/sales` le acepta a la
+   * sesión (tope del cajero en Ajustes). `null`: admin, dueño o rol cargando —
+   * sin tope en pantalla, decide la ruta.
+   */
+  topeItemPct?: number | null;
 }
 
 /** Una línea del carrito: cantidad, descuento por producto y quitar. */
-export default function POSCartItem({ item, lastAddedId, editingDiscount, setEditingDiscount, updateQuantity, updateDiscount, removeFromCart }: POSCartItemProps) {
+export default function POSCartItem({ item, lastAddedId, editingDiscount, setEditingDiscount, updateQuantity, updateDiscount, removeFromCart, topeItemPct = null }: POSCartItemProps) {
                 const discountMultiplier = 1 - (item.discount || 0) / 100;
+                // El «-10 %» de producto por vencer o un carrito pausado pueden traer más que el tope:
+                // se marca en rojo acá antes de que el cobro lo rechace (403).
+                const pasaTope = topeItemPct != null && excedeTopeItemCajero(item.discount ?? 0, topeItemPct);
                 const itemTotal = item.product.price * item.quantity * discountMultiplier;
   return (
                   <div className={cn("rounded-lg border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-3 hover:bg-[var(--surface-sunken)] transition-all duration-[var(--dur-base)]", lastAddedId === item.product.id && "ring-2 ring-[var(--data-success-500)]/40 bg-primary/10 dark:bg-primary/15")}>
@@ -38,7 +48,15 @@ export default function POSCartItem({ item, lastAddedId, editingDiscount, setEdi
                             {fmt(item.product.price)}
                           </p>
                           {item.discount && item.discount > 0 && (
-                            <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 px-1 py-0.5 rounded">
+                            <span
+                              title={pasaTope ? `Pasa tu tope de ${pctLegible(topeItemPct ?? 0)} %: que lo cobre el dueño o un admin` : undefined}
+                              className={cn(
+                                "text-[length:var(--ts-2xs)] font-bold px-1 py-0.5 rounded",
+                                pasaTope
+                                  ? "text-[var(--data-error-600)] dark:text-[var(--data-error-500)] bg-[var(--data-error-500)]/12"
+                                  : "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12",
+                              )}
+                            >
                               -{item.discount}%
                             </span>
                           )}
@@ -91,15 +109,23 @@ export default function POSCartItem({ item, lastAddedId, editingDiscount, setEdi
                           <input
                             type="number"
                             min="0"
-                            max="100"
+                            max={topeItemPct ?? 100}
                             step="1"
                             value={item.discount || 0}
-                            onChange={e => updateDiscount(item.product.id, Number(e.target.value))}
+                            onChange={e => {
+                              const v = Number(e.target.value);
+                              updateDiscount(item.product.id, topeItemPct != null ? Math.min(v, topeItemPct) : v);
+                            }}
                             className="flex-1 px-2 py-1 text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
                             placeholder="0"
                           />
                         </Field>
                         <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">%</span>
+                        {topeItemPct != null && (
+                          <span className={cn("text-xs", pasaTope ? "font-semibold text-[var(--data-error-600)] dark:text-[var(--data-error-500)]" : "text-[var(--text-tertiary)] dark:text-muted")}>
+                            {pasaTope ? `Tu tope es ${pctLegible(topeItemPct)} %` : `hasta ${pctLegible(topeItemPct)} %`}
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>

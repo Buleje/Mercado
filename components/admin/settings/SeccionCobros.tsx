@@ -4,9 +4,11 @@ import { Upload, AlertTriangle, FileText, Landmark, Hash, Percent, Timer, Chevro
 import { FieldLabel, TextInput, NumberInput, Toggle, SectionCard, SaveButton } from "@/components/admin/settings/campos";
 import { LINK_A_OTRA_PANTALLA } from "@/components/admin/settings/enlaces";
 import type { AjustesEstado } from "@/components/admin/settings/use-ajustes";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { topeCajeroParaGuardar } from "@/lib/pos/descuento-cajero";
 
 export function SeccionCobros({ aj, onNavigateTab }: { aj: AjustesEstado; onNavigateTab?: (tab: string) => void }) {
-  const { yapeEnabled, setYapeEnabled, yapeImage, setYapeImage, yapeName, setYapeName, yapePhone, setYapePhone, cashEnabled, setCashEnabled, plinEnabled, setPlinEnabled, plinImage, setPlinImage, plinName, setPlinName, plinPhone, setPlinPhone, transferEnabled, setTransferEnabled, transferBankName, setTransferBankName, transferAccountNum, setTransferAccountNum, transferAccountHolder, setTransferAccountHolder, taxRate, setTaxRate, sunatRuc, setSunatRuc, sunatDenominacion, setSunatDenominacion, cashAlertMax, setCashAlertMax, autoCloseTime, setAutoCloseTime, patch, handleFileUpload, saving, savedSection } = aj;
+  const { yapeEnabled, setYapeEnabled, yapeImage, setYapeImage, yapeName, setYapeName, yapePhone, setYapePhone, cashEnabled, setCashEnabled, plinEnabled, setPlinEnabled, plinImage, setPlinImage, plinName, setPlinName, plinPhone, setPlinPhone, transferEnabled, setTransferEnabled, transferBankName, setTransferBankName, transferAccountNum, setTransferAccountNum, transferAccountHolder, setTransferAccountHolder, taxRate, setTaxRate, sunatRuc, setSunatRuc, sunatDenominacion, setSunatDenominacion, cashAlertMax, setCashAlertMax, autoCloseTime, setAutoCloseTime, maxDiscountPercent, setMaxDiscountPercent, patch, handleFileUpload, saving, savedSection } = aj;
   const yapeImgRef = useRef<HTMLInputElement>(null);
   const plinImgRef = useRef<HTMLInputElement>(null);
   return (
@@ -56,10 +58,22 @@ export function SeccionCobros({ aj, onNavigateTab }: { aj: AjustesEstado; onNavi
         </div>
       </SectionCard>
 
-      <SectionCard title="Caja" desc="Aviso de efectivo acumulado y hora de cierre de la tienda">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <SectionCard title="Caja" desc="Aviso de efectivo acumulado, hora de cierre y descuento del cajero">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div><FieldLabel htmlFor="settings-cashAlertMax" icon={<AlertTriangle className="h-3.5 w-3.5" />}>Alerta de exceso en caja</FieldLabel><NumberInput id="settings-cashAlertMax" value={cashAlertMax} onChange={setCashAlertMax} min={0} suffix="soles" /></div>
           <div><FieldLabel icon={<Timer className="h-3.5 w-3.5" />}>Hora de cierre</FieldLabel><TextInput value={autoCloseTime} onChange={setAutoCloseTime} placeholder="22:00" /></div>
+          <div>
+            <FieldLabel htmlFor="settings-maxDiscountPercent" icon={<Percent className="h-3.5 w-3.5" />}>
+              Descuento máx. cajero
+              <InfoTip
+                title="Descuento máximo del cajero"
+                what="Lo más que un cajero puede descontar en el POS: por producto y en el total de la venta (trueque). El dueño y los admin no tienen tope."
+                affects="Si el cajero pide más, la venta no pasa y le pide que la cobre el dueño o un admin."
+                example="Con 15 %, en una venta de S/ 40,00 descuenta hasta S/ 6,00. De fábrica: 15 %."
+              />
+            </FieldLabel>
+            <NumberInput id="settings-maxDiscountPercent" value={maxDiscountPercent} onChange={(v) => setMaxDiscountPercent(topeCajeroParaGuardar(v))} min={0} max={99} step={1} suffix="%" />
+          </div>
         </div>
       </SectionCard>
 
@@ -82,6 +96,7 @@ export function SeccionCobros({ aj, onNavigateTab }: { aj: AjustesEstado; onNavi
         plinEnabled, plinImage, plinName, plinPhone,
         transferEnabled, transferBankName, transferAccountNum, transferAccountHolder,
         cashAlertMax, autoCloseTime, sunatRuc, sunatDenominacion, taxRate,
+        maxDiscountPercent: topeCajeroParaGuardar(maxDiscountPercent),
       })} />
     </div>
   );

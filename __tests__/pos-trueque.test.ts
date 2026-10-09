@@ -120,7 +120,11 @@ describe("guardián: el espejo coincide con POST /api/sales", () => {
   it("la ruta usa la MISMA función del tope (céntimos), no un 0.15 con decimales", () => {
     expect(TOPE_DESCUENTO_CAJERO_PCT).toBe(15);
     expect(ruta).toMatch(/from "@\/lib\/pos\/descuento-cajero"/);
-    expect(ruta).toMatch(/!isPrivilegedRole && excedeTopeCajero\(requestedDiscount, total\)/);
+    expect(ruta).toMatch(/!isPrivilegedRole && excedeTopeCajero\(requestedDiscount, total, topePct\)/);
+    // El % sale de Ajustes con la misma regla que el POS, no de un 15 fijo en la ruta.
+    expect(ruta).toMatch(/topeCajeroPct\(\s*\(await SettingsDB\.get\(auth\.tenantId\)/);
+    expect(ruta).toMatch(/excedeTopeItemCajero\(i\.discount \?\? 0, topePct\)/);
+    expect(ruta).not.toMatch(/MAX_ITEM_DISCOUNT_CAJERO/);
     expect(ruta).not.toMatch(/total \* 0\.15/);
   });
 

@@ -12,6 +12,7 @@ import POSCartDetail from "@/components/admin/pos/POSCartDetail";
 import { formatCurrency } from "@/lib/format";
 import { fmt, numeroAPalabras } from "@/components/admin/pos/pos-shared";
 import POSCartItem from "@/components/admin/pos/POSCartItem";
+import { useTopeDescuentoCajero } from "@/components/admin/pos/useTopeDescuentoCajero";
 import type { POSCarrito } from "@/components/admin/pos/usePOSCarrito";
 
 interface POSCartPanelProps {
@@ -34,6 +35,8 @@ export default function POSCartPanel({ carrito, expanded, customerPhone, custome
   // Confirmar antes de vaciar: los dos botones sólo se ven con cart.length > 0.
   const [confirmClear, setConfirmClear] = useState(false);
   const [editingDiscount, setEditingDiscount] = useState<number | null>(null);
+  // Tope de descuento por producto del cajero: el mismo de Ajustes que aplica POST /api/sales.
+  const tope = useTopeDescuentoCajero();
   // Otro carrito = otro cliente. Cambiar un carrito lleno por otro (cola o «Retomar») no lo vacía,
   // así que el efecto de usePOSCobro no limpia: sin esto el fiado del carrito B se anotaba al cliente A (09-10).
   const cambiarDeCarrito = (cargar: () => void) => { onQuitarCliente?.(); cargar(); };
@@ -153,6 +156,7 @@ export default function POSCartPanel({ carrito, expanded, customerPhone, custome
                   updateQuantity={updateQuantity}
                   updateDiscount={updateDiscount}
                   removeFromCart={removeFromCart}
+                  topeItemPct={tope.rol == null || tope.sinTope ? null : tope.pct}
                 />
               ))
             )}

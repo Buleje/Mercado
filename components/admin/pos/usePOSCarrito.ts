@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { logger } from "@/lib/logger";
 import { estaAgotado } from "@/lib/pos/stock-vendible";
 import type { Product, CartItem, StockAlert } from "@/components/admin/pos/pos-shared";
+import { useTopeDescuentoCajero } from "@/components/admin/pos/useTopeDescuentoCajero";
 
 interface UsePOSCarritoOpciones {
   products: Product[];
@@ -29,6 +30,12 @@ export function usePOSCarrito({ products, addToRecents, playDing, playError }: U
   const [globalDiscount, setGlobalDiscount] = useState<{ monto: number; porcentaje: number }>({ monto: 0, porcentaje: 0 });
   const [clientQueues, setClientQueues] = useState<CartItem[][]>([]);
   const [stockAlert, setStockAlert] = useState<StockAlert | null>(null);
+  /* «Aplicar −10 %» de lo que vence: un cajero no pasa su tope de Ajustes (si no, la línea sale en rojo y el cobro da 403). */
+  const tope = useTopeDescuentoCajero();
+  const topeRef = useRef(tope);
+  useEffect(() => {
+    topeRef.current = tope;
+  }, [tope]);
   const [showZeroStockConfirm, setShowZeroStockConfirm] = useState<Product | null>(null);
   const [lastAddedId, setLastAddedId] = useState<number | null>(null);
   const lastAddedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -87,10 +94,11 @@ export function usePOSCarrito({ products, addToRecents, playDing, playError }: U
           setStockAlert({
             message: `${product.name} vence en ${diffDays} dia${diffDays > 1 ? 's' : ''}. Aplicar descuento?`,
             type: "warning",
-            actionLabel: "Aplicar -10%",
+            actionLabel: `Aplicar -${descuentoPorVencer(topeRef.current)}%`,
             actionFn: () => {
+              const d = descuentoPorVencer(topeRef.current);
               setCart(prev => prev.map(i =>
-                i.product.id === product.id ? { ...i, discount: 10 } : i
+                i.product.id === product.id ? { ...i, discount: d } : i
               ));
               setStockAlert(null);
             },
@@ -246,3 +254,8 @@ export function usePOSCarrito({ products, addToRecents, playDing, playError }: U
 }
 
 export type POSCarrito = ReturnType<typeof usePOSCarrito>;
+
+/** El −10 % de lo que vence, sin pasar el tope del cajero (admin/dueño: 10). */
+function descuentoPorVencer(t: { pct: number; sinTope: boolean }): number {
+  return t.sinTope ? 10 : Math.min(10, t.pct);
+}

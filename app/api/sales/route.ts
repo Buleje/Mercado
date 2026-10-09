@@ -28,7 +28,13 @@ import { desglosarPago, type LineaDePago } from "@/lib/caja/desglosar-pago";
 import { anotarVentaEnCaja, type MotivoSinAnotar } from "@/lib/caja/anotar-venta";
 import { sinDato } from "@/lib/errores/sin-dato";
 import { MAX_RECIBIDO, notaTrueque } from "@/lib/pos/trueque";
-import { excedeTopeCajero, topeDescuentoCajero } from "@/lib/pos/descuento-cajero";
+import {
+  excedeTopeCajero,
+  excedeTopeItemCajero,
+  pctLegible,
+  topeCajeroPct,
+  topeDescuentoCajero,
+} from "@/lib/pos/descuento-cajero";
 
 const SaleItemSchema = z.object({
   productId: z.number().int().positive(),
@@ -230,10 +236,17 @@ async function salesHandler(
     }
   }
   // P0 fix (2026-06-04): cap de descuento por ítem alineado con el cap global —
-  // cajero ≤15%, admin/owner hasta 100%. El % viene del cliente pero el precio
-  // BASE siempre es el de DB (el cliente no puede inflar el precio).
+  // cajero hasta el tope de Ajustes (15 % de fábrica), admin/owner hasta 100%.
+  // El % viene del cliente pero el precio BASE siempre es el de DB (el cliente
+  // no puede inflar el precio). El tope lo lee el servidor de Settings, nunca
+  // del body: el POS sólo lo muestra (`lib/pos/descuento-cajero.ts`).
   const isPrivilegedRole = auth.role === "admin" || auth.role === "owner";
-  const MAX_ITEM_DISCOUNT_CAJERO = 15; // % máximo para cajero por ítem
+  const topePct = isPrivilegedRole
+    ? 100
+    : topeCajeroPct(
+        (await SettingsDB.get(auth.tenantId).catch(sinDato("api/sales tope de descuento del cajero")))
+          ?.maxDiscountPercent,
+      );
 
   // Reescribir items con precio de DB (rechaza items con productId desconocido).
   const itemsWithCost = data.items
@@ -244,7 +257,7 @@ async function salesHandler(
       const rawDiscount = i.discount ?? 0;
       const clampedDiscount = isPrivilegedRole
         ? Math.min(rawDiscount, 100)
-        : Math.min(rawDiscount, MAX_ITEM_DISCOUNT_CAJERO);
+        : Math.min(rawDiscount, topePct);
       // Precio neto por unidad = precio DB × (1 − descuento%). Es lo que se cobra
       // y lo que se persiste en SaleItem.price (sin columna nueva ni migración).
       const netUnit = dbPrice.price * (1 - clampedDiscount / 100);
@@ -261,11 +274,11 @@ async function salesHandler(
   // Rechazo explícito si un cajero intenta superar el cap de descuento por ítem.
   if (!isPrivilegedRole) {
     const violating = data.items.find(
-      i => priceCostMap.has(i.productId) && (i.discount ?? 0) > MAX_ITEM_DISCOUNT_CAJERO,
+      i => priceCostMap.has(i.productId) && excedeTopeItemCajero(i.discount ?? 0, topePct),
     );
     if (violating) {
       return NextResponse.json(
-        { error: `Descuento por ítem excede ${MAX_ITEM_DISCOUNT_CAJERO}% — requiere autorización del admin` },
+        { error: `Descuento por ítem excede ${pctLegible(topePct)}% — requiere autorización del admin` },
         { status: 403 },
       );
     }
@@ -277,16 +290,16 @@ async function salesHandler(
   // El descuento global se aplica SOBRE el subtotal ya reducido por ítem — sin
   // doble conteo (el ítem reduce price, el global reduce el total resultante).
   // `isPrivilegedRole` ya está declarado arriba (cap de descuento por ítem).
-  // El 15 % se compara en céntimos enteros con la MISMA función que usa el POS
-  // (`lib/pos/descuento-cajero.ts`): con decimales, 9 × 0,15 = 1,3499… y un
-  // descuento de S/ 1,35 sobre S/ 9,00 salía 403.
+  // El tope (Ajustes, 15 % de fábrica) se compara en céntimos enteros con la
+  // MISMA función que usa el POS (`lib/pos/descuento-cajero.ts`): con decimales,
+  // 9 × 0,15 = 1,3499… y un descuento de S/ 1,35 sobre S/ 9,00 salía 403.
   const requestedDiscount = data.descuentoMonto ?? 0;
   const discountAmount = isPrivilegedRole
     ? Math.min(requestedDiscount, total) // admin: hasta 100%
-    : Math.min(requestedDiscount, topeDescuentoCajero(total)); // cajero: hasta 15%
-  if (!isPrivilegedRole && excedeTopeCajero(requestedDiscount, total)) {
+    : Math.min(requestedDiscount, topeDescuentoCajero(total, topePct)); // cajero: hasta el tope de Ajustes
+  if (!isPrivilegedRole && excedeTopeCajero(requestedDiscount, total, topePct)) {
     return NextResponse.json(
-      { error: "Descuento excede 15% — requiere autorización del admin" },
+      { error: `Descuento excede ${pctLegible(topePct)}% — requiere autorización del admin` },
       { status: 403 },
     );
   }

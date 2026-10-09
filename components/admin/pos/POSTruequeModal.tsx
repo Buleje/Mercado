@@ -9,7 +9,8 @@ import { Field } from "@/components/admin/shared/Field";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { formatCurrency } from "@/lib/format";
 import { ETIQUETA_METODO } from "@/lib/fiados/cobro-metodo";
-import { useMiRol } from "@/hooks/use-mi-rol";
+import { useTopeDescuentoCajero } from "@/components/admin/pos/useTopeDescuentoCajero";
+import { pctLegible } from "@/lib/pos/descuento-cajero";
 import type { ExtraCobro } from "@/components/admin/pos/pos-shared";
 import {
   armarCobroTrueque,
@@ -53,7 +54,8 @@ export default function POSTruequeModal({
   const [recibido, setRecibido] = useState("");
   const [valorTexto, setValorTexto] = useState("");
   const [medio, setMedio] = useState<MedioTrueque>("efectivo");
-  const rol = useMiRol();
+  // Rol + tope de Ajustes con la misma regla que POST /api/sales.
+  const { rol, pct: topePct } = useTopeDescuentoCajero();
 
   // El formulario se limpia cuando el carrito queda vacío (venta hecha o
   // carrito borrado). Si la venta falla, lo escrito sigue ahí para reintentar.
@@ -67,7 +69,7 @@ export default function POSTruequeModal({
     }
   }
 
-  const calc = calcularTrueque(cartTotal, Number(valorTexto));
+  const calc = calcularTrueque(cartTotal, Number(valorTexto), topePct);
   const frena = frenaPorRol(calc, rol);
   const listo =
     recibido.trim().length > 0 && calc.valor > 0 && cartTotal > 0 && !frena && !processing;
@@ -198,7 +200,7 @@ export default function POSTruequeModal({
 
         {frena && (
           <p role="alert" className="text-xs font-semibold text-[var(--data-error-500)]">
-            Como cajero puedes descontar hasta {formatCurrency(calc.topeCajero)} (15 % de la venta).
+            Como cajero puedes descontar hasta {formatCurrency(calc.topeCajero)} ({pctLegible(calc.topeCajeroPct)} % de la venta).
             Que el dueño o un admin registre este trueque.
           </p>
         )}

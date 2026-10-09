@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { SettingsDB, type DbSettings } from "@/lib/jsondb";
 import { enqueueActivityLog } from "@/lib/queue";
 import { requireAdmin, tryAdmin } from "@/lib/require-admin";
@@ -73,6 +74,8 @@ const ADMIN_ONLY_SETTING_FIELDS = [
   // PII de personal
   "riders", "deliveryMaxRadius", "deliveryHours",
 ] as const;
+
+const TOPE_CAJERO_SCHEMA = z.number().min(0).max(100).nullable();
 
 export async function GET(req: NextRequest) {
   try {
@@ -171,6 +174,14 @@ export async function PUT(req: NextRequest) {
     const body = await req.json() as Partial<DbSettings>;
     if (body.mode && body.mode !== "whatsapp" && body.mode !== "checkout") {
       return NextResponse.json({ error: "mode must be 'whatsapp' or 'checkout'" }, { status: 400 });
+    }
+    // Tope de descuento del cajero (Ajustes › Cobros › Caja): número de 0 a 100,
+    // o null = 15 % de fábrica. Lo aplica POST /api/sales (`topeCajeroPct`).
+    if (body.maxDiscountPercent !== undefined) {
+      const tope = TOPE_CAJERO_SCHEMA.safeParse(body.maxDiscountPercent);
+      if (!tope.success) {
+        return NextResponse.json({ error: "El descuento máximo del cajero va de 0 a 100 %" }, { status: 400 });
+      }
     }
     const current = await SettingsDB.get(tenantId);
 
