@@ -26,6 +26,7 @@
  */
 
 import { useEffect, useRef } from "react";
+import { EVENTO_ABRIR_CIERRE_DIARIO } from "@/lib/admin/abrir-cierre-diario";
 import { isEditableTarget, isModalOpen } from "@/lib/keyboard-guards";
 import type { Tab } from "../_lib/tabs.types";
 
@@ -132,7 +133,14 @@ export function useKeyboardShortcuts(config: KeyboardShortcutsConfig): void {
       }
     };
 
+    // El botón de un estado vacío («Sin cierres de caja») abre el mismo modal que Ctrl+Shift+C.
+    const abrirCierre = () => configRef.current.setShowCierreDiario(() => true);
+
     window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    window.addEventListener(EVENTO_ABRIR_CIERRE_DIARIO, abrirCierre);
+    return () => {
+      window.removeEventListener("keydown", handler);
+      window.removeEventListener(EVENTO_ABRIR_CIERRE_DIARIO, abrirCierre);
+    };
   }, []);
 }

@@ -4,7 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { CuentaPorPagar } from "./resumen-cuentas";
 
-export type ProveedorBasico = { id: string; name: string };
+/** `diasCredito` sale de la ficha del proveedor: llena solo el «Vence» de una cuenta nueva. */
+export type ProveedorBasico = { id: string; name: string; diasCredito?: number | null };
 export type MetodoPago = "efectivo" | "yape" | "plin" | "transferencia";
 
 export type NuevaCuenta = { supplierId: string; description: string; amount: string; dueDate: string };

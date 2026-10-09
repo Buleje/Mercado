@@ -115,6 +115,7 @@ export default function PayablesTab() {
           icon={CreditCard}
           title="No le debes nada a ningún proveedor"
           description="Las compras a crédito crean su cuenta aquí solas."
+          action={{ label: "Anotar una cuenta", onClick: () => setNueva(true) }}
           className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]"
         />
       ) : (

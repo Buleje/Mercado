@@ -17,6 +17,9 @@ interface POSProductGridProps {
   toggleFavorite: (productId: number) => void;
 }
 
+/** El alta de productos vive en Productos & Precios: el vacío del POS lleva ahí (evento que escucha el panel). */
+const irAProductos = () => window.dispatchEvent(new CustomEvent("admin:navigate", { detail: { tab: "productos" } }));
+
 /** Grilla de productos del POS: un toque agrega al carrito. */
 export default function POSProductGrid({ products, filtered, expanded, cart, favorites, addToCart, toggleFavorite }: POSProductGridProps) {
   return (
@@ -25,7 +28,8 @@ export default function POSProductGrid({ products, filtered, expanded, cart, fav
               <EmptyState
                 icon={ShoppingCart}
                 title="Sin productos"
-                description="Agrega productos desde el módulo de Productos & Precios para empezar a vender."
+                description="Agrega tus productos para empezar a vender."
+                action={{ label: "Ir a Productos", onClick: irAProductos }}
               />
             ) : filtered.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-40 text-[var(--text-tertiary)] dark:text-muted">

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  diaDeVencimiento, fechaConDia, filtrar, ordenar, proveedoresConCuentas, resumir, vencimiento, type CuentaPorPagar,
+  diaDeVencimiento, fechaConDia, filtrar, ordenar, proveedoresConCuentas, resumir, sumarDias, vencimiento, venceConCredito, type CuentaPorPagar,
 } from "@/components/admin/cuentas-por-pagar/resumen-cuentas";
 import { cuerpoDelProveedor, diasDeEntrega, EMPTY_FORM, formDesdeProveedor } from "@/components/admin/proveedores/proveedor-form-datos";
 
@@ -63,5 +63,25 @@ describe("días de entrega del proveedor", () => {
     expect(formDesdeProveedor({ name: "X" }).leadTimeDias).toBe("");
     expect(cuerpoDelProveedor({ ...EMPTY_FORM, name: "X", leadTimeDias: "5" }).leadTimeDias).toBe(5);
     expect(cuerpoDelProveedor({ ...EMPTY_FORM, name: "X" }).leadTimeDias).toBeNull();
+  });
+});
+
+describe("«Vence» de una cuenta nueva con los días de crédito del proveedor", () => {
+  it("hoy + días de crédito, cruzando el fin de mes", () => {
+    expect(venceConCredito("2026-10-09", 15)).toEqual({ fecha: "2026-10-24", linea: "a 15 días de crédito" });
+    expect(venceConCredito("2026-10-20", 30).fecha).toBe("2026-11-19");
+    expect(venceConCredito("2026-10-09", 1).linea).toBe("a 1 día de crédito");
+  });
+
+  it("sin días, 0 o basura: vence hoy y lo dice", () => {
+    for (const d of [0, null, undefined, -3, Number.NaN]) {
+      expect(venceConCredito(HOY, d)).toEqual({ fecha: HOY, linea: "sin días de crédito en su ficha: vence hoy" });
+    }
+  });
+
+  it("sumarDias trabaja la fecha del calendario (año bisiesto y cambio de año)", () => {
+    expect(sumarDias("2028-02-28", 1)).toBe("2028-02-29");
+    expect(sumarDias("2026-12-25", 10)).toBe("2027-01-04");
+    expect(sumarDias("2026-10-09", 0)).toBe("2026-10-09");
   });
 });

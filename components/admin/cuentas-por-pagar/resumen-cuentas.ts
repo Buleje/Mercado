@@ -58,6 +58,26 @@ export function diasEntre(desde: string, hasta: string): number {
   return Math.round((b - a) / 86_400_000);
 }
 
+/** Clave «AAAA-MM-DD» + N días, en UTC (fecha del calendario, sin hora). */
+export function sumarDias(clave: string, dias: number): string {
+  const t = Date.UTC(+clave.slice(0, 4), +clave.slice(5, 7) - 1, +clave.slice(8, 10)) + dias * 86_400_000;
+  return new Date(t).toISOString().slice(0, 10);
+}
+
+/**
+ * «Vence» sugerido de una cuenta nueva: hoy + los días de crédito de la ficha
+ * del proveedor (`Supplier.diasCredito`). Sin días (o 0) vence hoy, que es lo
+ * mismo que guardaba el servidor con la fecha vacía.
+ */
+export function venceConCredito(hoy: string, diasCredito: number | null | undefined): { fecha: string; linea: string } {
+  const n = Number(diasCredito);
+  const dias = Number.isFinite(n) && n > 0 ? Math.round(n) : 0;
+  return {
+    fecha: sumarDias(hoy, dias),
+    linea: dias > 0 ? `a ${dias} día${dias === 1 ? "" : "s"} de crédito` : "sin días de crédito en su ficha: vence hoy",
+  };
+}
+
 /** «jueves 10/09». */
 export function fechaConDia(clave: string): string {
   if (!clave) return "—";

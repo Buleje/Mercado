@@ -49,13 +49,26 @@ export default function CRMTab() {
 
   // ── Empty state — sin clientes ───────────────────────────────────────────
 
+  // El alta de cliente se monta acá también: el botón del vacío la abre sin salir de la pantalla.
+  const modalNuevoCliente = (
+    <ClienteFormModal
+      isOpen={showNewClientModal}
+      onClose={() => setShowNewClientModal(false)}
+      onSaved={() => { setShowNewClientModal(false); load(); }}
+    />
+  );
+
   if (customers.length === 0) {
     return (
-      <EmptyState
-        illustration="customers"
-        title="Sin clientes"
-        description="Tus clientes aparecerán aquí cuando hagan su primera compra."
-      />
+      <>
+        <EmptyState
+          illustration="customers"
+          title="Sin clientes"
+          description="Tus clientes aparecerán aquí cuando hagan su primera compra."
+          action={{ label: "Agregar cliente", onClick: () => setShowNewClientModal(true) }}
+        />
+        {modalNuevoCliente}
+      </>
     );
   }
 
@@ -95,11 +108,7 @@ export default function CRMTab() {
       <CrmComparar crm={crm} />
 
       {/* New client modal */}
-      <ClienteFormModal
-        isOpen={showNewClientModal}
-        onClose={() => setShowNewClientModal(false)}
-        onSaved={() => { setShowNewClientModal(false); load(); }}
-      />
+      {modalNuevoCliente}
     </div>
   );
 }

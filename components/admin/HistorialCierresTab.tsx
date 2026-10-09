@@ -4,6 +4,7 @@ import { CardTitle, DataTable } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { Download, Eye, ChevronLeft, ChevronRight, CalendarOff } from "@buleje/design-system/icons";
 import { exportToExcel } from "@/lib/export-excel";
+import { abrirCierreDiario } from "@/lib/admin/abrir-cierre-diario";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import TableSkeleton from "@/components/admin/shared/TableSkeleton";
 import { formatCurrency, formatDateTime } from "@/lib/format";
@@ -123,7 +124,8 @@ export default function HistorialCierresTab() {
         <EmptyState
           icon={CalendarOff}
           title="Sin cierres de caja"
-          description="No hay cierres de caja registrados aún. Usa el botón «Cerrar día» en la barra superior para crear el primer cierre."
+          description="Aparecen aquí cada vez que cierras el día."
+          action={{ label: "Cerrar el día", onClick: abrirCierreDiario }}
         />
       ) : (
         <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-card-border overflow-hidden">
