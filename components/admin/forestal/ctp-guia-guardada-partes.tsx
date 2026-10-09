@@ -9,6 +9,7 @@
 
 import { CheckCircle2, Loader2, Search, ShieldCheck } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import { formatDateShort, formatNumber } from "@/lib/format";
 import type { Contrato } from "@/lib/forestal/contratos";
 import type { GuiaGuardadaVista } from "@/lib/forestal/guias-guardadas";
@@ -50,6 +51,13 @@ export function CamposDeGuia({
   const set = (patch: Partial<FormGuia>) => onChange({ ...form, ...patch });
   const titulares = [...new Set(contratos.map((c) => c.titularNombre).filter(Boolean))];
   const YA_EN_EL_LIBRO = "La guía ya entró al libro: este número no se cambia desde aquí.";
+  /* El permiso al que quedó atada, en OTRA pestaña: lo escrito en este borrador no se pierde. */
+  const atado = contratos.find((c) => c.id === form.contratoId);
+  const enlacePermiso = atado ? (
+    <EnlacePanel cosa="permiso" id={atado.id} target="_blank" rel="noopener" className="mt-1 inline-block text-xs">
+      Ver el permiso {atado.codigo}
+    </EnlacePanel>
+  ) : null;
   return (
     <FormularioClaro>
       <CampoGrid>
@@ -164,6 +172,7 @@ export function CamposDeGuia({
             readOnly={oficial}
             disabled={bloqueado}
           />
+          {!oficial && enlacePermiso}
         </Field>
         {/* Con el permiso fijado por la ficha, el permiso CARGADO al que se ata
             se elige aparte (ADR-421): el código del papel no se toca. */}
@@ -182,6 +191,7 @@ export function CamposDeGuia({
                 </option>
               ))}
             </select>
+            {enlacePermiso}
           </Field>
         )}
         <Field label="Notas" span={12}>

@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from "react";
 import { FolderOpen, Loader2, Save } from "@buleje/design-system/icons";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import { useMiRol } from "@/hooks/use-mi-rol";
 import { formatCurrency } from "@/lib/currency";
 import { fmtVolumen } from "@/lib/forestal/cubicacion-cuenta";
@@ -18,6 +19,7 @@ import { fechaConDia } from "@/lib/forestal/loth-tablero-reporte";
 import type { DiametrosPorTroza, FormulaTrozas } from "@/lib/forestal/cubicacion-trozas-formula";
 import { ActionToasts, useActionToasts } from "./cubicador-toasts";
 import { BOTON_SECUNDARIO } from "./ctp-lotes-modal-marco";
+import { cerrarAlNavegar } from "./enlace-cierra-ventana";
 import type { FilaTroza } from "./cubicador-trozas-tabla";
 import GuardarEnLaCuentaModal from "./cubicador-trozas-guardar";
 import ValorizarCubicacionModal from "./cubicador-trozas-valorizar";
@@ -164,17 +166,26 @@ function ListaGuardadasModal({ onAbrir, onCerrar }: { onAbrir: (id: string) => v
               const e = ESTADO_CUB[c.estado];
               return (
                 <li key={c.id}>
-                  <button type="button" onClick={() => onAbrir(c.id)}
-                    className="flex w-full flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 text-left hover:bg-[var(--surface-sunken)]">
+                  {/* Fila clicable sin `<button>`: adentro va el enlace a la cuenta de la
+                      persona, y un `<a>` dentro de un `<button>` no es válido. */}
+                  <div role="button" tabIndex={0} onClick={() => onAbrir(c.id)}
+                    onKeyDown={(ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); onAbrir(c.id); } }}
+                    className="flex w-full cursor-pointer flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 text-left hover:bg-[var(--surface-sunken)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent)]">
                     <span className="font-mono text-sm font-bold text-[var(--text-primary)]">{c.codigo}</span>
                     <span className="text-sm text-[var(--text-secondary)]">{fechaConDia(c.fecha)}</span>
-                    <span className="min-w-0 flex-1 truncate text-sm font-semibold text-[var(--text-primary)]">{c.personaNombre ?? "—"}</span>
+                    <span className="min-w-0 flex-1 truncate text-sm font-semibold text-[var(--text-primary)]">
+                      {c.personaNombre ? (
+                        <EnlacePanel cosa="cuenta-adelantos" id={c.beneficiarioId ?? c.parteId} onClick={cerrarAlNavegar(onCerrar)}>
+                          {c.personaNombre}
+                        </EnlacePanel>
+                      ) : "—"}
+                    </span>
                     <span className="text-sm tabular-nums text-[var(--text-secondary)]">
                       {c.nTrozas} trozas · {fmtVolumen(c.volumen, c.formula)}
                       {c.monto != null && ` · ${formatCurrency(c.monto)}`}
                     </span>
                     <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${e.clase}`}>{e.label}</span>
-                  </button>
+                  </div>
                 </li>
               );
             })}

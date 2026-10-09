@@ -10,6 +10,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { X, Cog } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import { codigoTroza, type ContenidoZona } from "@/lib/forestal/planta-croquis";
 import { claveTroza, type AsignacionPlanta, type Item, type MaquinaPlanta, type PlantaCroquis, type PlantaZona, type TrozaUbicable, type UbicacionPlanta } from "@/lib/forestal/planta-zona-types";
 import { BOTON_SECUNDARIO } from "./ctp-lotes-modal-marco";
@@ -55,6 +56,8 @@ export default function CtpPlantaCroquisFicha(p: CtpPlantaCroquisFichaProps) {
   }, [sel.tipo, sel.id]);
 
   let titulo = "";
+  /** El título con enlaces (la troza lleva a su ficha); si falta, va `titulo` tal cual. */
+  let tituloConEnlace: React.ReactNode = null;
   let cuerpo: React.ReactNode = null;
   if (sel.tipo === "zona") {
     const z = zonaById.get(sel.id);
@@ -83,6 +86,11 @@ export default function CtpPlantaCroquisFicha(p: CtpPlantaCroquisFichaProps) {
     const t = trozaById.get(sel.id);
     if (t) {
       titulo = `Troza ${codigoTroza(t.troza)}`;
+      tituloConEnlace = (
+        <>
+          Troza <EnlacePanel cosa="troza" id={t.troza.id}>{codigoTroza(t.troza)}</EnlacePanel>
+        </>
+      );
       cuerpo = (
         <CtpPlantaCroquisFichaTroza
           troza={t.troza} pila={t.pila} zona={zonaById.get(ubicaciones[claveTroza(t.troza.id)]?.zonaId ?? "") ?? null}
@@ -114,7 +122,7 @@ export default function CtpPlantaCroquisFicha(p: CtpPlantaCroquisFichaProps) {
   return (
     <div ref={ref} className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3.5">
       <div className="mb-2 flex items-start justify-between gap-2">
-        <CardTitle as="h3" className="min-w-0 break-words text-sm font-bold text-[var(--text-primary)]">{titulo || "Ya no está en el plano"}</CardTitle>
+        <CardTitle as="h3" className="min-w-0 break-words text-sm font-bold text-[var(--text-primary)]">{tituloConEnlace ?? (titulo || "Ya no está en el plano")}</CardTitle>
         <button type="button" onClick={p.onCerrar} aria-label="Cerrar ficha y volver a la lista" title="Volver a la lista (Esc)" className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"><X className="h-4 w-4" /></button>
       </div>
       {cuerpo ?? <p className="text-sm text-[var(--text-tertiary)]">Se despachó o se quitó desde otra pantalla. Cierra la ficha para volver a la lista.</p>}

@@ -14,6 +14,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Save, Truck } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
+import { hrefDe } from "@/lib/admin/enlaces-panel";
 import SelectorContrato from "./SelectorContrato";
 import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
 import { usePtDeGuia } from "@/hooks/use-pt-de-guia";
@@ -130,6 +132,8 @@ function CampoPersona({
   nombre: string;
   onCambiar: (v: { id: string; nombre: string }) => void;
 }) {
+  /* `null` mientras la ficha de la parte no abra por enlace (regla del explorador). */
+  const fichaDeLaParte = hrefDe("parte", id);
   return (
     <>
       <Field label={label} span={span} hint={hintSelect}>
@@ -146,6 +150,12 @@ function CampoPersona({
             <option key={o.id} value={o.id}>{o.nombre}</option>
           ))}
         </select>
+        {/* Su ficha del Directorio, en OTRA pestaña: este borrador no se pierde. */}
+        {fichaDeLaParte && (
+          <EnlacePanel href={fichaDeLaParte} target="_blank" rel="noopener" className="mt-1 inline-block text-xs">
+            Ver la ficha de {nombre || "esta persona"}
+          </EnlacePanel>
+        )}
       </Field>
       <Field label={nombreLabel} span={span} hint={id ? "Viene del directorio" : "Si no está en el directorio"}>
         <input

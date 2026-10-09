@@ -23,6 +23,7 @@ import { aNumero } from "@/lib/forestal/trozas-import";
 import { repartoDeGuia, type GuiaSinCosto, type RepartoDeGuia } from "@/lib/forestal/trozas-patio-kpis";
 import type { GuardarCompraInput, PlataDeGuiaDTO } from "@/lib/forestal/plata-de-guia";
 import { usePlataDeGuia } from "@/hooks/use-plata-de-guia";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import { Btn } from "./ctp-shared";
 import { n2 } from "./ctp-trozas-ui";
 
@@ -232,9 +233,14 @@ export default function FilaCostoGuia({
           {/* Sin proveedor enlazado no se anota en ninguna cuenta: no hace falta decirlo en cada fila. */}
           {dto.proveedor?.seguro && (
             <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-              {anotar || dto.cuenta
-                ? `Se anota en la cuenta de ${dto.proveedor.nombre} (lo que le debes).`
-                : `No se anota en la cuenta de ${dto.proveedor.nombre}.`}
+              {/* Con la guía ya anotada, el nombre abre su cuenta en OTRA pestaña (los
+                  montos escritos aquí no se pierden). Sin anotar puede no tener cuenta:
+                  texto, porque un enlace que no abre nada es peor que nada. */}
+              {anotar || dto.cuenta ? "Se anota en la cuenta de " : "No se anota en la cuenta de "}
+              <EnlacePanel cosa="cuenta-adelantos" id={dto.cuenta ? dto.proveedor.parteId : null} target="_blank" rel="noopener">
+                {dto.proveedor.nombre}
+              </EnlacePanel>
+              {anotar || dto.cuenta ? " (lo que le debes)." : "."}
             </p>
           )}
         </>

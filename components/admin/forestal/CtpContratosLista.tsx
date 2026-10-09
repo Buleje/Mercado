@@ -19,6 +19,7 @@ import { resumirBalance, type BalanceContrato, type Contrato } from "@/lib/fores
 import { ESTADO_CLASE, ESTADO_LABEL, soles, TIPO_LABEL, vigenciaTexto } from "./contratos-ui";
 import { textoDeServicio } from "./CtpContratoBalance";
 import { formatNumber } from "@/lib/format";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import {
   BarraFiltrosTabla,
   FiltroEnCabecera,
@@ -236,20 +237,21 @@ export default function CtpContratosLista({
             <tr key={c.id} className="transition-colors hover:bg-[var(--surface-sunken)]">
               <td className={TD}>
                 {/* El código ES el enlace al balance: en el libro se habla del
-                      contrato por su código, no por una columna «acción». */}
-                <button
-                  type="button"
-                  onClick={() => onElegir(c)}
-                  className="whitespace-nowrap text-left font-mono text-sm font-bold text-[var(--text-primary)] underline-offset-2 hover:underline"
-                >
+                      contrato por su código, no por una columna «acción». Es un
+                      `<a>` de verdad (ctrl+clic = otra pestaña); el clic normal
+                      escribe `?contrato=` sin recargar y la vista abre la ficha. */}
+                <EnlacePanel cosa="permiso" id={c.id} className="whitespace-nowrap font-mono text-sm font-bold">
                   {c.codigo}
-                </button>
+                </EnlacePanel>
                 {c.alias && (
                   <span className="block text-xs text-[var(--text-tertiary)]">{c.alias}</span>
                 )}
               </td>
               <td className={TD}>
-                <span className="font-semibold text-[var(--text-primary)]">{c.titularNombre}</span>
+                {/* El titular lleva a su ficha del Directorio cuando esa ficha abre por enlace. */}
+                <span className="font-semibold text-[var(--text-primary)]">
+                  <EnlacePanel cosa="parte" id={c.titularId}>{c.titularNombre}</EnlacePanel>
+                </span>
                 {c.region && (
                   <span className="block text-xs text-[var(--text-tertiary)]">{c.region}</span>
                 )}

@@ -27,6 +27,7 @@ import type { BloqueACobrar } from "@/lib/forestal/tarifa-aserrio";
 import { formatCurrency } from "@/lib/format";
 import CtpCobroAserrio, { type DirectorioForestal } from "./CtpCobroAserrio";
 import CtpParteModal from "./CtpParteModal";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import { Btn } from "./ctp-shared";
 import type { TratoDelCliente } from "./hooks/use-trato-del-cliente";
 import CtpLineaDelTrato from "./CtpLineaDelTrato";
@@ -91,6 +92,13 @@ export default function CtpServicioProduccion({
 }) {
   const [creando, setCreando] = useState(false);
   const cliente = parteId ? (directorio.partes.find((p) => p.id === parteId) ?? null) : null;
+  /* El cliente lleva a su ficha del Directorio en OTRA pestaña (esta declaración
+     no se pierde); texto mientras esa ficha no abra por enlace. */
+  const nombreCliente = cliente ? (
+    <EnlacePanel cosa="parte" id={cliente.id} target="_blank" rel="noopener">
+      {cliente.nombre}
+    </EnlacePanel>
+  ) : null;
   const comprador = compradorId ? (directorio.partes.find((p) => p.id === compradorId) ?? null) : null;
   /* La cuenta recién creada va al selector del servicio que está a la vista. */
   const usarCreada = (id: string) => (servicio === "propia" ? onComprador?.(id) : onParte(id));
@@ -200,7 +208,7 @@ export default function CtpServicioProduccion({
             >
               {calculando ? (
                 <>
-                  Calculando lo que se cargará a <b className="text-[var(--text-primary)]">{cliente.nombre}</b>…
+                  Calculando lo que se cargará a <b className="text-[var(--text-primary)]">{nombreCliente}</b>…
                 </>
               ) : cargo.total != null ? (
                 <>
@@ -208,12 +216,12 @@ export default function CtpServicioProduccion({
                   <b className="font-mono tabular-nums text-[var(--text-primary)]">
                     {formatCurrency(cargo.total)}
                   </b>{" "}
-                  a la cuenta de <b className="text-[var(--text-primary)]">{cliente.nombre}</b>.
+                  a la cuenta de <b className="text-[var(--text-primary)]">{nombreCliente}</b>.
                 </>
               ) : (
                 <>
                   Con estos precios no se carga nada a{" "}
-                  <b className="text-[var(--text-primary)]">{cliente.nombre}</b>: pon el precio de
+                  <b className="text-[var(--text-primary)]">{nombreCliente}</b>: pon el precio de
                   cada especie en el resumen.
                 </>
               )}

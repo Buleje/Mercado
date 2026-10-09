@@ -13,6 +13,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Camera, Loader2 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
+import { cerrarAlNavegar } from "./enlace-cierra-ventana";
 import type { RespuestaALaVista, TrozaALaVista } from "@/lib/camaras/marcadores";
 import { formatNumber } from "@/lib/format";
 import { Btn, ModalBody, ModalFooter } from "./ctp-shared";
@@ -151,7 +153,13 @@ export default function CtpLoteMixtoDesdeCamara({
                       className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--accent)] disabled:opacity-40"
                     />
                     <span className="min-w-0 flex-1 text-sm">
-                      <span className="font-bold text-[var(--text-primary)]">{t.troza?.codigo ?? "—"}</span>
+                      {/* El código lleva a la ficha de la troza: cierra esta ventana antes (si
+                          no, quedaría encima de la ficha); ctrl+clic la abre en otra pestaña. */}
+                      <span className="font-bold text-[var(--text-primary)]">
+                        <EnlacePanel cosa="troza" id={t.troza?.id} onClick={cerrarAlNavegar(onClose)}>
+                          {t.troza?.codigo ?? "—"}
+                        </EnlacePanel>
+                      </span>
                       <span className="text-[var(--text-secondary)]">
                         {" "}
                         · #{t.marcador}
