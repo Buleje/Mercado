@@ -123,6 +123,9 @@ export async function GET(
       genero: fullCustomer?.genero ?? null,
       comoLlego: fullCustomer?.comoLlego ?? null,
       observaciones: fullCustomer?.observaciones ?? null,
+      // Las «Notas del vendedor» de la ficha: sin esta clave salían vacías y al
+      // guardar pisaban la anterior. Las leen los mismos roles que el PATCH escribe.
+      privateNotes: fullCustomer?.privateNotes ?? null,
       notifOrderUpdates: fullCustomer?.notifOrderUpdates ?? true,
       notifPromotions: fullCustomer?.notifPromotions ?? true,
       notifRestock: fullCustomer?.notifRestock ?? false,
