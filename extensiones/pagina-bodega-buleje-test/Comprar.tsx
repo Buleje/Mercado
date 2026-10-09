@@ -6,8 +6,11 @@
  *
  * La bolsa es el CARRITO DE LA TIENDA (`useCart` del layout — nunca otro
  * `CartProvider`): lo que se agrega acá es lo mismo que se paga en el checkout
- * de siempre. Al agregar se abre la bolsa del salón (`abrirBolsa`), que al
- * cerrarse devuelve el foco a este botón.
+ * de siempre. Al agregar suena el «pop» (`addMultiple` no lo toca: lo pide
+ * `sonarAgregado`) y se abre la bolsa del salón (`abrirBolsa`), que al
+ * cerrarse devuelve el foco a este botón. En la ficha rápida (`FichaRapida`),
+ * `alAgregar` reemplaza a la bolsa: el modal se cierra y la foto vuela a ella.
+ * Sin `consulta` (el modal no sabe el WhatsApp) no sale «Pregunta por WhatsApp».
  *
  * Tope: lo que queda en existencia menos lo que ya está en tu bolsa (y nunca
  * más de 20, el tope del carrito). Los botones no se apagan con `disabled`
@@ -17,6 +20,7 @@ import { useEffect, useRef, useState } from "react";
 import { Check, MessageCircle, Minus, Plus, ShoppingBag } from "@buleje/design-system/icons";
 import { useCart } from "@/contexts/cart-context";
 import type { Product } from "@/data/products";
+import { sonarAgregado } from "./efecto-agregar";
 import { abrirBolsa } from "./estado-bolsa";
 import { BOTON, BOTON_BORDE } from "./ui";
 
@@ -44,7 +48,7 @@ function Cantidad({ valor, max, cambiar }: { valor: number; max: number; cambiar
   );
 }
 
-export function Comprar({ producto, consulta }: { producto: Product; consulta: string }) {
+export function Comprar({ producto, consulta, alAgregar }: { producto: Product; consulta?: string; alAgregar?: (cantidad: number) => void }) {
   const { addMultiple, items } = useCart();
   const [cantidad, setCantidad] = useState(1);
   const [aviso, setAviso] = useState("");
@@ -62,12 +66,14 @@ export function Comprar({ producto, consulta }: { producto: Product; consulta: s
   const agregar = () => {
     if (sinLugar) return;
     addMultiple([{ product: producto, quantity: n }]);
+    sonarAgregado();
     setAviso(`Agregaste ${n} × ${producto.name}. Tienes ${enBolsa + n} en tu bolsa.`);
     setCantidad(1);
     setHecho(true);
     clearTimeout(reloj.current);
     reloj.current = setTimeout(() => setHecho(false), 1800);
-    abrirBolsa();
+    if (alAgregar) alAgregar(n);
+    else abrirBolsa();
   };
 
   return (
@@ -95,9 +101,11 @@ export function Comprar({ producto, consulta }: { producto: Product; consulta: s
           )}
         </button>
       </div>
-      <a href={consulta} target="_blank" rel="noopener noreferrer" className={`${BOTON_BORDE} w-full`}>
-        <MessageCircle className="h-5 w-5" aria-hidden="true" /> Pregunta por WhatsApp
-      </a>
+      {consulta && (
+        <a href={consulta} target="_blank" rel="noopener noreferrer" className={`${BOTON_BORDE} w-full`}>
+          <MessageCircle className="h-5 w-5" aria-hidden="true" /> Pregunta por WhatsApp
+        </a>
+      )}
       {/* «Ya tienes N» no se repite acá: lo dicen el número del encabezado y el aviso flotante «Ver bolsa». */}
       <span className="sr-only" aria-live="polite">
         {aviso}

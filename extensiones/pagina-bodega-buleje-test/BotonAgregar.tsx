@@ -5,11 +5,14 @@
  * por negocio en el navegador), así lo que agregas acá aparece en el catálogo
  * y se paga con el flujo de siempre. Confirma en el botón y por lector de
  * pantalla; la bolsa se abre desde el encabezado o el aviso flotante.
+ * Al agregar, la foto de la tarjeta (`[data-bb-foto]`) vuela a la bolsa y su
+ * número salta (`efecto-agregar.ts`); el «pop» lo toca `addItem` solo.
  */
 import { useEffect, useRef, useState } from "react";
 import { Check, ShoppingBag } from "@buleje/design-system/icons";
 import { useCart } from "@/contexts/cart-context";
 import type { Product } from "@/data/products";
+import { volarABolsa } from "./efecto-agregar";
 
 export function BotonAgregar({ producto }: { producto: Product }) {
   const { addItem, items } = useCart();
@@ -25,8 +28,10 @@ export function BotonAgregar({ producto }: { producto: Product }) {
       <button
         type="button"
         disabled={agotado}
-        onClick={() => {
+        onClick={(e) => {
           addItem(producto);
+          const tarjeta = e.currentTarget.closest("article");
+          volarABolsa(tarjeta?.querySelector("[data-bb-foto]") ?? e.currentTarget, producto.image);
           setHecho(true);
           clearTimeout(reloj.current);
           reloj.current = setTimeout(() => setHecho(false), 1800);

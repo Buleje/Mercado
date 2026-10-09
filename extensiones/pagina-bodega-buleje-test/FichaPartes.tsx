@@ -67,7 +67,7 @@ export function Galeria({ p }: { p: ProductoSalon }) {
   );
 }
 
-function Precio({ p }: { p: ProductoSalon }) {
+export function Precio({ p }: { p: ProductoSalon }) {
   return (
     <div className="mt-5">
       <p className="flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -88,7 +88,7 @@ function Precio({ p }: { p: ProductoSalon }) {
   );
 }
 
-function Existencias({ stock }: { stock: number | null }) {
+export function Existencias({ stock }: { stock: number | null }) {
   if (stock === null) return null;
   const [texto, tono] =
     stock <= 0 ? ["Agotado por ahora", "text-[var(--text-secondary)]"] : stock <= POCAS ? [`¡Quedan ${stock}!`, "font-semibold text-[var(--bb-vino)]"] : ["Disponible para delivery", "text-[var(--text-secondary)]"];

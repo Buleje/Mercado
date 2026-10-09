@@ -1,10 +1,15 @@
+"use client";
+
 /**
  * Tarjeta de un producto de la página del salón: foto, marca, nombre, precio
  * (con el «antes» del historial cuando hubo rebaja) y «Agregar» al carrito de
- * la tienda. La foto y el nombre llevan a la ficha del producto en el catálogo.
+ * la tienda. La foto y el nombre abren la ficha rápida (`EnlaceFicha`); con
+ * ctrl/cmd + clic o el clic del medio, la ficha del catálogo en otra pestaña.
+ * Es de cliente para que `p` viaje UNA vez al navegador (no una por enlace).
  */
 import Image from "next/image";
 import { BotonAgregar } from "./BotonAgregar";
+import { EnlaceFicha } from "./EnlaceFicha";
 import type { ProductoSalon } from "./datos";
 import { soles } from "./destinos";
 
@@ -14,7 +19,7 @@ export function TarjetaProducto({ p, prioridad = false }: { p: ProductoSalon; pr
   const pocas = p.stock !== null && p.stock > 0 && p.stock <= POCAS;
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] transition duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-lg)]">
-      <a href={p.href} className="relative block aspect-square overflow-hidden bg-[var(--bb-rubor)]" tabIndex={-1} aria-hidden="true">
+      <EnlaceFicha p={p} data-bb-foto className="relative block aspect-square overflow-hidden bg-[var(--bb-rubor)]" tabIndex={-1} aria-hidden="true">
         {p.imagen && (
           <Image
             src={p.imagen}
@@ -35,13 +40,13 @@ export function TarjetaProducto({ p, prioridad = false }: { p: ProductoSalon; pr
             </span>
           )}
         </span>
-      </a>
+      </EnlaceFicha>
       <div className="flex flex-1 flex-col gap-1.5 p-4">
         {p.marca && <p className="text-xs font-semibold uppercase tracking-[var(--ls-wider)] text-[var(--bb-vino)]">{p.marca}</p>}
         <h3 className="line-clamp-2 min-h-[2.75rem] text-base font-semibold leading-snug text-[var(--text-primary)]">
-          <a href={p.href} className="hover:underline focus-visible:underline">
+          <EnlaceFicha p={p} className="hover:underline focus-visible:underline">
             {p.nombre}
-          </a>
+          </EnlaceFicha>
         </h3>
         <div className="mt-auto flex flex-wrap items-baseline gap-x-2 pt-1">
           <span className="text-xl font-bold tabular-nums text-[var(--text-primary)]">{soles(p.precio)}</span>
