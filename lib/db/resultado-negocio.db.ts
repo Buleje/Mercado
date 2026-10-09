@@ -362,7 +362,7 @@ export const ResultadoNegocioDB = {
     const [liquidaciones, cajaDeLiquidaciones] = await Promise.all([
       prisma.liquidacionCuenta.findMany({
         where: { tenantId, anuladaAt: null, fecha: enRango },
-        select: { id: true, codigo: true, fecha: true, pagoDireccion: true, pagoMonto: true, montoCompensado: true, personaNombre: true, cajaMovimientoId: true },
+        select: { id: true, codigo: true, fecha: true, pagoDireccion: true, pagoMonto: true, montoCompensado: true, personaNombre: true, cajaMovimientoId: true, beneficiarioId: true, parteId: true },
       }),
       movimientosCaja.length
         ? prisma.liquidacionCuenta.findMany({

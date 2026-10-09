@@ -47,6 +47,7 @@ export default function FilaCuentaPersona({
   onGoTab,
   puedeLiquidar,
   abrirLiquidar = false,
+  liquidacionResaltada = null,
   onLiquidarPedidoAtendido,
   onCambio,
 }: {
@@ -65,6 +66,8 @@ export default function FilaCuentaPersona({
    * escrito al lado.
    */
   abrirLiquidar?: boolean;
+  /** Código de la liquidación a resaltar en el historial de Liquidar (llegó por enlace). */
+  liquidacionResaltada?: string | null;
   onLiquidarPedidoAtendido?: () => void;
   /**
    * Se liquidó o se anuló algo dentro del modal: la fila (esta lista entera,
@@ -200,7 +203,7 @@ export default function FilaCuentaPersona({
       {abierto && persona.parteId && <DetalleMovimientos movimientos={persona.madera?.movimientos ?? []} onGoTab={onGoTab} />}
 
       {liquidando && (
-        <LiquidarCuentaModal persona={persona} onClose={() => setLiquidando(false)} onVincular={onVincular} onCambio={onCambio} />
+        <LiquidarCuentaModal persona={persona} resaltar={liquidacionResaltada} onClose={() => setLiquidando(false)} onVincular={onVincular} onCambio={onCambio} />
       )}
     </li>
   );

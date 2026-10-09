@@ -12,11 +12,17 @@
  * adelantó contra lo que te debe en la cuenta forestal): con dos, adivinar
  * sería abrir la cuenta equivocada.
  *
- * Los dos parámetros se borran al atenderse (`replaceState`): si no, volver a
- * la pestaña reabría el modal cada vez.
+ * `liquidacion=<código>` (el Resultado del negocio): esa liquidación queda
+ * resaltada en el historial de Liquidar.
+ *
+ * Los parámetros se borran al atenderse (`replaceState`): si no, volver a
+ * la pestaña reabría el modal cada vez. Los que no se atienden (un
+ * `?liquidacion=` suelto, sin `accion`) se van al salir de Adelantos
+ * (`useLimpiarAlSalirDeAdelantos`).
  */
 
 import type { CuentaPersona } from "@/lib/adelantos/cuenta-unificada";
+import { PARAM_LIQUIDACION } from "@/lib/adelantos/enlace-adelanto";
 
 export const PARAM_ACCION = "accion";
 export const PARAM_PERSONA = "persona";
@@ -25,6 +31,8 @@ export const ACCION_LIQUIDAR = "liquidar";
 export interface PedidoLiquidar {
   /** `null` = el link no dijo quién. */
   persona: string | null;
+  /** Código de la liquidación a resaltar en el historial, o `null`. */
+  liquidacion: string | null;
 }
 
 /** Lo que pide la URL, o `null` si no pide liquidar. */
@@ -32,16 +40,17 @@ export function leerPedidoLiquidar(): PedidoLiquidar | null {
   if (typeof window === "undefined") return null;
   const q = new URLSearchParams(window.location.search);
   if (q.get(PARAM_ACCION) !== ACCION_LIQUIDAR) return null;
-  return { persona: q.get(PARAM_PERSONA)?.trim() || null };
+  return { persona: q.get(PARAM_PERSONA)?.trim() || null, liquidacion: q.get(PARAM_LIQUIDACION)?.trim() || null };
 }
 
 /** Atendido: fuera de la URL, sin agregar una entrada al historial. */
 export function borrarPedidoLiquidar(): void {
   try {
     const u = new URL(window.location.href);
-    if (!u.searchParams.has(PARAM_ACCION) && !u.searchParams.has(PARAM_PERSONA)) return;
+    if (!u.searchParams.has(PARAM_ACCION) && !u.searchParams.has(PARAM_PERSONA) && !u.searchParams.has(PARAM_LIQUIDACION)) return;
     u.searchParams.delete(PARAM_ACCION);
     u.searchParams.delete(PARAM_PERSONA);
+    u.searchParams.delete(PARAM_LIQUIDACION);
     window.history.replaceState(null, "", u.toString());
   } catch {
     // Sin history: el modal ya se abrió; sólo queda el parámetro en la barra.

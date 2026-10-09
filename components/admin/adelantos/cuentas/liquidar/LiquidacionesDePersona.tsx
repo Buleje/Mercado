@@ -9,7 +9,7 @@
  * `ControlVinculo`: nada de un diálogo sobre un diálogo).
  */
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, Ban, FileDown } from "@buleje/design-system/icons";
 import { useSettingsSafe } from "@/contexts/settings-context";
 import type { LiquidacionDTO } from "@/lib/db/liquidacion-cuenta.db";
@@ -28,9 +28,12 @@ export default function LiquidacionesDePersona({
   liquidaciones,
   persona,
   onAnular,
+  resaltada = null,
 }: {
   liquidaciones: LiquidacionDTO[];
   persona: CuentaPersona;
+  /** Código de la liquidación que se vino a ver (enlace del Resultado): se marca y se trae a la vista. */
+  resaltada?: string | null;
   onAnular: (
     id: string,
     motivo: string,
@@ -47,6 +50,18 @@ export default function LiquidacionesDePersona({
 
   const ordenadas = [...liquidaciones].sort((a, b) => b.creadaEn.localeCompare(a.creadaEn));
   const ultimaVivaId = ordenadas.find((l) => !l.anulada)?.id ?? null;
+
+  /* El historial va al pie del modal, debajo del formulario: sin traerla a la
+     vista, la liquidación que se vino a ver quedaba fuera de pantalla. Una vez
+     por código (las filas llegan después de abrir). */
+  const resaltadaRef = useRef<HTMLLIElement>(null);
+  const traida = useRef<string | null>(null);
+  const hayResaltada = !!resaltada && ordenadas.some((l) => l.codigo === resaltada);
+  useEffect(() => {
+    if (!hayResaltada || traida.current === resaltada) return;
+    traida.current = resaltada;
+    resaltadaRef.current?.scrollIntoView?.({ block: "center" });
+  }, [hayResaltada, resaltada]);
 
   const descargarPdf = async (liq: LiquidacionDTO) => {
     const { descargarComprobanteLiquidacion } = await import("@/lib/adelantos/pdf-liquidacion");
@@ -92,7 +107,16 @@ export default function LiquidacionesDePersona({
           // queremos derivarla dos veces con datos que ya tenemos acá.
           const resultadoCaja = textoResultadoCaja(liq);
           return (
-            <li key={liq.id} className="rounded-2xl border border-[var(--rule-base)] p-3">
+            <li
+              key={liq.id}
+              ref={liq.codigo === resaltada ? resaltadaRef : undefined}
+              aria-current={liq.codigo === resaltada ? "true" : undefined}
+              className={
+                liq.codigo === resaltada
+                  ? "rounded-2xl border-2 border-[var(--accent)] bg-[var(--accent-soft)] p-3"
+                  : "rounded-2xl border border-[var(--rule-base)] p-3"
+              }
+            >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="min-w-0">
                   <p

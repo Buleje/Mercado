@@ -9,39 +9,66 @@
  * panel, así que a 400 px una tabla no se volvería tarjetas y desbordaría.
  */
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent } from "react";
 import { LoadingState } from "@buleje/design-system";
 import { ChevronRight, RefreshCw } from "@buleje/design-system/icons";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+import { hrefDeDestino } from "@/lib/admin/enlaces-panel";
 import { useDetalleDelRenglon } from "@/hooks/use-resultado-del-mes";
 import { diaConNombre } from "@/lib/forestal/plazo-de-apartado";
-import type { FilaFuente, FuenteDetalle } from "@/lib/finance/resultado-del-negocio";
+import type { EnlaceOrigen, FilaFuente, FuenteDetalle } from "@/lib/finance/resultado-del-negocio";
 import { esAproximado, etiquetaFuente, medidaTexto, mesConAnio, montoTexto } from "./fuentes";
 import { irAlOrigen } from "./ir-al-origen";
 
-function FilaDelDetalle({ fila, onIr }: { fila: FilaFuente; onIr: (f: FilaFuente) => void }) {
+/** Clic que el navegador tiene que manejar solo: otra pestaña o ventana (ctrl/cmd/shift/alt). */
+const esClicDelNavegador = (e: MouseEvent<HTMLAnchorElement>) => e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey;
+
+const FILA = "flex w-full items-center justify-between gap-3 rounded-lg px-2 py-2.5 text-left";
+
+/* Un enlace de verdad (`href` = el origen): ctrl/cmd/clic de rueda lo abre en
+   otra pestaña; el clic simple navega sin recargar el panel (`irAlOrigen`).
+   Sin origen que lo muestre (`enlace: null`), la fila es texto: un enlace que
+   no abre nada es peor que ninguno. */
+function FilaDelDetalle({ fila, onIr }: { fila: FilaFuente; onIr: (enlace: EnlaceOrigen) => void }) {
   const medida = medidaTexto(fila.pt, fila.m3);
+  const monto = montoTexto(fila.monto, { aproximado: esAproximado(fila.certeza) });
+  const cuerpo = (
+    <>
+      <span className="min-w-0">
+        <span className="block text-xs text-[var(--text-secondary)]">
+          <span className="font-semibold text-[var(--text-primary)]">{diaConNombre(fila.fecha)}</span>
+          {fila.quien && <span> · {fila.quien}</span>}
+        </span>
+        <span className="block text-sm font-medium text-[var(--text-primary)] [overflow-wrap:anywhere]">{fila.que}</span>
+        {medida && <span className="block text-xs text-[var(--text-secondary)] tabular-nums">{medida}</span>}
+      </span>
+      <span className="flex shrink-0 items-center gap-1 text-sm font-bold tabular-nums text-[var(--text-primary)]">
+        {monto}
+        {fila.enlace ? (
+          <ChevronRight className="h-4 w-4 text-[var(--text-tertiary)] transition-transform group-hover:translate-x-0.5" aria-hidden />
+        ) : (
+          /* El monto queda en la misma columna que el de las filas con enlace. */
+          <span className="h-4 w-4" aria-hidden />
+        )}
+      </span>
+    </>
+  );
+  const enlace = fila.enlace;
+  if (!enlace) return <li className={FILA}>{cuerpo}</li>;
   return (
     <li>
-      <button
-        type="button"
-        onClick={() => onIr(fila)}
-        aria-label={`${fila.que}, ${diaConNombre(fila.fecha)}: ${montoTexto(fila.monto, { aproximado: esAproximado(fila.certeza) })}. Abrir donde se anotó`}
-        className="group flex w-full items-center justify-between gap-3 rounded-lg px-2 py-2.5 text-left transition-colors hover:bg-[var(--surface-sunken)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+      <a
+        href={hrefDeDestino(enlace)}
+        onClick={(e) => {
+          if (esClicDelNavegador(e)) return;
+          e.preventDefault();
+          onIr(enlace);
+        }}
+        aria-label={`${fila.que}, ${diaConNombre(fila.fecha)}: ${monto}. Abrir donde se anotó`}
+        className={`group ${FILA} transition-colors hover:bg-[var(--surface-sunken)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]`}
       >
-        <span className="min-w-0">
-          <span className="block text-xs text-[var(--text-secondary)]">
-            <span className="font-semibold text-[var(--text-primary)]">{diaConNombre(fila.fecha)}</span>
-            {fila.quien && <span> · {fila.quien}</span>}
-          </span>
-          <span className="block text-sm font-medium text-[var(--text-primary)] [overflow-wrap:anywhere]">{fila.que}</span>
-          {medida && <span className="block text-xs text-[var(--text-secondary)] tabular-nums">{medida}</span>}
-        </span>
-        <span className="flex shrink-0 items-center gap-1 text-sm font-bold tabular-nums text-[var(--text-primary)]">
-          {montoTexto(fila.monto, { aproximado: esAproximado(fila.certeza) })}
-          <ChevronRight className="h-4 w-4 text-[var(--text-tertiary)] transition-transform group-hover:translate-x-0.5" aria-hidden />
-        </span>
-      </button>
+        {cuerpo}
+      </a>
     </li>
   );
 }
@@ -82,9 +109,9 @@ export default function DetalleRenglonModal({
   }, [fuente]);
   const aproximado = listos?.filas.some((f) => esAproximado(f.certeza)) ?? false;
 
-  const ir = (fila: FilaFuente) => {
+  const ir = (enlace: EnlaceOrigen) => {
     onClose();
-    irAlOrigen(fila.enlace);
+    irAlOrigen(enlace);
   };
 
   return (

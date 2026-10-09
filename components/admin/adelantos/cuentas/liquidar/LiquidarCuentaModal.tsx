@@ -42,11 +42,14 @@ function leerMadera(saldo: number): string {
 
 export default function LiquidarCuentaModal({
   persona,
+  resaltar = null,
   onClose,
   onVincular,
   onCambio,
 }: {
   persona: CuentaPersona;
+  /** Código de una liquidación del historial a resaltar (se llegó por enlace a ESA liquidación). */
+  resaltar?: string | null;
   onClose: () => void;
   /** El mismo `vincularParte` que ya usa `ControlVinculo` — «Es la misma persona». */
   onVincular: (beneficiarioId: string, forestPartyId: string | null) => Promise<boolean>;
@@ -225,7 +228,7 @@ export default function LiquidarCuentaModal({
 
           {/* Historial de liquidaciones de esta persona. */}
           <div className="mt-6 border-t border-[var(--rule-soft)] pt-4">
-            <LiquidacionesDePersona liquidaciones={liquidaciones} persona={persona} onAnular={anularYAvisar} />
+            <LiquidacionesDePersona liquidaciones={liquidaciones} persona={persona} onAnular={anularYAvisar} resaltada={resaltar} />
           </div>
         </>
       )}

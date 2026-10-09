@@ -59,6 +59,7 @@ export default function TablaAdelantos({
   onPagina,
   porPagina,
   onVerDetalle,
+  resaltadoId = null,
   onChange,
 }: {
   adelantos: DbAdelanto[];
@@ -68,6 +69,8 @@ export default function TablaAdelantos({
   onPagina: (p: number) => void;
   porPagina: number;
   onVerDetalle: (a: DbAdelanto) => void;
+  /** La fila que se vino a ver (`?adelanto=`, `use-adelanto-en-url`): marcada y traída a la vista. */
+  resaltadoId?: string | null;
   /** Refresca la lista tras anular o editar notas desde la fila. */
   onChange: () => void;
 }) {
@@ -117,6 +120,16 @@ export default function TablaAdelantos({
     // Re-chequea si cambia la página: el ancho de la tabla no depende de las
     // filas, pero el navegador puede resetear scrollLeft a 0 al re-renderizar.
   }, [checkScroll, pag.pagina]);
+
+  /* La fila que se vino a ver, a la vista UNA vez por llegada: cuando ya está
+     en la página que toca (la lista salta a esa página un render después). */
+  const traida = useRef<string | null>(null);
+  const resaltadaEnPagina = !!resaltadoId && pag.items.some((a) => a.id === resaltadoId);
+  useEffect(() => {
+    if (!resaltadoId || !resaltadaEnPagina || traida.current === resaltadoId) return;
+    traida.current = resaltadoId;
+    wrapRef.current?.querySelector(`[data-adelanto-id="${CSS.escape(resaltadoId)}"]`)?.scrollIntoView?.({ block: "center" });
+  }, [resaltadaEnPagina, resaltadoId]);
 
   const th = (columna: ColumnaOrden, label: string, alineado?: "right") => (
     <th className={`px-2.5 py-2.5 ${alineado === "right" ? "text-right" : "text-left"}`} aria-sort={ariaSort(orden, columna)}>
@@ -197,7 +210,13 @@ export default function TablaAdelantos({
                         onVerDetalle(a);
                       }
                     }}
-                    className="cursor-pointer transition-colors hover:bg-[var(--surface-sunken)]/50"
+                    data-adelanto-id={a.id}
+                    aria-current={a.id === resaltadoId ? "true" : undefined}
+                    className={
+                      a.id === resaltadoId
+                        ? "cursor-pointer bg-[var(--accent-soft)] outline outline-2 -outline-offset-2 outline-[var(--accent)] transition-colors"
+                        : "cursor-pointer transition-colors hover:bg-[var(--surface-sunken)]/50"
+                    }
                   >
                     {/* El código, en su propia columna y ordenable: es como se
                         identifica el adelanto por teléfono. `sm:whitespace-nowrap`

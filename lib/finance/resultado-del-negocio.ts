@@ -40,6 +40,8 @@ import type { FilaPnl } from "@/lib/forestal/ctp-pnl";
 import { claveNumeroGtf, puedeSerLaMismaGtf } from "@/lib/forestal/gtf-talonario";
 import { limaDateKey } from "@/lib/utils";
 import { decodeExpenseDescription } from "@/lib/expense-meta";
+import { destinoDe } from "@/lib/admin/enlaces-panel";
+import { DESTINO_ADELANTOS, destinoDeLaLiquidacion, destinoDelAdelanto } from "@/lib/adelantos/enlace-adelanto";
 
 /**
  * El nombre del gasto, sin el bloque `\n---META---\n{json}` que los gastos
@@ -131,7 +133,8 @@ export interface FilaFuente {
   pt: number | null;
   m3: number | null;
   certeza: Certeza;
-  enlace: EnlaceOrigen;
+  /** `null` = no hay pantalla que muestre ESE hecho (una liquidación sin persona): la fila es texto, no enlace. */
+  enlace: EnlaceOrigen | null;
 }
 
 /** Un renglón del resultado. `signo` dice si suma (1) o resta (-1). */
@@ -920,7 +923,9 @@ function calcularResultado(mes: string, e: EntradaResultado): CalculoResultado {
       if (!(p.total > 0)) continue;
       filas.planilla.push({
         id: `planilla:${p.id}`, fecha: `${mes}-01`, quien: p.nombre, que: "≈ Lo ganado según su asistencia",
-        monto: r2(p.total), pt: null, m3: null, certeza: "estimado", enlace: { tab: "rrhh", params: { colaborador: p.id } },
+        monto: r2(p.total), pt: null, m3: null, certeza: "estimado",
+        // La ficha de ESA persona (RRHH lee `?persona=`, no `?colaborador=`).
+        enlace: destinoDe("colaborador", p.id) ?? { tab: "rrhh", params: { vista: "personal" } },
       });
     }
     if (diasSinMarcar > 0) faltan.planilla = { cuantos: diasSinMarcar, motivo: `${plural(diasSinMarcar, "día", "días")} sin marcar asistencia` };
@@ -1091,6 +1096,9 @@ export interface LiquidacionEntrada {
   montoCompensado: number;
   personaNombre: string;
   cajaMovimientoId: string | null;
+  /** Con quién se liquidó (uno de los dos): el enlace abre SU cuenta. Ausente = sin enlace a la persona. */
+  beneficiarioId?: string | null;
+  parteId?: string | null;
 }
 
 export interface AdelantoEntrada {
@@ -1264,7 +1272,7 @@ function calcularCaja(mes: string, e: EntradaCaja): CalculoCaja {
     (entro ? filas.liquidacion_recibida : filas.liquidacion_pagada).push({
       id: l.id, fecha: dia, quien: l.personaNombre?.trim() || null, que: `Liquidación ${l.codigo}`,
       monto: r2(num(l.pagoMonto)), pt: null, m3: null, certeza: "medido",
-      enlace: { tab: "plata", params: { vista: "adelantos", liquidacion: l.codigo } },
+      enlace: destinoDeLaLiquidacion(l.codigo, l.beneficiarioId ?? l.parteId),
     });
   }
 
@@ -1281,7 +1289,7 @@ function calcularCaja(mes: string, e: EntradaCaja): CalculoCaja {
       id: a.id, fecha: dia, quien: a.beneficiario?.trim() || null,
       que: `${entro ? "Te adelantaron" : "Adelanto"}${a.codigo ? ` ${a.codigo}` : ""}`,
       monto: r2(num(a.montoAdelantado)), pt: null, m3: null, certeza: "medido",
-      enlace: { tab: "plata", params: { vista: "adelantos", ...(a.codigo ? { adelanto: a.codigo } : {}) } },
+      enlace: destinoDelAdelanto(a.codigo ?? a.id) ?? DESTINO_ADELANTOS,
     });
   }
   // Entregas: la devuelta en plata tiene su movimiento de caja (mismo código,
@@ -1316,7 +1324,7 @@ function calcularCaja(mes: string, e: EntradaCaja): CalculoCaja {
       id: en.id, fecha: dia, quien: en.beneficiario?.trim() || null,
       que: `${dado ? "Te devolvieron en plata" : "Devolviste en plata"} · ${en.adelantoCodigo}`,
       monto: r2(num(en.valor)), pt: null, m3: null, certeza: "medido",
-      enlace: { tab: "plata", params: { vista: "adelantos", adelanto: en.adelantoCodigo ?? "" } },
+      enlace: destinoDelAdelanto(en.adelantoCodigo) ?? DESTINO_ADELANTOS,
     });
   }
 

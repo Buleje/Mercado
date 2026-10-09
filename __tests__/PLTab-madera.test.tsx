@@ -172,9 +172,11 @@ describe("Ganancias y pérdidas lee el resultado del servidor", () => {
     responder(respuesta());
     const navegar = vi.fn();
     window.addEventListener("admin:navigate", navegar);
+    /* El panel vive en /admin: fuera de ahí, `irAEnlace` navega con recarga. */
+    window.history.replaceState(null, "", "/admin?tab=plata&vista=pl");
     render(<PLTab />);
     fireEvent.click(await screen.findByRole("button", { name: /^Aserrío: S\/ 11,054\.18/ }));
-    const fila = await screen.findByRole("button", { name: /Corrida N° 61, jueves 10\/09: S\/ 356\.40/ });
+    const fila = await screen.findByRole("link", { name: /Corrida N° 61, jueves 10\/09: S\/ 356\.40/ });
     expect(mockFetch.mock.calls.some(([u]) => String(u) === `/api/finanzas/resultado/detalle?mes=${MES}&fuente=aserrio`)).toBe(true);
     fireEvent.click(fila);
     await waitFor(() => expect(navegar).toHaveBeenCalled());

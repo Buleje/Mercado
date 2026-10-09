@@ -43,6 +43,10 @@ export default function CuentasPorPersona({ onGoTab }: { onGoTab: (tab: string) 
      Se relee con el «atrás» y con el popstate que dispara la navegación del panel. */
   const [pedido, setPedido] = useState<PedidoLiquidar | null>(() => leerPedidoLiquidar());
   const [abrirLiquidarDe, setAbrirLiquidarDe] = useState<string | null>(null);
+  /* `&liquidacion=<código>` (el Resultado del negocio): queda resaltada en el
+     historial de Liquidar de ESA persona. No se borra con el pedido atendido:
+     el modal se monta después. */
+  const [liquidacionResaltada, setLiquidacionResaltada] = useState<{ clave: string; codigo: string } | null>(null);
   const [verTodas, setVerTodas] = useState(false);
   useEffect(() => {
     const releer = () => setPedido(leerPedidoLiquidar());
@@ -54,7 +58,9 @@ export default function CuentasPorPersona({ onGoTab }: { onGoTab: (tab: string) 
     const destino = personaDelPedido(pedido, personas);
     borrarPedidoLiquidar();
     setPedido(null);
-    if (destino) setAbrirLiquidarDe(destino.clave);
+    if (!destino) return;
+    setAbrirLiquidarDe(destino.clave);
+    setLiquidacionResaltada(pedido.liquidacion ? { clave: destino.clave, codigo: pedido.liquidacion } : null);
   }, [pedido, loading, rol, personas]);
 
   return (
@@ -126,6 +132,7 @@ export default function CuentasPorPersona({ onGoTab }: { onGoTab: (tab: string) 
               onGoTab={onGoTab}
               puedeLiquidar={puedeLiquidar}
               abrirLiquidar={abrirLiquidarDe === p.clave}
+              liquidacionResaltada={liquidacionResaltada?.clave === p.clave ? liquidacionResaltada.codigo : null}
               onLiquidarPedidoAtendido={() => setAbrirLiquidarDe(null)}
               onCambio={reload}
             />

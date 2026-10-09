@@ -36,6 +36,9 @@ import ResumenView from "./resumen/ResumenView";
 import type { Resumen } from "./resumen/tipos";
 import CrearPersonaModal from "./personas/CrearPersonaModal";
 import { leerPedidoLiquidar } from "./cuentas/liquidar-por-url";
+import { useAdelantoEnUrl } from "./hooks/use-adelanto-en-url";
+import { useFichaEnUrl } from "@/hooks/use-ficha-en-url";
+import { PARAM_ADELANTO } from "@/lib/adelantos/enlace-adelanto";
 import { sinTildes, fmtMon, sumByMoneda, fmtMonedas, EmptyState, SkeletonGrid, inputCls, Field, ModalShell, ModalActions, STATUS_BADGE } from "./shared";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { estadoDeCredito, requiereAtencion, saldoParaLimite } from "@/lib/adelantos/limite-credito";
@@ -108,6 +111,14 @@ export default function AdelantosModule() {
   useEffect(() => {
     if (leerPedidoLiquidar() && tab !== "resumen") setTab("resumen");
   }, [tab, setTab]);
+  /* `?adelanto=<código>` (Resultado del negocio, link copiado): la ficha vive en
+     la lista. Sólo al llegar —depende del pedido, no de la sub-vista—: con la
+     ficha abierta, ir a Resumen no te devuelve a la lista. */
+  const adelantoPedido = useFichaEnUrl(PARAM_ADELANTO).id;
+  useEffect(() => {
+    if (adelantoPedido) setTab("lista");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [adelantoPedido]);
   const [resumen, setResumen] = useState<Resumen | null>(null);
   const [adelantos, setAdelantos] = useState<DbAdelanto[]>([]);
   const [beneficiarios, setBeneficiarios] = useState<BeneficiarioConSaldo[]>([]);
@@ -251,7 +262,6 @@ function AdelantosView({
   creando: boolean;
   onCreando: (v: boolean) => void;
 }) {
-  const [detalle, setDetalle] = useState<DbAdelanto | null>(null);
   /** Los descuentos de planilla del período, en una pasada. */
   const [planilla, setPlanilla] = useState(false);
   const [filtro, setFiltro] = useState<string>("TODOS");
@@ -294,6 +304,10 @@ function AdelantosView({
    * el resultado a 12 filas muestra una tabla vacía que parece un error.
    */
   useEffect(() => setPagina(1), [filtro, q, orden.columna, orden.direccion]);
+
+  /* La ficha abierta vive en `?adelanto=` (el «atrás» la cierra; el Resultado
+     del negocio la abre): va DESPUÉS del `setPagina(1)` de arriba. */
+  const ficha = useAdelantoEnUrl({ adelantos, filtrados, loading, orden, porPagina: POR_PAGINA, setFiltro, setQ, setPagina });
 
   // Totales de la vista filtrada — segmentados por moneda (ADR-118). Lo
   // RECIBIDO va aparte (ADR-448): sumado a «por recuperar» contaría como por
@@ -422,6 +436,17 @@ function AdelantosView({
         </>
       )}
 
+      {ficha.noEncontrado && (
+        <div role="status" className="mb-3 flex items-center justify-between gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-2.5 text-sm text-[var(--text-secondary)]">
+          <span>
+            No encontré el adelanto <span className="font-mono font-bold text-[var(--text-primary)]">{ficha.noEncontrado}</span> en esta lista.
+          </span>
+          <button type="button" onClick={ficha.cerrar} className="shrink-0 text-sm font-semibold text-[var(--accent-ink)] hover:underline">
+            Entendido
+          </button>
+        </div>
+      )}
+
       {loading ? (
         <SkeletonGrid />
       ) : adelantos.length === 0 ? (
@@ -436,7 +461,8 @@ function AdelantosView({
           pagina={pagina}
           onPagina={setPagina}
           porPagina={POR_PAGINA}
-          onVerDetalle={setDetalle}
+          onVerDetalle={ficha.abrir}
+          resaltadoId={ficha.resaltadoId}
           onChange={onChange}
         />
       )}
@@ -454,10 +480,10 @@ function AdelantosView({
           }}
         />
       )}
-      {detalle && (
+      {ficha.abierto && (
         <DetalleAdelantoModal
-          adelantoId={detalle.id}
-          onClose={() => setDetalle(null)}
+          adelantoId={ficha.abierto.id}
+          onClose={ficha.cerrar}
           onChange={onChange}
         />
       )}
