@@ -26,6 +26,7 @@ import {
 } from "@/app/api/marketplace/checkout/payment-proof/route";
 import {
   getCustomerPayload,
+  telefonoDeLaSesion,
   CUSTOMER_SESSION,
 } from "@/lib/auth/customer-session";
 import { randomBytes } from "crypto";
@@ -204,6 +205,28 @@ export async function POST(req: NextRequest) {
       scheduledFor,
       paymentProof,
     } = parsed.data;
+
+    // ── Canje de puntos: solo quien PROBÓ ese teléfono ───────────────
+    // Los puntos salen de la ficha del teléfono del cuerpo: sin esta llave,
+    // cualquiera escribía un número ajeno y gastaba sus puntos (security
+    // 2026-10-08). La sesión tiene que haber probado el número con el código
+    // (Google/Facebook prueban un correo, no un teléfono). Se comparan los
+    // dígitos completos y no `normalizePhone` (últimos 9): el canje busca la
+    // ficha con el teléfono TAL CUAL, y «1987654321» no es «987654321».
+    // Sin puntos, el pedido de invitado sigue igual.
+    if ((loyaltyRedeemPoints ?? 0) > 0) {
+      const tokenPuntos = req.cookies.get(CUSTOMER_SESSION.COOKIE_NAME)?.value;
+      const telSesion = telefonoDeLaSesion(
+        tokenPuntos ? await getCustomerPayload(tokenPuntos) : null,
+      );
+      const digitos = customerPhone.replace(/\D/g, "");
+      if (!telSesion || (digitos !== telSesion && digitos !== `51${telSesion}`)) {
+        return NextResponse.json(
+          { error: "Para usar tus puntos inicia sesión con tu número" },
+          { status: 401 },
+        );
+      }
+    }
 
     // ── Validación de comprobante (Yape/Plin/Transfer) ───────────────
     // Si el cliente envió un paymentProof, requiere sesión de customer

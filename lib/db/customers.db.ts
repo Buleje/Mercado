@@ -119,7 +119,20 @@ function computePoints(amount: number): number {
  * normalizePhone (blast radius). Root-cause real (normalizar-al-escribir +
  * migración) queda como follow-up de su propio sprint.
  */
+/**
+ * ¿Es la ficha propia de un login social (`google_<id>` / `facebook_<id>`)?
+ * Su `phone` es un id sintético, no un teléfono: nunca se normaliza.
+ */
+export function esFichaSocial(id: string): boolean {
+  return /^(google|facebook)_/.test(id);
+}
+
 function phoneMatchCandidates(phone: string): string[] {
+  // La ficha de un login social se busca EXACTA: sus dígitos no son un
+  // teléfono, y los últimos 9 de «google_1177…987654321» caían en la ficha
+  // del 987654321 de otra persona (el callback copiaba su nombre, dirección,
+  // puntos y crédito). Security 2026-10-08.
+  if (esFichaSocial(phone)) return [phone];
   const normalized = normalizePhone(phone); // últimos 9 dígitos
   return Array.from(
     new Set([normalized, `51${normalized}`, `+51${normalized}`, phone.trim()].filter(Boolean))

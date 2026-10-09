@@ -4,7 +4,7 @@ import {
   getCustomerPayload,
   CUSTOMER_SESSION,
 } from "@/lib/auth/customer-session";
-import { CustomersDB } from "@/lib/db/customers.db";
+import { CustomersDB, esFichaSocial } from "@/lib/db/customers.db";
 import { OrdersDB } from "@/lib/db/orders.db";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
@@ -74,7 +74,13 @@ export async function GET(req: NextRequest) {
   try {
     const [customer, orders, consents] = await Promise.all([
       CustomersDB.getByPhone(customerId, tenantId),
-      OrdersDB.getByCustomerPhone(tenantId, customerId),
+      // Una ficha de Google/Facebook no es un teléfono: `getByCustomerPhone`
+      // se queda con sus últimos 9 dígitos y exportaba los pedidos de otra
+      // persona (security 2026-10-08). Hasta que Google/Facebook se unan a
+      // un teléfono probado, esa sesión no exporta pedidos por teléfono.
+      esFichaSocial(customerId)
+        ? Promise.resolve([])
+        : OrdersDB.getByCustomerPhone(tenantId, customerId),
       // ActivityLog: consents persistidos como entity="[L29733] Consent"
       // (compatible con la persistencia actual del POST /api/compliance/consent).
       // @prisma-direct: superadmin-style read scoped a customer + tenant.
