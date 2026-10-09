@@ -5,13 +5,16 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { leerJson } from "@/lib/errores/sin-dato";
 import { AdminGoalsDB } from "@/lib/db/admin-goals.db";
-import { metaCrearSchema } from "@/lib/admin/metas-tareas";
+import { MENSAJES_REGLA_META, metaCrearSchema, reglaMetaRota } from "@/lib/admin/metas-tareas";
 
 /**
  * /api/goals — metas del panel del negocio de la sesión (ADR-415).
  *
  * Antes era `local-data/goals.json`: una sola lista para todos los negocios, y
  * en Vercel (disco de sólo lectura) no se guardaba ninguna.
+ *
+ * ADR-488: el avance de cada meta sale de los datos (`GET /api/goals/avance`);
+ * acá sólo se guarda la meta. `current` se acepta únicamente en `manual`.
  */
 
 /** GET — array de metas, en el orden en que se crearon. */
@@ -39,8 +42,14 @@ export async function POST(req: NextRequest) {
 
   const parsed = metaCrearSchema.safeParse(await leerJson(req));
   if (!parsed.success) {
+    // ADR-488: tipear el avance de una meta que se mide sola, o una unidad que no es suya.
+    const regla = reglaMetaRota(parsed.error.issues);
     return NextResponse.json(
-      { error: "Revisa los datos de la meta", code: "validation_error", issues: parsed.error.issues },
+      {
+        error: regla ? MENSAJES_REGLA_META[regla] : "Revisa los datos de la meta",
+        code: regla ?? "validation_error",
+        issues: parsed.error.issues,
+      },
       { status: 422 },
     );
   }

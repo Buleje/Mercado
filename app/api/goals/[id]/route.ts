@@ -4,12 +4,23 @@ import { assertCsrf } from "@/lib/auth/csrf";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { leerJson } from "@/lib/errores/sin-dato";
-import { AdminGoalsDB } from "@/lib/db/admin-goals.db";
-import { metaEditarSchema } from "@/lib/admin/metas-tareas";
+import { AdminGoalsDB, type MotivoMetaNoEditada } from "@/lib/db/admin-goals.db";
+import { MENSAJES_REGLA_META, metaEditarSchema, reglaMetaRota } from "@/lib/admin/metas-tareas";
 
 type Contexto = { params: Promise<{ id: string }> };
 
-/** PATCH — cambia sólo los campos que llegan (`{ current }` al mover el avance). */
+/** Lo que ve la persona cuando el cambio no se guardó (ADR-488). */
+const NO_EDITADA: Readonly<Record<MotivoMetaNoEditada, { status: number; error: string }>> = {
+  no_existe: { status: 404, error: "La meta ya no existe" },
+  avance_solo_manual: { status: 422, error: MENSAJES_REGLA_META.avance_solo_manual },
+  unidad_no_valida: { status: 422, error: MENSAJES_REGLA_META.unidad_no_valida },
+  cambio_en_paralelo: { status: 409, error: "Alguien cambió esta meta mientras la editabas. Vuelve a abrirla." },
+};
+
+/**
+ * PATCH — cambia sólo los campos que llegan. `{ current }` sólo en una meta a
+ * mano: en las demás el avance sale de los datos (ADR-488) → 422.
+ */
 export async function PATCH(req: NextRequest, { params }: Contexto) {
   const csrfFail = assertCsrf(req);
   if (csrfFail) return csrfFail;
@@ -21,16 +32,24 @@ export async function PATCH(req: NextRequest, { params }: Contexto) {
   const { id } = await params;
   const parsed = metaEditarSchema.safeParse(await leerJson(req));
   if (!parsed.success) {
+    const regla = reglaMetaRota(parsed.error.issues);
     return NextResponse.json(
-      { error: "Revisa los datos de la meta", code: "validation_error", issues: parsed.error.issues },
+      {
+        error: regla ? MENSAJES_REGLA_META[regla] : "Revisa los datos de la meta",
+        code: regla ?? "validation_error",
+        issues: parsed.error.issues,
+      },
       { status: 422 },
     );
   }
 
   try {
-    const meta = await AdminGoalsDB.editar(auth.tenantId, id, parsed.data);
-    if (!meta) return NextResponse.json({ error: "La meta ya no existe" }, { status: 404 });
-    return NextResponse.json(meta);
+    const r = await AdminGoalsDB.editar(auth.tenantId, id, parsed.data);
+    if (!r.ok) {
+      const { status, error } = NO_EDITADA[r.motivo];
+      return NextResponse.json({ error, code: r.motivo }, { status });
+    }
+    return NextResponse.json(r.meta);
   } catch (e) {
     logger.error("[goals] PATCH error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "No se pudo guardar la meta. Reintenta." }, { status: 503 });

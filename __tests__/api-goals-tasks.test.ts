@@ -22,9 +22,14 @@ vi.mock("@/lib/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: 
 const mockRequireAdmin = vi.fn();
 vi.mock("@/lib/require-admin", () => ({ requireAdmin: mockRequireAdmin }));
 
-const goal = { findMany: vi.fn(), create: vi.fn(), update: vi.fn(), deleteMany: vi.fn() };
+const goal = { findMany: vi.fn(), findFirst: vi.fn(), create: vi.fn(), updateMany: vi.fn(), deleteMany: vi.fn() };
 const task = { findMany: vi.fn(), create: vi.fn(), update: vi.fn(), deleteMany: vi.fn() };
 vi.mock("@/lib/prisma", () => ({ prisma: { adminGoal: goal, adminTask: task } }));
+const mockInvalidateByPrefix = vi.fn();
+vi.mock("@/lib/cache", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/cache")>()),
+  invalidateByPrefix: mockInvalidateByPrefix,
+}));
 
 const goalsRoute = await import("@/app/api/goals/route");
 const goalRoute = await import("@/app/api/goals/[id]/route");
@@ -126,37 +131,155 @@ describe("/api/goals — metas por negocio", () => {
     expect(goal.create).not.toHaveBeenCalled();
   });
 
-  it("PATCH { current } cambia sólo el avance: no pisa la categoría con el valor por defecto", async () => {
-    goal.update.mockResolvedValue(filaMeta({ category: "caja", current: "12000.00" }));
+  it("PATCH { current } en una meta a mano: la condición «manual» va en el WHERE y no pisa la categoría", async () => {
+    goal.updateMany.mockResolvedValue({ count: 1 });
+    goal.findFirst.mockResolvedValue(filaMeta({ category: "manual", unit: "cajas", current: "12000.00" }));
     const res = await goalRoute.PATCH(req("/api/goals/g1", "PATCH", { current: 12000 }), ctx("g1"));
     expect(res.status).toBe(200);
-    expect(goal.update).toHaveBeenCalledWith({ where: { tenantId_id: { tenantId: "t1", id: "g1" } }, data: { current: 12000 } });
+    expect(goal.updateMany).toHaveBeenCalledWith({ where: { tenantId: "t1", id: "g1", category: "manual" }, data: { current: 12000 } });
     expect((await res.json()).current).toBe(12000);
+    expect(mockInvalidateByPrefix).toHaveBeenCalledWith("metas-avance:t1:");
+  });
+
+  it("ADR-488: PATCH { current } en una meta de ventas → 422 sin escribir (el avance sale de los datos)", async () => {
+    goal.updateMany.mockResolvedValue({ count: 0 });
+    goal.findFirst.mockResolvedValue({ id: "g1" });
+    const res = await goalRoute.PATCH(req("/api/goals/g1", "PATCH", { current: 500 }), ctx("g1"));
+    expect(res.status).toBe(422);
+    expect(await res.json()).toMatchObject({
+      code: "avance_solo_manual",
+      error: "El avance de esta meta sale de tus datos; solo las metas a mano se anotan",
+    });
+    expect(mockInvalidateByPrefix).not.toHaveBeenCalled();
+  });
+
+  it("ADR-488: PATCH { category: 'ventas', current } → 422 por el esquema, sin tocar la base", async () => {
+    const res = await goalRoute.PATCH(req("/api/goals/g1", "PATCH", { category: "ventas", current: 500 }), ctx("g1"));
+    expect(res.status).toBe(422);
+    expect((await res.json()).code).toBe("avance_solo_manual");
+    expect(goal.findFirst).not.toHaveBeenCalled();
+    expect(goal.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("ADR-488: POST de cubicación trimestral sin unidad → m³ del catálogo y avance 0", async () => {
+    goal.create.mockResolvedValue(filaMeta({ category: "cubicacion", period: "trimestral", unit: "m³", current: "0.00" }));
+    const res = await goalsRoute.POST(req("/api/goals", "POST", { name: "Cubicar", target: 150, category: "cubicacion", period: "trimestral" }));
+    expect(res.status).toBe(201);
+    expect(goal.create.mock.calls[0][0].data).toMatchObject({ category: "cubicacion", period: "trimestral", unit: "m³", current: 0 });
+    expect(mockInvalidateByPrefix).toHaveBeenCalledWith("metas-avance:t1:");
+  });
+
+  it("ADR-488: POST con avance tipeado en una meta que se mide sola → 422 avance_solo_manual", async () => {
+    const res = await goalsRoute.POST(req("/api/goals", "POST", { name: "Cubicar", target: 150, category: "cubicacion", current: 80 }));
+    expect(res.status).toBe(422);
+    expect((await res.json()).code).toBe("avance_solo_manual");
+    expect(goal.create).not.toHaveBeenCalled();
+  });
+
+  it("ADR-488: POST con una unidad que la categoría no admite → 422; PT sí vale en producción", async () => {
+    goal.create.mockResolvedValue(filaMeta());
+    const mala = await goalsRoute.POST(req("/api/goals", "POST", { name: "A", target: 1, category: "gastos", unit: "kg" }));
+    expect(mala.status).toBe(422);
+    expect(await mala.json()).toMatchObject({ code: "unidad_no_valida", error: "Esa unidad no va con esta meta: elige una de la lista" });
+    const buena = await goalsRoute.POST(req("/api/goals", "POST", { name: "B", target: 1, category: "produccion", unit: "PT" }));
+    expect(buena.status).toBe(201);
+    expect(goal.create).toHaveBeenCalledTimes(1);
+    expect(goal.create.mock.calls[0][0].data.unit).toBe("PT");
+  });
+
+  it("ADR-488: POST a mano guarda el avance tipeado y la unidad libre", async () => {
+    goal.create.mockResolvedValue(filaMeta({ category: "manual" }));
+    await goalsRoute.POST(req("/api/goals", "POST", { name: "Pintar", target: 10, category: "manual", unit: "paredes", current: 3 }));
+    expect(goal.create.mock.calls[0][0].data).toMatchObject({ category: "manual", unit: "paredes", current: 3 });
+  });
+
+  it("ADR-488: PATCH que pasa una meta a mano a producción corrige la unidad, deja el avance en 0 y exige la categoría leída", async () => {
+    goal.findFirst
+      .mockResolvedValueOnce({ category: "manual", unit: "cajas" })
+      .mockResolvedValueOnce(filaMeta({ category: "produccion", unit: "m³", current: "0.00" }));
+    goal.updateMany.mockResolvedValue({ count: 1 });
+    const res = await goalRoute.PATCH(req("/api/goals/g1", "PATCH", { category: "produccion" }), ctx("g1"));
+    expect(res.status).toBe(200);
+    expect(goal.findFirst.mock.calls[0][0]).toEqual({ where: { tenantId: "t1", id: "g1" }, select: { category: true, unit: true } });
+    expect(goal.updateMany).toHaveBeenCalledWith({
+      where: { tenantId: "t1", id: "g1", category: "manual" },
+      data: { category: "produccion", unit: "m³", current: 0 },
+    });
+  });
+
+  it("ADR-488: PATCH { unit } se mide contra la categoría guardada", async () => {
+    goal.findFirst.mockResolvedValueOnce({ category: "ventas", unit: "S/" });
+    const mala = await goalRoute.PATCH(req("/api/goals/g1", "PATCH", { unit: "kg" }), ctx("g1"));
+    expect(mala.status).toBe(422);
+    expect((await mala.json()).code).toBe("unidad_no_valida");
+    expect(goal.updateMany).not.toHaveBeenCalled();
+
+    goal.findFirst
+      .mockResolvedValueOnce({ category: "despacho", unit: "m³" })
+      .mockResolvedValueOnce(filaMeta({ category: "despacho", unit: "PT", current: "0.00" }));
+    goal.updateMany.mockResolvedValue({ count: 1 });
+    const buena = await goalRoute.PATCH(req("/api/goals/g1", "PATCH", { unit: "PT" }), ctx("g1"));
+    expect(buena.status).toBe(200);
+    expect(goal.updateMany).toHaveBeenCalledWith({ where: { tenantId: "t1", id: "g1", category: "despacho" }, data: { unit: "PT", current: 0 } });
+  });
+
+  it("ADR-488: si otro cambió la categoría entre la lectura y la escritura → 409 sin pisar", async () => {
+    goal.findFirst.mockResolvedValueOnce({ category: "manual", unit: "cajas" }).mockResolvedValueOnce({ id: "g1" });
+    goal.updateMany.mockResolvedValue({ count: 0 });
+    const res = await goalRoute.PATCH(req("/api/goals/g1", "PATCH", { category: "manual", current: 4 }), ctx("g1"));
+    expect(res.status).toBe(409);
+    expect((await res.json()).code).toBe("cambio_en_paralelo");
+    expect(mockInvalidateByPrefix).not.toHaveBeenCalled();
+  });
+
+  it("ADR-488: POST con un período fuera de la lista → 422", async () => {
+    const res = await goalsRoute.POST(req("/api/goals", "POST", { name: "Meta", target: 10, period: "bimestral" }));
+    expect(res.status).toBe(422);
+    expect(goal.create).not.toHaveBeenCalled();
   });
 
   it("PATCH descarta lo que no está en el esquema (createdAt, tenantId)", async () => {
-    goal.update.mockResolvedValue(filaMeta({ name: "Nuevo" }));
+    goal.updateMany.mockResolvedValue({ count: 1 });
+    goal.findFirst.mockResolvedValue(filaMeta({ name: "Nuevo" }));
     await goalRoute.PATCH(req("/api/goals/g1", "PATCH", { createdAt: "2020-01-01", tenantId: "otro", name: "Nuevo" }), ctx("g1"));
-    expect(goal.update.mock.calls[0][0].data).toEqual({ name: "Nuevo" });
+    expect(goal.updateMany).toHaveBeenCalledWith({ where: { tenantId: "t1", id: "g1" }, data: { name: "Nuevo" } });
   });
 
   it.each([[""], [null]])("PATCH con dueDate %j borra la fecha", async (dueDate) => {
-    goal.update.mockResolvedValue(filaMeta({ dueDate: null }));
+    goal.updateMany.mockResolvedValue({ count: 1 });
+    goal.findFirst.mockResolvedValue(filaMeta({ dueDate: null }));
     const res = await goalRoute.PATCH(req("/api/goals/g1", "PATCH", { dueDate }), ctx("g1"));
-    expect(goal.update.mock.calls[0][0].data).toEqual({ dueDate: null });
+    expect(goal.updateMany.mock.calls[0][0].data).toEqual({ dueDate: null });
     expect(await res.json()).not.toHaveProperty("dueDate");
   });
 
   it("PATCH sin ningún campo → 422", async () => {
     const res = await goalRoute.PATCH(req("/api/goals/g1", "PATCH", {}), ctx("g1"));
     expect(res.status).toBe(422);
-    expect(goal.update).not.toHaveBeenCalled();
+    expect(goal.updateMany).not.toHaveBeenCalled();
   });
 
-  it("PATCH de una meta que no es de este negocio → 404", async () => {
-    goal.update.mockRejectedValue(noEncontrado());
+  it("PATCH de una meta que no es de este negocio → 404 (el WHERE lleva el negocio de la sesión)", async () => {
+    goal.updateMany.mockResolvedValue({ count: 0 });
+    const res = await goalRoute.PATCH(req("/api/goals/ajena", "PATCH", { name: "x" }), ctx("ajena"));
+    expect(res.status).toBe(404);
+    expect(goal.updateMany).toHaveBeenCalledWith({ where: { tenantId: "t1", id: "ajena" }, data: { name: "x" } });
+  });
+
+  it("PATCH { current } de una meta de otro negocio → 404, no 422 (no se revela que existe)", async () => {
+    goal.updateMany.mockResolvedValue({ count: 0 });
+    goal.findFirst.mockResolvedValue(null);
     const res = await goalRoute.PATCH(req("/api/goals/ajena", "PATCH", { current: 1 }), ctx("ajena"));
     expect(res.status).toBe(404);
+    expect(goal.findFirst).toHaveBeenCalledWith({ where: { tenantId: "t1", id: "ajena" }, select: { id: true } });
+  });
+
+  it("PATCH { category } de una meta de otro negocio → 404 sin escribir (la lectura previa ya filtra por negocio)", async () => {
+    goal.findFirst.mockResolvedValue(null);
+    const res = await goalRoute.PATCH(req("/api/goals/ajena", "PATCH", { category: "manual" }), ctx("ajena"));
+    expect(res.status).toBe(404);
+    expect(goal.findFirst).toHaveBeenCalledWith({ where: { tenantId: "t1", id: "ajena" }, select: { category: true, unit: true } });
+    expect(goal.updateMany).not.toHaveBeenCalled();
   });
 
   it("DELETE filtra por el negocio y responde ok aunque no hubiera nada que borrar", async () => {

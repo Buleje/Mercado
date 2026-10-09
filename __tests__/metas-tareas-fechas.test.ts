@@ -27,6 +27,8 @@ describe("metas y tareas — fechas sin hora en el día de Lima", () => {
     expect(vencimientoDePlantilla("diario", hoy)).toBe("2026-09-14");
     expect(vencimientoDePlantilla("semanal", hoy)).toBe("2026-09-21");
     expect(vencimientoDePlantilla("mensual", hoy)).toBe("2026-10-14");
+    expect(vencimientoDePlantilla("trimestral", hoy)).toBe("2026-12-14");
+    expect(vencimientoDePlantilla("anual", hoy)).toBe("2027-09-14");
   });
 
   it("una tarea que vence hoy no está vencida a las 09:00 de ese día", () => {

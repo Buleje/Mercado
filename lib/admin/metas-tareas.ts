@@ -5,9 +5,14 @@
  * negocios leían y escribían la misma, y en Vercel el disco es de sólo lectura,
  * así que producción nunca guardó una.
  *
- * Las listas cerradas viven acá Y en los CHECK de
- * `prisma/migrations/adr-415-metas-y-tareas.sql`: una categoría nueva cambia
- * los dos lados.
+ * Las listas cerradas viven acá, en el catálogo (`lib/admin/metas-catalogo.ts`:
+ * área, unidad y de dónde sale el avance de cada una) Y en los CHECK de la base
+ * (`prisma/migrations/adr-415-metas-y-tareas.sql`, ampliados por
+ * `adr-488-metas-por-area.sql`): una categoría nueva cambia los tres lados.
+ *
+ * ADR-488: el avance de una meta se DERIVA de los datos del período al leer;
+ * `current` sólo vale en la categoría `manual` (el servidor lo deja en 0 en las
+ * demás, `AdminGoalsDB`). La unidad la fija el catálogo (`normalizarUnidad`).
  *
  * Los esquemas de edición se escriben aparte y SIN `.default()`: en Zod 4,
  * `.partial()` aplica los defaults, así que un PATCH `{ current: 5 }` también
@@ -16,9 +21,20 @@
  * antes dejaba cambiar cualquier campo, incluso `createdAt`.
  */
 import { z } from "zod";
+// El catálogo sólo importa TIPOS de este archivo: no hay ciclo en tiempo de ejecución.
+import { unidadPermitida } from "./metas-catalogo";
 
-export const CATEGORIAS_META = ["ventas", "pedidos", "clientes", "productos", "caja", "ticket_promedio", "retencion"] as const;
-export const PERIODOS_META = ["diario", "semanal", "mensual"] as const;
+/** Mismo orden y mismos valores que el CHECK `AdminGoal_category_chk` (ADR-488). Lo nuevo va al final del grupo. */
+export const CATEGORIAS_META = [
+  "ventas", "pedidos", "clientes", "productos", "caja", "ticket_promedio", "retencion",
+  "fiados_cobrados", "compras", "gastos",
+  "marketplace_ventas", "marketplace_pedidos",
+  "madera_ingresada", "produccion", "despacho", "venta_madera", "cubicacion", "cubicador",
+  "loth_tala", "loth_trozado",
+  "tareas", "manual",
+] as const;
+/** Mismo orden y mismos valores que el CHECK `AdminGoal_period_chk` (ADR-488). */
+export const PERIODOS_META = ["diario", "semanal", "mensual", "trimestral", "anual"] as const;
 export const PRIORIDADES_TAREA = ["baja", "media", "alta", "urgente"] as const;
 export const ESTADOS_TAREA = ["pendiente", "en_progreso", "completada", "cancelada"] as const;
 
@@ -44,15 +60,52 @@ const tituloTarea = z.string().trim().min(1).max(200);
 
 const alMenosUnCampo = (obj: Record<string, unknown>) => Object.values(obj).some((v) => v !== undefined);
 
-export const metaCrearSchema = z.object({
-  name: nombreMeta,
-  category: z.enum(CATEGORIAS_META).default("ventas"),
-  period: z.enum(PERIODOS_META).default("mensual"),
-  target: monto.positive(),
-  current: monto.min(0).default(0),
-  unit: unidadMeta.default("S/"),
-  dueDate: fecha,
-});
+/**
+ * ADR-488: lo que una meta que se mide sola no acepta. El `message` del issue es
+ * el código (como «sin_cambios»); el texto para la persona sale de acá.
+ */
+export const MENSAJES_REGLA_META = {
+  avance_solo_manual: "El avance de esta meta sale de tus datos; solo las metas a mano se anotan",
+  unidad_no_valida: "Esa unidad no va con esta meta: elige una de la lista",
+} as const;
+export type ReglaMeta = keyof typeof MENSAJES_REGLA_META;
+
+/** La primera regla de ADR-488 que rompe un cuerpo, o `null` (otro error de forma). */
+export function reglaMetaRota(issues: readonly { message: string }[]): ReglaMeta | null {
+  const rota = issues.find((i) => Object.hasOwn(MENSAJES_REGLA_META, i.message));
+  return rota ? (rota.message as ReglaMeta) : null;
+}
+
+/**
+ * Fuera de `manual` el avance sale de los datos (no se tipea: `current` > 0 es
+ * error) y la unidad tiene que ser una de las del catálogo. Sin categoría en el
+ * cuerpo (PATCH parcial) no hay contra qué medir: lo resuelve
+ * `AdminGoalsDB.editar` con la guardada, en el WHERE.
+ */
+function revisarReglasDeCategoria(
+  d: { category?: CategoriaMeta; current?: number; unit?: string },
+  ctx: { addIssue: (issue: { code: "custom"; message: ReglaMeta; path: string[] }) => void },
+): void {
+  if (d.category === undefined || d.category === "manual") return;
+  if ((d.current ?? 0) > 0) ctx.addIssue({ code: "custom", message: "avance_solo_manual", path: ["current"] });
+  if (d.unit !== undefined && !unidadPermitida(d.category, d.unit)) {
+    ctx.addIssue({ code: "custom", message: "unidad_no_valida", path: ["unit"] });
+  }
+}
+
+export const metaCrearSchema = z
+  .object({
+    name: nombreMeta,
+    category: z.enum(CATEGORIAS_META).default("ventas"),
+    period: z.enum(PERIODOS_META).default("mensual"),
+    target: monto.positive(),
+    /** Sólo se anota en `manual`; en las demás tiene que venir en 0 (o no venir). */
+    current: monto.min(0).default(0),
+    /** Ausente = la [0] del catálogo para esa categoría (`normalizarUnidad`, en `AdminGoalsDB`). */
+    unit: unidadMeta.optional(),
+    dueDate: fecha,
+  })
+  .superRefine(revisarReglasDeCategoria);
 
 export const metaEditarSchema = z
   .object({
@@ -64,7 +117,8 @@ export const metaEditarSchema = z
     unit: unidadMeta.optional(),
     dueDate: fecha,
   })
-  .refine(alMenosUnCampo, "sin_cambios");
+  .refine(alMenosUnCampo, "sin_cambios")
+  .superRefine(revisarReglasDeCategoria);
 
 export const tareaCrearSchema = z.object({
   title: tituloTarea,
@@ -161,10 +215,16 @@ export function sumarMesesAFecha(fecha: string, meses: number): string {
   return `${base.getUTCFullYear()}-${String(base.getUTCMonth() + 1).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
 }
 
-/** Cuándo vence una meta creada desde plantilla, contado desde `hoy` (el día de Lima): diaria hoy, semanal en 7 días, mensual en un mes. */
+/**
+ * Cuándo vence una meta creada desde plantilla, contado desde `hoy` (el día de
+ * Lima): diaria hoy, semanal en 7 días, mensual en un mes, trimestral en 3,
+ * anual en 12.
+ */
 export function vencimientoDePlantilla(periodo: PeriodoMeta, hoy: string): string {
   if (periodo === "diario") return hoy;
   if (periodo === "semanal") return sumarDiasAFecha(hoy, 7);
+  if (periodo === "trimestral") return sumarMesesAFecha(hoy, 3);
+  if (periodo === "anual") return sumarMesesAFecha(hoy, 12);
   return sumarMesesAFecha(hoy, 1);
 }
 
