@@ -2,6 +2,7 @@ import type { CartItem } from "@/contexts/cart-context";
 import type { Customer, SavedLocation } from "@/contexts/customer-context";
 import type { DbOrderItem } from "@/lib/jsondb";
 import type { CheckoutState, PaymentMethod } from "../types";
+import type { DescuentoAutomaticoVista } from "@/lib/pricing/total-pedido";
 
 /**
  * Helpers puros para el flow de submit del checkout.
@@ -68,26 +69,57 @@ export function generateRequestId(): string {
  * NOTA: el backend recompone el total — este `total` es solo informativo
  * para tracking y antifraude.
  */
+/**
+ * Teléfono que viaja en el pedido (o undefined si es muy corto). La cotización
+ * del descuento automático usa el MISMO valor: si difiriera, la vista previa y
+ * el cobro mirarían clientes distintos.
+ */
+export function telefonoDelPedido(phone: string): string | undefined {
+  return phone.length >= 6 ? phone : undefined;
+}
+
+/**
+ * Firma de lo que decide el total en el servidor (productos, cantidades,
+ * precios, teléfono, cupón y promo). Un total corregido por un 422 solo vale
+ * mientras la firma no cambie: si el cliente toca el carrito, se descarta.
+ */
+export function firmaDelTotal(args: {
+  items: CartItem[];
+  telefono: string | undefined;
+  cupon: string;
+  promoId: string;
+}): string {
+  const items = args.items
+    .map((i) => `${i.id}:${i.quantity}:${i.price}`)
+    .sort()
+    .join(",");
+  return `${items}|${args.telefono ?? ""}|${args.cupon}|${args.promoId}`;
+}
+
 export function buildOrderPayload(args: {
   state: CheckoutState;
   effective: EffectiveValues;
   orderItems: DbOrderItem[];
-  finalTotal: number;
+  /**
+   * Total que cobra el servidor (`calcularTotalPedido`): sin propina, que el
+   * pedido no guarda. Si no coincide con el del servidor, responde 422.
+   */
+  totalPedido: number;
   promo: { id: string } | null;
   discount: number;
   juntaCode?: string;
 }): string {
-  const { state, effective, orderItems, finalTotal, promo, discount, juntaCode } =
+  const { state, effective, orderItems, totalPedido, promo, discount, juntaCode } =
     args;
   return JSON.stringify({
     customer: {
       name: effective.name,
-      phone: effective.phone.length >= 6 ? effective.phone : undefined,
+      phone: telefonoDelPedido(effective.phone),
       location: effective.location || undefined,
       reference: effective.reference || undefined,
     },
     items: orderItems,
-    total: finalTotal,
+    total: totalPedido,
     notes: (state.address.notes ?? "").trim() || undefined,
     deliverySlot:
       state.delivery.slot !== "lo-antes-posible"
@@ -114,7 +146,6 @@ export function buildOrderPayload(args: {
         appliedCouponCode: state.coupon.code.trim(),
         couponDiscount: state.coupon.discount,
       }),
-    ...(state.payment.tip > 0 && { tip: state.payment.tip }),
   });
 }
 
@@ -181,6 +212,8 @@ export function saveLastOrder(
   items: CartItem[],
   finalTotal: number,
   customerPhone?: string,
+  /** Descuento automático que cobró el servidor (la confirmación lo muestra). */
+  descuento?: DescuentoAutomaticoVista | null,
 ) {
   try {
     localStorage.setItem(
@@ -195,6 +228,9 @@ export function saveLastOrder(
           image: i.image ?? "",
         })),
         total: finalTotal,
+        ...(descuento && descuento.monto > 0 && {
+          descuento: { monto: descuento.monto, etiqueta: descuento.etiqueta },
+        }),
         // HOTFIX-003: persist phone so public order lookups can prove ownership.
         ...(customerPhone && { customerPhone }),
       })

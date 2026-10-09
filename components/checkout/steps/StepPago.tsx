@@ -12,6 +12,7 @@ import type { YapeConfig } from "@/contexts/settings-context";
 import LoyaltyTierProgressBar from "@/components/loyalty/LoyaltyTierProgressBar";
 import { useFiadoOption } from "../hooks/useFiadoOption";
 import { JuntaActiveBanner } from "../JuntaActiveBanner";
+import type { DescuentoAutomaticoVista } from "@/lib/pricing/total-pedido";
 
 /**
  * StepPago — selector de método de pago + resumen del pedido.
@@ -27,8 +28,8 @@ export type StepPagoProps = {
   cartTotal: number;
   discount: number;
   promo: DbPromotion | null;
-  tierDiscount: number;
-  tierDiscountPct: number;
+  /** Descuento automático cotizado por el servidor (primera compra, etc.). */
+  descuentoAutomatico: DescuentoAutomaticoVista | null;
   effectiveCustomer: Customer | null;
   loyaltyPoints: number | null;
   yape: YapeConfig;
@@ -46,8 +47,7 @@ export function StepPago({
   cartTotal,
   discount,
   promo,
-  tierDiscount,
-  tierDiscountPct,
+  descuentoAutomatico,
   effectiveCustomer,
   loyaltyPoints,
   yape,
@@ -99,14 +99,8 @@ export function StepPago({
             finalTotal={finalTotal}
             discount={discount}
             promo={promo}
-            tierDiscount={tierDiscount}
-            tierDiscountPct={tierDiscountPct}
-            loyaltyTier={state.loyalty.tier}
+            descuentoAutomatico={descuentoAutomatico}
             loyaltyPoints={loyaltyPoints}
-            redemptionSoles={state.loyalty.redemptionSoles}
-            onRedemptionChange={(soles) =>
-              dispatch({ type: "SET_LOYALTY", patch: { redemptionSoles: soles } })
-            }
             paymentMethod={state.payment.method}
             onPaymentMethodChange={(method) => {
               dispatch({

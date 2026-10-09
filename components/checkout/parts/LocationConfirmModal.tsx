@@ -136,7 +136,7 @@ export function LocationConfirmModal({
                       Obteniendo tu ubicación
                     </p>
                     <p className="text-sm text-muted dark:text-[var(--text-tertiary)] mt-1 leading-relaxed max-w-sm">
-                      Estamos consultando tu GPS. Si el navegador lo pide, aceptá el permiso.
+                      Estamos consultando tu GPS. Si el navegador lo pide, acepta el permiso.
                     </p>
                   </div>
                 </div>
@@ -154,7 +154,7 @@ export function LocationConfirmModal({
                     {/* Hint flotante */}
                     <div className="absolute top-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-raised)] shadow-lg px-3.5 py-1.5 text-xs font-bold text-[var(--text-primary)] border border-[var(--rule-soft)]">
                       <MapPin className="h-3.5 w-3.5 text-[var(--color-primary,#00A0A0)]" strokeWidth={2.5} />
-                      Mové el pin para ajustar
+                      Mueve el pin para ajustar
                     </div>
                   </div>
 

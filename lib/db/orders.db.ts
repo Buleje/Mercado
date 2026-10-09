@@ -18,6 +18,7 @@ import {
   normalizePhone,
 } from "./misc.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { estadosQuePuedenPasarA } from "@/lib/order-status";
 import { DomainEvents } from "@/lib/domain-events";
 import { notifyOwnerNewOrder } from "@/lib/whatsapp-order-notify";
 import { findTenantByIdOrSlug } from "@/lib/tenant";
@@ -232,6 +233,8 @@ export const OrdersDB = {
     status?: string;
     since?: string;
     phone?: string;
+    /** Solo estos pedidos (token de seguimiento de un invitado). */
+    ids?: string[];
     tenantId: string;
   }): Promise<{ orders: DbOrder[]; nextCursor: string | null; total: number }> {
     const limit = Math.min(Math.max(opts.limit ?? 50, 1), 200);
@@ -251,6 +254,9 @@ export const OrdersDB = {
     }
     if (opts.phone) {
       where.customerPhone = normalizePhone(opts.phone);
+    }
+    if (opts.ids) {
+      where.id = { in: opts.ids };
     }
 
     // TD-116: batch-tx → Promise.all dentro de la tx interactiva de withRlsTx
@@ -614,6 +620,154 @@ export const OrdersDB = {
         deletedAt: null,
       },
     }));
+  },
+
+  /**
+   * Cuántas compras tiene un teléfono en ESTE negocio: pedidos vivos o
+   * entregados (no cuentan los cancelados ni los borrados: un pedido
+   * cancelado no es una compra y no debe quitar la «primera compra»).
+   * Decide el descuento automático (primera compra / cliente frecuente): la
+   * cotización del checkout y `POST /api/orders` leen este mismo conteo
+   * (`calcularDescuentoAutomatico`). Normaliza con `normalizePhone` (últimos 9
+   * dígitos), igual que se guarda `customerPhone`: «51…», «+51 …» o
+   * «999-888…» cuentan las mismas compras (audit pagos M004, security 08-10).
+   */
+  async contarComprasPorTelefono(tenantId: string, telefono: string): Promise<number> {
+    const normalizado = normalizePhone(telefono);
+    if (!normalizado) return 0;
+    return withRlsTx(tenantId, (tx) =>
+      tx.order.count({
+        where: {
+          tenantId,
+          customerPhone: normalizado,
+          status: { not: "cancelado" },
+          deletedAt: null,
+        },
+      }),
+    );
+  },
+
+  /**
+   * Cancela un pedido y devuelve su stock UNA sola vez, en una transacción.
+   * La usan todas las vías de cancelar (PATCH /api/orders/[id], cancelar en
+   * lote, rechazo del pago Yape). Solo la llamada que marca `cancelledAt`
+   * (condición en el WHERE) repone: dos cancelaciones simultáneas, o cancelar
+   * en lote algo que ya estaba cancelado, no devuelven el stock dos veces.
+   * Un pedido `entregado` no se repone (la mercadería ya salió).
+   */
+  async cancelarConReposicion(
+    tenantId: string,
+    id: string,
+    cancelReason: string | null,
+  ): Promise<{ repuesto: boolean; items: number }> {
+    const res = await withRlsTx(tenantId, async (tx) => {
+      const marcado = await tx.order.updateMany({
+        where: { id, tenantId, cancelledAt: null, status: { not: "entregado" } },
+        data: { status: "cancelado", cancelReason, cancelledAt: new Date() },
+      });
+      if (marcado.count === 0) return { repuesto: false, items: 0 };
+      const items = await tx.orderItem.findMany({
+        where: { orderId: id },
+        select: { productId: true, quantity: true },
+      });
+      for (const it of items) {
+        await tx.$executeRaw`
+          UPDATE "Product"
+             SET "stock" = "stock" + ${it.quantity}
+           WHERE "id" = ${it.productId}
+             AND "tenantId" = ${tenantId}
+             AND "stock" IS NOT NULL
+        `;
+      }
+      return { repuesto: true, items: items.length };
+    });
+    if (res.repuesto) {
+      logger.info("[orders/cancel] stock repuesto", { tenantId, orderId: id, items: res.items });
+    }
+    return res;
+  },
+
+  /**
+   * Cambia el estado de varios pedidos respetando la máquina de estados
+   * (`TRANSICIONES_PEDIDO`, la misma del cambio de a uno). Antes el lote
+   * hacía un `updateMany` ciego: pasaba de entregado a cancelado, revivía
+   * cancelados y cada vuelta a «cancelado» reponía stock otra vez.
+   *
+   *  - Mismo estado → no se toca (`sinCambio`).
+   *  - Transición inválida → no se toca (`rechazados`, con su estado actual).
+   *  - «cancelado» → `cancelarConReposicion` por pedido (cancelledAt + stock
+   *    una sola vez). Si ya tenía `cancelledAt` (lo revivió el lote viejo), se
+   *    marca cancelado SIN reponer: el stock ya se devolvió esa vez.
+   *  - Otro estado → `updateMany` con los estados de origen válidos en el
+   *    WHERE: si otro cambió el pedido entre la lectura y el write, no pisa.
+   */
+  async cambiarEstadoEnLote(
+    tenantId: string,
+    ids: string[],
+    estado: OrderStatus,
+  ): Promise<{
+    actualizados: string[];
+    rechazados: { id: string; desde: string }[];
+    sinCambio: string[];
+    noEncontrados: string[];
+    stockRepuesto: number;
+  }> {
+    const unicos = [...new Set(ids)];
+    const filas = await withRlsTx(tenantId, (tx) =>
+      tx.order.findMany({
+        where: { tenantId, id: { in: unicos }, deletedAt: null },
+        select: { id: true, status: true },
+      }),
+    );
+    const porId = new Map(filas.map((f) => [f.id, f.status]));
+    const origenes = estadosQuePuedenPasarA(estado);
+    const candidatos: string[] = [];
+    const rechazados: { id: string; desde: string }[] = [];
+    const sinCambio: string[] = [];
+    const noEncontrados: string[] = [];
+    for (const id of unicos) {
+      const desde = porId.get(id);
+      if (desde === undefined) noEncontrados.push(id);
+      else if (desde === estado) sinCambio.push(id);
+      else if ((origenes as string[]).includes(desde)) candidatos.push(id);
+      else rechazados.push({ id, desde });
+    }
+
+    const actualizados: string[] = [];
+    let stockRepuesto = 0;
+    if (estado === "cancelado") {
+      for (const id of candidatos) {
+        const r = await OrdersDB.cancelarConReposicion(tenantId, id, null);
+        if (r.repuesto) {
+          stockRepuesto++;
+          actualizados.push(id);
+          continue;
+        }
+        const soloEstado = await withRlsTx(tenantId, (tx) =>
+          tx.order.updateMany({
+            where: { id, tenantId, status: { in: origenes } },
+            data: { status: "cancelado", updatedAt: new Date() },
+          }),
+        );
+        if (soloEstado.count > 0) actualizados.push(id);
+      }
+    } else if (candidatos.length > 0) {
+      const res = await withRlsTx(tenantId, async (tx) => {
+        const r = await tx.order.updateMany({
+          where: { tenantId, id: { in: candidatos }, status: { in: origenes } },
+          data: { status: estado, updatedAt: new Date() },
+        });
+        // Cuáles quedaron en el estado pedido (el WHERE pudo saltar alguno).
+        if (r.count === candidatos.length) return candidatos;
+        const ahora = await tx.order.findMany({
+          where: { tenantId, id: { in: candidatos }, status: estado },
+          select: { id: true },
+        });
+        return ahora.map((o) => o.id);
+      });
+      actualizados.push(...res);
+    }
+    return { actualizados, rechazados, sinCambio, noEncontrados, stockRepuesto };
   },
 
   /**

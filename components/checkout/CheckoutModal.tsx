@@ -16,7 +16,16 @@ import { MiniCartSummary } from "./parts/MiniCartSummary";
 import { CheckoutModalShell } from "./parts/CheckoutModalShell";
 import { useCheckoutFlow } from "./checkout-flow-context";
 import { useCoupon } from "./hooks/useCoupon";
-import { useLoyalty, getTierDiscountPct } from "./hooks/useLoyalty";
+import { useLoyalty } from "./hooks/useLoyalty";
+import { useDescuentoAutomatico } from "./hooks/useDescuentoAutomatico";
+import {
+  resolveEffectiveValues,
+  telefonoDelPedido,
+} from "./hooks/checkout-submit-helpers";
+import {
+  calcularTotalPedido,
+  porcentajeDe,
+} from "@/lib/pricing/total-pedido";
 import { useDniLookup } from "./hooks/useDniLookup";
 import { useGeolocation } from "./hooks/useGeolocation";
 import { usePhoneSearch } from "./hooks/usePhoneSearch";
@@ -90,15 +99,28 @@ export default function CheckoutModal() {
     cartTotal,
     state.customer.phone || customer?.phone
   );
-  const discount = promo ? cartTotal * (promo.discountPercent / 100) : 0;
-  const tierDiscountPct = getTierDiscountPct(state.loyalty.tier);
-  const tierDiscount = cartTotal * (tierDiscountPct / 100);
+  const discount = promo ? porcentajeDe(cartTotal, promo.discountPercent) : 0;
 
-  // El backend recompone — esto solo es UI/preview
-  const finalTotal = Math.max(
-    0,
-    cartTotal - discount - state.coupon.discount - tierDiscount - state.loyalty.redemptionSoles + state.payment.tip
-  );
+  // Descuento automático (primera compra, volumen, cliente frecuente): lo
+  // cotiza el servidor con la misma función que cobra el pedido.
+  const autoDescuento = useDescuentoAutomatico({
+    telefono: telefonoDelPedido(resolveEffectiveValues(state, effectiveCustomer).phone),
+    subtotal: cartTotal,
+    unidades: items.reduce((sum, i) => sum + i.quantity, 0),
+    activo: checkoutOpen,
+  });
+
+  // Vista previa con la fórmula ÚNICA del servidor (lib/pricing/total-pedido).
+  // Sin el «tier» de lealtad ni el canje de puntos: el servidor no los cobra
+  // y todo pedido con ellos caía en 422. La propina NO entra: se da en mano
+  // al repartidor y el pedido no la guarda, así que Yape/Plin/efectivo y el
+  // pie cobran solo el total del pedido.
+  const totalVistaPrevia = calcularTotalPedido({
+    subtotal: cartTotal,
+    descuentoCupon: state.coupon.discount,
+    descuentoPromo: discount,
+    descuentoAutomatico: autoDescuento.descuento?.monto ?? 0,
+  });
 
   // ── Hooks de side effects ───────────────────────────────────────
   const coupon = useCoupon({ state: state.coupon, cartTotal, dispatch });
@@ -115,7 +137,7 @@ export default function CheckoutModal() {
   const submitter = useCheckoutSubmit({
     state,
     items,
-    finalTotal,
+    finalTotal: totalVistaPrevia,
     effectiveCustomer,
     promo,
     discount,
@@ -124,6 +146,11 @@ export default function CheckoutModal() {
     customerActions: { register, openOrderStatusModal },
     closeCheckout,
   });
+  // Si un 422 corrigió el total (p. ej. la cotización falló por 429 o red),
+  // el resumen muestra el del servidor antes de volver a confirmar.
+  const ajuste = submitter.ajusteServidor;
+  const descuentoMostrado = ajuste ? ajuste.descuentoAutomatico : autoDescuento.descuento;
+  const finalTotal = ajuste?.serverTotal ?? totalVistaPrevia;
 
   const handlers = useCheckoutHandlers({
     state,
@@ -254,8 +281,7 @@ export default function CheckoutModal() {
             cartTotal={cartTotal}
             discount={discount}
             promo={promo}
-            tierDiscount={tierDiscount}
-            tierDiscountPct={tierDiscountPct}
+            descuentoAutomatico={descuentoMostrado}
             effectiveCustomer={effectiveCustomer}
             loyaltyPoints={state.loyalty.points}
             yape={yape}
@@ -275,6 +301,7 @@ export default function CheckoutModal() {
             finalTotal={finalTotal}
             cartTotal={cartTotal}
             discount={discount}
+            descuentoAutomatico={descuentoMostrado}
             effectiveCustomer={effectiveCustomer}
             onEditAddress={() => dispatch({ type: "SET_STEP", step: "datos" })}
           />

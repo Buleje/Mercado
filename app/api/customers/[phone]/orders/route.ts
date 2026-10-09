@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { OrdersDB, normalizePhone } from "@/lib/jsondb";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { getTenantIdFromRequest } from "@/lib/tenant";
-import { getCustomerPayload, CUSTOMER_SESSION } from "@/lib/auth/customer-session";
+import { getCustomerPayload, getSeguimientoPedidos, CUSTOMER_SESSION } from "@/lib/auth/customer-session";
 import { logger } from "@/lib/logger";
 import { z } from "zod";
 import { enqueueActivityLog } from "@/lib/queue";
@@ -42,12 +42,22 @@ export async function GET(
   // Customer-session check: si hay cookie firmada con HMAC y el phone
   // del path coincide con el customerId del session, autorizamos.
   // Si no hay session, devolvemos lista vacía (no leak por path-param).
+  // Sesión VERIFICADA del teléfono → todo su historial. Token de SEGUIMIENTO
+  // (lo deja un pedido de invitado; el teléfono vino en el cuerpo y no prueba
+  // nada, security 2026-10-08) → solo los pedidos cuyo id lleva adentro.
   const sessionToken = req.cookies.get(CUSTOMER_SESSION.COOKIE_NAME)?.value;
   let authorized = false;
+  let soloIds: string[] | null = null;
   if (sessionToken) {
     const payload = await getCustomerPayload(sessionToken);
     if (payload?.customerId && normalizePhone(payload.customerId) === normalizedPhone) {
       authorized = true;
+    } else {
+      const seg = await getSeguimientoPedidos(sessionToken);
+      if (seg && normalizePhone(seg.telefono) === normalizedPhone && seg.pedidos.length > 0) {
+        authorized = true;
+        soloIds = seg.pedidos;
+      }
     }
   }
   if (!authorized) {
@@ -56,7 +66,9 @@ export async function GET(
   }
 
   try {
-    const orders = await OrdersDB.getByCustomerPhone(tenantId, normalizedPhone);
+    const orders = soloIds
+      ? (await OrdersDB.getPage({ tenantId, phone: normalizedPhone, ids: soloIds, limit: 50 })).orders
+      : await OrdersDB.getByCustomerPhone(tenantId, normalizedPhone);
     enqueueActivityLog({
       action: "leer",
       resource: "cliente_pii",

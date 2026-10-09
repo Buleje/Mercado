@@ -487,7 +487,7 @@ export function PaymentProofModal({
                   Arrastra la captura aquí
                 </p>
                 <p className="text-sm text-[var(--text-tertiary)] mt-1">
-                  o tocá para elegir desde tu galería
+                  o toca para elegir desde tu galería
                 </p>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-2">
                   JPG · PNG · WebP · HEIC · máx 5 MB

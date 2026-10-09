@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { CUSTOMER_SESSION, getCustomerPayload } from "@/lib/auth/customer-session";
+import { CUSTOMER_SESSION, getCustomerPayload, getSeguimientoPedidos } from "@/lib/auth/customer-session";
 import { tryAdmin } from "@/lib/require-admin";
 import { generateRatingToken } from "@/lib/delivery/rating-token";
 
@@ -54,6 +54,14 @@ export async function GET(
         if (sessionPhone && orderPhone && sessionPhone === orderPhone) {
           authorized = true;
           viewerRole = "customer";
+        } else if (!payload) {
+          // Token de SEGUIMIENTO de un pedido de invitado (security
+          // 2026-10-08): solo los pedidos cuyo id lleva, del mismo negocio.
+          const seg = await getSeguimientoPedidos(sessionToken);
+          if (seg && seg.tenantId === order.tenantId && seg.pedidos.includes(order.id)) {
+            authorized = true;
+            viewerRole = "customer";
+          }
         }
       }
     }

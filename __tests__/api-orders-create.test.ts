@@ -229,6 +229,11 @@ vi.mock("@/lib/tenant", () => ({
 
 // ── Import handler AFTER all mocks are set up ─────────────────────────────────
 import { POST, GET } from "@/app/api/orders/route";
+import {
+  createCustomerToken,
+  getCustomerPayload,
+  getSeguimientoPedidos,
+} from "@/lib/auth/customer-session";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -427,6 +432,18 @@ describe("POST /api/orders", () => {
       expect(mockRequireAdmin).not.toHaveBeenCalled();
     });
 
+    it("la venta online baja el stock UNA vez: decrementFEFO solo anota el kardex", async () => {
+      const { InventoryMovementsDB } = await import("@/lib/db/inventory.db");
+      const fefo = vi.mocked(InventoryMovementsDB.decrementFEFO);
+      fefo.mockClear();
+      const res = await POST(makePostReq(VALID_BODY), defaultCtx);
+      expect(res.status).toBe(201);
+      expect(fefo).toHaveBeenCalled();
+      for (const llamada of fefo.mock.calls) {
+        expect(llamada[5]).toEqual({ stockYaAplicado: true });
+      }
+    });
+
     it("purga el Tablero de Ventas del tenant tras crear el pedido", async () => {
       const res = await POST(makePostReq(VALID_BODY), defaultCtx);
       expect(res.status).toBe(201);
@@ -523,6 +540,80 @@ describe("POST /api/orders", () => {
       expect(res.status).toBe(201);
       const body = await res.json();
       expect(body.customer.name).toBe("Cliente Anónimo");
+    });
+  });
+
+  // ── Seguimiento del invitado (security 2026-10-08, Ley 29733) ──────────────
+  // El teléfono del pedido viene del CUERPO: la cookie que deja el POST no es
+  // una sesión; solo abre los pedidos hechos desde ese navegador.
+  describe("cookie del invitado = seguimiento, no sesión", () => {
+    const COOKIE = "buleje-customer-sess";
+    const conCookie = (qs: string, token: string) =>
+      new NextRequest(`https://host/api/orders${qs}`, {
+        method: "GET",
+        headers: { cookie: `${COOKIE}=${encodeURIComponent(token)}`, "x-tenant-id": "main" },
+      });
+    const sesionVerificada = (telefono: string) =>
+      createCustomerToken({
+        customerId: telefono,
+        email: `${telefono}@x.pe`,
+        name: "Dueña del número",
+        tenantId: "main",
+        provider: "phone",
+      });
+
+    it("el invitado recibe un token de seguimiento con SOLO su pedido", async () => {
+      const res = await POST(makePostReq(VALID_BODY), defaultCtx);
+      expect(res.status).toBe(201);
+      const token = (res as NextResponse).cookies.get(COOKIE)?.value;
+      expect(token).toBeTruthy();
+      expect(await getCustomerPayload(token!)).toBeNull();
+      expect(await getSeguimientoPedidos(token!)).toMatchObject({
+        telefono: "987654321",
+        pedidos: [SAVED_ORDER.id],
+      });
+    });
+
+    it("con ese token, GET ?phone= trae solo su pedido; el historial del dueño del número no", async () => {
+      const res = await POST(makePostReq(VALID_BODY), defaultCtx);
+      const token = (res as NextResponse).cookies.get(COOKIE)!.value;
+      mockOrdersGetPage.mockResolvedValue({ orders: [SAVED_ORDER], nextCursor: null, total: 1 });
+
+      const propio = await GET(conCookie("?phone=987654321", token), defaultCtx);
+      expect(propio.status).toBe(200);
+      expect(mockOrdersGetPage).toHaveBeenCalledWith(
+        expect.objectContaining({ phone: "987654321", ids: [SAVED_ORDER.id] }),
+      );
+
+      mockOrdersGetPage.mockClear();
+      const ajeno = await GET(conCookie("?phone=911222333", token), defaultCtx);
+      expect(await ajeno.json()).toEqual([]);
+      expect(mockOrdersGetPage).not.toHaveBeenCalled();
+    });
+
+    it("la sesión VERIFICADA del teléfono ve todo su historial (sin filtro de ids)", async () => {
+      mockOrdersGetPage.mockResolvedValue({ orders: [SAVED_ORDER], nextCursor: null, total: 1 });
+      const res = await GET(conCookie("?phone=987654321", await sesionVerificada("987654321")), defaultCtx);
+      expect(res.status).toBe(200);
+      const llamada = mockOrdersGetPage.mock.calls[0][0] as Record<string, unknown>;
+      expect(llamada.phone).toBe("987654321");
+      expect(llamada).not.toHaveProperty("ids");
+    });
+
+    it("un pedido con sesión verificada NO pisa la cookie de sesión", async () => {
+      const token = await sesionVerificada("987654321");
+      const res = await POST(
+        makePostReq(VALID_BODY, { cookie: `${COOKIE}=${encodeURIComponent(token)}` }),
+        defaultCtx,
+      );
+      expect(res.status).toBe(201);
+      expect((res as NextResponse).cookies.get(COOKIE)).toBeUndefined();
+    });
+
+    it("fiado sin sesión verificada del teléfono → 401 y no crea pedido", async () => {
+      const res = await POST(makePostReq({ ...VALID_BODY, paymentMethod: "fiado" }), defaultCtx);
+      expect(res.status).toBe(401);
+      expect(mockOrdersAdd).not.toHaveBeenCalled();
     });
   });
 });

@@ -9,30 +9,17 @@ import { logActivity } from "@/lib/activity-logger";
 import { requireAdmin } from "@/lib/require-admin";
 import { sendPushToPhone } from "@/lib/push-sender";
 import { prisma } from "@/lib/prisma";
-import { prismaForTenant } from "@/lib/tenant";
 import { logger } from "@/lib/logger";
 import { invalidate } from "@/lib/cache";
 import { autoEarnLoyaltyPoints } from "@/lib/loyalty/auto-earn";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
+import { transicionesDesde } from "@/lib/order-status";
 
 const NOTIFIABLE_STATUSES = new Set(["confirmado", "preparando", "en_camino", "entregado", "cancelado"]);
 
-// Valid order status transitions — prevents going backward (e.g. entregado → pendiente)
-// Mantener sincronizado con `components/admin/OrdersTab/types.ts:VALID_TRANSITIONS`.
-//
-// FIX 2026-05-07: agregar entrega manual directa desde confirmado y preparando.
-// Antes el dueño TENÍA que mover por "en_camino" antes de "entregado", aunque
-// el cliente vino al mostrador o lo entregó sin delivery. Ahora puede saltar
-// el paso "en_camino" — útil para negocios sin flota de repartidores.
-const VALID_TRANSITIONS: Record<string, string[]> = {
-  pendiente: ["confirmado", "cancelado"],
-  confirmado: ["preparando", "en_camino", "entregado", "cancelado"],
-  preparando: ["en_camino", "entregado", "cancelado"],
-  en_camino: ["entregado", "cancelado"],
-  entregado: [],    // Terminal state
-  cancelado: [],    // Terminal state
-};
+// Transiciones válidas: `TRANSICIONES_PEDIDO` (lib/order-status.ts), la misma
+// tabla que usa el cambio en lote (`OrdersDB.cambiarEstadoEnLote`).
 
 const PatchSchema = z.object({
   status: z.enum(["pendiente", "confirmado", "preparando", "en_camino", "entregado", "cancelado"]).optional(),
@@ -105,7 +92,7 @@ async function patchOrder(
 
     // Validate status transition if attempting to change status
     if (parsed.data.status && parsed.data.status !== existing.status) {
-      const allowed = VALID_TRANSITIONS[existing.status] ?? [];
+      const allowed = transicionesDesde(existing.status);
       if (!allowed.includes(parsed.data.status)) {
         return NextResponse.json(
           { error: `No se puede cambiar de "${existing.status}" a "${parsed.data.status}". Transiciones válidas: ${allowed.join(", ") || "ninguna (estado final)"}` },
@@ -157,33 +144,14 @@ async function patchOrder(
         // F4: await — garantiza que el stock se repone antes de responder al cliente.
         // Si la tx falla, el catch loggea el error pero la respuesta HTTP ya se
         // preparó correctamente (el status del pedido sí cambió a cancelado).
-        await prismaForTenant(auth.tenantId).$transaction(async (tx) => {
-          const items = await tx.orderItem.findMany({
-            where: { orderId: id },
-            select: { productId: true, quantity: true },
-          });
-          for (const it of items) {
-            await tx.$executeRaw`
-              UPDATE "Product"
-                 SET "stock" = "stock" + ${it.quantity}
-               WHERE "id" = ${it.productId}
-                 AND "tenantId" = ${auth.tenantId}
-                 AND "stock" IS NOT NULL
-            `;
-          }
-          await tx.order.update({
-            where: { id },
-            data: {
-              cancelReason: parsed.data.cancelReason ?? null,
-              cancelledAt: new Date(),
-            },
-          });
-          logger.info("[orders/cancel] stock reverted + metadata persisted", {
-            orderId: id,
-            tenantId: auth.tenantId,
-            itemsReverted: items.length,
-          });
-        }).catch((err) => {
+        // Misma transacción que cancelar en lote y rechazar el pago
+        // (`OrdersDB.cancelarConReposicion`): marca `cancelledAt` y repone el
+        // stock una sola vez aunque lleguen dos PATCH «cancelado» a la vez.
+        await OrdersDB.cancelarConReposicion(
+          auth.tenantId,
+          id,
+          parsed.data.cancelReason ?? null,
+        ).catch((err) => {
           logger.error("[orders/cancel] revert+metadata transaction failed", {
             orderId: id,
             tenantId: auth.tenantId,

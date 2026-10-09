@@ -23,6 +23,7 @@ import {
 import type { CartItem } from "@/contexts/cart-context";
 import type { Customer } from "@/contexts/customer-context";
 import type { CheckoutState } from "../types";
+import type { DescuentoAutomaticoVista } from "@/lib/pricing/total-pedido";
 import { OrderItemsDetailModal } from "../parts/OrderItemsDetailModal";
 
 /**
@@ -41,6 +42,8 @@ export type StepConfirmarProps = {
   finalTotal: number;
   cartTotal: number;
   discount: number;
+  /** Descuento automático cotizado por el servidor (primera compra, etc.). */
+  descuentoAutomatico?: DescuentoAutomaticoVista | null;
   effectiveCustomer: Customer | null;
   onEditAddress?: () => void;
 };
@@ -116,6 +119,7 @@ export function StepConfirmar({
   finalTotal,
   cartTotal,
   discount,
+  descuentoAutomatico,
   effectiveCustomer,
   onEditAddress,
 }: StepConfirmarProps) {
@@ -422,14 +426,29 @@ export function StepConfirmar({
                 </span>
               </div>
             )}
+            {descuentoAutomatico && descuentoAutomatico.monto > 0 && (
+              <div
+                className="flex items-center justify-between text-[var(--data-success-700)] dark:text-emerald-400"
+                data-testid="confirmar-descuento-automatico"
+              >
+                <span>
+                  {descuentoAutomatico.etiqueta}
+                  {descuentoAutomatico.porcentaje > 0 &&
+                    ` −${descuentoAutomatico.porcentaje} %`}
+                </span>
+                <span className="tabular-nums font-bold">
+                  −{fmt(descuentoAutomatico.monto)}
+                </span>
+              </div>
+            )}
             {state.payment.tip > 0 && (
               <div className="flex items-center justify-between">
-                <span className="text-muted dark:text-[var(--text-tertiary)]">Propina</span>
-                <span
-                  className="tabular-nums font-semibold"
-                  style={{ color: "var(--color-primary-dark, #009690)" }}
-                >
-                  +{fmt(state.payment.tip)}
+                {/* Fuera del total: se da en mano al repartidor. */}
+                <span className="text-muted dark:text-[var(--text-tertiary)]">
+                  Propina (en mano al repartidor, no suma al total)
+                </span>
+                <span className="tabular-nums font-semibold text-muted dark:text-[var(--text-tertiary)]">
+                  {fmt(state.payment.tip)}
                 </span>
               </div>
             )}

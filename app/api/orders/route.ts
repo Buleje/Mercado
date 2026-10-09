@@ -23,8 +23,14 @@ import { MarketplaceStoresDB } from "@/lib/db/marketplace/stores.db";
 import { resolveTenantSlug, resolveTenantSlugToId } from "@/lib/resolve-tenant";
 import { getPlanLimits, withinLimit, planLimitPayload } from "@/lib/plans";
 import { getOrSet } from "@/lib/cache";
-import { createDefaultDiscountEngine } from "@/lib/pricing/discount-strategies";
-import type { OrderContext } from "@/lib/pricing/discount-strategies";
+import {
+  calcularDescuentoAutomatico,
+  sesionDelTelefono,
+  DESCUENTO_PERSONAL_AL_INVITADO,
+  vistaPublica,
+  vistaSinTramo,
+} from "@/lib/pricing/descuento-automatico";
+import { calcularTotalPedido, porcentajeDe } from "@/lib/pricing/total-pedido";
 import { withApiHandler } from "@/lib/api-handler";
 
 const OrderItemModifierSchema = z.object({
@@ -88,14 +94,27 @@ export const GET = withApiHandler("orders-list", async (req) => {
     if (rl) return rl;
 
     // Customer-session check (defensa principal — sustituye a rate-only).
-    const { getCustomerPayload, CUSTOMER_SESSION } = await import("@/lib/auth/customer-session");
+    // Sesión VERIFICADA del teléfono → todo su historial. Token de
+    // SEGUIMIENTO (lo deja un pedido de invitado, el teléfono vino en el
+    // cuerpo y no prueba nada) → solo los pedidos cuyo id lleva adentro.
+    const { getCustomerPayload, getSeguimientoPedidos, CUSTOMER_SESSION } = await import(
+      "@/lib/auth/customer-session"
+    );
     const { normalizePhone } = await import("@/lib/db/misc.db");
     const sessionToken = req.cookies.get(CUSTOMER_SESSION.COOKIE_NAME)?.value;
+    const telefonoPedido = normalizePhone(phoneParam);
     let authorized = false;
-    if (sessionToken) {
+    let soloIds: string[] | undefined;
+    if (sessionToken && telefonoPedido) {
       const payload = await getCustomerPayload(sessionToken);
-      if (payload?.customerId && normalizePhone(payload.customerId) === normalizePhone(phoneParam)) {
+      if (payload?.customerId && normalizePhone(payload.customerId) === telefonoPedido) {
         authorized = true;
+      } else {
+        const seg = await getSeguimientoPedidos(sessionToken);
+        if (seg && normalizePhone(seg.telefono) === telefonoPedido && seg.pedidos.length > 0) {
+          authorized = true;
+          soloIds = seg.pedidos;
+        }
       }
     }
     if (!authorized) {
@@ -115,6 +134,7 @@ export const GET = withApiHandler("orders-list", async (req) => {
         status: statusFilter ?? undefined,
         since:  sinceParam  ?? undefined,
         phone:  phoneParam,
+        ...(soloIds ? { ids: soloIds } : {}),
         tenantId,
       })
     );
@@ -532,53 +552,57 @@ export const POST = withApiHandler("orders-create", async (req) => {
         (!promo.expiresAt || new Date(promo.expiresAt) > now) &&
         (!promo.minPurchase || itemsTotal >= promo.minPurchase);
       if (promoValid) {
-        promoDiscount = Math.round((itemsTotal * promo.discountPercent) / 100 * 100) / 100;
+        // Misma regla que la vista previa del checkout (`porcentajeDe`).
+        promoDiscount = porcentajeDe(itemsTotal, promo.discountPercent);
         verifiedPromoId = promo.id;
       }
     }
 
-    // ── Strategy-based discounts (volume, loyalty, first purchase) ───────────
-    // Uses the discount engine to compute the best automatic discount
-    let engineDiscount = 0;
-    let engineDiscountReason = "";
+    // ── Descuento automático (volumen, fidelidad, primera compra) ───────────
+    // MISMA función que `GET /api/orders/cotizar`: la vista previa del checkout
+    // muestra exactamente lo que se resta acá (2026-10-08: el 5 % de primera
+    // compra solo existía en el servidor y todo teléfono nuevo recibía 422).
+    // El conteo de compras normaliza el teléfono (audit pagos M004) y vive en
+    // `OrdersDB.contarComprasPorTelefono`.
+    //
+    // Privacidad (Ley 29733, security 2026-10-08): primera compra / cliente
+    // frecuente solo con la sesión VERIFICADA de ese teléfono. El invitado
+    // recibe el de volumen, salvo que `DESCUENTO_PERSONAL_AL_INVITADO` esté
+    // prendido: entonces su vista previa (sin historial) no los conoce, se
+    // acepta cualquier total entre el del servidor y el «sin historial» y se
+    // cobra el menor; las respuestas nunca dicen el tramo.
     const totalItemCount = body.items.reduce((sum, i) => sum + i.quantity, 0);
-    const customerPhone = body.customer.phone;
-    let customerTotalPurchases = 0;
-    let isFirstPurchase = true;
-
-    if (customerPhone) {
-      // SECURITY 2026-05-06 (audit pagos M004): normalizar phone antes del
-      // count. Antes el atacante cambiaba el formato (51999..., 999...,
-      // 999-888-...) para activar siempre `isFirstPurchase=true` y obtener
-      // descuento de primer compra repetidamente.
-      const normalized = customerPhone.replace(/\D/g, "");
-      customerTotalPurchases = await prismaForTenant(tenantId).order.count({
-        where: { tenantId, customerPhone: normalized },
-      }).catch(() => 0);
-      // Fallback: también contar por phone tal-cual por si hay legacy data.
-      if (customerTotalPurchases === 0 && normalized !== customerPhone) {
-        customerTotalPurchases = await prismaForTenant(tenantId).order.count({
-          where: { tenantId, customerPhone },
-        }).catch(() => 0);
-      }
-      isFirstPurchase = customerTotalPurchases === 0;
-    }
-
-    const discountCtx: OrderContext = {
+    const conSesion = await sesionDelTelefono(req, body.customer.phone);
+    const usaHistorial = conSesion || DESCUENTO_PERSONAL_AL_INVITADO;
+    const descuentoAuto = await calcularDescuentoAutomatico(tenantId, {
       subtotal: itemsTotal,
-      itemCount: totalItemCount,
-      customerTotalPurchases,
-      isFirstPurchase,
-    };
-    const discountEngine = createDefaultDiscountEngine();
-    const engineResult = discountEngine.apply(discountCtx);
+      unidades: totalItemCount,
+      telefono: body.customer.phone,
+      conHistorial: usaHistorial,
+    });
+    const engineDiscount = descuentoAuto?.monto ?? 0;
+    const engineDiscountReason = descuentoAuto?.motivo ?? "";
+    const descuentoSinHistorial = conSesion || !usaHistorial
+      ? descuentoAuto
+      : await calcularDescuentoAutomatico(tenantId, {
+          subtotal: itemsTotal,
+          unidades: totalItemCount,
+          conHistorial: false,
+        });
 
-    if (engineResult.bestDiscount && engineResult.bestDiscount.discountAmount > 0) {
-      engineDiscount = engineResult.bestDiscount.discountAmount;
-      engineDiscountReason = engineResult.bestDiscount.reason;
-    }
-
-    const computedTotal = Math.max(0, itemsTotal - serverCouponDiscount - promoDiscount - engineDiscount);
+    // Fórmula única del total (lib/pricing/total-pedido.ts), la misma que
+    // arma la vista previa del cliente.
+    const totalCon = (descuentoAutomatico: number) =>
+      calcularTotalPedido({
+        subtotal: itemsTotal,
+        descuentoCupon: serverCouponDiscount,
+        descuentoPromo: promoDiscount,
+        descuentoAutomatico,
+      });
+    const computedTotal = totalCon(engineDiscount);
+    // Lo que un invitado puede saber del total (sin su historial). Con sesión
+    // es el mismo número y el chequeo vuelve a ser exacto.
+    const totalVisible = totalCon(descuentoSinHistorial?.monto ?? 0);
 
     // Anti-fraude del total. Brandon 2026-05-18 (audit P0 #1): antes solo
     // telemetría sin acción. Ahora rechazamos cuando el delta supera 1
@@ -588,8 +612,14 @@ export const POST = withApiHandler("orders-create", async (req) => {
     //  2. clientes con cart desincronizado (cambio de precio mientras
     //     escribían el checkout) deben reintentar viendo el total real.
     // Tolerancia: 1 centavo absorbe redondeos de floating point.
+    // Rango aceptado: [total del servidor, total visible]. Por debajo = intento
+    // de pagar menos; por encima del visible = carrito desfasado (precio,
+    // cupón o promo cambiaron): el cliente reintenta viendo el total real.
     const clientTotal = typeof body.total === "number" ? body.total : null;
-    if (clientTotal !== null && Math.abs(clientTotal - computedTotal) > 0.01) {
+    if (
+      clientTotal !== null &&
+      (clientTotal < computedTotal - 0.01 || clientTotal > totalVisible + 0.01)
+    ) {
       const fraudContext = {
         clientTotal,
         computedTotal,
@@ -607,7 +637,11 @@ export const POST = withApiHandler("orders-create", async (req) => {
         {
           error: "El total no coincide. Refresca el carrito y vuelve a intentar.",
           code: "TOTAL_MISMATCH",
-          serverTotal: computedTotal,
+          // El checkout reintenta con este total y muestra la línea. Sin
+          // sesión: el total visible (sin historial), que el POST acepta y
+          // cobra al menor — un 422 no debe servir de oráculo del tramo.
+          serverTotal: totalVisible,
+          descuentoAutomatico: vistaPublica(descuentoSinHistorial),
         },
         { status: 422 },
       );
@@ -652,6 +686,16 @@ export const POST = withApiHandler("orders-create", async (req) => {
         return NextResponse.json(
           { error: "El fiado requiere un teléfono de cliente" },
           { status: 400 },
+        );
+      }
+      // SECURITY 2026-10-08: el fiado se carga a la cuenta de ESE teléfono.
+      // Sin la sesión VERIFICADA del mismo teléfono, cualquiera que escribiera
+      // el número de un cliente con crédito le cargaba un pedido. La opción
+      // del checkout (`/api/checkout/fiado-option`) ya pedía sesión.
+      if (!conSesion) {
+        return NextResponse.json(
+          { error: "Para pagar con fiado inicia sesión con tu número" },
+          { status: 401 },
         );
       }
       const { getFiadoCheckoutEligibility } = await import(
@@ -919,7 +963,11 @@ export const POST = withApiHandler("orders-create", async (req) => {
     // en logger y se perdían silenciosamente (kardex desync con Product.stock).
     for (const item of body.items) {
       if (item.id > 0) {
-        InventoryMovementsDB.decrementFEFO(item.id, item.quantity, tenantId, saved.id, "venta_online").catch((err) => {
+        // `stockYaAplicado`: el UPDATE atómico de arriba ya bajó Product.stock.
+        // Sin esta marca decrementFEFO lo volvía a bajar (vender 1 restaba 2 y
+        // cancelar devolvía 1 — 2026-10-08). Acá solo se anota el kardex y se
+        // consumen los lotes.
+        InventoryMovementsDB.decrementFEFO(item.id, item.quantity, tenantId, saved.id, "venta_online", { stockYaAplicado: true }).catch((err) => {
           logger.error("[orders] inventory FEFO decrement failed", { error: String(err), tenantId, productId: item.id, orderId: saved.id });
           import("@sentry/nextjs")
             .then((Sentry) => Sentry.captureException(err, { extra: { orderId: saved.id, productId: item.id, tenantId, type: "order-fefo-loss" } }))
@@ -1138,14 +1186,6 @@ export const POST = withApiHandler("orders-create", async (req) => {
       });
     }
 
-    // ── Auto-firmar customer-session ──────────────────────────────────────
-    // UX 2026-05-06: tras un checkout exitoso con phone válido, firmamos la
-    // cookie de sesión del cliente. Sin esto, /api/customers/[phone]/orders
-    // devolvía [] y la página /mis-pedidos mostraba "Haz tu primer pedido"
-    // aunque el cliente acababa de hacer uno. La cookie habilita el historial
-    // sin requerir un login adicional. El phone ya viene del input del propio
-    // cliente, así que no abrimos nuevo vector de auth — solo evitamos pedirle
-    // credenciales repetidas para sus propios datos.
     // ── Socio Buleje: cashback 5% al confirmar el pedido (fire-and-forget) ──
     // El socio userId == teléfono (mismo que el customerId de la sesión). Si el
     // cliente no es socio activo, es no-op. Idempotente por orderId. No bloquea
@@ -1165,19 +1205,35 @@ export const POST = withApiHandler("orders-create", async (req) => {
         );
     }
 
-    const response = NextResponse.json(saved, { status: 201 });
-    const customerPhoneForSession = saved.customer?.phone;
+    // Confirmación: el descuento automático cobrado. Al invitado, solo el
+    // monto («Descuento aplicado»), sin tramo ni motivo (Ley 29733).
+    const response = NextResponse.json(
+      {
+        ...saved,
+        descuentoAplicado: conSesion ? vistaPublica(descuentoAuto) : vistaSinTramo(descuentoAuto),
+      },
+      { status: 201 },
+    );
+    // Token de SEGUIMIENTO (security 2026-10-08, Ley 29733): el teléfono vino
+    // en el cuerpo del pedido, así que la cookie NO es una sesión del cliente:
+    // solo abre los pedidos hechos desde este navegador (sus ids van adentro;
+    // se acumulan si ya había uno del mismo teléfono y negocio). Historial
+    // completo, fiado y descuentos personales piden sesión verificada (código
+    // por WhatsApp/SMS, Google). Si el navegador ya tiene una, no se toca.
+    const { normalizePhone: normalizarTelSesion } = await import("@/lib/db/misc.db");
+    const customerPhoneForSession = saved.customer?.phone
+      ? normalizarTelSesion(saved.customer.phone)
+      : "";
     if (customerPhoneForSession) {
       try {
-        const { createCustomerToken, CUSTOMER_SESSION } = await import("@/lib/auth/customer-session");
-        const token = await createCustomerToken({
-          customerId: customerPhoneForSession,
-          email: `${customerPhoneForSession}@phone.local`,
-          name: body.customer.name,
+        const { tokenTrasPedido, CUSTOMER_SESSION } = await import("@/lib/auth/customer-session");
+        const token = await tokenTrasPedido(req.cookies.get(CUSTOMER_SESSION.COOKIE_NAME)?.value, {
+          telefono: customerPhoneForSession,
+          nombre: body.customer.name,
           tenantId,
-          provider: "checkout",
+          pedidoId: saved.id,
         });
-        response.cookies.set(CUSTOMER_SESSION.COOKIE_NAME, token, {
+        if (token) response.cookies.set(CUSTOMER_SESSION.COOKIE_NAME, token, {
           httpOnly: true,
           secure: process.env.NODE_ENV === "production",
           sameSite: "lax",

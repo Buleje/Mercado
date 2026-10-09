@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import type { CartItem } from "@/contexts/cart-context";
 import type { Customer } from "@/contexts/customer-context";
 import { trackPurchase } from "@/lib/analytics";
@@ -13,7 +13,10 @@ import {
   saveLastOrder,
   postWithRetry,
   generateRequestId,
+  firmaDelTotal,
+  telefonoDelPedido,
 } from "./checkout-submit-helpers";
+import type { DescuentoAutomaticoVista } from "@/lib/pricing/total-pedido";
 
 /**
  * useCheckoutSubmit — orquesta el envío final del pedido.
@@ -33,6 +36,11 @@ import {
 type Args = {
   state: CheckoutState;
   items: CartItem[];
+  /**
+   * Total del pedido según la vista previa (`calcularTotalPedido`, sin
+   * propina: el pedido no la guarda). Va como `total` salvo que un 422 del
+   * servidor lo haya corregido (`ajusteServidor`).
+   */
   finalTotal: number;
   effectiveCustomer: Customer | null;
   promo: { id: string; discountPercent: number } | null;
@@ -51,8 +59,20 @@ type Args = {
   closeCheckout: () => void;
 };
 
+/**
+ * Total que devolvió el servidor en un 422 TOTAL_MISMATCH. Si la cotización
+ * falló (429 o red), sin esto cada reconfirmación mandaba el mismo total y
+ * caía en el mismo 422 sin salida.
+ */
+export type AjusteServidor = {
+  serverTotal: number;
+  descuentoAutomatico: DescuentoAutomaticoVista | null;
+};
+
 export type UseCheckoutSubmitResult = {
   submit: () => Promise<void>;
+  /** Corrección vigente (misma firma del carrito); null si no hay o cambió. */
+  ajusteServidor: AjusteServidor | null;
 };
 
 const SUCCESS_DELAY_MS = 2500;
@@ -69,6 +89,21 @@ export function useCheckoutSubmit({
   customerActions,
   closeCheckout,
 }: Args): UseCheckoutSubmitResult {
+  const firma = firmaDelTotal({
+    items,
+    telefono: telefonoDelPedido(resolveEffectiveValues(state, effectiveCustomer).phone),
+    cupon: state.coupon.applied ? state.coupon.code.trim() : "",
+    promoId: promo?.id ?? "",
+  });
+  const [ajuste, setAjuste] = useState<(AjusteServidor & { firma: string }) | null>(null);
+  // Si el cliente cambió el carrito, el teléfono, el cupón o la promo, el total
+  // corregido ya no vale: vuelve a mandar la vista previa.
+  const ajusteServidor: AjusteServidor | null =
+    ajuste && ajuste.firma === firma
+      ? { serverTotal: ajuste.serverTotal, descuentoAutomatico: ajuste.descuentoAutomatico }
+      : null;
+  const totalAEnviar = ajusteServidor?.serverTotal ?? finalTotal;
+
   // CK-1: Un UUID por intento de checkout. Se genera la primera vez que
   // se llama a submit y se mantiene estable para todos los reintentos de
   // red del MISMO intento. Se resetea a null para que el próximo intento
@@ -127,7 +162,7 @@ export function useCheckoutSubmit({
       state,
       effective,
       orderItems,
-      finalTotal,
+      totalPedido: totalAEnviar,
       promo,
       discount,
       juntaCode: getActiveJunta() ?? undefined,
@@ -139,13 +174,21 @@ export function useCheckoutSubmit({
 
     try {
       if (res?.ok) {
-        const data = (await res.json()) as { id: string };
+        const data = (await res.json()) as {
+          id: string;
+          total?: number;
+          descuentoAplicado?: DescuentoAutomaticoVista | null;
+        };
         dispatch({ type: "SET_UI", patch: { orderId: data.id } });
 
         // CK-1: limpiar el key para que el siguiente checkout genere uno nuevo.
         requestIdRef.current = null;
 
-        saveLastOrder(data.id, items, finalTotal, effective.phone);
+        // El total y el descuento que cobró el servidor (al invitado le
+        // puede restar la primera compra que su vista previa no conocía).
+        const totalCobrado = typeof data.total === "number" ? data.total : totalAEnviar;
+        saveLastOrder(data.id, items, totalCobrado, effective.phone, data.descuentoAplicado);
+        setAjuste(null);
 
         cartActions.clear();
         cartActions.closeCart();
@@ -158,7 +201,7 @@ export function useCheckoutSubmit({
 
         trackPurchase({
           orderId: data.id,
-          total: finalTotal,
+          total: totalCobrado,
           items: items.map((i) => ({
             id: i.id,
             name: i.name,
@@ -190,6 +233,9 @@ export function useCheckoutSubmit({
             // auto-limpiar todos los items inválidos en una sola operación.
             invalidProductIds?: number[];
             message?: string;
+            code?: string;
+            serverTotal?: number;
+            descuentoAutomatico?: DescuentoAutomaticoVista | null;
             issues?: { path: (string | number)[]; message: string }[];
           };
           // JSON.stringify para evitar el lazy-render de Chrome DevTools que
@@ -218,12 +264,25 @@ export function useCheckoutSubmit({
               for (const id of idsToRemove) cartActions.removeItem(id);
               friendlyError = errBody.message
                 ?? (idsToRemove.length === 1
-                  ? "Quitamos un producto que no está disponible en esta tienda. Revisá tu carrito y volvé a intentar."
-                  : `Quitamos ${idsToRemove.length} productos que no están disponibles en esta tienda. Revisá tu carrito y volvé a intentar.`);
+                  ? "Quitamos un producto que no está disponible en esta tienda. Revisa tu carrito y vuelve a intentar."
+                  : `Quitamos ${idsToRemove.length} productos que no están disponibles en esta tienda. Revisa tu carrito y vuelve a intentar.`);
             } else {
               friendlyError =
-                "Algunos productos del carrito no están disponibles en esta tienda. Vacía el carrito y volvé a agregar lo que necesites.";
+                "Algunos productos del carrito no están disponibles en esta tienda. Vacía el carrito y vuelve a agregar lo que necesites.";
             }
+          } else if (
+            errBody?.code === "TOTAL_MISMATCH" &&
+            typeof errBody.serverTotal === "number"
+          ) {
+            // El servidor decide el total (Regla 6). Se guarda para que el
+            // resumen muestre el total real y la próxima confirmación lo mande
+            // (sin esto, si la cotización falló, el 422 se repetía siempre).
+            setAjuste({
+              firma,
+              serverTotal: errBody.serverTotal,
+              descuentoAutomatico: errBody.descuentoAutomatico ?? null,
+            });
+            friendlyError = `El total se actualizó a S/ ${errBody.serverTotal.toFixed(2)}. Revisa el resumen y vuelve a confirmar.`;
           } else if (errBody?.error === "tenant mismatch") {
             friendlyError =
               "Esta acción cruzó tiendas. Recarga la página e intenta de nuevo.";
@@ -251,6 +310,8 @@ export function useCheckoutSubmit({
     state,
     items,
     finalTotal,
+    totalAEnviar,
+    firma,
     effectiveCustomer,
     promo,
     discount,
@@ -260,5 +321,5 @@ export function useCheckoutSubmit({
     closeCheckout,
   ]);
 
-  return { submit };
+  return { submit, ajusteServidor };
 }

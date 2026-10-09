@@ -290,9 +290,21 @@ export const InventoryMovementsDB = {
   /**
    * Decrement stock using FEFO (First Expired, First Out) batch selection.
    */
-  async decrementFEFO(productId: number, quantity: number, tenantId: string, reference?: string, type: string = "venta_online"): Promise<void> {
-    // 1. Decrement Product.stock globally
-    await this.record({ productId, type, quantity, reference, notes: `FEFO: ${quantity} unidades`, tenantId });
+  async decrementFEFO(
+    productId: number,
+    quantity: number,
+    tenantId: string,
+    reference?: string,
+    type: string = "venta_online",
+    opts: { stockYaAplicado?: boolean } = {},
+  ): Promise<void> {
+    // 1. Kardex + Product.stock. Con `stockYaAplicado` el caller ya bajó el
+    //    stock en su transacción atómica (POST /api/orders): solo se anota el
+    //    movimiento. Sin la marca se bajaba dos veces (vender 1 restaba 2).
+    await this.record({
+      productId, type, quantity, reference, notes: `FEFO: ${quantity} unidades`, tenantId,
+      stockYaAplicado: opts.stockYaAplicado,
+    });
 
     // 2. Decrement from batches (FEFO order). SECURITY 2026-05-06: filtrar
     // por tenantId para evitar consumir batches de otro tenant.

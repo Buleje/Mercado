@@ -106,13 +106,13 @@ export function CheckoutAccountStep({
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-lg font-extrabold text-[var(--text-primary)] tracking-tight leading-tight">
-              {mode === "menu" && "¿Cómo querés continuar?"}
+              {mode === "menu" && "¿Cómo quieres continuar?"}
               {mode === "search" && "Buscar mi cuenta"}
               {mode === "signup" && "Crear cuenta nueva"}
             </h3>
             <p className="text-sm text-muted dark:text-[var(--text-tertiary)] leading-snug mt-0.5">
               {mode === "menu" && (storeName ? `Tu cuenta queda en ${storeName} — independiente de otras tiendas.` : "Tu información solo se guarda en esta tienda.")}
-              {mode === "search" && "Ingresá tu celular para cargar tus datos."}
+              {mode === "search" && "Ingresa tu celular para cargar tus datos."}
               {mode === "signup" && "Solo necesitamos tu nombre y celular."}
             </p>
           </div>
@@ -298,7 +298,7 @@ export function CheckoutAccountStep({
                 />
               </div>
               {signupPhone.length > 0 && signupPhone.length < 9 && (
-                <p className="text-xs text-muted dark:text-[var(--text-tertiary)]">Ingresá los 9 dígitos completos</p>
+                <p className="text-xs text-muted dark:text-[var(--text-tertiary)]">Ingresa los 9 dígitos completos</p>
               )}
               {signupPhone.length === 9 && !signupPhone.startsWith("9") && (
                 <p className="text-xs text-[var(--data-error-500)] font-semibold">El celular debe empezar con 9</p>
