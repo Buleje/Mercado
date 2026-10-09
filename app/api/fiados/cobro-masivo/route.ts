@@ -6,35 +6,48 @@ import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
+import { METODOS_COBRO, notasConMetodo } from "@/lib/fiados/cobro-metodo";
+import { FiadoNoCobrableError, type PedidoCobroMasivo } from "@/lib/fiados/reparto-cobro-masivo";
 
 const PaymentItemSchema = z.object({
   fiadoId: z.string().min(1),
   monto: z.number().positive(),
 });
 
-const CobroMasivoSchema = z.object({
-  payments: z
-    .array(PaymentItemSchema)
-    .min(1)
-    .max(50)
-    // Audit 2026-08-26: un fiadoId repetido en el mismo lote hacía que ambas
-    // entradas decrementaran contra el mismo saldo prefetcheado (TOCTOU) —
-    // rechazarlo acá es la señal más clara para el cajero, en vez de dejar
-    // que la segunda ocurrencia falle silenciosa contra el guard de la DB.
-    .refine(
-      (payments) => new Set(payments.map((p) => p.fiadoId)).size === payments.length,
-      { message: "Un mismo fiado no puede repetirse en el mismo cobro masivo" },
-    ),
-  notas: z.string().max(500).optional(),
-});
+// Audit 2026-08-26: un fiadoId repetido en el mismo lote hacía que ambas
+// entradas decrementaran contra el mismo saldo prefetcheado (TOCTOU) —
+// rechazarlo acá es la señal más clara para el cajero.
+const sinRepetidos = (ids: string[]) => new Set(ids).size === ids.length;
+const MSJ_REPETIDO = "Un mismo fiado no puede repetirse en el mismo cobro masivo";
+
+const CobroMasivoSchema = z
+  .object({
+    /** Lo que manda la ventana: los fiados elegidos y el monto; el reparto lo hace el servidor. */
+    fiadoIds: z.array(z.string().min(1)).min(1).max(50).refine(sinRepetidos, { message: MSJ_REPETIDO }).optional(),
+    monto: z.number().min(0.01).max(1_000_000).optional(),
+    /** Contrato viejo: el detalle por fiado (cada monto se topa al saldo). */
+    payments: z
+      .array(PaymentItemSchema)
+      .min(1)
+      .max(50)
+      .refine((p) => sinRepetidos(p.map((x) => x.fiadoId)), { message: MSJ_REPETIDO })
+      .optional(),
+    notas: z.string().max(500).optional(),
+    metodo: z.enum(METODOS_COBRO).optional(),
+    /** true = lo cobrado entra también a la caja abierta (misma transacción). */
+    aCaja: z.boolean().optional(),
+  })
+  .refine((d) => (d.payments ? !d.fiadoIds && d.monto === undefined : !!d.fiadoIds && d.monto !== undefined), {
+    message: "Manda los fiados y el monto (fiadoIds + monto) o el detalle (payments), no los dos",
+  });
 
 /**
  * POST /api/fiados/cobro-masivo
- * Process batch payment across multiple fiados in a single transaction.
+ * Cobra varios fiados en una sola transacción: el monto se reparte del más
+ * viejo al más nuevo en céntimos (FiadosDB.cobroMasivo). Con `aCaja`, lo
+ * cobrado entra a la caja abierta con su medio, un ingreso por cliente.
  *
- * Audit 2026-05-17 P1-5: toda la lógica de transacción migrada a
- * FiadosDB.cobroMasivo (regla #1 CLAUDE.md — no prisma directo en routes).
- * P1-3: races detectadas como 409 Conflict (no 503).
+ * 409 = otro cobro movió el saldo (reintentable) · 422 = un fiado ya no se puede cobrar.
  */
 export async function POST(req: NextRequest) {
   const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
@@ -45,7 +58,7 @@ export async function POST(req: NextRequest) {
   const tenantId = auth.tenantId;
 
   try {
-    const raw = await req.json();
+    const raw = await req.json().catch(() => null);
     const parsed = CobroMasivoSchema.safeParse(raw);
     if (!parsed.success) {
       return NextResponse.json(
@@ -54,30 +67,33 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { payments, notas } = parsed.data;
-    const results = await FiadosDB.cobroMasivo(tenantId, payments, notas);
-    const totalCobrado = results.reduce((s, r) => s + r.montoPagado, 0);
+    const { payments, fiadoIds, monto, notas, metodo, aCaja } = parsed.data;
+    const pedido: PedidoCobroMasivo = payments ?? { fiadoIds: fiadoIds ?? [], monto: monto ?? 0 };
+    const caja = aCaja ? { metodo: metodo ?? "efectivo" } : undefined;
+    const r = await FiadosDB.cobroMasivo(tenantId, pedido, notasConMetodo(metodo, notas?.trim() || "Cobro masivo"), caja);
 
     // Score crediticio fire-and-forget — actualiza por cada cliente cobrado.
-    // Antes solo se actualizaba via cron semanal (gap del audit).
     // customerId en Fiado es el phone (por relation a Customer.phone).
-    const uniqueCustomerIds = Array.from(new Set(results.map((r) => r.customerId).filter(Boolean)));
+    const uniqueCustomerIds = Array.from(new Set(r.resultados.map((x) => x.customerId).filter(Boolean)));
     for (const customerId of uniqueCustomerIds) {
       import("@/lib/credit/scoring-engine")
         .then(({ updateCreditProfile }) => updateCreditProfile(tenantId, customerId))
         .catch((err) => logger.warn("[fiados/cobro-masivo] updateCreditProfile failed", { customerId, err: String(err) }));
     }
 
+    const enCaja = r.caja ? (r.caja.sinCaja ? " (sin caja abierta)" : " a la caja") : "";
     logActivity(
       "Cobro masivo", "fiado",
-      `Cobro masivo de ${results.length} fiados por S/${totalCobrado.toFixed(2)}`,
+      `Cobro masivo de ${r.resultados.length} fiados por S/${r.cobrado.toFixed(2)}${metodo ? ` en ${metodo}` : ""}${enCaja}`,
       undefined, auth.username, undefined, tenantId,
     ).catch((err) => logger.warn("[fiados/cobro-masivo] activity log failed", { err: String(err) }));
 
     return NextResponse.json({
       success: true,
-      totalCobrado,
-      results,
+      totalCobrado: r.cobrado,
+      sobrante: r.sobrante,
+      results: r.resultados,
+      ...(r.caja && { caja: r.caja }),
     });
   } catch (e) {
     if (e instanceof FiadoConflictError) {
@@ -86,10 +102,10 @@ export async function POST(req: NextRequest) {
         { status: 409 },
       );
     }
+    if (e instanceof FiadoNoCobrableError) {
+      return NextResponse.json({ error: e.message, code: e.code }, { status: 422 });
+    }
     logger.error("[fiados/cobro-masivo] POST error", { err: e instanceof Error ? e.message : String(e) });
-    return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Error al procesar el cobro masivo" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Error al procesar el cobro masivo" }, { status: 500 });
   }
 }

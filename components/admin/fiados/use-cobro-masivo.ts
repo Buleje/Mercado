@@ -1,14 +1,24 @@
 "use client";
 
 /**
- * Cobro masivo (Mejora 3): marcar varios fiados en la tabla y repartir un
- * pago del más viejo al más nuevo. Salió de FiadosModule sin cambiar el reparto.
+ * Cobro masivo (Mejora 3): marcar varios fiados en la tabla y cobrar un monto
+ * que reparte el SERVIDOR del más viejo al más nuevo, en céntimos. La vista
+ * previa usa la misma regla (`repartirCobroMasivo`): lo que ves es lo que se
+ * cobra. Con su medio y, si quieres, a la caja abierta en la misma transacción
+ * (antes el cobro masivo no entraba a la caja ni guardaba el medio).
  */
 import { useState } from "react";
+import { toast } from "sonner";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { formatCurrency } from "@/lib/format";
+import type { MetodoCobro } from "@/lib/fiados/cobro-metodo";
+import { aCentimos, repartirCobroMasivo } from "@/lib/fiados/reparto-cobro-masivo";
 import { estaAbierto, type Fiado } from "./tipos";
 
 export type Reparto = { fiadoId: string; customerName: string; saldo: number; pago: number; tipo: string };
+export type DatosCobroMasivo = { metodo: MetodoCobro; aCaja: boolean; notas: string };
+
+type RespuestaCobroMasivo = { totalCobrado: number; sobrante?: number; caja?: { sinCaja: boolean; movimientos: number } };
 
 export function useCobroMasivo(fiados: Fiado[], alTerminar: () => void) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -27,38 +37,48 @@ export function useCobroMasivo(fiados: Fiado[], alTerminar: () => void) {
   };
 
   const selectedFiados = fiados.filter((f) => selectedIds.has(f.id) && estaAbierto(f));
-  const selectedTotal = selectedFiados.reduce((s, f) => s + f.saldo, 0);
+  // En céntimos: 10.1 + 20.2 en float da 30.299999… y «Todo» mostraba un céntimo menos.
+  const selectedTotal = selectedFiados.reduce((s, f) => s + aCentimos(f.saldo), 0) / 100;
 
-  // Reparte el pago del fiado más viejo al más nuevo
+  // Vista previa del reparto, con la misma regla que aplica el servidor.
   const computeDistribution = (totalPago: number): Reparto[] => {
-    const sorted = [...selectedFiados].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-    let remaining = totalPago;
-    const distribution: Reparto[] = [];
-    for (const f of sorted) {
-      if (remaining <= 0) break;
-      const pago = Math.min(remaining, f.saldo);
-      distribution.push({ fiadoId: f.id, customerName: f.customerName || f.customerId, saldo: f.saldo, pago, tipo: pago >= f.saldo ? "Pago completo" : "Abono parcial" });
-      remaining -= pago;
-    }
-    return distribution;
+    const nombre = new Map(selectedFiados.map((f) => [f.id, f.customerName || f.customerId]));
+    return repartirCobroMasivo(selectedFiados, totalPago).pagos.map((p) => ({
+      fiadoId: p.fiadoId,
+      customerName: nombre.get(p.fiadoId) ?? "",
+      saldo: p.saldo,
+      pago: p.pago,
+      tipo: p.completo ? "Pago completo" : "Abono parcial",
+    }));
   };
 
-  const handleCobroMasivo = async () => {
+  const handleCobroMasivo = async (datos?: DatosCobroMasivo) => {
     const monto = parseFloat(cobroMonto);
-    if (isNaN(monto) || monto <= 0) { setCobroError("Monto inválido"); return; }
+    if (!Number.isFinite(monto) || monto < 0.01) { setCobroError("Monto inválido"); return; }
+    if (selectedFiados.length === 0) { setCobroError("Elige al menos un fiado con deuda"); return; }
     setCobroPaying(true);
     setCobroError(null);
     try {
-      const payments = computeDistribution(monto).map((d) => ({ fiadoId: d.fiadoId, monto: d.pago }));
       const res = await fetch("/api/fiados/cobro-masivo", {
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ payments }),
+        body: JSON.stringify({
+          fiadoIds: selectedFiados.map((f) => f.id),
+          monto: aCentimos(monto) / 100,
+          metodo: datos?.metodo,
+          aCaja: datos?.aCaja ?? false,
+          notas: datos?.notas.trim() || undefined,
+        }),
       });
       if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: "Error" }));
+        const err = (await res.json().catch(() => ({}))) as { error?: string };
+        // 409/422: otro cobro o un fiado ya pagado. Se refresca la lista para que veas lo de ahora.
+        if (res.status === 409 || res.status === 422) alTerminar();
         throw new Error(err.error || "Error al cobrar");
       }
+      const r = (await res.json()) as RespuestaCobroMasivo;
+      if (datos?.aCaja && r.caja?.sinCaja) toast.warning(`Cobraste ${formatCurrency(r.totalCobrado)}, pero no había caja abierta: no entró a la caja.`);
+      else toast.success(`Cobraste ${formatCurrency(r.totalCobrado)}${r.caja && !r.caja.sinCaja ? " · entró a la caja" : ""}`);
       setShowCobroMasivo(false);
       setCobroMonto("");
       setSelectedIds(new Set());

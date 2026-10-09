@@ -12,9 +12,10 @@ import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
 import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { formatCurrency, formatDateLong, formatTime } from "@/lib/format";
 import { ETIQUETA_METODO, type MetodoCobro } from "@/lib/fiados/cobro-metodo";
+import CobroMasivoModal from "./CobroMasivoModal";
+import type { DatosCobroMasivo, Reparto } from "./use-cobro-masivo";
 import {
-  X, DollarSign,
-  Loader2,
+  X,
   CheckCircle2, MessageCircle,
   Printer, PenTool, Navigation, MapPin, Phone,
 } from "@buleje/design-system/icons";
@@ -45,12 +46,6 @@ type Fiado = {
   updatedAt: string;
 };
 
-type DistributionItem = {
-  customerName: string;
-  pago: number;
-  tipo: string;
-};
-
 type ReciboData = {
   fecha: string;
   clienteNombre: string;
@@ -75,9 +70,9 @@ type FiadoModalsProps = {
   setCobroMonto: (v: string) => void;
   cobroPaying: boolean;
   cobroError: string | null;
-  handleCobroMasivo: () => void;
+  handleCobroMasivo: (datos: DatosCobroMasivo) => void;
   setCobroError: (v: string | null) => void;
-  computeDistribution: (monto: number) => DistributionItem[];
+  computeDistribution: (monto: number) => Reparto[];
   showRecibo: boolean;
   setShowRecibo: (v: boolean) => void;
   reciboData: ReciboData | null;
@@ -107,11 +102,7 @@ export default function FiadoModals({
   // pide el foco atrapado y la semántica de diálogo.
   // (El «Registrar Pago» que vivía acá pasó a PagoFiadoModal: medio + caja.)
 
-  const cobroPanelRef = useRef<HTMLDivElement>(null);
-  const cobroTitleId = useId();
   const cerrarCobro = useCallback(() => setShowCobroMasivo(false), [setShowCobroMasivo]);
-  useModalAccesible(cobroPanelRef, { onCerrar: cerrarCobro, activo: showCobroMasivo, cerrarConEscape: false });
-  const ventanaCobro = useVentanaDeModal(showCobroMasivo, { ref: cobroPanelRef, aplicarTranslate: true, claveMemoria: "fiados-cobro-masivo" });
 
   const reciboPanelRef = useRef<HTMLDivElement>(null);
   const reciboTitleId = useId();
@@ -166,108 +157,19 @@ export default function FiadoModals({
         </div>
       )}
 
-      {/* Mejora 3: Cobro masivo modal */}
-      <AnimatePresence>
-        {showCobroMasivo && (
-          <>
-            <m.div
-              key="cobro-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="modal-backdrop"
-              style={{ zIndex: 60 }}
-              onClick={() => setShowCobroMasivo(false)}
-            />
-            <m.div
-              key="cobro-modal"
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="fixed inset-0 z-[60] flex items-center justify-center p-4"
-              onClick={e => e.target === e.currentTarget && !ventanaCobro.fijado && setShowCobroMasivo(false)}
-            >
-              <div ref={cobroPanelRef} role="dialog" aria-modal="true" aria-labelledby={cobroTitleId} tabIndex={-1}
-                className="relative w-full max-w-md bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 max-h-[80vh] overflow-y-auto">
-                <div {...ventanaCobro.asaProps} className="flex items-center justify-between">
-                  <CardTitle id={cobroTitleId} className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Cobro Masivo</CardTitle>
-                  <span className="ml-auto flex items-center gap-1">
-                    <ControlesDeVentana ventana={ventanaCobro} />
-                    <button aria-label="Cerrar" onClick={() => setShowCobroMasivo(false)} className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)]">
-                      <X className="h-4 w-4 text-[var(--text-secondary)]" />
-                    </button>
-                  </span>
-                </div>
-
-                <p className="text-sm text-[var(--text-secondary)]">
-                  {selectedFiados.length} fiado{selectedFiados.length !== 1 ? "s" : ""} — Total: <span className="font-bold text-primary">{formatCurrency(selectedTotal)}</span>
-                </p>
-
-                {/* Fiados list */}
-                <div className="space-y-1.5">
-                  {selectedFiados.map(f => (
-                    <div key={f.id} className="flex items-center justify-between p-2 bg-[var(--surface-sunken)] rounded-lg text-xs">
-                      <span className="font-medium text-[var(--text-primary)]">{f.customerName || f.customerId}</span>
-                      <span className="font-bold text-[var(--text-secondary)]">{formatCurrency(f.saldo)}</span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Amount input */}
-                <Field label="Monto a abonar (S/)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    value={cobroMonto}
-                    onChange={e => setCobroMonto(e.target.value)}
-                    placeholder="0.00"
-                    className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  />
-                </Field>
-
-                {/* Distribution preview */}
-                {cobroMonto && parseFloat(cobroMonto) > 0 && (
-                  <div className="bg-primary/5 rounded-xl p-3 space-y-1.5">
-                    <p className="text-xs font-bold text-[var(--text-secondary)]">Distribucion (antiguo primero)</p>
-                    {computeDistribution(parseFloat(cobroMonto)).map((d, i) => (
-                      <div key={i} className="flex items-center justify-between text-xs">
-                        <span className="text-[var(--text-primary)]">{d.customerName}</span>
-                        <span className="font-bold">
-                          {formatCurrency(d.pago)}
-                          <span className="ml-1 text-xs text-[var(--text-tertiary)]">({d.tipo})</span>
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {cobroError && (
-                  <p className="text-xs text-[var(--data-error-500)] font-semibold">{cobroError}</p>
-                )}
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setShowCobroMasivo(false)}
-                    className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--rule-soft)] hover:bg-[var(--rule-base)] transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={handleCobroMasivo}
-                    disabled={cobroPaying || !cobroMonto || parseFloat(cobroMonto) <= 0}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
-                  >
-                    {cobroPaying ? <Loader2 className="h-4 w-4 animate-spin" /> : <DollarSign className="h-4 w-4" />}
-                    Confirmar cobro
-                  </button>
-                </div>
-                <TiradorDeVentana ventana={ventanaCobro} />
-              </div>
-            </m.div>
-          </>
-        )}
-      </AnimatePresence>
+      {/* Mejora 3: Cobro masivo — medio y caja (CobroMasivoModal) */}
+      <CobroMasivoModal
+        abierto={showCobroMasivo}
+        onCerrar={cerrarCobro}
+        fiados={selectedFiados}
+        total={selectedTotal}
+        monto={cobroMonto}
+        setMonto={setCobroMonto}
+        pagando={cobroPaying}
+        error={cobroError}
+        computeDistribution={computeDistribution}
+        onCobrar={handleCobroMasivo}
+      />
 
       {/* Mejora 7: Recibo post-pago modal */}
       <AnimatePresence>
