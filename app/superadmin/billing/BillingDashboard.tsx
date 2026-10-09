@@ -54,7 +54,8 @@ interface TenantBillingRow {
   planLabel: string;
   industry: string;
   active: boolean;
-  status: "paid" | "trial" | "canceled" | "free";
+  /** expired = prueba vencida sin pago (la tienda está en solo lectura). */
+  status: "paid" | "trial" | "canceled" | "free" | "expired";
   monthlyPEN: number;
   source: "stripe" | "mp" | "none";
   trialEndsAt: string | null;
@@ -68,6 +69,8 @@ interface BillingSummary {
   generatedAt: string;
   mrrPEN: number;
   arrPEN: number;
+  /** Plata que ENTRÓ (vouchers aprobados), aparte del MRR que es precio de lista. */
+  cobrado?: { mes: string; mesPEN: number; pagosMes: number; historicoPEN: number; pagosHistorico: number };
   mrrMovement: MrrMovement;
   dunning: Dunning;
   counts: {
@@ -75,6 +78,7 @@ interface BillingSummary {
     paid: number;
     trial: number;
     canceled: number;
+    expired?: number;
     free: number;
     activeNonFree: number;
   };
@@ -197,6 +201,11 @@ const STATUS_META: Record<
  label: "Trial",
  pill: "bg-sky-100 text-sky-800 dark:bg-sky-500/15 dark:text-sky-200",
  dot: "bg-sky-500",
+ },
+ expired: {
+ label: "Prueba vencida",
+ pill: "bg-[var(--data-warning-100)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]",
+ dot: "bg-[var(--data-warning-500)]",
  },
  canceled: {
  label: "Cancelado",
@@ -575,7 +584,11 @@ export default function BillingDashboard() {
         <Kpi
           label="MRR consolidado"
           value={fmtPEN(data.mrrPEN)}
-          sub={`ARR ${fmtPEN(data.arrPEN)}`}
+          sub={
+            data.cobrado
+              ? `Cobrado este mes ${fmtPEN(data.cobrado.mesPEN)} · ARR ${fmtPEN(data.arrPEN)}`
+              : `ARR ${fmtPEN(data.arrPEN)}`
+          }
           tone="success"
           icon={Wallet}
         />
@@ -596,7 +609,7 @@ export default function BillingDashboard() {
         <Kpi
           label="Cancelados"
           value={String(data.counts.canceled)}
-          sub={`Free: ${data.counts.free}`}
+          sub={`Prueba vencida: ${data.counts.expired ?? 0} · Free: ${data.counts.free}`}
           tone={data.counts.canceled > 0 ? "danger" : "default"}
           icon={XCircle}
         />
@@ -738,6 +751,7 @@ export default function BillingDashboard() {
             <option value="all">Todos los estados</option>
             <option value="paid">Pagados</option>
             <option value="trial">Trials</option>
+            <option value="expired">Prueba vencida</option>
             <option value="canceled">Cancelados</option>
             <option value="free">Free</option>
           </select>

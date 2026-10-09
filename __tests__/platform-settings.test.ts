@@ -5,7 +5,7 @@
  *
  * Covers:
  *   - PlatformSettingsDB: get / getAll / set / setMany / delete
- *   - lib/plans.ts:       getPlanPrice / getAllPlanPrices fallback + override
+ *   - lib/plans.ts:       getPlanPrice / getAllPlanPrices = un solo precio (sin override, 2026-10-09)
  *   - lib/plans.ts:       DEFAULT_PLAN_PRICES = {free:0, pro:89, business:179, enterprise:349}
  *
  * Brandon 2026-05-17: precios actualizados 2026-05-11 (commit migración planes).
@@ -283,14 +283,15 @@ describe("getPlanPrice (lib/plans.ts)", () => {
     expect(price).toBe(89);
   });
 
-  it("retorna el valor de la DB cuando hay override", async () => {
-    mockFindUnique.mockResolvedValueOnce({
+  it("una fila vieja de plan-prices en la base ya no manda: un solo precio (2026-10-09)", async () => {
+    mockFindUnique.mockResolvedValue({
       value: { free: 0, pro: 59, business: 179, enterprise: 599 },
     });
 
     const price = await getPlanPrice("enterprise");
 
-    expect(price).toBe(599);
+    expect(price).toBe(349);
+    expect(mockFindUnique).not.toHaveBeenCalled();
   });
 
   it("cae a default por-plano cuando el override es parcial", async () => {
@@ -318,34 +319,13 @@ describe("getAllPlanPrices (lib/plans.ts)", () => {
     });
   });
 
-  it("retorna los 4 valores de la DB cuando hay override completo", async () => {
-    mockFindUnique.mockResolvedValueOnce({
-      value: { free: 0, pro: 59, business: 179, enterprise: 599 },
-    });
+  it("ignora el override de la base (completo o parcial): sale lo de plan-tiers", async () => {
+    mockFindUnique.mockResolvedValue({ value: { pro: 59, enterprise: 699 } });
 
     const prices = await getAllPlanPrices();
 
-    expect(prices).toEqual({
-      free: 0,
-      pro: 59,
-      business: 179,
-      enterprise: 599,
-    });
-  });
-
-  it("mezcla override parcial con defaults (merge shallow)", async () => {
-    mockFindUnique.mockResolvedValueOnce({
-      value: { enterprise: 699 }, // solo enterprise overrideado
-    });
-
-    const prices = await getAllPlanPrices();
-
-    expect(prices).toEqual({
-      free: 0,
-      pro: 89,
-      business: 179,
-      enterprise: 699,
-    });
+    expect(prices).toEqual({ free: 0, pro: 89, business: 179, enterprise: 349 });
+    expect(mockFindUnique).not.toHaveBeenCalled();
   });
 
   it("cae a defaults si la DB class rompe (migración no corrida)", async () => {

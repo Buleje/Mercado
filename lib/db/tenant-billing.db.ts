@@ -79,4 +79,30 @@ export const TenantBillingDB = {
     });
     invalidateByPrefix(`tenant:${tenantId}`);
   },
+
+  /**
+   * Todas las tiendas con lo que hace falta para saber si pagan y cuánto
+   * (MRR de la plataforma). Lectura de PLATAFORMA (superadmin): no filtra por
+   * tenant a propósito. Sin tope: la tabla Tenant es la base de clientes y los
+   * KPIs se calculan sobre TODAS (un `take` subcontaba el MRR).
+   */
+  async listParaMrr() {
+    return prisma.tenant.findMany({
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        plan: true,
+        industry: true,
+        active: true,
+        trialEndsAt: true,
+        stripeSubscriptionId: true,
+        stripeCurrentPeriodEnd: true,
+        cancelAtPeriodEnd: true,
+        mpSubscriptionId: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  },
 };

@@ -19,6 +19,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { getOrSet } from "@/lib/cache";
 import { logger } from "@/lib/logger";
+import { precioMensualDePlan } from "@/lib/billing/plan-tiers";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -44,16 +45,8 @@ const COST_PER_ORDER = 0.02;    // ~S/20 per 1000 orders/month (Vercel + webhook
 const COST_PER_AI_REQ = 0.04;   // ~S/40 per 1000 AI requests (Gateway + tokens)
 const BASE_COST = 2.0;          // Fixed per-tenant cost en PEN (DNS, cert, observabilidad)
 
-// Plan revenue (mensual en PEN — alineado con DEFAULT_PLAN_PRICES en lib/plans.ts)
-// Single source of truth: DEFAULT_PLAN_PRICES.
-// Mantener este map como fallback estático para evitar circular imports y
-// para que el cálculo sea determinístico sin DB hit.
-const PLAN_REVENUE: Record<string, number> = {
-  free: 0,
-  pro: 89,        // Starter
-  business: 179,  // Pro
-  enterprise: 349, // Business
-};
+// Ingreso por plan = `precioMensualDePlan` (plan-tiers): el mismo precio que
+// cobra Facturación y suma el P&L. Antes había una tabla escrita a mano acá.
 
 const CACHE_TTL = 600; // 10 min
 
@@ -98,7 +91,7 @@ export async function estimateTenantCost(
     const aiCost = Math.round(aiRequestsLast30d * COST_PER_AI_REQ * 100) / 100;
     const totalCost = Math.round((storageCost + computeCost + aiCost) * 100) / 100;
 
-    const revenue = PLAN_REVENUE[tenant.plan] ?? 0;
+    const revenue = precioMensualDePlan(tenant.plan);
     const grossMargin = revenue > 0
       ? Math.round(((revenue - totalCost) / revenue) * 100 * 100) / 100
       : 0;

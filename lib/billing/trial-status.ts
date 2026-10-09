@@ -50,10 +50,10 @@ const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 /**
  * Devuelve el estado de trial/suscripción de un tenant.
- * Determinístico — solo depende de los campos pasados + Date.now().
+ * Determinístico — solo depende de los campos pasados + `now` (por defecto,
+ * Date.now(); el MRR de la plataforma lo fija para medir un mes pasado).
  */
-export function getTrialStatus(t: TenantSubscriptionFields): TrialStatus {
-  const now = Date.now();
+export function getTrialStatus(t: TenantSubscriptionFields, now: number = Date.now()): TrialStatus {
   // 1. Plan pagado vía Stripe.
   // SECURITY 2026-05-06 (pentest billing #3): exigir `stripeCurrentPeriodEnd
   // > now`. Antes, si Stripe no enviaba `customer.subscription.deleted` (queue
@@ -99,7 +99,6 @@ export function getTrialStatus(t: TenantSubscriptionFields): TrialStatus {
   // 4. Plan free + trial vigente.
   if (t.trialEndsAt) {
     const target = new Date(t.trialEndsAt).getTime();
-    const now = Date.now();
     const diffMs = target - now;
     if (diffMs > 0) {
       return {

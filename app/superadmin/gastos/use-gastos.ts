@@ -3,11 +3,13 @@
 /**
  * useGastos — toda la data + mutaciones de /superadmin/gastos en un solo hook
  * (saca el fetch del componente, per code-quality). Cruza 3 fuentes: gastos
- * reales de plataforma, costos de infra por tienda, y billing (MRR) para el P&L.
+ * reales de plataforma (+ el P&L del mes que arma el servidor: cobrado, MRR,
+ * gasto e infra estimada) y costos de infra por tienda.
  */
 
 import { useCallback, useEffect, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
+import type { PnlPlataforma } from "@/lib/billing/mrr-plataforma";
 import type { Expense, Summary, CostsData, BudgetByCategory, HistoryMonth } from "./gastos-helpers";
 
 export type ExpenseInput = {
@@ -32,18 +34,16 @@ export function useGastos() {
   const [budgetByCategory, setBudgetByCategory] = useState<BudgetByCategory>({});
   const [history, setHistory] = useState<HistoryMonth[]>([]);
   const [fxRate, setFxRate] = useState<number>(3.75);
-  const [mrrPen, setMrrPen] = useState<number>(0);
-  const [payingTenants, setPayingTenants] = useState<number>(0);
+  const [pnl, setPnl] = useState<PnlPlataforma | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
-      const [a, b, c] = await Promise.all([
+      const [a, b] = await Promise.all([
         fetch(EXPENSES_URL, { credentials: "include", cache: "no-store" }),
         fetch("/api/superadmin/costs", { credentials: "include", cache: "no-store" }),
-        fetch("/api/superadmin/billing-summary", { credentials: "include", cache: "no-store" }),
       ]);
       if (a.ok) {
         const j = await a.json();
@@ -53,15 +53,11 @@ export function useGastos() {
         setBudgetByCategory(j.budgetByCategory ?? {});
         setHistory(Array.isArray(j.history) ? j.history : []);
         if (typeof j.fxRate === "number") setFxRate(j.fxRate);
+        setPnl(j.pnl ?? null);
       }
       if (b.ok) {
         const j = await b.json();
         setCosts({ totalMonthlyCost: j.totalMonthlyCost, avgGrossMargin: j.avgGrossMargin, tenants: j.tenants ?? [] });
-      }
-      if (c.ok) {
-        const j = await c.json();
-        setMrrPen(typeof j.mrrPEN === "number" ? j.mrrPEN : 0);
-        setPayingTenants(typeof j.counts?.paid === "number" ? j.counts.paid : 0);
       }
     } catch {
       setErr("No se pudieron cargar los gastos.");
@@ -186,7 +182,9 @@ export function useGastos() {
   );
 
   return {
-    expenses, summary, costs, budget, budgetByCategory, history, fxRate, mrrPen, payingTenants,
+    expenses, summary, costs, budget, budgetByCategory, history, fxRate, pnl,
+    mrrPen: pnl?.ingresos.mrrEstimadoPen ?? 0,
+    payingTenants: pnl?.ingresos.tiendasQuePagan ?? 0,
     loading, busy, err, setErr, load,
     addExpense, updateExpense, removeExpense, saveBudget, saveBudgetByCategory, saveFxRate,
   };

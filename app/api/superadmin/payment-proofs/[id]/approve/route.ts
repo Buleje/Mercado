@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { randomBytes } from "crypto";
 import { PaymentProofsDB } from "@/lib/db/payment-proofs.db";
+import { tierToPlanId } from "@/lib/billing/plan-mapping";
+import { precioMensualDePlan, type PlanTier } from "@/lib/billing/plan-tiers";
 import {
   findTenantBySlug,
   createTenant,
@@ -74,15 +76,19 @@ export async function POST(
     if (existing) {
       tenantId = existing.id;
     } else {
-      // Mapeo: el id interno "basico" en plan-tiers.ts corresponde al
-      // string "free" del campo Tenant.plan (legacy). Pro/business/enterprise
-      // mapea 1-1; max → enterprise (el campo tenant.plan no soporta "max").
-      const tenantPlan: "free" | "pro" | "business" | "enterprise" =
-        proof.planTier === "basico" ? "free"
-        : proof.planTier === "pro" ? "pro"
-        : proof.planTier === "max" ? "enterprise"
-        : "enterprise";
-      const trialEnds = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30d default
+      // Mapeo tier → Tenant.plan con la tabla única (plan-mapping.ts):
+      // basico→free · pro→pro · enterprise (Pro S/ 179)→business · max (Business
+      // S/ 349)→enterprise. Antes el tier «enterprise» quedaba guardado como
+      // «enterprise» = Business: la tienda que pagó Pro recibía Business y se
+      // contaba a S/ 349. `planTier` ya viene validado por el alta (z.enum).
+      const tenantPlan = tierToPlanId(proof.planTier as PlanTier);
+      // Voucher aprobado = plan PAGADO, no prueba: sin `trialEndsAt`, igual que
+      // cuando el superadmin otorga un plan a mano (PATCH tenants/[slug]). Antes
+      // la tienda nacía con 30 días de prueba y al vencer `getTrialStatus` la
+      // pasaba a solo lectura aunque había pagado (y el MRR la contaba en prueba).
+      // El plan gratis conserva los 30 días de siempre.
+      const trialEnds =
+        precioMensualDePlan(tenantPlan) > 0 ? null : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
       const created = await createTenant({
         slug: proof.tenantSlug,
         storeName: proof.storeName,

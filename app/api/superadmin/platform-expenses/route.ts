@@ -5,6 +5,11 @@ import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { validateSuperadminCsrf, csrfForbiddenResponse } from "@/lib/csrf";
 import { PlatformExpensesDB, EXPENSE_CATEGORIES } from "@/lib/db/platform-expenses.db";
 import { logger } from "@/lib/logger";
+import { TenantBillingDB } from "@/lib/db/tenant-billing.db";
+import { PaymentProofsDB } from "@/lib/db/payment-proofs.db";
+import { estimateAllTenantCosts } from "@/lib/cost-tracking";
+import { armarPnlPlataforma, resumirMrr, type PnlPlataforma } from "@/lib/billing/mrr-plataforma";
+import { mesLima, rangoDelMesLima } from "@/lib/finance/ingresos-del-periodo";
 
 /**
  * /api/superadmin/platform-expenses — gastos REALES de plataforma (Buleje SaaS).
@@ -36,6 +41,34 @@ const CreateSchema = z.object({
 
 const DeleteSchema = z.object({ id: z.string().trim().min(1).max(60) });
 
+/**
+ * Estado de resultados del mes, calculado ACÁ (no en el navegador): lo cobrado
+ * de verdad, el MRR estimado y el gasto (registrado + infra estimada si ese mes
+ * no registraste infra). Si una fuente falla, el P&L sale igual sin ella.
+ */
+async function pnlDelMes(gastoRegistradoPen: number, infraRegistradaPen: number): Promise<PnlPlataforma> {
+  const now = Date.now();
+  const mes = mesLima(new Date(now));
+  const rango = rangoDelMesLima(mes);
+  const [tenants, cobrado, costos] = await Promise.all([
+    TenantBillingDB.listParaMrr(),
+    PaymentProofsDB.resumenCobrado(rango.start, rango.end),
+    estimateAllTenantCosts().catch((err) => {
+      logger.error("[superadmin/platform-expenses] infra estimada", { error: String(err) });
+      return null;
+    }),
+  ]);
+  const infraEstimadaPen = costos ? costos.reduce((acc, c) => acc + c.totalCost, 0) : null;
+  return armarPnlPlataforma({
+    mes,
+    cobrado: { totalPen: cobrado.mesPen, pagos: cobrado.pagosMes },
+    mrr: resumirMrr(tenants, now),
+    gastoRegistradoPen,
+    infraRegistradaPen,
+    infraEstimadaPen,
+  });
+}
+
 export async function GET(req: NextRequest) {
   const auth = await requirePlatformAPI(req);
   if (auth instanceof NextResponse) return auth;
@@ -48,6 +81,11 @@ export async function GET(req: NextRequest) {
       PlatformExpensesDB.getFxRate(),
       PlatformExpensesDB.historyTable(12),
     ]);
+    const infraRegistradaPen = summary.byCategory.find((c) => c.category === "infra")?.amountPen ?? 0;
+    const pnl = await pnlDelMes(summary.monthlyRunRatePen, infraRegistradaPen).catch((err) => {
+      logger.error("[superadmin/platform-expenses] pnl", { error: String(err) });
+      return null;
+    });
     return NextResponse.json(
       {
         expenses,
@@ -56,6 +94,7 @@ export async function GET(req: NextRequest) {
         budgetByCategory: budgetByCategory ?? {},
         fxRate,
         history,
+        pnl,
         generatedAt: new Date().toISOString(),
       },
       { headers: NO_STORE },

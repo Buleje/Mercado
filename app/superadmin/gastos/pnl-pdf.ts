@@ -5,9 +5,12 @@
  * (dynamic import para no pesar el bundle). Brandon 2026-06-30.
  */
 
+import type { PnlPlataforma } from "@/lib/billing/mrr-plataforma";
 import { CAT_META, computePnl, fmtPen, type Summary } from "./gastos-helpers";
 
 export interface PnlPdfInput {
+  /** P&L del mes armado por el servidor; si falta, se cae al cálculo viejo MRR − gasto. */
+  pnl: PnlPlataforma | null;
   mrrPen: number;
   payingTenants: number;
   summary: Summary | null;
@@ -26,6 +29,8 @@ export async function generatePnlPDF(input: PnlPdfInput): Promise<void> {
 
   const runRate = input.summary?.monthlyRunRatePen ?? 0;
   const avgRevenue = input.payingTenants > 0 ? input.mrrPen / input.payingTenants : null;
+  // Sin P&L del servidor se cae al cálculo viejo MRR − gasto. Con P&L, margen y
+  // anual salen del servidor (ver «Línea de contexto»), igual que la pantalla.
   const pnl = computePnl(input.mrrPen, runRate, avgRevenue);
   const profitable = pnl.profitPen >= 0;
 
@@ -66,19 +71,50 @@ export async function generatePnlPDF(input: PnlPdfInput): Promise<void> {
     doc.setTextColor(...color);
     doc.text(value, x, y + 8);
   };
-  metric(0, "Ingresos (MRR)", fmtPen(input.mrrPen), TEAL);
-  metric(1, "Gasto real / mes", fmtPen(runRate), [40, 40, 40]);
-  metric(2, "Utilidad / mes", `${profitable ? "+" : "−"}${fmtPen(Math.abs(pnl.profitPen))}`, profitable ? GREEN : RED);
-  y += 16;
+  const srv = input.pnl;
+  if (srv) {
+    const gana = srv.resultadoCobradoPen >= 0;
+    metric(0, "Cobrado este mes", fmtPen(srv.ingresos.cobradoPen), TEAL);
+    metric(1, "Gasto del mes", fmtPen(srv.gastos.totalPen), [40, 40, 40]);
+    metric(2, "Resultado (cobrado)", `${gana ? "+" : "−"}${fmtPen(Math.abs(srv.resultadoCobradoPen))}`, gana ? GREEN : RED);
+    y += 16;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(70, 70, 70);
+    const infraTxt = srv.gastos.infraEstimadaSumada
+      ? `  ·  gasto incluye infra ESTIMADA ${fmtPen(srv.gastos.infraEstimadaPen ?? 0)}`
+      : "";
+    doc.text(
+      `MRR estimado ${fmtPen(srv.ingresos.mrrEstimadoPen)} (${srv.ingresos.tiendasQuePagan} pagan, ${srv.ingresos.tiendasEnPrueba} en prueba)  ·  resultado con MRR ${srv.resultadoMrrPen >= 0 ? "+" : "−"}${fmtPen(Math.abs(srv.resultadoMrrPen))}${infraTxt}`,
+      M,
+      y,
+    );
+    y += 6;
+  } else {
+    metric(0, "Ingresos (MRR)", fmtPen(input.mrrPen), TEAL);
+    metric(1, "Gasto real / mes", fmtPen(runRate), [40, 40, 40]);
+    metric(2, "Utilidad / mes", `${profitable ? "+" : "−"}${fmtPen(Math.abs(pnl.profitPen))}`, profitable ? GREEN : RED);
+    y += 16;
+  }
 
   // Línea de contexto (margen · anual · break-even)
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(70, 70, 70);
-  const marginTxt = pnl.marginPct === null ? "sin ingresos" : `Margen ${pnl.marginPct.toFixed(0)}%`;
-  const annualTxt = `${profitable ? "Gana" : "Pierde"} ${fmtPen(Math.abs(pnl.annualProfitPen))}/año`;
-  const beTxt =
-    pnl.breakEvenTenants === null
+  // Con P&L del servidor: margen BRUTO = (MRR − infra) / MRR y anual = resultado
+  // con MRR × 12 (un mes «normal»), los mismos números de la pantalla. Antes el
+  // PDF usaba (cobrado − gasto) / cobrado y multiplicaba por 12 un mes a medias.
+  const margenPct = srv ? srv.margenBrutoPct : pnl.marginPct;
+  const anualPen = srv ? Math.round(srv.resultadoMrrPen * 12 * 100) / 100 : pnl.annualProfitPen;
+  const marginTxt =
+    margenPct === null ? "sin ingresos" : `Margen ${srv ? "bruto " : ""}${margenPct.toFixed(0)}%`;
+  const annualTxt = `${anualPen >= 0 ? "Gana" : "Pierde"} ${fmtPen(Math.abs(anualPen))}/año${srv ? " (con MRR)" : ""}`;
+  const eq = input.pnl?.puntoDeEquilibrio;
+  const beTxt = eq
+    ? eq.tiendas === null
+      ? "sin gasto este mes"
+      : `Equilibrio: ${eq.tiendas} tiendas${eq.ticketEsReferencia ? ` en plan ${eq.planReferencia}` : " que pagan"} (hoy ${input.payingTenants})`
+    : pnl.breakEvenTenants === null
       ? "break-even: falta ticket"
       : `Break-even: ${pnl.breakEvenTenants} tiendas que pagan (hoy ${input.payingTenants})`;
   doc.text(`${marginTxt}  ·  ${annualTxt}  ·  ${beTxt}`, M, y);

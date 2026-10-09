@@ -29,6 +29,7 @@
  */
 
 import type { Tab } from "@/app/admin/_lib/tabs.types";
+import { PLAN_ID_TO_TIER } from "@/lib/billing/plan-mapping";
 
 export type PlanTier = "basico" | "pro" | "enterprise" | "max";
 
@@ -446,4 +447,39 @@ export function monthlyEquivalentAnnual(plan: PlanDefinition): number {
 /** Cuánto ahorra el usuario en un año vs pagar mensual. */
 export function annualSavings(plan: PlanDefinition): number {
   return Math.round(plan.monthlyPrice * 12 - annualPrice(plan));
+}
+
+// ── Precio del plan GUARDADO en la tienda (fuente única, 2026-10-09) ────────
+//
+// `Tenant.plan` NO guarda el id de tier: guarda el id legacy
+// (`free | pro | business | enterprise`, equivalencia en plan-mapping.ts).
+// Ojo con «enterprise»: en la tienda es el tier `max` (Business S/ 349), no el
+// tier `enterprise` (Pro S/ 179). Antes había 4 tablas de precios distintas
+// (Facturación contaba «pro» a 179, Analítica usaba 49/149/299); ahora toda
+// pantalla de plata de la plataforma pregunta acá.
+
+/** Alias que aparecen en tablas viejas; lo demás sale de plan-mapping. */
+const PLAN_GUARDADO_A_TIER = new Map<string, PlanTier>([
+  ...Object.entries(PLAN_ID_TO_TIER),
+  ["basico", "basico"],
+  ["starter", "pro"],
+  ["max", "max"],
+]);
+
+/** Tier de un `Tenant.plan` (o alias). `null` si el texto no es un plan conocido. */
+export function tierDePlanGuardado(plan: string | null | undefined): PlanTier | null {
+  if (!plan) return null;
+  return PLAN_GUARDADO_A_TIER.get(plan.trim().toLowerCase()) ?? null;
+}
+
+/** Precio de lista mensual (S/) del plan guardado en la tienda. 0 si es gratis o desconocido. */
+export function precioMensualDePlan(plan: string | null | undefined): number {
+  const tier = tierDePlanGuardado(plan);
+  return tier ? PLANS[tier].monthlyPrice : 0;
+}
+
+/** Nombre visible del plan guardado («Starter», «Pro»…); el texto crudo si no se conoce. */
+export function etiquetaDePlan(plan: string | null | undefined): string {
+  const tier = tierDePlanGuardado(plan);
+  return tier ? PLANS[tier].label : (plan ?? "—");
 }

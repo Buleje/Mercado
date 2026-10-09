@@ -6,6 +6,8 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { getOrSet } from "@/lib/cache";
 import { logger } from "@/lib/logger";
+import { etiquetaDePlan } from "@/lib/billing/plan-tiers";
+import { estadoDeCobro, mrrMensualDeTenant } from "@/lib/billing/mrr-plataforma";
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -83,7 +85,11 @@ export async function GET(req: NextRequest) {
         ] = await Promise.all([
           prisma.tenant.findMany({
             where: { active: true },
-            select: { id: true, createdAt: true, plan: true },
+            select: {
+              id: true, createdAt: true, plan: true, active: true, trialEndsAt: true, cancelAtPeriodEnd: true,
+              // La regla de «paga» (estadoDeCobro) mira la pasarela y su período.
+              stripeSubscriptionId: true, stripeCurrentPeriodEnd: true, mpSubscriptionId: true,
+            },
           }),
           prisma.tenant.groupBy({
             by: ["plan"],
@@ -180,12 +186,14 @@ export async function GET(req: NextRequest) {
             take: 10,
           }),
         ]);
+        const nowMs = now.getTime();
         const cohortMap = new Map<string, { signups: number; payingNow: number }>();
         for (const t of allTenants) {
           const k = `${t.createdAt.getFullYear()}-${String(t.createdAt.getMonth() + 1).padStart(2, "0")}`;
           const cur = cohortMap.get(k) ?? { signups: 0, payingNow: 0 };
           cur.signups += 1;
-          if (t.plan && t.plan !== "free") cur.payingNow += 1;
+          // «Pagando ahora» = paga hoy (una tienda en prueba todavía no paga).
+          if (estadoDeCobro(t, nowMs).status === "paid") cur.payingNow += 1;
           cohortMap.set(k, cur);
         }
         const cohorts = Array.from(cohortMap.entries())
@@ -199,19 +207,16 @@ export async function GET(req: NextRequest) {
           }));
 
         // ── MRR breakdown por plan ─────────────────────────────────────────────
-        // Precios placeholder — el dashboard real ya los lee de PlatformSetting,
-        // acá usamos defaults razonables para el breakdown.
-        const PLAN_PRICES: Record<string, number> = {
-          free: 0,
-          pro: 49,
-          business: 149,
-          enterprise: 299,
-        };
-        const mrrByPlan = planCounts.map((p) => ({
-          plan: p.plan ?? "free",
-          count: p._count._all,
-          mrr: (PLAN_PRICES[p.plan ?? "free"] ?? 0) * p._count._all,
-        }));
+        // Precio = `precioMensualDePlan` (plan-tiers.ts, lo que se cobra); una
+        // tienda en prueba o cancelada aporta S/ 0. Antes: 49/149/299 × todas
+        // las activas, incluidas las que estaban en prueba.
+        const mrrByPlan = planCounts.map((p) => {
+          const plan = p.plan ?? "free";
+          const mrr = allTenants
+            .filter((t) => (t.plan ?? "free") === plan)
+            .reduce((acc, t) => acc + mrrMensualDeTenant(t, nowMs), 0);
+          return { plan, label: etiquetaDePlan(plan), count: p._count._all, mrr };
+        });
 
         // ── Top customers cross-tenant por gasto ────────────────────────────────
         const topCustomers = ordersByCustomer.map((c) => ({

@@ -9,6 +9,8 @@
  * delega el cálculo de dinero acá (CLAUDE.md #6 — totales en backend).
  */
 
+import type { EstadoDeCobro } from "@/lib/billing/mrr-plataforma";
+
 /** Fila de tenant ya clasificada — subconjunto de lo que arma el route. */
 export interface DunningInputRow {
   id: string;
@@ -16,7 +18,7 @@ export interface DunningInputRow {
   name: string;
   plan: string;
   planLabel: string;
-  status: "paid" | "trial" | "canceled" | "free";
+  status: EstadoDeCobro;
   monthlyPEN: number;
   source: "stripe" | "mp" | "none";
   trialEndsAt: string | null;
@@ -136,11 +138,13 @@ export function computeDunning(
   const cancelingRows = rows.filter(
     (r) => r.cancelAtPeriodEnd && planPrice(r.plan) > 0,
   );
+  // `expired` = la prueba o el período de la pasarela vencieron sin pago: la
+  // tienda ya está en solo lectura y aporta S/ 0 al MRR, pero es justo a quien
+  // hay que cobrarle (monto = precio de su plan).
   const pastDueRows = rows.filter(
     (r) =>
-      r.status === "paid" &&
-      r.nextBillAt !== null &&
-      new Date(r.nextBillAt).getTime() < now,
+      r.status === "expired" ||
+      (r.status === "paid" && r.nextBillAt !== null && new Date(r.nextBillAt).getTime() < now),
   );
   const trialEndingRows = rows.filter(
     (r) => r.status === "trial" && (r.trialDaysLeft ?? 99) <= 3,
@@ -164,10 +168,10 @@ export function computeDunning(
     {
       key: "pastDue",
       label: "Cobro vencido",
-      hint: "La fecha de renovación ya pasó — verifica el pago",
+      hint: "La prueba o la renovación ya vencieron sin pago — la tienda está en solo lectura",
       kind: "risk",
       count: pastDueRows.length,
-      amountPEN: sum(pastDueRows.map((r) => r.monthlyPEN)),
+      amountPEN: sum(pastDueRows.map((r) => (r.status === "expired" ? planPrice(r.plan) : r.monthlyPEN))),
       rows: pastDueRows
         .map((r) => toRow(r, r.monthlyPEN, r.nextBillAt))
         .slice(0, MAX_ROWS),

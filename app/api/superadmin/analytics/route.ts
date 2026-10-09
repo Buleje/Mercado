@@ -4,7 +4,8 @@ import { cacheLife, cacheTag } from "next/cache";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prismaReadonly as prisma } from "@/lib/prisma-readonly";
 import { applyRateLimit } from "@/lib/rate-limit";
-import { getAllPlanPrices } from "@/lib/plans-server";
+import { estadoDeCobro } from "@/lib/billing/mrr-plataforma";
+import { precioMensualDePlan } from "@/lib/billing/plan-tiers";
 import { logger } from "@/lib/logger";
 
 async function requirePlatform(req: NextRequest) {
@@ -34,8 +35,6 @@ async function getAnalyticsData(fromISO?: string, toISO?: string) {
   const prevEnd = new Date(periodStart.getTime() - 1);
   const prevStart = new Date(prevEnd.getTime() - periodMs);
 
-  const PLAN_PRICES = await getAllPlanPrices();
-
   const [
     allTenants,
     tenantsThisMonth,
@@ -52,6 +51,7 @@ async function getAnalyticsData(fromISO?: string, toISO?: string) {
         id: true, slug: true, name: true, plan: true, active: true,
         createdAt: true, cancelAtPeriodEnd: true, trialEndsAt: true,
         stripeCustomerId: true, ownerEmail: true,
+        stripeSubscriptionId: true, stripeCurrentPeriodEnd: true, mpSubscriptionId: true,
       },
     }),
     prisma.tenant.count({ where: { createdAt: { gte: periodStart, lte: periodEnd } } }),
@@ -88,19 +88,20 @@ async function getAnalyticsData(fromISO?: string, toISO?: string) {
   // «MRR S/0 · 9 de pago» y la «Visión mensual» sumaba S/15,192 en 6 meses
   // con los 9 tenants activos en trial hasta 2027 (0 pagan, como dice Billing).
   // `at` se recorta a `now`: un mes que todavía no terminó se mide hoy.
+  //
+  // 2026-10-09: «paga» y el precio salen de la misma regla que Facturación
+  // (`estadoDeCobro` + `precioMensualDePlan`): una prueba VENCIDA sin pasarela
+  // ya no cuenta como de pago (la app la tiene en solo lectura) y el precio ya
+  // no sale de `plan-prices` (otra tabla que podía diferir de la que se cobra).
   const pagaEn = (t: (typeof allTenants)[number], at: Date) => {
     const corte = at > now ? now : at;
     return (
-      t.active &&
       new Date(t.createdAt) <= corte &&
-      !(t.trialEndsAt && new Date(t.trialEndsAt) > corte)
+      estadoDeCobro(t, corte.getTime()).status === "paid"
     );
   };
   const mrrAt = (at: Date) =>
-    allTenants.reduce(
-      (s, t) => (pagaEn(t, at) ? s + (PLAN_PRICES[t.plan as keyof typeof PLAN_PRICES] ?? 0) : s),
-      0,
-    );
+    allTenants.reduce((s, t) => (pagaEn(t, at) ? s + precioMensualDePlan(t.plan) : s), 0);
   const mrr = mrrAt(now);
 
   // Growth metrics

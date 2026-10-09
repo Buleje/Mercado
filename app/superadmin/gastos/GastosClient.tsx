@@ -2,7 +2,8 @@
 
 /**
  * GastosClient — /superadmin/gastos. Panel de salud financiera de la plataforma
- * Buleje SaaS: (1) P&L (MRR vs gasto real → utilidad, margen, break-even),
+ * Buleje SaaS: (1) P&L (cobrado y MRR estimado vs gasto + infra estimada →
+ * resultado y punto de equilibrio, calculado en el servidor),
  * (2) gastos REALES con alta/edición, dona, tendencia vs tope, búsqueda/agrupar y
  * CSV, (3) presupuesto global + por categoría, (4) costos ESTIMADOS de infra por
  * tienda + margen. Orquesta useGastos() + sub-componentes. Brandon 2026-06-30.
@@ -49,6 +50,7 @@ export default function GastosClient() {
   const runRate = g.summary?.monthlyRunRatePen ?? 0;
   const prev = g.summary?.prevMonthRunRatePen ?? 0;
   const delta = prev > 0 ? ((runRate - prev) / prev) * 100 : null;
+  const margen = g.pnl?.margenBrutoPct ?? null;
 
   const downloadCSV = () => {
     const blob = new Blob(["﻿" + expensesToCSV(g.expenses)], { type: "text/csv;charset=utf-8;" });
@@ -62,6 +64,7 @@ export default function GastosClient() {
 
   const exportPnl = () => {
     generatePnlPDF({
+      pnl: g.pnl,
       mrrPen: g.mrrPen,
       payingTenants: g.payingTenants,
       summary: g.summary,
@@ -127,7 +130,7 @@ export default function GastosClient() {
       {/* ── Resumen: salud financiera ─────────────────────────────────────── */}
       {tab === "resumen" && (
         <>
-          <PnlHero mrrPen={g.mrrPen} runRatePen={runRate} payingTenants={g.payingTenants} />
+          <PnlHero pnl={g.pnl} loading={g.loading} />
 
           <SpendHealthBanner
             runRatePen={runRate}
@@ -146,13 +149,22 @@ export default function GastosClient() {
               tone={g.budget !== null && g.budget > 0 && runRate > g.budget ? "bad" : "default"}
               sub={delta === null ? `${g.summary?.count ?? 0} gastos` : `${delta >= 0 ? "▲" : "▼"} ${Math.abs(delta).toFixed(0)}% vs mes ant.`}
             />
-            <SAKpiCard label="Ingresos (MRR)" value={fmtPen(g.mrrPen)} icon={DollarSign} tone="good" sub={`${g.payingTenants} tiendas que pagan`} />
-            <SAKpiCard label="Costo infra estimado" value={fmtPen(g.costs?.totalMonthlyCost ?? 0)} icon={Server} sub={`${g.costs?.tenants.length ?? 0} tiendas`} />
             <SAKpiCard
-              label="Margen bruto prom."
-              value={`${(g.costs?.avgGrossMargin ?? 0).toFixed(0)}%`}
-              icon={(g.costs?.avgGrossMargin ?? 0) >= 0 ? TrendingUp : TrendingDown}
-              tone={(g.costs?.avgGrossMargin ?? 0) >= 50 ? "good" : (g.costs?.avgGrossMargin ?? 0) >= 0 ? "warn" : "bad"}
+              label="Cobrado este mes"
+              value={fmtPen(g.pnl?.ingresos.cobradoPen ?? 0)}
+              icon={DollarSign}
+              tone="good"
+              sub={`MRR estimado ${fmtPen(g.mrrPen)} · ${g.payingTenants} pagan`}
+            />
+            <SAKpiCard label="Costo infra estimado" value={fmtPen(g.costs?.totalMonthlyCost ?? 0)} icon={Server} sub={`${g.costs?.tenants.length ?? 0} tiendas`} />
+            {/* Margen del P&L del servidor (MRR − infra estimada). El promedio por
+                tienda de /costs contaba las de prueba como si pagaran (daba 99 %). */}
+            <SAKpiCard
+              label="Margen bruto"
+              value={margen === null ? "—" : `${margen.toFixed(0)}%`}
+              icon={(margen ?? 0) >= 0 ? TrendingUp : TrendingDown}
+              tone={margen === null ? "default" : margen >= 50 ? "good" : margen >= 0 ? "warn" : "bad"}
+              sub={margen === null ? "nadie paga aún" : "MRR menos infra estimada"}
             />
           </div>
 

@@ -4,7 +4,7 @@ import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
-import { DEFAULT_PLAN_PRICES, type PlanId } from "@/lib/plans";
+import { DEFAULT_PLAN_PRICES } from "@/lib/plans";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 
@@ -12,8 +12,8 @@ import { assertCsrf } from "@/lib/auth/csrf";
  * /api/superadmin/settings
  *
  * GET  — devuelve TODAS las platform settings (key → value).
- *        Si "plan-prices" no existe aún, devuelve los defaults canónicos
- *        para que el formulario del superadmin tenga algo que editar.
+ *        "plan-prices" siempre sale de plan-tiers (un solo precio por plan,
+ *        2026-10-09): ya no se guarda acá (POST lo rechaza o lo ignora).
  *
  * POST — upserta 1 o N settings:
  *        · body = { key, value, updatedBy? }            → 1 setting
@@ -43,12 +43,10 @@ export async function GET(req: NextRequest) {
 
   const settings = await PlatformSettingsDB.getAll();
 
-  // Seed en caliente: si no hay "plan-prices" todavía (migración no corrida o
-  // fresh install), devolvemos los defaults para que el frontend tenga algo que
-  // mostrar. No escribimos — el primer POST persiste el row.
-  if (!settings["plan-prices"]) {
-    settings["plan-prices"] = { ...DEFAULT_PLAN_PRICES };
-  }
+  // Un solo precio por plan (2026-10-09): siempre el de `plan-tiers`, el mismo
+  // que cobra Facturación y ve el cliente. Una fila vieja de "plan-prices" en
+  // la base ya no manda (no la lee nadie).
+  settings["plan-prices"] = { ...DEFAULT_PLAN_PRICES };
 
   return NextResponse.json({ settings });
 }
@@ -66,13 +64,6 @@ const SingleSettingSchema = z.object({
 const BatchSettingsSchema = z.object({
   settings: z.record(z.string(), z.unknown()),
   updatedBy: z.string().optional(),
-});
-
-const PlanPricesSchema = z.object({
-  free: z.number().min(0).max(100_000),
-  pro: z.number().min(0).max(100_000),
-  business: z.number().min(0).max(100_000),
-  enterprise: z.number().min(0).max(100_000),
 });
 
 export async function POST(req: NextRequest) {
@@ -100,16 +91,13 @@ export async function POST(req: NextRequest) {
     // Validación fuerte para "plan-prices" — nunca dejar que un payload
     // malformado rompa el cálculo del MRR en toda la plataforma.
     if (key === "plan-prices") {
-      const priceCheck = PlanPricesSchema.safeParse(value);
-      if (!priceCheck.success) {
-        return NextResponse.json(
-          { error: "invalid_plan_prices", detail: priceCheck.error.flatten() },
-          { status: 400 },
-        );
-      }
-      await PlatformSettingsDB.set("plan-prices", priceCheck.data, updatedBy);
-      revalidateTag("platform-config", "max");
-      return NextResponse.json({ ok: true, key, value: priceCheck.data });
+      return NextResponse.json(
+        {
+          error: "plan_prices_fijos",
+          message: "El precio de cada plan es uno solo (el que ve el cliente) y se cambia en la tabla de planes, no acá.",
+        },
+        { status: 409 },
+      );
     }
 
     await PlatformSettingsDB.set(key, value, updatedBy);
@@ -124,17 +112,9 @@ export async function POST(req: NextRequest) {
   if (batch.success) {
     const sanitized: Record<string, unknown> = { ...batch.data.settings };
 
-    // Si el batch incluye "plan-prices", valídalo antes de tocar la DB.
-    if ("plan-prices" in sanitized) {
-      const priceCheck = PlanPricesSchema.safeParse(sanitized["plan-prices"]);
-      if (!priceCheck.success) {
-        return NextResponse.json(
-          { error: "invalid_plan_prices", detail: priceCheck.error.flatten() },
-          { status: 400 },
-        );
-      }
-      sanitized["plan-prices"] = priceCheck.data satisfies Record<PlanId, number>;
-    }
+    // "plan-prices" ya no se guarda: un solo precio por plan (plan-tiers). Si
+    // un cliente viejo lo manda en el lote, se ignora y se guarda el resto.
+    delete sanitized["plan-prices"];
 
     await PlatformSettingsDB.setMany(sanitized, updatedBy);
     revalidateTag("platform-config", "max");

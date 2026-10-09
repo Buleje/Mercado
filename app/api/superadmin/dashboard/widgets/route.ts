@@ -6,7 +6,8 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { getOrSet } from "@/lib/cache";
 import { logger } from "@/lib/logger";
-import { getAllPlanPrices } from "@/lib/plans-server";
+import { estadoDeCobro } from "@/lib/billing/mrr-plataforma";
+import { precioMensualDePlan } from "@/lib/billing/plan-tiers";
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -99,13 +100,14 @@ export async function GET(req: NextRequest) {
         select: { createdAt: true, total: true },
       }),
       // ARPU = MRR (suscripciones) / tiendas que pagan, al cierre de cada mes. Mismo criterio
-      // que /api/superadmin/analytics (`pagaEn`): activa, ya creada y fuera de prueba.
-      Promise.all([
-        prisma.tenant.findMany({
-          select: { plan: true, active: true, createdAt: true, trialEndsAt: true },
-        }),
-        getAllPlanPrices(),
-      ]),
+      // que /api/superadmin/analytics (`pagaEn`): ya creada y `estadoDeCobro` = paid
+      // (fuera de prueba y sin prueba vencida), al precio de `precioMensualDePlan`.
+      prisma.tenant.findMany({
+        select: {
+          plan: true, active: true, createdAt: true, trialEndsAt: true, cancelAtPeriodEnd: true,
+          stripeSubscriptionId: true, stripeCurrentPeriodEnd: true, mpSubscriptionId: true,
+        },
+      }),
     ]);
 
     // ── Phase 2: queries que dependen de Phase 1 ───────────────────────────
@@ -223,20 +225,17 @@ export async function GET(req: NextRequest) {
     }));
 
     // ARPU = MRR / tiendas de pago al cierre del mes (el mes en curso, a hoy).
-    const [arpuTenants, planPrices] = arpuMonthly;
+    const arpuTenants = arpuMonthly;
     const arpuSeries = arpuWindows.map(({ monthStart, nextMonthStart }) => {
       const corte = nextMonthStart > now ? now : new Date(nextMonthStart.getTime() - 1);
       let mrrMes = 0;
       let pagan = 0;
       for (const t of arpuTenants) {
         const paga =
-          t.active &&
-          t.plan !== "free" &&
-          new Date(t.createdAt) <= corte &&
-          !(t.trialEndsAt && new Date(t.trialEndsAt) > corte);
+          new Date(t.createdAt) <= corte && estadoDeCobro(t, corte.getTime()).status === "paid";
         if (!paga) continue;
         pagan += 1;
-        mrrMes += planPrices[t.plan as keyof typeof planPrices] ?? 0;
+        mrrMes += precioMensualDePlan(t.plan);
       }
       return {
         month: monthFmt.format(monthStart),

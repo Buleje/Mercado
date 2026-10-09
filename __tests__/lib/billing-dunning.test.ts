@@ -82,6 +82,13 @@ describe("computeDunning", () => {
     expect(bucket("pastDue").amountPEN).toBe(349);
   });
 
+  it("balde Cobro vencido: la prueba vencida sin pago entra por el precio de su plan", () => {
+    const vencida = mk({ id: "exp", name: "Prueba vencida", plan: "enterprise", status: "expired", monthlyPEN: 0, trialEndsAt: iso("2026-06-10") });
+    const pd = computeDunning([...rows, vencida], planPrice, NOW).buckets.find((b) => b.key === "pastDue")!;
+    expect(pd.count).toBe(2);
+    expect(pd.amountPEN).toBe(349 + planPrice("enterprise"));
+  });
+
   it("balde Sin método de pago: paid + source none", () => {
     expect(bucket("noPaymentMethod").count).toBe(1);
     expect(bucket("noPaymentMethod").amountPEN).toBe(89);

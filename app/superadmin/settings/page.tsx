@@ -183,12 +183,6 @@ export default function SettingsPage() {
     try {
       const payload = {
         settings: {
-          "plan-prices": {
-            free: settings.priceFree,
-            pro: settings.pricePro,
-            business: settings.priceBusiness,
-            enterprise: settings.priceEnterprise,
-          },
           "commission-default": settings.commissionDefault,
           "limits-free-products": settings.limitsFreeProducts,
           "limits-free-users": settings.limitsFreeUsers,
@@ -225,9 +219,9 @@ export default function SettingsPage() {
       <SuperAdminModuleTabs tabs={SETTINGS_TABS} />
     <AdminTabShell
       info={{
-        what: "Controla los precios de planes (S//mes), límites por plan (productos, usuarios, pedidos), comisión default y controles globales como modo mantenimiento.",
-        affects: "Los precios se usan para calcular el MRR real del dashboard. Los límites se aplican a cada tienda según su plan. El modo mantenimiento afecta a todos los usuarios.",
-        example: "Si subes el precio del plan Pro de S/100 a S/120, el MRR del dashboard se recalcula automáticamente con el nuevo valor.",
+        what: "Muestra los precios de planes (S//mes) y controla los límites por plan (productos, usuarios, pedidos), la comisión default y controles globales como modo mantenimiento.",
+        affects: "El precio de cada plan es uno solo en toda la plataforma (lo que ve el cliente = lo que suma el MRR). Los límites se aplican a cada tienda según su plan. El modo mantenimiento afecta a todos los usuarios.",
+        example: "El plan Pro cuesta S/ 179 en la página de precios, en Facturación y en el Dashboard: no hay otro número.",
       }}
       title="Configuración de plataforma"
       kicker="Control global"
@@ -297,7 +291,7 @@ export default function SettingsPage() {
         eyebrow="Monetización"
         icon={DollarSign}
         title="Precios de planes"
-        subtitle="Precio mensual en soles (S/) que paga cada negocio. Alimenta el MRR del dashboard."
+        subtitle="Un solo precio por plan: el mismo que ve el cliente al elegir plan y el que suman Facturación, el Dashboard y Gastos. Se cambia en la tabla de planes del sistema, no acá."
       />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {PLAN_TIERS.map((tier) => (
@@ -305,7 +299,7 @@ export default function SettingsPage() {
             key={tier.key}
             tier={tier}
             value={settings[tier.key]}
-            disabled={loading}
+            disabled
             onChange={(v) => update(tier.key, v)}
           />
         ))}
