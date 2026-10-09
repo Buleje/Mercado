@@ -20,6 +20,22 @@ import { logger } from "@/lib/logger";
 // Next 16 Cache Components (ADR-019): cacheLife + cacheTag para
 // MarketplaceStatsDB queries (revalidate + tag-invalidation).
 import { cacheLife, cacheTag } from "next/cache";
+import { StoreReviewsDB } from "@/lib/db/store-reviews.db";
+
+/**
+ * Pisa el `store.rating` anidado con el promedio REAL de reseñas aprobadas
+ * (una consulta para todas las tiendas de la página). La columna Store.rating
+ * puede venir sembrada: 09-10 mi-pollo tenía 4,8 con 0 reseñas aprobadas.
+ */
+async function conRatingRealAnidado<T extends { store: { id: string; rating: number } }>(
+  rows: T[],
+): Promise<T[]> {
+  if (rows.length === 0) return rows;
+  const agg = await StoreReviewsDB.getApprovedAggregatesByStoreIds([
+    ...new Set(rows.map((r) => r.store.id)),
+  ]);
+  return rows.map((r) => ({ ...r, store: { ...r.store, rating: agg.get(r.store.id)?.average ?? 0 } }));
+}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -400,10 +416,10 @@ export const MarketplacePublicDB = {
           },
         });
         if (!store) return null;
-        return {
-          ...store,
-          rating: toNumOrZero(store.rating),
-        };
+        const [real] = await StoreReviewsDB.conRatingReal([
+          { ...store, rating: toNumOrZero(store.rating) },
+        ]);
+        return real;
       },
     );
   },
@@ -602,7 +618,7 @@ export const MarketplacePublicDB = {
       : opts.sort === "rating"    ? { store: { rating: "desc" as const } }
       : { retailPrice: "asc" as const }; // price_asc | distance | default
 
-    return prisma.storeProduct.findMany({
+    const rows = await prisma.storeProduct.findMany({
       where: {
         isActive: true,
         ...((opts.minPrice !== undefined || opts.maxPrice !== undefined) && {
@@ -635,6 +651,7 @@ export const MarketplacePublicDB = {
       orderBy,
       take: opts.limit ?? 80,
     });
+    return conRatingRealAnidado(rows);
   },
 
   /**
@@ -897,7 +914,7 @@ export const MarketplacePublicDB = {
         .map((r) => r.productId)
         .filter((x): x is number => x != null && typeof x === "number");
 
-      const storeProducts = await prisma.storeProduct.findMany({
+      const storeProducts = await conRatingRealAnidado(await prisma.storeProduct.findMany({
         where: {
           productId: { in: productIds },
           isActive: true,
@@ -910,7 +927,7 @@ export const MarketplacePublicDB = {
           product: { select: { id: true, name: true, image: true, unit: true, stock: true, price: true, category: true } },
           store: { select: { id: true, slug: true, name: true, rating: true, logo: true } },
         },
-      });
+      }));
 
       const bestByProduct = new Map<number, (typeof storeProducts)[number]>();
       for (const sp of storeProducts) {
@@ -1257,7 +1274,7 @@ export const MarketplacePublicDB = {
         }),
       };
 
-      return prisma.storeProduct.findMany({
+      const rows = await prisma.storeProduct.findMany({
         where,
         select: {
           id: true,
@@ -1274,6 +1291,7 @@ export const MarketplacePublicDB = {
         take: opts.limit + 1,
         ...(opts.cursor && { cursor: { id: opts.cursor }, skip: 1 }),
       });
+      return conRatingRealAnidado(rows);
     });
   },
 };
@@ -1422,8 +1440,8 @@ export const MarketplaceAdminDB = {
    * @cross-tenant intentional — el slug ES el discriminador público.
    */
   async getStoreDetailBySlug(slug: string) {
-    return getOrSet(`marketplace:store-detail:${slug}:v1`, 120, async () => {
-      return prisma.store.findUnique({
+    return getOrSet(`marketplace:store-detail:${slug}:v2`, 120, async () => {
+      const store = await prisma.store.findUnique({
         where: { slug },
         select: {
           id: true, slug: true, name: true, description: true,
@@ -1434,6 +1452,9 @@ export const MarketplaceAdminDB = {
           _count: { select: { products: { where: { isActive: true } } } },
         },
       });
+      if (!store) return null;
+      const [real] = await StoreReviewsDB.conRatingReal([store]);
+      return real;
     });
   },
 
@@ -1458,8 +1479,16 @@ export const MarketplaceAdminDB = {
    * @cross-tenant intentional — agrega productos de todos los stores publicados.
    */
   async getCatalogSections() {
-    return getOrSet("marketplace:catalog-sections:v2", 120, async () => {
+    return getOrSet("marketplace:catalog-sections:v3", 120, async () => {
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      // «Mejor calificadas» = promedio REAL ≥ 4 en reseñas aprobadas, no la
+      // columna sembrada Store.rating (09-10: mi-pollo 4,8 con 0 reseñas).
+      const publicadas = await prisma.store.findMany({
+        where: { isPublished: true, vacationMode: { not: true } },
+        select: { id: true },
+      });
+      const aggReal = await StoreReviewsDB.getApprovedAggregatesByStoreIds(publicadas.map((p) => p.id));
+      const bienCalificadas = [...aggReal.entries()].filter(([, a]) => a.average >= 4).map(([id]) => id);
 
       const baseStoreFilter = {
         isPublished: true,
@@ -1479,9 +1508,9 @@ export const MarketplaceAdminDB = {
 
       const [featuredRaw, topSellerData, lowStockRaw, flashDealRaw] = await Promise.all([
         prisma.storeProduct.findMany({
-          where: { isActive: true, store: { ...baseStoreFilter, rating: { gte: 4 } }, product: { stock: { gt: 0 } } },
+          where: { isActive: true, store: { ...baseStoreFilter, id: { in: bienCalificadas } }, product: { stock: { gt: 0 } } },
           select: baseSelect,
-          orderBy: { store: { rating: "desc" } },
+          orderBy: { id: "desc" },
           take: 8,
         }),
         prisma.orderItem.groupBy({
@@ -1522,7 +1551,12 @@ export const MarketplaceAdminDB = {
         (a, b) => (topSellerMap.get(a.product.id) ?? 99) - (topSellerMap.get(b.product.id) ?? 99),
       );
 
-      return { featuredRaw, flashDealRaw, sortedTopSellers, lowStockRaw };
+      return {
+        featuredRaw: await conRatingRealAnidado(featuredRaw),
+        flashDealRaw: await conRatingRealAnidado(flashDealRaw),
+        sortedTopSellers: await conRatingRealAnidado(sortedTopSellers),
+        lowStockRaw: await conRatingRealAnidado(lowStockRaw),
+      };
     });
   },
 };
@@ -1597,12 +1631,20 @@ export const MarketplaceStatsDB = {
     } as const;
     try {
        
-      const top = await prisma.store.findMany({
-        where: { isPublished: true },
-        orderBy: [{ rating: "desc" }, { reviewCount: "desc" }],
-        take: limit,
-        select: SELECT,
-      });
+      // Orden por reseñas REALES: se trae holgura y se reordena tras pisar la
+      // columna sembrada (con pocas tiendas publicadas, la holgura las cubre).
+      const top = (
+        await StoreReviewsDB.conRatingReal(
+          await prisma.store.findMany({
+            where: { isPublished: true },
+            orderBy: [{ rating: "desc" }, { reviewCount: "desc" }],
+            take: Math.max(limit * 3, 30),
+            select: SELECT,
+          }),
+        )
+      )
+        .sort((a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount)
+        .slice(0, limit);
 
       // IDs con beneficio "Destacar en Home" (jsonb fuera del schema Prisma).
       let featuredIds: string[] = [];
@@ -1619,10 +1661,12 @@ export const MarketplaceStatsDB = {
       let extra: typeof top = [];
       if (missing.length > 0) {
          
-        extra = await prisma.store.findMany({
-          where: { id: { in: missing }, isPublished: true },
-          select: SELECT,
-        });
+        extra = await StoreReviewsDB.conRatingReal(
+          await prisma.store.findMany({
+            where: { id: { in: missing }, isPublished: true },
+            select: SELECT,
+          }),
+        );
       }
 
       const featuredSet = new Set(featuredIds);
@@ -1731,7 +1775,7 @@ export const MarketplaceStatsDB = {
       // isPublished:true). Removido el blocklist de slugs/nombres test/demo:
       // para sacar una tienda del showcase, el superadmin la despublica
       // (criterio único, consistente con sitemap, API y SSR).
-      const visibleStores = stores;
+      const visibleStores = await StoreReviewsDB.conRatingReal(stores);
 
       // featuredHome: beneficio "Destacar en Home" (jsonb fuera del schema).
       let featuredIds = new Set<string>();

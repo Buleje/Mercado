@@ -169,6 +169,23 @@ export const StoreReviewsDB = {
     }
   },
 
+  /**
+   * Pisa `rating`/`reviewCount` de cada tienda con el agregado REAL de sus
+   * reseñas aprobadas (una sola consulta para N tiendas). Sin reseñas → 0/0 y
+   * la tarjeta dice «Nueva». La columna Store.rating puede venir sembrada
+   * (09-10: mi-pollo mostraba 4,8 con «24 reseñas» y tenía 0 aprobadas).
+   */
+  async conRatingReal<T extends { id: string; rating: number; reviewCount: number }>(
+    rows: T[],
+  ): Promise<T[]> {
+    if (rows.length === 0) return rows;
+    const agg = await this.getApprovedAggregatesByStoreIds(rows.map((r) => r.id));
+    return rows.map((r) => {
+      const real = agg.get(r.id);
+      return { ...r, rating: real?.average ?? 0, reviewCount: real?.total ?? 0 };
+    });
+  },
+
   /** Azúcar para una sola tienda. Devuelve null si no hay reseñas reales. */
   async getApprovedAggregate(
     storeId: string,

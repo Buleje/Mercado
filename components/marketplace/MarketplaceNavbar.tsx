@@ -317,6 +317,8 @@ function useStorefrontLogo(pathname: string | null): {
       "como-pagar", "repartidor", "registrar", "buscar", "categoria",
       "gift-cards", "recetas", "calificar-entrega", "en-vivo",
       "comparar", "payment-result", "apply",
+      // 09-10: sin estas dos, /marketplace/para-vos pedía la tienda «para-vos» (404).
+      "para-vos", "negocios",
     ]);
     if (!slug || RESERVED.has(slug)) {
       setData({ logo: null, name: null });
