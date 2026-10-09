@@ -5,10 +5,13 @@
  * encabezado, aviso flotante o `?carrito=abrir`), no el `isOpen` del carrito:
  * ver `estado-bolsa.ts`.
  *
- * «Finalizar compra»: con `pagar` (la portada, que no tiene checkout) es un
- * enlace al catálogo con la bolsa abierta; sin `pagar` (el marco, ADR-460)
- * cierra la bolsa y abre el checkout de la tienda ahí mismo — nunca vuelve a
- * `?carrito=abrir`, que reabriría la bolsa en bucle.
+ * «Finalizar compra»: con `pagar` (la portada, fuera del layout de la tienda)
+ * cierra la bolsa y abre el checkout ahí mismo con `ProveedorTienda` (un botón:
+ * un enlace dispararía el «Cargando…» de `NavProgress`, que quedaba pegado);
+ * donde la portada no puede abrirlo (otro negocio sin ruta segura), el enlace
+ * al catálogo con la bolsa abierta, y si el checkout no baja, ese mismo destino.
+ * Sin `pagar` (el marco, ADR-460) abre el checkout de la tienda ahí mismo —
+ * nunca vuelve a `?carrito=abrir`, que reabriría la bolsa en bucle.
  *
  * Capa `z-system`: por encima del cupón de bienvenida de la tienda (z 7000),
  * que en el celular tapaba «Finalizar compra».
@@ -19,6 +22,7 @@ import { Minus, Plus, ShoppingBag, Trash2, X } from "@buleje/design-system/icons
 import { useCart } from "@/contexts/cart-context";
 import { soles, unidades } from "./destinos";
 import { cerrarBolsa, useBolsaAbierta } from "./estado-bolsa";
+import { finalizarAqui, useCheckoutAqui } from "./ProveedorTienda";
 
 const REDONDO = "inline-flex items-center justify-center rounded-full text-[var(--text-primary)] hover:bg-[var(--bb-rubor)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]";
 const PAGAR =
@@ -27,6 +31,7 @@ const PAGAR =
 export function Cajon({ pagar }: { pagar?: string }) {
   const { items, count, total, updateQty, removeItem, openCheckout } = useCart();
   const abierta = useBolsaAbierta();
+  const checkoutAqui = useCheckoutAqui();
   const panel = useRef<HTMLDivElement>(null);
   const cerrarBtn = useRef<HTMLButtonElement>(null);
   const antes = useRef<HTMLElement | null>(null);
@@ -132,7 +137,7 @@ export function Cajon({ pagar }: { pagar?: string }) {
                 <span className="text-2xl font-bold tabular-nums text-[var(--text-primary)]">{soles(total)}</span>
               </div>
               <p className="mt-1 text-sm text-[var(--text-secondary)]">El delivery y el total final se calculan al confirmar tu pedido.</p>
-              {pagar ? (
+              {pagar && !checkoutAqui ? (
                 <a href={pagar} className={PAGAR}>
                   Finalizar compra
                 </a>
@@ -141,8 +146,12 @@ export function Cajon({ pagar }: { pagar?: string }) {
                   type="button"
                   className={PAGAR}
                   onClick={() => {
+                    if (pagar && !finalizarAqui()) {
+                      window.location.assign(pagar);
+                      return;
+                    }
                     cerrarBolsa();
-                    openCheckout();
+                    if (!pagar) openCheckout();
                   }}
                 >
                   Finalizar compra

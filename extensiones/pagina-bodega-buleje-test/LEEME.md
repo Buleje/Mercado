@@ -36,7 +36,8 @@ La misma pieza **viste toda la tienda del negocio**, no sólo la portada:
 | Archivo | Qué es |
 |---|---|
 | `servidor.tsx` | `Pagina()` devuelve al instante un `<Suspense>`; los datos se leen adentro (el tope de 2 s nunca salta por la base). Suma `marco` y `Catalogo` |
-| `PaginaSalon.tsx` | arma las secciones de la portada + JSON-LD `HairSalon` + esqueleto de carga |
+| `PaginaSalon.tsx` | arma la portada en dos tandas: franja, barra, portada y pie con `cargarMarco`; la vitrina (precios) + JSON-LD `HairSalon` bajo su `<Suspense>` |
+| `ProveedorTienda.tsx` · `CheckoutEnPortada.tsx` | el checkout de la tienda en la portada, sin cambiar de página (se baja al abrir la bolsa) |
 | `Marco.tsx` | el marco del resto de la tienda: tema, encabezado (con su esqueleto), pie y bolsa |
 | `Catalogo.tsx` · `CatalogoCliente.tsx` | el catálogo propio: lectura en el servidor, filtrar/ordenar al instante en el navegador |
 | `Ficha.tsx` · `FichaPartes.tsx` · `FichaExtras.tsx` · `Comprar.tsx` · `rutina.ts` | la ficha propia: lectura y JSON-LD; migas, foto, resumen y beneficios; pasos, rutina, «no lo encontramos» y esqueleto; cantidad + agregar (cliente); qué producto pide la URL y qué va al lado |
@@ -58,17 +59,24 @@ La misma pieza **viste toda la tienda del negocio**, no sólo la portada:
 - Sólo se muestran las categorías de `CATEGORIAS` (+ «Servicios de salón»): el resto del catálogo de
   `main` (la bodega de prueba) sigue en el catálogo, no acá.
 - El carrito es **el de la tienda** (`CartProvider`, mismo guardado por negocio). En la portada (que vive
-  fuera del layout de la tienda) la bolsa trae su `CartProvider` y «Finalizar compra» lleva al catálogo con
-  la bolsa abierta (`?carrito=abrir`); en el resto usa el del layout (NUNCA un segundo) y «Finalizar compra»
-  abre el checkout de siempre ahí mismo. La bolsa se abre con su propio estado (`estado-bolsa.ts`), no con
+  fuera del layout de la tienda) la bolsa trae su `CartProvider` y «Finalizar compra» abre el checkout AHÍ
+  MISMO (`ProveedorTienda` baja `CheckoutEnPortada` al abrir la bolsa: los proveedores de la tienda con
+  `sinCarrito` sobre ese carrito, el checkout y los modales del pedido, en un portal con `CSS_GLOBAL`). Si
+  no baja, se cae o el negocio no es `main` en `/t/<negocio>` sin barra final (la API resolvería `main` por
+  el Referer: `lib/middleware/tenant.ts`), va al catálogo con la bolsa abierta (`?carrito=abrir`). En el
+  resto usa el del layout (NUNCA un segundo) y «Finalizar compra» abre el checkout de siempre ahí mismo. La bolsa se abre con su propio estado (`estado-bolsa.ts`), no con
   el `isOpen` del carrito: la cuenta monta además su cajón general con ese `isOpen`.
 - Un **servicio** del salón no va al carrito: se reserva por WhatsApp con el mensaje armado.
 - Encabezado y pie salen en todas las páginas: anclas con ruta completa (`/t/<negocio>#servicios`) y, fuera
   de la portada, el logo no es el `<h1>`.
 - WhatsApp: `Mi Tienda → Contacto` (o el teléfono del negocio). Sin número, el botón abre WhatsApp con
   el mensaje armado y la persona elige el chat. **`main` hoy no tiene número cargado.**
-- Fuente de títulos: Instrument Serif (la que el sitio ya precarga). No meter `next/font` acá: su hoja
-  de `@font-face` se cuela en todas las tiendas `/t/<negocio>` (ver `tema.ts`).
+- Fuente de títulos: Fraunces (la declaración que ya existe en `app/layout.tsx`, óptica automática, sin
+  cursiva: suma 81 KB). No meter `next/font` acá: su hoja de `@font-face` se cuela en todas las tiendas
+  `/t/<negocio>` (ver `tema.ts`).
+- Fotos: `imagenes.ts` (`fotoResponsiva`, `precargarFoto`, `TAMANOS_PORTADA`) arma el `srcset` de Unsplash
+  por ancho; va con `<img>` porque en dev `next/image` ignora el loader. Medir con
+  `node scripts/perf-tienda.mjs --ruta /t/main --anchos 400,1280 --veces 2`.
 
 ## Catálogo de demostración (negocio de prueba `main`)
 `scripts/demo-salon/`: `catalogo.mjs` (24 productos + 8 servicios, marcas inventadas) ·

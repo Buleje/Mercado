@@ -1,28 +1,37 @@
 /**
  * «Buleje Beauty» — la página entera del salón (enchufe `tienda.pagina`).
  *
- * Arma las secciones con los datos de `cargarSalon` (una lectura por pedido).
+ * En dos tandas (velocidad, 08-10): la franja, la barra, el menú, la portada y
+ * el pie salen con la lectura liviana (`cargarMarco`: ajustes, contacto y
+ * categorías, sin precios), así la foto de la portada y el primer texto llegan
+ * sin esperar la vitrina; las secciones con precios (`cargarVitrina`: visibilidad
+ * e historial de precios) llegan después, bajo su propio <Suspense> con
+ * `EsqueletoVitrina`. La franja sale primero sin «hasta X %» y se completa con
+ * la vitrina; el menú muestra «Ofertas» como en el marco (sin esperar precios).
  * La bolsa de acá trae su propio carrito (la portada vive fuera del layout de
- * la tienda); el resto de la tienda la monta con el marco (`Marco.tsx`).
+ * la tienda) y «Finalizar compra» abre el checkout ahí mismo (`ProveedorTienda`,
+ * que lo baja al tocarlo); el resto de la tienda la monta con el marco (`Marco.tsx`).
  * `servidor.tsx` la envuelve en <Suspense> con `EsqueletoSalon`: `Pagina()`
  * devuelve al instante (el tope de 2 s del enchufe nunca corre por datos) y
- * mientras llegan se ve el esqueleto con los colores de la marca.
+ * mientras llega `cargarMarco` se ve el esqueleto con los colores de la marca.
  */
 import "server-only";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import TenantPageTracker from "@/app/t/[slug]/_components/TenantPageTracker";
+import { sinDato } from "@/lib/errores/sin-dato";
 import { safeJsonLdStringify } from "@/lib/seo/json-ld";
-import { CATEGORIAS, FRANJA, PORTADA } from "./anuncios";
+import { FRANJA, PORTADA } from "./anuncios";
 import { ProveedorBolsa } from "./Bolsa";
 import { Categorias } from "./Categorias";
 import { Favoritos, Lineas, Novedades } from "./Colecciones";
-import { cargarSalon, type DatosSalon } from "./datos";
+import { cargarMarco, cargarVitrina, type DatosMarco, type DatosSalon } from "./datos";
 import { hrefDestino, rellenar, rutas } from "./destinos";
 import { BarraSuperior, MenuCategorias } from "./Encabezado";
 import { FranjaAnuncio } from "./FranjaAnuncio";
 import { Beneficios, Pie } from "./Pie";
 import { Portada, type DiapositivaVista } from "./Portada";
 import { Promos } from "./Promos";
+import { ProveedorTienda } from "./ProveedorTienda";
 import { BannerOscuro, Servicios } from "./Salon";
 import { CSS_TEMA, ID_PAGINA } from "./tema";
 import { ANCHO } from "./ui";
@@ -67,52 +76,96 @@ function datosEstructurados(d: DatosSalon) {
   };
 }
 
+/** Los textos de la franja; `{descuento}` sólo con la vitrina (sin ella, esos textos no salen). */
+function mensajesFranja(pagos: string | null, mayorDescuento: number | null): string[] {
+  const valores = { descuento: mayorDescuento ? String(mayorDescuento) : null, pagos };
+  return FRANJA.map((m) => rellenar(m, valores)).filter((m): m is string => m !== null);
+}
+
+/** La franja completa («hasta X % de descuento»): espera la vitrina, que ya está en camino. */
+async function FranjaConDescuento({ tenantId, slug, pagos }: { tenantId: string; slug: string; pagos: string | null }) {
+  const v = await cargarVitrina(tenantId, slug);
+  return <FranjaAnuncio mensajes={mensajesFranja(pagos, v.mayorDescuento)} />;
+}
+
 export async function PaginaSalon({ tenantId, slug }: { tenantId: string; slug: string }) {
-  const d = await cargarSalon(tenantId, slug);
+  // La vitrina arranca YA, en paralelo (la comparten la franja y las secciones: `cache`).
+  void cargarVitrina(tenantId, slug).catch(sinDato("página salón · vitrina por adelantado"));
+  const m = await cargarMarco(tenantId);
   const r = rutas(slug);
-  const valores = { descuento: d.mayorDescuento ? String(d.mayorDescuento) : null, pagos: d.pagos };
-  const mensajes = FRANJA.map((m) => rellenar(m, valores)).filter((m): m is string => m !== null);
   const diapositivas: DiapositivaVista[] = PORTADA.map(({ cta, cta2, ...p }) => ({
     ...p,
-    cta: { texto: cta.texto, ...hrefDestino(cta.destino, slug, d.whatsapp) },
-    ...(cta2 ? { cta2: { texto: cta2.texto, ...hrefDestino(cta2.destino, slug, d.whatsapp) } } : {}),
+    cta: { texto: cta.texto, ...hrefDestino(cta.destino, slug, m.whatsapp) },
+    ...(cta2 ? { cta2: { texto: cta2.texto, ...hrefDestino(cta2.destino, slug, m.whatsapp) } } : {}),
   }));
-  const categorias = CATEGORIAS.filter((c) => d.productos.some((p) => p.categoria === c.nombre)).map((c) => c.nombre);
 
   return (
     <Lienzo>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(datosEstructurados(d)) }} />
       <TenantPageTracker tenantSlug={slug} />
       <ProveedorBolsa slug={slug} pagar={r.pagar}>
-        <FranjaAnuncio mensajes={mensajes} />
-        <BarraSuperior nombre={d.nombre} slug={slug} />
-        <MenuCategorias slug={slug} categorias={categorias} hayOfertas={d.productos.some((p) => p.descuento)} />
+        <Suspense fallback={<FranjaAnuncio mensajes={mensajesFranja(m.pagos, null)} />}>
+          <FranjaConDescuento tenantId={tenantId} slug={slug} pagos={m.pagos} />
+        </Suspense>
+        <BarraSuperior nombre={m.nombre} slug={slug} />
+        <MenuCategorias slug={slug} categorias={m.categorias} hayOfertas />
         <main id="main-content">
           <Portada diapositivas={diapositivas} />
-          {d.productos.length === 0 ? (
-            <section className={`${ANCHO} py-20 text-center`}>
-              <p className="bb-serif text-4xl text-[var(--text-primary)]">Estamos preparando la vitrina</p>
-              <p className="mt-3 text-lg text-[var(--text-secondary)]">Vuelve en un rato o mira el catálogo completo.</p>
-              <a href={r.catalogo} className="mt-6 inline-flex h-12 items-center rounded-full bg-[var(--text-primary)] px-7 text-base font-semibold text-[var(--surface-canvas)]">
-                Ver el catálogo
-              </a>
-            </section>
-          ) : (
-            <>
-              <Novedades productos={d.productos} slug={slug} />
-              <Promos productos={d.productos} slug={slug} />
-              <Favoritos productos={d.productos} />
-              <Lineas productos={d.productos} slug={slug} nombre={d.nombre} />
-            </>
-          )}
-          <BannerOscuro servicios={d.servicios} whatsapp={d.whatsapp} />
-          <Categorias productos={d.productos} servicios={d.servicios} slug={slug} />
-          <Servicios servicios={d.servicios} whatsapp={d.whatsapp} horario={d.horario} direccion={d.direccion} nombre={d.nombre} />
-          <Beneficios pagos={d.pagos} nombre={d.nombre} />
+          <Suspense fallback={<EsqueletoVitrina />}>
+            <Vitrina tenantId={tenantId} slug={slug} marco={m} />
+          </Suspense>
         </main>
-        <Pie nombre={d.nombre} descripcion={d.descripcion} slug={slug} whatsapp={d.whatsapp} redes={d.redes} pagos={d.pagos} />
+        <Pie nombre={m.nombre} descripcion={m.descripcion} slug={slug} whatsapp={m.whatsapp} redes={m.redes} pagos={m.pagos} />
+        <ProveedorTienda slug={slug} pagar={r.pagar} />
       </ProveedorBolsa>
     </Lienzo>
+  );
+}
+
+/** Las secciones con precios (y el JSON-LD con los servicios): llegan con `cargarVitrina`. */
+async function Vitrina({ tenantId, slug, marco: m }: { tenantId: string; slug: string; marco: DatosMarco }) {
+  const v = await cargarVitrina(tenantId, slug);
+  const d: DatosSalon = { ...m, ...v };
+  const r = rutas(slug);
+  return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(datosEstructurados(d)) }} />
+      {d.productos.length === 0 ? (
+        <section className={`${ANCHO} py-20 text-center`}>
+          <p className="bb-serif text-4xl text-[var(--text-primary)]">Estamos preparando la vitrina</p>
+          <p className="mt-3 text-lg text-[var(--text-secondary)]">Vuelve en un rato o mira el catálogo completo.</p>
+          <a href={r.catalogo} className="mt-6 inline-flex h-12 items-center rounded-full bg-[var(--text-primary)] px-7 text-base font-semibold text-[var(--surface-canvas)]">
+            Ver el catálogo
+          </a>
+        </section>
+      ) : (
+        <>
+          <Novedades productos={d.productos} slug={slug} />
+          <Promos productos={d.productos} slug={slug} />
+          <Favoritos productos={d.productos} />
+          <Lineas productos={d.productos} slug={slug} nombre={d.nombre} />
+        </>
+      )}
+      <BannerOscuro servicios={d.servicios} whatsapp={d.whatsapp} />
+      <Categorias productos={d.productos} servicios={d.servicios} slug={slug} />
+      <Servicios servicios={d.servicios} whatsapp={d.whatsapp} horario={d.horario} direccion={d.direccion} nombre={d.nombre} />
+      <Beneficios pagos={d.pagos} nombre={d.nombre} />
+    </>
+  );
+}
+
+const BLOQUE = "animate-pulse rounded-2xl bg-[var(--bb-rubor)]";
+
+/** Lo que ocupa la vitrina mientras llegan los precios: un título y una fila de tarjetas. */
+function EsqueletoVitrina() {
+  return (
+    <div className={`${ANCHO} py-14`} aria-busy="true" aria-label="Cargando los productos">
+      <div className="h-10 w-56 animate-pulse rounded bg-[var(--bb-rubor)]" />
+      <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+        {Array.from({ length: 5 }, (_, i) => (
+          <div key={i} className={`${BLOQUE} aspect-[3/4] ${i < 2 ? "" : i === 2 ? "hidden sm:block" : "hidden lg:block"}`} />
+        ))}
+      </div>
+    </div>
   );
 }
 

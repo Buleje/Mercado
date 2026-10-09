@@ -31,11 +31,16 @@ export default function StoreProviders({
   // pone la página: sin el tema del editor (no baja la fuente de Google ni
   // pinta el color de marca encima).
   temaDelEditor = true,
+  // ADR-460 · la portada de una página propia ya trae el carrito de su bolsa;
+  // el checkout que monta ahí usa ESE (nunca un segundo CartProvider: el
+  // carrito ya se sincroniza entre pestañas por BroadcastChannel).
+  sinCarrito = false,
 }: {
   children: React.ReactNode;
   tenantSlug?: string;
   initialCustomer?: Customer | null;
   temaDelEditor?: boolean;
+  sinCarrito?: boolean;
 }) {
   return (
     <TenantSlugProvider slug={tenantSlug}>
@@ -44,7 +49,7 @@ export default function StoreProviders({
           <SettingsProvider>
             {temaDelEditor && <ThemeInjector />}
             <PromotionsProvider>
-              <CartProvider tenantSlug={tenantSlug}>
+              <ConCarrito activo={!sinCarrito} tenantSlug={tenantSlug}>
                 <FavoritesProvider>
                   <WishlistProvider>
                     <CompareProvider>
@@ -68,11 +73,17 @@ export default function StoreProviders({
                     </CompareProvider>
                   </WishlistProvider>
                 </FavoritesProvider>
-              </CartProvider>
+              </ConCarrito>
             </PromotionsProvider>
           </SettingsProvider>
         </ReviewsProvider>
       </ToastProvider>
     </TenantSlugProvider>
   );
+}
+
+/** El `CartProvider` de la tienda, salvo que el carrito ya venga de afuera (`sinCarrito`). */
+function ConCarrito({ activo, tenantSlug, children }: { activo: boolean; tenantSlug: string; children: React.ReactNode }) {
+  if (!activo) return <>{children}</>;
+  return <CartProvider tenantSlug={tenantSlug}>{children}</CartProvider>;
 }
