@@ -30,6 +30,9 @@ const CrearSchema = z.object({
   notifyDaysBefore: z.number().int().min(0).max(30).default(2),
   paymentMethod: z.string().max(40).optional(),
   notes: z.string().max(500).optional(),
+  /* `false` = plantilla del Punto de compra: guarda el pedido sin repetirlo
+     ni avisar. Se activa después desde Órdenes si conviene que se repita. */
+  active: z.boolean().default(true),
 });
 
 export async function GET(req: NextRequest) {
@@ -77,6 +80,7 @@ export async function POST(req: NextRequest) {
       notifyDaysBefore: data.notifyDaysBefore,
       paymentMethod: data.paymentMethod,
       notes: data.notes,
+      active: data.active,
     });
     return NextResponse.json(creado, { status: 201 });
   } catch (e) {

@@ -23,15 +23,17 @@ import AvisoClaveIa from "@/components/admin/shared/AvisoClaveIa";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface InvoiceItem {
+export interface InvoiceItem {
   nombre: string;
   cantidad: number;
   precioUnitario: number;
 }
 
-interface InvoiceData {
+/** Todo lo que lee la IA: el Punto de compra usa proveedor+RUC, comprobante, precios y total. */
+export interface InvoiceData {
   proveedor: { nombre: string; ruc?: string };
   fecha?: string;
+  comprobante?: { tipo?: "factura" | "boleta" | "guia"; numero?: string };
   items: InvoiceItem[];
   total: number;
 }
@@ -39,10 +41,8 @@ interface InvoiceData {
 interface Props {
   open: boolean;
   onClose: () => void;
-  onConfirm: (data: {
-    proveedor: { nombre: string; ruc?: string };
-    items: InvoiceItem[];
-  }) => void;
+  /** Pasa TODO lo leído (antes se perdían RUC, fecha, precios y total). */
+  onConfirm: (data: InvoiceData) => void;
 }
 
 type ScanState = "idle" | "capturing" | "processing" | "results" | "error";
@@ -241,10 +241,7 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
     );
     if (validItems.length === 0) return;
 
-    onConfirm({
-      proveedor: invoiceData.proveedor,
-      items: validItems,
-    });
+    onConfirm({ ...invoiceData, items: validItems });
   }, [invoiceData, editItems, onConfirm]);
 
   // ── Close handler ───────────────────────────────────────────────────────────
@@ -419,6 +416,11 @@ export default function InvoiceScannerModal({ open, onClose, onConfirm }: Props)
                     </span>
                   )}
                 </p>
+                {invoiceData.comprobante?.numero && (
+                  <p className="text-xs text-[var(--data-success-500)] mt-0.5">
+                    {invoiceData.comprobante.tipo === "boleta" ? "Boleta" : invoiceData.comprobante.tipo === "guia" ? "Guía" : "Factura"} {invoiceData.comprobante.numero}
+                  </p>
+                )}
                 {invoiceData.fecha && (
                   <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mt-0.5">
                     Fecha: {invoiceData.fecha}

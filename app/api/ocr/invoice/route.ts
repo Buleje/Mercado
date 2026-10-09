@@ -45,6 +45,12 @@ const InvoiceSchema = z.object({
     ruc: z.string().optional(),
   }).default({ nombre: "Desconocido" }),
   fecha: z.string().optional(),
+  /* El papel del proveedor: sin número no hay forma de encontrar la compra
+     cuando el contador la pide (0 de 71 órdenes lo tenían el 09-10). */
+  comprobante: z.object({
+    tipo: z.enum(["factura", "boleta", "guia"]).optional().catch(undefined),
+    numero: z.string().max(60).optional(),
+  }).optional().catch(undefined),
   items: z.array(z.object({
     nombre: z.string(),
     cantidad: z.number().min(0),
@@ -71,6 +77,14 @@ const JSON_SCHEMA_FACTURA = {
       additionalProperties: false,
     },
     fecha: { type: "string" },
+    comprobante: {
+      type: "object",
+      properties: {
+        tipo: { type: "string", enum: ["factura", "boleta", "guia"] },
+        numero: { type: "string" },
+      },
+      additionalProperties: false,
+    },
     items: {
       type: "array",
       items: {
@@ -96,9 +110,10 @@ const JSON_SCHEMA_FACTURA = {
  * no recibe el JSON Schema.
  */
 const PROMPT =
-  "Extrae los datos de esta boleta o factura peruana: el proveedor con su RUC, la fecha de emisión, cada ítem con su " +
+  "Extrae los datos de esta boleta o factura peruana: el proveedor con su RUC, la fecha de emisión, el tipo de " +
+  "comprobante (factura, boleta o guia) con su serie y número tal cual (ej. F001-00012345), cada ítem con su " +
   "cantidad y precio unitario, y el total. " +
-  'Responde SOLO JSON: {"proveedor":{"nombre":"...","ruc":"..."},"fecha":"...","items":[{"nombre":"...","cantidad":1,"precioUnitario":0}],"total":0}. ' +
+  'Responde SOLO JSON: {"proveedor":{"nombre":"...","ruc":"..."},"fecha":"...","comprobante":{"tipo":"factura","numero":"F001-00012345"},"items":[{"nombre":"...","cantidad":1,"precioUnitario":0}],"total":0}. ' +
   "Si un dato no figura en el comprobante, omítelo en vez de inventarlo.";
 
 export async function POST(req: NextRequest) {

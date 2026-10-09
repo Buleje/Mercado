@@ -92,6 +92,8 @@ export type CrearRecurrente = {
   notifyDaysBefore: number;
   paymentMethod?: string;
   notes?: string;
+  /** `false` = plantilla guardada sin repetirse (Punto de compra). */
+  active?: boolean;
 };
 
 export const RecurringPurchasesDB = {
@@ -140,6 +142,7 @@ export const RecurringPurchasesDB = {
         notifyDaysBefore: data.notifyDaysBefore,
         paymentMethod: data.paymentMethod ?? null,
         notes: data.notes ?? null,
+        ...(data.active !== undefined && { active: data.active }),
       },
     });
     invalidateAdminCache.afterPurchase(tenantId);

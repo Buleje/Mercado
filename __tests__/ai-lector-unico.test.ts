@@ -323,6 +323,15 @@ const SCHEMA_FACTURA_DE_ANTES = {
       additionalProperties: false,
     },
     fecha: { type: "string" },
+    // Punto de compra (09-10): serie y número del comprobante, opcional.
+    comprobante: {
+      type: "object",
+      properties: {
+        tipo: { type: "string", enum: ["factura", "boleta", "guia"] },
+        numero: { type: "string" },
+      },
+      additionalProperties: false,
+    },
     items: {
       type: "array",
       items: {
