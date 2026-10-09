@@ -51,11 +51,29 @@ let rechazarCarga: ((err: Error) => void) | null = null;
 let fallosSeguidos = 0;
 let pausaHasta = 0;
 
+/**
+ * Sin tarjeta gráfica útil, se recuerda 7 días y no se vuelve a preguntar
+ * (Brandon 2026-10-09: la consola decía «No available adapters.» en cada carga;
+ * lo imprime Chrome cuando `requestAdapter()` no encuentra GPU). Pasada la
+ * semana se prueba de nuevo, por si cambió el equipo o el driver.
+ */
+const CLAVE_SIN_GPU = "camaras:detector-sin-gpu-hasta";
+const RECORDAR_SIN_GPU_MS = 7 * 24 * 60 * 60 * 1000;
+
 function forzarCpu(): boolean {
   try {
-    return localStorage.getItem("camaras:detector-cpu") === "1";
+    if (localStorage.getItem("camaras:detector-cpu") === "1") return true;
+    return Number(localStorage.getItem(CLAVE_SIN_GPU) ?? 0) > Date.now();
   } catch {
     return false;
+  }
+}
+
+function recordarSinGpu(): void {
+  try {
+    localStorage.setItem(CLAVE_SIN_GPU, String(Date.now() + RECORDAR_SIN_GPU_MS));
+  } catch (err) {
+    logger.warn("[camaras] no se pudo recordar que no hay GPU", { error: String(err) });
   }
 }
 
@@ -100,9 +118,12 @@ export function cargarMotorDfine(): Promise<InfoMotorDfine> {
       return;
     }
     worker = w;
+    const forzado = forzarCpu();
     w.onmessage = (e: MessageEvent<RespuestaDfine>) => {
       const r = e.data;
       if (r.tipo === "listo") {
+        /* Eligió el procesador sin que se lo pidieran: no hay GPU (o es más lenta). */
+        if (r.backend === "wasm" && !forzado) recordarSinGpu();
         info = { backend: r.backend, cargaMs: r.cargaMs };
         rechazarCarga = null;
         ok(info);
@@ -132,7 +153,7 @@ export function cargarMotorDfine(): Promise<InfoMotorDfine> {
       tipo: "cargar",
       modelo: new URL(RUTA_MODELO_DFINE, location.origin).href,
       motor: new URL(RUTA_MOTOR_ONNX, location.origin).href,
-      forzarCpu: forzarCpu(),
+      forzarCpu: forzado,
     };
     w.postMessage(pedido);
   }).catch((err: unknown) => {

@@ -49,6 +49,18 @@ export interface OpcionesVisor {
 /** Cuánto se espera el primer cuadro (4G + despertar la cámara solar) antes de decir que no llegó. */
 export const SEGUNDOS_SIN_VIDEO = 45;
 
+/**
+ * Reintentos solos cuando EZUIKit falla AL ARRANCAR (Brandon 2026-10-09, en
+ * Blas: `wss://vtmforsa…` «Received unexpected continuation frame» →
+ * «startPlay error» y el cuadro quedaba en error hasta tocar Reintentar). Es
+ * una falla del servidor de video de Hikvision, de a ratos: la reconexión
+ * propia de EZUIKit sólo cubre cortes con el video ya andando, no el arranque.
+ * Dos intentos más, espaciados (Hikvision corta a 5 pedidos/s); después sí se
+ * muestra el error. NO cuando la cámara no mandó video en 45 s: ahí está
+ * dormida o sin señal, y reintentar sólo gasta su batería.
+ */
+export const ESPERAS_REINTENTO_MS = [2_000, 6_000] as const;
+
 interface RespuestaVideo {
   url: string;
   accessToken: string;
@@ -79,6 +91,9 @@ export function useVisorNube(camaraId: string, opciones: OpcionesVisor = {}) {
   const [intento, setIntento] = useState(0);
   const player = useRef<EZUIKitPlayer | null>(null);
   const corte = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Reintentos automáticos ya gastados en este arranque (vuelve a 0 al ver video). */
+  const reintentosSolos = useRef(0);
+  const esperaReintento = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const cortar = useCallback(() => {
     destruir(player.current, document.getElementById(contenedorId));
@@ -201,26 +216,42 @@ export function useVisorNube(camaraId: string, opciones: OpcionesVisor = {}) {
           language: "en",
           width: medida.ancho,
           height: medida.alto,
+          /* La reconexión propia, para cortes con el video ya andando (por defecto 1 vez a 1,5 s). */
+          reconnect: { enabled: true, maxRetry: 3, retryDelay: 2_000 },
           handleSuccess: () => {
             if (!vivo) return;
+            reintentosSolos.current = 0;
             setEstado("viendo");
             alVer(player.current);
           },
           handleError: (e: unknown) => {
             if (!vivo) return;
-            setError(mensajeDelReproductor(e));
-            setEstado("error");
+            fallo(e);
           },
         });
       } catch (e) {
-        setError(mensajeDelReproductor(e));
-        setEstado("error");
+        fallo(e);
       }
     })();
+
+    /** Falló el arranque: se reintenta solo (`ESPERAS_REINTENTO_MS`) y recién después se muestra. */
+    function fallo(e: unknown) {
+      const n = reintentosSolos.current;
+      if (n < ESPERAS_REINTENTO_MS.length) {
+        reintentosSolos.current = n + 1;
+        logger.warn("[camaras] el video no arrancó, se reintenta solo", { camaraId, intento: n + 1, error: mensajeDelReproductor(e) });
+        setEstado("cargando");
+        esperaReintento.current = setTimeout(() => setIntento((i) => i + 1), ESPERAS_REINTENTO_MS[n]);
+        return;
+      }
+      setError(mensajeDelReproductor(e));
+      setEstado("error");
+    }
 
     return () => {
       vivo = false;
       control.abort();
+      if (esperaReintento.current) clearTimeout(esperaReintento.current);
       destruir(player.current, document.getElementById(contenedorId));
       player.current = null;
     };
@@ -259,7 +290,15 @@ export function useVisorNube(camaraId: string, opciones: OpcionesVisor = {}) {
     return () => obs.disconnect();
   }, [contenedorId]);
 
-  const reintentar = useCallback(() => setIntento((n) => n + 1), []);
+  /* Otra cámara, calidad o rango: los reintentos solos vuelven a estar disponibles. */
+  useEffect(() => {
+    reintentosSolos.current = 0;
+  }, [camaraId, calidad, claveModo]);
+
+  const reintentar = useCallback(() => {
+    reintentosSolos.current = 0;
+    setIntento((n) => n + 1);
+  }, []);
 
   const verGrabacion = useCallback((fecha: string, hora: string) => {
     const r = rangoDeGrabacion(fecha, hora, 60);

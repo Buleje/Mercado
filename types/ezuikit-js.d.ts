@@ -19,6 +19,12 @@ declare module "ezuikit-js" {
     language?: "zh" | "en";
     /** Dónde están los decodificadores; ABSOLUTA (el worker ignora una relativa y va al CDN de EZVIZ). */
     staticPath?: string;
+    /**
+     * Reconexión propia del flujo cuando se corta con el video ya andando
+     * (defaults del bundle 9.0.23: `{ enabled: true, maxRetry: 1, retryDelay: 1500,
+     * dataTimeout: 10000, dataCheckInterval: 10000 }`). No cubre la falla del arranque.
+     */
+    reconnect?: { enabled?: boolean; maxRetry?: number; retryDelay?: number; dataTimeout?: number; dataCheckInterval?: number };
     handleSuccess?: () => void;
     handleError?: (err: unknown) => void;
   }
