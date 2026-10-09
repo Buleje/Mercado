@@ -55,12 +55,12 @@ function EsqueletoEncabezado() {
       <div aria-hidden="true">
         <div className="h-10 bg-[var(--bb-tinta)]" />
         <div className="border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)]">
-          <div className={`${ANCHO} flex h-16 items-center gap-6 sm:h-20`}>
+          <div className={`${ANCHO} flex h-14 items-center gap-6 sm:h-20`}>
             <div className={`${bloque} h-10 w-32`} />
             <div className={`${bloque} mx-auto hidden h-12 w-full max-w-[34rem] md:block`} />
           </div>
         </div>
-        <div className="h-[7.5rem] border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] md:h-[3.75rem]" />
+        <div className="h-[7.25rem] border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] md:h-[3.75rem]" />
       </div>
     </Paleta>
   );

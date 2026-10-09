@@ -10,5 +10,5 @@ import { useSearchParams } from "next/navigation";
 
 export function CampoBuscar({ id, className }: { id: string; className: string }) {
   const q = useSearchParams()?.get("q") ?? "";
-  return <input key={q} id={id} name="q" type="search" enterKeyHint="search" defaultValue={q} placeholder="Busca shampoo, keratina, planchas…" className={className} />;
+  return <input key={q} id={id} name="q" type="search" enterKeyHint="search" defaultValue={q} placeholder="Busca shampoo, keratina…" className={className} />;
 }

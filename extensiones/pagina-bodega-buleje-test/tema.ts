@@ -23,13 +23,24 @@
 export const ID_PAGINA = "pagina-bodega-buleje-test";
 
 /*
- * Títulos: Instrument Serif (`--font-display`), la serif editorial que el sitio
- * YA carga y precarga en todas las páginas — cero descarga extra. Se probó
- * Cormorant con `next/font` dentro de la pieza: su hoja de @font-face (7 KB,
- * bloqueante) se colaba en TODAS las tiendas `/t/<negocio>` (medido 01-10 en
- * /t/mi-pollo), porque la ruta empaqueta lo que la pieza importa. Instrument
- * Serif sólo tiene peso 400: los títulos van sin `font-semibold` (negrita falsa).
- * Cuerpo: la sans del sitio (Geist).
+ * Títulos: Fraunces (`--font-display-alt`), serif variable con eje óptico
+ * (`opsz` 9-144) y pesos reales 100-900. El sitio YA la declara en
+ * `app/layout.tsx` con `preload: false`: sólo se descarga en las páginas que la
+ * pintan (67 KB, latín; sin cursiva ni ejes SOFT/WONK, que suman 54-81 KB más).
+ * NO meter `next/font` acá: se probó Cormorant así y su hoja de @font-face
+ * (7 KB, bloqueante) se colaba en TODAS las tiendas `/t/<negocio>` (medido
+ * 01-10 en /t/mi-pollo), porque la ruta empaqueta lo que la pieza importa.
+ * Sin cursiva cargada, los títulos van rectos (una cursiva falsa se ve rota).
+ *
+ * - `.bb-serif`: títulos chicos y medianos; el navegador elige la óptica según
+ *   el tamaño (`font-optical-sizing: auto`).
+ * - `.bb-display`: titulares grandes, tracking cerrado; la óptica crece sola con
+ *   el tamaño (a 76 px, opsz 76: más contraste). Se probó forzar opsz 144 con
+ *   peso 320 desde 768 px: la barra de la «e» desaparecía y «del» se leía «dcl»
+ *   (captura 1280, 08-10). Peso 400 como piso.
+ * - `.bb-num`: numerales de vitrina (precios, ranking, contadores); óptica
+ *   automática: a 20 px la de 144 deja los trazos finos ilegibles (medido 08-10).
+ * Cuerpo: la sans del sitio (Geist), siempre ≥ 16 px.
  */
 
 const sel = `[data-pagina="${ID_PAGINA}"]`;
@@ -52,9 +63,19 @@ background:var(--surface-canvas);color:var(--text-primary);
 --text-primary:#f7efeb;--text-secondary:#d6c8c4;--text-tertiary:#b3a39f;
 --accent:#f2bcc0;--accent-600:#f7d0d3;--accent-dark:#f7d0d3;--color-primary:#f2bcc0;
 }
-${sel} .bb-serif{font-family:var(--font-display),Georgia,serif;font-weight:400;letter-spacing:-0.01em}
+${sel} .bb-serif{font-family:var(--font-display-alt),Georgia,serif;font-weight:420;letter-spacing:-0.015em;font-optical-sizing:auto}
+${sel} .bb-display{font-family:var(--font-display-alt),Georgia,serif;font-weight:400;letter-spacing:-0.022em;font-optical-sizing:auto}
+${sel} .bb-num{font-family:var(--font-display-alt),Georgia,serif;font-weight:400;font-variant-numeric:lining-nums proportional-nums;letter-spacing:-0.01em;font-optical-sizing:auto}
 ${sel} .bb-sin-barra{scrollbar-width:none}
 ${sel} .bb-sin-barra::-webkit-scrollbar{display:none}
+${sel} .bb-desvanecer{-webkit-mask-image:linear-gradient(90deg,transparent,black 1rem,black calc(100% - 3rem),transparent);mask-image:linear-gradient(90deg,transparent,black 1rem,black calc(100% - 3rem),transparent)}
+@media (min-width:640px){${sel} .bb-desvanecer-sm{-webkit-mask-image:none;mask-image:none}}
+@media (min-width:768px){${sel} .bb-desvanecer-movil{-webkit-mask-image:none;mask-image:none}}
+${sel} .bb-puntos{flex:1;align-self:end;margin-bottom:.4em;height:2px;background-image:radial-gradient(circle,currentColor 1px,transparent 1.3px);background-size:6px 2px;background-repeat:repeat-x;opacity:.45}
+${sel} .noise-texture-bg::after{opacity:.075}
+.dark ${sel} .noise-texture-bg::after{opacity:.06;filter:invert(1);mix-blend-mode:screen}
+@keyframes bb-girar{to{transform:rotate(1turn)}}
+${sel} .bb-girar{animation:bb-girar 48s linear infinite}
 @media (prefers-reduced-motion: reduce){${sel} *{transition-duration:.01ms!important;animation:none!important;scroll-behavior:auto!important}}
 `;
 
@@ -125,7 +146,7 @@ export const CSS_GLOBAL = `
 --color-popover:#1f1819;--color-popover-foreground:#f7efeb;--color-border:#3d2f32;--color-input:#3d2f32;
 --color-ring:#c14f63;--color-accent:#c14f63;--color-muted:#b3a39f;--color-muted-foreground:#b3a39f;
 }
-[data-marco] h1{font-family:var(--font-display),Georgia,serif;font-weight:400;letter-spacing:-0.01em}
+[data-marco] h1{font-family:var(--font-display-alt),Georgia,serif;font-weight:400;letter-spacing:-0.015em}
 :root:root.dark :is(${TEXTO_CON_ACENTO}){color:var(--accent-ink)}
 :root:root.dark :is(${TEXTO_EN_LINEA_CON_ACENTO}){color:var(--accent-ink)!important}
 :root:root .text-muted{color:var(--text-tertiary)}

@@ -11,20 +11,20 @@ import { Carril } from "./Carril";
 import type { ProductoSalon } from "./datos";
 import { enlaceWhatsapp, mensajeReserva, rutas, soles } from "./destinos";
 import { coincide } from "./filtros";
-import { ANCHO } from "./ui";
+import { ANCHO, ConAcento, Kicker } from "./ui";
 
 export function FranjaServicios({ servicios, q, whatsapp, slug }: { servicios: ProductoSalon[]; q: string; whatsapp: string | null; slug: string }) {
   if (servicios.length === 0) return null;
   const buscados = q ? servicios.filter((s) => coincide(s, q)) : [];
   const lista = buscados.length ? buscados : servicios;
   return (
-    <section aria-labelledby="bb-franja-servicios" className="bg-[var(--bb-tinta)] py-14 text-[var(--bb-sobre-tinta)] sm:py-16 dark:border-y dark:border-[var(--rule-base)]">
-      <div className={ANCHO}>
-        <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <section aria-labelledby="bb-franja-servicios" className="noise-texture-bg bg-[var(--bb-tinta)] py-10 text-[var(--bb-sobre-tinta)] sm:py-16 dark:border-y dark:border-[var(--rule-base)]">
+      <div className={`${ANCHO} relative z-[1]`}>
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="max-w-2xl">
-            <p className="text-sm font-semibold uppercase tracking-[var(--ls-wider)] text-[var(--bb-oro)]">Del salón</p>
-            <h2 id="bb-franja-servicios" className="bb-serif mt-2 text-4xl leading-[1.05] tracking-tight sm:text-5xl">
-              {buscados.length ? `En el salón: “${q}”` : "¿Prefieres que lo hagamos por ti?"}
+            <Kicker claro>Del salón</Kicker>
+            <h2 id="bb-franja-servicios" className="bb-display mt-2 text-[2.5rem] leading-[0.98] sm:text-5xl">
+              {buscados.length ? `En el salón: “${q}”` : <ConAcento texto="¿Prefieres que lo hagamos por ti?" acento="text-[var(--bb-oro)]" />}
             </h2>
             <p className="mt-3 text-base leading-relaxed text-[var(--bb-sobre-tinta-2)] sm:text-lg">
               Elige el servicio y te escribimos por WhatsApp para confirmar el día y la hora. Se paga en el salón.

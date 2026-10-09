@@ -9,13 +9,31 @@
 import { Children, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight } from "@buleje/design-system/icons";
 
-/** Ancho de cada tarjeta: 2,2 en el celular, 3 en tablet, 4-5 en escritorio (3 si la fila va al lado de una foto). */
+/**
+ * Ancho de cada tarjeta: 1,7 en el celular (a 46 % la tarjeta medía 169 px y el
+ * nombre se cortaba a la 2.ª línea; a 58 % entran ~44 letras en dos líneas),
+ * 3 en tablet, 4-5 en escritorio (3 si la fila va al lado de una foto).
+ */
 const ANCHO_ITEM = {
-  completo: "w-[46%] sm:w-[31%] lg:w-[calc((100%_-_3*1.25rem)/4)] xl:w-[calc((100%_-_4*1.25rem)/5)]",
-  angosto: "w-[46%] sm:w-[31%] lg:w-[calc((100%_-_2*1.25rem)/3)]",
+  completo: "w-[58%] sm:w-[31%] lg:w-[calc((100%_-_3*1.25rem)/4)] xl:w-[calc((100%_-_4*1.25rem)/5)]",
+  angosto: "w-[58%] sm:w-[31%] lg:w-[calc((100%_-_2*1.25rem)/3)]",
 } as const;
 
-export function Carril({ etiqueta, ancho = "completo", children }: { etiqueta: string; ancho?: keyof typeof ANCHO_ITEM; children: ReactNode }) {
+/**
+ * `inicio`: una tarjeta que va primera SÓLO en el celular y la tablet (p. ej. la
+ * foto de una línea, que en escritorio va al lado de la fila).
+ */
+export function Carril({
+  etiqueta,
+  ancho = "completo",
+  inicio,
+  children,
+}: {
+  etiqueta: string;
+  ancho?: keyof typeof ANCHO_ITEM;
+  inicio?: ReactNode;
+  children: ReactNode;
+}) {
   const fila = useRef<HTMLDivElement>(null);
   const [borde, setBorde] = useState({ inicio: true, fin: false });
 
@@ -56,6 +74,7 @@ export function Carril({ etiqueta, ancho = "completo", children }: { etiqueta: s
         tabIndex={0}
         className="bb-sin-barra -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-3 pt-1 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--accent)] sm:-mx-6 sm:scroll-px-6 sm:gap-5 sm:px-6 lg:mx-0 lg:scroll-px-0 lg:px-0"
       >
+        {inicio && <div className={`shrink-0 snap-start lg:hidden ${ANCHO_ITEM[ancho]}`}>{inicio}</div>}
         {Children.map(children, (hijo) => (
           <div className={`shrink-0 snap-start ${ANCHO_ITEM[ancho]}`}>{hijo}</div>
         ))}

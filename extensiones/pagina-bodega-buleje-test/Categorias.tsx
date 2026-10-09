@@ -1,6 +1,8 @@
 /**
  * Categorías en círculos: la foto es la de un producto real de esa categoría
  * (el favorito, si hay) y el número es cuántos hay hoy. Las vacías no salen.
+ * Van en arcos (el espejo del salón). En el celular, una fila que se desliza
+ * con imán y el borde derecho desvanecido; desde 1024 px, las 8 en una fila.
  */
 import Image from "next/image";
 import { CATEGORIAS } from "./anuncios";
@@ -21,22 +23,21 @@ export function Categorias({ productos, servicios, slug }: { productos: Producto
   if (items.length === 0) return null;
 
   return (
-    <section aria-labelledby="bb-categorias" className="py-14 sm:py-20">
+    <section aria-labelledby="bb-categorias" className="py-9 sm:py-20">
       <div className={ANCHO}>
         <TituloSeccion id="bb-categorias" kicker="Encuentra lo tuyo" titulo="Compra por categoría" centrado />
-        <ul className="grid grid-cols-3 gap-x-3 gap-y-8 sm:grid-cols-4 lg:grid-cols-8 lg:gap-x-5">
-          {items.map((c) => (
-            <li key={c.nombre}>
-              <a href={c.href} className="group flex flex-col items-center gap-3 text-center focus-visible:outline-none">
-                <span className="relative block aspect-square w-full max-w-[9rem] overflow-hidden rounded-full bg-[var(--bb-rubor)] ring-1 ring-[var(--rule-base)] transition duration-300 group-hover:-translate-y-1 group-hover:ring-2 group-hover:ring-[var(--bb-vino)] group-focus-visible:ring-4 group-focus-visible:ring-[var(--accent)]">
-                  {c.foto && <Image src={c.foto} alt="" fill sizes="(min-width: 1024px) 9rem, 30vw" className="object-cover transition duration-500 group-hover:scale-110" />}
-                </span>
-                <span className="flex flex-col">
-                  <span className="hyphens-auto text-[0.9375rem] font-semibold text-[var(--text-primary)] sm:text-base">{c.nombre}</span>
-                  <span className="text-sm text-[var(--text-secondary)]">
-                    {c.cuantos} {c.cuantos === 1 ? c.unidad : `${c.unidad}s`}
+        <ul className="bb-sin-barra bb-desvanecer -mx-4 flex snap-x snap-proximity scroll-px-4 gap-3 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:scroll-px-6 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-8 lg:gap-5 lg:overflow-visible lg:px-0 bb-desvanecer-movil">
+          {items.map((c, i) => (
+            <li key={c.nombre} className={`w-32 shrink-0 snap-start lg:w-auto ${i === items.length - 1 ? "pr-8 sm:pr-10 lg:pr-0" : ""}`}>
+              <a href={c.href} className="group flex flex-col items-center gap-2.5 text-center focus-visible:outline-none">
+                <span className="relative block aspect-[4/5] w-full overflow-hidden rounded-b-2xl rounded-t-full bg-[var(--bb-rubor)] ring-1 ring-[var(--rule-base)] transition duration-300 group-hover:-translate-y-1 group-hover:ring-2 group-hover:ring-[var(--bb-vino)] group-focus-visible:ring-4 group-focus-visible:ring-[var(--accent)]">
+                  {c.foto && <Image src={c.foto} alt="" fill sizes="(min-width: 1024px) 9rem, 7rem" className="object-cover transition duration-500 group-hover:scale-110" />}
+                  <span className="absolute bottom-1.5 right-1.5 inline-flex h-8 items-center justify-center rounded-full bg-[var(--surface-raised)] px-2.5 text-sm font-bold tabular-nums leading-none text-[var(--bb-vino)] shadow-sm">
+                    {c.cuantos}
+                    <span className="sr-only"> {c.cuantos === 1 ? c.unidad : `${c.unidad}s`}</span>
                   </span>
                 </span>
+                <span className="hyphens-auto text-base font-semibold leading-tight text-[var(--text-primary)]">{c.nombre}</span>
               </a>
             </li>
           ))}

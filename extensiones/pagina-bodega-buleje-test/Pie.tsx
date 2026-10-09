@@ -2,6 +2,10 @@
  * Franja de beneficios + pie de la tienda (columnas, redes, suscripción y los
  * enlaces legales que ya existen en la tienda: pedidos, reclamaciones,
  * términos y privacidad).
+ *
+ * En el celular: beneficios en una fila que se desliza; las categorías del pie en una fila que
+ * baja de línea, «Salón» y «Ayuda» lado a lado; al final, la firma del salón
+ * en grande (decorativa).
  */
 import { Facebook, Instagram, MessageCircle, ShieldCheck, Truck, Wallet } from "@buleje/design-system/icons";
 import { BENEFICIOS, CATEGORIAS } from "./anuncios";
@@ -15,17 +19,18 @@ export function Beneficios({ pagos, nombre }: { pagos: string | null; nombre: st
   const items = BENEFICIOS.map((b) => ({ ...b, texto: rellenar(b.texto, { pagos }) })).filter((b) => b.texto);
   return (
     <section aria-label={`Por qué comprar en ${nombre}`} className="border-y border-[var(--rule-soft)] bg-[var(--surface-canvas)]">
-      <ul className={`${ANCHO} grid grid-cols-1 gap-6 py-10 sm:grid-cols-2 lg:grid-cols-4`}>
-        {items.map((b) => {
+      {/* Celular: una fila que se desliza (con imán y el borde derecho desvanecido); desde 640 px, grilla. */}
+      <ul className={`${ANCHO} bb-sin-barra bb-desvanecer bb-desvanecer-sm flex snap-x snap-proximity scroll-px-4 gap-5 overflow-x-auto py-6 sm:grid sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:py-10 lg:grid-cols-4`}>
+        {items.map((b, i) => {
           const Icono = ICONOS[b.icono];
           return (
-            <li key={b.titulo} className="flex items-start gap-4">
-              <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--bb-rubor)] text-[var(--bb-vino)]">
+            <li key={b.titulo} className={`flex w-[78%] shrink-0 snap-start items-start gap-4 sm:w-auto ${i === items.length - 1 ? "pr-8 sm:pr-0" : ""}`}>
+              <span className="inline-flex h-12 w-11 shrink-0 items-center justify-center rounded-b-xl rounded-t-full bg-[var(--bb-rubor)] text-[var(--bb-vino)]">
                 <Icono className="h-6 w-6" strokeWidth={1.6} aria-hidden="true" />
               </span>
               <span>
-                <span className="block text-base font-semibold text-[var(--text-primary)]">{b.titulo}</span>
-                <span className="mt-0.5 block text-sm leading-relaxed text-[var(--text-secondary)]">{b.texto}</span>
+                <span className="block text-base font-semibold leading-snug text-[var(--text-primary)]">{b.titulo}</span>
+                <span className="mt-1 block text-sm leading-relaxed text-[var(--text-secondary)]">{b.texto}</span>
               </span>
             </li>
           );
@@ -60,13 +65,13 @@ export function Pie({
 
   return (
     <footer className="bg-[var(--bb-tinta)] text-[var(--bb-sobre-tinta)]">
-      <div className={`${ANCHO} grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr_1fr_1.5fr] lg:gap-8`}>
-        <div className="flex flex-col gap-4">
+      <div className={`${ANCHO} grid grid-cols-2 gap-x-6 gap-y-7 py-10 sm:py-14 lg:grid-cols-[1.3fr_1fr_1fr_1fr_1.5fr] lg:gap-8`}>
+        <div className="col-span-2 flex flex-col gap-4 lg:col-span-1">
           <a href={r.base} className="flex flex-col leading-none">
-            <span className="bb-serif text-4xl">{primera}</span>
+            <span className="bb-display text-4xl">{primera}</span>
             {resto.length > 0 && <span className="mt-1 text-xs font-semibold uppercase tracking-[0.46em] text-[var(--bb-oro)]">{resto.join(" ")}</span>}
           </a>
-          <p className="text-base leading-relaxed text-[var(--bb-sobre-tinta-2)]">
+          <p className="line-clamp-3 text-base leading-relaxed text-[var(--bb-sobre-tinta-2)] sm:line-clamp-none">
             {descripcion ?? "Salón y cosmética capilar: productos profesionales para tu rutina y estilistas que te asesoran."}
           </p>
           {(fb || ig) && (
@@ -85,9 +90,9 @@ export function Pie({
           )}
         </div>
 
-        <nav aria-label="Tienda">
+        <nav aria-label="Tienda" className="col-span-2 lg:col-span-1">
           <p className={titulo}>Tienda</p>
-          <ul className="mt-3">
+          <ul className="mt-2 flex flex-wrap gap-x-5 lg:mt-3 lg:block">
             {CATEGORIAS.map((c) => (
               <li key={c.nombre}>
                 <a href={r.categoria(c.nombre)} className={enlace}>
@@ -155,15 +160,18 @@ export function Pie({
           </ul>
         </nav>
 
-        <div>
+        <div className="col-span-2 lg:col-span-1">
           <p className={titulo}>Suscríbete</p>
           <div className="mt-4">
             <Suscripcion />
           </div>
         </div>
       </div>
+      <p aria-hidden="true" className={`${ANCHO} bb-display select-none overflow-hidden whitespace-nowrap text-[19vw] leading-[0.8] text-[var(--bb-sobre-tinta)]/[0.09] lg:text-[13.5rem]`}>
+        {primera}
+      </p>
       <div className="border-t border-[var(--bb-sobre-tinta)]/15">
-        <div className={`${ANCHO} flex flex-col gap-2 py-6 text-sm text-[var(--bb-sobre-tinta-2)] sm:flex-row sm:items-center sm:justify-between`}>
+        <div className={`${ANCHO} flex flex-col gap-2 py-5 text-sm sm:py-6 text-[var(--bb-sobre-tinta-2)] sm:flex-row sm:items-center sm:justify-between`}>
           <p>
             © {new Date().getFullYear()} {nombre}. Precios en soles, con IGV.
           </p>

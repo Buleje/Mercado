@@ -3,6 +3,9 @@
  * semana». El % de cada banner es el mayor descuento REAL de su grupo
  * (historial de precios); si el grupo no tiene rebajas, el banner no promete
  * ninguna.
+ *
+ * En el celular los tres banners van en una fila que se desliza (apilados
+ * medían ~1.200 px); desde 768 px, la grilla de 1 grande + 2 apiladas.
  */
 import Image from "next/image";
 import { ArrowRight } from "@buleje/design-system/icons";
@@ -11,7 +14,7 @@ import { Carril } from "./Carril";
 import { mayorDescuentoDe, type ProductoSalon } from "./datos";
 import { conDescuento, rutas } from "./destinos";
 import { TarjetaProducto } from "./TarjetaProducto";
-import { ANCHO, TituloSeccion } from "./ui";
+import { ANCHO, ConAcento, TituloSeccion } from "./ui";
 
 const TONO = {
   tinta: { fondo: "bg-[var(--bb-tinta)]", texto: "text-[var(--bb-sobre-tinta)]", kicker: "text-[var(--bb-oro)]", pastilla: "bg-[var(--bb-sobre-tinta)] text-[var(--bb-tinta)]" },
@@ -24,30 +27,35 @@ function Banner({ promo, productos, slug, grande }: { promo: Promo; productos: P
   const t = TONO[promo.tono];
   const oferta = conDescuento(promo.oferta, mayorDescuentoDe(productos, promo.grupo));
   const href = "categoria" in promo.grupo ? r.categoria(promo.grupo.categoria) : r.buscar(promo.grupo.marca);
+  // Celular: todas iguales (texto a la izquierda, recorte a la derecha). Desde 768 px la grande crece.
   return (
     <a
       href={href}
-      className={`group relative flex overflow-hidden rounded-3xl ${t.fondo} ${grande ? "flex-col md:row-span-2 lg:min-h-[38rem]" : "min-h-[17rem]"} focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--accent)]`}
+      className={`noise-texture-bg group relative flex h-full min-h-[16rem] overflow-hidden rounded-[1.75rem] ${t.fondo} ${grande ? "md:row-span-2 md:flex-col lg:min-h-[38rem]" : "md:min-h-[17rem]"} focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--accent)]`}
     >
       {grande && (
-        <span aria-hidden="true" className="pointer-events-none absolute -bottom-24 -right-16 h-[28rem] w-[28rem] rounded-full bg-[var(--bb-oro)]/25 blur-3xl" />
+        <span aria-hidden="true" className="pointer-events-none absolute -bottom-24 -right-16 hidden h-[28rem] w-[28rem] rounded-full bg-[var(--bb-oro)]/25 blur-3xl md:block" />
       )}
-      <div className={`relative z-10 flex flex-col p-6 sm:p-10 ${grande ? "lg:max-w-[26rem] lg:flex-1 lg:justify-between" : "max-w-[62%] justify-center"}`}>
+      <div
+        className={`relative z-10 flex max-w-[62%] flex-col justify-center p-6 sm:p-10 ${grande ? "md:max-w-none lg:max-w-[26rem] lg:flex-1 lg:justify-between" : ""}`}
+      >
         <div>
           <p className={`text-sm font-semibold uppercase tracking-[var(--ls-wider)] ${t.kicker}`}>{promo.kicker}</p>
-          <h3 className={`bb-serif mt-3 leading-[1.02] tracking-tight ${t.texto} ${grande ? "text-5xl lg:text-6xl" : "text-[1.75rem] sm:text-4xl md:text-[2rem] lg:text-4xl"}`}>
+          <h3
+            className={`bb-display mt-3 leading-[0.98] ${t.texto} ${grande ? "text-[2rem] sm:text-4xl md:text-5xl lg:text-6xl" : "text-[2rem] sm:text-4xl md:text-[2rem] lg:text-4xl"}`}
+          >
             {promo.titulo}
           </h3>
-          {oferta && <p className={`mt-5 inline-flex whitespace-nowrap rounded-full px-4 py-2 text-base font-bold sm:text-lg ${t.pastilla}`}>{oferta}</p>}
+          {oferta && <p className={`mt-4 inline-flex whitespace-nowrap rounded-full px-4 py-2 text-base font-bold sm:mt-5 sm:text-lg ${t.pastilla}`}>{oferta}</p>}
         </div>
-        <span className={`mt-6 inline-flex items-center gap-2 border-b-2 border-current pb-0.5 text-base font-semibold ${t.texto} self-start`}>
+        <span className={`mt-5 inline-flex items-center gap-2 self-start border-b-2 border-current pb-0.5 text-base font-semibold sm:mt-6 ${t.texto}`}>
           {promo.cta}
           <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
         </span>
       </div>
       <div
         aria-hidden="true"
-        className={`pointer-events-none flex items-end ${grande ? "relative -mt-4 h-56 justify-center sm:h-72 lg:absolute lg:bottom-0 lg:right-0 lg:mt-0 lg:h-[72%] lg:w-[86%] lg:justify-end" : "absolute bottom-0 right-0 h-full w-[48%] justify-center"}`}
+        className={`pointer-events-none absolute bottom-0 right-0 flex h-full w-[46%] items-end justify-center ${grande ? "md:relative md:-mt-4 md:h-72 md:w-auto md:justify-center lg:absolute lg:mt-0 lg:h-[72%] lg:w-[86%] lg:justify-end" : "md:w-[48%]"}`}
       >
         {promo.imagenes.map((img, i) => (
           <Image
@@ -68,7 +76,7 @@ export function Promos({ productos, slug }: { productos: ProductoSalon[]; slug: 
   const rebajados = productos.filter((p) => p.descuento).sort((a, b) => (b.descuento ?? 0) - (a.descuento ?? 0));
   const [grande, ...chicas] = PROMOS;
   return (
-    <section id="ofertas" aria-labelledby="bb-ofertas" className="scroll-mt-24 py-14 sm:py-20">
+    <section id="ofertas" aria-labelledby="bb-ofertas" className="scroll-mt-24 py-9 sm:py-20">
       <div className={ANCHO}>
         <TituloSeccion
           id="bb-ofertas"
@@ -77,16 +85,26 @@ export function Promos({ productos, slug }: { productos: ProductoSalon[]; slug: 
           verTodo={rebajados.length ? { href: rutas(slug).ofertas, texto: "Ver todas las ofertas" } : undefined}
         />
         {grande && (
-          <div className="grid gap-4 sm:gap-5 md:grid-cols-2">
-            <Banner promo={grande} productos={productos} slug={slug} grande />
-            {chicas.map((p) => (
-              <Banner key={p.titulo} promo={p} productos={productos} slug={slug} grande={false} />
-            ))}
+          <div
+            role="region"
+            aria-label="Promociones"
+            tabIndex={0}
+            className="bb-sin-barra -mx-4 snap-x snap-mandatory scroll-px-4 overflow-x-auto px-4 pb-2 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--accent)] sm:-mx-6 sm:scroll-px-6 sm:px-6 md:mx-0 md:overflow-visible md:px-0 md:pb-0"
+          >
+            <div className="flex gap-3 sm:gap-5 md:grid md:grid-cols-2">
+              {[grande, ...chicas].map((p, i) => (
+                <div key={p.titulo} className={`w-[86%] shrink-0 snap-start sm:w-[60%] md:w-auto ${i === 0 ? "md:row-span-2" : ""}`}>
+                  <Banner promo={p} productos={productos} slug={slug} grande={i === 0} />
+                </div>
+              ))}
+            </div>
           </div>
         )}
         {rebajados.length > 0 && (
-          <div className="mt-12">
-            <h3 className="bb-serif mb-5 text-3xl text-[var(--text-primary)]">Ofertas de la semana</h3>
+          <div className="mt-8 sm:mt-14">
+            <h3 className="bb-serif mb-4 text-[1.75rem] leading-tight text-[var(--text-primary)] sm:mb-5 sm:text-3xl">
+              <ConAcento texto="Ofertas de la semana" />
+            </h3>
             <Carril etiqueta="Ofertas de la semana">
               {rebajados.map((p) => (
                 <TarjetaProducto key={p.id} p={p} />
