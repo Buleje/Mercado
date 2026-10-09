@@ -42,7 +42,7 @@ Alias sin sufijo: `--data-success` = `-500` pero `--data-warning/error/info` = `
 ## 3. Gotchas que rompen diseños (verificados)
 
 1. **Remap anti-naranja** (`@theme :60-90`): `amber-*` → escala **coral** y `orange-*` → escala **teal**. Un `bg-amber-400` copiado de internet renderiza coral. Es intencional (identidad); no "arreglarlo".
-2. **`max-w-{sm,md,lg,xl}` valen ~2×** (720/960/1200/1440px) por override `--container-*`. Modales/popovers → rem explícito (`max-w-[28rem]`).
+2. **`max-w-{xs,sm,md,lg,xl}` = escala de Tailwind** (320/384/448/512/576 px) desde 2026-10-09; antes globals.css los doblaba (560/720/960/1200/1440). Una ventana que tiene que ser ancha → `max-w-2xl…7xl` o rem explícito (`max-w-[60rem]`).
 3. Dark mode = **clase `.dark`** (`@custom-variant`), toggle `localStorage buleje-theme`; admin tiene overrides scoped `[data-admin-shell="true"]`.
 4. Storefront hard-reload siempre arranca light (sessionStorage) — verificar ambos temas igual.
 
