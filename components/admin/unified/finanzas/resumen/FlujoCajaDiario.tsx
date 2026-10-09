@@ -11,6 +11,8 @@ import { SERIE } from "@/components/admin/shared/chart-palette";
 import FavStar from "@/components/admin/shared/FavStar";
 import type { useFavoriteCharts } from "@/hooks/use-favorite-charts";
 import type { DiaFlujo } from "./tipos";
+import BloquePlegable from "./BloquePlegable";
+import { lineaFlujo } from "./lineas-plegadas";
 
 /** Ingresos, gastos y balance por día de los últimos 30 días. */
 export default function FlujoCajaDiario({
@@ -25,18 +27,18 @@ export default function FlujoCajaDiario({
       {/* Guard: el array siempre tiene 30 elementos (uno por día), pero si todos
           son cero no hay movimientos reales → no mostrar ejes vacíos */}
       {cashFlow.some(d => d.ingresos > 0 || d.gastos > 0) && (
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <FavStar id="flujo-caja" favs={finFavs} />
-            <div className="h-2 w-2 rounded-full bg-primary" />
-              <p className="text-sm font-bold text-[var(--text-primary)]">Flujo de Caja</p>
-            </div>
-            <div className="flex items-center gap-2">
+        <BloquePlegable
+          id="flujo-caja"
+          titulo="Flujo de caja"
+          resumen={lineaFlujo(cashFlow)}
+          acciones={
+            <>
               <span className="text-xs text-[var(--text-tertiary)] font-medium">Últimos 30 días</span>
+              <FavStar id="flujo-caja" favs={finFavs} />
               <button onClick={() => setExpandedChart("flujo-caja")} className="p-1 hover:bg-[var(--surface-sunken)] rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /></button>
-            </div>
-          </div>
+            </>
+          }
+        >
           <ResponsiveContainer minWidth={0} width="100%" height={280}>
             <AreaChart data={cashFlow} margin={{ top: 10, right: 15, left: 0, bottom: 5 }}>
               <defs>
@@ -68,7 +70,7 @@ export default function FlujoCajaDiario({
               />
             </AreaChart>
           </ResponsiveContainer>
-        </div>
+        </BloquePlegable>
       )}
     </>
   );

@@ -10,6 +10,10 @@
  * 2026-09-28: el tablero llegó a 1.037 líneas. Los datos pasaron a
  * `hooks/use-resumen-plata.ts` y cada bloque a `./resumen/`; este archivo
  * decide qué se ve y en qué orden.
+ *
+ * 2026-10-09: medía 5,26 pantallas. Arriba queda lo de hoy (caja, deudas,
+ * indicadores del mes y el gráfico); el resto son bloques plegables y
+ * recordados (`./resumen/BloquePlegable`) que plegados dicen su cifra.
  */
 
 import { CardTitle } from "@buleje/design-system";
@@ -36,6 +40,8 @@ import GraficosAmpliados from "./resumen/GraficosAmpliados";
 import EsqueletoResumen from "./resumen/EsqueletoResumen";
 import CajaDelResumen from "./resumen/CajaDelResumen";
 import TeDebenYDebes from "./resumen/TeDebenYDebes";
+import BloquePlegable from "./resumen/BloquePlegable";
+import { etiquetaSalud } from "./resumen/lineas-plegadas";
 
 /** Por qué la liquidez no se puede medir, en palabras del dueño. */
 function motivoSinLiquidez({ caja, error }: UsoCajaAbierta): string {
@@ -147,15 +153,26 @@ export default function FinanzasDashboard() {
         <ResumenFiscal fiscal={fiscal} mesCapitalized={mesCapitalized} />
       </StaggerItem>
 
-      <StaggerItem index={6}>
-        <IndicadoresDeSalud healthScore={healthScore} motivoSinLiquidez={sinLiquidez} />
-      </StaggerItem>
+      {/* Los indicadores y el puntaje hablan de lo mismo: un solo bloque, que
+          plegado dice el puntaje. Antes eran dos tarjetas con casi el mismo título. */}
+      {healthScore && (
+        <StaggerItem index={6}>
+          <BloquePlegable
+            id="salud"
+            titulo="Salud del negocio"
+            resumen={`${healthScore.total}/100 — ${etiquetaSalud(healthScore.total)}`}
+          >
+            <div className="space-y-6">
+              <IndicadoresDeSalud healthScore={healthScore} motivoSinLiquidez={sinLiquidez} />
+              <SaludDelNegocio healthScore={healthScore} monthlyData={monthlyData} motivoSinLiquidez={sinLiquidez} />
+            </div>
+          </BloquePlegable>
+        </StaggerItem>
+      )}
 
       <StaggerItem index={7}>
         <DeudasYCobros topPayables={topPayables} topFiados={topFiados} />
       </StaggerItem>
-
-      <SaludDelNegocio healthScore={healthScore} monthlyData={monthlyData} motivoSinLiquidez={sinLiquidez} />
 
       <StaggerItem index={9}>
         <CompararMeses monthlyData={monthlyData} />

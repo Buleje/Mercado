@@ -88,17 +88,9 @@ export function SaludDelNegocio({ healthScore, monthlyData, motivoSinLiquidez }:
     <>
       {healthScore && (
         <StaggerItem index={8}>
-          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="h-2 w-2 rounded-full" style={{ backgroundColor: healthScore.total > 70 ? "var(--accent)" : healthScore.total >= 40 ? SERIE.alerta : SERIE.gastos }} />
-              <p className="text-sm font-bold text-[var(--text-primary)]">Salud del Negocio</p>
-              <span className="ml-auto text-xs font-bold px-2 py-0.5 rounded-full" style={{
-                backgroundColor: healthScore.total > 70 ? "color-mix(in oklab, var(--accent) 12%, transparent)" : healthScore.total >= 40 ? "color-mix(in oklab, var(--data-warning-500) 12%, transparent)" : "color-mix(in oklab, var(--data-error-500) 12%, transparent)",
-                color: healthScore.total > 70 ? "var(--accent)" : healthScore.total >= 40 ? SERIE.alerta : SERIE.gastos,
-              }}>
-                {healthScore.total}/100
-              </span>
-            </div>
+          {/* Sin tarjeta ni título propios: vive dentro del bloque plegable
+              «Salud del negocio», que ya dice el puntaje (58/100) plegado. */}
+          <div className="border-t border-[var(--rule-soft)] pt-6">
             <div className="flex flex-col sm:flex-row items-center gap-6">
               {/* Gauge semicircular */}
               <div className="relative w-40 h-22.5 shrink-0">
@@ -122,9 +114,9 @@ export function SaludDelNegocio({ healthScore, monthlyData, motivoSinLiquidez }:
               {/* Breakdown */}
               <div className="flex-1 w-full space-y-3">
                 {[
-                  { label: "Margen bruto", pts: healthScore.margenPts, max: 33, detail: `${Number(healthScore.margen).toFixed(1)}%`, desc: "Cuanto ganas por cada sol vendido" },
+                  { label: "Margen bruto", pts: healthScore.margenPts, max: 33, detail: `${Number(healthScore.margen).toFixed(1)}%`, desc: "Cuánto ganas por cada sol vendido" },
                   { label: "Liquidez", pts: healthScore.liquidezPts, max: 33, detail: healthScore.liquidez == null ? "Sin dato" : `${Number(healthScore.liquidez).toFixed(1)}x`, desc: healthScore.liquidez == null ? `Efectivo vs gastos mensuales · ${motivoSinLiquidez}` : "Efectivo vs gastos mensuales" },
-                  { label: "Rotacion inv.", pts: 17, max: 25, detail: "Est.", desc: "Que tan rápido vendes tu stock" },
+                  { label: "Rotación inv.", pts: 17, max: 25, detail: "Est.", desc: "Qué tan rápido vendes tu stock" },
                   { label: "Crecimiento", pts: Math.min(25, Math.max(5, monthlyData.length >= 2 && monthlyData[monthlyData.length - 2].ingresos > 0 ? Math.round(((monthlyData[monthlyData.length - 1].ingresos - monthlyData[monthlyData.length - 2].ingresos) / monthlyData[monthlyData.length - 2].ingresos) * 25 + 12.5) : 12)), max: 25, detail: monthlyData.length >= 2 ? `${Math.round(((monthlyData[monthlyData.length - 1].ingresos - monthlyData[monthlyData.length - 2].ingresos) / Math.max(monthlyData[monthlyData.length - 2].ingresos, 1)) * 100)}%` : "N/A", desc: "Ventas vs mes anterior" },
                 ].map(f => (
                   <div key={f.label}>

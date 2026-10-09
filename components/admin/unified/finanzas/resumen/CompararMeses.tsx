@@ -9,6 +9,7 @@ import { formatSolesShort } from "@/lib/chart-helpers";
 import { SERIE } from "@/components/admin/shared/chart-palette";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import type { MesResumen } from "./tipos";
+import BloquePlegable from "./BloquePlegable";
 
 /** Dos meses lado a lado. */
 export default function CompararMeses({ monthlyData }: { monthlyData: MesResumen[] }) {
@@ -18,9 +19,11 @@ export default function CompararMeses({ monthlyData }: { monthlyData: MesResumen
   const [cmpMonth1, setCmpMonth1] = useState(() => monthlyData[monthlyData.length - 2]?.mes ?? "");
   const [cmpMonth2, setCmpMonth2] = useState(() => monthlyData[monthlyData.length - 1]?.mes ?? "");
   return (
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6">
-          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-            <p className="text-sm font-bold text-[var(--text-primary)]">Comparar Meses</p>
+        <BloquePlegable
+          id="comparar-meses"
+          titulo="Comparar meses"
+          resumen={`${cmpMonth1} vs ${cmpMonth2}`}
+          acciones={
             <div className="flex items-center gap-2">
               <select aria-label="Primer mes a comparar" value={cmpMonth1} onChange={e => setCmpMonth1(e.target.value)} className="text-xs border border-[var(--rule-base)] rounded-xl px-2 py-1 bg-[var(--surface-raised)] text-[var(--text-primary)]">
                 {monthlyData.map(m => <option key={m.fullMonth} value={m.mes}>{m.mes}</option>)}
@@ -30,11 +33,12 @@ export default function CompararMeses({ monthlyData }: { monthlyData: MesResumen
                 {monthlyData.map(m => <option key={m.fullMonth} value={m.mes}>{m.mes}</option>)}
               </select>
             </div>
-          </div>
+          }
+        >
           {(() => {
             const d1 = monthlyData.find(m => m.mes === cmpMonth1);
             const d2 = monthlyData.find(m => m.mes === cmpMonth2);
-            if (!d1 || !d2) return <EmptyState icon={BarChart3} title="Selecciona meses con datos" description="Los datos apareceran cuando registres ventas" />;
+            if (!d1 || !d2) return <EmptyState icon={BarChart3} title="Elige dos meses con datos" />;
             // Sin datos reales en ninguno de los dos meses — no mostrar gráfico vacío
             const sinDatos = d1.ingresos === 0 && d1.gastos === 0 && d2.ingresos === 0 && d2.gastos === 0;
             if (sinDatos) return <EmptyState icon={BarChart3} title="Sin ventas en esos meses" description="Registra ventas y gastos para ver la comparativa" />;
@@ -71,6 +75,6 @@ export default function CompararMeses({ monthlyData }: { monthlyData: MesResumen
               </>
             );
           })()}
-        </div>
+        </BloquePlegable>
   );
 }

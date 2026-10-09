@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/currency";
 import { SERIE } from "@/components/admin/shared/chart-palette";
 import type { Proyeccion } from "./tipos";
+import BloquePlegable from "./BloquePlegable";
 
 /** A qué ritmo va el mes: lo vendido y gastado, llevado a fin de mes. */
 export default function ProyeccionDelMes({ projection, mesCapitalized }: { projection: Proyeccion | null; mesCapitalized: string }) {
@@ -17,11 +18,11 @@ export default function ProyeccionDelMes({ projection, mesCapitalized }: { proje
   return (
     <>
       {projection && (
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <TrendingUp className="h-4 w-4 text-[var(--text-primary)]" strokeWidth={1.75} />
-            <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">Proyección {mesCapitalized}</p>
-          </div>
+        <BloquePlegable
+          id="proyeccion"
+          titulo={<span className="inline-flex items-center gap-2"><TrendingUp className="h-4 w-4" strokeWidth={1.75} aria-hidden />Proyección de {mesCapitalized.toLowerCase()}</span>}
+          resumen={`ventas ${formatCurrency(projVentas, { decimals: 0 })} · gastos ${formatCurrency(projGastos, { decimals: 0 })} · utilidad ${projUtilidad < 0 ? "−" : ""}${formatCurrency(Math.abs(projUtilidad), { decimals: 0 })}`}
+        >
           <div className="grid grid-cols-3 gap-4 mb-5">
             <div className="text-center p-3 bg-[var(--surface-sunken)] rounded-xl">
               <p className="text-xs font-bold text-[var(--text-tertiary)] uppercase mb-1">Ventas proyectadas</p>
@@ -60,7 +61,7 @@ export default function ProyeccionDelMes({ projection, mesCapitalized }: { proje
               </span>
             </p>
           </div>
-        </div>
+        </BloquePlegable>
       )}
     </>
   );

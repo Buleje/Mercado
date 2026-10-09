@@ -5,13 +5,16 @@ import { Truck, CreditCard } from "@buleje/design-system/icons";
 import { formatCurrency } from "@/lib/currency";
 import { SERIE } from "@/components/admin/shared/chart-palette";
 import type { Deudor } from "./tipos";
+import BloquePlegable from "./BloquePlegable";
+import { lineaDeudores } from "./lineas-plegadas";
 
 /** A quién le debo y quién me debe. */
 export default function DeudasYCobros({ topPayables, topFiados }: { topPayables: Deudor[]; topFiados: Deudor[] }) {
   return (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <BloquePlegable id="deudas-y-fiados" titulo="Deudas y fiados, uno por uno" resumen={lineaDeudores(topPayables.length, topFiados.length)}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Debo a proveedores */}
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6">
+        <div>
           <div className="flex items-center gap-2 mb-4">
             <Truck className="h-4 w-4 text-secondary" />
             <p className="text-sm font-bold text-[var(--text-primary)]">Debo a proveedores</p>
@@ -42,13 +45,13 @@ export default function DeudasYCobros({ topPayables, topFiados }: { topPayables:
           {topPayables.some(p => p.vencido) && (
             <div className="flex items-center gap-2 mt-3 text-xs text-[var(--text-tertiary)]">
               <div className="w-2 h-2 rounded-full bg-[var(--data-error-500)]" /> Vencido
-              <div className="w-2 h-2 rounded-full bg-secondary ml-2" /> Al dia
+              <div className="w-2 h-2 rounded-full bg-secondary ml-2" /> Al día
             </div>
           )}
         </div>
 
         {/* Me deben (fiados) */}
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6">
+        <div>
           <div className="flex items-center gap-2 mb-4">
             <CreditCard className="h-4 w-4 text-[var(--data-warning-500)]" />
             <p className="text-sm font-bold text-[var(--text-primary)]">Me deben (fiados)</p>
@@ -79,10 +82,11 @@ export default function DeudasYCobros({ topPayables, topFiados }: { topPayables:
           {topFiados.some(f => f.vencido) && (
             <div className="flex items-center gap-2 mt-3 text-xs text-[var(--text-tertiary)]">
               <div className="w-2 h-2 rounded-full bg-[var(--data-error-500)]" /> Vencido
-              <div className="w-2 h-2 rounded-full bg-[var(--data-warning-500)] ml-2" /> Al dia
+              <div className="w-2 h-2 rounded-full bg-[var(--data-warning-500)] ml-2" /> Al día
             </div>
           )}
         </div>
       </div>
+    </BloquePlegable>
   );
 }

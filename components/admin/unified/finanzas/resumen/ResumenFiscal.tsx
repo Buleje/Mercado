@@ -7,6 +7,7 @@ import { formatCurrency } from "@/lib/currency";
 import type { Fiscal } from "./tipos";
 import { igvDeGastosSinCredito, leerIgv } from "./igv";
 import AyudaIgv from "./AyudaIgv";
+import BloquePlegable from "./BloquePlegable";
 
 const CELDA_MONTO = "py-2.5 text-right font-bold font-mono tabular-nums text-[var(--text-primary)]";
 const CELDA_SIN_DATO = "py-2.5 text-right text-sm text-[var(--text-secondary)]";
@@ -24,12 +25,14 @@ export default function ResumenFiscal({ fiscal, mesCapitalized }: { fiscal: Fisc
   const igv = leerIgv(fiscal.igv);
   const registrado = igv?.tipo === "registrado" ? igv : null;
   return (
-    <div className="bg-[var(--surface-raised)] border-2 border-secondary/40 rounded-xl p-4 sm:p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <Calculator className="h-5 w-5 text-secondary" />
-        <p className="text-sm font-bold text-[var(--text-primary)]">Resumen Fiscal — {mesCapitalized}</p>
-        {igv && <AyudaIgv lectura={igv} />}
-      </div>
+    <BloquePlegable
+      id="fiscal"
+      titulo={<span className="inline-flex items-center gap-2"><Calculator className="h-4 w-4 text-secondary" aria-hidden />Resumen fiscal de {mesCapitalized.toLowerCase()}</span>}
+      resumen={registrado
+        ? `${registrado.neto < 0 ? "saldo a favor" : "IGV a pagar"} ${formatCurrency(Math.abs(Math.round(registrado.neto)), { decimals: 0 })}`
+        : !igv ? "no se pudo leer el IGV" : igv.tipo === "exoneradas" ? "sin IGV" : "sin IGV registrado"}
+      acciones={igv && <AyudaIgv lectura={igv} />}
+    >
       <div className="overflow-x-auto">
         <DataTable className="w-full text-sm">
           <thead>
@@ -79,6 +82,6 @@ export default function ResumenFiscal({ fiscal, mesCapitalized }: { fiscal: Fisc
           </tfoot>
         </DataTable>
       </div>
-    </div>
+    </BloquePlegable>
   );
 }

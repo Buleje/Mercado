@@ -2,14 +2,19 @@
 
 import { useState } from "react";
 import { Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { BarChart3, Maximize2, X as XIcon } from "@buleje/design-system/icons";
+import { Maximize2, X as XIcon } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/currency";
 import { colorMedioPago } from "@/components/admin/shared/chart-palette";
 import FavStar from "@/components/admin/shared/FavStar";
-import EmptyState from "@/components/admin/shared/EmptyState";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import type { useFavoriteCharts } from "@/hooks/use-favorite-charts";
 import { DASHBOARD_EXPENSE_COLORS, PM_FALLBACK_COLORS, type Porcion } from "./tipos";
+import BloquePlegable from "./BloquePlegable";
+import { lineaGastosYPagos } from "./lineas-plegadas";
+
+/** Vacío de una mitad: una frase, no una tarjeta con título (ley de la vista). */
+const VACIO = "py-6 text-center text-sm text-[var(--text-tertiary)]";
 
 /** Gastos del mes por categoría y los ingresos por medio de pago. */
 export default function DonutsGastosYPagos({
@@ -25,13 +30,18 @@ export default function DonutsGastosYPagos({
   const totalExpenses = expensesByCategory.reduce((s, g) => s + g.value, 0);
   const totalIncome = paymentMethods.reduce((s, g) => s + g.value, 0);
   return (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <BloquePlegable
+      id="gastos-y-pagos"
+      titulo="Gastos e ingresos por tipo"
+      resumen={lineaGastosYPagos(totalExpenses, totalIncome, expensesByCategory.length > 0, paymentMethods.length > 0)}
+    >
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Donut izquierda: Gastos por categoria */}
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6">
+        <div>
           <div className="flex items-center gap-2 mb-4">
             <FavStar id="gastos-categoria" favs={finFavs} />
             <div className="h-2 w-2 rounded-full bg-[var(--data-error-500)]" />
-            <p className="text-sm font-bold text-[var(--text-primary)]">Gastos por Categoría</p>
+            <p className="text-sm font-bold text-[var(--text-primary)]">Gastos por categoría</p>
             <div className="flex-1" />
             {gastosPieFilter && (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold">
@@ -74,15 +84,18 @@ export default function DonutsGastosYPagos({
               </div>
             </div>
           ) : (
-            <EmptyState icon={BarChart3} title="Sin gastos registrados este mes" description="Los datos apareceran cuando registres ventas" />
+            <p className={VACIO}>
+              Sin gastos anotados este mes.{" "}
+              <EnlacePanel href="/admin?tab=plata&vista=gastos">Ir a Gastos</EnlacePanel>
+            </p>
           )}
         </div>
 
         {/* Donut derecha: Metodos de pago */}
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6">
+        <div>
           <div className="flex items-center gap-2 mb-4">
             <div className="h-2 w-2 rounded-full bg-primary" />
-            <p className="text-sm font-bold text-[var(--text-primary)]">Ingresos por Método de Pago</p>
+            <p className="text-sm font-bold text-[var(--text-primary)]">Ingresos por medio de pago</p>
           </div>
           {paymentMethods.length > 0 ? (
             <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -116,9 +129,10 @@ export default function DonutsGastosYPagos({
               </div>
             </div>
           ) : (
-            <EmptyState icon={BarChart3} title="Sin ventas registradas este mes" description="Los datos apareceran cuando registres ventas" />
+            <p className={VACIO}>Sin ventas cobradas este mes.</p>
           )}
         </div>
       </div>
+    </BloquePlegable>
   );
 }
