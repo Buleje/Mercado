@@ -187,13 +187,13 @@ describe("AnalyticsDB.getDashboardAggregates — tenant isolation", () => {
     const todayWhere = mockPrisma.order.aggregate.mock.calls[0]?.[0]?.where;
     const weekWhere = mockPrisma.order.aggregate.mock.calls[1]?.[0]?.where;
 
-    // Today filter: createdAt.gte is the start of the current day (00:00:00).
+    // Today filter: createdAt.gte = 00:00 de LIMA (05:00Z), no la medianoche
+    // del servidor (en Vercel, UTC = 19:00 de Lima del día anterior).
     const todayGte: Date = todayWhere?.createdAt?.gte;
     expect(todayGte).toBeInstanceOf(Date);
-    expect(todayGte.getHours()).toBe(0);
-    expect(todayGte.getMinutes()).toBe(0);
-    expect(todayGte.getSeconds()).toBe(0);
-    expect(todayGte.getMilliseconds()).toBe(0);
+    expect(todayGte.toISOString()).toMatch(/T05:00:00\.000Z$/);
+    expect(todayGte.getTime()).toBeLessThanOrEqual(before);
+    expect(before - todayGte.getTime()).toBeLessThan(24 * 60 * 60 * 1000);
 
     // Week filter: createdAt.gte ≈ now - 7d, within a generous slack of the
     // window we timed the call in.

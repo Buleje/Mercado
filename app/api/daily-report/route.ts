@@ -7,6 +7,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import type { DailyReport } from "@/lib/daily-report";
 import { logger } from "@/lib/logger";
 import { saldoEsperadoDeCaja } from "@/lib/caja/saldo-esperado";
+import { startOfLimaDay } from "@/lib/utils";
 
 export async function GET(request: NextRequest) {
   const auth = await requireAdmin(request, ["admin", "cajero"]);
@@ -16,7 +17,8 @@ export async function GET(request: NextRequest) {
 
   try {
     const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    // 00:00 de Lima (el servidor corre en UTC: la medianoche local cortaba a las 19:00 de Lima).
+    const startOfDay = new Date(startOfLimaDay(now));
     const startOfDayISO = startOfDay.toISOString();
 
     // Obtener datos en paralelo

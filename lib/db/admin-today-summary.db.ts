@@ -13,6 +13,7 @@
  */
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { startOfLimaDay } from "@/lib/utils";
 
 export type TodaySummaryPayload = {
   ventas: {
@@ -46,7 +47,9 @@ export const AdminTodaySummaryDB = {
    */
   async getSummaryForTenant(tenantId: string): Promise<TodaySummaryPayload> {
     const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    // 00:00 de Lima (el servidor corre en UTC: la medianoche local caía a las
+    // 19:00 de Lima de ayer y «hoy» mezclaba las ventas de anoche).
+    const startOfDay = new Date(startOfLimaDay(now));
     const yesterdayStart = new Date(startOfDay.getTime() - 24 * 60 * 60 * 1000);
 
     const [

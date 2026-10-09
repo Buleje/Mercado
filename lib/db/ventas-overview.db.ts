@@ -2,6 +2,7 @@ import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { limaDateKey, startOfLimaDay } from "@/lib/utils";
 import { saldoEsperadoDeCaja } from "@/lib/caja/saldo-esperado";
 import { tagVentasOverview } from "@/lib/caja/invalidar-ventas-overview";
 
@@ -71,46 +72,41 @@ export type VentasOverviewData = {
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-/** Devuelve la fecha de inicio del rango (00:00:00 servidor). */
-function rangeStart(range: VentasRange): Date {
-  const now = new Date();
-  if (range === "hoy") {
-    return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-  }
-  const days = range === "7d" ? 7 : 30;
-  const d = new Date(now);
-  d.setDate(d.getDate() - days);
-  d.setHours(0, 0, 0, 0);
-  return d;
+// «Hoy» es el día de LIMA (sin horario de verano: UTC−5 fijo), no el del
+// servidor. En Vercel el proceso corre en UTC: con `setHours(0)` el día
+// empezaba a las 19:00 de Lima de AYER y las ventas de anoche caían en «hoy»;
+// la serie diaria y las horas pico se corrían 5 h (2026-10-09).
+const DIA_MS = 24 * 60 * 60 * 1000;
+const LIMA_OFFSET_MS = 5 * 60 * 60 * 1000;
+
+/** Devuelve la fecha de inicio del rango (00:00 de Lima). */
+export function rangeStart(range: VentasRange, ahora: Date = new Date()): Date {
+  const hoy = startOfLimaDay(ahora);
+  const days = range === "hoy" ? 0 : range === "7d" ? 7 : 30;
+  return new Date(hoy - days * DIA_MS);
 }
 
 /** Inicio del período ANTERIOR (misma longitud), para comparar tendencia. */
-function prevRangeStart(range: VentasRange, since: Date): Date {
-  const d = new Date(since);
-  if (range === "hoy") {
-    d.setDate(d.getDate() - 1); // ayer 00:00
-  } else {
-    d.setDate(d.getDate() - (range === "7d" ? 7 : 30));
-  }
-  return d;
+export function prevRangeStart(range: VentasRange, since: Date): Date {
+  const days = range === "hoy" ? 1 : range === "7d" ? 7 : 30;
+  return new Date(since.getTime() - days * DIA_MS);
 }
 
-/** Formatea Date → "YYYY-MM-DD" (local). */
+/** Date → "YYYY-MM-DD" del día de Lima. */
 function toDateKey(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+  return limaDateKey(d);
 }
 
-/** Genera todos los días del rango (inclusive). */
-function buildDateRange(from: Date, to: Date): string[] {
+/** Hora 0–23 en Lima. */
+export function horaLima(d: Date): number {
+  return new Date(d.getTime() - LIMA_OFFSET_MS).getUTCHours();
+}
+
+/** Genera todos los días de Lima del rango (inclusive). */
+export function buildDateRange(from: Date, to: Date): string[] {
   const days: string[] = [];
-  const cur = new Date(from);
-  cur.setHours(0, 0, 0, 0);
-  while (cur <= to) {
-    days.push(toDateKey(cur));
-    cur.setDate(cur.getDate() + 1);
+  for (let t = startOfLimaDay(from); t <= to.getTime(); t += DIA_MS) {
+    days.push(limaDateKey(new Date(t)));
   }
   return days;
 }
@@ -312,12 +308,12 @@ export const VentasOverviewDB = {
       orders: 0,
     }));
     for (const o of rawOrders) {
-      const h = o.createdAt.getHours();
+      const h = horaLima(o.createdAt);
       hourly[h].revenue += toNumOrZero(o.total);
       hourly[h].orders += 1;
     }
     for (const s of rawSales) {
-      const h = s.createdAt.getHours();
+      const h = horaLima(s.createdAt);
       hourly[h].revenue += toNumOrZero(s.total);
       hourly[h].orders += 1;
     }

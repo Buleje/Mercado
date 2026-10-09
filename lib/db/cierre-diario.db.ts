@@ -2,6 +2,9 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
+import { limaDateKey, startOfLimaDay } from "@/lib/utils";
+import { SettingsDB } from "@/lib/db/settings.db";
+import { minimoGlobalDe, stockMinimoDe } from "@/lib/inventario/stock-minimo";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -27,14 +30,13 @@ export interface CierreDiarioPreview {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function getPeruDayBounds(): { startOfDay: Date; endOfDay: Date; fecha: string } {
-  const now = new Date();
-  const peruOffset = -5 * 60;
-  const localNow = new Date(now.getTime() + (peruOffset - now.getTimezoneOffset()) * 60000);
-  const startOfDay = new Date(Date.UTC(localNow.getFullYear(), localNow.getMonth(), localNow.getDate(), 5, 0, 0));
+/** Día de Lima (UTC−5 fijo). La cuenta anterior restaba el offset del proceso
+ *  y sólo acertaba con el servidor en UTC: en una PC en Lima daba la fecha de
+ *  AYER hasta las 10:00. */
+export function getPeruDayBounds(ahora: Date = new Date()): { startOfDay: Date; endOfDay: Date; fecha: string } {
+  const startOfDay = new Date(startOfLimaDay(ahora));
   const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
-  const fecha = `${localNow.getFullYear()}-${String(localNow.getMonth() + 1).padStart(2, "0")}-${String(localNow.getDate()).padStart(2, "0")}`;
-  return { startOfDay, endOfDay, fecha };
+  return { startOfDay, endOfDay, fecha: limaDateKey(ahora) };
 }
 
 type DecimalField = { toNumber(): number; toFixed(d?: number): string; toString(): string } | number | string | null;
@@ -65,6 +67,14 @@ function computeBestHour(ventas: { createdAt: Date; total: DecimalField }[]): st
 export const CierreDiarioDB = {
   async getPreview(tenantId: string): Promise<CierreDiarioPreview> {
     const { startOfDay, endOfDay, fecha } = getPeruDayBounds();
+    // Un solo stock mínimo (09-10): el global del negocio para los productos
+    // sin mínimo propio, en vez del `?? 5` a mano. SettingsDB.get va cacheado.
+    const minimoGlobal = minimoGlobalDe(
+      await SettingsDB.get(tenantId).catch((err) => {
+        logger.warn("[cierre-diario] settings no disponibles, mínimo por defecto", { error: String(err) });
+        return null;
+      }),
+    );
 
     const [
       ventasResult,
@@ -107,9 +117,11 @@ export const CierreDiarioDB = {
       prisma.product.findMany({
         where: {
           tenantId, active: true, deletedAt: null, stock: { not: null },
+          // Antes ambas ramas pedían `stock <= 5`: un producto con mínimo 20 y
+          // 10 en stock nunca salía. Ahora cada uno contra SU mínimo.
           OR: [
-            { stockMin: { not: null }, stock: { lte: 5 } },
-            { stockMin: null, stock: { lte: 5 } },
+            { stockMin: { not: null }, stock: { lte: prisma.product.fields.stockMin } },
+            { stockMin: null, stock: { lte: minimoGlobal } },
           ],
         },
         select: { name: true, stock: true, stockMin: true },
@@ -125,7 +137,7 @@ export const CierreDiarioDB = {
     const fiadosNuevos = fiadosNuevosResult.status === "fulfilled" ? Number(fiadosNuevosResult.value._sum?.total ?? 0) : 0;
     const fiadosVencidos = fiadosVencidosResult.status === "fulfilled" ? (typeof fiadosVencidosResult.value === "number" ? fiadosVencidosResult.value : 0) : 0;
     const stockAlertas = stockAlertasResult.status === "fulfilled"
-      ? stockAlertasResult.value.map((p) => ({ nombre: p.name, stock: p.stock ?? 0, stockMin: p.stockMin ?? 5 }))
+      ? stockAlertasResult.value.map((p) => ({ nombre: p.name, stock: p.stock ?? 0, stockMin: stockMinimoDe(p, minimoGlobal) }))
       : [];
 
     const filteredStockAlertas = stockAlertas.filter((p) => p.stock <= p.stockMin);

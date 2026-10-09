@@ -12,6 +12,7 @@ import "server-only";
  */
 
 import { prisma } from "@/lib/prisma";
+import { startOfLimaDay } from "@/lib/utils";
 import { withDbRetry } from "@/lib/db-retry";
 
 export type AdminStatsPayload = {
@@ -43,11 +44,12 @@ export const AdminStatsDB = {
    */
   async getHeaderStats(tenantId: string): Promise<AdminStatsPayload> {
     const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const startOfWeek = new Date(startOfToday);
-    startOfWeek.setDate(startOfWeek.getDate() - 6); // rolling 7 days
-    const startOfYesterday = new Date(startOfToday);
-    startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+    // Días de LIMA (UTC−5 fijo), no del servidor UTC: la medianoche local
+    // empezaba «hoy» a las 19:00 de Lima de ayer.
+    const DIA_MS = 24 * 60 * 60 * 1000;
+    const startOfToday = new Date(startOfLimaDay(now));
+    const startOfWeek = new Date(startOfToday.getTime() - 6 * DIA_MS); // rolling 7 days
+    const startOfYesterday = new Date(startOfToday.getTime() - DIA_MS);
     const thirtyMinutesAgo = new Date(now.getTime() - 30 * 60 * 1000);
 
     const [

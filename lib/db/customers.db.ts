@@ -149,6 +149,60 @@ export const CustomersDB = {
   },
 
   /**
+   * Lo que cada cliente debe DE VERDAD: suma del `saldo` de sus fiados ACTIVO +
+   * VENCIDO (la misma regla que `FiadosDB.resumenByCustomer`). La columna
+   * `Customer.creditBalance` no sigue a los fiados —medido 2026-10-09: 0 en
+   * todos los clientes de todos los tenants aunque haya fiados abiertos—, así
+   * que el panel lee esto. Dos consultas agregadas en la misma tx; no escribe
+   * nada. `vencido` = estado VENCIDO o ACTIVO con la fecha ya pasada.
+   * Montos en céntimos al sumar para no arrastrar decimales del float.
+   */
+  async deudaDeFiados(tenantId: string, ahora: Date = new Date()): Promise<Map<string, { deuda: number; vencido: number }>> {
+    const [abiertos, vencidos] = await withRlsTx(tenantId, (tx) =>
+      Promise.all([
+        tx.fiado.groupBy({
+          by: ["customerId"],
+          where: { tenantId, status: { in: ["ACTIVO", "VENCIDO"] } },
+          _sum: { saldo: true },
+        }),
+        tx.fiado.groupBy({
+          by: ["customerId"],
+          where: {
+            tenantId,
+            OR: [{ status: "VENCIDO" }, { status: "ACTIVO", fechaVence: { lt: ahora } }],
+          },
+          _sum: { saldo: true },
+        }),
+      ]),
+    );
+    const enCentimos = (v: Parameters<typeof toNumOrZero>[0]) => Math.round(toNumOrZero(v) * 100);
+    const vencidoPor = new Map(vencidos.map((r) => [r.customerId, enCentimos(r._sum.saldo)]));
+    const out = new Map<string, { deuda: number; vencido: number }>();
+    for (const r of abiertos) {
+      const deuda = enCentimos(r._sum.saldo);
+      if (deuda <= 0) continue;
+      out.set(r.customerId, { deuda: deuda / 100, vencido: (vencidoPor.get(r.customerId) ?? 0) / 100 });
+    }
+    return out;
+  },
+
+  /**
+   * `getAll` con `creditBalance` = la deuda real de fiados (ver `deudaDeFiados`)
+   * y `fiadoVencido` = la parte vencida. Lo usa GET /api/customers (CRM, POS,
+   * Cobrar): ahí «Fiado S/ X» tiene que ser lo que el cliente debe hoy.
+   */
+  async getAllConDeuda(tenantId: string, limit = 2000): Promise<(DbCustomer & { fiadoVencido: number })[]> {
+    const [clientes, deudas] = await Promise.all([
+      CustomersDB.getAll(tenantId, limit),
+      CustomersDB.deudaDeFiados(tenantId),
+    ]);
+    return clientes.map((c) => {
+      const d = deudas.get(c.phone);
+      return { ...c, creditBalance: d?.deuda ?? 0, fiadoVencido: d?.vencido ?? 0 };
+    });
+  },
+
+  /**
    * Cursor-based paginated listing of customers.
    * Uses phone as the cursor since it's the PK. Returns up to `limit` rows.
    */

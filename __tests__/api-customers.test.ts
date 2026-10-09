@@ -44,6 +44,8 @@ const { mockCustomersGetAll, mockCustomersUpsert, mockNormalizePhone } = vi.hois
 vi.mock("@/lib/jsondb", () => ({
   CustomersDB: {
     getAll: mockCustomersGetAll,
+    // GET usa la variante con la deuda real de fiados (09-10); el contrato de la lista es el mismo.
+    getAllConDeuda: mockCustomersGetAll,
     upsert: mockCustomersUpsert,
   },
   normalizePhone: mockNormalizePhone,

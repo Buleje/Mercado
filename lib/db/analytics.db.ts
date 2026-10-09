@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { cacheLife, cacheTag } from "next/cache";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { startOfLimaDay } from "@/lib/utils";
 
 /**
  * lib/db/analytics.db.ts
@@ -69,10 +70,9 @@ const ACTIVE_CART_STATUSES = ["pendiente", "confirmado"] as const;
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
+/** 00:00 de Lima (no del servidor UTC, que cortaba a las 19:00 de Lima). */
 function startOfToday(): Date {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
+  return new Date(startOfLimaDay());
 }
 
 function startOfLastWeek(): Date {
