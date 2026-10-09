@@ -14,17 +14,14 @@
  * la bolsa abierta (`rutas().pagar`). Sin JS, si el trozo no baja o si el
  * checkout se cae al dibujarse, se sigue ese enlace.
  *
- * Sólo se abre acá cuando el pedido llega seguro al negocio correcto: desde
- * `/t/<negocio>` SIN barra final, `/api/*` resuelve el negocio por el Referer
- * con un patrón que exige `/t/<negocio>/` (`lib/middleware/tenant.ts`) y cae
- * al negocio por defecto (`main`). Medido 08-10 con `/api/settings`: Referer
- * `/t/<qa-forestal>` → «Buleje Beauty» (main); `/t/<qa-forestal>/tienda` → el
- * negocio correcto. En `main` da igual; otro negocio sigue el enlace de siempre
- * hasta que se arregle ese patrón.
+ * Se abre acá en todos los negocios: `/api/*` resuelve el negocio por el
+ * Referer `/t/<negocio>` con o sin barra final y sin mirar la query
+ * (`tenantDesdeReferer` en `lib/middleware/tenant.ts`, security 08-10). Antes
+ * el patrón exigía `/t/<negocio>/` y leía la query: sólo `main` sin «/» en la
+ * query era seguro y el resto seguía el enlace.
  */
 import { Component, useCallback, useEffect, useState, useSyncExternalStore, type ComponentType, type ReactNode } from "react";
 import { logger } from "@/lib/logger";
-import { esTenantPorDefecto } from "@/lib/tenancy/negocio-por-defecto";
 import { useBolsaAbierta } from "./estado-bolsa";
 
 export type PropsCheckoutEnPortada = {
@@ -85,15 +82,6 @@ function cargar(): Promise<ComponentType<PropsCheckoutEnPortada>> {
   return modulo;
 }
 
-/** ¿Las llamadas a `/api/*` desde esta página llegan al negocio `slug`? (ver arriba) */
-function seguroAqui(slug: string): boolean {
-  const sinBarra = /^\/t\/[^/]+$/.test(window.location.pathname);
-  // Una «/» en la query (`?utm_content=https://fb.com/x`) hace que el patrón
-  // del Referer capture `main?utm_content=https:` → negocio basura, 400
-  // `invalid_product` y la bolsa vaciada (security 08-10): sigue el enlace.
-  return !sinBarra || (esTenantPorDefecto(slug) && !window.location.search.includes("/"));
-}
-
 export function ProveedorTienda({ slug, pagar }: { slug: string; pagar: string }) {
   const hayPedido = useSyncExternalStore(suscribir, () => pedido, () => false);
   const bolsaAbierta = useBolsaAbierta();
@@ -101,7 +89,6 @@ export function ProveedorTienda({ slug, pagar }: { slug: string; pagar: string }
   const [activo, setActivo] = useState(false);
 
   useEffect(() => {
-    if (!seguroAqui(slug)) return;
     listos += 1;
     setActivo(true);
     avisar();

@@ -107,7 +107,13 @@ export async function resolveTenantMultiSource(req: NextRequest, baseTenant: str
   const pathname = req.nextUrl.pathname;
   const pathTenantMatch = pathname.match(/^\/t\/([^/]+)(\/|$)/);
   if (pathTenantMatch) {
-    const rawSlug = decodeURIComponent(pathTenantMatch[1]);
+    // %-escape roto (`/t/%E0%A4%A`): negocio base, no 500 (security 08-10).
+    let rawSlug: string;
+    try {
+      rawSlug = decodeURIComponent(pathTenantMatch[1]);
+    } catch {
+      return baseTenant;
+    }
     // Audit 2026-05-17 05-P2-7: defensa en profundidad — validar slug contra
     // cache compartido. Si resuelve a CUID, retornar el CUID directo (DB
     // classes downstream evitan double-lookup). Si NO resuelve, retornar el
@@ -175,16 +181,34 @@ export async function resolveTenantMultiSource(req: NextRequest, baseTenant: str
     // estructurado. Se puede agregar via @vercel/otel span si se requiere.)
   }
 
-  // Source 3 (LOWEST): Referer header contains /t/[slug]/.
-  // Extracts the slug (NOT a CUID). Only useful for unauthenticated
-  // storefront browsing when no JWT or cookie is available.
-  const referer = req.headers.get("referer");
-  if (referer) {
-    const refTenantMatch = referer.match(/\/t\/([^/]+)\//);
-    if (refTenantMatch) {
-      return decodeURIComponent(refTenantMatch[1]);
-    }
-  }
+  // Source 3 (LOWEST): Referer de una página `/t/[slug]` del MISMO host.
+  // Solo sirve para la tienda sin sesión (las llamadas `/api/*` que hace la
+  // portada pública). Security 08-10 — antes era `/\/t\/([^/]+)\//` sobre el
+  // texto crudo: exigía barra tras el slug (`/t/x` caía al negocio base),
+  // capturaba la query (`?utm_content=https://fb.com/x` → `x?utm_content=https:`,
+  // POST de pedido 400 y bolsa vaciada) y `decodeURIComponent` sin try daba 500.
+  return (await tenantDesdeReferer(req)) ?? baseTenant;
+}
 
-  return baseTenant;
+/**
+ * Negocio de la página que hizo la llamada (`Referer`), o `null` si no aplica.
+ * Lee solo el `pathname` (nunca la query ni el hash), exige el mismo host que
+ * la request (un sitio ajeno no elige el negocio) y devuelve el id SOLO si el
+ * slug existe: un slug inventado cae al negocio base, no viaja como tenantId.
+ */
+export async function tenantDesdeReferer(req: NextRequest): Promise<string | null> {
+  const referer = req.headers.get("referer");
+  if (!referer) return null;
+  try {
+    const url = new URL(referer);
+    if (url.host !== req.headers.get("host")) return null;
+    const m = url.pathname.match(/^\/t\/([^/]+)(?:\/|$)/);
+    if (!m) return null;
+    const slug = decodeURIComponent(m[1]);
+    const { resolveTenantSlugToId } = await import("@/lib/resolve-tenant");
+    const id = await resolveTenantSlugToId(slug);
+    return id !== slug ? id : null;
+  } catch {
+    return null; // Referer mal formado (URL o %-escape inválido): se ignora
+  }
 }

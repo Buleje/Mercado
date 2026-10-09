@@ -29,11 +29,15 @@ vi.mock("@/lib/session", async (importOriginal) => {
 // tests de Source 0. Mockeamos el resolver con el MISMO comportamiento real de
 // "slug no encontrado": devolver el slug tal cual (tenant?.id ?? slugOrId), que
 // es lo que valida el test (el path gana; la resolución del slug es incidental).
-vi.mock("@/lib/resolve-tenant", () => ({
-  resolveTenantSlugToId: vi.fn(async (slug: string) => slug),
-}));
+// 08-10: el Referer solo elige negocio si el slug EXISTE (resuelve a otro id).
+// "demo" y "x" existen; cualquier otro slug sigue el comportamiento real de
+// "no encontrado" (devuelve el mismo string).
+vi.mock("@/lib/resolve-tenant", () => {
+  const existen: Record<string, string> = { demo: "cm-demo-id", x: "cm-x-id" };
+  return { resolveTenantSlugToId: vi.fn(async (slug: string) => existen[slug] ?? slug) };
+});
 
-import { resolveTenantMultiSource } from "@/lib/middleware/tenant";
+import { resolveTenantMultiSource, tenantDesdeReferer } from "@/lib/middleware/tenant";
 
 function makeReq(path: string, opts?: { headers?: Record<string, string>; cookies?: Record<string, string> }) {
   const headers: Record<string, string> = { host: "localhost:3000", ...(opts?.headers ?? {}) };
@@ -110,7 +114,14 @@ describe("resolveTenantMultiSource", () => {
     });
 
     const tenant = await resolveTenantMultiSource(req, "main");
-    expect(tenant).toBe("demo");
+    expect(tenant).toBe("cm-demo-id");
+  });
+
+  it("Referer con slug que no existe → negocio base (no viaja como tenantId)", async () => {
+    const req = makeReq("/api/products", {
+      headers: { referer: "http://localhost:3000/t/inventado/tienda" },
+    });
+    expect(await resolveTenantMultiSource(req, "main")).toBe("main");
   });
 
   it("returns baseTenant when no sources available", async () => {
@@ -183,5 +194,56 @@ describe("resolveTenantMultiSource", () => {
 
     const tenant = await resolveTenantMultiSource(req, "main");
     expect(tenant).toBe("tenant-A");
+  });
+});
+
+describe("tenantDesdeReferer (security 08-10)", () => {
+  const conReferer = (referer?: string, host = "localhost:3000") =>
+    makeReq("/api/settings", { headers: { host, ...(referer ? { referer } : {}) } });
+
+  it.each([
+    ["/t/x sin barra final", "http://localhost:3000/t/x"],
+    ["/t/x/ con barra", "http://localhost:3000/t/x/"],
+    ["/t/x/tienda", "http://localhost:3000/t/x/tienda"],
+    ["/t/x con query que trae «/»", "http://localhost:3000/t/x?u=https://a/b"],
+    ["/t/x con hash", "http://localhost:3000/t/x#bolsa"],
+  ])("%s → el negocio x", async (_nombre, referer) => {
+    expect(await tenantDesdeReferer(conReferer(referer))).toBe("cm-x-id");
+  });
+
+  it("%-escape roto (%E0%A4%A) → null, sin lanzar", async () => {
+    await expect(tenantDesdeReferer(conReferer("http://localhost:3000/t/%E0%A4%A/tienda"))).resolves.toBeNull();
+  });
+
+  it("Referer que no es URL → null", async () => {
+    expect(await tenantDesdeReferer(conReferer("no es una url"))).toBeNull();
+  });
+
+  it("host ajeno → null (otro sitio no elige el negocio)", async () => {
+    expect(await tenantDesdeReferer(conReferer("http://evil.example/t/x/"))).toBeNull();
+    expect(await tenantDesdeReferer(conReferer("http://localhost:3001/t/x/"))).toBeNull();
+  });
+
+  it("sin Referer → null", async () => {
+    expect(await tenantDesdeReferer(conReferer())).toBeNull();
+  });
+
+  it("/t/ en medio del path o slug inexistente → null", async () => {
+    expect(await tenantDesdeReferer(conReferer("http://localhost:3000/blog/t/x/"))).toBeNull();
+    expect(await tenantDesdeReferer(conReferer("http://localhost:3000/t/inventado"))).toBeNull();
+  });
+
+  it("la query con «/» ya no rompe el pedido: resolveTenantMultiSource da el negocio", async () => {
+    const req = conReferer("http://localhost:3000/t/x?utm_content=https://fb.com/x");
+    expect(await resolveTenantMultiSource(req, "main")).toBe("cm-x-id");
+  });
+
+  it("la sesión de admin sigue ganando sobre el Referer", async () => {
+    const token = makeToken({ tenantId: "cm-admin-id", role: "admin" });
+    const req = makeReq("/api/settings", {
+      headers: { referer: "http://localhost:3000/t/x" },
+      cookies: { "buleje-admin-sess": token },
+    });
+    expect(await resolveTenantMultiSource(req, "main")).toBe("cm-admin-id");
   });
 });

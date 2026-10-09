@@ -56,17 +56,22 @@ describe("finalizarAqui", () => {
     await vi.waitFor(() => expect(montado).toHaveBeenCalledWith(true));
   });
 
-  it("en /t/<otro> sin barra final sigue el enlace (la API caería en main)", () => {
-    enRuta("/t/otro-salon");
+  // Security 08-10: el Referer `/t/<negocio>` resuelve el negocio con o sin
+  // barra final y sin leer la query → la portada abre el checkout en todos.
+  it.each([
+    ["/t/<otro> sin barra final", "/t/otro-salon"],
+    ["/t/<otro> con query que trae «/»", "/t/otro-salon?utm_content=https://fb.com/x"],
+    ["/t/main con query que trae «/»", "/t/main?utm_content=https://fb.com/x"],
+  ])("%s: abre el checkout ahí mismo", (_nombre, ruta) => {
+    enRuta(ruta);
+    const slug = ruta.split(/[/?]/)[2];
     const { getByTestId } = render(
       <>
         <Sonda />
-        <ProveedorTienda slug="otro-salon" pagar="/t/otro-salon/tienda?carrito=abrir" />
+        <ProveedorTienda slug={slug} pagar={`/t/${slug}/tienda?carrito=abrir`} />
       </>,
     );
-    expect(getByTestId("aqui").textContent).toBe("false");
-    expect(finalizarAqui()).toBe(false);
-    expect(montado).not.toHaveBeenCalled();
+    expect(getByTestId("aqui").textContent).toBe("true");
   });
 
   it("con más ruta después del negocio, sí (el Referer lleva el negocio)", () => {
