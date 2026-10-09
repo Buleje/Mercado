@@ -9,6 +9,9 @@ import { requireActiveSubscription } from "@/lib/billing/require-active-subscrip
 import { toErrorPayload } from "@/lib/api-error";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { leerJson } from "@/lib/errores/sin-dato";
+import { gastoEnRango, rangoDeConsulta } from "@/lib/gastos/lista-gastos";
+
+const DIA = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
  * Alta de un gasto. Los campos de ADR-374 son opcionales: un gasto cargado a
@@ -57,19 +60,23 @@ export async function GET(req: NextRequest) {
     // Audit 2026-05-17 (feature compras): ?recurring=true devuelve el catálogo
     // de gastos recurrentes que se muestran como cards en el Punto de Compra.
     if (from && to) {
-      // `to=2026-08-10` es medianoche del 10, así que un gasto registrado ESE
-      // día quedaba fuera del rango: el panel decía «Sin gastos registrados»
-      // con el gasto recién cargado en la base. Una fecha sin hora significa
-      // «todo ese día».
-      //
-      // Tiene que ser `setUTCHours`, no `setHours`: `new Date("2026-08-10")`
-      // se parsea como medianoche UTC, y correrle las horas en hora local
-      // (Lima, UTC-5) lo manda al 9 a las 23:59 — el rango terminaba ANTES de
-      // empezar el día pedido. El cliente arma estas fechas con
-      // `toISOString()`, así que el día se cierra en la misma escala.
-      const hasta = new Date(to);
-      if (!to.includes("T")) hasta.setUTCHours(23, 59, 59, 999);
-      return NextResponse.json(await ExpensesDB.getByDateRange(auth.tenantId, new Date(from), hasta));
+      // `from`/`to` son DÍAS de Pucallpa («2026-10-01»), y cada gasto cae en
+      // su día con `diaDelGasto`: el que se anotó sin hora quedó como
+      // medianoche UTC (= el día escrito) y el que se anotó con el instante,
+      // en el día de Lima de ese instante. Antes el rango iba en UTC y el
+      // cliente lo armaba con `toISOString()`: desde las 19:00 el «desde» salía
+      // el 2 y los gastos del 1 se perdían de la lista y del total.
+      if (DIA.test(from) && DIA.test(to)) {
+        const rango = rangoDeConsulta(from, to);
+        const gastos = (await ExpensesDB.getByDateRange(auth.tenantId, rango.desde, rango.hasta))
+          .filter((g) => gastoEnRango(g.date, from, to));
+        if (searchParams.get("caja") !== "1") return NextResponse.json(gastos);
+        // Qué le pasa a la caja si se borra cada uno (lo dice la confirmación).
+        const retiros = await GastoConCajaDB.retirosDeGastos(auth.tenantId, gastos.map((g) => g.id));
+        return NextResponse.json(gastos.map((g) => ({ ...g, caja: retiros[g.id] ?? null })));
+      }
+      // Con hora explícita (algún consumidor viejo): el instante tal cual.
+      return NextResponse.json(await ExpensesDB.getByDateRange(auth.tenantId, new Date(from), new Date(to)));
     }
     const filters: { recurring?: boolean; category?: string } = {};
     if (recurring === "true") filters.recurring = true;

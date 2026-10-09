@@ -14,7 +14,7 @@ import {
 } from "@/lib/caja/egreso-de-caja";
 import { CashRegistersMovementsDB } from "./cash-registers-movements.db";
 import { contratoPropio } from "./contrato-propio.db";
-import { ExpensesDB, PayablesDB, type DbExpense } from "./finance.db";
+import { ExpensesDB, PayablesDB, revalidarGastosAlInstante, type DbExpense } from "./finance.db";
 import { invalidarIgvDelMes } from "./igv-del-mes.db";
 import type { DbPayable, DbPayment } from "./misc.db";
 
@@ -136,7 +136,7 @@ function safeRevalidate(tag: string): void {
 /** Lo mismo que invalida `ExpensesDB.add` (privado allá) + la caja. */
 function revalidarTrasEgreso(tenantId: string, gasto: boolean): void {
   if (gasto) {
-    safeRevalidate(`tenant:${tenantId}:expenses`);
+    revalidarGastosAlInstante(tenantId);
     safeRevalidate(`tenant:${tenantId}:cash-flow`);
     try {
       invalidateByPrefix(`${claveCacheResultado(tenantId)}:`);
@@ -152,6 +152,36 @@ function revalidarTrasEgreso(tenantId: string, gasto: boolean): void {
 }
 
 export const GastoConCajaDB = {
+  /**
+   * El retiro de caja de cada gasto de la lista (los que no salieron del cajón
+   * no aparecen). Es lo que la confirmación de borrar le cuenta a la persona:
+   * «vuelven al cajón» con la caja abierta, «esa caja no cambia» si ya cerró —
+   * la misma regla que aplica `borrarGasto`. Una consulta por PK (`id in`).
+   */
+  async retirosDeGastos(
+    tenantId: string,
+    gastoIds: readonly string[],
+  ): Promise<Record<string, { monto: number; abierta: boolean; dia: string }>> {
+    if (!tenantId) throw new Error("tenantId is required");
+    if (gastoIds.length === 0) return {};
+    const porRetiro = new Map(gastoIds.map((id) => [idRetiroDeGasto(id), id]));
+    const movs = await prisma.cashMovement.findMany({
+      where: { id: { in: [...porRetiro.keys()] }, cashRegister: { tenantId } },
+      select: { id: true, amount: true, cashRegister: { select: { status: true, openedAt: true } } },
+    });
+    const out: Record<string, { monto: number; abierta: boolean; dia: string }> = {};
+    for (const m of movs) {
+      const gastoId = porRetiro.get(m.id);
+      if (!gastoId) continue;
+      out[gastoId] = {
+        monto: toNumOrZero(m.amount),
+        abierta: m.cashRegister.status === "abierta",
+        dia: diaDeCaja(m.cashRegister.openedAt),
+      };
+    }
+    return out;
+  },
+
   /** Registra un gasto; si `salidaDeCaja`, anota su egreso en la caja abierta. */
   async registrarGasto(
     tenantId: string,

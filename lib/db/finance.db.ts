@@ -26,6 +26,21 @@ import { invalidarIgvDelMes } from "./igv-del-mes.db";
 // llama fuera de un contexto de request de Next (ej. unit tests que invocan la
 // db class directo) — lo envolvemos: la invalidación es fire-and-forget, no
 // crítica para la operación.
+/**
+ * La lista de gastos se relee justo después de anotar o borrar uno: con
+ * `"max"` (stale-while-revalidate) esa primera lectura todavía traía la
+ * versión vieja y el gasto borrado seguía en Plata › Gastos (medido 09-10 en
+ * main: toast «Borraste…» y la fila ahí 2,5 s después). `{ expire: 0 }` =
+ * la próxima lectura ya es la nueva, como en `tenant-pieza.db.ts`.
+ */
+export function revalidarGastosAlInstante(tenantId: string): void {
+  try {
+    revalidateTag(`tenant:${tenantId}:expenses`, { expire: 0 });
+  } catch {
+    /* fuera de un request (test/script): la invalidación no es crítica */
+  }
+}
+
 function safeRevalidate(tag: string): void {
   try {
     revalidateTag(tag, "max");
@@ -37,7 +52,7 @@ function safeRevalidate(tag: string): void {
 // Tras escribir un gasto hay que invalidar su caché Y la del flujo de caja (los
 // gastos alimentan cash-flow). Antes no se invalidaba nada → resumen viejo 30-60s.
 function revalidateExpenses(tenantId: string): void {
-  safeRevalidate(`tenant:${tenantId}:expenses`);
+  revalidarGastosAlInstante(tenantId);
   safeRevalidate(`tenant:${tenantId}:cash-flow`);
   // El resultado y la caja del negocio (ADR-451) restan los gastos.
   try {
