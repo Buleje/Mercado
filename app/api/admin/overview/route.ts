@@ -3,6 +3,8 @@ import { requireAdmin } from "@/lib/require-admin";
 import { getOrSet } from "@/lib/cache";
 import { formatCurrency } from "@/lib/format";
 import type { AlertaDeInicio } from "@/lib/admin/overview-tipos";
+import { startOfLimaDay } from "@/lib/utils";
+import { horaLima } from "@/lib/db/ventas-overview.db";
 
 // Brandon 2026-05-16 P1 (audit): force-dynamic obligatorio. Sin esto, Next 16
 // puede inferir el endpoint como estático en build y servir KPIs cacheados
@@ -54,12 +56,15 @@ function parseDate(s: string | null): Date | null {
   return isNaN(d.getTime()) ? null : d;
 }
 
+// Días de LIMA: el servidor corre en UTC y `new Date(y, m, d)` arrancaba el día
+// a las 19:00 de Lima del anterior. Las etiquetas salen bien igual: las 00:00
+// de Lima son las 05:00 UTC, el mismo día de calendario.
 function startOfDay(d: Date) {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
+  return new Date(startOfLimaDay(d));
 }
 
 function endOfDay(d: Date) {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+  return new Date(startOfLimaDay(d) + 24 * 60 * 60 * 1000 - 1);
 }
 
 type Preset = "diario" | "semanal" | "mensual" | "anual" | "personalizado";
@@ -104,7 +109,7 @@ function buildBuckets(from: Date, to: Date): Array<{ label: string; iso: string;
       const start = new Date(from.getTime() + i * 4 * 60 * 60 * 1000);
       const end = new Date(start.getTime() + 4 * 60 * 60 * 1000 - 1);
       buckets.push({
-        label: `${pad2API(start.getHours())}h`,
+        label: `${pad2API(horaLima(start))}h`,
         iso: start.toISOString(),
         start,
         end,

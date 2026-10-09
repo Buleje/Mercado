@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { ProductsDB, CustomersDB, OrdersDB, SettingsDB, FiadosDB } from "@/lib/db";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
+import { limaDateKey } from "@/lib/utils";
 
 export async function GET(req: NextRequest) {
   // 1. Auth — solo admin puede descargar backup completo
@@ -95,12 +96,12 @@ export async function GET(req: NextRequest) {
       auth.username,
       "export",
       "backup",
-      `backup-${auth.tenantId}-${new Date().toISOString().slice(0, 10)}`
+      `backup-${auth.tenantId}-${limaDateKey()}`
     ).catch(() => {
       /* fire-and-forget per CLAUDE.md rule #7 */
     });
 
-    const fecha = new Date().toISOString().slice(0, 10);
+    const fecha = limaDateKey();
     const filename = `backup-${auth.tenantId}-${fecha}.json`;
 
     return new NextResponse(JSON.stringify(backup, null, 2), {

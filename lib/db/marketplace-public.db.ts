@@ -21,6 +21,7 @@ import { logger } from "@/lib/logger";
 // MarketplaceStatsDB queries (revalidate + tag-invalidation).
 import { cacheLife, cacheTag } from "next/cache";
 import { StoreReviewsDB } from "@/lib/db/store-reviews.db";
+import { startOfLimaDay, startOfLimaMonth } from "@/lib/utils";
 
 /**
  * Pisa el `store.rating` anidado con el promedio REAL de reseñas aprobadas
@@ -1312,9 +1313,9 @@ export const MarketplaceAdminDB = {
    */
   async getPlatformOverview() {
     const now = new Date();
-    const todayStart    = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const monthStart    = new Date(now.getFullYear(), now.getMonth(), 1);
-    const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const todayStart    = new Date(startOfLimaDay(now));
+    const monthStart    = new Date(startOfLimaMonth(0, now));
+    const prevMonthStart = new Date(startOfLimaMonth(-1, now));
 
     const [
       totalStores, activeStores, pendingStores,
@@ -1410,9 +1411,7 @@ export const MarketplaceAdminDB = {
    * storeId debe pertenecer al tenantId (verificado en el route).
    */
   async getVendorKpis(tenantId: string, storeId: string) {
-    const monthStart = new Date();
-    monthStart.setDate(1);
-    monthStart.setHours(0, 0, 0, 0);
+    const monthStart = new Date(startOfLimaMonth());
 
     const [publishedProducts, monthOrders, pendingCommissions] = await Promise.all([
       prisma.storeProduct.count({ where: { storeId, isActive: true } }),

@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { limaDayRange } from "@/lib/utils";
 
 /**
  * DeliveryAssignmentsDB
@@ -20,11 +21,9 @@ export const DeliveryAssignmentsDB = {
     if (filters.status) where.status = filters.status;
     if (filters.partnerId) where.partnerId = filters.partnerId;
     if (filters.date) {
-      const from = new Date(filters.date);
-      from.setHours(0, 0, 0, 0);
-      const to = new Date(filters.date);
-      to.setHours(23, 59, 59, 999);
-      where.createdAt = { gte: from, lte: to };
+      // El día de LIMA de «YYYY-MM-DD» (el servidor corre en UTC).
+      const { start, end } = limaDayRange(filters.date);
+      where.createdAt = { gte: start, lt: end };
     }
     return prisma.deliveryAssignment.findMany({
       where,

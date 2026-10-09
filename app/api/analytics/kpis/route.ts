@@ -4,6 +4,7 @@ import { AnalyticsKpisDB } from "@/lib/db/analytics-kpis.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
 import { getOrSet } from "@/lib/cache";
+import { startOfLimaDay, startOfLimaMonth } from "@/lib/utils";
 
 /**
  * GET /api/analytics/kpis
@@ -22,13 +23,13 @@ export async function GET(req: NextRequest) {
     const cacheKey = `admin:kpis:${auth.tenantId}`;
     const payload = await getOrSet<Record<string, unknown>>(cacheKey, 30, async () => {
     const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayStart = new Date(startOfLimaDay(now));
     const yesterdayStart = new Date(todayStart);
     yesterdayStart.setDate(yesterdayStart.getDate() - 1);
     const yesterdayEnd = new Date(todayStart); // todayStart IS yesterdayEnd
 
-    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const thisMonthStart = new Date(startOfLimaMonth(0, now));
+    const lastMonthStart = new Date(startOfLimaMonth(-1, now));
     const lastMonthEnd = new Date(thisMonthStart);
 
     // Audit project-wide 2026-05-19: migrado a AnalyticsKpisDB.fetchKpisRaw.

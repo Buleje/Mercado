@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { PrestamosDB } from "@/lib/db/prestamos.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
+import { limaDateKey } from "@/lib/utils";
 
 // GET /api/prestamos/exportar — export as CSV
 export async function GET(req: NextRequest) {
@@ -51,7 +52,7 @@ export async function GET(req: NextRequest) {
     return new NextResponse(bom + csv, {
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
-        "Content-Disposition": `attachment; filename="prestamos-${new Date().toISOString().slice(0, 10)}.csv"`,
+        "Content-Disposition": `attachment; filename="prestamos-${limaDateKey()}.csv"`,
       },
     });
   } catch (e) {

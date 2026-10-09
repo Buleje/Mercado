@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { AnalyticsFiadoDB } from "@/lib/db/analytics-fiado.db";
 import { logger } from "@/lib/logger";
+import { startOfLimaMonth } from "@/lib/utils";
 
 /**
  * GET /api/analytics/fiado-analytics
@@ -13,7 +14,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const now = new Date();
-    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const thisMonthStart = new Date(startOfLimaMonth(0, now));
     // Audit project-wide 2026-05-19: migrado a AnalyticsFiadoDB.
     const twelveMonthsAgo = new Date(now);
     twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
@@ -96,7 +97,7 @@ export async function GET(req: NextRequest) {
     const tendencia12m: { mes: string; cobrados: number; nuevos: number }[] = [];
 
     for (let i = 11; i >= 0; i--) {
-      const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthDate = new Date(startOfLimaMonth(-i, now));
       const monthKey = monthDate.toISOString().slice(0, 7); // YYYY-MM
       tendencia12m.push({ mes: monthKey, cobrados: 0, nuevos: 0 });
     }

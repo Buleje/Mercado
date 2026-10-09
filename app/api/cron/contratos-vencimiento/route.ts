@@ -6,6 +6,7 @@ import { NotificationCenterDB } from "@/lib/db/notification-center.db";
 import { enviarWhatsAppDelNegocio } from "@/lib/whatsapp-tenant";
 import { resumenEnvioWhatsApp } from "@/lib/whatsapp/aviso-plantilla";
 import { logger } from "@/lib/logger";
+import { limaDateKey } from "@/lib/utils";
 
 /**
  * ADR-307 — Aviso de vencimiento de contratos.
@@ -25,11 +26,12 @@ import { logger } from "@/lib/logger";
 const VENTANA_DIAS = 30;
 
 function diasHasta(fecha: Date): number {
-  const hoy = new Date();
-  hoy.setHours(0, 0, 0, 0);
+  // Días de calendario: el vencimiento es una fecha (00:00 UTC) y «hoy» es el de
+  // LIMA, no el del servidor (UTC) — después de las 19:00 ya era mañana.
+  const hoy = Date.parse(`${limaDateKey()}T00:00:00.000Z`);
   const d = new Date(fecha);
-  d.setHours(0, 0, 0, 0);
-  return Math.ceil((d.getTime() - hoy.getTime()) / 86_400_000);
+  d.setUTCHours(0, 0, 0, 0);
+  return Math.ceil((d.getTime() - hoy) / 86_400_000);
 }
 
 function textoCorto(dias: number): string {

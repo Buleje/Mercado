@@ -10,6 +10,7 @@
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { startOfLimaDay } from "@/lib/utils";
 
 let cachedActivity: unknown = null;
 let cachedAt = 0;
@@ -53,7 +54,7 @@ export async function GET() {
       // Today's order count
       prisma.order.count({
         where: {
-          createdAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) },
+          createdAt: { gte: new Date(startOfLimaDay()) },
           status: { not: "cancelado" },
         },
       }),

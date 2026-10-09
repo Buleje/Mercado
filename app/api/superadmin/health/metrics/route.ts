@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { startOfLimaDay } from "@/lib/utils";
 
 /**
  * GET /api/superadmin/health/metrics — métricas REALES del sistema (Brandon
@@ -101,7 +102,7 @@ async function redisPing() {
 
 async function tenantsRollup() {
   try {
-    const start = new Date(); start.setHours(0, 0, 0, 0);
+    const start = new Date(startOfLimaDay());
     const [total, active, published, ordersToday, products] = await Promise.all([
       prisma.tenant.count(),
       prisma.tenant.count({ where: { active: true } }),

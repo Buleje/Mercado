@@ -16,6 +16,7 @@ import { logger } from "@/lib/logger";
 import * as Sentry from "@sentry/nextjs";
 import { z } from "zod/v4";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
+import { limaDateKey } from "@/lib/utils";
 
 const EmitSchema = z.object({
   orderId: z.string().min(1),
@@ -134,7 +135,7 @@ async function emitHandler(
     const correlatIvoStr = await generateCorrelativo(auth.tenantId, tipo);
     const correlativo = parseInt(correlatIvoStr, 10);
 
-    const fechaEmision = new Date().toISOString().split("T")[0];
+    const fechaEmision = limaDateKey();
 
     // Calcular totales con IGV correcto
     const igvTotal = calculateIGV(order.total);

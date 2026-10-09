@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { ActivityLogDB } from "@/lib/db/activity-log.db";
 import { logger } from "@/lib/logger";
+import { startOfLimaDay } from "@/lib/utils";
 
 /**
  * GET /api/audit-trail
@@ -23,11 +24,8 @@ import { logger } from "@/lib/logger";
 function periodToSince(period: string | null): Date | undefined {
   const now = Date.now();
   switch (period) {
-    case "today": {
-      const d = new Date(now);
-      d.setHours(0, 0, 0, 0);
-      return d;
-    }
+    case "today":
+      return new Date(startOfLimaDay(new Date(now))); // 00:00 de Lima, no del servidor (UTC)
     case "7d":
       return new Date(now - 7 * 24 * 60 * 60 * 1000);
     case "30d":

@@ -5,6 +5,7 @@ import { logger } from "@/lib/logger";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { SettingsDB } from "@/lib/db/settings.db";
 import { minimoGlobalDe, stockMinimoDe } from "@/lib/inventario/stock-minimo";
+import { limaDayRange, limaDateKey } from "@/lib/utils";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
@@ -14,13 +15,10 @@ export async function GET(req: NextRequest) {
 
   try {
     // Date boundaries for today (Peru timezone UTC-5)
+    // (la cuenta vieja con getTimezoneOffset daba AYER en una PC en Lima antes de las 05:00)
     const now = new Date();
-    const peruOffset = -5 * 60; // minutes
-    const localNow = new Date(now.getTime() + (peruOffset - now.getTimezoneOffset()) * 60000);
-    const startOfDay = new Date(Date.UTC(localNow.getFullYear(), localNow.getMonth(), localNow.getDate(), 5, 0, 0)); // 00:00 Peru = 05:00 UTC
-    const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
-
-    const fecha = `${localNow.getFullYear()}-${String(localNow.getMonth() + 1).padStart(2, "0")}-${String(localNow.getDate()).padStart(2, "0")}`;
+    const { start: startOfDay, end: endOfDay } = limaDayRange(now);
+    const fecha = limaDateKey(now);
 
     // Un solo stock mínimo (09-10): el global del negocio para los productos
     // sin mínimo propio, en vez del `lte: 5` / `?? 5` a mano. SettingsDB.get va cacheado.

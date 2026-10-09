@@ -7,6 +7,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { estadoDeCobro } from "@/lib/billing/mrr-plataforma";
 import { precioMensualDePlan } from "@/lib/billing/plan-tiers";
 import { logger } from "@/lib/logger";
+import { startOfLimaMonth } from "@/lib/utils";
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -28,7 +29,7 @@ async function getAnalyticsData(fromISO?: string, toISO?: string) {
 
   const now = new Date();
   // Si vienen from/to, usar esos como "periodo actual"; sino fallback al mes en curso.
-  const periodStart = fromISO ? new Date(fromISO) : new Date(now.getFullYear(), now.getMonth(), 1);
+  const periodStart = fromISO ? new Date(fromISO) : new Date(startOfLimaMonth(0, now));
   const periodEnd = toISO ? new Date(toISO) : now;
   const periodMs = Math.max(periodEnd.getTime() - periodStart.getTime(), 86_400_000);
   // Periodo anterior de misma duración para comparación de growth
@@ -121,9 +122,9 @@ async function getAnalyticsData(fromISO?: string, toISO?: string) {
   // Monthly signups for the last 6 months (legacy — sigue presente para retro-compat)
   const monthlySignups: { month: string; count: number }[] = [];
   for (let i = 5; i >= 0; i--) {
-    const start = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59, 999);
-    const label = start.toLocaleDateString("es-PE", { month: "short", year: "2-digit" });
+    const start = new Date(startOfLimaMonth(-i, now));
+    const end = new Date(startOfLimaMonth(-i + 1, now) - 1);
+    const label = start.toLocaleDateString("es-PE", { month: "short", year: "2-digit", timeZone: "America/Lima" });
     const count = allTenants.filter(
       (t) => new Date(t.createdAt) >= start && new Date(t.createdAt) <= end,
     ).length;
@@ -133,8 +134,8 @@ async function getAnalyticsData(fromISO?: string, toISO?: string) {
   // Monthly revenue (estimated) for the last 6 months (legacy)
   const monthlyRevenue: { month: string; revenue: number }[] = [];
   for (let i = 5; i >= 0; i--) {
-    const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59, 999);
-    const label = end.toLocaleDateString("es-PE", { month: "short", year: "2-digit" });
+    const end = new Date(startOfLimaMonth(-i + 1, now) - 1);
+    const label = end.toLocaleDateString("es-PE", { month: "short", year: "2-digit", timeZone: "America/Lima" });
     const revenue = mrrAt(end);
     monthlyRevenue.push({ month: label, revenue });
   }

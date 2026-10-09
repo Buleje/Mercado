@@ -8,6 +8,7 @@ import type { DailyReport } from "@/lib/daily-report";
 import { logger } from "@/lib/logger";
 import { saldoEsperadoDeCaja } from "@/lib/caja/saldo-esperado";
 import { startOfLimaDay } from "@/lib/utils";
+import { horaLima } from "@/lib/db/ventas-overview.db";
 
 export async function GET(request: NextRequest) {
   const auth = await requireAdmin(request, ["admin", "cajero"]);
@@ -116,14 +117,14 @@ export async function GET(request: NextRequest) {
       salesByHour[h] += sale.total ?? 0;
     }
     for (const order of activeOrders) {
-      const h = new Date(order.createdAt).getHours();
+      const h = horaLima(new Date(order.createdAt)); // hora de Lima, no de UTC
       salesByHour[h] += order.total ?? 0;
     }
 
     // Comparación con la semana pasada (mismo día)
     const lastWeekDay = new Date(now);
     lastWeekDay.setDate(lastWeekDay.getDate() - 7);
-    const lastWeekStart = new Date(lastWeekDay.getFullYear(), lastWeekDay.getMonth(), lastWeekDay.getDate());
+    const lastWeekStart = new Date(startOfLimaDay(lastWeekDay));
     const lastWeekEnd = new Date(lastWeekStart);
     lastWeekEnd.setDate(lastWeekEnd.getDate() + 1);
 

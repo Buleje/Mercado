@@ -5,6 +5,7 @@ import {
   type RentabilidadProductLineRaw,
 } from "@/lib/db/analytics-rentabilidad.db";
 import { logger } from "@/lib/logger";
+import { startOfLimaDayDaysAgo } from "@/lib/utils";
 
 export type ProductProfitLine = {
   productId: number;
@@ -47,7 +48,7 @@ export async function GET(req: NextRequest) {
         : DEFAULT_DAYS;
 
     const now = new Date();
-    const since = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (days - 1));
+    const since = new Date(startOfLimaDayDaysAgo(days - 1));
 
     const [saleLines, orderLines] = await Promise.all([
       AnalyticsRentabilidadDB.getSaleLinesByProduct(tenantId, since),

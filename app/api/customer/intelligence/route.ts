@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { logger } from "@/lib/logger";
+import { limaDateKey, startOfLimaDay } from "@/lib/utils";
+import { aYmd } from "@/lib/clientes/cumpleanos";
 
 /**
  * GET /api/customer/intelligence
@@ -101,28 +103,21 @@ export async function GET(req: NextRequest) {
       : null;
 
     // Streak: consecutive days with >= 1 order (from today backwards)
-    const orderDays = new Set(
-      recentOrders.map((o) =>
-        new Date(o.createdAt.getFullYear(), o.createdAt.getMonth(), o.createdAt.getDate()).toISOString(),
-      ),
-    );
+    // Días de LIMA: el servidor corre en UTC y un pedido de las 20:00 caía «mañana».
+    const orderDays = new Set(recentOrders.map((o) => limaDateKey(o.createdAt)));
     let streakDays = 0;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = startOfLimaDay();
     for (let i = 0; i < 30; i++) {
-      const d = new Date(today);
-      d.setDate(d.getDate() - i);
-      if (orderDays.has(d.toISOString())) streakDays++;
+      if (orderDays.has(limaDateKey(new Date(today - i * 24 * 60 * 60 * 1000)))) streakDays++;
       else break;
     }
 
     // Birthday check (month + day match)
     let isBirthday = false;
-    if (customer?.birthday) {
-      const bd = new Date(customer.birthday);
-      const now = new Date();
-      isBirthday = bd.getMonth() === now.getMonth() && bd.getDate() === now.getDate();
-    }
+    // Mes-día del cumpleaños (fecha UTC, `aYmd`) contra el HOY de Lima: con
+    // `getDate()` del servidor (UTC), a las 20:00 ya festejaba al de mañana.
+    const cumple = aYmd(customer?.birthday);
+    if (cumple) isBirthday = cumple.slice(5) === limaDateKey().slice(5);
 
     // Top product + cadence estimate
     let topProduct: { name: string; daysUntilLikelyOut: number } | null = null;

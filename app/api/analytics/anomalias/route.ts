@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { AnalyticsAnomaliasDB } from "@/lib/db/analytics-anomalias.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
+import { startOfLimaDay } from "@/lib/utils";
 
 export type Anomalia = {
   type: "venta_baja" | "stock_muerto" | "fiado_vencido" | "margen_critico";
@@ -27,7 +28,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayStart = new Date(startOfLimaDay(now));
     // Audit project-wide 2026-05-19: migrado a AnalyticsAnomaliasDB.
     const tid = auth.tenantId;
 
