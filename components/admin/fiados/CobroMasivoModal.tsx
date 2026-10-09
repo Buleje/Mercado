@@ -21,6 +21,7 @@ import { formatCurrency } from "@/lib/format";
 import { tenantCacheKey } from "@/lib/tenant-cache";
 import { ETIQUETA_METODO, type MetodoCobro } from "@/lib/fiados/cobro-metodo";
 import type { DatosCobroMasivo, Reparto } from "./use-cobro-masivo";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 
 const MEDIOS: { id: MetodoCobro; icon: typeof Banknote; corto: string }[] = [
   { id: "efectivo", icon: Banknote, corto: "Efectivo" },
@@ -147,7 +148,7 @@ export default function CobroMasivoModal({ abierto, onCerrar, fiados, total, mon
                   </p>
                   {reparto.map((d) => (
                     <div key={d.fiadoId} className="flex items-center justify-between gap-2 text-xs">
-                      <span className="truncate text-[var(--text-primary)]">{d.customerName}</span>
+                      <span className="truncate text-[var(--text-primary)]"><EnlacePanel cosa="cliente" id={fiados.find((f) => f.id === d.fiadoId)?.customerId}>{d.customerName}</EnlacePanel></span>
                       <span className="shrink-0 font-bold tabular-nums text-[var(--text-primary)]">
                         {formatCurrency(d.pago)}
                         <span className="ml-1 font-normal text-[var(--text-tertiary)]">{d.tipo === "Pago completo" ? "· queda pagado" : `· de ${formatCurrency(d.saldo)}`}</span>
@@ -156,7 +157,7 @@ export default function CobroMasivoModal({ abierto, onCerrar, fiados, total, mon
                   ))}
                   {fiados.filter((f) => !reparto.some((d) => d.fiadoId === f.id)).map((f) => (
                     <div key={f.id} className="flex items-center justify-between gap-2 text-xs text-[var(--text-tertiary)]">
-                      <span className="truncate">{f.customerName || f.customerId}</span>
+                      <span className="truncate"><EnlacePanel cosa="cliente" id={f.customerId}>{f.customerName || f.customerId}</EnlacePanel></span>
                       <span className="shrink-0">no alcanza · queda en {formatCurrency(f.saldo)}</span>
                     </div>
                   ))}

@@ -5,6 +5,7 @@ import { HandCoins, Check, X, Loader2 } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
 import { formatCurrency, formatDateShort } from "@/lib/format";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 
 /**
  * CreditRequestsPanel — cola de solicitudes de línea de fiado que el vecino
@@ -109,7 +110,7 @@ export default function CreditRequestsPanel() {
           >
             <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
               <p className="text-sm font-bold text-[var(--text-primary)]">
-                {r.customerName ?? r.customerId}
+                <EnlacePanel cosa="cliente" id={r.customerId} className="font-bold">{r.customerName ?? r.customerId}</EnlacePanel>
               </p>
               <p className="text-xs text-[var(--text-tertiary)]">{fmtDate(r.createdAt)}</p>
             </div>

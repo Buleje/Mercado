@@ -21,6 +21,7 @@ import { tenantCacheKey } from "@/lib/tenant-cache";
 import { FiadoStreakBadge } from "./FiadoBadges";
 import { diasDeAtraso, recordarPorWhatsApp } from "./recordar";
 import { STATUS_META, estaAbierto, type Fiado } from "./tipos";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 
 type Props = {
   selected: Fiado | null;
@@ -113,7 +114,7 @@ export default function FiadoDetalleSheet({ selected, onCerrar, fiados, detailLo
                       <User className="h-5 w-5 text-secondary" />
                     </div>
                     <div>
-                      <p className="font-bold text-[var(--text-primary)]">{selected.customerName || selected.customerId}</p>
+                      <p className="font-bold text-[var(--text-primary)]"><EnlacePanel cosa="cliente" id={selected.customerId} className="font-bold" title="Abrir su ficha de cliente">{selected.customerName || selected.customerId}</EnlacePanel></p>
                       <p className="text-xs text-[var(--text-secondary)]">Creado: {formatDate(selected.createdAt)}</p>
                     </div>
                     <div className="ml-auto flex items-center gap-1.5">

@@ -14,6 +14,7 @@ import { formatCurrency, formatDateLong, formatTime } from "@/lib/format";
 import { ETIQUETA_METODO, type MetodoCobro } from "@/lib/fiados/cobro-metodo";
 import CobroMasivoModal from "./CobroMasivoModal";
 import type { DatosCobroMasivo, Reparto } from "./use-cobro-masivo";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import {
   X,
   CheckCircle2, MessageCircle,
@@ -665,7 +666,7 @@ export default function FiadoModals({
                                   return (
                                     <div key={f.id} className="flex items-center gap-2 p-2 bg-[var(--surface-sunken)] rounded-lg">
                                       <div className="flex-1 min-w-0">
-                                        <p className="text-xs font-bold text-[var(--text-primary)] truncate">{f.customerName || f.customerId}</p>
+                                        <p className="text-xs font-bold text-[var(--text-primary)] truncate"><EnlacePanel cosa="cliente" id={f.customerId} className="font-bold">{f.customerName || f.customerId}</EnlacePanel></p>
                                         <p className="text-xs text-[var(--text-secondary)]">{formatCurrency(f.saldo)}</p>
                                       </div>
                                       <div className="flex gap-1 shrink-0">

@@ -43,6 +43,8 @@ import PanelFirmantes from "@/components/admin/contratos/PanelFirmantes";
 import PanelRevision from "@/components/admin/contratos/PanelRevision";
 import VinculoContraparte from "@/components/admin/contratos/VinculoContraparte";
 import { formatDateNumeric, formatDateTime, formatNumber } from "@/lib/format";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
+import { enlaceDeContraparte } from "./contratos/enlace-contraparte";
 
 const ContratosChart = dynamic(() => import("./ContratosChart"), {
   ssr: false,
@@ -787,7 +789,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                     <div className="space-y-2">
                       {contratos.filter(c => estadoVisible(c) === "POR_VENCER").slice(0, 5).map(c => (
                         <div key={c.id} className="flex items-center justify-between text-xs">
-                          <span className="text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">{c.clienteNombre} — {c.numero} — vence {formatDatePeru(c.fechaVencimiento!)}</span>
+                          <span className="text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"><EnlacePanel {...enlaceDeContraparte(c)} apariencia="heredada" className="font-bold underline">{c.clienteNombre}</EnlacePanel> — {c.numero} — vence {formatDatePeru(c.fechaVencimiento!)}</span>
                           <button onClick={() => { setSelected(c); }} className="px-2 py-1 rounded-lg bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/40 text-[var(--data-warning-500)] font-bold hover:bg-[var(--data-warning-500)] transition-colors">
                             Ver
                           </button>
@@ -909,7 +911,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                             <div className="flex items-center gap-2">
                               <div className="h-7 w-7 rounded-full bg-secondary/20 flex items-center justify-center shrink-0"><User className="h-3.5 w-3.5 text-secondary" /></div>
                               <div className="min-w-0">
-                                <p className="text-sm text-[var(--text-secondary)] truncate">{c.clienteNombre}</p>
+                                <p className="text-sm text-[var(--text-secondary)] truncate"><EnlacePanel {...enlaceDeContraparte(c)}>{c.clienteNombre}</EnlacePanel></p>
                                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{c.clienteDoc}</p>
                               </div>
                             </div>
@@ -979,7 +981,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                             >
                               <td className="font-mono text-xs text-[var(--text-secondary)]">{c.numero}</td>
                               <td>
-                                <p className="font-medium text-[var(--text-primary)] truncate">{c.clienteNombre}</p>
+                                <p className="font-medium text-[var(--text-primary)] truncate"><EnlacePanel {...enlaceDeContraparte(c)}>{c.clienteNombre}</EnlacePanel></p>
                                 <p className="text-xs text-[var(--text-tertiary)]">{c.clienteDoc}</p>
                               </td>
                               <td className="hidden sm:table-cell">
@@ -1588,7 +1590,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                       <User className="h-5 w-5 text-secondary" />
                     </div>
                     <div>
-                      <p className="font-bold text-[var(--text-primary)]">{selected.clienteNombre}</p>
+                      <p className="font-bold text-[var(--text-primary)]"><EnlacePanel {...enlaceDeContraparte(detalle ?? selected)} className="font-bold" title="Abrir su ficha">{selected.clienteNombre}</EnlacePanel></p>
                       <p className="text-xs text-[var(--text-secondary)]">{selected.clienteDoc}</p>
                     </div>
                   </div>

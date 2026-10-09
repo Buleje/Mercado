@@ -15,6 +15,7 @@ import { FiadoAvatar, FiadoReliabilityBadge, FiadoSemaphore, FiadoStreakBadge } 
 import { diasDeAtraso, recordarPorWhatsApp } from "./recordar";
 import { STATUS_META, estaAbierto, type ColumnaOrden, type Fiado, type FiadoStatus } from "./tipos";
 import type { EstadoFiados } from "./use-fiados";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 
 const STATUS_FILTERS: { key: FiadoStatus | ""; label: string }[] = [
   { key: "", label: "Todos" },
@@ -149,7 +150,7 @@ export default function FiadosDeudoresTabla({ estado, totalSaldo, activosCount, 
                             <FiadoAvatar nombre={f.customerName || f.customerId} />
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5 flex-wrap">
-                                <p className="font-medium text-[var(--text-primary)] truncate">{f.customerName || f.customerId}</p>
+                                <p className="font-medium text-[var(--text-primary)] truncate"><EnlacePanel cosa="cliente" id={f.customerId}>{f.customerName || f.customerId}</EnlacePanel></p>
                                 {/* Mejora 15: Semáforo visual */}
                                 <FiadoSemaphore fiado={f} />
                                 {/* Mejora 11: Score de confiabilidad */}

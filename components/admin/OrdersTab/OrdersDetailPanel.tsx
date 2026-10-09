@@ -39,6 +39,7 @@ import { DespachoSection } from "./DespachoSection";
 import ManualDeliveryModal from "./ManualDeliveryModal";
 import { PaymentProofViewer } from "@/components/admin/PaymentProofViewer";
 import { formatCurrency } from "@/lib/format";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 
 interface OrdersDetailPanelProps {
   order: DbOrder;
@@ -259,7 +260,7 @@ export function OrdersDetailPanel({
                 Pedido · #{order.id.slice(-8)}
               </p>
               <CardTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)] truncate">
-                {order.customer.name}
+                <EnlacePanel cosa="cliente" id={order.customer.phone} apariencia="heredada" title="Abrir su ficha de cliente">{order.customer.name}</EnlacePanel>
               </CardTitle>
               <div className="text-xs text-[var(--text-tertiary)] mt-1 flex items-center gap-1.5 flex-wrap">
                 <span

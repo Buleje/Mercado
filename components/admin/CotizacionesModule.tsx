@@ -27,6 +27,7 @@ import { cn } from "@/lib/utils";
 import ClienteFormModal from "./clientes/ClienteFormModal";
 import { formatCurrency, formatDate, formatMonth } from "@/lib/format";
 import { escapeDeLaPaginaConFijado } from "@/hooks/use-ventana-de-modal";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -878,7 +879,7 @@ export default function CotizacionesModule() {
                             <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold", meta.bg, meta.color)}>{meta.label}</span>
                           </div>
                           <div className="p-4 space-y-2">
-                            <p className="font-bold text-[var(--text-primary)] truncate group-hover:text-primary transition-colors">{c.clienteNombre}</p>
+                            <p className="font-bold text-[var(--text-primary)] truncate group-hover:text-primary transition-colors"><EnlacePanel cosa="cliente" id={c.customerId} className="font-bold">{c.clienteNombre}</EnlacePanel></p>
                             <div className="flex items-center justify-between">
                               <span className="text-lg font-extrabold text-primary">{formatCurrency(c.total)}</span>
                               <span className="text-xs text-[var(--text-tertiary)]">{formatDate(c.createdAt)} · {diasValidez > 0 ? `${diasValidez}d válido` : "Vencida"}</span>
@@ -928,7 +929,7 @@ export default function CotizacionesModule() {
                                   <User className="h-4 w-4 text-secondary" />
                                 </div>
                                 <div className="min-w-0">
-                                  <p className="font-medium text-[var(--text-primary)] truncate">{c.clienteNombre}</p>
+                                  <p className="font-medium text-[var(--text-primary)] truncate"><EnlacePanel cosa="cliente" id={c.customerId}>{c.clienteNombre}</EnlacePanel></p>
                                   {c.clienteRuc && <p className="text-xs text-[var(--text-tertiary)] truncate">RUC: {c.clienteRuc}</p>}
                                 </div>
                               </div>
@@ -1248,7 +1249,7 @@ export default function CotizacionesModule() {
                       <User className="h-5 w-5 text-secondary" />
                     </div>
                     <div>
-                      <p className="font-bold text-[var(--text-primary)]">{selected.clienteNombre}</p>
+                      <p className="font-bold text-[var(--text-primary)]"><EnlacePanel cosa="cliente" id={selected.customerId} className="font-bold" title="Abrir su ficha de cliente">{selected.clienteNombre}</EnlacePanel></p>
                       {selected.clienteRuc && <p className="text-xs text-[var(--text-secondary)]">RUC: {selected.clienteRuc}</p>}
                     </div>
                     <span className={cn("ml-auto px-2 py-1 rounded-lg text-xs font-bold", STATUS_META[selected.status].bg, STATUS_META[selected.status].color)}>

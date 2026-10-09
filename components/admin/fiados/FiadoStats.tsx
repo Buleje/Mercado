@@ -13,6 +13,7 @@ import { waLink } from "@/lib/whatsapp-link";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
 import { activateProps } from "@/components/admin/shared/a11y";
 import { formatCurrency, formatCurrencyCompact } from "@/lib/format";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 
 type FiadoStatus = "ACTIVO" | "PAGADO" | "VENCIDO" | "CANCELADO";
 
@@ -360,7 +361,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
           <div className="flex-1 min-w-0">
             <p className="text-xs font-bold text-[var(--data-error-500)]">Fiado mas antiguo</p>
             <p className="text-sm text-[var(--text-primary)] mt-0.5 truncate">
-              <span className="font-bold">{fiadoMasAntiguo.customerName || fiadoMasAntiguo.customerId}</span>
+              <EnlacePanel cosa="cliente" id={fiadoMasAntiguo.customerId} className="font-bold">{fiadoMasAntiguo.customerName || fiadoMasAntiguo.customerId}</EnlacePanel>
               {" · "}<span className="font-bold">{formatCurrency(fiadoMasAntiguo.saldo)}</span>
               {" · "}hace {fiadoMasAntiguo.dias} dias
             </p>
@@ -756,7 +757,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                 {porDia[calDiaSeleccionado].map(f => (
                   <div key={f.id} className="flex items-center gap-3 p-2 bg-[var(--surface-sunken)] rounded-lg">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-[var(--text-primary)] truncate">{f.customerName || f.customerId}</p>
+                      <p className="text-sm font-bold text-[var(--text-primary)] truncate"><EnlacePanel cosa="cliente" id={f.customerId} className="font-bold">{f.customerName || f.customerId}</EnlacePanel></p>
                       <p className="text-xs text-[var(--text-secondary)]">{formatCurrency(f.saldo)}</p>
                     </div>
                     <button

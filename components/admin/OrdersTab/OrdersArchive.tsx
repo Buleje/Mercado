@@ -11,6 +11,7 @@ import { formatDate } from "@/lib/admin-helpers";
 import { googleMapsUrl } from "@/lib/order-utils";
 import { STATUS_COLORS, STATUS_LABELS } from "./types";
 import { formatCurrency } from "@/lib/format";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 
 interface OrdersArchiveProps {
   archivedOrders: DbOrder[];
@@ -100,7 +101,7 @@ export function OrdersArchive({
                         aria-label={`Ver pedido de ${o.customer.name}`}
                       >
                         <td className="px-4 py-3">
-                          <p className="font-semibold text-[var(--text-primary)] dark:text-foreground">{o.customer.name}</p>
+                          <p className="font-semibold text-[var(--text-primary)] dark:text-foreground"><EnlacePanel cosa="cliente" id={o.customer.phone}>{o.customer.name}</EnlacePanel></p>
                           {o.customer.phone && (
                             <p className="text-xs text-[var(--text-tertiary)] dark:text-muted font-mono">{o.customer.phone}</p>
                           )}
@@ -148,7 +149,7 @@ export function OrdersArchive({
                   >
                     <div className="flex justify-between items-start gap-3">
                       <div className="flex-1 min-w-0">
-                        <p className="font-bold text-[var(--text-primary)] dark:text-foreground">{o.customer.name}</p>
+                        <p className="font-bold text-[var(--text-primary)] dark:text-foreground"><EnlacePanel cosa="cliente" id={o.customer.phone} className="font-bold">{o.customer.name}</EnlacePanel></p>
                         {o.customer.phone && (
                           <p className="text-xs text-[var(--text-tertiary)] dark:text-muted font-mono">{o.customer.phone}</p>
                         )}

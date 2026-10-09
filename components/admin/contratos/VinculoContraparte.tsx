@@ -18,6 +18,8 @@ import { BlockTitle } from "@buleje/design-system";
 import { Loader2, Link2, Check, X, User, Truck, Users } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
+import { enlaceDeContraparte } from "./enlace-contraparte";
 
 interface Persona {
   id: string;
@@ -136,9 +138,15 @@ export default function VinculoContraparte({
 
       {!abierto && (
         <p className="text-xs text-[var(--text-secondary)]">
-          {vinculado
-            ? `Atado a la ficha de ${customerId ? "un cliente" : supplierId ? "un proveedor" : "un trabajador"}: desde ahí se ven sus contratos y lo comprometido.`
-            : `Hoy dice "${clienteNombre}" como texto suelto. Vinculándolo a su ficha, sus contratos aparecen ahí.`}
+          {vinculado ? (
+            <>
+              Atado a la ficha {customerId ? "del cliente" : supplierId ? "del proveedor" : "del trabajador"}{" "}
+              <EnlacePanel {...enlaceDeContraparte({ customerId, supplierId, colaboradorId })}>{clienteNombre}</EnlacePanel>:
+              desde ahí se ven sus contratos y lo comprometido.
+            </>
+          ) : (
+            `Hoy dice "${clienteNombre}" como texto suelto. Vinculándolo a su ficha, sus contratos aparecen ahí.`
+          )}
         </p>
       )}
 
