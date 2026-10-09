@@ -1,8 +1,55 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { InicioForestal } from "@/lib/forestal/inicio-forestal";
+import { algunDato, valorConDato } from "@/lib/admin/inicio/hay-datos";
+import type { InicioForestal, PermisoInicio } from "@/lib/forestal/inicio-forestal";
 import type { DateRange } from "./DashboardDateRange";
+
+/** Guías vigentes del período: las del CTP menos sus anuladas, más las del LO-TH. */
+export function guiasVigentes(d: Pick<InicioForestal, "ctp" | "loth">): { ctp: number; th: number; anuladas: number } {
+  const ctp = d.ctp ? Math.max(0, d.ctp.guias.total - d.ctp.guias.anuladas) : 0;
+  const th = d.loth ? d.loth.guias.emitidas : 0;
+  const anuladas = (d.ctp?.guias.anuladas ?? 0) + (d.loth?.guias.anuladas ?? 0);
+  return { ctp, th, anuladas };
+}
+
+/**
+ * Un permiso tiene algo que mostrar si trae volumen autorizado (o registrado)
+ * o si ya se taló o despachó algo de él. Uno recién creado, sin volumen ni
+ * tala, no es una barra: es un nombre en la línea de «todavía sin volumen».
+ */
+export function permisoConDato(p: PermisoInicio): boolean {
+  return algunDato([p.baseM3, p.taladoM3, p.despachadoM3, p.taladoSinRegistrarM3]);
+}
+
+/**
+ * Qué hay para mostrar en el Inicio forestal (reglas R1/R2 del tablero, 09-10):
+ *  - `movimiento`: algo pasó EN EL PERÍODO (entró, se aserró, salió madera o
+ *    se emitió una guía vigente). Las anuladas solas no mueven madera.
+ *  - `foto`: algo que es «a hoy» y no depende del rango (patio con trozas,
+ *    permisos con volumen o tala, adelantos por cobrar).
+ * Sin ninguno de los dos, la pestaña es sólo el estado vacío del paiche; sin
+ * movimiento pero con foto, el paiche reemplaza a las cifras del período y la
+ * foto de hoy queda debajo.
+ *
+ * Sólo mira lo que ya llegó de `GET /api/admin/inicio/forestal`: no recalcula.
+ */
+export function estadoInicioForestal(d: InicioForestal): { movimiento: boolean; foto: boolean } {
+  const g = guiasVigentes(d);
+  const movimiento = algunDato([
+    d.ctp?.ingresoM3,
+    d.ctp?.consumoM3,
+    d.ctp?.producido,
+    d.ctp?.despachado,
+    g.ctp + g.th,
+  ]);
+  const foto =
+    valorConDato(d.ctp?.patio?.trozas) ||
+    valorConDato(d.ctp?.patio?.m3) ||
+    (d.loth?.permisos ?? []).some(permisoConDato) ||
+    (d.adelantos ?? []).some((a) => valorConDato(a.saldoPendiente));
+  return { movimiento, foto };
+}
 
 /**
  * Lee `GET /api/admin/inicio/forestal` para el rango del Inicio.
