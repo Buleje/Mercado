@@ -125,11 +125,13 @@ describe("un solo esperado para la misma caja", () => {
   });
 
   it("ninguna pantalla vuelve a copiar la cuenta a mano", () => {
-    for (const archivo of ["components/admin/CashRegisterTab.tsx", "components/admin/TurnosModule.tsx", "app/api/cash-registers/[id]/route.ts", "lib/agents/domains/caja.agent.ts", "app/api/daily-report/route.ts", "lib/db/ventas-overview.db.ts"]) {
+    for (const archivo of ["components/admin/CashRegisterTab.tsx", "components/admin/caja/use-caja-registradora.ts", "lib/caja/parte-del-dia.ts", "components/admin/TurnosModule.tsx", "components/admin/turnos/use-cierre-turno.ts", "app/api/cash-registers/[id]/route.ts", "lib/agents/domains/caja.agent.ts", "app/api/daily-report/route.ts", "lib/db/ventas-overview.db.ts"]) {
       const src = readFileSync(path.join(process.cwd(), archivo), "utf8");
       expect(src, `${archivo} suma egresos a mano`).not.toMatch(/type === "egreso"\)\s*\.reduce/);
     }
-    expect(readFileSync(path.join(process.cwd(), "components/admin/CashRegisterTab.tsx"), "utf8")).toContain("cuentasDeCajaParaPantalla(");
-    expect(readFileSync(path.join(process.cwd(), "components/admin/TurnosModule.tsx"), "utf8")).toContain("cuentasDeCajaParaPantalla(");
+    /* La pestaña Caja se partió (CashRegisterTab → components/admin/caja/): sus cuentas viven en el hook. */
+    expect(readFileSync(path.join(process.cwd(), "components/admin/caja/use-caja-registradora.ts"), "utf8")).toContain("cuentasDeCajaParaPantalla(");
+    /* Turnos también se partió: el cierre calcula el esperado en su hook. */
+    expect(readFileSync(path.join(process.cwd(), "components/admin/turnos/use-cierre-turno.ts"), "utf8")).toContain("cuentasDeCajaParaPantalla(");
   });
 });

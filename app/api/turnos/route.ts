@@ -25,7 +25,12 @@ export async function GET(req: NextRequest) {
 
   try {
     const { searchParams } = new URL(req.url);
-    const adminUserId = searchParams.get("adminUserId") ?? undefined;
+    // Igual que /activo: la cajera sólo ve SUS turnos (cada fila trae nombre,
+    // esperado y diferencia de caja; las de sus compañeras no le corresponden).
+    const esGestion = auth.role === "admin" || auth.role === "owner" || auth.role === "manager";
+    const adminUserId = esGestion
+      ? searchParams.get("adminUserId") ?? undefined
+      : (await AdminUsersDB.resolveIdByUsername(auth.tenantId, auth.username)) ?? "__none__";
     // El status es un enum de Prisma (ABIERTO | CERRADO). Pasarle cualquier otra
     // cosa hacía explotar la query y salía un 503 «Database error»: un filtro mal
     // escrito no es una caída del servidor, es una petición inválida.
@@ -38,7 +43,8 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const turnos = await TurnosDB.list(auth.tenantId, { status: statusRaw, adminUserId });
+    // Con el nombre de quien atendió y la diferencia de caja del servidor (ver listHistorial).
+    const turnos = await TurnosDB.listHistorial(auth.tenantId, { status: statusRaw, adminUserId });
 
     return NextResponse.json(turnos, {
       headers: { "X-Total-Count": String(turnos.length) },
@@ -133,6 +139,13 @@ export async function POST(req: NextRequest) {
           const notes = operator ? `${operator} (turno)` : undefined;
           const reg = await CashRegistersDB.open(auth.tenantId, parsed.data.inicioEfectivo, notes);
           cashRegisterId = reg.id;
+          // La caja abierta con el turno también deja su «Abrir»: Cuadrar caja lo lee para
+          // decir quién la abrió (sin esto la columna salía «—»).
+          logActivity(
+            "Abrir", "caja",
+            `Apertura con S/${parsed.data.inicioEfectivo.toFixed(2)} al abrir turno`,
+            reg.id, auth.username, undefined, auth.tenantId,
+          ).catch((err) => logger.warn("[turnos] activity log caja failed", { err: String(err) }));
         }
       } catch (regErr) {
         // No bloquear la apertura del turno si la caja falla — se puede abrir
