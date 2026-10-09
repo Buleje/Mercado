@@ -11,26 +11,18 @@
  * Sólo aplica a `source === "expense"`. Una compra a proveedor, un flete, un
  * adelanto o un retiro de caja se corrigen en el módulo que los emitió — acá
  * son un reflejo, y editarlos por este lado dejaría los dos lados en desacuerdo.
+ * El comprobante (tipo, N°, RUC, IGV, foto) también se corrige acá: antes, un
+ * gasto guardado sin factura se quedaba así para siempre, y su IGV nunca
+ * llegaba a «IGV del mes › compras». La lógica vive en `use-gasto-editar`.
  */
 
-import { useState } from "react";
-import { undoToast } from "@buleje/design-system";
 import { AlertTriangle, Loader2, Save, Trash2 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
-import { csrfHeaders } from "@/lib/csrf-client";
+import ComprobanteCampos from "@/components/admin/gastos/ComprobanteCampos";
 import { PAYMENT_METHOD_LABELS, type ExpensePaymentMethod } from "@/lib/expense-meta";
-import { borrarGasto, restaurarGasto } from "./restaurar";
 import { fmt, type HistorialItem } from "./shared";
+import { useGastoEditar } from "./use-gasto-editar";
 import { formatDate } from "@/lib/format";
-
-/** `YYYY-MM-DD` en hora local: con `toISOString()` el día se corre en Perú. */
-function comoFechaInput(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  const mes = String(d.getMonth() + 1).padStart(2, "0");
-  const dia = String(d.getDate()).padStart(2, "0");
-  return `${d.getFullYear()}-${mes}-${dia}`;
-}
 
 function Campo({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -53,90 +45,12 @@ export default function GastoEditarModal({
   onGuardado: () => void;
   onClose: () => void;
 }) {
-  const [descripcion, setDescripcion] = useState(item.description);
-  const [monto, setMonto] = useState(String(item.amount));
-  const [categoria, setCategoria] = useState(item.category);
-  const [fecha, setFecha] = useState(() => comoFechaInput(item.fecha));
-  const [metodo, setMetodo] = useState<string>(item.meta?.paymentMethod ?? "");
-  const [proveedor, setProveedor] = useState(item.supplierName ?? "");
-  const [notas, setNotas] = useState(item.meta?.notes ?? "");
-
-  const [guardando, setGuardando] = useState(false);
-  const [borrando, setBorrando] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const montoNum = Number(monto.replace(",", "."));
-  const montoValido = Number.isFinite(montoNum) && montoNum > 0;
-
-  const guardar = async () => {
-    if (!montoValido) { setError("El monto tiene que ser un número mayor que cero."); return; }
-    setGuardando(true);
-    setError(null);
-
-    // Se manda SÓLO lo que cambió. Importa: los gastos viejos (pre-ADR-374)
-    // guardan metadata serializada dentro de `description`, así que reescribirla
-    // sin necesidad borraría la frecuencia o el día de pago que sólo viven ahí.
-    const patch: Record<string, unknown> = {};
-    if (descripcion !== item.description) patch.description = descripcion;
-    if (montoNum !== item.amount) patch.amount = montoNum;
-    if (categoria !== item.category) patch.category = categoria;
-    if (fecha !== comoFechaInput(item.fecha)) {
-      const [y, m, d] = fecha.split("-").map(Number);
-      patch.date = new Date(y ?? 0, (m ?? 1) - 1, d ?? 1, 12, 0, 0, 0).toISOString();
-    }
-    if (metodo !== (item.meta?.paymentMethod ?? "")) patch.paymentMethod = metodo || null;
-    if (proveedor !== (item.supplierName ?? "")) patch.supplierName = proveedor || null;
-    if (notas !== (item.meta?.notes ?? "")) patch.notes = notas || null;
-
-    if (Object.keys(patch).length === 0) { setGuardando(false); onClose(); return; }
-
-    try {
-      const res = await fetch(`/api/expenses/${item.refId}`, {
-        method: "PUT",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify(patch),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      onGuardado();
-      onClose();
-    } catch (err) {
-      console.warn("[GastoEditarModal] guardar falló", err);
-      setError("No se pudo guardar el cambio. Intenta de nuevo.");
-    } finally {
-      setGuardando(false);
-    }
-  };
-
-  const borrar = async () => {
-    setBorrando(true);
-    setError(null);
-    try {
-      const borrado = await borrarGasto(item.refId);
-      onGuardado();
-      onClose();
-      // El undo de 5 segundos es lo que reemplaza al «¿estás seguro?»: la
-      // acción se completa al toque y el arrepentimiento tiene una salida
-      // (patrón `undoToast` del DS).
-      undoToast({
-        message: "Gasto borrado",
-        description: `${item.description || "Sin descripción"} · ${fmt(item.amount)}`,
-        onUndo: async () => {
-          try {
-            await restaurarGasto(borrado);
-            onGuardado();
-          } catch (err) {
-            console.warn("[GastoEditarModal] restaurar falló", err);
-          }
-        },
-      });
-    } catch (err) {
-      console.warn("[GastoEditarModal] borrar falló", err);
-      setError("No se pudo borrar el gasto. Intenta de nuevo.");
-      setBorrando(false);
-    }
-  };
-
-  const ocupado = guardando || borrando;
+  const g = useGastoEditar(item, onGuardado, onClose);
+  const {
+    descripcion, setDescripcion, monto, setMonto, categoria, setCategoria, fecha, setFecha,
+    metodo, setMetodo, proveedor, setProveedor, notas, setNotas, montoValido, error, guardar, borrar,
+    guardando, borrando, ocupado,
+  } = g;
 
   return (
     <AdminModal
@@ -234,10 +148,27 @@ export default function GastoEditarModal({
           </select>
         </Campo>
 
+        {/* Con papel, «a quién le pagaste» va dentro del comprobante (mismo dato). */}
+        {!g.conPapel && (
+          <div className="sm:col-span-2">
+            <Campo label="Proveedor o a quién se le pagó">
+              <input type="text" value={proveedor} onChange={(e) => setProveedor(e.target.value)} className={INPUT} />
+            </Campo>
+          </div>
+        )}
+
         <div className="sm:col-span-2">
-          <Campo label="Proveedor o a quién se le pagó">
-            <input type="text" value={proveedor} onChange={(e) => setProveedor(e.target.value)} className={INPUT} />
-          </Campo>
+          {g.papelListo ? (
+            <ComprobanteCampos g={g.comprobante} />
+          ) : (
+            <p className="flex items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 py-3 text-sm text-[var(--text-secondary)]">
+              {g.papelError ? (
+                <><AlertTriangle className="h-4 w-4 text-[var(--data-error-500)]" aria-hidden />No se pudo leer el comprobante: el resto se corrige igual.</>
+              ) : (
+                <><Loader2 className="h-4 w-4 animate-spin" aria-hidden />Leyendo el comprobante…</>
+              )}
+            </p>
+          )}
         </div>
 
         <div className="sm:col-span-2">
@@ -259,7 +190,7 @@ export default function GastoEditarModal({
 
         {error && (
           <p className="flex items-center gap-2 text-sm font-semibold text-[var(--data-error-500)] sm:col-span-2" role="alert">
-            <AlertTriangle className="h-4 w-4" aria-hidden />{error}
+            <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />{error.texto}
           </p>
         )}
       </div>

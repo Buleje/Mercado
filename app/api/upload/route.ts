@@ -23,6 +23,10 @@ const ALLOWED_FOLDERS = new Set([
   "rrhh",
   // Fotos de la madera al bajar del camión: el respaldo del ingreso del Libro CTP.
   "forestal",
+  // La foto del comprobante de un gasto (Compras › Gasto nuevo / Corregir gasto).
+  "gastos",
+  // La foto de la mercadería recibida (Recepciones): también caía en «general».
+  "recepciones",
 ]);
 
 export async function POST(req: NextRequest) {

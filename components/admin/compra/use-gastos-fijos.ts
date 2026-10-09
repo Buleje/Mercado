@@ -5,6 +5,8 @@ import { agruparDuplicados } from "@/lib/expense-meta";
 import { formatCurrency } from "@/lib/format";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { useConfirm } from "@/components/admin/shared/ConfirmDialog";
+import type { PagoPropuesto } from "@/components/admin/compras/historial/ConfirmarPagoModal";
+import { pagarGastoFijo, type PagoDeFijo } from "@/components/admin/compras/historial/pagar-fijo";
 
 export type ExpenseTemplate = {
   id: string;
@@ -12,6 +14,7 @@ export type ExpenseTemplate = {
   description: string;
   amount: number;
   recurring: boolean;
+  paymentMethod?: string | null;
 };
 
 export type PagoHecho = { description: string; amount: number; date: string; templateId?: string | null };
@@ -69,6 +72,8 @@ export function useGastosFijos({ playDing, confirm, setToastMsg }: Opciones) {
    * hubieras pagado o no — la misma trampa que los duplicados, por otro camino.
    */
   const [pagosHechos, setPagosHechos] = useState<PagoHecho[]>([]);
+  /** Sube tras registrar un pago: sin esto la tarjeta seguía «pendiente». */
+  const [vueltaPagos, setVueltaPagos] = useState(0);
   useEffect(() => {
     fetch("/api/expenses", { credentials: "include" })
       .then((r) => (r.ok ? r.json() : []))
@@ -86,7 +91,7 @@ export function useGastosFijos({ playDing, confirm, setToastMsg }: Opciones) {
         );
       })
       .catch((err) => console.warn("[PuntoCompraView] pagos hechos fetch failed", err));
-  }, [expenseCatalog]);
+  }, [expenseCatalog, vueltaPagos]);
 
   /** Una sola fecha de referencia por montaje: si cada render creara la suya,
    *  el «vence en N días» podría cambiar entre repintados. */
@@ -103,31 +108,31 @@ export function useGastosFijos({ playDing, confirm, setToastMsg }: Opciones) {
     setTimeout(() => setExpenseError(null), 4000);
   }, []);
 
-  // Ejecuta un gasto a partir de un template recurring
-  const executeExpenseFromTemplate = useCallback(async (template: ExpenseTemplate) => {
-    if (executingTemplateId) return;
-    setExecutingTemplateId(template.id);
-    try {
-      const res = await fetch(`/api/expenses/from-template/${template.id}`, {
-        method: "POST",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({}),
-      });
-      if (res.ok) {
-        playDing();
-        setToastMsg(`Gasto registrado: ${template.description || template.category} · ${formatCurrency(template.amount)}`);
-        setTimeout(() => setToastMsg(null), 3000);
-      } else {
-        const err = await res.json().catch(() => ({}));
-        fallar(err.error || "Error al registrar gasto");
-      }
-    } catch (err) {
-      console.warn("[PuntoCompraView] from-template failed", err);
-      fallar("Error de conexión");
-    } finally {
-      setExecutingTemplateId(null);
-    }
-  }, [executingTemplateId, playDing, setToastMsg, fallar]);
+  // Pagar un fijo pasa por el mismo «Registrar pago» del Historial: monto,
+  // fecha, con qué pagaste y si sale de la caja. Antes un toque registraba el
+  // alquiler con la fecha de hoy sin preguntar, y nunca salía del cajón.
+  const [porConfirmar, setPorConfirmar] = useState<(PagoPropuesto & { metodoPlantilla: string | null }) | null>(null);
+  const [errorPago, setErrorPago] = useState<string | null>(null);
+  const pedirPago = useCallback((pago: PagoPropuesto) => {
+    setErrorPago(null);
+    setPorConfirmar({ ...pago, metodoPlantilla: pago.metodo ?? null });
+  }, []);
+  const cerrarPago = useCallback(() => { setPorConfirmar(null); setErrorPago(null); }, []);
+
+  const confirmarPago = useCallback(async (pago: PagoDeFijo) => {
+    const tpl = porConfirmar;
+    if (!tpl || executingTemplateId) return;
+    setExecutingTemplateId(tpl.id);
+    setErrorPago(null);
+    const r = await pagarGastoFijo(tpl.id, pago, tpl.metodoPlantilla);
+    setExecutingTemplateId(null);
+    if (!r.ok) { setErrorPago(r.error); return; }
+    setPorConfirmar(null);
+    setVueltaPagos((v) => v + 1);
+    playDing();
+    setToastMsg([`Gasto registrado: ${tpl.nombre} · ${formatCurrency(pago.monto)}`, r.aviso].filter(Boolean).join(" · "));
+    setTimeout(() => setToastMsg(null), r.aviso ? 6000 : 3000);
+  }, [porConfirmar, executingTemplateId, playDing, setToastMsg]);
 
   // Eliminar template recurrente del catálogo. Pide confirmación para evitar
   // borrados accidentales; el id queda anotado para que ninguna carga lo devuelva.
@@ -168,7 +173,7 @@ export function useGastosFijos({ playDing, confirm, setToastMsg }: Opciones) {
   return {
     expenseCatalog, expenseCatalogLoading, expenseCatalogUnico, expenseDuplicados, expenseError,
     showNewExpense, setShowNewExpense, executingTemplateId, deletingTemplateId, pagosHechos, hoyRef,
-    executeExpenseFromTemplate, handleDeleteTemplate, alCrear,
+    porConfirmar, errorPago, pedirPago, cerrarPago, confirmarPago, handleDeleteTemplate, alCrear,
   };
 }
 

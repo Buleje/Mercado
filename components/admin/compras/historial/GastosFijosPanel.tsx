@@ -17,7 +17,6 @@ import { Kicker } from "@buleje/design-system";
 import {
   AlertTriangle, CalendarClock, Check, ChevronDown, Copy, Loader2, RefreshCw, Wand2,
 } from "@buleje/design-system/icons";
-import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
 import {
   agruparDuplicados, decodeExpenseDescription, proximoVencimiento,
@@ -25,6 +24,7 @@ import {
   type EstadoVencimiento, type PagoRegistrado,
 } from "@/lib/expense-meta";
 import ConfirmarPagoModal from "./ConfirmarPagoModal";
+import { pagarGastoFijo, type PagoDeFijo } from "./pagar-fijo";
 import UnificarDuplicadosModal, { type GrupoRepetido } from "./UnificarDuplicadosModal";
 import { fmt } from "./shared";
 import { formatDateShort } from "@/lib/format";
@@ -33,6 +33,7 @@ type GastoCrudo = {
   id: string; category: string; description: string; amount: number; date: string; recurring: boolean;
   /** Sólo en los ejecutados: de qué plantilla salieron (ADR-374). */
   templateId?: string | null;
+  paymentMethod?: string | null;
 };
 
 type Fijo = {
@@ -46,6 +47,8 @@ type Fijo = {
   dias: number | null;
   pagado: boolean;
   fechaPago: string | null;
+  /** El medio del gasto fijo: columna (ADR-374) o la metadata vieja. */
+  metodo: string | null;
 };
 
 const TONO_ESTADO: Record<EstadoVencimiento, string> = {
@@ -125,6 +128,7 @@ export default function GastosFijosPanel({
           dias: v.dias,
           pagado: pago.pagado,
           fechaPago: pago.fecha,
+          metodo: g.paymentMethod ?? meta.paymentMethod ?? null,
         };
       }).sort((a, b) => urgencia(a) - urgencia(b) || b.amount - a.amount));
 
@@ -150,27 +154,24 @@ export default function GastosFijosPanel({
 
   useEffect(() => { cargar(); }, [cargar, recargaToken]);
 
-  const registrarPago = useCallback(async (id: string, fechaIso: string, monto: number) => {
-    setPagando(id);
+  /** Aviso de lo que pasó con la caja tras pagar (se ve sobre la grilla). */
+  const [avisoPago, setAvisoPago] = useState<{ texto: string; tono: "ok" | "aviso" } | null>(null);
+  const registrarPago = useCallback(async (f: Fijo, pago: PagoDeFijo) => {
+    setPagando(f.id);
     setErrorPago(null);
-    try {
-      const res = await fetch(`/api/expenses/from-template/${id}`, {
-        method: "POST",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ date: fechaIso, amount: monto }),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    setAvisoPago(null);
+    const r = await pagarGastoFijo(f.id, pago, f.metodo);
+    if (r.ok) {
       setPorConfirmar(null);
+      if (r.aviso) setAvisoPago({ texto: r.aviso, tono: r.tono });
       await cargar();
       onPagoRegistrado?.();
-    } catch (err) {
-      console.warn("[GastosFijosPanel] registrar pago falló", err);
+    } else {
       // El error se queda EN el modal: cerrarlo y avisar atrás dejaba al
       // usuario sin saber si el pago entró o no.
-      setErrorPago("No se pudo registrar el pago. Intenta de nuevo.");
-    } finally {
-      setPagando(null);
+      setErrorPago(r.error);
     }
+    setPagando(null);
   }, [cargar, onPagoRegistrado]);
 
   const resumen = useMemo(() => {
@@ -271,6 +272,18 @@ export default function GastosFijosPanel({
           <AlertTriangle className="h-4 w-4" aria-hidden />{errorPago}
         </p>
       )}
+      {avisoPago && (
+        <p
+          role="status"
+          className={cn(
+            "mt-2 flex items-center gap-2 text-sm font-semibold",
+            avisoPago.tono === "aviso" ? "text-[var(--data-warning-ink)]" : "text-[var(--text-secondary)]",
+          )}
+        >
+          {avisoPago.tono === "aviso" ? <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden /> : <Check className="h-4 w-4 shrink-0 text-[var(--data-success-500)]" aria-hidden />}
+          {avisoPago.texto}
+        </p>
+      )}
 
       {/* Tres datos y una acción no entran en una línea: el nombre del gasto se
           cortaba a la mitad («Internet + cable…») para dejarle lugar al botón.
@@ -351,10 +364,11 @@ export default function GastosFijosPanel({
           resumenMeta: porConfirmar.resumenMeta || porConfirmar.category,
           textoVencimiento: porConfirmar.textoVencimiento,
           pagado: porConfirmar.pagado,
+          metodo: porConfirmar.metodo,
         }}
         guardando={pagando === porConfirmar?.id}
         error={errorPago}
-        onConfirmar={(fechaIso, monto) => porConfirmar && registrarPago(porConfirmar.id, fechaIso, monto)}
+        onConfirmar={(pago) => porConfirmar && registrarPago(porConfirmar, pago)}
         onClose={() => { setPorConfirmar(null); setErrorPago(null); }}
       />
 

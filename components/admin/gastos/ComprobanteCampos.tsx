@@ -7,14 +7,27 @@ import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
 import { TIPOS_COMPROBANTE } from "@/lib/gastos/comprobante-del-gasto";
 import { campo, chip } from "./estilos";
-import type { GastoNuevo } from "./use-gasto-nuevo";
+import type { FormGasto, GastoNuevo } from "./use-gasto-nuevo";
+
+/** Los campos del papel que pinta este bloque. */
+export type CamposPapel = Pick<FormGasto, "documentType" | "documentNumber" | "supplierRuc" | "supplierName" | "afectoIgv" | "attachmentUrl">;
+
+/**
+ * Lo que necesita el bloque: el alta (`useGastoNuevo`) lo cumple entero, y
+ * «Corregir gasto» (`use-gasto-editar`) arma lo suyo con la misma forma.
+ */
+export type ComprobanteEditable = Pick<GastoNuevo, "error" | "errorRuc" | "padron" | "buscandoRuc" | "igvVistaPrevia" | "subiendo" | "buscarRuc" | "subirFoto"> & {
+  form: CamposPapel;
+  // `FormGasto[K]` y no `CamposPapel[K]`: tsc 7 no ve que el Pick da el mismo tipo.
+  set: <K extends keyof CamposPapel>(campo: K, valor: FormGasto[K]) => void;
+};
 
 /**
  * El papel que respalda el gasto: tipo, número, RUC (con el padrón de SUNAT),
  * IGV y foto. Sin esto «IGV del mes › compras» siempre daba S/ 0: medido el
  * 2026-10-09, 0 de 24 gastos de toda la base tenían comprobante.
  */
-export default function ComprobanteCampos({ g }: { g: GastoNuevo }) {
+export default function ComprobanteCampos({ g }: { g: ComprobanteEditable }) {
   const { form, set, error, errorRuc, padron, buscandoRuc, igvVistaPrevia, subiendo } = g;
   const conPapel = form.documentType !== "sin_comprobante";
   const esFactura = form.documentType === "factura";

@@ -15,10 +15,19 @@
  * (`templateId`, ADR-374) y el vínculo sobrevive a que el número cambie.
  */
 
-import { useState } from "react";
-import { AlertTriangle, Check, Info, Loader2, Wallet } from "@buleje/design-system/icons";
+import { useEffect, useState } from "react";
+import { Kicker } from "@buleje/design-system";
+import { AlertTriangle, Check, Loader2, Wallet } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { chip } from "@/components/admin/gastos/estilos";
+import { useLocalStorage } from "@/hooks/use-local-storage";
+import { PAYMENT_METHOD_LABELS, type ExpensePaymentMethod } from "@/lib/expense-meta";
+import type { PagoDeFijo } from "./pagar-fijo";
 import { fmt } from "./shared";
+
+const METODOS = Object.keys(PAYMENT_METHOD_LABELS) as ExpensePaymentMethod[];
+const esMetodo = (v: unknown): v is ExpensePaymentMethod => METODOS.includes(v as ExpensePaymentMethod);
 
 export type PagoPropuesto = {
   id: string;
@@ -30,6 +39,8 @@ export type PagoPropuesto = {
   textoVencimiento: string;
   /** Ya hay un pago de este fijo en el período en curso. */
   pagado: boolean;
+  /** El medio que dice el gasto fijo (columna o metadata vieja). */
+  metodo?: string | null;
 };
 
 /** `YYYY-MM-DD` de hoy en hora local: `toISOString()` corre el día en Perú. */
@@ -46,17 +57,40 @@ export default function ConfirmarPagoModal({
   pago: PagoPropuesto | null;
   guardando: boolean;
   error: string | null;
-  onConfirmar: (fechaIso: string, monto: number) => void;
+  onConfirmar: (pago: PagoDeFijo) => void;
   onClose: () => void;
 }) {
   const [fecha, setFecha] = useState(hoyLocal);
   const [monto, setMonto] = useState(() => String(pago?.amount ?? ""));
+  const [metodo, setMetodo] = useState<ExpensePaymentMethod>(() => {
+    const delFijo = pago?.metodo;
+    return esMetodo(delFijo) ? delFijo : "efectivo";
+  });
+  // Recordado como en «Por pagar»: quien paga del cajón, paga siempre del cajón.
+  const [salidaDeCaja, setSalidaDeCaja] = useLocalStorage<boolean>("compras:gastos-fijos:sale-de-caja", true);
+  /** `null` = mirando; decide si «sale de la caja» se puede marcar. */
+  const [caja, setCaja] = useState<{ abierta: boolean; esperado?: number } | null>(null);
+  const abierto = pago != null;
+
+  useEffect(() => {
+    if (!abierto) return;
+    let vivo = true;
+    fetch("/api/finanzas/caja-abierta", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : { abierta: false }))
+      .then((d: { abierta?: boolean; esperado?: number }) => { if (vivo) setCaja({ abierta: d.abierta === true, esperado: d.esperado }); })
+      .catch((err) => { console.warn("[ConfirmarPagoModal] caja-abierta falló", err); if (vivo) setCaja({ abierta: false }); });
+    return () => { vivo = false; };
+  }, [abierto]);
 
   if (!pago) return null;
 
   const montoNum = Number(monto.replace(",", "."));
   const montoValido = Number.isFinite(montoNum) && montoNum > 0;
   const difiere = montoValido && Math.abs(montoNum - pago.amount) > 0.005;
+  const esDeHoy = fecha === hoyLocal();
+  /** Sólo efectivo de HOY con una caja abierta sale del cajón (el servidor da 400 si no). */
+  const puedeSalirDeCaja = metodo === "efectivo" && esDeHoy && caja?.abierta === true;
+  const pocoEnCaja = puedeSalirDeCaja && salidaDeCaja && caja?.esperado != null && montoValido && montoNum > caja.esperado;
 
   const confirmar = () => {
     if (!montoValido) return;
@@ -64,7 +98,7 @@ export default function ConfirmarPagoModal({
     // a mediodía local para que ningún huso lo empuje al día anterior.
     const [y, m, d] = fecha.split("-").map(Number);
     const cuando = new Date(y ?? 0, (m ?? 1) - 1, d ?? 1, 12, 0, 0, 0);
-    onConfirmar(cuando.toISOString(), montoNum);
+    onConfirmar({ fechaIso: cuando.toISOString(), monto: montoNum, paymentMethod: metodo, salidaDeCaja: puedeSalirDeCaja && salidaDeCaja });
   };
 
   return (
@@ -99,13 +133,21 @@ export default function ConfirmarPagoModal({
     >
       <div className="space-y-4 px-5 py-5 sm:px-6">
         <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3.5">
-          <label className="block">
-            <span className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">
-              Cuánto salió
+          <div className="block">
+            {/* El ⓘ va al lado de la etiqueta, nunca dentro del <label> (guardián infotip-no-anidado). */}
+            <span className="inline-flex items-center gap-1 text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+              <label htmlFor="monto-pago-gasto-fijo">Cuánto salió</label>
+              <InfoTip
+                title="Pago del período"
+                what="Esto anota el pago de este período. El gasto fijo del catálogo no cambia."
+                affects="Si el precio subió para siempre, actualízalo también en el Punto de Compra."
+                example="La luz vino S/ 145 este mes: se registra S/ 145 y la ficha sigue diciendo S/ 129.90."
+              />
             </span>
             <div className="mt-1 flex items-center gap-2">
               <span className="text-2xl font-extrabold text-[var(--text-secondary)]">S/</span>
               <input
+                id="monto-pago-gasto-fijo"
                 type="number"
                 min="0.01"
                 step="0.01"
@@ -115,7 +157,7 @@ export default function ConfirmarPagoModal({
                 className="h-14 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-3xl font-extrabold tabular-nums text-[var(--text-primary)] outline-none focus:border-primary/60 "
               />
             </div>
-          </label>
+          </div>
           <p className="mt-1.5 text-sm text-[var(--text-secondary)]">
             {pago.resumenMeta || "Gasto fijo"}
             {pago.textoVencimiento ? ` · ${pago.textoVencimiento}` : ""}
@@ -158,16 +200,43 @@ export default function ConfirmarPagoModal({
             className="mt-1 h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-base tabular-nums text-[var(--text-primary)] outline-none focus:border-primary/60 "
           />
           <span className="mt-1 block text-sm text-[var(--text-secondary)]">
-            Si lo pagaste otro día, cambialo: el período se cuenta por esta fecha.
+            Si lo pagaste otro día, cámbialo: el período se cuenta por esta fecha.
           </span>
         </label>
 
-        <div className="flex items-start gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2.5">
-          <Info className="mt-0.5 h-4 w-4 shrink-0 text-[var(--text-secondary)]" aria-hidden />
-          <p className="text-sm text-[var(--text-primary)]">
-            Esto anota el pago de este período. El gasto fijo del catálogo no cambia: si el precio
-            subió para siempre, actualizalo también en el Punto de Compra.
-          </p>
+        <div className="space-y-2">
+          <Kicker>Cómo pagaste</Kicker>
+          <div role="radiogroup" aria-label="Cómo pagaste" className="flex flex-wrap gap-2">
+            {METODOS.map((m) => (
+              <button key={m} type="button" role="radio" aria-checked={metodo === m} onClick={() => setMetodo(m)} className={chip(metodo === m)}>
+                {PAYMENT_METHOD_LABELS[m]}
+              </button>
+            ))}
+          </div>
+          {metodo === "efectivo" && (
+            <div className="flex items-start gap-2 rounded-xl bg-[var(--surface-sunken)] px-3 py-2 text-sm">
+              {!esDeHoy ? (
+                <span className="flex-1 text-[var(--text-secondary)]">Es un pago de otro día: no sale de la caja de hoy.</span>
+              ) : caja?.abierta ? (
+                <label className="flex flex-1 cursor-pointer items-start gap-2">
+                  <input type="checkbox" checked={salidaDeCaja} onChange={(e) => setSalidaDeCaja(e.target.checked)} className="mt-0.5 h-4 w-4 rounded accent-[var(--accent)]" />
+                  <span className="text-[var(--text-primary)]">
+                    Sale de la caja abierta
+                    {caja.esperado != null && <span className="text-[var(--text-tertiary)]"> · en el cajón debería haber {fmt(caja.esperado)}</span>}
+                    {pocoEnCaja && <span className="block text-xs font-semibold text-[var(--data-error-500)]">El pago es mayor que lo que hay en el cajón.</span>}
+                  </span>
+                </label>
+              ) : (
+                <span className="flex-1 text-[var(--text-secondary)]">{caja ? "No hay caja abierta: el pago se registra y ninguna caja se toca." : "Mirando la caja…"}</span>
+              )}
+              <InfoTip
+                title="Sale de la caja"
+                what="El efectivo que sacas del cajón para pagar se anota como un retiro de la caja abierta, en el mismo momento."
+                affects="El arqueo del día cuadra: la caja sabe que salió esa plata. Déjala sin marcar si pagas con plata que no está en la caja."
+                example="Pagas S/ 120 de luz con la plata del cajón → la caja anota «Gasto · luz» por S/ 120."
+              />
+            </div>
+          )}
         </div>
 
         {error && (

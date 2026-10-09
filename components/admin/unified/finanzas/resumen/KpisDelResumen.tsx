@@ -8,13 +8,16 @@ import {
 import { formatCurrency } from "@/lib/currency";
 import { SERIES, SERIE } from "@/components/admin/shared/chart-palette";
 import type { Fiscal, MesResumen } from "./tipos";
-import { leerIgv } from "./igv";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { leerIgv, textoExoneradas } from "./igv";
 import AyudaIgv from "./AyudaIgv";
 
 type KpiDef = { key: string; label: string; icon: typeof TrendingUp; color: string };
 const KPI_DEFS: KpiDef[] = [
   { key: "ingresos", label: "Ingresos del mes", icon: TrendingUp, color: "var(--accent)" },
-  { key: "gastos", label: "Gastos del mes", icon: TrendingDown, color: SERIE.gastos },
+  // «Costos» y no «Gastos»: el valor es `totalCostos` del Resultado (gastos
+  // registrados + costo de lo vendido + fletes + planilla), no sólo los gastos.
+  { key: "gastos", label: "Costos del mes", icon: TrendingDown, color: SERIE.gastos },
   { key: "utilidad", label: "Utilidad neta", icon: DollarSign, color: SERIE.utilidad },
   { key: "margen", label: "Margen %", icon: Percent, color: SERIES[3] },
   { key: "deuda", label: "Deuda proveedores", icon: Truck, color: SERIE.alerta },
@@ -23,8 +26,24 @@ const KPI_DEFS: KpiDef[] = [
   { key: "puntoEq", label: "Punto equilibrio", icon: Target, color: "var(--color-primary)" },
 ];
 
-/** Los ocho indicadores del mes. */
-export default function KpisDelResumen({ kpis, monthlyData, fiscal }: { kpis: Record<string, number>; monthlyData: MesResumen[]; fiscal: Fiscal | null }) {
+/** Qué dice la tarjeta de gastos según de dónde salió la cifra. */
+const SUB_GASTOS = {
+  // Del Resultado del servidor: gastos + costo de lo vendido + aserrío + fletes + planilla.
+  conCosto: "Con costo de venta",
+  // Sin el Resultado (el rol no lo ve, o falló): sólo los gastos anotados.
+  sinCosto: "Sólo gastos registrados",
+  // Quien llama no dijo de dónde salió: una frase que vale en los dos casos.
+  sinDato: "Se resta de tus ingresos",
+} as const;
+
+/**
+ * Los ocho indicadores del mes. `conCostoDeVenta` = la cifra de gastos salió del
+ * Resultado (`true`) o son sólo los gastos registrados (`false`); sin el dato,
+ * la tarjeta no afirma ninguna de las dos.
+ */
+export default function KpisDelResumen({ kpis, monthlyData, fiscal, conCostoDeVenta }: {
+  kpis: Record<string, number>; monthlyData: MesResumen[]; fiscal: Fiscal | null; conCostoDeVenta?: boolean;
+}) {
   const igv = leerIgv(fiscal?.igv ?? null);
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -45,9 +64,41 @@ export default function KpisDelResumen({ kpis, monthlyData, fiscal }: { kpis: Re
         }
 
         if (def.key === "margen") {
-          display = `${val}%`;
-          subValue = val > 25 ? "Excelente" : val >= 15 ? "Aceptable" : "Bajo";
-          emphasis = val > 25 ? "success" : val >= 15 ? "warning" : "error";
+          // Sin la clave no hay margen que decir (sin ingresos, o tan chicos que
+          // pasa de ±999 %): «0 %» en rojo afirmaba un margen que nadie midió.
+          if (kpis.margen == null) {
+            display = "—";
+            subValue = (
+              <span className="inline-flex items-center gap-1">
+                {(kpis.ingresos ?? 0) > 0 ? "Fuera de escala" : "Sin ingresos este mes"}
+                <InfoTip
+                  title="Margen %"
+                  ariaLabel="Por qué no hay margen"
+                  what="El margen es Utilidad neta ÷ Ingresos del mes. Sin ingresos no hay de qué sacar el porcentaje."
+                  affects="Con ingresos muy chicos el porcentaje pasa de ±999 % y no dice nada: tampoco se muestra."
+                  example="Ingresos S/ 0.10 y costos S/ 18.29 darían −18,190 %: aquí ves «—»."
+                />
+              </span>
+            );
+          } else {
+            display = `${val}%`;
+            subValue = val > 25 ? "Excelente" : val >= 15 ? "Aceptable" : "Bajo";
+            emphasis = val > 25 ? "success" : val >= 15 ? "warning" : "error";
+          }
+        } else if (def.key === "gastos") {
+          display = formatCurrency(val, { decimals: 0 });
+          subValue = (
+            <span className="inline-flex items-center gap-1">
+              {conCostoDeVenta === true ? SUB_GASTOS.conCosto : conCostoDeVenta === false ? SUB_GASTOS.sinCosto : SUB_GASTOS.sinDato}
+              <InfoTip
+                title={conCostoDeVenta === false ? "Gastos del mes" : "Costos del mes"}
+                ariaLabel="Qué suma Costos del mes"
+                what="Tus gastos registrados más el costo de lo que vendiste (mercadería y madera), el aserrío, los fletes y la planilla. Es lo mismo que resta el Resultado."
+                affects="Utilidad neta = Ingresos − Costos del mes. Si tu usuario no puede ver el Resultado, aquí van sólo tus gastos registrados."
+                example="Vendiste mercadería que te costó S/ 700 y pagaste S/ 150 de luz: Costos del mes S/ 850."
+              />
+            </span>
+          );
         } else if (def.key === "utilidad") {
           display = `${val >= 0 ? "+" : "-"}${formatCurrency(Math.abs(val), { decimals: 0 })}`;
           emphasis = val >= 0 ? "success" : "error";
@@ -58,6 +109,9 @@ export default function KpisDelResumen({ kpis, monthlyData, fiscal }: { kpis: Re
           if (!igv) {
             display = "—";
             subValue = "No se pudo leer";
+          } else if (igv.tipo === "exoneradas") {
+            display = "Sin IGV";
+            subValue = <span className="inline-flex items-center gap-1">{textoExoneradas(igv.facturas)} <AyudaIgv lectura={igv} /></span>;
           } else if (igv.tipo === "sin_registro") {
             display = "Sin registrar";
             subValue = <span className="inline-flex items-center gap-1">Sin IGV registrado <AyudaIgv lectura={igv} /></span>;
@@ -85,7 +139,8 @@ export default function KpisDelResumen({ kpis, monthlyData, fiscal }: { kpis: Re
         return (
           <StatCard
             key={def.key}
-            label={def.label}
+            // Sin el Resultado la cifra no trae el costo de lo vendido: no son «Costos».
+            label={def.key === "gastos" && conCostoDeVenta === false ? "Gastos del mes" : def.label}
             value={display}
             subValue={subValue}
             icon={def.icon}

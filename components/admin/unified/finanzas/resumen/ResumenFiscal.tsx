@@ -5,7 +5,7 @@ import { Calculator } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/currency";
 import type { Fiscal } from "./tipos";
-import { leerIgv } from "./igv";
+import { igvDeGastosSinCredito, leerIgv } from "./igv";
 import AyudaIgv from "./AyudaIgv";
 
 const CELDA_MONTO = "py-2.5 text-right font-bold font-mono tabular-nums text-[var(--text-primary)]";
@@ -57,7 +57,7 @@ export default function ResumenFiscal({ fiscal, mesCapitalized }: { fiscal: Fisc
               <td className="py-2.5 text-[var(--text-secondary)]">IGV de tus gastos</td>
               {registrado && registrado.conIgv > 0
                 ? <td className={CELDA_MONTO}>{formatCurrency(Math.round(registrado.credito), { decimals: 0 })}</td>
-                : <td className={CELDA_SIN_DATO}>{!igv ? "—" : igv.gastos === 0 ? "Sin gastos este mes" : `Ningún gasto lo trae (0 de ${igv.gastos})`}</td>}
+                : <td className={CELDA_SIN_DATO}>{igv ? igvDeGastosSinCredito(igv) : "—"}</td>}
             </tr>
           </tbody>
           <tfoot>
@@ -72,7 +72,7 @@ export default function ResumenFiscal({ fiscal, mesCapitalized }: { fiscal: Fisc
                 </td>
               ) : (
                 <td className="pt-3 pb-1 text-right font-semibold text-[var(--text-secondary)]">
-                  {igv ? "Sin IGV registrado" : "No se pudo leer"}
+                  {!igv ? "No se pudo leer" : igv.tipo === "exoneradas" ? "Sin IGV" : "Sin IGV registrado"}
                 </td>
               )}
             </tr>

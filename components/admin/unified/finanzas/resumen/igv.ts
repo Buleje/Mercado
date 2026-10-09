@@ -13,11 +13,17 @@
 export interface IgvDelMes {
   mes: string;
   ventas: { igv: number; comprobantes: number };
-  compras: { igv: number; conIgv: number; gastos: number };
+  /** `exoneradas`: facturas del mes guardadas con IGV 0 (Ley 27037, Amazonía). */
+  compras: { igv: number; conIgv: number; gastos: number; exoneradas?: number };
 }
 
 export type LecturaIgv =
   | { tipo: "sin_registro"; gastos: number }
+  /**
+   * Sin comprobantes emitidos y sin IGV en los gastos, PERO con facturas
+   * exoneradas: «sin registro» sería falso — sí se anotó, y dice S/ 0.
+   */
+  | { tipo: "exoneradas"; facturas: number; gastos: number }
   | {
       tipo: "registrado";
       /** IGV de tus comprobantes (débito). */
@@ -29,13 +35,20 @@ export type LecturaIgv =
       comprobantes: number;
       conIgv: number;
       gastos: number;
+      /** Facturas exoneradas del mes (IGV S/ 0): no suman crédito, pero están. */
+      exoneradas: number;
     };
 
 /** `null` = no se pudo leer (no es lo mismo que «no hay IGV»). */
 export function leerIgv(d: IgvDelMes | null): LecturaIgv | null {
   if (!d) return null;
   const { ventas, compras } = d;
-  if (ventas.comprobantes === 0 && compras.conIgv === 0) return { tipo: "sin_registro", gastos: compras.gastos };
+  const exoneradas = compras.exoneradas ?? 0;
+  if (ventas.comprobantes === 0 && compras.conIgv === 0) {
+    return exoneradas > 0
+      ? { tipo: "exoneradas", facturas: exoneradas, gastos: compras.gastos }
+      : { tipo: "sin_registro", gastos: compras.gastos };
+  }
   return {
     tipo: "registrado",
     debito: ventas.igv,
@@ -44,5 +57,21 @@ export function leerIgv(d: IgvDelMes | null): LecturaIgv | null {
     comprobantes: ventas.comprobantes,
     conIgv: compras.conIgv,
     gastos: compras.gastos,
+    exoneradas,
   };
+}
+
+/** «Tu factura está exonerada» / «Tus 3 facturas están exoneradas». */
+export function textoExoneradas(n: number): string {
+  return n === 1 ? "Tu factura está exonerada" : `Tus ${n} facturas están exoneradas`;
+}
+
+/**
+ * Qué decir en «IGV de tus gastos» cuando no hay crédito que sumar: exoneradas
+ * (sí se anotó, y es S/ 0), sin gastos, o gastos sin el IGV anotado.
+ */
+export function igvDeGastosSinCredito(l: LecturaIgv): string {
+  const exoneradas = l.tipo === "exoneradas" ? l.facturas : l.tipo === "registrado" ? l.exoneradas : 0;
+  if (exoneradas > 0) return textoExoneradas(exoneradas);
+  return l.gastos === 0 ? "Sin gastos este mes" : `Ningún gasto lo trae (0 de ${l.gastos})`;
 }

@@ -9,19 +9,20 @@ import { decodeExpenseDescription, proximoVencimiento, summarizeMeta, yaPagadoEn
 import { findCategory, CATEGORY_COLOR_CLASSES } from "@/lib/expense-categories";
 import { getCategoryIcon } from "@/lib/expense-icons";
 import { formatCurrency } from "@/lib/format";
+import ConfirmarPagoModal from "@/components/admin/compras/historial/ConfirmarPagoModal";
 import type { GastosFijos } from "./use-gastos-fijos";
 
 const RecurringExpenseModal = dynamic(() => import("@/components/admin/pos/RecurringExpenseModal"), { ssr: false });
 
 /**
  * Gastos fijos del negocio (alquiler, servicios, combustible): tarjetas que
- * registran el pago del período con un toque. Rediseño 2026-05-17.
+ * abren «Registrar pago» (monto, fecha, medio y si sale de la caja).
  */
 export default function CompraGastosFijos({ gastos }: { gastos: GastosFijos }) {
   const {
     expenseCatalog, expenseCatalogLoading, expenseCatalogUnico, expenseDuplicados, expenseError,
     showNewExpense, setShowNewExpense, executingTemplateId, deletingTemplateId, pagosHechos, hoyRef,
-    executeExpenseFromTemplate, handleDeleteTemplate, alCrear,
+    porConfirmar, errorPago, pedirPago, cerrarPago, confirmarPago, handleDeleteTemplate, alCrear,
   } = gastos;
   return (
     <>
@@ -132,7 +133,15 @@ export default function CompraGastosFijos({ gastos }: { gastos: GastosFijos }) {
                   >
                     <button
                       type="button"
-                      onClick={() => executeExpenseFromTemplate(tpl)}
+                      onClick={() => pedirPago({
+                        id: tpl.id,
+                        nombre: humanDesc || tpl.category,
+                        amount: Number(tpl.amount ?? 0),
+                        resumenMeta: metaSummary || tpl.category,
+                        textoVencimiento: venc.texto,
+                        pagado: pago.pagado,
+                        metodo: tpl.paymentMethod ?? meta.paymentMethod ?? null,
+                      })}
                       disabled={isExecuting || isDeleting}
                       aria-label={`Registrar gasto ${humanDesc || tpl.category} por ${formatCurrency(tpl.amount)}`}
                       className="w-full text-left p-4 rounded-2xl disabled:cursor-wait focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
@@ -240,6 +249,17 @@ export default function CompraGastosFijos({ gastos }: { gastos: GastosFijos }) {
           )}
         </div>
       </section>
+
+      {/* El mismo «Registrar pago» del Historial; `key` para no arrastrar la
+          fecha o el monto de un fijo al siguiente. */}
+      <ConfirmarPagoModal
+        key={porConfirmar?.id ?? "ninguno"}
+        pago={porConfirmar}
+        guardando={executingTemplateId != null && executingTemplateId === porConfirmar?.id}
+        error={errorPago}
+        onConfirmar={confirmarPago}
+        onClose={cerrarPago}
+      />
 
       {/* Modal nuevo template de gasto (componente completo) */}
       <RecurringExpenseModal

@@ -435,6 +435,8 @@ export const ExpensesDB = {
     id: string,
     patch: Partial<Pick<DbExpense,
       "category" | "description" | "amount" | "date" | "paymentMethod" | "supplierName" | "notes"
+      // El comprobante: llega YA revisado (`corregirComprobante` en la ruta).
+      | "documentType" | "documentNumber" | "supplierRuc" | "igvAmount" | "afectoIgv" | "attachmentUrl"
     >>,
   ): Promise<DbExpense | null> {
     const existing = await prisma.expense.findFirst({ where: { id, tenantId } });
@@ -446,6 +448,12 @@ export const ExpensesDB = {
     if (patch.paymentMethod !== undefined) data.paymentMethod = patch.paymentMethod;
     if (patch.supplierName !== undefined) data.supplierName = patch.supplierName;
     if (patch.notes !== undefined) data.notes = patch.notes;
+    if (patch.documentType !== undefined) data.documentType = patch.documentType;
+    if (patch.documentNumber !== undefined) data.documentNumber = patch.documentNumber;
+    if (patch.supplierRuc !== undefined) data.supplierRuc = patch.supplierRuc;
+    if (patch.igvAmount !== undefined) data.igvAmount = patch.igvAmount;
+    if (patch.afectoIgv !== undefined) data.afectoIgv = patch.afectoIgv;
+    if (patch.attachmentUrl !== undefined) data.attachmentUrl = patch.attachmentUrl;
     if (patch.date !== undefined) {
       const fecha = new Date(patch.date);
       data.date = fecha;
