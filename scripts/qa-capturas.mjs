@@ -18,7 +18,7 @@
  *     [--ls '{"clave":"valor"}']   (siembra localStorage antes de cargar: estados recordados sin recargar) \
  *     (sin QA_BASE prueba :3000 y :3001 y usa el que contesta: el dev reiniciado vuelve a veces en :3001) \
  *     [--candado]   (toma /tmp/bsm-pesado.lock por su cuenta y avisa por stderr cuánto lleva esperándolo;
- *                    NO usar si ya lo corres con `flock /tmp/bsm-pesado.lock node …`: se trabaría a sí mismo)
+ *                    si ya lo corres con `flock /tmp/bsm-pesado.lock node …`, lo detecta y no lo pide otra vez)
  *
  * Pasos (array JSON, una clave por paso; los selectores son de Playwright,
  * p. ej. `text=Guardar`, `role=button[name="Dueños"]`, `#id`):
