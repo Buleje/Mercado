@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import {
   Search,
   Send,
@@ -26,6 +25,7 @@ import {
 } from "./types";
 import { BroadcastModal } from "./BroadcastModal";
 import { NewConversationModal } from "./NewConversationModal";
+import { useAbrirChatPorUrl } from "./use-abrir-chat-por-url";
 import { csrfHeaders } from "@/lib/csrf-client";
 
 const STATUS_TABS: { id: PlatformConvStatus | "all"; label: string }[] = [
@@ -116,42 +116,16 @@ export default function SuperAdminMessenger() {
     }
   }, []);
 
-  // Deep-link desde /superadmin/tenants ("Chatear"): ?c=<conv> abre directo;
-  // ?tenant=<id>&name= hace find-or-create de la conversación. Corre una vez
-  // tras la primera carga de la lista. Brandon 2026-06-14 (bundle B).
-  const searchParams = useSearchParams();
-  const paramHandledRef = useRef(false);
-  useEffect(() => {
-    if (paramHandledRef.current || loadingList) return;
-    const c = searchParams.get("c");
-    const tenant = searchParams.get("tenant");
-    const name = searchParams.get("name");
-    if (c) {
-      paramHandledRef.current = true;
-      void openConversation(c);
-    } else if (tenant) {
-      paramHandledRef.current = true;
-      const existing = conversations.find((cv) => cv.tenantId === tenant);
-      if (existing) {
-        void openConversation(existing.id);
-      } else {
-        fetch("/api/superadmin/chat/conversations", {
-          method: "POST",
-          credentials: "include",
-          headers: csrfHeaders({ "Content-Type": "application/json" }),
-          body: JSON.stringify({ tenantId: tenant, tenantName: name ?? undefined }),
-        })
-          .then((r) => (r.ok ? r.json() : null))
-          .then((d) => {
-            if (d?.conversation) {
-              void loadConversations();
-              void openConversation(d.conversation.id);
-            }
-          })
-          .catch(() => setError("No se pudo abrir el chat"));
-      }
-    }
-  }, [searchParams, loadingList, conversations, openConversation, loadConversations]);
+  // Enlaces «Chatear» / «Contactar con este mensaje» (?c, ?tenant, ?msg).
+  useAbrirChatPorUrl({
+    listaCargada: !loadingList,
+    statusTab,
+    setStatusTab,
+    setConversations,
+    openConversation,
+    setText,
+    setError,
+  });
 
   useEffect(() => {
     threadEndRef.current?.scrollIntoView({ behavior: "smooth" });

@@ -433,6 +433,31 @@ export class PlatformChatDB {
     return this.getMessages(conversationId, { includeNotes: false });
   }
 
+  /**
+   * Id O slug → el negocio real. Los enlaces «Contactar» de la ficha 360,
+   * Errores, Rescate, Uso… pasan el slug; guardar eso como tenantId creaba
+   * una conversación que el negocio nunca ve (SUPMKT-1, 2026-10-09).
+   */
+  static async resolverNegocio(ref: string): Promise<{ id: string; name: string } | null> {
+    const rows = await prisma.$queryRawUnsafe<{ id: string; name: string }[]>(
+      `SELECT id, name FROM "Tenant" WHERE id = $1 OR slug = $1 ORDER BY (id = $1) DESC LIMIT 1`,
+      ref,
+    );
+    return rows[0] ?? null;
+  }
+
+  /** La conversación de siempre del negocio: la abierta más reciente; si no hay, la cerrada. Archivadas no. */
+  static async conversacionVigente(tenantId: string): Promise<DbPlatformConversation | null> {
+    const rows = await prisma.$queryRawUnsafe<RawConv[]>(
+      `SELECT ${CONV_COLS} FROM "PlatformConversation"
+        WHERE "tenantId" = $1 AND status <> 'archived'
+        ORDER BY (status = 'open') DESC, "lastMessageAt" DESC NULLS LAST, "createdAt" DESC
+        LIMIT 1`,
+      tenantId,
+    );
+    return rows[0] ? mapConv(rows[0]) : null;
+  }
+
   // ──────────────────────────────────────────────────────────────────────────
 
   private static async resolveTenantName(tenantId: string): Promise<string> {

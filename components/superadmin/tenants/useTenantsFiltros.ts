@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { XCircle, Clock, AlertTriangle } from "@buleje/design-system/icons";
 import type { TenantRow, PlanId } from "@/lib/superadmin-types";
+import { coincideNegocio } from "@/lib/superadmin/buscar-negocio";
 import type { SortField, SortDir } from "@/components/superadmin/tenants/types";
 import type { AlertItemShape } from "@/components/superadmin/tenants/TenantsAlertsBanner";
 
@@ -31,10 +32,8 @@ export function useTenantsFiltros(tenants: TenantRow[]) {
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
   const filtered = tenants.filter((t) => {
-    if (search) {
-      const q = search.toLowerCase();
-      if (!t.name.toLowerCase().includes(q) && !t.slug.toLowerCase().includes(q) && !(t.ownerEmail ?? "").toLowerCase().includes(q)) return false;
-    }
+    // Nombre, código, correo, teléfono (+51, espacios, guiones) o RUC.
+    if (search && !coincideNegocio(t, search)) return false;
     if (filterPlan !== "all" && t.plan !== filterPlan) return false;
     if (filterActive === "active" && !t.active) return false;
     if (filterActive === "inactive" && t.active) return false;

@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Plus, X, Loader2, Search, Building2 } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { aNegocioBuscable, coincideNegocio, type NegocioBuscable } from "@/lib/superadmin/buscar-negocio";
 
-type TenantOpt = { id: string; name: string; slug: string };
+type TenantOpt = NegocioBuscable & { id: string };
 
 export function NewConversationModal({ onClose, onCreated }: { onClose: () => void; onCreated: (id: string) => void }) {
   const [tenants, setTenants] = useState<TenantOpt[]>([]);
@@ -26,19 +27,14 @@ export function NewConversationModal({ onClose, onCreated }: { onClose: () => vo
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         const rows = (d?.tenants ?? d ?? []) as Array<Record<string, unknown>>;
-        setTenants(
-          rows
-            .map((t) => ({ id: String(t.id ?? ""), name: String(t.name ?? t.slug ?? ""), slug: String(t.slug ?? "") }))
-            .filter((t) => t.id),
-        );
+        setTenants(rows.map(aNegocioBuscable).filter((t) => t.id));
       })
       .catch(() => setErr("No se pudieron cargar los tenants"));
   }, []);
 
   const filtered = useMemo(() => {
-    const s = q.trim().toLowerCase();
-    if (!s) return tenants.slice(0, 50);
-    return tenants.filter((t) => t.name.toLowerCase().includes(s) || t.slug.toLowerCase().includes(s)).slice(0, 50);
+    if (!q.trim()) return tenants.slice(0, 50);
+    return tenants.filter((t) => coincideNegocio(t, q)).slice(0, 50);
   }, [tenants, q]);
 
   const handleCreate = async () => {
@@ -81,7 +77,7 @@ export function NewConversationModal({ onClose, onCreated }: { onClose: () => vo
             <>
               <div className="flex items-center gap-2 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 focus-within:border-[var(--accent)]">
                 <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
-                <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar tienda…" className="w-full bg-transparent text-sm text-[var(--text-primary)] outline-none" />
+                <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Busca por nombre, teléfono o RUC…" className="w-full bg-transparent text-sm text-[var(--text-primary)] outline-none" />
               </div>
               <div className="max-h-64 overflow-y-auto rounded-xl border border-[var(--rule-base)]">
                 {filtered.length === 0 ? (

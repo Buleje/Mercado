@@ -73,8 +73,8 @@ export function TenantsToolbar({
           ref={searchInputRef}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar por nombre, slug o email…"
-          aria-label="Buscar tenants (atajo: tecla /)"
+          placeholder="Busca por nombre, correo, teléfono o RUC…"
+          aria-label="Buscar negocios por nombre, correo, teléfono o RUC (atajo: tecla /)"
           className="w-full h-10 pl-10 pr-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] placeholder:font-normal focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 transition-colors"
         />
         <kbd
