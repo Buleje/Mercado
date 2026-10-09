@@ -204,7 +204,7 @@ export const VERTICAL_REGISTRY: Record<Industry, VerticalConfig> = {
       // "fiados" ya no es entrada propia del sidebar (colapsada dentro de
       // FinanzasModule, auditoría 2026-08-02) — el destacado apunta a "plata".
       featured: ["cotizaciones", "guias-remision", "contratos", "plata", "compras"],
-      hidden: ["delivery-partners", "delivery-live", "marketplace-chat", "metas-logros"],
+      hidden: ["delivery-partners", "delivery-live", "marketplace-chat"],
       comingSoon: ["pietaje", "calculadora-cubicaje", "lotes-madera"],
     },
     branding: {
