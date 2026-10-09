@@ -1,4 +1,4 @@
-import type { FormEvent } from "react";
+import { useEffect, useRef, type FormEvent } from "react";
 import { toast } from "sonner";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useInventarioEstado } from "@/components/admin/inventario/hooks/use-inventario-estado";
@@ -7,6 +7,9 @@ import { useInventarioImagenes } from "@/components/admin/inventario/hooks/use-i
 import { useInventarioMasivo } from "@/components/admin/inventario/hooks/use-inventario-masivo";
 import { useInventarioPedidos } from "@/components/admin/inventario/hooks/use-inventario-pedidos";
 import { useInventarioFiltros } from "@/components/admin/inventario/hooks/use-inventario-filtros";
+import type { GuardarCosto } from "@/components/admin/inventario/CostoEnFila";
+import { formatCurrency } from "@/lib/format";
+import { centimosDelCosto } from "@/lib/inventario/costo-en-fila";
 
 /** Dar de alta un producto y seleccionar todo lo filtrado (usan `formCategories` y `filteredProducts`, por eso van al final). Parte de `useInventario`. */
 export function useInventarioGuardar(previo: ReturnType<typeof useInventarioEstado> & ReturnType<typeof useInventarioCarga> & ReturnType<typeof useInventarioImagenes> & ReturnType<typeof useInventarioMasivo> & ReturnType<typeof useInventarioPedidos> & ReturnType<typeof useInventarioFiltros>) {
@@ -14,6 +17,7 @@ export function useInventarioGuardar(previo: ReturnType<typeof useInventarioEsta
     saving, setSaving, setShowAdd, EMPTY_ADD, addForm, setAddForm, addVariants, setAddVariants,
     addModifierGroups, setAddModifierGroups, addSeo, setAddSeo, addGallery, setAddGallery, addSpecs,
     addRich, selectedIds, setSelectedIds, load, formCategories, filteredProducts,
+    products, setProducts, showUndo, showExtendedCols, faltaDato,
   } = previo;
   const addProduct = async (e: FormEvent) => {
     e.preventDefault();
@@ -180,7 +184,62 @@ export function useInventarioGuardar(previo: ReturnType<typeof useInventarioEsta
       setSelectedIds(new Set(filteredProducts.map(p => p.id)));
     }
   };
+  // Costo en la fila (FAC-2): la misma ruta que la ventana de editar, con
+  // SÓLO el costo. Soles con 2 decimales salidos de céntimos enteros; null =
+  // quitar el costo (nunca 0). Al volver, el producto se actualiza en la
+  // lista: el filtro «Sin costo» y sus cifras se recalculan sin recargar.
+  const ponerCosto = async (productId: number, soles: number | null): Promise<string | null> => {
+    try {
+      const res = await fetch(`/api/products/${productId}`, {
+        method: "PUT",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ costPrice: soles }),
+      });
+      const json = (await res.json().catch(() => null)) as { error?: string; costPrice?: number | string | null } | null;
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) return "No tienes permiso para cambiar costos";
+        return json?.error || `No se guardó (HTTP ${res.status})`;
+      }
+      const guardado = json?.costPrice != null && Number(json.costPrice) > 0 ? Number(json.costPrice) : undefined;
+      setProducts((prev) => prev.map((x) => (x.id === productId ? { ...x, costPrice: guardado } : x)));
+      return null;
+    } catch (err) {
+      console.error("[Inventario] guardar costo falló", err);
+      return "Sin conexión: reintenta";
+    }
+  };
+  // La lista al momento del clic en «Deshacer» (el cierre de guardarCosto ve
+  // la de antes de guardar).
+  const productosAhora = useRef(products);
+  useEffect(() => { productosAhora.current = products; }, [products]);
+  const guardarCosto: GuardarCosto = async (productId, centimos) => {
+    const p = products.find((x) => x.id === productId);
+    if (!p) return "Ese producto ya no está en la lista";
+    const antes = p.costPrice != null && p.costPrice > 0 ? p.costPrice : null;
+    const soles = centimos == null ? null : centimos / 100;
+    const fallo = await ponerCosto(productId, soles);
+    if (fallo) return fallo;
+    showUndo({
+      message: soles == null ? `${p.name}: costo quitado` : `${p.name}: costo ${formatCurrency(soles)}`,
+      detail: antes != null ? `Antes: ${formatCurrency(antes)}` : undefined,
+      onUndo: () => {
+        // Si el costo ya no es el que puso ESTE guardado (lo corregiste otra
+        // vez, o desde la ventana de editar), deshacer pisaría el nuevo.
+        const actual = productosAhora.current.find((x) => x.id === productId);
+        if (!actual || centimosDelCosto(actual.costPrice) !== centimos) {
+          toast.info(`${p.name}: el costo ya cambió; no se deshizo`);
+          return;
+        }
+        void ponerCosto(productId, antes).then((e) => {
+          if (e) toast.error(`No se pudo deshacer: ${e}`);
+        });
+      },
+    });
+    return null;
+  };
+  /** La columna Costo se ve con «Más columnas» o cuando el filtro pide completar costos. */
+  const verColumnaCosto = showExtendedCols || faltaDato === "sin-costo" || faltaDato === "incompleto";
   return {
-    addProduct, toggleSelectAll,
+    addProduct, toggleSelectAll, guardarCosto, verColumnaCosto,
   };
 }

@@ -243,7 +243,8 @@ export const ProductsDB = {
       where: { id: { in: ids }, tenantId, deletedAt: null },
     });
   },
-  async upsert(product: DbProduct): Promise<DbProduct> {
+  /** `costPrice: null` = quitar el costo (undefined = no tocarlo). */
+  async upsert(product: Omit<DbProduct, "costPrice"> & { costPrice?: number | null }): Promise<DbProduct> {
     const d = {
       name: product.name, category: product.category, price: product.price,
       costPrice: product.costPrice, image: product.image,
@@ -275,7 +276,10 @@ export const ProductsDB = {
     });
     // PERF 2026-05-24: invalidar el cache de getAll (cacheTag products) tras
     // el write — sin esto /tienda y /api/products sirven datos stale hasta 5min.
-    revalidateTag(`tenant:${product.tenantId}:products`, "max");
+    // `{ expire: 0 }` y no `"max"`: con "max" la PRIMERA lectura tras el write
+    // todavía devuelve la lista vieja (stale-while-revalidate); el costo viejo
+    // entraba al modal de editar y, al guardarlo, se reescribía (gastos, 09-10).
+    revalidateTag(`tenant:${product.tenantId}:products`, { expire: 0 });
     return mapProduct(row);
   },
   /**

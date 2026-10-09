@@ -14,7 +14,7 @@ import InventarioFilasTabla from "@/components/admin/inventario/InventarioFilasT
 export default function InventarioTabla({ inv }: { inv: Inventario }) {
   const {
     products, catFilter, setCatFilter, estadoFiltro, setEstadoFiltro, stockRango, setStockRango,
-    vencRango, setVencRango, viewMode, selectedIds, showExtendedCols, orden, totalProducts,
+    vencRango, setVencRango, viewMode, selectedIds, showExtendedCols, orden, totalProducts, verColumnaCosto,
     activeProducts, dynamicCategories, filteredProducts, pgProducts, toggleSelectAll,
   } = inv;
   return (
@@ -57,7 +57,7 @@ export default function InventarioTabla({ inv }: { inv: Inventario }) {
                         <FiltroColumnaRango label="Stock" paso={1} valor={stockRango} onChange={(r) => setStockRango(r as Rango<number>)} />
                       </th>
                     ),
-                    costoProm: <th data-col="costoProm" className={cn(!showExtendedCols && "hidden")} title="Basado en las ultimas compras">Costo Prom.</th>,
+                    costoProm: <th data-col="costoProm" className={cn(!verColumnaCosto && "hidden")} title="Lo que te cuesta cada unidad; con él sale el margen. Enter guarda, Esc cancela">Costo</th>,
                     rotacion: <th data-col="rotacion" className={cn(!showExtendedCols && "hidden")}>Rotacion</th>,
                     cambio30d: <th data-col="cambio30d" className={cn(!showExtendedCols && "hidden")}>Cambio 30d</th>,
                     vence: (

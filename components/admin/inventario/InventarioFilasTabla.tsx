@@ -10,6 +10,7 @@ import PriceSparkline from "@/components/admin/inventario/PriceSparkline";
 import ImageWarningBadge from "@/components/admin/inventario/ImageWarningBadge";
 import { formatCurrency, formatDateNumeric } from "@/lib/format";
 import { EnOrden } from "@/components/admin/shared/columnas-ordenables";
+import CostoEnFila from "@/components/admin/inventario/CostoEnFila";
 import type { Inventario } from "@/components/admin/inventario/hooks/use-inventario";
 
 /** Filas de la tabla de productos. Pieza de InventoryTab: recibe `useInventario` entero. */
@@ -18,7 +19,7 @@ export default function InventarioFilasTabla({ inv }: { inv: Inventario }) {
     movements, setShowAdd, EMPTY_ADD, setAddForm, selectedIds, autoReorderConfigs, setShowAutoReorder,
     setArThreshold, setArQty, setShowQRProduct, showExtendedCols, orden, setModifiersProduct,
     setCtxMenu, openEditModal, toggleActive, deleteProduct, toggleSelect, removeAutoReorder,
-    isLowStock, isExpiringSoon, topRentables, catLabelOf, expiryOf, pgProducts,
+    isLowStock, isExpiringSoon, topRentables, catLabelOf, expiryOf, pgProducts, guardarCosto, verColumnaCosto,
   } = inv;
   return (
     <>
@@ -126,13 +127,14 @@ export default function InventarioFilasTabla({ inv }: { inv: Inventario }) {
                     />
                   </td>
                 ),
-                /* Mejora 6R2: Costo promedio ponderado */
+                /* Costo editable en la fila (FAC-2): sin costo = casilla; con
+                   costo = la cifra, un toque la corrige. Los servicios no
+                   llevan costo (el filtro «Sin costo» tampoco los cuenta). */
                 costoProm: (
-                  <td className={cn(!showExtendedCols && "hidden")}>
-                    {p.costPrice != null && p.costPrice > 0
-                      ? <span className="font-mono text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)]" title="Basado en las ultimas compras">{formatCurrency(Number(p.costPrice))}</span>
-                      : <span className="text-[var(--text-tertiary)] dark:text-muted">—</span>
-                    }
+                  <td className={cn(!verColumnaCosto && "hidden")}>
+                    {p.type === "service"
+                      ? <span className="text-[var(--text-tertiary)] dark:text-muted">—</span>
+                      : <CostoEnFila productId={p.id} nombre={p.name} costPrice={p.costPrice} guardar={guardarCosto} />}
                   </td>
                 ),
                 /* Mejora 6: Rotation indicator */

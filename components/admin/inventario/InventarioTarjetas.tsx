@@ -10,6 +10,7 @@ import ImageWarningBadge from "@/components/admin/inventario/ImageWarningBadge";
 import { categories } from "@/data/products";
 import { Paginator } from "@/hooks/use-pagination";
 import { formatCurrency } from "@/lib/format";
+import CostoEnFila from "@/components/admin/inventario/CostoEnFila";
 import { ChipsDeFiltros } from "@/components/admin/shared/filtros-columna";
 import type { Inventario } from "@/components/admin/inventario/hooks/use-inventario";
 
@@ -18,7 +19,7 @@ export default function InventarioTarjetas({ inv }: { inv: Inventario }) {
   const {
     products, setCatFilter, setEstadoFiltro, setStockRango, setVencRango, viewMode, setKardexProduct,
     setModifiersProduct, openEditModal, toggleActive, deleteProduct, isLowStock, topRentables,
-    filteredProducts, chipsDeColumna, quitarChip, pgProducts,
+    filteredProducts, chipsDeColumna, quitarChip, pgProducts, guardarCosto, verColumnaCosto,
   } = inv;
   return (
     <>
@@ -86,7 +87,11 @@ export default function InventarioTarjetas({ inv }: { inv: Inventario }) {
                   <p className="mt-0.5 truncate text-xs text-[var(--text-tertiary)] dark:text-muted">{cat?.label ?? p.category} · {p.unit}</p>
                   <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                     <span className="text-base font-extrabold text-primary">{formatCurrency(Number(p.price))}</span>
-                    {p.costPrice && <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">costo {formatCurrency(Number(p.costPrice))}</span>}
+                    {verColumnaCosto && p.type !== "service" ? (
+                      <span className="inline-flex items-center gap-1.5 text-xs text-[var(--text-tertiary)] dark:text-muted">
+                        costo <CostoEnFila productId={p.id} nombre={p.name} costPrice={p.costPrice} guardar={guardarCosto} />
+                      </span>
+                    ) : p.costPrice ? <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">costo {formatCurrency(Number(p.costPrice))}</span> : null}
                     {p.badge && <span className="inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">{p.badge}</span>}
                   </div>
                 </div>

@@ -13,7 +13,10 @@ const ProductUpdateSchema = z.object({
   name: z.string().min(1).max(150).optional(),
   category: z.string().min(1).max(100).optional(),
   price: z.number().positive().optional(),
-  costPrice: z.number().min(0).optional().nullable(),
+  // Costo en soles redondeado a céntimos (la columna es Decimal(12,2)). Un 0
+  // no es un costo: se ignora abajo para no pisar el que hay (la OC recibida
+  // manda stock + costo juntos y un 400 perdería el stock); quitar = null.
+  costPrice: z.number().min(0).transform((v) => Math.round(v * 100) / 100).optional().nullable(),
   // FIX 2026-05: bumped 500 → 500_000 para soportar dataURL WebP comprimida.
   // El processImage() del cliente garantiza ≤120KB (~160_000 chars base64).
   // 500K da margen para imágenes grandes pegadas como URL externa también.
@@ -109,7 +112,9 @@ async function handleUpdate(req: NextRequest, ctx: RouteCtx) {
       ...existing,
       ...body,
       id: numId,
-      costPrice: body.costPrice ?? existing.costPrice,
+      // null explícito = quitar el costo (casilla vacía en la fila del
+      // inventario); sin enviar o 0 = conservar. Con `??` el null no limpiaba.
+      costPrice: "costPrice" in body && body.costPrice !== 0 ? body.costPrice : existing.costPrice,
       badge: body.badge ?? existing.badge,
       barcode: body.barcode ?? existing.barcode,
       // Brandon 2026-06-06: distinguir null (stock ILIMITADO — el admin lo
