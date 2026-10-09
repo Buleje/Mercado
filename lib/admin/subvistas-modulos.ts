@@ -105,6 +105,7 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
     { key: "ordenes-compra", label: "Ordenes", hint: "Órdenes de compra emitidas" },
     { key: "proveedores", label: "Proveedores", hint: "A quién le compras" },
     { key: "recepcion", label: "Recepcion", hint: "Recibir la mercadería que llegó" },
+    { key: "cuentas-por-pagar", label: "Por pagar", hint: "Lo que le debes a cada proveedor y cuándo vence" },
     { key: "comparador", label: "Comparador", hint: "Qué proveedor conviene por producto" },
     { key: "devoluciones", label: "Devoluciones", hint: "Devolver al proveedor" },
   ],

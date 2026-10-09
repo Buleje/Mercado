@@ -1,376 +1,178 @@
-﻿"use client";
+"use client";
 
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import { CardTitle, StatCard } from "@buleje/design-system";
-import { csrfHeaders } from "@/lib/csrf-client";
-
-import { useState, useEffect, useCallback, useId, useRef, type FormEvent } from "react";
-import {
-  Trash2, Plus, ChevronDown, ChevronUp, X,
-  DollarSign, CreditCard, Check,
-} from "@buleje/design-system/icons";
-import type { DbPayable, DbSupplier, PaymentMethod } from "@/lib/jsondb";
-import { cn } from "@/lib/utils";
-import { useScrollLock } from "@/hooks/use-scroll-lock";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
+import { useId, useMemo, useState } from "react";
+import { SectionTitle } from "@buleje/design-system";
+import { CreditCard, Download, MoreHorizontal, Plus, RefreshCw, X } from "@buleje/design-system/icons";
+import ActionMenu from "@/components/admin/shared/action-menu";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import TableSkeleton from "@/components/admin/shared/TableSkeleton";
-import StatusBadge from "./shared/StatusBadge";
-import { Field } from "@/components/admin/shared/Field";
-import { formatCurrency, formatDate } from "@/lib/format";
-const PAY_STATUS_LABELS = { pendiente: "Pendiente", parcial: "Parcial", pagado: "Pagado" } as const;
-const PAY_STATUS_VARIANT: Record<"pendiente" | "parcial" | "pagado", "warning" | "info" | "success"> = {
-  pendiente: "warning",
-  parcial: "info",
-  pagado: "success",
-};
-const METHOD_LABELS: Record<PaymentMethod, string> = {
-  efectivo: "Efectivo", yape: "Yape", plin: "Plin", transferencia: "Transferencia",
-};
+import { BotonIndicadores } from "@/components/admin/arqueo/KpisCuadre";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { useLocalStorage } from "@/hooks/use-local-storage";
+import { formatCurrency } from "@/lib/format";
+import { cn, exportToCSV, limaDateKey } from "@/lib/utils";
+import KpisPorPagar from "@/components/admin/cuentas-por-pagar/KpisPorPagar";
+import NuevaCuentaModal from "@/components/admin/cuentas-por-pagar/NuevaCuentaModal";
+import TablaCuentas, { type Abierto } from "@/components/admin/cuentas-por-pagar/TablaCuentas";
+import { useCuentasPorPagar } from "@/components/admin/cuentas-por-pagar/use-cuentas-por-pagar";
+import {
+  diaDeVencimiento, estaPagada, filtrar, ordenar, proveedoresConCuentas, resumir, saldo, type FiltroEstado,
+} from "@/components/admin/cuentas-por-pagar/resumen-cuentas";
 
-// Extrae un mensaje legible de una respuesta fallida (evita el fallo silencioso).
-async function readError(res: Response): Promise<string> {
-  try {
-    const j = await res.json();
-    if (typeof j?.error === "string") return j.error;
-  } catch { /* sin cuerpo JSON */ }
-  return `No se pudo completar la operación (${res.status}).`;
-}
+const ESTADOS: { id: FiltroEstado; label: string }[] = [
+  { id: "pendientes", label: "Por pagar" },
+  { id: "pagadas", label: "Pagadas" },
+  { id: "todas", label: "Todas" },
+];
 
+/**
+ * Cuentas por pagar a proveedores: a quién le debes, cuánto, cuándo vence y
+ * pagar. Vive en Compras › Por pagar y en Facturación › Cuentas x Pagar.
+ */
 export default function PayablesTab() {
-  const [payables, setPayables] = useState<DbPayable[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [suppliers, setSuppliers] = useState<DbSupplier[]>([]);
-  const [expanded, setExpanded] = useState<string | null>(null);
-  const [showAdd, setShowAdd] = useState(false);
-  const [showPayment, setShowPayment] = useState<string | null>(null);
-  const [filterSupplier, setFilterSupplier] = useState("");
-  useScrollLock(showAdd);
+  const { cuentas, proveedores, loading, error, setError, saving, load, crear, pagar, eliminar } = useCuentasPorPagar();
   const { confirm } = useConfirm();
-  const addTitleId = useId();
-  const addPanelRef = useRef<HTMLDivElement>(null);
-  useModalAccesible(addPanelRef, { onCerrar: () => setShowAdd(false), activo: showAdd });
-  const ventanaAdd = useVentanaDeModal(showAdd, { ref: addPanelRef, aplicarTranslate: true, claveMemoria: "cuentas-por-pagar-nueva" });
+  const [kpisAbiertos, setKpisAbiertos] = useLocalStorage<boolean>("compras:por-pagar:kpis-abiertos", true);
+  const [estado, setEstado] = useState<FiltroEstado>("pendientes");
+  const [proveedorId, setProveedorId] = useState("");
+  const [abierto, setAbierto] = useState<Abierto>(null);
+  const [nueva, setNueva] = useState(false);
+  const [aviso, setAviso] = useState<{ texto: string; tono: "ok" | "aviso" } | null>(null);
+  const kpisId = useId();
+  const hoy = limaDateKey();
 
-  // Add form
-  const [addForm, setAddForm] = useState({ supplierId: "", description: "", amount: "", dueDate: "" });
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const resumen = useMemo(() => resumir(cuentas, hoy), [cuentas, hoy]);
+  const porProveedor = useMemo(() => proveedoresConCuentas(cuentas), [cuentas]);
+  const visibles = useMemo(() => ordenar(filtrar(cuentas, estado, proveedorId)), [cuentas, estado, proveedorId]);
+  const conteo = useMemo(() => {
+    const deProveedor = filtrar(cuentas, "todas", proveedorId);
+    const pagadas = deProveedor.filter(estaPagada).length;
+    return { pendientes: deProveedor.length - pagadas, pagadas, todas: deProveedor.length };
+  }, [cuentas, proveedorId]);
+  const elegido = porProveedor.find((p) => p.id === proveedorId);
 
-  // Payment form
-  const [payForm, setPayForm] = useState({ amount: "", method: "efectivo" as PaymentMethod, reference: "" });
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [payRes, supRes] = await Promise.all([
-        fetch("/api/payables"),
-        fetch("/api/suppliers"),
-      ]);
-      if (payRes.ok) setPayables(await payRes.json());
-      if (supRes.ok) setSuppliers(await supRes.json());
-    } catch {}
-    setLoading(false);
-  }, []);
-
-   
-  useEffect(() => { load(); }, [load]);
-
-  const addPayable = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!addForm.supplierId || !addForm.amount) return;
-    const sup = suppliers.find(s => s.id === addForm.supplierId);
-    setSaving(true);
-    setError(null);
-    const res = await fetch("/api/payables", {
-      method: "POST",
-      headers: csrfHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({
-        supplierId: addForm.supplierId,
-        supplierName: sup?.name || "",
-        description: addForm.description,
-        amount: Number(addForm.amount),
-        dueDate: addForm.dueDate ? new Date(addForm.dueDate).toISOString() : new Date().toISOString(),
-      }),
-    });
-    setSaving(false);
-    if (!res.ok) { setError(await readError(res)); return; }
-    setShowAdd(false);
-    setAddForm({ supplierId: "", description: "", amount: "", dueDate: "" });
-    load();
+  const borrar = async (id: string) => {
+    if (!(await confirm({ title: "¿Eliminar esta cuenta por pagar?", description: "Se borra con sus pagos registrados.", intent: "danger", confirmLabel: "Sí, eliminar" }))) return;
+    await eliminar(id);
   };
 
-  const registerPayment = async (e: FormEvent, payableId: string) => {
-    e.preventDefault();
-    if (!payForm.amount || Number(payForm.amount) <= 0) return;
-    setSaving(true);
-    setError(null);
-    const res = await fetch(`/api/payables/${payableId}/payments`, {
-      method: "POST",
-      headers: csrfHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({
-        amount: Number(payForm.amount),
-        method: payForm.method,
-        reference: payForm.reference || undefined,
-      }),
-    });
-    setSaving(false);
-    if (!res.ok) { setError(await readError(res)); return; }
-    setShowPayment(null);
-    setPayForm({ amount: "", method: "efectivo", reference: "" });
-    load();
-  };
-
-  const deletePayable = async (id: string) => {
-    if (!(await confirm({ title: "¿Eliminar esta cuenta por pagar?", intent: "danger", confirmLabel: "Sí, eliminar" }))) return;
-    setError(null);
-    const res = await fetch(`/api/payables/${id}`, { method: "DELETE", headers: csrfHeaders() });
-    if (!res.ok) { setError(await readError(res)); return; }
-    load();
-  };
-
-  const filtered = filterSupplier
-    ? payables.filter(p => p.supplierId === filterSupplier)
-    : payables;
-
-  const totalDebt = filtered.reduce((s, p) => s + (p.amount - p.paidAmount), 0);
-  const totalPaid = filtered.reduce((s, p) => s + p.paidAmount, 0);
-
-  // Summary by supplier
-  const supplierSummary = suppliers.map(sup => {
-    const debts = payables.filter(p => p.supplierId === sup.id);
-    const total = debts.reduce((s, p) => s + p.amount, 0);
-    const paid = debts.reduce((s, p) => s + p.paidAmount, 0);
-    return { ...sup, totalDebt: total, totalPaid: paid, pending: total - paid, count: debts.length };
-  }).filter(s => s.count > 0);
+  const descargar = () => exportToCSV(ordenar(cuentas).map((c) => ({
+    proveedor: c.supplierName, concepto: c.description, total: c.amount, pagado: c.paidAmount,
+    falta: saldo(c), vence: diaDeVencimiento(c.dueDate), estado: c.status, orden: c.purchaseOrderId ?? "",
+  })), "cuentas-por-pagar");
 
   return (
     <div className="space-y-4">
-      {/* Header estándar (antes: kicker + PageTitle + subtítulo a mano). */}
-      <AdminModuleHeader
-        as="h2"
-        eyebrow="Finanzas · Obligaciones"
-        title="Cuentas por pagar"
-        description={`${filtered.length} cuentas activas con proveedores`}
-        icon={CreditCard}
-      >
-        <button onClick={() => setShowAdd(v => !v)} className="flex items-center gap-1.5 text-sm font-semibold text-white bg-primary hover:bg-primary-dark px-4 min-h-10 rounded-xl transition-colors">
-          <Plus className="h-4 w-4" /> Nueva cuenta
-        </button>
-      </AdminModuleHeader>
+      <div className="flex flex-wrap items-center gap-2">
+        <SectionTitle className="text-[var(--text-primary)]">Cuentas por pagar</SectionTitle>
+        <InfoTip
+          title="Cuentas por pagar"
+          what="Lo que le debes a cada proveedor: las compras a crédito crean su cuenta sola y también puedes cargar una a mano. Arriba van las vencidas y las que vencen primero."
+          affects="Al recibir con productos dañados, vencidos o faltantes, la cuenta de esa orden baja sola. Si pagas en efectivo puedes marcar «Sale de la caja» y el pago queda como egreso de la caja abierta."
+          example="Orden de S/ 140 a 15 días con Distribuidora Ucayali: vence el jueves 23/10; si pagas S/ 100 hoy te faltan S/ 40."
+        />
+        <div className="ml-auto flex items-center gap-2">
+          <BotonIndicadores abierto={kpisAbiertos} onAlternar={() => setKpisAbiertos((v) => !v)} controla={kpisId} />
+          <button type="button" onClick={() => setNueva(true)} className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-primary px-3 text-sm font-semibold text-white transition-colors hover:bg-primary-dark sm:px-4">
+            <Plus className="h-4 w-4" aria-hidden /> <span className="max-sm:sr-only">Nueva cuenta</span>
+          </button>
+          <ActionMenu
+            label="Más acciones"
+            soloIcono
+            icon={MoreHorizontal}
+            actions={[
+              { id: "refrescar", label: "Actualizar", icon: RefreshCw, onSelect: () => void load(), busy: loading },
+              { id: "csv", label: "Descargar CSV", hint: "Todas las cuentas", icon: Download, onSelect: descargar, disabled: cuentas.length === 0 },
+            ]}
+          />
+        </div>
+      </div>
 
-      {/* Error banner — antes las mutaciones fallaban en silencio */}
-      {error && (
-        <div className="flex items-start justify-between gap-3 rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-50)] dark:bg-red-950/20 px-4 py-3">
-          <p className="text-sm font-semibold text-[var(--data-error-500)]">{error}</p>
-          <button onClick={() => setError(null)} className="shrink-0 text-[var(--data-error-500)] hover:opacity-70" aria-label="Cerrar aviso">
-            <X className="h-4 w-4" />
+      {(error || aviso) && (
+        <div
+          role={error ? "alert" : "status"}
+          className={cn(
+            "flex items-start justify-between gap-3 rounded-xl border px-4 py-3 text-sm font-semibold",
+            error ? "border-[var(--data-error-500)]/40 bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]"
+              : aviso?.tono === "aviso" ? "border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]"
+              : "border-[var(--accent)]/40 bg-[var(--accent-soft)] text-[var(--text-primary)]",
+          )}
+        >
+          <p>{error ?? aviso?.texto}</p>
+          <button type="button" onClick={() => { setError(null); setAviso(null); }} className="shrink-0 hover:opacity-70" aria-label="Cerrar aviso">
+            <X className="h-4 w-4" aria-hidden />
           </button>
         </div>
       )}
 
-      {/* KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard label="Por pagar" value={`${formatCurrency(totalDebt)}`} icon={DollarSign} emphasis={totalDebt > 0 ? "warning" : "neutral"} />
-        <StatCard label="Pagado" value={`${formatCurrency(totalPaid)}`} icon={Check} emphasis="success" />
-        <StatCard label="Cuentas activas" value={filtered.length} icon={CreditCard} />
-      </div>
+      {!loading && cuentas.length > 0 && <KpisPorPagar r={resumen} abierto={kpisAbiertos} id={kpisId} />}
 
-      {/* Supplier summary cards */}
-      {supplierSummary.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {supplierSummary.map(s => (
-            <button
-              key={s.id}
-              onClick={() => setFilterSupplier(filterSupplier === s.id ? "" : s.id)}
-              className={cn(
-                "text-left p-3 rounded-xl border transition-all",
-                filterSupplier === s.id
-                  ? "border-primary bg-primary/5 ring-1 ring-primary"
-                  : "border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-gray-300"
-              )}
-            >
-              <p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm truncate">{s.name}</p>
-              <div className="flex flex-wrap items-center gap-3 mt-1">
-                <span className="text-xs text-[var(--data-error-500)] font-bold">Debe: {formatCurrency(Number(s.pending))}</span>
-                <span className="text-xs text-[var(--data-success-500)]">Pagado: {formatCurrency(Number(s.totalPaid))}</span>
-              </div>
-              <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">{s.count} factura{s.count !== 1 ? "s" : ""}</p>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Payables list */}
       {loading ? (
-        <TableSkeleton rows={4} cols={4} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl" />
-      ) : filtered.length === 0 ? (
+        <TableSkeleton rows={4} cols={4} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]" />
+      ) : cuentas.length === 0 ? (
         <EmptyState
           icon={CreditCard}
-          title={filterSupplier ? "Sin cuentas para este proveedor" : "Sin cuentas por pagar"}
-          description={filterSupplier ? "Este proveedor no tiene deudas registradas." : "No tienes deudas con proveedores. ¡Excelente!"}
-          className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl"
+          title="No le debes nada a ningún proveedor"
+          description="Las compras a crédito crean su cuenta aquí solas."
+          className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]"
         />
       ) : (
-        <div className="space-y-3">
-          {filtered.map((p) => {
-            const remaining = p.amount - p.paidAmount;
-            const pct = p.amount > 0 ? (p.paidAmount / p.amount) * 100 : 0;
-            return (
-              <div key={p.id} className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden">
-                <div className="p-4 flex flex-col sm:flex-row sm:items-center gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-[var(--text-primary)]">{p.supplierName}</span>
-                      <StatusBadge variant={PAY_STATUS_VARIANT[p.status]} label={PAY_STATUS_LABELS[p.status]} size="sm" dot />
-                    </div>
-                    {p.description && <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">{p.description}</p>}
-                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-[var(--text-tertiary)] dark:text-muted mt-1">
-                      <span>Total: <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatCurrency(Number(p.amount))}</span></span>
-                      <span>Pagado: <span className="font-bold text-[var(--data-success-500)]">{formatCurrency(Number(p.paidAmount))}</span></span>
-                      <span>Restante: <span className="font-bold text-[var(--data-error-500)]">{formatCurrency(remaining)}</span></span>
-                      <span>Vence: {formatDate(p.dueDate, { soloFecha: true })}</span>
-                    </div>
-                    {/* Progress bar — fill sólido y diferenciado: verde cuando
-                        está 100% pagado, teal cuando es pago parcial. Antes usaba
-                        --accent-soft (pálido) para ambos → invisible y sin distinción. */}
-                    <div className="w-full bg-[var(--surface-sunken)] rounded-full h-1.5 mt-2">
-                      <div
-                        className={cn("h-1.5 rounded-full transition-all", pct >= 100 ? "bg-[var(--data-success-500)]" : "bg-primary")}
-                        style={{ width: `${Math.min(pct, 100)}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-2 shrink-0">
-                    {p.status !== "pagado" && (
-                      <button
-                        onClick={() => { setShowPayment(showPayment === p.id ? null : p.id); setPayForm({ amount: String(remaining.toFixed(2)), method: "efectivo", reference: "" }); }}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary text-white hover:bg-primary/90 text-xs font-bold transition-colors"
-                      >
-                        <DollarSign className="h-3.5 w-3.5" /> Pagar
-                      </button>
-                    )}
-                    <button onClick={() => setExpanded(expanded === p.id ? null : p.id)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors">
-                      {expanded === p.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    </button>
-                    <button onClick={() => deletePayable(p.id)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors" title="Eliminar">
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Payment form */}
-                {showPayment === p.id && (
-                  <form onSubmit={(e) => registerPayment(e, p.id)} className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] px-2 sm:px-4 py-2 sm:py-3 bg-primary/10 flex flex-wrap items-end gap-3">
-                    <Field label="Monto (S/)" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">
-                      <input
-                        required type="number" step="0.01" min="0.01" max={remaining}
-                        value={payForm.amount}
-                        onChange={(e) => setPayForm(f => ({ ...f, amount: e.target.value }))}
-                        className="w-28 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
-                      />
-                    </Field>
-                    <Field label="Método" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">
-                      <select
-                        value={payForm.method}
-                        onChange={(e) => setPayForm(f => ({ ...f, method: e.target.value as PaymentMethod }))}
-                        className="px-2 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
-                      >
-                        {(Object.keys(METHOD_LABELS) as PaymentMethod[]).map(m => (
-                          <option key={m} value={m}>{METHOD_LABELS[m]}</option>
-                        ))}
-                      </select>
-                    </Field>
-                    <Field label="Referencia" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">
-                      <input
-                        value={payForm.reference}
-                        onChange={(e) => setPayForm(f => ({ ...f, reference: e.target.value }))}
-                        placeholder="Nº operación…"
-                        className="w-32 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
-                      />
-                    </Field>
-                    <button type="submit" disabled={saving} className="px-4 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/90 transition-colors flex items-center gap-1 disabled:opacity-60">
-                      <Check className="h-3.5 w-3.5" /> Registrar pago
-                    </button>
-                    <button type="button" onClick={() => setShowPayment(null)} className="px-3 py-1.5 rounded-lg bg-[var(--surface-raised)] text-[var(--text-secondary)] dark:text-muted text-xs font-semibold hover:bg-[var(--surface-sunken)] transition-colors border border-[var(--rule-base)] dark:border-[var(--rule-base)]">
-                      Cancelar
-                    </button>
-                  </form>
-                )}
-
-                {/* Payment history */}
-                {expanded === p.id && (
-                  <div className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] px-2 sm:px-4 py-2 sm:py-3 bg-[var(--surface-sunken)] ">
-                    <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted mb-2">Historial de pagos</p>
-                    {p.payments.length === 0 ? (
-                      <p className="text-sm text-[var(--text-tertiary)] dark:text-muted">Sin pagos registrados</p>
-                    ) : (
-                      <div className="space-y-1.5">
-                        {p.payments.map((pay) => (
-                          <div key={pay.id} className="flex items-center justify-between text-sm bg-[var(--surface-raised)] rounded-lg px-3 py-2">
-                            <div>
-                              <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatCurrency(Number(pay.amount))}</span>
-                              <span className="text-[var(--text-tertiary)] dark:text-muted ml-2">{METHOD_LABELS[pay.method]}</span>
-                              {pay.reference && <span className="text-[var(--text-tertiary)] dark:text-muted ml-2 text-xs">Ref: {pay.reference}</span>}
-                            </div>
-                            <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">{formatDate(pay.date)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-2">ID: {p.id}{p.purchaseOrderId ? ` · OC: ${p.purchaseOrderId}` : ""}</p>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-      {/* ── Add payable modal ── */}
-      {showAdd && (
-      <div className="fixed inset-0 z-modal flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && !ventanaAdd.fijado && setShowAdd(false)}>
-        <div ref={addPanelRef} role="dialog" aria-modal="true" aria-labelledby={addTitleId} tabIndex={-1} className="relative bg-[var(--surface-raised)] w-full sm:max-w-lg sm:rounded-xl rounded-t-2xl overflow-y-auto max-h-[90dvh]">
-          <div {...ventanaAdd.asaProps} className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-[var(--surface-raised)] z-10">
-            <CardTitle id={addTitleId} className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)] flex flex-wrap items-center gap-2"><CreditCard className="h-5 w-5 text-primary" /> Nueva cuenta por pagar</CardTitle>
-            <span className="ml-auto flex items-center gap-1">
-              <ControlesDeVentana ventana={ventanaAdd} />
-              <button aria-label="Cerrar" onClick={() => setShowAdd(false)} className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)] transition-colors"><X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" /></button>
-            </span>
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <div role="group" aria-label="Qué cuentas ver" className="inline-flex rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-0.5">
+              {ESTADOS.map((e) => (
+                <button
+                  key={e.id}
+                  type="button"
+                  aria-pressed={estado === e.id}
+                  onClick={() => setEstado(e.id)}
+                  className={cn(
+                    "h-9 rounded-lg px-3 text-sm font-semibold transition-colors",
+                    estado === e.id ? "bg-primary text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+                  )}
+                >
+                  {e.label} <span className="tabular-nums opacity-80">{conteo[e.id]}</span>
+                </button>
+              ))}
+            </div>
+            <select
+              value={proveedorId}
+              onChange={(e) => setProveedorId(e.target.value)}
+              aria-label="Filtrar por proveedor"
+              className="h-10 max-w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+            >
+              <option value="">Todos los proveedores</option>
+              {porProveedor.map((p) => (
+                <option key={p.id} value={p.id}>{p.nombre}{p.debe > 0 ? ` · debes ${formatCurrency(p.debe)}` : " · al día"}</option>
+              ))}
+            </select>
+            {elegido && (
+              <p className="text-sm text-[var(--text-secondary)]">
+                Le debes <strong className="tabular-nums text-[var(--text-primary)]">{formatCurrency(elegido.debe)}</strong> en {elegido.n} cuenta{elegido.n === 1 ? "" : "s"}.
+              </p>
+            )}
           </div>
-          <form onSubmit={addPayable} className="p-5 space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
-              <Field label="Proveedor *" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">
-                <select required value={addForm.supplierId} onChange={(e) => setAddForm(f => ({ ...f, supplierId: e.target.value }))} className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm">
-                  <option value="">Seleccionar proveedor</option>
-                  {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </select>
-              </Field>
-              <Field label="Monto (S/) *" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">
-                <input required type="number" step="0.01" min="0.01" value={addForm.amount} onChange={(e) => setAddForm(f => ({ ...f, amount: e.target.value }))} placeholder="0.00" className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
-              </Field>
-              <Field label="Descripción" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">
-                <input value={addForm.description} onChange={(e) => setAddForm(f => ({ ...f, description: e.target.value }))} placeholder="Factura #001…" className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
-              </Field>
-              <Field label="Fecha de vencimiento" labelClassName="block text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1">
-                <input type="date" value={addForm.dueDate} onChange={(e) => setAddForm(f => ({ ...f, dueDate: e.target.value }))} className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none text-sm" />
-              </Field>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <button type="button" onClick={() => setShowAdd(false)} className="flex-1 min-h-11 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] transition-colors">Cancelar</button>
-              <button type="submit" disabled={saving} className="flex-1 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-60">
-                {saving ? "Guardando…" : "Crear cuenta"}
-              </button>
-            </div>
-          </form>
-          <TiradorDeVentana ventana={ventanaAdd} />
+          {visibles.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-[var(--rule-base)] px-4 py-6 text-center text-sm text-[var(--text-secondary)]">
+              {estado === "pendientes" ? "No te falta pagar nada con este filtro." : "Sin cuentas con este filtro."}
+            </p>
+          ) : (
+            <TablaCuentas
+              cuentas={visibles}
+              hoy={hoy}
+              abierto={abierto}
+              setAbierto={setAbierto}
+              saving={saving}
+              onPagar={pagar}
+              onEliminar={(id) => void borrar(id)}
+              onAviso={(texto, tono) => setAviso({ texto, tono })}
+            />
+          )}
         </div>
-      </div>
       )}
+
+      {nueva && <NuevaCuentaModal proveedores={proveedores} saving={saving} onCrear={crear} onCerrar={() => setNueva(false)} />}
     </div>
   );
 }
-

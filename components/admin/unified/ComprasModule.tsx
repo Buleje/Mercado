@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import dynamic from "next/dynamic";
 import {
   Lightbulb, ClipboardList, Users, PackageCheck,
-  BarChart3, PackagePlus, ShoppingBasket, RotateCcw, Receipt,
+  BarChart3, PackagePlus, ShoppingBasket, RotateCcw, Receipt, CreditCard,
 } from "@buleje/design-system/icons";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
@@ -25,6 +25,9 @@ const PuntoCompraView = dynamic(() => import("@/components/admin/pos/PuntoCompra
 const SupplierComparator = dynamic(() => import("@/components/admin/SupplierComparator"), { ssr: false, loading: S });
 const DevolucionesProveedorModule = dynamic(() => import("@/components/admin/DevolucionesProveedorModule"), { loading: S });
 const HistorialGastosTab = dynamic(() => import("@/components/admin/compras/HistorialGastosTab"), { loading: S });
+/* La cabecera prometía «cuentas por pagar» y ninguna sub-vista las mostraba: vivían
+   sólo en Facturación. Es la misma pantalla en los dos lados (09-10). */
+const PayablesTab = dynamic(() => import("@/components/admin/PayablesTab"), { loading: S });
 
 const MODULE_ID = "compras";
 
@@ -35,6 +38,7 @@ const TABS: AdminTab[] = [
   { id: "ordenes-compra", label: "Ordenes", icon: ClipboardList },
   { id: "proveedores", label: "Proveedores", icon: Users },
   { id: "recepcion", label: "Recepcion", icon: PackageCheck },
+  { id: "cuentas-por-pagar", label: "Por pagar", icon: CreditCard },
   { id: "comparador", label: "Comparador", icon: BarChart3 },
   { id: "devoluciones", label: "Devoluciones", icon: RotateCcw },
 ];
@@ -106,6 +110,7 @@ export default function ComprasModule({ initialTab }: { initialTab?: string } = 
         {sub === "ordenes-compra" && <PurchaseOrdersTab />}
         {sub === "proveedores" && <SuppliersTab />}
         {sub === "recepcion" && <ReceivingTab />}
+        {sub === "cuentas-por-pagar" && <PayablesTab />}
         {sub === "comparador" && (
           <SupplierComparator
             onCreateOC={(supplier) => {

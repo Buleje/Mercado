@@ -51,7 +51,7 @@ afterEach(() => {
 });
 
 describe("PayablesTab — el vencimiento se lee como fecha DATE-only", () => {
-  it("una cuenta que vence el 15/10 se muestra «15 oct.», no «14 oct.»", async () => {
+  it("una cuenta que vence el 15/10 se muestra «jueves 15/10», no «miércoles 14/10»", async () => {
     global.fetch = vi.fn(async (input: RequestInfo | URL) => {
       const u = String(input);
       if (u === "/api/payables") return jsonResponse([cuenta]);
@@ -65,7 +65,7 @@ describe("PayablesTab — el vencimiento se lee como fecha DATE-only", () => {
       </ConfirmDialogProvider>
     );
 
-    expect(await screen.findByText(/Vence: 15 oct\./)).toBeInTheDocument();
-    expect(screen.queryByText(/Vence: 14 oct\./)).not.toBeInTheDocument();
+    expect(await screen.findByText(/jueves 15\/10/)).toBeInTheDocument();
+    expect(screen.queryByText(/miércoles 14\/10/)).not.toBeInTheDocument();
   });
 });

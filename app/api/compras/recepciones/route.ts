@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { revalidateTenantTag } from "@/lib/cache";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
@@ -9,6 +10,11 @@ import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { getRecibidoAcumulado, estaCompleta } from "@/lib/compras/recibido-acumulado";
 import { costoUnitarioReal } from "@/lib/compras/totales-oc";
+import { calcularCreditoRecepcion } from "@/lib/compras/credito-recepcion";
+import {
+  aplicarCreditoRecepcion, anotarCreditoEnItems, getFaltantesAcreditados, SIN_CREDITO, type ResultadoCredito,
+} from "@/lib/compras/aplicar-credito-recepcion";
+import { logAudit } from "@/lib/audit-logger";
 
 // Item del checklist tal como lo arma ReceivingTab. `productId` es opcional: si
 // el item se eligió del combobox o vino prefilleado de la OC, trae el id real
@@ -118,6 +124,8 @@ export async function POST(req: NextRequest) {
     let stockUpdated = 0;
     /** Unidades que llegaron dañadas o vencidas: se registran, no se venden. */
     let noAptos = 0;
+    /** Lo que llegó mal o no llegó, descontado de la cuenta por pagar o reclamado. */
+    let credito: ResultadoCredito = SIN_CREDITO;
     if (data.orderRef) {
       try {
         const oc = await prisma.purchaseOrder.findFirst({
@@ -202,7 +210,36 @@ export async function POST(req: NextRequest) {
               });
               stockUpdated++;
             }
-            const allComplete = estaCompleta(oc.items, recibidoTotal);
+            // 09-10: lo dañado, vencido o faltante no se le paga al proveedor.
+            // Antes la merma quedaba registrada y la cuenta seguía por el
+            // total pedido. Va en esta misma transacción: stock y plata juntos.
+            const lineasOc = oc.items.map((i) => ({ productId: i.productId, name: i.name, quantity: i.quantity, unitCost: i.unitCost }));
+            const faltantesPrevios = await getFaltantesAcreditados(tx, tenantId, oc.id, lineasOc, receipt.id);
+            const calculo = calcularCreditoRecepcion({
+              ocItems: lineasOc,
+              totalOc: oc.total,
+              items: data.items,
+              recibidoTotal,
+              faltantesYaAcreditados: faltantesPrevios,
+            });
+            if (calculo.total > 0) {
+              credito = await aplicarCreditoRecepcion(tx, tenantId, {
+                purchaseOrderId: oc.id, supplierId: oc.supplierId || null, supplierName: oc.supplierName || data.supplier, ref, credito: calculo,
+              });
+              // Anotado por línea en la recepción: así un segundo viaje no
+              // vuelve a acreditar el mismo faltante.
+              await tx.goodsReceipt.updateMany({
+                where: { id: receipt.id, tenantId },
+                data: { itemsJson: anotarCreditoEnItems(data.items, calculo) },
+              });
+            }
+            // Lo que se acreditó como faltante ya no va a llegar: cuenta como
+            // cerrado para el veredicto. Sin esto la OC quedaba «parcial» para
+            // siempre esperando unidades que el proveedor no va a mandar.
+            const cerrado = new Map(recibidoTotal);
+            for (const [pid, n] of faltantesPrevios) cerrado.set(pid, (cerrado.get(pid) ?? 0) + n);
+            for (const l of calculo.lineas) if (l.motivo === "faltante") cerrado.set(l.productId, (cerrado.get(l.productId) ?? 0) + l.unidades);
+            const allComplete = estaCompleta(oc.items, cerrado);
             await tx.purchaseOrder.update({
               where: { id: oc.id },
               data: {
@@ -217,6 +254,8 @@ export async function POST(req: NextRequest) {
           });
         }
       } catch (stockErr) {
+        // La transacción se revirtió entera: el crédito tampoco quedó escrito.
+        credito = SIN_CREDITO;
         logger.warn("[compras/recepciones] actualización de stock falló (recepción sí guardada)", {
           ref, err: stockErr instanceof Error ? stockErr.message : String(stockErr),
         });
@@ -232,8 +271,18 @@ export async function POST(req: NextRequest) {
     if (stockUpdated > 0) {
       revalidateTenantTag(tenantId, "products");
     }
+    if (credito.total > 0) {
+      // La cuenta se tocó con `tx.payable`, salteando PayablesDB (tag `payables`).
+      // `expire: 0` y no `"max"`: con «max» el próximo GET todavía sirve la
+      // cuenta vieja (medido 09-10: la base decía S/ 40 y la lista S/ 140).
+      try { revalidateTag(`tenant:${tenantId}:payables`, { expire: 0 }); } catch { /* fuera de request */ }
+      logAudit({
+        req, tenantId, user: auth.username, action: "UPDATE", entity: "Purchase", entityId: data.orderRef,
+        detail: `Recepción ${ref} (${credito.detalle}): −S/${credito.descontado.toFixed(2)} de la cuenta ${credito.payableId ?? "(sin cuenta)"}, S/${credito.aFavor.toFixed(2)} a favor`,
+      });
+    }
 
-    return NextResponse.json({ ...toReception(receipt), stockUpdated, noAptos }, { status: 201 });
+    return NextResponse.json({ ...toReception(receipt), stockUpdated, noAptos, credito }, { status: 201 });
   } catch (e) {
     logger.error("[compras/recepciones] POST error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Error procesando recepcion" }, { status: 500 });

@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("@/lib/csrf-client", () => ({ csrfHeaders: (h: Record<string, string> = {}) => h }));
 
 import ReceivingTab from "@/components/admin/ReceivingTab";
+import { ConfirmDialogProvider } from "@/components/admin/shared/ConfirmDialog";
 
 const R1 = {
   id: "r1", ref: "REC-001", orderRef: "OC-1", supplier: "Distribuidora Pucallpa",
@@ -64,7 +65,7 @@ function tabla() {
 }
 
 async function montar() {
-  render(<ReceivingTab />);
+  render(<ConfirmDialogProvider><ReceivingTab /></ConfirmDialogProvider>);
   await waitFor(() => expect(pedido("/api/compras/recepciones")).toBeTruthy());
   await resolver("/api/compras/recepciones", [R1, R2, R3]);
   await resolver("/api/products", []);

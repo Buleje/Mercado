@@ -99,6 +99,9 @@ export async function PATCH(
     if (d.categoria !== undefined) data.categoria = d.categoria;
     if (d.condicionPago !== undefined) data.condicionPago = d.condicionPago;
     if (d.diasCredito !== undefined) data.diasCredito = d.diasCredito;
+    // El Zod lo aceptaba y nadie lo escribía: editar los días de entrega de un
+    // proveedor devolvía 200 y la columna seguía igual (09-10).
+    if (d.leadTimeDias !== undefined) data.leadTimeDias = d.leadTimeDias;
     if (d.cuentaBancaria !== undefined) data.cuentaBancaria = d.cuentaBancaria;
     if (d.banco !== undefined) data.banco = d.banco;
     if (d.observaciones !== undefined) data.observaciones = d.observaciones;
@@ -108,12 +111,12 @@ export async function PATCH(
     }
 
      
-    const result = await prisma.supplier.updateMany({ where: { id, tenantId: auth.tenantId }, data });
-    if (result.count === 0) {
+    // Por la DB class: el `prisma.supplier.updateMany` directo salteaba la
+    // invalidación del caché del panel (el proveedor editado seguía viejo).
+    const updated = await SuppliersDB.update(auth.tenantId, id, data as Parameters<typeof SuppliersDB.update>[2]);
+    if (!updated) {
       return NextResponse.json({ error: "No encontrado" }, { status: 404 });
     }
-     
-    const updated = await prisma.supplier.findFirst({ where: { id, tenantId: auth.tenantId } });
     return NextResponse.json(updated);
   } catch (e) {
     logger.error("[suppliers/id] PATCH error", { err: e instanceof Error ? e.message : String(e) });

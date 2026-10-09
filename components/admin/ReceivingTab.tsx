@@ -14,6 +14,9 @@ import {
 import { cn, exportToCSV } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import ProductCombobox, { type ProductOption } from "@/components/admin/shared/ProductCombobox";
+import AvisoCreditoRecepcion, { type CreditoDeRecepcion } from "@/components/admin/cuentas-por-pagar/AvisoCreditoRecepcion";
+import { useConfirmarCreditoRecepcion } from "@/components/admin/cuentas-por-pagar/use-confirmar-credito-recepcion";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { enRango, rangoActivo, textoDeRango, type ChipFiltro, type FacetaOpcion, type Rango } from "@/lib/admin/filtros-columna";
 import { ChipsDeFiltros, FiltroColumnaMulti, FiltroColumnaRango } from "@/components/admin/shared/filtros-columna";
@@ -26,7 +29,7 @@ interface PendingOC {
   status?: string;
   total?: number;
   createdAt?: string;
-  items?: Array<{ productId?: number; name?: string; quantity?: number; unit?: string }>;
+  items?: Array<{ productId?: number; name?: string; quantity?: number; unit?: string; unitCost?: number }>;
 }
 
 type ReceptionStatus = "programada" | "en-proceso" | "aceptada" | "parcial" | "rechazada";
@@ -65,11 +68,13 @@ const STATUS_MAP: Record<ReceptionStatus, { label: string; color: string; bg: st
   rechazada:    { label: "Rechazada",   color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30" },
 };
 
-const COND_MAP: Record<ItemCondition, { label: string; color: string; bg: string }> = {
+// `opcion`: cómo se lee en el selector. «Faltante» baja la deuda y cierra la
+// línea de la orden: no sirve para «llega mañana».
+const COND_MAP: Record<ItemCondition, { label: string; color: string; bg: string; opcion?: string }> = {
   ok:       { label: "OK",       color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
   "dañado": { label: "Dañado",   color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20" },
   vencido:  { label: "Vencido",  color: "text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20" },
-  faltante: { label: "Faltante", color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20" },
+  faltante: { label: "Faltante", opcion: "Faltante (no llegará)", color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20" },
 };
 
 function fmtDate(iso: string) {
@@ -108,6 +113,7 @@ export default function ReceivingTab() {
 
   // Órdenes pendientes de recibir (para el dropdown del modal)
   const [pendingOCs, setPendingOCs] = useState<PendingOC[]>([]);
+  const confirmarCredito = useConfirmarCreditoRecepcion();
   const [selectedOcId, setSelectedOcId] = useState("");
 
   // New reception form
@@ -116,6 +122,8 @@ export default function ReceivingTab() {
   });
   const [checklist, setChecklist] = useState<ReceptionItem[]>([{ ...EMPTY_CHECKLIST }]);
   const [saving, setSaving] = useState(false);
+  /** Lo que la última recepción bajó de la cuenta por pagar o dejó como reclamo. */
+  const [avisoCredito, setAvisoCredito] = useState<(CreditoDeRecepcion & { proveedor: string }) | null>(null);
   // Factura del proveedor adjunta a la recepción (foto/imagen → /api/upload).
   const [invoiceUrl, setInvoiceUrl] = useState("");
   const [uploadingInvoice, setUploadingInvoice] = useState(false);
@@ -263,6 +271,8 @@ export default function ReceivingTab() {
 
   const saveReception = async () => {
     if (!newForm.supplier || !newForm.orderRef || checklist.some(r => !r.product)) return;
+    const ocElegida = pendingOCs.find((p) => p.id === selectedOcId);
+    if (!(await confirmarCredito(ocElegida, newForm.supplier, checklist))) return;
     setSaving(true);
     const nonConformities = checklist.filter(it => it.condition !== "ok" || it.receivedQty < it.expectedQty).length;
     const body = {
@@ -279,7 +289,8 @@ export default function ReceivingTab() {
       body: JSON.stringify(body),
     });
     if (res.ok) {
-      const created: Reception = await res.json();
+      const created: Reception & { credito?: CreditoDeRecepcion } = await res.json();
+      setAvisoCredito(created.credito && created.credito.total > 0 ? { ...created.credito, proveedor: created.supplier } : null);
       setReceptions(prev => {
         const next = [created, ...prev];
         try { localStorage.setItem("admin-recepciones-cache", JSON.stringify({ data: next, ts: Date.now() })); } catch { /* quota */ }
@@ -348,6 +359,8 @@ export default function ReceivingTab() {
           <BotonRestablecerColumnas cambiado={ordenRecepciones.cambiado} onRestablecer={ordenRecepciones.restablecer} />
         </div>
       </div>
+
+      {avisoCredito && <AvisoCreditoRecepcion credito={avisoCredito} proveedor={avisoCredito.proveedor} onCerrar={() => setAvisoCredito(null)} />}
 
       {/* KPI summary minimalista */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -734,7 +747,15 @@ export default function ReceivingTab() {
             {/* Checklist */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <BlockTitle>Checklist de productos</BlockTitle>
+                <div className="flex items-center gap-1.5">
+                  <BlockTitle>Checklist de productos</BlockTitle>
+                  <InfoTip
+                    title="Dañado, vencido y faltante"
+                    what="Lo que marcas dañado, vencido o faltante se baja de lo que le debes al proveedor por esta orden. «Faltante (no llegará)» además cierra esa línea: la orden deja de esperarla."
+                    affects="Antes de guardar te mostramos cuánto se descuenta. No se puede deshacer: si lo que falta llega en otro viaje, no lo marques faltante; déjalo en «OK» con lo que llegó y registra el otro viaje cuando llegue."
+                    example="Pediste 10 arroz y llegaron 7, los 3 no los mandarán: Recibido 7 + «Faltante (no llegará)» → se descuentan los 3 de la cuenta."
+                  />
+                </div>
                 <button onClick={addChecklistRow} className="text-xs text-primary font-bold flex items-center gap-1 hover:underline">
                   <Plus className="h-3 w-3" /> Agregar fila
                 </button>
@@ -757,7 +778,7 @@ export default function ReceivingTab() {
                     <select value={row.condition} onChange={e => updateChecklistRow(idx, "condition", e.target.value as ItemCondition)}
                       aria-label={`Condición de ${row.product || "el producto"}`}
                       className="px-2 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs">
-                      {Object.entries(COND_MAP).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                      {Object.entries(COND_MAP).map(([k, v]) => <option key={k} value={k}>{v.opcion ?? v.label}</option>)}
                     </select>
                     <input value={row.notes} onChange={e => updateChecklistRow(idx, "notes", e.target.value)}
                       placeholder="Notas (opcional)" className="flex-1 min-w-24 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs" />
