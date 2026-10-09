@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
 import { evaluarReposicion, LEAD_TIME_DEFAULT } from "@/lib/compras/reorden";
+import { stockMinimoDe } from "@/lib/inventario/stock-minimo";
+import { minimoGlobalDelNegocio } from "@/lib/inventario/stock-minimo.server";
 import {
   getProductosConStockMin,
   contarProductosActivos,
@@ -94,6 +96,9 @@ export async function GET(req: NextRequest) {
 
     const sugerencias: Array<Record<string, unknown>> = [];
     const sinRotacion: Array<Record<string, unknown>> = [];
+    // Un solo stock mínimo (09-10): hoy sólo llegan productos con mínimo
+    // propio, pero la regla es la misma que en el resto de las alertas.
+    const minimoGlobal = await minimoGlobalDelNegocio(tenantId);
 
     for (const p of products) {
       const stockActual = p.stock ?? 0;
@@ -111,7 +116,7 @@ export async function GET(req: NextRequest) {
       const decision = evaluarReposicion({
         stock: stockActual,
         enTransito: enCamino,
-        stockMin: p.stockMin ?? 0,
+        stockMin: stockMinimoDe(p, minimoGlobal),
         vendido: venta.vendido,
         diasConStock: venta.diasConStock,
         leadTimeDias,
@@ -123,7 +128,7 @@ export async function GET(req: NextRequest) {
         productName: p.name,
         category: p.category,
         currentStock: stockActual,
-        stockMin: p.stockMin ?? 0,
+        stockMin: stockMinimoDe(p, minimoGlobal),
         enTransito: enCamino,
         dailyAvg: ventaDiaria,
         diasConStock: Math.round(venta.diasConStock * 10) / 10,

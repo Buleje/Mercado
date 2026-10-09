@@ -43,6 +43,10 @@ const { mockPrisma } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/prisma", () => ({ prisma: mockPrisma }));
+// Un solo stock mínimo (09-10): el global del negocio sale de Settings.
+vi.mock("@/lib/inventario/stock-minimo.server", () => ({
+  minimoGlobalDelNegocio: vi.fn().mockResolvedValue(7),
+}));
 
 import { AnalyticsDB } from "@/lib/db/analytics.db";
 
@@ -250,7 +254,7 @@ describe("AnalyticsDB.getDashboardAggregates — tenant isolation", () => {
   // ──────────────────────────────────────────────────────────────────────
   // Case 5 — low-stock query respects tenant + active + stockMin NOT NULL
   // ──────────────────────────────────────────────────────────────────────
-  it("low-stock raw query filters by tenant, active, stock/stockMin NOT NULL, stock <= stockMin", async () => {
+  it("low-stock raw query filters by tenant, active, stock NOT NULL, stock <= mínimo efectivo", async () => {
     mockAllQueries({
       todayCount: 0,
       weekCount: 0,
@@ -276,11 +280,13 @@ describe("AnalyticsDB.getDashboardAggregates — tenant isolation", () => {
     expect(joined).toContain('"deletedAt" IS NULL');
     expect(joined).toContain('"active" = true');
     expect(joined).toContain('"stock" IS NOT NULL');
-    expect(joined).toContain('"stockMin" IS NOT NULL');
-    expect(joined).toContain('"stock" <= "stockMin"');
+    // Sin mínimo propio cuenta con el global del negocio (antes quedaba fuera).
+    expect(joined).not.toContain('"stockMin" IS NOT NULL');
+    expect(joined).toContain('"stock" <= COALESCE("stockMin",');
 
-    // The tenantId is passed as a parameterised value, not interpolated.
+    // The tenantId and the global minimum go as parameterised values.
     expect(rawCall?.[1]).toBe(TENANT_A);
+    expect(rawCall?.[2]).toBe(7);
 
     // Sanity: tenant A's low-stock count stays at 0 even if tenant B had rows —
     // the mock only returned what was set up for this call.

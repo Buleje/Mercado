@@ -28,3 +28,19 @@ export function stockMinimoDe(
   if (typeof propio === "number" && Number.isFinite(propio) && propio >= 0) return propio;
   return minimoGlobal;
 }
+
+/**
+ * ¿Entra en «stock bajo»? La misma regla para todas las alertas, conteos y
+ * avisos: el producto controla stock (null = servicio o sin inventario, nunca
+ * alerta; antes `(stock ?? 0) <= (stockMin ?? 0)` los contaba a todos) y está
+ * en o bajo su mínimo efectivo. Los agotados entran (stock ≤ 0 ≤ mínimo); las
+ * pantallas que separan «agotado» de «pocas existencias» filtran aparte.
+ */
+export function enStockBajo(
+  producto: { stock?: number | null; stockMin?: number | null },
+  minimoGlobal: number,
+): boolean {
+  const stock = producto.stock;
+  if (typeof stock !== "number" || !Number.isFinite(stock)) return false;
+  return stock <= stockMinimoDe(producto, minimoGlobal);
+}

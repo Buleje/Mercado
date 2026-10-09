@@ -14,6 +14,9 @@ import { generateDailyInsights } from "@/lib/ai/daily-insights";
 import { reportAICall } from "@/lib/billing/wire-up/ai-metering-middleware";
 import { sinDato } from "@/lib/errores/sin-dato";
 import { saldoEsperadoDeCaja } from "@/lib/caja/saldo-esperado";
+import { enStockBajo } from "@/lib/inventario/stock-minimo";
+import { minimoGlobalDelNegocio } from "@/lib/inventario/stock-minimo.server";
+import { startOfLimaDay, limaDateKey } from "@/lib/utils";
 
 /**
  * GET /api/cron/daily-summary
@@ -25,6 +28,11 @@ import { saldoEsperadoDeCaja } from "@/lib/caja/saldo-esperado";
  * Sugerencia vercel.json: "0 20 * * *" (20:00 cada día)
  * Autorización: Bearer <CRON_SECRET>
  */
+/** El día de Lima de `ahora` a las 00:00 UTC: así guarda `DailySummary.fecha` cada día. */
+function fechaDelResumen(ahora: Date): Date {
+  return new Date(`${limaDateKey(ahora)}T00:00:00.000Z`);
+}
+
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
   const auth = req.headers.get("authorization") ?? "";
@@ -47,7 +55,7 @@ export async function GET(req: NextRequest) {
         const tenantId = tenant.id;
 
         const now = new Date();
-        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const startOfDay = new Date(startOfLimaDay(now));
         const startOfDayISO = startOfDay.toISOString();
 
         // Recopilar datos en paralelo
@@ -100,12 +108,11 @@ export async function GET(req: NextRequest) {
           .slice(0, 5);
 
         // Productos con stock bajo
-        const productosStockBajo = allProducts.filter((p) => {
-          if (!p.active) return false;
-          if (p.stock == null) return false;
-          const min = p.stockMin ?? 5;
-          return p.stock <= min;
-        });
+        // Un solo stock mínimo (09-10): el propio o el global del negocio.
+        const minimoGlobal = await minimoGlobalDelNegocio(tenantId);
+        const productosStockBajo = allProducts.filter(
+          (p) => p.active && enStockBajo(p, minimoGlobal),
+        );
 
         // Diferencia de caja
         let diferenciaCaja: number | null = null;
@@ -125,11 +132,10 @@ export async function GET(req: NextRequest) {
         const fechaTexto = new Date().toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" });
 
         // Obtener resumen del día anterior para comparar tendencias
-        const yesterday = new Date(now);
-        yesterday.setDate(yesterday.getDate() - 1);
-        yesterday.setHours(0, 0, 0, 0);
-        const yesterdayEnd = new Date(yesterday);
-        yesterdayEnd.setHours(23, 59, 59, 999);
+        // `DailySummary.fecha` guarda el DÍA a las 00:00 UTC (formato de siempre);
+        // el día es el de LIMA, no el del servidor (UTC).
+        const yesterday = new Date(fechaDelResumen(now).getTime() - 24 * 60 * 60 * 1000);
+        const yesterdayEnd = new Date(yesterday.getTime() + 24 * 60 * 60 * 1000 - 1);
 
         let summaryAyer: { totalVentas: number; totalPedidos: number; ticketPromedio: number } | null = null;
         try {
@@ -193,8 +199,7 @@ export async function GET(req: NextRequest) {
         // to findFirst + update/create. Schema field types:
         //   diferenciaCaja: Decimal NOT NULL @default(0)
         //   stockAlertas:   String? (JSON stringified list)
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const today = fechaDelResumen(new Date());
         const diferenciaCajaSafe = diferenciaCaja ?? 0;
         const stockAlertasJson = JSON.stringify(
           productosStockBajo.map((p) => ({ id: p.id, name: p.name, stock: p.stock ?? 0 })),

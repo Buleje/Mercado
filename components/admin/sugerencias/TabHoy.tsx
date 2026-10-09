@@ -13,6 +13,8 @@ import {
 import { cn } from "@/lib/utils";
 import ProductImage from "./ProductImage";
 import { normalizeProducts } from "./normalize";
+import { enStockBajo, minimoGlobalDe } from "@/lib/inventario/stock-minimo";
+import { cachedJson } from "@/lib/client-cache-fetch";
 import { formatCurrency } from "@/lib/format";
 
 interface SaleItem {
@@ -141,8 +143,13 @@ export default function TabHoy({ onTabChange }: Props) {
       if (prodRes.ok) {
         const data = await prodRes.json();
         const prods = normalizeProducts(data);
+        // Un solo stock mínimo (09-10): el propio o el del negocio (antes un
+        // producto sin mínimo propio nunca era «compra urgente»).
+        const minimoGlobal = minimoGlobalDe(
+          await cachedJson<{ globalMinStock?: number | null }>("/api/settings", 60_000).catch(() => null),
+        );
         const urgent = prods
-          .filter((p) => (p.stock ?? 0) < (p.stockMin ?? 0))
+          .filter((p) => enStockBajo(p, minimoGlobal))
           .sort((a, b) => (a.stock ?? 0) - (b.stock ?? 0))[0];
         if (urgent) {
           snap.urgentBuy = {

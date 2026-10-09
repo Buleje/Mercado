@@ -4,6 +4,8 @@ import { CardTitle, SectionTitle } from "@buleje/design-system";
 import { useState, useCallback } from "react";
 import { FileText, Loader2, Download, BarChart3, Package, Users, DollarSign, Clock, TrendingUp, Printer, Database, CalendarDays } from "@buleje/design-system/icons";
 import { formatCurrency, formatDate, formatDateNumeric, formatDateTime, formatMonthYear } from "@/lib/format";
+import { enStockBajo, stockMinimoDe } from "@/lib/inventario/stock-minimo";
+import { useStockMinimoGlobal } from "@/lib/inventario/use-stock-minimo-global";
 
 type ReportType = "ventas" | "inventario" | "clientes" | "financiero" | "horas-pico" | "margen" | "metricas-completas" | "informe-mensual";
 
@@ -19,6 +21,9 @@ const REPORTS: { type: ReportType; label: string; desc: string; icon: typeof Bar
 ];
 
 export default function ReportsTab() {
+  // Un solo stock mínimo (09-10): el propio o el del negocio. Antes leía
+  // `minStock`, un campo que Product no tiene: era un 5 fijo para todos.
+  const minimoGlobal = useStockMinimoGlobal();
   const [generating, setGenerating] = useState<ReportType | null>(null);
 
   const fetchData = useCallback(async (type: ReportType) => {
@@ -57,12 +62,12 @@ export default function ReportsTab() {
       } else if (type === "inventario") {
         const [products] = data;
         const totalValue = (products || []).reduce((s: number, p: { price: number; stock: number }) => s + p.price * p.stock, 0);
-        const lowStock = (products || []).filter((p: { stock: number; minStock?: number }) => p.stock <= (p.minStock || 5));
+        const lowStock = (products || []).filter((p: { stock: number | null; stockMin?: number | null; active?: boolean }) => p.active !== false && enStockBajo(p, minimoGlobal));
         csv = `Reporte de Inventario - ${now}\n\n`;
         csv += `Total Productos,${(products || []).length}\nValor Total Inventario,"${formatCurrency(totalValue)}"\nProductos Stock Bajo,${lowStock.length}\n\n`;
         csv += `ID,Nombre,Categoría,Precio,Stock,Min Stock,Valor\n`;
-        (products || []).forEach((p: { id: number; name: string; category?: string; price: number; stock: number; minStock?: number }) => {
-          csv += `${p.id},"${p.name}",${p.category || ""},${formatCurrency(Number(p.price))},${p.stock},${p.minStock || 5},${formatCurrency(p.price * p.stock)}\n`;
+        (products || []).forEach((p: { id: number; name: string; category?: string; price: number; stock: number; stockMin?: number | null }) => {
+          csv += `${p.id},"${p.name}",${p.category || ""},${formatCurrency(Number(p.price))},${p.stock},${stockMinimoDe(p, minimoGlobal)},${formatCurrency(p.price * p.stock)}\n`;
         });
       } else if (type === "clientes") {
         const [customers] = data;
@@ -190,7 +195,7 @@ export default function ReportsTab() {
         csv += `Productos Activos,${(products || []).filter((p: { active: boolean }) => p.active).length}\n`;
         const totalStockValue = (products || []).reduce((s: number, p: { price: number; stock: number }) => s + (p.price * (p.stock || 0)), 0);
         csv += `Valor Total Inventario,${formatCurrency(totalStockValue)}\n`;
-        const lowStock = (products || []).filter((p: { stock: number; stockMin?: number }) => (p.stock || 0) <= (p.stockMin || 5));
+        const lowStock = (products || []).filter((p: { stock: number | null; stockMin?: number | null; active?: boolean }) => p.active !== false && enStockBajo(p, minimoGlobal));
         csv += `Productos con Stock Bajo,${lowStock.length}\n`;
         const outOfStock = (products || []).filter((p: { stock: number }) => (p.stock || 0) === 0);
         csv += `Productos Agotados,${outOfStock.length}\n\n`;
@@ -289,7 +294,7 @@ export default function ReportsTab() {
       URL.revokeObjectURL(url);
     } catch { /* ignore */ }
     setGenerating(null);
-  }, [fetchData]);
+  }, [fetchData, minimoGlobal]);
 
   const generatePDF = useCallback(async (type: ReportType) => {
     setGenerating(type);
@@ -399,7 +404,7 @@ export default function ReportsTab() {
       } else if (type === "inventario") {
         const [products] = data;
         const totalValue = (products || []).reduce((s: number, p: { price: number; stock: number }) => s + p.price * p.stock, 0);
-        const lowStock = (products || []).filter((p: { stock: number; minStock?: number }) => p.stock <= (p.minStock || 5));
+        const lowStock = (products || []).filter((p: { stock: number | null; stockMin?: number | null; active?: boolean }) => p.active !== false && enStockBajo(p, minimoGlobal));
         html += `<h2>Reporte de Inventario</h2>`;
         html += `<div class="summary">
           <div class="summary-item"><span class="summary-label">Total Productos:</span><span class="summary-value">${(products || []).length}</span></div>
@@ -407,8 +412,8 @@ export default function ReportsTab() {
           <div class="summary-item"><span class="summary-label">Stock Bajo:</span><span class="summary-value">${lowStock.length}</span></div>
         </div>`;
         html += `<table><thead><tr><th>ID</th><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>Min Stock</th><th>Valor</th></tr></thead><tbody>`;
-        (products || []).forEach((p: { id: number; name: string; category?: string; price: number; stock: number; minStock?: number }) => {
-          html += `<tr><td>${p.id}</td><td>${p.name}</td><td>${p.category || ""}</td><td>${formatCurrency(Number(p.price))}</td><td>${p.stock}</td><td>${p.minStock || 5}</td><td>${formatCurrency(p.price * p.stock)}</td></tr>`;
+        (products || []).forEach((p: { id: number; name: string; category?: string; price: number; stock: number; stockMin?: number | null }) => {
+          html += `<tr><td>${p.id}</td><td>${p.name}</td><td>${p.category || ""}</td><td>${formatCurrency(Number(p.price))}</td><td>${p.stock}</td><td>${stockMinimoDe(p, minimoGlobal)}</td><td>${formatCurrency(p.price * p.stock)}</td></tr>`;
         });
         html += `</tbody></table>`;
       } else if (type === "clientes") {
@@ -532,7 +537,7 @@ export default function ReportsTab() {
           .reduce((s: number, p: { amount: number; paidAmount?: number }) => s + (p.amount - (p.paidAmount || 0)), 0);
 
         // Stock
-        const lowStockProducts = (products || []).filter((p: { stock?: number; stockMin?: number }) => (p.stock || 0) <= (p.stockMin || 5));
+        const lowStockProducts = (products || []).filter((p: { stock?: number | null; stockMin?: number | null; active?: boolean }) => p.active !== false && enStockBajo(p, minimoGlobal));
         const inventoryValue = (products || []).reduce((s: number, p: { price: number; stock?: number }) => s + p.price * (p.stock || 0), 0);
 
         // Customers
@@ -568,7 +573,7 @@ export default function ReportsTab() {
         <h3 style="color:#121f17;margin-top:25px;">⚠️ Alertas de Inventario</h3>
         ${lowStockProducts.length === 0
           ? '<p style="color:#16a34a;">✅ Todo el inventario está sobre el mínimo.</p>'
-          : `<table><thead><tr><th>Producto</th><th>Stock actual</th><th>Stock mínimo</th></tr></thead><tbody>${lowStockProducts.slice(0, 15).map((p: { name: string; stock?: number; stockMin?: number }) => `<tr><td>${p.name}</td><td style="color:#dc2626;font-weight:700;">${p.stock || 0}</td><td>${p.stockMin || 5}</td></tr>`).join("")}</tbody></table>`
+          : `<table><thead><tr><th>Producto</th><th>Stock actual</th><th>Stock mínimo</th></tr></thead><tbody>${lowStockProducts.slice(0, 15).map((p: { name: string; stock?: number | null; stockMin?: number | null }) => `<tr><td>${p.name}</td><td style="color:#dc2626;font-weight:700;">${p.stock || 0}</td><td>${stockMinimoDe(p, minimoGlobal)}</td></tr>`).join("")}</tbody></table>`
         }
 
         <h3 style="color:#121f17;margin-top:25px;">👥 Clientes</h3>
@@ -598,7 +603,7 @@ export default function ReportsTab() {
       }
     } catch { /* ignore */ }
     setGenerating(null);
-  }, [fetchData]);
+  }, [fetchData, minimoGlobal]);
 
   return (
     <div className="space-y-3 sm:space-y-6">

@@ -8,6 +8,9 @@ import { SalesDB } from "@/lib/db/sales.db";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
+import { startOfLimaDay } from "@/lib/utils";
+import { enStockBajo } from "@/lib/inventario/stock-minimo";
+import { minimoGlobalDelNegocio } from "@/lib/inventario/stock-minimo.server";
 
 /**
  * GET /api/cron/auto-backup
@@ -30,7 +33,7 @@ export async function GET(req: NextRequest) {
   try {
     const result = await withCronRetry("auto-backup", async () => {
       const now = new Date();
-      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const startOfDay = new Date(startOfLimaDay(now));
       const startOfDayISO = startOfDay.toISOString();
 
       // P1-1 multi-tenant: iterar todos los tenants activos en vez de hardcodear "main".
@@ -63,10 +66,11 @@ export async function GET(req: NextRequest) {
 
           const productosActivos = allProducts.filter((p) => p.active).length;
           const productosTotal = allProducts.length;
-          const productosStockBajo = allProducts.filter((p) => {
-            if (!p.active || p.stock == null) return false;
-            return p.stock <= (p.stockMin ?? 5);
-          }).length;
+          // Un solo stock mínimo (09-10): el propio o el global del negocio.
+          const minimoGlobal = await minimoGlobalDelNegocio(tenant.id);
+          const productosStockBajo = allProducts.filter(
+            (p) => p.active && enStockBajo(p, minimoGlobal),
+          ).length;
 
           const clientesTotal = Array.isArray(allCustomers) ? allCustomers.length : 0;
           const clientesNuevosHoy = Array.isArray(allCustomers)

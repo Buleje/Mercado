@@ -67,7 +67,9 @@ async function executeAction(action: { type: string; payload: Record<string, unk
         image: "/placeholder.webp",
         unit: p.unit ?? "unidad",
         stock: p.stock ?? 0,
-        stockMin: p.stockMin ?? 5,
+        // Sin mínimo propio usa el del negocio (`stockMinimoDe`, 09-10);
+        // antes grababa un 5 propio que tapaba al global.
+        stockMin: p.stockMin,
         active: true,
         tenantId,
       });

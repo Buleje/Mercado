@@ -7,6 +7,8 @@ import { BulejeComposedChart } from "@/components/ui-system/charts";
 import { DashboardSection } from "./_shared";
 import { DraggableSections, type DraggableItem } from "./DraggableSections";
 import { formatNumber } from "@/lib/format";
+import { enStockBajo } from "@/lib/inventario/stock-minimo";
+import { useStockMinimoGlobal } from "@/lib/inventario/use-stock-minimo-global";
 
 type Product = {
   id: number | string;
@@ -174,6 +176,8 @@ const KPI_SUFFIX: Record<string, string> = {
 };
 
 export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: { dateRange?: DateRange }) {
+  // Un solo stock mínimo (09-10): el propio o el del negocio.
+  const minimoGlobal = useStockMinimoGlobal();
   const { data } = useDashboardData();
 
   // Rango efectivo (default: rango activo si no se pasa).
@@ -280,11 +284,11 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({ dateRange }: 
       0,
     );
     const criticos = activos.filter(
-      (p) => (p.stock ?? 0) > 0 && (p.stock ?? 0) <= (p.stockMin ?? 5),
+      (p) => (p.stock ?? 0) > 0 && enStockBajo(p, minimoGlobal),
     ).length;
     const sinStock = activos.filter((p) => (p.stock ?? 0) <= 0).length;
     return { valor: Math.round(valor), skus: activos.length, criticos, sinStock };
-  }, [products]);
+  }, [products, minimoGlobal]);
 
   // ── 3. COMPRAS — monto + órdenes + pendiente por proveedor top-7 ─────────
   const compChart = useMemo(() => {

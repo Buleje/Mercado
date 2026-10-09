@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { cacheLife, cacheTag } from "next/cache";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { startOfLimaDay } from "@/lib/utils";
+import { minimoGlobalDelNegocio } from "@/lib/inventario/stock-minimo.server";
 
 /**
  * lib/db/analytics.db.ts
@@ -113,6 +114,8 @@ export const AnalyticsDB = {
 
     const todayStart = startOfToday();
     const weekStart = startOfLastWeek();
+    // Un solo stock mínimo (09-10): el global del negocio, una vez por pedido.
+    const minimoGlobal = await minimoGlobalDelNegocio(tenantId);
 
     // All four queries run in parallel against the DB. Each returns only
     // aggregated numbers (no rows), so the total payload stays tiny. Any
@@ -152,9 +155,10 @@ export const AnalyticsDB = {
           status: { in: [...ACTIVE_CART_STATUSES] },
         },
       }),
-      // Low stock: products where stock is set, stockMin is set, and
-      // stock <= stockMin. Prisma cannot express column-to-column comparison
-      // with its fluent API, so we use a parameterized raw query ($1).
+      // Low stock: stock is set and at or below the effective minimum (own
+      // stockMin, else Settings.globalMinStock — un solo stock mínimo, 09-10).
+      // Prisma cannot express column-to-column comparison with its fluent
+      // API, so we use a parameterized raw query.
       prisma.$queryRaw<{ count: bigint }[]>`
         SELECT COUNT(*)::bigint AS count
         FROM "Product"
@@ -162,8 +166,7 @@ export const AnalyticsDB = {
           AND "deletedAt" IS NULL
           AND "active" = true
           AND "stock" IS NOT NULL
-          AND "stockMin" IS NOT NULL
-          AND "stock" <= "stockMin"
+          AND "stock" <= COALESCE("stockMin", ${minimoGlobal}::int)
       `,
       // Abandoned carts: SavedCart updated >2h ago, <24h, non-empty
       prisma.savedCart.findMany({

@@ -7,6 +7,9 @@ import { enqueueNotification } from "@/lib/queue";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
+import { enStockBajo, stockMinimoDe } from "@/lib/inventario/stock-minimo";
+import { minimoGlobalDelNegocio } from "@/lib/inventario/stock-minimo.server";
+import { startOfLimaDay } from "@/lib/utils";
 
 /**
  * GET /api/cron/stock-alerts-notify
@@ -35,31 +38,34 @@ export const GET = withCronHealth("stock-alerts-notify", async (_req) => {
           where: {
             tenantId: { in: tenantIds },
             active: true,
+            deletedAt: null,
             stock: { not: null },
           },
           select: { id: true, name: true, category: true, unit: true, stock: true, stockMin: true },
         });
 
+        // Un solo stock mínimo (09-10): el propio o el global del negocio, y
+        // «en o bajo» como el resto de las alertas (antes `< stockMin ?? 5`).
+        const minimoGlobal = await minimoGlobalDelNegocio(tenant.id);
         const alertas = allProducts
-          .filter((p) => {
-            const minimo = p.stockMin ?? 5;
-            return (p.stock as number) < minimo;
-          })
-          .map((p) => ({
-            id: p.id,
-            nombre: p.name,
-            categoria: p.category,
-            unidad: p.unit,
-            stockActual: p.stock as number,
-            minimo: p.stockMin ?? 5,
-            deficit: (p.stockMin ?? 5) - (p.stock as number),
-          }));
+          .filter((p) => enStockBajo(p, minimoGlobal))
+          .map((p) => {
+            const minimo = stockMinimoDe(p, minimoGlobal);
+            return {
+              id: p.id,
+              nombre: p.name,
+              categoria: p.category,
+              unidad: p.unit,
+              stockActual: p.stock as number,
+              minimo,
+              deficit: minimo - (p.stock as number),
+            };
+          });
 
         if (alertas.length === 0) continue;
 
         // Deduplication: check if we already sent alert for these products today
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const today = new Date(startOfLimaDay());
         const recentLog = await prisma.notificationLog.findFirst({
           where: {
             type: "low_stock_cron",

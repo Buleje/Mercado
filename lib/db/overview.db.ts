@@ -19,6 +19,7 @@ import "server-only";
 
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { minimoGlobalDelNegocio } from "@/lib/inventario/stock-minimo.server";
 
 // La regla del pedido «olvidado» vive en lib/admin/pedidos-olvidados.ts: la
 // lista de Pedidos la aplica igual en el navegador.
@@ -73,6 +74,8 @@ export const OverviewDB = {
    */
   async fetchOverview(opts: OverviewQueryOpts): Promise<OverviewRawData> {
     const { tenantId, rangeFrom, rangeTo, prevFrom, prevTo, startOf30dAgo, now } = opts;
+    // Un solo stock mínimo (09-10): el global del negocio, una vez por pedido.
+    const minimoGlobal = await minimoGlobalDelNegocio(tenantId);
 
     const [
       rangeOrders,
@@ -125,13 +128,14 @@ export const OverviewDB = {
       }),
 
       // 5. Catálogo en UNA pasada: «Bajo stock» con la regla de Inventario
-      // (`stock <= stockMin ?? 5`, agotados incluidos; antes contaba sólo 1-5 y
+      // (`enStockBajo`: el mínimo propio o `Settings.globalMinStock`, agotados
+      // incluidos — 09-10 dejó de ser un 5 fijo; antes contaba sólo 1-5 y
       // el aviso no coincidía con lo que el filtro mostraba) y los datos que le
       // faltan (`lib/inventario/catalogo-incompleto.ts`). Sin borrados ni
       // servicios. Parámetros por plantilla de Prisma, nunca interpolados.
       prisma.$queryRaw<CatalogoDeInicio[]>`
         SELECT
-          count(*) FILTER (WHERE stock IS NOT NULL AND stock <= COALESCE("stockMin", 5))::int AS "bajoStock",
+          count(*) FILTER (WHERE stock IS NOT NULL AND stock <= COALESCE("stockMin", ${minimoGlobal}::int))::int AS "bajoStock",
           count(*) FILTER (WHERE type <> 'service' AND COALESCE("costPrice", 0) <= 0)::int AS "sinCosto",
           count(*) FILTER (WHERE type <> 'service' AND COALESCE(btrim(barcode), '') = '')::int AS "sinCodigo",
           count(*) FILTER (WHERE type <> 'service' AND stock IS NOT NULL AND "stockMin" IS NULL)::int AS "sinMinimo",

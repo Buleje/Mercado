@@ -45,7 +45,9 @@ export function formatProductsForExport(products: {
     "Precio (S/)": p.price,
     "Costo (S/)": p.costPrice ?? "",
     Stock: p.stock,
-    "Stock Mínimo": p.stockMin ?? 0,
+    // Vacío = sin mínimo propio (usa el del negocio); un 0 se reimportaba
+    // como «avisar sólo al agotarse».
+    "Stock Mínimo": p.stockMin ?? "",
     Unidad: p.unit,
     Activo: p.active ? "Sí" : "No",
   }));

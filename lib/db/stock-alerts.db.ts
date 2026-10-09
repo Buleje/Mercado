@@ -28,19 +28,27 @@ export interface VelocityCandidate {
   stockMin: number | null;
   category: string;
   unit: string;
+  /** Para avisar a cada negocio sólo de lo suyo (09-10). */
+  tenantId: string;
 }
 
 export const StockAlertsDB = {
   /**
-   * Lista productos activos con stockMin definido. Caller filtra por
-   * stock <= stockMin en memoria para no perder semantica null.
+   * Candidatos a «stock bajo»: activos, sin borrar y con stock controlado.
+   * Los que tienen mínimo propio llegan ya en o bajo él; los que no, todos
+   * (el caller los mide contra el mínimo global de SU negocio con
+   * `enStockBajo`, 09-10: antes quedaban fuera y nunca alertaban).
    */
   async listActiveWithMinStock(): Promise<LowStockProduct[]> {
     return prisma.product.findMany({
       where: {
         active: true,
+        deletedAt: null,
         stock: { not: null },
-        stockMin: { not: null },
+        OR: [
+          { stockMin: { not: null }, stock: { lte: prisma.product.fields.stockMin } },
+          { stockMin: null },
+        ],
       },
       select: {
         id: true,
@@ -68,6 +76,7 @@ export const StockAlertsDB = {
         stockMin: true,
         category: true,
         unit: true,
+        tenantId: true,
       },
     });
   },

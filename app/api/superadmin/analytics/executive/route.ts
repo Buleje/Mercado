@@ -8,6 +8,9 @@ import { getOrSet } from "@/lib/cache";
 import { logger } from "@/lib/logger";
 import { etiquetaDePlan } from "@/lib/billing/plan-tiers";
 import { estadoDeCobro, mrrMensualDeTenant } from "@/lib/billing/mrr-plataforma";
+import { startOfLimaMonth, limaDateKey } from "@/lib/utils";
+import { enStockBajo, stockMinimoDe, STOCK_MINIMO_GLOBAL_POR_DEFECTO } from "@/lib/inventario/stock-minimo";
+import { minimosGlobalesPorNegocio } from "@/lib/inventario/stock-minimo.server";
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -45,7 +48,7 @@ export async function GET(req: NextRequest) {
     const toParam = req.nextUrl.searchParams.get("to");
     const periodStart = fromParam
       ? new Date(fromParam)
-      : new Date(now.getFullYear(), now.getMonth(), 1);
+      : new Date(startOfLimaMonth(0, now));
     const periodEnd = toParam ? new Date(toParam) : now;
     // [PERF] Cache 10min por rango: las ~13 queries (incl. el groupBy de
     // top-customers SIN filtro de fecha = scan all-time) + 2 findMany de órdenes
@@ -62,8 +65,8 @@ export async function GET(req: NextRequest) {
         // Pre-compute month windows para AOV (últimos 6 meses)
         const aovWindows = Array.from({ length: 6 }, (_, idx) => {
           const i = 5 - idx;
-          const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
-          const nextMonthStart = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+          const monthStart = new Date(startOfLimaMonth(-i, now));
+          const nextMonthStart = new Date(startOfLimaMonth(-i + 1, now));
           return { monthStart, nextMonthStart };
         });
 
@@ -81,7 +84,7 @@ export async function GET(req: NextRequest) {
           ordersForHeatmap,
           channelBreakdown,
           customerOrderCounts,
-          lowStockProducts,
+          lowStockCandidatos,
         ] = await Promise.all([
           prisma.tenant.findMany({
             where: { active: true },
@@ -179,17 +182,25 @@ export async function GET(req: NextRequest) {
             },
             _count: { _all: true },
           }),
+          // Candidatos a stock bajo: en o bajo su mínimo propio, o sin él (se
+          // miden abajo contra el global de SU negocio; antes `stock <= 5` fijo).
           prisma.product.findMany({
-            where: { deletedAt: null, active: true, stock: { lte: 5, not: null } },
+            where: {
+              deletedAt: null, active: true, stock: { not: null },
+              OR: [
+                { stockMin: { not: null }, stock: { lte: prisma.product.fields.stockMin } },
+                { stockMin: null },
+              ],
+            },
             select: { id: true, name: true, stock: true, stockMin: true, tenantId: true },
             orderBy: { stock: "asc" },
-            take: 10,
+            take: 50,
           }),
         ]);
         const nowMs = now.getTime();
         const cohortMap = new Map<string, { signups: number; payingNow: number }>();
         for (const t of allTenants) {
-          const k = `${t.createdAt.getFullYear()}-${String(t.createdAt.getMonth() + 1).padStart(2, "0")}`;
+          const k = limaDateKey(t.createdAt).slice(0, 7); // mes de Lima
           const cur = cohortMap.get(k) ?? { signups: 0, payingNow: 0 };
           cur.signups += 1;
           // «Pagando ahora» = paga hoy (una tienda en prueba todavía no paga).
@@ -233,8 +244,7 @@ export async function GET(req: NextRequest) {
         }));
 
         // ── Daily active stores ────────────────────────────────────────────────
-        const dayKey = (d: Date) =>
-          `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        const dayKey = (d: Date) => limaDateKey(d); // día de Lima
         const dasMap = new Map<string, Set<string>>();
         for (let i = 0; i < 30; i++) {
           const d = new Date(last30Start);
@@ -335,6 +345,13 @@ export async function GET(req: NextRequest) {
         // ── Stock alerts cross-tenant: productos con stock bajo ────────────────
         // Product no tiene relación `tenant` definida en schema, así que hacemos
         // 1 query adicional para los tenants de los productos en stock bajo.
+        // Un solo stock mínimo (09-10): el propio o el global de cada negocio.
+        const minimosPorNegocio = await minimosGlobalesPorNegocio(lowStockCandidatos.map((p) => p.tenantId));
+        const lowStockProducts = lowStockCandidatos
+          .map((p) => ({ p, minimoGlobal: minimosPorNegocio.get(p.tenantId) ?? STOCK_MINIMO_GLOBAL_POR_DEFECTO }))
+          .filter(({ p, minimoGlobal }) => enStockBajo(p, minimoGlobal))
+          .slice(0, 10)
+          .map(({ p, minimoGlobal }) => ({ ...p, stockMin: stockMinimoDe(p, minimoGlobal) }));
         const stockTenantIds = Array.from(new Set(lowStockProducts.map((p) => p.tenantId)));
         const stockTenants = stockTenantIds.length
           ? await prisma.tenant.findMany({
@@ -349,7 +366,7 @@ export async function GET(req: NextRequest) {
             productId: p.id,
             name: p.name,
             stock: p.stock ?? 0,
-            stockMin: p.stockMin ?? 0,
+            stockMin: p.stockMin,
             tenantName: t?.name ?? "(desconocido)",
             tenantSlug: t?.slug ?? p.tenantId,
           };

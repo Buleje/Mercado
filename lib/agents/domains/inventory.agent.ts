@@ -14,6 +14,8 @@ import {
   AutoReorderDB,
 } from "@/lib/db";
 import { BatchesDB } from "@/lib/db/batches.db";
+import { stockMinimoDe } from "@/lib/inventario/stock-minimo";
+import { minimoGlobalDelNegocio } from "@/lib/inventario/stock-minimo.server";
 
 // ── Action handlers ──────────────────────────────────────────────────────────
 
@@ -34,9 +36,11 @@ async function checkStock(
 
   const withStock = products.filter((p) => p.stock != null && p.active);
 
-  const lowStock = withStock.filter(
-    (p) => p.stock! <= (threshold ?? p.stockMin ?? 5),
-  );
+  // Un solo stock mínimo (09-10): el propio o el global del negocio; el
+  // `threshold` del payload, si viene, manda sobre ambos.
+  const minimoGlobal = await minimoGlobalDelNegocio(task.tenantId);
+  const minimoDe = (p: { stockMin?: number | null }) => threshold ?? stockMinimoDe(p, minimoGlobal);
+  const lowStock = withStock.filter((p) => p.stock! <= minimoDe(p));
 
   const outOfStock = withStock.filter((p) => p.stock! <= 0);
 
@@ -77,7 +81,7 @@ async function checkStock(
         id: p.id,
         name: p.name,
         stock: p.stock,
-        stockMin: p.stockMin ?? 5,
+        stockMin: minimoDe(p),
         category: p.category,
       })),
       outOfStockProducts: outOfStock.map((p) => ({

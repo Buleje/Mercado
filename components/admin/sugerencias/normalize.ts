@@ -16,8 +16,13 @@
 export interface NormProduct {
   id: string | number;
   name: string;
-  stock: number;
-  stockMin: number;
+  /**
+   * null = el producto no controla stock (servicio, plato preparado). Antes
+   * llegaba como 0 y salía como «compra urgente» (09-10).
+   */
+  stock: number | null;
+  /** Mínimo PROPIO (null = usa el del negocio: `stockMinimoDe`, 09-10). */
+  stockMin: number | null;
   stockMax?: number;
   price: number;
   cost?: number;
@@ -51,8 +56,8 @@ export function normalizeProducts(raw: unknown): NormProduct[] {
     return {
       id: (p.id as string | number) ?? "",
       name: String(p.name ?? ""),
-      stock: Number(p.stock ?? 0),
-      stockMin: Number(p.stockMin ?? 0),
+      stock: p.stock == null || p.stock === "" ? null : Number(p.stock),
+      stockMin: p.stockMin == null || p.stockMin === "" ? null : Number(p.stockMin),
       stockMax: p.stockMax != null ? Number(p.stockMax) : undefined,
       price: Number(p.price ?? 0),
       cost:

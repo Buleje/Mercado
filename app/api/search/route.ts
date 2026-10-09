@@ -3,6 +3,8 @@ import { requireAdmin } from "@/lib/require-admin";
 import { ProductsDB, CustomersDB, OrdersDB, SuppliersDB } from "@/lib/jsondb";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import { enStockBajo } from "@/lib/inventario/stock-minimo";
+import { minimoGlobalDelNegocio } from "@/lib/inventario/stock-minimo.server";
 
 export async function GET(req: NextRequest) {
   try {
@@ -15,11 +17,12 @@ export async function GET(req: NextRequest) {
   const q = (req.nextUrl.searchParams.get("q") ?? "").toLowerCase().trim();
   if (q.length < 2) return NextResponse.json({ results: [] });
 
-  const [products, customers, orders, suppliers] = await Promise.all([
+  const [products, customers, orders, suppliers, minimoGlobal] = await Promise.all([
     ProductsDB.getAll(auth.tenantId).catch(() => []),
     CustomersDB.getAll(auth.tenantId).catch(() => []),
     OrdersDB.getAll(auth.tenantId).catch(() => []),
     SuppliersDB.getAll(auth.tenantId).catch(() => []),
+    minimoGlobalDelNegocio(auth.tenantId),
   ]);
 
   type SearchResult = {
@@ -45,8 +48,9 @@ export async function GET(req: NextRequest) {
         type: "producto",
         title: p.name,
         subtitle: `${p.category} · S/${p.price} · Stock: ${p.stock}`,
-        badge: (p.stock ?? 0) <= (p.stockMin ?? 0) ? "Stock bajo" : undefined,
-        badgeColor: (p.stock ?? 0) <= (p.stockMin ?? 0) ? "#ef4444" : undefined,
+        // Un solo stock mínimo (09-10): el propio o el global del negocio.
+        badge: enStockBajo(p, minimoGlobal) ? "Stock bajo" : undefined,
+        badgeColor: enStockBajo(p, minimoGlobal) ? "#ef4444" : undefined,
         tab: "inventario",
       });
     }

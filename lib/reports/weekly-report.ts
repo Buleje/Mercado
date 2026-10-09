@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { minimoGlobalDelNegocio } from "@/lib/inventario/stock-minimo.server";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -128,15 +129,17 @@ export async function generateWeeklyReport(tenantId: string): Promise<WeeklyRepo
 
   // Refine with raw for column-to-column comparison
   // TODO: expose this via ProductsDB.countCriticalStock(tenantId) when ProductsDB adds that method
+  // Un solo stock mínimo (09-10): en o bajo el propio o `Settings.globalMinStock`
+  // (antes `< stockMin` y sólo con mínimo propio: no coincidía con Inicio).
+  const minimoGlobal = await minimoGlobalDelNegocio(tenantId);
   const criticalRaw = await prisma.$queryRaw<Array<{ count: bigint }>>`
     SELECT COUNT(*)::bigint as count
     FROM "Product"
     WHERE "tenantId" = ${tenantId}
       AND "active" = true
       AND "deletedAt" IS NULL
-      AND "stockMin" IS NOT NULL
       AND "stock" IS NOT NULL
-      AND "stock" < "stockMin"
+      AND "stock" <= COALESCE("stockMin", ${minimoGlobal}::int)
   `;
   const stockCriticoCountReal = Number(criticalRaw[0]?.count ?? 0);
 

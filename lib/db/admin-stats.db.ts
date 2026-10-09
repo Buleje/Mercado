@@ -14,6 +14,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { startOfLimaDay } from "@/lib/utils";
 import { withDbRetry } from "@/lib/db-retry";
+import { minimoGlobalDelNegocio } from "@/lib/inventario/stock-minimo.server";
 
 export type AdminStatsPayload = {
   pendingOrders: number;
@@ -140,15 +141,18 @@ export const AdminStatsDB = {
     // Productos bajo stock minimo: Prisma no soporta comparacion columna-columna,
     // se usa raw SQL parametrizado (regla #11 CLAUDE.md: $1/$2, no interpolacion).
      
+    // Un solo stock mínimo (09-10): el propio o `Settings.globalMinStock` (antes
+    // sólo los que tenían mínimo propio), sin borrados, como Inicio e Inventario.
+    const minimoGlobal = await minimoGlobalDelNegocio(tenantId);
     const lowStockResult = await withDbRetry(() =>
       prisma.$queryRaw<{ count: bigint }[]>`
         SELECT COUNT(*)::bigint AS count
         FROM "Product"
         WHERE "tenantId" = ${tenantId}
           AND "active" = true
+          AND "deletedAt" IS NULL
           AND "stock" IS NOT NULL
-          AND "stockMin" IS NOT NULL
-          AND "stock" <= "stockMin"
+          AND "stock" <= COALESCE("stockMin", ${minimoGlobal}::int)
       `
     );
     const lowStockProducts = Number(lowStockResult[0]?.count ?? 0);

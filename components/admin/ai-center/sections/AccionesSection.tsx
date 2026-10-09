@@ -16,6 +16,8 @@ import {
 import { cn } from "@/lib/utils";
 import type { BusinessData } from "../ai-center.types";
 import { formatNumber } from "@/lib/format";
+import { enStockBajo, stockMinimoDe } from "@/lib/inventario/stock-minimo";
+import { useStockMinimoGlobal } from "@/lib/inventario/use-stock-minimo-global";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -106,16 +108,17 @@ function formatSoles(n: number): string {
 
 // ─── Task generation ──────────────────────────────────────────────────────────
 
-function generateTasks(data: BusinessData): Task[] {
+function generateTasks(data: BusinessData, minimoGlobal: number): Task[] {
   const tasks: Task[] = [];
   const today = new Date();
 
   // URGENTE — low stock
   for (const p of data.products) {
     if (p.active === false) continue;
+    // Un solo stock mínimo (09-10): el propio o el del negocio.
     const stock = p.stock ?? 0;
-    const min = p.stockMin ?? 0;
-    if (min > 0 && stock <= min) {
+    const min = stockMinimoDe(p, minimoGlobal);
+    if (min > 0 && enStockBajo(p, minimoGlobal)) {
       const needed = min - stock;
       const impact = needed * (p.price ?? 0);
       tasks.push({
@@ -480,7 +483,8 @@ export default function AccionesSection({ data }: AccionesSectionProps) {
     });
   }, []);
 
-  const tasks = useMemo(() => generateTasks(data), [data]);
+  const minimoGlobal = useStockMinimoGlobal();
+  const tasks = useMemo(() => generateTasks(data, minimoGlobal), [data, minimoGlobal]);
 
   const urgente = tasks.filter((t) => t.priority === "urgente");
   const importante = tasks.filter((t) => t.priority === "importante");

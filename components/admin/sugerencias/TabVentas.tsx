@@ -10,7 +10,8 @@ import { formatCurrency } from "@/lib/format";
 interface Product {
   id: string | number;
   name: string;
-  stock: number;
+  /** null = no controla stock (ver `normalizeProducts`). */
+  stock: number | null;
   price: number;
   cost?: number;
   imageUrl?: string;
@@ -101,7 +102,7 @@ export default function TabVentas() {
     [items]
   );
   const slowMovers = useMemo(
-    () => items.filter((i) => i.product.stock > 5).sort((a, b) => a.weeklySales - b.weeklySales).slice(0, 5),
+    () => items.filter((i) => (i.product.stock ?? 0) > 5).sort((a, b) => a.weeklySales - b.weeklySales).slice(0, 5),
     [items]
   );
 

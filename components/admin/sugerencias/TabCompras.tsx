@@ -18,12 +18,15 @@ import {
   isoDaysAgo,
 } from "./normalize";
 import { formatCurrency } from "@/lib/format";
+import { stockMinimoDe } from "@/lib/inventario/stock-minimo";
+import { useStockMinimoGlobal } from "@/lib/inventario/use-stock-minimo-global";
 
 interface Product {
   id: string | number;
   name: string;
-  stock: number;
-  stockMin: number;
+  /** null = no controla stock (ver `normalizeProducts`). */
+  stock: number | null;
+  stockMin: number | null;
   price: number;
   cost?: number;
   category: string;
@@ -111,6 +114,8 @@ const MOCK_PURCH: PurchaseData[] = [
 ];
 
 export default function TabCompras() {
+  // Un solo stock mínimo (09-10): el propio o el del negocio.
+  const minimoGlobal = useStockMinimoGlobal();
   const [products, setProducts] = useState<Product[]>([]);
   const [sales, setSales] = useState<SaleData[]>([]);
   const [purchases, setPurchases] = useState<PurchaseData[]>([]);
@@ -163,16 +168,20 @@ export default function TabCompras() {
 
   const advised = useMemo<AdvisedItem[]>(() => {
     return products
+      // Sin control de stock (servicio, plato preparado) no se repone por
+      // existencias: antes el stock vacío llegaba como 0 y pedía 5 de cada uno.
+      .filter((p): p is Product & { stock: number } => p.stock != null)
       .map((p) => {
         const weekly = salesMap[String(p.id)] ?? 0;
         const daily = weekly / 7;
         const days = daily > 0 ? Math.floor(p.stock / daily) : 99;
-        const target = Math.max(p.stockMin ?? 0, daily * 14);
+        const minimo = stockMinimoDe(p, minimoGlobal);
+        const target = Math.max(minimo, daily * 14);
         const qty = Math.max(0, Math.ceil(target - p.stock));
         const sup = supplierMap[String(p.id)] ?? null;
         const total = qty * (sup?.cost ?? p.cost ?? p.price * 0.7);
         const urgency: AdvisedItem["urgency"] = days <= 2 ? "critical" : days <= 5 ? "high" : "medium";
-        const fillPct = Math.min(100, Math.round((p.stock / Math.max(p.stockMin || 1, 1)) * 100));
+        const fillPct = Math.min(100, Math.round((p.stock / Math.max(minimo, 1)) * 100));
         return {
           product: p,
           daysUntilOut: days,
@@ -187,7 +196,7 @@ export default function TabCompras() {
       })
       .filter((i) => i.suggestedQty > 0)
       .sort((a, b) => ({ critical: 0, high: 1, medium: 2 }[a.urgency] - { critical: 0, high: 1, medium: 2 }[b.urgency]));
-  }, [products, salesMap, supplierMap]);
+  }, [products, salesMap, supplierMap, minimoGlobal]);
 
   const totalEstimated = useMemo(() => advised.reduce((s, i) => s + i.estimatedTotal, 0), [advised]);
   const counts = useMemo(() => ({

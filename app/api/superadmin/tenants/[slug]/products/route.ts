@@ -163,7 +163,9 @@ export async function POST(
           description: productData.description ?? null,
           image: productData.image ?? "",
           stock: productData.stock ?? 999,
-          stockMin: productData.stockMin ?? 0,
+          // Sin mínimo propio usa el del negocio (un solo stock mínimo, 09-10);
+          // un 0 grabado acá decía «avisar sólo al agotarse» sin que nadie lo pidiera.
+          stockMin: productData.stockMin ?? null,
           active: productData.active,
           isPrepared: productData.isPrepared ?? false, // ADR-131
         },

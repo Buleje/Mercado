@@ -27,6 +27,8 @@ import {
 import { DashboardSection } from "./_shared";
 import { DraggableSections, type DraggableItem } from "./DraggableSections";
 import { formatDateShort, formatNumber } from "@/lib/format";
+import { enStockBajo } from "@/lib/inventario/stock-minimo";
+import { useStockMinimoGlobal } from "@/lib/inventario/use-stock-minimo-global";
 
 type Product = {
   id: number | string;
@@ -80,6 +82,8 @@ function dayLabel(dk: string) {
 }
 
 export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts() {
+  // Un solo stock mínimo (09-10): el propio o el del negocio.
+  const minimoGlobal = useStockMinimoGlobal();
   const { data } = useDashboardData();
   const [loadingEoq, setLoadingEoq] = useState(false);
 
@@ -155,12 +159,12 @@ export const InventarioAdvancedCharts = memo(function InventarioAdvancedCharts()
     if (active.length === 0) return { pct: 100, ok: 0, warn: 0, bad: 0, total: 0 };
     const bad = active.filter((p) => (p.stock ?? 0) <= 0).length;
     const warn = active.filter(
-      (p) => (p.stock ?? 0) > 0 && (p.stock ?? 0) <= (p.stockMin ?? 5),
+      (p) => (p.stock ?? 0) > 0 && enStockBajo(p, minimoGlobal),
     ).length;
     const ok = active.length - bad - warn;
     const pct = Math.round((ok / active.length) * 100);
     return { pct, ok, warn, bad, total: active.length };
-  }, [active]);
+  }, [active, minimoGlobal]);
 
   // ── 3. ROTACIÓN POR CATEGORÍA ────────────────────────────────────────────
   const rotacion = useMemo(() => {
