@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import dynamic from "next/dynamic";
-import { Truck, Users, ClipboardList, Shield, RefreshCw, MapPin, FileText, Trophy, Activity } from "@buleje/design-system/icons";
+import { Truck, Users, ClipboardList, Shield, RefreshCw, MapPin, FileText, Trophy, Activity, Wallet } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { tenantFetch } from "@/lib/tenant-fetch";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
@@ -12,6 +12,7 @@ import { AsignacionesTab } from "@/components/admin/delivery-partners/tabs/Asign
 import { PermisosTab } from "@/components/admin/delivery-partners/tabs/PermisosTab";
 import { RankingTab } from "@/components/admin/delivery-partners/tabs/RankingTab";
 import { SolicitudesTab } from "@/components/admin/delivery-partners/tabs/SolicitudesTab";
+import { RetirosTab } from "@/components/admin/repartidores/RetirosTab";
 
 // Lazy-load del mapa Leaflet (usa window) — tab "live".
 const DeliveryPartnersLiveMap = dynamic(
@@ -32,6 +33,7 @@ const TABS = [
   { id: "repartidores",  label: "Repartidores",  icon: Users },
   { id: "solicitudes",   label: "Solicitudes",   icon: FileText },
   { id: "asignaciones",  label: "Asignaciones",  icon: ClipboardList },
+  { id: "retiros",       label: "Retiros",        icon: Wallet },
   { id: "ranking",       label: "Ranking",        icon: Trophy },
   { id: "permisos",      label: "Permisos",       icon: Shield },
 ];
@@ -81,7 +83,7 @@ export default function DeliveryPartnersModule({ initialTab }: { initialTab?: st
       <AdminTabBar
         heading={{
           title: "Delivery",
-          description: "Gestiona repartidores, asignaciones y permisos.",
+          description: "Gestiona repartidores, asignaciones, retiros y permisos.",
           icon: Truck,
           actions: (
             <>
@@ -105,6 +107,7 @@ export default function DeliveryPartnersModule({ initialTab }: { initialTab?: st
         {tab === "repartidores" && <RepartidoresTab />}
         {tab === "solicitudes"  && <SolicitudesTab />}
         {tab === "asignaciones" && <AsignacionesTab />}
+        {tab === "retiros"      && <RetirosTab />}
         {tab === "ranking"      && <RankingTab />}
         {tab === "permisos"     && <PermisosTab />}
       </AdminTabBar>
