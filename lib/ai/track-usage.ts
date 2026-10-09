@@ -63,11 +63,18 @@ const PRICING_PER_1M: Record<string, { input: number; output: number }> = {
   "claude-opus-4-7":   { input: 15.0, output: 75.0 },
   "gpt-4o-mini":       { input: 0.15, output: 0.6 },
   "llama-3.3-70b-versatile": { input: 0.59, output: 0.79 }, // Groq
+  // Modelos del router `callLLM` (lib/llm-providers): xAI y Groq, precio de lista
+  // al alta (el más alto conocido: si bajó, se cobra de más, nunca de menos).
+  "grok-3":            { input: 3.0,  output: 15.0 },
+  "grok-3-fast":       { input: 5.0,  output: 25.0 },
+  "grok-3-mini":       { input: 0.3,  output: 0.5 },
+  "openai/gpt-oss-20b":  { input: 0.1,  output: 0.5 },  // Groq
+  "openai/gpt-oss-120b": { input: 0.15, output: 0.75 }, // Groq
   // Default fallback conservador (Sonnet pricing)
   default: { input: 3.0, output: 15.0 },
 };
 
-function calculateCostUsd(model: string, usage: AiUsageInfo): number {
+export function calculateCostUsd(model: string, usage: AiUsageInfo): number {
   const pricing = PRICING_PER_1M[model] ?? PRICING_PER_1M.default;
   const inputTok = usage.promptTokens ?? 0;
   const outputTok = usage.completionTokens ?? 0;
