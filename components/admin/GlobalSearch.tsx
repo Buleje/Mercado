@@ -475,10 +475,10 @@ export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Prop
       {/* Popover anclado al search button del topbar (top-14 ~ debajo del header
           h-14), alineado a la izquierda con el botón. En mobile ocupa todo el ancho.
 
-          El ancho va en rem EXPLÍCITO, no `max-w-xl`: este repo overridea
-          `--container-xl` a 1440px (globals.css :2071), así que `sm:max-w-xl`
-          hacía que el popover midiera 1200px —casi toda la pantalla— en vez de
-          los ~576px que aparenta. Gotcha del DS: modales y popovers en rem. */}
+          El ancho va en rem EXPLÍCITO (36rem = 576px): hasta 2026-10-09
+          globals.css ponía `--container-xl` en 1440px y `sm:max-w-xl` hacía que
+          el popover midiera 1200px —casi toda la pantalla—. Hoy `max-w-xl`
+          vale lo mismo; el rem se queda por claridad. */}
       <div
         style={{ top: anchorTop }}
         className="fixed left-2 sm:left-12 lg:left-[calc(var(--admin-sidebar-w,276px)+1rem)] right-2 sm:right-auto z-[9999] sm:w-[calc(100vw-3rem)] sm:max-w-[36rem] animate-in fade-in zoom-in-95 duration-[var(--dur-base)]"

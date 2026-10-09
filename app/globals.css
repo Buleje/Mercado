@@ -2157,17 +2157,21 @@ button,
   --motion-deliberate: 600ms;
 
   /* ── Layout ── */
-  --container-xs: 560px;
-  --container-sm: 720px;
-  /* md = 28rem (448 px), el valor de Tailwind. Estaba en 960px y como Tailwind 4
-     arma `max-w-md` con `var(--container-md)`, las 241 ventanas, cajones y
-     párrafos escritos con `max-w-md` (pensados angostos) salían de 960 px; los
-     modales de Adelantos «sm» quedaban MÁS anchos que los «md» (672). Ningún CSS
-     lee esta variable a mano y `@md:` (container query) usa el valor del tema,
-     no esta línea. xs/sm/lg/xl siguen con la escala vieja (noche 2026-10-09). */
+  /* xs/sm/md/lg/xl = la escala de Tailwind (20/24/28/32/36rem = 320/384/448/512/576 px).
+     El commit «Ola 3+4» (abr-2026) puso acá una escala de páginas con nombres que
+     chocan con Tailwind 4 (`max-w-sm` = `var(--container-sm)`): 560/720/960/1200/1440.
+     Nadie la usó como página; los ~425 usos de max-w-xs/sm/lg/xl (ventanas, cajones,
+     buscadores, párrafos), escritos para la escala de Tailwind, salían al doble (un cajón `max-w-lg` de 1200 px tapaba
+     toda la pantalla; el paso 2 del asistente de notas de crédito, `max-w-xl`, salía
+     MÁS ancho que el paso 1, `max-w-3xl`) y AdminModal, GlobalSearch, AdminTopHeader
+     y OnboardingWizard tuvieron que esquivarla con rem fijos. Ningún CSS lee estas
+     variables a mano y `@sm:`/`@lg:` (container queries) usan el valor del tema, no
+     estas líneas. md volvió primero; xs/sm/lg/xl, la misma noche (2026-10-09). */
+  --container-xs: 20rem;
+  --container-sm: 24rem;
   --container-md: 28rem;
-  --container-lg: 1200px;
-  --container-xl: 1440px;
+  --container-lg: 32rem;
+  --container-xl: 36rem;
   --container-max: 1760px;
 
   /* ── Section spacing vertical ── */

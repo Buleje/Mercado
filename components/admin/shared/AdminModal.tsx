@@ -112,12 +112,10 @@ export const MODAL_BODY = `py-5 ${MODAL_GUTTER}`;
 // el patrón móvil estándar, más cómodo que una tarjeta flotante centrada.
 // En sm+ vuelven a ser tarjetas centradas como siempre.
 // Brandon 2026-07-03: los anchos van en REM EXPLÍCITOS, no en tokens `max-w-{sm,md,lg,xl}`.
-// Este proyecto redefine `--container-{sm,md,lg,xl}` en @theme (globals.css) como una
-// escala de contenedores de layout (md=960px, lg=1200px…), y en Tailwind v4 `max-w-md`
-// = `var(--container-md)`. Usar los tokens hacía que los modales salieran 2× de ancho
-// (el drawer `side` a 960px se veía "chueco"). Los rem fijos son inmunes al override y
-// matchean el intent original (sm=24rem, md=28rem, lg=32rem). `wide`/`pos` usan `2xl`/`6xl`
-// que NO están overrideados, así que quedan como estaban.
+// Hasta 2026-10-09 globals.css redefinía `--container-{xs,sm,md,lg,xl}` al doble
+// (md=960px, lg=1200px…) y los modales salían 2× de ancho (el drawer `side` a 960px se
+// veía "chueco"). Ya volvieron a la escala de Tailwind (sm=24rem, md=28rem, lg=32rem);
+// los rem fijos se quedan porque dicen lo mismo y no dependen de ese token.
 const VARIANT_CLASSES: Record<Variant, string> = {
   default: "w-full rounded-t-2xl max-h-[90vh] sm:w-[calc(100vw-2rem)] sm:max-w-[32rem] sm:rounded-2xl sm:max-h-[85vh]",
   "centered-sm": "w-full rounded-t-2xl max-h-[90vh] sm:w-[calc(100vw-2rem)] sm:max-w-[24rem] sm:rounded-2xl sm:max-h-[85vh]",

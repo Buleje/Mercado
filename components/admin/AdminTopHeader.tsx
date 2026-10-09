@@ -169,8 +169,8 @@ export const AdminTopHeader = memo(function AdminTopHeader({
             // atajo ⌘K.
             //
             // El ancho va en un token propio: `sm:max-w-xl` valía 1440px acá
-            // (globals.css overridea `--container-xl`), así que el pill se
-            // estiraba hasta comerse el espacio de los botones de la derecha.
+            // (hasta 2026-10-09 globals.css doblaba `--container-xl`), así que el
+            // pill se estiraba hasta comerse el espacio de los botones de la derecha.
             // `--panel-search-max` sube de 30 a 36/44rem en monitores grandes
             // — 480px fijos contra 2248px de contenido lo dejaban raquítico.
             "group inline-flex sm:flex items-center justify-center sm:justify-start h-11 w-11 sm:w-auto sm:flex-1 sm:max-w-[var(--panel-search-max,30rem)] sm:h-10 sm:px-3.5 sm:gap-2.5 rounded-xl cursor-pointer shrink-0 sm:shrink sm:min-w-11",

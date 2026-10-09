@@ -105,8 +105,8 @@ export default function OnboardingWizard() {
       <div className="relative flex min-h-full items-center justify-center p-4">
         {showConfetti && <ConfettiEffect />}
 
-        {/* Card compacto: 460px hardcoded para escapar del override de
-            --container-lg (1200px) que tiene este proyecto en Tailwind v4.
+        {/* Card compacto: 460px hardcoded; se escribió para escapar del
+            --container-lg de 1200px que globals.css tuvo hasta 2026-10-09.
             Glass + entrada suave (sin opacity stuck). */}
         <motion.div
           initial={{ opacity: 0, y: 14, scale: 0.97 }}
