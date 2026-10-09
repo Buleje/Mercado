@@ -27,9 +27,10 @@ vi.mock("@/lib/require-admin", () => ({
   requireAdmin: vi.fn(() => Promise.resolve({ role: "admin", username: "qa", tenantId: "tenant-a" })),
 }));
 vi.mock("@/lib/db", () => ({
-  NotasCreditoDB: { sumActiveForSale: mockSum, siguienteNumero: mockNumero, create: mockCreate, getAll: vi.fn() },
+  NotasCreditoDB: { sumActiveTotalForSale: mockSum, siguienteNumero: mockNumero, create: mockCreate, getAll: vi.fn() },
 }));
 vi.mock("@/lib/db/sales.db", () => ({ SalesDB: { getById: mockGetSale } }));
+vi.mock("@/lib/db/orders.db", () => ({ OrdersDB: { getById: vi.fn() } }));
 vi.mock("@/lib/db/settings.db", () => ({ SettingsDB: { get: vi.fn(() => Promise.resolve({ taxRate: 18 })) } }));
 vi.mock("@/lib/audit-logger", () => ({ logAudit: vi.fn() }));
 vi.mock("@/lib/rate-limit", () => ({ applyRateLimit: vi.fn(() => null) }));
@@ -190,7 +191,7 @@ describe("POST /api/notas-credito con el cuerpo del POS (Zod real)", () => {
 
   it("con la base entera ya acreditada, una NC de S/ 0,01 da 400 (antes el céntimo de tolerancia las dejaba sin fin)", async () => {
     const { POST } = await import("@/app/api/notas-credito/route");
-    mockSum.mockResolvedValue(20); // base de 23,60 = 20,00, ya emitida entera
+    mockSum.mockResolvedValue(23.6); // la venta de 23,60 ya acreditada entera (suma de `total`)
     const res = await POST(postNc({ saleId: VENTA.id, motivoCodigo: "07", motivoDesc: "x", monto: 0.01 }));
     expect(res.status).toBe(400);
     expect(await res.json()).toMatchObject({ disponible: 0, disponibleConIgv: 0 });
@@ -199,13 +200,14 @@ describe("POST /api/notas-credito con el cuerpo del POS (Zod real)", () => {
     expect(mockCreate).not.toHaveBeenCalled();
   });
 
-  it("si todavía queda algo, el céntimo de redondeo sigue entrando (queda 0,01 → pasa 0,02, no 0,03)", async () => {
+  it("tope exacto, sin céntimo de tolerancia: queda 0,01 con IGV → pasa 0,01 y no 0,02", async () => {
     const { POST } = await import("@/app/api/notas-credito/route");
-    mockSum.mockResolvedValue(19.99);
-    const pasada = await POST(postNc({ saleId: VENTA.id, motivoCodigo: "07", motivoDesc: "x", monto: 0.03 }));
+    mockSum.mockResolvedValue(23.59);
+    const pasada = await POST(postNc({ saleId: VENTA.id, motivoCodigo: "07", motivoDesc: "x", monto: 0.02 }));
     expect(pasada.status).toBe(400);
-    const justa = await POST(postNc({ saleId: VENTA.id, motivoCodigo: "07", motivoDesc: "x", monto: 0.02 }));
+    const justa = await POST(postNc({ saleId: VENTA.id, motivoCodigo: "07", motivoDesc: "x", monto: 0.01 }));
     expect(justa.status).toBe(201);
+    expect(mockCreate.mock.calls[0][1]).toMatchObject({ monto: 0.01, igv: 0, total: 0.01 });
   });
 
   it("errores con texto se muestran; 403 dice quién la emite", () => {

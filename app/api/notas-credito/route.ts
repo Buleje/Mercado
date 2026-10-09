@@ -9,7 +9,9 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { SettingsDB } from "@/lib/db/settings.db";
 import { igvRateFromSettings } from "@/lib/tax";
 import { sinDato } from "@/lib/errores/sin-dato";
-import { baseDisponibleNotaCredito, desgloseNotaCredito } from "@/lib/pos/reembolso";
+import { desgloseNotaCredito } from "@/lib/pos/reembolso";
+import { topeNotaCredito } from "@/lib/notas-credito/tope";
+import { OrdersDB } from "@/lib/db/orders.db";
 
 const CreateNotaCreditoSchema = z.object({
   orderId: z.string().optional(),
@@ -76,9 +78,12 @@ export async function POST(req: NextRequest) {
     }
 
     // SECURITY/CRITICAL 2026-05-06 (pentest H2): la nota no pasa lo que queda de
-    // la venta. Base contra base: `Sale.total` trae IGV y las notas guardan la
-    // base (antes se comparaba base contra total con IGV: 18 % de más).
-    // 1 céntimo de tolerancia por el redondeo de partir el IGV nota por nota.
+    // su documento. Tope EXACTO (09-10): total con IGV de la nota contra lo que el
+    // documento cobró menos el `total` de sus notas activas, en céntimos y sin
+    // tolerancia. Antes se sumaba la base con 1 céntimo de tolerancia, y las notas
+    // por `orderId` (pedidos de la tienda) no tenían tope.
+    let desglose = { monto, igv, total };
+    const documentos: Array<{ tipo: "venta" | "pedido"; totalDocumento: number; totalYaEmitido: number }> = [];
     if (data.saleId) {
       const sale = await SalesDB.getById(auth.tenantId, data.saleId);
       if (!sale) {
@@ -87,26 +92,42 @@ export async function POST(req: NextRequest) {
           { status: 404 }
         );
       }
-      const yaEmitido = await NotasCreditoDB.sumActiveForSale(auth.tenantId, data.saleId);
-      const saleTotal = Number(sale.total);
-      const disponible = baseDisponibleNotaCredito(saleTotal, yaEmitido, tasa);
-      const dispC = Math.round(disponible * 100);
-      // El céntimo de tolerancia, sólo si todavía queda algo: con 0 disponible «1 > 0 + 1» era
-      // falso y se emitían NC de S/ 0,01 sin fin contra una venta ya acreditada entera.
-      if (Math.round(monto * 100) > dispC + (dispC > 0 ? 1 : 0)) {
-        // Lo que queda con IGV sale del total de la venta (base→total redondeado perdía 1 céntimo: 0,10 → 0,09).
-        const disponibleConIgv = Math.max(0, Math.round(saleTotal * 100) - Math.round(yaEmitido * (1 + tasa) * 100)) / 100;
+      const totalYaEmitido = await NotasCreditoDB.sumActiveTotalForSale(auth.tenantId, data.saleId);
+      documentos.push({ tipo: "venta", totalDocumento: Number(sale.total), totalYaEmitido });
+    }
+    if (data.orderId) {
+      const pedido = await OrdersDB.getById(auth.tenantId, data.orderId);
+      if (!pedido) {
+        return NextResponse.json(
+          { error: "Pedido no encontrado en este tenant" },
+          { status: 404 }
+        );
+      }
+      const totalYaEmitido = await NotasCreditoDB.sumActiveTotalForOrder(auth.tenantId, data.orderId);
+      documentos.push({ tipo: "pedido", totalDocumento: Number(pedido.total), totalYaEmitido });
+    }
+    for (const doc of documentos) {
+      const tope = topeNotaCredito({
+        totalDocumento: doc.totalDocumento,
+        totalYaEmitido: doc.totalYaEmitido,
+        pedido: desglose,
+        tasa,
+        porBase: data.totalConIgv == null,
+      });
+      if (!tope.ok) {
         return NextResponse.json(
           {
-            error: `El monto excede lo que queda de la venta: hasta S/ ${disponible.toFixed(2)} sin IGV (S/ ${disponibleConIgv.toFixed(2)} con IGV).`,
-            saleTotal,
-            yaEmitido,
-            disponible,
-            disponibleConIgv,
+            error: `El monto excede lo que queda ${doc.tipo === "venta" ? "de la venta" : "del pedido"}: hasta S/ ${tope.disponible.toFixed(2)} sin IGV (S/ ${tope.disponibleConIgv.toFixed(2)} con IGV).`,
+            saleTotal: doc.tipo === "venta" ? doc.totalDocumento : undefined,
+            orderTotal: doc.tipo === "pedido" ? doc.totalDocumento : undefined,
+            yaEmitidoConIgv: doc.totalYaEmitido,
+            disponible: tope.disponible,
+            disponibleConIgv: tope.disponibleConIgv,
           },
           { status: 400 }
         );
       }
+      desglose = tope.desglose;
     }
 
     const numero = await NotasCreditoDB.siguienteNumero(auth.tenantId);
@@ -117,9 +138,9 @@ export async function POST(req: NextRequest) {
       saleId: data.saleId,
       motivoCodigo: data.motivoCodigo,
       motivoDesc: data.motivoDesc,
-      monto,
-      igv,
-      total,
+      monto: desglose.monto,
+      igv: desglose.igv,
+      total: desglose.total,
       notas: data.notas,
       createdBy: auth.username,
     });
@@ -129,7 +150,7 @@ export async function POST(req: NextRequest) {
       action: "CREATE",
       entity: "Order",
       entityId: nota.id,
-      detail: `Nota de crédito ${numero} creada por S/${total.toFixed(2)} — ${data.motivoDesc}`,
+      detail: `Nota de crédito ${numero} creada por S/${desglose.total.toFixed(2)} — ${data.motivoDesc}`,
       user: auth.username,
       tenantId: auth.tenantId,
     });
