@@ -2,7 +2,7 @@
 
 import { Fragment, useCallback, useEffect, useState } from "react";
 import { AlertTriangle, ArrowDownRight, Check, ClipboardList, FileText, Loader2, PackageCheck, PackageOpen, Pencil, Scissors, Search } from "@buleje/design-system/icons";
-import { CardTitle, DataTable } from "@buleje/design-system";
+import { DataTable, Kicker } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import CtpRetrozarModal, { type TrozaParaCortar } from "./CtpRetrozarModal";
@@ -295,9 +295,9 @@ export default function CtpTrozasDeIngreso({
           <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <PackageOpen className="h-4 w-4" />
           </span>
-          <CardTitle as="h3" className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">
+          <Kicker as="h3" className="libro-kicker">
             Lista de trozas · {trozas.length} pieza{trozas.length === 1 ? "" : "s"}
-          </CardTitle>
+          </Kicker>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           {balance.faltantes > 0 && (

@@ -409,7 +409,7 @@ export default function Anexo04Modal({
       <div ref={cajaRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Vista previa del Anexo N° 04" className="relative flex max-h-[94vh] w-full max-w-[min(96vw,110rem)] flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-lg)]">
         <div {...ventana.asaProps} className="flex shrink-0 items-start justify-between gap-3">
           <div className="min-w-0">
-            <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+            <CardTitle as="h3" className="flex items-center gap-2 font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">
               <FileText className="h-5 w-5 text-[var(--accent)]" /> Vista previa · ANEXO N° 04
               {duenoFiltro !== "todos" && (
                 <span className="rounded-full bg-primary/12 px-2.5 py-0.5 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">

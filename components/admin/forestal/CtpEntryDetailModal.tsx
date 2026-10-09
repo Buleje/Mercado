@@ -13,7 +13,7 @@
 import { Children, isValidElement, useEffect, useState, type ReactElement } from "react";
 import { toast } from "sonner";
 import AdminModal from "@/components/admin/shared/AdminModal";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, Kicker } from "@buleje/design-system";
 import CtpHistorial from "./CtpHistorial";
 import TrazaForwardSection from "./CtpTrazaForward";
 import CtpTrozasDeIngreso from "./CtpTrozasDeIngreso";
@@ -307,9 +307,9 @@ export default function CtpEntryDetailModal({ entry, onClose, onCompletar, onCam
           <section className="break-inside-avoid border-t border-[var(--rule-base)] pt-3">
             <div className="mb-2.5 flex items-center gap-2">
               <FileText className="h-4 w-4 shrink-0 text-[var(--accent-ink)] dark:text-[var(--accent)]" strokeWidth={1.75} />
-              <CardTitle as="h3" className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+              <Kicker as="h3" className="libro-kicker">
                 Fotos de la guía
-              </CardTitle>
+              </Kicker>
             </div>
             <CtpFotosDelIngreso fotos={fotos} onCambio={(u) => void guardarFotos(u)} disabled={guardandoFotos} gtf={entry.gtfNumber} />
           </section>
@@ -436,9 +436,9 @@ function Section({
     <section className="border-t border-[var(--rule-base)] pt-3">
       <div className="mb-2.5 flex items-center gap-2">
         <Icon className="h-4 w-4 shrink-0 text-[var(--accent-ink)] dark:text-[var(--accent)]" strokeWidth={1.75} />
-        <CardTitle as="h3" className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+        <Kicker as="h3" className="libro-kicker">
           {title}
-        </CardTitle>
+        </Kicker>
       </div>
       {conDato.length > 0 && <div className="grid grid-cols-2 gap-x-4 gap-y-3">{conDato}</div>}
       {sinDato.length > 0 && (

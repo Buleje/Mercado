@@ -24,7 +24,7 @@ import {
   RefreshCw,
   Trash2,
 } from "@buleje/design-system/icons";
-import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { CardTitle, SectionTitle, Kicker } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
@@ -254,9 +254,9 @@ export default function SyncEscritorioView({
 
       {/* ── Equipos ── */}
       <section className="space-y-3">
-        <CardTitle as="h3" className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+        <Kicker as="h3" className="libro-kicker">
           Equipos conectados
-        </CardTitle>
+        </Kicker>
         {cargando && equipos.length === 0 ? (
           <p className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]">
             <Loader2 className="h-4 w-4 animate-spin" /> Viendo si hay alguno…
@@ -403,9 +403,9 @@ export default function SyncEscritorioView({
       {/* ── Claves ── */}
       {claves.length > 0 && (
         <section className="space-y-2">
-          <CardTitle as="h3" className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+          <Kicker as="h3" className="libro-kicker">
             Claves activas
-          </CardTitle>
+          </Kicker>
           <ul className="space-y-2">
             {claves.map((k) => (
               <li

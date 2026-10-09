@@ -506,7 +506,7 @@ export default function ExpiredBatchesWidget() {
               <div {...ventanaMerma.asaProps} className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
                 <div className="flex items-center gap-2">
                   <ClipboardList className="h-4 w-4 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" />
-                  <SectionTitle id={mermaModalTitleId} className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
+                  <SectionTitle id={mermaModalTitleId} className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">
                     Registrar merma
                   </SectionTitle>
                 </div>

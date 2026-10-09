@@ -11,7 +11,7 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
-import { CardTitle } from "@buleje/design-system";
+import { Kicker } from "@buleje/design-system";
 import {
   Search, Image as ImageIcon, Loader2, Check,
 } from "@buleje/design-system/icons";
@@ -150,9 +150,9 @@ export default function ImageBankPicker({ open, onOpenChange, onPick }: Props) {
 
             {!loading && visibleCategories.map((cat) => (
               <section key={cat.id} className="mb-6 last:mb-0">
-                <CardTitle as="h3" className="text-xs font-black uppercase tracking-wider text-[var(--text-tertiary)] mb-2 px-1">
+                <Kicker as="h3" className="libro-kicker mb-2 px-1">
                   {cat.name} <span className="text-[var(--text-tertiary)] font-medium">· {cat.items.length}</span>
-                </CardTitle>
+                </Kicker>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
                   {cat.items.map((item) => (
                     <button

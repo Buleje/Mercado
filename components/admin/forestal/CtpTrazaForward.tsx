@@ -10,7 +10,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { CardTitle } from "@buleje/design-system";
+import { Kicker } from "@buleje/design-system";
 import {
   AlertCircle,
   ArrowRight,
@@ -46,9 +46,9 @@ export default function TrazaForwardSection({ entryId }: { entryId: string }) {
         <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
           <ArrowRight className="h-4 w-4" />
         </span>
-        <CardTitle as="h3" className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">
+        <Kicker as="h3" className="libro-kicker">
           ¿A dónde fue esta madera?
-        </CardTitle>
+        </Kicker>
       </div>
 
       {loading && (

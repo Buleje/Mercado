@@ -136,7 +136,7 @@ export default function LothTraceUmbralesModal({
           className="flex items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-3"
         >
           <div className="flex items-center gap-1.5">
-            <p className="text-sm font-black uppercase tracking-widest text-[var(--text-secondary)]">Umbrales de merma</p>
+            <p className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Umbrales de merma</p>
             <InfoTip
               title="Umbrales de merma"
               what="Cuánta madera puede perderse entre el tocón y las trozas antes de que la pantalla marque la fila."

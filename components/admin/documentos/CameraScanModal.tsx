@@ -86,7 +86,7 @@ export function CameraScanModal({ folderId, onClose, onDone }: { folderId: strin
     <div className="fixed inset-0 z-modal-2 flex items-center justify-center bg-black/50 p-4" onClick={() => { if (!ventana.fijado) onClose(); }}>
       <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="relative flex max-h-[90vh] w-full max-w-[34rem] flex-col overflow-hidden rounded-2xl bg-[var(--surface-raised)] shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div {...ventana.asaProps} className="flex items-center justify-between border-b border-[var(--rule-base)] p-4">
-          <CardTitle id={titleId} as="h3" className="inline-flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"><Camera className="h-5 w-5 text-primary" /> Escanear a PDF</CardTitle>
+          <CardTitle id={titleId} as="h3" className="inline-flex items-center gap-2 font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]"><Camera className="h-5 w-5 text-primary" /> Escanear a PDF</CardTitle>
           <span className="flex items-center gap-1">
             <ControlesDeVentana ventana={ventana} />
             <button onClick={onClose} className="rounded-xl p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Cerrar"><X className="h-5 w-5" /></button>

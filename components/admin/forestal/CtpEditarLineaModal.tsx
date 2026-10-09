@@ -359,7 +359,7 @@ export default function CtpEditarLineaModal({
         <div {...ventana.asaProps} className="mb-1 flex items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-1.5">
-              <SectionTitle className="text-sm font-bold text-[var(--text-primary)]">
+              <SectionTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">
                 Editar la corrida N° {linea.lineNo ?? "—"}
               </SectionTitle>
               {/* La explicación general del modal pasó al ⓘ (2026-09-24). */}

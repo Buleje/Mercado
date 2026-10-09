@@ -18,7 +18,7 @@
  * la **ARFFS** que lo aprobó y la **fecha** de la resolución.
  */
 
-import { CardTitle } from "@buleje/design-system";
+import { Kicker } from "@buleje/design-system";
 import { CalendarClock, FileText, MapPin } from "@buleje/design-system/icons";
 import { estadoVigencia } from "@/lib/forestal/loth-plan-vigencia";
 import { fmtFecha, type Plan } from "./loth-plan-shared";
@@ -97,13 +97,13 @@ function Grupo({
 }) {
   return (
     <section className="min-w-0 space-y-1.5 border-[var(--rule-soft)] max-lg:border-b max-lg:pb-3 lg:border-l lg:pl-4 lg:first:border-l-0 lg:first:pl-0 max-lg:last:border-b-0 max-lg:last:pb-0">
-      <CardTitle
+      <Kicker
         as="h3"
-        className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]"
+        className="libro-kicker flex items-center gap-1.5"
       >
         <Icon className="h-3.5 w-3.5" strokeWidth={2} />
         {titulo}
-      </CardTitle>
+      </Kicker>
       <dl className="space-y-1">{children}</dl>
     </section>
   );

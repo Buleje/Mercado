@@ -62,7 +62,7 @@ export function BulkTagModal({
         <div {...ventana.asaProps} className="flex items-center gap-3 border-b border-[var(--rule-base)] px-5 py-4">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Tag className="h-5 w-5" /></span>
           <div className="min-w-0 flex-1">
-            <p id={titleId} className="text-sm font-extrabold text-[var(--text-primary)]">Etiquetar {count} documento{count === 1 ? "" : "s"}</p>
+            <p id={titleId} className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Etiquetar {count} documento{count === 1 ? "" : "s"}</p>
             <p className="text-xs text-[var(--text-tertiary)]">Elige una etiqueta existente o crea una nueva</p>
           </div>
           <ControlesDeVentana ventana={ventana} />

@@ -25,7 +25,7 @@
  */
 
 import { Keyboard } from "@buleje/design-system/icons";
-import { CardTitle } from "@buleje/design-system";
+import { Kicker } from "@buleje/design-system";
 import AdminModal from "./AdminModal";
 
 interface Shortcut {
@@ -96,9 +96,9 @@ export function KeyboardShortcutsHelp({ open, onClose, sections = DEFAULT_SECTIO
       <div className="space-y-6 px-5 py-5">
         {sections.map((section) => (
           <section key={section.title}>
-            <CardTitle as="h3" className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-3">
+            <Kicker as="h3" className="libro-kicker mb-3">
               {section.title}
-            </CardTitle>
+            </Kicker>
             <dl className="divide-y divide-[var(--rule-soft)]">
               {section.items.map((item, i) => (
                 <div key={i} className="flex items-center justify-between gap-4 py-2">

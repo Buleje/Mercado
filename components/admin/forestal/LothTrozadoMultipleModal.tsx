@@ -167,7 +167,7 @@ export default function LothTrozadoMultipleModal({
         {/* Cabecera — y asa para arrastrar la ventana. */}
         <header {...ventana.asaProps} className="flex items-start justify-between gap-3 border-b-2 border-[var(--rule-base)] px-4 py-3 sm:px-5">
           <div className="flex items-center gap-1.5">
-            <p className="flex items-center gap-2 text-sm font-black uppercase tracking-widest text-[var(--text-secondary)]">
+            <p className="flex items-center gap-2 font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">
               <Scissors className="h-4 w-4" /> Trozar un árbol
             </p>
             <InfoTip

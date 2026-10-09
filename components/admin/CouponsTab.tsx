@@ -461,7 +461,7 @@ export default function CouponsTab() {
           <div ref={cajaRegla} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Configurar regla" className="relative bg-[var(--surface-raised)] rounded-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <div>
-                <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Configurar Regla</CardTitle>
+                <CardTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Configurar Regla</CardTitle>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{ruleConfigs[editingRule.type].label}</p>
               </div>
               <div className="flex items-center gap-1"><ControlesDeVentana ventana={ventanaRegla} />
@@ -522,7 +522,7 @@ export default function CouponsTab() {
           <div ref={cajaWhatsapp} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Enviar cupón por WhatsApp" className="relative bg-[var(--surface-raised)] rounded-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <div>
-                <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Enviar cupon por WhatsApp</CardTitle>
+                <CardTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Enviar cupon por WhatsApp</CardTitle>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Codigo: <span className="font-mono font-bold text-primary">{whatsappCoupon.code}</span></p>
               </div>
               <div className="flex items-center gap-1"><ControlesDeVentana ventana={ventanaWhatsapp} />
@@ -579,7 +579,7 @@ export default function CouponsTab() {
           <div ref={cajaPlantilla} tabIndex={-1} role="dialog" aria-modal="true" aria-label="Constructor de plantilla" className="relative bg-[var(--surface-raised)] rounded-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <div>
-                <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Constructor de Plantilla</CardTitle>
+                <CardTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Constructor de Plantilla</CardTitle>
                 <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Define el patrón de códigos automáticos</p>
               </div>
               <div className="flex items-center gap-1"><ControlesDeVentana ventana={ventanaPlantilla} />

@@ -129,7 +129,7 @@ export default function LothCoordsModal({ open, zonaDefault, onClose, onApply }:
           className="flex items-center justify-between gap-3 border-b-2 border-[var(--rule-base)] px-5 py-3"
         >
           <div className="flex items-center gap-1.5">
-            <p className="text-sm font-black uppercase tracking-widest text-[var(--text-secondary)]">Importar coordenadas</p>
+            <p className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Importar coordenadas</p>
             <InfoTip
               title="Importar coordenadas"
               what="Pega el cuadro del plan de manejo o sube el KML / GeoJSON del expediente."

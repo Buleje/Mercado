@@ -104,7 +104,7 @@ export default function AnularAdelantoModal({
             <Ban className="h-5 w-5" />
           </span>
           <div className="min-w-0">
-            <p className="text-base font-extrabold text-[var(--text-primary)]">¿Anular este adelanto?</p>
+            <p className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">¿Anular este adelanto?</p>
             <p className="text-sm text-[var(--text-secondary)]">
               <strong className="text-[var(--text-primary)]">{persona}</strong> — {fmtMon(monto, moneda)}. No se borra el
               historial, queda marcado como cancelado.

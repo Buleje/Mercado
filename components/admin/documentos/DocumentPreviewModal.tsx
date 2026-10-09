@@ -273,7 +273,7 @@ export function DocumentPreviewModal({ docId, onClose, onRefresh, allDocs, folde
               <FileText className="h-5 w-5 text-[var(--text-secondary)]" />
             </span>
             <div className="min-w-0">
-              <p id={titleId} className="text-base font-extrabold text-[var(--text-primary)] truncate">{doc.name}</p>
+              <p id={titleId} className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)] truncate">{doc.name}</p>
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 {/* Dónde vive el archivo: se ve sin cambiar de pestaña y se
                     puede mover desde acá mismo. */}

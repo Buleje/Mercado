@@ -15,7 +15,7 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, Loader2, Share2 } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
-import { CardTitle } from "@buleje/design-system";
+import { Kicker } from "@buleje/design-system";
 import {
   costoPorM3Proveedor,
   type TrazabilidadProveedor,
@@ -257,9 +257,9 @@ function Dato({ label, valor, pie, tono = "ok" }: { label: string; valor: string
 function Bloque({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
     <section>
-      <CardTitle as="h3" className="mb-1.5 text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+      <Kicker as="h3" className="libro-kicker mb-1.5">
         {titulo}
-      </CardTitle>
+      </Kicker>
       <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">{children}</div>
     </section>
   );

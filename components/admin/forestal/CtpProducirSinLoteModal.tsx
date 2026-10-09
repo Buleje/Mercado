@@ -207,7 +207,7 @@ export default function CtpProducirSinLoteModal({
             <Calculator className="h-4 w-4" aria-hidden />
           </span>
           <div className="flex min-w-0 flex-1 items-center gap-1.5">
-            <CardTitle as="h3" className="text-[length:var(--ts-xl)] font-bold leading-tight text-[var(--text-primary)]">
+            <CardTitle as="h3" className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)] leading-tight">
               Producir sin lote
             </CardTitle>
             <InfoTip

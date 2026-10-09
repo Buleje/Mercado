@@ -155,7 +155,7 @@ function MedidasDeclaradas({ paquetes, onCerrar }: {
           className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4 sm:px-6"
         >
           <div>
-            <BlockTitle className="text-[length:var(--ts-xl)] flex items-center gap-2 text-[var(--text-primary)]">
+            <BlockTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)] flex items-center gap-2">
               <Ruler className="h-5 w-5 text-[var(--accent)]" aria-hidden /> Medidas declaradas
             </BlockTitle>
             <p className="text-xs text-[var(--text-tertiary)]">
@@ -519,7 +519,7 @@ export default function CtpVincularMateriaPrimaModal({
           className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4 sm:px-6"
         >
           <div className="min-w-0">
-            <CardTitle as="h3" className="flex items-center gap-2 text-[length:var(--ts-xl)] font-bold">
+            <CardTitle as="h3" className="flex items-center gap-2 font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">
               <Layers className="h-5 w-5 text-[var(--accent)]" aria-hidden /> Vincular materia prima
             </CardTitle>
             <p className="flex flex-wrap items-center gap-x-2 text-xs text-[var(--text-tertiary)]">

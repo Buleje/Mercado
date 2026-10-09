@@ -489,7 +489,7 @@ function TemplatesModal({
             <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
               Galería de plantillas
             </p>
-            <SectionTitle className="text-[var(--text-primary)]">
+            <SectionTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">
               Elige una sección para agregar
             </SectionTitle>
           </div>

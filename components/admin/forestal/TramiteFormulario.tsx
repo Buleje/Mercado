@@ -675,7 +675,7 @@ export default function TramiteFormulario({
               )}
             </div>
             <span className="mt-2 flex items-center gap-1.5">
-              <CardTitle as="h3" className="font-display text-2xl leading-tight text-[var(--text-primary)]">{formato.nombre}</CardTitle>
+              <CardTitle as="h3" className="text-[length:var(--ts-xl)] font-bold leading-tight text-[var(--text-primary)]">{formato.nombre}</CardTitle>
               <InfoTip title={formato.nombre} what={formato.proposito} />
             </span>
           </div>

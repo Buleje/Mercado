@@ -2286,7 +2286,7 @@ export default function PuntoCompraView() {
           >
             <div {...ventanaNuevoProveedor.asaProps} className="flex items-start justify-between">
               <div>
-                <CardTitle as="h3" id="punto-compra-nuevo-proveedor" className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">Nuevo proveedor</CardTitle>
+                <CardTitle as="h3" id="punto-compra-nuevo-proveedor" className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Nuevo proveedor</CardTitle>
                 <p className="text-xs text-[var(--text-secondary)] mt-0.5">
                   Se guarda en tu lista de proveedores y se selecciona en esta orden.
                 </p>

@@ -7,7 +7,7 @@
 
 import { useId, useMemo } from "react";
 import { Copy, Plus, Ruler, Trash2 } from "@buleje/design-system/icons";
-import { CardTitle } from "@buleje/design-system";
+import { Kicker } from "@buleje/design-system";
 import type { AdvertenciaPlantacion, BloqueInput, EspecieBloqueInput } from "@/lib/forestal/plantacion-tramite";
 import { geometriaBloque, type VerticeBloque } from "@/lib/forestal/plantacion-cartografia";
 import PlantacionVerticesTabla from "./PlantacionVerticesTabla";
@@ -77,9 +77,9 @@ export default function PlantacionBloqueCard({
   return (
     <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <header className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-[var(--rule-base)] px-4 py-3">
-        <CardTitle as="h3" className="text-sm font-black uppercase tracking-widest text-[var(--text-secondary)]">
+        <Kicker as="h3" className="libro-kicker">
           Bloque {bloque.numero || index + 1}{bloque.nombre ? ` — ${bloque.nombre}` : ""}
-        </CardTitle>
+        </Kicker>
         {!soloLectura && (
           <div className="flex items-center gap-1">
             <button

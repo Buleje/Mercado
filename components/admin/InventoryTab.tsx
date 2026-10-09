@@ -2492,7 +2492,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Inventario</p>
-                  <SectionTitle className="text-[var(--text-primary)]">Agregar al catálogo</SectionTitle>
+                  <SectionTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Agregar al catálogo</SectionTitle>
                   <p className="mt-0.5 text-sm text-[var(--text-secondary)] leading-snug">Toca un producto para editarlo, o crea uno nuevo.</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -2600,7 +2600,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
           <div ref={addModalRef} role="dialog" aria-modal="true" aria-label="Nuevo producto" tabIndex={-1} className="relative bg-[var(--surface-raised)] w-full sm:max-w-5xl sm:rounded-2xl rounded-t-2xl overflow-y-auto max-h-[92dvh] border border-[var(--rule-base)] shadow-xl">
             <div {...ventanaAdd.asaProps} className="sticky top-0 z-10 flex items-center justify-between gap-3 px-6 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]/95 backdrop-blur">
               <div className="min-w-0">
-                <SectionTitle className="text-[var(--text-primary)]">Nuevo producto</SectionTitle>
+                <SectionTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Nuevo producto</SectionTitle>
                 <p className="text-xs text-[var(--text-tertiary)]">Producto físico o servicio del catálogo</p>
               </div>
               <span className="ml-auto flex items-center gap-1 shrink-0">
@@ -3227,7 +3227,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
             <div {...ventanaEdit.asaProps} className="sticky top-0 z-10 flex items-center justify-between gap-3 px-6 py-4 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]/95 backdrop-blur">
               <div className="min-w-0">
                 <p className="text-xs font-medium text-[var(--text-tertiary)]">Editar {(editForm.type ?? "product") === "service" ? "servicio" : "producto"}</p>
-                <SectionTitle className="text-[var(--text-primary)] truncate">{editModalProduct.name}</SectionTitle>
+                <SectionTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)] truncate">{editModalProduct.name}</SectionTitle>
               </div>
               <span className="ml-auto flex items-center gap-1 shrink-0">
                 <ControlesDeVentana ventana={ventanaEdit} />
@@ -3807,7 +3807,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
         <div className="modal-backdrop flex items-center justify-center p-4">
           <div ref={bulkModalRef} role="dialog" aria-modal="true" aria-label="Edición masiva" tabIndex={-1} className="relative bg-[var(--surface-raised)] rounded-xl max-w-sm w-full overflow-hidden">
             <div {...ventanaBulk.asaProps} className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-              <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">Edición masiva — {selectedIds.size} producto{selectedIds.size > 1 ? "s" : ""}</CardTitle>
+              <CardTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Edición masiva — {selectedIds.size} producto{selectedIds.size > 1 ? "s" : ""}</CardTitle>
               <span className="ml-auto flex items-center gap-1">
                 <ControlesDeVentana ventana={ventanaBulk} />
                 <button aria-label="Cerrar" onClick={() => setBulkModal(false)} className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5"><X className="h-5 w-5" /></button>
@@ -3984,7 +3984,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
               className="relative w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-5 space-y-4 text-center"
             >
               <div {...ventanaQR.asaProps} className="flex items-center justify-between">
-                <CardTitle id={qrTitleId} className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Codigo QR</CardTitle>
+                <CardTitle id={qrTitleId} className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Codigo QR</CardTitle>
                 <span className="ml-auto flex items-center gap-1">
                   <ControlesDeVentana ventana={ventanaQR} />
                   <button aria-label="Cerrar" onClick={() => setShowQRProduct(null)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] ">
@@ -4053,7 +4053,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
               className="relative w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-5 space-y-4"
             >
               <div {...ventanaAutoReorder.asaProps} className="flex items-center justify-between">
-                <CardTitle id={autoReorderTitleId} className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Configurar Auto-Reorden</CardTitle>
+                <CardTitle id={autoReorderTitleId} className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Configurar Auto-Reorden</CardTitle>
                 <span className="ml-auto flex items-center gap-1">
                   <ControlesDeVentana ventana={ventanaAutoReorder} />
                   <button aria-label="Cerrar" onClick={() => setShowAutoReorder(null)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] ">

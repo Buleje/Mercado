@@ -52,7 +52,7 @@ export function VeredictoBanner({ v }: { v: Veredicto }) {
           <Icon className="h-6 w-6" aria-hidden="true" />
         </span>
         <div className="min-w-0 flex-1">
-          <CardTitle as="h3" className={`text-lg leading-tight ${e.texto}`}>{v.titulo}</CardTitle>
+          <CardTitle as="h3" className={`text-[length:var(--ts-xl)] font-bold leading-tight ${e.texto}`}>{v.titulo}</CardTitle>
           {v.motivos.length > 0 ? (
             <ul className="mt-2 space-y-1">
               {v.motivos.map((m, i) => (

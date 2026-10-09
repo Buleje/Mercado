@@ -27,7 +27,7 @@ import {
   Truck,
   X as XIcon,
 } from "@buleje/design-system/icons";
-import { CardTitle } from "@buleje/design-system";
+import { Kicker } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { applyCtpPeriodParams, type CtpPeriod } from "@/lib/forestal/ctp-period";
 import { formatDate, productLabel, StatusBadge, type WoodEntry } from "./ctp-shared";
@@ -221,10 +221,10 @@ export default function CtpBuscarGtf({
            */}
           {paquetes.length > 0 && onVerPaquete && (
             <section className="mb-4">
-              <CardTitle as="h3" className="mb-2 flex items-center gap-2 border-b-2 border-[var(--rule-soft)] pb-1.5 text-xs font-bold uppercase tracking-wide text-[var(--text-secondary)]">
+              <Kicker as="h3" className="libro-kicker mb-2 flex items-center gap-2 border-b-2 border-[var(--rule-soft)] pb-1.5">
                 <Boxes className="h-4 w-4" aria-hidden="true" />
                 Paquetes con ese código · {paquetes.length}
-              </CardTitle>
+              </Kicker>
               <ul className="space-y-2">
                 {paquetes.map((p) => (
                   <li key={p.id}>
@@ -256,10 +256,10 @@ export default function CtpBuscarGtf({
 
           {ingresos.length > 0 && (
             <section className="mb-4">
-              <CardTitle as="h3" className="mb-2 flex items-center gap-2 border-b-2 border-[var(--rule-soft)] pb-1.5 text-xs font-bold uppercase tracking-wide text-[var(--text-secondary)]">
+              <Kicker as="h3" className="libro-kicker mb-2 flex items-center gap-2 border-b-2 border-[var(--rule-soft)] pb-1.5">
                 <PackageOpen className="h-4 w-4" aria-hidden="true" />
                 Entró con esta guía · {ingresos.length}
-              </CardTitle>
+              </Kicker>
               <ul className="space-y-2">
                 {ingresos.map((e) => (
                   <li key={e.id}>
@@ -294,10 +294,10 @@ export default function CtpBuscarGtf({
 
           {despachos.length > 0 && (
             <section>
-              <CardTitle as="h3" className="mb-2 flex items-center gap-2 border-b-2 border-[var(--rule-soft)] pb-1.5 text-xs font-bold uppercase tracking-wide text-[var(--text-secondary)]">
+              <Kicker as="h3" className="libro-kicker mb-2 flex items-center gap-2 border-b-2 border-[var(--rule-soft)] pb-1.5">
                 <Truck className="h-4 w-4" aria-hidden="true" />
                 Salió con esta guía · {despachos.length}
-              </CardTitle>
+              </Kicker>
               <ul className="space-y-2">
                 {despachos.map((d) => (
                   <li key={d.id}>

@@ -580,7 +580,7 @@ function AssetDetailDrawer({ asset, onClose, onContract, onChanged }: { asset: A
         <div className="flex items-center gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] px-5 py-3.5 sm:px-6">
           <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Receipt className="h-5 w-5" /></span>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-base font-extrabold text-[var(--text-primary)]">{asset.name}</p>
+            <p className="truncate font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">{asset.name}</p>
             <p className="text-xs font-bold text-[var(--text-tertiary)]">Ganancia: <span className={cn("font-mono", asset.profit >= 0 ? "text-primary" : "text-[var(--data-error-600)]")}>{fmt(asset.profit)}</span>{asset.currentHours != null && <span> · {asset.currentHours} h</span>}</p>
           </div>
           <button type="button" onClick={onContract} aria-label="Contrato" title="Contrato / cotización" className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"><FileText className="h-4.5 w-4.5" /></button>
@@ -1006,7 +1006,7 @@ function ModalShell({ title, subtitle, onClose, children, icon: Icon = Construct
           <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Icon className="h-6 w-6" strokeWidth={2.1} /></span>
           <div className="min-w-0 flex-1">
             <p className="text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Activos & Maquinaria</p>
-            <CardTitle as="h2" className="text-[length:var(--ts-xl)] font-bold leading-tight tracking-tight">{title}</CardTitle>
+            <CardTitle as="h2" className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)] leading-tight">{title}</CardTitle>
             <p className="mt-0.5 text-sm text-[var(--text-secondary)]">{subtitle}</p>
           </div>
           <span className="ml-auto flex shrink-0 items-center gap-1">

@@ -37,7 +37,7 @@ export default function StorePublicCard({ storeSlug }: { storeSlug: string }) {
           <Store className="h-5 w-5" strokeWidth={2} aria-hidden />
         </span>
         <div className="min-w-0 flex-1">
-          <CardTitle>Tu tienda pública</CardTitle>
+          <CardTitle className="text-sm font-bold">Tu tienda pública</CardTitle>
           <p className="mt-0.5 truncate text-sm text-[var(--text-secondary)]">{prettyUrl}</p>
 
           <div className="mt-3 flex flex-wrap items-center gap-2">

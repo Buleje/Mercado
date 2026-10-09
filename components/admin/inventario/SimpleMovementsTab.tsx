@@ -450,7 +450,7 @@ function RegisterMovementModal({ products, onClose, onSaved }: { products: Produ
       <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="relative max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl sm:max-w-lg sm:rounded-2xl">
         <div {...ventana.asaProps} className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]/95 px-6 py-4 backdrop-blur">
           <div>
-            <SectionTitle id={titleId} as="h2" className="leading-tight text-[var(--text-primary)]">Registrar movimiento</SectionTitle>
+            <SectionTitle id={titleId} as="h2" className="leading-tight font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Registrar movimiento</SectionTitle>
             <p className="text-xs text-[var(--text-tertiary)]">Entrada o salida de stock con motivo</p>
           </div>
           <span className="ml-auto flex items-center gap-1 shrink-0">

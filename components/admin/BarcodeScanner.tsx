@@ -189,7 +189,7 @@ export default function BarcodeScanner({ onDetected, onClose, continuo = false, 
         <div className="px-2 sm:px-4 py-2 sm:py-3 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex items-center justify-between">
           <div className="flex flex-wrap items-center gap-2">
             <Camera className="h-5 w-5 text-primary" />
-            <CardTitle id={tituloId} className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Escanear código de barras</CardTitle>
+            <CardTitle id={tituloId} className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Escanear código de barras</CardTitle>
           </div>
           <div className="flex items-center gap-1">
           <ControlesDeVentana ventana={ventana} />

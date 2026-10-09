@@ -358,7 +358,7 @@ export function SendWhatsAppModal({ docs, mode = "share", telefono, onClose }: {
             {isSign ? <PenLine className="h-5 w-5" /> : <MessageCircle className="h-5 w-5" />}
           </span>
           <div className="min-w-0 flex-1">
-            <p id={titleId} className="text-sm font-extrabold text-[var(--text-primary)]">{isSign ? "Solicitar firma" : multi ? `Enviar ${docs.length} documentos por WhatsApp` : "Enviar por WhatsApp"}</p>
+            <p id={titleId} className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">{isSign ? "Solicitar firma" : multi ? `Enviar ${docs.length} documentos por WhatsApp` : "Enviar por WhatsApp"}</p>
             <p className="truncate text-xs text-[var(--text-tertiary)]">{multi ? docs.map((d) => d.name).join(" · ") : doc?.name}</p>
           </div>
           <ControlesDeVentana ventana={ventana} />

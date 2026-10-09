@@ -18,7 +18,7 @@ import {
   useState,
   type ReactElement,
 } from "react";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, Kicker } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { MODAL_BODY } from "@/components/admin/shared/AdminModal";
@@ -741,9 +741,9 @@ export function Seccion({
             {String(numero).padStart(2, "0")}
           </span>
         )}
-        <CardTitle as="h3" className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+        <Kicker as="h3" className="libro-kicker">
           {title}
-        </CardTitle>
+        </Kicker>
         {/* El estado por sección evita recorrer el formulario entero buscando
             qué falta: se ve de un vistazo cuál quedó a medias. */}
         {estado === "ok" && (
@@ -779,9 +779,9 @@ export function PanelResumen({
 }) {
   return (
     <aside className="sticky top-0 flex h-fit flex-col gap-3 rounded-2xl bg-[var(--surface-sunken)] p-4">
-      <CardTitle as="h3" className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+      <Kicker as="h3" className="libro-kicker">
         {title}
-      </CardTitle>
+      </Kicker>
       {children}
       {footer}
     </aside>

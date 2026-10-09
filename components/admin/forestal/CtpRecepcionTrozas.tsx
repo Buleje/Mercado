@@ -13,7 +13,7 @@
  */
 
 import { useMemo, useRef, useState } from "react";
-import { CardTitle, DataTable } from "@buleje/design-system";
+import { DataTable, Kicker } from "@buleje/design-system";
 import { AlertTriangle, CalendarClock, Camera, Check, Hash, Loader2, PackageCheck, X } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { URL_TROZAS_RECEPCION, escribirDelPatio } from "@/lib/forestal/patio-cola";
@@ -233,9 +233,9 @@ export default function CtpRecepcionTrozas({
           <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <PackageCheck className="h-4 w-4" aria-hidden />
           </span>
-          <CardTitle as="h3" className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">
+          <Kicker as="h3" className="libro-kicker">
             Recepción en patio
-          </CardTitle>
+          </Kicker>
         </div>
         <span className="font-mono text-sm tabular-nums text-[var(--text-secondary)]">
           <b className="text-[var(--text-primary)]">{balance.recibidas}</b>/{balance.declaradas} piezas ·{" "}
@@ -250,9 +250,9 @@ export default function CtpRecepcionTrozas({
         <div ref={fotosRef} className="border-b border-[var(--rule-soft)] px-4 py-3">
           <div className="mb-1.5 flex items-center gap-2">
             <Camera className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
-            <CardTitle as="h4" className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">
+            <Kicker as="h4" className="libro-kicker">
               Fotos de la guía
-            </CardTitle>
+            </Kicker>
           </div>
           <CtpFotosDelIngreso fotos={fotos} onCambio={(u) => void cambiarFotos(u)} disabled={guardandoFotos} gtf={gtfNumber} />
           {errorFotos && (

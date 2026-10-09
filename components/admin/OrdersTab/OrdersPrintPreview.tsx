@@ -48,7 +48,7 @@ export function OrdersPrintPreview({
         {/* Header */}
         <div {...ventana.asaProps} className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
           <div>
-            <CardTitle id={titleId} className="font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-lg">Vista previa de impresión</CardTitle>
+            <CardTitle id={titleId} className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Vista previa de impresión</CardTitle>
             <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">
               {selectedOrderIds.size} pedido{selectedOrderIds.size > 1 ? "s" : ""} seleccionado{selectedOrderIds.size > 1 ? "s" : ""}
             </p>

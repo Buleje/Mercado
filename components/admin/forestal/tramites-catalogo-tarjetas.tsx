@@ -127,7 +127,10 @@ export function Hero({
           <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide">
             El más pedido · {AUTORIDADES[formato.autoridad].corto}
           </span>
-          <SectionTitle as="h2" className="mt-2 text-2xl font-bold leading-tight tracking-tight text-white!">{formato.nombre}</SectionTitle>
+          {/* Hero de acción (Brandon 08-10, escala única): es el ÚNICO título que sube un
+              peldaño sobre la vista (24 px en vez de 20) porque la tarjeta entera es el
+              botón del trámite más pedido. Cualquier otra tarjeta usa la escala. */}
+          <SectionTitle as="h2" data-titulo="hero" className="mt-2 text-[length:var(--ts-2xl)] font-bold leading-tight tracking-tight text-white!">{formato.nombre}</SectionTitle>
           <span className="mt-2 inline-flex items-center gap-2 text-sm font-bold">
             Llenar y presentar
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -169,7 +172,7 @@ export function RegistroPlantacionCard({ onClick }: { onClick: () => void }) {
           <span className="inline-flex items-center gap-2 rounded-full bg-[var(--data-success-500)]/15 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
             Registro Nacional · SERFOR
           </span>
-          <span className="mt-1.5 block text-xl font-bold leading-snug tracking-tight text-[var(--text-primary)]">
+          <span className="mt-1.5 block text-[length:var(--ts-xl)] font-bold leading-snug tracking-tight text-[var(--text-primary)]">
             Registro de Plantación Forestal
           </span>
         </span>

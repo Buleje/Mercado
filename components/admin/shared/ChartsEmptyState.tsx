@@ -72,7 +72,7 @@ export default function ChartsEmptyState({
         </div>
 
         {/* Headline (SectionTitle del DS para cumplir ADR-075) */}
-        <SectionTitle className="text-[length:clamp(1.25rem,2.5vw,1.625rem)] tracking-tight text-[var(--text-primary)] leading-tight">
+        <SectionTitle className="tracking-tight text-[var(--text-primary)] leading-tight">
           {title}
         </SectionTitle>
 

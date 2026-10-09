@@ -120,7 +120,7 @@ export function MemberProfileDrawer({ member, onClose, onExtend, onCancel }: Pro
               {member.name.charAt(0).toUpperCase()}
             </div>
             <div>
-              <CardTitle id={tituloId} className="text-sm font-bold text-[var(--text-primary)]">{member.name}</CardTitle>
+              <CardTitle id={tituloId} className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">{member.name}</CardTitle>
               <p className="text-xs text-[var(--text-secondary)]">Socio Buleje · {PLAN_LABELS[member.plan]}</p>
             </div>
           </div>

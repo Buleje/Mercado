@@ -18,7 +18,7 @@
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import * as Dialog from "@radix-ui/react-dialog";
-import { CardTitle } from "@buleje/design-system";
+import { Kicker } from "@buleje/design-system";
 import {
   X, Plus, Loader2, Image as ImageIcon, Check, BookOpen, Search,
 } from "@buleje/design-system/icons";
@@ -246,9 +246,9 @@ export default function CatalogOptionPicker({ onClose, onPick, existingNames }: 
             {Object.values(grouped).map(({ template, options }) => (
               <section key={template.id} className="space-y-2">
                 <div className="flex items-center gap-2 px-1">
-                  <CardTitle as="h3" className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                  <Kicker as="h3" className="libro-kicker">
                     {template.category} · {template.name}
-                  </CardTitle>
+                  </Kicker>
                   <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                     {options.length} item{options.length === 1 ? "" : "s"}
                   </span>

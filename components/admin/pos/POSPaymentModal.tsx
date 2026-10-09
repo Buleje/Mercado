@@ -28,7 +28,7 @@ import {
   Volume2,
   VolumeX,
 } from "@buleje/design-system/icons";
-import { CardTitle, LoadingState, BlockTitle } from "@buleje/design-system";
+import { LoadingState, BlockTitle, Kicker } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import POSCustomerSearch from "./POSCustomerSearch";
 import POSSplitPayment from "./POSSplitPayment";
@@ -198,7 +198,7 @@ function CustomerListPanel({ onSelect, onClose }: { onSelect: (phone: string, na
             <ClipboardList className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <BlockTitle className="text-[length:var(--ts-xl)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">Todos los clientes</BlockTitle>
+            <BlockTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Todos los clientes</BlockTitle>
             <p className="text-sm text-[var(--text-tertiary)] dark:text-muted">Selecciona un cliente existente</p>
           </div>
         </div>
@@ -627,7 +627,7 @@ export default function POSPaymentModal({
                 <span className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-[var(--accent-ink)] dark:text-[var(--accent)]">
                   <Banknote className="h-4 w-4" />
                 </span>
-                <CardTitle as="h3" className="text-sm font-extrabold text-[var(--text-primary)] uppercase tracking-wide">Pago</CardTitle>
+                <Kicker as="h3" className="libro-kicker">Pago</Kicker>
               </div>
               <div className="px-4 py-3 space-y-3 min-w-0">
 
@@ -1128,7 +1128,7 @@ export default function POSPaymentModal({
                 <span className="h-8 w-8 rounded-full bg-[var(--data-success-500)]/15 flex items-center justify-center text-[var(--data-success-500)]">
                   <User className="h-4 w-4" />
                 </span>
-                <CardTitle as="h3" className="text-sm font-extrabold text-[var(--text-primary)] uppercase tracking-wide">Cliente</CardTitle>
+                <Kicker as="h3" className="libro-kicker">Cliente</Kicker>
                 {isFiado && <span className="ml-auto text-[length:var(--ts-2xs)] font-extrabold text-[var(--data-error-500)] uppercase">Requerido</span>}
               </div>
               <div className="px-4 py-3 space-y-3 min-w-0">
@@ -1277,7 +1277,7 @@ export default function POSPaymentModal({
                 <span className="h-8 w-8 rounded-full bg-[var(--data-warning-500)]/15 flex items-center justify-center text-[var(--data-warning-500)]">
                   <Receipt className="h-4 w-4" />
                 </span>
-                <CardTitle as="h3" className="text-sm font-extrabold text-[var(--text-primary)] uppercase tracking-wide">Comprobante</CardTitle>
+                <Kicker as="h3" className="libro-kicker">Comprobante</Kicker>
               </div>
               <div className="px-4 py-3 space-y-3 min-w-0">
 

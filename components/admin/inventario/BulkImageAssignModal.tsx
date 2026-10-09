@@ -233,7 +233,7 @@ export default function BulkImageAssignModal({ open, onOpenChange, products, onA
             <Sparkles className="h-5 w-5" />
           </div>
           <div className="flex-1 min-w-0">
-            <SectionTitle id={titleId} as="h2" className="text-[var(--text-primary)]">Asignar imágenes en bloque</SectionTitle>
+            <SectionTitle id={titleId} as="h2" className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Asignar imágenes en bloque</SectionTitle>
             <p className="text-xs sm:text-sm text-[var(--text-secondary)]">
               Arrastra una imagen del banco al producto sin foto. Se guarda automático.
             </p>

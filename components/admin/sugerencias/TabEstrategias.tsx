@@ -148,7 +148,7 @@ export default function TabEstrategias() {
             </span>
             <div className="flex-1 min-w-0">
               <div className="flex items-baseline justify-between gap-2 flex-wrap">
-                <p className="text-lg sm:text-xl font-extrabold text-[var(--text-primary)] leading-tight">
+                <p className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] leading-tight">
                   {next.label}
                 </p>
                 <p className="text-xs font-bold uppercase tracking-wider" style={{ color: next.accent }}>

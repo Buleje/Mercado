@@ -755,7 +755,7 @@ function BoostModal({
             <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-0.5">
               Marketplace · Boost
             </p>
-            <SectionTitle className="text-[var(--text-primary)] leading-tight">
+            <SectionTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)] leading-tight">
               {existing ? "Boost activo" : "Destacar producto"}
             </SectionTitle>
             <p className="mt-1 text-sm text-[var(--text-secondary)] leading-relaxed truncate">

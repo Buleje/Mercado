@@ -37,7 +37,36 @@ type Rule = {
   adminOnly?: boolean;
   /** Si se provee, la severidad se eleva a "error" cuando MODE_DESIGN_STRICT=true. */
   strictUpgrade?: boolean;
+  /** Si se provee, el match solo cuenta cuando devuelve true (reglas que no caben en una regex). */
+  filter?: (match: string) => boolean;
 };
+
+// ─── Escala única de títulos del panel (Brandon 2026-10-08) ────────────────
+//
+// Referencia: Libro TH › GTF. Cuatro niveles y nada más:
+//   vista    <SectionTitle> sin tamaño (20 px / 700) o `text-[length:var(--ts-xl)] font-bold`
+//   bloque   <CardTitle className="text-sm font-bold"> (14 px / 700)
+//   ventana  la clase del título de AdminModal (`font-display text-base sm:text-lg font-semibold`)
+//   rótulo   <Kicker className="libro-kicker"> (12 px / 700 / mayúsculas) — nunca un título con `uppercase`
+// Excepción documentada: `data-titulo="hero"` (la tarjeta-botón del trámite más pedido).
+const TITULO_TAMANO = /^(?:[a-z0-9@\[\]\-]+:)*text-(?:xs|sm|base|md|lg|xl|[2-9]xl|\[(?:length:[^\]]*|[\d.]+(?:px|rem)|clamp\([^\]]*\))\])$/;
+const TITULO_PESO = /^(?:[a-z0-9@\[\]\-]+:)*font-(?:thin|light|normal|medium|semibold|bold|extrabold|black|display)$/;
+const ESCALA_TITULOS = [
+  "",
+  "font-bold text-sm",
+  "font-bold text-[length:var(--ts-xl)]",
+  "font-display font-semibold sm:text-lg text-base",
+];
+function tituloFueraDeEscala(match: string): boolean {
+  if (/data-titulo="hero"/.test(match)) return false;
+  const cls = match.match(/className="([^"]*)"/)?.[1] ?? "";
+  const toks = cls.split(/\s+/).filter((t) => t && !t.startsWith("print:"));
+  if (toks.includes("uppercase")) return true;
+  const firma = toks.filter((t) => TITULO_TAMANO.test(t) || TITULO_PESO.test(t)).sort().join(" ");
+  // <SectionTitle className="font-bold"> repite su default: está en la escala.
+  if (firma === "font-bold" && match.startsWith("<SectionTitle")) return false;
+  return !ESCALA_TITULOS.includes(firma);
+}
 
 // ─── Tokens --data-* que NO existen ────────────────────────────────────────
 //
@@ -316,6 +345,15 @@ const RULES: Rule[] = [
     severity: "warning",
     adminOnly: true,
     strictUpgrade: true,
+  },
+  {
+    id: "ds-title-off-scale-admin",
+    pattern: /<(?:SectionTitle|CardTitle)\b[^>]*?className="[^"]*"/g,
+    filter: tituloFueraDeEscala,
+    message:
+      "Título fuera de la escala del panel. Vista = <SectionTitle> sin tamaño (20/700) · bloque = <CardTitle className=\"text-sm font-bold\"> (14/700) · ventana = clase del título de AdminModal · rótulo en mayúsculas = <Kicker className=\"libro-kicker\">. Ver components/admin/shared/titulo-modulo.tsx.",
+    severity: "warning",
+    adminOnly: true,
   },
   {
     id: "ds-no-heading-h4-raw-admin",
@@ -623,6 +661,7 @@ function scan(file: string): Finding[] {
       const re = new RegExp(rule.pattern.source, rule.pattern.flags);
       let m: RegExpExecArray | null;
       while ((m = re.exec(line)) !== null) {
+        if (rule.filter && !rule.filter(m[0])) continue;
         findings.push({ file, line: idx + 1, col: m.index + 1, rule, match: m[0] });
       }
     });

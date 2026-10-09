@@ -151,7 +151,7 @@ export default function PlanTierSelector({
             <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
               Plan actual
             </p>
-            <CardTitle className="mt-1 sm:text-2xl text-[var(--text-primary)]">
+            <CardTitle className="mt-1 text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">
               {PLANS[currentPlan].label}
               <span className="ml-2 text-sm font-bold text-[var(--text-tertiary)]">
                 {PLANS[currentPlan].price}

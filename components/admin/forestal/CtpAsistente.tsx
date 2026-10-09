@@ -121,7 +121,7 @@ export default function CtpAsistente() {
             className="absolute right-0 z-50 mt-2 w-[min(24rem,calc(100vw-2rem))] max-sm:fixed max-sm:inset-x-4 max-sm:top-20 max-sm:mt-0 max-sm:w-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 shadow-[var(--shadow-lg)]"
           >
             <div className="mb-3 flex items-center justify-between">
-              <span className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+              <span className="flex items-center gap-2 font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">
                 <Sparkles className="h-4 w-4 text-primary" aria-hidden="true" /> Asistente del Libro
               </span>
               <button type="button" onClick={() => setOpen(false)} className="grid h-8 w-8 place-items-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-canvas)]" aria-label="Cerrar"><XIcon className="h-4 w-4" /></button>

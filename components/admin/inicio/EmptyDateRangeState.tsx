@@ -132,7 +132,7 @@ export default function EmptyDateRangeState({
         </div>
 
         {/* Headline */}
-        <CardTitle as="h3" className="text-[length:clamp(1.25rem,2.5vw,1.625rem)] font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
+        <CardTitle as="h3" className="text-[length:var(--ts-xl)] font-bold tracking-tight text-[var(--text-primary)] leading-tight">
           {headline}
         </CardTitle>
 

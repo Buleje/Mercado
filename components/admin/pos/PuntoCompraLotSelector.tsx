@@ -39,7 +39,7 @@ export default function PuntoCompraLotSelector({ product, open, onClose, onSelec
           <div className="flex items-center gap-2 min-w-0">
             <Package className="h-4 w-4 text-primary shrink-0" />
             <div className="min-w-0">
-              <CardTitle id={titleId} className="text-xs font-bold text-[var(--text-primary)] truncate">
+              <CardTitle id={titleId} className="text-sm font-bold text-[var(--text-primary)] truncate">
                 Seleccionar lote
               </CardTitle>
               <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] truncate">{product.name}</p>

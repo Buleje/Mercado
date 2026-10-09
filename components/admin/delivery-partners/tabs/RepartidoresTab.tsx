@@ -111,7 +111,7 @@ function PartnerModal({
         tabIndex={-1}
       >
         <div {...ventana.asaProps} className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)]">
-          <CardTitle id="partner-modal-title" className="text-sm font-bold text-[var(--text-primary)]">
+          <CardTitle id="partner-modal-title" className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">
             {partner?.id ? "Editar repartidor" : "Nuevo repartidor"}
           </CardTitle>
           <span className="ml-auto flex items-center gap-1">
@@ -711,7 +711,7 @@ export function RepartidoresTab() {
           <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--surface-sunken)] mb-4">
             <Truck className="h-8 w-8 text-[var(--text-tertiary)]" />
           </span>
-          <p className="font-display text-xl font-extrabold text-[var(--text-primary)]">
+          <p className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">
             Sin repartidores registrados
           </p>
           <p className="text-base text-[var(--text-secondary)] mt-2 max-w-md mx-auto leading-relaxed">
@@ -978,7 +978,7 @@ export function RepartidoresTab() {
                 <AlertCircle className="h-5 w-5 text-[var(--data-error-500)]" />
               </div>
               <div>
-                <CardTitle className="text-sm font-bold text-[var(--text-primary)]">¿Eliminar repartidor?</CardTitle>
+                <CardTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">¿Eliminar repartidor?</CardTitle>
                 <p className="text-sm text-[var(--text-secondary)]">Esta acción no se puede deshacer.</p>
               </div>
             </div>

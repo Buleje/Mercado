@@ -208,7 +208,7 @@ export default function LothImportLineasModal({
           className="flex items-start justify-between gap-3 border-b-2 border-[var(--rule-base)] px-5 py-3"
         >
           <div className="flex items-center gap-1.5">
-            <p className="text-sm font-black uppercase tracking-widest text-[var(--text-secondary)]">
+            <p className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">
               Importar · {SECTION_META[section].label}
             </p>
             <InfoTip

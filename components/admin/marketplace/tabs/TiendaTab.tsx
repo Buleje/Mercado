@@ -69,7 +69,7 @@ export function MarketplaceTiendaTab() {
                 </span>
               )}
             </div>
-            <SectionTitle className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] tracking-tight truncate">
+            <SectionTitle className="text-[var(--text-primary)] tracking-tight truncate">
               {store.name || "Tu tienda en el marketplace"}
             </SectionTitle>
             <p className="mt-2 text-base text-[var(--text-secondary)] line-clamp-2 max-w-2xl leading-relaxed">

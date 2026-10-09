@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, Kicker } from "@buleje/design-system";
 import {
   DndContext,
   closestCenter,
@@ -327,10 +327,10 @@ function ThemePreview({
 function SectionHeader({ icon: Icon, title, hint }: { icon: React.ElementType; title: string; hint?: string }) {
   return (
     <div className="mb-2">
-      <CardTitle as="h3" className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-zinc-400">
+      <Kicker as="h3" className="flex items-center gap-1.5 font-bold text-zinc-400">
         <Icon className="h-3 w-3 text-primary" strokeWidth={2.5} />
         {title}
-      </CardTitle>
+      </Kicker>
       {hint && <p className="text-xs text-zinc-500 mt-0.5 leading-relaxed">{hint}</p>}
     </div>
   );

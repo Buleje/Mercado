@@ -2321,7 +2321,7 @@ export default function POSView() {
                 <AlertTriangle className="h-5 w-5" aria-hidden />
               </span>
               <div>
-                <CardTitle className="text-sm font-bold text-[var(--text-primary)]">
+                <CardTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">
                   {turnoAbierto === false && cashRegisterOpen === false
                     ? "Sin turno ni caja abiertos"
                     : turnoAbierto === false

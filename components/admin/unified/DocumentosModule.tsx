@@ -667,7 +667,7 @@ function PreviewModal({
               <Icon className={cn("h-5 w-5", tint)} />
             </span>
             <div className="min-w-0">
-              <p id={tituloId} className="text-base font-extrabold text-[var(--text-primary)] truncate">{doc.name}</p>
+              <p id={tituloId} className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)] truncate">{doc.name}</p>
               <p className="text-xs text-[var(--text-tertiary)] tabular-nums">
                 {formatBytes(doc.size)} · {doc.type || "Desconocido"} · {formatDate(doc.uploadedAt)}
               </p>

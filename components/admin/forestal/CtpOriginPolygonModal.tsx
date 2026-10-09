@@ -158,7 +158,7 @@ export default function CtpOriginPolygonModal({ originCode, initialPolygonJson, 
         <div {...ventana.asaProps} className="flex items-center justify-between border-b-2 border-[var(--rule-base)] px-5 py-3">
           <div className="flex items-center gap-2">
             <MapPin className="h-4 w-4 text-[var(--brand-ink)] dark:text-[var(--text-primary)]" />
-            <CardTitle id={titleId} as="h3" className="text-sm font-bold text-[var(--text-primary)]">Dibujar parcela · {originCode}</CardTitle>
+            <CardTitle id={titleId} as="h3" className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Dibujar parcela · {originCode}</CardTitle>
           </div>
           <span className="ml-auto flex items-center gap-1">
             <ControlesDeVentana ventana={ventana} />

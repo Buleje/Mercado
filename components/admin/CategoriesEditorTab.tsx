@@ -414,7 +414,7 @@ export default function CategoriesEditorTab() {
                 <p className="text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-0.5">
                   Catálogo
                 </p>
-                <CardTitle as="h2" id="new-cat-title" className="text-[length:var(--ts-xl)] font-bold leading-tight">
+                <CardTitle as="h2" id="new-cat-title" className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)] leading-tight">
                   Nueva categoría
                 </CardTitle>
                 <p className="mt-1 text-sm text-[var(--text-secondary)] leading-relaxed">

@@ -206,7 +206,7 @@ function ObservacionesModal({
           className="flex items-start justify-between gap-3"
         >
           <div className="flex items-center gap-2">
-            <BlockTitle className="flex items-center gap-2 text-[var(--text-primary)]">
+            <BlockTitle className="flex items-center gap-2 font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">
               <MessageSquare className="h-4 w-4 text-[var(--accent)]" /> (12) Observaciones
             </BlockTitle>
             <InfoTip icono="ayuda" title="(12) Observaciones" what="Es una declaración jurada: lo que dice acá lo escribe quien firma." example="Vacío no imprime nada." />

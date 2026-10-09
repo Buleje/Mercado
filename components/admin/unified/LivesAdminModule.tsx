@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle, SectionTitle, StatCard } from "@buleje/design-system";
+import { CardTitle, StatCard, Kicker } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 /**
  * LivesAdminModule — Gestión de transmisiones en vivo.
@@ -237,9 +237,9 @@ export default function LivesAdminModule() {
       {/* Programadas */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <SectionTitle as="h2" className="font-bold text-[var(--text-primary)] text-sm uppercase tracking-wide">
+          <Kicker as="h2" className="libro-kicker">
             Próximas transmisiones
-          </SectionTitle>
+          </Kicker>
           <button
             onClick={() => setShowSchedule(true)}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 hover:bg-primary/20 transition-colors"
@@ -303,9 +303,9 @@ export default function LivesAdminModule() {
       {/* Pasadas */}
       <div className="space-y-3">
         <div className="flex items-center gap-1.5">
-          <SectionTitle as="h2" className="font-bold text-[var(--text-primary)] text-sm uppercase tracking-wide">
+          <Kicker as="h2" className="libro-kicker">
             Transmisiones pasadas
-          </SectionTitle>
+          </Kicker>
           <InfoTip
             title="Transmisiones pasadas"
             what="Las métricas se actualizan en tiempo real durante cada transmisión y se consolidan al finalizar."

@@ -133,7 +133,7 @@ export default function CapturaFoto({
         className="relative w-full max-w-lg overflow-hidden rounded-2xl bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
       >
         <div {...ventana.asaProps} className="flex items-center justify-between px-5 py-3">
-          <p className="text-base font-extrabold text-[var(--text-primary)]">Foto del comprobante</p>
+          <p className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Foto del comprobante</p>
           <span className="ml-auto flex items-center gap-1">
             <ControlesDeVentana ventana={ventana} />
             <button

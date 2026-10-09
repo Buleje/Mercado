@@ -21,7 +21,7 @@ import {
   RotateCcw,
   ShieldCheck,
 } from "@buleje/design-system/icons";
-import { CardTitle } from "@buleje/design-system";
+import { Kicker } from "@buleje/design-system";
 import type { CtpCierrePeriodo } from "@/lib/forestal/ctp-cierre-types";
 import type { CtpCierresState } from "@/hooks/use-ctp-cierres";
 import { formatDateTime, formatNumber } from "@/lib/format";
@@ -66,7 +66,7 @@ export default function CtpCierrePanel({ estado }: { estado: CtpCierresState }) 
 
       {/* Períodos cerrados */}
       <div>
-        <CardTitle as="h3" className="mb-2 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]"><ShieldCheck className="h-4 w-4" /> Períodos cerrados</CardTitle>
+        <Kicker as="h3" className="libro-kicker mb-2 flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> Períodos cerrados</Kicker>
         {cierres === null ? (
           <p className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Cargando…</p>
         ) : cierres.length === 0 ? (

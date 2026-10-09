@@ -23,7 +23,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CardTitle, StatCard } from "@buleje/design-system";
+import { StatCard, Kicker } from "@buleje/design-system";
 import { CtpKpisPlegables } from "./kpis-plegables";
 import { AlertCircle, Coins, PackageOpen, Percent } from "@buleje/design-system/icons";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
@@ -216,9 +216,9 @@ export default function CtpValorizarIngresos({ period }: { period: CtpPeriod }) 
 
       <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <CardTitle as="h3" className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
+          <Kicker as="h3" className="libro-kicker">
             {sinPeriodo ? "Todos los ingresos · registra lo que pagaste" : "Ingresos del período · registra lo que pagaste"}
-          </CardTitle>
+          </Kicker>
           <div className="flex flex-wrap items-center gap-2">
             {/* Sin este botón, la madera parada hace años queda fuera de alcance:
                 es la que más urge valorizar y la que nunca cae en el período en

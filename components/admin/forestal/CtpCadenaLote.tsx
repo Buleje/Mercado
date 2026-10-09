@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle, DataTable } from "@buleje/design-system";
+import { DataTable, Kicker } from "@buleje/design-system";
 import { ArrowDownRight, Boxes, PackageOpen, Target, Truck, AlertTriangle } from "@buleje/design-system/icons";
 import type { CadenaLote, MetaEspecie } from "@/lib/forestal/ctp-cadena-lote";
 import { PT_POR_M3 } from "@/lib/forestal/cubicacion";
@@ -28,9 +28,9 @@ export default function CtpCadenaLote({ cadena }: { cadena: CadenaLote }) {
 
   return (
     <section className="space-y-4">
-      <CardTitle as="h3" className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">
+      <Kicker as="h3" className="libro-kicker">
         Cadena de custodia
-      </CardTitle>
+      </Kicker>
 
       {cadena.huecos.length > 0 && (
         <div className="rounded-xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] p-3.5 dark:bg-[var(--data-warning-500)]/10">
@@ -140,9 +140,9 @@ function MetaRendimiento({ meta }: { meta: MetaEspecie[] }) {
         <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
           <Target className="h-4 w-4" />
         </span>
-        <CardTitle as="h4" className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">
+        <Kicker as="h4" className="libro-kicker">
           Meta de rendimiento · {RENDIMIENTO_REF_ASERRADA}% por especie
-        </CardTitle>
+        </Kicker>
         <span className="ml-auto text-xs text-[var(--text-tertiary)]">1 m³ ≈ {pt(PT_POR_M3)} pt</span>
       </div>
       <div className="overflow-x-auto">
@@ -241,9 +241,9 @@ function Banda({
         <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
           <Icon className="h-4 w-4" />
         </span>
-        <CardTitle as="h4" className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-secondary)]">
+        <Kicker as="h4" className="libro-kicker">
           {titulo}
-        </CardTitle>
+        </Kicker>
       </div>
       {hay ? (
         <ul className="divide-y divide-[var(--rule-soft)]">{children}</ul>

@@ -55,7 +55,7 @@ export function OrdersFilters({ filters, dispatch, repartidores, repartidor, onR
         {/* Header */}
         <div {...ventana.asaProps} className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
           <div>
-            <CardTitle id={titleId} className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Filtros Avanzados</CardTitle>
+            <CardTitle id={titleId} className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Filtros Avanzados</CardTitle>
             <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">Afina tu búsqueda de pedidos</p>
           </div>
           <span className="ml-auto flex items-center gap-1">

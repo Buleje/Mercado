@@ -84,7 +84,7 @@ export default function EditarNotasModal({
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <Pencil className="h-4.5 w-4.5" />
           </span>
-          <p className="text-base font-extrabold text-[var(--text-primary)]">Editar motivo / notas</p>
+          <p className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Editar motivo / notas</p>
           <div className="ml-auto flex items-center gap-1"><ControlesDeVentana ventana={ventana} /></div>
         </div>
 

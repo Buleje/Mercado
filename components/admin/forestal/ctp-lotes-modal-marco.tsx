@@ -59,7 +59,7 @@ export function MarcoModalLotes({
         className="flex max-h-[92vh] w-full max-w-[36rem] flex-col overflow-hidden rounded-t-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-[var(--shadow-xl)] sm:rounded-2xl"
       >
         <header className="flex items-center justify-between gap-3 border-b-2 border-[var(--rule-base)] px-4 py-3 sm:px-5">
-          <p className="flex min-w-0 items-center gap-2 text-base font-bold">
+          <p className="flex min-w-0 items-center gap-2 font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">
             {icono}
             <span className="min-w-0">{titulo}</span>
             {ayuda}

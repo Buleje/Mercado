@@ -115,7 +115,7 @@ export default function LothLineaDetalleModal({
           className="flex items-start justify-between gap-3 border-b-2 border-[var(--rule-base)] px-5 py-3"
         >
           <div>
-            <p className="text-sm font-black uppercase tracking-widest text-[var(--text-secondary)]">
+            <p className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">
               Línea N° {linea.lineNo}
             </p>
             <p className="mt-0.5 text-xs font-semibold text-[var(--text-tertiary)]">

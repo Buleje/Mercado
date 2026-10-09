@@ -146,7 +146,7 @@ export function TemplateGenerator({ onClose, onGenerated }: Props) {
               <Sparkles className="h-5 w-5 text-[var(--accent)]" />
             </span>
             <div>
-              <p id={tituloId} className="text-base font-extrabold text-[var(--text-primary)]">Generador de plantillas</p>
+              <p id={tituloId} className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Generador de plantillas</p>
               <p className="text-xs text-[var(--text-secondary)]">Contratos, recibos, cotizaciones y acuerdos listos en 1 minuto.</p>
             </div>
           </div>

@@ -153,7 +153,7 @@ export function RankingTab() {
           <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--surface-sunken)] mb-4">
             <Trophy className="h-8 w-8 text-[var(--text-tertiary)]" />
           </span>
-          <p className="font-display text-xl font-extrabold text-[var(--text-primary)]">
+          <p className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">
             Sin datos de ranking
           </p>
           <p className="text-base text-[var(--text-secondary)] mt-2 max-w-md mx-auto leading-relaxed">

@@ -272,7 +272,7 @@ function NewCouponModal({
             <Ticket className="h-3.5 w-3.5" />
             Nuevo cupón marketplace
           </div>
-          <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] tracking-tight">Configura tu descuento</CardTitle>
+          <CardTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Configura tu descuento</CardTitle>
           <p className="text-sm text-[var(--text-secondary)] mt-1">Aparecerá en el carrito de los clientes que entren al marketplace.</p>
 
           {/* Preview ticket */}

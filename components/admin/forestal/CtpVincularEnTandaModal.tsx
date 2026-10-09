@@ -295,7 +295,7 @@ export default function CtpVincularEnTandaModal({
         <div {...ventana.asaProps} className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4 sm:px-6">
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              <CardTitle as="h3" className="flex items-center gap-2 text-[length:var(--ts-xl)] font-bold">
+              <CardTitle as="h3" className="flex items-center gap-2 font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">
                 <Layers className="h-5 w-5 text-[var(--accent)]" aria-hidden /> Ponerles el lote
               </CardTitle>
               <InfoTip

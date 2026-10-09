@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { CardTitle, SectionTitle, Kicker } from "@buleje/design-system";
 import { leerJson } from "@/lib/errores/sin-dato";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useState, useEffect, useCallback, useMemo, useRef, useId, type FormEvent } from "react";
@@ -1160,7 +1160,7 @@ export default function PurchaseOrdersTab() {
       {showRecurringModal && (
         <div className="modal-backdrop p-4" role="presentation" onClick={(e) => e.target === e.currentTarget && closeRecurringModal()}>
           <div ref={recurringModalRef} role="dialog" aria-modal="true" aria-labelledby={recurringTitleId} tabIndex={-1} className="bg-[var(--surface-raised)] rounded-xl w-full max-w-sm p-6 space-y-4">
-            <CardTitle id={recurringTitleId} className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Hacer recurrente</CardTitle>
+            <CardTitle id={recurringTitleId} className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Hacer recurrente</CardTitle>
             <p className="text-sm text-[var(--text-secondary)] dark:text-muted">
               OC para {suppliers.find(s => s.id === showRecurringModal.supplierId)?.name} · {showRecurringModal.items.length} productos
             </p>
@@ -1356,7 +1356,7 @@ export default function PurchaseOrdersTab() {
                 <FileText className="h-6 w-6 text-primary" strokeWidth={2.2} />
               </span>
               <div className="flex-1 min-w-0">
-                <SectionTitle id="create-oc-title">Nueva orden de compra</SectionTitle>
+                <SectionTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]" id="create-oc-title">Nueva orden de compra</SectionTitle>
                 <p className="text-sm text-[var(--text-secondary)]">Elige proveedor, suma productos y guarda. Después puedes marcarla como recibida cuando llegue la mercadería.</p>
               </div>
               <span className="ml-auto flex items-center gap-1 shrink-0">
@@ -1377,10 +1377,10 @@ export default function PurchaseOrdersTab() {
               <div className="px-5 sm:px-6 py-5 space-y-6">
                 {/* ── Sección: Proveedor + Notas ── */}
                 <section className="space-y-3">
-                  <CardTitle as="h3" className="inline-flex items-center gap-2 text-sm font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
+                  <Kicker as="h3" className="libro-kicker inline-flex items-center gap-2">
                     <Building2 className="h-4 w-4 text-[var(--text-tertiary)]" />
                     Proveedor
-                  </CardTitle>
+                  </Kicker>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Field label="Proveedor *" labelClassName="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1" className="sm:col-span-2">
                       <select
@@ -1406,10 +1406,10 @@ export default function PurchaseOrdersTab() {
 
                 {/* ── Sección: Condiciones de compra ── */}
                 <section className="space-y-3">
-                  <CardTitle as="h3" className="inline-flex items-center gap-2 text-sm font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
+                  <Kicker as="h3" className="libro-kicker inline-flex items-center gap-2">
                     <CreditCard className="h-4 w-4 text-[var(--text-tertiary)]" />
                     Condiciones
-                  </CardTitle>
+                  </Kicker>
 
                   <div>
                     <span className="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5">Forma de pago</span>
@@ -1470,10 +1470,10 @@ export default function PurchaseOrdersTab() {
 
                 {/* ── Sección: Comprobante y costos de traer (ADR-377) ── */}
                 <section className="space-y-3">
-                  <CardTitle as="h3" className="inline-flex items-center gap-2 text-sm font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
+                  <Kicker as="h3" className="libro-kicker inline-flex items-center gap-2">
                     <Receipt className="h-4 w-4 text-[var(--text-tertiary)]" />
                     Comprobante y costos de traer
-                  </CardTitle>
+                  </Kicker>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Field label="Tipo de comprobante" labelClassName="block text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
@@ -1540,7 +1540,7 @@ export default function PurchaseOrdersTab() {
                 {/* ── Sección: Productos ── */}
                 <section className="space-y-3">
                   <div className="flex items-center justify-between flex-wrap gap-2">
-                    <CardTitle as="h3" className="inline-flex items-center gap-2 text-sm font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
+                    <Kicker as="h3" className="libro-kicker inline-flex items-center gap-2">
                       <Package className="h-4 w-4 text-[var(--text-tertiary)]" />
                       Productos de la orden
                       {items.length > 0 && (
@@ -1548,7 +1548,7 @@ export default function PurchaseOrdersTab() {
                           {items.length}
                         </span>
                       )}
-                    </CardTitle>
+                    </Kicker>
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
@@ -2091,7 +2091,7 @@ export default function PurchaseOrdersTab() {
         >
           <div ref={addItemModalRef} role="dialog" aria-modal="true" aria-label="Agregar producto" tabIndex={-1} className="relative bg-[var(--surface-raised)] w-full sm:max-w-lg sm:rounded-xl rounded-t-2xl max-h-[85dvh] flex flex-col overflow-hidden">
             <div {...ventanaAddItem.asaProps} className="flex items-center justify-between px-5 py-4 border-b">
-              <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
+              <CardTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)] flex flex-wrap items-center gap-2">
                 <Plus className="h-5 w-5 text-primary" /> Agregar producto
               </CardTitle>
               <span className="ml-auto flex items-center gap-1">
@@ -2312,7 +2312,7 @@ export default function PurchaseOrdersTab() {
         <div className="fixed inset-0 z-modal flex items-end sm:items-center justify-center bg-black/50" role="presentation" onClick={(e) => e.target === e.currentTarget && !ventanaScanner.fijado && setShowScanner(false)}>
           <div ref={scannerModalRef} role="dialog" aria-modal="true" aria-label="Escanear código de barras" tabIndex={-1} className="relative bg-[var(--surface-raised)] w-full sm:max-w-md sm:rounded-xl rounded-t-2xl overflow-hidden">
             <div {...ventanaScanner.asaProps} className="flex items-center justify-between px-5 py-4 border-b">
-              <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Escanear código de barras</CardTitle>
+              <CardTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Escanear código de barras</CardTitle>
               <span className="ml-auto flex items-center gap-1">
                 <ControlesDeVentana ventana={ventanaScanner} />
                 <button aria-label="Cerrar" onClick={() => setShowScanner(false)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors"><X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" /></button>

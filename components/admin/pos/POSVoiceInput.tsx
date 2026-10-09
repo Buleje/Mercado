@@ -381,7 +381,7 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
                   <p className="text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-0.5">
                     Dictado por voz
                   </p>
-                  <SectionTitle as="h2" className="text-[var(--text-primary)] leading-tight">
+                  <SectionTitle as="h2" className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)] leading-tight">
                     {isListening
                       ? "Escuchando…"
                       : processing

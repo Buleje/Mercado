@@ -89,7 +89,7 @@ export function ConfirmarBorrarCarpetas({
             <FolderX className="h-5 w-5" />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-extrabold text-[var(--text-primary)]">
+            <p className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">
               ¿Eliminar {nombres.length} carpeta{nombres.length === 1 ? "" : "s"}?
             </p>
             <p className="truncate text-xs text-[var(--text-tertiary)]">

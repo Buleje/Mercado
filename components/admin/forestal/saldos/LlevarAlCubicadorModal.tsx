@@ -115,7 +115,7 @@ export default function LlevarAlCubicadorModal({
       >
         <div {...ventana.asaProps} className="mb-1 flex items-start justify-between gap-3">
           <div>
-            <SectionTitle className="text-sm font-bold text-[var(--text-primary)]">
+            <SectionTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">
               Llevar esta madera al cubicador
             </SectionTitle>
             <p className="text-sm text-[var(--text-tertiary)]">

@@ -8,7 +8,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, Kicker } from "@buleje/design-system";
 import { AlertCircle, CheckCircle2, ChevronDown, Loader2, Lock, RotateCcw, ShieldCheck } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
@@ -117,7 +117,7 @@ export default function CacaoCierrePanel() {
       </div>
 
       <div>
-        <CardTitle as="h3" className="mb-2 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]"><ShieldCheck className="h-4 w-4" /> Campañas cerradas</CardTitle>
+        <Kicker as="h3" className="libro-kicker mb-2 flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> Campañas cerradas</Kicker>
         {cierres === null ? (
           <p className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]"><Loader2 className="h-4 w-4 animate-spin" /> Cargando…</p>
         ) : cierres.length === 0 ? (

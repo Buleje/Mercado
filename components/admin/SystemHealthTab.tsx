@@ -118,7 +118,7 @@ export default function SystemHealthTab() {
       <div className={cn("rounded-xl p-3 sm:p-5 flex items-center gap-2 sm:gap-4", STATUS_CONFIG[overallStatus].bg)}>
         <OverallIcon className={cn("h-10 w-10 shrink-0", STATUS_CONFIG[overallStatus].color)} />
         <div>
-          <CardTitle className={cn("", STATUS_CONFIG[overallStatus].color)}>
+          <CardTitle className={cn("text-[length:var(--ts-xl)] font-bold", STATUS_CONFIG[overallStatus].color)}>
             {overallStatus === "operativo"
               ? "Todos los sistemas operativos"
               : overallStatus === "degradado"

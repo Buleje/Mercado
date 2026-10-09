@@ -9,7 +9,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { CardTitle, DataTable, StatCard } from "@buleje/design-system";
+import { DataTable, StatCard, Kicker } from "@buleje/design-system";
 import { CtpKpisPlegables } from "./kpis-plegables";
 import { PanelSkeleton } from "./ctp-shared";
 import { AlertCircle, Award, CheckCircle2, Coins, Loader2, Sparkles, TrendingDown, TrendingUp, Wallet } from "@buleje/design-system/icons";
@@ -182,7 +182,7 @@ export default function CtpRentabilidadPanel({ period }: { period: CtpPeriod }) 
       {/* Cascada del P&L: Ventas − COGS = Margen, de un vistazo. */}
       {pnl.completos > 0 && (
         <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-          <CardTitle as="h3" className="mb-2 text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Cómo se compone el margen</CardTitle>
+          <Kicker as="h3" className="libro-kicker mb-2">Cómo se compone el margen</Kicker>
           <BulejeWaterfallChart steps={waterfall} currency={cur} height={230} />
         </div>
       )}
@@ -190,7 +190,7 @@ export default function CtpRentabilidadPanel({ period }: { period: CtpPeriod }) 
       {/* Por producto */}
       {pnl.porProducto.length > 0 && (
         <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-          <CardTitle as="h3" className="mb-2 text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Margen por producto</CardTitle>
+          <Kicker as="h3" className="libro-kicker mb-2">Margen por producto</Kicker>
           <div className="overflow-x-auto">
             <DataTable className="w-full text-sm">
               <thead className="text-left text-xs uppercase text-[var(--text-tertiary)]"><tr><th className="py-1.5 pr-2 font-bold">Producto</th><th className="py-1.5 px-2 text-right font-bold">Ventas</th><th className="py-1.5 px-2 text-right font-bold">COGS</th><th className="py-1.5 px-2 text-right font-bold">Margen</th><th className="py-1.5 pl-2 text-right font-bold">%</th></tr></thead>
@@ -226,7 +226,7 @@ export default function CtpRentabilidadPanel({ period }: { period: CtpPeriod }) 
 
       {/* Por despacho — venta editable */}
       <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-        <CardTitle as="h3" className="mb-2 text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">Despachos del período · registra el valor de venta</CardTitle>
+        <Kicker as="h3" className="libro-kicker mb-2">Despachos del período · registra el valor de venta</Kicker>
         {pnl.porDespacho.length === 0 ? (
           <p className="text-sm text-[var(--text-tertiary)]">No hay despachos en el período.</p>
         ) : (

@@ -67,7 +67,7 @@ export default function ReglaResaltado({
       >
         <div {...ventana.asaProps} className="flex items-center gap-2 border-b border-[var(--rule-base)] px-4 py-3">
           <Paintbrush className="h-4 w-4 text-[var(--accent)]" />
-          <p id={titleId} className="flex-1 text-sm font-extrabold text-[var(--text-primary)]">Resaltar por regla</p>
+          <p id={titleId} className="flex-1 font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Resaltar por regla</p>
           <ControlesDeVentana ventana={ventana} />
           <button onClick={onCerrar} aria-label="Cerrar" className="rounded-xl p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]">
             <X className="h-4 w-4" />

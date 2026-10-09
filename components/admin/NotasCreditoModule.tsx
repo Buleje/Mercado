@@ -1285,7 +1285,7 @@ export default function NotasCreditoModule() {
               <div className="p-4 sm:p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle id={detailTitleId} className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] flex items-center gap-2">
+                    <CardTitle id={detailTitleId} className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)] flex items-center gap-2">
                       <span className="text-xl">{getDocIcon(selected.numero)}</span>
                       NC {selected.numero}
                     </CardTitle>
@@ -1429,7 +1429,7 @@ export default function NotasCreditoModule() {
                 {/* Wizard Header */}
                 <div className="px-5 pt-5 pb-0">
                   <div {...ventanaWizard.asaProps} className="flex items-center justify-between mb-4">
-                    <CardTitle id={wizardTitleId} className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] flex items-center gap-2">
+                    <CardTitle id={wizardTitleId} className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)] flex items-center gap-2">
                       <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                         <CreditCard className="h-4 w-4 text-primary" />
                       </div>

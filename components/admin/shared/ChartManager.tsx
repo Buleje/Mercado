@@ -161,7 +161,7 @@ export default function ChartManager({ moduleId, charts, className, emptyState }
           return (
             <Fragment key={chart.id}>
               {showSectionHeader && !chartIsEmpty && (
-                <SectionTitle as="h2" className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] mt-4 -mb-1 tracking-tight">
+                <SectionTitle as="h2" className="text-[var(--text-primary)] mt-4 -mb-1 tracking-tight">
                   {chart.section}
                 </SectionTitle>
               )}

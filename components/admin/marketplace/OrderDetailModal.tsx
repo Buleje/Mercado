@@ -28,7 +28,7 @@ import {
   Receipt,
   User,
 } from "@buleje/design-system/icons";
-import { SectionTitle, CardTitle } from "@buleje/design-system";
+import { SectionTitle, Kicker } from "@buleje/design-system";
 import type { MarketplaceOrderDetail } from "./hooks/use-marketplace-orders";
 import { cn } from "@/lib/utils";
 import { formatDateTime } from "@/lib/format";
@@ -123,7 +123,7 @@ export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChange
                 Pedido marketplace
               </p>
               <div className="mt-1 flex items-center gap-2">
-                <SectionTitle as="h2" className="text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">
+                <SectionTitle as="h2" className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">
                   #{orderShortId}
                 </SectionTitle>
                 {order && (
@@ -194,10 +194,10 @@ export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChange
             <>
               {/* ── Cliente ────────────────────────────── */}
               <section>
-                <CardTitle as="h3" className="mb-3 flex items-center gap-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                <Kicker as="h3" className="libro-kicker mb-3 flex items-center gap-2">
                   <User className="h-3.5 w-3.5" />
                   Cliente
-                </CardTitle>
+                </Kicker>
                 <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4">
                   <div className="flex items-center gap-3">
                     <div className="h-12 w-12 shrink-0 rounded-2xl bg-[var(--accent)] text-white flex items-center justify-center text-base font-extrabold">
@@ -247,13 +247,13 @@ export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChange
 
               {/* ── Productos ──────────────────────────── */}
               <section>
-                <CardTitle as="h3" className="mb-3 flex items-center justify-between text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                <Kicker as="h3" className="libro-kicker mb-3 flex items-center justify-between">
                   <span className="flex items-center gap-2">
                     <Package className="h-3.5 w-3.5" />
                     Productos
                   </span>
                   <span className="text-[var(--text-secondary)]">{order.items.length} ítem{order.items.length !== 1 ? "s" : ""}</span>
-                </CardTitle>
+                </Kicker>
                 <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] overflow-hidden">
                   <ul className="divide-y-2 divide-[var(--rule-base)]">
                     {order.items.map((it) => (
@@ -324,10 +324,10 @@ export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChange
               {/* ── Cancelación si aplica ──────────────── */}
               {order.status === "cancelado" && order.cancelReason && (
                 <section className="rounded-2xl border-2 border-rose-400/50 bg-rose-500/10 p-4">
-                  <CardTitle as="h3" className="flex items-center gap-2 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--data-error)] mb-2">
+                  <Kicker as="h3" className="font-bold flex items-center gap-2 text-[var(--data-error)] mb-2">
                     <Receipt className="h-3.5 w-3.5" />
                     Motivo de cancelación
-                  </CardTitle>
+                  </Kicker>
                   <p className="text-sm font-semibold text-[var(--data-error)]">
                     {order.cancelReason}
                   </p>

@@ -28,7 +28,7 @@ export function ForestalPermisos({ permisos, onIr }: { permisos: PermisoInicio[]
             Libro TH · desde el inicio de cada permiso
           </p>
           <div className="flex items-center gap-2">
-            <CardTitle className="text-lg font-extrabold leading-tight tracking-tight text-[var(--text-primary)] sm:text-xl">
+            <CardTitle className="text-[length:var(--ts-xl)] font-bold leading-tight tracking-tight text-[var(--text-primary)]">
               Permisos vigentes
             </CardTitle>
             <InfoTip

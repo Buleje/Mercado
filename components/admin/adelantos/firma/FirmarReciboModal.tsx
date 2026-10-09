@@ -74,7 +74,7 @@ export default function FirmarReciboModal({
               <FileSignature className="h-5 w-5" aria-hidden />
             </span>
             <div className="min-w-0">
-              <CardTitle id="firmar-recibo-titulo" className="text-lg font-extrabold text-[var(--text-primary)]">
+              <CardTitle id="firmar-recibo-titulo" className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">
                 Firmar el recibo
               </CardTitle>
               <p className="truncate font-mono text-sm text-[var(--text-tertiary)]">{f.a?.codigoOperacion ?? "—"}</p>

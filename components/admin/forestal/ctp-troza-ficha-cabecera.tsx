@@ -74,7 +74,7 @@ export function CabeceraDeFicha({
     >
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
-          <CardTitle as="h2" className="break-all font-mono text-xl font-bold tracking-tight sm:text-2xl">
+          <CardTitle as="h2" className="break-all font-mono text-[length:var(--ts-xl)] font-bold tracking-tight">
             {codigo ?? (
               <>
                 <span className="sr-only">Buscando la troza…</span>

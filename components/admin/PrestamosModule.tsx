@@ -1804,7 +1804,7 @@ export default function PrestamosModule() {
             >
               <div className="p-4 sm:p-6 space-y-5">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">Detalle Préstamo</CardTitle>
+                  <CardTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Detalle Préstamo</CardTitle>
                   <button aria-label="Cerrar" onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
                     <X className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
@@ -2370,7 +2370,7 @@ ${cuotas.map(c => { const row = `<tr>
             <m.div key="ref-modal" initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="fixed inset-0 z-modal-2 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && !ventanaRefinanciar.fijado && setShowRefinanciar(false)}>
               <div ref={refinanciarPanelRef} role="dialog" aria-modal="true" aria-label="Refinanciar préstamo" tabIndex={-1} className="relative w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 outline-none">
                 <div {...ventanaRefinanciar.asaProps} className="flex items-center justify-between">
-                  <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] flex items-center gap-2"><RotateCcw className="h-5 w-5 text-[var(--data-success-500)]" /> Refinanciar Préstamo</CardTitle>
+                  <CardTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)] flex items-center gap-2"><RotateCcw className="h-5 w-5 text-[var(--data-success-500)]" /> Refinanciar Préstamo</CardTitle>
                   <span className="ml-auto flex items-center gap-1">
                     <ControlesDeVentana ventana={ventanaRefinanciar} />
                   </span>
@@ -2445,7 +2445,7 @@ ${cuotas.map(c => { const row = `<tr>
             >
               <div ref={pagoPanelRef} role="dialog" aria-modal="true" aria-label="Pagar cuota" tabIndex={-1} className="relative w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 outline-none">
                 <div {...ventanaPago.asaProps} className="flex items-center justify-between gap-2">
-                  <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">Pagar Cuota</CardTitle>
+                  <CardTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Pagar Cuota</CardTitle>
                   <ControlesDeVentana ventana={ventanaPago} />
                 </div>
                 <Field label="Monto del pago (S/)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
@@ -2503,7 +2503,7 @@ ${cuotas.map(c => { const row = `<tr>
                 {/* Header */}
                 <div {...ventanaCreate.asaProps} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">Crear Préstamo</CardTitle>
+                    <CardTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Crear Préstamo</CardTitle>
                     <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
                       Paso {createStep} de 2
                     </span>

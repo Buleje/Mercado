@@ -40,7 +40,7 @@ import {
 import {
   EmptyState,
   LoadingState,
-  CardTitle,
+  Kicker,
 } from "@buleje/design-system";
 import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
 import { cn } from "@/lib/utils";
@@ -607,9 +607,9 @@ export default function CatalogoTiendaTab() {
           {grouped.map(([cat, prods]) => (
             <section key={cat} className="space-y-2.5">
               <header className="flex items-center justify-between gap-2 px-1">
-                <CardTitle as="h3" className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                <Kicker as="h3" className="libro-kicker">
                   {cat}
-                </CardTitle>
+                </Kicker>
                 <span className="text-xs font-mono tabular-nums text-muted">
                   {prods.filter(p => p.visible).length}/{prods.length} visibles
                 </span>

@@ -13,7 +13,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { CardTitle } from "@buleje/design-system";
+import { Kicker } from "@buleje/design-system";
 import { AlertTriangle, Loader2, Search, TreePine } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import {
@@ -100,9 +100,9 @@ export default function CtpTrozasPicker({
     <div className="space-y-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
       <div className="flex flex-wrap items-center gap-2">
         <TreePine className="h-4 w-4 text-[var(--accent-ink)] dark:text-[var(--accent)]" aria-hidden />
-        <CardTitle as="h4" className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+        <Kicker as="h4" className="libro-kicker">
           Trozas que entran a la sierra
-        </CardTitle>
+        </Kicker>
         <span className="ml-auto font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">
           {totales.piezas} pza · {fmtM3(totales.volumenM3)} m³ ·{" "}
           {formatNumber(totales.pieTablar)} pt

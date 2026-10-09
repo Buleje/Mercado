@@ -152,7 +152,7 @@ function Bloque({
   return (
     <section className="rounded-xl border border-[var(--rule-base)]">
       {plegable ? (
-        <CardTitle as="h3" className="rounded-t-xl bg-[var(--surface-sunken)]">
+        <CardTitle as="h3" className="text-sm font-bold rounded-t-xl bg-[var(--surface-sunken)]">
           <button
             type="button"
             onClick={() => setAbierto((v) => !v)}
@@ -167,7 +167,7 @@ function Bloque({
           </button>
         </CardTitle>
       ) : (
-        <CardTitle as="h3" className="flex flex-wrap items-center justify-between gap-2 rounded-t-xl bg-[var(--surface-sunken)] px-3 py-2">
+        <CardTitle as="h3" className="text-sm font-bold flex flex-wrap items-center justify-between gap-2 rounded-t-xl bg-[var(--surface-sunken)] px-3 py-2">
           {cabecera}
           {acciones}
         </CardTitle>

@@ -771,7 +771,7 @@ export default function RecetasModule() {
             >
               <div className="p-4 sm:p-6 space-y-4">
                 <div className="flex items-center justify-between">
-                  <CardTitle id={detailTitleId} className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">{selected.nombre}</CardTitle>
+                  <CardTitle id={detailTitleId} className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">{selected.nombre}</CardTitle>
                   <button aria-label="Cerrar" onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-[var(--rule-soft)] transition-colors">
                     <X className="h-5 w-5 text-[var(--text-secondary)]" />
                   </button>
@@ -989,7 +989,7 @@ export default function RecetasModule() {
                 className="relative w-full max-w-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl flex flex-col max-h-[90vh]">
                 {/* UX Mejora 12: Sticky header */}
                 <div {...ventanaNew.asaProps} className="sticky top-0 z-dropdown bg-[var(--surface-raised)] border-b border-[var(--rule-base)] px-6 py-4 flex items-center justify-between rounded-t-2xl">
-                  <CardTitle id={newTitleId} className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">
+                  <CardTitle id={newTitleId} className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">
                     Nueva Receta — Paso {step}/3
                   </CardTitle>
                   <span className="ml-auto flex items-center gap-1">
@@ -1177,7 +1177,7 @@ export default function RecetasModule() {
               <div ref={producirPanelRef} role="dialog" aria-modal="true" aria-labelledby={producirTitleId} tabIndex={-1}
                 className="relative w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4">
                 <div {...ventanaProducir.asaProps} className="flex items-center justify-between gap-2">
-                  <CardTitle id={producirTitleId} className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">Producir Lote</CardTitle>
+                  <CardTitle id={producirTitleId} className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Producir Lote</CardTitle>
                   <ControlesDeVentana ventana={ventanaProducir} />
                 </div>
                 <p className="text-sm text-[var(--text-secondary)]">

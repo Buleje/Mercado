@@ -113,7 +113,7 @@ export function DashboardSection({ kicker, title, description, kpis, rightSlot, 
             <p className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1.5">
               {kicker}
             </p>
-            <CardTitle className="text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
+            <CardTitle className="text-[length:var(--ts-xl)] font-bold tracking-tight text-[var(--text-primary)] leading-tight">
               {title}
             </CardTitle>
             {description && (

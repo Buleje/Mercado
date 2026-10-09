@@ -13,7 +13,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CardTitle } from "@buleje/design-system";
+import { Kicker } from "@buleje/design-system";
 import {
   AlertTriangle, CalendarClock, Check, ChevronDown, Copy, Loader2, RefreshCw, Wand2,
 } from "@buleje/design-system/icons";
@@ -199,9 +199,9 @@ export default function GastosFijosPanel({
     <section className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <header className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <CalendarClock className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden />
-        <CardTitle className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+        <Kicker as="h3" className="libro-kicker">
           Gastos fijos de este período
-        </CardTitle>
+        </Kicker>
         <p className="text-sm text-[var(--text-secondary)]">
           <span className="font-bold text-[var(--text-primary)] tabular-nums">
             {resumen.pagados} de {resumen.total}

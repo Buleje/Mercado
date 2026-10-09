@@ -39,7 +39,7 @@ export function ModalUbicacion({ aj }: { aj: AjustesEstado }) {
               className="relative bg-[var(--surface-raised)] rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col"
             >
               <div {...ventanaMapPicker.asaProps} className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-                <CardTitle id={mapPickerTitleId} className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Ubicación del negocio</CardTitle>
+                <CardTitle id={mapPickerTitleId} className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Ubicación del negocio</CardTitle>
                 <span className="ml-auto flex items-center gap-1">
                   <ControlesDeVentana ventana={ventanaMapPicker} />
                 </span>

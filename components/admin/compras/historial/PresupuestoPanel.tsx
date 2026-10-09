@@ -11,7 +11,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CardTitle } from "@buleje/design-system";
+import { Kicker } from "@buleje/design-system";
 import { Check, ChevronDown, Loader2, Pencil, TrendingDown, TrendingUp, Zap } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
@@ -135,9 +135,9 @@ export default function PresupuestoPanel() {
   return (
     <section className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <header className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1">
-        <CardTitle className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+        <Kicker as="h3" className="libro-kicker">
           Presupuesto y comparación
-        </CardTitle>
+        </Kicker>
         <p className="text-sm text-[var(--text-secondary)]">
           Este mes <span className="font-bold tabular-nums text-[var(--text-primary)]">{fmt(data.totales.actual)}</span>
           {data.totales.anterior > 0 ? (

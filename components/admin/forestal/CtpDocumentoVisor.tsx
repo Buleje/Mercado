@@ -227,7 +227,7 @@ export default function CtpDocumentoVisor({
             <FileText className="h-5 w-5" aria-hidden />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-base font-bold text-[var(--text-primary)]">{doc?.nombre ?? "Documento"}</p>
+            <p className="truncate font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">{doc?.nombre ?? "Documento"}</p>
             <p className="text-sm text-[var(--text-secondary)]">
               Vista previa en tamaño {tamano} · {hojas} hoja{hojas === 1 ? "" : "s"} · revísalo antes de imprimir
             </p>

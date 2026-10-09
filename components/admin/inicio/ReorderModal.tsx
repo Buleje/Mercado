@@ -169,7 +169,7 @@ export function ReorderModal({ open, candidates, onClose, onSuccess }: Props) {
                     </p>
                     <SectionTitle
                       id="reorder-title"
-                      className="text-[var(--text-primary)]"
+                      className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]"
                     >
                       Generar orden de compra
                     </SectionTitle>

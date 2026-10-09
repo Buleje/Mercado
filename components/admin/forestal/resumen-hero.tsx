@@ -90,7 +90,7 @@ export function HeroResumen({ total, renglones, porEspecie, porTipo, porMedida, 
             <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-widest text-[var(--text-tertiary)]">
               Cubicación · lote en curso
             </div>
-            <CardTitle as="h3" className="flex items-center gap-2.5 font-display text-3xl font-normal leading-tight text-[var(--text-primary)]">
+            <CardTitle as="h3" className="flex items-center gap-2.5 text-[length:var(--ts-xl)] font-bold leading-tight text-[var(--text-primary)]">
               <BarChart3 className="h-6 w-6 shrink-0 text-[var(--accent)]" aria-hidden /> Resúmenes del lote
             </CardTitle>
             {frase && <p className="mt-1 max-w-xl text-sm text-[var(--text-secondary)]">{frase}</p>}

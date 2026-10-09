@@ -173,7 +173,7 @@ function StepRow({
           </span>
           <CardTitle
             className={cn(
-              "truncate",
+              "truncate text-sm font-bold",
               done ? "text-[var(--text-secondary)] line-through" : "text-[var(--text-primary)]"
             )}
           >

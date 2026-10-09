@@ -163,7 +163,7 @@ export default function TramitesCatalogo({
             return (
               <section key={aut} className="space-y-3">
                 <div className="flex flex-wrap items-center gap-1.5 border-b-2 border-[var(--rule-soft)] pb-2">
-                  <SectionTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">
+                  <SectionTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
                     {meta.label}
                   </SectionTitle>
                   <InfoTip title={meta.label} what={meta.detalle} />

@@ -981,7 +981,7 @@ export default function GuiasRemisionModule() {
                 {/* Header */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle id={detailTitleId} className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] font-mono">{selected.numero}</CardTitle>
+                    <CardTitle id={detailTitleId} className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)] font-mono">{selected.numero}</CardTitle>
                     <p className="text-xs text-[var(--text-tertiary)]">Creada: {formatDateTime(selected.createdAt)}</p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -1218,7 +1218,7 @@ export default function GuiasRemisionModule() {
                 className="relative w-full max-w-3xl bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl flex flex-col max-h-[90vh] my-8">
                 {/* UX Mejora 12: Sticky header */}
                 <div {...ventanaNew.asaProps} className="sticky top-0 z-10 bg-[var(--surface-raised)] border-b border-[var(--rule-base)] px-6 py-4 flex items-center justify-between rounded-t-2xl">
-                  <CardTitle id={newTitleId} className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">Nueva Guía de Remisión</CardTitle>
+                  <CardTitle id={newTitleId} className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Nueva Guía de Remisión</CardTitle>
                   <span className="ml-auto flex items-center gap-1">
                     <ControlesDeVentana ventana={ventanaNew} />
                   </span>
