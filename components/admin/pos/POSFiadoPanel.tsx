@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { AlertTriangle, CheckCircle, HandCoins, Loader2, X } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { formatCurrency } from "@/lib/format";
+import type { MetodoCobro } from "@/lib/fiados/cobro-metodo";
+import { MedioCobroCompacto, avisarSiSinCaja, cuerpoCobroACaja } from "./POSMedioCobro";
 
 interface FiadoResumen {
   montoPendiente: number;
@@ -30,6 +32,7 @@ export default function POSFiadoPanel({
   const [showCobrar, setShowCobrar] = useState(false);
   const [cobroMonto, setCobroMonto] = useState("");
   const [cobrando, setCobrando] = useState(false);
+  const [metodo, setMetodo] = useState<MetodoCobro>("efectivo");
   // Audit 2026-05-17 P1-1: antes `catch { /* Silent fail */ }` perdía
   // errores de cobro y el cajero no sabía si el cobro pasó. Ahora
   // distinguimos: éxito + remaining (P2-6), conflict 409 (P1-3), error real.
@@ -74,10 +77,12 @@ export default function POSFiadoPanel({
         body: JSON.stringify({
           customerPhone,
           monto,
+          ...cuerpoCobroACaja(metodo),
         }),
       });
       const body = await res.json().catch(() => ({} as Record<string, unknown>));
       if (res.ok) {
+        avisarSiSinCaja(body);
         // Audit P2-6: si remaining > 0 el cajero cobró más que la deuda;
         // se le devolvió/mantuvo en caja y debe enterarse.
         const cobrado = Number(body.totalCobrado ?? monto);
@@ -170,6 +175,7 @@ export default function POSFiadoPanel({
           <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)] dark:text-muted">
             Deuda total: {fmt(data.montoPendiente)}
           </p>
+          <MedioCobroCompacto valor={metodo} onCambiar={setMetodo} deshabilitado={cobrando} />
           <div className="flex gap-2">
             <div className="relative flex-1">
               <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-xs font-bold">

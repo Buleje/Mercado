@@ -24,7 +24,7 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
@@ -41,14 +41,14 @@ export async function GET(
   }
 }
 
-// PATCH /api/fiados/[id] — update status
+// PATCH /api/fiados/[id] — descripción (admin/cajero) o estado (sólo admin)
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const _rl = await applyRateLimit(req, "MODERATE", "fiados-X"); if (_rl) return _rl;
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
@@ -59,6 +59,17 @@ export async function PATCH(
       return NextResponse.json(
         { error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) },
         { status: 400 },
+      );
+    }
+
+    // Cambiar el estado (PAGADO/CANCELADO) es perdonar la deuda sin plata de
+    // por medio: sólo admin y su nivel (dueño/encargado pasan solos en
+    // requireAdmin). La cajera sólo anota la descripción (compromiso firmado).
+    if (parsed.data.status !== undefined && auth.role === "cajero") {
+      return NextResponse.json(
+        // `error` legible: la pantalla de Fiados muestra `error` tal cual.
+        { error: "Solo el administrador cambia el estado de un fiado", code: "forbidden" },
+        { status: 403 },
       );
     }
 

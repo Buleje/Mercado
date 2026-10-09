@@ -11,6 +11,7 @@ import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
 import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { formatCurrency, formatDateLong, formatTime } from "@/lib/format";
+import { ETIQUETA_METODO, type MetodoCobro } from "@/lib/fiados/cobro-metodo";
 import {
   X, DollarSign,
   Loader2,
@@ -57,20 +58,13 @@ type ReciboData = {
   montoPagado: number;
   saldoAnterior: number;
   saldoActual: number;
+  /** Medio del pago y si entró a la caja (lo arma la ventana «Cobrar»). */
+  metodo?: MetodoCobro;
+  caja?: "entro" | "sin-caja";
 };
 
 type FiadoModalsProps = {
-  showPago: boolean;
-  setShowPago: (v: boolean) => void;
   selected: Fiado | null;
-  pagoMonto: string;
-  setPagoMonto: (v: string) => void;
-  pagoNotas: string;
-  setPagoNotas: (v: string) => void;
-  paying: boolean;
-  pagoError: string | null;
-  handlePago: () => void;
-  setPagoError: (v: string | null) => void;
   selectedIds: Set<string>;
   selectedFiados: Fiado[];
   selectedTotal: number;
@@ -102,7 +96,7 @@ type FiadoModalsProps = {
 };
 
 export default function FiadoModals({
-  showPago, setShowPago, selected, pagoMonto, setPagoMonto, pagoNotas, setPagoNotas, paying, pagoError, handlePago, setPagoError: _setPagoError,
+  selected,
   selectedIds, selectedFiados, selectedTotal, setSelectedIds, showCobroMasivo, setShowCobroMasivo, cobroMonto, setCobroMonto, cobroPaying, cobroError, handleCobroMasivo, setCobroError, computeDistribution,
   showRecibo, setShowRecibo, reciboData,
   showCompromiso, setShowCompromiso, compromisoMonto, setCompromisoMonto, compromisoFecha, setCompromisoFecha, firmaCanvasRef, isDrawing, setIsDrawing,
@@ -111,10 +105,7 @@ export default function FiadoModals({
   // El Escape de estos 5 modales ya lo maneja el listener global en
   // FiadosModule (coordina cuál cierra según cuál está abierto) — acá sólo se
   // pide el foco atrapado y la semántica de diálogo.
-  const pagoPanelRef = useRef<HTMLDivElement>(null);
-  const pagoTitleId = useId();
-  const cerrarPago = useCallback(() => setShowPago(false), [setShowPago]);
-  useModalAccesible(pagoPanelRef, { onCerrar: cerrarPago, activo: showPago && !!selected, cerrarConEscape: false });
+  // (El «Registrar Pago» que vivía acá pasó a PagoFiadoModal: medio + caja.)
 
   const cobroPanelRef = useRef<HTMLDivElement>(null);
   const cobroTitleId = useId();
@@ -141,82 +132,6 @@ export default function FiadoModals({
 
   return (
     <>
-      <AnimatePresence>
-        {showPago && selected && (
-          <>
-            <m.div
-              key="pago-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="modal-backdrop"
-              style={{ zIndex: 60 }}
-              onClick={() => setShowPago(false)}
-            />
-            <m.div
-              key="pago-modal"
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="fixed inset-0 z-[60] flex items-center justify-center p-4"
-              onClick={e => e.target === e.currentTarget && setShowPago(false)}
-            >
-              <div ref={pagoPanelRef} role="dialog" aria-modal="true" aria-labelledby={pagoTitleId} tabIndex={-1}
-                className="w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4">
-                <CardTitle id={pagoTitleId} className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Registrar Pago</CardTitle>
-                <p className="text-sm text-[var(--text-secondary)]">
-                  Saldo pendiente: <span className="font-bold text-[var(--data-error-500)]">{formatCurrency(selected.saldo)}</span>
-                </p>
-
-                <div className="space-y-3">
-                  <Field label="Monto del pago (S/)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0.01"
-                      max={selected.saldo}
-                      value={pagoMonto}
-                      onChange={e => setPagoMonto(e.target.value)}
-                      placeholder="0.00"
-                      className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
-                    />
-                  </Field>
-                  <Field label="Notas (opcional)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
-                    <input
-                      type="text"
-                      value={pagoNotas}
-                      onChange={e => setPagoNotas(e.target.value)}
-                      placeholder="Ej: Pagó con Yape"
-                      className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
-                    />
-                  </Field>
-                </div>
-
-                {pagoError && (
-                  <p className="text-xs text-[var(--data-error-500)] font-semibold">{pagoError}</p>
-                )}
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setShowPago(false)}
-                    className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--rule-soft)] hover:bg-[var(--rule-base)] transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={handlePago}
-                    disabled={paying}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
-                  >
-                    {paying ? <Loader2 className="h-4 w-4 animate-spin" /> : <DollarSign className="h-4 w-4" />}
-                    Pagar
-                  </button>
-                </div>
-              </div>
-            </m.div>
-          </>
-        )}
-      </AnimatePresence>
 
       {/* Mejora 3: Cobro masivo sticky bar.
           Audit 2026-08-26: en mobile quedaba pintada encima del bottom-nav del
@@ -418,6 +333,16 @@ export default function FiadoModals({
                     <span className="text-[var(--text-secondary)] print:text-black">Monto pagado:</span>
                     <span className="font-extrabold text-[var(--data-success-500)] text-base">{formatCurrency(reciboData.montoPagado)}</span>
                   </div>
+                  {reciboData.metodo && (
+                    <div className="flex justify-between">
+                      <span className="text-[var(--text-secondary)] print:text-black">Pagó con:</span>
+                      <span className="font-bold text-[var(--text-primary)]">
+                        {ETIQUETA_METODO[reciboData.metodo]}
+                        {reciboData.caja === "entro" && <span className="font-semibold text-[var(--text-tertiary)] print:hidden"> · entró a la caja</span>}
+                        {reciboData.caja === "sin-caja" && <span className="font-semibold text-[var(--data-warning-700)] print:hidden"> · sin caja abierta</span>}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-[var(--text-secondary)] print:text-black">Saldo anterior:</span>
                     <span className="font-bold text-[var(--text-secondary)]">{formatCurrency(reciboData.saldoAnterior)}</span>

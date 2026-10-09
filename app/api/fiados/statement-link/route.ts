@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "MODERATE", "fiado-statement-link");
   if (_rl) return _rl;
 
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 
   const body = await leerJson(req);

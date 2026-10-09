@@ -4,8 +4,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Search, UserPlus, X, User, ShoppingBag, RotateCcw, Loader2, Star, StarOff, ShoppingCart } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
-import { csrfHeaders } from "@/lib/csrf-client";
 import { formatCurrency } from "@/lib/format";
+import POSAbonoRapido from "./POSAbonoRapido";
 
 const ClienteFormModal = dynamic(
   () => import("@/components/admin/clientes/ClienteFormModal"),
@@ -72,9 +72,6 @@ export default function POSCustomerSearch({
   const [reliabilityScore, setReliabilityScore] = useState<{ score: number } | null>(null);
 
   // Mejora M-3: Abono rápido de fiado desde POS
-  const [showAbonoRapido, setShowAbonoRapido] = useState(false);
-  const [abonoMonto, setAbonoMonto] = useState("");
-  const [abonoLoading, setAbonoLoading] = useState(false);
   const [fiadoSaldo, setFiadoSaldo] = useState(0);
 
   // Click outside close
@@ -145,7 +142,6 @@ export default function POSCustomerSearch({
       setRedeemAmount(0);
       setReliabilityScore(null);
       setFiadoSaldo(0);
-      setShowAbonoRapido(false);
        
       return;
     }
@@ -288,66 +284,15 @@ export default function POSCustomerSearch({
             </span>
           </div>
         )}
-        {/* Mejora M-3: Abono rápido de fiado */}
+        {/* Mejora M-3: Abono rápido de fiado (entra a la caja con su medio) */}
         {fiadoSaldo > 0 && (
-          <div className="space-y-1">
-            <div className="flex items-center gap-1.5 px-3 py-2 bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30 rounded-lg">
-              <span className="text-sm font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] flex-1">
-                Fiado pendiente: {formatCurrency(fiadoSaldo)}
-              </span>
-              <button
-                onClick={() => { setShowAbonoRapido(!showAbonoRapido); setAbonoMonto(fiadoSaldo.toFixed(2)); }}
-                className="text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 hover:bg-primary/10 px-2 py-1 rounded transition-colors"
-              >
-                Abonar
-              </button>
-            </div>
-            {showAbonoRapido && (
-              <div className="px-2 py-2 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg space-y-1.5">
-                <p className="text-sm font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)]">
-                  Abonar a fiado de {selectedName || selectedPhone}
-                </p>
-                <div className="flex gap-1.5">
-                  <div className="relative flex-1">
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm font-bold">S/</span>
-                    <input
-                      type="number"
-                      inputMode="decimal"
-                      step="0.10"
-                      value={abonoMonto}
-                      onChange={(e) => setAbonoMonto(e.target.value)}
-                      aria-label="Monto a abonar al fiado"
-                      className="w-full pl-6 pr-2 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary"
-                    />
-                  </div>
-                  <button
-                    onClick={async () => {
-                      const monto = Number(abonoMonto);
-                      if (!monto || monto <= 0) return;
-                      setAbonoLoading(true);
-                      try {
-                        const res = await fetch("/api/fiados/cobrar", {
-                          method: "POST",
-                          headers: csrfHeaders({ "Content-Type": "application/json" }),
-                          body: JSON.stringify({ customerPhone: selectedPhone, monto }),
-                        });
-                        if (res.ok) {
-                          setFiadoSaldo(prev => Math.max(0, prev - monto));
-                          setShowAbonoRapido(false);
-                          setAbonoMonto("");
-                        }
-                      } catch { /* silent */ }
-                      setAbonoLoading(false);
-                    }}
-                    disabled={abonoLoading || !abonoMonto || Number(abonoMonto) <= 0}
-                    className="px-2.5 py-1.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-50"
-                  >
-                    {abonoLoading ? "..." : "Confirmar"}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+          <POSAbonoRapido
+            key={selectedPhone}
+            telefono={selectedPhone}
+            nombre={selectedName}
+            saldo={fiadoSaldo}
+            onAbonado={(monto) => setFiadoSaldo((prev) => Math.max(0, prev - monto))}
+          />
         )}
         {/* Mejora 10R2: Notes badge */}
         {customerNotes && (

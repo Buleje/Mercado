@@ -6,10 +6,15 @@ import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
+import { METODOS_COBRO, etiquetaCobroFiado, notasConMetodo } from "@/lib/fiados/cobro-metodo";
 
 const PagoSchema = z.object({
   monto: z.number().positive(),
   notas: z.string().max(500).optional(),
+  /** Medio del pago: va al inicio de la nota y al ingreso de la caja. */
+  metodo: z.enum(METODOS_COBRO).optional(),
+  /** true = el cobro entra también a la caja abierta (misma transacción). */
+  aCaja: z.boolean().optional(),
 });
 
 // POST /api/fiados/[id]/pagar — register payment
@@ -19,7 +24,8 @@ export async function POST(
 ) {
   const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const _rl = await applyRateLimit(req, "MODERATE", "fiados-X-pagar"); if (_rl) return _rl;
-  const auth = await requireAdmin(req);
+  // Con `aCaja` el cobro mete plata en la caja: mismos roles que /cobrar y /cobro-masivo.
+  const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
@@ -38,14 +44,20 @@ export async function POST(
       return NextResponse.json({ error: "Fiado no encontrado" }, { status: 404 });
     }
 
-    if (existing.status !== "ACTIVO") {
+    // VENCIDO también se cobra (antes daba 422; el cobro masivo y el del POS
+    // ya lo aceptaban). Sólo PAGADO y CANCELADO quedan cerrados.
+    if (existing.status !== "ACTIVO" && existing.status !== "VENCIDO") {
       return NextResponse.json(
         { error: `No se puede pagar un fiado con status "${existing.status}"` },
         { status: 422 },
       );
     }
 
-    const updated = await FiadosDB.registerPago(auth.tenantId, id, parsed.data.monto, parsed.data.notas);
+    const { monto, metodo, aCaja } = parsed.data;
+    const caja = aCaja
+      ? { metodo: metodo ?? "efectivo", etiqueta: etiquetaCobroFiado(existing.customerName || existing.customerId) }
+      : undefined;
+    const updated = await FiadosDB.registerPago(auth.tenantId, id, monto, notasConMetodo(metodo, parsed.data.notas), caja);
     if (!updated) return NextResponse.json({ error: "Error al registrar pago" }, { status: 500 });
 
     logActivity(

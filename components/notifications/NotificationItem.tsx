@@ -13,6 +13,7 @@ import {
   BellRing,
   Loader2,
 } from "lucide-react";
+import { useMiRol } from "@/hooks/use-mi-rol";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
 import type { NotificationItem as NotificationItemType } from "./useNotificationCenter";
@@ -72,6 +73,10 @@ export default function NotificationItem({ notification, onMarkRead }: Props) {
   const [cobroMonto, setCobroMonto] = useState("");
   const [cobroLoading, setCobroLoading] = useState(false);
   const [cobroDone, setCobroDone] = useState(false);
+  const [cobroError, setCobroError] = useState<string | null>(null);
+  // /api/fiados/[id]/pagar pide admin o cajero (owner y manager pasan como admin): el resto no ve el botón.
+  const rol = useMiRol();
+  const puedeCobrar = rol === "admin" || rol === "cajero" || rol === "owner" || rol === "manager";
 
   const handleClick = () => {
     if (isUnread) onMarkRead(notification.id);
@@ -138,7 +143,7 @@ export default function NotificationItem({ notification, onMarkRead }: Props) {
               </span>
             )}
             {/* Mejora M-8: Boton cobrar para FIADO_VENCIDO */}
-            {isFiadoVencido && !cobroDone && (
+            {isFiadoVencido && puedeCobrar && !cobroDone && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -164,7 +169,7 @@ export default function NotificationItem({ notification, onMarkRead }: Props) {
       </div>
 
       {/* Mejora M-8: Cobro express inline panel */}
-      {showCobroExpress && isFiadoVencido && (
+      {showCobroExpress && isFiadoVencido && puedeCobrar && (
         <div className="px-4 py-2 bg-gray-50 dark:bg-surface border-l-4 border-l-emerald-400">
           <p className="text-[length:var(--ts-2xs)] font-bold text-gray-600 dark:text-[var(--text-primary)] mb-1.5">
             Registrar pago
@@ -189,6 +194,7 @@ export default function NotificationItem({ notification, onMarkRead }: Props) {
                 const monto = Number(cobroMonto);
                 if (!monto || monto <= 0) return;
                 setCobroLoading(true);
+                setCobroError(null);
                 try {
                   const entityId = (notification as unknown as { entityId?: string }).entityId;
                   if (entityId) {
@@ -201,9 +207,14 @@ export default function NotificationItem({ notification, onMarkRead }: Props) {
                       setCobroDone(true);
                       setShowCobroExpress(false);
                       onMarkRead(notification.id);
+                    } else {
+                      const cuerpo = (await res.json().catch(() => null)) as { error?: string; message?: string } | null;
+                      setCobroError(res.status === 403 ? "Tu rol no puede registrar cobros." : cuerpo?.message ?? cuerpo?.error ?? "No se pudo registrar el pago.");
                     }
                   }
-                } catch { /* silent */ }
+                } catch {
+                  setCobroError("No se pudo registrar el pago. Revisa tu conexión.");
+                }
                 setCobroLoading(false);
               }}
               disabled={cobroLoading || !cobroMonto || Number(cobroMonto) <= 0}
@@ -212,6 +223,9 @@ export default function NotificationItem({ notification, onMarkRead }: Props) {
               {cobroLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Confirmar"}
             </button>
           </div>
+          {cobroError && (
+            <p role="alert" className="mt-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{cobroError}</p>
+          )}
         </div>
       )}
     </div>

@@ -5,6 +5,8 @@ import { Check } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { fiadoDelCliente } from "@/lib/fiados/fiado-del-cliente";
 import { formatCurrency } from "@/lib/format";
+import type { MetodoCobro } from "@/lib/fiados/cobro-metodo";
+import { MedioCobroCompacto, avisarSiSinCaja, cuerpoCobroACaja } from "./POSMedioCobro";
 
 // ── Mejora QW-10g: Abono rápido desde la venta ──────────────────────────────
 export default function QuickAbonoFromSale({ customerPhone, customerName }: { customerPhone?: string; customerName?: string }) {
@@ -13,6 +15,7 @@ export default function QuickAbonoFromSale({ customerPhone, customerName }: { cu
   const [done, setDone] = useState(false);
   /** Lo que dijo el servidor si el abono no entró. Antes se perdía. */
   const [errorAbono, setErrorAbono] = useState<string | null>(null);
+  const [metodo, setMetodo] = useState<MetodoCobro>("efectivo");
 
   useEffect(() => {
     if (!customerPhone) return;
@@ -45,7 +48,7 @@ export default function QuickAbonoFromSale({ customerPhone, customerName }: { cu
     setPaying(true);
     setErrorAbono(null);
     try {
-      const res = await fetch(`/api/fiados/${fiado.id}/pagar`, { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ monto }) });
+      const res = await fetch(`/api/fiados/${fiado.id}/pagar`, { method: "POST", headers: csrfHeaders({ "Content-Type": "application/json" }), body: JSON.stringify({ monto, ...cuerpoCobroACaja(metodo) }) });
       // El endpoint devuelve 400/404/409/422/503 según el caso, y todos salían
       // como «Abono registrado» en verde: el cliente se iba creyendo que pagó.
       if (!res.ok) {
@@ -53,6 +56,7 @@ export default function QuickAbonoFromSale({ customerPhone, customerName }: { cu
         setErrorAbono(typeof body?.error === "string" ? body.error : `No se pudo registrar el abono (error ${res.status})`);
         return;
       }
+      avisarSiSinCaja(await res.json().catch(() => null));
       setDone(true);
     } catch (err) {
       console.warn("[POS] abono de fiado falló", err);
@@ -75,6 +79,7 @@ export default function QuickAbonoFromSale({ customerPhone, customerName }: { cu
       <p className="text-sm font-semibold text-[var(--data-warning-500)]">
         {customerName || customerPhone} tiene fiado de <span className="font-bold">{formatCurrency(Number(fiado.saldo))}</span>. ¿Abonar?
       </p>
+      <MedioCobroCompacto valor={metodo} onCambiar={setMetodo} deshabilitado={paying} />
       <div className="flex flex-wrap gap-2">
         {quickAmounts.map(a => (
           <button key={a} onClick={() => abonar(a)} disabled={paying}

@@ -20,7 +20,7 @@ const CreateSchema = z.object({
 
 // GET /api/fiados/gestiones — las últimas gestiones del tenant
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
   try {
     // 180 días: más atrás la gestión ya no cambia lo que se hace hoy.
@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const _rl = await applyRateLimit(req, "MODERATE", "fiados-gestion"); if (_rl) return _rl;
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
   try {
     const parsed = CreateSchema.safeParse(await req.json());
