@@ -2,7 +2,7 @@
 
 import { DataTable, SectionTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { useId, useRef, useState } from "react";
+import { Fragment, useId, useRef, useState } from "react";
 import {
   X, ChevronRight, ChevronLeft, Check,
   Loader2, AlertTriangle, Package,
@@ -13,6 +13,8 @@ import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
 import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { formatCurrency } from "@/lib/format";
+import VenceLoteCampo from "@/components/admin/compras/VenceLoteCampo";
+import { errorDeVencimiento, pideLote, textoVence } from "@/lib/compras/lotes-recepcion";
 
 type OCItem = {
   productId: number;
@@ -55,7 +57,15 @@ type ReceivedItem = {
   noLlego: boolean;
   /** Cómo llegó la mercadería. Lo dañado y lo vencido no entra a stock vendible. */
   condition: CondicionItem;
+  /** «Vence» (YYYY-MM-DD): con fecha, lo que entra a stock nace como lote. */
+  expiryDate?: string;
+  lote?: string;
 };
+
+/** La fecha y el lote viajan solo si la línea entra a stock: la merma no vence. */
+function conVence(i: ReceivedItem): boolean {
+  return !i.noLlego && pideLote(i);
+}
 
 export default function OCRecepcionModal({ ocId, supplier, items, onComplete, onClose }: OCRecepcionModalProps) {
   useScrollLock(true);
@@ -105,6 +115,8 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
   );
 
   const itemsRecibidos = receivedItems.filter((i) => i.receivedQty > 0);
+  /** Una fecha de vencimiento imposible frena el paso (el servidor la rechazaría). */
+  const venceConError = receivedItems.some((i) => conVence(i) && errorDeVencimiento(i.expiryDate ?? "") !== null);
 
   const handleConfirm = async () => {
     setSaving(true);
@@ -132,6 +144,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
               // el proveedor tiene que responder, no una recepción normal de 0.
               condition: i.noLlego ? "faltante" : i.condition,
               notes: "",
+              ...(conVence(i) ? { expiryDate: i.expiryDate, lote: i.lote } : {}),
             })),
           status: receivedItems.some((i) => i.noLlego || i.condition !== "ok" || i.receivedQty !== i.orderedQty)
             ? "parcial"
@@ -216,7 +229,8 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
                     {receivedItems.map((item, idx) => {
                       const diff = item.receivedQty - item.orderedQty;
                       return (
-                        <tr key={item.productId} className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]/50">
+                        <Fragment key={item.productId}>
+                        <tr className={cn(!item.noLlego && item.condition === "ok" && item.receivedQty > 0 ? "" : "border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]/50")}>
                           <td className="py-2 px-2 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                             {item.name}
                           </td>
@@ -279,6 +293,20 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
                             />
                           </td>
                         </tr>
+                        {!item.noLlego && item.condition === "ok" && item.receivedQty > 0 && (
+                          <tr className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]/50">
+                            <td colSpan={6} className="px-2 pb-2">
+                              <VenceLoteCampo
+                                id={`oc-vence-${item.productId}`}
+                                producto={item.name}
+                                valor={item}
+                                ayuda={idx === 0}
+                                onChange={(patch) => updateItem(idx, patch)}
+                              />
+                            </td>
+                          </tr>
+                        )}
+                        </Fragment>
                       );
                     })}
                   </tbody>
@@ -394,6 +422,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
                     </span>
                     <span className="text-[var(--text-secondary)] dark:text-muted font-semibold">
                       {item.receivedQty}/{item.orderedQty} - {formatCurrency(item.receivedQty * item.unitPrice)}
+                      {conVence(item) && item.expiryDate ? ` · vence ${textoVence(item.expiryDate)}` : ""}
                     </span>
                   </div>
                 ))}
@@ -432,7 +461,9 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
           {step < 3 ? (
             <button
               onClick={() => setStep((s) => s + 1)}
-              className="flex items-center gap-1 px-4 min-h-10 bg-primary hover:bg-primary/90 text-white font-semibold text-sm rounded-xl transition-colors"
+              disabled={step === 1 && venceConError}
+              title={step === 1 && venceConError ? "Corrige la fecha de vencimiento marcada en rojo" : undefined}
+              className="flex items-center gap-1 px-4 min-h-10 bg-primary hover:bg-primary/90 disabled:opacity-50 text-white font-semibold text-sm rounded-xl transition-colors"
             >
               Siguiente <ChevronRight className="h-4 w-4" />
             </button>
@@ -440,7 +471,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
             <button
               onClick={handleConfirm}
               disabled={saving || itemsRecibidos.length === 0}
-              className="flex items-center gap-2 px-4 min-h-10 bg-primary/10 hover:bg-primary/10 disabled:opacity-50 text-white font-semibold text-sm rounded-xl transition-colors"
+              className="flex items-center gap-2 px-4 min-h-10 bg-primary hover:bg-primary/90 disabled:opacity-50 text-white font-semibold text-sm rounded-xl transition-colors"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
               Confirmar recepción

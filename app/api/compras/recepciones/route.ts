@@ -15,6 +15,8 @@ import {
   aplicarCreditoRecepcion, anotarCreditoEnItems, getFaltantesAcreditados, SIN_CREDITO, type ResultadoCredito,
 } from "@/lib/compras/aplicar-credito-recepcion";
 import { logAudit } from "@/lib/audit-logger";
+import { BatchesDB } from "@/lib/db/batches.db";
+import { armarLoteDeRecepcion, errorDeVencimiento, pideLote, type LoteDeRecepcion } from "@/lib/compras/lotes-recepcion";
 
 // Item del checklist tal como lo arma ReceivingTab. `productId` es opcional: si
 // el item se eligió del combobox o vino prefilleado de la OC, trae el id real
@@ -26,6 +28,17 @@ const RecepcionItemSchema = z.object({
   receivedQty: z.number().nonnegative().default(0),
   condition: z.enum(["ok", "dañado", "vencido", "faltante"]).default("ok"),
   notes: z.string().max(500).default(""),
+  // 09-10: «vence» de lo que llegó (YYYY-MM-DD) y el lote del proveedor. Con
+  // fecha, lo que entra a stock vendible nace como lote y alimenta las
+  // alertas de vencimiento y los descuentos por vencer.
+  expiryDate: z.string().trim().max(10).optional(),
+  lote: z.string().trim().max(60).optional(),
+}).superRefine((item, ctx) => {
+  // Solo se valida si va a nacer un lote: en una línea dañada o vencida la
+  // fecha no se usa, y ahí una fecha pasada es justamente lo esperable.
+  if (!pideLote(item)) return;
+  const problema = errorDeVencimiento(item.expiryDate ?? "");
+  if (problema) ctx.addIssue({ code: "custom", path: ["expiryDate"], message: `${item.product}: ${problema}` });
 });
 
 const RecepcionSchema = z.object({
@@ -90,8 +103,11 @@ export async function POST(req: NextRequest) {
     const raw = await req.json();
     const parsed = RecepcionSchema.safeParse(raw);
     if (!parsed.success) {
+      // La fecha de vencimiento se explica sola: el modal muestra `error`, y
+      // «Datos inválidos» no le decía al encargado qué línea corregir.
+      const vence = parsed.error.issues.find((i) => i.path.at(-1) === "expiryDate");
       return NextResponse.json(
-        { error: "Datos invalidos", issues: parsed.error.issues.map((i) => i.message) },
+        { error: vence?.message ?? "Datos invalidos", issues: parsed.error.issues.map((i) => i.message) },
         { status: 400 },
       );
     }
@@ -126,6 +142,8 @@ export async function POST(req: NextRequest) {
     let noAptos = 0;
     /** Lo que llegó mal o no llegó, descontado de la cuenta por pagar o reclamado. */
     let credito: ResultadoCredito = SIN_CREDITO;
+    /** Lotes con vencimiento que nacieron de esta recepción. */
+    let lotesAnotados = 0;
     if (data.orderRef) {
       try {
         const oc = await prisma.purchaseOrder.findFirst({
@@ -146,7 +164,8 @@ export async function POST(req: NextRequest) {
             const subtotalOrden = oc.items.reduce((s, i) => s + i.quantity * Number(i.unitCost ?? 0), 0);
             const sobrecostos = Number(oc.flete ?? 0) + Number(oc.otrosCostos ?? 0);
 
-            for (const item of data.items) {
+            const lotes: LoteDeRecepcion[] = [];
+            for (const [indice, item] of data.items.entries()) {
               // Preferir match por productId exacto; caer a nombre si no vino.
               const ocItem = item.productId != null
                 ? oc.items.find((i) => i.productId === item.productId)
@@ -209,6 +228,23 @@ export async function POST(req: NextRequest) {
                 },
               });
               stockUpdated++;
+              // Con «vence», lo que acaba de entrar nace como lote. El stock ya
+              // se sumó arriba: el lote no lo vuelve a sumar, lo describe.
+              const lote = armarLoteDeRecepcion({
+                indice, item, ref,
+                productId: ocItem.productId,
+                productName: product.name,
+                productCategory: product.category,
+                unit: ocItem.unit || product.unit,
+                costUnit: authorizedUnitCost,
+                supplierId: oc.supplierId || null,
+                supplierName: oc.supplierName || data.supplier,
+              });
+              if (lote) lotes.push(lote);
+            }
+            if (lotes.length > 0) {
+              lotesAnotados = await BatchesDB.crearDesdeRecepcionTx(tx, tenantId, receipt.id, lotes);
+              await BatchesDB.propagarVenceTx(tx, tenantId, lotes.map((l) => l.productId));
             }
             // 09-10: lo dañado, vencido o faltante no se le paga al proveedor.
             // Antes la merma quedaba registrada y la cuenta seguía por el
@@ -251,11 +287,17 @@ export async function POST(req: NextRequest) {
                 notes: `${oc.notes ? oc.notes + " | " : ""}Recepción ${ref}${data.invoiceUrl ? ` · Factura: ${data.invoiceUrl}` : ""}`,
               },
             });
-          });
+            // Una recepción de 30 líneas son ~100 consultas en serie: con el
+            // corte por defecto de Prisma (5 s) se revertía entera y el stock
+            // no entraba (revisión 09-10).
+          }, { timeout: 20_000, maxWait: 5_000 });
         }
       } catch (stockErr) {
-        // La transacción se revirtió entera: el crédito tampoco quedó escrito.
+        // La transacción se revirtió entera: ni stock, ni crédito, ni lotes.
+        // Sin el 0 la respuesta decía «stock actualizado» de algo revertido.
+        stockUpdated = 0;
         credito = SIN_CREDITO;
+        lotesAnotados = 0;
         logger.warn("[compras/recepciones] actualización de stock falló (recepción sí guardada)", {
           ref, err: stockErr instanceof Error ? stockErr.message : String(stockErr),
         });
@@ -271,6 +313,7 @@ export async function POST(req: NextRequest) {
     if (stockUpdated > 0) {
       revalidateTenantTag(tenantId, "products");
     }
+    if (lotesAnotados > 0) BatchesDB.invalidarVencimientos(tenantId);
     if (credito.total > 0) {
       // La cuenta se tocó con `tx.payable`, salteando PayablesDB (tag `payables`).
       // `expire: 0` y no `"max"`: con «max» el próximo GET todavía sirve la
@@ -282,7 +325,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    return NextResponse.json({ ...toReception(receipt), stockUpdated, noAptos, credito }, { status: 201 });
+    return NextResponse.json({ ...toReception(receipt), stockUpdated, noAptos, credito, lotes: lotesAnotados }, { status: 201 });
   } catch (e) {
     logger.error("[compras/recepciones] POST error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Error procesando recepcion" }, { status: 500 });

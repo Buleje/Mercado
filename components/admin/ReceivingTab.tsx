@@ -17,6 +17,8 @@ import ProductCombobox, { type ProductOption } from "@/components/admin/shared/P
 import AvisoCreditoRecepcion, { type CreditoDeRecepcion } from "@/components/admin/cuentas-por-pagar/AvisoCreditoRecepcion";
 import { useConfirmarCreditoRecepcion } from "@/components/admin/cuentas-por-pagar/use-confirmar-credito-recepcion";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import VenceLoteCampo from "@/components/admin/compras/VenceLoteCampo";
+import { errorDeVencimiento, pideLote, textoVence } from "@/lib/compras/lotes-recepcion";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { enRango, rangoActivo, textoDeRango, type ChipFiltro, type FacetaOpcion, type Rango } from "@/lib/admin/filtros-columna";
 import { ChipsDeFiltros, FiltroColumnaMulti, FiltroColumnaRango } from "@/components/admin/shared/filtros-columna";
@@ -43,6 +45,10 @@ type ReceptionItem = {
   receivedQty: number;
   condition: ItemCondition;
   notes: string;
+  /** «Vence» de lo que llegó (YYYY-MM-DD). Con fecha, lo que entra a stock nace como lote. */
+  expiryDate?: string;
+  /** Lote del proveedor; sin él, el lote lleva la referencia de la recepción. */
+  lote?: string;
 };
 
 type Reception = {
@@ -269,6 +275,9 @@ export default function ReceivingTab() {
     }
   };
 
+  /** Una fecha de vencimiento imposible frena el guardado (el servidor la rechazaría igual). */
+  const venceConError = checklist.some((r) => pideLote(r) && errorDeVencimiento(r.expiryDate ?? "") !== null);
+
   const saveReception = async () => {
     if (!newForm.supplier || !newForm.orderRef || checklist.some(r => !r.product)) return;
     const ocElegida = pendingOCs.find((p) => p.id === selectedOcId);
@@ -278,7 +287,8 @@ export default function ReceivingTab() {
     const body = {
       ...newForm,
       status: "en-proceso" as ReceptionStatus,
-      items: checklist,
+      // Lo dañado, vencido o faltante no hace lote: la fecha no viaja.
+      items: checklist.map(({ expiryDate, lote, ...it }) => (it.condition === "ok" ? { ...it, expiryDate, lote } : it)),
       photos: 0,
       nonConformities,
       invoiceUrl: invoiceUrl || undefined,
@@ -642,7 +652,14 @@ export default function ReceivingTab() {
                           {COND_MAP[it.condition].label}
                         </span>
                       </td>
-                      <td className="text-xs text-[var(--text-tertiary)]">{it.notes || "—"}</td>
+                      <td className="text-xs text-[var(--text-tertiary)]">
+                        {it.notes || (it.expiryDate ? null : "—")}
+                        {it.expiryDate && (
+                          <span className="block font-semibold text-[var(--text-secondary)]">
+                            Vence {textoVence(it.expiryDate)}{it.lote ? ` · Lote ${it.lote}` : ""}
+                          </span>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -787,6 +804,16 @@ export default function ReceivingTab() {
                         <X className="h-3.5 w-3.5" />
                       </button>
                     )}
+                    {row.condition === "ok" && (
+                      <VenceLoteCampo
+                        id={`recep-vence-${idx}`}
+                        producto={row.product || "el producto"}
+                        valor={row}
+                        ayuda={idx === 0}
+                        onChange={(patch) => setChecklist(prev => prev.map((r, i) => i === idx ? { ...r, ...patch } : r))}
+                        className="basis-full"
+                      />
+                    )}
                   </div>
                 ))}
               </div>
@@ -829,7 +856,7 @@ export default function ReceivingTab() {
 
             <div className="flex justify-end gap-2 pt-2">
               <button onClick={() => setShowNew(false)} className="px-4 py-2 rounded-xl text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] ">Cancelar</button>
-              <button onClick={saveReception} disabled={saving} className="px-4 min-h-10 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary/90 disabled:opacity-50 flex items-center gap-1.5">
+              <button onClick={saveReception} disabled={saving || venceConError} title={venceConError ? "Corrige la fecha de vencimiento marcada en rojo" : undefined} className="px-4 min-h-10 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary/90 disabled:opacity-50 flex items-center gap-1.5">
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                 Guardar recepción
               </button>
