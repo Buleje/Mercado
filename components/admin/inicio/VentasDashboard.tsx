@@ -10,7 +10,7 @@ import {
   ShoppingCart,
   Percent,
 } from "@buleje/design-system/icons";
-import { buildCostLookup, aggregateMargin } from "@/lib/chart-helpers";
+import { buildCostLookup, aggregateMargin, lineasCobradas } from "@/lib/chart-helpers";
 import { algunDato } from "@/lib/admin/inicio/hay-datos";
 import {
   COLOR_CONCEPTO,
@@ -20,6 +20,7 @@ import {
   soles,
 } from "@/lib/admin/inicio/formato-tablero";
 import { SinDatoHero, HoyVsAyer, queSeMuestraVentas, sparkSiHayTendencia } from "./VentasHero";
+import { margenLegible } from "./caja-presentacion";
 import dynamic from "next/dynamic";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
 import type { DateRange } from "./DashboardDateRange";
@@ -215,13 +216,15 @@ export default function VentasDashboard({
       mOrders.reduce((a, o) => a + o.total, 0) + mSales.reduce((a, s) => a + s.total, 0);
     // Margen REAL (helper único): solo ítems con costPrice cargado cuentan a costo
     // y margen; los sin costo no inflan (antes `price*0.7` daba ~30% ficticio).
+    // Y sobre lo COBRADO (lineasCobradas): con el precio de lista, una venta de
+    // S/ 24,90 cobrada en S/ 0,10 daba «Utilidad bruta S/ 6,61» (09-10).
     const mMargin = aggregateMargin(
       [
         ...mOrders.flatMap((o) =>
-          o.items.map((i) => ({ productId: i.id, quantity: i.quantity, price: i.price })),
+          lineasCobradas(o.items.map((i) => ({ productId: i.id, quantity: i.quantity, price: i.price })), o.total),
         ),
         ...mSales.flatMap((s) =>
-          s.items.map((i) => ({ productId: i.productId, quantity: i.quantity, price: i.price })),
+          lineasCobradas(s.items.map((i) => ({ productId: i.productId, quantity: i.quantity, price: i.price })), s.total),
         ),
       ],
       cost,
@@ -253,10 +256,10 @@ export default function VentasDashboard({
     const pMargin = aggregateMargin(
       [
         ...pOrders.flatMap((o) =>
-          o.items.map((i) => ({ productId: i.id, quantity: i.quantity, price: i.price })),
+          lineasCobradas(o.items.map((i) => ({ productId: i.id, quantity: i.quantity, price: i.price })), o.total),
         ),
         ...pSales.flatMap((s) =>
-          s.items.map((i) => ({ productId: i.productId, quantity: i.quantity, price: i.price })),
+          lineasCobradas(s.items.map((i) => ({ productId: i.productId, quantity: i.quantity, price: i.price })), s.total),
         ),
       ],
       cost,
@@ -321,7 +324,7 @@ export default function VentasDashboard({
         dailyVentasMap.set(k, (dailyVentasMap.get(k) ?? 0) + t.total);
         dailyTicketsMap.set(k, (dailyTicketsMap.get(k) ?? 0) + 1);
         const dProfit = aggregateMargin(
-          t.items.map((i) => ({ productId: i.id, quantity: i.quantity, price: i.price })),
+          lineasCobradas(t.items.map((i) => ({ productId: i.id, quantity: i.quantity, price: i.price })), t.total),
           cost,
         ).utilidadBruta;
         dailyProfitMap.set(k, (dailyProfitMap.get(k) ?? 0) + dProfit);
@@ -333,7 +336,7 @@ export default function VentasDashboard({
         dailyVentasMap.set(k, (dailyVentasMap.get(k) ?? 0) + s.total);
         dailyTicketsMap.set(k, (dailyTicketsMap.get(k) ?? 0) + 1);
         const dProfit = aggregateMargin(
-          s.items.map((i) => ({ productId: i.productId, quantity: i.quantity, price: i.price })),
+          lineasCobradas(s.items.map((i) => ({ productId: i.productId, quantity: i.quantity, price: i.price })), s.total),
           cost,
         ).utilidadBruta;
         dailyProfitMap.set(k, (dailyProfitMap.get(k) ?? 0) + dProfit);
@@ -622,6 +625,11 @@ export default function VentasDashboard({
           value={
             sinCosto ? (
               <SinDatoHero titulo="Margen" motivo={avisoCosto} />
+            ) : !margenLegible(data.margen, data.ventasNetas) ? (
+              <SinDatoHero
+                titulo="Margen"
+                motivo="Lo cobrado es muy chico frente al costo (un descuento casi total): el porcentaje no dice nada. Mira la utilidad bruta."
+              />
             ) : (
               porcentaje(data.margen, 1)
             )
