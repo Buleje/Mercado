@@ -16,6 +16,7 @@ import { StatCard } from "@buleje/design-system";
 import LibroChrome from "@/components/admin/shared/libro-chrome";
 import ContratoActivoChip from "@/components/admin/forestal/ContratoActivoChip";
 import { useDebounce } from "@/hooks/use-debounce";
+import { useFichaEnUrl } from "@/hooks/use-ficha-en-url";
 import { resumenLotes } from "@/lib/forestal/lote-metricas";
 import LoteForm from "./LoteForm";
 import LoteDetailModal from "./LoteDetailModal";
@@ -43,7 +44,8 @@ export default function ForestLotesModule() {
   const [searchInput, setSearchInput] = useState("");
   const search = useDebounce(searchInput, 350);
   const [showForm, setShowForm] = useState(false);
-  const [detailId, setDetailId] = useState<string | null>(null);
+  /* `?lote=<id>`: la ficha del lote vive en la URL (enlace copiable; el «atrás» la cierra). */
+  const fichaLote = useFichaEnUrl("lote");
   const [vista, setVista] = useState<"cards" | "tabla">("cards");
   const [pagina, setPagina] = useState(1);
   const [porPagina, setPorPagina] = useState(25);
@@ -200,18 +202,18 @@ export default function ForestLotesModule() {
           porPagina={porPagina}
           onPagina={setPagina}
           onPorPagina={setPorPagina}
-          onAbrir={setDetailId}
+          onAbrir={fichaLote.abrir}
         />
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           {lotes.map((l) => (
-            <LoteCard key={l.id} lote={l} onAbrir={setDetailId} />
+            <LoteCard key={l.id} lote={l} onAbrir={fichaLote.abrir} />
           ))}
         </div>
       )}
 
       {showForm && <LoteForm onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); load(); }} />}
-      {detailId && <LoteDetailModal loteId={detailId} onClose={() => setDetailId(null)} onChanged={load} />}
+      {fichaLote.id && <LoteDetailModal key={fichaLote.id} loteId={fichaLote.id} onClose={fichaLote.cerrar} onChanged={load} />}
     </LibroChrome>
   );
 }

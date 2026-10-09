@@ -282,6 +282,12 @@ const PARAMS_DE_VISTA_CTP: ParamsDeVista<CtpView> = {
   trozas: [PARAM_TROZA],
   /* Las pilas elegidas en Volumen disponible: al volver, manda la memoria. */
   disponibles: ["fuentes"],
+  /* La ficha de una guía (`?ingreso=`, use-guia-de-ingreso-en-url) y la de una
+     parte del Directorio (`?parte=`, use-parte-en-url): al irse de la vista,
+     se borran, y volver muestra la lista. Las dos vistas de guías la leen. */
+  ingresos: ["ingreso"],
+  "gtf-ingresadas": ["ingreso"],
+  directorio: ["parte"],
 };
 /** Las pestañas que se fusionaron en Volumen disponible: sus links viejos siguen llegando. */
 const ALIAS_CTP = {

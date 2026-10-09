@@ -42,6 +42,7 @@ import CtpProveedorTrazaModal from "./CtpProveedorTrazaModal";
 import { Btn, I, TablaSkeleton, VistaHeader, IconAction } from "./ctp-shared";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import CtpImportarPartesModal from "./CtpImportarPartesModal";
+import { useParteEnUrl } from "./hooks/use-parte-en-url";
 import { partesACsv } from "@/lib/forestal/directorio-importar";
 
 type Pestaña = RolParte | "vehiculos";
@@ -65,6 +66,11 @@ export default function CtpDirectorioView() {
   /** Titular cuya cadena se está mirando (ADR-319). */
   const [trazando, setTrazando] = useState<string | null>(null);
   const [importando, setImportando] = useState(false);
+  /* `?parte=<id>`: la ficha de esa parte, encima de su pestaña, con el enlace copiable. */
+  const fichaParte = useParteEnUrl(dir.partes, dir.cargando, (p) => {
+    if (!p.roles.includes(pestaña as RolParte) && p.roles[0]) setPestaña(p.roles[0]);
+  });
+  const parteAbierta = fichaParte.parte ?? (editando?.tipo === "parte" ? editando.valor : null);
 
   const esVehiculos = pestaña === "vehiculos";
   const transportistas = useMemo(() => dir.porRol("transportista"), [dir]);
@@ -246,6 +252,15 @@ export default function CtpDirectorioView() {
         </p>
       )}
 
+      {fichaParte.noEsta && (
+        <p role="status" className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3 text-sm text-[var(--text-secondary)]">
+          El enlace apunta a una parte que no está en el directorio.
+          <button type="button" onClick={fichaParte.cerrar} className="font-semibold text-[var(--accent-ink)] underline underline-offset-2">
+            Quitar
+          </button>
+        </p>
+      )}
+
       {dir.cargando ? (
         <TablaSkeleton />
       ) : esVehiculos ? (
@@ -262,14 +277,15 @@ export default function CtpDirectorioView() {
           borrando={borrando}
           vacioTexto={soloIncompletos ? "Ningún registro incompleto — la libreta está al día en este rol." : undefined}
           onTrazar={(p) => setTrazando(p.nombre)}
-          onEditar={(p) => setEditando({ tipo: "parte", valor: p })}
+          onEditar={(p) => fichaParte.abrir(p.id)}
           onBorrar={(p) => void borrar(p.id, p.nombre, "parte")}
         />
       )}
 
-      {editando?.tipo === "parte" && (
+      {(fichaParte.parte || editando?.tipo === "parte") && (
         <CtpParteModal
-          parte={editando.valor}
+          key={parteAbierta?.id ?? "nueva"}
+          parte={parteAbierta}
           rolInicial={esVehiculos ? "destinatario" : (pestaña as RolParte)}
           existentes={dir.partes}
           // La misma ficha abierta desde el picker lista los camiones del
@@ -278,7 +294,10 @@ export default function CtpDirectorioView() {
           // Devuelve la ficha guardada: el modal la necesita para colgarle los
           // permisos que se cargaron durante el alta (ADR-425).
           onGuardar={(input) => dir.guardarParte(input)}
-          onClose={() => setEditando(null)}
+          onClose={() => {
+            if (fichaParte.parte) fichaParte.cerrar();
+            else setEditando(null);
+          }}
         />
       )}
       {trazando && <CtpProveedorTrazaModal proveedor={trazando} onClose={() => setTrazando(null)} />}

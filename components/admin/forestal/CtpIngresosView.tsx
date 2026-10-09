@@ -58,6 +58,7 @@ import { DocumentosGuiaProvider } from "./ctp-documentos-guia-contexto";
 import { useConteoDocumentosGuias } from "@/hooks/use-documentos-guia";
 import type { ResultadoBloque } from "@/hooks/use-recepcion-bloque";
 import { logger } from "@/lib/logger";
+import { useGuiaDeIngresoEnUrl } from "./hooks/use-guia-de-ingreso-en-url";
 
 /** Lo que el endpoint de trozas devuelve: lo usan el papel y la ficha. */
 interface TrozaDeGuia {
@@ -756,6 +757,18 @@ export default function CtpIngresosView({
     }
   }, [piezasDeGuia]);
 
+  /* `?ingreso=<asiento>` abre la ficha de su guía: el nombre de una guía en
+     Saldos, Trozas o Despacho llega directo, y «Ver ficha» deja el enlace. */
+  const fichaEnUrl = useGuiaDeIngresoEnUrl({
+    guias,
+    cargando: loading,
+    abierta: fichaGuia,
+    abrir: (g) => void verFicha(g),
+    cerrar: () => { setFichaGuia(null); setFichaTrozas(null); setFichaError(null); },
+    noEncontrada: () =>
+      pushToast({ tono: "warning", msg: "No encontré ese ingreso", detail: "El enlace apunta a un ingreso que ya no está en el libro." }),
+  });
+
   const verDocumento = useCallback(async (guia: GuiaIngreso<WoodEntry>) => {
     setDocGuia(guia);
     setDocTrozas(null);
@@ -1358,7 +1371,7 @@ export default function CtpIngresosView({
         onEdit={setEditEntry}
         onVerGuia={setGuiaEntry}
         onVerDocumento={(g) => void verDocumento(g)}
-        onVerFicha={(g) => void verFicha(g)}
+        onVerFicha={fichaEnUrl.abrirFicha}
         onCuadrar={setCuadreGuia}
         onCostear={(g) => setCostoGuia(costeableDeGuia(g))}
         onCorregirRecepcion={firma ? (g) => setCorregirRecepcion({ inicial: g.clave }) : undefined}
