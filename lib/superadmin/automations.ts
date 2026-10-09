@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { USAGE_TIERS, type TierName } from "@/lib/billing/wire-up/usage-tiers";
+import { USAGE_TIERS } from "@/lib/billing/wire-up/usage-tiers";
+import { cupoDeUsoDePlan } from "@/lib/superadmin/upgrade-recommendation";
 import type { NotifyLog } from "@/lib/superadmin/automation-cooldown";
 
 /**
@@ -44,13 +45,6 @@ export const RULES: { key: RuleKey; title: string; trigger: string; action: stri
   },
 ];
 
-function planToTier(plan: string): TierName {
-  if (plan === "pro" || plan === "business") return "pro";
-  if (plan === "enterprise") return "enterprise";
-  if (plan === "starter") return "starter";
-  return "free";
-}
-
 export type MatchTenant = { id: string; slug: string; name: string };
 
 /** Tiendas que matchean una regla AHORA (datos reales). */
@@ -89,7 +83,7 @@ export async function computeMatches(key: RuleKey): Promise<MatchTenant[]> {
   ]);
   const orderMap = new Map(ordersBy.map((r) => [r.tenantId, r._count._all]));
   return tenants.filter((t) => {
-    const quota = USAGE_TIERS[planToTier(t.plan)]["order.created"];
+    const quota = USAGE_TIERS[cupoDeUsoDePlan(t.plan)]["order.created"];
     const limit = quota?.limit ?? Infinity;
     if (limit === Infinity || limit === 0) return false;
     return (orderMap.get(t.id) ?? 0) / limit >= 0.9;

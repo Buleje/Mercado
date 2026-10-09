@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Bell, Clock, ExternalLink, ShoppingBag } from "@buleje/design-system/icons";
 import type { TenantRow } from "@/lib/superadmin-types";
+import { etiquetaDePlan } from "@/lib/billing/plan-tiers";
 import { PendingOrdersModal } from "./PendingOrdersModal";
 
 /**
@@ -17,12 +18,6 @@ import { PendingOrdersModal } from "./PendingOrdersModal";
 
 type Health = "healthy" | "warning" | "critical";
 
-const PLAN_LABEL: Record<string, string> = {
-  free: "Free",
-  pro: "Pro",
-  business: "Business",
-  enterprise: "Enterprise",
-};
 
 const HEALTH_DOT: Record<Health, string> = {
   healthy: "bg-[var(--data-success-500)]",
@@ -136,7 +131,7 @@ export function TenantCardCompact({
       {/* Señales: plan + ventas + pendientes + trial — 1 fila */}
       <div className="mt-2.5 flex items-center gap-1.5 border-t border-[var(--rule-soft)] pt-2.5">
         <span className="shrink-0 rounded-md bg-[var(--surface-sunken)] px-1.5 py-0.5 text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-          {PLAN_LABEL[t.plan] ?? t.plan}
+          {etiquetaDePlan(t.plan)}
         </span>
         <span
           className={`truncate text-xs font-bold tabular-nums ${revenue > 0 ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"}`}

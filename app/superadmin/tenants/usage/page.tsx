@@ -18,6 +18,7 @@ import {
 import { AdminTabShell } from "../../_components/_shared";
 import { SuperAdminModuleTabs, TENANTS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 import { fetchSuperadmin } from "@/lib/superadmin/fetch-auth";
+import { etiquetaDePlan } from "@/lib/billing/plan-tiers";
 
 type UpgradeRec = { recommendedPlan: string; recommendedLabel: string; upsidePEN: number; newOrderLimit: number | null };
 type UsageRow = {
@@ -30,13 +31,12 @@ type UsageRow = {
 const isDoubleRisk = (r: UsageRow) => r.nearLimit && r.trialDaysLeft != null && r.trialDaysLeft >= 0 && r.trialDaysLeft <= 7;
 function upgradeMsg(r: UsageRow): string {
   const to = r.recommendation ? ` a ${r.recommendation.recommendedLabel}` : "";
-  return `Hola, vi que ${r.name} ya está al ${r.orderPct}% de su límite de pedidos del plan ${PLAN_LABEL[r.plan] ?? r.plan}. Te conviene subir${to} para no frenar tus ventas. ¿Lo activamos?`;
+  return `Hola, vi que ${r.name} ya está al ${r.orderPct}% de su límite de pedidos del plan ${etiquetaDePlan(r.plan)}. Te conviene subir${to} para no frenar tus ventas. ¿Lo activamos?`;
 }
 type UpsellSummary = { count: number; monthlyUpsidePEN: number };
 type SortKey = "name" | "usage" | "orders" | "products" | "users";
 
 const fmtPEN = (n: number) => `S/${n.toLocaleString("es-PE")}`;
-const PLAN_LABEL: Record<string, string> = { free: "Free", starter: "Starter", pro: "Pro", business: "Business", enterprise: "Enterprise" };
 
 function barColor(pct: number, near: boolean): string {
   if (near || pct >= 90) return "var(--data-error-500)";
@@ -200,7 +200,7 @@ export default function TenantsUsagePage() {
             className="h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] cursor-pointer"
           >
             <option value="all">Todos los planes</option>
-            {planOptions.map((p) => <option key={p} value={p}>{PLAN_LABEL[p] ?? p}</option>)}
+            {planOptions.map((p) => <option key={p} value={p}>{etiquetaDePlan(p)}</option>)}
           </select>
           <button
             type="button"
@@ -249,7 +249,7 @@ export default function TenantsUsagePage() {
                         </button>
                       </td>
                       <td className="px-3 py-2.5">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--surface-sunken)] text-[var(--text-secondary)]">{PLAN_LABEL[r.plan] ?? r.plan}</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--surface-sunken)] text-[var(--text-secondary)]">{etiquetaDePlan(r.plan)}</span>
                       </td>
                       <td className="px-3 py-2.5">
                         <div className="flex items-center gap-2">
@@ -297,7 +297,7 @@ export default function TenantsUsagePage() {
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-base)] shrink-0">
               <div className="min-w-0">
                 <h2 className="text-base font-bold text-[var(--text-primary)] truncate">{detail.name}</h2>
-                <p className="text-xs text-[var(--text-tertiary)] truncate font-mono">{detail.slug} · {PLAN_LABEL[detail.plan] ?? detail.plan}</p>
+                <p className="text-xs text-[var(--text-tertiary)] truncate font-mono">{detail.slug} · {etiquetaDePlan(detail.plan)}</p>
               </div>
               <button type="button" onClick={() => setDetail(null)} aria-label="Cerrar" className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] shrink-0"><X className="w-5 h-5" /></button>
             </div>

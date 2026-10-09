@@ -1,3 +1,5 @@
+import { PLAN_ID_LABEL } from "@/lib/billing/plan-mapping";
+
 // ─── PlanBadge ────────────────────────────────────────────────────────────────
 
 type PlanId = "free" | "pro" | "business" | "enterprise";
@@ -9,16 +11,10 @@ const PLAN_STYLES: Record<PlanId, string> = {
   enterprise: "bg-teal-600 text-white dark:bg-teal-500 dark:text-white",
 };
 
-const PLAN_LABEL: Record<PlanId, string> = {
-  free:       "Free",
-  pro:        "Pro",
-  business:   "Business",
-  enterprise: "Enterprise",
-};
-
 export function PlanBadge({ plan }: { plan: PlanId }) {
   const style = PLAN_STYLES[plan] ?? PLAN_STYLES.free;
-  const label = PLAN_LABEL[plan] ?? plan;
+  // Nombre visible de la fuente única: pro = Starter, business = Pro, enterprise = Business.
+  const label = PLAN_ID_LABEL[plan] ?? plan;
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${style}`}>
       {label}

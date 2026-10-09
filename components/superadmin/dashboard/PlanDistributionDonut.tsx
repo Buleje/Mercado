@@ -8,6 +8,7 @@
 import { useMemo } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { ChartWrapper, useChartTokens } from "@buleje/design-system";
+import { PLAN_ID_LABEL } from "@/lib/billing/plan-mapping";
 
 type Plan = "free" | "pro" | "business" | "enterprise";
 
@@ -22,12 +23,8 @@ const PLAN_COLORS: Record<Plan, string> = {
   enterprise: "var(--data-success, #10b981)",
 };
 
-const PLAN_LABELS: Record<Plan, string> = {
-  free: "Free",
-  pro: "Pro",
-  business: "Business",
-  enterprise: "Enterprise",
-};
+/** Nombre visible de la fuente única: pro = Starter, business = Pro, enterprise = Business. */
+const PLAN_LABELS: Record<Plan, string> = PLAN_ID_LABEL;
 
 function DonutTooltip({
   active,

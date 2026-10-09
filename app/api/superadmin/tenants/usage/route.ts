@@ -2,8 +2,8 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { prisma } from "@/lib/prisma";
-import { USAGE_TIERS, type TierName } from "@/lib/billing/wire-up/usage-tiers";
-import { recommendUpgrade } from "@/lib/superadmin/upgrade-recommendation";
+import { USAGE_TIERS } from "@/lib/billing/wire-up/usage-tiers";
+import { cupoDeUsoDePlan, recommendUpgrade } from "@/lib/superadmin/upgrade-recommendation";
 import { logger } from "@/lib/logger";
 
 /**
@@ -14,13 +14,8 @@ import { logger } from "@/lib/logger";
  * tier), productos y usuarios admin. Marca candidatas a upsell (≥ alertAt).
  */
 
-// Tenant.plan ∈ {free, pro, business, enterprise} → tier de límites.
-function planToTier(plan: string): TierName {
-  if (plan === "pro" || plan === "business") return "pro";
-  if (plan === "enterprise") return "enterprise";
-  if (plan === "starter") return "starter";
-  return "free";
-}
+// El cupo de cada Tenant.plan sale de `cupoDeUsoDePlan` (misma escalera que la
+// recomendación): «pro» = Starter = 1.000 pedidos, no los 10.000 de Pro.
 
 export async function GET(req: NextRequest) {
   const auth = await requirePlatformAPI(req);
@@ -43,7 +38,7 @@ export async function GET(req: NextRequest) {
     const adminMap = new Map(adminsByTenant.map((r) => [r.tenantId, r._count._all]));
 
     const rows = tenants.map((t) => {
-      const tier = planToTier(t.plan);
+      const tier = cupoDeUsoDePlan(t.plan);
       const quota = USAGE_TIERS[tier]["order.created"];
       const orderLimit = quota?.limit ?? Infinity;
       const alertAt = quota?.alertAt ?? 0.9;

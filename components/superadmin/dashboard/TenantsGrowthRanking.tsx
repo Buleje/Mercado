@@ -29,6 +29,7 @@ import {
   Minus,
 } from "@buleje/design-system/icons";
 import SuperadminChartCard from "@/components/superadmin/_shared/SuperadminChartCard";
+import { PLAN_ID_LABEL } from "@/lib/billing/plan-mapping";
 
 type Range = "1d" | "7d" | "30d" | "90d" | "1y";
 
@@ -58,10 +59,10 @@ const RANGE_LABELS: Record<Range, string> = {
 };
 
 const PLAN_COLORS: Record<string, { bg: string; text: string; label: string }> = {
-  free: { bg: "bg-[var(--rule-soft)] ", text: "text-[var(--text-primary)] ", label: "Free" },
-  pro: { bg: "bg-teal-100 dark:bg-teal-950/40", text: "text-teal-800 dark:text-teal-300", label: "Pro" },
-  business: { bg: "bg-sky-100 dark:bg-sky-950/40", text: "text-sky-800 dark:text-sky-300", label: "Business" },
-  enterprise: { bg: "bg-[var(--data-success-100)] dark:bg-[var(--data-success-500)]/40", text: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]", label: "Enterprise" },
+  free: { bg: "bg-[var(--rule-soft)] ", text: "text-[var(--text-primary)] ", label: PLAN_ID_LABEL.free },
+  pro: { bg: "bg-teal-100 dark:bg-teal-950/40", text: "text-teal-800 dark:text-teal-300", label: PLAN_ID_LABEL.pro },
+  business: { bg: "bg-sky-100 dark:bg-sky-950/40", text: "text-sky-800 dark:text-sky-300", label: PLAN_ID_LABEL.business },
+  enterprise: { bg: "bg-[var(--data-success-100)] dark:bg-[var(--data-success-500)]/40", text: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]", label: PLAN_ID_LABEL.enterprise },
 };
 
 const fmtSoles = (n: number) =>
