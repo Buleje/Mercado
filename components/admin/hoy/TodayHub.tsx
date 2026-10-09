@@ -1,16 +1,13 @@
 "use client";
 
-import type { MouseEvent } from "react";
-import { Sparkles } from "@buleje/design-system/icons";
-import { AdminInsightCard, type ContextualMetric, type InsightAction } from "@/components/admin/ux";
 import { SkeletonEditorial } from "@/components/ui-system";
 import { usePersonalizedGreeting } from "@/hooks/use-personalized-greeting";
 import { usePlatformBrand } from "@/lib/use-platform-brand";
 import { useTenant } from "@/contexts/tenant-context";
 import { cn } from "@/lib/utils";
-import { irEnElPanel } from "@/lib/admin/ir-en-el-panel";
 import type { DateRange } from "@/components/admin/inicio/DashboardDateRange";
-import { formatTime } from "@/lib/format";
+import { algunDato } from "@/lib/admin/inicio/hay-datos";
+import { HeroResumen } from "./HeroResumen";
 import { ListaDeAlertas } from "./ListaDeAlertas";
 import { useOverview } from "./use-overview";
 
@@ -52,40 +49,6 @@ interface Props {
   className?: string;
 }
 
-const PRESET_HERO_LABEL: Record<string, string> = {
-  diario: "Ventas de hoy",
-  semanal: "Ventas de la semana",
-  mensual: "Ventas del mes",
-  anual: "Ventas del año",
-  personalizado: "Ventas del período",
-};
-
-const PRESET_DELTA_LABEL: Record<string, string> = {
-  diario: "vs ayer",
-  semanal: "vs semana pasada",
-  mensual: "vs mes pasado",
-  anual: "vs año pasado",
-  personalizado: "vs período anterior",
-};
-
-const PRESET_ORDERS_LABEL: Record<string, string> = {
-  diario: "Pedidos hoy",
-  semanal: "Pedidos de la semana",
-  mensual: "Pedidos del mes",
-  anual: "Pedidos del año",
-  personalizado: "Pedidos del período",
-};
-
-/**
- * «Ver cuáles» del consejo: cambia de módulo sin recargar la página entera.
- * `AdminInsightCard` tipa `cta.onClick` como `() => void` pero lo pasa tal cual
- * al `<a href>`, así que React le da el evento (el parámetro es opcional para
- * que el tipo encaje).
- */
-function irDesdeElConsejo(e?: MouseEvent<HTMLAnchorElement>): void {
-  if (e) irEnElPanel(e);
-}
-
 export function TodayHub({ userName, greeting: greetingOverride, dateRange, hideAlerts = false, className }: Props) {
   // Brandon mayo 2026 v4: si no se pasa userName, usamos el nombre del
   // negocio — "Buenas tardes, Mi Pollo" se siente más personal.
@@ -102,12 +65,8 @@ export function TodayHub({ userName, greeting: greetingOverride, dateRange, hide
   if (loading) {
     return (
       <div className={cn("space-y-4", className)}>
-        <SkeletonEditorial height={280} rounded="xl" />
-        <div className="grid sm:grid-cols-2 gap-4">
-          <SkeletonEditorial height={140} rounded="xl" />
-          <SkeletonEditorial height={140} rounded="xl" />
-        </div>
-        <SkeletonEditorial height={320} rounded="xl" />
+        {/* Del alto del hero: debajo, InicioDashboardV2 pone su propio esqueleto. */}
+        <SkeletonEditorial height={260} rounded="xl" />
       </div>
     );
   }
@@ -134,62 +93,17 @@ export function TodayHub({ userName, greeting: greetingOverride, dateRange, hide
   }
 
   const presetKey = dateRange?.preset ?? "diario";
-  const heroLabel = PRESET_HERO_LABEL[presetKey] ?? PRESET_HERO_LABEL.diario;
-  const deltaLabel = PRESET_DELTA_LABEL[presetKey] ?? PRESET_DELTA_LABEL.diario;
-  const ordersLabel = PRESET_ORDERS_LABEL[presetKey] ?? PRESET_ORDERS_LABEL.diario;
+  const venta = data.hero.totalRange ?? data.hero.totalToday ?? 0;
+  const pedidos = data.contextual.ordersInRange ?? data.contextual.ordersToday ?? 0;
 
-  const heroValue = data.hero.totalRange ?? data.hero.totalToday ?? 0;
-  const heroDelta = data.hero.deltaVsPrevious ?? data.hero.deltaVsYesterday ?? 0;
-  const ordersValue = data.contextual.ordersInRange ?? data.contextual.ordersToday ?? 0;
-
-  // Map contextual metrics
-  const contextualMetrics: ContextualMetric[] = [
-    {
-      label: ordersLabel,
-      value: ordersValue,
-    },
-    {
-      label: "Clientes únicos",
-      value: data.contextual.uniqueCustomers,
-    },
-    {
-      label: "Ticket promedio",
-      value: data.contextual.ticketAverage,
-      prefix: "S/ ",
-      decimals: 2,
-    },
-    {
-      // El mismo número que el «Bajo stock» de Inventario (en su mínimo o agotado).
-      label: "Bajo stock",
-      value: data.contextual.criticalStock,
-      status: data.contextual.criticalStock > 0 ? "warning" : undefined,
-    },
-  ];
-
-  const insightAction: InsightAction | undefined = data.insight
-    ? {
-        type: data.insight.type,
-        text: data.insight.text,
-        cta: data.insight.cta ? { ...data.insight.cta, onClick: irDesdeElConsejo } : undefined,
-      }
-    : undefined;
+  // Sin ventas ni pedidos en el rango, el hero sería un muro de «S/ 0»: no se
+  // dibuja. Debajo, InicioDashboardV2 muestra lo que sí se movió (compras,
+  // caja) o el estado vacío del paiche si no se movió nada (Brandon 2026-10-09).
+  if (!algunDato([venta, pedidos])) return null;
 
   return (
     <div className={cn("space-y-4", className)}>
-      {/* ── Hero unificado ── */}
-      <AdminInsightCard
-        greeting={greeting}
-        heroLabel={heroLabel}
-        heroValue={heroValue}
-        heroPrefix="S/ "
-        heroDecimals={2}
-        heroDelta={heroDelta}
-        heroDeltaLabel={deltaLabel}
-        trend={data.hero.sparkline}
-        trendLabels={data.hero.sparklineLabels}
-        contextualMetrics={contextualMetrics}
-        insight={insightAction}
-      />
+      <HeroResumen data={data} preset={presetKey} saludo={greeting} />
 
       {/* ── Alertas accionables ── */}
       {!hideAlerts && data.alerts.length > 0 && (
@@ -209,15 +123,6 @@ export function TodayHub({ userName, greeting: greetingOverride, dateRange, hide
         </section>
       )}
 
-      {/* Heatmap "Cuándo venden" y "Top productos últimos 7 días" removidos
-          — migran al módulo de gráficos individuales. El resumen del admin
-          solo muestra charts de alto nivel. */}
-
-      {/* Refresh timestamp */}
-      <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] text-right">
-        <Sparkles className="inline h-2.5 w-2.5 -mt-0.5 mr-1" strokeWidth={2} aria-hidden />
-        Actualizado: {formatTime(data.generatedAt)}
-      </p>
     </div>
   );
 }

@@ -11,7 +11,16 @@ import { useOverview } from "./use-overview";
  * «Meta del mes» (InicioDashboardV2). Comparte el pedido a /api/admin/overview
  * con TodayHub (`useOverview`).
  */
-export function DashboardAlertsList({ dateRange, className }: { dateRange?: DateRange; className?: string }) {
+export function DashboardAlertsList({
+  dateRange,
+  className,
+  dosColumnas = false,
+}: {
+  dateRange?: DateRange;
+  className?: string;
+  /** A todo el ancho (sin el ritmo al lado): los avisos en dos columnas desde lg. */
+  dosColumnas?: boolean;
+}) {
   const { data } = useOverview(dateRange);
 
   if (!data || data.alerts.length === 0) {
@@ -59,7 +68,15 @@ export function DashboardAlertsList({ dateRange, className }: { dateRange?: Date
       </header>
       {/* Con el catálogo y los pedidos olvidados entran hasta 7 avisos: el tope
           de 256 px los cortaba en 4; 384 px deja ver todos sin estirar la fila. */}
-      <ListaDeAlertas alerts={data.alerts} tamano="amplio" className="flex-1 overflow-y-auto max-h-96" />
+      <ListaDeAlertas
+        alerts={data.alerts}
+        tamano="amplio"
+        className={cn(
+          "flex-1 overflow-y-auto max-h-96",
+          dosColumnas &&
+            "lg:-mb-px lg:grid lg:max-h-none lg:grid-cols-2 lg:divide-y-0 lg:[&>li]:border-b lg:[&>li]:border-[var(--rule-soft)]",
+        )}
+      />
     </section>
   );
 }
