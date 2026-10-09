@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { cumpleDe, cumpleParaGuardar } from "@/lib/clientes/cumpleanos";
 
 /**
  * BirthdayCouponsDB
@@ -21,21 +22,30 @@ export interface BirthdayCandidate {
 
 export const BirthdayCouponsDB = {
   /**
-   * Lista candidatos: customers con birthday no-null. El filtro por
-   * dia/mes se hace en memoria porque Prisma no expresa "MONTH(x)
-   * AND DAY(x)" portable sin raw SQL.
+   * Lista candidatos: customers con cumpleaños en CUALQUIERA de las dos
+   * columnas (`birthday` de la tienda o `fechaNacimiento` de la ficha del
+   * panel — 09-10: el que cargaba el cajero nunca disparaba el cupón).
+   * `birthday` sale ya unificado por `cumpleDe` y a mediodía UTC, así el
+   * `getMonth()/getDate()` del llamador da el mismo día en Lima y en UTC.
+   * El filtro por dia/mes se hace en memoria porque Prisma no expresa
+   * "MONTH(x) AND DAY(x)" portable sin raw SQL.
    */
   async listBirthdayCandidates(): Promise<BirthdayCandidate[]> {
-    return prisma.customer.findMany({
-      where: { birthday: { not: null } },
+    const filas = await prisma.customer.findMany({
+      where: { OR: [{ birthday: { not: null } }, { fechaNacimiento: { not: null } }] },
       select: {
         phone: true,
         name: true,
         birthday: true,
+        fechaNacimiento: true,
         notifPromotions: true,
         tenantId: true,
       },
     });
+    return filas.map(({ fechaNacimiento, ...c }) => ({
+      ...c,
+      birthday: cumpleParaGuardar(cumpleDe({ birthday: c.birthday, fechaNacimiento })),
+    }));
   },
 
   /**

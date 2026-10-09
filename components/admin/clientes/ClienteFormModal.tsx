@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import AdminModal from '@/components/admin/shared/AdminModal';
 import { Field } from '@/components/admin/shared/Field';
 import { csrfHeaders } from "@/lib/csrf-client";
+import { cumpleDe } from "@/lib/clientes/cumpleanos";
 
 // ── Ubigeo data (principales departamentos de Peru) ─────────────────────────
 
@@ -227,7 +228,8 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
         creditLimit: (customer.creditLimit as number) ?? 0,
         diasCredito: (customer.diasCredito as number) ?? 0,
         alertasWhatsapp: (customer.alertasWhatsapp as boolean) ?? true,
-        fechaNacimiento: customer.fechaNacimiento ? String(customer.fechaNacimiento).slice(0, 10) : '',
+        // Un solo cumpleaños: el que dio en la tienda (birthday) o el de la ficha.
+        fechaNacimiento: cumpleDe({ birthday: customer.birthday as string | null | undefined, fechaNacimiento: customer.fechaNacimiento as string | null | undefined }) ?? '',
         genero: (customer.genero as string) ?? '',
         comoLlego: (customer.comoLlego as string) ?? '',
         observaciones: (customer.observaciones as string) ?? '',

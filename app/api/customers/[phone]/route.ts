@@ -8,6 +8,7 @@ import { logger } from "@/lib/logger";
 import { invalidate } from "@/lib/cache";
 import { runWithAuditContext } from "@/lib/audit/audit-context";
 import type { HealthScore } from "@/app/api/customers/health-scores/route";
+import { cumpleDe, cumpleParaGuardar } from "@/lib/clientes/cumpleanos";
 
 const CustomerPatchSchema = z.object({
   // Existing fields
@@ -40,6 +41,11 @@ const CustomerPatchSchema = z.object({
   genero: z.string().max(10).optional().nullable(),
   comoLlego: z.string().max(30).optional().nullable(),
   observaciones: z.string().max(2000).optional().nullable(),
+  // Avisos que acepta el cliente (Ley 29733: él decide). Antes ninguna
+  // pantalla del panel los mostraba ni los cambiaba.
+  notifOrderUpdates: z.boolean().optional(),
+  notifPromotions: z.boolean().optional(),
+  notifRestock: z.boolean().optional(),
 }).partial();
 
 export async function GET(
@@ -89,6 +95,8 @@ export async function GET(
       locations: customer.locations ?? [],
       activeLocationId: customer.activeLocationId ?? null,
       birthday: customer.birthday ?? null,
+      // Un solo cumpleaños: la columna que tenga dato (tienda o ficha).
+      cumple: cumpleDe({ birthday: fullCustomer?.birthday ?? customer.birthday, fechaNacimiento: fullCustomer?.fechaNacimiento }),
       healthScore,
       creditLimit: fullCustomer?.creditLimit ?? 0,
       creditBalance: fullCustomer?.creditBalance ?? 0,
@@ -115,6 +123,9 @@ export async function GET(
       genero: fullCustomer?.genero ?? null,
       comoLlego: fullCustomer?.comoLlego ?? null,
       observaciones: fullCustomer?.observaciones ?? null,
+      notifOrderUpdates: fullCustomer?.notifOrderUpdates ?? true,
+      notifPromotions: fullCustomer?.notifPromotions ?? true,
+      notifRestock: fullCustomer?.notifRestock ?? false,
     });
   } catch (e) {
     logger.error("[customers/phone] GET error", { err: e instanceof Error ? e.message : String(e) });
@@ -185,8 +196,14 @@ async function patchCustomer(
     if (parsed.data.diasCredito !== undefined) prismaUpdate.diasCredito = parsed.data.diasCredito;
     if (parsed.data.alertasWhatsapp !== undefined) prismaUpdate.alertasWhatsapp = parsed.data.alertasWhatsapp;
     if (parsed.data.fechaNacimiento !== undefined) {
-      prismaUpdate.fechaNacimiento = parsed.data.fechaNacimiento ? new Date(parsed.data.fechaNacimiento) : null;
+      // Las DOS columnas: `birthday` es la que leen cupón, saludo y campañas.
+      const cumple = cumpleParaGuardar(parsed.data.fechaNacimiento);
+      prismaUpdate.fechaNacimiento = cumple;
+      prismaUpdate.birthday = cumple;
     }
+    if (parsed.data.notifOrderUpdates !== undefined) prismaUpdate.notifOrderUpdates = parsed.data.notifOrderUpdates;
+    if (parsed.data.notifPromotions !== undefined) prismaUpdate.notifPromotions = parsed.data.notifPromotions;
+    if (parsed.data.notifRestock !== undefined) prismaUpdate.notifRestock = parsed.data.notifRestock;
     if (parsed.data.genero !== undefined) prismaUpdate.genero = parsed.data.genero;
     if (parsed.data.comoLlego !== undefined) prismaUpdate.comoLlego = parsed.data.comoLlego;
     if (parsed.data.observaciones !== undefined) prismaUpdate.observaciones = parsed.data.observaciones;

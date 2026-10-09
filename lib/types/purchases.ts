@@ -1,3 +1,5 @@
+import { stockMinimoDe } from "@/lib/inventario/stock-minimo";
+
 export interface PurchaseProduct {
   id: number;
   name: string;
@@ -32,8 +34,12 @@ export type PurchaseSortBy = "stock" | "price" | "name";
 export type PurchaseViewMode = "grid" | "list";
 
 /** Calcula cantidad sugerida para reposición */
-export function calculateSuggestedQty(product: Pick<PurchaseProduct, "stock" | "stockMin" | "stockMax">): number {
-  const targetStock = product.stockMax ?? (((product.stockMin ?? 0) * 3) || 10);
+export function calculateSuggestedQty(
+  product: Pick<PurchaseProduct, "stock" | "stockMin" | "stockMax">,
+  /** `Settings.globalMinStock` (minimoGlobalDe). Sin él, como antes: 0. */
+  minimoGlobal = 0,
+): number {
+  const targetStock = product.stockMax ?? ((stockMinimoDe(product, minimoGlobal) * 3) || 10);
   return Math.max(1, targetStock - (product.stock ?? 0));
 }
 
@@ -47,7 +53,12 @@ export function calculateSuggestedQty(product: Pick<PurchaseProduct, "stock" | "
  * considera productos con `stockMin > 0`. Ahora exige un mínimo REAL configurado
  * y un stock rastreado en/por debajo de él → ambas superficies coinciden.
  */
-export function needsReorder(product: Pick<PurchaseProduct, "stock" | "stockMin">): boolean {
-  const min = product.stockMin ?? 0;
+export function needsReorder(
+  product: Pick<PurchaseProduct, "stock" | "stockMin">,
+  /** `Settings.globalMinStock` (minimoGlobalDe) para los que no tienen mínimo
+   *  propio — así Compras coincide con el cierre y las alertas. Sin él: 0. */
+  minimoGlobal = 0,
+): boolean {
+  const min = stockMinimoDe(product, minimoGlobal);
   return min > 0 && product.stock != null && product.stock <= min;
 }

@@ -3,6 +3,8 @@ import { requireAdmin } from "@/lib/require-admin";
 import { CierreDiarioPreviewDB } from "@/lib/db/cierre-diario-preview.db";
 import { logger } from "@/lib/logger";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { SettingsDB } from "@/lib/db/settings.db";
+import { minimoGlobalDe, stockMinimoDe } from "@/lib/inventario/stock-minimo";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
@@ -19,6 +21,15 @@ export async function GET(req: NextRequest) {
     const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
 
     const fecha = `${localNow.getFullYear()}-${String(localNow.getMonth() + 1).padStart(2, "0")}-${String(localNow.getDate()).padStart(2, "0")}`;
+
+    // Un solo stock mínimo (09-10): el global del negocio para los productos
+    // sin mínimo propio, en vez del `lte: 5` / `?? 5` a mano. SettingsDB.get va cacheado.
+    const minimoGlobal = minimoGlobalDe(
+      await SettingsDB.get(tenantId).catch((err) => {
+        logger.warn("[cierre-diario/preview] settings no disponibles, mínimo por defecto", { error: String(err) });
+        return null;
+      }),
+    );
 
     // Audit project-wide 2026-05-19: migrado a CierreDiarioPreviewDB.
     // Run all queries in parallel — use allSettled so one failure doesn't block others
@@ -41,7 +52,7 @@ export async function GET(req: NextRequest) {
         () => ({ _sum: { total: null } }),
       ),
       CierreDiarioPreviewDB.countOverdueFiados(tenantId).catch(() => 0),
-      CierreDiarioPreviewDB.listLowStockProducts(tenantId, 20),
+      CierreDiarioPreviewDB.listLowStockProducts(tenantId, minimoGlobal, 20),
     ]);
 
     // Extract results safely
@@ -59,7 +70,7 @@ export async function GET(req: NextRequest) {
       ? (typeof fiadosVencidosResult.value === "number" ? fiadosVencidosResult.value : 0)
       : 0;
     const stockAlertas = stockAlertasResult.status === "fulfilled"
-      ? stockAlertasResult.value.map((p) => ({ nombre: p.name, stock: p.stock ?? 0, stockMin: p.stockMin ?? 5 }))
+      ? stockAlertasResult.value.map((p) => ({ nombre: p.name, stock: p.stock ?? 0, stockMin: stockMinimoDe(p, minimoGlobal) }))
       : [];
 
     // Filter low stock properly (stock <= stockMin)

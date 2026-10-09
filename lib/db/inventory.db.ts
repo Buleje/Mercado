@@ -6,6 +6,7 @@ import type {
   Warehouse as PWarehouse,
 } from "@/lib/generated/prisma/client";
 import { DomainEvents } from "@/lib/domain-events";
+import { minimoGlobalDe, stockMinimoDe } from "@/lib/inventario/stock-minimo";
 
 // ── Local Types ───────────────────────────────────────────────────────────────
 
@@ -85,6 +86,57 @@ function mapWarehouse(w: PWarehouse): DbWarehouse {
 }
 
 // ── Inventory Movements DB ────────────────────────────────────────────────────
+
+/**
+ * Aviso (push + evento de dominio) cuando una salida cruza el stock mínimo.
+ * Mínimo efectivo = el propio del producto o, si no tiene, el global del
+ * negocio (`stockMinimoDe`, 09-10). Corre fuera del camino de la venta.
+ */
+async function avisarSiCruzaMinimo(a: {
+  tenantId: string;
+  productId: number;
+  productName: string;
+  stockMinPropio: number | null;
+  prevStock: number;
+  clampedNewStock: number;
+  quantity: number;
+  type: string;
+}): Promise<void> {
+  let minimoGlobal = 0;
+  if (a.stockMinPropio == null) {
+    const { SettingsDB } = await import("@/lib/db/settings.db");
+    minimoGlobal = minimoGlobalDe(await SettingsDB.get(a.tenantId));
+  }
+  const minimo = stockMinimoDe({ stockMin: a.stockMinPropio }, minimoGlobal);
+  if (!(a.prevStock > minimo && a.clampedNewStock <= minimo)) return;
+
+  // 1) Legacy push notification — scoped por tenantId (audit WhatsApp #14).
+  import("@/lib/push-sender").then(({ broadcastPush }) =>
+    broadcastPush({
+      title: `⚠️ Stock bajo: ${a.productName}`,
+      body: a.clampedNewStock === 0
+        ? `Se agotó "${a.productName}". Reabastece cuanto antes.`
+        : `Solo quedan ${a.clampedNewStock} unidad(es) de "${a.productName}" (mínimo: ${minimo}).`,
+      url: "/admin?tab=inventario",
+    }, a.tenantId)
+  ).catch((err) => logger.error("[inventory.db] low-stock notification failed", { error: String(err), productId: a.productId }));
+
+  // 2) Domain event
+  await DomainEvents.stockBajo(a.tenantId, {
+    productId:     a.productId,
+    productName:   a.productName,
+    currentStock:  a.clampedNewStock,
+    stockMin:      minimo,
+    lastDeduction: a.quantity,
+    reason:        (a.type === "venta" || a.type === "venta_online")
+      ? "venta"
+      : a.type === "merma"
+        ? "merma"
+        : a.type === "ajuste_negativo"
+          ? "ajuste"
+          : "transferencia",
+  }).catch((err) => logger.error("[inventory.db] DomainEvents.stockBajo failed", { error: String(err), productId: a.productId }));
+}
 
 export const InventoryMovementsDB = {
   async getAll(tenantId: string, limit = 200): Promise<DbInventoryMovement[]> {
@@ -245,43 +297,22 @@ export const InventoryMovementsDB = {
       },
     });
 
-    // Fire-and-forget: push notification when stock drops below minimum
-    const lowStockMin = (product as unknown as { stockMin?: number | null })?.stockMin;
-    if (
-      !isIncrease &&
-      lowStockMin != null &&
-      prevStock > lowStockMin &&
-      clampedNewStock <= lowStockMin &&
-      product
-    ) {
-      // 1) Legacy push notification — scoped por tenantId (audit WhatsApp #14).
-      import("@/lib/push-sender").then(({ broadcastPush }) =>
-        broadcastPush({
-          title: `⚠️ Stock bajo: ${product.name}`,
-          body: clampedNewStock === 0
-            ? `Se agotó "${product.name}". Reabastece cuanto antes.`
-            : `Solo quedan ${clampedNewStock} unidad(es) de "${product.name}" (mínimo: ${lowStockMin}).`,
-          url: "/admin?tab=inventario",
-        }, data.tenantId)
-      ).catch((err) => logger.error("[inventory.db] low-stock notification failed", { error: String(err), productId: data.productId }));
-
-      // 2) Domain event
-      if (data.tenantId) {
-        DomainEvents.stockBajo(data.tenantId, {
-          productId:     data.productId,
-          productName:   product.name,
-          currentStock:  clampedNewStock,
-          stockMin:      lowStockMin,
-          lastDeduction: data.quantity,
-          reason:        (data.type === "venta" || data.type === "venta_online")
-            ? "venta"
-            : data.type === "merma"
-              ? "merma"
-              : data.type === "ajuste_negativo"
-                ? "ajuste"
-                : "transferencia",
-        }).catch((err) => logger.error("[inventory.db] DomainEvents.stockBajo failed", { error: String(err), productId: data.productId }));
-      }
+    // Fire-and-forget: push notification when stock drops below minimum.
+    // Un solo stock mínimo (09-10): sin mínimo propio, el global del negocio
+    // (`Settings.globalMinStock`). Se lee sólo en ese caso y fuera del camino
+    // de la venta (SettingsDB.get va cacheado); antes esos productos nunca
+    // avisaban.
+    if (!isIncrease && product && product.stock != null) {
+      avisarSiCruzaMinimo({
+        tenantId: data.tenantId,
+        productId: data.productId,
+        productName: product.name,
+        stockMinPropio: product.stockMin,
+        prevStock,
+        clampedNewStock,
+        quantity: data.quantity,
+        type: data.type,
+      }).catch((err) => logger.error("[inventory.db] aviso de stock mínimo falló", { error: String(err), productId: data.productId }));
     }
 
     return mapInventoryMovement(row);
@@ -431,13 +462,27 @@ export const WarehousesDB = {
 // ── Auto-Reorder Helper ───────────────────────────────────────────────────────
 
 export const AutoReorderDB = {
+  /**
+   * Productos en o bajo su stock mínimo. Un solo stock mínimo (09-10): los que
+   * no tienen mínimo propio usan `Settings.globalMinStock` (antes quedaban
+   * fuera). `stockMin` sale ya como el mínimo efectivo.
+   */
   async getLowStockProducts(tenantId: string): Promise<{ id: number; name: string; stock: number; stockMin: number; stockMax: number; category: string; unit: string }[]> {
+    const { SettingsDB } = await import("@/lib/db/settings.db");
+    const minimoGlobal = minimoGlobalDe(await SettingsDB.get(tenantId));
     const prods = await prisma.product.findMany({
-      where: { tenantId, active: true, stock: { not: null }, stockMin: { not: null } },
+      where: {
+        tenantId, active: true, deletedAt: null, stock: { not: null },
+        OR: [
+          { stockMin: { not: null }, stock: { lte: prisma.product.fields.stockMin } },
+          { stockMin: null, stock: { lte: minimoGlobal } },
+        ],
+      },
       select: { id: true, name: true, stock: true, stockMin: true, stockMax: true, category: true, unit: true },
     });
     return prods
-      .filter(p => p.stock !== null && p.stockMin !== null && p.stock <= p.stockMin)
-      .map(p => ({ id: p.id, name: p.name, stock: p.stock ?? 0, stockMin: p.stockMin ?? 0, stockMax: p.stockMax ?? (p.stockMin ?? 0) * 3, category: p.category, unit: p.unit }));
+      .map(p => ({ p, minimo: stockMinimoDe(p, minimoGlobal) }))
+      .filter(({ p, minimo }) => p.stock !== null && p.stock <= minimo)
+      .map(({ p, minimo }) => ({ id: p.id, name: p.name, stock: p.stock ?? 0, stockMin: minimo, stockMax: p.stockMax ?? minimo * 3, category: p.category, unit: p.unit }));
   },
 };

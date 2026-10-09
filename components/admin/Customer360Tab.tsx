@@ -14,6 +14,8 @@ import { m, AnimatePresence } from "@/components/admin/providers";
 import { cn } from "@/lib/utils";
 import EstadoCuentaModal from "./EstadoCuentaModal";
 import ClienteFormModal from "./clientes/ClienteFormModal";
+import { AvisosDelCliente } from "./clientes/AvisosDelCliente";
+import { cumpleCorto, cumpleDe } from "@/lib/clientes/cumpleanos";
 import { LinkedDocumentsSection } from "./documentos/LinkedDocumentsSection";
 import { formatCurrency, formatDate, formatDateNumeric, formatMonth } from "@/lib/format";
 
@@ -27,6 +29,11 @@ type CustomerData = {
   location?: string;
   reference?: string;
   birthday?: string | null;
+  /** Un solo cumpleaños "AAAA-MM-DD" (birthday o fechaNacimiento, la que tenga dato). */
+  cumple?: string | null;
+  notifOrderUpdates?: boolean;
+  notifPromotions?: boolean;
+  notifRestock?: boolean;
   healthScore?: HealthScore;
   creditLimit?: number;
   creditBalance?: number;
@@ -794,7 +801,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[var(--text-secondary)] dark:text-muted">
               <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> {customer.phone}</span>
               {customer.location && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {customer.location}</span>}
-              {customer.birthday && <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {customer.birthday}</span>}
+              {cumpleDe(customer) && <span className="flex items-center gap-1"><Calendar className="h-3 w-3" aria-hidden /> Cumple {cumpleCorto(cumpleDe(customer))}</span>}
               {lastOrder && <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> Últ. pedido {fmtRelative(lastOrder.createdAt)}</span>}
             </div>
           </div>
@@ -904,7 +911,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
       )}
 
       {/* Ficha completa del cliente */}
-      {(customer.documento || customer.categoria || customer.departamento || customer.email || customer.observaciones) && (
+      {(customer.documento || customer.categoria || customer.departamento || customer.email || customer.observaciones || cumpleDe(customer)) && (
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
           <CardTitle className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-3">Datos de la ficha</CardTitle>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2 text-sm">
@@ -935,8 +942,8 @@ export default function Customer360Tab({ phone, onClose }: Props) {
             {customer.genero && (
               <div className="flex gap-2"><span className="text-[var(--text-tertiary)] dark:text-muted shrink-0">Genero:</span><span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{customer.genero === 'M' ? 'Masculino' : customer.genero === 'F' ? 'Femenino' : 'Otro'}</span></div>
             )}
-            {customer.fechaNacimiento && (
-              <div className="flex gap-2"><span className="text-[var(--text-tertiary)] dark:text-muted shrink-0">Nacimiento:</span><span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatDateNumeric(customer.fechaNacimiento)}</span></div>
+            {cumpleDe(customer) && (
+              <div className="flex gap-2"><span className="text-[var(--text-tertiary)] dark:text-muted shrink-0">Nacimiento:</span><span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatDateNumeric(cumpleDe(customer) ?? "", { soloFecha: true })}</span></div>
             )}
             {customer.comoLlego && (
               <div className="flex gap-2"><span className="text-[var(--text-tertiary)] dark:text-muted shrink-0">Llego por:</span><span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] capitalize">{customer.comoLlego}</span></div>
@@ -966,6 +973,14 @@ export default function Customer360Tab({ phone, onClose }: Props) {
           )}
         </div>
       )}
+
+      {/* Avisos que acepta (Ley 29733: el cliente decide) */}
+      <AvisosDelCliente
+        key={customer.phone}
+        phone={customer.phone}
+        avisos={customer}
+        onCambio={(campo, valor) => setCustomer(prev => (prev ? { ...prev, [campo]: valor } : prev))}
+      />
 
       {/* Crédito + Etiquetas */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
