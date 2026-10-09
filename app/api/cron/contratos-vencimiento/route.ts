@@ -78,6 +78,9 @@ export const GET = withCronAuth("contratos-vencimiento", async () => {
             : `${masUrgente.numero} con ${masUrgente.clienteNombre} ${textoCorto(dias)}, y ${n - 1} más.`,
         actionUrl: "/admin?tab=documentos#contratos",
         actionLabel: "Ver contratos",
+        // Mismo tipo que el aviso de papeles por vencer: con su propia entidad
+        // cada uno es su aviso y uno no pisa (ni reusa) al otro.
+        entityId: "contratos",
         dedupWindowHours: 20,
       });
 

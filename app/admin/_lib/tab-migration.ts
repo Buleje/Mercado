@@ -11,6 +11,9 @@ export const TAB_MIGRATION: Record<string, Tab> = {
   whatsapp: "whatsapp-inbox",
   "canales-venta": "canales",
   documentacion: "documentos",
+  // Los avisos «Adelantos vencidos por cobrar» anteriores al 09-10 traen
+  // `?tab=cobranza`, que nunca existió: sin esto abrían Inicio.
+  cobranza: "adelantos",
   // → Asistente IA (absorbe dashboard, agentes, changelog)
   dashboard: "asistente-ia", "dashboard-ejecutivo": "asistente-ia", "panel-principal": "asistente-ia",
   agentes: "asistente-ia", changelog: "asistente-ia",

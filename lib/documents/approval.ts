@@ -68,6 +68,8 @@ export async function handleApproval(
     body: notif.body,
     actionUrl: "/admin?tab=documentos",
     actionLabel: "Ver documento",
+    // Un aviso por documento: sin esto, aprobar otro papel pisaba el aviso del primero.
+    entityId: docId,
     dedupWindowHours: 1,
   }).catch((err) => logger.warn("documents.approval.notify_fail", { err: String(err) }));
 

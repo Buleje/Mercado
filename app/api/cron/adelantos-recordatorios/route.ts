@@ -43,8 +43,9 @@ export const GET = withCronAuth("adelantos-recordatorios", async () => {
         severity: "MEDIUM",
         title: "Adelantos vencidos por cobrar",
         body: `${n} persona${n === 1 ? "" : "s"} con saldo vencido (+${DIAS_UMBRAL} días): ${totalTxt}.`,
-        actionUrl: "/admin?tab=cobranza",
-        actionLabel: "Ver cobranza",
+        // `tab=cobranza` no existe: el panel caía en Inicio. Adelantos vive en Mi Plata.
+        actionUrl: "/admin?tab=plata&vista=adelantos",
+        actionLabel: "Ver adelantos",
         dedupWindowHours: 20,
       });
       // Sellar último recordatorio en los beneficiarios afectados
