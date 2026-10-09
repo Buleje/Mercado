@@ -39,7 +39,9 @@ const TAB_LOADERS: Record<string, Loader> = {
   recetas: () => import("@/components/admin/RecetasModule"),
   dropship: () => import("@/components/admin/unified/DropshipModule"),
   marketplace: () => import("@/components/admin/unified/MarketplaceModule"),
-  promociones: () => import("@/components/admin/PromocionesModule"),
+  // «promociones» se redirige a «productos» (tab-migration): precargar PromocionesModule bajaba
+  // un módulo que nunca se dibuja. Ofertas y Cupones viven en el hub de Catálogo.
+  promociones: () => import("@/components/admin/unified/CatalogoTiendaModule"),
   // Hub de documentos & SUNAT.
   cotizaciones: () => import("@/components/admin/unified/DocumentosHubModule"),
   "guias-remision": () => import("@/components/admin/unified/DocumentosHubModule"),
