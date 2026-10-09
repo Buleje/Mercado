@@ -8,7 +8,7 @@
  * Correr con `npm run test:vrt`.
  */
 import "@/app/globals.css";
-import { beforeEach, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { render } from "vitest-browser-react";
 import { page } from "vitest/browser";
 import { LazyMotion, domAnimation } from "framer-motion";
@@ -19,10 +19,20 @@ beforeEach(async () => {
   // La sección de pago mide ~1 400 px: con el alto por defecto (700) lo de
   // abajo (canje y resumen) no se pinta en la captura.
   await page.viewport(900, 1600);
+  // La banda de arriba sale de la hora de Lima («~30 minutos» de 8 a 21,
+  // «Mañana 8 a 10 am» fuera): sin fijarla, la captura cambiaba según la hora
+  // en que corría (2026-10-09, roja a las 10:14). Sólo `Date`: los cuadros de
+  // la animación siguen con el reloj real. 23:30 de Lima = cerrado, como la base.
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-09T04:30:00Z"));
   vi.stubGlobal(
     "fetch",
     vi.fn(async () => new Response(JSON.stringify({}), { status: 200, headers: { "Content-Type": "application/json" } })),
   );
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 function montar(tema: "light" | "dark", canje: CanjePuntosProps, descuentoPuntos: number) {
