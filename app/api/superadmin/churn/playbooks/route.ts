@@ -6,36 +6,42 @@ import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
+import { SuperadminChurnSignalsDB } from "@/lib/db/superadmin-churn-signals.db";
+import { ACCIONES, SENALES, SEVERIDADES } from "@/lib/churn/playbook-catalog";
 
 // ─── Schemas de validación ────────────────────────────────────────────────────
 
-const VALID_SIGNALS = [
-  "login_drop",
-  "order_drop",
-  "trial_expiring",
-  "support_unresolved",
-  "plan_downgrade_intent",
-] as const;
+// Una sola fuente con la pantalla de reglas (lib/churn/playbook-catalog.ts).
+const VALID_SIGNALS = SENALES;
+const VALID_SEVERITIES = SEVERIDADES;
+const VALID_ACTIONS = ACCIONES;
 
-const VALID_SEVERITIES = ["low", "medium", "high", "critical"] as const;
-const VALID_ACTIONS = ["email", "whatsapp", "discount", "call"] as const;
-
-const createPlaybookSchema = z.object({
+// Campos SIN `.default()`: en Zod 4 `.partial()` conserva los defaults, y un PATCH
+// con sólo `{ id, isActive: false }` reescribía triggerSeverity a "high" (medido
+// 2026-10-09: «critical_score» quedó en high). Los defaults van sólo en el alta.
+const playbookFields = {
   name: z
     .string()
     .min(3)
     .max(80)
     .regex(/^[a-z0-9_]+$/, "Solo letras minúsculas, números y guión bajo"),
   triggerSignal: z.enum(VALID_SIGNALS),
-  triggerSeverity: z.enum(VALID_SEVERITIES).default("high"),
+  triggerSeverity: z.enum(VALID_SEVERITIES),
   action: z.enum(VALID_ACTIONS),
   templateId: z.string().max(100).optional().nullable(),
   discountPercent: z.number().int().min(1).max(100).optional().nullable(),
   discountDays: z.number().int().min(1).max(365).optional().nullable(),
-  isActive: z.boolean().default(true),
+  isActive: z.boolean(),
+};
+
+const createPlaybookSchema = z.object({
+  ...playbookFields,
+  triggerSeverity: playbookFields.triggerSeverity.default("high"),
+  isActive: playbookFields.isActive.default(true),
 });
 
-const updatePlaybookSchema = createPlaybookSchema
+const updatePlaybookSchema = z
+  .object(playbookFields)
   .partial()
   .extend({ id: z.string().min(1) });
 
@@ -44,6 +50,10 @@ const updatePlaybookSchema = createPlaybookSchema
 /**
  * Lista todos los playbooks.
  * Filtro opcional: ?isActive=true|false
+ *
+ * También devuelve lo que la pantalla de reglas necesita para leerlas:
+ * `autorun` (si el cron ejecuta la acción o sólo guarda la alerta) y las
+ * alertas abiertas por tipo y severidad (a cuántos negocios les toca hoy).
  */
 export async function GET(req: NextRequest) {
   try {
@@ -58,9 +68,13 @@ export async function GET(req: NextRequest) {
     logger.info("[superadmin/churn/playbooks] GET", { user: auth.username, isActiveFilter });
 
     // Audit project-wide 2026-05-19: migrado a SuperadminChurnPlaybooksDB.
-    const playbooks = await SuperadminChurnPlaybooksDB.list(isActiveFilter);
+    const [playbooks, abiertas] = await Promise.all([
+      SuperadminChurnPlaybooksDB.list(isActiveFilter),
+      SuperadminChurnSignalsDB.resumenAbiertas(),
+    ]);
+    const autorun = (process.env.CHURN_AUTORUN ?? "").toLowerCase() === "true";
 
-    return NextResponse.json({ playbooks });
+    return NextResponse.json({ playbooks, autorun, abiertas });
 
   } catch (e) {
     logger.error("[get] error", { err: e instanceof Error ? e.message : String(e) });
@@ -111,6 +125,14 @@ export async function POST(req: NextRequest) {
       name: playbook.name,
       action: playbook.action,
     });
+    logSuperadminAction(
+      "create_churn_playbook",
+      `Creó la regla de retención "${playbook.name}"`,
+      { playbookId: playbook.id, action: playbook.action, triggerSignal: playbook.triggerSignal },
+      auth.username,
+    ).catch((err) =>
+      logger.error("[churn/playbooks POST] audit log failed", { err: String(err) }),
+    );
 
     return NextResponse.json({ playbook }, { status: 201 });
 

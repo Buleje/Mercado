@@ -5,7 +5,10 @@ import {
   Loader2, HeartPulse, AlertTriangle, CheckCircle2, Clock,
   LogIn, ShoppingBag, Layers, TrendingDown,
 } from "@buleje/design-system/icons";
+import Link from "next/link";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { SENAL_LABEL } from "@/lib/churn/playbook-catalog";
+import { fueAccionReal } from "@/lib/churn/intervencion";
 
 // ─── Tipos (espejan el contrato de /api/superadmin/churn/[tenantSlug]) ──────────
 type RiskLevel = "low" | "medium" | "high" | "critical";
@@ -51,13 +54,8 @@ const RISK: Record<RiskLevel, { label: string; text: string; bg: string; bar: st
   critical: { label: "Crítico",     text: "text-[var(--data-error-600,#dc2626)]",   bg: "bg-[var(--data-error-50,#fef2f2)] dark:bg-[var(--data-error-500)]/20",   bar: "bg-[var(--data-error-600,#dc2626)]" },
 };
 
-const SIGNAL_LABEL: Record<string, string> = {
-  login_drop: "Caída de logins",
-  order_drop: "Caída de pedidos",
-  trial_expiring: "Trial por vencer",
-  support_unresolved: "Soporte sin resolver",
-  plan_downgrade_intent: "Intención de bajar de plan",
-};
+// Una sola fuente con la pantalla de reglas de retención.
+const SIGNAL_LABEL: Record<string, string> = SENAL_LABEL;
 
 function fmtDT(d: string) {
   return new Date(d).toLocaleString("es-PE", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
@@ -208,6 +206,9 @@ export function TenantHealthTab({ slug }: { slug: string }) {
       <div>
         <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-[var(--text-tertiary)]">
           <AlertTriangle className="h-4 w-4" /> Señales activas {active.length > 0 && <span className="rounded-full bg-[var(--data-error-500)] px-1.5 text-xs font-bold text-white">{active.length}</span>}
+          <Link href="/superadmin/rescue/reglas" className="ml-auto text-xs font-bold text-[var(--accent-ink)] hover:underline dark:text-[var(--accent)]">
+            Reglas de retención
+          </Link>
         </h3>
         {active.length === 0 ? (
           <p className="flex items-center gap-2 rounded-xl bg-[var(--surface-sunken)]/40 px-3 py-2.5 text-sm text-[var(--text-secondary)]"><CheckCircle2 className="h-4 w-4 text-[var(--data-success-500)]" /> Sin señales activas — todo en orden.</p>
@@ -219,7 +220,9 @@ export function TenantHealthTab({ slug }: { slug: string }) {
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-bold text-[var(--text-primary)]">{SIGNAL_LABEL[s.signalType] ?? s.signalType}</p>
                   <p className="text-xs text-[var(--text-secondary)]">{s.detail}</p>
-                  <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">{fmtDT(s.createdAt)}</p>
+                  <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
+                    Desde {fmtDT(s.createdAt)} · {fueAccionReal(s.intervention) ? s.intervention : "Sin acción todavía"}
+                  </p>
                 </div>
                 <button
                   type="button"

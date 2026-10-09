@@ -10,6 +10,7 @@
  * 6 tabs:
  *   1. Overview       — KPIs hero + timeline + postura
  *   2. Auth & Sesiones — sesiones activas + 2FA + policy + failures chart
+ *   2b. Dos pasos     — activar TOTP del superadmin (QR + código; ?tab=dos-pasos)
  *   3. Permisos       — matriz RBAC 26 recursos × 6 roles (vista documental)
  *   4. Vulnerabilidades — CVE list + scan history (stub)
  *   5. Compliance     — Ley 29733 + OWASP Top 10
@@ -26,6 +27,7 @@ import {
   ClipboardCheck,
   ScrollText,
   Target,
+  KeyRound,
 } from "@buleje/design-system/icons";
 import { SecurityHero } from "@/components/superadmin/security/SecurityHero";
 import { OverviewTab } from "@/components/superadmin/security/OverviewTab";
@@ -35,10 +37,11 @@ import { PermissionsTab } from "@/components/superadmin/security/PermissionsTab"
 import { VulnerabilitiesTab } from "@/components/superadmin/security/VulnerabilitiesTab";
 import { ComplianceTab } from "@/components/superadmin/security/ComplianceTab";
 import { AuditLogTab } from "@/components/superadmin/security/AuditLogTab";
+import { DosPasosTab } from "@/components/superadmin/security/DosPasosTab";
 import { SUPERADMIN_PAGE, SUPERADMIN_CONTENT } from "@/lib/superadmin-layout";
 import { SuperAdminModuleTabs, SEGURIDAD_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 
-type TabKey = "overview" | "threats" | "auth" | "permissions" | "vulnerabilities" | "compliance" | "audit";
+type TabKey = "overview" | "threats" | "auth" | "dos-pasos" | "permissions" | "vulnerabilities" | "compliance" | "audit";
 
 interface TabDef {
   key: TabKey;
@@ -50,6 +53,7 @@ const TABS: TabDef[] = [
   { key: "overview", label: "Overview", icon: LayoutDashboard },
   { key: "threats", label: "Amenazas", icon: Target },
   { key: "auth", label: "Auth & Sesiones", icon: Lock },
+  { key: "dos-pasos", label: "Dos pasos", icon: KeyRound },
   { key: "permissions", label: "Permisos", icon: Users },
   { key: "vulnerabilities", label: "Vulnerabilidades", icon: ShieldAlert },
   { key: "compliance", label: "Compliance", icon: ClipboardCheck },
@@ -75,6 +79,13 @@ export default function SecurityCenterPage() {
   useEffect(() => {
     const t = setInterval(() => setTick((n) => n + 1), 30_000);
     return () => clearInterval(t);
+  }, []);
+
+  // Enlace directo a una pestaña: /superadmin/security?tab=dos-pasos (sin
+  // useSearchParams, que en una page client pide un Suspense para el build).
+  useEffect(() => {
+    const pedido = new URLSearchParams(window.location.search).get("tab");
+    if (pedido && TABS.some((t) => t.key === pedido)) setActive(pedido as TabKey);
   }, []);
 
   const handleRefresh = () => {
@@ -142,6 +153,7 @@ export default function SecurityCenterPage() {
         {active === "overview" && <OverviewTab />}
         {active === "threats" && <ThreatsTab />}
         {active === "auth" && <AuthSessionsTab />}
+        {active === "dos-pasos" && <DosPasosTab />}
         {active === "permissions" && <PermissionsTab />}
         {active === "vulnerabilities" && <VulnerabilitiesTab />}
         {active === "compliance" && <ComplianceTab />}
