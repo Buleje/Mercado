@@ -5,7 +5,7 @@
 // del compiler. Este componente se renderiza decenas de veces por página
 // de catálogo (UnifiedProductCard es la card principal del marketplace).
 // El compiler auto-memoiza props + hooks, reduce re-renders innecesarios.
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { m as motion } from "framer-motion";
@@ -24,10 +24,7 @@ import {
 
 import { ProductPhotoFallback } from "@/components/marketplace/ProductPhotoFallback";
 import { cn } from "@/lib/utils";
-import { BRAND_GEO } from "@/lib/geo";
-import { celebrate } from "@/lib/celebrate";
-import { useMarketplaceCart, modifierHashOf } from "@/hooks/use-marketplace-cart";
-import { useToast } from "@/contexts/toast-context";
+import { useAgregarProducto } from "@/hooks/use-agregar-producto";
 import { useHoverPrefetch } from "@/hooks/use-hover-prefetch";
 import { useCompare } from "@/contexts/compare-context";
 import ProductModifierModal from "@/components/marketplace/ProductModifierModal";
@@ -150,60 +147,23 @@ export default function UnifiedProductCard({
   aboveFold = false,
 }: UnifiedProductCardProps) {
   const isCompact = layout === "compact";
-  // Brandon 2026-05-18 v6: importamos `addItem` directo (sin drawer) para
-  // el flow de modifiers — cuando el cliente confirma desde el modal de
-  // adicionales NO queremos abrir el AddedToCartDrawer encima (sería un
-  // modal sobre otro modal). El producto se agrega al cart y se cierra.
-  const { items: cartItems, addItem } = useMarketplaceCart();
-  // Toast "Agregado al carrito" — confirmación CLARA al agregar desde la card
-  // (antes solo cambiaba el badge, imperceptible). Audit comprador 2026-07-05.
-  const { showToast } = useToast();
+  // Lógica de carrito compartida con la tarjeta de la home (hooks/use-agregar-producto):
+  // líneas del carrito, cantidad, tope de stock, «Avísame», vuelo al carrito y
+  // el modal «Arma tu pedido» con su re-edición. Mismo comportamiento de siempre.
+  const {
+    inCartQty,
+    isOutOfStock,
+    atStockCap,
+    notifyWaHref,
+    imgWrapRef,
+    handleAdd,
+    handleIncrement,
+    setModifierModalOpen,
+    modalProps,
+  } = useAgregarProducto(product);
   const { add: addToCompare, remove: removeFromCompare, has: isInCompare, items: compareItems, max: compareMax } = useCompare();
   const [compareLimitMsg, setCompareLimitMsg] = useState(false);
-  const [modifierModalOpen, setModifierModalOpen] = useState(false);
-  // Re-edit: cuando el cliente clickea "Editar" en el AddedToCartDrawer,
-  // capturamos el evento global y abrimos nuestro modal con la selección
-  // inicial poblada desde la línea actual del cart.
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent<{ storeId: string; productId: number }>).detail;
-      if (
-        detail &&
-        detail.storeId === (product.storeId ?? "") &&
-        detail.productId === product.id
-      ) {
-        setModifierModalOpen(true);
-      }
-    };
-    window.addEventListener("buleje:reedit-modifiers", handler);
-    return () => window.removeEventListener("buleje:reedit-modifiers", handler);
-  }, [product.storeId, product.id]);
   const countdown = useCountdown(variant === "flash" ? endsAt : undefined);
-
-  // Líneas del carrito que corresponden a ESTE producto. Puede haber varias si
-  // se agregó con distintos adicionales (mismo producto, modifierHash distinto).
-  // El stepper de la card opera sobre estas líneas para sumar/restar.
-  // Brandon 2026-06-09 fix: el match por storeId fallaba en secciones que no
-  // pasan storeId (ej. "Lo más pedido hoy") → contador siempre 0. Ahora se
-  // matchea por storeProductId (clave única store-producto que pasan top-today,
-  // catálogo y storefront) con fallback a storeId/storeSlug.
-  const cartLines = useMemo(() => {
-    return cartItems.filter((i) => {
-      if (product.storeProductId && i.storeProductId)
-        return i.storeProductId === product.storeProductId;
-      if (i.productId !== product.id) return false;
-      if (product.storeId) return i.storeId === product.storeId;
-      if (product.storeSlug) return i.storeSlug === product.storeSlug;
-      return false;
-    });
-  }, [cartItems, product.id, product.storeId, product.storeSlug, product.storeProductId]);
-
-  // Cantidad total ya en el carrito — suma todas las líneas del producto.
-  const inCartQty = useMemo(
-    () => cartLines.reduce((acc, i) => acc + i.quantity, 0),
-    [cartLines],
-  );
 
   // Brandon 2026-07-06: al tocar un producto → su PÁGINA DE DETALLE (no la
   // tienda). Antes el default caía a `/marketplace/{slug}` (portada de la
@@ -217,21 +177,6 @@ export default function UnifiedProductCard({
 
   const { onMouseEnter, onMouseLeave } = useHoverPrefetch(productHref);
 
-  const isOutOfStock = product.stock === 0;
-
-  // Brandon 2026-06-12: "Avísame cuando llegue" para agotados. Sin DB: abre
-  // WhatsApp al número central de Buleje con el producto + tienda prellenados.
-  // Captura demanda perdida (quién quería qué) y le da salida al cliente en
-  // vez de un carrito muerto. Upgrade futuro: waitlist persistida.
-  const notifyWaHref = useMemo(() => {
-    const digits = BRAND_GEO.phone.replace(/[^0-9]/g, "");
-    const text = encodeURIComponent(
-      `Hola Buleje 👋 Avísenme cuando vuelva a haber ${product.name}` +
-        (product.storeName ? ` de ${product.storeName}` : "") +
-        ", por favor.",
-    );
-    return `https://wa.me/${digits}?text=${text}`;
-  }, [product.name, product.storeName]);
   const inCompare = isInCompare(product.id);
 
   const handleCompare = useCallback(() => {
@@ -256,124 +201,6 @@ export default function UnifiedProductCard({
       stock: product.stock ?? undefined,
     });
   }, [inCompare, addToCompare, removeFromCompare, compareItems, compareMax, product]);
-
-
-  // Brandon 2026-05-18 v5: handleDecrement removido — el stepper mobile
-  // del card se quitó (CTA mobile ahora es círculo icon-only igual que
-  // desktop). El decremento se hace desde el carrito (/marketplace/carrito).
-
-  const handleAdd = useCallback(() => {
-    if (isOutOfStock) return;
-    // Vibration haptic feedback en mobile — confirmación táctil rápida
-    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
-      try {
-        navigator.vibrate(30);
-      } catch {
-        /* silent */
-      }
-    }
-    // Brandon 2026-05-27: SIEMPRE abrir el modal "Armá tu pedido" — tenga o no
-    // adicionales. Sin grupos, el modal muestra solo la cantidad + agregar
-    // (quick add). Unifica el flujo de agregado en un único formato.
-    setModifierModalOpen(true);
-  }, [isOutOfStock]);
-
-  // Tope de stock: si el producto controla stock, no dejar sumar más allá.
-  const atStockCap =
-    product.stock != null && product.stock > 0 && inCartQty >= product.stock;
-
-  // Ref del well de la imagen — origen de la animación "vuela al carrito".
-  const imgWrapRef = useRef<HTMLDivElement>(null);
-
-  // Brandon 2026-06-12: animación suave al agregar — una mini-vista del producto
-  // sale de la card y "vuela" hasta el carrito del nav, que late al recibirla.
-  // Self-contained (DOM directo, sin provider): busca el botón Carrito del nav.
-  const flyToNavCart = useCallback(() => {
-    if (typeof document === "undefined") return;
-    const src = imgWrapRef.current;
-    const cart = document.querySelector('[aria-label^="Carrito"]') as HTMLElement | null;
-    if (!src || !cart) return;
-    const s = src.getBoundingClientRect();
-    const c = cart.getBoundingClientRect();
-    if (s.width === 0 || c.width === 0) return;
-    const SIZE = 46;
-    const node = document.createElement("div");
-    node.setAttribute("aria-hidden", "true");
-    node.style.cssText = [
-      "position:fixed",
-      `left:${s.left + s.width / 2 - SIZE / 2}px`,
-      `top:${s.top + s.height / 2 - SIZE / 2}px`,
-      `width:${SIZE}px`,
-      `height:${SIZE}px`,
-      "border-radius:9999px",
-      "overflow:hidden",
-      "z-index:9999",
-      "pointer-events:none",
-      "background:#fff",
-      "box-shadow:0 10px 30px rgba(0,0,0,.28)",
-      "transition:transform .7s cubic-bezier(.22,.7,.22,1),opacity .7s ease",
-    ].join(";");
-    if (product.image) {
-      const img = document.createElement("img");
-      img.src = product.image;
-      img.style.cssText = "width:100%;height:100%;object-fit:cover";
-      node.appendChild(img);
-    }
-    document.body.appendChild(node);
-    const dx = c.left + c.width / 2 - (s.left + s.width / 2);
-    const dy = c.top + c.height / 2 - (s.top + s.height / 2);
-    requestAnimationFrame(() => {
-      node.style.transform = `translate(${dx}px, ${dy}px) scale(0.18)`;
-      node.style.opacity = "0.25";
-    });
-    const cleanup = () => node.remove();
-    node.addEventListener("transitionend", cleanup, { once: true });
-    setTimeout(cleanup, 950);
-    // Latido del carrito del nav al "recibir" el producto.
-    setTimeout(() => {
-      cart.animate?.(
-        [{ transform: "scale(1)" }, { transform: "scale(1.28)" }, { transform: "scale(1)" }],
-        { duration: 320, easing: "ease-out" },
-      );
-    }, 640);
-  }, [product.image]);
-
-  // Agregar UNA unidad (Brandon 2026-06-12). Con adicionales abre el modal
-  // (hay que elegir opciones); producto simple suma directo + animación + 🎉.
-  // Reemplaza el stepper: el botón del carrito siempre SUMA (no hay restar).
-  const handleIncrement = useCallback(() => {
-    if (isOutOfStock || atStockCap) return;
-    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
-      try {
-        navigator.vibrate(20);
-      } catch {
-        /* silent */
-      }
-    }
-    if ((product.modifierGroups?.length ?? 0) > 0) {
-      setModifierModalOpen(true);
-      return;
-    }
-    flyToNavCart();
-    addItem({
-      storeId: product.storeId ?? "",
-      storeName: product.storeName ?? "",
-      storeSlug: product.storeSlug ?? "",
-      storeProductId: product.storeProductId ?? String(product.id),
-      productId: product.id,
-      name: product.name,
-      price: product.price,
-      basePrice: product.price,
-      image: product.image ?? null,
-      unit: product.unit ?? null,
-      modifiers: [],
-      modifierHash: modifierHashOf([]),
-      quantity: 1,
-      stock: product.stock ?? undefined,
-    });
-    celebrate({ intensity: "sm" });
-    showToast(product.name, product.image ?? "");
-  }, [isOutOfStock, atStockCap, product, addItem, flyToNavCart, showToast]);
 
   /* ── Badges top-left ───────────────────────────────────────────── */
   const showOfertaBadge =
@@ -805,60 +632,9 @@ export default function UnifiedProductCard({
         )}
       </div>
 
-      {/* Modal "Armá tu pedido" — SIEMPRE disponible (Brandon 2026-05-27).
+      {/* Modal "Arma tu pedido" — SIEMPRE disponible (Brandon 2026-05-27).
           Con adicionales muestra los grupos; sin adicionales, solo cantidad. */}
-      {(
-        <ProductModifierModal
-          open={modifierModalOpen}
-          onClose={() => setModifierModalOpen(false)}
-          product={{
-            id: product.id,
-            name: product.name,
-            price: product.price,
-            image: product.image ?? null,
-            unit: product.unit ?? null,
-            category: product.category,
-            storeId: product.storeId ?? "",
-            storeName: product.storeName ?? "",
-            storeSlug: product.storeSlug ?? "",
-            storeProductId: product.storeProductId ?? String(product.id),
-            storeLogo: product.storeLogo ?? null,
-            description: product.description ?? null,
-            storeRating: product.storeRating ?? null,
-            storeReviewCount: product.storeReviewCount ?? null,
-            storeCategory: product.storeCategory ?? null,
-            storeProductCount: product.storeProductCount ?? null,
-            storeSince: product.storeSince ?? null,
-          }}
-          groups={product.modifierGroups ?? []}
-          onConfirm={({ quantity, modifiers, finalUnitPrice }) => {
-            // Brandon 2026-05-18 v6: usar `addItem` directo (NO
-            // addItemWithUndo) para evitar abrir el AddedToCartDrawer
-            // encima del modal de modifiers. El producto + adicionales
-            // se agregan al cart (y se persisten al checkout/admin igual)
-            // y el cliente vuelve al storefront sin un segundo modal.
-            addItem({
-              storeId: product.storeId ?? "",
-              storeName: product.storeName ?? "",
-              storeSlug: product.storeSlug ?? "",
-              storeProductId: product.storeProductId ?? String(product.id),
-              productId: product.id,
-              name: product.name,
-              price: finalUnitPrice,
-              basePrice: product.price,
-              image: product.image ?? null,
-              unit: product.unit ?? null,
-              modifiers,
-              modifierHash: modifierHashOf(modifiers),
-              quantity,
-            });
-            setModifierModalOpen(false);
-            flyToNavCart(); // ✈️ vuela al carrito del nav
-            celebrate({ intensity: "sm" }); // 🎉 agregado al carrito
-            showToast(product.name, product.image ?? ""); // ✓ toast "Agregado"
-          }}
-        />
-      )}
+      <ProductModifierModal {...modalProps} />
     </motion.article>
   );
 }

@@ -1,137 +1,155 @@
 /**
- * ProductPhotoFallback — placeholder amable para productos SIN foto.
+ * ProductPhotoFallback — el «sin foto» del marketplace: un SELLO DE FAMILIA.
  *
- * Única fuente del "sin foto" del marketplace (Brandon 2026-07-04): ícono Lucide
- * de la categoría en un círculo con tinte de marca + nombre del producto sobre un
- * degradado suave. Convierte el negativo ("no hay imagen") en un tile intencional
- * y reconocible, en vez del texto crudo "Sin foto". Presentational, server-safe.
+ * Única fuente del "sin foto" (Brandon 2026-07-04). Rediseño «Dosel»
+ * (2026-10-10): el 57 % de los productos no tiene foto, así que esto es el caso
+ * común y tiene que verse intencional, no «a medio terminar».
  *
- * Se usa en UnifiedProductCard (card principal) y en cualquier mini-card que antes
- * pintaba su propio "Sin foto" (CartSuggestions, etc.).
+ *   · Fondo con el tinte de su familia (`data-familia` → `--tinte-bg`) y su
+ *     motivo (`.patron-familia`: mantel en comida, hojitas en frescos, ondas en
+ *     bebidas, granos en despensa, greca en hogar). El color vive en globals.css.
+ *   · Un blob orgánico (3 formas, elegida por el nombre para que la grilla no
+ *     se vea clonada) con un brillo arriba a la izquierda.
+ *   · El glifo más específico: pistas por nombre → categoría → familia.
+ *   · SIN texto adentro: el nombre ya está debajo de la foto. `showName` queda
+ *     para superficies que no lo muestran afuera.
+ *
+ * `forma="mini"` (≤ 56 px): solo blob y glifo, sin motivo. Server-safe.
  */
 
 import {
-  Pizza,
+  Apple,
   Beef,
   Beer,
+  CakeSlice,
+  Candy,
   Carrot,
   ChefHat,
+  Coffee,
   Cookie,
   Croissant,
+  CupSoda,
   Drumstick,
   Fish,
+  GlassWater,
+  Hammer,
+  IceCreamCone,
   Milk,
-  Sandwich,
-  Apple,
-  Coffee,
   Package,
-  ShoppingCart,
+  Pizza,
+  Sandwich,
+  SprayCan,
+  Truck,
+  Wheat,
   type LucideIcon,
 } from "@buleje/design-system/icons";
+import { getProductCategoryIcon } from "@/components/marketplace/_category-icons";
+import { familiaDe, familiaPorId, sinTildes } from "@/lib/marketplace/familias-categoria";
+import { cn } from "@/lib/utils";
 
-const CATEGORY_ICON: Record<string, LucideIcon> = {
-  abarrotes: Package,
-  bebidas: Beer,
-  carnes: Beef,
-  lacteos: Milk,
-  frutas: Apple,
-  verduras: Carrot,
-  panaderia: Croissant,
-  golosinas: Cookie,
-  limpieza: Package,
-  hogar: Package,
-  mascotas: Package,
-  bebes: Package,
-  farmacia: Package,
-  ferreteria: Package,
-  pollo: Drumstick,
-  polleria: Drumstick,
-  pescados: Fish,
-  congelados: Package,
-  pizza: Pizza,
-  pizzas: Pizza,
-  pizzeria: Pizza,
-  sandwich: Sandwich,
-  sandwiches: Sandwich,
-  comida: ChefHat,
-  comidas: ChefHat,
-  restaurante: ChefHat,
-  restaurantes: ChefHat,
-  default: ShoppingCart,
-};
-
-// Brandon 2026-07-05 (audit comprador): heurísticas por NOMBRE para que menos
-// productos caigan al ícono genérico (cajita/carrito) → el fallback se ve
-// intencional, no "a medio terminar". Se prueba cuando la categoría no resuelve
-// a un ícono específico. Orden = primero match gana.
-const NAME_HINTS: Array<[RegExp, LucideIcon]> = [
-  [/caf[eé]|instant[aá]neo|nescaf|t[eé] |infusi[oó]n/i, Coffee],
-  [/cerveza|pilsen|cusque[nñ]a|corona|vino|pisco|ron |whisky|trago|licor/i, Beer],
-  [/agua|gaseosa|cola|kola|chicha|jugo|refresco|bebida|gatorade|botella|inca/i, Beer],
-  [/pollo|brasa|alita|pierna|presa|broaster/i, Drumstick],
-  [/pizza/i, Pizza],
-  [/pan|torta|brownie|tiramisu|postre|helado|keke|galleta|dulce|chocolate|caramelo/i, Cookie],
-  [/snack|papitas|chizito|cheetos|piqueo|man[ií] |chifle|doritos|lays/i, Cookie],
-  [/leche|yogur|queso|mantequilla|manjar/i, Milk],
-  [/carne|res|cerdo|chuleta|bistec|lomo|molida|chorizo/i, Beef],
-  [/pescado|paiche|doncella|trucha|atun|conserva/i, Fish],
-  [/manzana|platano|fruta|naranja|papaya|pi[nñ]a|mango|palta/i, Apple],
-  [/zanahoria|verdura|lechuga|tomate|cebolla|papa|ajo|culantro/i, Carrot],
-  [/croissant|bizcocho|empanada/i, Croissant],
-  [/sandwich|hamburguesa|hot ?dog|salchipapa|shawarma/i, Sandwich],
-  [/almuerzo|men[uú]|combo|plato|ceviche|tallarin|pasta|arroz chaufa|guiso/i, ChefHat],
+// Pistas por NOMBRE (sin tildes, minúsculas). Van antes que la categoría: el
+// nombre es más específico («Inca Kola» dice más que «Bebidas»). 1.er match gana.
+const PISTAS_POR_NOMBRE: Array<[RegExp, LucideIcon]> = [
+  [/torta|keke|tiramisu|brownie|pastel|cupcake|cheesecake|alfajor/, CakeSlice],
+  [/helado|yamboly|marciano|paleta/, IceCreamCone],
+  [/cerveza|pilsen|cusquena|corona|vino|pisco|\bron\b|whisky|trago|licor/, Beer],
+  [/cafe|instantaneo|nescaf|\bte\b|infusion|emoliente/, Coffee],
+  [/gaseosa|kola|\bcola\b|sprite|fanta|pepsi|guarana|7 ?up/, CupSoda],
+  [/agua|jugo|refresco|chicha|limonada|bebida|gatorade|frugos/, GlassWater],
+  [/pollo|brasa|alita|pierna|presa|broaster/, Drumstick],
+  [/pizza|calzone/, Pizza],
+  [/hamburgues|sandwich|hot ?dog|salchipapa|shawarma|butifarra/, Sandwich],
+  [/arroz|fideo|spaghetti|tallarin|harina|avena|quinua|trigo|menestra|lenteja/, Wheat],
+  [/golosina|caramelo|chupetin|chicle|gomita|chocolate|sublime/, Candy],
+  [/galleta|snack|papitas|chizito|cheetos|piqueo|chifle|doritos|lays/, Cookie],
+  [/\bpan\b|croissant|bizcocho|empanada/, Croissant],
+  [/leche|yogur|queso|mantequilla|manjar|huevo/, Milk],
+  [/carne|\bres\b|cerdo|chuleta|bistec|lomo|molida|chorizo/, Beef],
+  [/pescado|paiche|doncella|trucha|atun|sardina|conserva/, Fish],
+  [/manzana|platano|fruta|naranja|papaya|pina|mango|palta/, Apple],
+  [/zanahoria|verdura|lechuga|tomate|cebolla|\bpapa\b|culantro/, Carrot],
+  [/detergente|lejia|jabon|limpia|lavavajilla|desinfect|suavizante/, SprayCan],
+  [/madera|tabla|tornillo|clavo|cemento|fierro|herramienta|aserrad|triplay/, Hammer],
+  [/cargador|maquinaria|excavadora|volquete|tractor|camion/, Truck],
+  [/almuerzo|menu|combo|plato|ceviche|cebiche|guiso|chaufa/, ChefHat],
 ];
 
-// Brandon 2026-07-07 (audit ofertas): UN SOLO tinte consistente. Antes había 4
-// variantes tonales (teal + coral) derivadas del nombre → el grid se veía
-// "rosa/verde alternado", incompleto y poco cuidado (los tonos no comunican
-// categoría). Ahora TODOS los tiles comparten el mismo fondo neutro suave y el
-// mismo círculo de marca; la variedad la aporta el ÍCONO por categoría (que sí
-// comunica), no el color. Solo tokens, sin hex.
-const TILE = {
-  grad: "from-[var(--surface-sunken)] via-[var(--surface-canvas)] to-[var(--surface-sunken)]",
-  circle: "bg-[var(--accent)]/10 text-[var(--accent)] ring-[var(--accent)]/15",
-};
-
-/** Elige el ícono más específico: categoría explícita → nombre → default. */
-function iconFor(category?: string | null, name?: string | null): LucideIcon {
-  const key = (category ?? "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
-  const byCat = CATEGORY_ICON[key];
-  if (byCat && byCat !== CATEGORY_ICON.default) return byCat;
+/** El glifo más específico: nombre → categoría → familia. */
+function glifoDe(category?: string | null, name?: string | null): LucideIcon {
   if (name) {
-    for (const [re, icon] of NAME_HINTS) if (re.test(name)) return icon;
+    const n = sinTildes(name);
+    for (const [re, icon] of PISTAS_POR_NOMBRE) if (re.test(n)) return icon;
   }
-  return byCat ?? CATEGORY_ICON.default;
+  if (category) {
+    const porCategoria = getProductCategoryIcon(category);
+    if (porCategoria !== Package) return porCategoria;
+  }
+  return familiaPorId(familiaDe(category, name)).icon;
+}
+
+// Tres blobs orgánicos (viewBox 100×100). El nombre elige uno: la grilla varía
+// sin colores nuevos.
+const BLOBS = [
+  "M58 6c18 4 34 20 35 40 1 19-9 37-27 46-19 9-43 6-56-9C-2 69 2 45 13 29 24 13 40 2 58 6Z",
+  "M49 3c21-1 41 13 46 33 5 21-5 44-25 54-20 10-46 7-59-10C-1 63 1 38 15 22 24 10 36 4 49 3Z",
+  "M63 8c17 8 29 26 28 45-1 20-15 38-35 41-21 4-44-6-51-26C-2 48 7 24 26 12 37 5 51 2 63 8Z",
+] as const;
+
+function blobDe(name?: string | null): string {
+  let h = 0;
+  for (const ch of name ?? "") h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return BLOBS[h % BLOBS.length];
 }
 
 export function ProductPhotoFallback({
   name,
   category,
-  /** Tamaño del círculo del ícono. "sm" para mini-cards, "md" (default) para el card grande. */
+  /** Grosor del glifo: "sm" para mini-cards (trazo un poco más grueso), "md" default. */
   size = "md",
-  showName = true,
+  showName = false,
+  forma = "tile",
 }: {
   name?: string | null;
   category?: string | null;
   size?: "sm" | "md";
   showName?: boolean;
+  /** "tile" = pozo de tarjeta (default) · "mini" = miniatura ≤ 56 px, sin motivo. */
+  forma?: "tile" | "mini";
 }) {
-  const Icon = iconFor(category, name);
-  const circleSize = size === "sm" ? "h-11 w-11" : "h-16 w-16";
-  const glyph = size === "sm" ? "h-5 w-5" : "h-8 w-8";
+  const Icon = glifoDe(category, name);
+  const mini = forma === "mini";
+  const conNombre = showName && !!name && !mini;
   return (
     <div
-      className={`absolute inset-0 flex flex-col items-center justify-center gap-2 text-center px-3 bg-linear-to-br ${TILE.grad}`}
-      aria-label={name ? `${name} — sin foto` : "Producto sin foto"}
+      data-familia={familiaDe(category, name)}
+      role="img"
+      aria-label={name ? `${name}, sin foto` : "Producto sin foto"}
+      className="absolute inset-0 flex flex-col items-center justify-center overflow-hidden bg-[var(--tinte-bg)]"
     >
+      {!mini && <span aria-hidden className="patron-familia" />}
       <span
-        className={`inline-flex ${circleSize} items-center justify-center rounded-full ring-1 ring-inset ${TILE.circle}`}
         aria-hidden
+        className={cn("relative grid place-items-center", mini ? "h-[84%] w-[84%]" : "h-[62%] w-[62%]", conNombre && "h-[52%] w-[52%]")}
       >
-        <Icon className={glyph} strokeWidth={1.5} />
+        <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full">
+          <path d={blobDe(name)} fill="var(--tinte-blob)" />
+          <ellipse
+            cx="34"
+            cy="27"
+            rx="15"
+            ry="7.5"
+            transform="rotate(-28 34 27)"
+            className="fill-white/50 dark:fill-white/10"
+          />
+        </svg>
+        <Icon
+          className="relative h-[64%] w-[64%] -rotate-6 text-[var(--tinte-ink)]"
+          strokeWidth={size === "sm" || mini ? 1.75 : 1.5}
+          aria-hidden
+        />
       </span>
-      {showName && name && (
-        <p className="text-xs font-bold text-[var(--text-secondary)] leading-tight line-clamp-2 max-w-[92%]">
+      {conNombre && (
+        <p className="relative mt-2 line-clamp-2 max-w-[88%] text-center text-xs font-semibold leading-tight text-[var(--text-secondary)]">
           {name}
         </p>
       )}

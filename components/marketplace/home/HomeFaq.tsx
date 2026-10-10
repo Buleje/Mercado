@@ -1,94 +1,72 @@
 import { Reveal } from "@/components/landing/Reveal";
-import SectionHeading from "@/components/marketplace/home/SectionHeading";
+import HomeSeccionTitulo from "@/components/marketplace/home/HomeSeccionTitulo";
 import { HOME_FAQS } from "@/lib/marketplace/home-faqs";
 import { BRAND_GEO } from "@/lib/geo";
 import { ChevronDown, MessageCircle } from "@buleje/design-system/icons";
 
-// app/(store)/layout.tsx — único punto compartido con /tiendas y /marketplace.
-// ── FAQ visible — server component, accordeón nativo <details> (sin JS) ──────
-// Audit SEO 2026-05-31: el FAQPage schema necesitaba contenido VISIBLE en la
-// página (política de Google) — antes era schema-only. Esto también suma copy
-// indexable con keywords long-tail locales ("delivery en {city}", "pagar con
-// Yape"). Nativo <details>/<summary>: accesible por teclado, 0 JavaScript.
+// ── Preguntas frecuentes — server component, <details> nativo (0 JS) ─────────
+// Audit SEO 2026-05-31: el FAQPage JSON-LD necesita el contenido VISIBLE en la
+// página; la lista es la misma (lib/marketplace/home-faqs.ts). Rediseño «Dosel»
+// (2026-10-10): un solo panel compacto, 2 columnas en md+ y 1 a 400, sin
+// cuadros numerados; al abrir, una regla teal a la izquierda. La última fila
+// lleva a WhatsApp (botón en --accent-dark: el texto blanco exige 4,86:1).
+
+const WHATSAPP = `https://wa.me/${BRAND_GEO.phone.replace(/\D/g, "")}?text=${encodeURIComponent(
+  `Hola Buleje, tengo una pregunta sobre pedir en ${BRAND_GEO.city}`,
+)}`;
+
+function Pregunta({ q, a }: { q: string; a: string }) {
+  return (
+    <details className="group relative before:absolute before:inset-y-3 before:left-0 before:w-[3px] before:rounded-full before:bg-[var(--accent)] before:opacity-0 before:transition-opacity before:duration-[var(--dur-base)] open:before:opacity-100">
+      <summary className="flex min-h-[3.5rem] cursor-pointer list-none items-center gap-3 px-5 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent)] [&::-webkit-details-marker]:hidden">
+        <span className="flex-1 text-base font-semibold leading-snug text-[var(--text-primary)]">{q}</span>
+        <ChevronDown
+          className="h-5 w-5 shrink-0 text-[var(--text-tertiary)] transition-transform duration-[var(--dur-base)] group-open:rotate-180 motion-reduce:transition-none"
+          strokeWidth={2.25}
+          aria-hidden
+        />
+      </summary>
+      <p className="-mt-1 px-5 pb-4 text-base leading-relaxed text-[var(--text-secondary)]">{a}</p>
+    </details>
+  );
+}
+
 function HomeFaqSection() {
+  // Reparto par/impar: cada columna se expande sola al abrir (sin saltos de la otra).
+  const columnas = [0, 1].map((c) => HOME_FAQS.filter((_, i) => i % 2 === c));
   return (
     <section
       id="preguntas-frecuentes"
       aria-labelledby="faq-heading"
-      className="py-7 sm:py-9 bg-[var(--surface-sunken)]/40 border-y border-[var(--rule-soft)]"
+      className="mx-auto w-full max-w-[1760px] px-4 sm:px-6 lg:px-8"
     >
-      <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8">
-        <SectionHeading
-          headingId="faq-heading"
-          eyebrow="Preguntas frecuentes"
-          title={`Todo sobre comprar y pedir en ${BRAND_GEO.city}`}
-        />
-
-        {/* 2 columnas masonry (Brandon 2026-06-01): llena el ancho y cada
-            columna se expande independiente al abrir un acordeón (sin saltos de
-            la otra). Reparto par/impar preservando el número original. Sigue
-            siendo native <details> → 0 JS, indexable, accesible. */}
-        <div className="grid gap-3 sm:gap-4 md:grid-cols-2 md:items-start">
-          {[0, 1].map((colIdx) => (
-            <div key={colIdx} className="space-y-3 sm:space-y-4">
-              {HOME_FAQS.filter((_, i) => i % 2 === colIdx).map((f) => {
-                const n = HOME_FAQS.indexOf(f) + 1;
-                return (
-                  /* Brandon 2026-06-13: rediseño editorial SIN bordes redondeados.
-                     Tarjeta cuadrada con regla de acento a la IZQUIERDA (gris →
-                     acento al abrir), tinte suave + número resaltado en open. */
-                  <details
-                    key={n}
-                    className="group border border-[var(--rule-base)] border-l-[3px] border-l-[var(--rule-strong)] bg-[var(--surface-raised)] transition-colors open:border-l-[var(--accent)] open:bg-primary/10"
-                  >
-                    <summary className="flex items-center gap-3.5 cursor-pointer list-none px-4 sm:px-5 py-4 [&::-webkit-details-marker]:hidden">
-                      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center bg-[var(--surface-sunken)] text-[length:var(--ts-sm)] font-black tabular-nums text-[var(--text-tertiary)] transition-colors group-open:bg-[var(--accent)] group-open:text-white">
-                        {String(n).padStart(2, "0")}
-                      </span>
-                      <span className="flex-1 text-base font-bold leading-snug text-[var(--text-primary)] transition-colors group-open:text-[var(--accent)]">
-                        {f.q}
-                      </span>
-                      <span className="grid h-7 w-7 shrink-0 place-items-center text-[var(--text-tertiary)] transition-colors group-open:text-[var(--accent)]">
-                        <ChevronDown
-                          className="h-5 w-5 transition-transform duration-200 group-open:rotate-180"
-                          strokeWidth={2.5}
-                          aria-hidden
-                        />
-                      </span>
-                    </summary>
-                    <div className="pl-[3.875rem] pr-5 pb-5 -mt-1">
-                      <p className="text-base text-[var(--text-secondary)] leading-relaxed">
-                        {f.a}
-                      </p>
-                    </div>
-                  </details>
-                );
-              })}
+      <HomeSeccionTitulo
+        id="faq-heading"
+        titulo="Preguntas frecuentes"
+        bajada={`Comprar y pedir en ${BRAND_GEO.city}`}
+      />
+      <div className="overflow-hidden rounded-[var(--radius-xl)] bg-[var(--surface-raised)] ring-1 ring-[var(--rule-base)]">
+        <div className="divide-y divide-[var(--rule-soft)] md:grid md:grid-cols-2 md:items-start md:divide-x md:divide-y-0">
+          {columnas.map((lista, c) => (
+            <div key={c} className="divide-y divide-[var(--rule-soft)]">
+              {lista.map((f) => (
+                <Pregunta key={f.q} q={f.q} a={f.a} />
+              ))}
             </div>
           ))}
         </div>
-
-        {/* Cierre — duda no resuelta → WhatsApp directo. Bloque cuadrado con
-            franja de acento a la izquierda (consistente con las tarjetas). */}
-        <div className="mt-6 sm:mt-8 flex flex-col gap-4 border border-[var(--rule-base)] border-l-[3px] border-l-[var(--accent)] bg-[var(--surface-raised)] px-5 sm:px-7 py-5 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-base sm:text-lg font-extrabold text-[var(--text-primary)]">
-              ¿Te quedó otra duda?
-            </p>
-            <p className="mt-0.5 text-sm text-[var(--text-secondary)]">
-              Escríbenos por WhatsApp y te respondemos al toque.
-            </p>
-          </div>
+        <div className="flex flex-col gap-3 border-t border-[var(--rule-base)] bg-[var(--surface-sunken)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-base font-semibold text-[var(--text-primary)]">
+            ¿Otra duda? <span className="font-normal text-[var(--text-secondary)]">Escríbenos y te respondemos al toque.</span>
+          </p>
           <a
-            href={`https://wa.me/${BRAND_GEO.phone.replace(/\D/g, "")}?text=${encodeURIComponent(
-              `Hola Buleje, tengo una pregunta sobre pedir en ${BRAND_GEO.city}`,
-            )}`}
+            href={WHATSAPP}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex shrink-0 items-center justify-center gap-2 bg-[var(--accent)] px-6 h-12 text-sm font-extrabold text-white shadow-sm transition-all hover:gap-3 hover:shadow-md active:scale-95"
+            className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-[var(--accent-dark)] px-5 text-base font-bold text-white transition-colors duration-[var(--dur-fast)] hover:shadow-[var(--shadow-md)] active:scale-[0.98] motion-reduce:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-sunken)]"
           >
             <MessageCircle className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-            Escribir por WhatsApp
+            Escríbenos por WhatsApp
           </a>
         </div>
       </div>

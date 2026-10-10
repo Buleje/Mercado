@@ -98,5 +98,12 @@ export function brandColorOverridesCss(cfg: PlatformConfig): string | null {
     overrides.push(`--brand-secondary: ${secondary};`);
   }
   if (overrides.length === 0) return null;
-  return `:root{${overrides.join("")}}`;
+  /* En oscuro, globals.css pone `--accent-ink` CLARO (#2EC4BA): los enlaces van sobre
+   * fondo oscuro. El override de `:root` vive en el mismo <html> que `.dark` y, por ir
+   * después, lo pisaba con el teal hondo de claro → 3,2:1 en los enlaces de la home
+   * (2026-10-10). Se deriva el claro del mismo primario. */
+  const oscuro = primary && primary !== PLATFORM_CONFIG_DEFAULTS.brand.primaryColor
+    ? `.dark{--accent-ink: color-mix(in oklab, ${primary} 72%, white);}`
+    : "";
+  return `:root{${overrides.join("")}}${oscuro}`;
 }
