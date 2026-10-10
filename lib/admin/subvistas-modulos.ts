@@ -365,11 +365,14 @@ export const ANIDADAS_POR_MODULO: Readonly<Record<string, readonly SubvistaAnida
     { vista: "drive", key: "activity", label: "Actividad del drive", hint: "Quién subió, movió o borró qué" },
   ],
   // ── Ola 3 del panel unificado (2026-10-10) ──
-  // Comprobantes › Cotizaciones (venían de Documentos › Cotizaciones).
+  // Comprobantes › Cotizaciones (venían de Documentos › Cotizaciones). Desde el
+  // 10-10 sin pestañas internas: dos secciones por estado; `nueva` abre el
+  // formulario y `dashboard` llega con los Indicadores abiertos (`lista` = alias).
   facturacion: [
-    { vista: "cotizaciones", key: "dashboard", label: "Resumen de cotizaciones", hint: "Cuántas cotizaste, cuántas se aceptaron y cuántas se convirtieron", origen: ["cotizaciones", "documentos"] },
-    { vista: "cotizaciones", key: "lista", label: "Lista de cotizaciones", hint: "Presupuestos enviados", origen: ["cotizaciones", "documentos"] },
+    { vista: "cotizaciones", key: "en-curso", label: "Cotizaciones en curso", hint: "Borradores, enviadas y aceptadas: las que falta cerrar", origen: ["cotizaciones", "documentos"] },
+    { vista: "cotizaciones", key: "cerradas", label: "Cotizaciones cerradas", hint: "Convertidas en pedido, rechazadas y vencidas", origen: ["cotizaciones", "documentos"] },
     { vista: "cotizaciones", key: "nueva", label: "Nueva cotización", hint: "Armar un presupuesto", origen: ["cotizaciones", "documentos"] },
+    { vista: "cotizaciones", key: "dashboard", label: "Resumen de cotizaciones", hint: "Cuántas cotizaste este mes, qué parte se convirtió y por cuánto", origen: ["cotizaciones", "documentos"] },
   ],
   // Ventas y caja › Caja (con «Cuadrar caja», que era la vista `arqueo`) y
   // Ventas y caja › Me deben (las pestañas del módulo de fiados).
