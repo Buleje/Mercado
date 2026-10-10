@@ -155,7 +155,8 @@ function Resumen({ p, whatsapp }: { p: ProductoSalon; whatsapp: string | null })
   const servicio = esServicio(p);
   const { src } = imagenDe(p);
   return (
-    <div className="flex flex-col">
+    // `data-mu-despejar`: la píldora «Ver bolsa» del celular no tapa el precio, el aviso de preventa ni «Qué trae».
+    <div data-mu-despejar className="flex flex-col">
       <p className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <span className={KICKER}>{servicio ? "Servicio del salón" : p.kit ? (p.kit.componentes.length === 1 ? "Dúo" : "Kit") : p.categoria}</span>
         {p.etiqueta && <Insignia texto={p.etiqueta} />}

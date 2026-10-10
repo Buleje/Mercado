@@ -86,7 +86,8 @@ export function Ilustracion({
 export function Escenario({ categoria, className = "", children }: { categoria: string; className?: string; children: ReactNode }) {
   return (
     <span className={`relative block overflow-hidden ${tinteDe(categoria)} ${className}`}>
-      <span aria-hidden="true" className="mu-arco absolute inset-x-[15%] bottom-[7%] top-[9%] bg-[var(--surface-raised)]/45" />
+      {/* En oscuro el arco se aclara (nude al 30 %): la tapa negra de los envases sobre el arco oscuro medía 1,08:1 y se perdía. */}
+      <span aria-hidden="true" className="mu-arco absolute inset-x-[15%] bottom-[7%] top-[9%] bg-[var(--surface-raised)]/45 dark:bg-[var(--mu-nude-fuerte)]/30" />
       <span
         aria-hidden="true"
         className="absolute inset-x-[24%] bottom-[8.5%] h-[6%] rounded-[50%] bg-[radial-gradient(closest-side,var(--mu-envase-sombra),transparent)] transition-[transform,opacity] duration-300 group-hover:scale-x-90 group-hover:opacity-70"

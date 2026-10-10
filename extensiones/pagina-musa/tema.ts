@@ -148,6 +148,10 @@ const RUIDO = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'
  *   el hueco, como el aro doble del sello; así se ve igual sobre hueso que sobre el
  *   cacao del héroe y del pie, donde el rosa solo daría 2,2:1) · `.mu-subrayado` (filete que
  *   crece desde el centro; color con `--mu-subrayado`).
+ * · Foco de globals.css (`button:focus-visible{border-radius:8px;outline:…}` SIN capa):
+ *   le gana a toda utilidad y volvía rectángulos las píldoras y los círculos. Acá,
+ *   `revert-layer` devuelve el radio de su `rounded-*` y el aro de su
+ *   `focus-visible:outline-*` (lo que no declara nada sigue con el aro global).
  * · El sello contador (`SelloContador` en `Sello.tsx`): `.mu-sello-contador`,
  *   `.mu-contador-num` (entra desde abajo) y `.mu-contador-num-sale` (sale hacia arriba).
  * · Movimiento: `mu-latido`, `mu-contador-sube`, `mu-aro-pulso`, `mu-flotar`,
@@ -166,6 +170,9 @@ ${sel} .mu-precio-chico{font-family:${SANS};font-weight:600;font-variant-numeric
 ${sel} .mu-sombra-tarjeta{box-shadow:var(--mu-sombra-tarjeta)}
 ${sel} .mu-sombra-flotante{box-shadow:var(--mu-sombra-flotante)}
 ${sel} .mu-arco{border-radius:var(--mu-radio-arco)}
+${sel} :is(a,button,input,select,textarea,[role="button"],[tabindex])[class*="rounded"]:focus-visible{border-radius:revert-layer}
+${sel} [class*="focus-visible:outline"]:focus-visible{outline:revert-layer;outline-offset:revert-layer}
+body:has(${sel}) aside[aria-label="Cupón de bienvenida"]{display:none!important}
 ${sel} .mu-foco:focus-visible{outline:2px solid var(--mu-foco);outline-offset:2px;box-shadow:0 0 0 2px var(--mu-foco-halo)}
 ${sel} .mu-foco-dentro:focus-within{outline:2px solid var(--mu-foco);outline-offset:2px}
 ${sel} .mu-grano{position:relative;isolation:isolate}
@@ -231,6 +238,12 @@ ${CLASES}${KEYFRAMES}`;
  * gana al `:root` y al `.dark` de globals.css. En oscuro el acento de FONDO
  * (#8a6f5e, blanco encima 4,65:1) y el de TEXTO (`--accent-ink`, #e3c6b3) son
  * dos tokens: ningún tono sirve para las dos cosas sobre el lienzo oscuro.
+ * El cupón de bienvenida de la tienda general («10 % en tu primer pedido», código
+ * BIENVENIDO) no va en Musa: el pedido sale por WhatsApp sin checkout (el código no
+ * se aplica en ningún lado) y la oferta real del manual es otra («preventa 10 % a las
+ * primeras 20 clientas»), que va en la franja (`FRANJA` en anuncios.ts). La regla que
+ * lo esconde está en `CLASES` (`body:has(…)`): así vale también en la portada, que no
+ * lleva esta hoja global.
  */
 export const TEXTO_CON_ACENTO = [
   ".text-\\[var\\(--accent\\)\\]",

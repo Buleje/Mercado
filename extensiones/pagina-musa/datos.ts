@@ -183,8 +183,26 @@ export const cargarMarco = cache(async (tenantId: string): Promise<DatosMarco> =
       [ajustes?.yapeEnabled ? "Yape" : "", ajustes?.plinEnabled ? "Plin" : "", ajustes?.cashEnabled !== false ? "efectivo contra entrega" : ""].filter(Boolean),
     ),
     categorias: CATEGORIAS.map((c) => c.nombre).filter((c) => conProductos.has(c)),
+    // Nombre, precio, imagen y componentes: los usa «Drucila te sugiere» en la bolsa (SugerenciaKit);
+    // sólo un kit ACTIVO lleva `componentes`, así nunca se sugiere uno apagado.
     codigos: Object.fromEntries(
-      (productos ?? []).map((p) => [String(p.id), { codigo: p.barcode?.trim() || null, encargo: esPorEncargo(p.badge) }]),
+      (productos ?? []).map((p) => {
+        const codigo = p.barcode?.trim() || null;
+        const receta = codigo && p.active !== false ? COMPOSICION_KITS[codigo] : undefined;
+        return [
+          String(p.id),
+          {
+            codigo,
+            encargo: esPorEncargo(p.badge),
+            nombre: p.name,
+            precio: p.price,
+            imagen: p.image || "",
+            categoria: p.category,
+            unidad: p.unit,
+            ...(receta ? { componentes: receta.flatMap((r) => Array.from({ length: r.cantidad }, () => r.codigo)) } : {}),
+          },
+        ];
+      }),
     ),
   };
 });

@@ -30,8 +30,11 @@ export const CATEGORIA_SERVICIOS = "Servicios";
  * La franja de arriba: rota de a uno (el S/ 99 es la regla de envío, no un precio).
  * Cada mensaje cabe en UNA línea a 400 px (≤ 48 letras): la franja mide lo del más
  * largo, y uno de 50 la subía a dos líneas en el celular.
+ * La preventa va con las palabras del manual (Campaña 01: «preventa 10 % a las primeras
+ * 20 clientas»), nada más; `{preventa}` vale "" mientras dura la campaña y null después.
  */
 export const FRANJA = [
+  "{preventa}Preventa: 10 % a las primeras 20 clientas",
   "Envío gratis en Ciudad Constitución",
   "Fuera de Constitución, envío gratis desde S/ 99",
   "Asesoría gratis por WhatsApp: 921 585 006",

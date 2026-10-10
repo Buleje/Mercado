@@ -20,6 +20,7 @@ import { FRANJA } from "./anuncios";
 import { PartesBolsa } from "./Bolsa";
 import { cargarMarco } from "./datos";
 import { rellenar } from "./destinos";
+import { preventaVigente } from "./pedido-whatsapp";
 import { BarraSuperior, MenuCategorias } from "./Encabezado";
 import { FranjaAnuncio } from "./FranjaAnuncio";
 import type { Opciones } from "./manifest";
@@ -37,7 +38,7 @@ export function Paleta({ children }: { children: ReactNode }) {
 
 async function Encabezado({ tenantId, slug }: { tenantId: string; slug: string }) {
   const m = await cargarMarco(tenantId);
-  const mensajes = FRANJA.map((t) => rellenar(t, { descuento: null, pagos: m.pagos })).filter((t): t is string => t !== null);
+  const mensajes = FRANJA.map((t) => rellenar(t, { descuento: null, pagos: m.pagos, preventa: preventaVigente() ? "" : null })).filter((t): t is string => t !== null);
   return (
     <Paleta>
       <FranjaAnuncio mensajes={mensajes} />

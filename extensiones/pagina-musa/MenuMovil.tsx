@@ -34,14 +34,24 @@ export function MenuMovil({
   asesoria: { href: string; horario: string };
 }) {
   const panel = useRef<HTMLDivElement>(null);
+  const cerrar = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     const el = panel.current;
     if (!el) return;
     const alTocar = (e: MouseEvent) => {
       if ((e.target as Element | null)?.closest("a")) el.hidePopover();
     };
+    // Un `role="dialog"` recibe el foco al abrirse: va a «Cerrar» (el primero del panel).
+    // Escape y cerrar lo devuelven solos al botón del menú (popover nativo).
+    const alAbrir = (e: Event) => {
+      if ((e as ToggleEvent).newState === "open") cerrar.current?.focus();
+    };
     el.addEventListener("click", alTocar);
-    return () => el.removeEventListener("click", alTocar);
+    el.addEventListener("toggle", alAbrir);
+    return () => {
+      el.removeEventListener("click", alTocar);
+      el.removeEventListener("toggle", alAbrir);
+    };
   }, []);
 
   return (
@@ -69,6 +79,7 @@ export function MenuMovil({
               <span className="mu-serif text-[1.5rem] leading-none">{nombre}</span>
             </span>
             <button
+              ref={cerrar}
               type="button"
               popoverTarget="mu-menu-movil"
               popoverTargetAction="hide"

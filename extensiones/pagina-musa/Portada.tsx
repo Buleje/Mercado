@@ -245,7 +245,7 @@ function Heroe({ productos, conPiezas, slug }: { productos: readonly ProductoSal
             )}
           </h2>
           <p className="mt-5 max-w-md text-[length:var(--mu-t-cuerpo)] leading-relaxed text-[var(--mu-sobre-cacao)]/85">{d.texto}</p>
-          <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-3">
+          <div data-mu-despejar className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-3">
             <a href={cta.href} className={BOTON_NUDE} {...(cta.externo ? externo : {})}>
               {d.cta.texto} <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </a>

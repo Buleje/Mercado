@@ -125,6 +125,11 @@ export const CAMPANA_REGALO = {
   regalo: "mascarilla",
 } as const;
 
+/** La preventa del manual («10 % a las primeras 20 clientas») es parte de la Campaña 01: se anuncia hasta su último día. */
+export function preventaVigente(hoy: string = hoyEnLima()): boolean {
+  return hoy <= CAMPANA_REGALO.hasta;
+}
+
 export interface Avance {
   /** De 0 a 1: cuánto se llena la barra. */
   fraccion: number;

@@ -6,6 +6,7 @@ import {
   esPorEncargo,
   hoyEnLima,
   pagosPara,
+  preventaVigente,
   solesPedido,
   sugerirKit,
   WHATSAPP_MUSA,
@@ -273,5 +274,13 @@ describe("sugerirKit («Drucila te sugiere»)", () => {
         precioDe,
       ),
     ).toBeNull();
+  });
+});
+
+describe("preventaVigente — la franja anuncia la preventa del manual sólo durante la Campaña 01", () => {
+  it("vale hasta el 31 de diciembre de 2026 (día de Lima) y no después", () => {
+    expect(preventaVigente("2026-10-10")).toBe(true);
+    expect(preventaVigente("2026-12-31")).toBe(true);
+    expect(preventaVigente("2027-01-01")).toBe(false);
   });
 });

@@ -18,12 +18,21 @@ import { ANCHO, Script } from "./ui";
 
 const ICONOS = { camion: Truck, pago: Wallet, escudo: ShieldCheck, chat: MessageCircle } as const;
 
-export function Beneficios({ pagos, nombre }: { pagos: string | null; nombre: string }) {
-  const items = BENEFICIOS.map((b) => ({ ...b, texto: rellenar(b.texto, { pagos }) })).filter((b) => b.texto);
+/** Columnas desde 1024 px según cuántos quedan (con 2, la grilla de 4 dejaba media fila vacía). */
+const COLUMNAS_LG: Record<number, string> = { 1: "lg:grid-cols-1", 2: "lg:grid-cols-2", 3: "lg:grid-cols-3" };
+
+/**
+ * `sin`: los íconos que la vista ya cuenta arriba. En la portada va justo después de
+ * «Tu compra está protegida» (garantía + asesoría con el número), así que ahí no se repiten.
+ */
+export function Beneficios({ pagos, nombre, sin = [] }: { pagos: string | null; nombre: string; sin?: readonly (typeof BENEFICIOS)[number]["icono"][] }) {
+  const items = BENEFICIOS.filter((b) => !sin.includes(b.icono))
+    .map((b) => ({ ...b, texto: rellenar(b.texto, { pagos }) }))
+    .filter((b) => b.texto);
   return (
     <section aria-label={`Por qué comprar en ${nombre}`} className="border-y border-[var(--rule-soft)] bg-[var(--surface-canvas)]">
       {/* Celular: una fila que se desliza (con imán y el borde derecho desvanecido); desde 640 px, grilla. */}
-      <ul className={`${ANCHO} mu-sin-barra mu-desvanecer mu-desvanecer-sm flex snap-x snap-proximity scroll-px-4 gap-5 overflow-x-auto py-6 sm:grid sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:py-10 lg:grid-cols-4`}>
+      <ul className={`${ANCHO} mu-sin-barra mu-desvanecer mu-desvanecer-sm flex snap-x snap-proximity scroll-px-4 gap-5 overflow-x-auto py-6 sm:grid sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:py-10 ${COLUMNAS_LG[items.length] ?? "lg:grid-cols-4"}`}>
         {items.map((b, i) => {
           const Icono = ICONOS[b.icono];
           return (

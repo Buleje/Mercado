@@ -27,6 +27,7 @@ import { Categorias } from "./Categorias";
 import { Favoritos, Lineas, Novedades } from "./Colecciones";
 import { cargarMarco, cargarVitrina, type DatosMarco, type DatosSalon } from "./datos";
 import { rellenar, rutas } from "./destinos";
+import { preventaVigente } from "./pedido-whatsapp";
 import { BarraSuperior, MenuCategorias } from "./Encabezado";
 import { FranjaAnuncio } from "./FranjaAnuncio";
 import { Beneficios, Pie } from "./Pie";
@@ -66,7 +67,7 @@ function datosEstructurados(d: DatosSalon) {
 
 /** Los textos de la franja; `{descuento}` sólo con la vitrina (sin ella, esos textos no salen). */
 function mensajesFranja(pagos: string | null, mayorDescuento: number | null): string[] {
-  const valores = { descuento: mayorDescuento ? String(mayorDescuento) : null, pagos };
+  const valores = { descuento: mayorDescuento ? String(mayorDescuento) : null, pagos, preventa: preventaVigente() ? "" : null };
   return FRANJA.map((m) => rellenar(m, valores)).filter((m): m is string => m !== null);
 }
 
@@ -137,7 +138,7 @@ async function Vitrina({ tenantId, slug, marco: m }: { tenantId: string; slug: s
       <Categorias productos={d.productos} servicios={d.servicios} slug={slug} />
       <BannerOscuro whatsapp={d.whatsapp} />
       <Protegida whatsapp={d.whatsapp} />
-      <Beneficios pagos={d.pagos} nombre={d.nombre} />
+      <Beneficios pagos={d.pagos} nombre={d.nombre} sin={["escudo", "chat"]} />
     </>
   );
 }

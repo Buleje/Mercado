@@ -226,7 +226,7 @@ export function BannerOscuro({ whatsapp }: { whatsapp: string | null }) {
               </li>
             ))}
           </ol>
-          <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+          <div data-mu-despejar className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
             <a href={enlaceWhatsapp(whatsapp ?? WHATSAPP_MUSA, b.mensaje)} {...externo} className={BOTON_NUDE}>
               <MessageCircle className="h-5 w-5" aria-hidden="true" /> Separar mi diagnóstico
             </a>
