@@ -1,5 +1,14 @@
 /**
- * Las fotos de ambiente del salón (Unsplash) al tamaño de la pantalla.
+ * Lo que se VE de cada cosa de la tienda, sin React (sirve en servidor y cliente):
+ * · las ilustraciones de producto (`imagenDe`), el tinte de su categoría
+ *   (`tinteDe`), su textura (`texturaDe`) y la frase «Ayuda a…» (`resumenDe`);
+ * · las fotos de ambiente del salón (Unsplash) al tamaño de la pantalla (abajo).
+ *
+ * Ilustraciones (10-10): los productos de Musa todavía no tienen foto. Cada uno
+ * tiene su envase ilustrado (como el catálogo de Navidad) en
+ * `/musa/productos/<CÓDIGO>.webp`. Una foto real subida en el panel gana; sin
+ * código conocido, la tarjeta dibuja el sello. Si el archivo no existe, el
+ * componente cae al sello (`Ilustracion` en `TarjetaProducto.tsx`).
  *
  * Por qué no basta `next/image`: en desarrollo (`images.unoptimized`, next.config.ts) dibuja
  * la URL tal cual —la portada pedía `w=1400` (80 KB) aunque la pantalla midiera 400 px— y en
@@ -16,6 +25,61 @@
  */
 import type { ImgHTMLAttributes } from "react";
 import { preload } from "react-dom";
+
+/** Donde viven los envases ilustrados (uno por código). */
+export const CARPETA_ILUSTRACIONES = "/musa/productos/";
+const CODIGO_MUSA = /^(MU\d{3}(-\d)?|KT\d{2})$/;
+
+/**
+ * La imagen de un producto: la foto del panel si es una foto real; si no, su
+ * envase ilustrado por código. `ilustracion` = es dibujo (la ficha lo aclara:
+ * «ilustración referencial»). Sin foto ni código de Musa → `src: null` (sello).
+ */
+export function imagenDe(p: { imagen: string; codigo: string | null }): { src: string | null; ilustracion: boolean } {
+  if (p.imagen) return { src: p.imagen, ilustracion: p.imagen.startsWith(CARPETA_ILUSTRACIONES) };
+  if (p.codigo && CODIGO_MUSA.test(p.codigo)) return { src: `${CARPETA_ILUSTRACIONES}${p.codigo}.webp`, ilustracion: true };
+  return { src: null, ilustracion: false };
+}
+
+/** El fondo de la ilustración según la categoría (tokens de `tema.ts`); clases enteras para que Tailwind las vea. */
+const TINTES: Readonly<Record<string, string>> = {
+  Cabello: "bg-[var(--mu-tinte-cabello)]",
+  Rostro: "bg-[var(--mu-tinte-rostro)]",
+  Cuerpo: "bg-[var(--mu-tinte-cuerpo)]",
+  "Kits y ofertas": "bg-[var(--mu-tinte-kits)]",
+};
+export const tinteDe = (categoria: string): string => TINTES[categoria] ?? "bg-[var(--mu-nude-claro)]";
+
+export type Textura = "gel" | "crema" | "aceite" | "serum" | "bruma" | "lamina" | "granos";
+
+export const NOMBRE_TEXTURA: Readonly<Record<Textura, string>> = {
+  gel: "Gel suave",
+  crema: "Crema",
+  aceite: "Aceite ligero",
+  serum: "Sérum en gotas",
+  bruma: "Bruma en spray",
+  lamina: "Lámina de tela",
+  granos: "Exfoliante en granos",
+};
+
+/** La textura de cada producto suelto (la miniatura de la ficha); los kits no tienen una. */
+const TEXTURAS: Readonly<Record<string, Textura>> = {
+  MU001: "gel", MU002: "crema", MU003: "crema", MU004: "crema", MU005: "aceite",
+  MU006: "bruma", MU007: "serum", MU008: "gel", MU009: "gel", MU010: "serum",
+  MU011: "serum", MU012: "serum", MU013: "crema", MU014: "gel", MU015: "crema",
+  MU016: "lamina", MU017: "crema", MU018: "granos", MU019: "aceite", MU020: "crema",
+};
+
+export const texturaDe = (codigo: string | null): Textura | null => (codigo && TEXTURAS[codigo]) || null;
+
+/** La primera frase de la descripción («Ayuda a…»), para la línea de la tarjeta. */
+export function resumenDe(descripcion: string | null): string | null {
+  const t = descripcion?.trim();
+  if (!t) return null;
+  const fin = t.search(/\.(\s|$)/);
+  return fin > 0 ? t.slice(0, fin + 1) : t;
+}
+
 
 /** Anchos que se le piden a Unsplash: 400 px ×2 → 828 · 27rem = 432 px → 480 · 432 ×2 → 1080 · banners a pantalla entera → 1600. */
 export const ANCHOS_FOTO = [480, 640, 828, 1080, 1280, 1600] as const;

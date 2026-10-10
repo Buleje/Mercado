@@ -1,17 +1,17 @@
 /**
- * El catálogo propio de «Buleje Beauty» (`/t/<negocio>/tienda`, ADR-460),
- * coherente con la portada: título serif, píldoras de categoría, ordenar y
- * filtrar, la grilla con las mismas tarjetas (precio y «antes» del historial),
- * los servicios del salón para reservar y los beneficios. El encabezado, el
- * pie y la bolsa los pone el marco (layout de la tienda).
+ * El catálogo propio de Musa (`/t/<negocio>/tienda`, ADR-460; contrato visual
+ * §e «Catálogo»): título en versalitas con su línea script, píldoras de
+ * categoría, ordenar y filtrar, la grilla de tarjetas con el envase ilustrado
+ * y el contador al agregar, y los beneficios. El encabezado, el pie y la bolsa
+ * los pone el marco (layout de la tienda).
  *
  * SÓLO lo del salón (las categorías de `CATEGORIAS` + servicios, igual que la
  * portada): el resto del catálogo del negocio no sale acá ni se borra.
  *
  * `Catalogo` devuelve AL INSTANTE (el tope de 2 s nunca salta por la base):
  * los datos se leen adentro, bajo <Suspense> con un esqueleto de la marca.
- * Trae su propia hoja de la paleta (`CSS_TEMA`, 2 KB): si el marco faltara,
- * el catálogo no queda sin colores.
+ * Trae su propia hoja de la paleta (`CSS_TEMA`): si el marco faltara, el
+ * catálogo no queda sin colores.
  */
 import "server-only";
 import { Suspense } from "react";
@@ -61,27 +61,34 @@ async function CatalogoSalon({ tenantId, slug, busqueda }: { tenantId: string; s
   );
 }
 
-/** Mientras llegan los datos: el título, las píldoras y una grilla de tarjetas. */
+/** Mientras llegan los datos: el título, las píldoras y una grilla de tarjetas (con su arco). */
 function EsqueletoCatalogo() {
-  const bloque = "animate-pulse rounded-2xl bg-[var(--mu-nude-claro)]";
+  const bloque = "animate-pulse bg-[var(--mu-nude-claro)]";
   return (
     <div aria-busy="true" aria-label="Cargando el catálogo" role="status">
       <div className="border-b border-[var(--rule-soft)] bg-[var(--mu-hueso)]">
         <div className={`${ANCHO} flex flex-col gap-4 py-8 sm:py-12`}>
-          <div className="h-5 w-40 animate-pulse rounded bg-[var(--mu-nude)]" />
-          <div className="h-14 w-72 animate-pulse rounded bg-[var(--mu-nude)]" />
-          <div className="h-5 w-28 animate-pulse rounded bg-[var(--mu-nude)]" />
+          <div className={`${bloque} h-4 w-40 rounded`} />
+          <div className={`${bloque} h-14 w-72 rounded`} />
+          <div className={`${bloque} h-10 w-44 rounded`} />
         </div>
       </div>
       <div className={`${ANCHO} py-6 sm:py-8`}>
         <div className="flex gap-2 overflow-hidden">
-          {Array.from({ length: 6 }, (_, i) => (
-            <div key={i} className={`${bloque} h-12 w-32 shrink-0 rounded-full`} />
+          {Array.from({ length: 5 }, (_, i) => (
+            <div key={i} className={`${bloque} h-11 w-32 shrink-0 rounded-full`} />
           ))}
         </div>
-        <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 lg:grid-cols-4">
+        <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 lg:gap-6 xl:grid-cols-4">
           {Array.from({ length: 8 }, (_, i) => (
-            <div key={i} className={`${bloque} aspect-[3/4]`} />
+            <div key={i} className="overflow-hidden rounded-[var(--mu-radio-tarjeta)] border border-[var(--rule-soft)] bg-[var(--surface-raised)]">
+              <div className={`${bloque} aspect-square`} />
+              <div className="flex flex-col gap-2 p-4">
+                <div className={`${bloque} h-3 w-16 rounded`} />
+                <div className={`${bloque} h-4 w-4/5 rounded`} />
+                <div className={`${bloque} mt-2 h-10 w-full rounded-full`} />
+              </div>
+            </div>
           ))}
         </div>
       </div>

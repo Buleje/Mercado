@@ -3,20 +3,21 @@
 /**
  * Lo que se ve y se oye al agregar algo a la bolsa del salón.
  *
- * · `volarABolsa(origen, imagen)` — un círculo con la foto sale de la tarjeta
- *   (o del modal de la ficha rápida) y vuela en arco hasta el botón de la
- *   bolsa (`[data-mu-bolsa]`, en `Bolsa.tsx`); al llegar, el botón y su número
- *   (`[data-mu-contador]`) dan un salto. Web Animations API: la portada no
+ * · `volarABolsa(origen, imagen)` — un círculo con el envase ilustrado (o la
+ *   foto) sale de la tarjeta, la ficha o el modal y vuela en arco hasta el
+ *   botón de la bolsa (`[data-mu-bolsa]`, en `Bolsa.tsx`); al llegar, la bolsa
+ *   LATE (1 → 1,12 → 1 en 320 ms, con rebote) y su sello contador
+ *   (`[data-mu-contador]`) da un salto. Web Animations API: la portada no
  *   tiene `MotionProvider` (sin framer). Con «reducir movimiento» no vuela ni
- *   salta: el número cambia y listo.
+ *   late: el número cambia y listo.
  * · `sonarAgregado()` — el mismo «pop» del carrito de la tienda (880→1400 Hz,
  *   120 ms). `addItem` ya lo toca solo (`cart-context`); `addMultiple` (la
  *   cantidad de la ficha y del modal) no, así que esos caminos lo piden acá.
  *   El `AudioContext` nace dentro del clic: así el navegador lo deja sonar.
  */
 
-/** `EASE.editorial` del sistema de motion. */
-const EDITORIAL = "cubic-bezier(0.22, 1, 0.36, 1)";
+/** `--mu-ease-rebote` del contrato: SOLO el contador y el latido de la bolsa. */
+const REBOTE = "cubic-bezier(0.34, 1.56, 0.64, 1)";
 const DURACION = 700;
 /** Lado (px) con que aterriza el círculo sobre la bolsa. */
 const ATERRIZA = 22;
@@ -25,15 +26,15 @@ export function reducirMovimiento(): boolean {
   return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-/** El salto del botón de la bolsa y de su número. */
+/** El latido de la bolsa del encabezado y el salto de su sello contador. */
 export function saltarBolsa(): void {
   if (reducirMovimiento()) return;
   const boton = document.querySelector<HTMLElement>("[data-mu-bolsa]");
   if (!boton) return;
-  boton.animate([{ transform: "scale(1)" }, { transform: "scale(1.18)" }, { transform: "scale(1)" }], { duration: 380, easing: EDITORIAL });
+  boton.animate([{ transform: "scale(1)" }, { transform: "scale(1.12)" }, { transform: "scale(1)" }], { duration: 320, easing: REBOTE });
   boton
     .querySelector<HTMLElement>("[data-mu-contador]")
-    ?.animate([{ transform: "scale(1)" }, { transform: "scale(1.55)" }, { transform: "scale(0.9)" }, { transform: "scale(1)" }], { duration: 520, easing: "ease-out" });
+    ?.animate([{ transform: "scale(1)" }, { transform: "scale(1.3)" }, { transform: "scale(1)" }], { duration: 320, easing: REBOTE });
 }
 
 /**
@@ -63,7 +64,8 @@ export function volarABolsa(origen: Element | null | undefined, imagen: string |
   capa.className = "pointer-events-none fixed z-system";
   capa.style.cssText = `left:${x0}px;top:${y0}px;width:${lado}px;height:${lado}px;`;
   const bola = document.createElement("div");
-  bola.className = "h-full w-full rounded-full border-2 border-[var(--surface-canvas)] bg-[var(--mu-nude-claro)] bg-cover bg-center shadow-[var(--shadow-lg)]";
+  // El envase ilustrado es transparente: entero (`contain`) sobre un círculo nude, con el aro oro del sello.
+  bola.className = "mu-sombra-flotante h-full w-full rounded-full border-2 border-[var(--mu-contador-aro,var(--surface-canvas))] bg-[var(--mu-nude-claro)] bg-contain bg-center bg-no-repeat";
   if (imagen) bola.style.backgroundImage = `url(${JSON.stringify(imagen)})`;
   capa.appendChild(bola);
   // Dentro de `[data-pagina]`: ahí viven los colores del salón (`--mu-*`).

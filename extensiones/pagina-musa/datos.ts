@@ -47,6 +47,66 @@ export interface ProductoSalon {
   duracion: string | null;
   /** Ficha del producto en el catálogo de la tienda. */
   href: string;
+  /** Kit o dúo: qué trae y cuánto ahorras frente a comprar cada cosa (null en un producto suelto). */
+  kit: KitSalon | null;
+}
+
+/** Lo que trae un kit, con los precios de HOY de la base (nunca escritos a mano). */
+export interface KitSalon {
+  componentes: { id: number; codigo: string; nombre: string; precio: number; cantidad: number; href: string }[];
+  /** Σ precio × cantidad de los componentes. */
+  porSeparado: number;
+  /** porSeparado − precio del kit; la tarjeta lo muestra sólo si es > 0. */
+  ahorro: number;
+}
+
+/**
+ * Qué trae cada kit y dúo (manual §5, «Kits»). Sólo la RECETA: los precios
+ * salen de la base cada vez, así «por separado» nunca miente si un precio cambia.
+ * Cuentas del 10-10 (cierran con el manual): KT01 167/18 · KT02 197/18 ·
+ * KT03 177/18 · KT04 177/18 · KT05 138/13 · MU016-2 78/9 · MU013-2 158/9.
+ */
+export const COMPOSICION_KITS: Readonly<Record<string, readonly { codigo: string; cantidad: number }[]>> = {
+  KT01: [
+    { codigo: "MU001", cantidad: 1 },
+    { codigo: "MU002", cantidad: 1 },
+    { codigo: "MU005", cantidad: 1 },
+  ],
+  KT02: [
+    { codigo: "MU009", cantidad: 1 },
+    { codigo: "MU011", cantidad: 1 },
+    { codigo: "MU013", cantidad: 1 },
+  ],
+  KT03: [
+    { codigo: "MU001", cantidad: 1 },
+    { codigo: "MU003", cantidad: 1 },
+    { codigo: "MU005", cantidad: 1 },
+  ],
+  KT04: [
+    { codigo: "MU012", cantidad: 1 },
+    { codigo: "MU015", cantidad: 1 },
+    { codigo: "MU016", cantidad: 1 },
+  ],
+  KT05: [
+    { codigo: "MU013", cantidad: 1 },
+    { codigo: "MU020", cantidad: 1 },
+  ],
+  "MU016-2": [{ codigo: "MU016", cantidad: 2 }],
+  "MU013-2": [{ codigo: "MU013", cantidad: 2 }],
+};
+
+/** El kit de `codigo` con los productos de hoy; null si no es kit o le falta un componente (oculto o inactivo). */
+export function armarKit(codigo: string | null, precio: number, productos: readonly Pick<ProductoSalon, "id" | "codigo" | "nombre" | "precio" | "href">[]): KitSalon | null {
+  const receta = codigo ? COMPOSICION_KITS[codigo] : undefined;
+  if (!receta) return null;
+  const componentes: KitSalon["componentes"] = [];
+  for (const r of receta) {
+    const x = productos.find((p) => p.codigo === r.codigo);
+    if (!x) return null;
+    componentes.push({ id: x.id, codigo: r.codigo, nombre: x.nombre, precio: x.precio, cantidad: r.cantidad, href: x.href });
+  }
+  const porSeparado = Math.round(componentes.reduce((s, c) => s + c.precio * c.cantidad, 0) * 100) / 100;
+  return { componentes, porSeparado, ahorro: Math.round((porSeparado - precio) * 100) / 100 };
 }
 
 export interface DatosMarco {
@@ -173,10 +233,13 @@ export const cargarVitrina = cache(async (tenantId: string, slug: string): Promi
       codigo: p.barcode?.trim() || null,
       duracion: p.durationLabel?.trim() || null,
       href: `${base}/${slugify(p.name)}`,
+      kit: null,
     };
   };
 
-  const todos = propios.map(aSalon);
+  const sueltos = propios.map(aSalon);
+  // Los kits se arman con los precios de hoy de sus componentes (en el servidor: el cliente no suma).
+  const todos = sueltos.map((p) => (COMPOSICION_KITS[p.codigo ?? ""] ? { ...p, kit: armarKit(p.codigo, p.precio, sueltos) } : p));
   const enVenta = todos.filter((p) => p.categoria !== CATEGORIA_SERVICIOS);
   const mayor = Math.max(0, ...enVenta.map((p) => p.descuento ?? 0));
   return {

@@ -1,14 +1,15 @@
 /**
- * La ficha de un producto o servicio de «Buleje Beauty»
- * (`/t/<negocio>/tienda/<producto>`, ADR-460), coherente con la portada y el
- * catálogo: migas del salón, la foto sobre el rubor de las tarjetas, marca en
- * versalitas, nombre en serif, precio con el «antes» y el % del historial,
- * cantidad + «Agregar a la bolsa» (la bolsa del marco), «Pregunta por
- * WhatsApp», beneficios, «Cómo usarlo» y «Completa tu rutina».
+ * La ficha de un producto de Musa (`/t/<negocio>/tienda/<producto>`, ADR-460;
+ * contrato visual §e «Ficha»), 6/6: a la izquierda el arco alto con el envase
+ * ilustrado y sus miniaturas; a la derecha migas, kicker, nombre, el chip negro
+ * «Cód. MU001» (como el catálogo), el precio (en un kit, «por separado» y lo que
+ * ahorras, del servidor), preventa o encargo, «Te ayuda a» (o «Qué trae»), la
+ * cantidad + «Agregar» (`Comprar`) y la tira de confianza. Debajo: «Tu rutina
+ * en 3 pasos», «Llévalo en kit» y más de la categoría. En el celular, cuando el
+ * botón sale de la vista, una barra fija con precio y contador (`BarraCompra`).
  * · Un SERVICIO no va a la bolsa: «Reservar por WhatsApp» y los otros servicios.
- * · Un producto que no es del salón (la bodega de `main`), oculto o que no
- *   existe → «no lo encontramos» dentro del marco (título de no encontrado y
- *   sin indexar, por `metadatosFicha`). Nunca la ficha general.
+ * · Un producto que no es del salón, oculto o que no existe → «no lo
+ *   encontramos» dentro del marco (sin indexar, por `metadatosFicha`).
  *
  * `Ficha` devuelve AL INSTANTE (el tope de 2 s nunca salta por la base): los
  * datos se leen adentro, bajo <Suspense> con el esqueleto de la marca. Son las
@@ -16,17 +17,23 @@
  */
 import "server-only";
 import { Suspense } from "react";
+import { Clock, MessageCircle, RefreshCw, ShieldCheck, Truck } from "@buleje/design-system/icons";
 import type { MetadatosFicha, PropsFicha } from "../_contrato";
 import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 import { MODO_DE_USO, PASOS_RESERVA } from "./anuncios-ficha";
+import { BarraCompra } from "./BotonAgregar";
+import { Comprar } from "./Comprar";
 import { cargarMarco, cargarVitrina, type DatosMarco, type ProductoSalon } from "./datos";
-import { rutas, soles } from "./destinos";
-import { EsqueletoFicha, NoEncontrado, OtrosServicios, Pasos, Rutina } from "./FichaExtras";
-import { Galeria, Migas, Resumen, type Miga } from "./FichaPartes";
+import { enlaceWhatsapp, mensajeReserva, rutas, soles, solesCortos } from "./destinos";
+import { KitsQueLoTraen, NoEncontrado, OtrosServicios, Pasos, QueTrae, Rutina, RutinaTresPasos } from "./FichaExtras";
+import { EsqueletoFicha, EstadoPedido, Existencias, Galeria, Migas, Precio, type Miga } from "./FichaPartes";
+import { imagenDe } from "./imagenes";
 import type { Opciones } from "./manifest";
-import { esServicio, productoDeLaUrl, rutinaDe, sugeridos } from "./rutina";
+import { ENVIO_GRATIS_DESDE } from "./pedido-whatsapp";
+import { esServicio, productoDeLaUrl, rutinaDe, rutinaEnTresPasos, sugeridos } from "./rutina";
+import { Insignia } from "./TarjetaProducto";
 import { CSS_TEMA, ID_PAGINA } from "./tema";
-import { ANCHO } from "./ui";
+import { ANCHO, BOTON, KICKER } from "./ui";
 
 async function buscar(tenantId: string, slug: string, producto: string) {
   const [m, v] = await Promise.all([cargarMarco(tenantId), cargarVitrina(tenantId, slug)]);
@@ -63,12 +70,12 @@ function JsonLd({ p, m, migas }: { p: ProductoSalon; m: DatosMarco; migas: Miga[
     : {
         ...comun,
         "@type": "Product",
-        sku: `${p.id}`,
+        sku: p.codigo ?? `${p.id}`,
         category: p.categoria,
         brand: { "@type": "Brand", name: p.marca ?? m.nombre },
         offers: {
           ...oferta,
-          availability: p.stock !== null && p.stock <= 0 ? "https://schema.org/OutOfStock" : "https://schema.org/InStock",
+          availability: p.stock !== null && p.stock <= 0 ? "https://schema.org/OutOfStock" : p.etiqueta ? "https://schema.org/PreOrder" : "https://schema.org/InStock",
           itemCondition: "https://schema.org/NewCondition",
           seller: { "@type": "Organization", name: m.nombre },
         },
@@ -86,21 +93,128 @@ function JsonLd({ p, m, migas }: { p: ProductoSalon; m: DatosMarco; migas: Miga[
   );
 }
 
+/** «Ayuda a limpiar sin resecar y a alargar el efecto…» → dos viñetas; lo demás (formato, consejo) va aparte. */
+function beneficiosDe(descripcion: string | null): { puntos: string[]; resto: string | null } | null {
+  const frases = (descripcion ?? "").split(/(?<=\.)\s+/).map((f) => f.trim()).filter(Boolean);
+  const m = frases[0] ? /^Ayuda a (.+?)\.?$/i.exec(frases[0]) : null;
+  if (!m?.[1]) return null;
+  const puntos = m[1].split(/\s+y a\s+/).map((x) => x.charAt(0).toUpperCase() + x.slice(1));
+  const resto = frases.slice(1).filter((f) => !/se pide al confirmar/i.test(f)).join(" ");
+  return { puntos, resto: resto || null };
+}
+
+function TeAyuda({ p }: { p: ProductoSalon }) {
+  const b = beneficiosDe(p.descripcion);
+  if (!b) return p.descripcion ? <p className="mt-6 max-w-xl text-[length:var(--mu-t-cuerpo)] leading-relaxed text-[var(--text-secondary)]">{p.descripcion}</p> : null;
+  return (
+    <div className="mt-6">
+      <p className="mu-kicker text-[var(--mu-acento-tinta)]">Te ayuda a</p>
+      <ul className="mt-3 flex flex-col gap-2.5">
+        {b.puntos.map((x) => (
+          <li key={x} className="flex items-start gap-3 text-[length:var(--mu-t-cuerpo)] leading-snug text-[var(--text-primary)]">
+            <span aria-hidden="true" className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[var(--mu-selva-claro)] text-[var(--mu-selva-tinta)]">
+              <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M2.5 6.2 5 8.5l4.5-5" />
+              </svg>
+            </span>
+            {x}
+          </li>
+        ))}
+      </ul>
+      {b.resto && <p className="mt-3 text-[length:var(--mu-t-chico)] text-[var(--text-secondary)]">{b.resto}</p>}
+    </div>
+  );
+}
+
+/** Envío, cambio y NSO: lo que da confianza, en una tira debajo del botón. */
+function Confianza() {
+  const items = [
+    { Icono: Truck, titulo: "Envío gratis en Constitución", texto: `Fuera, gratis desde ${solesCortos(ENVIO_GRATIS_DESDE)}` },
+    { Icono: RefreshCw, titulo: "Cambio sin costo", texto: "Si llega dañado: avísanos en 7 días" },
+    { Icono: ShieldCheck, titulo: "Originales con NSO", texto: "Registro sanitario a la vista" },
+  ];
+  return (
+    <ul className="mt-7 grid gap-3 border-t border-[var(--rule-soft)] pt-6 sm:grid-cols-3">
+      {items.map(({ Icono, titulo, texto }) => (
+        <li key={titulo} className="flex items-start gap-3 sm:flex-col sm:gap-2">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--mu-selva-claro)] text-[var(--mu-selva-tinta)]">
+            <Icono className="h-5 w-5" strokeWidth={1.7} aria-hidden="true" />
+          </span>
+          <span className="leading-snug">
+            <span className="block text-[length:var(--mu-t-chico)] font-semibold text-[var(--text-primary)]">{titulo}</span>
+            <span className="block text-[12px] text-[var(--text-tertiary)]">{texto}</span>
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** La columna de al lado del arco: quién es, cuánto cuesta, qué hace y cómo se pide. */
+function Resumen({ p, whatsapp }: { p: ProductoSalon; whatsapp: string | null }) {
+  const servicio = esServicio(p);
+  const { src } = imagenDe(p);
+  return (
+    <div className="flex flex-col">
+      <p className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <span className={KICKER}>{servicio ? "Servicio del salón" : p.kit ? (p.kit.componentes.length === 1 ? "Dúo" : "Kit") : p.categoria}</span>
+        {p.etiqueta && <Insignia texto={p.etiqueta} />}
+      </p>
+      <h1 className="mu-serif mt-3 text-[length:var(--mu-t-titulo)] leading-[1.1] text-[var(--text-primary)]">{p.nombre}</h1>
+      {p.codigo && (
+        <p className="mt-3">
+          <span className="inline-flex items-center rounded-full bg-[var(--mu-negro)] px-3 py-1 text-[12px] font-semibold tracking-[0.14em] text-[var(--surface-canvas)]">Cód. {p.codigo}</span>
+        </p>
+      )}
+      <Precio p={p} />
+      {servicio ? (
+        p.duracion && (
+          <p className="mt-4 inline-flex items-center gap-2 text-base text-[var(--text-secondary)]">
+            <Clock className="h-5 w-5" aria-hidden="true" /> {p.duracion}
+          </p>
+        )
+      ) : (
+        <>
+          <EstadoPedido etiqueta={p.etiqueta} />
+          <Existencias stock={p.stock} />
+        </>
+      )}
+      {p.kit ? <QueTrae kit={p.kit} /> : <TeAyuda p={p} />}
+      {servicio ? (
+        <a href={enlaceWhatsapp(whatsapp, mensajeReserva(p))} target="_blank" rel="noopener noreferrer" className={`${BOTON} mt-7 w-full`}>
+          <MessageCircle className="h-5 w-5" aria-hidden="true" /> Reservar por WhatsApp
+        </a>
+      ) : (
+        <div id="mu-comprar">
+          <Comprar
+            producto={{ id: p.id, name: p.nombre, category: p.categoria, price: p.precio, image: src ?? "", unit: p.unidad, ...(p.stock !== null ? { stock: p.stock } : {}) }}
+            consulta={enlaceWhatsapp(whatsapp, `Hola Drucila, tengo una consulta sobre ${p.nombre}${p.codigo ? ` (${p.codigo})` : ""}, de ${solesCortos(p.precio)}.`)}
+          />
+        </div>
+      )}
+      {!servicio && <Confianza />}
+    </div>
+  );
+}
+
 async function FichaSalon({ tenantId, slug, producto }: { tenantId: string; slug: string; producto: string }) {
   const { m, v, p } = await buscar(tenantId, slug, producto);
   if (!p) return <NoEncontrado nombre={m.nombre} slug={slug} sugeridos={sugeridos(v.productos)} />;
 
   const servicio = esServicio(p);
   const migas = migasDe(p, slug);
-  const linea = p.marca ? `Línea ${p.marca}` : `Tienda ${m.nombre}`;
+  const pasos = servicio ? [] : rutinaEnTresPasos(v.productos, p);
+  const kits = p.kit ? [] : v.productos.filter((k) => k.kit && k.kit.ahorro > 0 && k.kit.componentes.some((c) => c.codigo === p.codigo));
+  const parecidos = p.kit ? v.productos.filter((x) => x.kit && x.id !== p.id) : rutinaDe(v.productos, p).filter((x) => !x.kit);
+  const { src } = imagenDe(p);
   return (
     <main id="main-content">
       <JsonLd p={p} m={m} migas={migas} />
       <div className={`${ANCHO} pb-14 pt-6 sm:pb-20 sm:pt-8`}>
         <Migas items={migas} />
-        <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:gap-14">
-          <Galeria p={p} />
-          <Resumen p={p} whatsapp={m.whatsapp} pagos={m.pagos} />
+        <div data-mu-producto className="mt-6 grid gap-8 lg:grid-cols-2 lg:gap-14">
+          <Galeria p={p} paso={pasos.find((x) => x.esEste) ?? null} />
+          <Resumen p={p} whatsapp={m.whatsapp} />
         </div>
       </div>
       {servicio ? (
@@ -110,8 +224,13 @@ async function FichaSalon({ tenantId, slug, producto }: { tenantId: string; slug
         </>
       ) : (
         <>
-          <Pasos kicker="Modo de uso" titulo="Cómo usarlo" pasos={MODO_DE_USO[p.categoria] ?? []} />
-          <Rutina productos={rutinaDe(v.productos, p)} kicker={linea} titulo="Completa tu rutina" />
+          {pasos.length > 0 ? <RutinaTresPasos pasos={pasos} categoria={p.categoria} /> : <Pasos kicker="Modo de uso" titulo="Cómo usarlo" pasos={MODO_DE_USO[p.categoria] ?? []} />}
+          <KitsQueLoTraen kits={kits} nombre={p.nombre} />
+          <Rutina productos={parecidos} kicker={p.kit ? "Kits y dúos" : p.categoria} titulo={p.kit ? "Otros kits" : `Más de ${p.categoria.toLowerCase()}`} />
+          <BarraCompra
+            ancla="mu-comprar"
+            producto={{ id: p.id, name: p.nombre, category: p.categoria, price: p.precio, image: src ?? "", unit: p.unidad, ...(p.stock !== null ? { stock: p.stock } : {}) }}
+          />
         </>
       )}
     </main>
@@ -134,10 +253,11 @@ export async function metadatosFicha({ ctx, producto }: PropsFicha<Opciones>): P
   const { m, p } = await buscar(ctx.tenantId, ctx.slug, producto);
   if (!p) return null;
   const rebaja = p.antes && p.descuento ? ` Antes ${soles(p.antes)}, hoy ${soles(p.precio)} (-${p.descuento} %).` : "";
+  const ahorro = p.kit && p.kit.ahorro > 0 ? ` Por separado ${solesCortos(p.kit.porSeparado)}: ahorras ${solesCortos(p.kit.ahorro)}.` : "";
   const cierre = esServicio(p) ? `Reserva tu cita en ${m.nombre} por WhatsApp.` : `Envío gratis en Ciudad Constitución con ${m.nombre}.`;
   return {
-    titulo: `${p.nombre} — ${soles(p.precio)} · ${m.nombre}`,
-    descripcion: `${p.descripcion ?? p.nombre}${rebaja} ${cierre}`,
+    titulo: `${p.nombre} — ${solesCortos(p.precio)} · ${m.nombre}`,
+    descripcion: `${p.descripcion ?? p.nombre}${rebaja}${ahorro} ${cierre}`,
     ruta: p.href,
     imagen: p.imagen || null,
   };

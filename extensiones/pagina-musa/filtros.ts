@@ -44,6 +44,8 @@ export interface Filtrable {
   descuento: number | null;
   stock: number | null;
   etiqueta: string | null;
+  /** El código del catálogo (MU001, KT04…): también se busca por él. */
+  codigo?: string | null;
 }
 
 const ESQUEMA = {
@@ -106,18 +108,37 @@ export const CLAVES_DE_FILTRO = ["q", "categoria", "oferta", "orden", "marca", "
 /** Plural simple para buscar: «planchas» encuentra «plancha»; «rizos», «rizo». */
 const raiz = (t: string) => (t.length > 3 ? t.replace(/(es|s)$/, "") : t);
 
-/** ¿El producto tiene TODAS las palabras buscadas (en nombre, marca, categoría o descripción)? */
-export function coincide(p: Pick<Filtrable, "nombre" | "marca" | "categoria" | "descripcion">, q: string): boolean {
+/** ¿El producto tiene TODAS las palabras buscadas (en nombre, marca, categoría, descripción o código)? */
+export function coincide(p: Pick<Filtrable, "nombre" | "marca" | "categoria" | "descripcion" | "codigo">, q: string): boolean {
   const palabras = normalizar(q).split(" ").filter(Boolean).map(raiz);
   if (palabras.length === 0) return true;
-  const donde = normalizar([p.nombre, p.marca ?? "", p.categoria, p.descripcion ?? ""].join(" "));
+  const donde = normalizar([p.nombre, p.marca ?? "", p.categoria, p.descripcion ?? "", p.codigo ?? ""].join(" "));
   return palabras.every((w) => donde.includes(w));
 }
 
 const DESTACADO = (p: Filtrable) => (p.etiqueta?.toLowerCase() === "favorito" ? 2 : 0) + (p.descuento ? 1 : 0);
 
+/**
+ * El orden del catálogo impreso: MU001…MU020 (cabello, rostro, cuerpo), los kits
+ * KT01…KT05 y al final los dúos (MU013-2). Así la web se lee igual que el PDF
+ * que Drucila manda por WhatsApp (mismos códigos, mismo orden) y la grilla
+ * avanza por categoría en vez de abrir con 7 kits seguidos del mismo color.
+ * Sin código del catálogo: después, el más nuevo primero.
+ */
+export function ordenCatalogo(codigo: string | null | undefined): number {
+  const c = (codigo ?? "").toUpperCase();
+  const mu = /^MU(\d{3})$/.exec(c);
+  if (mu) return Number(mu[1]);
+  const kt = /^KT(\d{1,3})$/.exec(c);
+  if (kt) return 1000 + Number(kt[1]);
+  const duo = /^MU(\d{3})-(\d+)$/.exec(c);
+  if (duo) return 2000 + Number(duo[1]);
+  return 9000;
+}
+
 const COMPARAR: Record<Orden, (a: Filtrable, b: Filtrable) => number> = {
-  destacados: (a, b) => DESTACADO(b) - DESTACADO(a) || b.id - a.id,
+  // Favorito y rebaja primero (lo que marca Drucila en el panel); después, el orden del catálogo impreso.
+  destacados: (a, b) => DESTACADO(b) - DESTACADO(a) || ordenCatalogo(a.codigo) - ordenCatalogo(b.codigo) || b.id - a.id,
   "precio-asc": (a, b) => a.precio - b.precio || a.id - b.id,
   "precio-desc": (a, b) => b.precio - a.precio || a.id - b.id,
   descuento: (a, b) => (b.descuento ?? 0) - (a.descuento ?? 0) || a.precio - b.precio,
