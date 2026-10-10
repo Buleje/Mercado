@@ -12,7 +12,7 @@ import { ScanText, Upload, Camera, ClipboardPaste, AlertTriangle } from "@buleje
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useMiRol } from "@/hooks/use-mi-rol";
 import { logger } from "@/lib/logger";
-import { useLeerPapel } from "./use-leer-papel";
+import { useLeerPapel, useVisionConectada } from "./use-leer-papel";
 import { TarjetaPapel } from "./TarjetaPapel";
 import RevisarPapelModal from "./RevisarPapelModal";
 import { leerConVision, type SubComandos } from "./guardar-papel";
@@ -29,6 +29,7 @@ function esCampoDeTexto(el: EventTarget | null): boolean {
 export default function LeerPapel({ irA }: { irA: (sub: SubComandos) => void }) {
   const rol = useMiRol();
   const { papeles, agregarArchivos, agregarTexto, reintentar, releer, quitar, marcarGuardado } = useLeerPapel();
+  const vision = useVisionConectada(rol);
   const [encima, setEncima] = useState(false);
   const [pegando, setPegando] = useState(false);
   const [texto, setTexto] = useState("");
@@ -79,13 +80,31 @@ export default function LeerPapel({ irA }: { irA: (sub: SubComandos) => void }) 
               <InfoTip
                 title="Qué papeles lee"
                 what="Facturas y boletas, capturas de Yape o Plin, listas de precios del proveedor. Lo demás se guarda en Documentos."
-                affects="Lee en tu navegador sin costo; la IA solo entra si las reglas no alcanzan, y ves cuánto gastó."
+                affects="Lee en tu navegador sin costo; la IA solo entra si las reglas no alcanzan, y ves cuánto gastó. Nada se guarda sin que lo revises."
                 example="Ctrl+V de una captura de WhatsApp → «Leí: pago por Yape · S/ 25.00»."
                 side="bottom"
                 className="-mt-0.5"
               />
             </p>
-            <p className="text-sm text-[var(--text-secondary)]"><span className="hidden sm:inline">o pega con Ctrl+V. </span>Nada se guarda sin que lo revises.</p>
+            {/* Sin visión conectada (ia-salud) se dice en esta MISMA línea, sin prometer de más. */}
+            <p className="text-sm text-[var(--text-secondary)]" data-vision={vision === null ? undefined : String(vision)}>
+              <span className="hidden sm:inline">o pega con Ctrl+V. </span>
+              {vision === false ? (
+                <>
+                  La foto se lee en tu navegador; la IA de visión no está conectada{" "}
+                  <InfoTip
+                    title="Lectura de fotos"
+                    what="Las fotos y los PDF escaneados se leen con el lector gratis de tu navegador. Con letra chica o una foto movida puede leer mal: revisa antes de guardar."
+                    affects="Para leer fotos difíciles con IA hay que conectar un modelo de visión: lo ves en Asistente IA › Automatizaciones."
+                    example="Una factura impresa se lee bien; una boleta escrita a mano, no."
+                    side="bottom"
+                    className="-mt-0.5"
+                  />
+                </>
+              ) : (
+                "Nada se guarda sin que lo revises."
+              )}
+            </p>
           </div>
           {/* Celular: el primario a lo ancho y los otros dos en una fila (sin huérfano). */}
           <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">

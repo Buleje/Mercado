@@ -12,6 +12,7 @@ import {
   precioManteniendoMargen,
   precioParaMargen,
   redondear,
+  separarSinVenta,
   type ProductoPrecio,
 } from "@/lib/admin/comandos-ia/precios";
 
@@ -108,6 +109,77 @@ describe("la orden en palabras sin IA", () => {
     expect(interpretarOrdenConReglas("sube 5 % y 1 sol las bebidas", cats)).toBeNull();
     expect(interpretarOrdenConReglas("sube 500 % las bebidas", cats)).toBeNull();
     expect(interpretarOrdenConReglas("sube 5 % todo y redondea", cats)).toBeNull();
+  });
+});
+
+describe("«lo que no se vendió en N días» (Precios en bloque, 10-10)", () => {
+  const cats = ["Abarrotes", "Bebidas", "Frutas y Verduras", "Servicios de salón"];
+
+  it("«Rebaja 10 % lo que no se vendió en 30 días»: todo el catálogo, sólo lo quieto", () => {
+    const p = interpretarOrdenConReglas("Rebaja 10 % lo que no se vendió en 30 días", cats);
+    expect(p).toEqual({
+      filtro: { categorias: [], incluye: [], excluye: [], sinVentaDias: 30 },
+      operacion: { tipo: "pct", valor: -10 },
+      redondeo: 0,
+    });
+    expect(describirPlan(p!)).toBe("Baja 10 % · sin ventas en 30 días");
+  });
+
+  it("con categoría, semanas, «no se mueve» sin cifra (30) y «menos …»", () => {
+    expect(interpretarOrdenConReglas("baja 5 % las bebidas que no se vendieron en 2 semanas, redondea a 10 céntimos", cats)).toEqual({
+      filtro: { categorias: ["Bebidas"], incluye: [], excluye: [], sinVentaDias: 14 },
+      operacion: { tipo: "pct", valor: -5 },
+      redondeo: 0.1,
+    });
+    const quieto = interpretarOrdenConReglas("rebaja 50 céntimos lo que no se mueve menos el arroz", cats);
+    expect(quieto?.filtro).toEqual({ categorias: [], incluye: [], excluye: ["arroz"], sinVentaDias: 30 });
+    expect(quieto?.operacion).toEqual({ tipo: "monto", valor: -0.5 });
+    expect(interpretarOrdenConReglas("baja 10 % sin ventas en los últimos 2 meses", cats)?.filtro.sinVentaDias).toBe(60);
+    expect(describirPlan(quieto!)).toBe("Baja S/ 0.50 · sin ventas en 30 días · menos arroz");
+  });
+
+  it("la cifra de días no se lee como la operación y una ventana absurda va a la IA", () => {
+    // «30 días» no es «30 %» ni «S/ 30».
+    expect(interpretarOrdenConReglas("sube 5 % lo que no se vendió en 30 días", cats)?.operacion).toEqual({ tipo: "pct", valor: 5 });
+    expect(interpretarOrdenConReglas("baja 10 % lo que no se vendió en 900 días", cats)).toBeNull();
+    // Sin la frase, todo sigue igual: sin categoría no hay plan por reglas.
+    expect(interpretarOrdenConReglas("baja 10 %", cats)).toBeNull();
+    expect(interpretarOrdenConReglas("Sube 5 % todo Abarrotes", cats)?.filtro).not.toHaveProperty("sinVentaDias");
+  });
+
+  it("lo quieto detrás de «menos» va a la IA: sacarlo no es tocarlo (el filtro lo invertiría)", () => {
+    expect(interpretarOrdenConReglas("sube 10 % Bebidas, menos lo que no se vendió", cats)).toBeNull();
+    expect(interpretarOrdenConReglas("sube 10 % Bebidas excepto lo que no se mueve en 30 días", cats)).toBeNull();
+    expect(interpretarOrdenConReglas("baja 5 % Abarrotes sin contar lo que no se vendió", cats)).toBeNull();
+    // Antes del «menos» sí: el filtro toca lo quieto y saca el arroz.
+    expect(interpretarOrdenConReglas("baja 10 % lo que no se vendió en 30 días menos el arroz", cats)?.filtro).toEqual({
+      categorias: [],
+      incluye: [],
+      excluye: ["arroz"],
+      sinVentaDias: 30,
+    });
+  });
+
+  it("la cifra en letras se lee; una ventana que no se lee va a la IA, no a «30 días» a ciegas", () => {
+    const dias = (orden: string) => interpretarOrdenConReglas(orden, cats)?.filtro.sinVentaDias;
+    expect(dias("baja 10 % lo que no se vendió en dos semanas")).toBe(14);
+    expect(dias("baja 10 % lo que no se vendió en tres meses")).toBe(90);
+    expect(dias("baja 10 % lo que no se vendió en quince días")).toBe(15);
+    expect(dias("baja 10 % lo que no se vendió en un mes")).toBe(30);
+    expect(interpretarOrdenConReglas("baja 10 % lo que no se vendió hace más de 45 días", cats)).toBeNull();
+    expect(interpretarOrdenConReglas("baja 10 % lo que no se vendió en veintidós días", cats)).toBeNull();
+  });
+
+  it("separarSinVenta: fuera lo vendido; sin stock va aparte; stock null (no controla) entra", () => {
+    const productos: ProductoPrecio[] = [
+      { id: 1, name: "Arroz", category: "Abarrotes", price: 5, stock: 10 },
+      { id: 2, name: "Azúcar", category: "Abarrotes", price: 4, stock: 0 },
+      { id: 3, name: "Fideos", category: "Abarrotes", price: 3, stock: 8 },
+      { id: 4, name: "Corte", category: "Servicios de salón", price: 25, stock: null },
+    ];
+    const r = separarSinVenta(productos, new Set([1]));
+    expect(r.quedan.map((p) => p.id)).toEqual([3, 4]);
+    expect(r.sinStock.map((p) => p.id)).toEqual([2]);
   });
 });
 

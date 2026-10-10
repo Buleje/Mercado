@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { leerTextoDeImagen, liberarOcr, type ProgresoOcr } from "@/lib/ocr/ocr-navegador";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { cachedJson } from "@/lib/client-cache-fetch";
 import { logger } from "@/lib/logger";
 import type { RespuestaEntender } from "@/lib/admin/comandos-ia/papel";
 
@@ -180,4 +181,28 @@ export function useLeerPapel() {
   const marcarGuardado = useCallback((id: string, resumen: string) => actualizar(id, { guardado: resumen }), [actualizar]);
 
   return { papeles, agregarArchivos, agregarTexto, reintentar, releer, quitar, marcarGuardado };
+}
+
+/** Los que pasan `requireAdmin(req, ["admin"])` en /api/admin/ia-salud (management tier). */
+const LEEN_SALUD = new Set(["admin", "owner", "manager", "superadmin"]);
+
+/**
+ * ¿Hay un modelo de visión conectado? (GET /api/admin/ia-salud, 5 min de caché).
+ * `null` = no se sabe (cargando, otro rol o falló): no se dice nada. En local es
+ * `false` y «Lee un papel» lo avisa en una línea en vez de prometer papeles.
+ */
+export function useVisionConectada(rol: string | null): boolean | null {
+  const [conectada, setConectada] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (!rol || !LEEN_SALUD.has(rol)) return;
+    let vivo = true;
+    void cachedJson<{ vision?: { disponible?: unknown } }>("/api/admin/ia-salud", 5 * 60_000).then((d) => {
+      const v = d?.vision?.disponible;
+      if (vivo) setConectada(typeof v === "boolean" ? v : null);
+    });
+    return () => {
+      vivo = false;
+    };
+  }, [rol]);
+  return conectada;
 }

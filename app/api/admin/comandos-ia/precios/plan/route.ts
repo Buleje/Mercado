@@ -3,6 +3,8 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { ProductsDB } from "@/lib/db/products.db";
+import { SalesDB } from "@/lib/db/sales.db";
+import { OrdersDB } from "@/lib/db/orders.db";
 import { aiCostGuard } from "@/lib/ai/cost-control";
 import { estimadoIaUsd, llamarIa } from "@/lib/admin/comandos-ia/ia-llamada";
 import { logger } from "@/lib/logger";
@@ -18,6 +20,8 @@ import {
   precioManteniendoMargen,
   precioParaMargen,
   redondear,
+  separarSinVenta,
+  SIN_VENTA_MAX_DIAS,
   type FilaDiferencia,
   type PlanOrden,
   type ProductoPrecio,
@@ -33,6 +37,9 @@ import {
  *    aplica a ciegas.
  *  · `{lista, politica}`: emparejado por nombre sin IA; IA `cheap` sólo
  *    para las líneas ambiguas.
+ *  · «lo que no se vendió en N días» (`filtro.sinVentaDias`): las ventas de
+ *    caja y los pedidos no cancelados de esa ventana se leen AQUÍ; lo que no
+ *    tiene stock no entra (no es que no se mueva: no hay qué vender).
  * IA por `llamarIa` (lo mismo que Mensajes y Papel): `canSpend` con el precio
  * del modelo que va a responder, gasto anotado con el que respondió, 25 s de
  * tope, y «sin clave» / «tardó» / «falló» separados de «no entendí».
@@ -60,6 +67,13 @@ const PlanIA = z.object({
     categorias: z.array(z.string().max(80)).max(30).default([]),
     incluye: z.array(z.string().max(80)).max(30).default([]),
     excluye: z.array(z.string().max(80)).max(30).default([]),
+    sinVentaDias: z
+      .number()
+      .int()
+      .min(1)
+      .max(SIN_VENTA_MAX_DIAS)
+      .nullish()
+      .transform((v) => v ?? undefined),
   }),
   operacion: z.object({ tipo: z.enum(["pct", "monto", "margen"]), valor: z.number().finite() }),
   redondeo: Redondeo.catch(0),
@@ -135,8 +149,9 @@ function revisarPlan(p: PlanOrden, categorias: string[]): string[] {
 
 const SISTEMA_ORDEN = (cats: string[]) => `Eres el intérprete de órdenes de precios de una bodega en Perú.
 Categorías del negocio (cópialas EXACTAS): ${JSON.stringify(cats)}.
-Responde SOLO un JSON: {"filtro":{"categorias":[],"incluye":[],"excluye":[]},"operacion":{"tipo":"pct"|"monto"|"margen","valor":0},"redondeo":0|0.1|0.5|1}
+Responde SOLO un JSON: {"filtro":{"categorias":[],"incluye":[],"excluye":[],"sinVentaDias":null},"operacion":{"tipo":"pct"|"monto"|"margen","valor":0},"redondeo":0|0.1|0.5|1}
 - categorias: sólo de la lista. incluye: productos o marcas sueltos que no son categoría. excluye: lo que la orden saca («menos», «excepto»).
+- sinVentaDias: si pide «lo que no se vendió / no se mueve en N días», N en días (1 mes = 30); si no, null. Sólo para TOCAR lo quieto: si pide SACARLO («menos lo que no se vendió»), eso no se puede; responde con dudas.
 - pct: valor en %, negativo para bajar. monto: soles, negativo para bajar (50 céntimos = 0.5). margen: el margen objetivo en % (30).
 - redondeo: 0 si no lo pide; 0.1 = 10 céntimos; 0.5 = 50 céntimos; 1 = sol entero.
 Si es ambigua o no es un cambio de precios, responde {"dudas":["…"],"opciones":["2 o 3 órdenes completas con cifras concretas, p. ej. «Sube 5 % Bebidas»"]}.`;
@@ -163,10 +178,33 @@ async function planDeOrden(tenantId: string, orden: string, productos: ProductoP
   return { plan: p, origen: "ia" as const };
 }
 
-function filasDeOrden(plan: PlanOrden, productos: ProductoPrecio[]) {
-  const { incluidos, excluidos } = filtrarPorOrden(productos, plan.filtro);
-  const filas: FilaDiferencia[] = [];
+/**
+ * Los productos (de `ids`) que se vendieron desde hace `dias`: caja (Sale) y
+ * pedidos no cancelados (Order), como el EOQ. Sólo se piden los que tocó la orden.
+ */
+async function vendidosEn(tenantId: string, ids: number[], dias: number): Promise<Set<number>> {
+  if (ids.length === 0) return new Set();
+  const desde = new Date(Date.now() - dias * 86_400_000);
+  const [caja, pedidos] = await Promise.all([
+    SalesDB.findSaleItemsByProducts(tenantId, ids, desde),
+    OrdersDB.findOrderItemsByProducts(tenantId, ids, desde),
+  ]);
+  return new Set([...caja, ...pedidos].map((i) => Number(i.productId)));
+}
+
+async function filasDeOrden(tenantId: string, plan: PlanOrden, productos: ProductoPrecio[]) {
   const noAplica: Array<{ nombre: string; motivo: string }> = [];
+  let { incluidos, excluidos } = filtrarPorOrden(productos, plan.filtro);
+  const dias = plan.filtro.sinVentaDias;
+  const vendidos = dias ? await vendidosEn(tenantId, [...incluidos, ...excluidos].map((p) => p.id), dias) : null;
+  if (vendidos) {
+    const dentro = separarSinVenta(incluidos, vendidos);
+    incluidos = dentro.quedan;
+    // «menos el arroz» sólo se muestra si el arroz tampoco se vendió (si no, ni entraba).
+    excluidos = separarSinVenta(excluidos, vendidos).quedan;
+    for (const p of dentro.sinStock) noAplica.push({ nombre: p.name, motivo: "sin stock: no se vende porque no hay" });
+  }
+  const filas: FilaDiferencia[] = [];
   let sinCambio = 0;
   for (const p of incluidos) {
     const bruto = aplicarOperacion(p.price, p.costPrice, plan.operacion);
@@ -250,7 +288,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "tope-ia", mensaje: "Se acabó la IA de este mes. Escribe la orden como los ejemplos y la entiendo sin IA." }, { status: 402 });
       }
       if ("dudas" in r) return NextResponse.json({ estado: "dudas", dudas: r.dudas, opciones: r.opciones, costoIaUsd: costoIaUsd() });
-      return NextResponse.json({ estado: "plan", origen: r.origen, interpretacion: describirPlan(r.plan), ...filasDeOrden(r.plan, productos), costoIaUsd: costoIaUsd() });
+      return NextResponse.json({ estado: "plan", origen: r.origen, interpretacion: describirPlan(r.plan), ...(await filasDeOrden(auth.tenantId, r.plan, productos)), costoIaUsd: costoIaUsd() });
     }
 
     const b = parsed.data;

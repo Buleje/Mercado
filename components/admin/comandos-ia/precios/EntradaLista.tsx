@@ -16,7 +16,7 @@ const REDONDEO: Array<{ valor: Redondeo; label: string; corto: string }> = [
 ];
 
 const chip = (activo: boolean) =>
-  `min-h-9 rounded-full border px-3 max-sm:px-2.5 text-sm font-semibold transition-colors ${
+  `min-h-12 rounded-full border px-3 max-sm:px-2.5 text-sm font-semibold transition-colors ${
     activo
       ? "border-[var(--accent-dark)] bg-[var(--accent-dark)] text-white"
       : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -49,20 +49,13 @@ export default function EntradaLista({
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-1 text-base font-semibold text-[var(--text-primary)]">
-        <label htmlFor="comandos-ia-lista">Lista del proveedor</label>
-        <InfoTip
-          title="Lista del proveedor"
-          what="Un producto por renglón (o separados por «·»), con su costo al final. Los busco en tu catálogo por nombre, sin IA; la IA solo desempata nombres parecidos."
-          affects="Cambia el costo y el precio de los que encuentro; tú eliges cuáles."
-          example="Panetón D'Onofrio 900g 19.50 · Chifles 3.30"
-        />
-        {inicial && (
-          <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-xs font-medium text-[var(--text-secondary)]">
-            <ClipboardPaste className="h-3.5 w-3.5" aria-hidden /> Llegó de Lee un papel
-          </span>
-        )}
-      </div>
+      {/* El título y su ⓘ viven en la fila del modo (PreciosEnBloque): acá sólo el label para el lector. */}
+      <label htmlFor="comandos-ia-lista" className="sr-only">Lista del proveedor</label>
+      {inicial && (
+        <span className="inline-flex items-center gap-1 rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-sm font-medium text-[var(--text-secondary)]">
+          <ClipboardPaste className="h-4 w-4" aria-hidden /> Llegó de Lee un papel
+        </span>
+      )}
       <textarea
         id="comandos-ia-lista"
         value={texto}
@@ -73,7 +66,7 @@ export default function EntradaLista({
         className="w-full resize-y rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2 font-mono text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40"
       />
       {texto.trim() && (
-        <span className="block text-xs text-[var(--text-tertiary)]">
+        <span className="block text-sm text-[var(--text-tertiary)]">
           {leida.filas.length} con costo
           {leida.ignoradas.length > 0 && ` · ${leida.ignoradas.length} sin costo (no entran)`}
         </span>

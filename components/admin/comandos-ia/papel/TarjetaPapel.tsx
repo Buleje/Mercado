@@ -78,7 +78,7 @@ export function TarjetaPapel({ papel, rol, onRevisar, onQuitar, onReintentar, on
           {ocupado ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Icono className="h-5 w-5" aria-hidden />}
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-xs text-[var(--text-tertiary)]" title={papel.nombre}>{papel.nombre}</p>
+          <p className="truncate text-sm text-[var(--text-tertiary)]" title={papel.nombre}>{papel.nombre}</p>
           {r ? (
             <p className="text-sm font-semibold text-[var(--text-primary)]">Leí: {queLei(r)}</p>
           ) : papel.estado === "error" ? (
@@ -93,7 +93,7 @@ export function TarjetaPapel({ papel, rol, onRevisar, onQuitar, onReintentar, on
           type="button"
           onClick={onQuitar}
           aria-label={`Quitar ${papel.nombre}`}
-          className="-m-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+          className="-m-2 inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
         >
           <X className="h-4 w-4" aria-hidden />
         </button>
@@ -113,13 +113,13 @@ export function TarjetaPapel({ papel, rol, onRevisar, onQuitar, onReintentar, on
         </p>
       )}
       {r?.aviso && (
-        <p className="flex items-start gap-1.5 text-xs text-[var(--text-secondary)]">
-          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--data-warning-500)]" aria-hidden /> {r.aviso}
+        <p className="flex items-start gap-1.5 text-sm text-[var(--text-secondary)]">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-warning-500)]" aria-hidden /> {r.aviso}
         </p>
       )}
       {r && !puede && (
-        <p className="flex items-start gap-1.5 text-xs font-semibold text-[var(--text-primary)]">
-          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--data-warning-500)]" aria-hidden /> {SIN_PERMISO[r.propuesta.destino]}
+        <p className="flex items-start gap-1.5 text-sm font-semibold text-[var(--text-primary)]">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--data-warning-500)]" aria-hidden /> {SIN_PERMISO[r.propuesta.destino]}
         </p>
       )}
       {papel.guardado && (
@@ -130,7 +130,7 @@ export function TarjetaPapel({ papel, rol, onRevisar, onQuitar, onReintentar, on
 
       {(r || papel.estado === "error") && (
         <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-[var(--rule-soft)] pt-3">
-          <span className="text-xs tabular-nums text-[var(--text-tertiary)]">
+          <span className="text-sm tabular-nums text-[var(--text-tertiary)]">
             {r ? `${costoIa(r.costoIaUsd)} · certeza ${NIVEL(r.confianza)}` : ""}
             {papel.confianzaOcr != null ? ` · lectura ${papel.confianzaOcr} %` : ""}
           </span>

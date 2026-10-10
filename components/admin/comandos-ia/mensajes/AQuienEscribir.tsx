@@ -7,7 +7,8 @@
  * 2. [Redactar]: la IA escribe la plantilla; el servidor pone los datos que
  *    acaba de releer. El borrador se abre en un modal: copiar, recordar o
  *    abrir WhatsApp. Nada se envía solo.
- * 3. «Escríbelo por mí»: aviso libre → WhatsApp, cartel A4 o texto de tienda.
+ * 3. «Escríbelo por mí»: aviso libre → WhatsApp, cartel A4 o texto de tienda;
+ *    en el mismo bloque, «Ofrécele algo» (qué ofrecerle a un cliente, 10-10).
  * Con la bandeja vacía, «Escríbelo por mí» va primero.
  */
 import { useMemo, useRef, useState } from "react";
@@ -106,11 +107,11 @@ export default function AQuienEscribir(_props: { irA: (sub: SubComandos) => void
   const avisoVacio = (
     <div className="flex items-center gap-2 rounded-2xl border border-dashed border-[var(--rule-base)] px-4 py-3 text-sm text-[var(--text-secondary)]" data-bandeja-vacia>
       <Inbox className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
-      <span className="min-w-0">Hoy nadie te debe ni dejó de venir. Agrega teléfonos a tus clientes para encontrarlos aquí.</span>
+      <span className="min-w-0">Hoy nadie te debe ni dejó de venir.</span>
       <InfoTip
         title="Lo que miré"
         what={`${f.fiados} fiados, ${f.clientesConCompras} clientes con compras y teléfono${f.adelantos ? ", adelantos abiertos" : ""} y tus seguimientos.`}
-        affects="Un cliente entra si debe, si dejó de venir más del doble de su ritmo o si le pusiste un recordatorio."
+        affects="Un cliente entra si debe, si dejó de venir más del doble de su ritmo o si le pusiste un recordatorio. Agrega teléfonos a tus clientes para encontrarlos aquí."
         example="Juan compraba cada 7 días y lleva 20 sin venir."
         side="bottom"
         className="shrink-0"

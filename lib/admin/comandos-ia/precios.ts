@@ -25,6 +25,11 @@ export interface FiltroOrden {
   categorias: string[];
   incluye: string[];
   excluye: string[];
+  /**
+   * «Lo que no se vendió en 30 días»: de lo que toca la orden, sólo lo que no
+   * tuvo venta (caja ni pedido) en esa ventana. Las ventas las lee el servidor.
+   */
+  sinVentaDias?: number;
 }
 export interface PlanOrden {
   filtro: FiltroOrden;
@@ -55,6 +60,8 @@ export interface ProductoPrecio {
   category: string;
   price: number;
   costPrice?: number | null;
+  /** null = no controla stock. Sólo lo mira «lo que no se vendió». */
+  stock?: number | null;
 }
 
 // ── Aritmética ──────────────────────────────────────────────────────────────
@@ -190,6 +197,22 @@ export function filtrarPorOrden<P extends ProductoPrecio>(productos: P[], f: Fil
   return { incluidos: tocados.filter((p) => !fuera(p)), excluidos: tocados.filter(fuera) };
 }
 
+/**
+ * «Lo que no se vendió»: de los que tocó la orden quedan los que NO están en
+ * `vendidos` y tienen algo que vender. Sin stock no es «no se mueve» (no hay
+ * qué vender): va aparte, para decirlo en «no entran» y no rebajarlo a ciegas.
+ */
+export function separarSinVenta<P extends ProductoPrecio>(productos: P[], vendidos: ReadonlySet<number>) {
+  const quedan: P[] = [];
+  const sinStock: P[] = [];
+  for (const p of productos) {
+    if (vendidos.has(p.id)) continue;
+    if (p.stock != null && p.stock <= 0) sinStock.push(p);
+    else quedan.push(p);
+  }
+  return { quedan, sinStock };
+}
+
 export interface Emparejado {
   estado: "unico" | "ambiguo" | "ninguno";
   productId: number | null;
@@ -290,6 +313,50 @@ function leerOperacion(t: string): Operacion | null {
   return { tipo: "monto", valor: (signo * n) / ((m[3] ?? "").startsWith("centimo") ? 100 : 1) };
 }
 
+/** La ventana más larga que se acepta para «lo que no se vendió» (un año). */
+export const SIN_VENTA_MAX_DIAS = 365;
+/** «lo que no se mueve», sin cifra = un mes. */
+export const SIN_VENTA_DIAS_POR_DEFECTO = 30;
+
+/** «en dos semanas», «en quince días»: la cifra escrita también se lee (sin IA). */
+const CIFRA_EN_LETRAS: Record<string, number> = {
+  un: 1, una: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10,
+  once: 11, doce: 12, quince: 15, veinte: 20, treinta: 30, sesenta: 60, noventa: 90,
+};
+
+const SIN_VENTA = new RegExp(
+  "\\b(?:(?:todo\\s+)?lo\\s+que\\s+|(?:los\\s+)?que\\s+|productos\\s+que\\s+)?" +
+    "(?:no\\s+se\\s+(?:vend\\w*|muev\\w*|movi\\w*)|no\\s+(?:vendid\\w*|tuv\\w*\\s+ventas?)|sin\\s+(?:ventas?|vender(?:se)?|moverse|movimiento|salida))" +
+    "(?:\\s+(?:en|hace|desde\\s+hace|por|durante)?\\s*(?:(?:los|las)\\s+)?(?:ultim[oa]s?\\s+)?(\\d{1,4}|" + Object.keys(CIFRA_EN_LETRAS).join("|") + ")\\s*(dias?|semanas?|mes(?:es)?)\\b)?",
+);
+
+/** Lo que viene detrás saca productos del plan («menos el arroz»). */
+const EXCLUYE = /\b(?:menos|excepto|salvo|sin contar|pero no)\b/;
+
+/**
+ * «lo que no se vendió en 30 días», «sin ventas en 2 semanas», «lo que no se
+ * mueve» (30 días) → días. Sin la frase: `dias` undefined. → null (la orden va
+ * a la IA) cuando las reglas leerían otra cosa:
+ *  · cifra fuera de 1…365;
+ *  · la frase está DESPUÉS de «menos …» («sube Bebidas, menos lo que no se
+ *    vendió»): se pidió sacar lo quieto, no tocarlo — el filtro lo invertiría;
+ *  · queda una ventana sin leer («en dos semanas», «hace más de 45 días»): por
+ *    reglas saldría «30 días» sin aviso.
+ */
+function leerSinVenta(t: string): { dias?: number; resto: string } | null {
+  const m = t.match(SIN_VENTA);
+  if (!m || m.index == null) return { resto: t };
+  const corte = t.search(EXCLUYE);
+  if (corte >= 0 && corte < m.index) return null;
+  const n = m[1] == null ? null : /^\d/.test(m[1]) ? Number(m[1]) : (CIFRA_EN_LETRAS[m[1]] ?? NaN);
+  const u = m[2] ?? "";
+  const dias = n == null ? SIN_VENTA_DIAS_POR_DEFECTO : u.startsWith("semana") ? n * 7 : u.startsWith("mes") ? n * 30 : n;
+  if (!(dias >= 1 && dias <= SIN_VENTA_MAX_DIAS)) return null;
+  const resto = `${t.slice(0, m.index)} ${t.slice(m.index + m[0].length)}`;
+  if (/\b(?:dias?|semanas?|mes(?:es)?)\b/.test(resto)) return null;
+  return { dias, resto };
+}
+
 /** «menos el arroz y el azúcar» → ["arroz", "azucar"]. */
 function leerExcluidos(t: string): string[] {
   const m = t.match(/\b(?:menos|excepto|salvo|sin contar|pero no)\s+(.+)$/);
@@ -310,18 +377,25 @@ export function interpretarOrdenConReglas(orden: string, categorias: string[]): 
   const base = ` ${normalizar(orden)} `;
   const r = leerRedondeo(base);
   if (!r) return null;
-  const operacion = leerOperacion(r.resto);
+  // «lo que no se vendió en 30 días» sale antes de leer la cifra: «30» no es la operación.
+  const sv = leerSinVenta(r.resto);
+  if (!sv) return null;
+  const resto = sv.resto;
+  const operacion = leerOperacion(resto);
   if (!operacion || !Number.isFinite(operacion.valor) || operacion.valor === 0) return null;
   if (operacion.tipo === "pct" && (operacion.valor <= -90 || operacion.valor > 300)) return null;
   if (operacion.tipo === "margen" && (operacion.valor <= 0 || operacion.valor >= 95)) return null;
-  const antesDelMenos = r.resto.split(/\b(?:menos|excepto|salvo|sin contar|pero no)\b/)[0];
+  const antesDelMenos = resto.split(EXCLUYE)[0];
   const cats = categorias.filter((c) => {
     const n = normalizar(c);
     return n.length > 0 && new RegExp(`(?:^|\\s)${n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:\\s|$)`).test(antesDelMenos);
   });
   const todo = /\btodo el catalogo\b|\btodos los productos\b|\btoda la tienda\b/.test(antesDelMenos);
-  if (cats.length === 0 && !todo) return null;
-  return { filtro: { categorias: cats, incluye: [], excluye: leerExcluidos(r.resto) }, operacion, redondeo: r.redondeo };
+  // «Rebaja 10 % lo que no se vendió en 30 días» ya dice a quién: todo lo que no se movió.
+  if (cats.length === 0 && !todo && !sv.dias) return null;
+  const filtro: FiltroOrden = { categorias: cats, incluye: [], excluye: leerExcluidos(resto) };
+  if (sv.dias) filtro.sinVentaDias = sv.dias;
+  return { filtro, operacion, redondeo: r.redondeo };
 }
 
 const fmt = (n: number) => n.toLocaleString("es-PE", { maximumFractionDigits: 2 });
@@ -335,8 +409,10 @@ export function describirPlan(p: PlanOrden): string {
       : tipo === "pct"
         ? `${valor > 0 ? "Sube" : "Baja"} ${fmt(Math.abs(valor))} %`
         : `${valor > 0 ? "Sube" : "Baja"} S/ ${Math.abs(valor).toFixed(2)}`;
-  const quien = [...p.filtro.categorias, ...p.filtro.incluye].join(", ") || "todo el catálogo";
+  const dias = p.filtro.sinVentaDias;
+  const quien = [...p.filtro.categorias, ...p.filtro.incluye].join(", ") || (dias ? "" : "todo el catálogo");
+  const sinVenta = dias ? `sin ventas en ${dias} ${dias === 1 ? "día" : "días"}` : "";
   const menos = p.filtro.excluye.length ? ` · menos ${p.filtro.excluye.join(", ")}` : "";
   const red = p.redondeo ? ` · redondea a ${p.redondeo < 1 ? `${Math.round(p.redondeo * 100)} céntimos` : "S/ 1"}` : "";
-  return `${op} · ${quien}${menos}${red}`;
+  return `${op} · ${[quien, sinVenta].filter(Boolean).join(" · ")}${menos}${red}`;
 }

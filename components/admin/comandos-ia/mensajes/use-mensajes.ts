@@ -49,10 +49,11 @@ export interface Escrito {
 
 // ── Estilos compartidos por las piezas de esta sub-vista ─────────────────────
 
-// Botones: el canon de toda la pestaña (44 px de alto, como en papel y precios).
+// Botones: el canon de toda la pestaña (48 px de alto, como en papel y precios).
 export { BOTON_PRIMARIO, BOTON_SECUNDARIO } from "../papel/formato";
+/** Chips de filtro y de salida: 48 px y 14 px como los botones (10-10). */
 export const CHIP_BASE =
-  "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-muted)]";
+  "inline-flex h-12 shrink-0 items-center gap-1.5 rounded-full border px-4 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-muted)]";
 export const CHIP_ACTIVO = "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-ink)]";
 export const CHIP_INACTIVO = "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)]";
 

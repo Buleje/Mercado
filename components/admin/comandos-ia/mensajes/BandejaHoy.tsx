@@ -65,7 +65,7 @@ export default function BandejaHoy({
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <div className="flex min-w-0 flex-1 items-center gap-2">
           <CardTitle id="ci-bandeja-titulo" as="h3">Para escribir hoy</CardTitle>
-          <span className="rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-xs font-semibold tabular-nums text-[var(--text-secondary)]">{bandeja.candidatos.length}</span>
+          <span className="rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-sm font-semibold tabular-nums text-[var(--text-secondary)]">{bandeja.candidatos.length}</span>
           <InfoTip
             title="Para escribir hoy"
             what="Fiados vencidos o que vencen en 7 días, clientes que dejaron de venir (más del doble de su ritmo) y recordatorios que ya tocan."
@@ -74,23 +74,25 @@ export default function BandejaHoy({
             side="bottom"
           />
         </div>
-        <div className="flex w-full items-center gap-2 sm:w-auto">
-          <div role="group" aria-label="Tono" className="inline-flex rounded-xl border border-[var(--rule-base)] p-0.5">
+        {/* Tono, costo y «Redactar» en UNA fila también a 400 px (flex-nowrap):
+            a 48 px y 14 px entran si el botón suelta su ícono en el celular. */}
+        <div className="flex w-full flex-nowrap items-center gap-2 sm:w-auto" data-acciones-bandeja>
+          <div role="group" aria-label="Tono" className="inline-flex shrink-0 overflow-hidden rounded-xl border border-[var(--rule-base)]">
             {(["amable", "claro"] as const).map((t) => (
               <button
                 key={t}
                 type="button"
                 aria-pressed={tono === t}
                 onClick={() => setTono(t)}
-                className={cn("h-8 rounded-lg px-2.5 text-xs font-semibold capitalize sm:px-3", tono === t ? "bg-[var(--accent-soft)] text-[var(--accent-ink)]" : "text-[var(--text-secondary)]")}
+                className={cn("h-12 px-3 text-sm font-semibold capitalize transition-colors", tono === t ? "bg-[var(--accent-soft)] text-[var(--accent-ink)]" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]")}
               >
                 {t}
               </button>
             ))}
           </div>
-          <span className="ml-auto whitespace-nowrap text-xs tabular-nums text-[var(--text-tertiary)] sm:ml-0" data-costo-estimado><span className="max-sm:hidden">IA </span>≈ {costoTexto(costoEstimado(marcados.length))}</span>
-          <button type="button" className={BOTON_PRIMARIO} disabled={redactando || marcados.length === 0} onClick={() => onRedactar(marcados.map((c) => c.id), tono)} data-redactar-todos>
-            {redactando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Sparkles className="h-4 w-4" aria-hidden />}
+          <span className="ml-auto whitespace-nowrap text-sm tabular-nums text-[var(--text-tertiary)] sm:ml-0" data-costo-estimado><span className="max-sm:hidden">IA </span>≈ {costoTexto(costoEstimado(marcados.length))}</span>
+          <button type="button" className={cn(BOTON_PRIMARIO, "shrink-0 max-sm:px-3")} disabled={redactando || marcados.length === 0} onClick={() => onRedactar(marcados.map((c) => c.id), tono)} data-redactar-todos>
+            {redactando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Sparkles className="h-4 w-4 max-sm:hidden" aria-hidden />}
             {/* Un solo nodo: el gap del botón separaba «Redactar · los · 10» como tres piezas. */}
             <span>Redactar {marcados.length === 1 ? "1" : <><span className="max-sm:hidden">los </span>{marcados.length}</>}</span>
           </button>
@@ -115,29 +117,32 @@ export default function BandejaHoy({
           const hecho = hechos[c.id];
           const marcado = marcadosIds.has(c.id);
           return (
-            <li key={c.id} className="flex items-start gap-3 py-3" data-candidato={c.id}>
-              <input
-                type="checkbox"
-                aria-label={`Incluir a ${c.nombre}`}
-                checked={marcado}
-                disabled={!escribibles(c) || (!marcado && marcados.length >= MAX)}
-                onChange={() => alternar(c.id)}
-                className="mt-1 h-4 w-4 shrink-0 accent-[var(--accent)]"
-              />
+            <li key={c.id} className="flex items-center gap-2 py-2" data-candidato={c.id}>
+              {/* La casilla se ve de 20 px; se toca en 48 (toda la celda es el label). */}
+              <label className="-ml-3 inline-flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center">
+                <input
+                  type="checkbox"
+                  aria-label={`Incluir a ${c.nombre}`}
+                  checked={marcado}
+                  disabled={!escribibles(c) || (!marcado && marcados.length >= MAX)}
+                  onChange={() => alternar(c.id)}
+                  className="h-5 w-5 accent-[var(--accent)]"
+                />
+              </label>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                   <span className="truncate font-semibold text-[var(--text-primary)]">{c.nombre}</span>
-                  <span className="rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-semibold text-[var(--text-secondary)]">{ETIQUETA_TIPO[c.tipo]}</span>
+                  <span className="rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-sm font-medium text-[var(--text-secondary)]">{ETIQUETA_TIPO[c.tipo]}</span>
                 </div>
                 <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-sm text-[var(--text-secondary)]">
                   <span className={cn("tabular-nums", c.tipo === "fiado-vencido" && "font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]")}>{datoDeFila(c)}</span>
                   <InfoTip title="De dónde sale" what={c.origen} side="bottom" ariaLabel={`De dónde sale el dato de ${c.nombre}`} />
-                  {!c.telefono && <span className="text-xs text-[var(--text-tertiary)]">· sin teléfono</span>}
+                  {!c.telefono && <span className="text-[var(--text-tertiary)]">· sin teléfono</span>}
                 </div>
               </div>
               <div className="shrink-0">
                 {hecho ? (
-                  <span className="inline-flex h-10 items-center gap-1 text-xs font-semibold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+                  <span className="inline-flex h-12 items-center gap-1 text-sm font-semibold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
                     <CheckCircle2 className="h-4 w-4" aria-hidden /> <span className="max-sm:sr-only">{ETIQUETA_HECHO[hecho]}</span>
                   </span>
                 ) : c.pagado && c.recordatorioId ? (

@@ -46,10 +46,12 @@ export default function ReciboFila({ recibo, puedeDeshacer, onDeshacer }: Props)
     recibo.costoIaUsd != null && recibo.costoIaUsd > 0 ? `IA ${usd(recibo.costoIaUsd)}` : "sin IA",
   ].filter(Boolean);
 
+  // Desde `sm` el recibo va en UNA línea (qué · cuándo/quién/costo): con 17
+  // recibos la lista bajó de dos renglones por fila a uno (10-10). Todo ≥14 px.
   return (
-    <li className="flex items-start gap-3 py-2.5">
+    <li className="flex items-center gap-3 py-2">
       <span
-        className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
           recibo.tipo === "precios-deshecho"
             ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"
             : "bg-[var(--accent-soft)] text-[var(--accent-ink)]"
@@ -58,9 +60,10 @@ export default function ReciboFila({ recibo, puedeDeshacer, onDeshacer }: Props)
       >
         <Icono className="h-4 w-4" />
       </span>
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 sm:flex sm:items-baseline sm:gap-3">
         <p
-          className={`break-words text-sm font-medium ${
+          title={recibo.resumen}
+          className={`break-words text-sm font-medium sm:min-w-0 sm:flex-1 sm:truncate ${
             recibo.deshecho
               ? "text-[var(--text-tertiary)] line-through"
               : "text-[var(--text-primary)]"
@@ -69,7 +72,7 @@ export default function ReciboFila({ recibo, puedeDeshacer, onDeshacer }: Props)
           {recibo.resumen}
         </p>
         {/* Cada dato entero en su renglón (a 400 px «IA $0.001» quedaba partido). */}
-        <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
+        <p className="text-sm text-[var(--text-tertiary)] sm:shrink-0">
           {meta.map((m, i) => (
             <span key={i} className="whitespace-nowrap">
               {i > 0 && " · "}
@@ -85,18 +88,18 @@ export default function ReciboFila({ recibo, puedeDeshacer, onDeshacer }: Props)
           onClick={() => onDeshacer(recibo)}
           aria-label={`Deshacer: ${recibo.resumen}`}
           title="Deshacer"
-          className="inline-flex h-9 w-9 shrink-0 sm:w-auto items-center justify-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2 text-xs font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] sm:px-2.5"
+          className="inline-flex h-12 w-12 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] sm:w-auto sm:px-3"
         >
-          <Undo2 className="h-3.5 w-3.5" aria-hidden />
+          <Undo2 className="h-4 w-4" aria-hidden />
           <span className="hidden sm:inline">Deshacer</span>
         </button>
       )}
       {recibo.deshecho && (
         <span
           title="Deshecho"
-          className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--surface-sunken)] px-1.5 py-0.5 text-xs text-[var(--text-secondary)] sm:px-2"
+          className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-sm text-[var(--text-secondary)]"
         >
-          <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
+          <CheckCircle2 className="h-4 w-4" aria-hidden />
           <span className="sr-only">Deshecho</span>
           <span className="hidden sm:inline" aria-hidden>
             Deshecho

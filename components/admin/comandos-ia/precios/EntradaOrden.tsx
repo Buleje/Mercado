@@ -2,11 +2,12 @@
 
 import { useRef, useState, type Ref } from "react";
 import { AlertCircle, Loader2, Sparkles } from "@buleje/design-system/icons";
-import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { BTN } from "./FilasDiferencia";
 
 const EJEMPLOS = [
-  "Sube 5 % todo Abarrotes menos el arroz y redondea a 10 céntimos",
+  // 10-10: lo que antes era «Bajar precio» (sin acción) en Sugerencias › Qué vender.
+  "Rebaja 10 % lo que no se vendió en 30 días",
+  "Sube 5 % Abarrotes menos el arroz y redondea a 10 céntimos",
   "Lleva a 30 % de margen las Bebidas",
   "Baja 10 céntimos los Snacks",
 ];
@@ -80,15 +81,8 @@ export default function EntradaOrden({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-1 text-base font-semibold text-[var(--text-primary)]">
-        <label htmlFor="comandos-ia-orden">Tu orden</label>
-        <InfoTip
-          title="Orden en palabras"
-          what="Di qué precios cambiar, cuánto y cómo redondear. Las órdenes comunes se entienden sin IA ($0); si no, la IA lee tu orden con los nombres de tus categorías, nunca tus precios."
-          affects="Nada cambia hasta que ves la diferencia y tocas Aplicar."
-          example="«Sube 5 % Abarrotes menos el arroz y redondea a 10 céntimos»"
-        />
-      </div>
+      {/* El título y su ⓘ viven en la fila del modo (PreciosEnBloque): acá sólo el label para el lector. */}
+      <label htmlFor="comandos-ia-orden" className="sr-only">Tu orden</label>
       <textarea
         id="comandos-ia-orden"
         value={orden}
@@ -117,29 +111,36 @@ export default function EntradaOrden({
                   boton.current?.focus();
                   pedir(o);
                 }}
-                className="rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-1.5 text-left text-sm text-[var(--text-primary)] hover:border-[var(--accent)]"
+                className="min-h-12 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-2 text-left text-sm text-[var(--text-primary)] hover:border-[var(--accent)]"
               >
                 {o}
               </button>
             ))}
           </div>
         </div>
-      ) : (
-        <div className="flex flex-wrap gap-2" aria-label="Ejemplos">
-          {EJEMPLOS.map((e) => (
-            <button
-              key={e}
-              type="button"
-              onClick={() => setOrden(e)}
-              className="rounded-full border border-dashed border-[var(--rule-base)] px-3 py-1 text-left text-xs text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
-            >
-              {e}
-            </button>
-          ))}
-        </div>
-      )}
+      ) : null}
 
-      <PedirDiferencia ref={boton} pensando={pensando} deshabilitado={orden.trim().length < 3} error={error} onPedir={() => pedir(orden)} />
+      {/* Ejemplos y «Ver la diferencia» en la MISMA fila (el botón ya no ocupa un renglón solo). */}
+      <div className="flex flex-wrap items-center gap-2">
+        {!dudas && (
+          // `contents`: los ejemplos son hijos de la fila, así el botón cierra el último renglón.
+          <div role="group" className="contents" aria-label="Ejemplos">
+            {EJEMPLOS.map((e) => (
+              <button
+                key={e}
+                type="button"
+                onClick={() => setOrden(e)}
+                className="min-h-12 rounded-full border border-dashed border-[var(--rule-base)] px-4 py-2 text-left text-sm text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+              >
+                {e}
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="ml-auto min-w-0">
+          <PedirDiferencia ref={boton} pensando={pensando} deshabilitado={orden.trim().length < 3} error={error} onPedir={() => pedir(orden)} />
+        </div>
+      </div>
     </div>
   );
 }
