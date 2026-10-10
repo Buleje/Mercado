@@ -296,8 +296,8 @@ const PESTANAS_DEL_PERMISO = {
   comunicaciones: ["whatsapp-inbox"],
   // ≠ link (Configuración): notas y pendientes del turno viven en Equipo › Tareas.
   "agenda-utilidades": ["tareas"],
-  // ≠ link (Configuración): las tareas son pestaña propia desde que se montó
-  // TasksTab en Equipo (el link viejo quedó apuntando a Configuración).
+  // = link desde la ola 2 del panel unificado: `proyectos-tareas` lleva a Equipo ›
+  // Tareas (antes el link viejo apuntaba a Configuración).
   "proyectos-tareas": ["tareas"],
   // ≠ link (Clientes): rutas, envíos y devoluciones salen del pedido (el plan
   // F11 junta el reparto en Pedidos). La lista de Clientes es sólo del admin
@@ -331,7 +331,6 @@ export const PERMISOS_DISTINTOS_DEL_LINK: readonly ModuleId[] = [
   "reportes-documentos",
   "comunicaciones",
   "agenda-utilidades",
-  "proyectos-tareas",
   "logistica",
   "devoluciones-calidad",
 ];
