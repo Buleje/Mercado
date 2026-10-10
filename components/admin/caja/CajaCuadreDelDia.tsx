@@ -41,7 +41,7 @@ export function CajaCuadreDelDia({ parte, cargando, error, onReintentar, compact
             <button
               type="button"
               onClick={onReintentar}
-              className="font-semibold text-primary hover:underline"
+              className="min-h-12 rounded-xl px-2 font-semibold text-[var(--accent-ink)] hover:underline dark:text-[var(--accent)]"
             >
               Reintentar
             </button>
@@ -106,14 +106,14 @@ export function CajaCuadreDelDia({ parte, cargando, error, onReintentar, compact
         </div>
         <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
           <div className="rounded-xl bg-[var(--surface-sunken)] px-3 py-2">
-            <dt className="text-xs text-[var(--text-tertiary)]">Ventas del sistema</dt>
+            <dt className="text-sm text-[var(--text-secondary)]">Ventas del sistema</dt>
             <dd className="font-bold tabular-nums text-[var(--text-primary)]">
               {fmt(c.ventasSistema.total)}{" "}
               <span className="font-normal text-[var(--text-tertiary)]">· {c.ventasSistema.n}</span>
             </dd>
           </div>
           <div className="rounded-xl bg-[var(--surface-sunken)] px-3 py-2">
-            <dt className="text-xs text-[var(--text-tertiary)]">Anotadas en la caja</dt>
+            <dt className="text-sm text-[var(--text-secondary)]">Anotadas en la caja</dt>
             <dd className="font-bold tabular-nums text-[var(--text-primary)]">
               {fmt(c.ventasEnCaja.total)}{" "}
               <span className="font-normal text-[var(--text-tertiary)]">· {c.ventasEnCaja.n}</span>
@@ -126,7 +126,7 @@ export function CajaCuadreDelDia({ parte, cargando, error, onReintentar, compact
               type="button"
               onClick={() => setVerSinCaja((v) => !v)}
               aria-expanded={verSinCaja}
-              className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline"
+              className="-ml-2 inline-flex min-h-12 items-center gap-1 rounded-xl px-2 text-sm font-semibold text-[var(--accent-ink)] hover:underline dark:text-[var(--accent)]"
             >
               {verSinCaja ? "Ocultar" : "Ver"} las ventas sin caja
               <ChevronDown
@@ -138,7 +138,7 @@ export function CajaCuadreDelDia({ parte, cargando, error, onReintentar, compact
               <ul className="mt-2 divide-y divide-[var(--rule-soft)] rounded-xl border border-[var(--rule-soft)] text-sm">
                 {c.sinCaja.muestra.map((v) => (
                   <li key={v.id} className="flex items-center gap-3 px-3 py-2">
-                    <span className="font-mono text-xs text-[var(--text-tertiary)]">
+                    <span className="font-mono text-sm text-[var(--text-secondary)]">
                       {formatTime(v.createdAt)}
                     </span>
                     <span className="capitalize text-[var(--text-secondary)]">{v.medio}</span>
@@ -148,7 +148,7 @@ export function CajaCuadreDelDia({ parte, cargando, error, onReintentar, compact
                   </li>
                 ))}
                 {c.sinCaja.n > c.sinCaja.muestra.length && (
-                  <li className="px-3 py-2 text-xs text-[var(--text-tertiary)]">
+                  <li className="px-3 py-2 text-sm text-[var(--text-secondary)]">
                     y {c.sinCaja.n - c.sinCaja.muestra.length} más
                   </li>
                 )}
@@ -172,7 +172,7 @@ export function CajaCuadreDelDia({ parte, cargando, error, onReintentar, compact
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs text-[var(--text-tertiary)]">
+              <tr className="text-left text-sm text-[var(--text-secondary)]">
                 <th className="py-1.5 pr-2 font-semibold">Origen</th>
                 <th className="py-1.5 px-2 font-semibold text-right">Entró</th>
                 <th className="py-1.5 px-2 font-semibold text-right">Salió</th>
@@ -184,7 +184,7 @@ export function CajaCuadreDelDia({ parte, cargando, error, onReintentar, compact
                 <tr key={l.clave}>
                   <td className="py-1.5 pr-2 text-[var(--text-primary)]">
                     {l.etiqueta}{" "}
-                    <span className="text-xs text-[var(--text-tertiary)]">· {l.n}</span>
+                    <span className="text-sm text-[var(--text-secondary)]">· {l.n}</span>
                   </td>
                   <td className="py-1.5 px-2 text-right tabular-nums whitespace-nowrap text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
                     {l.entraEfectivo ? fmt(l.entraEfectivo) : "—"}

@@ -2,7 +2,7 @@
 
 import { useId, useRef } from "react";
 import { BlockTitle, CardTitle } from "@buleje/design-system";
-import { Banknote, Coins, MessageCircle, X } from "@buleje/design-system/icons";
+import { Banknote, Coins, MessageCircle, Receipt, X } from "@buleje/design-system/icons";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
 import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
@@ -39,7 +39,12 @@ function ComoSeConto({ notes }: { notes: string }) {
   );
 }
 
-export default function DetalleCuadre({ detail, onClose }: { detail: CashAudit; onClose: () => void }) {
+/**
+ * `onVerParte`: cierra este detalle y abre el parte del día de la caja (de
+ * dónde vino el efectivo y si cuadró con las ventas). Se abre DESPUÉS, no
+ * encima: dos ventanas apiladas se pisan el foco.
+ */
+export default function DetalleCuadre({ detail, onClose, onVerParte }: { detail: CashAudit; onClose: () => void; onVerParte?: () => void }) {
   const tituloId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   useModalAccesible(panelRef, { onCerrar: onClose, activo: true });
@@ -100,14 +105,25 @@ export default function DetalleCuadre({ detail, onClose }: { detail: CashAudit; 
 
         {detail.notes && <p className="text-sm italic text-[var(--text-secondary)]">«{detail.notes}»</p>}
 
-        <a
-          href={`https://wa.me/?text=${encodeURIComponent(textoWhatsApp(detail))}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
-        >
-          <MessageCircle className="h-4 w-4" aria-hidden /> Enviar por WhatsApp
-        </a>
+        <div className="flex flex-wrap gap-2">
+          {onVerParte && (
+            <button
+              type="button"
+              onClick={onVerParte}
+              className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+            >
+              <Receipt className="h-4 w-4" aria-hidden /> Ver de dónde vino el efectivo
+            </button>
+          )}
+          <a
+            href={`https://wa.me/?text=${encodeURIComponent(textoWhatsApp(detail))}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+          >
+            <MessageCircle className="h-4 w-4" aria-hidden /> Enviar por WhatsApp
+          </a>
+        </div>
         <TiradorDeVentana ventana={ventana} />
       </div>
     </div>

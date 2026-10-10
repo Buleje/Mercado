@@ -1,11 +1,13 @@
 /**
- * Caja › Cuadrar: el «Más» suma las acciones de Caja (Arqueo express y Arqueo
- * guiado, que CIERRA la caja). Los cuadres se cargan al montar y nada más, así
- * que tras un arqueo hecho desde ahí el contador y la tabla seguían diciendo
- * «abierta» (y guardar el conteo rebotaba con CajaNoAbiertaError).
+ * Caja: el «Más» suma las acciones de Caja (Arqueo express y Arqueo guiado,
+ * que CIERRA la caja). El contador (Hoy › Cuadrar) y los cuadres (Historial ›
+ * Por caja) se cargan al montar y nada más, así que tras un arqueo hecho desde
+ * ahí seguían diciendo «abierta» (y guardar el conteo rebotaba con
+ * CajaNoAbiertaError).
  *
- * Lo que se prueba: cada acción que termina relee la caja Y vuelve a montar los
- * cuadres. Los cuadres y los modales van simulados: interesa el cableado.
+ * Lo que se prueba: cada acción que termina relee la caja Y vuelve a montar el
+ * contador o los cuadres, según la sección. Hasta el 10-10 los dos vivían
+ * juntos en la sección «Cuadrar». Todo va simulado: interesa el cableado.
  */
 
 import { useEffect } from "react";
@@ -21,6 +23,9 @@ vi.mock("@/contexts/tenant-context", () => ({
 }));
 vi.mock("@/hooks/use-mi-rol", () => ({ useMiRol: () => "admin" }));
 vi.mock("@/components/admin/caja/use-atajos-caja", () => ({ useAtajosCaja: () => undefined }));
+vi.mock("@/components/admin/caja/use-indicadores-caja", () => ({
+  useIndicadoresCaja: () => ({ boton: null, panel: null, abierto: false }),
+}));
 vi.mock("@/components/admin/caja/use-parte-del-dia", () => ({
   useParteDelDia: () => ({ parte: null }),
 }));
@@ -43,9 +48,10 @@ vi.mock("@/components/admin/caja/use-caja-registradora", () => ({
   }),
 }));
 
-/* La cabecera de Caja, reducida a un botón por acción del «Más». */
-vi.mock("@/components/admin/caja/CajaCabecera", () => ({
-  CajaCabecera: ({ acciones }: { acciones: MenuAccion[] }) => (
+/* La cabecera de Caja, reducida a un botón por acción del «Más». Con la caja
+   abierta, en «Hoy», el «Más» va en la fila de acciones de la caja (`sinMas`). */
+function BotonesDelMas({ acciones }: { acciones: MenuAccion[] }) {
+  return (
     <div>
       {acciones.map((a) => (
         <button key={a.id} type="button" disabled={a.disabled} onClick={() => a.onSelect?.()}>
@@ -53,7 +59,22 @@ vi.mock("@/components/admin/caja/CajaCabecera", () => ({
         </button>
       ))}
     </div>
-  ),
+  );
+}
+vi.mock("@/components/admin/caja/CajaCabecera", () => ({
+  CajaCabecera: ({ acciones, sinMas }: { acciones: MenuAccion[]; sinMas?: boolean }) =>
+    sinMas ? null : <BotonesDelMas acciones={acciones} />,
+  MenuMasCaja: BotonesDelMas,
+}));
+
+/* El contador de Hoy › Cuadrar: cuenta sus montajes. */
+vi.mock("@/components/admin/caja/CajaContar", () => ({
+  CajaContar: function ContadorSimulado() {
+    useEffect(() => {
+      h.montajes += 1;
+    }, []);
+    return null;
+  },
 }));
 
 /* Los cuadres: cuentan sus montajes y piden la cabecera a Caja, como el real. */
@@ -90,20 +111,23 @@ vi.mock("@/components/admin/caja/ModalArqueoExpress", async (original) => ({
 
 import CashRegisterTab from "@/components/admin/CashRegisterTab";
 
-describe("Caja › Cuadrar: las acciones del «Más» refrescan los cuadres", () => {
+describe.each([
+  ["cuadrar", "el contador"],
+  ["historial", "los cuadres"],
+])("Caja › ?sub=%s: las acciones del «Más» refrescan %s", (sub) => {
   beforeEach(() => {
     h.montajes = 0;
     h.fetchData.mockClear();
     window.history.replaceState(
       null,
       "",
-      "/admin?tab=ventas-caja&vista=caja-registradora&sub=cuadrar",
+      `/admin?tab=ventas-caja&vista=caja-registradora&sub=${sub}`,
     );
   });
   afterEach(cleanup);
 
   it.each(["Arqueo guiado", "Arqueo express"])(
-    "«%s» relee la caja y vuelve a montar los cuadres",
+    "«%s» relee la caja y lo vuelve a montar",
     async (accion) => {
       render(<CashRegisterTab />);
       await waitFor(() => expect(h.montajes).toBe(1));

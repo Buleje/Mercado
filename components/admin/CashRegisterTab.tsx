@@ -5,40 +5,33 @@
  *
  * Era un archivo de 2.538 líneas; ahora orquesta piezas de
  * `components/admin/caja/`: datos (`use-caja-registradora`), parte del día
- * del servidor (`use-parte-del-dia`: origen de cada movimiento + cuadre con
- * ventas), las cinco secciones y las ventanas. La ley de la vista: un título,
- * cabecera en una fila, lo de uso constante a la vista y el resto en «Más».
+ * del servidor (`use-parte-del-dia`), las secciones y las ventanas.
  *
- * Las secciones viven en `?sub=` (`SUBS_CAJA`). «Cuadrar» es el módulo de
- * cuadres (CashAuditTab) montado tal cual: era la pestaña «Cuadrar caja» de
- * Ventas y caja hasta la ola 3 del panel unificado. Juntar sus contadores con
- * los del arqueo guiado y el cierre de turno es otro paso (ola 6).
+ * Desde el 10-10 son DOS pestañas con sus secciones (`caja/secciones.ts`),
+ * cada sección un valor de `?sub=` (`SUBS_CAJA`):
+ *   Hoy:       Resumen (`hoy`) · Movimientos · Medios de pago · Cuadrar
+ *   Historial: Por caja (`historial`, los cuadres) · Por día · Quién la tocó
+ * Antes eran cinco pestañas y «Hoy» apilaba todo en una columna. La tabla de
+ * cajas cerradas se fue: repetía la de los cuadres (misma fila por caja, 5 de
+ * 7 columnas iguales); su tendencia pasó a «Por día» y su parte del día se
+ * abre desde el detalle de cada cuadre.
  */
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { LoadingState } from "@buleje/design-system";
-import {
-  AlertTriangle,
-  Calculator,
-  Download,
-  MessageCircle,
-  Printer,
-  RefreshCw,
-  Scan,
-  Settings,
-} from "@buleje/design-system/icons";
-import type { MenuAccion } from "@/components/admin/shared/action-menu";
+import { AlertTriangle, Unlock } from "@buleje/design-system/icons";
+import { button } from "@/components/ui-system/button-variants";
 import { useTenant } from "@/contexts/tenant-context";
 import { useMiRol } from "@/hooks/use-mi-rol";
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { formatTime } from "@/lib/format";
-/* Estático, no `next/dynamic`: en Cuadrar la cabecera de Caja (con sus secciones)
-   la dibuja el módulo de cuadres; si bajara aparte, la fila de secciones
+/* Estático, no `next/dynamic`: en Historial › Por caja la fila de la cabecera
+   la completa el módulo de cuadres; si bajara aparte, la barra de secciones
    desaparecía mientras cargaba el chunk. */
 import CashAuditTab, { type PartesCabeceraCuadres } from "./CashAuditTab";
 import { CajaActual } from "./caja/CajaActual";
 import { CajaAuditoria } from "./caja/CajaAuditoria";
-import { CajaCabecera } from "./caja/CajaCabecera";
-import { CajaHistorial } from "./caja/CajaHistorial";
+import { CajaCabecera, MenuMasCaja } from "./caja/CajaCabecera";
+import { ID_PANEL_CAJA, idPestanaActiva } from "./caja/CajaSecciones";
 import { CajaReconciliacion } from "./caja/CajaReconciliacion";
 import { ModalAbrirCaja } from "./caja/ModalAbrirCaja";
 import { ModalArqueoExpress } from "./caja/ModalArqueoExpress";
@@ -47,7 +40,8 @@ import { ModalCerrarCaja } from "./caja/ModalCerrarCaja";
 import { ModalDetalleCaja } from "./caja/ModalDetalleCaja";
 import { ModalMovimientoCaja } from "./caja/ModalMovimientoCaja";
 import { ModalToleranciaCaja } from "./caja/ModalToleranciaCaja";
-import { enviarParteWhatsApp, exportarMovimientosCsv, imprimirParte } from "./caja/acciones-parte";
+import { accionesDeCaja } from "./caja/acciones-caja";
+import { grupoDe, recordarSeccion, seccionRecordada } from "./caja/secciones";
 import { useAtajosCaja } from "./caja/use-atajos-caja";
 import { useCajaRegistradora } from "./caja/use-caja-registradora";
 import { useParteDelDia } from "./caja/use-parte-del-dia";
@@ -80,13 +74,14 @@ export default function CashRegisterTab({ subInicial }: Props = {}) {
   const puedeCambiarMedio = rol === "admin" || rol === "owner";
   const datos = useCajaRegistradora();
   const { currentRegister: caja, stats, loading, errorCarga, fetchData } = datos;
-  /* Sin memoria entre visitas: Caja abre siempre en «Caja de hoy», como antes
-     (era estado local). La URL sí manda: `?sub=cuadrar` abre Cuadrar. */
-  const { vista, irA } = useSubvistaModulo("ventas-caja-caja", SUBS_CAJA, "hoy", subInicial, {
+  /* Caja abre siempre en «Hoy» (la URL manda: `?sub=cuadrar` abre Cuadrar), en
+     la sección de «Hoy» que usaste último. Cada pestaña recuerda la suya. */
+  const [porDefecto] = useState(() => seccionRecordada("hoy"));
+  const { vista, irA } = useSubvistaModulo("ventas-caja-caja", SUBS_CAJA, porDefecto, subInicial, {
     recordar: false,
   });
   /* Al salir de Cuadrar se relee la caja: un conteo guardado ahí deja un movimiento
-     «arqueo» que «Caja de hoy» no vería hasta su refresco de 30 s. */
+     «arqueo» que el resto de «Hoy» no vería hasta su refresco de 30 s. */
   const setVista = useCallback(
     (v: VistaCaja) => {
       if (vista === "cuadrar" && v !== "cuadrar") void fetchData();
@@ -95,6 +90,8 @@ export default function CashRegisterTab({ subInicial }: Props = {}) {
     },
     [irA, vista, fetchData],
   );
+  /* Se recuerda la sección a la vista venga de donde venga (clic, enlace, atrás). */
+  useEffect(() => recordarSeccion(vista), [vista]);
   const [modal, setModal] = useState<ModalCaja>(null);
   const [detalle, setDetalle] = useState<CashRegister | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
@@ -107,7 +104,8 @@ export default function CashRegisterTab({ subInicial }: Props = {}) {
   const parte = useParteDelDia(caja?.id ?? null, firma);
   const cerrar = useCallback(() => setModal(null), []);
   const recargar = useCallback(() => void fetchData(), [fetchData]);
-  /* Los cuadres cargan al montar: lo que termina un modal relee la caja y los remonta. */
+  /* Los cuadres y el contador cargan al montar: lo que termina un modal relee
+     la caja y los remonta (un arqueo del «Más» los dejaba diciendo «abierta»). */
   const [verCuadres, setVerCuadres] = useState(0);
   const alHacer = useCallback(() => {
     recargar();
@@ -115,115 +113,61 @@ export default function CashRegisterTab({ subInicial }: Props = {}) {
   }, [recargar]);
   const abrirIngreso = useCallback(() => setModal("ingreso"), []);
   const abrirRetiro = useCallback(() => setModal("egreso"), []);
-  useAtajosCaja(vista === "hoy" && !!caja && modal === null && !detalle, {
+  /* «I» y «R» en cualquier sección de «Hoy» con la caja abierta. */
+  useAtajosCaja(grupoDe(vista) === "hoy" && !!caja && modal === null && !detalle, {
     ingreso: abrirIngreso,
     retiro: abrirRetiro,
   });
 
   if (loading) return <LoadingState message="" size="sm" />;
 
-  const conCaja = (a: Omit<MenuAccion, "disabled">): MenuAccion => ({
-    ...a,
-    disabled: !caja,
-    hint: caja ? a.hint : "Abre una caja primero",
+  const acciones = accionesDeCaja({
+    caja,
+    parte: parte.parte,
+    nombreNegocio: branding.name ?? undefined,
+    tolerancia: datos.cashTolerance,
+    abrirModal: setModal,
+    avisar: setAviso,
+    recargar,
   });
-  const acciones: MenuAccion[] = [
-    conCaja({
-      id: "arqueo",
-      seccion: "Contar",
-      label: "Arqueo express",
-      hint: "Cuenta el cajón sin cerrar",
-      icon: Scan,
-      onSelect: () => setModal("arqueo"),
-    }),
-    conCaja({
-      id: "guiado",
-      seccion: "Contar",
-      label: "Arqueo guiado",
-      hint: "Billetes, monedas y vouchers; cierra la caja",
-      icon: Calculator,
-      onSelect: () => setModal("guiado"),
-    }),
-    conCaja({
-      id: "imprimir",
-      seccion: "Parte del día",
-      label: "Imprimir parte",
-      hint: "Hoja de 80 mm para la impresora térmica",
-      icon: Printer,
-      onSelect: () => {
-        if (caja && !imprimirParte(caja, parte.parte, branding.name ?? undefined))
-          setAviso(
-            "Tu navegador bloqueó la ventana de impresión: permite las ventanas emergentes de este sitio.",
-          );
-      },
-    }),
-    conCaja({
-      id: "csv",
-      seccion: "Parte del día",
-      label: "Exportar movimientos (CSV)",
-      hint: "Se abre en Excel, con el origen de cada uno",
-      icon: Download,
-      onSelect: () => caja && exportarMovimientosCsv(caja),
-    }),
-    {
-      id: "whatsapp",
-      seccion: "Parte del día",
-      label: "Enviar parte por WhatsApp",
-      hint: parte.parte ? "Esperado, retiros y cuadre con ventas" : "Abre una caja primero",
-      icon: MessageCircle,
-      disabled: !parte.parte || !caja,
-      onSelect: () => parte.parte && enviarParteWhatsApp(parte.parte),
-    },
-    {
-      id: "tolerancia",
-      seccion: "Ajustes",
-      label: "Tolerancia de diferencia",
-      meta: `±S/${datos.cashTolerance}`,
-      icon: Settings,
-      onSelect: () => setModal("tolerancia"),
-    },
-    {
-      id: "refrescar",
-      seccion: "Ajustes",
-      label: "Refrescar",
-      hint: "Se refresca solo cada 30 s",
-      icon: RefreshCw,
-      onSelect: recargar,
-    },
-  ];
 
   const estado = caja ? (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] whitespace-nowrap">
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-primary/10 px-2.5 py-1 text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
       <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden />
-      Abierta {formatTime(caja.openedAt)} · {stats?.salesCount ?? 0} ventas
+      Abierta {formatTime(caja.openedAt)}
     </span>
   ) : (
-    <span className="rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)] whitespace-nowrap">
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 py-1 text-sm font-bold text-[var(--text-secondary)]">
+      <span className="h-1.5 w-1.5 rounded-full bg-[var(--text-secondary)]" aria-hidden />
       Cerrada
     </span>
   );
+  /* Con la caja abierta, en «Hoy», «Más» va con ingreso, retiro y cerrar. */
+  const masEnAcciones = !!caja && grupoDe(vista) === "hoy";
+  const abrirCaja = !caja && grupoDe(vista) === "hoy" && (
+    <button type="button" onClick={() => setModal("abrir")} className={button({ variant: "primary", className: "rounded-xl" })}>
+      <Unlock className="h-4 w-4" aria-hidden /> Abrir caja
+    </button>
+  );
 
-  /* En Cuadrar, el título, «Indicadores» y las acciones vienen de los cuadres:
-     la misma fila, un solo «Más» (sus acciones primero) y sin chip de estado. */
+  /* En Historial › Por caja, «Indicadores» y las acciones vienen de los
+     cuadres: la misma fila, un solo «Más» (sus acciones primero). */
   const cabecera = (cuadres?: PartesCabeceraCuadres) => (
     <>
       <CajaCabecera
         vista={vista}
         onVista={setVista}
-        estado={cuadres ? undefined : estado}
+        hoyConSecciones={!!caja}
+        estado={estado}
         acciones={cuadres ? [...cuadres.acciones, ...acciones] : acciones}
-        titulo={cuadres?.titulo}
         extra={cuadres?.indicadores}
+        principal={abrirCaja}
+        sinMas={masEnAcciones}
       />
       {(errorCarga || aviso) && (
-        <div
-          role="alert"
-          className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/10 py-1 pl-4 pr-1"
-        >
+        <div role="alert" className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/10 py-1 pl-4 pr-1">
           <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--data-error-500)]" aria-hidden />
-          <p className="flex-1 text-sm font-semibold text-[var(--text-primary)]">
-            {aviso ?? errorCarga}
-          </p>
+          <p className="flex-1 text-sm font-semibold text-[var(--text-primary)]">{aviso ?? errorCarga}</p>
           <button
             type="button"
             onClick={() => (aviso ? setAviso(null) : recargar())}
@@ -236,62 +180,62 @@ export default function CashRegisterTab({ subInicial }: Props = {}) {
     </>
   );
 
-  return (
-    <div className="space-y-4">
-      {vista !== "cuadrar" && cabecera()}
+  /* El parte de una caja vieja, desde el detalle de su cuadre: la caja sale de
+     la misma lista que ya está cargada (no hay otro pedido). */
+  const panel = { role: "tabpanel", id: ID_PANEL_CAJA, "aria-labelledby": idPestanaActiva(vista, !!caja) } as const;
 
-      {vista === "hoy" && (
-        <CajaActual
-          datos={datos}
-          parte={parte}
-          puedeCambiarMedio={puedeCambiarMedio}
-          onAbrir={() => setModal("abrir")}
-          onMovimiento={(t) => setModal(t)}
-          onCerrarCaja={() => setModal("cerrar")}
-          onVerCaja={setDetalle}
-        />
+  const verParte = (id: string) => {
+    const r = datos.registers.find((x) => x.id === id);
+    if (r) setDetalle(r);
+  };
+
+  return (
+    <div className="space-y-4" data-caja-raiz>
+      {vista !== "historial" && cabecera()}
+
+      {/* El contenido de la sección es el `tabpanel` de la barra de secciones
+          (en «Por caja» lo pone CashAuditTab, que arma su propia cabecera). */}
+      {vista !== "historial" && (
+        <div {...panel}>
+          {grupoDe(vista) === "hoy" && (
+            <CajaActual
+              vista={vista}
+              datos={datos}
+              parte={parte}
+              puedeCambiarMedio={puedeCambiarMedio}
+              onMovimiento={(t) => setModal(t)}
+              onCerrarCaja={() => setModal("cerrar")}
+              onVerCaja={setDetalle}
+              onIrA={setVista}
+              versionConteo={verCuadres}
+              mas={<MenuMasCaja acciones={acciones} />}
+            />
+          )}
+          {vista === "reconciliacion" && <CajaReconciliacion cerradas={datos.closedRegisters} tolerancia={datos.cashTolerance} />}
+          {vista === "auditoria" && <CajaAuditoria />}
+        </div>
       )}
+      {/* `onIrACaja` lleva a «Hoy»: ahí se abre y se cierra la caja. */}
       {vista === "historial" && (
-        <CajaHistorial
-          cerradas={datos.closedRegisters}
+        <CashAuditTab
+          key={verCuadres}
+          onIrACaja={() => setVista("hoy")}
+          cabecera={cabecera}
+          onVerParte={verParte}
           tolerancia={datos.cashTolerance}
-          onVer={setDetalle}
+          panel={panel}
         />
-      )}
-      {vista === "auditoria" && <CajaAuditoria />}
-      {vista === "reconciliacion" && (
-        <CajaReconciliacion cerradas={datos.closedRegisters} tolerancia={datos.cashTolerance} />
-      )}
-      {/* `onIrACaja` llevaba a la pestaña Caja; ahora Caja es la casa: vuelve a «Caja de hoy». */}
-      {vista === "cuadrar" && (
-        <CashAuditTab key={verCuadres} onIrACaja={() => setVista("hoy")} cabecera={cabecera} />
       )}
 
       {modal === "abrir" && <ModalAbrirCaja onCerrar={cerrar} onHecho={alHacer} />}
-      {modal === "tolerancia" && (
-        <ModalToleranciaCaja
-          valor={datos.cashTolerance}
-          onGuardar={datos.setCashTolerance}
-          onCerrar={cerrar}
-        />
-      )}
+      {modal === "tolerancia" && <ModalToleranciaCaja valor={datos.cashTolerance} onGuardar={datos.setCashTolerance} onCerrar={cerrar} />}
       {caja && (modal === "ingreso" || modal === "egreso") && (
         <ModalMovimientoCaja cajaId={caja.id} tipo={modal} onCerrar={cerrar} onHecho={alHacer} />
       )}
-      {caja && modal === "cerrar" && (
-        <ModalCerrarCaja caja={caja} stats={stats} onCerrar={cerrar} onHecho={alHacer} />
-      )}
-      {caja && modal === "arqueo" && (
-        <ModalArqueoExpress caja={caja} stats={stats} onCerrar={cerrar} onHecho={alHacer} />
-      )}
+      {caja && modal === "cerrar" && <ModalCerrarCaja caja={caja} stats={stats} onCerrar={cerrar} onHecho={alHacer} />}
+      {caja && modal === "arqueo" && <ModalArqueoExpress caja={caja} stats={stats} onCerrar={cerrar} onHecho={alHacer} />}
       {caja && modal === "guiado" && (
-        <ModalArqueoGuiado
-          caja={caja}
-          stats={stats}
-          ventasPorMedio={datos.paymentBreakdown}
-          onCerrar={cerrar}
-          onHecho={alHacer}
-        />
+        <ModalArqueoGuiado caja={caja} stats={stats} ventasPorMedio={datos.paymentBreakdown} onCerrar={cerrar} onHecho={alHacer} />
       )}
       {detalle && <ModalDetalleCaja caja={detalle} onCerrar={() => setDetalle(null)} />}
     </div>

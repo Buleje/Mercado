@@ -2,7 +2,7 @@
  * Tipos y formatos compartidos por la pestaña Caja (Ventas & Caja › Caja).
  * Salieron de `CashRegisterTab.tsx` (2.538 líneas) al partirlo.
  */
-import { formatCurrency, formatDateShort, formatDateTimeShort } from "@/lib/format";
+import { formatCurrency, formatDateTimeShort } from "@/lib/format";
 
 export interface CashMovement {
   id: string;
@@ -32,12 +32,14 @@ export interface CashRegister {
 
 /**
  * Las secciones de Ventas y caja › Caja, en `?sub=` (2.º nivel; el 1.º es
- * `?vista=caja-registradora`). «Cuadrar» era la pestaña «Cuadrar caja»
+ * `?vista=caja-registradora`). Se agrupan en dos pestañas, «Hoy» e
+ * «Historial» (`secciones.ts`). «Cuadrar» era la pestaña «Cuadrar caja»
  * (`?vista=arqueo`) hasta la ola 3 del panel unificado: el link viejo llega
- * por VISTA_MIGRATION. Antes las otras cuatro eran estado local en inglés
- * (`current`, `history`…) y no se podían enlazar.
+ * por VISTA_MIGRATION. `movimientos` y `medios` eran bloques apilados de «Hoy»
+ * hasta el 10-10; `historial` dejó de ser la tabla de cajas cerradas (repetía
+ * la de los cuadres) y ahora ES la de los cuadres.
  */
-export const SUBS_CAJA = ["hoy", "historial", "auditoria", "reconciliacion", "cuadrar"] as const;
+export const SUBS_CAJA = ["hoy", "movimientos", "medios", "cuadrar", "historial", "reconciliacion", "auditoria"] as const;
 export type VistaCaja = (typeof SUBS_CAJA)[number];
 export type MethodFilter = "all" | "efectivo" | "yape" | "plin" | "tarjeta" | "transferencia";
 export type ModalCaja = "abrir" | "cerrar" | "ingreso" | "egreso" | "arqueo" | "guiado" | "tolerancia" | null;
@@ -60,14 +62,6 @@ export function fmt(n: number) {
 export function fmtDate(iso: string) {
   try {
     return formatDateTimeShort(iso);
-  } catch {
-    return iso;
-  }
-}
-
-export function fmtDateShort(iso: string) {
-  try {
-    return formatDateShort(iso);
   } catch {
     return iso;
   }
@@ -97,7 +91,5 @@ export const COLOR_SIGNO = {
 } as const;
 
 /** Clases de botón compartidas: misma altura y tono en toda la pestaña. */
-export const BOTON_SECUNDARIO =
-  "inline-flex items-center justify-center gap-1.5 px-3 min-h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] text-sm font-semibold text-[var(--text-secondary)] transition-colors";
 export const BOTON_PRIMARIO =
   "inline-flex items-center justify-center gap-1.5 px-4 min-h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark disabled:opacity-50 transition-colors";

@@ -6,9 +6,10 @@
  * conciliaciones quedan en este navegador (`buleje-concil-history`).
  */
 import { useState } from "react";
-import { Kicker } from "@buleje/design-system";
+import { CardTitle } from "@buleje/design-system";
 import { Smartphone } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { button } from "@/components/ui-system/button-variants";
 import { formatCurrency, formatDateShort } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { fmt } from "./tipos";
@@ -51,10 +52,10 @@ export function ConciliacionYapePlin({ breakdown }: { breakdown: Record<string, 
   };
 
   return (
-    <div className="rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-4">
+    <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <div className="mb-3 flex items-center gap-1.5">
         <Smartphone className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden />
-        <Kicker className="libro-kicker">Conciliación digital</Kicker>
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Conciliación digital</CardTitle>
         <InfoTip what="Compara lo vendido por Yape o Plin según la caja con el saldo que ves en tu app. Hasta S/ 5 de diferencia se toma como que cuadra." example="La caja dice S/ 120 por Yape y tu app muestra S/ 120: cuadra." />
       </div>
       <div className="flex gap-1 mb-3">
@@ -69,7 +70,7 @@ export function ConciliacionYapePlin({ breakdown }: { breakdown: Record<string, 
                 setTab(m);
                 setMonto("");
               }}
-              className={cn("px-3 min-h-9 rounded-lg text-xs font-bold transition-colors capitalize", tab === m ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]")}
+              className={cn("px-4 min-h-12 rounded-xl border text-sm font-bold transition-colors capitalize", tab === m ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-transparent bg-[var(--surface-sunken)] text-[var(--text-secondary)]")}
             >
               {m}
             </button>
@@ -77,13 +78,13 @@ export function ConciliacionYapePlin({ breakdown }: { breakdown: Record<string, 
       </div>
       <div className="flex flex-wrap items-end gap-3 mb-3">
         <div className="flex-1">
-          <p className="text-xs font-bold text-[var(--text-secondary)] mb-1">Ventas {tab} hoy</p>
+          <p className="text-sm font-semibold text-[var(--text-secondary)] mb-1">Ventas {tab} hoy</p>
           <p className="text-xl font-extrabold font-mono text-[var(--text-primary)]">{fmt(ventasDigital)}</p>
         </div>
         <label className="flex-1">
-          <span className="block text-xs font-bold text-[var(--text-secondary)] mb-1">Saldo en tu app</span>
+          <span className="block text-sm font-semibold text-[var(--text-secondary)] mb-1">Saldo en tu app</span>
           <span className="flex items-center gap-1">
-            <span className="text-xs text-[var(--text-secondary)]">S/</span>
+            <span className="text-sm text-[var(--text-secondary)]">S/</span>
             <input
               type="number"
               inputMode="decimal"
@@ -91,7 +92,7 @@ export function ConciliacionYapePlin({ breakdown }: { breakdown: Record<string, 
               onChange={(e) => setMonto(e.target.value)}
               placeholder="0.00"
               step="0.50"
-              className="w-28 px-2 min-h-9 rounded-xl border border-[var(--rule-base)] text-sm font-mono text-right bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none focus:border-primary"
+              className="w-28 px-2 min-h-12 rounded-xl border border-[var(--rule-base)] text-sm font-mono text-right bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none focus:border-primary"
             />
           </span>
         </label>
@@ -103,16 +104,16 @@ export function ConciliacionYapePlin({ breakdown }: { breakdown: Record<string, 
               ? `Cuadra perfecto${diferencia !== 0 ? ` (dif. ${formatCurrency(diferencia)})` : ""}`
               : `Diferencia de ${formatCurrency(Math.abs(diferencia))} — ${diferencia > 0 ? "sobrante" : "revisa si hay transferencias personales"}`}
           </p>
-          <button type="button" onClick={anotar} className="mt-2 px-4 min-h-9 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-dark transition-colors">
+          <button type="button" onClick={anotar} className={button({ variant: "primary", className: "mt-2 rounded-xl" })}>
             Anotar conciliación
           </button>
         </div>
       )}
       {historial.length > 0 && (
         <div className="border-t border-[var(--rule-soft)] pt-2 mt-2 space-y-1">
-          <Kicker className="libro-kicker">Últimas conciliaciones</Kicker>
+          <p className="text-sm font-semibold text-[var(--text-secondary)]">Últimas conciliaciones</p>
           {historial.slice(0, 3).map((h) => (
-            <div key={h.fecha} className="flex items-center justify-between text-xs">
+            <div key={h.fecha} className="flex items-center justify-between text-sm">
               <span className="text-[var(--text-secondary)]">
                 {(() => {
                   try {
@@ -130,6 +131,6 @@ export function ConciliacionYapePlin({ breakdown }: { breakdown: Record<string, 
           ))}
         </div>
       )}
-    </div>
+    </section>
   );
 }

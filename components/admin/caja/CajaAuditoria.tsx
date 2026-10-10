@@ -60,9 +60,9 @@ export function CajaAuditoria() {
               <li key={t.id} className="flex flex-wrap items-start gap-3 px-5 py-3">
                 <span
                   className={cn(
-                    "mt-0.5 inline-flex h-7 shrink-0 items-center rounded-full px-2.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide",
+                    "mt-0.5 inline-flex h-7 shrink-0 items-center rounded-full px-2.5 text-sm font-semibold",
                     esApertura
-                      ? "bg-primary/10 text-primary"
+                      ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : esCierre
                         ? "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
                         : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
@@ -72,7 +72,7 @@ export function CajaAuditoria() {
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm text-[var(--text-primary)]">{t.detail}</p>
-                  <p className="text-xs text-[var(--text-secondary)]">
+                  <p className="text-sm text-[var(--text-secondary)]">
                     <span className="font-semibold">{t.user}</span> · {formatDateTime(t.createdAt)}
                   </p>
                 </div>

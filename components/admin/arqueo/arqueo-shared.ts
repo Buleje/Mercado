@@ -85,6 +85,17 @@ export const STATUS_MAP: Record<AuditStatus, { label: string; color: string; bg:
   imposible: { label: "Revisar movimientos", color: "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]", bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30", icon: AlertTriangle },
 };
 
+/**
+ * Un sobrante o faltante chico, de hasta ± la tolerancia del negocio (Caja ›
+ * Más › «Tolerancia», S/ 5 si nunca se tocó): se muestra «Dentro de
+ * tolerancia», como hacía la tabla del Historial de cajas que se fue el 10-10.
+ * Lo que cuadró al céntimo sigue siendo «Conforme» (`veredictoArqueo`).
+ */
+export function dentroDeTolerancia(a: Pick<CashAudit, "status" | "difference">, tolerancia: number | undefined): boolean {
+  if (tolerancia == null) return false;
+  return (a.status === "sobrante" || a.status === "faltante") && Math.abs(a.difference) <= tolerancia;
+}
+
 // ── Fechas en hora de Lima (UTC−5 fijo, sin horario de verano) ───────────────
 
 const DIAS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"] as const;

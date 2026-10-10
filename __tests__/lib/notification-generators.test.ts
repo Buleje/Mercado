@@ -77,6 +77,8 @@ describe("generateNotifications", () => {
     expect(avisos()).toHaveLength(1);
     const a = avisos()[0];
     expect(a).toMatchObject({ type: "DIFERENCIA_CAJA", entityId: "caja-1", severity: "MEDIUM", dedupWindowHours: 20 });
+    // Caja cerrada → sus cuadres (Historial › Por caja), no el contador de la caja de hoy.
+    expect(a.actionUrl).toBe("/admin?tab=ventas-caja&vista=caja-registradora&sub=historial");
     // 02:00 UTC del 07 = 21:00 del 06 en Lima.
     expect(a.title).toContain("faltan S/ 40.00");
     expect(a.body).toContain("6/10/2026");

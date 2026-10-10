@@ -159,8 +159,10 @@ export async function generateNotifications(
         severity: Math.abs(diff) > DIFERENCIA_CAJA_GRAVE ? "HIGH" : "MEDIUM",
         title: `Caja del ${fechaLima(r.closedAt ?? ahora, { weekday: "long" })}: ${diff < 0 ? "faltan" : "sobran"} ${soles(Math.abs(diff))}`,
         body: `Se cerró el ${fechaLima(r.closedAt ?? ahora)} con ${soles(Math.abs(diff))} ${diff < 0 ? "de menos" : "de más"}.`,
-        // `tab=caja` migraba a ventas-caja y abría «Vender»: la diferencia se revisa en Cuadrar caja.
-        actionUrl: "/admin?tab=ventas-caja&vista=arqueo",
+        // La caja ya está cerrada: su cuadre se revisa en Caja › Historial › Por caja.
+        // `vista=arqueo` (link de antes) sigue cayendo en Hoy › Cuadrar, el contador de
+        // la caja ABIERTA, porque lo usan el aviso «caja abierta» y el de arqueo express.
+        actionUrl: "/admin?tab=ventas-caja&vista=caja-registradora&sub=historial",
         actionLabel: "Ver caja",
         entityId: r.id,
       });

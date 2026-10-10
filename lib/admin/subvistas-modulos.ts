@@ -102,7 +102,7 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
     { key: "turnos", label: "Turnos", hint: "Abre y cierra el turno de caja de cada cajero", origen: ["ventas-caja", "turnos"] },
     { key: "caja-registradora", label: "Caja", hint: "El efectivo del día: abrir, ingresos, retiros, historial y cuadrar", origen: ["ventas-caja"] },
     { key: "cuentas-cobrar", label: "Me deben", hint: "Lo que quedó fiado: quién debe, cobrar y recordar", origen: ["ventas-caja", "plata", "fiados"] },
-    { key: "comisiones", label: "Comisiones de vendedores", hint: "Lo que ganó cada vendedor", origen: ["ventas-caja"] },
+    { key: "comisiones", label: "Comisiones de vendedores", hint: "Lo que ganó cada vendedor por lo que vendió, venta por venta, y si ya se le pagó", origen: ["ventas-caja"] },
   ],
   // Mi Plata (ola 3): dos niveles. Las claves son las HOJAS (la sección dentro de
   // la pestaña, o la pestaña si no se divide) de `finanzas/estructura.ts`, en su
@@ -374,15 +374,19 @@ export const ANIDADAS_POR_MODULO: Readonly<Record<string, readonly SubvistaAnida
   // Ventas y caja › Caja (con «Cuadrar caja», que era la vista `arqueo`) y
   // Ventas y caja › Me deben (las pestañas del módulo de fiados).
   "ventas-caja": [
-    { vista: "caja-registradora", key: "hoy", label: "Caja de hoy", hint: "Abrir la caja, ingresos, retiros y lo que debería haber" },
-    { vista: "caja-registradora", key: "historial", label: "Historial de cajas", hint: "Las cajas cerradas con su diferencia" },
+    // Caja en dos pestañas (10-10): Hoy (hoy · movimientos · medios · cuadrar) e
+    // Historial (historial · reconciliacion · auditoria). Cada sección es un `?sub=`.
+    { vista: "caja-registradora", key: "hoy", label: "Caja de hoy", hint: "Abrir la caja, ingresos, retiros, lo que debería haber y si cuadra con las ventas" },
+    { vista: "caja-registradora", key: "movimientos", label: "Movimientos de la caja", hint: "Lo que entró y salió del cajón hoy, en lista o línea de tiempo, con su origen" },
+    { vista: "caja-registradora", key: "medios", label: "Ventas por medio de pago", hint: "Efectivo, Yape, Plin y tarjeta de la caja de hoy, el cruce con la app y las ventas por hora" },
+    { vista: "caja-registradora", key: "cuadrar", label: "Cuadrar caja", hint: "Contar billetes y monedas contra lo que debería haber en la caja abierta" },
+    { vista: "caja-registradora", key: "historial", label: "Historial de cajas", hint: "Cada caja con quién la abrió, el esperado, lo contado y la diferencia" },
+    { vista: "caja-registradora", key: "reconciliacion", label: "Caja por día", hint: "Esperado contra real por día, la tendencia de las diferencias y el flujo de la semana" },
     { vista: "caja-registradora", key: "auditoria", label: "Quién tocó la caja", hint: "Aperturas, cierres, ingresos y retiros con quién los hizo" },
-    { vista: "caja-registradora", key: "reconciliacion", label: "Reconciliación de caja", hint: "Esperado contra real por día" },
-    { vista: "caja-registradora", key: "cuadrar", label: "Cuadrar caja", hint: "Contar el efectivo y ver los cuadres de cada caja" },
-    { vista: "cuentas-cobrar", key: "resumen", label: "Fiados: resumen", hint: "Quién te debe y cuánto, para cobrar en un toque", origen: ["ventas-caja", "plata", "fiados"] },
-    { vista: "cuentas-cobrar", key: "deudores", label: "Deudores", hint: "La lista de fiados con saldo, días y filtros", origen: ["ventas-caja", "plata", "fiados"] },
-    { vista: "cuentas-cobrar", key: "cobranza", label: "Cobranza de fiados", hint: "Por tramos de atraso, a quién recordarle hoy", origen: ["ventas-caja", "plata", "fiados"] },
-    { vista: "cuentas-cobrar", key: "analisis", label: "Análisis de fiados", hint: "Morosidad, tendencia de cobro y proyección", origen: ["ventas-caja", "plata", "fiados"] },
+    { vista: "cuentas-cobrar", key: "cobranza", label: "Quién me debe", hint: "Cada cliente con lo que te debe, por tramos de atraso: cobrar y recordar", origen: ["ventas-caja", "plata", "fiados"] },
+    { vista: "cuentas-cobrar", key: "agenda", label: "Fiados por vencer", hint: "Promesas de pago sin cumplir y lo que vence hoy, esta semana y después", origen: ["ventas-caja", "plata", "fiados"] },
+    { vista: "cuentas-cobrar", key: "cobrado", label: "Fiados cobrados", hint: "Quién te pagó, cuánto y con qué; la tendencia de cobro del semestre", origen: ["ventas-caja", "plata", "fiados"] },
+    { vista: "cuentas-cobrar", key: "deudores", label: "Cada fiado", hint: "Todos los fiados uno por uno, también los pagados, con filtros y cobro de varios", origen: ["ventas-caja", "plata", "fiados"] },
   ],
   // Productos e inventario › Conteo físico (era un modal) y › Ofertas y cupones.
   inventario: [

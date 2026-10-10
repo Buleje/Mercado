@@ -10,11 +10,9 @@ import { useLocalStorage } from "@/hooks/use-local-storage";
 import { exportToCSV } from "@/lib/utils";
 import { STATUS_MAP, type CashAudit } from "@/components/admin/arqueo/arqueo-shared";
 import { useArqueos } from "@/components/admin/arqueo/use-arqueos";
-import ContadorEfectivo from "@/components/admin/arqueo/ContadorEfectivo";
 import KpisCuadre, { BotonIndicadores } from "@/components/admin/arqueo/KpisCuadre";
 import TablaCuadres from "@/components/admin/arqueo/TablaCuadres";
 import DetalleCuadre from "@/components/admin/arqueo/DetalleCuadre";
-import DesdeTurno from "@/components/admin/arqueo/DesdeTurno";
 
 type Props = {
   /**
@@ -31,6 +29,19 @@ type Props = {
    * fila propia de siempre.
    */
   cabecera?: (partes: PartesCabeceraCuadres) => ReactNode;
+  /**
+   * Abre el parte del día de esa caja (de dónde vino el efectivo y si cuadró
+   * con las ventas). Lo tenía la tabla del Historial de cajas, que se fue
+   * por repetir esta: ahora se llega desde el detalle de cada cuadre.
+   */
+  onVerParte?: (registerId: string) => void;
+  /** La tolerancia de Caja: una diferencia de hasta ± esto sale «Dentro de tolerancia». */
+  tolerancia?: number;
+  /**
+   * Dentro de Caja el cuerpo es el `tabpanel` de su barra de secciones (la
+   * cabecera, con las pestañas, queda afuera del panel).
+   */
+  panel?: { role: "tabpanel"; id: string; "aria-labelledby": string };
 };
 
 export interface PartesCabeceraCuadres {
@@ -40,14 +51,15 @@ export interface PartesCabeceraCuadres {
 }
 
 /**
- * «Cuadrar caja»: arriba lo que se mira primero —cuánto debería haber en la
- * caja abierta y el contador—, después los indicadores (plegados y
- * recordados) y abajo el historial con sus filtros.
+ * Los cuadres de caja, uno por caja: los indicadores (plegados y recordados)
+ * y la tabla con sus filtros y su buscador. Es Caja › Historial › Por caja.
+ * Hasta el 10-10 también traía el contador del efectivo arriba; el contador es
+ * de la caja de HOY y se mudó a Caja › Hoy › Cuadrar (`caja/CajaContar`), con
+ * el mismo hook.
  */
-export default function CashAuditTab({ onIrACaja, cabecera }: Props) {
-  const { audits, resumen, loading, error, reload, openRegister, openAudit, openExpectedAmount } = useArqueos();
+export default function CashAuditTab({ onIrACaja, cabecera, onVerParte, tolerancia, panel }: Props) {
+  const { audits, resumen, loading, error, reload } = useArqueos();
   const [detail, setDetail] = useState<CashAudit | null>(null);
-  const [contadorAbierto, setContadorAbierto] = useState(false);
   const [kpisAbiertos, setKpisAbiertos] = useLocalStorage<boolean>("ventas-caja:arqueo:kpis-abiertos", false);
   const kpisId = useId();
 
@@ -94,36 +106,31 @@ export default function CashAuditTab({ onIrACaja, cabecera }: Props) {
         </div>
       )}
 
-      <DesdeTurno />
+      <div {...panel} className="space-y-4">
+        {error ? (
+          <div role="alert" className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--data-error-500)]/30 bg-[var(--data-error-50)] py-1 pl-4 pr-1 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]">
+            <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden /> {error}
+            <button type="button" onClick={reload} className="ml-auto min-h-12 rounded-xl px-3 font-bold underline">Reintentar</button>
+          </div>
+        ) : loading && audits.length === 0 ? (
+          <div className="flex justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-8" role="status" aria-label="Cargando cuadres">
+            <LoadingSpinner size={32} />
+          </div>
+        ) : (
+          <>
+            <KpisCuadre resumen={resumen} abierto={kpisAbiertos} id={kpisId} />
+            <TablaCuadres audits={audits} onVer={setDetail} onIrACaja={onIrACaja} tolerancia={tolerancia} />
+          </>
+        )}
+      </div>
 
-      <ContadorEfectivo
-        expectedAmount={openExpectedAmount}
-        registerId={openRegister?.id ?? null}
-        abiertaDesde={openRegister?.openedAt ?? null}
-        ultimoConteo={openAudit?.conteos[0] ?? null}
-        abierto={contadorAbierto}
-        onAlternar={() => setContadorAbierto((v) => !v)}
-        onSaved={reload}
-        onIrACaja={onIrACaja}
-      />
-
-      {error ? (
-        <div role="alert" className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--data-error-500)]/30 bg-[var(--data-error-50)] py-1 pl-4 pr-1 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]">
-          <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden /> {error}
-          <button type="button" onClick={reload} className="ml-auto min-h-12 rounded-xl px-3 font-bold underline">Reintentar</button>
-        </div>
-      ) : loading && audits.length === 0 ? (
-        <div className="flex justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-8" role="status" aria-label="Cargando cuadres">
-          <LoadingSpinner size={32} />
-        </div>
-      ) : (
-        <>
-          <KpisCuadre resumen={resumen} abierto={kpisAbiertos} id={kpisId} />
-          <TablaCuadres audits={audits} onVer={setDetail} onIrACaja={onIrACaja} />
-        </>
+      {detail && (
+        <DetalleCuadre
+          detail={detail}
+          onClose={() => setDetail(null)}
+          onVerParte={onVerParte ? () => { const id = detail.id; setDetail(null); onVerParte(id); } : undefined}
+        />
       )}
-
-      {detail && <DetalleCuadre detail={detail} onClose={() => setDetail(null)} />}
     </div>
   );
 }

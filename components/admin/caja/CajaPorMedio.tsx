@@ -1,23 +1,25 @@
 "use client";
 
 /**
- * Ventas por medio de pago (mejora 6), la conciliación Yape/Plin y las ventas
- * por hora, en UN bloque plegable y recordado: es detalle, no lo primero que
- * se mira. Plegado sigue diciendo el reparto en una línea.
+ * Caja › Hoy › Medios de pago: las ventas de la caja abierta por medio de
+ * pago (mejora 6), el cruce Yape/Plin con la app y las ventas por hora.
+ * Hasta el 10-10 era un bloque plegable al fondo de «Hoy»; ahora es su propia
+ * sección y se ve entera.
  */
 import { CardTitle } from "@buleje/design-system";
-import { Banknote, ChevronDown, CreditCard, Smartphone } from "@buleje/design-system/icons";
-import { useLocalStorage } from "@/hooks/use-local-storage";
-import { cn } from "@/lib/utils";
+import { Banknote, CreditCard, Smartphone } from "@buleje/design-system/icons";
 import { ConciliacionYapePlin } from "./ConciliacionYapePlin";
 import { fmt, type StatsCaja } from "./tipos";
 
 const ICONO: Record<string, typeof Banknote> = { efectivo: Banknote, yape: Smartphone, plin: Smartphone, tarjeta: CreditCard };
 
+const MARCO = "rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]";
+
 export function CajaPorMedio({ breakdown, stats }: { breakdown: Record<string, number>; stats: StatsCaja | null }) {
-  const [abierto, setAbierto] = useLocalStorage<boolean>("caja:por-medio-abierto", false);
   const entradas = Object.entries(breakdown);
-  if (entradas.length === 0) return null;
+  if (entradas.length === 0) {
+    return <p className={`${MARCO} p-6 text-center text-sm font-semibold text-[var(--text-secondary)]`}>Todavía no hay ventas en esta caja.</p>;
+  }
   const total = entradas.reduce((s, [, v]) => s + v, 0);
 
   const horas = stats?.hourlyData ?? [];
@@ -28,67 +30,42 @@ export function CajaPorMedio({ breakdown, stats }: { breakdown: Record<string, n
   const maxH = Math.max(...horas, 1);
 
   return (
-    <section className="bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)]">
-      <div className="flex flex-wrap items-center gap-2 px-4 sm:px-5 py-3">
-        <button
-          type="button"
-          onClick={() => setAbierto(!abierto)}
-          aria-expanded={abierto}
-          aria-controls="caja-por-medio-panel"
-          aria-label={abierto ? "Plegar ventas por medio de pago" : "Ver ventas por medio de pago"}
-          className="h-9 w-9 inline-flex items-center justify-center rounded-lg hover:bg-[var(--surface-sunken)] transition-colors"
-        >
-          <ChevronDown className={cn("h-4 w-4 text-[var(--text-secondary)] transition-transform", abierto && "rotate-180")} aria-hidden />
-        </button>
-        <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Ventas por medio de pago</CardTitle>
-        {!abierto && (
-          <span className="min-w-0 flex-1 truncate text-sm text-[var(--text-secondary)] tabular-nums">
-            {entradas.map(([m, v], i) => (
-              <span key={m}>
-                {i > 0 && " · "}
-                <span className="capitalize">{m}</span> <span className="font-bold text-[var(--text-primary)]">{fmt(v)}</span>
-              </span>
-            ))}
-          </span>
-        )}
-      </div>
-      <div id="caja-por-medio-panel" hidden={!abierto} className="space-y-4 px-4 sm:px-5 pb-5">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {entradas.map(([m, v]) => {
-            const pct = total > 0 ? (v / total) * 100 : 0;
-            const Icono = ICONO[m] ?? Banknote;
-            return (
-              <div key={m} className="rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <Icono className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden />
-                  <span className="text-xs font-bold capitalize text-[var(--text-secondary)]">{m}</span>
-                  <span className="ml-auto text-xs text-[var(--text-tertiary)]">{pct.toFixed(0)}%</span>
-                </div>
-                <p className="text-lg font-extrabold font-mono text-[var(--text-primary)]">{fmt(v)}</p>
-                <div className="mt-1.5 h-1.5 bg-[var(--rule-soft)] rounded-full overflow-hidden">
-                  <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${pct}%` }} />
-                </div>
+    <div className="space-y-4">
+      <section aria-label="Ventas por medio de pago" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {entradas.map(([m, v]) => {
+          const pct = total > 0 ? (v / total) * 100 : 0;
+          const Icono = ICONO[m] ?? Banknote;
+          return (
+            <div key={m} className={`${MARCO} p-3`}>
+              <div className="mb-1 flex items-center gap-2">
+                <Icono className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden />
+                <span className="text-sm font-semibold capitalize text-[var(--text-secondary)]">{m}</span>
+                <span className="ml-auto text-sm tabular-nums text-[var(--text-secondary)]">{pct.toFixed(0)}%</span>
               </div>
-            );
-          })}
-        </div>
-        <div className="grid gap-4 lg:grid-cols-2">
-          {entradas.some(([k]) => k === "yape" || k === "plin") && <ConciliacionYapePlin breakdown={breakdown} />}
-          {franja.length > 0 && (
-            <div className="rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-4">
-              <p className="text-xs font-bold text-[var(--text-tertiary)] mb-2">Ventas por hora</p>
-              <div className="flex items-end gap-1 h-16">
-                {franja.map((h) => (
-                  <div key={h.hour} className="flex-1 flex flex-col items-center gap-0.5">
-                    <div className="w-full bg-primary/80 rounded-t transition-all min-h-[2px]" style={{ height: `${(h.value / maxH) * 48}px` }} title={`${h.hour}:00 — ${fmt(h.value)}`} />
-                    <span className="text-xs text-[var(--text-tertiary)]">{h.hour}h</span>
-                  </div>
-                ))}
+              <p className="font-mono text-lg font-extrabold text-[var(--text-primary)]">{fmt(v)}</p>
+              <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[var(--rule-soft)]">
+                <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
               </div>
             </div>
-          )}
-        </div>
+          );
+        })}
+      </section>
+      <div className="grid gap-4 lg:grid-cols-2">
+        {entradas.some(([k]) => k === "yape" || k === "plin") && <ConciliacionYapePlin breakdown={breakdown} />}
+        {franja.length > 0 && (
+          <section className={`${MARCO} p-4`}>
+            <CardTitle className="mb-2 text-sm font-bold text-[var(--text-primary)]">Ventas por hora</CardTitle>
+            <div className="flex h-20 items-end gap-1">
+              {franja.map((h) => (
+                <div key={h.hour} className="flex flex-1 flex-col items-center gap-0.5">
+                  <div className="min-h-[2px] w-full rounded-t bg-primary/80 transition-all" style={{ height: `${(h.value / maxH) * 56}px` }} title={`${h.hour}:00 — ${fmt(h.value)}`} />
+                  <span className="text-sm text-[var(--text-secondary)]">{h.hour}h</span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
-    </section>
+    </div>
   );
 }
