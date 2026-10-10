@@ -86,6 +86,17 @@ Producción tiene 78; la rama, 91 (13 nuevos). Todos diarios. Lima = UTC − 5.
 
 **Cambia de comportamiento**: `auto-close-register` (23:00 UTC = 18:00 Lima) antes miraba sólo `main`; ahora recorre todos los tenants. Cajas abiertas hoy: **Blas desde el 11-06 (108 días)**, QA desde el 04-09 y `demo` desde el 06-09. La primera noche las cierra tomando lo esperado como contado.
 
+### En pausa desde el 09-10 (decisión de Brandon: «proteger a Blas»)
+
+Dos crons salieron de `vercel.json` → `crons`. El código de sus rutas sigue igual, solo dejan de correr solos. Para volver a prenderlos, se repone su entrada:
+
+| Cron | Entrada para reponer | Por qué está en pausa (medido el 09-10) |
+|---|---|---|
+| `documentos-papelera` | `{ "path": "/api/cron/documentos-papelera", "schedule": "20 9 * * *" }` | En su primera corrida borraba para siempre (base + storage) 310 documentos de Blas y 33 de `main` que llevan más de 30 días en la papelera |
+| `auto-close-register` | `{ "path": "/api/cron/auto-close-register", "schedule": "0 23 * * *" }` | Cerraba sin conteo la caja real de Blas, abierta desde el 11-06. Deja de cerrar también la de `main`, que en julio sí cerraba sola |
+
+Antes de reponerlos: que Blas revise su papelera (restaurar lo que sirva) y que se cuente y cierre a mano la caja del 11-06.
+
 ## 5. Riesgos
 
 | Riesgo | Medido | Mitigación |
