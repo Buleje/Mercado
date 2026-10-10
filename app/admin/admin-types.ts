@@ -1,3 +1,12 @@
+/**
+ * ARCHIVO MUERTO: NO EDITAR (2026-10-09, plan «panel unificado» §6.3).
+ *
+ * Nadie lo importa: es una copia vieja de `Tab`, `VALID_TABS` y
+ * `TAB_MIGRATION`. Editarlo no cambia nada del panel. Los vivos son
+ * `app/admin/_lib/tabs.types.ts` (pestañas), `app/admin/_lib/tab-migration.ts`
+ * (alias) y `lib/admin/destino-tab.ts` (adónde lleva cada id, ADR-490).
+ * Borrarlo lo decide Brandon.
+ */
 import type { OrderStatus } from "@/lib/jsondb";
 import type React from "react";
 import {

@@ -1,8 +1,21 @@
+import type { DestinoTab } from "@/lib/admin/destino-tab";
 import type { Tab } from "./tabs.types";
 
-// Old tab IDs → consolidated module IDs for localStorage migration
-// Maps all legacy tab IDs from previous 14-module and 28-module layouts to new 8-module layout
-export const TAB_MIGRATION: Record<string, Tab> = {
+/**
+ * Alias de pestañas: id viejo → su casa de hoy (ADR-490, plan «panel unificado» R3).
+ *
+ * NINGÚN id se retira: hay avisos guardados en la base con `/admin?tab=<id>`,
+ * links de WhatsApp ya enviados y favoritos en cada navegador. El valor es:
+ *  - un `Tab` → nombre nuevo del MISMO módulo: la `?vista=` del link viaja;
+ *  - un `DestinoTab` `{ tab, vista, sub }` → el contenido se mudó a la vista de
+ *    otra pestaña: SU vista gana (la del link era del módulo viejo).
+ * Un alias puede apuntar a otro alias (se sigue la cadena); un ciclo o un
+ * destino que el panel no sabe abrir lo frena `__tests__/destino-tab.test.ts`.
+ *
+ * NO leer este mapa directo: `resolverDestino` (`lib/admin/destino-tab.ts`)
+ * aplica el orden único (par con vista → alias → cadena → pestaña conocida).
+ */
+export const TAB_MIGRATION: Record<string, Tab | DestinoTab> = {
   // Alias NATURALES — lo que una persona escribe o lo que un link viejo trae.
   // Sin estos, `?tab=inicio` no resolvía y el panel caía en silencio al último
   // tab guardado en localStorage: un link a "Inicio" te abría Inventario.
@@ -14,6 +27,14 @@ export const TAB_MIGRATION: Record<string, Tab> = {
   // Los avisos «Adelantos vencidos por cobrar» anteriores al 09-10 traen
   // `?tab=cobranza`, que nunca existió: sin esto abrían Inicio.
   cobranza: "adelantos",
+  // El cron de predicción (`app/api/cron/demand-forecast`) escribe «Ver
+  // predicciones» con `?tab=demand-prediction`, que nunca fue pestaña: 30
+  // avisos guardados caían en Inicio (medido 09-10). Si `forecasting` pasa a
+  // ser una vista de Inicio, éste la sigue solo.
+  "demand-prediction": "forecasting",
+  // El correo de límite del plan (`lib/billing/alerts/templates.ts`) manda a
+  // `?tab=subscription` para mejorar el plan; la pestaña del plan es `plan`.
+  subscription: "plan",
   // → Asistente IA (absorbe dashboard, agentes, changelog)
   dashboard: "asistente-ia", "dashboard-ejecutivo": "asistente-ia", "panel-principal": "asistente-ia",
   agentes: "asistente-ia", changelog: "asistente-ia",
@@ -28,6 +49,9 @@ export const TAB_MIGRATION: Record<string, Tab> = {
   "inventario-almacenes": "inventario", ubicaciones: "inventario", transferencias: "inventario",
   "auto-reorden": "inventario", "reorden-dinamico": "inventario",
   prediccion: "inventario", reposicion: "inventario",
+  // Formato viejo `/admin?module=inventario&tab=stock`: lo mandan por push los
+  // crones de stock bajo y de productos sin ventas. Caía en Inicio (09-10).
+  stock: { tab: "inventario", vista: "stock" },
   // → Productos & Precios
   "categorias-editor": "productos", "combos-editor": "productos", combos: "productos",
   kits: "productos", "catalogo-tienda": "productos",
@@ -99,6 +123,12 @@ export const TAB_MIGRATION: Record<string, Tab> = {
   "marketplace-productos": "marketplace",
   "marketplace-ordenes": "marketplace",
   "marketplace-comisiones": "marketplace",
+  // Formato viejo `/admin?module=marketplace&tab=ordenes`: el aviso «Nuevo
+  // pedido marketplace» (app/api/marketplace/orders y el webhook de Mercado
+  // Pago). 60 guardados en 5 negocios caían en Inicio (09-10). Sin vista a
+  // propósito: Marketplace elige su sección con estado local; cuando lea
+  // `?vista=` (ola 4) este alias y los `marketplace-*` llevan la suya.
+  ordenes: "marketplace",
   delivery: "delivery-partners",
   "delivery-partners": "delivery-partners",
   repartidores: "delivery-partners",
@@ -118,3 +148,11 @@ export const TAB_MIGRATION: Record<string, Tab> = {
   "recursos-humanos": "rrhh", personal: "rrhh", asistencia: "rrhh", asistencias: "rrhh",
   colaboradores: "rrhh", trabajadores: "rrhh", empleados: "rrhh", planilla: "rrhh",
 };
+
+/**
+ * Vistas que se mudaron: `"<tab>:<vista>"` viejo → destino (notación `vieneDe`
+ * del plan, §2.2). Gana sobre `TAB_MIGRATION`: un link `?tab=X&vista=Y` va al
+ * destino exacto de esa vista aunque `X` tenga su propio alias. La llenan los
+ * integradores de cada ola (pedido `vistaMigracion` en `SP/panel/registro`).
+ */
+export const VISTA_MIGRATION: Record<string, DestinoTab> = {};

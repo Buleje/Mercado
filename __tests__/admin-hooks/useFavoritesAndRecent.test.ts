@@ -103,4 +103,20 @@ describe("useFavoritesAndRecent", () => {
     const saved = JSON.parse(localStorageMock.getItem("admin_recent_tabs") || "[]");
     expect(saved).toContain("turnos");
   });
+
+  it("un favorito guardado con un id viejo carga como la pestaña de hoy y se puede quitar", () => {
+    // demand-prediction dejó de ser pestaña: es alias de forecasting (ADR-490).
+    localStorageMock.setItem("admin_fav_tabs", JSON.stringify(["demand-prediction", "pedidos"]));
+    const { result } = renderHook(() => useFavoritesAndRecent());
+    expect([...result.current.favoriteTabs].sort()).toEqual(["forecasting", "pedidos"]);
+    act(() => result.current.toggleFavorite("forecasting" as never));
+    expect([...result.current.favoriteTabs]).toEqual(["pedidos"]);
+    expect(JSON.parse(localStorageMock.getItem("admin_fav_tabs") || "[]")).toEqual(["pedidos"]);
+  });
+
+  it("un id que no lleva a ninguna pestaña se descarta al cargar", () => {
+    localStorageMock.setItem("admin_recent_tabs", JSON.stringify(["zzz-no-existe", "clientes"]));
+    const { result } = renderHook(() => useFavoritesAndRecent());
+    expect(result.current.recentTabs).toEqual(["clientes"]);
+  });
 });

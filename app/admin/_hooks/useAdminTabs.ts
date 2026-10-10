@@ -19,8 +19,13 @@
  *  3. localStorage `admin_active_tab`
  *  4. Default `"vendor-dashboard"`
  *
- * En todos los casos pasa por `TAB_MIGRATION` (legacy → nuevo id) y por
- * `VALID_TABS` (whitelist de tabs visibles desde sidebar).
+ * En todos los casos pasa por `resolverDestino` (ADR-490,
+ * `lib/admin/destino-tab.ts`): par con vista → alias → pestaña conocida, el
+ * MISMO orden para la URL, el hash, `admin_active_tab` y `navigateTab` (antes
+ * la URL migraba primero y `navigateTab` validaba primero). Un alias reescribe
+ * la URL a `?tab=<destino>&vista=<vista>` con `replaceState` y conserva el
+ * resto de los parámetros (`?lote=`, `?cliente=`…); un id que no existe avisa
+ * con `logger.warn` y cae en Inicio.
  *
  * Uso:
  * ```tsx
@@ -30,10 +35,11 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { TAB_MIGRATION } from "../_lib/tab-migration";
-import { VALID_TABS, type Tab } from "../_lib/tabs.types";
+import type { Tab } from "../_lib/tabs.types";
 import { useTabFrequency } from "./useTabFrequency";
 import { PARAMS_DE_VISTA } from "@/hooks/use-vista-modulo";
+import { destinoDeUrl, resolverDestino, urlConDestino } from "@/lib/admin/destino-tab";
+import { logger } from "@/lib/logger";
 
 export interface UseAdminTabsResult {
   tab: Tab;
@@ -45,6 +51,36 @@ export interface UseAdminTabsResult {
   topTabs: (n: number) => string[];
 }
 
+const INICIO: Tab = "vendor-dashboard";
+
+/** Un id roto en un aviso se abre muchas veces: se avisa una vez por id y por carga. */
+const yaAvisados = new Set<string>();
+function avisarDesconocido(id: string, fuente: string): void {
+  if (yaAvisados.has(id)) return;
+  yaAvisados.add(id);
+  logger.warn("[admin] pestaña que no existe: cae en Inicio", { id, fuente });
+}
+
+/**
+ * `history.state` sin lo de Next: con `__NA` adentro, el `replaceState`
+ * parcheado de Next 16 no sincroniza `useSearchParams` (memoria
+ * `historial-marca-y-navigation-api`); las marcas propias (`bsmFichaDesde`)
+ * se conservan.
+ */
+const CLAVES_DE_NEXT = new Set(["__NA", "__PRIVATE_NEXTJS_INTERNALS_TREE", "_N"]);
+function estadoPropio(): Record<string, unknown> | null {
+  const estado: unknown = window.history.state;
+  if (!estado || typeof estado !== "object") return null;
+  const propias = Object.entries(estado).filter(([clave]) => !CLAVES_DE_NEXT.has(clave));
+  return propias.length > 0 ? Object.fromEntries(propias) : null;
+}
+
+interface TabResuelto {
+  tab: Tab;
+  /** URL corregida (el pedido era un alias), o `null` si no hay que tocarla. */
+  url: string | null;
+}
+
 /**
  * El tab que dicta la URL (query o hash), o `null` si la URL no dice nada.
  *
@@ -53,35 +89,20 @@ export interface UseAdminTabsResult {
  * guardado" es justamente el módulo que se está dejando, y el atrás no hacía
  * nada visible.
  */
-function tabDesdeUrl(): Tab | null {
+function tabDesdeUrl(): TabResuelto | null {
   if (typeof window === "undefined") return null;
-
-  // 1. Query param ?tab=...
-  const urlTab = new URLSearchParams(window.location.search).get("tab");
-  if (urlTab) {
-    const migrated = TAB_MIGRATION[urlTab];
-    if (migrated) return migrated;
-    if (VALID_TABS.includes(urlTab as Tab)) return urlTab as Tab;
-    // Un ?tab explícito que no existe va a Inicio, NO al último tab guardado:
-    // caer en localStorage abría "cualquier cosa" según la sesión anterior, y
-    // el mismo link llevaba a cada persona a un lugar distinto.
-    return "vendor-dashboard";
-  }
-
-  // 2. Hash #...
-  const hash = window.location.hash.slice(1);
-  if (hash) {
-    const migrated = TAB_MIGRATION[hash];
-    if (migrated) return migrated;
-    if (VALID_TABS.includes(hash as Tab)) return hash as Tab;
-    return "vendor-dashboard";
-  }
-
-  return null;
+  const leido = destinoDeUrl(window.location.href);
+  if (!leido) return null;
+  if (leido.destino) return { tab: leido.destino.tab, url: leido.url };
+  // Un ?tab explícito que no existe va a Inicio, NO al último tab guardado:
+  // caer en localStorage abría "cualquier cosa" según la sesión anterior, y
+  // el mismo link llevaba a cada persona a un lugar distinto.
+  avisarDesconocido(leido.crudo, leido.fuente === "query" ? "?tab=" : "#");
+  return { tab: INICIO, url: null };
 }
 
-function resolveInitialTab(): Tab {
-  if (typeof window === "undefined") return "vendor-dashboard";
+function resolveInitialTab(): TabResuelto {
+  if (typeof window === "undefined") return { tab: INICIO, url: null };
 
   const deLaUrl = tabDesdeUrl();
   if (deLaUrl) return deLaUrl;
@@ -96,28 +117,79 @@ function resolveInitialTab(): Tab {
     try {
       const saved = localStorage.getItem("admin_active_tab");
       if (saved) {
-        const migrated = TAB_MIGRATION[saved];
-        if (migrated) return migrated;
-        if (VALID_TABS.includes(saved as Tab)) return saved as Tab;
+        const destino = resolverDestino(saved);
+        // Guardado antes de que su pestaña pasara a ser una vista: la vista
+        // tiene que llegar a la URL para que el módulo la abra.
+        if (destino) return { tab: destino.tab, url: destino.vista ? urlConDestino(window.location.href, destino, saved) : null };
+        avisarDesconocido(saved, "admin_active_tab");
       }
     } catch {
       // localStorage no disponible (modo privado, SSR, etc.)
     }
   }
 
-  return "vendor-dashboard";
+  return { tab: INICIO, url: null };
+}
+
+/**
+ * Al abrir un alias, el destino se escribe en la URL ANTES de que el módulo
+ * se dibuje (así su `useVistaModulo` lee la vista que trae el alias), y una
+ * vuelta después se reafirma: Next 16 reescribe la entrada inicial con SU url
+ * (la del alias) en el primer commit y recién después parchea `history`.
+ */
+let reafirmarAlMontar = false;
+
+function escribirAlDibujar(url: string): void {
+  try {
+    // `history.state` tal cual: durante el render, el parche de Next no debe
+    // despachar nada (con `__NA` adentro lo deja pasar sin tocar su router).
+    window.history.replaceState(window.history.state, "", url);
+    reafirmarAlMontar = true;
+  } catch {
+    // history no disponible — el tab igual se abre
+  }
+}
+
+function resolverAlMontar(): Tab {
+  const inicial = resolveInitialTab();
+  if (inicial.url) escribirAlDibujar(inicial.url);
+  return inicial.tab;
 }
 
 export function useAdminTabs(addRecent: (id: Tab) => void): UseAdminTabsResult {
-  const [tab, setTab] = useState<Tab>(resolveInitialTab);
+  const [tab, setTab] = useState<Tab>(resolverAlMontar);
   const { trackTab, getTopTabs } = useTabFrequency();
 
+  useEffect(() => {
+    if (!reafirmarAlMontar) return;
+    const t = window.setTimeout(() => {
+      reafirmarAlMontar = false;
+      try {
+        // `replaceState` con estado propio: ya con el parche de Next puesto,
+        // sincroniza `useSearchParams` con la URL corregida.
+        window.history.replaceState(estadoPropio(), "", destinoDeUrl(window.location.href)?.url ?? window.location.href);
+      } catch {
+        // history no disponible
+      }
+    }, 0);
+    return () => window.clearTimeout(t);
+  }, []);
+
   const navigateTab = useCallback(
-    (pedido: Tab, vista?: string, sub?: string) => {
+    (pedido: Tab, vistaPedida?: string, subPedido?: string) => {
       // El mismo alias que resuelve la URL al cargar (`inicio` → Inicio). Sin
       // esto, navegar a un id viejo dejaba el panel en blanco: el router no
-      // tiene rama para él (08-10, candado de `a-medida` → «inicio»).
-      const id: Tab = VALID_TABS.includes(pedido) ? pedido : (TAB_MIGRATION[pedido] ?? pedido);
+      // tiene rama para él (08-10, candado de `a-medida` → «inicio»). Un id que
+      // no existe ya no deja el panel en blanco: avisa y va a Inicio.
+      let destino = resolverDestino(pedido, vistaPedida);
+      if (!destino) {
+        avisarDesconocido(pedido, "navigateTab");
+        destino = { tab: INICIO };
+      }
+      const id = destino.tab;
+      const vista = destino.vista;
+      // El `sub` pedido es de la vista pedida: si el alias cambió la vista, no aplica.
+      const sub = vista === (vistaPedida || undefined) ? (destino.sub ?? subPedido) : destino.sub;
       setTab(id);
       try {
         localStorage.setItem("admin_active_tab", id);
@@ -127,7 +199,9 @@ export function useAdminTabs(addRecent: (id: Tab) => void): UseAdminTabsResult {
       // Persiste en URL hash + search param para deep-linking y reload.
       try {
         const url = new URL(window.location.href);
-        const tabActual = url.searchParams.get("tab");
+        const enUrl = url.searchParams.get("tab");
+        // Comparar módulos, no ids: `?tab=inicio` YA es Inicio.
+        const tabActual = enUrl ? (resolverDestino(enUrl)?.tab ?? enUrl) : null;
         url.searchParams.set("tab", id);
         // La sub-vista pertenece al módulo que se está dejando: si viaja, el
         // módulo nuevo recibe un `?vista=` que no es suyo (ver useVistaModulo).
@@ -177,7 +251,19 @@ export function useAdminTabs(addRecent: (id: Tab) => void): UseAdminTabsResult {
    * (Inicio) reabría justo el módulo del que venías. El historial manda.
    */
   useEffect(() => {
-    const onPop = () => setTab(tabDesdeUrl() ?? "vendor-dashboard");
+    const onPop = () => {
+      const deLaUrl = tabDesdeUrl();
+      // `irAEnlace` escribe el `?tab=` del enlace tal cual: si era un alias,
+      // la entrada queda con el id de hoy y su vista.
+      if (deLaUrl?.url) {
+        try {
+          window.history.replaceState(estadoPropio(), "", deLaUrl.url);
+        } catch {
+          // history no disponible
+        }
+      }
+      setTab(deLaUrl?.tab ?? INICIO);
+    };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);

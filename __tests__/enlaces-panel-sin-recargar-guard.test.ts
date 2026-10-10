@@ -14,10 +14,18 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { TAB_MIGRATION } from "@/app/admin/_lib/tab-migration";
+import { resolverDestino } from "@/lib/admin/destino-tab";
 
 const ROOT = path.resolve(__dirname, "..");
 const DIRS = ["components/admin", "app/admin/_components"];
+/* Los avisos, correos y respuestas de la IA arman sus enlaces en el servidor:
+   `?tab=demand-prediction` (cron de predicción) y `?tab=subscription` (correo
+   del plan) caían en Inicio y nadie lo veía (09-10). */
+const DIRS_CON_ENLACES = [...DIRS, "app/api", "lib"];
+/* `tab` en cualquier lugar de la query, no sólo primero: el formato viejo
+   `/admin?module=marketplace&tab=ordenes` (60 avisos de pedidos guardados) y
+   `?module=inventario&tab=stock` (push de stock) se le escapaban (09-10). */
+const TAB_EN_ENLACE = /\/admin\/?\?(?:[^"'`\s#]*?&)?tab=([a-z0-9-]+)/g;
 
 /** Excepciones a propósito, con su razón. */
 const PERMITIDOS: Record<string, string> = {
@@ -66,16 +74,20 @@ describe("enlaces del panel sin recargar", () => {
   /* 09-10: «Ver detalles» del aviso de IA mandaba a `?tab=settings`, que no
      existe. Con `<Link>` la recarga caía en el módulo por defecto; con
      `irAEnlace` el panel queda EN BLANCO (navigateTab no tiene rama para él). */
-  it("cada /admin?tab=<id> escrito a mano tiene módulo (TabRouter o alias de TAB_MIGRATION)", () => {
+  it("cada tab=<id> de un /admin?… escrito a mano (panel, API y lib) lleva a una rama de TabRouter", () => {
     const router = fs.readFileSync(path.join(ROOT, "app/admin/_components/TabRouter.tsx"), "utf8");
     const conRama = new Set([...router.matchAll(/tab === "([a-z0-9-]+)"/g)].map((m) => m[1]));
-    const existe = (id: string) => conRama.has(id) || id in TAB_MIGRATION;
+    // El mismo camino que el panel (ADR-490): alias → pestaña de hoy → su rama.
+    const existe = (id: string) => {
+      const destino = resolverDestino(id);
+      return destino !== null && conRama.has(destino.tab);
+    };
     const hallazgos: string[] = [];
-    for (const dir of DIRS) {
+    for (const dir of DIRS_CON_ENLACES) {
       for (const abs of archivos(path.join(ROOT, dir))) {
         const rel = path.relative(ROOT, abs).split(path.sep).join("/");
         const texto = fs.readFileSync(abs, "utf8");
-        for (const m of texto.matchAll(/\/admin\?tab=([a-z0-9-]+)/g)) {
+        for (const m of texto.matchAll(TAB_EN_ENLACE)) {
           if (!existe(m[1])) hallazgos.push(`${rel}:${linea(texto, m.index ?? 0)} → ?tab=${m[1]} no es un módulo`);
         }
       }

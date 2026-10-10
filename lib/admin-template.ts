@@ -37,7 +37,7 @@ export type AdminPlan = "basico" | "pro" | "enterprise" | "max";
 export type ModuleScope = "tienda" | "marketplace" | "mixto" | "sistema";
 
 export interface AdminModuleEntry {
-  /** Tab id (debe coincidir con `Tab` en `app/admin/admin-types.ts`). */
+  /** Tab id (debe coincidir con `Tab` en `app/admin/_lib/tabs.types.ts`; un id viejo es alias en `tab-migration.ts`). */
   id: string;
   /** Etiqueta default (puede sobreescribirse por el superadmin). */
   defaultLabel: string;
@@ -61,7 +61,8 @@ export interface AdminModuleEntry {
  * Catálogo COMPLETO de módulos del panel admin que el superadmin puede
  * configurar. Cada entrada se proyecta a una fila editable en la UI.
  *
- * Mantener sincronizado con `VALID_TABS` de `app/admin/admin-types.ts`.
+ * Mantener sincronizado con `VALID_TABS` de `app/admin/_lib/tabs.types.ts`
+ * (`app/admin/admin-types.ts` es una copia muerta: no la mira nadie).
  */
 export const ADMIN_MODULE_CATALOG: AdminModuleEntry[] = [
   // ── Free (basico) — solo lo basico para arrancar ─────────────────
