@@ -31,6 +31,7 @@ import { manifiesto as gtfHojaDeControl } from "./gtf-hoja-de-control/manifest";
 // Una por negocio (ADR-458). Las escribe `npm run pagina-propia -- crear <id> "<nombre>"`.
 // Acá sólo el manifiesto: la página se carga con `import()` en la lista (ver `EntradaServidor.pagina`).
 import { manifiesto as paginaBodegaBulejeTest } from "./pagina-bodega-buleje-test/manifest";
+import { manifiesto as paginaMusa } from "./pagina-musa/manifest";
 
 export const PIEZAS_SERVIDOR: readonly EntradaServidor[] = [
   // ── piezas de la tienda ──
@@ -46,4 +47,5 @@ export const PIEZAS_SERVIDOR: readonly EntradaServidor[] = [
 
   // ── páginas propias ──
   piezaServidor(paginaBodegaBulejeTest, { pagina: () => import("./pagina-bodega-buleje-test/servidor").then((m) => m.pagina) }),
+  piezaServidor(paginaMusa, { pagina: () => import("./pagina-musa/servidor").then((m) => m.pagina) }),
 ];

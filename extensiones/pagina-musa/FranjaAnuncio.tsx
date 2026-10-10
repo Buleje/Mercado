@@ -1,0 +1,64 @@
+"use client";
+
+/**
+ * Franja de anuncios de arriba. Desde 1024 px se ven todos juntos; más angosto
+ * rotan cada 5 s con un botón de pausa (WCAG 2.2.2) y se quedan quietos
+ * si la persona pidió menos movimiento. En el celular el texto baja de línea
+ * en vez de cortarse con «…»: todos los mensajes ocupan la MISMA celda de la
+ * grilla, así la franja mide lo del más largo y no salta al rotar.
+ */
+import { useEffect, useState } from "react";
+import { Pause, Play, Sparkles } from "@buleje/design-system/icons";
+
+export function FranjaAnuncio({ mensajes }: { mensajes: string[] }) {
+  const [actual, setActual] = useState(0);
+  const [pausa, setPausa] = useState(false);
+
+  useEffect(() => {
+    if (pausa || mensajes.length < 2) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const t = setInterval(() => setActual((i) => (i + 1) % mensajes.length), 5000);
+    return () => clearInterval(t);
+  }, [pausa, mensajes.length]);
+
+  if (mensajes.length === 0) return null;
+
+  return (
+    <div className="bg-[var(--mu-cacao)] text-[var(--mu-sobre-cacao)]" aria-label="Anuncios de la tienda" role="region">
+      <div className="mx-auto flex min-h-10 max-w-[1280px] items-center justify-center gap-3 px-4 py-1 text-sm font-medium tracking-wide sm:px-6 lg:h-10 lg:py-0 lg:px-8">
+        <ul className="hidden items-center gap-6 lg:flex">
+          {mensajes.map((m, i) => (
+            <li key={m} className="flex items-center gap-6">
+              {i > 0 && <span aria-hidden="true" className="h-1 w-1 rounded-full bg-[var(--mu-acento)]" />}
+              <span>{m}</span>
+            </li>
+          ))}
+        </ul>
+        <div className="flex min-w-0 flex-1 items-center justify-center gap-2 lg:hidden">
+          <Sparkles className="h-4 w-4 shrink-0 text-[var(--mu-acento)]" aria-hidden="true" />
+          <p className="grid min-w-0 text-center">
+            {mensajes.map((m, i) => (
+              <span
+                key={m}
+                aria-hidden={i !== actual}
+                className={`col-start-1 row-start-1 self-center text-balance leading-snug transition-opacity duration-500 ${i === actual ? "opacity-100" : "opacity-0"}`}
+              >
+                {m}
+              </span>
+            ))}
+          </p>
+        </div>
+        {mensajes.length > 1 && (
+          <button
+            type="button"
+            onClick={() => setPausa((p) => !p)}
+            aria-label={pausa ? "Seguir rotando los anuncios" : "Pausar los anuncios"}
+            className="-mr-2 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[var(--mu-sobre-cacao)] lg:hidden"
+          >
+            {pausa ? <Play className="h-4 w-4" aria-hidden="true" /> : <Pause className="h-4 w-4" aria-hidden="true" />}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
