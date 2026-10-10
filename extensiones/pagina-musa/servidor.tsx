@@ -1,9 +1,10 @@
 /**
- * «Buleje Beauty» — la página propia de este negocio (enchufe `tienda.pagina`, ADR-458).
+ * «Musa» — la página propia de este negocio (enchufe `tienda.pagina`, ADR-458).
  *
- * Un salón de belleza y cosmética capilar: anuncios, portada en carrusel,
- * novedades, promos, favoritos, líneas propias, servicios reservables por
- * WhatsApp y el carrito de la tienda. Qué es cada archivo: LEEME.md.
+ * Belleza profesional en Ciudad Constitución, hecha como su catálogo impreso
+ * (Campaña 01): héroe comprable, «Hola, linda» + «¿Qué quieres mejorar?»,
+ * kits con su ahorro real, la bolsa con contador y el pedido por WhatsApp.
+ * Colores, letras y tiempos: `tema.ts`. Qué es cada archivo: LEEME.md.
  *
  * `Pagina` devuelve AL INSTANTE (no espera datos): así el tope de 2 s del
  * enchufe nunca salta por una base lenta. Los datos se leen adentro, en

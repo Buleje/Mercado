@@ -26,11 +26,17 @@ export const BUSQUEDAS_SUGERIDAS = ["Shampoo sin sal", "Vitamina C", "FPS 50", "
 /** Musa no tiene servicios en la tienda: la categoría queda por compatibilidad (sin productos, no sale nada). */
 export const CATEGORIA_SERVICIOS = "Servicios";
 
+/**
+ * La franja de arriba: rota de a uno (el S/ 99 es la regla de envío, no un precio).
+ * Cada mensaje cabe en UNA línea a 400 px (≤ 48 letras): la franja mide lo del más
+ * largo, y uno de 50 la subía a dos líneas en el celular.
+ */
 export const FRANJA = [
   "Envío gratis en Ciudad Constitución",
-  "Asesoría gratis con Drucila por WhatsApp: 921 585 006",
-  "Diagnóstico gratis los sábados",
-  "Hasta {descuento} % de descuento en productos seleccionados",
+  "Fuera de Constitución, envío gratis desde S/ 99",
+  "Asesoría gratis por WhatsApp: 921 585 006",
+  "Diagnóstico gratis de piel y cabello los sábados",
+  "Productos con hasta {descuento} % de descuento",
 ];
 
 const u = (id: string, w: number) => `https://images.unsplash.com/photo-${id}?w=${w}&q=70&auto=format&fit=crop`;
@@ -38,6 +44,8 @@ const u = (id: string, w: number) => `https://images.unsplash.com/photo-${id}?w=
 export interface Diapositiva {
   kicker: string;
   titulo: string;
+  /** La línea script (Great Vibes, ≤3 palabras) encimada bajo el titular, como «esta Navidad» en la tapa del catálogo. */
+  script?: string;
   texto: string;
   cta: { texto: string; destino: Destino };
   cta2?: { texto: string; destino: Destino };
@@ -54,10 +62,16 @@ export type Destino =
   | { ancla: "servicios" | "ofertas" | "mejorar" }
   | { whatsapp: string };
 
+/**
+ * El héroe de la portada: UNO solo, comprable (contrato §e), como la tapa del
+ * catálogo de la Campaña 01. Sin precios escritos: «Kits desde S/ X» sale de
+ * la base. La asesoría (antes 2.ª diapositiva) pasó a «Hola, linda» (`CARTA`).
+ */
 export const PORTADA: Diapositiva[] = [
   {
-    kicker: "Campaña Navidad · Kits desde S/ 125",
+    kicker: "Campaña 01 · Nov–Dic 2026",
     titulo: "Regala belleza profesional",
+    script: "esta Navidad",
     texto: "Cuidado profesional para tu cabello, rostro y piel, con asesoría de verdad y entrega en tu puerta.",
     cta: { texto: "Ver kits de regalo", destino: { categoria: "Kits y ofertas" } },
     cta2: { texto: "¿Qué quieres mejorar?", destino: { ancla: "mejorar" } },
@@ -66,29 +80,39 @@ export const PORTADA: Diapositiva[] = [
     enfoque: "50% 35%",
     tono: "tinta",
   },
-  {
-    kicker: "Asesoría gratis",
-    titulo: "Te recomiendo solo lo que te sirve",
-    texto: "Escríbele a Drucila por WhatsApp: te pregunta por tu piel o tu cabello y te arma la rutina a tu medida.",
-    cta: { texto: "Escribir a Drucila", destino: { whatsapp: "Hola Drucila, quiero asesoría para elegir mis productos." } },
-    cta2: { texto: "Ver rostro", destino: { categoria: "Rostro" } },
-    foto: u("1617897903246-719242758050", 1400),
-    alt: "Frasco gotero de sérum junto a una rama verde",
-    enfoque: "50% 50%",
-    tono: "rubor",
-  },
-  {
-    kicker: "Cabello de salón en casa",
-    titulo: "Hecho para el sol y la humedad de la selva",
-    texto: "Shampoo sin sal, mascarilla y aceite de argán que ayudan a tu cabello a verse suave, con brillo y sin frizz.",
-    cta: { texto: "Ver cabello", destino: { categoria: "Cabello" } },
-    cta2: { texto: "Ver ofertas", destino: { ancla: "ofertas" } },
-    foto: u("1522337360788-8b13dee7a37e", 1400),
-    alt: "Mujer de espaldas con cabello largo castaño y brillante",
-    enfoque: "50% 30%",
-    tono: "salvia",
-  },
 ];
+
+/** «Hola, linda»: la carta de Drucila de la página 2 del catálogo (firma en script, como lo impreso). */
+export const CARTA = {
+  saludo: "Hola, linda",
+  parrafos: [
+    "Soy Drucila, tu asesora de belleza. Elegí cada producto de esta tienda pensando en el clima de nuestra selva: el sol fuerte, la humedad que esponja el cabello y la piel que necesita hidratación.",
+    "Antes de comprar, escríbeme: te pregunto por tu piel o tu cabello y te recomiendo solo lo que te sirve. Y a los 15 días te escribo para ver cómo vas.",
+  ],
+  firma: "Drucila",
+  cargo: "Tu asesora Musa",
+  boton: "Escribir a Drucila",
+  mensaje: "Hola Drucila, quiero asesoría para elegir mis productos.",
+} as const;
+
+/** Atención (manual §10): lo repiten el pie y la carta. */
+export const CONTACTO = {
+  telefono: "921 585 006",
+  horario: "Lunes a sábado, de 9:00 a 20:00",
+  lugar: "Ciudad Constitución, Pasco",
+  fueraDeHorario: "Fuera de horario, déjanos tu consulta y mañana temprano te respondemos.",
+} as const;
+
+/** Cómo se paga (manual): `metodo` elige el ícono de `PaymentMethodIcon` (arte propio del DS). */
+export const PAGOS = [
+  { metodo: "yape", texto: "Yape" },
+  { metodo: "plin", texto: "Plin" },
+  { metodo: "transferencia", texto: "Transferencia" },
+  { metodo: "efectivo", texto: "Contraentrega en Constitución" },
+] as const;
+
+/** La despedida del pie: script + la firma del manual. */
+export const DESPEDIDA = { script: "gracias, linda", firma: "— Drucila, tu asesora de belleza" } as const;
 
 export interface Promo {
   kicker: string;

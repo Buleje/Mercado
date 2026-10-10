@@ -1,135 +1,178 @@
 /**
- * Encabezado de Musa: barra pegajosa (sello, buscador, asesoría, cuenta y
- * bolsa) + menú de categorías. El buscador es un formulario GET al catálogo
- * (`?q=`): funciona aunque el JavaScript no haya cargado.
+ * Encabezado de Musa (contrato §e): barra pegajosa sobre hueso —sello +
+ * «Musa», buscador en píldora, asesoría, cuenta y la bolsa con su sello
+ * contador— y, desde 768 px, el menú de categorías en kicker con el filete
+ * rosa que crece desde el centro. En el celular la barra mide 56 px
+ * (menú · sello + Musa · bolsa) y el buscador baja a su propia fila, que se
+ * esconde al bajar y vuelve al subir (`EncabezadoVivo`).
  *
- * Van como DOS hermanos (no dentro de un <header> bajito) porque `sticky`
- * sólo pega dentro de su padre: el padre es la página entera.
+ * El buscador es un formulario GET al catálogo (`?q=`): funciona aunque el
+ * JavaScript no haya cargado.
  *
  * También es el encabezado del resto de la tienda (marco, ADR-460): por eso
- * «Ofertas» lleva la ruta completa de la portada
- * (`/t/<negocio>#servicios`), que en la portada misma sólo baja hasta ahí.
+ * los enlaces llevan la ruta completa de la portada (`/t/<negocio>#mejorar`).
  * Fuera de la portada el logo NO es el <h1> (`logoEsTitulo={false}`): el
  * título de la página es el suyo (p. ej. la categoría del catálogo).
  */
 import { ArrowRight, MessageCircle, Search, User } from "@buleje/design-system/icons";
-import { BotonBolsa } from "./Bolsa";
 import { CampoBuscar } from "./CampoBuscar";
 import { enlaceWhatsapp, rutas } from "./destinos";
+import { CONTACTO } from "./anuncios";
+import { BolsaEncabezado, EncabezadoVivo } from "./EncabezadoVivo";
+import { MenuMovil, type EnlaceMenu } from "./MenuMovil";
 import { WHATSAPP_MUSA } from "./pedido-whatsapp";
 import { Sello } from "./Sello";
+import { Destello } from "./ui";
 
-function Buscador({ id, catalogo }: { id: string; catalogo: string }) {
+const ASESORIA = "Hola Drucila, quiero asesoría para elegir mis productos.";
+
+function Buscador({ id, catalogo, corto = false }: { id: string; catalogo: string; corto?: boolean }) {
   return (
     <form action={catalogo} method="get" role="search" className="relative w-full">
       <label htmlFor={id} className="sr-only">
         Buscar productos
       </label>
-      <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden="true" />
-      {/* En el celular el botón es sólo la flecha (el texto del campo necesita el ancho); desde 640 px dice «Buscar». */}
+      <Search className="pointer-events-none absolute left-4 top-1/2 h-[1.125rem] w-[1.125rem] -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden="true" />
       <CampoBuscar
         id={id}
-        className="h-12 w-full rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] pl-12 pr-14 text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--text-primary)] focus:outline-none focus:ring-4 focus:ring-[var(--mu-nude)] sm:pr-28"
+        corto={corto}
+        className="h-11 w-full rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-11 pr-12 text-[0.9375rem] text-[var(--text-primary)] transition-colors duration-[var(--mu-dur-corto)] placeholder:text-[var(--text-tertiary)] hover:border-[var(--mu-nude-fuerte)] focus:border-[var(--mu-acento-tinta)] focus:outline-2 focus:outline-offset-2 focus:outline-[var(--mu-foco)]"
       />
-      {/* (`sr-only sm:not-sr-only` NO sirve acá: globals.css define `.sr-only` fuera de las capas y
-          le gana a cualquier variante; medido 08-10. Por eso el nombre va en `aria-label`.) */}
-      <button
-        type="submit"
-        aria-label="Buscar"
-        className="absolute right-1.5 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-[var(--text-primary)] text-sm font-semibold text-[var(--surface-canvas)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] sm:w-auto sm:px-4"
-      >
-        <ArrowRight className="h-4 w-4 sm:hidden" aria-hidden="true" />
-        <span className="hidden sm:inline">Buscar</span>
+      {/* 44 px tocables; el círculo visible es de 32. El nombre va en `aria-label` (`.sr-only` de globals.css le gana a las variantes). */}
+      <button type="submit" aria-label="Buscar" className="group absolute right-0 top-0 inline-flex h-11 w-11 items-center justify-center rounded-full mu-foco">
+        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--mu-boton-fondo)] text-[var(--mu-boton-texto)] transition-colors duration-[var(--mu-dur-corto)] group-hover:bg-[var(--mu-boton-fondo-hover)]">
+          <ArrowRight className="h-4 w-4" aria-hidden="true" />
+        </span>
       </button>
     </form>
   );
 }
 
+/** Sin `display`: cada uso dice el suyo (`inline-flex` y `hidden` juntos los decide el orden del CSS, no el del string). */
 const ICONO =
-  "inline-flex h-11 w-11 items-center justify-center gap-2 rounded-full text-[var(--text-primary)] transition hover:bg-[var(--mu-nude-claro)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]";
+  "mu-foco h-11 w-11 items-center justify-center gap-2 rounded-full text-[var(--text-primary)] transition-colors duration-[var(--mu-dur-corto)] hover:bg-[var(--mu-nude-claro)]";
 
-export function BarraSuperior({ nombre, slug, logoEsTitulo = true }: { nombre: string; slug: string; logoEsTitulo?: boolean }) {
+/**
+ * Lo que va en el menú del celular: la tienda, tu cuenta y la asesoría (la
+ * cuenta y la asesoría no entran en la barra de 56 px). «Regalos» (los kits de
+ * la portada, `#ofertas`) va resaltado: antes decía «Ofertas» justo debajo de
+ * «Kits y ofertas» y parecía repetido.
+ */
+function menuMovil(slug: string, categorias: string[], hayOfertas: boolean) {
   const r = rutas(slug);
-  const Logo = logoEsTitulo ? "h1" : "p";
-  return (
-    <div className="sticky top-0 z-40 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)]/95 backdrop-blur">
-      <div className="mx-auto flex h-14 max-w-[1280px] items-center gap-3 px-4 sm:h-20 sm:gap-6 sm:px-6 lg:px-8">
-        <Logo className="m-0 shrink-0">
-          <a href={r.base} className="flex items-center gap-2.5 leading-none text-[var(--text-primary)]">
-            <Sello id={logoEsTitulo ? "barra" : "barra-marco"} className="h-11 w-11 shrink-0 sm:h-14 sm:w-14" />
-            <span className="flex flex-col">
-              <span className="mu-display text-[1.6rem] tracking-[0.18em] sm:text-[2rem]">{nombre}</span>
-              {/* El espacio no se ve (contenedor flex) pero separa las palabras para el lector de pantalla. */}{" "}
-              <span className="mt-0.5 hidden text-[0.6875rem] font-medium tracking-[0.08em] text-[var(--mu-acento-tinta)] sm:block">
-                Belleza profesional, cerca de ti
-              </span>
-              <span className="sr-only sm:hidden"> — belleza profesional, cerca de ti</span>
-            </span>
-          </a>
-        </Logo>
-        <div className="mx-auto hidden w-full max-w-[34rem] md:block">
-          <Buscador id="mu-buscar" catalogo={r.catalogo} />
-        </div>
-        <nav aria-label="Tu cuenta y tu bolsa" className="ml-auto flex items-center gap-0.5 md:ml-0">
-          <a
-            href={enlaceWhatsapp(WHATSAPP_MUSA, "Hola Drucila, quiero asesoría para elegir mis productos.")}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`${ICONO} lg:w-auto lg:px-3`}
-          >
-            <MessageCircle className="h-5 w-5" strokeWidth={1.7} aria-hidden="true" />
-            <span className="hidden text-base font-semibold lg:inline">Asesoría gratis</span>
-            <span className="sr-only lg:hidden">Asesoría gratis por WhatsApp</span>
-          </a>
-          <a href={`${r.base}/cuenta`} className={ICONO} aria-label="Mi cuenta">
-            <User className="h-6 w-6" strokeWidth={1.6} aria-hidden="true" />
-          </a>
-          <BotonBolsa />
-        </nav>
-      </div>
-    </div>
-  );
+  const tienda: EnlaceMenu[] = [
+    ...(hayOfertas ? [{ texto: "Regalos", href: r.promociones, resaltado: true }] : []),
+    { texto: "Todo Musa", href: r.catalogo },
+    ...categorias.map((c) => ({ texto: c, href: r.categoria(c) })),
+    { texto: "¿Qué quieres mejorar?", href: r.mejorar },
+  ];
+  const cuenta = [
+    { texto: "Mi cuenta", href: `${r.base}/cuenta`, icono: "cuenta" as const },
+    { texto: "Mis pedidos", href: `${r.base}/mis-pedidos`, icono: "pedidos" as const },
+  ];
+  return { tienda, cuenta, asesoria: { href: enlaceWhatsapp(WHATSAPP_MUSA, ASESORIA), horario: CONTACTO.horario } };
 }
 
+export function BarraSuperior({
+  nombre,
+  slug,
+  logoEsTitulo = true,
+  categorias = [],
+  hayOfertas = true,
+}: {
+  nombre: string;
+  slug: string;
+  logoEsTitulo?: boolean;
+  categorias?: string[];
+  hayOfertas?: boolean;
+}) {
+  const r = rutas(slug);
+  const Logo = logoEsTitulo ? "h1" : "p";
+  const barra = (
+    <div className="mx-auto grid h-14 max-w-[1280px] grid-cols-[1fr_auto_1fr] items-center gap-2 px-2 sm:px-4 md:flex md:h-[4.5rem] md:gap-6 md:px-6 lg:px-8">
+      <div className="justify-self-start md:hidden">
+        <MenuMovil nombre={nombre} {...menuMovil(slug, categorias, hayOfertas)} />
+      </div>
+      <Logo className="m-0 shrink-0">
+        <a href={r.base} className="mu-foco flex items-center gap-2.5 rounded-full leading-none text-[var(--text-primary)]">
+          <Sello id={logoEsTitulo ? "barra" : "barra-marco"} simple className="h-10 w-10 shrink-0 md:h-12 md:w-12" />
+          <span className="flex flex-col">
+            <span className="mu-serif text-[1.625rem] leading-none md:text-[1.75rem]">{nombre}</span>
+            {/* El espacio no se ve (contenedor flex) pero separa las palabras para el lector de pantalla. */}{" "}
+            <span className="mu-cursiva mt-0.5 hidden text-[0.9375rem] leading-tight text-[var(--mu-acento-tinta)] lg:block">Belleza profesional, cerca de ti</span>
+            <span className="sr-only lg:hidden"> — belleza profesional, cerca de ti</span>
+          </span>
+        </a>
+      </Logo>
+      <div className="mx-auto hidden w-full max-w-[36rem] md:block">
+        <Buscador id="mu-buscar" catalogo={r.catalogo} />
+      </div>
+      <nav aria-label="Tu cuenta y tu bolsa" className="flex items-center gap-0.5 justify-self-end">
+        <a
+          href={enlaceWhatsapp(WHATSAPP_MUSA, ASESORIA)}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Asesoría gratis por WhatsApp"
+          className={`${ICONO} hidden md:inline-flex lg:w-auto lg:px-3.5`}
+        >
+          <MessageCircle className="h-5 w-5 text-[var(--mu-selva-tinta)]" strokeWidth={1.8} aria-hidden="true" />
+          <span className="hidden text-[0.9375rem] font-semibold lg:inline">Asesoría</span>
+        </a>
+        <a href={`${r.base}/cuenta`} className={`${ICONO} hidden md:inline-flex`} aria-label="Mi cuenta">
+          <User className="h-6 w-6" strokeWidth={1.6} aria-hidden="true" />
+        </a>
+        <BolsaEncabezado />
+      </nav>
+    </div>
+  );
+  const buscador = (
+    <div className="px-4 pb-2.5 pt-1">
+      <Buscador id={logoEsTitulo ? "mu-buscar-movil" : "mu-buscar-movil-marco"} catalogo={r.catalogo} corto />
+    </div>
+  );
+  return <EncabezadoVivo barra={barra} buscador={buscador} />;
+}
+
+/**
+ * Desde 768 px: las categorías en kicker, centradas, con el filete rosa que crece desde el centro al pasar.
+ * Al final, «Regalos» (los kits de la portada) en achiote con el destello ✦ del catálogo.
+ */
 export function MenuCategorias({ slug, categorias, hayOfertas }: { slug: string; categorias: string[]; hayOfertas: boolean }) {
   const r = rutas(slug);
   // (`min-w-*` está muerto en este repo por `* { min-width: 0 }`: anchos con `w-*`.)
-  // El color va aparte: dos `text-[…]` en la misma clase los decide el orden del CSS, no el del string.
-  // En el celular son píldoras con borde que se deslizan (con imán y el borde derecho desvanecido:
-  // se ve que sigue, sin cortar una palabra en seco); desde 768 px, versalitas centradas sin borde.
-  const forma =
-    "inline-flex h-11 snap-start items-center whitespace-nowrap rounded-full border px-4 text-base font-semibold transition hover:bg-[var(--mu-nude-claro)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--accent)] md:border-transparent md:px-3 md:text-sm md:uppercase md:tracking-[0.12em] xl:px-4 xl:tracking-[0.14em]";
-  const enlace = `${forma} border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]`;
+  const enlace =
+    "mu-subrayado mu-foco inline-flex h-11 items-center whitespace-nowrap px-3 text-[length:var(--mu-t-kicker)] font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)] transition-colors duration-[var(--mu-dur-corto)] hover:text-[var(--text-primary)] [--mu-subrayado-abajo:.6rem] xl:px-4 xl:tracking-[var(--mu-tracking-kicker)]";
   return (
-    <div className="border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)]">
-      <div className="mx-auto max-w-[1280px] px-4 sm:px-6 lg:px-8">
-        <div className="pt-2 md:hidden">
-          <Buscador id="mu-buscar-movil" catalogo={r.catalogo} />
-        </div>
-        <nav aria-label="Categorías">
-          <ul className="mu-sin-barra mu-desvanecer mu-desvanecer-movil -mx-4 flex snap-x snap-proximity scroll-px-4 gap-2 overflow-x-auto px-4 py-2 md:mx-0 md:justify-center-safe md:gap-1 md:px-0">
-            {categorias.map((c) => (
-              <li key={c} className="shrink-0">
-                <a href={r.categoria(c)} className={enlace}>
-                  {c}
-                </a>
-              </li>
-            ))}
-            <li className="shrink-0">
-              <a href={r.mejorar} className={enlace}>
-                ¿Qué quieres mejorar?
+    <div className="hidden border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] md:block">
+      <nav aria-label="Categorías" className="mx-auto max-w-[1280px] px-6 lg:px-8">
+        <ul className="mu-sin-barra flex justify-center-safe gap-1 overflow-x-auto">
+          <li className="shrink-0">
+            <a href={r.catalogo} className={enlace}>
+              Todo Musa
+            </a>
+          </li>
+          {categorias.map((c) => (
+            <li key={c} className="shrink-0">
+              <a href={r.categoria(c)} className={enlace}>
+                {c}
               </a>
             </li>
-            {hayOfertas && (
-              <li className="shrink-0 pr-8 md:pr-0">
-                <a href={r.promociones} className={`${forma} border-[var(--mu-acento-tinta)]/40 text-[var(--mu-acento-tinta)]`}>
-                  Ofertas
-                </a>
-              </li>
-            )}
-          </ul>
-        </nav>
-      </div>
+          ))}
+          <li className="shrink-0">
+            <a href={r.mejorar} className={enlace}>
+              ¿Qué quieres mejorar?
+            </a>
+          </li>
+          {hayOfertas && (
+            <li className="shrink-0">
+              <a href={r.promociones} className={`${enlace} gap-2 !text-[var(--mu-achiote-tinta)] [--mu-subrayado:var(--mu-achiote-tinta)]`}>
+                <Destello className="h-2.5 w-2.5 shrink-0 text-[var(--mu-oro)]" />
+                Regalos
+              </a>
+            </li>
+          )}
+        </ul>
+      </nav>
     </div>
   );
 }

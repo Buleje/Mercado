@@ -1,5 +1,5 @@
 /**
- * El marco de «Buleje Beauty» para el resto de la tienda (ADR-460): el layout
+ * El marco de «Musa» para el resto de la tienda (ADR-460): el layout
  * de la tienda lo pone alrededor del catálogo, la ficha, la cuenta, los
  * pedidos, los legales y el checkout de ESTE negocio.
  *
@@ -41,26 +41,30 @@ async function Encabezado({ tenantId, slug }: { tenantId: string; slug: string }
   return (
     <Paleta>
       <FranjaAnuncio mensajes={mensajes} />
-      <BarraSuperior nombre={m.nombre} slug={slug} logoEsTitulo={false} />
+      <BarraSuperior nombre={m.nombre} slug={slug} logoEsTitulo={false} categorias={m.categorias} hayOfertas />
       <MenuCategorias slug={slug} categorias={m.categorias} hayOfertas />
     </Paleta>
   );
 }
 
-/** Mismo alto que el encabezado (franja + barra + menú, con el buscador debajo en el celular): sin saltos al llegar. */
+/**
+ * Mismo alto que el encabezado: franja (36), barra (56 / 72), y debajo el
+ * buscador del celular (58) o el menú de categorías desde 768 px (45). Sin saltos al llegar.
+ */
 function EsqueletoEncabezado() {
   const bloque = "animate-pulse rounded-full bg-[var(--mu-nude-claro)]";
   return (
     <Paleta>
       <div aria-hidden="true">
-        <div className="h-10 bg-[var(--mu-cacao)]" />
-        <div className="border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)]">
-          <div className={`${ANCHO} flex h-14 items-center gap-6 sm:h-20`}>
-            <div className={`${bloque} h-10 w-32`} />
-            <div className={`${bloque} mx-auto hidden h-12 w-full max-w-[34rem] md:block`} />
+        <div className="h-9 bg-[var(--mu-cacao)]" />
+        <div className="bg-[var(--surface-canvas)]">
+          <div className={`${ANCHO} flex h-14 items-center justify-center gap-6 md:h-[4.5rem] md:justify-start`}>
+            <div className={`${bloque} h-10 w-28`} />
+            <div className={`${bloque} mx-auto hidden h-11 w-full max-w-[36rem] md:block`} />
           </div>
         </div>
-        <div className="h-[7.25rem] border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] md:h-[3.75rem]" />
+        <div className="h-[3.625rem] bg-[var(--surface-canvas)] md:hidden" />
+        <div className="hidden h-[2.8125rem] border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] md:block" />
       </div>
     </Paleta>
   );

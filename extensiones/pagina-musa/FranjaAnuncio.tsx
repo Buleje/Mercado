@@ -1,62 +1,77 @@
 "use client";
 
 /**
- * Franja de anuncios de arriba. Desde 1024 px se ven todos juntos; más angosto
- * rotan cada 5 s con un botón de pausa (WCAG 2.2.2) y se quedan quietos
- * si la persona pidió menos movimiento. En el celular el texto baja de línea
- * en vez de cortarse con «…»: todos los mensajes ocupan la MISMA celda de la
- * grilla, así la franja mide lo del más largo y no salta al rotar.
+ * Franja de anuncios (contrato §e): cacao, 36 px, Poppins 500 de 12 px en
+ * hueso, un mensaje a la vez entre dos destellos ✦ oro. Rotan cada 4 s con
+ * un fundido vertical (el que sale sube, el que entra viene de abajo) y se
+ * detienen con el puntero o el foco encima; el botón de pausa cumple WCAG
+ * 2.2.2. Con «reducir movimiento» queda fijo el primero.
+ *
+ * Todos los mensajes ocupan la MISMA celda de la grilla: la franja mide lo
+ * del más largo y no salta al rotar (en el celular el texto baja de línea en
+ * vez de cortarse con «…»). Para que en el celular quepa en UNA línea
+ * (36 px, como el esqueleto) ahí se van los destellos y el hueco de la
+ * izquierda, y el espaciado de letras baja a .04em.
  */
 import { useEffect, useState } from "react";
-import { Pause, Play, Sparkles } from "@buleje/design-system/icons";
+import { Pause, Play } from "@buleje/design-system/icons";
+import { Destello } from "./ui";
 
 export function FranjaAnuncio({ mensajes }: { mensajes: string[] }) {
   const [actual, setActual] = useState(0);
   const [pausa, setPausa] = useState(false);
+  const [encima, setEncima] = useState(false);
 
   useEffect(() => {
-    if (pausa || mensajes.length < 2) return;
+    if (pausa || encima || mensajes.length < 2) return;
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
-    const t = setInterval(() => setActual((i) => (i + 1) % mensajes.length), 5000);
+    const t = setInterval(() => setActual((i) => (i + 1) % mensajes.length), 4000);
     return () => clearInterval(t);
-  }, [pausa, mensajes.length]);
+  }, [pausa, encima, mensajes.length]);
 
   if (mensajes.length === 0) return null;
 
   return (
-    <div className="bg-[var(--mu-cacao)] text-[var(--mu-sobre-cacao)]" aria-label="Anuncios de la tienda" role="region">
-      <div className="mx-auto flex min-h-10 max-w-[1280px] items-center justify-center gap-3 px-4 py-1 text-sm font-medium tracking-wide sm:px-6 lg:h-10 lg:py-0 lg:px-8">
-        <ul className="hidden items-center gap-6 lg:flex">
-          {mensajes.map((m, i) => (
-            <li key={m} className="flex items-center gap-6">
-              {i > 0 && <span aria-hidden="true" className="h-1 w-1 rounded-full bg-[var(--mu-acento)]" />}
-              <span>{m}</span>
-            </li>
-          ))}
-        </ul>
-        <div className="flex min-w-0 flex-1 items-center justify-center gap-2 lg:hidden">
-          <Sparkles className="h-4 w-4 shrink-0 text-[var(--mu-acento)]" aria-hidden="true" />
-          <p className="grid min-w-0 text-center">
-            {mensajes.map((m, i) => (
-              <span
-                key={m}
-                aria-hidden={i !== actual}
-                className={`col-start-1 row-start-1 self-center text-balance leading-snug transition-opacity duration-500 ${i === actual ? "opacity-100" : "opacity-0"}`}
-              >
-                {m}
-              </span>
-            ))}
+    <div
+      role="region"
+      aria-label="Anuncios de la tienda"
+      onPointerEnter={() => setEncima(true)}
+      onPointerLeave={() => setEncima(false)}
+      onFocus={() => setEncima(true)}
+      onBlur={() => setEncima(false)}
+      className="bg-[var(--mu-cacao)] text-[var(--mu-sobre-cacao)]"
+    >
+      <div className="mx-auto flex min-h-9 max-w-[1280px] items-center justify-center gap-3 px-4 sm:px-6 lg:px-8">
+        <span className="hidden w-9 shrink-0 sm:block" aria-hidden="true" />
+        <div className="flex min-w-0 flex-1 items-center justify-center gap-3">
+          <Destello className="hidden h-2.5 w-2.5 shrink-0 text-[var(--mu-oro)] sm:block" />
+          <p className="grid min-w-0 overflow-hidden text-center text-xs font-medium leading-snug tracking-[0.04em] sm:tracking-[0.12em]">
+            {mensajes.map((m, i) => {
+              const lugar = i === actual ? "translate-y-0 opacity-100" : i === (actual - 1 + mensajes.length) % mensajes.length ? "-translate-y-full opacity-0" : "translate-y-full opacity-0";
+              return (
+                <span
+                  key={m}
+                  aria-hidden={i !== actual}
+                  className={`col-start-1 row-start-1 self-center text-balance transition-[transform,opacity] duration-[var(--mu-dur-medio)] ease-[var(--mu-ease)] ${lugar}`}
+                >
+                  {m}
+                </span>
+              );
+            })}
           </p>
+          <Destello className="hidden h-2.5 w-2.5 shrink-0 text-[var(--mu-oro)] sm:block" />
         </div>
-        {mensajes.length > 1 && (
+        {mensajes.length > 1 ? (
           <button
             type="button"
             onClick={() => setPausa((p) => !p)}
             aria-label={pausa ? "Seguir rotando los anuncios" : "Pausar los anuncios"}
-            className="-mr-2 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[var(--mu-sobre-cacao)] lg:hidden"
+            className="-mr-2 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[var(--mu-sobre-cacao-2)] transition-colors hover:bg-[var(--mu-sobre-cacao)]/10 hover:text-[var(--mu-sobre-cacao)] focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[var(--mu-oro)]"
           >
-            {pausa ? <Play className="h-4 w-4" aria-hidden="true" /> : <Pause className="h-4 w-4" aria-hidden="true" />}
+            {pausa ? <Play className="h-3.5 w-3.5" aria-hidden="true" /> : <Pause className="h-3.5 w-3.5" aria-hidden="true" />}
           </button>
+        ) : (
+          <span className="w-9 shrink-0" aria-hidden="true" />
         )}
       </div>
     </div>
