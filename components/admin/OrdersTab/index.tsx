@@ -1,14 +1,34 @@
 "use client";
 
-import { DataTable, PageTitle } from "@buleje/design-system";
+/**
+ * Pedidos y reparto (`?tab=pedidos`) — plan «panel unificado», 2026-10-09.
+ *
+ * Cuatro vistas en `?vista=` (link propio, «atrás» del navegador, destino de
+ * avisos y del buscador):
+ *   tablero     ← el kanban de siempre
+ *   lista       ← los mismos pedidos en una tabla
+ *   reparto     ← Delivery entero (DeliveryPartnersModule anidado; Brandon
+ *                 eligió Delivery DENTRO de Pedidos el 09-10)
+ *   archivados  ← antes un modal del menú «Más»
+ *
+ * Los filtros viven en UNA barra pegada al tablero o a la lista
+ * (`BarraPedidos`); qué pedidos pasan lo decide `filtrar-pedidos.ts`, así el
+ * tablero y la lista nunca dicen cosas distintas. Reparto se ve si su ORIGEN
+ * (delivery-partners) pasa el plan, la plantilla, el rubro y el rol (R2).
+ */
+import dynamic from "next/dynamic";
 import { useState } from "react";
-import { AlertTriangle, FileText, SlidersHorizontal, Printer, Package, DollarSign, Search } from "@buleje/design-system/icons";
-import { cn, limaDateKey } from "@/lib/utils";
-import { FiltroColumna, FiltroColumnaRango } from "@/components/admin/shared/filtros-columna";
-import type { Rango } from "@/lib/admin/filtros-columna";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { AlertTriangle, Archive, Kanban, List, Package, Printer, Truck } from "@buleje/design-system/icons";
+import type { AdminTab } from "@/components/admin/shared/AdminTabBar";
+import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { ModuleActionMenu } from "@/components/admin/shared/ModuleActionMenu";
+import { EmptyState } from "@/components/admin/EmptyState";
+import { LoadingSpinner } from "@/components/ui-system/LoadingSpinner";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
+import { useVistaModulo } from "@/hooks/use-vista-modulo";
+import { useContextoPermiso, useVistasPermitidas } from "@/hooks/use-vistas-permitidas";
+import { limaDateKey } from "@/lib/utils";
+import type { DbOrder } from "@/lib/jsondb";
 import { useOrdersData } from "./hooks/useOrdersData";
 import { useOrdersFilters } from "./hooks/useOrdersFilters";
 import { useDeliveryDriver } from "./hooks/useDeliveryDriver";
@@ -21,420 +41,170 @@ import { OrdersDetailPanel } from "./OrdersDetailPanel";
 import { OrdersArchive } from "./OrdersArchive";
 import { OrdersPrintPreview } from "./OrdersPrintPreview";
 import { DeleteConfirmModal, RejectModal } from "./OrdersModals";
-import { STATUS_LABELS } from "./types";
-import type { DbOrder } from "@/lib/jsondb";
-import { formatCurrency, formatDateTime } from "@/lib/format";
+import { BarraPedidos } from "./BarraPedidos";
+import { ListaPedidos } from "./ListaPedidos";
+import { ResumenImpresion } from "./ResumenImpresion";
+import { pedidosArchivados, pedidosEnMarcha, repartidoresConPedidos } from "./filtrar-pedidos";
 
-export default function OrdersTab() {
+// Delivery entero, montado como vista (R5: mover = montar). Trae el mapa
+// Leaflet, que usa `window`.
+const Reparto = dynamic(() => import("@/components/admin/unified/DeliveryPartnersModule"), {
+  ssr: false,
+  loading: () => <LoadingSpinner className="mx-auto my-16" />,
+});
+
+const MODULE_ID = "pedidos";
+
+const VISTAS: AdminTab[] = [
+  { id: "tablero", label: "Tablero", icon: Kanban },
+  { id: "lista", label: "Lista", icon: List },
+  { id: "reparto", label: "Reparto", icon: Truck },
+  { id: "archivados", label: "Archivados", icon: Archive },
+];
+type Vista = "tablero" | "lista" | "reparto" | "archivados";
+const IDS_VISTAS: readonly Vista[] = ["tablero", "lista", "reparto", "archivados"];
+
+export default function OrdersTab({ initialTab }: { initialTab?: string } = {}) {
+  const { vista, irA } = useVistaModulo<Vista>(MODULE_ID, IDS_VISTAS, "tablero", initialTab);
+  const vistas = useVistasPermitidas(MODULE_ID, VISTAS);
+  const contextoPermiso = useContextoPermiso();
+
+  const { orders, loading, loadError, storeLat, storeLon, storeName, detailOrder, load, setOrders, setLoadError, setDetailOrder } =
+    useOrdersData();
+  const { filters, dispatch: filtersDispatch } = useOrdersFilters();
+
   const {
-    orders,
-    loading,
-    loadError,
-    storeLat,
-    storeLon,
-    storeName,
-    detailOrder,
-    load,
-    setOrders,
-    setLoadError,
-    setDetailOrder,
-  } = useOrdersData();
-
-  const { filters, dispatch: filtersDispatch, activeFiltersCount } = useOrdersFilters();
-
-  const {
-    updateStatus,
-    patchOrder,
-    verifyYape,
-    rejectYape,
-    markDeudaPaid,
-    adminNote,
-    setAdminNote,
-    savingNote,
-    saveAdminNote,
-    showRejectModal,
-    setShowRejectModal,
-    rejectReason,
-    setRejectReason,
-    executeReject,
-    confirmDeleteId,
-    setConfirmDeleteId,
-    confirmDelete,
+    updateStatus, patchOrder, verifyYape, rejectYape, markDeudaPaid,
+    adminNote, setAdminNote, savingNote, saveAdminNote,
+    showRejectModal, setShowRejectModal, rejectReason, setRejectReason, executeReject,
+    confirmDeleteId, setConfirmDeleteId, confirmDelete,
   } = useOrderActions({ orders, setOrders, setDetailOrder, load });
 
-  const {
-    customDriver,
-    setCustomDriver,
-    savingDriver,
-    selectedDriverFilter,
-    setSelectedDriverFilter,
-    saveDeliveryDriver,
-    driverColor,
-  } = useDeliveryDriver({ patchOrder });
+  const { customDriver, setCustomDriver, savingDriver, selectedDriverFilter, setSelectedDriverFilter, saveDeliveryDriver, driverColor } =
+    useDeliveryDriver({ patchOrder });
 
-  /**
-   * Repartidores con pedidos hoy, con cuántos lleva cada uno — el selector de
-   * la barra y el del modal «Filtros» leen la misma lista y escriben el mismo
-   * `selectedDriverFilter` (fusión 2026-09-22: antes era un tercer lugar, un
-   * banner que aparecía desde el menú «Más»).
-   */
-  const repartidores = Array.from(
-    orders.reduce((m, o) => {
-      const d = (o as DbOrder & { deliveryDriver?: string }).deliveryDriver;
-      if (d) m.set(d, (m.get(d) ?? 0) + 1);
-      return m;
-    }, new Map<string, number>()),
-  )
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([value, count]) => ({ value, count }));
-
-  const {
-    selectedOrderIds,
-    bulkStatusTarget,
-    setBulkStatusTarget,
-    bulkUpdating,
-    toggleOrderSelect,
-    clearOrderSelection,
-    executeBulkStatus,
-  } = useOrderBulkActions({ onComplete: load });
+  const { selectedOrderIds, bulkStatusTarget, setBulkStatusTarget, bulkUpdating, toggleOrderSelect, clearOrderSelection, executeBulkStatus } =
+    useOrderBulkActions({ onComplete: load });
 
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [showArchive, setShowArchive] = useState(false);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
 
-  useScrollLock(!!detailOrder || showArchive || !!confirmDeleteId || showAdvancedFilters || showPrintPreview);
+  useScrollLock(!!detailOrder || !!confirmDeleteId || showAdvancedFilters || showPrintPreview);
 
-  // Active orders filtering
-  let activeOrders = orders.filter(o => o.status !== "entregado" && o.status !== "cancelado");
+  const activeOrders = pedidosEnMarcha(orders, filters, selectedDriverFilter);
+  const archivedOrders = pedidosArchivados(orders);
+  const enMarcha = orders.length - archivedOrders.length;
+  // El día del negocio es el de Lima: con `toISOString()` el corte caía a las
+  // 19:00 hora peruana y lo vendido de noche contaba como «mañana».
+  const entregadosHoy = orders.filter((o) => o.status === "entregado" && limaDateKey(o.createdAt) === limaDateKey()).length;
+  const resumen = `${enMarcha} en marcha${entregadosHoy > 0 ? ` · ${entregadosHoy} ${entregadosHoy === 1 ? "entregado" : "entregados"} hoy` : ""}`;
 
-  if (filters.statuses.size > 0) {
-    activeOrders = activeOrders.filter(o => filters.statuses.has(o.status));
-  }
-  if (filters.paymentMethod) {
-    activeOrders = activeOrders.filter(o => o.paymentMethod === filters.paymentMethod);
-  }
-  if (filters.dateFrom) {
-    activeOrders = activeOrders.filter(o => o.createdAt.slice(0, 10) >= filters.dateFrom);
-  }
-  if (filters.dateTo) {
-    activeOrders = activeOrders.filter(o => o.createdAt.slice(0, 10) <= filters.dateTo);
-  }
-  if (filters.amountMin) {
-    activeOrders = activeOrders.filter(o => o.total >= parseFloat(filters.amountMin));
-  }
-  if (filters.amountMax) {
-    activeOrders = activeOrders.filter(o => o.total <= parseFloat(filters.amountMax));
-  }
-  if (filters.customerSearch) {
-    const q = filters.customerSearch.toLowerCase();
-    activeOrders = activeOrders.filter(o =>
-      o.customer.name.toLowerCase().includes(q) ||
-      (o.customer.phone ?? "").includes(q) ||
-      o.id.toLowerCase().includes(q)
-    );
-  }
-  if (filters.hasDebt) {
-    activeOrders = activeOrders.filter(o => o.deuda === true);
-  }
-  if (filters.hasAdminNotes) {
-    activeOrders = activeOrders.filter(o => (o as DbOrder & { adminNotes?: string }).adminNotes);
-  }
-  if (filters.source) {
-    activeOrders = activeOrders.filter(o => {
-      // source ausente o "direct" ambos representan "Tienda Personal"
-      const src = (o as DbOrder & { source?: string }).source ?? "direct";
-      return src === filters.source;
-    });
-  }
-  if (selectedDriverFilter) {
-    activeOrders = activeOrders.filter(o => {
-      const driver = (o as DbOrder & { deliveryDriver?: string }).deliveryDriver;
-      return driver === selectedDriverFilter;
-    });
-  }
-
-  const archivedOrders = orders.filter(o => o.status === "entregado" || o.status === "cancelado");
-  const total = activeOrders.reduce((s, o) => s + o.total, 0);
-
-  // Stats agregados
-  const inDeliveryOrders = activeOrders.filter(o => o.status === "en_camino" || o.status === "confirmado" || o.status === "preparando").length;
-  const todayDelivered = orders.filter(o => {
-    if (o.status !== "entregado") return false;
-    // El día del negocio es el de Lima. Con `toISOString()` el corte caía a las
-    // 19:00 hora peruana: lo vendido de noche contaba como "mañana".
-    return limaDateKey(o.createdAt) === limaDateKey();
-  }).length;
+  const repartoVisible = vistas.some((v) => v.id === "reparto");
+  const tabs = vistas.map((v) => (v.id === "tablero" && enMarcha > 0 ? { ...v, badge: enMarcha } : v));
 
   return (
-    <div className="space-y-3 sm:space-y-6">
-      {/* Header — patrón estándar AdminModuleHeader (igual que EInvoice/Inventario/Compras).
-          Eyebrow Kicker + PageTitle font-display + descripción + slot acciones. */}
-      <AdminModuleHeader
-        eyebrow="Operaciones · Hoy"
-        title="Pedidos del día"
-        description={
-          activeOrders.length === 0
-            ? "Sin pedidos activos. Aparecerán acá en tiempo real."
-            : `${activeOrders.length} ${activeOrders.length === 1 ? "pedido" : "pedidos"} en marcha.${inDeliveryOrders > 0 ? ` ${inDeliveryOrders} en preparación o delivery.` : ""}${todayDelivered > 0 ? ` ${todayDelivered} entregado${todayDelivered === 1 ? "" : "s"} hoy.` : ""}`
-        }
-        icon={Package}
-      >
-        {/* #2 (2026-05-26): Filtros queda como acción primaria visible; las
-            secundarias (Por motorizado, Imprimir, Archivados) se agrupan en un
-            menú "Más" para descargar el header de 4 botones a 2. */}
-        <button
-          type="button"
-          onClick={() => setShowAdvancedFilters(true)}
-          className="relative flex items-center gap-1.5 px-3 min-h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
-        >
-          <SlidersHorizontal className="h-4 w-4" /> Filtros
-          {activeFiltersCount + (selectedDriverFilter ? 1 : 0) > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-xs font-bold bg-primary text-white">
-              {activeFiltersCount + (selectedDriverFilter ? 1 : 0)}
-            </span>
-          )}
-        </button>
-        <ModuleActionMenu
-          label="Más"
-          items={[
-            {
-              label: "Imprimir",
-              icon: Printer,
-              onClick: () => window.print(),
-            },
-            {
-              label: "Archivados",
-              icon: FileText,
-              onClick: () => setShowArchive(true),
-              description: archivedOrders.length > 0 ? `${archivedOrders.length} archivado${archivedOrders.length === 1 ? "" : "s"}` : undefined,
-              dividerBefore: true,
-            },
-          ]}
-        />
-      </AdminModuleHeader>
-
-      {/* #1 (2026-05-26): stat cards removidas — los conteos por estado ya viven
-          en los chips de filtro (interactivos) y en los headers de columna del
-          kanban. Triple redundancia eliminada; "Entregados hoy" se movió al
-          subtítulo del header. */}
-
-      {/* Error banner */}
-      {loadError && (
-        <div className="mb-3 flex items-center gap-2 bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] rounded-xl px-4 py-3 text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
-          <AlertTriangle className="h-4 w-4 shrink-0" />
-          <span className="flex-1">{loadError}</span>
-          <button
-            onClick={() => { setLoadError(null); void load(); }}
-            className="text-xs font-bold text-[var(--data-error-500)] hover:text-[var(--data-error-500)] underline"
-          >
-            Reintentar
-          </button>
-        </div>
-      )}
-
-      {/* #7 (2026-05-26): búsqueda inline en el board — antes solo vivía dentro
-          del modal de Filtros avanzados. Busca por cliente, teléfono o #pedido. */}
-      <div className="relative w-full sm:max-w-sm">
-        <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
-        <input
-          type="search"
-          value={filters.customerSearch}
-          onChange={(e) => filtersDispatch({ type: "SET_CUSTOMER_SEARCH", value: e.target.value })}
-          placeholder="Buscar por cliente, teléfono o #pedido…"
-          aria-label="Buscar pedidos por cliente, teléfono o número"
-          className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none transition-colors focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
-        />
-      </div>
-
-      {/* Quick filter chips por status — atajo visual sin abrir filtros avanzados */}
-      <div role="group" aria-label="Filtros rapidos por estado" className="flex items-center gap-2 flex-wrap">
-        {([
-          { id: "all", label: "Todos", count: activeOrders.length },
-          { id: "pendiente", label: "Pendientes", count: orders.filter(o => o.status === "pendiente").length },
-          { id: "confirmado", label: "Confirmados", count: orders.filter(o => o.status === "confirmado").length },
-          { id: "preparando", label: "Preparando", count: orders.filter(o => o.status === "preparando").length },
-          { id: "en_camino", label: "En camino", count: orders.filter(o => o.status === "en_camino").length },
-        ] as const).map((chip) => {
-          const active =
-            chip.id === "all"
-              ? filters.statuses.size === 0
-              : filters.statuses.size === 1 && filters.statuses.has(chip.id);
-          return (
-            <button
-              key={chip.id}
-              type="button"
-              onClick={() => {
-                if (chip.id === "all") {
-                  filtersDispatch({ type: "SET_STATUSES", statuses: new Set() });
-                } else {
-                  filtersDispatch({ type: "SET_STATUSES", statuses: new Set([chip.id]) });
-                }
-              }}
-              aria-pressed={active}
-              className={cn(
-                "inline-flex items-center gap-2 h-9 px-3.5 rounded-full text-sm font-bold transition-colors border",
-                active
-                  ? "bg-primary text-white border-primary"
-                  : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-primary/10",
-              )}
-            >
-              {chip.label}
-              <span
-                className={cn(
-                  "inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-xs font-extrabold tabular-nums",
-                  active
-                    ? "bg-[var(--surface-canvas)]/20 text-[var(--surface-canvas)]"
-                    : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
-                )}
-              >
-                {chip.count}
-              </span>
-            </button>
-          );
-        })}
-
-        {/* Método de pago — promovido del modal "Filtros Avanzados" al
-            toolbar (fusión 2026-09-22): es de las preguntas más frecuentes
-            («¿cuánto entró por Yape hoy?») y no amerita abrir un modal para
-            cada vez. Escribe el MISMO `filters.paymentMethod` que el modal —
-            no es un segundo filtro, es un segundo lugar desde donde tocarlo
-            (igual que Estado ya convive en chips + checkboxes del modal). */}
-        {([
-          { id: "yape" as const, label: "Yape" },
-          { id: "efectivo" as const, label: "Efectivo" },
-        ]).map((chip) => {
-          const active = filters.paymentMethod === chip.id;
-          return (
-            <button
-              key={chip.id}
-              type="button"
-              onClick={() => filtersDispatch({ type: "SET_PAYMENT_METHOD", value: active ? "" : chip.id })}
-              aria-pressed={active}
-              className={cn(
-                "inline-flex items-center gap-2 h-9 px-3.5 rounded-full text-sm font-bold transition-colors border",
-                active
-                  ? "bg-primary text-white border-primary"
-                  : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:bg-primary/10",
-              )}
-            >
-              {chip.label}
-            </button>
-          );
-        })}
-
-        {/* Repartidor y fecha — las otras dos «columnas» de una tarjeta del
-            kanban. En la barra sólo ≥640px; en el celular viven en el modal
-            «Filtros» (mismo estado, un solo filtro cada uno). El `[&>details]`
-            /`[&>select]` saca el margen que estos controles traen para vivir
-            debajo de un título de columna. */}
-        {repartidores.length > 0 && (
-          <span className="max-sm:hidden inline-flex items-center [&>select]:mt-0">
-            <FiltroColumna
-              label="Repartidor"
-              value={selectedDriverFilter || undefined}
-              options={repartidores}
-              onChange={(v) => setSelectedDriverFilter(v ?? "")}
-              placeholder="Repartidor"
-            />
-          </span>
-        )}
-        <span className="max-sm:hidden inline-flex items-center [&>details]:mt-0">
-          <FiltroColumnaRango
-            label="Fecha"
-            esFecha
-            placeholder="Fecha"
-            valor={{ min: filters.dateFrom || null, max: filters.dateTo || null } as Rango<string>}
-            onChange={(r) => {
-              filtersDispatch({ type: "SET_DATE_FROM", value: (r.min as string | null) ?? "" });
-              filtersDispatch({ type: "SET_DATE_TO", value: (r.max as string | null) ?? "" });
-            }}
+    <AdminTabBar
+      heading={{
+        title: "Pedidos y reparto",
+        description:
+          "Los pedidos en marcha en tablero o en lista, con sus filtros pegados; el reparto (repartidores en vivo, asignaciones, pagos y ranking) y los entregados y cancelados en Archivados.",
+        icon: Package,
+        actions: (
+          <ModuleActionMenu
+            label="Más acciones de pedidos"
+            iconOnly
+            className="h-12 w-12"
+            items={[{ label: "Imprimir", icon: Printer, onClick: () => window.print(), description: "Los pedidos en marcha que se ven" }]}
           />
-        </span>
-
-        {/* Sub-filtros adicionales: con deuda + Yape pendiente (visible si > 0) */}
-        {orders.some(o => o.deuda === true) && (
-          <button
-            type="button"
-            onClick={() => filtersDispatch({ type: "SET_HAS_DEBT", value: !filters.hasDebt })}
-            aria-pressed={filters.hasDebt}
-            className={cn(
-              "inline-flex items-center gap-2 h-9 px-3.5 rounded-full text-sm font-bold transition-colors border",
-              filters.hasDebt
-                ? "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)] border-[var(--data-warning-500)]/40"
-                : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--data-warning-500)] hover:text-[var(--data-warning-500)]",
+        ),
+      }}
+      tabs={tabs}
+      activeTab={vista}
+      onTabChange={irA}
+      moduleId={MODULE_ID}
+    >
+      <div className="space-y-3 sm:space-y-4">
+        {(vista === "tablero" || vista === "lista") && (
+          <>
+            {loadError && (
+              <div role="alert" className="flex items-center gap-2 rounded-xl border border-[var(--data-error-500)] bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-ink)] dark:bg-[var(--data-error-500)]/10">
+                <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
+                <span className="flex-1">{loadError}</span>
+                <button
+                  type="button"
+                  onClick={() => { setLoadError(null); void load(); }}
+                  className="h-12 px-2 text-sm font-bold underline"
+                >
+                  Reintentar
+                </button>
+              </div>
             )}
-          >
-            <DollarSign className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
-            Con deuda
-          </button>
+
+            <BarraPedidos
+              orders={orders}
+              filters={filters}
+              dispatch={filtersDispatch}
+              repartidor={selectedDriverFilter}
+              onRepartidor={setSelectedDriverFilter}
+              onAbrirFiltros={() => setShowAdvancedFilters(true)}
+              resumen={resumen}
+            />
+
+            {vista === "tablero" ? (
+              <OrdersKanban
+                activeOrders={activeOrders}
+                loading={loading}
+                storeLat={storeLat}
+                storeLon={storeLon}
+                selectedOrderIds={selectedOrderIds}
+                driverColor={driverColor}
+                onSelectOrder={setDetailOrder}
+                onToggleSelect={toggleOrderSelect}
+                onUpdateStatus={updateStatus}
+                onVerifyYape={verifyYape}
+                onRejectYape={rejectYape}
+                onMarkDeudaPaid={markDeudaPaid}
+                onDeleteOrder={setConfirmDeleteId}
+                onManualDelivery={(id, reason) =>
+                  patchOrder(id, {
+                    status: "entregado",
+                    // deliveryReason no es columna de Order — el server PATCH lo
+                    // extrae y persiste en OrderStatusHistory.note (audit log).
+                    ...({ deliveryReason: reason } as unknown as Partial<DbOrder>),
+                  })
+                }
+              />
+            ) : (
+              <ListaPedidos pedidos={activeOrders} loading={loading} onSelectOrder={setDetailOrder} />
+            )}
+
+            <ResumenImpresion pedidos={activeOrders} />
+          </>
         )}
+
+        {vista === "archivados" && (
+          <OrdersArchive archivedOrders={archivedOrders} onSelectOrder={setDetailOrder} onDeleteOrder={setConfirmDeleteId} />
+        )}
+
+        {vista === "reparto" &&
+          (repartoVisible ? (
+            <Reparto anidado />
+          ) : contextoPermiso === null ? (
+            <LoadingSpinner className="mx-auto my-16" />
+          ) : (
+            <EmptyState
+              icon={<Truck className="h-10 w-10 text-[var(--text-tertiary)]" />}
+              title="El reparto no está en tu plan o en tu rol"
+              actions={[]}
+            />
+          ))}
       </div>
 
-      {/* Orders kanban — 3 columnas operativas */}
-      <OrdersKanban
-        activeOrders={activeOrders}
-        loading={loading}
-        storeLat={storeLat}
-        storeLon={storeLon}
-        selectedOrderIds={selectedOrderIds}
-        driverColor={driverColor}
-        onSelectOrder={setDetailOrder}
-        onToggleSelect={toggleOrderSelect}
-        onUpdateStatus={updateStatus}
-        onVerifyYape={verifyYape}
-        onRejectYape={rejectYape}
-        onMarkDeudaPaid={markDeudaPaid}
-        onDeleteOrder={setConfirmDeleteId}
-        onManualDelivery={(id, reason) =>
-          patchOrder(id, {
-            status: "entregado",
-            // deliveryReason no es columna de Order — el server PATCH lo
-            // extrae y persiste en OrderStatusHistory.note (audit log).
-            ...({ deliveryReason: reason } as unknown as Partial<DbOrder>),
-          })
-        }
-      />
-
-      {/* Print-only summary */}
-      <div className="hidden print:block print-orders-summary">
-        {/* `as="h2"`: este título sólo existe para la impresión; como h1
-            duplicaba el encabezado de la página para los lectores de pantalla. */}
-        <PageTitle as="h2" className="text-[length:var(--ts-xl)] sm:text-[length:var(--ts-xl)] font-bold mb-1">Resumen de pedidos activos</PageTitle>
-        <p className="text-xs text-[var(--text-secondary)] mb-4">
-          {formatDateTime(new Date())} · {activeOrders.length} pedidos · {formatCurrency(total)} total
-        </p>
-        <DataTable className="w-full text-xs border-collapse">
-          <thead>
-            <tr className="border-b-2 border-gray-900">
-              <th className="text-left py-1 pr-2">ID</th>
-              <th className="text-left py-1 pr-2">Cliente</th>
-              <th className="text-left py-1 pr-2">Teléfono</th>
-              <th className="text-left py-1 pr-2">Estado</th>
-              <th className="text-left py-1 pr-2">Productos</th>
-              <th className="text-right py-1">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {activeOrders.map(o => (
-              <tr key={o.id} className="border-b border-[var(--rule-base)]">
-                <td className="py-1.5 pr-2 font-mono">{o.id.slice(-6)}</td>
-                <td className="py-1.5 pr-2">{o.customer.name}</td>
-                <td className="py-1.5 pr-2">{o.customer.phone || "—"}</td>
-                <td className="py-1.5 pr-2">{STATUS_LABELS[o.status]}</td>
-                <td className="py-1.5 pr-2">{o.items.map(i => `${i.quantity}× ${i.name}`).join(", ")}</td>
-                <td className="py-1.5 text-right font-semibold">{formatCurrency(Number(o.total))}</td>
-              </tr>
-            ))}
-          </tbody>
-        </DataTable>
-      </div>
-
-      {/* Modals */}
       {showAdvancedFilters && (
         <OrdersFilters
           filters={filters}
           dispatch={filtersDispatch}
-          repartidores={repartidores.map((r) => r.value)}
+          repartidores={repartidoresConPedidos(orders).map((r) => r.value)}
           repartidor={selectedDriverFilter}
           onRepartidor={setSelectedDriverFilter}
           onClose={() => setShowAdvancedFilters(false)}
@@ -455,19 +225,10 @@ export default function OrdersTab() {
           onVerifyYape={verifyYape}
           onRejectYape={rejectYape}
           onMarkDeudaPaid={markDeudaPaid}
-          onShowRejectModal={id => { setShowRejectModal(id); setRejectReason(""); }}
+          onShowRejectModal={(id) => { setShowRejectModal(id); setRejectReason(""); }}
           onCustomDriverChange={setCustomDriver}
           onSaveCustomDriver={saveDeliveryDriver}
           onPatchOrder={patchOrder}
-        />
-      )}
-
-      {showArchive && (
-        <OrdersArchive
-          archivedOrders={archivedOrders}
-          onSelectOrder={order => { setDetailOrder(order); setShowArchive(false); }}
-          onDeleteOrder={setConfirmDeleteId}
-          onClose={() => setShowArchive(false)}
         />
       )}
 
@@ -481,15 +242,8 @@ export default function OrdersTab() {
         />
       )}
 
-      {/* Delete confirmation modal */}
-      {confirmDeleteId && (
-        <DeleteConfirmModal
-          onConfirm={confirmDelete}
-          onCancel={() => setConfirmDeleteId(null)}
-        />
-      )}
+      {confirmDeleteId && <DeleteConfirmModal onConfirm={confirmDelete} onCancel={() => setConfirmDeleteId(null)} />}
 
-      {/* Rejection modal */}
       {showRejectModal && (
         <RejectModal
           rejectReason={rejectReason}
@@ -499,17 +253,18 @@ export default function OrdersTab() {
         />
       )}
 
-      {/* Bulk actions bar */}
-      <OrdersBulkActions
-        selectedCount={selectedOrderIds.size}
-        bulkStatusTarget={bulkStatusTarget}
-        bulkUpdating={bulkUpdating}
-        onBulkStatusChange={setBulkStatusTarget}
-        onExecuteBulkStatus={executeBulkStatus}
-        onClearSelection={clearOrderSelection}
-        onShowPrint={() => setShowPrintPreview(true)}
-      />
-    </div>
+      {/* La selección sale de las tarjetas del tablero. */}
+      {vista === "tablero" && (
+        <OrdersBulkActions
+          selectedCount={selectedOrderIds.size}
+          bulkStatusTarget={bulkStatusTarget}
+          bulkUpdating={bulkUpdating}
+          onBulkStatusChange={setBulkStatusTarget}
+          onExecuteBulkStatus={executeBulkStatus}
+          onClearSelection={clearOrderSelection}
+          onShowPrint={() => setShowPrintPreview(true)}
+        />
+      )}
+    </AdminTabBar>
   );
 }
-

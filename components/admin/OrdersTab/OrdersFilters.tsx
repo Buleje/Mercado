@@ -1,12 +1,19 @@
 "use client";
 
-import { useId, useRef } from "react";
-import { CardTitle } from "@buleje/design-system";
+/**
+ * El formulario completo de filtros de Pedidos y reparto: lo que no entra en
+ * la barra (origen, montos, notas internas) y, en el celular, todo. Se abre
+ * desde el botón «Filtros» de la barra (`BarraPedidos`) y escribe el MISMO
+ * estado que ella. Antes era un modal hecho a mano; ahora es `AdminModal`.
+ */
+import { useId } from "react";
 import { Field } from "@/components/admin/shared/Field";
-import { X, Search } from "@buleje/design-system/icons";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
+import { Search } from "@buleje/design-system/icons";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
+import { Button } from "@/components/ui-system/Button";
+import { button } from "@/components/ui-system/button-variants";
+import { Casilla } from "@/components/ui-system/Casilla";
 import { cn } from "@/lib/utils";
 import type { OrderFilters, FiltersAction, OrderSource } from "./types";
 import { STATUS_LABELS } from "./types";
@@ -23,6 +30,16 @@ interface OrdersFiltersProps {
   onClose: () => void;
 }
 
+/** Opción elegida o no de los grupos «Origen» y «Método de pago». */
+const opcion = (activa: boolean) =>
+  button({
+    variant: "secondary",
+    className: cn(
+      "flex-1 rounded-xl px-3",
+      activa && "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
+    ),
+  });
+
 export function OrdersFilters({ filters, dispatch, repartidores, repartidor, onRepartidor, onClose }: OrdersFiltersProps) {
   const handleClearAndClose = () => {
     dispatch({ type: "CLEAR" });
@@ -30,62 +47,45 @@ export function OrdersFilters({ filters, dispatch, repartidores, repartidor, onR
     onClose();
   };
 
-  const titleId = useId();
   const dateFromId = useId();
   const dateToId = useId();
   const repartidorId = useId();
-  const modalRef = useRef<HTMLDivElement>(null);
-  useModalAccesible(modalRef, { onCerrar: onClose });
-  const ventana = useVentanaDeModal(true, { ref: modalRef, aplicarTranslate: true, claveMemoria: "pedidos-filtros" });
 
   return (
-    <div
-      className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/50"
-      onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) onClose(); }}
+    <AdminModal
+      open
+      onClose={onClose}
+      title="Filtros de pedidos"
+      description="Afina qué pedidos ves en el tablero y en la lista"
+      variant="wide"
+      claveVentana="pedidos-filtros"
+      footer={
+        <ModalFooter>
+          <Button type="button" variant="secondary" onClick={handleClearAndClose}>
+            Limpiar filtros
+          </Button>
+          <Button type="button" variant="accent" onClick={onClose}>
+            Aplicar filtros
+          </Button>
+        </ModalFooter>
+      }
     >
-      <div
-        ref={modalRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        tabIndex={-1}
-        className="relative bg-[var(--surface-raised)] rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col"
-        onClick={e => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div {...ventana.asaProps} className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0">
-          <div>
-            <CardTitle id={titleId} className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Filtros Avanzados</CardTitle>
-            <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">Afina tu búsqueda de pedidos</p>
-          </div>
-          <span className="ml-auto flex items-center gap-1">
-            <ControlesDeVentana ventana={ventana} />
-            <button aria-label="Cerrar"
-              onClick={onClose}
-              className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--rule-soft)] transition-colors"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </span>
-        </div>
-
-        <div className="overflow-y-auto flex-1 p-5 space-y-4">
+        <div className={cn(MODAL_BODY, "space-y-4")}>
           {/* Status multi-select */}
           <div className="space-y-2">
-            <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Estado</p>
+            <p className="text-sm font-bold text-[var(--text-primary)]">Estado</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {(Object.keys(STATUS_LABELS) as OrderStatus[]).map(status => (
                 <label
                   key={status}
                   className={cn(
-                    "flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors",
+                    "flex h-12 items-center gap-2 px-3 rounded-xl border cursor-pointer transition-colors",
                     filters.statuses.has(status)
                       ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                      : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] "
+                      : "border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] "
                   )}
                 >
-                  <input
-                    type="checkbox"
+                  <Casilla
                     checked={filters.statuses.has(status)}
                     onChange={(e) => {
                       const next = new Set(filters.statuses);
@@ -93,7 +93,6 @@ export function OrdersFilters({ filters, dispatch, repartidores, repartidor, onR
                       else next.delete(status);
                       dispatch({ type: "SET_STATUSES", statuses: next });
                     }}
-                    className="rounded border-[var(--rule-base)] text-primary focus:ring-primary"
                   />
                   <span className="text-sm font-semibold">{STATUS_LABELS[status]}</span>
                 </label>
@@ -103,20 +102,17 @@ export function OrdersFilters({ filters, dispatch, repartidores, repartidor, onR
 
           {/* Origen */}
           <div className="space-y-2">
-            <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Origen</p>
+            <p className="text-sm font-bold text-[var(--text-primary)]">Origen</p>
             <div className="flex gap-2">
               {(["", "direct", "marketplace"] as OrderSource[]).map(src => (
                 <button
                   key={src || "all"}
+                  type="button"
+                  aria-pressed={filters.source === src}
                   onClick={() => dispatch({ type: "SET_SOURCE", value: src })}
-                  className={cn(
-                    "flex-1 px-3 min-h-10 rounded-xl border text-sm font-semibold transition-colors",
-                    filters.source === src
-                      ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                      : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] "
-                  )}
+                  className={opcion(filters.source === src)}
                 >
-                  {src === "" ? "Todos" : src === "direct" ? "Tienda Personal" : "Marketplace"}
+                  {src === "" ? "Todos" : src === "direct" ? "Tienda personal" : "Marketplace"}
                 </button>
               ))}
             </div>
@@ -124,21 +120,18 @@ export function OrdersFilters({ filters, dispatch, repartidores, repartidor, onR
 
           {/* Payment method */}
           <div className="space-y-2">
-            <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Método de Pago</p>
+            <p className="text-sm font-bold text-[var(--text-primary)]">Método de pago</p>
             <div className="flex gap-2">
               {(["yape", "efectivo"] as const).map(method => (
                 <button
                   key={method}
+                  type="button"
+                  aria-pressed={filters.paymentMethod === method}
                   onClick={() => dispatch({
                     type: "SET_PAYMENT_METHOD",
                     value: filters.paymentMethod === method ? "" : method,
                   })}
-                  className={cn(
-                    "flex-1 px-3 min-h-10 rounded-xl border text-sm font-semibold transition-colors",
-                    filters.paymentMethod === method
-                      ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                      : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] "
-                  )}
+                  className={opcion(filters.paymentMethod === method)}
                 >
                   {method === "yape" ? "Yape" : "Efectivo"}
                 </button>
@@ -149,12 +142,12 @@ export function OrdersFilters({ filters, dispatch, repartidores, repartidor, onR
           {/* Repartidor — la barra lo muestra ≥640px; acá es su casa en el celular. */}
           {repartidores.length > 0 && (
             <div className="space-y-2">
-              <label htmlFor={repartidorId} className="block text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Repartidor</label>
+              <label htmlFor={repartidorId} className="block text-sm font-bold text-[var(--text-primary)]">Repartidor</label>
               <select
                 id={repartidorId}
                 value={repartidor}
                 onChange={(e) => onRepartidor(e.target.value)}
-                className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm outline-none focus:border-primary"
+                className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm outline-none focus:border-primary"
               >
                 <option value="">Todos los repartidores</option>
                 {repartidores.map((r) => (
@@ -167,23 +160,23 @@ export function OrdersFilters({ filters, dispatch, repartidores, repartidor, onR
           {/* Date range */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <label htmlFor={dateFromId} className="block text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Fecha desde</label>
+              <label htmlFor={dateFromId} className="block text-sm font-bold text-[var(--text-primary)]">Fecha desde</label>
               <input
                 id={dateFromId}
                 type="date"
                 value={filters.dateFrom}
                 onChange={(e) => dispatch({ type: "SET_DATE_FROM", value: e.target.value })}
-                className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+                className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] text-sm outline-none focus:border-primary"
               />
             </div>
             <div className="space-y-2">
-              <label htmlFor={dateToId} className="block text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Fecha hasta</label>
+              <label htmlFor={dateToId} className="block text-sm font-bold text-[var(--text-primary)]">Fecha hasta</label>
               <input
                 id={dateToId}
                 type="date"
                 value={filters.dateTo}
                 onChange={(e) => dispatch({ type: "SET_DATE_TO", value: e.target.value })}
-                className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+                className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] text-sm outline-none focus:border-primary"
               />
             </div>
           </div>
@@ -191,7 +184,7 @@ export function OrdersFilters({ filters, dispatch, repartidores, repartidor, onR
           {/* Amount range */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Monto mínimo</p>
+              <p className="text-sm font-bold text-[var(--text-primary)]">Monto mínimo</p>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm">S/</span>
                 <input
@@ -199,12 +192,12 @@ export function OrdersFilters({ filters, dispatch, repartidores, repartidor, onR
                   value={filters.amountMin}
                   onChange={(e) => dispatch({ type: "SET_AMOUNT_MIN", value: e.target.value })}
                   placeholder="0.00"
-                  className="w-full pl-8 pr-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+                  className="w-full pl-8 pr-3 h-12 rounded-xl border border-[var(--rule-base)] text-sm outline-none focus:border-primary"
                 />
               </div>
             </div>
             <div className="space-y-2">
-              <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Monto máximo</p>
+              <p className="text-sm font-bold text-[var(--text-primary)]">Monto máximo</p>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] text-sm">S/</span>
                 <input
@@ -212,7 +205,7 @@ export function OrdersFilters({ filters, dispatch, repartidores, repartidor, onR
                   value={filters.amountMax}
                   onChange={(e) => dispatch({ type: "SET_AMOUNT_MAX", value: e.target.value })}
                   placeholder="999.99"
-                  className="w-full pl-8 pr-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+                  className="w-full pl-8 pr-3 h-12 rounded-xl border border-[var(--rule-base)] text-sm outline-none focus:border-primary"
                 />
               </div>
             </div>
@@ -220,50 +213,46 @@ export function OrdersFilters({ filters, dispatch, repartidores, repartidor, onR
 
           {/* Customer search */}
           <div className="space-y-2">
-            <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Buscar Cliente</p>
+            <p className="text-sm font-bold text-[var(--text-primary)]">Buscar cliente</p>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
               <input
                 type="text"
                 value={filters.customerSearch}
                 onChange={(e) => dispatch({ type: "SET_CUSTOMER_SEARCH", value: e.target.value })}
-                placeholder="Nombre o teléfono..."
-                className="w-full pl-9 pr-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm outline-none focus:border-primary"
+                placeholder="Nombre o teléfono…"
+                className="w-full pl-9 pr-3 h-12 rounded-xl border border-[var(--rule-base)] text-sm outline-none focus:border-primary"
               />
             </div>
           </div>
 
           {/* Checkboxes */}
           <div className="space-y-2">
-            <Field label="Tiene deuda pendiente" className="flex items-center gap-3 p-3 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] cursor-pointer" labelClassName="sr-only">
+            <Field label="Tiene deuda pendiente" className="flex min-h-12 items-center gap-3 px-3 py-2 rounded-xl border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] cursor-pointer" labelClassName="sr-only">
               {(id) => (
                 <>
-                  <input
+                  <Casilla
                     id={id}
-                    type="checkbox"
                     checked={filters.hasDebt}
                     onChange={(e) => dispatch({ type: "SET_HAS_DEBT", value: e.target.checked })}
-                    className="rounded border-[var(--rule-base)] text-primary focus:ring-primary"
                   />
                   <div>
-                    <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Tiene deuda pendiente</p>
+                    <p className="text-sm font-semibold text-[var(--text-primary)]">Tiene deuda pendiente</p>
                     <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Solo pedidos con deuda sin cobrar</p>
                   </div>
                 </>
               )}
             </Field>
-            <Field label="Tiene notas internas" className="flex items-center gap-3 p-3 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] cursor-pointer" labelClassName="sr-only">
+            <Field label="Tiene notas internas" className="flex min-h-12 items-center gap-3 px-3 py-2 rounded-xl border border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] cursor-pointer" labelClassName="sr-only">
               {(id) => (
                 <>
-                  <input
+                  <Casilla
                     id={id}
-                    type="checkbox"
                     checked={filters.hasAdminNotes}
                     onChange={(e) => dispatch({ type: "SET_HAS_ADMIN_NOTES", value: e.target.checked })}
-                    className="rounded border-[var(--rule-base)] text-primary focus:ring-primary"
                   />
                   <div>
-                    <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Tiene notas internas</p>
+                    <p className="text-sm font-semibold text-[var(--text-primary)]">Tiene notas internas</p>
                     <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Solo pedidos con comentarios del equipo</p>
                   </div>
                 </>
@@ -272,23 +261,6 @@ export function OrdersFilters({ filters, dispatch, repartidores, repartidor, onR
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="px-5 py-4 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] shrink-0 flex gap-3">
-          <button
-            onClick={handleClearAndClose}
-            className="flex-1 min-h-11 rounded-xl text-sm font-semibold text-[var(--text-secondary)] dark:text-muted border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] transition-colors"
-          >
-            Limpiar filtros
-          </button>
-          <button
-            onClick={onClose}
-            className="flex-1 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors"
-          >
-            Aplicar filtros
-          </button>
-        </div>
-        <TiradorDeVentana ventana={ventana} />
-      </div>
-    </div>
+    </AdminModal>
   );
 }

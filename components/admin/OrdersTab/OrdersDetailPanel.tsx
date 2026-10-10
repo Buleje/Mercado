@@ -16,7 +16,7 @@
  *   9. Footer sticky: Rechazar · Generar Boleta · Cerrar
  *
  * Reglas DS (sistema admin, sobrio):
- *   - CardTitle/SectionTitle del DS para headings (NO h1/h2/h3 directos)
+ *   - CardTitle del DS para el nombre y para cada bloque (NO h1/h2/h3 directos)
  *   - Sin font-display italic (eso es del sistema marketing/store)
  *   - Tokens del DS — 0 hex hardcoded
  */
@@ -25,10 +25,10 @@ import { useEffect, useRef, useState } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
 import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
-import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { CardTitle } from "@buleje/design-system";
 import {
   X, Printer, Check, Phone, MapPin as MapPinIcon, FileText, MessageCircle,
-  ChevronDown, ChevronRight, ExternalLink,
+  ChevronDown, ChevronRight, ExternalLink, Truck, FileMinus,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { DbOrder } from "@/lib/jsondb";
@@ -87,6 +87,12 @@ function escapeHtml(s: string): string {
 // boleta SUNAT. Antes "Imprimir" y "Generar boleta" abrían el MISMO endpoint
 // (/api/invoices) → botón duplicado. Ahora Imprimir = comanda para preparar,
 // Generar boleta = comprobante fiscal. Ventana nueva, todos los datos escapados.
+/** Mismo aspecto que «Imprimir comanda»: son papeles del pedido, del mismo peso.
+ *  px-2.5 y gap-1.5 en el pie: con los 5 botones en px-3 «Generar boleta» bajaba a
+ *  una fila propia a 1280 (737 px contra 728 de ancho útil). */
+const ENLACE_PAPEL =
+  "inline-flex items-center gap-1.5 h-12 px-2.5 rounded-xl text-sm font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:no-underline transition-colors";
+
 function printComanda(order: DbOrder): void {
   const w = window.open("", "_blank", "width=360,height=640");
   if (!w) return;
@@ -231,7 +237,7 @@ export function OrdersDetailPanel({
 
   return (
     <div ref={cajaRef} tabIndex={-1}
-      className="fixed inset-0 z-modal flex items-start sm:items-center justify-center p-3 sm:p-6 bg-black/55 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200"
+      className="fixed inset-0 z-modal flex items-start sm:items-center justify-center p-3 sm:p-6 bg-black/55 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-[var(--dur-fast)]"
       onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) onClose(); }}
       onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
@@ -327,7 +333,7 @@ export function OrdersDetailPanel({
                 type="button"
                 onClick={actionBanner.primary.onClick}
                 className={cn(
-                  "inline-flex items-center gap-1.5 h-10 px-4 rounded-xl text-sm font-semibold transition-colors text-white",
+                  "inline-flex items-center gap-1.5 h-12 px-4 rounded-xl text-sm font-semibold transition-colors text-white",
                   actionBanner.primary.tone === "success"
                     ? "bg-[var(--data-success-500)] hover:opacity-90"
                     : "bg-primary hover:bg-primary/90",
@@ -341,10 +347,10 @@ export function OrdersDetailPanel({
                   type="button"
                   onClick={actionBanner.secondary.onClick}
                   className={cn(
-                    "inline-flex items-center gap-1.5 h-10 px-4 rounded-xl text-sm font-semibold border bg-[var(--surface-raised)] transition-colors",
+                    "inline-flex items-center gap-1.5 h-12 px-4 rounded-xl text-sm font-semibold border bg-[var(--surface-raised)] transition-colors",
                     actionBanner.secondary.tone === "success"
-                      ? "border-[var(--data-success-500)]/40 text-[var(--data-success-500)] hover:bg-[var(--data-success-500)]/5"
-                      : "border-[var(--data-error-500)]/40 text-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/5",
+                      ? "border-[var(--data-success-500)]/40 text-[var(--data-success-ink)] hover:bg-[var(--data-success-500)]/5"
+                      : "border-[var(--data-error-500)]/40 text-[var(--data-error-ink)] hover:bg-[var(--data-error-500)]/5",
                   )}
                 >
                   {actionBanner.secondary.tone === "success" ? (
@@ -364,7 +370,7 @@ export function OrdersDetailPanel({
           {/* ─── 3. ITEMS + RESUMEN ──────────────────────────────────────── */}
           <section className="space-y-2">
             <div className="flex items-baseline justify-between">
-              <SectionTitle>Productos</SectionTitle>
+              <CardTitle className="text-sm font-bold">Productos</CardTitle>
               <span className="text-xs font-semibold tabular-nums text-[var(--text-tertiary)]">
                 {order.items.length} {order.items.length === 1 ? "ítem" : "ítems"}
               </span>
@@ -439,7 +445,7 @@ export function OrdersDetailPanel({
 
           {/* ─── 4. CONTACTO + DIRECCIÓN ─────────────────────────────────── */}
           <section className="space-y-2">
-            <SectionTitle>Contacto y entrega</SectionTitle>
+            <CardTitle className="text-sm font-bold">Contacto y entrega</CardTitle>
             <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
               {/* Teléfono */}
               {phone && (
@@ -450,7 +456,7 @@ export function OrdersDetailPanel({
                   </span>
                   <a
                     href={`tel:${phoneDigits}`}
-                    className="inline-flex items-center gap-1 h-8 px-2.5 rounded-md border border-[var(--rule-base)] text-xs font-semibold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+                    className="inline-flex items-center gap-1.5 h-12 px-3 rounded-xl border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
                   >
                     <Phone className="h-3.5 w-3.5" /> Llamar
                   </a>
@@ -458,7 +464,7 @@ export function OrdersDetailPanel({
                     href={`https://wa.me/${phoneDigits}?text=${encodeURIComponent(`Hola ${order.customer.name}, sobre tu pedido #${order.id.slice(-8)}`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 h-8 px-2.5 rounded-md bg-[var(--data-success-500)]/10 border border-[var(--data-success-500)]/30 text-xs font-semibold text-[var(--data-success-500)] hover:bg-[var(--data-success-500)]/15 transition-colors"
+                    className="inline-flex items-center gap-1.5 h-12 px-3 rounded-xl bg-[var(--data-success-500)]/10 border border-[var(--data-success-500)]/30 text-sm font-semibold text-[var(--data-success-ink)] hover:bg-[var(--data-success-500)]/15 transition-colors"
                   >
                     <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
                   </a>
@@ -482,7 +488,7 @@ export function OrdersDetailPanel({
                   href={googleMapsUrl(order.customer.location)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 h-8 px-2.5 rounded-md border border-[var(--rule-base)] text-xs font-semibold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors shrink-0"
+                  className="inline-flex items-center gap-1.5 h-12 px-3 rounded-xl border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors shrink-0"
                 >
                   <ExternalLink className="h-3.5 w-3.5" /> Mapa
                 </a>
@@ -514,14 +520,14 @@ export function OrdersDetailPanel({
           {/* ─── 6. PAGO (extra detail si Yape/Plin/Transfer o deuda) ──── */}
           {order.paymentMethod && order.paymentMethod !== "efectivo" && (
             <section className="space-y-2">
-              <SectionTitle>Pago</SectionTitle>
+              <CardTitle className="text-sm font-bold">Pago</CardTitle>
               <PaymentProofViewer orderId={order.id} />
             </section>
           )}
           {order.paymentMethod && (order.yapeOperationNumber || order.deuda !== undefined) && (
             <section className="space-y-2">
               {order.paymentMethod === "efectivo" && (
-                <SectionTitle>Pago</SectionTitle>
+                <CardTitle className="text-sm font-bold">Pago</CardTitle>
               )}
               <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 flex items-center gap-2 flex-wrap">
                 <span
@@ -547,13 +553,13 @@ export function OrdersDetailPanel({
                 )}
                 {order.paymentMethod === "efectivo" && order.deuda && (
                   <>
-                    <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-error-500)]/10 text-[var(--data-error-500)] border border-[var(--data-error-500)]/30">
+                    <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-error-500)]/10 text-[var(--data-error-ink)] border border-[var(--data-error-500)]/30">
                       Deuda pendiente
                     </span>
                     <button
                       type="button"
                       onClick={() => onMarkDeudaPaid(order.id)}
-                      className="ml-auto inline-flex items-center gap-1 h-8 px-2.5 rounded-lg text-xs font-semibold text-[var(--data-success-500)] bg-[var(--data-success-500)]/10 hover:bg-[var(--data-success-500)]/15 border border-[var(--data-success-500)]/30 transition-colors"
+                      className="ml-auto inline-flex items-center gap-1.5 h-12 px-3 rounded-xl text-sm font-semibold text-[var(--data-success-ink)] bg-[var(--data-success-500)]/10 hover:bg-[var(--data-success-500)]/15 border border-[var(--data-success-500)]/30 transition-colors"
                     >
                       <Check className="h-3.5 w-3.5" /> Marcar cobrado
                     </button>
@@ -573,7 +579,7 @@ export function OrdersDetailPanel({
             <button
               type="button"
               onClick={() => setNotesOpen((v) => !v)}
-              className="w-full flex items-center gap-2 py-2 group"
+              className="w-full flex min-h-12 items-center gap-2 group"
               aria-expanded={notesOpen}
             >
               {notesOpen ? (
@@ -581,9 +587,9 @@ export function OrdersDetailPanel({
               ) : (
                 <ChevronRight className="h-4 w-4 text-[var(--text-tertiary)]" />
               )}
-              <SectionTitle className="text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors">
+              <CardTitle className="text-sm font-bold text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors">
                 Notas internas
-              </SectionTitle>
+              </CardTitle>
               {adminNotes && (
                 <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)] text-xs font-bold">
                   !
@@ -605,13 +611,13 @@ export function OrdersDetailPanel({
                     onChange={(e) => onAdminNoteChange(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && onSaveAdminNote(order.id)}
                     placeholder="Agregar nota interna…"
-                    className="flex-1 h-10 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-primary transition-colors"
+                    className="flex-1 h-12 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-primary transition-colors"
                   />
                   <button
                     type="button"
                     onClick={() => onSaveAdminNote(order.id)}
                     disabled={savingNote || !adminNote.trim()}
-                    className="h-10 px-4 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
+                    className="h-12 px-4 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
                   >
                     {savingNote ? "…" : "Guardar"}
                   </button>
@@ -625,7 +631,7 @@ export function OrdersDetailPanel({
             <button
               type="button"
               onClick={() => setTimelineOpen((v) => !v)}
-              className="w-full flex items-center gap-2 py-2 group"
+              className="w-full flex min-h-12 items-center gap-2 group"
               aria-expanded={timelineOpen}
             >
               {timelineOpen ? (
@@ -633,9 +639,9 @@ export function OrdersDetailPanel({
               ) : (
                 <ChevronRight className="h-4 w-4 text-[var(--text-tertiary)]" />
               )}
-              <SectionTitle className="text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors">
+              <CardTitle className="text-sm font-bold text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors">
                 Línea de tiempo
-              </SectionTitle>
+              </CardTitle>
             </button>
             {timelineOpen && (
               <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 mt-2">
@@ -690,12 +696,12 @@ export function OrdersDetailPanel({
         </div>
 
         {/* ─── 9. FOOTER STICKY — acciones secundarias (peso normal) ──────── */}
-        <footer className="shrink-0 px-5 py-3 border-t border-[var(--rule-soft)] bg-[var(--surface-raised)] flex items-center gap-2 flex-wrap">
+        <footer className="shrink-0 px-5 py-3 border-t border-[var(--rule-soft)] bg-[var(--surface-raised)] flex items-center gap-1.5 flex-wrap">
           {order.status !== "cancelado" && order.status !== "entregado" && (
             <button
               type="button"
               onClick={() => onShowRejectModal(order.id)}
-              className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl text-sm font-semibold text-[var(--data-error-500)] border border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/5 hover:bg-[var(--data-error-500)]/10 transition-colors"
+              className="inline-flex items-center gap-1.5 h-12 px-2.5 rounded-xl text-sm font-semibold text-[var(--data-error-ink)] border border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/5 hover:bg-[var(--data-error-500)]/10 transition-colors"
             >
               <X className="h-4 w-4" />
               Rechazar
@@ -704,15 +710,35 @@ export function OrdersDetailPanel({
           <button
             type="button"
             onClick={() => printComanda(order)}
-            className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl text-sm font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+            className={ENLACE_PAPEL}
           >
             <Printer className="h-4 w-4" />
             Imprimir comanda
           </button>
+          {/* Los otros papeles del pedido (plan «panel unificado» 2026-10-09):
+              llevan a su pantalla; el N° de pedido se vincula allá. */}
+          <EnlacePanel
+            href="/admin?tab=guias-remision"
+            apariencia="heredada"
+            title={`Abre Guías de remisión para hacer la del pedido #${order.id.slice(-6)}`}
+            className={ENLACE_PAPEL}
+          >
+            <Truck className="h-4 w-4" aria-hidden />
+            Hacer guía
+          </EnlacePanel>
+          <EnlacePanel
+            href="/admin?tab=notas-credito"
+            apariencia="heredada"
+            title={`Abre Notas de crédito para la del pedido #${order.id.slice(-6)}`}
+            className={ENLACE_PAPEL}
+          >
+            <FileMinus className="h-4 w-4" aria-hidden />
+            Nota de crédito
+          </EnlacePanel>
           <button
             type="button"
             onClick={() => window.open(`/api/invoices/${order.id}`, "_blank", "noopener,noreferrer")}
-            className="ml-auto inline-flex items-center gap-1.5 h-10 px-4 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors"
+            className="ml-auto inline-flex items-center gap-1.5 h-12 px-3.5 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors"
           >
             <FileText className="h-4 w-4" strokeWidth={2} />
             Generar boleta
