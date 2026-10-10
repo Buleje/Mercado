@@ -213,6 +213,9 @@ await ctx.addInitScript((slug) => {
     if (!localStorage.getItem("active-tenant-slug")) localStorage.setItem("active-tenant-slug", slug);
     localStorage.setItem(`onboarding-completed-${slug}`, "1");
     localStorage.setItem("onboarding-completed-main", "1");
+    /* El TOUR es otra clave: sin ella, cargar /admin sin ?tab (retomar admin_active_tab)
+       arranca el tour y salta al Asistente IA (09-10: parecía un bug de las redirecciones). */
+    localStorage.setItem("bodega_onboarding_done", "true");
   } catch { /* sin storage */ }
 }, tenant);
 /* `--ls '{"clave":"valor"}'` (08-10): siembra localStorage ANTES de cargar; evitaba un eval con
