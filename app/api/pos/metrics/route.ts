@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { AdminUsersDB } from "@/lib/db/admin-users.db";
+import { CommissionRulesDB } from "@/lib/db/commission-rules.db";
+import { CommissionsDB } from "@/lib/db/commissions.db";
+import { calcularComisiones, tasaPara } from "@/lib/comisiones/calcular";
 import { logger } from "@/lib/logger";
 
 /**
@@ -21,10 +24,11 @@ import { logger } from "@/lib/logger";
  * ENRIQUECIDO 2026-05-07: ahora devuelve tambien:
  *  - paymentBreakdown: distribucion por metodo de pago.
  *  - topProductos: 3 productos mas vendidos del turno.
- *  - comisionEstimada: % por defecto sobre revenue.
+ *  - comisionEstimada: con la MISMA regla que el pago de Comisiones
+ *    (`calcularComisiones`: la regla del vendedor, si no la general, si no el
+ *    2 %, sobre lo vendido neto de devoluciones). Antes era un 2,5 % fijo sobre
+ *    lo bruto: con S/ 300 vendidos y sin reglas decía S/ 7.50 y se pagaban S/ 6.00.
  */
-
-const DEFAULT_COMMISSION_RATE = 2.5; // % sobre revenue (override via CommissionRule pendiente)
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "cajero", "owner", "manager"]);
@@ -106,7 +110,18 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => b.cantidad - a.cantidad)
       .slice(0, 3);
 
-    const comisionEstimada = Math.round(totalVentas * DEFAULT_COMMISSION_RATE) / 100;
+    // Lo vendido por esta cajera desde que abrió, como lo cuenta el pago
+    // (`CommissionsDB.cashierSummary`, neto de devoluciones) y con sus reglas.
+    // Filtrado en la consulta: antes traía las ventas de TODAS las cajeras.
+    const [reglasDb, porVendedor] = await Promise.all([
+      CommissionRulesDB.list(tenantId),
+      CommissionsDB.cashierSummary(tenantId, { from: turno.abrioEn, cashierIds }),
+    ]);
+    const reglas = reglasDb.map((r) => ({ id: r.id, cashierId: r.cashierId, label: r.label, minSales: Number(r.minSales), maxSales: r.maxSales == null ? null : Number(r.maxSales), rate: Number(r.rate) }));
+    const dia = turno.abrioEn.toISOString().slice(0, 10);
+    const comision = calcularComisiones(dia, dia, porVendedor.filter((v) => cashierIds.includes(v.cashierId)), reglas, []);
+    const comisionEstimada = comision.totales.comision;
+    const comisionRate = comision.filas[0]?.tasa ?? tasaPara(turnoUsername ?? turno.adminUserId, 0, reglas).tasa;
 
     return NextResponse.json({
       turnoActivo: true,
@@ -119,7 +134,7 @@ export async function GET(req: NextRequest) {
       paymentBreakdown,
       topProductos,
       comisionEstimada,
-      comisionRate: DEFAULT_COMMISSION_RATE,
+      comisionRate,
     });
   } catch (e) {
     logger.error("[POS Metrics]", { err: e instanceof Error ? e.message : String(e) });

@@ -4,7 +4,10 @@ import { useState } from "react";
 import { ArrowDown, ArrowUp, Check, Loader2 } from "@buleje/design-system/icons";
 import { Field } from "@/components/admin/shared/Field";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
+import { ME_DEBEN } from "@/components/admin/por-cobrar/FiadosEnVentasYCaja";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { hrefDeDestino } from "@/lib/admin/enlaces-panel";
 import { cn } from "@/lib/utils";
 import { BotonCancelar, MarcoModalCaja, mensajeDeError } from "./MarcoModalCaja";
 
@@ -22,7 +25,8 @@ const MOTIVOS: Record<"ingreso" | "egreso", Array<{ valor: string; rotulo: strin
   ],
   ingreso: [
     { valor: "Ingreso extra", rotulo: "Ingreso extra" },
-    { valor: "Cobro pendiente", rotulo: "Cobro pendiente (fiado)" },
+    /* Sin «Cobro pendiente (fiado)»: entraba a la caja sin bajar la deuda (se
+       podía cobrar dos veces). Ese cobro va por Me deben (enlace del modal). */
     { valor: "Cambio", rotulo: "Cambio (sencillo)" },
     { valor: "Otro", rotulo: "Otro" },
   ],
@@ -170,6 +174,15 @@ export function ModalMovimientoCaja({ cajaId, tipo, onCerrar, onHecho }: Props) 
               ))}
             </select>
             {faltaMotivo && <p className="text-sm text-[var(--data-error-500)] mt-1.5 font-medium">Motivo obligatorio para retiros</p>}
+            {esIngreso && (
+              <p className="mt-1.5 text-sm text-[var(--text-secondary)]">
+                ¿Te pagaron un fiado?{" "}
+                <EnlacePanel href={hrefDeDestino({ tab: ME_DEBEN.tab, params: { ...ME_DEBEN.params } })} onClick={onCerrar}>
+                  Cóbralo en Me deben
+                </EnlacePanel>
+                : baja la deuda y entra a la caja.
+              </p>
+            )}
           </>
         )}
       </Field>

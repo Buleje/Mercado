@@ -1,14 +1,14 @@
 "use client";
 
 /** Ventana «Cerrar turno»: lo esperado en el cajón, el conteo, la diferencia y la nota. */
-import { Loader2, Square } from "@buleje/design-system/icons";
+import { Loader2, RotateCcw, Square } from "@buleje/design-system/icons";
 import { Field } from "@/components/admin/shared/Field";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { ConteoDenominaciones } from "./ConteoDenominaciones";
 import { BOTON_PELIGRO, BOTON_SECUNDARIO, ErrorVentana, MarcoModalTurno } from "./MarcoModalTurno";
-import type { useCierreTurno } from "./use-cierre-turno";
+import { SIN_ESPERADO, type useCierreTurno } from "./use-cierre-turno";
 import type { Turno } from "./tipos";
 
 type Cierre = ReturnType<typeof useCierreTurno>;
@@ -21,7 +21,7 @@ const SEGMENTO_OFF = "text-[var(--text-tertiary)] hover:text-[var(--text-primary
 export function CerrarTurnoModal({ turno, cierre, ventasDelTurno }: { turno: Turno | null; cierre: Cierre; ventasDelTurno: number }) {
   const c = cierre;
   const montoValido = c.cierreEfectivo !== "" && !isNaN(parseFloat(c.cierreEfectivo));
-  const diff = montoValido ? parseFloat(c.cierreEfectivo) - c.esperado : 0;
+  const diff = montoValido && c.esperado !== null ? parseFloat(c.cierreEfectivo) - c.esperado : 0;
   const cuadrado = Math.abs(diff) < 0.01;
   const sobrante = diff > 0;
   const tonoDiff = cuadrado ? "text-[var(--data-success-500)]" : sobrante ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]";
@@ -39,7 +39,7 @@ export function CerrarTurnoModal({ turno, cierre, ventasDelTurno }: { turno: Tur
       onCerrar={c.resetCierreState}
       pie={<>
         <button type="button" onClick={c.resetCierreState} className={BOTON_SECUNDARIO}>Cancelar</button>
-        <button type="button" onClick={() => c.handleCerrar()} disabled={c.closing} className={BOTON_PELIGRO}>
+        <button type="button" onClick={() => c.handleCerrar()} disabled={c.closing || c.esperado === null} className={BOTON_PELIGRO}>
           {c.closing ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Square className="h-5 w-5" aria-hidden />}
           Confirmar cierre
         </button>
@@ -65,9 +65,23 @@ export function CerrarTurnoModal({ turno, cierre, ventasDelTurno }: { turno: Tur
                   example="S/ 100 de apertura + S/ 24.90 en efectivo + S/ 5 de ingreso = S/ 129.90"
                 />
               </span>
-              <span className="text-2xl font-extrabold text-[var(--text-primary)] tabular-nums">{formatCurrency(c.esperado)}</span>
+              {c.esperado !== null ? (
+                <span className="text-2xl font-extrabold text-[var(--text-primary)] tabular-nums">{formatCurrency(c.esperado)}</span>
+              ) : !c.esperadoFallo ? (
+                <Loader2 className="h-5 w-5 animate-spin text-[var(--text-tertiary)]" aria-label="Calculando lo esperado" />
+              ) : null}
             </div>
+            {c.esperado === null && c.esperadoFallo && (
+              <div role="alert" className="flex items-center justify-between gap-3 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 px-3 py-2">
+                <span className="text-sm font-semibold text-[var(--data-error-ink)]">{SIN_ESPERADO}</span>
+                <button type="button" onClick={c.reintentarEsperado} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 min-h-9 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]">
+                  <RotateCcw className="h-4 w-4" aria-hidden />
+                  Reintentar
+                </button>
+              </div>
+            )}
             {c.cajaFueraDelCajon && <p className="text-sm text-[var(--text-secondary)]">{c.cajaFueraDelCajon}</p>}
+            {c.cajaSigueAbierta && <p className="text-sm font-semibold text-[var(--data-info-ink)]">{c.cajaSigueAbierta}</p>}
           </div>
 
           <div>
@@ -103,7 +117,7 @@ export function CerrarTurnoModal({ turno, cierre, ventasDelTurno }: { turno: Tur
             )}
           </div>
 
-          {montoValido && (
+          {montoValido && c.esperado !== null && (
             <div
               aria-live="polite"
               className={cn(
@@ -131,7 +145,8 @@ export function CerrarTurnoModal({ turno, cierre, ventasDelTurno }: { turno: Tur
               className="w-full px-4 py-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
             />
           </Field>
-          <ErrorVentana mensaje={c.closeError} />
+          {/* El aviso de «no se pudo calcular» ya está junto al esperado, con su Reintentar. */}
+          <ErrorVentana mensaje={c.closeError === SIN_ESPERADO ? null : c.closeError} />
         </>
       )}
     </MarcoModalTurno>

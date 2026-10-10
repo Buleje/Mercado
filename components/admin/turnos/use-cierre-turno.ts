@@ -10,7 +10,51 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { cuentasDeCajaParaPantalla } from "@/lib/caja/cuentas-de-pantalla";
 import { formatCurrency } from "@/lib/format";
 import { pedirResumenServidor } from "./use-resumen-turno";
-import { calcularDesdeDenominaciones, esDiferenciaAnormal, type Turno, type TurnoSummary } from "./tipos";
+import { calcularDesdeDenominaciones, esDiferenciaAnormal, lineaCajaSigueAbierta, type Turno, type TurnoSummary } from "./tipos";
+
+export const SIN_ESPERADO = "No se pudo calcular lo esperado en caja. Reintenta antes de cerrar.";
+
+type EsperadoDelCierre = { esperado: number; fueraDelCajon: string | null };
+
+/** Lo que trae `GET /api/cash-registers` de cada caja (sólo lo que usa el cierre). */
+type CajaDelListado = {
+  id: string;
+  status: string;
+  openingAmount: number;
+  /** Lo suma el servidor sobre TODOS los movimientos de una caja abierta. */
+  efectivoEsperado?: number;
+  /** Sólo los últimos 100: sirven para la línea de Yape/tarjeta, no para el esperado. */
+  movements?: Array<{ type: string; method: string; amount: number }>;
+};
+
+/**
+ * El esperado del cierre, del servidor y por el MISMO camino que tomará
+ * `POST /api/turnos/[id]/cerrar`:
+ *  - turno con su caja abierta → `efectivoEsperado` de esa caja (el cierre la
+ *    cierra con esa cuenta: apertura + ventas en efectivo + ingresos − egresos);
+ *  - sin caja vinculada, o su caja ya cerrada → el cierre usa
+ *    `inicio + ventas del turno`; las ventas, del resumen del servidor.
+ * `null` = no se pudo saber. Antes caía a `inicio + ventasTotal`, y `ventasTotal`
+ * vale 0 con el turno abierto: «Esperado S/ 50.00» con S/ 345.50 vendidos.
+ */
+export async function pedirEsperadoDelCierre(turno: Turno): Promise<EsperadoDelCierre | null> {
+  if (turno.cashRegisterId) {
+    const res = await fetch("/api/cash-registers");
+    if (!res.ok) return null;
+    const data = await res.json();
+    const cajas: CajaDelListado[] = Array.isArray(data) ? data : (data?.items ?? []);
+    const caja = cajas.find((r) => r.id === turno.cashRegisterId);
+    if (caja?.status === "abierta") {
+      if (typeof caja.efectivoEsperado !== "number") return null;
+      /* LA cuenta del arqueo, la misma del cierre y de la pestaña Caja: aquí sólo da la línea de lo que no está en el cajón. */
+      const cuentas = cuentasDeCajaParaPantalla(Number(caja.openingAmount || 0), caja.movements ?? [], formatCurrency);
+      return { esperado: caja.efectivoEsperado, fueraDelCajon: cuentas.fueraDelCajon };
+    }
+  }
+  const s = await pedirResumenServidor(turno.id);
+  if (!s) return null;
+  return { esperado: Math.round((turno.inicioEfectivo + s.totalVendido) * 100) / 100, fueraDelCajon: null };
+}
 
 type Opciones = {
   turnoActivo: Turno | null;
@@ -25,10 +69,11 @@ export function useCierreTurno({ turnoActivo, cajeroNombre, onCerrado, refrescar
   const [cierreNotas, setCierreNotas] = useState("");
   const [closing, setClosing] = useState(false);
   const [closeError, setCloseError] = useState<string | null>(null);
-  // FIX 2026-07-08 (bug 6): esperado REAL del cajón = apertura + ventas en efectivo
-  // + ingresos − egresos de la caja vinculada. `null` = cargando / sin caja (fallback legacy).
-  const [cajaEsperado, setCajaEsperado] = useState<number | null>(null);
-  const [cajaFueraDelCajon, setCajaFueraDelCajon] = useState<string | null>(null);
+  // Esperado del cierre, del SERVIDOR (ver `pedirEsperadoDelCierre`). `null` = cargando
+  // o no se pudo saber (`esperadoFallo`): entonces no se muestra cifra ni se deja cerrar.
+  const [esperadoCierre, setEsperadoCierre] = useState<EsperadoDelCierre | null>(null);
+  const [esperadoFallo, setEsperadoFallo] = useState(false);
+  const [intentoEsperado, setIntentoEsperado] = useState(0);
   const [conteoMode, setConteoMode] = useState<"denominacion" | "manual">("denominacion");
   const [denomCounts, setDenomCounts] = useState<Record<string, number>>({});
   const [showDiffConfirm, setShowDiffConfirm] = useState(false);
@@ -50,34 +95,26 @@ export function useCierreTurno({ turnoActivo, cajeroNombre, onCerrado, refrescar
   const abrirCierre = useCallback(() => { setShowCierre(true); setCloseError(null); }, []);
 
   useEffect(() => {
-    if (!showCierre || !turnoActivo) { setCajaEsperado(null); setCajaFueraDelCajon(null); return; }
+    if (!showCierre || !turnoActivo) { setEsperadoCierre(null); setEsperadoFallo(false); return; }
     let cancelled = false;
-    fetch("/api/cash-registers")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (cancelled || !data) return;
-        const registers: Array<{
-          id: string; status: string; openingAmount: number;
-          movements?: Array<{ type: string; method: string; amount: number }>;
-        }> = Array.isArray(data) ? data : (data.items ?? []);
-        // La caja del turno; si es un turno legacy sin vínculo, la que esté abierta.
-        const reg = registers.find((r) => r.id === turnoActivo.cashRegisterId)
-          ?? registers.find((r) => r.status === "abierta");
-        if (!reg) return;
-        const movs = reg.movements ?? [];
-        /* LA cuenta del arqueo, la misma del cierre y de la pestaña Caja (sólo efectivo). */
-        const cuentas = cuentasDeCajaParaPantalla(Number(reg.openingAmount || 0), movs, formatCurrency);
-        setCajaEsperado(cuentas.expectedCash);
-        setCajaFueraDelCajon(cuentas.fueraDelCajon);
-      })
-      .catch((err) => {
-        console.warn("[Turnos] caja del cierre (cae al esperado legacy)", err);
-        if (!cancelled) { setCajaEsperado(null); setCajaFueraDelCajon(null); }
-      });
+    // Sin borrar la cifra que ya hay: un refresco del turno no la hace parpadear.
+    setEsperadoFallo(false);
+    pedirEsperadoDelCierre(turnoActivo).then((r) => {
+      if (cancelled) return;
+      setEsperadoCierre(r);
+      setEsperadoFallo(r === null);
+    }).catch((err) => {
+      console.warn("[Turnos] esperado del cierre", err);
+      if (!cancelled) { setEsperadoCierre(null); setEsperadoFallo(true); }
+    });
     return () => { cancelled = true; };
-  }, [showCierre, turnoActivo]);
+  }, [showCierre, turnoActivo, intentoEsperado]);
 
-  const esperado = turnoActivo ? cajaEsperado ?? (turnoActivo.inicioEfectivo + turnoActivo.ventasTotal) : 0;
+  const esperado = turnoActivo ? esperadoCierre?.esperado ?? null : null;
+  /* Otro turno abierto usa la misma caja: cerrar éste no la cierra y el esperado es el de toda la caja. */
+  const cajaSigueAbierta = lineaCajaSigueAbierta(turnoActivo?.cajaCompartidaCon);
+  const cajaFueraDelCajon = esperadoCierre?.fueraDelCajon ?? null;
+  const reintentarEsperado = useCallback(() => setIntentoEsperado((n) => n + 1), []);
 
   /** Cambia la cantidad de una denominación y recalcula el monto contado. */
   const cambiarDenominacion = useCallback((key: string, calcular: (actual: number) => number) => {
@@ -94,6 +131,11 @@ export function useCierreTurno({ turnoActivo, cajeroNombre, onCerrado, refrescar
     setCloseError(null);
     const monto = parseFloat(cierreEfectivo);
     if (isNaN(monto) || monto < 0) { setCloseError("Monto inválido"); return; }
+    // Sin el esperado del servidor no hay contra qué comparar: no se cierra a ciegas.
+    if (esperado === null) {
+      setCloseError(esperadoFallo ? SIN_ESPERADO : "Calculando lo esperado en caja…");
+      return;
+    }
 
     // Guarda de diferencia alta en la UI: el backend recibe cualquier monto.
     const anormal = esDiferenciaAnormal(monto - esperado, esperado);
@@ -123,8 +165,8 @@ export function useCierreTurno({ turnoActivo, cajeroNombre, onCerrado, refrescar
       }
       const cerrado = await res.json();
       const ventasTotal = Number(cerrado.ventasTotal ?? turnoActivo.ventasTotal ?? 0);
-      // Diferencia del servidor (movimientos reales de la caja); fallback al esperado del cajón.
-      const diferencia = Number(cerrado.diferencia ?? (monto - (cajaEsperado ?? (turnoActivo.inicioEfectivo + ventasTotal))));
+      // Diferencia del servidor (movimientos reales de la caja); si no viniera, contra el esperado mostrado.
+      const diferencia = Number(cerrado.diferencia ?? (monto - esperado));
 
       // T6 (audit 2026-05-07): agregados del servidor, no de /api/sales en el cliente.
       const s = await pedirResumenServidor(turnoActivo.id);
@@ -146,6 +188,7 @@ export function useCierreTurno({ turnoActivo, cajeroNombre, onCerrado, refrescar
         topProductos: (s?.topProductos ?? []).slice(0, 3),
         ventasPorHora: await ventasPorHoraDelTurno(turnoActivo),
         totalDescuentos: s?.totalDescuentos ?? 0,
+        cajaLaUsan: Array.isArray(cerrado.cajaLaUsan) ? cerrado.cajaLaUsan.filter((x: unknown): x is string => typeof x === "string") : [],
       });
       resetCierreState();
       refrescar();
@@ -161,7 +204,7 @@ export function useCierreTurno({ turnoActivo, cajeroNombre, onCerrado, refrescar
     showCierre, abrirCierre, resetCierreState,
     cierreEfectivo, setCierreEfectivo, cierreNotas, setCierreNotas,
     closing, closeError, setCloseError,
-    esperado, cajaFueraDelCajon,
+    esperado, esperadoFallo, reintentarEsperado, cajaFueraDelCajon, cajaSigueAbierta,
     conteoMode, setConteoMode, denomCounts, cambiarDenominacion,
     showDiffConfirm, setShowDiffConfirm, notaDiffAnormal, setNotaDiffAnormal,
     handleCerrar,

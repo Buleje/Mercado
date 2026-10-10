@@ -114,6 +114,14 @@ export async function POST(req: NextRequest) {
     //     Cuadre derive el nombre del cajero: "Nombre (detalle)").
     let cashRegisterId = parsed.data.cashRegisterId;
     /**
+     * Efectivo inicial del turno. Si el turno usa una caja YA abierta, es el
+     * fondo de ESA caja (lo pone el servidor): antes se guardaba la cifra de la
+     * pantalla y el historial decía «S/ 80» con la caja abierta en S/ 50, cuando
+     * el esperado del cierre parte del fondo de la caja. Sólo cuando el turno
+     * abre una caja nueva, la cifra contada es la de los dos.
+     */
+    let inicioEfectivo = parsed.data.inicioEfectivo;
+    /**
      * La caja que llega por el body tiene que ser de ESTE negocio.
      *
      * Venía del cliente y se usaba tal cual: con el id de una caja de otro
@@ -128,12 +136,14 @@ export async function POST(req: NextRequest) {
           { status: 400 },
         );
       }
+      if (propia.status === "abierta") inicioEfectivo = Number(propia.openingAmount);
     }
     if (!cashRegisterId) {
       try {
         const openReg = await CashRegistersDB.getOpen(auth.tenantId);
         if (openReg) {
           cashRegisterId = openReg.id;
+          inicioEfectivo = Number(openReg.openingAmount);
         } else {
           const operator = (auth.name?.trim() || auth.username || "").trim();
           const notes = operator ? `${operator} (turno)` : undefined;
@@ -160,12 +170,12 @@ export async function POST(req: NextRequest) {
       tenantId: auth.tenantId,
       adminUserId: resolvedAdminUserId,
       cashRegisterId,
-      inicioEfectivo: parsed.data.inicioEfectivo,
+      inicioEfectivo,
     });
 
     logActivity(
       "Abrir", "turno",
-      `Turno abierto con S/${parsed.data.inicioEfectivo.toFixed(2)} de efectivo inicial`,
+      `Turno abierto con S/${inicioEfectivo.toFixed(2)} de efectivo inicial`,
       turno.id, auth.username,
     ).catch((err) => logger.warn("[turnos] activity log failed", { turnoId: turno.id, err: String(err) }));
 

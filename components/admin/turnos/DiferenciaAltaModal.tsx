@@ -18,9 +18,11 @@ export function DiferenciaAltaModal({ cierre, hayTurno }: { cierre: Cierre; hayT
   const c = cierre;
   const monto = parseFloat(c.cierreEfectivo);
   const abierto = c.showDiffConfirm && hayTurno && c.cierreEfectivo !== "" && !isNaN(monto);
-  const diff = abierto ? monto - c.esperado : 0;
+  /* Sólo se abre tras pasar la guarda del cierre, que exige el esperado del servidor. */
+  const esperado = c.esperado ?? 0;
+  const diff = abierto ? monto - esperado : 0;
   const sobrante = diff > 0;
-  const pct = c.esperado > 0 ? (Math.abs(diff) / c.esperado) * 100 : 0;
+  const pct = esperado > 0 ? (Math.abs(diff) / esperado) * 100 : 0;
   const volver = () => { if (!c.closing) c.setShowDiffConfirm(false); };
 
   return (
@@ -49,7 +51,7 @@ export function DiferenciaAltaModal({ cierre, hayTurno }: { cierre: Cierre; hayT
       <div className="rounded-xl bg-[var(--surface-sunken)] p-4 space-y-2">
         <div className="flex justify-between items-center text-sm">
           <span className="text-[var(--text-secondary)]">Esperado</span>
-          <span className="font-bold text-[var(--text-primary)] tabular-nums">{formatCurrency(c.esperado)}</span>
+          <span className="font-bold text-[var(--text-primary)] tabular-nums">{formatCurrency(esperado)}</span>
         </div>
         <div className="flex justify-between items-center text-sm">
           <span className="text-[var(--text-secondary)]">Contado en caja</span>

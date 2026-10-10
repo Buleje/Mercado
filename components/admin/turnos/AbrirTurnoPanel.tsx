@@ -6,7 +6,7 @@
  * Enter en el monto abre el turno: sin pasos de más.
  *
  * Abrir el turno abre la caja o, si ya hay una abierta (alguien la abrió desde
- * Caja), la usa: el formulario lo dice y propone su fondo como efectivo inicial.
+ * Caja), la usa: el formulario lo dice y su fondo es el efectivo inicial (lo fija el servidor).
  *
  * Hasta el 10-10 eran dos tarjetas (formulario + «Último turno» y «Meta» al
  * costado, 1 pantalla para tres datos).
@@ -41,9 +41,13 @@ type Props = {
 };
 
 export function AbrirTurnoPanel(p: Props) {
-  const [efectivo, setEfectivo] = useState(() => (p.cajaAbierta ? String(p.cajaAbierta.fondo) : ""));
+  const [efectivo, setEfectivo] = useState("");
+  /* Con la caja ya abierta, el efectivo inicial ES su fondo (el servidor lo toma
+     de la caja): el campo lo muestra y no se edita. */
+  const fondoDeLaCaja = p.cajaAbierta ? String(p.cajaAbierta.fondo) : null;
+  const valor = fondoDeLaCaja ?? efectivo;
   const abrir = async () => {
-    const ok = await p.onAbrir(parseFloat(efectivo), p.cajeroElegido);
+    const ok = await p.onAbrir(parseFloat(valor), p.cajeroElegido);
     if (ok) { setEfectivo(""); p.setCajeroElegido(""); }
   };
   const u = p.ultimoTurno;
@@ -58,7 +62,7 @@ export function AbrirTurnoPanel(p: Props) {
           <InfoTip
             title="Una sola caja"
             what="Abrir el turno no abre otra caja: usa la que ya está abierta. El esperado del cierre sale de esa caja y de su fondo."
-            affects="Por eso el efectivo inicial viene con el fondo de la caja. Si lo cambias, el turno guarda tu cifra pero la caja sigue con la suya."
+            affects="Por eso el efectivo inicial del turno es el fondo de la caja y no se cambia: así el historial y el esperado parten de la misma cifra."
           />
         </p>
       )}
@@ -93,24 +97,26 @@ export function AbrirTurnoPanel(p: Props) {
             step="0.01"
             min="0"
             inputMode="decimal"
-            value={efectivo}
+            value={valor}
+            readOnly={fondoDeLaCaja !== null}
             onChange={(e) => setEfectivo(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter" && efectivo !== "") abrir(); }}
+            onKeyDown={(e) => { if (e.key === "Enter" && valor !== "") abrir(); }}
             placeholder="S/ 0.00"
-            className={cn(CAMPO, "px-4 text-lg font-bold text-right font-mono tabular-nums placeholder:font-normal placeholder:text-[var(--text-tertiary)]")}
+            className={cn(CAMPO, "px-4 text-lg font-bold text-right font-mono tabular-nums placeholder:font-normal placeholder:text-[var(--text-tertiary)] read-only:bg-[var(--surface-sunken)] read-only:cursor-default")}
           />
         </Field>
         <div role="group" aria-label="Montos rápidos" className="flex gap-2 sm:col-span-2 xl:col-span-1">
           {MONTOS_RAPIDOS.map((amount) => {
-            const activo = parseFloat(efectivo || "0") === amount;
+            const activo = parseFloat(valor || "0") === amount;
             return (
               <button
                 key={amount}
                 type="button"
                 aria-pressed={activo}
+                disabled={fondoDeLaCaja !== null}
                 onClick={() => setEfectivo(String(amount))}
                 className={cn(
-                  "flex-1 xl:flex-none px-3 min-h-12 rounded-xl text-sm font-semibold border tabular-nums transition-colors whitespace-nowrap",
+                  "flex-1 xl:flex-none px-3 min-h-12 rounded-xl text-sm font-semibold border tabular-nums transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed",
                   activo
                     ? "border-primary bg-[var(--accent-soft)] text-[var(--accent-ink)] dark:text-[var(--accent)]"
                     : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-primary/40 hover:text-[var(--text-primary)]",
@@ -124,7 +130,7 @@ export function AbrirTurnoPanel(p: Props) {
         <button
           type="button"
           onClick={abrir}
-          disabled={p.opening || efectivo === ""}
+          disabled={p.opening || valor === ""}
           className={button({ variant: "primary", className: "rounded-xl sm:col-span-2 xl:col-span-1" })}
         >
           {p.opening ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Play className="h-5 w-5" strokeWidth={2} aria-hidden />}

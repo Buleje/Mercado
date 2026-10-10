@@ -20,6 +20,7 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { logger } from "@/lib/logger";
 import { fmt } from "@/components/admin/pos/pos-shared";
 import { useResumenHoy } from "@/components/admin/pos/use-resumen-hoy";
+import { TASA_POR_DEFECTO } from "@/lib/comisiones/calcular";
 
 interface MetricasTurno {
   turnoActivo: boolean;
@@ -84,7 +85,7 @@ export function usePOSIndicadores(refreshKey: number) {
       key="comision"
       icono={HandCoins}
       rotulo="Tu comisión estimada"
-      ayuda={`Al ${t?.comisionRate ?? 2.5} % de lo que vendiste en este turno. La de cada vendedor, en Comisiones.`}
+      ayuda={`Al ${t?.comisionRate ?? TASA_POR_DEFECTO} % de lo que vendiste en este turno, con la regla de Comisiones (la que se paga).`}
     >
       {!t ? SIN_TURNO : <p className="text-lg font-extrabold tabular-nums text-[var(--accent-ink)] dark:text-[var(--accent)]">{fmt(t.comisionEstimada ?? 0)}</p>}
     </Tarjeta>,

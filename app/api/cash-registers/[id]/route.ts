@@ -14,6 +14,9 @@ import { z } from "zod";
 import { METODOS_DE_CAJA, saldoEsperadoDeCaja } from "@/lib/caja/saldo-esperado";
 import { TOPE_CAJA, montoContado } from "@/lib/caja/monto-contado";
 
+/** El motivo «Cobro pendiente (fiado)» que ofrecía «Registrar ingreso» (prefijo de la descripción). */
+const ES_COBRO_DE_FIADO_SUELTO = /^cobro pendiente\b/i;
+
 // Umbral de anomalia en arqueo: diferencias mayores generan alerta admin.
 const ANOMALY_THRESHOLD_SOL = 50;
 
@@ -112,6 +115,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         // SECURITY 2026-05-06 (pentest H003): verificar tenant ownership.
         if (!(await CashRegisterOwnershipDB.assertOwnership(id, auth.tenantId))) {
           return NextResponse.json({ error: "Register not found" }, { status: 404 });
+        }
+        /* Un cobro de fiado no es un ingreso suelto: entraba a la caja pero la
+           deuda seguía viva y se podía cobrar otra vez. Se cobra en Me deben,
+           que baja el saldo y anota la entrada a la caja en la misma operación.
+           (El modal ya no ofrece el motivo; esto ataja una pestaña vieja.) */
+        if (body.type === "ingreso" && ES_COBRO_DE_FIADO_SUELTO.test(body.description.trim())) {
+          return NextResponse.json(
+            { error: "Los cobros de fiado se registran en Ventas y caja › Me deben: ahí baja la deuda y entra a la caja." },
+            { status: 422 },
+          );
         }
         const movement = await CashRegistersDB.addMovement(
           id,
