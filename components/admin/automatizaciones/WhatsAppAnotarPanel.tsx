@@ -3,241 +3,157 @@
 /**
  * WhatsAppAnotarPanel — habilitar tu propio WhatsApp para anotar.
  *
- * Lo mismo que resuelve el panel de Telegram —emparejar un canal con el
- * negocio— pero con un riesgo que Telegram no tiene: acá el número YA atiende
- * clientes. Por eso la pantalla dice, arriba de todo, qué cambia para quién:
- * los teléfonos de esta lista hablan con el bot que escribe en los libros;
- * todos los demás siguen con la tienda, exactamente como hoy.
+ * Lo mismo que resuelve Telegram —emparejar un canal con el negocio— pero con
+ * un riesgo que Telegram no tiene: acá el número YA atiende clientes. Por eso
+ * el ⓘ dice qué cambia para quién: los teléfonos de esta lista hablan con el
+ * bot que escribe en los libros; todos los demás siguen con la tienda.
  *
  * El código dura 15 minutos y se quema al usarse: quien lo tenga puede
  * enganchar SU teléfono y anotar plata.
+ *
+ * El número del negocio NO se conecta acá: es el de Mensajes › Bot WhatsApp
+ * (un enlace, no una copia de ese panel).
  */
 
-import { useCallback, useEffect, useState } from "react";
-import { MessageCircle, Trash2, Copy, Check, Link2, Loader2 } from "@buleje/design-system/icons";
-import { CardTitle, InfoAlert, WarningAlert, BadgeStatus, PrimaryButton } from "@buleje/design-system";
+import { Link2, Loader2, MessageCircle } from "@buleje/design-system/icons";
+import { WarningAlert } from "@buleje/design-system";
+import Plegable from "@/components/admin/shared/Plegable";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
-import { csrfHeaders } from "@/lib/csrf-client";
-import { useCopiar } from "./shared";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { formatDateShort } from "@/lib/format";
+import { BandaCodigo, FilaVinculada, LineaAviso, principal48, SinDato } from "./piezas-canal";
+import { masReciente, useCopiar, useCuentaRegresiva, usoDe, type Canal } from "./shared";
+import type { EstadoWhatsApp } from "./tipos";
 
-interface Dueno {
-  telefono: string;
-  nombre: string;
-  vinculadoEn: string;
-  ultimoUso?: string | null;
-}
-
-interface Estado {
-  activo: boolean;
-  comoSeLlama: string | null;
-  duenos: Dueno[];
-  codigo: { codigo: string; quedanSegundos: number } | null;
-  comoVincular: string;
-}
-
-const API = "/api/admin/whatsapp-anotar";
-
-const fecha = (iso?: string | null) =>
-  iso ? formatDateShort(iso) : "—";
+const BOT_DEL_NUMERO = "/admin?tab=whatsapp-inbox&vista=bot";
 
 /**
  * Un teléfono se muestra agrupado, no como un chorro de dígitos: la lista se
  * lee para reconocer «ese es el mío» de un vistazo.
  */
-function telefonoLegible(soloDigitos: string): string {
-  const d = soloDigitos;
+export function telefonoLegible(d: string): string {
   if (d.length <= 6) return d;
-  const pais = d.slice(0, d.length - 9) || "";
+  const pais = d.slice(0, d.length - 9);
   const resto = d.slice(-9);
   return `${pais ? `+${pais} ` : ""}${resto.replace(/(\d{3})(\d{3})(\d{3})/, "$1 $2 $3")}`;
 }
 
-export default function WhatsAppAnotarPanel() {
+/** El estado del canal en una línea, para verlo plegado. */
+export function resumenWhatsApp(c: Canal<EstadoWhatsApp>): string | null {
+  if (c.cargando) return null;
+  if (!c.dato) return "No se pudo leer el estado";
+  if (!c.dato.activo) return "Sin número del negocio conectado";
+  const n = c.dato.duenos.length;
+  if (n === 0) return "Sin teléfonos habilitados";
+  const uso = masReciente(c.dato.duenos.map((d) => d.ultimoUso));
+  return `${n} ${n === 1 ? "teléfono" : "teléfonos"} · ${usoDe(uso)}`;
+}
+
+function Cuerpo({ canal }: { canal: Canal<EstadoWhatsApp> }) {
   const { confirm } = useConfirm();
-  const [estado, setEstado] = useState<Estado | null>(null);
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [ocupado, setOcupado] = useState(false);
-  const [quedan, setQuedan] = useState(0);
   const { copiado, copiar } = useCopiar();
+  const { dato, error, ocupado, accion, cargadoEn } = canal;
+  const quedan = useCuentaRegresiva(dato?.codigo, cargadoEn);
 
-  const cargar = useCallback(async () => {
-    try {
-      const r = await fetch(API);
-      if (!r.ok) throw new Error("No se pudo leer el estado del WhatsApp del negocio");
-      const json = (await r.json()) as Estado;
-      setEstado(json);
-      setQuedan(json.codigo?.quedanSegundos ?? 0);
-      setError(null);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setCargando(false);
-    }
-  }, []);
+  if (!dato) return <SinDato cargando={canal.cargando} error={error} />;
 
-  useEffect(() => {
-    void cargar();
-  }, [cargar]);
+  if (!dato.activo) {
+    return (
+      <div className="space-y-3">
+        {error && <WarningAlert>{error}</WarningAlert>}
+        <LineaAviso
+          titulo="Número del negocio"
+          ayuda="Para anotar por WhatsApp, el negocio necesita su número conectado. Conéctalo y vuelve acá para habilitar tu teléfono."
+        >
+          Falta conectar el número del negocio en{" "}
+          <EnlacePanel href={BOT_DEL_NUMERO}>Mensajes › Bot WhatsApp</EnlacePanel>
+        </LineaAviso>
+      </div>
+    );
+  }
 
-  // La cuenta regresiva: sin ella, «el código venció» se descubre recién cuando
-  // el bot lo rechaza, con el celular ya en la mano.
-  useEffect(() => {
-    if (quedan <= 0) return;
-    const t = setInterval(() => setQuedan((s) => Math.max(0, s - 1)), 1000);
-    return () => clearInterval(t);
-  }, [quedan]);
-
-  const accion = useCallback(
-    async (body: unknown, metodo: "POST" | "DELETE" = "POST") => {
-      setOcupado(true);
-      setError(null);
-      try {
-        const r = await fetch(API, {
-          method: metodo,
-          headers: csrfHeaders({ "Content-Type": "application/json" }),
-          body: JSON.stringify(body),
-        });
-        const json = (await r.json().catch(() => ({}))) as Record<string, unknown>;
-        if (!r.ok) throw new Error(String(json.error ?? "Falló la operación"));
-        await cargar();
-        return json;
-      } catch (e) {
-        setError(e instanceof Error ? e.message : String(e));
-        return null;
-      } finally {
-        setOcupado(false);
-      }
-    },
-    [cargar],
-  );
-
-  if (cargando) return null;
-
-  const codigoVivo = estado?.codigo && quedan > 0 ? estado.codigo.codigo : null;
-  const frase = codigoVivo ? `vincular ${codigoVivo}` : "";
+  const codigo = dato.codigo && quedan > 0 ? dato.codigo.codigo : null;
+  const frase = codigo ? `vincular ${codigo}` : "";
 
   return (
-    <section className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 space-y-4">
-      <div className="flex items-center gap-2 flex-wrap">
-        <MessageCircle className="h-4 w-4 text-[var(--text-secondary)]" />
-        <CardTitle className="text-sm font-bold">Anotar por WhatsApp</CardTitle>
-        {estado?.activo && estado.comoSeLlama && (
-          <BadgeStatus variant="success" size="sm" label={estado.comoSeLlama} />
-        )}
-        {estado?.activo && estado.duenos.length === 0 && (
-          <BadgeStatus variant="neutral" size="sm" label="Sin teléfonos" />
-        )}
-      </div>
-
+    <div className="space-y-3">
       {error && <WarningAlert>{error}</WarningAlert>}
-
-      {!estado?.activo ? (
-        <InfoAlert>
-          Este negocio todavía no tiene un número de WhatsApp conectado. Configuralo en{" "}
-          <strong>Ajustes › WhatsApp</strong> y vuelve acá para habilitar tu teléfono.
-        </InfoAlert>
+      {codigo ? (
+        <BandaCodigo
+          rotulo="Manda esto al WhatsApp del negocio:"
+          texto={frase}
+          quedan={quedan}
+          copiado={copiado === "codigo"}
+          onCopiar={() => copiar(frase, "codigo")}
+          extra=" · desde el teléfono que va a anotar"
+        />
       ) : (
-        <>
-          <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-            Le escribes al <strong>mismo número del negocio</strong> —con texto o una{" "}
-            <strong>nota de voz</strong>— y te muestra qué se va a anotar con los botones{" "}
-            <strong>Confirmar</strong> y <strong>Cancelar</strong>. Recién cuando tocas Confirmar
-            queda en los libros.
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <button
+            type="button"
+            disabled={ocupado}
+            onClick={() => void accion({ accion: "codigo" })}
+            className={principal48}
+          >
+            {ocupado ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
+            Habilitar un teléfono
+          </button>
+          <p className="text-sm text-[var(--text-secondary)]">
+            {dato.duenos.length === 0 && "Ningún teléfono anota todavía. "}
+            El número del negocio{dato.comoSeLlama ? ` (${dato.comoSeLlama})` : ""} se conecta en{" "}
+            <EnlacePanel href={BOT_DEL_NUMERO}>Mensajes › Bot WhatsApp</EnlacePanel>.
           </p>
-
-          {/*
-            La aclaración que evita el miedo razonable de «¿mis clientes van a
-            hablar con esto?». Va antes del botón, no después.
-          */}
-          <InfoAlert>
-            Sólo los teléfonos de esta lista hablan con el bot que anota. Cualquier otro número
-            sigue siendo atendido por la tienda, igual que hoy.
-          </InfoAlert>
-
-          {/* ── Vincular ─────────────────────────────────────────────────── */}
-          {codigoVivo ? (
-            <div className="rounded-lg border-2 border-[var(--data-success-500)]/40 bg-[var(--data-success-50)] p-4 space-y-2">
-              <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                Manda esto al WhatsApp del negocio
-              </p>
-              <div className="flex items-center gap-2 flex-wrap">
-                <code className="rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-base)] px-3 py-2 font-mono text-base font-bold tracking-widest text-[var(--text-primary)]">
-                  {frase}
-                </code>
-                <button
-                  type="button"
-                  onClick={() => copiar(frase, "codigo")}
-                  aria-label="Copiar el mensaje"
-                  className="h-11 w-11 inline-flex items-center justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-                >
-                  {copiado === "codigo" ? (
-                    <Check className="h-4 w-4 text-[var(--data-success-500)]" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
-              <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)]">
-                Vence en{" "}
-                <strong className="tabular-nums">
-                  {Math.floor(quedan / 60)}:{String(quedan % 60).padStart(2, "0")}
-                </strong>{" "}
-                · mandalo desde el teléfono que va a anotar
-              </p>
-            </div>
-          ) : (
-            <PrimaryButton
-              type="button"
-              size="lg"
-              disabled={ocupado}
-              onClick={() => void accion({ accion: "codigo" })}
-              leftIcon={ocupado ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
-            >
-              Habilitar un teléfono
-            </PrimaryButton>
-          )}
-
-          {/* ── Teléfonos habilitados ────────────────────────────────────── */}
-          {estado.duenos.length > 0 && (
-            <ul className="space-y-2">
-              {estado.duenos.map((d) => (
-                <li
-                  key={d.telefono}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-3 py-2.5"
-                >
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold text-[var(--text-primary)] truncate">
-                      {telefonoLegible(d.telefono)}
-                    </p>
-                    <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
-                      {d.nombre} · desde {fecha(d.vinculadoEn)} ·{" "}
-                      {d.ultimoUso ? `usado ${fecha(d.ultimoUso)}` : "sin usar todavía"}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      if (!(await confirm({
-                        title: `¿Quitar ${telefonoLegible(d.telefono)}?`,
-                        description: "Deja de poder anotar al instante y vuelve a ser atendido como cliente.",
-                        intent: "danger",
-                        confirmLabel: "Sí, quitar",
-                      }))) return;
-                      void accion({ telefono: d.telefono }, "DELETE");
-                    }}
-                    aria-label={`Quitar ${telefonoLegible(d.telefono)}`}
-                    className="shrink-0 h-11 w-11 inline-flex items-center justify-center rounded-xl border border-[var(--rule-soft)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:border-[var(--data-error-500)]/40 transition-colors"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </>
+        </div>
       )}
-    </section>
+
+      {dato.duenos.length > 0 && (
+        <ul className="divide-y divide-[var(--rule-soft)]">
+          {dato.duenos.map((d) => (
+            <FilaVinculada
+              key={d.telefono}
+              titulo={telefonoLegible(d.telefono)}
+              detalle={`${d.nombre} · desde ${formatDateShort(d.vinculadoEn)} · ${usoDe(d.ultimoUso ?? null)}`}
+              etiquetaQuitar={`Quitar ${telefonoLegible(d.telefono)}`}
+              onQuitar={async () => {
+                if (!(await confirm({
+                  title: `¿Quitar ${telefonoLegible(d.telefono)}?`,
+                  description: "Deja de poder anotar al instante y vuelve a ser atendido como cliente.",
+                  intent: "danger",
+                  confirmLabel: "Sí, quitar",
+                }))) return;
+                void accion({ telefono: d.telefono }, "DELETE");
+              }}
+            />
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+export default function WhatsAppAnotarPanel({ canal }: { canal: Canal<EstadoWhatsApp> }) {
+  return (
+    <Plegable
+      clave="asistente-ia:automatizaciones:whatsapp"
+      titulo={
+        <span className="inline-flex items-center gap-2">
+          <MessageCircle aria-hidden="true" className="h-4 w-4 text-[var(--text-secondary)]" />
+          WhatsApp
+        </span>
+      }
+      resumen={<span className="text-sm">{resumenWhatsApp(canal) ?? "Leyendo el estado…"}</span>}
+      acciones={
+        <InfoTip
+          title="Anotar por WhatsApp"
+          what="Le escribes al mismo número del negocio, con texto o una nota de voz, y te muestra qué va a anotar con Confirmar y Cancelar. Recién cuando tocas Confirmar queda en los libros."
+          affects="Sólo los teléfonos de esta lista hablan con el bot que anota. Cualquier otro número sigue siendo atendido por la tienda, igual que hoy."
+          example="Mandas un audio: «gasté 25 soles en flete». Te contesta con el resumen y los botones; tocas Confirmar y queda anotado."
+          side="left"
+        />
+      }
+    >
+      <Cuerpo canal={canal} />
+    </Plegable>
   );
 }
