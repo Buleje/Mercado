@@ -31,6 +31,7 @@
  *                                   del elemento): firmar en el lienzo de «Firmar recibo» (08-10)
  *   {"esperar": "<sel>"}          {"esperar": 500}            (ms)
  *   {"eval": "<expresión js>"}    → su resultado sale en el reporte
+ *   {"medir": "<selector raíz>"}  → pantallas, títulos por nivel, textos <14 px, botones <48 px y desborde de esa vista
  *   {"evalDialogo": {"texto": "<regex>", "js": "d.querySelectorAll('input').length"}} → como eval, pero `d` es el
  *                                   [role=dialog] cuyo textContent coincide (no el primero del DOM)
  *   {"elegirPrimera": ["<sel select>", "<regex a excluir>"]} → espera hasta 10 s una opción con value ≠ "" que no
@@ -176,6 +177,24 @@ const evalsTodos = bandera("evals-todos");
 const usuario = process.env.QA_USER ?? "qaadmin";
 const clave = process.env.QA_PASS ?? "Qa-admin-1234";
 
+/** Expresión JS de `{"medir"}`: mide la vista que cuelga de `raiz` (o `main`). */
+function medirExpr(raiz) {
+  const sel = JSON.stringify(typeof raiz === "string" ? raiz : "main");
+  return `(() => {
+    const r = document.querySelector(${sel}) || document.body;
+    const vis = (el) => { const b = el.getBoundingClientRect(); const cs = getComputedStyle(el); return b.width > 0 && b.height > 0 && cs.visibility !== "hidden" && cs.display !== "none"; };
+    const chicos = [];
+    for (const el of r.querySelectorAll("*")) {
+      if (!vis(el)) continue;
+      const propio = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
+      if (propio && parseFloat(getComputedStyle(el).fontSize) < 14) chicos.push(el.textContent.trim().slice(0, 30));
+    }
+    const bajos = [...r.querySelectorAll("button, a[role=button], [role=tab]")].filter(vis).filter((b) => b.getBoundingClientRect().height < 48).map((b) => (b.getAttribute("aria-label") || b.textContent).trim().slice(0, 30));
+    const tit = (n) => [...r.querySelectorAll("h" + n)].filter(vis).map((h) => h.textContent.trim().slice(0, 40));
+    return { pantallas: +(document.documentElement.scrollHeight / innerHeight).toFixed(2), titulos: { h1: tit(1), h2: tit(2), h3: tit(3) }, textosChicos: chicos.length, ejemplosChicos: chicos.slice(0, 6), botonesBajos: bajos.length, ejemplosBajos: bajos.slice(0, 6), desborde: document.documentElement.scrollWidth - innerWidth };
+  })()`;
+}
+
 let pasos = [];
 try {
   /* `--preset a,b` antepone recorridos guardados en `scripts/qa-pasos/<nombre>.json`
@@ -189,6 +208,11 @@ try {
   const crudo = arg("pasos-archivo") ? readFileSync(arg("pasos-archivo"), "utf8") : arg("pasos", "[]");
   pasos = [...dePresets, ...JSON.parse(crudo)];
   if (!Array.isArray(pasos)) throw new Error("los pasos van en un array");
+  /* {"medir": "<selector raíz>" | true} (10-10): la medición de una vista del panel que 3
+     carriles (Hoy, Calendario, Logros) escribieron a mano: pantallas, títulos por nivel,
+     textos visibles de menos de 14 px, botones de menos de 48 px de alto y desborde. Se
+     traduce a un {"eval"}: con --evals-todos sale en cada ancho y tema. */
+  pasos = pasos.map((p) => (p && typeof p === "object" && "medir" in p ? { eval: medirExpr(p.medir) } : p));
 } catch (e) {
   console.log(JSON.stringify({ ok: false, error: `pasos inválidos: ${e.message}` }));
   process.exit(1);
