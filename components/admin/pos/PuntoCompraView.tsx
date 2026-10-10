@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import { ScanLine, ShoppingBasket } from "@buleje/design-system/icons";
+import { Receipt, ScanLine, ShoppingBasket } from "@buleje/design-system/icons";
+import EnlacePanel from "@/components/admin/shared/EnlacePanel";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { formatCurrency } from "@/lib/format";
 import type { PurchaseProduct as Product, PurchaseSupplier as Supplier } from "@/lib/types/purchases";
@@ -11,12 +12,10 @@ import { conCostoEfectivo } from "@/components/admin/compra/costo-compra";
 import { useCompraCatalogo } from "@/components/admin/compra/use-compra-catalogo";
 import { useCompraCarrito } from "@/components/admin/compra/use-compra-carrito";
 import { useConfirmarCompra } from "@/components/admin/compra/use-confirmar-compra";
-import { useGastosFijos } from "@/components/admin/compra/use-gastos-fijos";
 import { usePlantillasCompra } from "@/components/admin/compra/use-plantillas-compra";
 import { useNuevoProveedor } from "@/components/admin/compra/use-nuevo-proveedor";
 import { useFacturaEscaneada } from "@/components/admin/compra/use-factura-escaneada";
 import CompraBarraControles from "@/components/admin/compra/CompraBarraControles";
-import CompraGastosFijos from "@/components/admin/compra/CompraGastosFijos";
 import CompraInventarioFiltros from "@/components/admin/compra/CompraInventarioFiltros";
 import CompraPromosBanner from "@/components/admin/compra/CompraPromosBanner";
 import CompraFacturaLeida from "@/components/admin/compra/CompraFacturaLeida";
@@ -46,7 +45,6 @@ export default function PuntoCompraView() {
 
   const catalogo = useCompraCatalogo();
   const carrito = useCompraCarrito({ playDing, confirm });
-  const gastos = useGastosFijos({ playDing, confirm, setToastMsg });
   const orden = useConfirmarCompra(carrito, setToastMsg);
   const plantillas = usePlantillasCompra({ carrito, products: catalogo.products, suppliers: catalogo.suppliers, confirm, prompt, setToastMsg });
   const factura = useFacturaEscaneada({ carrito, catalogo, setToastMsg });
@@ -89,7 +87,14 @@ export default function PuntoCompraView() {
         onNuevoProveedor={() => np.abrir()}
       />
 
-      <CompraGastosFijos gastos={gastos} />
+      {/* Los gastos fijos (alquiler, luz, combustible) y el historial de gastos se
+          mudaron a Mi Plata › Gastos y presupuesto (plan «panel unificado», ola 3):
+          el mismo catálogo con los mismos botones. Acá queda el camino. */}
+      <p className="mb-4 flex flex-wrap items-center gap-x-1.5 text-sm text-[var(--text-secondary)]">
+        <Receipt className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+        Gastos fijos e historial:
+        <EnlacePanel href="/admin?tab=plata&vista=gastos">Mi Plata › Gastos y presupuesto</EnlacePanel>
+      </p>
 
       <CompraInventarioFiltros
         catalogo={catalogo}

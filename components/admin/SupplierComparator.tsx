@@ -1,6 +1,7 @@
 "use client";
 
-import { DataTable, SectionTitle } from "@buleje/design-system";
+import { DataTable, ErrorAlert, LoadingState, SectionTitle } from "@buleje/design-system";
+import { button } from "@/components/ui-system/button-variants";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Users, Star, DollarSign, Clock, Package,
@@ -162,9 +163,11 @@ function SupplierRadar({ supplier }: { supplier: SupplierWithScore }) {
 interface SupplierComparatorProps {
   /** Lleva al flujo de "Nueva orden" con el proveedor preseleccionado. */
   onCreateOC?: (supplier: { id: string; name: string }) => void;
+  /** Avisa qué proveedor está elegido (Comparar muestra cómo entrega ese proveedor). */
+  onSeleccion?: (supplier: { id: string; name: string } | null) => void;
 }
 
-export default function SupplierComparator({ onCreateOC }: SupplierComparatorProps = {}) {
+export default function SupplierComparator({ onCreateOC, onSeleccion }: SupplierComparatorProps = {}) {
   const [suppliers, setSuppliers] = useState<SupplierWithScore[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -239,6 +242,14 @@ export default function SupplierComparator({ onCreateOC }: SupplierComparatorPro
 
   const selectedSupplier = useMemo(() => suppliers.find(s => s.id === selectedId) ?? null, [suppliers, selectedId]);
 
+  /* Por id y nombre, no por el objeto: `suppliers` se recalcula al actualizar y
+     un objeto nuevo con el mismo proveedor no tiene que remontar a quien escucha. */
+  const elegidoId = selectedSupplier?.id ?? null;
+  const elegidoNombre = selectedSupplier?.name ?? null;
+  useEffect(() => {
+    onSeleccion?.(elegidoId && elegidoNombre ? { id: elegidoId, name: elegidoNombre } : null);
+  }, [onSeleccion, elegidoId, elegidoNombre]);
+
   // FIX 2026-07-08 (reporte QA Comparador): antes hacía POST a
   // `/api/purchase-orders` (endpoint INEXISTENTE → 404 silencioso) y usaba
   // `confirm`/`alert` BLOQUEANTES que colgaban la pestaña. Una OC necesita
@@ -272,23 +283,20 @@ export default function SupplierComparator({ onCreateOC }: SupplierComparatorPro
     };
   }, [suppliers]);
 
-  // ── Loading ──
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-16">
-        <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  // ── Loading / error: los estados del DS (plan «panel unificado», ola 3) ──
+  if (loading) return <LoadingState message="Cargando proveedores..." />;
 
-  // ── Error ──
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 gap-3">
-        <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)]" />
-        <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{error}</p>
-        <button onClick={fetchData} className="text-xs text-primary hover:underline">Reintentar</button>
-      </div>
+      <ErrorAlert
+        title="No se pudo armar el comparador"
+        description={error}
+        action={
+          <button type="button" onClick={fetchData} className={button({ variant: "secondary" })}>
+            Reintentar
+          </button>
+        }
+      />
     );
   }
 

@@ -1,14 +1,24 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Truck, Package, MapPin, ExternalLink } from "@buleje/design-system/icons";
+import { ErrorAlert, SectionTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import ChartsEmptyState from "@/components/admin/shared/ChartsEmptyState";
+import EnlacePanel from "@/components/admin/shared/EnlacePanel";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
+import { button } from "@/components/ui-system/button-variants";
 import { formatCurrency } from "@/lib/format";
 
 // Dropshipping (ADR-298) — lista de envíos al proveedor generados automáticamente
 // cuando entra un pedido pagado en una tienda con dropshipEnabled.
+//
+// Plan «panel unificado», ola 3 (F20): vive en Compras › Dropship (`?tab=dropship`
+// llega ahí por alias). Dentro de Compras no lleva título propio (`enCompras`).
+// Muestra el NOMBRE del proveedor (antes, 8 letras de su id), el pedido es un
+// enlace a su ficha, y si el servidor falla lo dice: antes un 500 se veía como
+// «Todavía no hay envíos».
 
 interface ItemSnapshot { productId: number | null; name: string; qty: number; unitCost: number; supplierSku: string | null; }
 interface Fulfillment {
@@ -31,15 +41,58 @@ const STATUS_LABEL: Record<string, string> = {
   shipped: "Despachado", delivered: "Entregado", cancelled: "Cancelado",
 };
 
-export default function DropshipModule() {
-  const [rows, setRows] = useState<Fulfillment[] | null>(null);
+/** El mensaje que trae la respuesta de error, o su código. */
+async function motivoDeError(r: Response): Promise<string> {
+  try {
+    const j = (await r.json()) as { error?: unknown };
+    if (typeof j?.error === "string" && j.error) return `${j.error} (HTTP ${r.status})`;
+  } catch {
+    // cuerpo sin JSON: queda el código
+  }
+  return `HTTP ${r.status}`;
+}
 
+/**
+ * Nombre de cada proveedor por id (`GET /api/suppliers`). Es un adorno: si falla
+ * (el cajero no lista proveedores) queda el id corto, como antes.
+ */
+function useNombresDeProveedores(): Map<string, string> {
+  const [nombres, setNombres] = useState<Map<string, string>>(() => new Map());
   useEffect(() => {
-    fetch("/api/admin/dropship", { credentials: "include" })
-      .then((r) => (r.ok ? r.json() : []))
-      .then((d) => setRows(Array.isArray(d) ? d : []))
-      .catch(() => setRows([]));
+    let vivo = true;
+    fetch("/api/suppliers", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: unknown) => {
+        if (!vivo || !d) return;
+        const lista = (Array.isArray(d) ? d : ((d as { suppliers?: unknown[] }).suppliers ?? [])) as Array<{ id?: unknown; name?: unknown }>;
+        const m = new Map<string, string>();
+        for (const p of lista) if (typeof p.id === "string" && typeof p.name === "string") m.set(p.id, p.name);
+        setNombres(m);
+      })
+      .catch((err: unknown) => console.warn("[dropship] proveedores sin nombre", err instanceof Error ? err.message : String(err)));
+    return () => { vivo = false; };
   }, []);
+  return nombres;
+}
+
+export default function DropshipModule({ enCompras = false }: { enCompras?: boolean } = {}) {
+  const [rows, setRows] = useState<Fulfillment[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const nombres = useNombresDeProveedores();
+
+  const cargar = useCallback(() => {
+    setError(null);
+    setRows(null);
+    fetch("/api/admin/dropship", { credentials: "include" })
+      .then(async (r) => {
+        if (!r.ok) throw new Error(await motivoDeError(r));
+        return r.json();
+      })
+      .then((d: unknown) => setRows(Array.isArray(d) ? (d as Fulfillment[]) : []))
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)));
+  }, []);
+
+  useEffect(() => { cargar(); }, [cargar]);
 
   // Parsea itemsJson una sola vez por carga de datos (no en cada render).
   const parsedRows = useMemo(
@@ -54,14 +107,35 @@ export default function DropshipModule() {
 
   return (
     <div className="space-y-4">
-      <AdminModuleHeader
-        eyebrow="Abastecimiento · Dropshipping"
-        title="Dropshipping"
-        description="Envíos al proveedor generados automáticamente cuando se paga un pedido. El proveedor despacha directo al cliente."
-        icon={Truck}
-      />
+      {enCompras ? (
+        <div className="flex items-center gap-1.5">
+          <SectionTitle className="text-[var(--text-primary)]">Envíos de dropship</SectionTitle>
+          <InfoTip
+            title="Dropship"
+            what={<span>Cuando se paga un pedido con productos dropship, se arma sola la orden al proveedor con la dirección del cliente, el costo y el tracking.</span>}
+            affects={<span>El proveedor despacha directo al cliente: tú no tocas la mercadería.</span>}
+          />
+        </div>
+      ) : (
+        <AdminModuleHeader
+          eyebrow="Abastecimiento · Dropshipping"
+          title="Dropshipping"
+          description="Envíos al proveedor generados automáticamente cuando se paga un pedido. El proveedor despacha directo al cliente."
+          icon={Truck}
+        />
+      )}
 
-      {rows === null ? (
+      {error ? (
+        <ErrorAlert
+          title="No se pudieron traer los envíos al proveedor"
+          description={error}
+          action={
+            <button type="button" onClick={cargar} className={button({ variant: "secondary" })}>
+              Reintentar
+            </button>
+          }
+        />
+      ) : rows === null ? (
         <S />
       ) : rows.length === 0 ? (
         <ChartsEmptyState
@@ -78,8 +152,17 @@ export default function DropshipModule() {
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-[var(--text-primary)]">
-                      Pedido #{f.orderId.slice(0, 8)}
-                      <span className="text-[var(--text-tertiary)] font-normal"> · proveedor {f.supplierId ? f.supplierId.slice(0, 8) : "sin asignar"}</span>
+                      <EnlacePanel cosa="pedido" id={f.orderId} apariencia="heredada">Pedido #{f.orderId.slice(0, 8)}</EnlacePanel>
+                      <span className="text-[var(--text-tertiary)] font-normal">
+                        {" · "}
+                        {f.supplierId ? (
+                          <EnlacePanel cosa="proveedor" id={f.supplierId} apariencia="heredada">
+                            {nombres.get(f.supplierId) ?? `proveedor ${f.supplierId.slice(0, 8)}`}
+                          </EnlacePanel>
+                        ) : (
+                          "proveedor sin asignar"
+                        )}
+                      </span>
                     </p>
                     <p className="text-xs text-[var(--text-secondary)] mt-0.5 flex items-center gap-1">
                       <MapPin className="h-3 w-3" />

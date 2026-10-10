@@ -281,7 +281,7 @@ export default function SupplierPriceComparison({ productId, productName }: Supp
   return (
     <div className="space-y-2">
       <h4 className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
-        Comparacion de precios:{" "}
+        Comparación de precios:{" "}
         <EnlacePanel cosa="producto" id={String(productId)} apariencia="heredada">{productName}</EnlacePanel>
       </h4>
 

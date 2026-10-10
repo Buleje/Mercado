@@ -1,71 +1,141 @@
 "use client";
-import { useEffect } from "react";
+
+/**
+ * Compras (`?tab=compras`): 7 vistas (plan «panel unificado», ola 3).
+ *
+ *   Comprar ← punto-compra · Órdenes y recepción ← ordenes-compra + recepcion
+ *   (2.ª sección «Recibir», con o sin orden) · Sugerencias ← sugerencias +
+ *   Predicción (reorden) + Sugerencias IA › Compras: UN solo «qué reponer» ·
+ *   Proveedores ← proveedores + comparador (2.ª sección «Comparar», con los
+ *   precios del mercado) · Por pagar ← cuentas-por-pagar (casa única de
+ *   PayablesTab; Comprobantes y Mi Plata enlazan acá) · Devoluciones ·
+ *   Dropship ← dropship (sólo donde dropship se ve: rubro y plan, por origen).
+ *
+ * Gastos fijos e Historial de gastos se mudaron a Mi Plata › Gastos y
+ * presupuesto: Comprar deja el enlace y `?vista=historial-gastos` llega allá
+ * (VISTA_MIGRATION). Cada vista declara su `origen` en
+ * `lib/admin/subvistas-modulos.ts` (regla R2) y `useVistasPermitidas` ofrece
+ * sólo las que esta persona veía antes.
+ */
+
+import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import {
-  Lightbulb, ClipboardList, Users, PackageCheck,
-  BarChart3, PackagePlus, ShoppingBasket, RotateCcw, Receipt, CreditCard,
+  Lightbulb, ClipboardList, Users, PackagePlus, ShoppingBasket, RotateCcw, CreditCard, Truck,
 } from "@buleje/design-system/icons";
-import { useVistaModulo } from "@/hooks/use-vista-modulo";
+import { LoadingState } from "@buleje/design-system";
+import { useVistaModulo, type AliasDeVista } from "@/hooks/use-vista-modulo";
+import { useContextoPermiso, useVistasPermitidas } from "@/hooks/use-vistas-permitidas";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import type { AdminTab } from "@/components/admin/shared/AdminTabBar";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
-export const TabError = () => (
-  <div className="text-center py-12">
-    <p className="text-sm text-[var(--data-error-500)]">Error al cargar el módulo</p>
-    <button onClick={() => window.location.reload()} className="mt-2 text-xs text-primary hover:underline">Recargar página</button>
-  </div>
-);
-
-const SugerenciasCompraTab = dynamic(() => import("@/components/admin/compras/SugerenciasCompraTab"), { loading: S });
-const PurchaseOrdersTab = dynamic(() => import("@/components/admin/PurchaseOrdersTab"), { loading: S });
-const SuppliersTab = dynamic(() => import("@/components/admin/SuppliersTab"), { loading: S });
-const ReceivingTab = dynamic(() => import("@/components/admin/ReceivingTab"), { loading: S });
 const PuntoCompraView = dynamic(() => import("@/components/admin/pos/PuntoCompraView"), { loading: S });
-const SupplierComparator = dynamic(() => import("@/components/admin/SupplierComparator"), { ssr: false, loading: S });
-const DevolucionesProveedorModule = dynamic(() => import("@/components/admin/DevolucionesProveedorModule"), { loading: S });
-const HistorialGastosTab = dynamic(() => import("@/components/admin/compras/HistorialGastosTab"), { loading: S });
-/* La cabecera prometía «cuentas por pagar» y ninguna sub-vista las mostraba: vivían
-   sólo en Facturación. Es la misma pantalla en los dos lados (09-10). */
+const OrdenesYRecepcion = dynamic(() => import("@/components/admin/compras/OrdenesYRecepcion"), { loading: S });
+const SugerenciasVista = dynamic(() => import("@/components/admin/compras/SugerenciasVista"), { loading: S });
+const ProveedoresVista = dynamic(() => import("@/components/admin/compras/ProveedoresVista"), { loading: S });
+/* La cabecera prometía «cuentas por pagar» y ninguna sub-vista las mostraba:
+   vivían sólo en Facturación (09-10). Desde la ola 3 ésta es su casa única. */
 const PayablesTab = dynamic(() => import("@/components/admin/PayablesTab"), { loading: S });
+const DevolucionesProveedorModule = dynamic(() => import("@/components/admin/DevolucionesProveedorModule"), { loading: S });
+const DropshipModule = dynamic(() => import("@/components/admin/unified/DropshipModule"), { loading: S });
 
 const MODULE_ID = "compras";
 
 const TABS: AdminTab[] = [
-  { id: "punto-compra", label: "Punto de Compra", icon: ShoppingBasket },
-  { id: "historial-gastos", label: "Historial de Gastos", icon: Receipt },
+  { id: "punto-compra", label: "Comprar", icon: ShoppingBasket },
+  { id: "ordenes-compra", label: "Órdenes y recepción", icon: ClipboardList },
   { id: "sugerencias", label: "Sugerencias", icon: Lightbulb },
-  { id: "ordenes-compra", label: "Ordenes", icon: ClipboardList },
   { id: "proveedores", label: "Proveedores", icon: Users },
-  { id: "recepcion", label: "Recepcion", icon: PackageCheck },
   { id: "cuentas-por-pagar", label: "Por pagar", icon: CreditCard },
-  { id: "comparador", label: "Comparador", icon: BarChart3 },
   { id: "devoluciones", label: "Devoluciones", icon: RotateCcw },
+  { id: "dropship", label: "Dropship", icon: Truck },
 ];
 
-/** Los ids, estables: el hook los usa como dependencia. */
-const TAB_IDS = TABS.map((t) => t.id);
+/** Vistas que se fundieron en otra: un link guardado o la memoria del navegador siguen llegando. */
+const ALIAS: AliasDeVista<string> = { recepcion: "ordenes-compra", comparador: "proveedores" };
 
-// ── Componente principal ────────────────────────────────────────────────────
+/** La sección de la vista que abre cada nombre viejo (o la lista, si vas a la vista). */
+const SECCION_AL_IR: Readonly<Record<string, { vista: string; sub: string }>> = {
+  "ordenes-compra": { vista: "ordenes-compra", sub: "ordenes" },
+  recepcion: { vista: "ordenes-compra", sub: "recibir" },
+  comparador: { vista: "proveedores", sub: "comparar" },
+};
+
+/**
+ * La sección que pide un nombre viejo al abrir (`?vista=recepcion` → Órdenes y
+ * recepción › Recibir). Se lee ANTES que `useVistaModulo`, que reescribe la URL
+ * con el nombre de hoy: la vista de adentro carga después y ya no lo vería.
+ */
+function seccionPorNombreViejo(initialTab?: string): { vista: string; sub: string } | undefined {
+  if (typeof window === "undefined") return undefined;
+  const pedida = new URLSearchParams(window.location.search).get("vista") ?? initialTab;
+  return pedida && Object.hasOwn(ALIAS, pedida) ? SECCION_AL_IR[pedida] : undefined;
+}
+
+/** Cuánto se espera al rol antes de abrir igual (sin las vistas que dependen de él). */
+const ESPERA_DEL_ROL_MS = 4000;
 
 export default function ComprasModule({ initialTab }: { initialTab?: string } = {}) {
+  /* Dropship llegó de otra pestaña: depende del rol (R2) y `useVistaModulo`
+     valida la vista de la URL UNA vez, al montar. Sin esperar al rol,
+     `?tab=dropship` caía en Comprar. */
+  const rolListo = useContextoPermiso() !== null;
+  const rolTarde = useEsperaVencida(!rolListo, ESPERA_DEL_ROL_MS);
+  if (!rolListo && !rolTarde) return <LoadingState message="Cargando Compras..." />;
+  return <ComprasConVistas initialTab={initialTab} />;
+}
+
+/** `true` cuando `esperando` lleva `ms` sin resolverse. */
+function useEsperaVencida(esperando: boolean, ms: number): boolean {
+  const [vencida, setVencida] = useState(false);
+  useEffect(() => {
+    if (!esperando) return;
+    const t = setTimeout(() => setVencida(true), ms);
+    return () => clearTimeout(t);
+  }, [esperando, ms]);
+  return vencida;
+}
+
+function ComprasConVistas({ initialTab }: { initialTab?: string }) {
+  const vistas = useVistasPermitidas(MODULE_ID, TABS);
+  const ids = useMemo(() => vistas.map((v) => v.id), [vistas]);
+
   // La sub-vista vive en `?vista=`: link compartible, atrás del navegador y
   // destino del buscador global. `initialTab` gana cuando el módulo se abre
-  // desde un tab alias (ver useVistaModulo).
-  // La orden y el proveedor abiertos (`?oc=`, `?proveedor=`) son de UNA vista: se borran al salir de ella.
-  const { vista: sub, irA: setSub } = useVistaModulo(MODULE_ID, TAB_IDS, TAB_IDS[0], initialTab, {
-    paramsDeVista: { "ordenes-compra": ["oc"], proveedores: ["proveedor"] },
+  // desde un tab alias (ver useVistaModulo). La orden y el proveedor abiertos
+  // (`?oc=`, `?proveedor=`) y la sección (`?sub=`) son de UNA vista: se borran al salir.
+  const [entrada, setEntrada] = useState(() => seccionPorNombreViejo(initialTab));
+  const { vista: sub, irA: setSub } = useVistaModulo(MODULE_ID, ids, ids[0] ?? "punto-compra", initialTab, {
+    paramsDeVista: { "ordenes-compra": ["oc", "sub"], proveedores: ["proveedor", "sub"] },
+    alias: ALIAS,
   });
+  // La sección del nombre viejo vale sólo para la primera vista: al salir, se olvida.
+  useEffect(() => {
+    if (entrada && sub !== entrada.vista) setEntrada(undefined);
+  }, [sub, entrada]);
+  const seccionDe = (vista: string) => (entrada?.vista === vista ? entrada.sub : undefined);
 
-  // Escuchar evento de navegación desde PuntoCompraView (botón "Ver en Órdenes")
+  /** Ir a una vista; si nombra una sección (o es un nombre viejo), abrirla en esa sección. */
+  const irAVista = useCallback(
+    (id: string) => {
+      const conSeccion = SECCION_AL_IR[id];
+      if (conSeccion) setSub(conSeccion.vista, { sub: conSeccion.sub });
+      else setSub(id);
+    },
+    [setSub],
+  );
+
+  // Escuchar navegación desde adentro: «Ver en Órdenes» del Punto de Compra,
+  // el aviso de crédito de una recepción (Por pagar, Devoluciones).
   useEffect(() => {
     const handler = (e: Event) => {
       const tabId = (e as CustomEvent).detail;
-      if (tabId && TABS.some(t => t.id === tabId)) setSub(tabId);
+      if (typeof tabId === "string" && (TABS.some((t) => t.id === tabId) || tabId in SECCION_AL_IR)) irAVista(tabId);
     };
     window.addEventListener("compras-navigate-tab", handler);
     return () => window.removeEventListener("compras-navigate-tab", handler);
-  }, []);
+  }, [irAVista]);
 
   // Pre-fetch de products + suppliers al montar el módulo Compras —
   // así cuando el usuario entra a Punto de Compra/Sugerencias/Proveedores
@@ -88,44 +158,36 @@ export default function ComprasModule({ initialTab }: { initialTab?: string } = 
     ]);
   }, []);
 
-
-
   return (
     <div className="space-y-4">
       {/* El título va DENTRO de la barra de pestañas (patrón acordado con
           Brandon 2026-09-07, piloto en Análisis): identidad a la izquierda,
-          pestañas a la derecha, una sola regla. Recupera ~90px verticales,
-          que en una laptop de 677px útiles es la diferencia entre ver los
-          datos o sólo los encabezados.
-          El `eyebrow` se fue con el header: decía la categoría del sidebar
-          («Abastecimiento · Compras» sobre un título «Compras») — el mismo
-          dato tres veces contando el ítem marcado en el sidebar. */}
+          pestañas a la derecha, una sola regla. */}
       <AdminTabBar
-        heading={{ title: "Compras", description: "Pedidos a proveedores, recepción y cuentas por pagar.", icon: PackagePlus }}
-        tabs={TABS}
+        heading={{ title: "Compras", description: "Comprar, órdenes y recepción, qué reponer, proveedores, lo que debes y devoluciones.", icon: PackagePlus }}
+        tabs={vistas}
         activeTab={sub}
         onTabChange={setSub}
         moduleId="compras"
       >
         {sub === "punto-compra" && <PuntoCompraView />}
-        {sub === "historial-gastos" && <HistorialGastosTab />}
-        {sub === "sugerencias" && <SugerenciasCompraTab />}
-        {sub === "ordenes-compra" && <PurchaseOrdersTab />}
-        {sub === "proveedores" && <SuppliersTab />}
-        {sub === "recepcion" && <ReceivingTab />}
-        {sub === "cuentas-por-pagar" && <PayablesTab />}
-        {sub === "comparador" && (
-          <SupplierComparator
-            onCreateOC={(supplier) => {
+        {sub === "ordenes-compra" && <OrdenesYRecepcion seccionInicial={seccionDe("ordenes-compra")} />}
+        {sub === "sugerencias" && <SugerenciasVista />}
+        {sub === "proveedores" && (
+          <ProveedoresVista
+            seccionInicial={seccionDe("proveedores")}
+            onCrearOC={(supplier) => {
               // "Crear OC" desde el comparador → llevar al flujo de Nueva Orden
               // con el proveedor preseleccionado (una OC necesita productos; no
               // se crea vacía por API). PurchaseOrdersTab lee este stash al montar.
               try { localStorage.setItem("bsm-new-oc-supplier", JSON.stringify(supplier)); } catch { /* quota */ }
-              setSub("ordenes-compra");
+              irAVista("ordenes-compra");
             }}
           />
         )}
+        {sub === "cuentas-por-pagar" && <PayablesTab />}
         {sub === "devoluciones" && <DevolucionesProveedorModule />}
+        {sub === "dropship" && <DropshipModule enCompras />}
       </AdminTabBar>
     </div>
   );

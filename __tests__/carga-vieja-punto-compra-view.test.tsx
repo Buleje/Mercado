@@ -12,8 +12,13 @@
  *
  * Cada pedido del catálogo y cada DELETE quedan pendientes hasta que el test
  * los resuelve: el orden de llegada lo decide el test, no la red.
+ *
+ * Plan «panel unificado», ola 3 (2026-10-10): el catálogo salió del Punto de
+ * Compra y lo muestra Mi Plata › Gastos y presupuesto, con el MISMO componente
+ * (`compra/CompraGastosFijos`) y el MISMO hook (`compra/use-gastos-fijos`).
+ * El test los monta solos, como los monta cualquier casa que los tenga.
  */
-import { StrictMode } from "react";
+import { StrictMode, useState } from "react";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -33,8 +38,17 @@ vi.mock("next/dynamic", async () => {
   };
 });
 
-import PuntoCompraView from "@/components/admin/pos/PuntoCompraView";
-import { ConfirmDialogProvider } from "@/components/admin/shared/ConfirmDialog";
+import CompraGastosFijos from "@/components/admin/compra/CompraGastosFijos";
+import { useGastosFijos } from "@/components/admin/compra/use-gastos-fijos";
+import { ConfirmDialogProvider, useConfirm } from "@/components/admin/shared/ConfirmDialog";
+
+/** El catálogo de gastos fijos tal como lo arma quien lo monta (antes PuntoCompraView). */
+function CatalogoDeGastosFijos() {
+  const { confirm } = useConfirm();
+  const [, setToastMsg] = useState<string | null>(null);
+  const gastos = useGastosFijos({ playDing: () => undefined, confirm, setToastMsg });
+  return <CompraGastosFijos gastos={gastos} />;
+}
 
 const CATALOGO = "/api/expenses?recurring=true";
 const ALQUILER = { id: "g1", category: "Alquiler", description: "Alquiler del local", amount: 850, recurring: true };
@@ -85,7 +99,7 @@ function montar() {
   render(
     <StrictMode>
       <ConfirmDialogProvider>
-        <PuntoCompraView />
+        <CatalogoDeGastosFijos />
       </ConfirmDialogProvider>
     </StrictMode>,
   );
@@ -101,7 +115,7 @@ async function eliminar(tpl: { id: string; description: string }) {
   await resolver(pedido("DELETE", `/api/expenses/${tpl.id}`), { ok: true });
 }
 
-describe("PuntoCompraView — una carga vieja no devuelve una plantilla borrada", () => {
+describe("Gastos fijos (catálogo) — una carga vieja no devuelve una plantilla borrada", () => {
   it("la plantilla eliminada no reaparece cuando el GET del doble montaje vuelve tarde", async () => {
     montar();
     await waitFor(() => expect(cargas()).toHaveLength(2));

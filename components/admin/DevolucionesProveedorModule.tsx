@@ -1,12 +1,11 @@
 "use client";
-import { CardTitle, LoadingState } from "@buleje/design-system";
+import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { RotateCcw, Plus, X, ChevronDown, ChevronUp, Package, Truck, AlertCircle, Loader2, RefreshCw, BarChart2, Download, Clock, CheckCircle2 } from "@buleje/design-system/icons";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import ProductCombobox, { type ProductOption } from "@/components/admin/shared/ProductCombobox";
 import { csrfHeaders } from "@/lib/csrf-client";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { Field } from "@/components/admin/shared/Field";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { formatCurrency, formatDate, formatDateNumeric, formatMonthYear } from "@/lib/format";
@@ -520,10 +519,10 @@ export default function DevolucionesProveedorModule() {
 
   return (
     <div className="space-y-6">
-      <AdminModuleHeader
-        title="Devoluciones a Proveedores"
-        icon={RotateCcw}
-      >
+      {/* Vive dentro de Compras (su barra ya es el título del módulo): acá va el
+          título de la vista, no un segundo h1 (plan «panel unificado», ola 3). */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <SectionTitle className="text-[var(--text-primary)]">Devoluciones a proveedores</SectionTitle>
         <div className="flex items-center gap-2">
           <button
             onClick={() => fetchDevoluciones(true)}
@@ -541,7 +540,7 @@ export default function DevolucionesProveedorModule() {
             Nueva devolución
           </button>
         </div>
-      </AdminModuleHeader>
+      </div>
 
       {/* Resultado de la última acción. Antes no había ninguno: una devolución
           que no se guardaba y una que sí se veían igual (reporte QA Compras). */}

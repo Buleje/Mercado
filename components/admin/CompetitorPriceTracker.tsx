@@ -55,7 +55,11 @@ function diffPercent(myPrice: number, competitorPrice: number): { value: number;
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
-export default function CompetitorPriceTracker() {
+/**
+ * `embebido`: montado dentro de un bloque que ya lo titula (Compras › Proveedores
+ * › Comparar › «Precios del mercado»): sin su propio título, queda la línea de cifras.
+ */
+export default function CompetitorPriceTracker({ embebido = false }: { embebido?: boolean } = {}) {
   const [data, setData] = useState<TrackerData>({ competitors: [], products: [] });
   const [newCompetitor, setNewCompetitor] = useState("");
   const [newProduct, setNewProduct] = useState("");
@@ -171,6 +175,11 @@ export default function CompetitorPriceTracker() {
   return (
     <div className="space-y-6">
       {/* Header */}
+      {embebido ? (
+        <p className="text-xs text-[var(--text-tertiary)]">
+          {data.competitors.length} competidores · {data.products.length} productos
+        </p>
+      ) : (
       <div className="flex items-center gap-3">
         <div className="h-10 w-10 rounded-lg bg-primary text-white flex items-center justify-center ">
           <BarChart3 className="h-5 w-5" />
@@ -182,6 +191,7 @@ export default function CompetitorPriceTracker() {
           </p>
         </div>
       </div>
+      )}
 
       {/* Insights */}
       {insights.totalCompared > 0 && (

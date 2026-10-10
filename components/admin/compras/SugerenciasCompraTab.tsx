@@ -394,7 +394,9 @@ export default function SugerenciasCompraTab() {
   const nadaQueComprar = sugerencias.length === 0;
 
   return (
-    <div className="space-y-4 pb-32">
+    /* El `pb-32` de la barra fija lo pone la vista que lo monta (SugerenciasVista):
+       debajo van otros bloques y el espacio tiene que quedar al final. */
+    <div className="space-y-4">
       {/* ─── Hero header ─────────────────────────────────────────────── */}
       <section className="rounded-2xl border border-[var(--rule-base)] bg-linear-to-br from-white to-[var(--accent-soft)]/40 dark:from-[var(--color-card)] dark:to-[var(--accent-muted)]/20 px-5 py-4 flex items-center gap-4 flex-wrap">
         <span className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-primary/10 dark:bg-[var(--data-success-500)]/15 border border-[var(--data-success-500)]/30 shrink-0">
