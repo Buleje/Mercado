@@ -7,6 +7,8 @@
  */
 
 import type { AdminRole } from "@/lib/session";
+import { VALID_TABS, type Tab } from "@/app/admin/_lib/tabs.types";
+import { resolverDestino } from "@/lib/admin/destino-tab";
 
 // All module IDs — must stay in sync with the Tab type in app/admin/page.tsx
 export type ModuleId =
@@ -249,4 +251,134 @@ export function filterModulesByRole<T extends string>(
   if (role === "admin" || role === "superadmin") return allModules;
   const allowed = overrides?.[role] ?? MODULE_PERMISSIONS[role as Exclude<AdminRole, "admin" | "superadmin">] ?? [];
   return allModules.filter((m) => allowed.includes(m));
+}
+
+// ── Pestañas reales por rol (plan «panel unificado», carril O1-K2) ─────────
+
+/**
+ * Bandera del carril O1-K2 (decisión 15 del plan, 2026-10-09). Con `false` el
+ * panel filtra por rol EXACTAMENTE como hasta hoy. Con `true`, el cajero y el
+ * almacenero ven las pestañas reales de sus permisos: hoy ven 2 de 11 y 2 de 12
+ * porque MODULE_PERMISSIONS usa nombres de pestaña viejos («pos-caja»,
+ * «catalogo-tienda»…) que no coinciden con ninguna pestaña de hoy.
+ * Se enciende sólo con el OK de Brandon y después de la pasada de `security`.
+ */
+export const ROL_CON_IDS_REALES = false;
+
+/**
+ * Roles cuya lista de pestañas sale de MODULE_PERMISSIONS. Los demás (manager,
+ * owner, tienda_owner, analista, proveedor, delivery) ven hoy lo mismo que el
+ * admin, salvo que el negocio les guarde una lista propia
+ * (useAdminTabsDerived: `ROLE_TABS[rol] ?? ROLE_TABS.admin`); la bandera no los toca.
+ */
+const ROLES_CON_LISTA_PROPIA: ReadonlySet<string> = new Set(["cajero", "almacenero"]);
+
+/**
+ * La pestaña de HOY que tiene el contenido de cada permiso viejo, al CONCEDERLO.
+ * Es el destino del link viejo (TAB_MIGRATION) salvo los 7 marcados «≠ link»:
+ * ahí el link cae en una pestaña mucho más ancha que el permiso (Configuración,
+ * Mi Plata, el Asistente IA, la lista de clientes) y concederla entera le daría
+ * al rol más de lo que el permiso decía. Un link puede caer en una pestaña ancha
+ * porque el filtro por rol igual aplica; un permiso, no.
+ *
+ * Vocabulario: ids de pestaña de hoy, el mismo de `origen` de las vistas (plan
+ * R2). Cuando una pestaña se funda en otra, el permiso sigue al contenido por
+ * `origen`; esta tabla no cambia. La revisa `security` antes de encender la bandera.
+ */
+const PESTANAS_DEL_PERMISO = {
+  // ≠ link (asistente-ia): «los KPIs del día, sólo ver» viven en Inicio; el
+  // Asistente IA consulta y anota sobre todo el negocio.
+  "panel-principal": ["vendor-dashboard"],
+  // ≠ link (Mi Plata): los reportes del día viven en Inicio (vistas Ventas,
+  // Productos, Compras); Mi Plata es la plata entera del negocio.
+  "reportes-documentos": ["vendor-dashboard"],
+  // ≠ link (Configuración): mandar mensajes a los clientes vive en Mensajes.
+  comunicaciones: ["whatsapp-inbox"],
+  // ≠ link (Configuración): notas y pendientes del turno viven en Equipo › Tareas.
+  "agenda-utilidades": ["tareas"],
+  // ≠ link (Configuración): las tareas son pestaña propia desde que se montó
+  // TasksTab en Equipo (el link viejo quedó apuntando a Configuración).
+  "proyectos-tareas": ["tareas"],
+  // ≠ link (Clientes): rutas, envíos y devoluciones salen del pedido (el plan
+  // F11 junta el reparto en Pedidos). La lista de Clientes es sólo del admin
+  // (GET /api/customers → 403 al cajero y al almacenero, medido 09-10).
+  logistica: ["pedidos"],
+  "devoluciones-calidad": ["pedidos"],
+  "pos-caja": ["ventas-caja"],
+  "inventario-almacenes": ["inventario"],
+  reposicion: ["inventario"],
+  "catalogo-tienda": ["productos"],
+  "precios-promos": ["productos"],
+  proveedores: ["compras"],
+  "ventas-marketing": ["analytics-pro"],
+  "crm-clientes": ["clientes"],
+  fidelizacion: ["clientes"],
+  "encuestas-soporte": ["clientes"],
+  resenas: ["clientes"],
+  "analytics-bi": ["plata"],
+  proyecciones: ["plata"],
+  finanzas: ["plata"],
+  tesoreria: ["plata"],
+  "gastos-activos": ["plata"],
+  "alertas-automatizacion": ["config"],
+  configuracion: ["config"],
+  equipo: ["config"],
+} as const satisfies Partial<Record<ModuleId, readonly Tab[]>>;
+
+/** Los permisos de la tabla que NO siguen al link viejo (los «≠ link» de arriba). */
+export const PERMISOS_DISTINTOS_DEL_LINK: readonly ModuleId[] = [
+  "panel-principal",
+  "reportes-documentos",
+  "comunicaciones",
+  "agenda-utilidades",
+  "proyectos-tareas",
+  "logistica",
+  "devoluciones-calidad",
+];
+
+const PESTANAS_DE_HOY: ReadonlySet<string> = new Set<string>(VALID_TABS);
+
+/**
+ * Las pestañas reales que concede un permiso: la tabla para los nombres viejos,
+ * el mismo id si ya es una pestaña, y si no, adonde lleva su link viejo
+ * (resolverDestino). `[]` = ninguna.
+ */
+export function pestanasDelPermiso(id: string): readonly Tab[] {
+  if (Object.hasOwn(PESTANAS_DEL_PERMISO, id)) {
+    return PESTANAS_DEL_PERMISO[id as keyof typeof PESTANAS_DEL_PERMISO];
+  }
+  if (PESTANAS_DE_HOY.has(id)) return [id as Tab];
+  const destino = resolverDestino(id);
+  return destino ? [destino.tab] : [];
+}
+
+function aPestanasReales(ids: readonly string[]): Tab[] {
+  const salida = new Set<Tab>();
+  for (const id of ids) for (const tab of pestanasDelPermiso(id)) salida.add(tab);
+  return [...salida];
+}
+
+/**
+ * Las pestañas que ve un rol (antes de plan, plantilla, rubro y ocultos).
+ * `null` = sin filtro: admin, superadmin y los roles sin lista propia ni guardada.
+ *
+ * Bandera apagada: la lista tal cual, como hoy (ids viejos incluidos; el panel
+ * descarta los que no son pestaña). Encendida: cada id traducido a su pestaña
+ * real con `pestanasDelPermiso`. `opciones.idsReales` existe para los tests y
+ * la tabla rol → pestañas del carril; el panel no lo pasa.
+ */
+export function tabsDelRol(
+  role: string,
+  overrides?: Record<string, string[]> | null,
+  opciones: { idsReales?: boolean } = {},
+): readonly string[] | null {
+  if (role === "admin" || role === "superadmin") return null;
+  const guardada = overrides && Object.hasOwn(overrides, role) ? overrides[role] : undefined;
+  const lista = Array.isArray(guardada)
+    ? guardada
+    : ROLES_CON_LISTA_PROPIA.has(role)
+      ? MODULE_PERMISSIONS[role as "cajero" | "almacenero"]
+      : null;
+  if (!lista) return null;
+  return (opciones.idsReales ?? ROL_CON_IDS_REALES) ? aPestanasReales(lista) : lista;
 }
