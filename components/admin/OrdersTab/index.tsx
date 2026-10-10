@@ -4,47 +4,38 @@
  * Pedidos y reparto (`?tab=pedidos`) — plan «panel unificado», 2026-10-09.
  *
  * Cuatro vistas en `?vista=` (link propio, «atrás» del navegador, destino de
- * avisos y del buscador):
- *   tablero     ← el kanban de siempre
- *   lista       ← los mismos pedidos en una tabla
+ * avisos y del buscador), cada una con SU tarea (10-10, Brandon):
+ *   tablero     ← mover los pedidos en marcha de un paso al siguiente
+ *   lista       ← los mismos para buscar, ordenar, elegir varios e imprimir
  *   reparto     ← Delivery entero (DeliveryPartnersModule anidado; Brandon
  *                 eligió Delivery DENTRO de Pedidos el 09-10)
- *   archivados  ← antes un modal del menú «Más»
+ *   archivados  ← los entregados y cancelados
  *
- * Los filtros viven en UNA barra pegada al tablero o a la lista
+ * Cabecera en UNA fila: título · vistas · Indicadores (de lo que está en
+ * marcha). «Imprimir» pasó del «⋯» (su única opción) a la Lista. Los filtros viven en UNA barra pegada al tablero o a la lista
  * (`BarraPedidos`); qué pedidos pasan lo decide `filtrar-pedidos.ts`, así el
- * tablero y la lista nunca dicen cosas distintas. Reparto se ve si su ORIGEN
+ * tablero y la lista nunca dicen cosas distintas. El estado vive en
+ * `usePedidos` y las ventanas en `VentanasPedidos`. Reparto se ve si su ORIGEN
  * (delivery-partners) pasa el plan, la plantilla, el rubro y el rol (R2).
  */
 import dynamic from "next/dynamic";
-import { useState } from "react";
-import { AlertTriangle, Archive, Kanban, List, Package, Printer, Truck } from "@buleje/design-system/icons";
+import { useEffect } from "react";
+import { AlertTriangle, Archive, Kanban, List, Package, Truck } from "@buleje/design-system/icons";
 import type { AdminTab } from "@/components/admin/shared/AdminTabBar";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
-import { ModuleActionMenu } from "@/components/admin/shared/ModuleActionMenu";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { LoadingSpinner } from "@/components/ui-system/LoadingSpinner";
-import { useScrollLock } from "@/hooks/use-scroll-lock";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import { useContextoPermiso, useVistasPermitidas } from "@/hooks/use-vistas-permitidas";
-import { limaDateKey } from "@/lib/utils";
 import type { DbOrder } from "@/lib/jsondb";
-import { useOrdersData } from "./hooks/useOrdersData";
-import { useOrdersFilters } from "./hooks/useOrdersFilters";
-import { useDeliveryDriver } from "./hooks/useDeliveryDriver";
-import { useOrderBulkActions } from "./hooks/useOrderBulkActions";
-import { useOrderActions } from "./hooks/useOrderActions";
+import { usePedidos } from "./hooks/usePedidos";
 import { OrdersKanban } from "./OrdersKanban";
-import { OrdersFilters } from "./OrdersFilters";
 import { OrdersBulkActions } from "./OrdersBulkActions";
-import { OrdersDetailPanel } from "./OrdersDetailPanel";
 import { OrdersArchive } from "./OrdersArchive";
-import { OrdersPrintPreview } from "./OrdersPrintPreview";
-import { DeleteConfirmModal, RejectModal } from "./OrdersModals";
 import { BarraPedidos } from "./BarraPedidos";
 import { ListaPedidos } from "./ListaPedidos";
 import { ResumenImpresion } from "./ResumenImpresion";
-import { pedidosArchivados, pedidosEnMarcha, repartidoresConPedidos } from "./filtrar-pedidos";
+import { VentanasPedidos } from "./VentanasPedidos";
 
 // Delivery entero, montado como vista (R5: mover = montar). Trae el mapa
 // Leaflet, que usa `window`.
@@ -64,75 +55,78 @@ const VISTAS: AdminTab[] = [
 type Vista = "tablero" | "lista" | "reparto" | "archivados";
 const IDS_VISTAS: readonly Vista[] = ["tablero", "lista", "reparto", "archivados"];
 
+/**
+ * `?sub=` es de Reparto (sus secciones: en vivo, repartidores, pagos…). Al
+ * salir de Reparto se borra; sin esto, `?vista=tablero&sub=en-vivo` (el enlace
+ * de Brandon del 10-10) quedaba pegado en el Tablero.
+ */
+const OPCIONES_VISTA = { paramsDeVista: { reparto: ["sub"] } } as const;
+
+const AYUDA =
+  "Tablero: mueve cada pedido al paso siguiente. Lista: búscalos, ordénalos, elige varios e imprímelos. Reparto: repartidores en vivo, asignaciones, pagos y ranking. Archivados: los entregados y cancelados.";
+
 export default function OrdersTab({ initialTab }: { initialTab?: string } = {}) {
-  const { vista, irA } = useVistaModulo<Vista>(MODULE_ID, IDS_VISTAS, "tablero", initialTab);
+  const { vista, irA } = useVistaModulo<Vista>(
+    MODULE_ID,
+    IDS_VISTAS,
+    "tablero",
+    initialTab,
+    OPCIONES_VISTA,
+  );
   const vistas = useVistasPermitidas(MODULE_ID, VISTAS);
   const contextoPermiso = useContextoPermiso();
 
-  const { orders, loading, loadError, storeLat, storeLon, storeName, detailOrder, load, setOrders, setLoadError, setDetailOrder } =
-    useOrdersData();
-  const { filters, dispatch: filtersDispatch } = useOrdersFilters();
+  // `paramsDeVista` limpia al SALIR de Reparto; si se llega a otra vista con el
+  // `?sub=` ya pegado (un enlace guardado), se borra acá.
+  useEffect(() => {
+    if (vista === "reparto") return;
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has("sub")) return;
+    url.searchParams.delete("sub");
+    window.history.replaceState(window.history.state, "", url.toString());
+  }, [vista]);
 
-  const {
-    updateStatus, patchOrder, verifyYape, rejectYape, markDeudaPaid,
-    adminNote, setAdminNote, savingNote, saveAdminNote,
-    showRejectModal, setShowRejectModal, rejectReason, setRejectReason, executeReject,
-    confirmDeleteId, setConfirmDeleteId, confirmDelete,
-  } = useOrderActions({ orders, setOrders, setDetailOrder, load });
-
-  const { customDriver, setCustomDriver, savingDriver, selectedDriverFilter, setSelectedDriverFilter, saveDeliveryDriver, driverColor } =
-    useDeliveryDriver({ patchOrder });
-
-  const { selectedOrderIds, bulkStatusTarget, setBulkStatusTarget, bulkUpdating, toggleOrderSelect, clearOrderSelection, executeBulkStatus } =
-    useOrderBulkActions({ onComplete: load });
-
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [showPrintPreview, setShowPrintPreview] = useState(false);
-
-  useScrollLock(!!detailOrder || !!confirmDeleteId || showAdvancedFilters || showPrintPreview);
-
-  const activeOrders = pedidosEnMarcha(orders, filters, selectedDriverFilter);
-  const archivedOrders = pedidosArchivados(orders);
-  const enMarcha = orders.length - archivedOrders.length;
-  // El día del negocio es el de Lima: con `toISOString()` el corte caía a las
-  // 19:00 hora peruana y lo vendido de noche contaba como «mañana».
-  const entregadosHoy = orders.filter((o) => o.status === "entregado" && limaDateKey(o.createdAt) === limaDateKey()).length;
-  const resumen = `${enMarcha} en marcha${entregadosHoy > 0 ? ` · ${entregadosHoy} ${entregadosHoy === 1 ? "entregado" : "entregados"} hoy` : ""}`;
+  const p = usePedidos();
+  const { datos, acciones: a, reparto: r, bulk } = p;
 
   const repartoVisible = vistas.some((v) => v.id === "reparto");
-  const tabs = vistas.map((v) => (v.id === "tablero" && enMarcha > 0 ? { ...v, badge: enMarcha } : v));
+  const tabs = vistas.map((v) =>
+    v.id === "tablero" && p.enMarcha > 0 ? { ...v, badge: p.enMarcha } : v,
+  );
+  const enMarchaVisible = vista === "tablero" || vista === "lista";
 
   return (
     <AdminTabBar
       heading={{
         title: "Pedidos y reparto",
-        description:
-          "Los pedidos en marcha en tablero o en lista, con sus filtros pegados; el reparto (repartidores en vivo, asignaciones, pagos y ranking) y los entregados y cancelados en Archivados.",
+        description: AYUDA,
         icon: Package,
-        actions: (
-          <ModuleActionMenu
-            label="Más acciones de pedidos"
-            iconOnly
-            className="h-12 w-12"
-            items={[{ label: "Imprimir", icon: Printer, onClick: () => window.print(), description: "Los pedidos en marcha que se ven" }]}
-          />
-        ),
+        // Siempre un elemento (aunque vacío en Reparto y Archivados): con o sin
+        // acciones AdminTabBar decide distinto si el título va en la fila de
+        // las pestañas, y la cabecera no tiene que saltar al cambiar de vista.
+        actions: <>{enMarchaVisible && p.kpis.boton}</>,
       }}
       tabs={tabs}
       activeTab={vista}
       onTabChange={irA}
       moduleId={MODULE_ID}
     >
-      <div className="space-y-3 sm:space-y-4">
-        {(vista === "tablero" || vista === "lista") && (
+      <div className="space-y-3">
+        {enMarchaVisible && (
           <>
-            {loadError && (
-              <div role="alert" className="flex items-center gap-2 rounded-xl border border-[var(--data-error-500)] bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-ink)] dark:bg-[var(--data-error-500)]/10">
+            {datos.loadError && (
+              <div
+                role="alert"
+                className="flex items-center gap-2 rounded-xl border border-[var(--data-error-500)] bg-[var(--data-error-50)] px-4 py-1 text-sm text-[var(--data-error-ink)] dark:bg-[var(--data-error-500)]/10"
+              >
                 <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
-                <span className="flex-1">{loadError}</span>
+                <span className="flex-1">{datos.loadError}</span>
                 <button
                   type="button"
-                  onClick={() => { setLoadError(null); void load(); }}
+                  onClick={() => {
+                    datos.setLoadError(null);
+                    void datos.load();
+                  }}
                   className="h-12 px-2 text-sm font-bold underline"
                 >
                   Reintentar
@@ -140,33 +134,47 @@ export default function OrdersTab({ initialTab }: { initialTab?: string } = {}) 
               </div>
             )}
 
+            {p.kpis.panel}
+
             <BarraPedidos
-              orders={orders}
-              filters={filters}
-              dispatch={filtersDispatch}
-              repartidor={selectedDriverFilter}
-              onRepartidor={setSelectedDriverFilter}
-              onAbrirFiltros={() => setShowAdvancedFilters(true)}
-              resumen={resumen}
+              orders={datos.orders}
+              filters={p.filters}
+              dispatch={p.dispatch}
+              repartidor={r.selectedDriverFilter}
+              onRepartidor={r.setSelectedDriverFilter}
+              onAbrirFiltros={() => p.setFiltrosAbiertos(true)}
+              conCuentas={vista === "lista"}
+              extremo={
+                vista === "lista" ? (
+                  <OrdersBulkActions
+                    selectedCount={p.elegidosVisibles.length}
+                    bulkStatusTarget={bulk.bulkStatusTarget}
+                    bulkUpdating={bulk.bulkUpdating}
+                    onBulkStatusChange={bulk.setBulkStatusTarget}
+                    onExecuteBulkStatus={() => void bulk.executeBulkStatus(p.elegidosVisibles)}
+                    onClearSelection={bulk.clearOrderSelection}
+                    onShowPrint={() => p.setImpresionAbierta(true)}
+                    onImprimirLista={() => window.print()}
+                  />
+                ) : undefined
+              }
             />
 
             {vista === "tablero" ? (
               <OrdersKanban
-                activeOrders={activeOrders}
-                loading={loading}
-                storeLat={storeLat}
-                storeLon={storeLon}
-                selectedOrderIds={selectedOrderIds}
-                driverColor={driverColor}
-                onSelectOrder={setDetailOrder}
-                onToggleSelect={toggleOrderSelect}
-                onUpdateStatus={updateStatus}
-                onVerifyYape={verifyYape}
-                onRejectYape={rejectYape}
-                onMarkDeudaPaid={markDeudaPaid}
-                onDeleteOrder={setConfirmDeleteId}
+                activeOrders={p.enMarchaFiltrados}
+                loading={datos.loading}
+                conFiltros={p.puestos > 0}
+                storeLat={datos.storeLat}
+                storeLon={datos.storeLon}
+                driverColor={r.driverColor}
+                onSelectOrder={datos.setDetailOrder}
+                onUpdateStatus={a.updateStatus}
+                onVerifyYape={a.verifyYape}
+                onRejectYape={a.rejectYape}
+                onMarkDeudaPaid={a.markDeudaPaid}
                 onManualDelivery={(id, reason) =>
-                  patchOrder(id, {
+                  a.patchOrder(id, {
                     status: "entregado",
                     // deliveryReason no es columna de Order — el server PATCH lo
                     // extrae y persiste en OrderStatusHistory.note (audit log).
@@ -175,15 +183,27 @@ export default function OrdersTab({ initialTab }: { initialTab?: string } = {}) 
                 }
               />
             ) : (
-              <ListaPedidos pedidos={activeOrders} loading={loading} onSelectOrder={setDetailOrder} />
+              <ListaPedidos
+                pedidos={p.enMarchaFiltrados}
+                loading={datos.loading}
+                conFiltros={p.puestos > 0}
+                elegidos={bulk.selectedOrderIds}
+                onElegir={bulk.toggleOrderSelect}
+                onElegirTodos={bulk.setOrderSelection}
+                onSelectOrder={datos.setDetailOrder}
+              />
             )}
 
-            <ResumenImpresion pedidos={activeOrders} />
+            <ResumenImpresion pedidos={p.enMarchaFiltrados} />
           </>
         )}
 
         {vista === "archivados" && (
-          <OrdersArchive archivedOrders={archivedOrders} onSelectOrder={setDetailOrder} onDeleteOrder={setConfirmDeleteId} />
+          <OrdersArchive
+            archivedOrders={p.archivados}
+            onSelectOrder={datos.setDetailOrder}
+            onDeleteOrder={a.setConfirmDeleteId}
+          />
         )}
 
         {vista === "reparto" &&
@@ -200,71 +220,7 @@ export default function OrdersTab({ initialTab }: { initialTab?: string } = {}) 
           ))}
       </div>
 
-      {showAdvancedFilters && (
-        <OrdersFilters
-          filters={filters}
-          dispatch={filtersDispatch}
-          repartidores={repartidoresConPedidos(orders).map((r) => r.value)}
-          repartidor={selectedDriverFilter}
-          onRepartidor={setSelectedDriverFilter}
-          onClose={() => setShowAdvancedFilters(false)}
-        />
-      )}
-
-      {detailOrder && (
-        <OrdersDetailPanel
-          order={detailOrder}
-          adminNote={adminNote}
-          savingNote={savingNote}
-          customDriver={customDriver}
-          savingDriver={savingDriver}
-          driverColor={driverColor}
-          onClose={() => setDetailOrder(null)}
-          onAdminNoteChange={setAdminNote}
-          onSaveAdminNote={saveAdminNote}
-          onVerifyYape={verifyYape}
-          onRejectYape={rejectYape}
-          onMarkDeudaPaid={markDeudaPaid}
-          onShowRejectModal={(id) => { setShowRejectModal(id); setRejectReason(""); }}
-          onCustomDriverChange={setCustomDriver}
-          onSaveCustomDriver={saveDeliveryDriver}
-          onPatchOrder={patchOrder}
-        />
-      )}
-
-      {showPrintPreview && (
-        <OrdersPrintPreview
-          orders={orders}
-          selectedOrderIds={selectedOrderIds}
-          storeName={storeName}
-          driverColor={driverColor}
-          onClose={() => setShowPrintPreview(false)}
-        />
-      )}
-
-      {confirmDeleteId && <DeleteConfirmModal onConfirm={confirmDelete} onCancel={() => setConfirmDeleteId(null)} />}
-
-      {showRejectModal && (
-        <RejectModal
-          rejectReason={rejectReason}
-          onReasonChange={setRejectReason}
-          onConfirm={executeReject}
-          onCancel={() => setShowRejectModal(null)}
-        />
-      )}
-
-      {/* La selección sale de las tarjetas del tablero. */}
-      {vista === "tablero" && (
-        <OrdersBulkActions
-          selectedCount={selectedOrderIds.size}
-          bulkStatusTarget={bulkStatusTarget}
-          bulkUpdating={bulkUpdating}
-          onBulkStatusChange={setBulkStatusTarget}
-          onExecuteBulkStatus={executeBulkStatus}
-          onClearSelection={clearOrderSelection}
-          onShowPrint={() => setShowPrintPreview(true)}
-        />
-      )}
+      <VentanasPedidos p={p} />
     </AdminTabBar>
   );
 }

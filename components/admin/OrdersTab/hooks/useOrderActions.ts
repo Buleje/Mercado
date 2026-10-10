@@ -63,6 +63,14 @@ export function useOrderActions({ orders, setOrders, setDetailOrder, load }: Use
       setDetailOrder(prevDetail);
       const err = await res.json().catch(() => ({ error: "Error al actualizar pedido" }));
       toast.error(err.error ?? "Error al actualizar pedido");
+      return;
+    }
+    // Entregado desde el tablero: el servidor devuelve el enlace para avisar al cliente.
+    if (patch.status) {
+      const data = await leerJson<{ whatsappLink?: string; whatsappSent?: boolean }>(res);
+      if (data?.whatsappLink && !data.whatsappSent) {
+        window.open(data.whatsappLink, "_blank", "noopener,noreferrer");
+      }
     }
   };
 

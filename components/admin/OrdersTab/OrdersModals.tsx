@@ -29,13 +29,13 @@ export function DeleteConfirmModal({ onConfirm, onCancel }: DeleteConfirmModalPr
         <div className="flex gap-3">
           <button
             onClick={onCancel}
-            className="flex-1 h-10 rounded-xl text-sm font-semibold text-[var(--text-primary)] dark:text-foreground bg-[var(--rule-soft)] dark:bg-accent hover:bg-[var(--rule-base)] transition-colors"
+            className="flex-1 h-12 rounded-xl text-sm font-semibold text-[var(--text-primary)] dark:text-foreground bg-[var(--rule-soft)] dark:bg-accent hover:bg-[var(--rule-base)] transition-colors"
           >
             Cancelar
           </button>
           <button
             onClick={onConfirm}
-            className="flex-1 h-10 rounded-xl text-sm font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors"
+            className="flex-1 h-12 rounded-xl text-sm font-semibold text-white bg-[var(--data-error-600)] hover:bg-[var(--data-error-700)] transition-colors"
           >
             Sí, eliminar
           </button>
@@ -69,7 +69,7 @@ export function RejectModal({ rejectReason, onReasonChange, onConfirm, onCancel 
               key={t}
               onClick={() => onReasonChange(t)}
               className={cn(
-                "text-left px-3 min-h-10 rounded-xl text-sm border transition-colors",
+                "text-left px-3 min-h-12 rounded-xl text-sm border transition-colors",
                 rejectReason === t
                   ? "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-500)] font-semibold"
                   : "border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] "
@@ -83,19 +83,19 @@ export function RejectModal({ rejectReason, onReasonChange, onConfirm, onCancel 
           value={rejectReason}
           onChange={e => onReasonChange(e.target.value)}
           placeholder="O escribe un motivo personalizado..."
-          className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-card-border text-sm text-[var(--text-primary)] dark:text-foreground outline-none focus:border-[var(--data-error-500)]"
+          className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] dark:border-card-border text-sm text-[var(--text-primary)] dark:text-foreground outline-none focus:border-[var(--data-error-500)]"
         />
         <div className="flex gap-2 pt-1">
           <button
             onClick={onCancel}
-            className="flex-1 h-10 rounded-xl border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] "
+            className="flex-1 h-12 rounded-xl border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] "
           >
             Cancelar
           </button>
           <button
             onClick={onConfirm}
             disabled={!rejectReason.trim()}
-            className="flex-1 h-10 rounded-xl bg-[var(--data-error-500)] text-white text-sm font-semibold hover:bg-[var(--data-error-500)] transition-colors disabled:opacity-50"
+            className="flex-1 h-12 rounded-xl bg-[var(--data-error-600)] text-white text-sm font-semibold hover:bg-[var(--data-error-700)] transition-colors disabled:opacity-50"
           >
             Rechazar pedido
           </button>

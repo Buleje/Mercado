@@ -12,9 +12,8 @@ import { formatCurrency, formatDateTimeShort } from "@/lib/format";
 import { googleMapsUrl } from "@/lib/order-utils";
 import type { DbOrder } from "@/lib/jsondb";
 import { cn } from "@/lib/utils";
-import { STATUS_COLORS, STATUS_LABELS } from "./types";
+import { STATUS_COLORS, STATUS_LABELS, nombreDelPago } from "./types";
 
-const PAGO: Record<string, string> = { yape: "Yape", efectivo: "Efectivo", tarjeta: "Tarjeta", plin: "Plin" };
 const TH = "text-left px-4 py-2.5 font-semibold text-[var(--text-secondary)] dark:text-muted";
 const ACCION =
   "grid h-12 w-12 place-items-center rounded-xl text-[var(--text-tertiary)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40";
@@ -72,7 +71,7 @@ export function TablaArchivados({ pedidos, onSelectOrder, onDeleteOrder }: Props
               <td className="px-4 py-3">
                 <span className={cn("inline-flex rounded-full px-2 py-0.5 text-sm font-bold", STATUS_COLORS[o.status])}>{STATUS_LABELS[o.status]}</span>
               </td>
-              <td className="px-4 py-3 text-[var(--text-secondary)]">{(o.paymentMethod && PAGO[o.paymentMethod]) || o.paymentMethod || "—"}</td>
+              <td className="px-4 py-3 text-[var(--text-secondary)]">{nombreDelPago(o.paymentMethod) || "—"}</td>
               <td className="px-4 py-3 text-right font-semibold tabular-nums text-[var(--text-primary)]">{formatCurrency(Number(o.total))}</td>
               <td className="whitespace-nowrap px-4 py-3 text-[var(--text-secondary)]">{formatDateTimeShort(o.createdAt)}</td>
               <td className="px-4 py-3">

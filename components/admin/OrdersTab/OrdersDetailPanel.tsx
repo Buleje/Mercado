@@ -1,45 +1,33 @@
 "use client";
 
 /**
- * OrdersDetailPanel — Modal lateral con detalle del pedido.
+ * OrdersDetailPanel — la ventana con el detalle de un pedido (se abre desde el
+ * Tablero, la Lista y Archivados; vive en `?pedido=<id>`).
  *
- * Estructura (de arriba a abajo, por prioridad operativa):
- *   1. Header: cliente + total + status + acciones
- *   2. Action banner — la acción primaria del estado (Confirmar Yape /
- *      Avanzar a "En camino" / Marcar entregado…)
- *   3. Items + Resumen (lo que vende este pedido)
- *   4. Contacto + Dirección (1 card con botones Llamar/WhatsApp/Mapa)
- *   5. Despacho (DespachoSection — motorizados reales)
- *   6. Pago (método + Nº op + acciones Yape contextuales)
- *   7. Notas (cliente + internas) en sección colapsable
- *   8. Timeline (referencia secundaria)
- *   9. Footer sticky: Rechazar · Generar Boleta · Cerrar
+ * De arriba a abajo, por lo que se hace con él:
+ *   1. Cabecera: cliente · estado · número · hace cuánto · medio de pago · total
+ *   2. Siguiente paso: el botón que lo avanza (Confirmar Yape, En camino…)
+ *   3. Productos (y el desglose sólo si hubo descuento o cupón)
+ *   4. Contacto y entrega · 5. Despacho · 6. Pago
+ *   7. Notas internas y línea de tiempo, plegadas
+ *   8. Pie: rechazar y los papeles del pedido
  *
- * Reglas DS (sistema admin, sobrio):
- *   - CardTitle del DS para el nombre y para cada bloque (NO h1/h2/h3 directos)
- *   - Sin font-display italic (eso es del sistema marketing/store)
- *   - Tokens del DS — 0 hex hardcoded
+ * 10-10: partido de 757 líneas en `detalle/` y sin cifras repetidas (el total
+ * salía dos veces y el medio de pago también). Texto de 14 px y botones de
+ * 48 px (antes rótulos de 10 px y el cerrar de 32 px).
  */
-
 import { useEffect, useRef, useState } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
-import { CardTitle } from "@buleje/design-system";
-import {
-  X, Printer, Check, Phone, MapPin as MapPinIcon, FileText, MessageCircle,
-  ChevronDown, ChevronRight, ExternalLink, Truck, FileMinus,
-} from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
+import { TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import type { DbOrder } from "@/lib/jsondb";
-import { formatDate, getOrderTimeline } from "@/lib/admin-helpers";
-import { googleMapsUrl } from "@/lib/order-utils";
-import { STATUS_COLORS, STATUS_LABELS } from "./types";
 import { DespachoSection } from "./DespachoSection";
 import ManualDeliveryModal from "./ManualDeliveryModal";
-import { PaymentProofViewer } from "@/components/admin/PaymentProofViewer";
-import { formatCurrency } from "@/lib/format";
-import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
+import { DetalleCabecera, DetallePasoSiguiente } from "./detalle/DetalleCabecera";
+import { DetalleContacto, DetallePago } from "./detalle/DetalleContactoYPago";
+import { DetalleLineaDeTiempo, DetalleNotas } from "./detalle/DetalleNotasYTiempo";
+import { DetallePie } from "./detalle/DetallePie";
+import { DetalleProductos } from "./detalle/DetalleProductos";
 
 interface OrdersDetailPanelProps {
   order: DbOrder;
@@ -58,69 +46,6 @@ interface OrdersDetailPanelProps {
   onCustomDriverChange: (v: string) => void;
   onSaveCustomDriver: (orderId: string) => void;
   onPatchOrder: (id: string, patch: Partial<DbOrder>) => void;
-}
-
-function relativeTime(dateStr: string): string {
-  const ms = Date.now() - new Date(dateStr).getTime();
-  const min = Math.floor(ms / 60_000);
-  if (min < 1) return "ahora";
-  if (min < 60) return `hace ${min} min`;
-  const h = Math.floor(min / 60);
-  if (h < 24) return `hace ${h} h`;
-  const d = Math.floor(h / 24);
-  return `hace ${d} ${d === 1 ? "día" : "días"}`;
-}
-
-function digitsOnly(phone: string): string {
-  return phone.replace(/\D+/g, "");
-}
-
-// Escapa para inyección segura en la ventana de impresión (datos internos del
-// pedido, pero escapamos igual — nunca interpolar sin escapar). Brandon 2026-06-04.
-function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) =>
-    c === "&" ? "&amp;" : c === "<" ? "&lt;" : c === ">" ? "&gt;" : c === '"' ? "&quot;" : "&#39;",
-  );
-}
-
-// Imprime una COMANDA (ticket de cocina/armado) del pedido — distinto de la
-// boleta SUNAT. Antes "Imprimir" y "Generar boleta" abrían el MISMO endpoint
-// (/api/invoices) → botón duplicado. Ahora Imprimir = comanda para preparar,
-// Generar boleta = comprobante fiscal. Ventana nueva, todos los datos escapados.
-/** Mismo aspecto que «Imprimir comanda»: son papeles del pedido, del mismo peso.
- *  px-2.5 y gap-1.5 en el pie: con los 5 botones en px-3 «Generar boleta» bajaba a
- *  una fila propia a 1280 (737 px contra 728 de ancho útil). */
-const ENLACE_PAPEL =
-  "inline-flex items-center gap-1.5 h-12 px-2.5 rounded-xl text-sm font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)] hover:text-[var(--accent)] hover:no-underline transition-colors";
-
-function printComanda(order: DbOrder): void {
-  const w = window.open("", "_blank", "width=360,height=640");
-  if (!w) return;
-  const rows = order.items
-    .map(
-      (i) =>
-        `<tr><td class="q">${i.quantity}×</td><td class="n">${escapeHtml(i.name)}${
-          i.note ? `<div class="note">${escapeHtml(i.note)}</div>` : ""
-        }</td></tr>`,
-    )
-    .join("");
-  const ref = order.customer.reference ? `<br><i>Ref: ${escapeHtml(order.customer.reference)}</i>` : "";
-  const when = escapeHtml(new Date(order.createdAt).toLocaleString("es-PE", { timeZone: "America/Lima" }));
-  w.document.write(
-    `<!doctype html><html><head><meta charset="utf-8"><title>Comanda #${escapeHtml(order.id.slice(-8))}</title>` +
-      `<style>*{font-family:ui-monospace,Menlo,monospace;margin:0}body{padding:12px;font-size:13px;color:#000}` +
-      `h1{font-size:16px;text-align:center;letter-spacing:2px}.meta{text-align:center;font-size:11px;color:#444;margin:2px 0 8px}` +
-      `hr{border:0;border-top:1px dashed #000;margin:8px 0}table{width:100%;border-collapse:collapse}` +
-      `td{padding:3px 0;vertical-align:top}.q{width:36px;font-weight:700}.note{font-size:11px;color:#444;font-style:italic}` +
-      `.cust{font-size:12px;line-height:1.5}.total{display:flex;justify-content:space-between;font-weight:800;font-size:16px;margin-top:6px}</style>` +
-      `</head><body><h1>COMANDA</h1><div class="meta">#${escapeHtml(order.id.slice(-8))} · ${when}</div><hr>` +
-      `<div class="cust"><b>${escapeHtml(order.customer.name)}</b><br>${escapeHtml(order.customer.phone ?? "")}<br>` +
-      `${escapeHtml(order.customer.location ?? "")}${ref}</div><hr><table>${rows}</table><hr>` +
-      `<div class="total"><span>TOTAL</span><span>${formatCurrency(Number(order.total))}</span></div></body></html>`,
-  );
-  w.document.close();
-  w.focus();
-  w.print();
 }
 
 export function OrdersDetailPanel({
@@ -147,11 +72,9 @@ export function OrdersDetailPanel({
        el foco, la trampa de Tab y el scroll, no una segunda salida. */
   useModalAccesible(cajaRef, { onCerrar: onClose, cerrarConEscape: false });
   const adminNotes = (order as DbOrder & { adminNotes?: string }).adminNotes;
-  const initial = order.customer.name.trim().charAt(0).toUpperCase() || "?";
-  // FIX 2026-05-07: estado del modal "Entrega manual" — pide método y nota antes
-  // de marcar entregado. Persiste auditoria en OrderStatusHistory.note.
+  // FIX 2026-05-07: «Entregado sin reparto» pide método y nota antes de marcar
+  // entregado. Persiste en OrderStatusHistory.note para auditoría.
   const [manualOpen, setManualOpen] = useState(false);
-  const openManual = () => setManualOpen(true);
   const handleManualConfirm = (deliveryReason: string) => {
     setManualOpen(false);
     onPatchOrder(order.id, {
@@ -161,26 +84,23 @@ export function OrdersDetailPanel({
       ...({ deliveryReason } as unknown as Partial<DbOrder>),
     });
   };
-  const phone = order.customer.phone ?? "";
-  const phoneDigits = phone ? digitsOnly(phone) : "";
-  const subtotal = order.items.reduce((s, i) => s + i.price * i.quantity, 0);
 
-  const [notesOpen, setNotesOpen] = useState(false);
-  const [timelineOpen, setTimelineOpen] = useState(false);
-
-  // a11y/UX (Brandon 2026-06-04): foco entra al panel al abrir + Escape cierra
-  // (memoria del proyecto: todo modal necesita click-fuera + Escape; faltaba el
-  // Escape). No cierra si el sub-modal de entrega manual está encima.
+  // a11y/UX (Brandon 2026-06-04): foco entra al panel al abrir + Escape cierra.
+  // No cierra si el sub-modal de entrega manual está encima.
   const panelRef = useRef<HTMLDivElement>(null);
-  useEffect(() => { panelRef.current?.focus(); }, []);
-  const ventana = useVentanaDeModal(true, { ref: panelRef, aplicarTranslate: true, claveMemoria: "pedido-detalle" });
+  useEffect(() => {
+    panelRef.current?.focus();
+  }, []);
+  const ventana = useVentanaDeModal(true, {
+    ref: panelRef,
+    aplicarTranslate: true,
+    claveMemoria: "pedido-detalle",
+  });
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape" && !manualOpen) {
-        // Frenar propagación: con el modal abierto, Escape cierra SOLO el modal —
-        // no debe disparar atajos globales del admin ni el onboarding tour
-        // (ambos escuchan keydown en window, que recibe el evento después de
-        // document en fase de burbujeo).
+        // Con el modal abierto, Escape cierra SOLO el modal: no dispara los
+        // atajos globales del admin ni el tour (escuchan en window, después).
         e.stopPropagation();
         onClose();
       }
@@ -189,57 +109,17 @@ export function OrdersDetailPanel({
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose, manualOpen]);
 
-  // ── Acción primaria contextual por estado ───────────────────────────────
-  const actionBanner = (() => {
-    if (order.status === "pendiente" && order.paymentMethod === "yape") {
-      return {
-        label: "Verificar pago Yape",
-        sub: order.yapeOperationNumber ? `Nº Op. ${order.yapeOperationNumber}` : "Comprobante adjunto",
-        primary: { label: "Confirmar Yape", onClick: () => onVerifyYape(order.id), tone: "success" as const },
-        secondary: { label: "Yape falso", onClick: () => onRejectYape(order.id), tone: "danger" as const },
-      };
-    }
-    if (order.status === "pendiente") {
-      return {
-        label: "Pendiente de confirmar",
-        sub: "Marca como confirmado cuando esté listo para preparar",
-        primary: { label: "Confirmar pedido", onClick: () => onPatchOrder(order.id, { status: "confirmado" }), tone: "primary" as const },
-      };
-    }
-    if (order.status === "confirmado") {
-      return {
-        label: "Confirmado · listo para preparar",
-        sub: "Marca cuando empieces a armar el pedido",
-        primary: { label: "Empezar preparación", onClick: () => onPatchOrder(order.id, { status: "preparando" }), tone: "primary" as const },
-        // FIX 2026-05-07: entrega manual sin pasar por delivery. Abre modal
-        // que pide método (mostrador / propia / encargo / otro) + nota
-        // opcional, persistido en OrderStatusHistory.note para auditoría.
-        secondary: { label: "Entregado (manual)", onClick: openManual, tone: "success" as const },
-      };
-    }
-    if (order.status === "preparando") {
-      return {
-        label: "Preparando · armando el pedido",
-        sub: "Asigna un motorizado abajo y avanza cuando salga",
-        primary: { label: "Marcar en camino", onClick: () => onPatchOrder(order.id, { status: "en_camino" }), tone: "primary" as const },
-        secondary: { label: "Entregado (manual)", onClick: openManual, tone: "success" as const },
-      };
-    }
-    if (order.status === "en_camino") {
-      return {
-        label: "En camino · rumbo al cliente",
-        sub: "Confirma cuando reciba el cliente",
-        primary: { label: "Marcar entregado", onClick: () => onPatchOrder(order.id, { status: "entregado" }), tone: "success" as const },
-      };
-    }
-    return null;
-  })();
-
   return (
-    <div ref={cajaRef} tabIndex={-1}
+    <div
+      ref={cajaRef}
+      tabIndex={-1}
       className="fixed inset-0 z-modal flex items-start sm:items-center justify-center p-3 sm:p-6 bg-black/55 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-[var(--dur-fast)]"
-      onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) onClose(); }}
-      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !ventana.fijado) onClose();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onClose();
+      }}
     >
       {/* El diálogo es el PANEL, no el velo: es lo que se mueve como ventana. */}
       <div
@@ -252,261 +132,18 @@ export function OrdersDetailPanel({
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => e.stopPropagation()}
       >
-        {/* ─── 1. HEADER — patrón estándar admin (CardTitle DS, sin italic) ── */}
-        <header {...ventana.asaProps} className="flex items-start justify-between gap-3 px-5 py-4 border-b border-[var(--rule-soft)] shrink-0 bg-[var(--surface-raised)]">
-          <div className="flex items-start gap-3 min-w-0">
-            <span
-              aria-hidden
-              className="inline-flex h-11 w-11 items-center justify-center rounded-xl shrink-0 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-base font-bold tracking-tight"
-            >
-              {initial}
-            </span>
-            <div className="min-w-0">
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-0.5">
-                Pedido · #{order.id.slice(-8)}
-              </p>
-              <CardTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)] truncate">
-                <EnlacePanel cosa="cliente" id={order.customer.phone} apariencia="heredada" title="Abrir su ficha de cliente">{order.customer.name}</EnlacePanel>
-              </CardTitle>
-              <div className="text-xs text-[var(--text-tertiary)] mt-1 flex items-center gap-1.5 flex-wrap">
-                <span
-                  className={cn(
-                    "inline-flex items-center px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider",
-                    STATUS_COLORS[order.status],
-                  )}
-                >
-                  {STATUS_LABELS[order.status]}
-                </span>
-                <span aria-hidden>·</span>
-                <span title={formatDate(order.createdAt)}>{relativeTime(order.createdAt)}</span>
-                {order.paymentMethod && (
-                  <>
-                    <span aria-hidden>·</span>
-                    <span className="font-semibold text-[var(--text-secondary)]">
-                      {order.paymentMethod === "yape" ? "Yape" : "Efectivo"}
-                    </span>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-          <div className="flex flex-col items-end gap-1 shrink-0">
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-              Total
-            </p>
-            <p className="text-xl font-extrabold tabular-nums text-[var(--text-primary)] leading-none">
-              {formatCurrency(Number(order.total))}
-            </p>
-            <span className="mt-1 flex items-center gap-1">
-              <ControlesDeVentana ventana={ventana} />
-              <button
-                type="button"
-                onClick={onClose}
-                className="inline-flex items-center justify-center h-8 w-8 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
-                aria-label="Cerrar panel"
-              >
-                <X className="h-4 w-4" strokeWidth={2} aria-hidden />
-              </button>
-            </span>
-          </div>
-        </header>
+        <DetalleCabecera order={order} ventana={ventana} onClose={onClose} />
+        <DetallePasoSiguiente
+          order={order}
+          onVerifyYape={onVerifyYape}
+          onRejectYape={onRejectYape}
+          onPatchOrder={onPatchOrder}
+          onEntregaManual={() => setManualOpen(true)}
+        />
 
-        {/* ─── 2. ACTION BANNER — siguiente paso operativo, sticky ────────── */}
-        {actionBanner && (
-          <section
-            className="shrink-0 px-5 py-3 border-b flex flex-col gap-2 bg-[var(--surface-sunken)] border-[var(--rule-soft)]"
-            aria-label="Acción primaria"
-          >
-            <div className="min-w-0">
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                Siguiente paso
-              </p>
-              <p className="text-sm font-bold text-[var(--text-primary)] truncate">
-                {actionBanner.label}
-              </p>
-              <p className="text-xs text-[var(--text-secondary)] truncate">
-                {actionBanner.sub}
-              </p>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <button
-                type="button"
-                onClick={actionBanner.primary.onClick}
-                className={cn(
-                  "inline-flex items-center gap-1.5 h-12 px-4 rounded-xl text-sm font-semibold transition-colors text-white",
-                  actionBanner.primary.tone === "success"
-                    ? "bg-[var(--data-success-500)] hover:opacity-90"
-                    : "bg-primary hover:bg-primary/90",
-                )}
-              >
-                <Check className="h-4 w-4" strokeWidth={2} />
-                {actionBanner.primary.label}
-              </button>
-              {actionBanner.secondary && (
-                <button
-                  type="button"
-                  onClick={actionBanner.secondary.onClick}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 h-12 px-4 rounded-xl text-sm font-semibold border bg-[var(--surface-raised)] transition-colors",
-                    actionBanner.secondary.tone === "success"
-                      ? "border-[var(--data-success-500)]/40 text-[var(--data-success-ink)] hover:bg-[var(--data-success-500)]/5"
-                      : "border-[var(--data-error-500)]/40 text-[var(--data-error-ink)] hover:bg-[var(--data-error-500)]/5",
-                  )}
-                >
-                  {actionBanner.secondary.tone === "success" ? (
-                    <Check className="h-4 w-4" strokeWidth={2} />
-                  ) : (
-                    <X className="h-4 w-4" strokeWidth={2} />
-                  )}
-                  {actionBanner.secondary.label}
-                </button>
-              )}
-            </div>
-          </section>
-        )}
-
-        {/* ─── SCROLLABLE BODY ──────────────────────────────────────────── */}
-        <div className="overflow-y-auto px-5 py-5 space-y-4 flex-1 bg-[var(--surface-canvas)]">
-          {/* ─── 3. ITEMS + RESUMEN ──────────────────────────────────────── */}
-          <section className="space-y-2">
-            <div className="flex items-baseline justify-between">
-              <CardTitle className="text-sm font-bold">Productos</CardTitle>
-              <span className="text-xs font-semibold tabular-nums text-[var(--text-tertiary)]">
-                {order.items.length} {order.items.length === 1 ? "ítem" : "ítems"}
-              </span>
-            </div>
-            <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
-              <ul className="divide-y divide-[var(--rule-soft)]">
-                {order.items.map((item, i) => (
-                  <li key={i} className="flex items-start justify-between gap-3 px-4 py-2.5">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-[var(--text-primary)] truncate">
-                        <span className="text-[var(--accent)] font-bold tabular-nums mr-1">
-                          {item.quantity}×
-                        </span>
-                        {item.name}
-                      </p>
-                      <p className="text-xs text-[var(--text-tertiary)] mt-0.5 tabular-nums">
-                        {formatCurrency(Number(item.price))} · {item.unit}
-                      </p>
-                      {item.note && (
-                        <p className="text-xs text-[var(--text-secondary)] italic mt-1">
-                          “{item.note}”
-                        </p>
-                      )}
-                    </div>
-                    <p className="text-sm font-semibold tabular-nums text-[var(--text-primary)] shrink-0">
-                      {formatCurrency(item.price * item.quantity)}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-              {/* Resumen */}
-              <div className="border-t border-[var(--rule-base)] bg-[var(--surface-sunken)]/40">
-                {((order.couponDiscount ?? 0) > 0 || (order.discountAmount ?? 0) > 0) && (
-                  <>
-                    <div className="flex justify-between items-center px-4 py-1.5 text-xs">
-                      <span className="text-[var(--text-secondary)]">Subtotal</span>
-                      <span className="text-[var(--text-secondary)] tabular-nums">{formatCurrency(subtotal)}</span>
-                    </div>
-                    {(order.discountAmount ?? 0) > 0 && (
-                      <div className="flex justify-between items-center px-4 py-1.5 text-xs">
-                        <span className="text-[var(--data-success-500)] font-semibold">
-                          Descuento{order.appliedPromoId ? ` · ${order.appliedPromoId}` : ""}
-                        </span>
-                        <span className="font-semibold text-[var(--data-success-500)] tabular-nums">
-                          −{formatCurrency(Number(order.discountAmount))}
-                        </span>
-                      </div>
-                    )}
-                    {(order.couponDiscount ?? 0) > 0 && (
-                      <div className="flex justify-between items-center px-4 py-1.5 text-xs">
-                        <span className="text-[var(--data-success-500)] font-semibold">
-                          Cupón{order.appliedCouponCode ? ` · ${order.appliedCouponCode}` : ""}
-                        </span>
-                        <span className="font-semibold text-[var(--data-success-500)] tabular-nums">
-                          −{formatCurrency(Number(order.couponDiscount))}
-                        </span>
-                      </div>
-                    )}
-                  </>
-                )}
-                <div className="flex justify-between items-center border-t border-[var(--rule-soft)] px-5 py-2.5 sm:px-6">
-                  <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                    Total a cobrar
-                  </span>
-                  <span className="text-lg font-extrabold tabular-nums text-[var(--text-primary)]">
-                    {formatCurrency(Number(order.total))}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* ─── 4. CONTACTO + DIRECCIÓN ─────────────────────────────────── */}
-          <section className="space-y-2">
-            <CardTitle className="text-sm font-bold">Contacto y entrega</CardTitle>
-            <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
-              {/* Teléfono */}
-              {phone && (
-                <div className="flex flex-wrap items-center gap-2 border-b border-[var(--rule-soft)] px-5 py-2.5 sm:px-6">
-                  <Phone className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" strokeWidth={2} />
-                  <span className="font-mono text-sm font-semibold text-[var(--text-primary)] flex-1 min-w-0 truncate">
-                    {phone}
-                  </span>
-                  <a
-                    href={`tel:${phoneDigits}`}
-                    className="inline-flex items-center gap-1.5 h-12 px-3 rounded-xl border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
-                  >
-                    <Phone className="h-3.5 w-3.5" /> Llamar
-                  </a>
-                  <a
-                    href={`https://wa.me/${phoneDigits}?text=${encodeURIComponent(`Hola ${order.customer.name}, sobre tu pedido #${order.id.slice(-8)}`)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 h-12 px-3 rounded-xl bg-[var(--data-success-500)]/10 border border-[var(--data-success-500)]/30 text-sm font-semibold text-[var(--data-success-ink)] hover:bg-[var(--data-success-500)]/15 transition-colors"
-                  >
-                    <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
-                  </a>
-                </div>
-              )}
-
-              {/* Dirección */}
-              <div className="flex items-start gap-2 px-4 py-2.5">
-                <MapPinIcon className="h-4 w-4 text-[var(--text-tertiary)] shrink-0 mt-0.5" strokeWidth={2} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">
-                    {order.customer.location}
-                  </p>
-                  {order.customer.reference && (
-                    <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
-                      Ref: {order.customer.reference}
-                    </p>
-                  )}
-                </div>
-                <a
-                  href={googleMapsUrl(order.customer.location)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 h-12 px-3 rounded-xl border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors shrink-0"
-                >
-                  <ExternalLink className="h-3.5 w-3.5" /> Mapa
-                </a>
-              </div>
-
-              {/* Notas del cliente — inline si existen */}
-              {order.notes && (
-                <div className="border-t border-[var(--rule-soft)] bg-primary/10 px-5 py-2.5 sm:px-6">
-                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)] mb-1">
-                    Nota del cliente
-                  </p>
-                  <p className="text-sm text-[var(--text-primary)] italic">“{order.notes}”</p>
-                </div>
-              )}
-            </div>
-          </section>
-
-          {/* ─── 5. DESPACHO ─────────────────────────────────────────────── */}
+        <div className="flex-1 space-y-4 overflow-y-auto bg-[var(--surface-canvas)] px-5 py-4">
+          <DetalleProductos order={order} />
+          <DetalleContacto order={order} />
           <DespachoSection
             order={order}
             customDriver={customDriver}
@@ -516,234 +153,19 @@ export function OrdersDetailPanel({
             onSaveCustomDriver={onSaveCustomDriver}
             onPatchOrder={onPatchOrder}
           />
-
-          {/* ─── 6. PAGO (extra detail si Yape/Plin/Transfer o deuda) ──── */}
-          {order.paymentMethod && order.paymentMethod !== "efectivo" && (
-            <section className="space-y-2">
-              <CardTitle className="text-sm font-bold">Pago</CardTitle>
-              <PaymentProofViewer orderId={order.id} />
-            </section>
-          )}
-          {order.paymentMethod && (order.yapeOperationNumber || order.deuda !== undefined) && (
-            <section className="space-y-2">
-              {order.paymentMethod === "efectivo" && (
-                <CardTitle className="text-sm font-bold">Pago</CardTitle>
-              )}
-              <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 flex items-center gap-2 flex-wrap">
-                <span
-                  className={cn(
-                    "inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider",
-                    order.paymentMethod === "efectivo"
-                      ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border border-[var(--accent)]/30"
-                      : "bg-[var(--surface-sunken)] text-[var(--text-primary)] border border-[var(--rule-base)]",
-                  )}
-                >
-                  {order.paymentMethod === "yape"
-                    ? "Yape"
-                    : order.paymentMethod === "plin"
-                      ? "Plin"
-                      : order.paymentMethod === "transfer"
-                        ? "Transferencia"
-                        : "Efectivo"}
-                </span>
-                {order.yapeOperationNumber && (
-                  <span className="font-mono text-xs font-semibold text-[var(--text-secondary)] tabular-nums">
-                    Nº Op. {order.yapeOperationNumber}
-                  </span>
-                )}
-                {order.paymentMethod === "efectivo" && order.deuda && (
-                  <>
-                    <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-error-500)]/10 text-[var(--data-error-ink)] border border-[var(--data-error-500)]/30">
-                      Deuda pendiente
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => onMarkDeudaPaid(order.id)}
-                      className="ml-auto inline-flex items-center gap-1.5 h-12 px-3 rounded-xl text-sm font-semibold text-[var(--data-success-ink)] bg-[var(--data-success-500)]/10 hover:bg-[var(--data-success-500)]/15 border border-[var(--data-success-500)]/30 transition-colors"
-                    >
-                      <Check className="h-3.5 w-3.5" /> Marcar cobrado
-                    </button>
-                  </>
-                )}
-                {order.paymentMethod === "efectivo" && order.deuda === false && (
-                  <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-success-500)]/10 text-[var(--data-success-500)] border border-[var(--data-success-500)]/30">
-                    Cobrado
-                  </span>
-                )}
-              </div>
-            </section>
-          )}
-
-          {/* ─── 7. NOTAS — colapsable ────────────────────────────────────── */}
-          <section>
-            <button
-              type="button"
-              onClick={() => setNotesOpen((v) => !v)}
-              className="w-full flex min-h-12 items-center gap-2 group"
-              aria-expanded={notesOpen}
-            >
-              {notesOpen ? (
-                <ChevronDown className="h-4 w-4 text-[var(--text-tertiary)]" />
-              ) : (
-                <ChevronRight className="h-4 w-4 text-[var(--text-tertiary)]" />
-              )}
-              <CardTitle className="text-sm font-bold text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors">
-                Notas internas
-              </CardTitle>
-              {adminNotes && (
-                <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)] text-xs font-bold">
-                  !
-                </span>
-              )}
-            </button>
-            {notesOpen && (
-              <div className="space-y-2 mt-2">
-                {adminNotes && (
-                  <div className="rounded-lg bg-[var(--data-warning-500)]/10 border border-[var(--data-warning-500)]/30 p-3">
-                    <pre className="text-sm text-[var(--text-primary)] whitespace-pre-wrap font-sans leading-relaxed">
-                      {adminNotes}
-                    </pre>
-                  </div>
-                )}
-                <div className="flex items-center gap-2">
-                  <input
-                    value={adminNote}
-                    onChange={(e) => onAdminNoteChange(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && onSaveAdminNote(order.id)}
-                    placeholder="Agregar nota interna…"
-                    className="flex-1 h-12 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:border-primary transition-colors"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => onSaveAdminNote(order.id)}
-                    disabled={savingNote || !adminNote.trim()}
-                    className="h-12 px-4 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50"
-                  >
-                    {savingNote ? "…" : "Guardar"}
-                  </button>
-                </div>
-              </div>
-            )}
-          </section>
-
-          {/* ─── 8. TIMELINE — colapsable, contexto secundario ───────────── */}
-          <section>
-            <button
-              type="button"
-              onClick={() => setTimelineOpen((v) => !v)}
-              className="w-full flex min-h-12 items-center gap-2 group"
-              aria-expanded={timelineOpen}
-            >
-              {timelineOpen ? (
-                <ChevronDown className="h-4 w-4 text-[var(--text-tertiary)]" />
-              ) : (
-                <ChevronRight className="h-4 w-4 text-[var(--text-tertiary)]" />
-              )}
-              <CardTitle className="text-sm font-bold text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors">
-                Línea de tiempo
-              </CardTitle>
-            </button>
-            {timelineOpen && (
-              <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 mt-2">
-                <ol className="relative pl-6">
-                  <span
-                    aria-hidden
-                    className="absolute left-2.5 top-3 bottom-3 w-px bg-[var(--rule-base)]"
-                  />
-                  {getOrderTimeline(order).map((step) => {
-                    const Icon = step.icon;
-                    const isCanceled = step.status === "cancelado";
-                    return (
-                      <li key={step.status} className="relative pb-3 last:pb-0">
-                        <span
-                          className={cn(
-                            "absolute -left-6 top-0.5 w-5 h-5 rounded-full flex items-center justify-center border-2 shrink-0",
-                            step.completed || step.current
-                              ? isCanceled
-                                ? "bg-[var(--data-error-500)] border-[var(--data-error-500)] text-white"
-                                : "bg-[var(--data-success-500)] border-[var(--data-success-500)] text-white"
-                              : "bg-[var(--surface-canvas)] border-[var(--rule-base)] text-[var(--text-tertiary)]",
-                          )}
-                        >
-                          <Icon className="h-2.5 w-2.5" />
-                        </span>
-                        <div className="flex items-baseline justify-between gap-2">
-                          <p
-                            className={cn(
-                              "text-sm font-semibold",
-                              step.completed || step.current
-                                ? isCanceled
-                                  ? "text-[var(--data-error-500)]"
-                                  : "text-[var(--text-primary)]"
-                                : "text-[var(--text-tertiary)]",
-                            )}
-                          >
-                            {step.label}
-                          </p>
-                          {step.timestamp && (
-                            <span className="text-xs text-[var(--text-tertiary)] tabular-nums shrink-0">
-                              {step.timestamp}
-                            </span>
-                          )}
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ol>
-              </div>
-            )}
-          </section>
+          <DetallePago order={order} onMarkDeudaPaid={onMarkDeudaPaid} />
+          <DetalleNotas
+            orderId={order.id}
+            notasGuardadas={adminNotes}
+            nota={adminNote}
+            guardando={savingNote}
+            onNota={onAdminNoteChange}
+            onGuardar={onSaveAdminNote}
+          />
+          <DetalleLineaDeTiempo order={order} />
         </div>
 
-        {/* ─── 9. FOOTER STICKY — acciones secundarias (peso normal) ──────── */}
-        <footer className="shrink-0 px-5 py-3 border-t border-[var(--rule-soft)] bg-[var(--surface-raised)] flex items-center gap-1.5 flex-wrap">
-          {order.status !== "cancelado" && order.status !== "entregado" && (
-            <button
-              type="button"
-              onClick={() => onShowRejectModal(order.id)}
-              className="inline-flex items-center gap-1.5 h-12 px-2.5 rounded-xl text-sm font-semibold text-[var(--data-error-ink)] border border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/5 hover:bg-[var(--data-error-500)]/10 transition-colors"
-            >
-              <X className="h-4 w-4" />
-              Rechazar
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => printComanda(order)}
-            className={ENLACE_PAPEL}
-          >
-            <Printer className="h-4 w-4" />
-            Imprimir comanda
-          </button>
-          {/* Los otros papeles del pedido (plan «panel unificado» 2026-10-09):
-              llevan a su pantalla; el N° de pedido se vincula allá. */}
-          <EnlacePanel
-            href="/admin?tab=guias-remision"
-            apariencia="heredada"
-            title={`Abre Guías de remisión para hacer la del pedido #${order.id.slice(-6)}`}
-            className={ENLACE_PAPEL}
-          >
-            <Truck className="h-4 w-4" aria-hidden />
-            Hacer guía
-          </EnlacePanel>
-          <EnlacePanel
-            href="/admin?tab=notas-credito"
-            apariencia="heredada"
-            title={`Abre Notas de crédito para la del pedido #${order.id.slice(-6)}`}
-            className={ENLACE_PAPEL}
-          >
-            <FileMinus className="h-4 w-4" aria-hidden />
-            Nota de crédito
-          </EnlacePanel>
-          <button
-            type="button"
-            onClick={() => window.open(`/api/invoices/${order.id}`, "_blank", "noopener,noreferrer")}
-            className="ml-auto inline-flex items-center gap-1.5 h-12 px-3.5 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors"
-          >
-            <FileText className="h-4 w-4" strokeWidth={2} />
-            Generar boleta
-          </button>
-        </footer>
+        <DetallePie order={order} onRechazar={onShowRejectModal} />
         <TiradorDeVentana ventana={ventana} />
       </div>
       <ManualDeliveryModal

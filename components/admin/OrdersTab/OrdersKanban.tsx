@@ -1,616 +1,105 @@
 "use client";
 
 /**
- * OrdersKanban — 4 columnas operativas (Por confirmar / Confirmado / Preparando / En camino).
+ * Pedidos y reparto › Tablero: los pedidos en marcha en cuatro columnas (Por
+ * confirmar · Confirmado · Preparando · En camino) para MOVERLOS: cada
+ * tarjeta trae la acción que la pasa al siguiente paso y se arrastra de una
+ * columna a otra. Buscar, ordenar, elegir varios e imprimir es tarea de la
+ * Lista (10-10, Brandon: «cada pestaña cumple su tarea»).
  *
- * Reemplaza la lista vertical larga por un cockpit Kanban que muestra el flujo
- * de trabajo en paralelo. Cada columna tiene:
- *   - Header con label, contador y monto total de la columna
- *   - Cards compactas con cliente, total, motorizado (si hay) y 1 acción primaria
+ * El ancho manda (no la pantalla): con 52rem o más, cuatro columnas; desde
+ * 34rem, dos; más angosto, una sola con la barra de secciones arriba. Antes
+ * eran cuatro desde `lg` aunque el menú lateral dejara ~230 px a cada una.
+ * Se dibuja UNA sola disposición: la doble (celular + escritorio) registraba
+ * dos veces cada tarjeta y cada columna en el arrastre.
  *
- * En mobile colapsa a un segmented control (grid 2×2 en pantallas chicas).
- *
- * Tipografía: estándar admin (text-base/text-xl font-extrabold), sin italic.
+ * Partido el 10-10 de 822 líneas: tarjeta en `kanban/TarjetaPedido`, columna
+ * en `kanban/ColumnaKanban`, la configuración en `kanban/columnas`.
  */
-
-import { useMemo, useState, useEffect, useRef, memo } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import {
-  Check, X as XIcon, MapPin, Bike, Clock, AlertTriangle, ShoppingBasket, ArrowRight, Store, Boxes, ChefHat, GripHorizontal, Banknote, ChevronDown,
-} from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
-import BotonIconoTip from "@/components/admin/shared/boton-icono-tip";
-import { EmptyState } from "@/components/admin/EmptyState";
-import type { DbOrder, OrderStatus } from "@/lib/jsondb";
-import { formatDate, parseGps, haversineKm } from "@/lib/admin-helpers";
-import { STATUS_LABELS, VALID_TRANSITIONS } from "./types";
-import ManualDeliveryModal from "./ManualDeliveryModal";
 import {
   DndContext,
   DragOverlay,
   PointerSensor,
   TouchSensor,
+  closestCorners,
   useSensor,
   useSensors,
-  useDraggable,
-  useDroppable,
-  closestCorners,
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import { formatCurrency } from "@/lib/format";
+import { ShoppingBasket } from "@buleje/design-system/icons";
+import { EmptyState } from "@/components/admin/EmptyState";
+import { BarraDeSecciones, idPestanaDeSeccion } from "@/components/admin/shared/BarraDeSecciones";
+import type { DbOrder, OrderStatus } from "@/lib/jsondb";
+import { cn } from "@/lib/utils";
+import { COLUMNAS, type ColumnId } from "./kanban/columnas";
+import { ColumnaKanban } from "./kanban/ColumnaKanban";
+import { TarjetaPedido } from "./kanban/TarjetaPedido";
+import { masEsperaPrimero } from "./tiempo-en-estado";
+import { VALID_TRANSITIONS } from "./types";
 
 interface OrdersKanbanProps {
   activeOrders: DbOrder[];
   loading: boolean;
+  /** Hay filtros puestos: el vacío lo dice («con estos filtros»). */
+  conFiltros?: boolean;
   storeLat: number | null;
   storeLon: number | null;
-  selectedOrderIds: Set<string>;
   driverColor: (name: string) => string;
   onSelectOrder: (order: DbOrder) => void;
-  onToggleSelect: (id: string) => void;
   onUpdateStatus: (id: string, status: OrderStatus) => void;
   onVerifyYape: (id: string) => void;
   onRejectYape: (id: string) => void;
   onMarkDeudaPaid: (id: string) => void;
-  onDeleteOrder: (id: string) => void;
-  // FIX 2026-05-07: callback opcional para entrega manual con razón.
-  // Si se provee, el card abre un modal y devuelve la razón formateada.
+  /** Entrega sin reparto con su motivo (va al historial del pedido). */
   onManualDelivery?: (id: string, reason: string) => void;
 }
 
-type ColumnId = "pendiente" | "confirmado" | "preparando" | "en_camino";
-
-interface ColumnConfig {
-  id: ColumnId;
-  label: string;
-  description: string;
-  accentVar: string;
-  emptyMessage: string;
-}
-
-const COLUMNS: Array<ColumnConfig & { Icon: React.ElementType; iconColor: string }> = [
-  {
-    id: "pendiente",
-    label: "Por confirmar",
-    description: "Yape por verificar · pago a aprobar",
-    accentVar: "var(--data-warning-500)",
-    Icon: Clock,
-    iconColor: "text-[var(--data-warning-700)]",
-    emptyMessage: "Sin pedidos por confirmar",
-  },
-  {
-    id: "confirmado",
-    label: "Confirmado",
-    description: "Aprobados · listos para preparar",
-    accentVar: "var(--accent)",
-    Icon: ShoppingBasket,
-    iconColor: "text-[var(--accent-dark)] dark:text-[var(--accent)]",
-    emptyMessage: "Nada confirmado",
-  },
-  {
-    id: "preparando",
-    label: "Preparando",
-    description: "En cocina · armando el pedido",
-    accentVar: "var(--data-warning-500)",
-    Icon: ChefHat,
-    iconColor: "text-[var(--data-warning-700)]",
-    emptyMessage: "Nada en preparación",
-  },
-  {
-    id: "en_camino",
-    label: "En camino",
-    description: "Asignado · rumbo al cliente",
-    accentVar: "var(--data-info-500)",
-    Icon: Bike,
-    iconColor: "text-[var(--data-info-700)]",
-    emptyMessage: "Ningún motorizado en ruta",
-  },
-];
-
-function urgency(o: DbOrder, nowMs: number): "u2h" | "u1h" | null {
-  // #5 (2026-05-26): "sin avanzar" = tiempo en el ESTADO actual, no edad total.
-  // Antes usaba createdAt → un pedido viejo recién movido a "preparando" salía
-  // flagueado aunque acababa de avanzar (todos los pedidos de seed se marcaban).
-  // updatedAt cambia con cada transición de estado → mide el estancamiento real.
-  const ref = o.updatedAt ?? o.createdAt;
-  const stuckH = (nowMs - new Date(ref).getTime()) / 3_600_000;
-  if (stuckH >= 2) return "u2h";
-  if (stuckH >= 1) return "u1h";
-  return null;
-}
-
-interface OrderCardProps {
-  order: DbOrder;
-  selected: boolean;
-  storeLat: number | null;
-  storeLon: number | null;
-  nowMs: number;
-  driverColor: (name: string) => string;
-  onSelect: () => void;
-  onToggleSelect: () => void;
-  onUpdateStatus: (status: OrderStatus) => void;
-  onVerifyYape: () => void;
-  onRejectYape: () => void;
-  onMarkDeudaPaid: () => void;
-  // FIX 2026-05-07: si el padre lo provee, el botón "entregado manual" abre
-  // un modal que persiste razón en OrderStatusHistory.note. Si no lo provee,
-  // cae al patch simple de onUpdateStatus("entregado").
-  onManualDelivery?: (reason: string) => void;
-}
+const ID_PANEL = "pedidos-tablero-columna";
+/** 34rem y 52rem a 16 px: desde ahí, dos y cuatro columnas. */
+const DOS_COLUMNAS = 544;
+const CUATRO_COLUMNAS = 832;
+const nada = () => {};
 
 /**
- * Comparador para OrderCard.
- * Los callbacks son lambdas inline recreadas en cada render de KanbanColumn,
- * por lo que el comparador los ignora y solo observa los datos del pedido.
+ * El ancho del contenedor (no de la pantalla). Ref de función: el contenedor
+ * nace recién cuando llegan los pedidos (antes está el esqueleto) y un
+ * `useRef` + efecto al montar no lo vería nunca. Sin ResizeObserver (jsdom):
+ * ancho infinito, cuatro columnas.
  */
-function areOrderCardPropsEqual(prev: OrderCardProps, next: OrderCardProps): boolean {
-  return (
-    prev.order.id === next.order.id &&
-    prev.order.status === next.order.status &&
-    prev.order.updatedAt === next.order.updatedAt &&
-    prev.order.total === next.order.total &&
-    prev.selected === next.selected &&
-    prev.nowMs === next.nowMs &&
-    prev.storeLat === next.storeLat &&
-    prev.storeLon === next.storeLon
-  );
+function useAncho<T extends HTMLElement>() {
+  const [el, setEl] = useState<T | null>(null);
+  const [ancho, setAncho] = useState(Number.POSITIVE_INFINITY);
+  useLayoutEffect(() => {
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const medir = () => setAncho(el.clientWidth);
+    medir();
+    const obs = new ResizeObserver(medir);
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [el]);
+  return { ref: setEl, ancho };
 }
-
-const OrderCard = memo(function OrderCard({
-  order,
-  selected,
-  storeLat,
-  storeLon,
-  nowMs,
-  driverColor,
-  onSelect,
-  onToggleSelect,
-  onUpdateStatus,
-  onVerifyYape,
-  onRejectYape,
-  onMarkDeudaPaid,
-  onManualDelivery,
-}: OrderCardProps) {
-  const u = urgency(order, nowMs);
-  // FIX 2026-05-07: estado del modal Entrega Manual local a esta card.
-  const [manualOpen, setManualOpen] = useState(false);
-  const handleManualConfirm = (reason: string) => {
-    setManualOpen(false);
-    if (onManualDelivery) {
-      onManualDelivery(reason);
-    } else {
-      // Fallback compat: si el padre no provee onManualDelivery, hacemos
-      // el patch simple sin razón (la auditoría se pierde pero no rompe).
-      onUpdateStatus("entregado");
-    }
-  };
-  const driver = (order as DbOrder & { deliveryDriver?: string }).deliveryDriver;
-  const initial = order.customer.name.trim().charAt(0).toUpperCase() || "?";
-
-  // Distancia si tenemos GPS
-  let distanceLabel: string | null = null;
-  if (storeLat !== null && storeLon !== null) {
-    const gps = parseGps(order.customer.location);
-    if (gps) {
-      const km = haversineKm(storeLat, storeLon, gps.lat, gps.lon);
-      distanceLabel = km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`;
-    }
-  }
-
-  // Acción primaria por estado
-  let primaryAction: { label: string; icon: typeof Check; onClick: () => void; variant: "primary" | "warning" | "neutral" } | null = null;
-  // FIX 2026-05-07: acción secundaria "Marcar entregado (manual)" en estados
-  // confirmado/preparando — útil cuando el cliente vino al mostrador o el dueño
-  // entregó sin pasar por delivery. Antes había que mover por en_camino primero.
-  let manualDeliverAction: { onClick: () => void } | null = null;
-  if (order.status === "pendiente" && order.paymentMethod === "yape") {
-    primaryAction = { label: "Confirmar Yape", icon: Check, onClick: onVerifyYape, variant: "primary" };
-  } else if (order.status === "pendiente") {
-    primaryAction = { label: "Confirmar", icon: Check, onClick: () => onUpdateStatus("confirmado"), variant: "primary" };
-  } else if (order.status === "confirmado") {
-    primaryAction = { label: "Preparando", icon: ChefHat, onClick: () => onUpdateStatus("preparando"), variant: "primary" };
-    manualDeliverAction = { onClick: () => setManualOpen(true) };
-  } else if (order.status === "preparando") {
-    primaryAction = { label: "En camino", icon: ArrowRight, onClick: () => onUpdateStatus("en_camino"), variant: "primary" };
-    manualDeliverAction = { onClick: () => setManualOpen(true) };
-  } else if (order.status === "en_camino") {
-    primaryAction = { label: "Entregado", icon: Check, onClick: () => onUpdateStatus("entregado"), variant: "primary" };
-  }
-
-  return (
-    <article
-      className={cn(
-        "group rounded-2xl border bg-[var(--surface-raised)] overflow-hidden transition-all duration-[var(--dur-fast)]",
-        selected
-          ? "border-[var(--accent)] ring-2 ring-[var(--accent)]/30"
-          : "border-[var(--rule-soft)] hover:border-[var(--accent)]/50 hover:-translate-y-0.5",
-        "motion-reduce:hover:translate-y-0",
-      )}
-    >
-      {/* Indicador de urgencia minimalista — texto muteado sobre fondo tenue,
-          sin barra saturada full-color ni animate-pulse (ruido visual). */}
-      {u === "u2h" && (
-        <div className="flex items-center gap-1.5 px-4 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-error-600)] bg-[var(--data-error-500)]/8 border-b border-[var(--data-error-500)]/20">
-          <AlertTriangle className="h-3 w-3" strokeWidth={2.5} />
-          +2h sin avanzar
-        </div>
-      )}
-      {u === "u1h" && (
-        <div className="flex items-center gap-1.5 px-4 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-warning-700)] bg-[var(--data-warning-500)]/8 border-b border-[var(--data-warning-500)]/20">
-          <Clock className="h-3 w-3" strokeWidth={2.5} />
-          +1h sin avanzar
-        </div>
-      )}
-
-      {/* #10 (2026-05-26): a11y — antes era un <div role="button"> que contenía
-          el checkbox y los botones de acción (interactive anidado en interactive).
-          Ahora el área de "abrir detalle" es un <button> real que envuelve SOLO
-          contenido no interactivo; checkbox y acciones quedan como hermanos. */}
-      <div className="p-4">
-        {/* #8 (2026-05-26): pista de arrastre — grip que aparece en hover para
-            comunicar que la card se arrastra entre columnas. pointer-events-none
-            para no interferir con el drag real ni con los clics. */}
-        <div aria-hidden className="flex justify-center -mt-1.5 mb-1 opacity-0 transition-opacity group-hover:opacity-40 pointer-events-none motion-reduce:transition-none">
-          <GripHorizontal className="h-3.5 w-3.5 text-[var(--text-tertiary)]" strokeWidth={2} />
-        </div>
-        <div className="flex items-start gap-3">
-          <input
-            type="checkbox"
-            checked={selected}
-            onClick={(e) => e.stopPropagation()}
-            onChange={onToggleSelect}
-            aria-label={`Seleccionar pedido de ${order.customer.name}`}
-            className="mt-1.5 rounded border-[var(--rule-base)] text-[var(--accent)] focus:ring-[var(--accent)]/30 shrink-0"
-          />
-          <button
-            type="button"
-            onClick={onSelect}
-            aria-label={`Ver detalle del pedido de ${order.customer.name}`}
-            className="flex flex-1 items-start gap-3 min-w-0 text-left cursor-pointer rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
-          >
-            <span
-              aria-hidden
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl shrink-0 bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-base font-bold tracking-tight"
-            >
-              {initial}
-            </span>
-            <div className="flex-1 min-w-0">
-              <p className="font-bold text-[var(--text-primary)] text-sm leading-tight line-clamp-2">
-                {order.customer.name}
-              </p>
-              <p className="text-xs text-[var(--text-tertiary)] mt-0.5 truncate">
-                <span className="font-mono">#{order.id.slice(-6)}</span>
-                <span aria-hidden> · </span>
-                <span className="whitespace-nowrap">{formatDate(order.createdAt)}</span>
-              </p>
-              {order.customer.phone && (
-                <p className="text-xs font-mono text-[var(--text-tertiary)] mt-0.5 truncate">
-                  {order.customer.phone}
-                </p>
-              )}
-            </div>
-            <div className="text-right shrink-0">
-              <p className="text-base font-extrabold tabular-nums text-[var(--text-primary)] leading-none">
-                {formatCurrency(Number(order.total))}
-              </p>
-              <p className="text-xs text-[var(--text-tertiary)] mt-1">
-                {order.items.length} {order.items.length === 1 ? "ítem" : "ítems"}
-              </p>
-            </div>
-          </button>
-        </div>
-
-        {/* Meta chips */}
-        <div className="flex items-center gap-1.5 flex-wrap mt-3">
-          {/* Chip origen — outline neutral (sin relleno saturado). El ícono
-              distingue marketplace vs tienda; el color queda fuera del card. */}
-          {(order as DbOrder & { source?: string }).source === "marketplace" ? (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider border border-[var(--rule-base)] text-[var(--text-secondary)]">
-              <Boxes className="h-3 w-3" strokeWidth={2} aria-hidden /> MKT
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider border border-[var(--rule-base)] text-[var(--text-secondary)]">
-              <Store className="h-3 w-3" strokeWidth={2} aria-hidden /> TIENDA
-            </span>
-          )}
-          {order.paymentMethod && (
-            <span className="inline-flex px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider border border-[var(--rule-base)] text-[var(--text-secondary)]">
-              {order.paymentMethod === "yape" ? "Yape" : "Efectivo"}
-            </span>
-          )}
-          {order.paymentMethod === "efectivo" && order.deuda && (
-            <span className="inline-flex px-2 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider bg-[var(--data-error-500)]/10 text-[var(--data-error-500)] border border-[var(--data-error-500)]/30">
-              Deuda
-            </span>
-          )}
-          {distanceLabel && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold border border-[var(--rule-base)] text-[var(--text-secondary)]">
-              <MapPin className="h-3 w-3" strokeWidth={2} aria-hidden />
-              {distanceLabel}
-            </span>
-          )}
-          {driver && (
-            <span
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold text-white"
-              style={{ backgroundColor: driverColor(driver) }}
-            >
-              <Bike className="h-3 w-3" strokeWidth={2} aria-hidden /> {driver}
-            </span>
-          )}
-        </div>
-
-        {/* Action row — `flex-wrap`: cuando los tres botones no entran, el
-            secundario baja de línea. Antes el principal se estrangulaba y
-            "PREPARANDO" quedaba cortado en "PREPARAN". */}
-        <div
-          className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-[var(--rule-soft)]"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {primaryAction && (
-            <button
-              type="button"
-              onClick={primaryAction.onClick}
-              className={cn(
-                // `flex-auto` y NO `flex-1`: con basis 0 el botón "cabe" en cualquier
-                // línea (nunca envuelve) y el min-width lo desborda después. Con
-                // basis auto, si el texto no entra junto a los otros botones, la
-                // fila envuelve y el label sale entero.
-                "flex-auto whitespace-nowrap inline-flex items-center justify-center gap-1.5 h-10 px-3 rounded-xl text-xs font-extrabold uppercase tracking-[var(--ls-wider)] transition-colors",
-                // Primario teal como el resto del panel (Brandon 2026-09-07): el
-                // negro «editorial» era el único botón de acción de otro color.
-                "bg-primary text-white hover:bg-primary/90 active:scale-[0.99]",
-              )}
-            >
-              <primaryAction.icon className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
-              {primaryAction.label}
-            </button>
-          )}
-          {order.status === "pendiente" && order.paymentMethod === "yape" && (
-            <button
-              type="button"
-              onClick={onRejectYape}
-              className="inline-flex items-center justify-center h-10 w-10 rounded-xl text-[var(--data-error-500)] bg-[var(--data-error-500)]/10 hover:bg-[var(--data-error-500)]/20 border border-[var(--data-error-500)]/30 transition-colors"
-              title="Rechazar Yape"
-              aria-label="Rechazar Yape (pago falso)"
-            >
-              <XIcon className="h-4 w-4" strokeWidth={2.5} />
-            </button>
-          )}
-          {order.paymentMethod === "efectivo" && order.deuda && (
-            <BotonIconoTip
-              icon={Banknote}
-              onClick={onMarkDeudaPaid}
-              label="Marcar la deuda como cobrada"
-              tip="Cobrado"
-              className="h-10 w-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)]"
-            />
-          )}
-          {manualDeliverAction && (
-            <button
-              type="button"
-              onClick={manualDeliverAction.onClick}
-              className="inline-flex items-center justify-center h-10 w-10 rounded-xl text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--rule-soft)] hover:text-[var(--text-primary)] border border-[var(--rule-base)] transition-colors"
-              title="Marcar entregado (entrega manual sin delivery)"
-              aria-label="Marcar como entregado manualmente"
-            >
-              <Check className="h-4 w-4" strokeWidth={2.5} />
-            </button>
-          )}
-        </div>
-      </div>
-      <ManualDeliveryModal
-        open={manualOpen}
-        customerName={order.customer.name}
-        onConfirm={handleManualConfirm}
-        onCancel={() => setManualOpen(false)}
-      />
-    </article>
-  );
-}, areOrderCardPropsEqual);
-
-// ── Draggable wrapper ─────────────────────────────────────────────────────────
-function DraggableOrderCard(props: OrderCardProps & { shake?: boolean }) {
-  const { shake, ...cardProps } = props;
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: props.order.id,
-    data: { order: props.order },
-  });
-  return (
-    <div
-      ref={setNodeRef}
-      {...attributes}
-      {...listeners}
-      /* dnd-kit pone `role="button"` en el envoltorio, pero la tarjeta adentro
-         tiene checkbox, botón de detalle y acciones: un botón que contiene
-         botones (axe 2026-09-12: 18 «nested-interactive» en Pedidos). `group`
-         conserva el foco y el arrastre con teclado sin mentir el rol. */
-      role="group"
-      aria-roledescription="tarjeta arrastrable"
-      aria-label={`Pedido de ${props.order.customer.name}`}
-      className={cn(
-        "outline-none touch-none",
-        isDragging ? "opacity-30 cursor-grabbing" : "cursor-grab",
-      )}
-      style={shake ? { animation: "orders-kanban-shake 0.5s cubic-bezier(.36,.07,.19,.97) both" } : undefined}
-    >
-      {shake && (
-        <style>{`
-          @keyframes orders-kanban-shake {
-            10%, 90% { transform: translateX(-2px); }
-            20%, 80% { transform: translateX(4px); }
-            30%, 50%, 70% { transform: translateX(-6px); }
-            40%, 60% { transform: translateX(6px); }
-          }
-        `}</style>
-      )}
-      <OrderCard {...cardProps} />
-    </div>
-  );
-}
-
-interface KanbanColumnProps extends ColumnConfig {
-  orders: DbOrder[];
-  selectedOrderIds: Set<string>;
-  storeLat: number | null;
-  storeLon: number | null;
-  nowMs: number;
-  driverColor: (name: string) => string;
-  rejectedId?: string | null;
-  onSelectOrder: (o: DbOrder) => void;
-  onToggleSelect: (id: string) => void;
-  onUpdateStatus: (id: string, status: OrderStatus) => void;
-  onVerifyYape: (id: string) => void;
-  onRejectYape: (id: string) => void;
-  onMarkDeudaPaid: (id: string) => void;
-  onManualDelivery?: (id: string, reason: string) => void;
-}
-
-const KanbanColumn = memo(function KanbanColumn({
-  id,
-  label,
-  description,
-  accentVar,
-  Icon,
-  iconColor,
-  emptyMessage,
-  orders,
-  selectedOrderIds,
-  storeLat,
-  storeLon,
-  nowMs,
-  driverColor,
-  rejectedId,
-  isActiveTarget,
-  onSelectOrder,
-  onToggleSelect,
-  onUpdateStatus,
-  onVerifyYape,
-  onRejectYape,
-  onMarkDeudaPaid,
-  onManualDelivery,
-}: KanbanColumnProps & {
-  Icon: React.ElementType;
-  iconColor: string;
-  isActiveTarget?: boolean;
-}) {
-  const total = orders.reduce((s, o) => s + Number(o.total), 0);
-  const { setNodeRef, isOver } = useDroppable({ id });
-  /* Ley de Brandon (2026-10-01): 18 pedidos = 18 tarjetas con 2-3 botones cada
-     una. Se ven los primeros; el resto, a un toque (nada se esconde: el
-     contador de la cabecera sigue diciendo cuántos hay). */
-  const [verTodos, setVerTodos] = useState(false);
-  /* Con una tarjeta de más no vale el botón: «Ver los 3» para mostrar una sola. */
-  const plegable = orders.length > PEDIDOS_POR_COLUMNA + 1;
-  const visibles = verTodos || !plegable ? orders : orders.slice(0, PEDIDOS_POR_COLUMNA);
-  return (
-    <div
-      ref={setNodeRef}
-      style={
-        isOver || isActiveTarget
-          ? { borderColor: accentVar, backgroundColor: `color-mix(in oklab, ${accentVar} 6%, var(--surface-canvas))` }
-          : undefined
-      }
-      className={cn(
-        "flex flex-col min-h-0 rounded-2xl border p-3 transition-all",
-        isOver
-          ? "scale-[1.005] shadow-[var(--shadow-md)] ring-2 ring-offset-0"
-          : isActiveTarget
-          ? "border-dashed"
-          : "border-[var(--rule-soft)] bg-[var(--surface-sunken)]",
-      )}
-    >
-      {/* Header minimalista: punto de estado (único acento) + label + contadores
-          en una sola línea con regla inferior. Sin anillos ni cajas tintadas —
-          el color queda como señal sutil, no como relleno saturado. */}
-      <div
-        className="flex items-center gap-2.5 px-1 pb-2.5 mb-3 border-b border-[var(--rule-soft)] shrink-0"
-        title={description}
-      >
-        <span
-          aria-hidden
-          className="h-2.5 w-2.5 rounded-full shrink-0"
-          style={{ backgroundColor: accentVar }}
-        />
-        <p className="flex-1 truncate text-[length:var(--ts-xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)] leading-none">
-          {label}
-        </p>
-        <span role="img"
-          className="font-mono tabular-nums text-[length:var(--ts-sm)] font-extrabold text-[var(--text-primary)] leading-none"
-          aria-label={`${orders.length} pedidos en ${label}`}
-        >
-          {orders.length}
-        </span>
-        <span aria-hidden className="h-1 w-1 rounded-full bg-[var(--rule-base)]" />
-        <span className="text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-tertiary)] leading-none">
-          {formatCurrency(total)}
-        </span>
-      </div>
-
-      {/* Cards */}
-      <div className="flex-1 space-y-3 min-h-[200px]">
-        {orders.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-10 px-4 rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)]/60 text-center">
-            <Icon className={cn("h-8 w-8 opacity-40", iconColor)} strokeWidth={1.5} />
-            <p className="mt-2 text-xs font-bold text-[var(--text-tertiary)]">{emptyMessage}</p>
-          </div>
-        ) : (
-          visibles.map((o) => (
-            <DraggableOrderCard
-              key={o.id}
-              order={o}
-              selected={selectedOrderIds.has(o.id)}
-              storeLat={storeLat}
-              storeLon={storeLon}
-              nowMs={nowMs}
-              driverColor={driverColor}
-              shake={o.id === rejectedId}
-              onSelect={() => onSelectOrder(o)}
-              onToggleSelect={() => onToggleSelect(o.id)}
-              onUpdateStatus={(s) => onUpdateStatus(o.id, s)}
-              onVerifyYape={() => onVerifyYape(o.id)}
-              onRejectYape={() => onRejectYape(o.id)}
-              onMarkDeudaPaid={() => onMarkDeudaPaid(o.id)}
-              onManualDelivery={onManualDelivery ? (reason) => onManualDelivery(o.id, reason) : undefined}
-            />
-          ))
-        )}
-        {plegable && (
-          <button
-            type="button"
-            onClick={() => setVerTodos((v) => !v)}
-            aria-expanded={verTodos}
-            className="flex h-10 w-full items-center justify-center gap-1.5 rounded-xl text-xs font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-raised)] hover:text-[var(--text-primary)]"
-          >
-            <ChevronDown className={cn("h-4 w-4 transition-transform", verTodos && "rotate-180")} aria-hidden />
-            {verTodos ? "Ver menos" : `Ver los ${orders.length}`}
-          </button>
-        )}
-      </div>
-    </div>
-  );
-});
-
-/** Cuántas tarjetas se ven por columna antes de «Ver los N». */
-const PEDIDOS_POR_COLUMNA = 2;
 
 export function OrdersKanban({
   activeOrders,
   loading,
+  conFiltros = false,
   storeLat,
   storeLon,
-  selectedOrderIds,
   driverColor,
   onSelectOrder,
-  onToggleSelect,
   onUpdateStatus,
   onVerifyYape,
   onRejectYape,
   onMarkDeudaPaid,
   onManualDelivery,
 }: OrdersKanbanProps) {
-  // Mobile: tab segmented control para mostrar 1 columna por vez
-  const [mobileColumn, setMobileColumn] = useState<ColumnId>("pendiente");
+  const { ref, ancho } = useAncho<HTMLDivElement>();
+  /* En angosto: la columna que se eligió; sin elegir, la primera con pedidos. */
+  const [elegida, setElegida] = useState<ColumnId | null>(null);
 
   const [nowMs, setNowMs] = useState(() => Date.now());
   useEffect(() => {
@@ -618,36 +107,33 @@ export function OrdersKanban({
     return () => clearInterval(id);
   }, []);
 
-  // ── Drag & drop state ──────────────────────────────────────────────────────
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
-  // Salto de estado inválido (ej. Por confirmar → Preparando): la card
-  // rebota a su columna sin este flag, y para el usuario se ve idéntico a
-  // "el drag&drop no funciona". Shake + toast avisan que fue un rechazo, no un bug.
+  /* Salto de estado inválido (Por confirmar → Preparando): sin el sacudón y el
+     aviso, la tarjeta vuelve a su columna y parece que el arrastre no anda. */
   const [rejectedId, setRejectedId] = useState<string | null>(null);
   const rejectedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => {
-    if (rejectedTimeoutRef.current) clearTimeout(rejectedTimeoutRef.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (rejectedTimeoutRef.current) clearTimeout(rejectedTimeoutRef.current);
+    },
+    [],
+  );
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
   );
 
-  const handleDragStart = (e: DragStartEvent) => {
-    setActiveDragId(String(e.active.id));
-  };
+  const handleDragStart = (e: DragStartEvent) => setActiveDragId(String(e.active.id));
   const handleDragEnd = (e: DragEndEvent) => {
     setActiveDragId(null);
     const overId = e.over?.id;
     const activeId = String(e.active.id);
     if (!overId) return;
-    const target = COLUMNS.find((c) => c.id === overId);
-    if (!target) return;
+    const target = COLUMNAS.find((c) => c.id === overId);
     const order = activeOrders.find((o) => o.id === activeId);
-    if (!order || order.status === target.id) return;
-    const allowed = VALID_TRANSITIONS[order.status] ?? [];
-    if (!allowed.includes(target.id as OrderStatus)) {
-      const from = COLUMNS.find((c) => c.id === order.status)?.label ?? order.status;
+    if (!target || !order || order.status === target.id) return;
+    if (!(VALID_TRANSITIONS[order.status] ?? []).includes(target.id as OrderStatus)) {
+      const from = COLUMNAS.find((c) => c.id === order.status)?.label ?? order.status;
       toast.error(`No se puede pasar de "${from}" a "${target.label}" directo`, {
         description: "Primero pasa por los estados intermedios del pedido.",
       });
@@ -660,28 +146,30 @@ export function OrdersKanban({
   };
 
   const draggedOrder = activeDragId
-    ? activeOrders.find((o) => o.id === activeDragId) ?? null
+    ? (activeOrders.find((o) => o.id === activeDragId) ?? null)
     : null;
 
+  /* Dentro de cada columna, el que más espera primero: lo atrasado no queda tapado por «Ver los N». */
   const columnsData = useMemo(() => {
-    const map: Record<ColumnId, DbOrder[]> = { pendiente: [], confirmado: [], preparando: [], en_camino: [] };
-    for (const o of activeOrders) {
-      if (o.status === "pendiente") map.pendiente.push(o);
-      else if (o.status === "confirmado") map.confirmado.push(o);
-      else if (o.status === "preparando") map.preparando.push(o);
-      else if (o.status === "en_camino") map.en_camino.push(o);
-    }
+    const map: Record<ColumnId, DbOrder[]> = {
+      pendiente: [],
+      confirmado: [],
+      preparando: [],
+      en_camino: [],
+    };
+    for (const o of activeOrders) if (o.status in map) map[o.status as ColumnId].push(o);
+    for (const lista of Object.values(map)) lista.sort(masEsperaPrimero);
     return map;
   }, [activeOrders]);
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-busy="true">
         {[1, 2, 3, 4].map((c) => (
-          <div key={c} className="space-y-3">
-            <div className="h-12 skeleton-shimmer rounded-lg" />
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-32 skeleton-shimmer rounded-2xl" />
+          <div key={c} className="space-y-2">
+            <div className="h-10 rounded-lg skeleton-shimmer" />
+            {[1, 2].map((i) => (
+              <div key={i} className="h-36 rounded-xl skeleton-shimmer" />
             ))}
           </div>
         ))}
@@ -693,12 +181,19 @@ export function OrdersKanban({
     return (
       <EmptyState
         icon={<ShoppingBasket className="h-10 w-10 text-[var(--text-tertiary)]" />}
-        title="No hay pedidos activos"
-        description="Cuando llegue uno nuevo aparecerá aquí en tiempo real."
+        title={
+          conFiltros
+            ? "No hay pedidos en marcha con estos filtros"
+            : "No hay pedidos en marcha: los nuevos aparecen aquí al momento"
+        }
         actions={[]}
       />
     );
   }
+
+  const angosto = ancho < DOS_COLUMNAS;
+  const activa = elegida ?? COLUMNAS.find((c) => columnsData[c.id].length > 0)?.id ?? "pendiente";
+  const visibles = angosto ? COLUMNAS.filter((c) => c.id === activa) : COLUMNAS;
 
   return (
     <DndContext
@@ -707,108 +202,67 @@ export function OrdersKanban({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      {/* Mobile: segmented control. Grid 2×2 en phone/tablet angosto (4 labels
-          largos en mayúsculas no caben en 1 fila con poco ancho), y 4-en-fila
-          desde 900px donde sí hay espacio aun con el sidebar (260px) presente.
-          A <900px el contenido útil queda <640px y 4 columnas se superpondrían. */}
-      <div className="lg:hidden grid grid-cols-2 min-[900px]:grid-cols-4 gap-1 p-1 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-base)]">
-        {COLUMNS.map((col) => {
-          const count = columnsData[col.id].length;
-          const isActive = mobileColumn === col.id;
-          return (
-            <button
-              key={col.id}
-              type="button"
-              onClick={() => setMobileColumn(col.id)}
-              className={cn(
-                "w-full inline-flex items-center justify-center gap-1.5 h-10 px-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all",
-                isActive
-                  ? "bg-primary text-white shadow-[var(--shadow-sm)]"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
-              )}
-            >
-              {col.label}
-              <span
-                className={cn(
-                  "inline-flex items-center justify-center min-w-5 h-5 px-1 rounded-full text-xs font-extrabold tabular-nums",
-                  isActive ? "bg-[var(--surface-canvas)]/20" : "bg-[var(--surface-raised)] text-[var(--text-tertiary)]",
-                )}
-              >
-                {count}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Mobile single column */}
-      <div className="lg:hidden mt-4">
-        {COLUMNS.filter((c) => c.id === mobileColumn).map((col) => (
-          <KanbanColumn
-            key={col.id}
-            {...col}
-            orders={columnsData[col.id]}
-            selectedOrderIds={selectedOrderIds}
-            storeLat={storeLat}
-            storeLon={storeLon}
-            nowMs={nowMs}
-            driverColor={driverColor}
-            rejectedId={rejectedId}
-            onSelectOrder={onSelectOrder}
-            onToggleSelect={onToggleSelect}
-            onUpdateStatus={onUpdateStatus}
-            onVerifyYape={onVerifyYape}
-            onRejectYape={onRejectYape}
-            onMarkDeudaPaid={onMarkDeudaPaid}
-            onManualDelivery={onManualDelivery}
+      <div ref={ref} className="min-w-0 space-y-2">
+        {angosto && (
+          <BarraDeSecciones
+            secciones={COLUMNAS.map((c) => ({
+              clave: c.id,
+              rotulo: c.label,
+              cuenta: columnsData[c.id].length,
+            }))}
+            activa={activa}
+            onCambiar={setElegida}
+            etiqueta="Columnas del tablero"
+            idPanel={ID_PANEL}
           />
-        ))}
-      </div>
-
-      {/* Desktop 4 columns */}
-      <div className="hidden lg:grid lg:grid-cols-4 gap-5">
-        {COLUMNS.map((col) => {
-          const draggedFromOther = !!draggedOrder && draggedOrder.status !== col.id;
-          return (
-            <KanbanColumn
+        )}
+        <div
+          id={angosto ? ID_PANEL : undefined}
+          role={angosto ? "tabpanel" : undefined}
+          aria-labelledby={angosto ? idPestanaDeSeccion(ID_PANEL, activa) : undefined}
+          className={cn(
+            "grid gap-3",
+            !angosto && (ancho >= CUATRO_COLUMNAS ? "grid-cols-4" : "grid-cols-2"),
+          )}
+        >
+          {visibles.map((col) => (
+            <ColumnaKanban
               key={col.id}
-              {...col}
+              columna={col}
               orders={columnsData[col.id]}
-              selectedOrderIds={selectedOrderIds}
+              conCabecera={!angosto}
               storeLat={storeLat}
               storeLon={storeLon}
               nowMs={nowMs}
               driverColor={driverColor}
               rejectedId={rejectedId}
-              isActiveTarget={draggedFromOther}
+              isActiveTarget={!!draggedOrder && draggedOrder.status !== col.id}
               onSelectOrder={onSelectOrder}
-              onToggleSelect={onToggleSelect}
               onUpdateStatus={onUpdateStatus}
               onVerifyYape={onVerifyYape}
               onRejectYape={onRejectYape}
               onMarkDeudaPaid={onMarkDeudaPaid}
+              onManualDelivery={onManualDelivery}
             />
-          );
-        })}
+          ))}
+        </div>
       </div>
 
-      {/* Drag overlay — preview de la card flotante */}
+      {/* La tarjeta que flota mientras se arrastra. */}
       <DragOverlay dropAnimation={{ duration: 220, easing: "cubic-bezier(0.22, 1, 0.36, 1)" }}>
         {draggedOrder ? (
-          <div className="rotate-2 scale-105 shadow-[var(--shadow-xl)] ring-2 ring-[var(--accent)] rounded-2xl">
-            <OrderCard
+          <div className="rotate-2 scale-105 rounded-xl shadow-[var(--shadow-xl)] ring-2 ring-[var(--accent)]">
+            <TarjetaPedido
               order={draggedOrder}
-              selected={false}
               storeLat={storeLat}
               storeLon={storeLon}
               nowMs={nowMs}
               driverColor={driverColor}
-              onSelect={() => {}}
-              onToggleSelect={() => {}}
-              onUpdateStatus={() => {}}
-              onVerifyYape={() => {}}
-              onRejectYape={() => {}}
-              onMarkDeudaPaid={() => {}}
+              onSelect={nada}
+              onUpdateStatus={nada}
+              onVerifyYape={nada}
+              onRejectYape={nada}
+              onMarkDeudaPaid={nada}
             />
           </div>
         ) : null}
@@ -816,7 +270,3 @@ export function OrdersKanban({
     </DndContext>
   );
 }
-
-// Re-export STATUS_LABELS para que componentes que importaban OrdersList sigan
-// teniendo acceso si lo necesitan.
-export { STATUS_LABELS };

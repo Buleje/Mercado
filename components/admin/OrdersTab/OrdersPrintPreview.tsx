@@ -7,7 +7,7 @@ import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
 import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import type { DbOrder } from "@/lib/jsondb";
-import { STATUS_LABELS } from "./types";
+import { STATUS_LABELS, nombreDelPago } from "./types";
 import { formatCurrency, formatDateTimeShort } from "@/lib/format";
 
 interface OrdersPrintPreviewProps {
@@ -140,7 +140,7 @@ export function OrdersPrintPreview({
                       <div className="flex justify-between text-sm mb-1">
                         <span className="font-bold text-[var(--text-secondary)]">Método de pago:</span>
                         <span className="font-bold">
-                          {order.paymentMethod === "yape" ? "Yape" : "Efectivo"}
+                          {nombreDelPago(order.paymentMethod)}
                         </span>
                       </div>
                     )}

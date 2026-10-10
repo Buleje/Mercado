@@ -293,10 +293,10 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
   // Reparto es de quien veía Delivery (Enterprise/Max), no de quien ve Pedidos
   // (Básico, el cajero): sin el origen se le regalaba a todos.
   pedidos: [
-    { key: "tablero", label: "Tablero", hint: "Los pedidos en marcha en columnas por estado: confirmar, preparar y despachar", origen: ["pedidos"] },
-    { key: "lista", label: "Lista", hint: "Los mismos pedidos en marcha en una tabla, con los mismos filtros", origen: ["pedidos"] },
+    { key: "tablero", label: "Tablero", hint: "Mueve cada pedido en marcha al paso siguiente (confirmar, preparar, enviar, entregar) y mira cuánto lleva sin avanzar", origen: ["pedidos"] },
+    { key: "lista", label: "Lista", hint: "Busca y ordena los pedidos en marcha, elige varios para pasarlos de estado o imprimirlos de una vez", origen: ["pedidos"] },
     { key: "reparto", label: "Reparto", hint: "Repartidores en vivo, tu equipo y quienes postulan, asignaciones, pagos a repartidores y ranking", origen: ["delivery-partners", "delivery-live"] },
-    { key: "archivados", label: "Archivados", hint: "Los pedidos entregados y cancelados, con búsqueda por cliente y fechas", origen: ["pedidos"] },
+    { key: "archivados", label: "Archivados", hint: "Los pedidos entregados y cancelados, con sus cifras, búsqueda por cliente y fechas", origen: ["pedidos"] },
   ],
   // Herramientas y trámites (ola 2): dos fases en una pestaña. Trámites
   // (`forestal-tramites`) se ve si su especialización está encendida, aunque
@@ -428,13 +428,14 @@ export const ANIDADAS_POR_MODULO: Readonly<Record<string, readonly SubvistaAnida
     { vista: "sistema", key: "colas", label: "Colas", hint: "Trabajos en segundo plano y crons que fallaron", origen: ["colas"] },
   ],
   // Pedidos y reparto › Reparto (ola 2): las secciones del Delivery de antes.
-  // «Postulantes» no es pestaña (es Repartidores con su filtro) pero se busca
-  // por su nombre.
+  // La barra dice En vivo · Equipo · Asignaciones · Pagos · Ranking (10-10);
+  // «Postulantes» no es sección (es Equipo con su selector) pero se busca por
+  // su nombre.
   pedidos: [
-    { vista: "reparto", key: "en-vivo", label: "Repartidores en vivo", hint: "Mapa con los repartidores en la calle y, plegadas, las rutas y paradas de hoy", origen: ["delivery-partners", "delivery-live"] },
-    { vista: "reparto", key: "repartidores", label: "Repartidores", hint: "Tu equipo de reparto y sus datos", origen: ["delivery-partners"] },
+    { vista: "reparto", key: "en-vivo", label: "Repartidores en vivo", hint: "El mapa con los repartidores en la calle, las cifras de hoy y, plegadas, las rutas y paradas", origen: ["delivery-partners", "delivery-live"] },
+    { vista: "reparto", key: "repartidores", label: "Equipo de reparto", hint: "Tus repartidores: teléfono, zona, vehículo, tarifa y si están activos", origen: ["delivery-partners"] },
     { vista: "reparto", key: "postulantes", label: "Postulantes a repartidor", hint: "Quienes postularon para repartir (antes Solicitudes)", origen: ["delivery-partners"] },
-    { vista: "reparto", key: "asignaciones", label: "Asignaciones y permisos de repartidores", hint: "Qué pedido va con qué repartidor y qué puede hacer cada uno", origen: ["delivery-partners"] },
+    { vista: "reparto", key: "asignaciones", label: "Asignaciones y permisos de repartidores", hint: "Qué pedido va con qué repartidor; plegados, los permisos de tienda de cada usuario", origen: ["delivery-partners"] },
     { vista: "reparto", key: "pagos", label: "Pagos a repartidores", hint: "Lo que cobran los repartidores por sus entregas (antes Retiros)", origen: ["delivery-partners"] },
     { vista: "reparto", key: "ranking", label: "Ranking de repartidores", hint: "Quién entrega más y mejor", origen: ["delivery-partners"] },
   ],

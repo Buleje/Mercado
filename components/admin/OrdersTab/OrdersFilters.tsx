@@ -238,7 +238,7 @@ export function OrdersFilters({ filters, dispatch, repartidores, repartidor, onR
                   />
                   <div>
                     <p className="text-sm font-semibold text-[var(--text-primary)]">Tiene deuda pendiente</p>
-                    <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Solo pedidos con deuda sin cobrar</p>
+                    <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Solo pedidos con deuda sin cobrar</p>
                   </div>
                 </>
               )}
@@ -253,7 +253,7 @@ export function OrdersFilters({ filters, dispatch, repartidores, repartidor, onR
                   />
                   <div>
                     <p className="text-sm font-semibold text-[var(--text-primary)]">Tiene notas internas</p>
-                    <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Solo pedidos con comentarios del equipo</p>
+                    <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Solo pedidos con comentarios del equipo</p>
                   </div>
                 </>
               )}
