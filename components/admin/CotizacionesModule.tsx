@@ -19,7 +19,7 @@ const CotizacionesChart = dynamic(() => import("./CotizacionesChart"), {
   ),
 });
 import { CardTitle, DataTable, ErrorAlert, LoadingState, BlockTitle } from "@buleje/design-system";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import TituloDeVista from "@/components/admin/rrhh/TituloDeVista";
 import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
 import { Field } from "@/components/admin/shared/Field";
 import { printCotizacion, type EmpresaEmisor } from "@/lib/documentos/cotizacion-print";
@@ -316,6 +316,9 @@ export default function CotizacionesModule() {
   const [selected, setSelected] = useState<Cotizacion | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  /** El pedido que nació al convertir (la API lo devuelve; la cotización no lo guarda). */
+  const [pedidoCreado, setPedidoCreado] = useState<{ cotizacionId: string; orderId: string } | null>(null);
+  const [convertirError, setConvertirError] = useState<string | null>(null);
   const detailPanelRef = useRef<HTMLDivElement>(null);
   const detailTituloId = useId();
   const cerrarDetalle = useCallback(() => setSelected(null), []);
@@ -399,6 +402,8 @@ export default function CotizacionesModule() {
   // ── Detail ──────────────────────────────────────────────────────────────────
 
   const openDetail = async (c: Cotizacion) => {
+    // El error de «Convertir en venta» es de UNA cotización: no se arrastra a la siguiente.
+    setConvertirError(null);
     setSelected(c);
     setDetailLoading(true);
     try {
@@ -430,10 +435,17 @@ export default function CotizacionesModule() {
     setActionLoading(true);
     try {
       const res = await fetch(`/api/cotizaciones/${selected.id}/convertir`, { method: "POST", headers: csrfHeaders() });
-      if (!res.ok) throw new Error("Error al convertir");
+      let data: { orderId?: string; error?: string } = {};
+      try { data = await res.json(); } catch { /* sin cuerpo: queda el mensaje genérico */ }
+      if (!res.ok) throw new Error(data.error ?? "No se pudo convertir la cotización");
+      // El pedido que nació de esta cotización: el detalle lo enlaza.
+      if (data.orderId) setPedidoCreado({ cotizacionId: selected.id, orderId: data.orderId });
+      setConvertirError(null);
       setSelected({ ...selected, status: "CONVERTIDA" });
       fetchCotizaciones();
-    } catch { /* ignore */ } finally { setActionLoading(false); }
+    } catch (e) {
+      setConvertirError(e instanceof Error ? e.message : "No se pudo convertir la cotización");
+    } finally { setActionLoading(false); }
   };
 
   // ── Product autocomplete ────────────────────────────────────────────────────
@@ -603,19 +615,23 @@ export default function CotizacionesModule() {
 
   return (
     <div className="space-y-6">
-      <AdminModuleHeader
-        eyebrow="Documentos · Ventas"
-        title="Cotizaciones"
-        description="Presupuestos profesionales para tus clientes."
-        icon={FileText}
+      {/* Un título por vista (Comprobantes › Cotizaciones): sin el antetítulo
+          «Documentos · Ventas» y con la explicación en la ⓘ. */}
+      <TituloDeVista
+        titulo="Cotizaciones"
+        ayuda={{
+          what: "Los presupuestos que mandas antes de vender, con su vigencia y su estado.",
+          affects: "Una cotización aceptada se convierte en pedido con un toque; vencida, ya no se puede convertir.",
+          example: "Le cotizas 20 planchas de triplay al colegio, válida 15 días: la aceptan y la conviertes en pedido.",
+        }}
       >
         {!loading && cotizaciones.length > 0 && (() => {
           const pendientes = cotizaciones.filter(c => c.status === "BORRADOR" || c.status === "ENVIADA").length;
           return pendientes > 0 ? (
-            <span className="text-xs font-semibold bg-[color-mix(in_oklch,var(--data-success)_12%,transparent)] text-[var(--data-success-500)] px-2.5 py-1 rounded-full">{pendientes} pendientes</span>
+            <span className="text-xs font-semibold bg-[color-mix(in_oklch,var(--data-success)_12%,transparent)] text-[var(--data-success-ink)] dark:text-[var(--data-success-500)] px-2.5 py-1 rounded-full">{pendientes} pendientes</span>
           ) : null;
         })()}
-      </AdminModuleHeader>
+      </TituloDeVista>
 
       {/* AdminTabBar como el resto del panel (antes: segmented control propio,
           con su propio alto/radio/estado activo y sin persistencia del último
@@ -1393,6 +1409,20 @@ export default function CotizacionesModule() {
                       className="flex items-center gap-1.5 px-4 min-h-10 rounded-xl text-sm font-semibold text-white bg-[var(--accent-600,var(--accent))] hover:bg-[var(--accent)] disabled:opacity-50 transition-colors">
                       <ShoppingCart className="h-4 w-4" /> Convertir a Orden
                     </button>
+                  )}
+                  {/* Recién convertida: el enlace al pedido que se creó (antes sólo
+                      cambiaba el estado y había que buscarlo en Pedidos). */}
+                  {pedidoCreado?.cotizacionId === selected.id && (
+                    <span role="status" className="inline-flex min-h-10 items-center gap-1.5 text-sm text-[var(--text-secondary)]">
+                      <Check className="h-4 w-4 text-[var(--data-success-ink)] dark:text-[var(--data-success-500)]" aria-hidden />
+                      Pedido creado:
+                      <EnlacePanel cosa="pedido" id={pedidoCreado.orderId}>ver el pedido #{pedidoCreado.orderId.slice(-6)}</EnlacePanel>
+                    </span>
+                  )}
+                  {convertirError && selected.status === "ACEPTADA" && (
+                    <span role="alert" className="inline-flex min-h-10 items-center text-sm text-[var(--data-error-ink)] dark:text-[var(--data-error-500)]">
+                      {convertirError}
+                    </span>
                   )}
                   {/* Mejora M10: Enviar cotizacion por WhatsApp */}
                   <button

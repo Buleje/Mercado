@@ -2,7 +2,11 @@
 
 import { CardTitle, DataTable, LoadingState, StatCard, BlockTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import TituloDeVista from "@/components/admin/rrhh/TituloDeVista";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
+import { hrefDeDestino } from "@/lib/admin/enlaces-panel";
+import { button } from "@/components/ui-system/button-variants";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { useState, useEffect, useCallback, useRef, useId } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
@@ -798,20 +802,39 @@ export default function GuiasRemisionModule() {
 
   return (
     <div className="space-y-6">
-      <AdminModuleHeader
-        eyebrow="Documentos · Logística"
-        title="Guías de Remisión"
-        description="Documentos de traslado de mercadería entre puntos."
-        icon={Truck}
+      {/* Un título por vista (Comprobantes › Guías de remisión): sin el
+          antetítulo «Documentos · Logística» y con la explicación en la ⓘ. */}
+      <TituloDeVista
+        titulo="Guías de remisión"
+        ayuda={{
+          what: "Los papeles que acompañan a la mercadería cuando sale de un lugar a otro: quién la lleva, en qué vehículo y hasta dónde.",
+          affects: "Una guía en tránsito queda pendiente hasta que la marcas entregada. Anularla no borra el traslado de tu historial.",
+          example: "Mandas 40 sacos de arroz a la tienda de Yarinacocha en la camioneta ABC-123: haces la guía y viaja con el chofer.",
+        }}
       >
         <button
+          type="button"
           onClick={() => { setShowNew(true); setCreateError(null); }}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors min-h-[44px]"
+          className={button({ variant: "primary", className: "rounded-xl" })}
         >
-          <Plus className="h-4 w-4" />
-          Nueva Guía
+          <Plus className="h-4 w-4" aria-hidden />
+          Nueva guía
         </button>
-      </AdminModuleHeader>
+      </TituloDeVista>
+
+      {/* La guía de un pedido nace en el pedido (plan «panel unificado», ola 3):
+          su detalle tiene «Hacer guía», y el N° de pedido se vincula en la guía. */}
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[var(--text-secondary)]">
+        <Truck className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+        <span>¿Es de un pedido? Hazla desde el pedido.</span>
+        <InfoTip
+          title="La guía de un pedido"
+          what="Abre el pedido en Pedidos y toca «Hacer guía»: llegas acá y escribes su N° en «Vincular pedido» al crearla."
+          example="El pedido #A1B2C3 sale en moto a Manantay: su guía lleva ese N° y queda vinculada al pedido."
+          side="bottom"
+        />
+        <EnlacePanel href={hrefDeDestino({ tab: "pedidos", params: {} })}>Ir a Pedidos →</EnlacePanel>
+      </div>
 
       {/* KPI Cards — UnifiedKPITile (ADR-074 Phase 3) */}
       {!loading && guias.length > 0 && (() => {

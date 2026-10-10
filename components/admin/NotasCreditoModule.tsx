@@ -1,8 +1,10 @@
 "use client";
 
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import TituloDeVista from "@/components/admin/rrhh/TituloDeVista";
+import BotonIconoTip from "@/components/admin/shared/boton-icono-tip";
+import { button } from "@/components/ui-system/button-variants";
 import { m, AnimatePresence } from "@/components/admin/providers";
-import { Plus, FileX, Download, Send, CheckSquare, Keyboard } from "@buleje/design-system/icons";
+import { Plus, Download, Send, CheckSquare, Keyboard } from "@buleje/design-system/icons";
 import { StaleDraftsBanner } from "@/components/admin/notas-credito/NcPiezas";
 import { useNotasCredito } from "@/components/admin/notas-credito/hooks/use-notas-credito";
 import NcIndicadores from "@/components/admin/notas-credito/NcIndicadores";
@@ -24,21 +26,32 @@ export default function NotasCreditoModule() {
 
   return (
     <div className="space-y-6">
-      <AdminModuleHeader
-        eyebrow="Documentos · Ajustes"
-        title="Notas de Crédito"
-        description="Centro de documentos — anulaciones, devoluciones y ajustes."
-        icon={FileX}
+      {/* Un título por vista (Comprobantes › Notas de crédito): sin el antetítulo
+          «Documentos · Ajustes» y con la explicación en la ⓘ. */}
+      <TituloDeVista
+        titulo="Notas de crédito"
+        ayuda={{
+          what: "Las notas que anulan o corrigen una boleta o factura ya emitida: devoluciones, descuentos y errores.",
+          affects: "Una nota emitida baja lo cobrado de ese comprobante. En borrador no cuenta hasta que la emites.",
+          example: "Doña Rosa devuelve 2 latas de leche de la boleta B001-340: haces la nota por S/ 9 y su boleta queda corregida.",
+        }}
       >
-        <button onClick={() => setShowShortcuts(s => !s)} className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)] transition-colors hidden sm:block" title="Atajos de teclado">
-          <Keyboard className="h-4 w-4" />
+        <BotonIconoTip
+          label="Atajos de teclado"
+          icon={Keyboard}
+          aria-pressed={showShortcuts}
+          onClick={() => setShowShortcuts(s => !s)}
+          className="hidden h-12 w-12 rounded-xl sm:inline-flex"
+        />
+        <button
+          type="button"
+          onClick={() => { setShowNew(true); setCreateError(null); setWizardStep(0); setPickerSearch(""); setPickerDocType("all"); }}
+          className={button({ variant: "primary", className: "rounded-xl" })}
+        >
+          <Plus className="h-4 w-4" aria-hidden />
+          Nueva nota
         </button>
-        <button onClick={() => { setShowNew(true); setCreateError(null); setWizardStep(0); setPickerSearch(""); setPickerDocType("all"); }}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors min-h-[44px]">
-          <Plus className="h-4 w-4" />
-          Nueva NC
-        </button>
-      </AdminModuleHeader>
+      </TituloDeVista>
 
       {/* ── Keyboard Shortcuts Panel ───────────────────────────────────── */}
       {showShortcuts && (

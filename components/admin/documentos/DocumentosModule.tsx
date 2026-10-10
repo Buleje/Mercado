@@ -32,7 +32,8 @@ import {
 } from "@buleje/design-system/icons";
 import { DataTable } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import TituloDeVista from "@/components/admin/rrhh/TituloDeVista";
+import { button } from "@/components/ui-system/button-variants";
 import { ModuleActionMenu } from "@/components/admin/shared/ModuleActionMenu";
 import { useDocuments, getSignedDownloadUrl, analyzeDoc, mergeDocs, rotateDoc, splitDoc, fetchTags, fetchSharedLinks } from "@/hooks/use-documents";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
@@ -1318,10 +1319,16 @@ export default function DocumentosModule() {
         </div>
       )}
 
-      <AdminModuleHeader
-        title="Documentación"
-        description="Drive del negocio: contratos, licencias, facturas. Te avisa antes de que venzan."
-        icon={FolderArchive}
+      {/* Un título por vista (Documentos › Archivo, ola 3 del panel unificado):
+          el título del hub ya dice «Documentos»; acá va el de la vista, con la
+          explicación en la ⓘ y las acciones en la misma fila. */}
+      <TituloDeVista
+        titulo="Archivo del negocio"
+        ayuda={{
+          what: "Tus documentos en carpetas: contratos, licencias, facturas, fotos y planillas.",
+          affects: "Un documento con fecha de vencimiento te avisa 30 días antes. La IA lo nombra y lo clasifica al escanearlo.",
+          example: "Subes la licencia de funcionamiento con vencimiento el 15/03: el 13/02 te aparece en «por vencer».",
+        }}
       >
         {/* Si está conectado con el escritorio o no, a la vista sin entrar a
             "Mi PC" (Brandon 2026-08-28). No se ve nada si el navegador no
@@ -1338,7 +1345,7 @@ export default function DocumentosModule() {
             aria-expanded={kpisVisible}
             aria-label={kpisVisible ? "Ocultar resumen" : "Mostrar resumen"}
             title={kpisVisible ? "Ocultar resumen" : "Mostrar resumen"}
-            className="inline-flex items-center justify-center h-11 w-11 shrink-0 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary"
+            className="inline-flex items-center justify-center h-12 w-12 shrink-0 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary"
           >
             {kpisVisible ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </button>
@@ -1350,6 +1357,8 @@ export default function DocumentosModule() {
             "Importar carpeta" vivía como botón suelto y era lo que más
             forzaba el salto de línea (Brandon 2026-08-30). */}
         <ModuleActionMenu
+          iconOnly
+          className="h-12 w-12"
           items={[
             {
               label: "Escanear un documento",
@@ -1380,11 +1389,11 @@ export default function DocumentosModule() {
         />
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors shadow-sm"
+          className={button({ variant: "primary", className: "rounded-xl" })}
         >
           {uploadProgress ? (
             <>
-              <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
               {uploadProgress.total === 1 ? "Procesando…" : `Subiendo ${uploadProgress.done}/${uploadProgress.total}…`}
             </>
           ) : (
@@ -1408,7 +1417,7 @@ export default function DocumentosModule() {
           className="hidden"
           onChange={(e) => e.target.files && handleScan(e.target.files)}
         />
-      </AdminModuleHeader>
+      </TituloDeVista>
 
       {/* Aviso proactivo: documentos por vencer (la promesa del módulo) */}
       {expiringDocs.length > 0 && !expiryBannerDismissed && (

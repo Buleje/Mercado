@@ -3,7 +3,8 @@
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { CardTitle, DataTable, LoadingState, SectionTitle, BlockTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import TituloDeVista from "@/components/admin/rrhh/TituloDeVista";
+import { button } from "@/components/ui-system/button-variants";
 import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
 import { activateProps } from "@/components/admin/shared/a11y";
 import { useState, useEffect, useCallback, useId, useRef, useMemo } from "react";
@@ -11,7 +12,7 @@ import { m, AnimatePresence } from "@/components/admin/providers";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
   Search, Plus, X, ChevronLeft, ChevronRight, Loader2, AlertTriangle,
-  FileText, User, Printer, DollarSign, Clock, CheckCircle, BookOpen, FileSignature, LayoutGrid, List,
+  FileText, User, Printer, DollarSign, Clock, CheckCircle, BookOpen, LayoutGrid, List,
   Download, Copy, Eye, Edit3, ArrowRight, ArrowLeft, Briefcase, Truck, Home, Package, Users,
   Lock, TreePine, Scale, PenTool, Save, BarChart3, AlertCircle, ClipboardCopy,
   MapPin, Info } from "@buleje/design-system/icons";
@@ -674,23 +675,28 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
 
   return (
     <div className="space-y-6">
-      <AdminModuleHeader
-        eyebrow="Legal · Documentos"
-        title="Contratos"
-        description="Gestión legal de contratos con plantillas peruanas."
-        icon={FileSignature}
+      {/* Un título por vista (Documentos › Contratos): sin el antetítulo
+          «Legal · Documentos» y con la explicación en la ⓘ. */}
+      <TituloDeVista
+        titulo="Contratos"
+        ayuda={{
+          what: "Los contratos del negocio armados con plantillas peruanas: alquiler, servicios, trabajo y compraventa, con su firma y su vencimiento.",
+          affects: "Un contrato por vencer te avisa antes de la fecha. Los de una persona del equipo se ven también en Equipo › Contratos.",
+          example: "Alquilas el local de Jr. Ucayali por un año: eliges la plantilla, completas los datos y lo mandas a firmar.",
+        }}
       >
         {contratos.length > 0 && (
           <span className="bg-[var(--surface-sunken)] text-xs px-2.5 py-1 rounded-full font-semibold text-[var(--text-secondary)]">{contratos.length}</span>
         )}
         <button
+          type="button"
           onClick={() => setActiveTab("plantillas")}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors min-h-[44px]"
+          className={button({ variant: "primary", className: "rounded-xl" })}
         >
-          <Plus className="h-4 w-4" />
-          Nuevo Contrato
+          <Plus className="h-4 w-4" aria-hidden />
+          Nuevo contrato
         </button>
-      </AdminModuleHeader>
+      </TituloDeVista>
 
       {/* AdminTabBar, el mismo componente que el resto del panel. Antes esto
           era un segmented control propio: mismo rol que las sub-pestañas de

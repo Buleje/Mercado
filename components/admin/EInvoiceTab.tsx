@@ -5,6 +5,8 @@ import { Field } from "@/components/admin/shared/Field";
 import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
 import { BotonRestablecerColumnas, EnOrden, useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
 import { csrfHeaders } from "@/lib/csrf-client";
+import TituloDeVista from "@/components/admin/rrhh/TituloDeVista";
+import { button } from "@/components/ui-system/button-variants";
 import { useState, useMemo, useEffect, useCallback, useId, useRef } from "react";
 import {
   FileText, Download, Search, Eye, X, CheckCircle2,
@@ -17,8 +19,10 @@ import { cn, exportToCSV } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { formatDateNumeric, formatNumber } from "@/lib/format";
 
-// Estado del Modo SUNAT Oficial (read-only para el admin). Toggle = superadmin.
-const SunatModoOficialCard = dynamic(() => import("@/components/admin/sunat/SunatModoOficialCard"), { ssr: false });
+/* El estado de SUNAT en una línea (Comprobantes, ola 3 del panel unificado).
+   La tarjeta «Modo SUNAT Oficial» completa vive en Configuración › Cobros y
+   comprobantes, donde se arregla: estaba montada dos veces. */
+const EstadoSunatLinea = dynamic(() => import("@/components/admin/sunat/EstadoSunatLinea"), { ssr: false });
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -290,9 +294,6 @@ export default function EInvoiceTab() {
 
   return (
     <div className="space-y-3 sm:space-y-6">
-      {/* Estado del Modo SUNAT Oficial — el admin ve si está activo + requisitos */}
-      <SunatModoOficialCard />
-
       {/* Toast */}
       {toast && (
         <div className="fixed bottom-6 right-6 z-50 bg-primary/10 text-white px-4 py-3 rounded-xl text-sm font-semibold flex items-center gap-2">
@@ -300,21 +301,34 @@ export default function EInvoiceTab() {
         </div>
       )}
 
-      {/* Toolbar (header eliminado — lo renderiza FacturacionModule parent via AdminModuleHeader) */}
-      <div className="flex items-center justify-end gap-2">
+      {/* El título de la vista con sus dos acciones en la misma fila y, debajo,
+          el estado de SUNAT en una línea (antes: tarjeta Modo oficial entera
+          arriba y una fila de botones huérfana). */}
+      <TituloDeVista
+        titulo="Facturas y boletas"
+        ayuda={{
+          what: "Las boletas, facturas y notas electrónicas que emitiste, con su estado en SUNAT.",
+          affects: "«Pendientes SUNAT» son las que todavía no volvieron con su constancia; «Rechazados», las que SUNAT devolvió.",
+          example: "Emites la factura F001-120 a Ferretería Ucayali por S/ 118: sale con S/ 18 de IGV y queda «Aceptado».",
+        }}
+      >
         <button
-          onClick={() => openEmitModal()}
-          className="flex items-center gap-1.5 px-3 min-h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
-        >
-          <Send className="h-4 w-4" /> Emitir comprobante
-        </button>
-        <button
+          type="button"
           onClick={() => exportToCSV(docs.map(d => ({ serie: d.serie, número: d.number, fecha: d.date, tipo: TYPE_META[d.type].label, estado: STATUS_META[d.status].label, cliente: d.clientName, ruc: d.clientRUC, subtotal: d.subtotal, igv: d.igv, total: d.total })), "e-facturacion")}
-          className="flex items-center gap-1.5 px-3 min-h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-alt)] transition-colors"
+          className={button({ variant: "secondary", className: "rounded-xl" })}
         >
-          <Download className="h-4 w-4" /> Exportar
+          <Download className="h-4 w-4" aria-hidden /> Exportar
         </button>
-      </div>
+        <button
+          type="button"
+          onClick={() => openEmitModal()}
+          className={button({ variant: "primary", className: "rounded-xl" })}
+        >
+          <Send className="h-4 w-4" aria-hidden /> Emitir comprobante
+        </button>
+      </TituloDeVista>
+
+      <EstadoSunatLinea />
 
       {/* Stats — KPIs uniformes (sin fondo ni top-strip; intent sólo en el valor cuando > 0) */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
