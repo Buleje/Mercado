@@ -62,7 +62,7 @@ function lecturaDe(estado: SunatModoOficialState): { frase: string; ok: boolean;
   if (estado.enabled) {
     return {
       ok: true,
-      frase: `Tus boletas y facturas salen oficiales a SUNAT (${ambiente}).`,
+      frase: `oficial (${ambiente}).`,
       detalle: "Cada comprobante que emites acá viaja a SUNAT y vuelve con su constancia.",
     };
   }
@@ -71,8 +71,8 @@ function lecturaDe(estado: SunatModoOficialState): { frase: string; ok: boolean;
     ok: false,
     frase:
       faltan.length > 0
-        ? `Todavía no emites comprobantes oficiales: falta${faltan.length === 1 ? "" : "n"} ${faltan.length} requisito${faltan.length === 1 ? "" : "s"}.`
-        : "Todo listo para SUNAT: falta que soporte de Buleje active el modo oficial.",
+        ? `aún no es oficial: falta${faltan.length === 1 ? "" : "n"} ${faltan.length} requisito${faltan.length === 1 ? "" : "s"}.`
+        : "todo listo: falta que soporte active el modo oficial.",
     detalle:
       faltan.length > 0
         ? `${faltan.join(" ")} Mientras tanto, lo que emites queda como comprobante interno.`
@@ -87,7 +87,7 @@ export default function EstadoSunatLinea() {
     return (
       <div
         aria-hidden
-        className="h-12 animate-pulse rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)]"
+        className="h-10 animate-pulse rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)]"
       />
     );
   }
@@ -104,13 +104,13 @@ export default function EstadoSunatLinea() {
   return (
     <div
       role="status"
-      className="flex min-h-12 flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-4 py-2"
+      className="flex min-h-10 flex-wrap items-center gap-x-3 gap-y-0 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-3 py-1"
     >
       <span className="flex min-w-0 items-center gap-2">
         <Icono className={`h-4 w-4 shrink-0 ${tono}`} aria-hidden />
         <span className="text-sm text-[var(--text-primary)]">
-          <span className="font-bold">SUNAT</span>{" "}
-          {lectura?.frase ?? "No se pudo leer el estado de la conexión."}
+          <span className="font-bold">SUNAT:</span>{" "}
+          {lectura?.frase ?? "no se pudo leer el estado de la conexión."}
         </span>
         {lectura && <InfoTip title="Estado de SUNAT" what={lectura.detalle} side="bottom" />}
       </span>
@@ -119,7 +119,7 @@ export default function EstadoSunatLinea() {
           origen={origenDeCobros()}
           sinPermiso={<span className="text-[var(--text-secondary)]">Lo configura el dueño en Configuración.</span>}
         >
-          <EnlacePanel href={hrefDeDestino(DESTINO_CONEXION)}>Conexión con SUNAT →</EnlacePanel>
+          <EnlacePanel href={hrefDeDestino(DESTINO_CONEXION)}>Conexión →</EnlacePanel>
         </PermisoDe>
       </span>
     </div>

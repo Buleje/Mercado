@@ -1,176 +1,45 @@
 "use client";
 
-import { CardTitle, DataTable } from "@buleje/design-system";
-import { Field } from "@/components/admin/shared/Field";
-import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
-import { BotonRestablecerColumnas, EnOrden, useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
-import { csrfHeaders } from "@/lib/csrf-client";
-import TituloDeVista from "@/components/admin/rrhh/TituloDeVista";
-import { button } from "@/components/ui-system/button-variants";
-import { useState, useMemo, useEffect, useCallback, useId, useRef } from "react";
-import {
-  FileText, Download, Search, Eye, X, CheckCircle2,
-  XCircle, Clock, Send, AlertTriangle, Receipt, Loader2,
-} from "@buleje/design-system/icons";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
-import { cn, exportToCSV } from "@/lib/utils";
+import { useCallback, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { formatDateNumeric, formatNumber } from "@/lib/format";
+import { SectionTitle } from "@buleje/design-system";
+import { AlertTriangle, CheckCircle2, Download, MoreHorizontal, Receipt, Search, Send } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
+import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
+import { BotonRestablecerColumnas, useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
+import { button } from "@/components/ui-system/button-variants";
+import { exportToCSV } from "@/lib/utils";
+import { ModalDetalleComprobante } from "./einvoice/ModalDetalleComprobante";
+import { ModalEmitirComprobante } from "./einvoice/ModalEmitirComprobante";
+import { TablaComprobantes } from "./einvoice/TablaComprobantes";
+import {
+  calcularStats, COLS_EINVOICE, STATUS_META, TYPE_META,
+  type DocStatus, type DocType, type EDocument,
+} from "./einvoice/tipos";
+import { useComprobantes } from "./einvoice/use-comprobantes";
+import { useIndicadoresComprobantes } from "./einvoice/use-indicadores-comprobantes";
 
 /* El estado de SUNAT en una línea (Comprobantes, ola 3 del panel unificado).
    La tarjeta «Modo SUNAT Oficial» completa vive en Configuración › Cobros y
    comprobantes, donde se arregla: estaba montada dos veces. */
 const EstadoSunatLinea = dynamic(() => import("@/components/admin/sunat/EstadoSunatLinea"), { ssr: false });
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+const FILTRO_EN_FILA = "mt-0! min-w-0 flex-1 sm:flex-none [&_summary]:h-12 [&_summary]:rounded-xl";
 
-type DocType = "boleta" | "factura" | "nota-credito" | "nota-debito";
-type DocStatus = "emitido" | "aceptado" | "rechazado" | "anulado" | "pendiente";
+interface Props {
+  /** Lo que el módulo padre suma al menú «Más» (enlaces a donde se mudaron otras pantallas). */
+  accionesExtra?: MenuAccion[];
+}
 
-type EDocument = {
-  id: string;
-  serie: string;
-  number: string;
-  date: string;
-  type: DocType;
-  status: DocStatus;
-  clientName: string;
-  clientRUC: string;
-  subtotal: number;
-  igv: number;
-  total: number;
-  items: number;
-  sunatResponse: string;
-  pdfUrl?: string | null;
-  relatedDoc?: string;
-};
-
-type EmitForm = {
-  orderId: string;
-  tipoDoc: "01" | "03";
-  clienteNombre: string;
-  clienteDni: string;
-  clienteRuc: string;
-  clienteDireccion: string;
-};
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-const fmt = (n: number) => "S/ " + formatNumber(n, { min: 2 });
-
-const TYPE_META: Record<DocType, { label: string; color: string; bg: string }> = {
-  boleta:         { label: "Boleta",          color: "text-primary",     bg: "bg-primary/10 dark:bg-primary/15" },
-  factura:        { label: "Factura",         color: "text-primary",  bg: "bg-primary/10 dark:bg-primary/15" },
-  "nota-credito": { label: "Nota de crédito", color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
-  "nota-debito":  { label: "Nota de débito",  color: "text-[var(--text-secondary)]",  bg: "bg-[var(--surface-sunken)]" },
-};
-
-const STATUS_META: Record<DocStatus, { label: string; color: string; icon: typeof CheckCircle2 }> = {
-  emitido:   { label: "Emitido",   color: "text-[var(--data-success-500)]",    icon: Send },
-  aceptado:  { label: "Aceptado",  color: "text-[var(--data-success-500)]", icon: CheckCircle2 },
-  rechazado: { label: "Rechazado", color: "text-[var(--data-error-500)]",     icon: XCircle },
-  anulado:   { label: "Anulado",   color: "text-[var(--text-secondary)]",    icon: XCircle },
-  pendiente: { label: "Pendiente", color: "text-[var(--data-warning-500)]",   icon: Clock },
-};
-
-/** Las columnas de datos en su orden de fábrica (Ver/PDF es fija, al final). */
-const COLS_EINVOICE = ["serieNro", "fecha", "tipo", "cliente", "total", "estado"] as const;
-
-const EMPTY_FORM: EmitForm = {
-  orderId: "",
-  tipoDoc: "03",
-  clienteNombre: "",
-  clienteDni: "",
-  clienteRuc: "",
-  clienteDireccion: "",
-};
-
-// ── Component ─────────────────────────────────────────────────────────────────
-
-export default function EInvoiceTab() {
-  const [docs, setDocs] = useState<EDocument[]>([]);
+export default function EInvoiceTab({ accionesExtra = [] }: Props) {
+  const { docs, cargando, emitForm, setEmitForm, emitLoading, emitError, toast, abrirEmision, emitir } = useComprobantes();
   const [search, setSearch] = useState("");
-  // Tipo y Estado son columnas de la tabla: autofiltro en su `<th>` (Brandon
-  // 2026-09-24), `[]` = todos, admite varios a la vez.
+  // Tipo y Estado: `[]` = todos, admite varios a la vez (Brandon 2026-09-24).
   const [filterType, setFilterType] = useState<DocType[]>([]);
   const [filterStatus, setFilterStatus] = useState<DocStatus[]>([]);
   const [detail, setDetail] = useState<EDocument | null>(null);
-  const [, setLoadingDocs] = useState(true);
   const orden = useOrdenColumnas("einvoice-comprobantes", COLS_EINVOICE);
-
-  // Emisión
-  const [emitForm, setEmitForm] = useState<EmitForm | null>(null);
-  const [emitLoading, setEmitLoading] = useState(false);
-  const [emitError, setEmitError] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
-
-  // Cargar comprobantes reales desde la API
-  const loadInvoices = useCallback(async () => {
-    try {
-      setLoadingDocs(true);
-      const res = await fetch("/api/admin/sunat/invoices?limit=100");
-      if (!res.ok) { setLoadingDocs(false); return; }
-      const data = await res.json();
-      // El endpoint /api/admin/sunat/invoices devuelve { data: [...] } con campos
-      // en inglés (series/number/type/sunatStatus/customerName). El mapeo previo
-      // leía serie/número/tipo/status/clienteNombre → todo caía a defaults
-      // ("0", "boleta", "emitido", "-"). Verificado contra el route 2026-07-05.
-      const invoices = (data.data ?? data.invoices ?? []) as Array<{
-        id: string;
-        series?: string;
-        number?: number | string;
-        type?: string;
-        sunatStatus?: string;
-        customerName?: string;
-        customerRuc?: string;
-        subtotal?: number;
-        igv?: number;
-        total?: number;
-        errorMessage?: string | null;
-        pdfUrl?: string | null;
-        createdAt?: string;
-      }>;
-      const TYPE_MAP: Record<string, DocType> = {
-        factura: "factura",
-        nota_credito: "nota-credito",
-        "nota-credito": "nota-credito",
-        nota_debito: "nota-debito",
-        "nota-debito": "nota-debito",
-        boleta: "boleta",
-      };
-      const STATUS_MAP: Record<string, DocStatus> = {
-        pending: "pendiente",
-        accepted: "aceptado",
-        rejected: "rechazado",
-        voided: "anulado",
-      };
-      const mapped: EDocument[] = invoices.map(inv => ({
-        id: inv.id,
-        serie: inv.series || (inv.type === "factura" ? "F001" : "B001"),
-        number: inv.number != null ? String(inv.number) : "0",
-        date: inv.createdAt ? formatDateNumeric(inv.createdAt) : "-",
-        type: TYPE_MAP[inv.type ?? ""] ?? "boleta",
-        status: STATUS_MAP[inv.sunatStatus ?? ""] ?? "emitido",
-        clientName: inv.customerName || "-",
-        clientRUC: inv.customerRuc || "-",
-        subtotal: inv.subtotal ?? 0,
-        igv: inv.igv ?? 0,
-        total: inv.total ?? 0,
-        items: 0,
-        sunatResponse: inv.errorMessage || "-",
-        pdfUrl: inv.pdfUrl,
-      }));
-      setDocs(mapped);
-    } catch (e) {
-      console.error("[EInvoiceTab] no se pudo cargar comprobantes", e);
-    } finally {
-      setLoadingDocs(false);
-    }
-  }, []);
-
-  useEffect(() => { loadInvoices(); }, [loadInvoices]);
 
   const filtered = useMemo(() => {
     let list = [...docs];
@@ -187,513 +56,112 @@ export default function EInvoiceTab() {
     return list;
   }, [docs, filterType, filterStatus, search]);
 
-  const stats = useMemo(() => {
-    const totalEmitted = docs.filter(d => !["anulado"].includes(d.status)).reduce((s, d) => s + d.total, 0);
-    const totalIGV = docs.filter(d => !["anulado"].includes(d.status)).reduce((s, d) => s + d.igv, 0);
-    const pending = docs.filter(d => d.status === "pendiente").length;
-    const rejected = docs.filter(d => d.status === "rechazado").length;
-    return { totalEmitted, totalIGV, pending, rejected, total: docs.length };
-  }, [docs]);
-
-  function showToast(msg: string) {
-    setToast(msg);
-    setTimeout(() => setToast(null), 4000);
-  }
-
-  function openEmitModal(orderId = "") {
-    setEmitError(null);
-    setEmitForm({ ...EMPTY_FORM, orderId });
-  }
-
-  async function handleEmitir() {
-    if (!emitForm) return;
-    setEmitLoading(true);
-    setEmitError(null);
-
-    const res = await fetch("/api/admin/sunat/generate-invoice", {
-      method: "POST",
-      headers: csrfHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({
-        orderId: emitForm.orderId,
-        tipo: emitForm.tipoDoc === "01" ? "factura" : "boleta",
-        clienteNombre: emitForm.clienteNombre,
-        clienteDocumento: emitForm.clienteDni || emitForm.clienteRuc || undefined,
-        clienteTipoDocumento: emitForm.tipoDoc === "01" ? "RUC" : "DNI",
-      }),
-    });
-
-    let data: {
-      ok?: boolean;
-      pdfUrl?: string | null;
-      xmlUrl?: string | null;
-      hash?: string | null;
-      error?: string;
-      invoice?: { id: string; serie: string; número: string; total: number; subtotal: number; igv: number };
-    };
-    try {
-      data = await res.json();
-    } catch {
-      data = { error: "Respuesta inválida del servidor" };
-    }
-
-    setEmitLoading(false);
-
-    if (!res.ok || !data.ok) {
-      setEmitError(data.error ?? "Error al emitir el comprobante");
-      return;
-    }
-
-    // Agregar el documento emitido a la tabla local
-    const tipo: DocType = emitForm.tipoDoc === "01" ? "factura" : "boleta";
-    const serie = data.invoice?.serie || (emitForm.tipoDoc === "01" ? "F001" : "B001");
-    const newDoc: EDocument = {
-      id: data.invoice?.id || `${serie}-${Date.now()}`,
-      serie,
-      number: data.invoice?.número || String(Math.floor(Date.now() / 1000) % 99999999).padStart(8, "0"),
-      date: formatDateNumeric(new Date()),
-      type: tipo,
-      status: "emitido",
-      clientName: emitForm.clienteNombre,
-      clientRUC: emitForm.tipoDoc === "01" ? (emitForm.clienteRuc || "—") : (emitForm.clienteDni || "—"),
-      subtotal: data.invoice?.subtotal ?? 0,
-      igv: data.invoice?.igv ?? 0,
-      total: data.invoice?.total ?? 0,
-      items: 0,
-      sunatResponse: data.hash ? `Hash: ${data.hash}` : "Emitido vía Nubefact",
-      pdfUrl: data.pdfUrl,
-    };
-    setDocs(prev => [newDoc, ...prev]);
-    setEmitForm(null);
-
-    showToast("Comprobante emitido correctamente");
-
-    if (data.pdfUrl) {
-      window.open(data.pdfUrl, "_blank", "noopener,noreferrer");
-    }
-  }
-
+  const stats = useMemo(() => calcularStats(docs), [docs]);
+  const kpis = useIndicadoresComprobantes(stats, cargando && docs.length === 0);
   const cerrarDetail = useCallback(() => setDetail(null), []);
-  const cerrarEmit = useCallback(() => { if (!emitLoading) setEmitForm(null); }, [emitLoading]);
-  const detailModalRef = useRef<HTMLDivElement>(null);
-  const emitModalRef = useRef<HTMLDivElement>(null);
-  const detailTitleId = useId();
-  const emitTitleId = useId();
-  useModalAccesible(detailModalRef, { onCerrar: cerrarDetail, activo: !!detail });
-  useModalAccesible(emitModalRef, { onCerrar: cerrarEmit, activo: emitForm !== null });
-  /** Ventana: se mueve, se achica y se fija (ADR-420). */
-  const ventanaDetalle = useVentanaDeModal(!!detail, {
-    ref: detailModalRef,
-    aplicarTranslate: true,
-    claveMemoria: "efactura-detalle",
-  });
-  const ventanaEmit = useVentanaDeModal(emitForm !== null, {
-    ref: emitModalRef,
-    aplicarTranslate: true,
-    claveMemoria: "efactura-emitir",
-  });
+
+  const acciones: MenuAccion[] = [
+    {
+      id: "excel",
+      label: "Exportar a Excel",
+      hint: `${docs.length} comprobantes`,
+      icon: Download,
+      disabled: docs.length === 0,
+      onSelect: () => exportToCSV(docs.map(d => ({ serie: d.serie, número: d.number, fecha: d.date, tipo: TYPE_META[d.type].label, estado: STATUS_META[d.status].label, cliente: d.clientName, ruc: d.clientRUC, subtotal: d.subtotal, igv: d.igv, total: d.total })), "e-facturacion"),
+    },
+    ...accionesExtra,
+  ];
+
+  const opcionesTipo = (Object.keys(TYPE_META) as DocType[]).map(t => ({ value: t, count: docs.filter(d => d.type === t).length }));
+  const opcionesEstado = (Object.keys(STATUS_META) as DocStatus[]).map(s => ({ value: s, count: docs.filter(d => d.status === s).length }));
 
   return (
-    <div className="space-y-3 sm:space-y-6">
-      {/* Toast */}
+    <div className="space-y-3 sm:space-y-4">
       {toast && (
-        <div className="fixed bottom-6 right-6 z-50 bg-primary/10 text-white px-4 py-3 rounded-xl text-sm font-semibold flex items-center gap-2">
+        <div role="status" className="fixed bottom-6 right-6 z-50 bg-primary text-white px-4 py-3 rounded-xl text-sm font-semibold flex items-center gap-2">
           <CheckCircle2 className="h-4 w-4 shrink-0" /> {toast}
         </div>
       )}
 
-      {/* El título de la vista con sus dos acciones en la misma fila y, debajo,
-          el estado de SUNAT en una línea (antes: tarjeta Modo oficial entera
-          arriba y una fila de botones huérfana). */}
-      <TituloDeVista
-        titulo="Facturas y boletas"
-        ayuda={{
-          what: "Las boletas, facturas y notas electrónicas que emitiste, con su estado en SUNAT.",
-          affects: "«Pendientes SUNAT» son las que todavía no volvieron con su constancia; «Rechazados», las que SUNAT devolvió.",
-          example: "Emites la factura F001-120 a Ferretería Ucayali por S/ 118: sale con S/ 18 de IGV y queda «Aceptado».",
-        }}
-      >
-        <button
-          type="button"
-          onClick={() => exportToCSV(docs.map(d => ({ serie: d.serie, número: d.number, fecha: d.date, tipo: TYPE_META[d.type].label, estado: STATUS_META[d.status].label, cliente: d.clientName, ruc: d.clientRUC, subtotal: d.subtotal, igv: d.igv, total: d.total })), "e-facturacion")}
-          className={button({ variant: "secondary", className: "rounded-xl" })}
-        >
-          <Download className="h-4 w-4" aria-hidden /> Exportar
-        </button>
-        <button
-          type="button"
-          onClick={() => openEmitModal()}
-          className={button({ variant: "primary", className: "rounded-xl" })}
-        >
-          <Send className="h-4 w-4" aria-hidden /> Emitir comprobante
-        </button>
-      </TituloDeVista>
+      {/* Una fila: título · Indicadores · Emitir comprobante · Más. */}
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-2 xl:flex-nowrap">
+        <div className="flex shrink-0 items-center gap-2">
+          <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">Facturas y boletas</SectionTitle>
+          <InfoTip
+            title="Facturas y boletas"
+            what="Las boletas, facturas y notas electrónicas que emitiste, con su estado en SUNAT."
+            affects="«Pendientes SUNAT» son las que todavía no volvieron con su constancia; «Rechazados», las que SUNAT devolvió."
+            example="Emites la factura F001-120 a Ferretería Ucayali por S/ 118: sale con S/ 18 de IGV y queda «Aceptado»."
+            side="bottom"
+          />
+        </div>
+        <div className="ml-auto flex min-w-0 items-center gap-2">
+          {kpis.boton}
+          <button type="button" onClick={() => abrirEmision()} className={button({ variant: "primary", className: "rounded-xl shrink-0" })}>
+            <Send className="h-4 w-4" aria-hidden /> Emitir comprobante
+          </button>
+          <ActionMenu label="Más" icon={MoreHorizontal} actions={acciones} soloIcono size="md" className="w-12 shrink-0" title="Exportar y otras pantallas de comprobantes, impuestos y cuentas por pagar" />
+        </div>
+      </div>
 
       <EstadoSunatLinea />
 
-      {/* Stats — KPIs uniformes (sin fondo ni top-strip; intent sólo en el valor cuando > 0) */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { label: "Total emitido", value: fmt(stats.totalEmitted), intent: "neutral" as const },
-          { label: "IGV acumulado", value: fmt(stats.totalIGV), intent: "neutral" as const },
-          { label: "Pendientes SUNAT", value: String(stats.pending), intent: stats.pending > 0 ? ("warning" as const) : ("neutral" as const) },
-          { label: "Rechazados", value: String(stats.rejected), intent: stats.rejected > 0 ? ("danger" as const) : ("neutral" as const) },
-        ].map(({ label, value, intent }) => (
-          <div
-            key={label}
-            className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4"
-          >
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">{label}</p>
-            <p
-              className={cn(
-                "text-xl font-extrabold tabular-nums",
-                intent === "warning" ? "text-[var(--data-warning-500)]" :
-                intent === "danger" ? "text-[var(--data-error-500)]" :
-                "text-[var(--text-primary)]",
-              )}
-            >
-              {value}
-            </p>
-          </div>
-        ))}
-      </div>
-
-      {/* IGV summary card */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-5">
-        <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2 mb-3">
-          <FileText className="h-4 w-4 text-primary" /> Resumen tributario del mes
-        </CardTitle>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 text-sm">
-          <div><p className="text-xs text-[var(--text-tertiary)]">Boletas emitidas</p><p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{docs.filter(d => d.type === "boleta").length}</p></div>
-          <div><p className="text-xs text-[var(--text-tertiary)]">Facturas emitidas</p><p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{docs.filter(d => d.type === "factura").length}</p></div>
-          <div><p className="text-xs text-[var(--text-tertiary)]">Notas de crédito</p><p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{docs.filter(d => d.type === "nota-credito").length}</p></div>
-          <div><p className="text-xs text-[var(--text-tertiary)]">Notas de débito</p><p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{docs.filter(d => d.type === "nota-debito").length}</p></div>
-        </div>
-      </div>
+      {kpis.panel}
 
       {stats.rejected > 0 && (
-        <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/40 rounded-xl p-4 flex flex-wrap items-start gap-3">
-          <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)] mt-0.5 shrink-0" />
-          <div>
-            <p className="text-sm font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">Hay {stats.rejected} comprobante(s) rechazados por SUNAT</p>
-            <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mt-0.5">Revise los errores y reenvíe los documentos corregidos antes de la declaración mensual.</p>
-          </div>
+        <div role="alert" className="flex min-h-12 flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-[var(--data-error-500)] bg-[var(--data-error-50)] px-4 py-2 dark:bg-red-950/20">
+          <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--data-error-500)]" aria-hidden />
+          <span className="text-sm font-bold text-[var(--data-error-ink)] dark:text-[var(--data-error-500)]">
+            {stats.rejected} comprobante{stats.rejected === 1 ? "" : "s"} rechazado{stats.rejected === 1 ? "" : "s"} por SUNAT
+          </span>
+          <InfoTip what="Revisa los errores y reenvía los documentos corregidos antes de la declaración mensual." side="bottom" />
+          <button
+            type="button"
+            onClick={() => setFilterStatus(["rechazado"])}
+            className="ml-auto min-h-12 rounded-xl px-3 text-sm font-semibold text-[var(--data-error-ink)] hover:underline dark:text-[var(--data-error-500)]"
+          >
+            Ver solo esos
+          </button>
         </div>
       )}
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
+      {/* Buscador y filtros en UNA fila, pegados a la tabla que filtran. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-0 flex-1 basis-56 sm:max-w-sm">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Cliente, serie, número..."
-            className="w-full pl-9 pr-3 h-10 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]"
+            aria-label="Buscar comprobante por cliente, serie o número"
+            className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)]"
           />
         </div>
-        <BotonRestablecerColumnas cambiado={orden.cambiado} onRestablecer={orden.restablecer} />
+        {docs.length > 0 && (
+          <>
+            <FiltroColumnaMulti label="Tipo" value={filterType} options={opcionesTipo} etiqueta={(v) => TYPE_META[v as DocType]?.label ?? v} onChange={(v) => setFilterType(v as DocType[])} placeholder="Tipo: todos" className={FILTRO_EN_FILA} />
+            <FiltroColumnaMulti label="Estado" value={filterStatus} options={opcionesEstado} etiqueta={(v) => STATUS_META[v as DocStatus]?.label ?? v} onChange={(v) => setFilterStatus(v as DocStatus[])} placeholder="Estado: todos" className={FILTRO_EN_FILA} />
+          </>
+        )}
+        <BotonRestablecerColumnas cambiado={orden.cambiado} onRestablecer={orden.restablecer} className="h-12!" />
       </div>
 
-      {/* En el celular la tabla es tarjetas (`.admin-mobile-cards` esconde el
-          <thead>): Tipo y Estado se repiten acá, mismo estado, sólo visibles
-          ahí. */}
-      {docs.length > 0 && (
-        <div className="grid grid-cols-2 gap-2 sm:hidden">
-          <div className="flex flex-col gap-1">
-            <span className="text-sm font-bold text-[var(--text-secondary)]">Tipo</span>
-            <FiltroColumnaMulti
-              label="Tipo"
-              value={filterType}
-              options={(Object.keys(TYPE_META) as DocType[]).map(t => ({ value: t, count: docs.filter(d => d.type === t).length }))}
-              etiqueta={(v) => TYPE_META[v as DocType]?.label ?? v}
-              onChange={(v) => setFilterType(v as DocType[])}
-              placeholder="Todos"
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <span className="text-sm font-bold text-[var(--text-secondary)]">Estado</span>
-            <FiltroColumnaMulti
-              label="Estado"
-              value={filterStatus}
-              options={(Object.keys(STATUS_META) as DocStatus[]).map(s => ({ value: s, count: docs.filter(d => d.status === s).length }))}
-              etiqueta={(v) => STATUS_META[v as DocStatus]?.label ?? v}
-              onChange={(v) => setFilterStatus(v as DocStatus[])}
-              placeholder="Todos"
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Documents table */}
       <div className="bg-[var(--surface-raised)] rounded-xl overflow-hidden">
         {docs.length === 0 ? (
-          <div className="py-16 text-center text-[var(--text-tertiary)] dark:text-muted text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl">
-            <Receipt className="h-10 w-10 mx-auto mb-3 opacity-30" />
-            <p className="font-semibold">Sin comprobantes emitidos</p>
-            <p className="text-xs mt-1">Usa el botón &quot;Emitir comprobante&quot; para registrar el primer comprobante electrónico.</p>
+          <div className="py-12 text-center text-[var(--text-tertiary)] text-sm border border-[var(--rule-base)] rounded-xl">
+            <Receipt className="h-8 w-8 mx-auto mb-2 opacity-30" aria-hidden />
+            <p className="font-semibold">{cargando ? "Cargando comprobantes…" : "Sin comprobantes emitidos"}</p>
+            {!cargando && <p className="mt-1">Con «Emitir comprobante» registras el primero.</p>}
           </div>
+        ) : filtered.length === 0 ? (
+          <p className="py-10 text-center text-sm text-[var(--text-tertiary)] border border-[var(--rule-base)] rounded-xl">Ningún comprobante coincide con esos filtros.</p>
         ) : (
-          <DataTable className="min-w-[640px]">
-              <thead ref={orden.refCabecera}>
-                <tr>
-                  <EnOrden
-                    orden={orden.orden}
-                    celdas={{
-                      serieNro: <th data-col="serieNro">Serie-Nro</th>,
-                      fecha: <th data-col="fecha">Fecha</th>,
-                      tipo: (
-                        <th data-col="tipo">
-                          <span className="block">Tipo</span>
-                          <FiltroColumnaMulti
-                            label="Tipo"
-                            value={filterType}
-                            options={(Object.keys(TYPE_META) as DocType[]).map(t => ({ value: t, count: docs.filter(d => d.type === t).length }))}
-                            etiqueta={(v) => TYPE_META[v as DocType]?.label ?? v}
-                            onChange={(v) => setFilterType(v as DocType[])}
-                            placeholder="Todos"
-                          />
-                        </th>
-                      ),
-                      cliente: <th data-col="cliente">Cliente</th>,
-                      total: <th data-col="total">Total</th>,
-                      estado: (
-                        <th data-col="estado">
-                          <span className="block">Estado</span>
-                          <FiltroColumnaMulti
-                            label="Estado"
-                            value={filterStatus}
-                            options={(Object.keys(STATUS_META) as DocStatus[]).map(s => ({ value: s, count: docs.filter(d => d.status === s).length }))}
-                            etiqueta={(v) => STATUS_META[v as DocStatus]?.label ?? v}
-                            onChange={(v) => setFilterStatus(v as DocStatus[])}
-                            placeholder="Todos"
-                          />
-                        </th>
-                      ),
-                    }}
-                  />
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(d => {
-                  const StatusIcon = STATUS_META[d.status].icon;
-                  return (
-                    <tr key={d.id}>
-                      <EnOrden
-                        orden={orden.orden}
-                        celdas={{
-                          serieNro: <td className="font-mono font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{d.serie}-{d.number}</td>,
-                          fecha: <td className="text-[var(--text-secondary)]">{d.date}</td>,
-                          tipo: (
-                            <td>
-                              <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", TYPE_META[d.type].bg, TYPE_META[d.type].color)}>
-                                {TYPE_META[d.type].label}
-                              </span>
-                            </td>
-                          ),
-                          cliente: (
-                            <td className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-                              {d.clientName}<br />
-                              <span className="text-xs text-[var(--text-tertiary)]">{d.clientRUC}</span>
-                            </td>
-                          ),
-                          total: <td className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(d.total)}</td>,
-                          estado: (
-                            <td>
-                              <span className={cn("flex items-center gap-1 text-xs font-bold", STATUS_META[d.status].color)}>
-                                <StatusIcon className="h-3 w-3" />{STATUS_META[d.status].label}
-                              </span>
-                            </td>
-                          ),
-                        }}
-                      />
-                      <td className="flex items-center gap-2">
-                        <button aria-label="Ver" onClick={() => setDetail(d)} className="text-primary hover:underline text-xs font-bold">
-                          <Eye className="h-3.5 w-3.5 inline" />
-                        </button>
-                        {d.pdfUrl && (
-                          <a
-                            href={d.pdfUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs font-bold text-primary hover:underline"
-                            title="Ver PDF"
-                          >
-                            PDF
-                          </a>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </DataTable>
+          <TablaComprobantes docs={filtered} orden={orden} onVer={setDetail} />
         )}
       </div>
 
-      {/* Detail modal */}
-      {detail && (
-        <div className="modal-backdrop p-4" role="presentation" onClick={e => e.target === e.currentTarget && !ventanaDetalle.fijado && setDetail(null)}>
-          <div ref={detailModalRef} role="dialog" aria-modal="true" aria-labelledby={detailTitleId} tabIndex={-1} className="relative bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 w-full max-w-lg space-y-4">
-            <div {...ventanaDetalle.asaProps} className="flex items-center justify-between">
-              <CardTitle id={detailTitleId} className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.serie}-{detail.number}</CardTitle>
-              <span className="ml-auto flex items-center gap-1">
-                <ControlesDeVentana ventana={ventanaDetalle} />
-              </span>
-              <button aria-label="Cerrar" onClick={() => setDetail(null)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-              {([
-                ["Tipo", TYPE_META[detail.type].label],
-                ["Fecha", detail.date],
-                ["Cliente", detail.clientName],
-                ["RUC/DNI", detail.clientRUC],
-                ["Subtotal", fmt(detail.subtotal)],
-                ["IGV (18%)", fmt(detail.igv)],
-                ["Total", fmt(detail.total)],
-                ["Items", String(detail.items)],
-                ["Estado", STATUS_META[detail.status].label],
-              ] as [string, string][]).map(([k, v]) => (
-                <div key={k}><p className="text-xs text-[var(--text-tertiary)]">{k}</p><p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{v}</p></div>
-              ))}
-              {detail.relatedDoc && (
-                <div><p className="text-xs text-[var(--text-tertiary)]">Doc. relacionado</p><p className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.relatedDoc}</p></div>
-              )}
-            </div>
-            <div>
-              <p className="text-xs text-[var(--text-tertiary)] mb-1">Respuesta SUNAT</p>
-              <p className="text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-[var(--surface-alt)] rounded-xl p-3 font-mono text-xs">{detail.sunatResponse}</p>
-            </div>
-            {detail.pdfUrl && (
-              <a
-                href={detail.pdfUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-primary/10 text-white text-sm font-semibold hover:bg-primary/10 transition-colors"
-              >
-                <Download className="h-4 w-4" /> Descargar PDF
-              </a>
-            )}
-            <TiradorDeVentana ventana={ventanaDetalle} />
-          </div>
-        </div>
-      )}
-
-      {/* Emit modal */}
-      {emitForm !== null && (
-        <div className="modal-backdrop p-4" role="presentation" onClick={e => e.target === e.currentTarget && !emitLoading && !ventanaEmit.fijado && setEmitForm(null)}>
-          <div ref={emitModalRef} role="dialog" aria-modal="true" aria-labelledby={emitTitleId} tabIndex={-1} className="relative bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-6 w-full max-w-md space-y-4">
-            <div {...ventanaEmit.asaProps} className="flex items-center justify-between">
-              <CardTitle id={emitTitleId} className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
-                <Send className="h-4 w-4 text-primary" /> Emitir comprobante SUNAT
-              </CardTitle>
-              <span className="ml-auto flex items-center gap-1">
-                <ControlesDeVentana ventana={ventanaEmit} />
-              </span>
-              {!emitLoading && (
-                <button aria-label="Cerrar" onClick={() => setEmitForm(null)}>
-                  <X className="h-4 w-4 text-[var(--text-tertiary)]" />
-                </button>
-              )}
-            </div>
-
-            <div className="space-y-3">
-              {/* Tipo de comprobante */}
-              <Field label="Tipo de comprobante" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">
-                <select
-                  value={emitForm.tipoDoc}
-                  onChange={e => setEmitForm(f => f && { ...f, tipoDoc: e.target.value as "01" | "03" })}
-                  className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]"
-                >
-                  <option value="03">Boleta (B001)</option>
-                  <option value="01">Factura (F001)</option>
-                </select>
-              </Field>
-
-              {/* ID del pedido */}
-              <Field label="ID del pedido" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">
-                <input
-                  value={emitForm.orderId}
-                  onChange={e => setEmitForm(f => f && { ...f, orderId: e.target.value })}
-                  placeholder="ej. cm3abc123..."
-                  className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]"
-                />
-              </Field>
-
-              {/* Nombre del cliente */}
-              <Field label="Nombre del cliente" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">
-                <input
-                  value={emitForm.clienteNombre}
-                  onChange={e => setEmitForm(f => f && { ...f, clienteNombre: e.target.value })}
-                  placeholder="Nombre o razón social"
-                  className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]"
-                />
-              </Field>
-
-              {/* DNI o RUC según tipo */}
-              {emitForm.tipoDoc === "03" ? (
-                <Field label={<>DNI <span className="font-normal">(opcional)</span></>} labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">
-                  <input
-                    value={emitForm.clienteDni}
-                    onChange={e => setEmitForm(f => f && { ...f, clienteDni: e.target.value })}
-                    placeholder="12345678"
-                    maxLength={8}
-                    className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]"
-                  />
-                </Field>
-              ) : (
-                <Field label="RUC" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">
-                  <input
-                    value={emitForm.clienteRuc}
-                    onChange={e => setEmitForm(f => f && { ...f, clienteRuc: e.target.value })}
-                    placeholder="20123456789"
-                    maxLength={11}
-                    className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]"
-                  />
-                </Field>
-              )}
-
-              {/* Dirección */}
-              <Field label={<>Dirección <span className="font-normal">(opcional)</span></>} labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1 block">
-                <input
-                  value={emitForm.clienteDireccion}
-                  onChange={e => setEmitForm(f => f && { ...f, clienteDireccion: e.target.value })}
-                  placeholder="Av. Centenario 123, Pucallpa"
-                  className="w-full text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]"
-                />
-              </Field>
-            </div>
-
-            {emitError && (
-              <div className="bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/40 rounded-xl p-3 text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-semibold flex items-start gap-2">
-                <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" /> {emitError}
-              </div>
-            )}
-
-            <div className="flex gap-2 pt-1">
-              <button
-                onClick={() => setEmitForm(null)}
-                disabled={emitLoading}
-                className="flex-1 min-h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-alt)] transition-colors disabled:opacity-50"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleEmitir}
-                disabled={emitLoading || !emitForm.orderId.trim() || !emitForm.clienteNombre.trim()}
-                className="flex-1 min-h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {emitLoading ? (
-                  <><Loader2 className="h-4 w-4 animate-spin" /> Emitiendo...</>
-                ) : (
-                  <><Send className="h-4 w-4" /> Emitir</>
-                )}
-              </button>
-            </div>
-            <TiradorDeVentana ventana={ventanaEmit} />
-          </div>
-        </div>
-      )}
+      <ModalDetalleComprobante doc={detail} onCerrar={cerrarDetail} />
+      <ModalEmitirComprobante form={emitForm} setForm={setEmitForm} cargando={emitLoading} error={emitError} onEmitir={emitir} />
     </div>
   );
 }

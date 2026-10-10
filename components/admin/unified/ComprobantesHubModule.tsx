@@ -57,8 +57,8 @@ const ALIAS: AliasDeVista<Vista> = {
   "guias-remision": "guias",
 };
 
-/** Cotizaciones lleva su pestaña interna en `?sub=`: al salir, no viaja a la vista siguiente. */
-const PARAMS_DE_VISTA: ParamsDeVista<Vista> = { cotizaciones: ["sub"] };
+/** Cada vista lleva su sección en `?sub=`: al salir, no viaja a la vista siguiente. */
+const PARAMS_DE_VISTA: ParamsDeVista<Vista> = { facturas: ["sub"], notas: ["sub"], guias: ["sub"], cotizaciones: ["sub"] };
 
 const AYUDA_DEL_HUB =
   "Los papeles de tus ventas: boletas y facturas, las notas que las corrigen, las guías del traslado y las cotizaciones antes de vender.";

@@ -17,16 +17,17 @@
  *
  * Cada enlace se ofrece sólo a quien puede abrir el destino (el origen
  * REGISTRADO de esa vista): uno que lleva a una pestaña cerrada es peor que
- * ninguno. Si no queda ninguno, la sección no se dibuja.
+ * ninguno. Desde el 10-10 viven en el menú «Más» de la cabecera de Facturas y
+ * boletas (antes: un bloque «Antes estaban aquí» al fondo). Si no queda ninguno,
+ * el menú trae sólo lo propio.
  */
 
 import dynamic from "next/dynamic";
-import type { LucideIcon } from "@buleje/design-system/icons";
 import { useMemo } from "react";
-import { Calculator, ChevronRight, CreditCard } from "@buleje/design-system/icons";
-import { CardTitle } from "@buleje/design-system";
-import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
+import { Calculator, CreditCard } from "@buleje/design-system/icons";
+import type { LucideIcon } from "@buleje/design-system/icons";
+import type { MenuAccion } from "@/components/admin/shared/action-menu";
+import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
 import { useContextoPermiso } from "@/hooks/use-vistas-permitidas";
 import { hrefDeDestino } from "@/lib/admin/enlaces-panel";
 import { origenesDeVista, vistaPermitida } from "@/lib/admin/permiso-vista";
@@ -46,8 +47,8 @@ interface Mudanza {
 }
 
 const MUDANZAS: readonly Mudanza[] = [
-  { titulo: "Cuentas por pagar", donde: "Compras › Por pagar", icon: CreditCard, tab: "compras", vista: "cuentas-por-pagar" },
-  { titulo: "Impuestos y obligaciones", donde: "Mi Plata › Impuestos y reportes", icon: Calculator, tab: "plata", vista: "impuestos" },
+  { titulo: "Cuentas por pagar", donde: "Antes estaba aquí: Compras › Por pagar", icon: CreditCard, tab: "compras", vista: "cuentas-por-pagar" },
+  { titulo: "Impuestos y obligaciones", donde: "Antes estaba aquí: Mi Plata › Impuestos y reportes", icon: Calculator, tab: "plata", vista: "impuestos" },
 ];
 
 /** El origen con que el panel ofrece esa vista (el registrado; si no hay, la pestaña). */
@@ -64,42 +65,16 @@ function useMudanzasVisibles(): readonly Mudanza[] {
 
 export default function FacturacionModule() {
   const mudanzas = useMudanzasVisibles();
+  const acciones: MenuAccion[] = mudanzas.map((m) => ({
+    id: `ir-${m.tab}-${m.vista}`,
+    label: m.titulo,
+    hint: m.donde,
+    icon: m.icon,
+    onSelect: () => { irAEnlace(hrefDeDestino({ tab: m.tab, params: { vista: m.vista } })); },
+  }));
   return (
     <div className="space-y-4">
-      <EInvoiceTab />
-
-      {mudanzas.length > 0 && (
-        <section aria-labelledby="facturacion-se-mudaron" className="space-y-3 pt-2">
-          <div className="flex items-center gap-1.5">
-            <CardTitle as="h3" id="facturacion-se-mudaron" className="text-sm font-bold text-[var(--text-primary)]">
-              Antes estaban aquí
-            </CardTitle>
-            <InfoTip
-              title="Antes estaban aquí"
-              what="Las cuentas por pagar y los impuestos vivían en Documentos › Facturación. No son comprobantes: ahora están donde se usan."
-              side="bottom"
-            />
-          </div>
-          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {mudanzas.map((m) => (
-              <li key={m.vista}>
-                <EnlacePanel
-                  href={hrefDeDestino({ tab: m.tab, params: { vista: m.vista } })}
-                  apariencia="heredada"
-                  className="group flex min-h-12 items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 transition-colors hover:border-[var(--accent)] hover:no-underline"
-                >
-                  <m.icon className="h-5 w-5 shrink-0 text-[var(--text-tertiary)] group-hover:text-[var(--accent-ink)] dark:group-hover:text-[var(--accent)]" aria-hidden />
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-semibold text-[var(--text-primary)]">{m.titulo}</span>
-                    <span className="block text-xs text-[var(--text-secondary)]">{m.donde}</span>
-                  </span>
-                  <ChevronRight className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
-                </EnlacePanel>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      <EInvoiceTab accionesExtra={acciones} />
     </div>
   );
 }
