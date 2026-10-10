@@ -22,7 +22,7 @@ export async function GET(
       return NextResponse.json({ error: "Conteo no encontrado" }, { status: 404 });
     }
 
-    const items = await InventoryConteoItemsDB.listItemsByConteo(id);
+    const items = await InventoryConteoItemsDB.listItemsByConteo(auth.tenantId, id);
 
     // Fetch product details for each item (tenant-scoped now)
     const productIds = items.map(i => i.productId);
@@ -89,38 +89,20 @@ export async function PATCH(
 
     const { itemId, stockContado, ajustado } = parsed.data;
 
-    // Verify ownership
-    const conteo = await InventoryConteoItemsDB.findConteoInTenant(auth.tenantId, id);
-    if (!conteo) {
-      return NextResponse.json({ error: "Conteo no encontrado" }, { status: 404 });
-    }
-    if (conteo.status === "CERRADO") {
-      return NextResponse.json({ error: "El conteo ya está cerrado" }, { status: 400 });
-    }
-
-    const item = await InventoryConteoItemsDB.findItemInConteo(itemId, id);
-    if (!item) {
+    // Dueño por tenantId en el WHERE, estado y escritura del ítem en una sola
+    // transacción con el candado del conteo (ver `contarItem`).
+    const r = await InventoryConteoItemsDB.contarItem(auth.tenantId, id, itemId, { stockContado, ajustado });
+    if (!r.ok) {
+      if (r.motivo === "no_encontrado") {
+        return NextResponse.json({ error: "Conteo no encontrado" }, { status: 404 });
+      }
+      if (r.motivo === "cerrado") {
+        return NextResponse.json({ error: "El conteo ya está cerrado" }, { status: 400 });
+      }
       return NextResponse.json({ error: "Item no encontrado" }, { status: 404 });
     }
 
-    // Si sólo se está tildando/destildando, la cuenta anterior se conserva.
-    const contado = stockContado ?? item.stockContado;
-    const diferencia = contado != null ? contado - item.stockSistema : item.diferencia;
-
-    const updated = await InventoryConteoItemsDB.updateItem(itemId, {
-      ...(contado != null ? { stockContado: contado } : {}),
-      ...(diferencia != null ? { diferencia } : {}),
-      // La decisión del usuario manda. Sólo cuando no dice nada se usa el
-      // default de siempre: toda diferencia se ajusta salvo aviso.
-      ajustado: ajustado ?? (diferencia != null && diferencia !== 0),
-    });
-
-    // Update conteo status to EN_PROGRESO if needed
-    if (conteo.status === "INICIADO") {
-      await InventoryConteoItemsDB.markConteoInProgress(id);
-    }
-
-    return NextResponse.json(updated);
+    return NextResponse.json(r.item);
   } catch (e) {
     logger.error("[conteo/items/PATCH]", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Error al actualizar item" }, { status: 500 });

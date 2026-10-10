@@ -1,8 +1,7 @@
- 
 import { NextRequest, NextResponse } from "next/server";
-import { revalidateTenantTag } from "@/lib/cache";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { InventoryConteoItemsDB } from "@/lib/db/inventory-conteo-items.db";
+import { logAudit } from "@/lib/audit-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { clearConteoLock } from "@/app/api/inventory/conteo/route";
@@ -19,75 +18,31 @@ export async function POST(
   const { id } = await params;
 
   try {
-    const conteo = await prisma.conteoFisico.findFirst({
-      where: { id, tenantId: auth.tenantId },
-      include: { items: true },
-    });
+    // Stock, kardex, cierre e invalidación del Inventario: todo en la DB class.
+    const cierre = await InventoryConteoItemsDB.cerrar(auth.tenantId, id, auth.username);
 
-    if (!conteo) {
-      return NextResponse.json({ error: "Conteo no encontrado" }, { status: 404 });
+    if (!cierre.ok) {
+      return cierre.motivo === "no_encontrado"
+        ? NextResponse.json({ error: "Conteo no encontrado" }, { status: 404 })
+        : NextResponse.json({ error: "El conteo ya está cerrado" }, { status: 400 });
     }
-    if (conteo.status === "CERRADO") {
-      return NextResponse.json({ error: "El conteo ya está cerrado" }, { status: 400 });
-    }
-
-    const contados = conteo.items.filter(i => i.stockContado !== null);
-    const conDiferencia = contados.filter(i => i.diferencia !== null && i.diferencia !== 0);
-    const aAjustar = conDiferencia.filter(i => i.ajustado);
-
-    // Apply adjustments in a transaction
-    await prisma.$transaction(async (tx) => {
-      for (const item of aAjustar) {
-        if (item.stockContado === null || item.diferencia === null) continue;
-
-        // Update product stock
-        await tx.product.update({
-          where: { id: item.productId },
-          data: { stock: item.stockContado },
-        });
-
-        // Create inventory movement for the adjustment
-        await tx.inventoryMovement.create({
-          data: {
-            productId: item.productId,
-            type: item.diferencia > 0 ? "ajuste_positivo" : "ajuste_negativo",
-            quantity: Math.abs(item.diferencia),
-            previousStock: item.stockSistema,
-            newStock: item.stockContado,
-            reference: `Conteo-${id.slice(0, 8)}`,
-            notes: `Conteo físico: sistema=${item.stockSistema}, contado=${item.stockContado}`,
-            createdBy: auth.username,
-            tenantId: auth.tenantId,
-          },
-        });
-      }
-
-      // Close the conteo
-      await tx.conteoFisico.update({
-        where: { id },
-        data: {
-          status: "CERRADO",
-          fechaCierre: new Date(),
-        },
-      });
-    });
-
-    // El conteo pisa el stock con `tx.product.update` (salteando ProductsDB),
-    // así que el ajuste hay que invalidarlo a mano: si no, el Inventario sigue
-    // mostrando lo de antes de contar, que es justo lo que se acaba de corregir.
-    revalidateTenantTag(auth.tenantId, "products");
 
     // F6: Liberar lock de conteo activo
     await clearConteoLock(auth.tenantId);
 
+    logAudit({
+      req,
+      action: "UPDATE",
+      entity: "Inventory",
+      entityId: id,
+      detail: `Conteo físico cerrado: ${cierre.resumen.ajustados} ajustes de stock de ${cierre.resumen.contados} productos contados`,
+      user: auth.username,
+      tenantId: auth.tenantId,
+    });
+
     return NextResponse.json({
       message: "Conteo cerrado exitosamente",
-      resumen: {
-        totalItems: conteo.items.length,
-        contados: contados.length,
-        conDiferencia: conDiferencia.length,
-        ajustados: aAjustar.length,
-      },
+      resumen: cierre.resumen,
     });
   } catch (e) {
     logger.error("[conteo/close/POST]", { err: e instanceof Error ? e.message : String(e) });
