@@ -10,8 +10,8 @@
  * Corre en el hook Stop. Es `async: true` y falla en silencio a propósito: un aviso
  * que no suena no puede además romper el cierre del turno.
  */
-import { spawn } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { execFile, spawn } from "node:child_process";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
@@ -67,6 +67,90 @@ function resumenDelTurno(input) {
   return linea.length > 110 ? linea.slice(0, 107) + "…" : linea;
 }
 
+// ── Voz (Brandon 09-10: «dictar y escuchar en español») ─────────────────────
+// En vez de la melodía, una voz peruana lee el comienzo de la respuesta. WSLg está
+// apagado a propósito (.wslconfig), así que el audio no puede salir de Ubuntu: el mp3
+// se genera acá (edge-tts, ~1,8 s en caliente) y lo reproduce PowerShell en Windows.
+// Apagar: crear ~/.claude/voz-apagada (vuelve la melodía). Sin internet → melodía.
+const VOZ_APAGADA = join(homedir(), ".claude", "voz-apagada");
+const UVX = join(homedir(), ".local", "bin", "uvx");
+const VOZ = "es-PE-CamilaNeural";
+const CARPETA_VOZ_WSL = "/mnt/c/Users/Public/claude-voz";
+const CARPETA_VOZ_WIN = "C:\\Users\\Public\\claude-voz";
+// Dos sesiones que terminan juntas no deben hablar encima: la reproducción hace fila.
+const CANDADO_VOZ = "/tmp/claude-voz.lock";
+
+/** Lo que se lee en voz alta: el primer párrafo de prosa (sin tablas, código ni rutas), ≤ 280 letras. */
+function textoParaLeer(input) {
+  if (input?.hook_event_name === "StopFailure") return "Me detuve por un error. Revisa la terminal.";
+  const texto = (input?.last_assistant_message ?? "").trim();
+  if (!texto) return "Terminé.";
+  const parrafos = [];
+  let actual = [];
+  let enCodigo = false;
+  const cerrar = () => {
+    if (actual.length) parrafos.push(actual.join(" "));
+    actual = [];
+  };
+  for (const cruda of texto.split("\n")) {
+    const l = cruda.trim();
+    if (l.startsWith("```")) {
+      enCodigo = !enCodigo;
+      cerrar();
+      continue;
+    }
+    if (enCodigo) continue;
+    // Tablas, títulos y separadores no se leen: suenan a «barra, barra, guion».
+    if (!l || l.startsWith("|") || l.startsWith("#") || /^[-*_]{3,}$/.test(l)) {
+      cerrar();
+      continue;
+    }
+    actual.push(l.replace(/^[-*>]\s+/, "").replace(/^\d+\.\s+/, ""));
+  }
+  cerrar();
+  const limpiar = (s) =>
+    s
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+      .replace(/`[^`]*`/g, "")
+      .replace(/https?:\/\/\S+/g, "")
+      .replace(/S\/\s?/g, "soles ")
+      .replace(/[→·]/g, ", ")
+      .replace(/[*_~]+/g, "")
+      .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, "")
+      .replace(/\s+([,.;:])/g, "$1")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+  let salida = "";
+  for (const p of parrafos.map(limpiar).filter(Boolean)) {
+    salida = salida ? `${salida} ${p}` : p;
+    if (salida.length >= 60) break;
+  }
+  if (!salida) return "Terminé.";
+  if (salida.length <= 280) return salida;
+  const corte = salida.slice(0, 280);
+  const fin = Math.max(corte.lastIndexOf(". "), corte.lastIndexOf(": "));
+  return fin > 80 ? corte.slice(0, fin + 1) : `${corte.replace(/\s+\S*$/, "")}.`;
+}
+
+/** Genera el mp3 con la voz; null si está apagada o falla (sin internet, uvx ausente). */
+function generarVoz(texto) {
+  if (existsSync(VOZ_APAGADA) || !existsSync(UVX)) return Promise.resolve(null);
+  try {
+    mkdirSync(CARPETA_VOZ_WSL, { recursive: true });
+  } catch {
+    return Promise.resolve(null);
+  }
+  const nombre = `voz-${process.pid}-${Date.now()}.mp3`;
+  return new Promise((ok) => {
+    execFile(
+      UVX,
+      ["edge-tts", "--voice", VOZ, "--rate=+10%", "--text", texto, "--write-media", `${CARPETA_VOZ_WSL}/${nombre}`],
+      { timeout: 20_000 },
+      (err) => ok(err ? null : `${CARPETA_VOZ_WIN}\\${nombre}`),
+    );
+  });
+}
+
 /** Escapa comillas simples para incrustar texto en un string de PowerShell. */
 function psEscape(s) {
   return s.replace(/'/g, "''").replace(/[\r\n]+/g, " ");
@@ -103,19 +187,40 @@ async function main() {
   // Corre en paralelo con el toast local — no esperar a Telegram para sonar.
   avisarTelegram(resumen).catch(() => {});
 
-  // Sonido + toast en una sola invocación de PowerShell (arrancar powershell.exe cuesta
-  // ~300ms; hacerlo dos veces se nota). El toast pide su audio en silencio porque el
-  // sonido lo pone la melodía de abajo — sin eso sonarían los dos superpuestos.
-  // Si el toast nativo falla (Focus Assist, política, versión rara de Windows) cae a
-  // NotifyIcon.ShowBalloonTip, que Windows 10/11 igual renderiza como toast.
-  const ps = `
-$ErrorActionPreference='SilentlyContinue'
+  // La voz se genera antes de lanzar PowerShell (el hook es async: el turno no espera).
+  const mp3 = await generarVoz(textoParaLeer(input));
+
+  // Con voz: la lee MediaPlayer (espera a conocer la duración y borra el mp3 al final).
+  // Sin voz (apagada, sin internet): la melodía de siempre.
+  const sonido = mp3
+    ? `
+try {
+  Add-Type -AssemblyName PresentationCore
+  $p = New-Object System.Windows.Media.MediaPlayer
+  $p.Open([uri]'${psEscape(mp3)}')
+  $i = 0; while (-not $p.NaturalDuration.HasTimeSpan -and $i -lt 50) { Start-Sleep -Milliseconds 100; $i++ }
+  $p.Play()
+  $ms = if ($p.NaturalDuration.HasTimeSpan) { $p.NaturalDuration.TimeSpan.TotalMilliseconds } else { 8000 }
+  Start-Sleep -Milliseconds ([int]$ms + 300)
+  $p.Close()
+} catch {
+  (New-Object Media.SoundPlayer '${SONIDO}').PlaySync()
+}
+Remove-Item -LiteralPath '${psEscape(mp3)}' -Force`
+    : `
 try {
   (New-Object Media.SoundPlayer '${SONIDO}').PlaySync()
 } catch {
   (New-Object Media.SoundPlayer 'C:\\Windows\\Media\\Windows Notify System Generic.wav').PlaySync()
-}
+}`;
 
+  // Toast + sonido en una sola invocación de PowerShell (arrancar powershell.exe cuesta
+  // ~300ms; hacerlo dos veces se nota). El toast va primero y pide su audio en silencio:
+  // aparece mientras habla la voz (o suena la melodía) y no se superponen dos sonidos.
+  // Si el toast nativo falla (Focus Assist, política, versión rara de Windows) cae a
+  // NotifyIcon.ShowBalloonTip, que Windows 10/11 igual renderiza como toast.
+  const ps = `
+$ErrorActionPreference='SilentlyContinue'
 try {
   [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] > $null
   [Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom, ContentType = WindowsRuntime] > $null
@@ -136,14 +241,16 @@ try {
   $n.BalloonTipText = '${mensaje}'
   $n.Visible = $true
   $n.ShowBalloonTip(6000)
-  Start-Sleep -Milliseconds 6500
-  $n.Dispose()
 }
+${sonido}
+# El globo vive mientras viva el proceso: se suelta después del sonido, no antes.
+if ($n) { Start-Sleep -Milliseconds 1500; $n.Dispose() }
 `.trim();
 
+  // `flock`: si dos sesiones terminan juntas, la segunda espera a que calle la primera.
   const hijo = spawn(
-    "powershell.exe",
-    ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", ps],
+    "flock",
+    ["-w", "90", CANDADO_VOZ, "powershell.exe", "-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", ps],
     { detached: true, stdio: "ignore" }
   );
   // Se desprende: el turno no espera a que termine de sonar.
