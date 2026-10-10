@@ -20,9 +20,13 @@
  * una fila y las doce vistas agrupadas por fase (Operación → Trazabilidad →
  * Control → Gestión). El cromo pasó de ~370px a ~130px y la nav de doce
  * destinos planos a cuatro grupos de tres.
+ * 2026-10-10 v6 (plan «panel unificado», ola 2) — de 26 a 22 entradas sin
+ * borrar nada: GTF ingresadas es Ingresos › Recepcionadas; Reportes, Análisis,
+ * Rentabilidad y el Rendimiento de Herramientas son pestañas del Tablero; los
+ * Lotes comerciales con QR, una pestaña de Despacho (`ctp-vistas-fusionadas`).
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import {
   Boxes,
@@ -30,9 +34,7 @@ import {
   CalendarClock,
   BarChart3,
   ClipboardList,
-  Coins,
   FileSignature,
-  FileBarChart,
   FileSpreadsheet,
   FileText,
   FolderOpen,
@@ -41,7 +43,6 @@ import {
   Lock,
   MapPin,
   Flame,
-  PackageCheck,
   PackageOpen,
   Scale,
   Search,
@@ -51,7 +52,6 @@ import {
   ShieldCheck,
   TreePine,
   Trees,
-  TrendingUp,
   Truck,
   Trash2,
   Upload,
@@ -70,7 +70,18 @@ import { useVistaModulo, type ParamsDeVista } from "@/hooks/use-vista-modulo";
 import { PARAM_CONTRATO, PARAM_SECCION_FICHA } from "./ficha-del-permiso-url";
 import { PARAM_TROZA } from "@/lib/forestal/ctp-troza-etiquetas";
 import CtpPeriodPicker, { type CtpCustomRange } from "./CtpPeriodPicker";
-import CtpIngresosView from "./CtpIngresosView";
+import CtpIngresosMitades from "./CtpIngresosMitades";
+import CtpTableroPestanas, { SUBS_TABLERO_SIN_PERIODO } from "./CtpTableroPestanas";
+import CtpDespachoPestanas from "./CtpDespachoPestanas";
+import {
+  ALIAS_FUSIONADAS,
+  TECLAS_FUSIONADAS,
+  destinoFusionado,
+  plegarAlertasFusionadas,
+  type PedidoSub,
+  type SubTablero,
+  type VistaConSubs,
+} from "./ctp-vistas-fusionadas";
 import CtpOperacionSwitcher from "./CtpOperacionSwitcher";
 import { CtpEntriesView, CtpSaldosView } from "./CtpSectionViews";
 import CtpCompliancePanel from "./CtpCompliancePanel";
@@ -85,16 +96,12 @@ import CtpPatioBandeja from "./CtpPatioBandeja";
 import { usePatioCola } from "@/hooks/use-patio-cola";
 import CtpCierreAsistido from "./CtpCierreAsistido";
 import CtpEudrPanel from "./CtpEudrPanel";
-import CtpRentabilidadPanel from "./CtpRentabilidadPanel";
 import CtpSerforImportModal from "./CtpSerforImportModal";
 import VaciarLibroModal from "./VaciarLibroModal";
 import CtpTrazaRadar from "./CtpTrazaRadar";
 import CtpHistoriaLoteView from "./CtpHistoriaLoteView";
 import CtpPlantaView from "./CtpPlantaView";
 import CtpAsistente from "./CtpAsistente";
-import CtpAnalisis from "./CtpAnalisis";
-import CtpReportesView from "./CtpReportesView";
-import CtpTableroControl from "./CtpTableroControl";
 import CtpHealthChip from "./CtpHealthChip";
 import CtpPendientes from "./CtpPendientes";
 import CtpArranque from "./CtpArranque";
@@ -125,7 +132,6 @@ const CtpReportesDiariosModal = dynamic(() => import("./CtpReportesDiariosModal"
 
 type CtpView =
   | "ingresos"
-  | "gtf-ingresadas"
   | "lotes"
   | "consumos"
   | "produccion"
@@ -142,9 +148,6 @@ type CtpView =
   | "cumplimiento"
   | "cierre"
   | "eudr"
-  | "reportes"
-  | "rentabilidad"
-  | "analisis"
   | "fletes"
   | "guias"
   | "directorio"
@@ -168,15 +171,9 @@ const CTP_GROUPS: LibroGroup[] = [
     id: "operacion",
     label: "Operación",
     views: [
+      /* La bandeja y el archivo (antes «GTF ingresadas», ADR-339) son UNA vista
+         con el filtro «Por recepcionar / Recepcionadas» pegado a la tabla. */
       { key: "ingresos", ...CTP_VISTAS_POR_KEY["ingresos"], icon: PackageOpen, tecla: "i" },
-      /* Las guías que ya se recibieron salen de la bandeja y viven acá (ADR-339):
-         Ingresos es trabajo por hacer, esto es el archivo del período. */
-      {
-        key: "gtf-ingresadas",
-        ...CTP_VISTAS_POR_KEY["gtf-ingresadas"],
-        icon: PackageCheck,
-        tecla: "z",
-      },
       /* Va entre Ingresos y Consumos porque ése es el orden del patio: llega la
          madera, se aparta la que entra junta al carro, y recién ahí se aserra. */
       { key: "lotes", ...CTP_VISTAS_POR_KEY["lotes"], icon: Layers, tecla: "l" },
@@ -215,6 +212,8 @@ const CTP_GROUPS: LibroGroup[] = [
     id: "control",
     label: "Control",
     views: [
+      /* Con pestañas internas: Movimiento · Producción (Reportes) · Tendencias
+         (Análisis) · Margen (Rentabilidad) · Rendimiento (de Herramientas). */
       { key: "tablero", ...CTP_VISTAS_POR_KEY["tablero"], icon: BarChart3, tecla: "k" },
       { key: "saldos", ...CTP_VISTAS_POR_KEY["saldos"], icon: Scale, tecla: "s" },
       { key: "resumenes", ...CTP_VISTAS_POR_KEY["resumenes"], icon: ClipboardList, tecla: "q" },
@@ -226,11 +225,8 @@ const CTP_GROUPS: LibroGroup[] = [
     id: "gestion",
     label: "Gestión",
     views: [
-      /* Primero en Gestión: es la pregunta de todos los lunes —«¿cuánto
-         sacamos y de quién era la madera?»—. La tecla es «y», la única libre. */
-      { key: "reportes", ...CTP_VISTAS_POR_KEY["reportes"], icon: FileBarChart, tecla: "y" },
-      { key: "rentabilidad", ...CTP_VISTAS_POR_KEY["rentabilidad"], icon: Coins, tecla: "b" },
-      { key: "analisis", ...CTP_VISTAS_POR_KEY["analisis"], icon: TrendingUp, tecla: "a" },
+      /* Reportes, Rentabilidad y Análisis se mudaron al Tablero (ola 2): sus
+         teclas «y», «b» y «a» siguen llevando ahí (`TECLAS_FUSIONADAS`). */
       { key: "fletes", ...CTP_VISTAS_POR_KEY["fletes"], icon: Truck, tecla: "j" },
       { key: "directorio", ...CTP_VISTAS_POR_KEY["directorio"], icon: Users, tecla: "g" },
       /* El contrato es el eje del movimiento (ADR-421): va en Gestión, al
@@ -262,7 +258,6 @@ const CTP_MODULE_ID = "ctp-libro";
    firmó hasta hoy. Acotar su balance al trimestre del libro mostraría una
    parte de la plata puesta y la haría pasar por el total. */
 const SIN_PERIODO: CtpView[] = [
-  "analisis",
   "cierre",
   "ficha",
   "trozas",
@@ -270,10 +265,10 @@ const SIN_PERIODO: CtpView[] = [
   "lotes",
   "disponibles",
   "contratos",
-  /* Reportes trae su propio período (N semanas, mes o rango): el del libro al
-     lado serían dos selectores de fecha y uno no haría nada. */
-  "reportes",
 ];
+/* Análisis (6 meses fijos), Reportes (su propio período: N semanas, mes o
+   rango) y Rendimiento viven ahora en el Tablero: el selector se esconde en
+   esas pestañas (`SUBS_TABLERO_SIN_PERIODO`). */
 
 const PARAMS_DE_VISTA_CTP: ParamsDeVista<CtpView> = {
   contratos: [PARAM_CONTRATO, PARAM_SECCION_FICHA],
@@ -285,14 +280,18 @@ const PARAMS_DE_VISTA_CTP: ParamsDeVista<CtpView> = {
   /* La ficha de una guía (`?ingreso=`, use-guia-de-ingreso-en-url) y la de una
      parte del Directorio (`?parte=`, use-parte-en-url): al irse de la vista,
      se borran, y volver muestra la lista. Las dos vistas de guías la leen. */
-  ingresos: ["ingreso"],
-  "gtf-ingresadas": ["ingreso"],
+  ingresos: ["ingreso", "sub"],
   directorio: ["parte"],
+  /* Las pestañas internas (`?sub=`) son de su vista: al irse, se borran. */
+  tablero: ["sub"],
+  despacho: ["sub", "lote"],
 };
 /** Las pestañas que se fusionaron en Volumen disponible: sus links viejos siguen llegando. */
 const ALIAS_CTP = {
   "trozas-disponibles": "disponibles",
   "productos-disponibles": "disponibles",
+  /* Las que se mudaron adentro de otra (ola 2): `?vista=reportes` abre el Tablero. */
+  ...ALIAS_FUSIONADAS,
 } as const;
 
 export default function CTPLibroOperaciones() {
@@ -360,15 +359,37 @@ export default function CTPLibroOperaciones() {
   const [loteHistoria, setLoteHistoria] = useState<string | null>(null);
   /** Qué pila abrir al llegar con un nombre viejo («trozas-disponibles»). */
   const [fuentesPedidas, setFuentesPedidas] = useState<FuentesPedidas | null>(null);
+  /** La pestaña interna que el libro le pide a la vista que YA está abierta (ver `usePestanaInterna`). */
+  const [pedidoSub, setPedidoSub] = useState<PedidoSub | null>(null);
+  /** La pestaña del Tablero a la vista: decide si el selector de período tiene sentido. */
+  const [subTablero, setSubTablero] = useState<SubTablero>("movimiento");
+  /* En un ref: `irA` es estable (la cabina y los paneles la pasan a efectos). */
+  const vistaActual = useRef(view);
+  vistaActual.current = view;
+  const irASub = useCallback(
+    (vista: VistaConSubs, sub: string) => {
+      if (vistaActual.current === vista) setPedidoSub((prev) => ({ vista, sub, n: (prev?.n ?? 0) + 1 }));
+      else setView(vista, { sub });
+    },
+    [setView],
+  );
   const irA = useCallback(
     (v: string, filtro?: CtpIngresosFiltroRapido) => {
+      /* Una vista que se mudó adentro de otra (ola 2): Reportes → Tablero › Producción. */
+      const fusion = destinoFusionado(v);
+      if (fusion) {
+        irASub(fusion.vista, fusion.sub);
+        return;
+      }
+      /* Un salto con filtro («2 fuera de plazo») es a la bandeja, como cuando era su propia pestaña. */
+      if (v === "ingresos" && filtro) irASub("ingresos", "por-recepcionar");
       const fuente = fuenteDeVistaVieja(v);
       if (fuente) setFuentesPedidas((prev) => ({ fuentes: [fuente], n: (prev?.n ?? 0) + 1 }));
       setView(v as CtpView, fuente ? { fuentes: fuente } : undefined);
       // El contador hace que repetir el MISMO salto vuelva a aplicar el filtro.
       if (filtro) setFiltroIngresos((prev) => ({ tipo: filtro, n: (prev?.n ?? 0) + 1 }));
     },
-    [setView],
+    [setView, irASub],
   );
 
   // Levanta el handoff de sessionStorage → abre Ingresos pre-llenado. Se
@@ -383,10 +404,10 @@ export default function CTPLibroOperaciones() {
       // sessionStorage puede fallar (modo privado/SSR): sin handoff, sin bug.
     }
     if (gtf) {
-      setView("ingresos");
+      irASub("ingresos", "por-recepcionar");
       setPendingIngresoGtf(gtf);
     }
-  }, [setView]);
+  }, [irASub]);
 
   useEffect(() => {
     consumirHandoff();
@@ -433,13 +454,55 @@ export default function CTPLibroOperaciones() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  /**
+   * `g` + la tecla de una vista que se mudó adentro de otra (ola 2): la cabina
+   * arma sus atajos con el riel y estas vistas ya no están en él. Misma regla
+   * que la cabina: se apaga escribiendo o con un diálogo abierto, y la ventana
+   * del `g` dura 1,5 s.
+   */
+  useEffect(() => {
+    let armado = false;
+    let reloj: number | undefined;
+    const onKey = (ev: KeyboardEvent) => {
+      if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
+      const t = ev.target as HTMLElement | null;
+      const tag = t?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || t?.isContentEditable) return;
+      if (document.querySelector('[role="dialog"]')) return;
+      if (armado) {
+        armado = false;
+        const destino = TECLAS_FUSIONADAS.find((x) => x.tecla === ev.key.toLowerCase());
+        if (destino) {
+          ev.preventDefault();
+          irA(destino.vieja);
+        }
+        return;
+      }
+      if (ev.key === "g" || ev.key === "G") {
+        armado = true;
+        window.clearTimeout(reloj);
+        reloj = window.setTimeout(() => {
+          armado = false;
+        }, 1500);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.clearTimeout(reloj);
+    };
+  }, [irA]);
+
   /** Los atajos de la vista activa, para que la hoja (`?`) los liste junto a los
    *  de navegación. Declararlos acá y no en la vista mantiene la hoja completa
    *  aunque la vista todavía no esté montada. */
   const atajosDeVista = useMemo<ShortcutSection[]>(() => {
     const global: ShortcutSection = {
       title: "En todo el Libro CTP",
-      items: [{ keys: ["B"], description: "Buscar una guía (de entrada o de salida)" }],
+      items: [
+        { keys: ["B"], description: "Buscar una guía (de entrada o de salida)" },
+        ...TECLAS_FUSIONADAS.map((x) => ({ keys: ["G", x.tecla.toUpperCase()], description: x.descripcion })),
+      ],
     };
     if (view === "ingresos") {
       return [
@@ -479,10 +542,13 @@ export default function CTPLibroOperaciones() {
    *  el número aparece en el grupo y el punto en la vista. Misma fuente que la
    *  tira de abajo — no puede decir "3" arriba y listar dos. */
   const alertasPorVista = useMemo(() => {
-    return alertasPorVistaDe(pendientes.lista, {
-      reservasVencidas: pendientes.reservasVencidas.length,
-      sinMedidasEnElPatio: pendientes.paquetesSinMedidasEnElPatio,
-    });
+    /* Un aviso de una vista que se mudó (Rentabilidad) se anuncia en la que la absorbió. */
+    return plegarAlertasFusionadas(
+      alertasPorVistaDe(pendientes.lista, {
+        reservasVencidas: pendientes.reservasVencidas.length,
+        sinMedidasEnElPatio: pendientes.paquetesSinMedidasEnElPatio,
+      }),
+    );
   }, [pendientes.lista, pendientes.reservasVencidas, pendientes.paquetesSinMedidasEnElPatio]);
 
   /** Importar/exportar/informar se usan una vez por mes: van plegadas en el
@@ -595,7 +661,7 @@ export default function CTPLibroOperaciones() {
           // El período no aplica a Análisis (tendencia fija de 6 meses), Cierre
           // (por mes) ni Ficha (identidad): mostrarlo ahí hacía parecer que "el
           // selector no hace nada".
-          SIN_PERIODO.includes(view) ? undefined : (
+          SIN_PERIODO.includes(view) || (view === "tablero" && SUBS_TABLERO_SIN_PERIODO.includes(subTablero)) ? undefined : (
             <CtpPeriodPicker
               periodKey={periodKey}
               custom={custom}
@@ -660,17 +726,14 @@ export default function CTPLibroOperaciones() {
         <CtpPatioBandeja cola={cola} />
 
         {view === "ingresos" && (
-          <CtpIngresosView
-            key={ingresosKey}
+          <CtpIngresosMitades
+            instancia={ingresosKey}
             period={period}
             openGtf={pendingIngresoGtf}
             onOpenConsumed={() => setPendingIngresoGtf(null)}
             filtroRapido={filtroIngresos}
-            recepcion="pendiente"
+            pedido={pedidoSub?.vista === "ingresos" ? pedidoSub : null}
           />
-        )}
-        {view === "gtf-ingresadas" && (
-          <CtpIngresosView key={`gtf-ing-${ingresosKey}`} period={period} recepcion="cerrada" />
         )}
         {view === "lotes" && (
           <CtpLotesView
@@ -730,13 +793,18 @@ export default function CTPLibroOperaciones() {
         )}
         {view === "reprocesos" && <CtpReprocesosDeclarados period={period} />}
         {view === "despacho" && (
-          <CtpEntriesView
-            key={`desp-${ingresosKey}`}
-            section="despacho"
-            period={period}
-            presetProducto={productoADespachar?.producto ?? null}
-            presetEspecie={productoADespachar?.especie ?? null}
-            onPresetUsado={() => setProductoADespachar(null)}
+          <CtpDespachoPestanas
+            pedido={pedidoSub?.vista === "despacho" ? pedidoSub : null}
+            despachos={
+              <CtpEntriesView
+                key={`desp-${ingresosKey}`}
+                section="despacho"
+                period={period}
+                presetProducto={productoADespachar?.producto ?? null}
+                presetEspecie={productoADespachar?.especie ?? null}
+                onPresetUsado={() => setProductoADespachar(null)}
+              />
+            }
           />
         )}
         {view === "radar" && <CtpTrazaRadar period={period} />}
@@ -759,7 +827,14 @@ export default function CTPLibroOperaciones() {
         )}
         {view === "trozas" && <CtpTrozasView />}
         {view === "resumenes" && <CtpResumenesSerfor period={period} />}
-        {view === "tablero" && <CtpTableroControl period={period} onIr={irA} />}
+        {view === "tablero" && (
+          <CtpTableroPestanas
+            period={period}
+            onIr={irA}
+            pedido={pedidoSub?.vista === "tablero" ? pedidoSub : null}
+            onSub={setSubTablero}
+          />
+        )}
         {view === "cumplimiento" && <CtpCompliancePanel period={period} onNavigate={irA} />}
         {view === "cierre" && (
           <div className="space-y-6">
@@ -770,9 +845,6 @@ export default function CTPLibroOperaciones() {
           </div>
         )}
         {view === "eudr" && <CtpEudrPanel period={period} onNavigate={irA} />}
-        {view === "rentabilidad" && <CtpRentabilidadPanel period={period} />}
-        {view === "analisis" && <CtpAnalisis />}
-        {view === "reportes" && <CtpReportesView onIr={irA} />}
         {view === "guias" && (
           <CtpGuiasEmitidasView period={period} onAbrirDespacho={() => setView("despacho")} />
         )}

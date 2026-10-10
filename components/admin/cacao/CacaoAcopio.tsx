@@ -2,7 +2,7 @@
 
 /**
  * CacaoAcopio — Módulo admin de Acopio & Beneficio de Cacao (ADR-128).
- * Gating: spec:agricola:cacao-acopio. 8 sub-vistas agrupadas en 3 familias
+ * Gating: spec:agricola:cacao-acopio. 13 sub-vistas agrupadas en 3 familias
  * (Operación · Gestión · Inteligencia, ver lib/cacao/cacao-views); la sub-vista
  * activa se deep-linkea vía ?cacaoView= para navegar desde el sidebar.
  */
@@ -45,7 +45,7 @@ import {
   CACAO_VIEW_GROUPS,
   CACAO_VIEW_PARAM,
   DEFAULT_CACAO_VIEW,
-  isCacaoView,
+  aCacaoView,
   type CacaoView,
 } from "@/lib/cacao/cacao-views";
 import CacaoLoteForm from "./CacaoLoteForm";
@@ -184,20 +184,23 @@ export default function CacaoAcopio() {
   }, []);
 
   /** La cabina navega con strings; acá se valida contra las vistas reales. */
-  const irA = useCallback((v: string) => { if (isCacaoView(v)) selectView(v); }, [selectView]);
+  const irA = useCallback((v: string) => { const cv = aCacaoView(v); if (cv) selectView(cv); }, [selectView]);
 
   // Deep-link inicial: leer ?cacaoView= tras montar (evita hydration mismatch).
   // El sidebar del admin navega a una sub-vista disparando el evento cacao:navigate.
   useEffect(() => {
     const fromUrl = new URLSearchParams(window.location.search).get(CACAO_VIEW_PARAM);
-    if (isCacaoView(fromUrl)) setView(fromUrl);
+    /* `aCacaoView`: un nombre viejo (`noticias`) abre su casa de hoy (Mercado). */
+    const deUrl = aCacaoView(fromUrl);
+    if (deUrl && deUrl !== fromUrl) selectView(deUrl); // reescribe el nombre viejo en la URL
+    else if (deUrl) setView(deUrl);
     const onNav = (e: Event) => {
-      const v = (e as CustomEvent<string>).detail;
-      if (isCacaoView(v)) setView(v);
+      const v = aCacaoView((e as CustomEvent<string>).detail);
+      if (v) setView(v);
     };
     window.addEventListener("cacao:navigate", onNav);
     return () => window.removeEventListener("cacao:navigate", onNav);
-  }, []);
+  }, [selectView]);
 
   async function annul() {
     if (!annulId || annulReason.trim().length < 3) return;
@@ -888,11 +891,14 @@ export default function CacaoAcopio() {
       {/* RESUMEN — dashboard de campaña (componente propio, self-fetch) */}
       {view === "resumen" && <CacaoResumen />}
 
-      {/* MERCADO (precio en vivo) */}
-      {view === "mercado" && <CacaoNoticiero />}
-
-      {/* NOTICIAS (feed separado) */}
-      {view === "noticias" && <CacaoNews />}
+      {/* MERCADO — el precio en vivo y, debajo, las noticias que lo mueven (las
+          dos leen /market; hasta la ola 2 del panel unificado eran dos vistas). */}
+      {view === "mercado" && (
+        <div className="space-y-6">
+          <CacaoNoticiero />
+          <CacaoNews />
+        </div>
+      )}
 
       {/* ASESOR */}
       {view === "asesor" && <CacaoAsesor />}

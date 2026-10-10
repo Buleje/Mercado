@@ -12,7 +12,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Layers, Plus, RefreshCw, Search, PackageCheck, Boxes, Truck, LayoutGrid, Rows3,
 } from "@buleje/design-system/icons";
-import { StatCard } from "@buleje/design-system";
+import { EmptyState, ErrorAlert, SectionTitle, StatCard } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import SegmentedControl from "@/components/ui-system/SegmentedControl";
+import { LoadingSpinner } from "@/components/ui-system/LoadingSpinner";
 import LibroChrome from "@/components/admin/shared/libro-chrome";
 import ContratoActivoChip from "@/components/admin/forestal/ContratoActivoChip";
 import { useDebounce } from "@/hooks/use-debounce";
@@ -35,7 +38,17 @@ const STATUS_FILTERS: { key: LoteStatus | "todos"; label: string }[] = [
   { key: "anulado", label: "Anulados" },
 ];
 
-export default function ForestLotesModule() {
+export default function ForestLotesModule({
+  embebido = false,
+}: {
+  /**
+   * Montado DENTRO de Libro CTP › Despacho › «Lotes comerciales y QR» (plan
+   * «panel unificado», F34 — Brandon 2026-10-09): sin cabina propia (sería una
+   * cabina dentro de otra); el permiso de trabajo ya lo muestra la del libro.
+   * Suelto (`?tab=forestal-lotes`, el QR viejo) conserva su cabina.
+   */
+  embebido?: boolean;
+}) {
   const [lotes, setLotes] = useState<LoteRow[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -77,28 +90,22 @@ export default function ForestLotesModule() {
   const kpis = useMemo(() => stats ?? { total: 0, abiertos: 0, cerrados: 0, despachados: 0, cantidadTotal: 0 }, [stats]);
   const resumen = useMemo(() => resumenLotes(lotes), [lotes]);
 
-  return (
-    <LibroChrome
-      moduleId="forest-lotes"
-      eyebrow="Forestal · Especialización"
-      title="Lotes de Producción"
-      icon={Layers}
-      /* El permiso de TRABAJO (Brandon 2026-09-19): un lote empaqueta corridas
-         que ya salieron del Libro CTP bajo un título habilitante — saber cuál
-         importa tanto acá como en el libro de origen. */
-      contrato={<ContratoActivoChip />}
-      tools={
-        <button
-          type="button"
-          onClick={() => setShowForm(true)}
-          title="Agrupa corridas del Libro CTP en un lote comercial con código, grado y certificado QR"
-          className="inline-flex h-10 items-center gap-2 rounded-xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-4 text-sm font-semibold text-white shadow-sm transition hover:brightness-110"
-        >
-          <Plus className="h-4 w-4" /> Nuevo lote
-        </button>
-      }
+  /* La acción principal con la piel de «Nuevo ingreso» del mismo libro (desde
+     `--accent-600`: con `--accent` el blanco quedaba en 3,2:1). En la cabina
+     suelta mide lo que sus vecinos (h-10); dentro de Despacho, 48 px. */
+  const botonNuevo = (alto: "h-10" | "h-12") => (
+    <button
+      type="button"
+      onClick={() => setShowForm(true)}
+      title="Agrupa corridas del Libro CTP en un lote comercial con código, grado y certificado QR"
+      className={`inline-flex ${alto} items-center justify-center gap-2 ${alto === "h-12" ? "rounded-2xl px-5" : "rounded-xl px-4"} bg-linear-to-br from-[var(--accent-600)] to-[var(--accent-dark)] text-sm font-semibold text-white shadow-sm transition duration-[var(--dur-fast)] hover:shadow-md hover:brightness-110`}
     >
+      <Plus className="h-4 w-4" /> Nuevo lote
+    </button>
+  );
 
+  const cuerpo = (
+    <>
       {/* La pregunta de la planta no es cuántos lotes hay: es CUÁNTO QUEDA. Las
           cifras salen de los lotes a la vista —el filtro es parte de lo que se
           está midiendo— y sólo de los que miden en m³, porque sumar kg con m³
@@ -144,57 +151,58 @@ export default function ForestLotesModule() {
         />
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="flex h-12 flex-1 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4">
-          <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
-          <input value={searchInput} onChange={(e) => setSearchInput(e.target.value)} placeholder="Buscar por código, especie, producto o destino..." className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none" />
+      {/* Una barra: el buscador, cómo se lee (tarjetas para mirar pocos lotes,
+          tabla para BARRER una columna y comparar rendimientos: la misma data)
+          y Recargar; el estado, pegado a lo que filtra. Todo a 48 px. */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex h-12 min-w-0 flex-1 basis-full items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 sm:basis-0">
+          <Search className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+          <input
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="Buscar por código, especie, producto o destino..."
+            aria-label="Buscar lotes"
+            className="w-full min-w-0 bg-transparent text-base text-[var(--text-primary)] outline-none"
+          />
         </div>
-        <button type="button" onClick={load} disabled={loading} className="inline-flex h-12 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60">
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar
+        <SegmentedControl<"cards" | "tabla">
+          size="lg"
+          label="Cómo ver los lotes"
+          value={vista}
+          onChange={setVista}
+          options={[
+            { value: "cards", label: "Tarjetas", icon: <LayoutGrid className="h-4 w-4" /> },
+            { value: "tabla", label: "Tabla", icon: <Rows3 className="h-4 w-4" /> },
+          ]}
+        />
+        <button type="button" onClick={load} disabled={loading} className="inline-flex h-12 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] transition-colors duration-[var(--dur-fast)] hover:bg-[var(--surface-sunken)] disabled:opacity-60">
+          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} aria-hidden /> Recargar
         </button>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        {STATUS_FILTERS.map((f) => (
-          <button key={f.key} type="button" onClick={() => setStatusFilter(f.key)} className={`inline-flex h-9 items-center rounded-full border-2 px-3.5 text-sm font-bold transition-colors ${statusFilter === f.key ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)] hover:text-[var(--text-primary)]"}`}>
-            {f.label}
-          </button>
-        ))}
+      {/* En el celular las cinco opciones no entran en 368 px: la fila se desliza. */}
+      <div className="max-sm:-mx-1 max-sm:overflow-x-auto max-sm:px-1 max-sm:pb-1">
+        <SegmentedControl<LoteStatus | "todos">
+          size="lg"
+          label="Estado del lote"
+          value={statusFilter}
+          onChange={setStatusFilter}
+          options={STATUS_FILTERS.map((f) => ({ value: f.key, label: f.label }))}
+        />
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        {/* Cards para mirar pocos lotes; tabla para BARRER una columna y comparar
-            rendimientos. Es la misma data: sólo cambia la forma de leerla. */}
-        {([
-          { key: "cards", label: "Tarjetas", icon: LayoutGrid },
-          { key: "tabla", label: "Tabla", icon: Rows3 },
-        ] as const).map((v) => (
-          <button
-            key={v.key}
-            type="button"
-            onClick={() => setVista(v.key)}
-            aria-pressed={vista === v.key}
-            className={`inline-flex h-9 items-center gap-1.5 rounded-full border-2 px-3.5 text-sm font-bold transition-colors ${
-              vista === v.key
-                ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]"
-            }`}
-          >
-            <v.icon className="h-4 w-4" aria-hidden /> {v.label}
-          </button>
-        ))}
-      </div>
-
-      {error && <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm text-[var(--data-error-700)]"><strong>Error:</strong> {error}</div>}
+      {error && <ErrorAlert title="No se pudieron cargar los lotes" description={error} />}
 
       {loading && lotes.length === 0 ? (
-        <div className="p-12 text-center text-[var(--text-tertiary)]"><RefreshCw className="mx-auto h-6 w-6 animate-spin" /><p className="mt-2 text-sm">Cargando lotes…</p></div>
-      ) : lotes.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-12 text-center text-[var(--text-tertiary)]">
-          <Layers className="mx-auto mb-3 h-10 w-10 opacity-30" />
-          <p className="text-base font-medium">{search.trim() || statusFilter !== "todos" ? "Ningún lote coincide con el filtro." : "Sin lotes todavía."}</p>
-          {!search.trim() && statusFilter === "todos" && <p className="mt-1 text-sm">Crea el primer lote agrupando corridas de producción del Libro CTP.</p>}
+        <div className="flex h-48 items-center justify-center" role="status" aria-label="Cargando lotes">
+          <LoadingSpinner size={32} />
         </div>
+      ) : lotes.length === 0 ? (
+        search.trim() || statusFilter !== "todos" ? (
+          <EmptyState icon={Layers} title="Ningún lote coincide" description="Prueba con otro estado o borra la búsqueda." />
+        ) : (
+          <EmptyState icon={Layers} title="Sin lotes todavía" description="Agrupa corridas de producción del Libro CTP en un lote con su código y su QR." />
+        )
       ) : vista === "tabla" ? (
         <LotesTabla
           lotes={lotes}
@@ -214,6 +222,41 @@ export default function ForestLotesModule() {
 
       {showForm && <LoteForm onClose={() => setShowForm(false)} onSaved={() => { setShowForm(false); load(); }} />}
       {fichaLote.id && <LoteDetailModal key={fichaLote.id} loteId={fichaLote.id} onClose={fichaLote.cerrar} onChanged={load} />}
+    </>
+  );
+
+  if (embebido) {
+    return (
+      <div className="space-y-4" data-vista-lotes-qr>
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="inline-flex items-center gap-1.5">
+            <SectionTitle as="h2">Lotes comerciales</SectionTitle>
+            <InfoTip
+              title="Lotes comerciales y QR"
+              what="Agrupa corridas de producción del libro en un lote con código, grado y estado; cada lote tiene su certificado y su QR verificable."
+              affects="La cadena de custodia del lote es la de sus corridas: sale del mismo libro."
+            />
+          </span>
+          <div className="ml-auto">{botonNuevo("h-12")}</div>
+        </div>
+        {cuerpo}
+      </div>
+    );
+  }
+
+  return (
+    <LibroChrome
+      moduleId="forest-lotes"
+      eyebrow="Forestal · Especialización"
+      title="Lotes de Producción"
+      icon={Layers}
+      /* El permiso de TRABAJO (Brandon 2026-09-19): un lote empaqueta corridas
+         que ya salieron del Libro CTP bajo un título habilitante — saber cuál
+         importa tanto acá como en el libro de origen. */
+      contrato={<ContratoActivoChip />}
+      tools={botonNuevo("h-10")}
+    >
+      {cuerpo}
     </LibroChrome>
   );
 }

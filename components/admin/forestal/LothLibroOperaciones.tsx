@@ -11,7 +11,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import {
-  Axe,
   TreePine,
   AlertCircle,
   RefreshCw,
@@ -57,6 +56,7 @@ import LothCupoEnPie from "./LothCupoEnPie";
 import { talasDelPlan } from "@/lib/forestal/loth-cupo-vista";
 import { cupoPorEspecie, type EspecieAutorizadaCupo } from "@/lib/forestal/loth-cupo-especie";
 import LothTableroTrozas from "./LothTableroTrozas";
+import LothControlPestanas from "./LothControlPestanas";
 import LothControlPermisoEncabezado, { accionInformeDelControl } from "./LothControlPermisoEncabezado";
 import { planFichaDesdeApi, type CaratulaFicha, type PlanFichaApi } from "@/lib/forestal/loth-ficha-permiso";
 import LothPlanView from "./LothPlanView";
@@ -138,11 +138,13 @@ const POR_PAGINA = LINEAS_POR_PAGINA;
 /** Las columnas de cada sección y sus celdas viven en `loth-seccion-cols` (08-10). */
 const COLS = COLS_SECCION;
 
-type LothView = "secciones" | "trazabilidad" | "tablero" | "plan" | "gtf" | "extraccion" | "cumplimiento" | "cierre" | "mapa" | "rentabilidad";
+type LothView = "secciones" | "trazabilidad" | "tablero" | "plan" | "gtf" | "cumplimiento" | "cierre" | "mapa" | "rentabilidad";
 
 /** «Analítica» y «Rentabilidad» se fusionaron en «Rentabilidad y rendimiento» (2026-09-29):
- *  un `?vista=analitica` guardado, o un botón que aún la nombra, llegan a la nueva. */
-const LOTH_VISTAS_FUSIONADAS = { analitica: "rentabilidad" } as const satisfies Record<string, LothView>;
+ *  un `?vista=analitica` guardado, o un botón que aún la nombra, llegan a la nueva.
+ *  «Extracción» es una pestaña del Control del permiso desde el 2026-10-10 (plan
+ *  «panel unificado», ola 2): `?vista=extraccion` abre el Control en esa pestaña. */
+const LOTH_VISTAS_FUSIONADAS = { analitica: "rentabilidad", extraccion: "tablero" } as const satisfies Record<string, LothView>;
 
 /* «Importar guías despachadas» (ADR-461): se usa de vez en cuando, se baja al abrirlo. */
 const LothImportarGuiasModal = dynamic(() => import("./LothImportarGuiasModal"), { ssr: false });
@@ -154,7 +156,7 @@ const LothExtraccionView = dynamic(() => import("./LothExtraccionView"), {
 });
 
 // Navegación en cabina compartida con el Libro CTP (`libro-chrome`): las nueve
-// vistas agrupadas por fase, con los MISMOS nombres de grupo que el otro libro
+// vistas (diez hasta la ola 2: Extracción pasó al Control del permiso) agrupadas por fase, con los MISMOS nombres de grupo que el otro libro
 // — quien sabe moverse en uno se mueve en el otro sin volver a aprender.
 const LOTH_MODULE_ID = "loth-libro";
 /** label y hint salen de `lib/admin/subvistas-modulos` — la MISMA fuente que
@@ -174,10 +176,12 @@ const LOTH_GROUPS: LibroGroup[] = [
     id: "trazabilidad",
     label: "Trazabilidad",
     views: [
+      /* Primero en su fase (ola 2): con Trozas · Kárdex · Extracción es la
+         pregunta de todos los días —«¿cuánto le queda a este permiso?»—. */
+      { key: "tablero", ...LOTH_VISTAS_POR_KEY["tablero"], icon: LayoutGrid },
       { key: "plan", ...LOTH_VISTAS_POR_KEY["plan"], icon: MapIcon },
       { key: "mapa", ...LOTH_VISTAS_POR_KEY["mapa"], icon: MapPin },
       { key: "trazabilidad", ...LOTH_VISTAS_POR_KEY["trazabilidad"], icon: Share2 },
-      { key: "tablero", ...LOTH_VISTAS_POR_KEY["tablero"], icon: LayoutGrid },
     ],
   },
   {
@@ -192,7 +196,6 @@ const LOTH_GROUPS: LibroGroup[] = [
     id: "gestion",
     label: "Gestión",
     views: [
-      { key: "extraccion", ...LOTH_VISTAS_POR_KEY["extraccion"], icon: Axe },
       { key: "rentabilidad", ...LOTH_VISTAS_POR_KEY["rentabilidad"], icon: Coins },
     ],
   },
@@ -226,8 +229,19 @@ export default function LothLibroOperaciones() {
   const [reloadSignal, setReloadSignal] = useState(0);
   const [pending, setPending] = useState<string | null>(null);
   // Misma cabina que el CTP: la vista vive en la URL con memoria de respaldo.
-  const { vista: view, irA } = useVistaModulo<LothView>(LOTH_MODULE_ID, LOTH_VIEW_KEYS_TIPADAS, "secciones", undefined, { alias: LOTH_VISTAS_FUSIONADAS });
+  const { vista: view, irA } = useVistaModulo<LothView>(LOTH_MODULE_ID, LOTH_VIEW_KEYS_TIPADAS, "secciones", undefined, {
+    alias: LOTH_VISTAS_FUSIONADAS,
+    /* La pestaña interna del Control (`?sub=`) es suya: al irse, se borra. */
+    paramsDeVista: { tablero: ["sub"] },
+  });
   const setView = irA;
+  /** La pestaña del Control que el libro pide estando YA en el Control (ver `usePestanaInterna`). */
+  const [pedidoControl, setPedidoControl] = useState<{ sub: string; n: number } | null>(null);
+  /** «Saldo y agotamiento» (Rentabilidad) y los enlaces viejos a Extracción: Control › Extracción. */
+  const irAExtraccion = useCallback(() => {
+    if (view === "tablero") setPedidoControl((p) => ({ sub: "extraccion", n: (p?.n ?? 0) + 1 }));
+    else irA("tablero", { sub: "extraccion" });
+  }, [view, irA]);
   /* EL permiso del libro (02-10-2026): lo elige el chip de la banda (o «Ver
      libro de» en Secciones, que es el MISMO estado) y lo leen todas las vistas
      por `LothPermisoContext`: tabla, contadores, Excel, impreso, plan de manejo,
@@ -1087,9 +1101,6 @@ export default function LothLibroOperaciones() {
         />
       )}
 
-      {/* Vista Extracción — el permiso de punta a punta: censo, saldos y cadena (ADR-454) */}
-      {view === "extraccion" && <LothExtraccionView reloadSignal={reloadSignal} onIr={setView} />}
-
       {/* Vista Cumplimiento — veredicto de fiscalización OSINFOR + reporte (ADR-305) */}
       {view === "cumplimiento" && (
         <LothCompliancePanel
@@ -1116,53 +1127,63 @@ export default function LothLibroOperaciones() {
       )}
 
       {/* Vista Rentabilidad y rendimiento — margen, flujo bosque→producto, anomalías y valor (antes: Rentabilidad + Analítica) */}
-      {view === "rentabilidad" && <LothRentabilidadView reloadSignal={reloadSignal} entries={allEntries} onIrAExtraccion={() => setView("extraccion")} />}
+      {view === "rentabilidad" && <LothRentabilidadView reloadSignal={reloadSignal} entries={allEntries} onIrAExtraccion={irAExtraccion} />}
 
-      {/* Vista de trazabilidad — operación completa por árbol */}
+      {/* Control del permiso — Trozas · Kárdex · Extracción (ola 2 del panel unificado) */}
       {view === "tablero" && (
-        <>
-          {/* El spinner sólo la primera vez: al recargar tras despachar, el
-              tablero se queda montado y no pierde filtros ni permiso. */}
-          {loading && allEntries.length === 0 ? (
-            <div className="p-8 text-center text-[var(--text-tertiary)]">
-              <RefreshCw className="mx-auto h-6 w-6 animate-spin" />
-              <p className="mt-2 text-sm">Cargando el control del permiso...</p>
-            </div>
-          ) : (
-            <LothTableroTrozas
-              entries={allEntries}
-              caratula={caratula}
-              reloadSignal={reloadSignal}
-              onDespacharConGuia={(codigos, planes) => {
-                setDespachoElegidas({ codigos, planes });
-                setShowDespachoGuia(true);
-              }}
-              nav={{
-                onVerCadena: (code) => setCadenaCode(code),
-                onVerGtf: (gtf) => {
-                  setFocoGtf(gtf);
-                  setView("gtf");
-                },
-                onIrAlPlan: () => setView("plan"),
-              }}
-              accionesExtra={(datos) => [accionInformeDelControl({ datos, caratula, planActivo, saldo: entradaSaldo })]}
-              encabezado={(datos) => (
-                <LothControlPermisoEncabezado
-                  datos={datos}
+        <LothControlPestanas
+          pedido={pedidoControl}
+          /* Extracción — el permiso de punta a punta: censo, saldos y cadena (ADR-454) */
+          extraccion={<LothExtraccionView reloadSignal={reloadSignal} onIr={setView} />}
+        >
+          {(pestana, irAPestana) => (
+            <>
+              {/* El spinner sólo la primera vez: al recargar tras despachar, el
+                  tablero se queda montado y no pierde filtros ni permiso. */}
+              {loading && allEntries.length === 0 ? (
+                <div className="p-8 text-center text-[var(--text-tertiary)]">
+                  <RefreshCw className="mx-auto h-6 w-6 animate-spin" />
+                  <p className="mt-2 text-sm">Cargando el control del permiso...</p>
+                </div>
+              ) : (
+                <LothTableroTrozas
+                  pestana={pestana}
+                  onPestana={irAPestana}
+                  entries={allEntries}
                   caratula={caratula}
-                  planActivo={planActivo}
-                  saldo={entradaSaldo}
-                  onCompletarCaratula={() => setShowCaratula(true)}
-                  onCompletarPlan={() => irA("plan")}
-                  onVerGtf={(gtf) => {
-                    setFocoGtf(gtf);
-                    setView("gtf");
+                  reloadSignal={reloadSignal}
+                  onDespacharConGuia={(codigos, planes) => {
+                    setDespachoElegidas({ codigos, planes });
+                    setShowDespachoGuia(true);
                   }}
+                  nav={{
+                    onVerCadena: (code) => setCadenaCode(code),
+                    onVerGtf: (gtf) => {
+                      setFocoGtf(gtf);
+                      setView("gtf");
+                    },
+                    onIrAlPlan: () => setView("plan"),
+                  }}
+                  accionesExtra={(datos) => [accionInformeDelControl({ datos, caratula, planActivo, saldo: entradaSaldo })]}
+                  encabezado={(datos) => (
+                    <LothControlPermisoEncabezado
+                      datos={datos}
+                      caratula={caratula}
+                      planActivo={planActivo}
+                      saldo={entradaSaldo}
+                      onCompletarCaratula={() => setShowCaratula(true)}
+                      onCompletarPlan={() => irA("plan")}
+                      onVerGtf={(gtf) => {
+                        setFocoGtf(gtf);
+                        setView("gtf");
+                      }}
+                    />
+                  )}
                 />
               )}
-            />
+            </>
           )}
-        </>
+        </LothControlPestanas>
       )}
 
       {view === "trazabilidad" && (

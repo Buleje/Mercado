@@ -17,7 +17,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatDateNumeric } from "@/lib/format";
 import { useMiRol } from "@/hooks/use-mi-rol";
 import { AlertCircle, FileText, PackageCheck, TreePine } from "@buleje/design-system/icons";
-import ActionMenu from "@/components/admin/shared/action-menu";
+import CtpRecepcionFiltro from "./CtpRecepcionFiltro";
+import type { FiltroRecepcion } from "./ctp-vistas-fusionadas";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useGuardarPrefs, usePrefsIniciales } from "@/hooks/use-ctp-ingresos-prefs";
@@ -172,6 +173,8 @@ export default function CtpIngresosView({
   onOpenConsumed,
   filtroRapido,
   recepcion,
+  recepcionInicial,
+  onRecepcion,
 }: {
   period: CtpPeriod;
   /** Puente inverso: GTF que el shell mandó a ingresar (abre el form pre-llenado). */
@@ -185,6 +188,13 @@ export default function CtpIngresosView({
    * ingresadas**. Sin valor, el listado completo de siempre.
    */
   recepcion?: "pendiente" | "cerrada";
+  /** Con qué filtro abre, si no es el de su mitad («Todas» elegido desde el archivo). */
+  recepcionInicial?: FiltroRecepcion;
+  /**
+   * Cambiar de mitad del libro (ola 2 del panel unificado: Ingresos y GTF
+   * ingresadas son UNA vista). Con esto el filtro ofrece «Recepcionadas».
+   */
+  onRecepcion?: (f: FiltroRecepcion) => void;
 }) {
   /* Corregir la recepción y acomodar trozas los firma admin o dueño (el servidor
      rechaza al resto). `null` = todavía no se sabe: se ofrece y el servidor decide,
@@ -317,7 +327,7 @@ export default function CtpIngresosView({
   /* La bandeja arranca en lo que pidió la pestaña, pero se puede abrir a todo:
      un salto desde Cumplimiento («3 fuera de plazo») puede apuntar a guías ya
      recepcionadas, y llevar a una lista vacía sería peor que no saltar. */
-  const [recepcionSel, setRecepcionSel] = useState<"pendiente" | "cerrada" | "">(recepcion ?? "");
+  const [recepcionSel, setRecepcionSel] = useState<FiltroRecepcion>(recepcionInicial ?? recepcion ?? "");
   /**
    * El ARCHIVO («GTF ingresadas») no es la bandeja (ADR-357).
    *
@@ -326,7 +336,19 @@ export default function CtpIngresosView({
    * es cuánta madera bajó y cuántas piezas quedaron, no qué falta recibir.
    */
   const esArchivo = recepcion === "cerrada";
-  useEffect(() => { setRecepcionSel(recepcion ?? ""); }, [recepcion]);
+  /* Sólo si la mitad cambia con la vista montada: al montar manda `recepcionInicial`. */
+  const recepcionPrevia = useRef(recepcion);
+  useEffect(() => {
+    if (recepcionPrevia.current === recepcion) return;
+    recepcionPrevia.current = recepcion;
+    setRecepcionSel(recepcion ?? "");
+  }, [recepcion]);
+  /** El filtro de la tabla: dentro de la misma mitad filtra acá; la otra mitad la abre el libro. */
+  const elegirRecepcion = (f: FiltroRecepcion) => {
+    const mismaMitad = esArchivo ? f === "cerrada" : f !== "cerrada";
+    if (mismaMitad || !onRecepcion) setRecepcionSel(f);
+    else onRecepcion(f);
+  };
 
   const filtros = useMemo(
     () => ({ status: statusFilter, search, recepcion: recepcionSel, ...facetas,
@@ -1047,29 +1069,8 @@ export default function CtpIngresosView({
          tabla (antes, una fila propia) y como menú: dos botones por una opción
          que se cambia de vez en cuando. */
       recepcionFiltro={
-        recepcion === "pendiente" ? (
-          <>
-            <ActionMenu
-              label={recepcionSel === "pendiente" ? "Por recepcionar" : "Todas las del período"}
-              title="Qué guías lista la bandeja"
-              variant={recepcionSel === "pendiente" ? "accent" : "outline"}
-              size="xs"
-              actions={[
-                { id: "pendiente", label: "Por recepcionar", hint: "Guías que llegaron y falta recibirlas", icon: PackageCheck, activo: recepcionSel === "pendiente", onSelect: () => setRecepcionSel("pendiente") },
-                { id: "todas", label: "Todas las del período", hint: "Incluye también las ya recepcionadas", icon: FileText, activo: recepcionSel === "", onSelect: () => setRecepcionSel("") },
-              ]}
-            />
-            {/* El detalle va en un ⓘ: explicaba en un renglón entero lo que el
-                propio botón ya dice, y ese renglón se paga en TODAS las cargas. */}
-            <InfoTip
-              title={recepcionSel === "pendiente" ? "Por recepcionar" : "Todas las del período"}
-              what={
-                recepcionSel === "pendiente"
-                  ? "Guías que llegaron y falta recibirlas. Al recepcionarlas pasan a «GTF ingresadas» y sus piezas quedan disponibles para la sierra."
-                  : "Incluye también las ya recepcionadas."
-              }
-            />
-          </>
+        recepcion === "pendiente" || onRecepcion ? (
+          <CtpRecepcionFiltro valor={recepcionSel} onElegir={elegirRecepcion} conRecepcionadas={!!onRecepcion} />
         ) : undefined
       }
       searchInput={searchInput}

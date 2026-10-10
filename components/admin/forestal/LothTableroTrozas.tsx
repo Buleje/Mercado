@@ -87,6 +87,8 @@ export default function LothTableroTrozas({
   onDespacharConGuia,
   encabezado,
   accionesExtra,
+  pestana: pestanaElegida,
+  onPestana,
 }: {
   entries: LothEntryDTO[];
   caratula?: CaratulaTablero | null;
@@ -106,6 +108,10 @@ export default function LothTableroTrozas({
   encabezado?: ReactNode | ((datos: DatosEncabezadoTablero) => ReactNode);
   /** Opciones que el libro suma al menú «⋯» de la cabecera (el informe del permiso). */
   accionesExtra?: (datos: DatosEncabezadoTablero) => MenuAccion[];
+  /** Elegida AFUERA (Control del permiso: Trozas · Kárdex · Extracción en una fila): sin selector propio. */
+  pestana?: "trozas" | "kardex";
+  /** Con la pestaña elegida afuera, «Ver en la tabla» del escáner le pide a esa fila que vuelva a Trozas. */
+  onPestana?: (p: "trozas") => void;
 }) {
   const permiso = useLothTableroPermiso(reloadSignal);
   const ctx = useTableroContexto();
@@ -163,7 +169,8 @@ export default function LothTableroTrozas({
   );
 
   /* «Trozas» (cada troza con su estado) o «Kárdex» (cada movimiento con su saldo). Se recuerda. */
-  const [pestana, setPestana] = useLocalStorage<"trozas" | "kardex">("loth-tablero:pestana", "trozas");
+  const [pestanaRecordada, setPestana] = useLocalStorage<"trozas" | "kardex">("loth-tablero:pestana", "trozas");
+  const pestana = pestanaElegida ?? pestanaRecordada;
   const kardex = useLothTableroKardex({
     entries,
     planId: permiso.plan?.id ?? null,
@@ -191,7 +198,9 @@ export default function LothTableroTrozas({
 
   /* «Ver en la tabla» del escáner: la tabla queda sólo con esa troza. */
   const verEnTabla = (code: string) => {
-    setPestana("trozas");
+    /* Estando en Kárdex el escáner también se dibuja: sin saltar a Trozas, el filtro no se veía. */
+    if (pestanaElegida !== undefined) onPestana?.("trozas");
+    else setPestana("trozas");
     t.mostrarTodo();
     t.setTexto(code);
   };
@@ -250,15 +259,17 @@ export default function LothTableroTrozas({
         />
       )}
 
-      <SegmentedControl
-        value={pestana}
-        onChange={setPestana}
-        label="Qué ver del permiso"
-        options={[
-          { value: "trozas", label: "Trozas", badge: filas.length },
-          { value: "kardex", label: "Kárdex" },
-        ]}
-      />
+      {pestanaElegida === undefined && (
+        <SegmentedControl
+          value={pestana}
+          onChange={setPestana}
+          label="Qué ver del permiso"
+          options={[
+            { value: "trozas", label: "Trozas", badge: filas.length },
+            { value: "kardex", label: "Kárdex" },
+          ]}
+        />
+      )}
 
       {pestana === "kardex" ? (
         <LothTableroKardex k={kardex} banda={banda} hoyKey={hoyKey} nav={nav} cargandoFranja={saldo.cargando} />
