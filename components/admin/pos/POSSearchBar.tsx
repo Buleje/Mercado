@@ -175,7 +175,7 @@ export default function POSSearchBar({
           return (
             p.name.toLowerCase().includes(debouncedQuery.toLowerCase()) ||
             fuzzyMatch(debouncedQuery, p.name) ||
-            p.barcode?.includes(debouncedQuery)
+            !!p.barcode?.toLowerCase().includes(debouncedQuery.trim().toLowerCase())
           );
         })
         .slice(0, 8)
@@ -223,10 +223,10 @@ export default function POSSearchBar({
           onFocus={() => setShowResults(true)}
           placeholder="Buscar producto, código de barras..."
           aria-label="Buscar productos"
-          className="w-full pl-10 pr-4 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary transition-colors"
+          className="w-full pl-10 pr-4 h-12 rounded-2xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary transition-colors"
           autoComplete="off"
         />
-        <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[length:var(--ts-2xs)] bg-[var(--surface-sunken)] text-[var(--text-tertiary)] dark:text-muted px-1.5 py-0.5 rounded font-mono">
+        <kbd className="max-sm:hidden absolute right-3 top-1/2 -translate-y-1/2 text-[length:var(--ts-2xs)] bg-[var(--surface-sunken)] text-[var(--text-tertiary)] dark:text-muted px-1.5 py-0.5 rounded font-mono">
           F1
         </kbd>
       </div>
@@ -237,7 +237,7 @@ export default function POSSearchBar({
           {results.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-6 text-[var(--text-tertiary)] dark:text-muted">
               <Package className="h-5 w-5 mb-1" />
-              <p className="text-xs">No se encontraron productos</p>
+              <p className="text-sm">No se encontraron productos</p>
             </div>
           ) : (
             results.map((p, idx) => {
@@ -269,11 +269,11 @@ export default function POSSearchBar({
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">
+                    <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">
                       {p.name}
                     </p>
                     <div className="flex items-center gap-1.5">
-                      <p className="text-xs font-bold text-primary">
+                      <p className="text-sm font-bold text-primary">
                         {formatCurrency(Number(p.price))}
                       </p>
                       {p.previousPrice && p.previousPrice !== p.price && (

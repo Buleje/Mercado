@@ -14,7 +14,6 @@ import type { POSCarrito } from "@/components/admin/pos/usePOSCarrito";
 // Los hijos que piden datos o animan no importan acá: sólo el cambio de carrito.
 vi.mock("@/components/admin/pos/POSFiadoPanel", () => ({ default: () => null }));
 vi.mock("@/components/admin/pos/POSCrossSell", () => ({ default: () => null }));
-vi.mock("@/components/admin/pos/POSCartDetail", () => ({ default: () => null }));
 vi.mock("@/components/admin/pos/POSCartItem", () => ({ default: () => null }));
 vi.mock("@/components/admin/pos/POSPausedCarts", () => ({
   default: ({ onResume }: { onResume: (items: unknown[]) => void }) => (

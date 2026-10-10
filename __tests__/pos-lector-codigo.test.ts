@@ -48,6 +48,38 @@ describe("Enter del buscador del POS (lector de código)", () => {
   });
 });
 
+describe("Códigos con letras y números cortos (10-10)", () => {
+  const conLetras = [
+    ...catalogo,
+    { ...p(4, "Filtro de aceite", "ABC123X", 3), sku: "FIL-01" } as Product,
+    p(5, "Galleta 123 Soda", "7751271001230", 9),
+    p(6, "Clavo 2 pulgadas", "123", 40),
+  ];
+
+  it("un código alfanumérico en mayúsculas se encuentra exacto, lo lea como lo lea", () => {
+    expect(resolverEnter(conLetras, "ABC123X")).toEqual({ tipo: "codigo", codigo: "ABC123X", producto: conLetras[3] });
+    expect(resolverEnter(conLetras, "abc123x")).toMatchObject({ tipo: "codigo", producto: conLetras[3] });
+  });
+
+  it("el SKU también entra exacto, sin importar mayúsculas", () => {
+    expect(resolverEnter(conLetras, "fil-01")).toMatchObject({ tipo: "codigo", producto: conLetras[3] });
+  });
+
+  it("un número corto sólo vale exacto: no agrega otro producto que lo contiene", () => {
+    expect(resolverEnter(conLetras, "123")).toMatchObject({ tipo: "codigo", producto: conLetras[5] });
+    // «12» está dentro de «Galleta 123 Soda», de «123» y de varios códigos: antes agregaba el primero de esos.
+    expect(resolverEnter(conLetras, "12")).toEqual({ tipo: "codigo", codigo: "12", producto: null });
+    expect(resolverEnter(catalogo, "1001")).toEqual({ tipo: "codigo", codigo: "1001", producto: null });
+  });
+
+  it("la cámara también encuentra el código con letras", () => {
+    const addToCart = vi.fn();
+    const { result } = renderHook(() => usePOSLectorCodigo({ products: conLetras, addToCart, playError: vi.fn() }));
+    act(() => void result.current.handleBarcode("abc123x"));
+    expect(addToCart).toHaveBeenCalledWith(conLetras[3]);
+  });
+});
+
 describe("Enter del buscador en el mostrador (hook)", () => {
   afterEach(() => {
     document.body.innerHTML = "";
@@ -101,5 +133,12 @@ describe("Enter del buscador en el mostrador (hook)", () => {
     act(() => result.current.handleAddTopResult());
     expect(addToCart).toHaveBeenCalledWith(catalogo[0]);
     expect(input.value).toBe("leche");
+  });
+});
+
+describe("código con letras: no agrega un pariente por coincidencia parcial (revisión 10-10)", () => {
+  it("leer MU013 no agrega MU013-2 (paquete de 2) si el MU013 no está en la lista", () => {
+    const soloPaquete = [p(9, "Sérum vitamina C x2", "MU013-2", 5)];
+    expect(resolverEnter(soloPaquete, "MU013")?.producto ?? null).toBeNull();
   });
 });

@@ -81,7 +81,7 @@ export default function POSCajaModule({ initialTab }: { initialTab?: string } = 
   // Cuadrar, no en «Caja de hoy».
   const [subDeCaja, setSubDeCaja] = useState(subDeCajaPorVistaVieja);
   const { vista: sub, irA: setSub } = useVistaModulo<TabId>(MODULE_ID, TAB_IDS, TAB_IDS[0], initialTab, {
-    paramsDeVista: { "caja-registradora": ["sub", "turno"], "cuentas-cobrar": ["sub"], turnos: ["cerrar"] },
+    paramsDeVista: { "caja-registradora": ["sub", "turno"], "cuentas-cobrar": ["sub"], turnos: ["cerrar", "sub", "turno"] },
     alias: ALIAS_DE_VISTA,
   });
   const { notice } = useConfirm();
@@ -230,7 +230,8 @@ export default function POSCajaModule({ initialTab }: { initialTab?: string } = 
           Posicionado POR ENCIMA del bottom-nav (~72px + safe-area): antes con
           bottom-16 (64px) quedaba detrás del nav (z-50) y tapaba cards sin
           elevación. Sombra lg para separarlo del contenido que scrollea debajo. */}
-      {sub !== "turnos" && (
+      {/* Y en Vender: su cabecera ya trae «Abrir turno» y a 400 px tapaba la grilla encima de la barra de cobro. */}
+      {sub !== "turnos" && sub !== "pos" && (
       <div className="sm:hidden fixed bottom-[calc(72px+env(safe-area-inset-bottom)+12px)] right-4 z-40">
         {/* 48 px y colores del DS: el blanco sobre turquesa (3,2:1) y sobre rojo -500 no llegaban a AA. */}
         {turnoAbierto ? (

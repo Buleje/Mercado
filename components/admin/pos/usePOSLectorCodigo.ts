@@ -21,28 +21,57 @@ export function esCodigoDeBarras(q: string): boolean {
   return new RegExp(`^\\d{${LARGO_MINIMO_CODIGO},}$`).test(q.trim());
 }
 
+/** Lo que identifica a un producto por código: el de barras o el SKU. */
+interface ConCodigo {
+  barcode?: string | null;
+  sku?: string | null;
+}
+
+/**
+ * El producto cuyo código de barras o SKU es EXACTAMENTE lo leído, sin importar mayúsculas (10-10).
+ * Antes el buscador pasaba a minúsculas sólo lo leído y lo comparaba con el código tal cual estaba
+ * guardado: un Code 128 «ABC123» no se encontraba nunca. Lo usan el Enter, la cámara y el modo Express.
+ */
+export function buscarPorCodigo<T>(products: readonly T[], codigo: string): T | null {
+  const q = codigo.trim().toLowerCase();
+  if (!q) return null;
+  // El Product del POS viene de un tipo con índice (`[key: string]: any`): `barcode`/`sku` se leen así.
+  const igual = (c: unknown) => typeof c === "string" && c.trim().toLowerCase() === q;
+  return products.find((p) => igual((p as ConCodigo).barcode)) ?? products.find((p) => igual((p as ConCodigo).sku)) ?? null;
+}
+
 export type ResultadoEnter =
   | { tipo: "codigo"; codigo: string; producto: Product | null }
   | { tipo: "nombre"; producto: Product | null };
 
-/** El primero vendible cuyo nombre o código contiene lo escrito (la búsqueda de siempre). */
+/** El primero vendible cuyo nombre o código contiene lo escrito (la búsqueda de siempre).
+ *  El código va tal cual, sin pasar a minúsculas: con minúsculas, leer «MU013» agregaba el
+ *  «MU013-2» (paquete de 2) si el MU013 no estaba en la lista (revisión 10-10). */
 function primerVendible(products: Product[], q: string): Product | null {
   return products.find((p) => !estaAgotado(p) && (p.name.toLowerCase().includes(q) || !!p.barcode?.includes(q))) ?? null;
 }
 
 /**
- * Qué hacer con el Enter del buscador: un código busca exacto; un nombre, el primero vendible.
- * Si un código no está exacto se prueba la búsqueda de siempre antes de avisar: un código a medias
- * escrito a mano («1009999») encontraba el producto antes de partir el POS y tiene que seguir haciéndolo.
- * Dos lecturas pegadas (26 dígitos) no las contiene ningún código, así que igual terminan en aviso.
+ * Qué hacer con el Enter del buscador.
+ *  · Un código del inventario (de barras o SKU, con o sin mayúsculas) entra exacto, sea cual sea su largo.
+ *  · Un número de 6 dígitos o más que no está exacto prueba la búsqueda de siempre antes de avisar: un
+ *    código a medias escrito a mano («1009999») encontraba el producto antes de partir el POS y tiene que
+ *    seguir haciéndolo. Dos lecturas pegadas (26 dígitos) no las contiene ningún código: terminan en aviso.
+ *  · Un número CORTO (menos de 6 dígitos) sólo vale exacto (10-10): «123» buscado como «contiene» agregaba
+ *    el primer producto con «123» en cualquier parte del código o del nombre — OTRO producto.
+ *  · Un nombre agrega el primero vendible que lo contiene.
  */
 export function resolverEnter(products: Product[], texto: string): ResultadoEnter | null {
-  const q = texto.trim().toLowerCase();
+  const leido = texto.trim();
+  const q = leido.toLowerCase();
   if (!q) return null;
-  if (esCodigoDeBarras(q)) {
-    const exacto = products.find((p) => p.barcode === q);
-    return { tipo: "codigo", codigo: q, producto: exacto ?? primerVendible(products, q) };
+  const exacto = buscarPorCodigo(products, leido);
+  const soloDigitos = /^\d+$/.test(q);
+  if (soloDigitos) {
+    const parcial = esCodigoDeBarras(q) ? primerVendible(products, q) : null;
+    return { tipo: "codigo", codigo: leido, producto: exacto ?? parcial };
   }
+  if (exacto) return { tipo: "codigo", codigo: leido, producto: exacto };
   return { tipo: "nombre", producto: primerVendible(products, q) };
 }
 
@@ -76,7 +105,7 @@ export function usePOSLectorCodigo({ products, addToCart, playError }: Opciones)
 
   /** Cámara o foto: el código llega entero. */
   const handleBarcode = useCallback(async (code: string) => {
-    const local = products.find((p) => p.barcode === code);
+    const local = buscarPorCodigo(products, code);
     if (local) { addToCart(local); return; }
     avisarNoEsta(code);
   }, [products, addToCart, avisarNoEsta]);

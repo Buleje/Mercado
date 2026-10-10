@@ -8,16 +8,18 @@ import { extractIgv } from "@/lib/tax";
 import POSFiadoPanel from "@/components/admin/pos/POSFiadoPanel";
 import POSPausedCarts from "@/components/admin/pos/POSPausedCarts";
 import POSCrossSell from "@/components/admin/pos/POSCrossSell";
-import POSCartDetail from "@/components/admin/pos/POSCartDetail";
 import { formatCurrency } from "@/lib/format";
 import { fmt, numeroAPalabras } from "@/components/admin/pos/pos-shared";
 import POSCartItem from "@/components/admin/pos/POSCartItem";
 import { useTopeDescuentoCajero } from "@/components/admin/pos/useTopeDescuentoCajero";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { button } from "@/components/ui-system/button-variants";
 import type { POSCarrito } from "@/components/admin/pos/usePOSCarrito";
 
 interface POSCartPanelProps {
   carrito: POSCarrito;
-  expanded: boolean;
+  /** Ya no cambia nada: el alto lo pone el mostrador (useAltoDelMostrador). */
+  expanded?: boolean;
   customerPhone: string;
   /** Cliente elegido en el cobro (usePOSCobro): se ve aquí con lo que debe. */
   customerName?: string;
@@ -26,7 +28,7 @@ interface POSCartPanelProps {
 }
 
 /** Columna del carrito: cola de clientes, líneas, total y Cobrar. */
-export default function POSCartPanel({ carrito, expanded, customerPhone, customerName, onQuitarCliente, openPaymentModal }: POSCartPanelProps) {
+export default function POSCartPanel({ carrito, customerPhone, customerName, onQuitarCliente, openPaymentModal }: POSCartPanelProps) {
   const {
     cart, cartCount, cartTotal, clientQueues, enqueueClient, loadFromQueue, removeFromQueue, clearCart,
     handlePauseCart, handleResumeCart, handleAddFromSearch, lastAddedId, updateQuantity, updateDiscount, removeFromCart,
@@ -41,27 +43,37 @@ export default function POSCartPanel({ carrito, expanded, customerPhone, custome
   // así que el efecto de usePOSCobro no limpia: sin esto el fiado del carrito B se anotaba al cliente A (09-10).
   const cambiarDeCarrito = (cargar: () => void) => { onQuitarCliente?.(); cargar(); };
 
+  const botonCabecera = "inline-flex h-12 items-center gap-1.5 rounded-xl px-2 text-sm font-bold transition-colors";
+
   return (
-        <div className={cn(
-          "bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl flex flex-col shrink-0 min-h-0",
-          "lg:w-80 xl:w-[22rem]"
-        )} style={{ minHeight: "28rem", maxHeight: expanded ? "calc(100vh - 8rem)" : "calc(100vh - 14rem)" }}>
-          {/* Cart header */}
-          <div className="px-2 sm:px-4 py-2 sm:py-3 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-            <div className="flex items-center justify-between">
-              <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm flex flex-wrap items-center gap-2">
-                <ShoppingBasket className="h-4 w-4 text-primary" />
+        <div
+          className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl flex flex-col shrink-0 min-h-[14rem] lg:min-h-0 lg:w-[22rem] 2xl:w-[24rem]"
+          data-pos-carrito
+        >
+          {/* Cabecera en una fila: título con la cuenta · pausar · siguiente cliente · vaciar */}
+          <div className="px-2 sm:px-3 py-1 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+            <div className="flex flex-wrap items-center justify-between gap-x-1">
+              <CardTitle className="font-bold text-[var(--text-primary)] text-sm flex items-center gap-2">
+                <ShoppingBasket className="h-4 w-4 text-[var(--accent-ink)] dark:text-[var(--accent)]" aria-hidden />
                 Carrito
                 {cartCount > 0 && (
-                  <span className="bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold px-2 py-0.5 rounded-full">{cartCount}</span>
+                  <span className="bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-sm font-bold px-2 py-0.5 rounded-full tabular-nums">{cartCount}</span>
                 )}
               </CardTitle>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center justify-end gap-x-1">
+                {/* Mejora 10: Paused Carts */}
+                <POSPausedCarts
+                  currentCartItems={cart as { product: { id: number; name: string; price: number; unit: string; image?: string; [k: string]: unknown }; quantity: number; discount?: number }[]}
+                  currentTotal={cartTotal}
+                  onPause={handlePauseCart}
+                  onResume={(items) => cambiarDeCarrito(() => handleResumeCart(items))}
+                />
                 {/* Mejora 1 nueva: Cola de clientes */}
                 <button
+                  type="button"
                   onClick={enqueueClient}
                   disabled={clientQueues.length >= 5}
-                  className="inline-flex items-center text-xs font-bold text-[var(--data-success-500)] hover:text-[var(--data-success-500)] px-1.5 max-sm:min-h-[40px] rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  className={cn(botonCabecera, "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] hover:bg-[var(--surface-sunken)] disabled:opacity-40 disabled:cursor-not-allowed")}
                   title="Guardar carrito y atender siguiente cliente"
                 >
                   +Siguiente
@@ -69,23 +81,25 @@ export default function POSCartPanel({ carrito, expanded, customerPhone, custome
                 {clientQueues.length > 0 && (
                   <div className="relative">
                     <button
+                      type="button"
                       onClick={() => setShowQueueDropdown(!showQueueDropdown)}
-                      className="text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10 px-2 py-0.5 rounded-full hover:bg-primary/20 transition-colors"
+                      aria-expanded={showQueueDropdown}
+                      className={cn(botonCabecera, "text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10")}
                     >
                       Cola: {clientQueues.length}
                     </button>
                     {showQueueDropdown && (
-                      <div className="absolute right-0 top-7 z-dropdown w-56 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-2 space-y-1">
+                      <div className="absolute right-0 top-12 z-dropdown w-64 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-2 space-y-1 shadow-[var(--shadow-md)]">
                         {clientQueues.map((q, idx) => {
                           const qTotal = q.reduce((s, i) => s + i.product.price * i.quantity, 0);
                           const qItems = q.reduce((s, i) => s + i.quantity, 0);
                           return (
-                            <div key={idx} className="flex items-center gap-2 text-xs p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] ">
-                              <button onClick={() => { cambiarDeCarrito(() => loadFromQueue(idx)); setShowQueueDropdown(false); }} className="flex-1 text-left">
-                                <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Cliente {idx + 1}</span>
-                                <span className="text-[var(--text-tertiary)] dark:text-muted ml-1">{qItems} items · {fmt(qTotal)}</span>
+                            <div key={idx} className="flex items-center gap-1 text-sm rounded-lg hover:bg-[var(--surface-sunken)]">
+                              <button type="button" onClick={() => { cambiarDeCarrito(() => loadFromQueue(idx)); setShowQueueDropdown(false); }} className="flex-1 min-h-12 px-2 text-left">
+                                <span className="font-bold text-[var(--text-primary)]">Cliente {idx + 1}</span>
+                                <span className="text-[var(--text-tertiary)] ml-1">{qItems} items · {fmt(qTotal)}</span>
                               </button>
-                              <button aria-label="Quitar" onClick={() => removeFromQueue(idx)} className="p-0.5 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)]"><X className="h-3 w-3" /></button>
+                              <button type="button" aria-label="Quitar" onClick={() => removeFromQueue(idx)} className="h-12 w-12 shrink-0 inline-flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--data-error-ink)]"><X className="h-4 w-4" /></button>
                             </div>
                           );
                         })}
@@ -96,29 +110,30 @@ export default function POSCartPanel({ carrito, expanded, customerPhone, custome
                 {/* Feature 3: Vaciar carrito con confirmacion */}
                 {cart.length > 0 && !confirmClear && (
                   <button
+                    type="button"
                     onClick={() => setConfirmClear(true)}
-                    className="text-xs font-semibold text-[var(--data-error-500)] hover:text-[var(--data-error-600)] transition-colors flex items-center gap-1"
-                    title="Vaciar carrito (pide confirmacion)"
+                    className={cn(botonCabecera, "w-12 justify-center px-0 text-[var(--data-error-ink)] hover:bg-[var(--data-error-500)]/10")}
+                    title="Vaciar carrito (F3)"
                     aria-label="Vaciar carrito"
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    Vaciar
-                    <kbd className="text-[length:var(--ts-2xs)] bg-[var(--surface-sunken)] dark:bg-[var(--surface-sunken)] text-[var(--text-tertiary)] px-1 rounded">F3</kbd>
+                    <Trash2 className="h-4 w-4" aria-hidden />
                   </button>
                 )}
                 {cart.length > 0 && confirmClear && (
                   <div className="flex items-center gap-1 animate-in fade-in duration-[var(--dur-fast)]" role="group" aria-label="Confirmar vaciar carrito">
-                    <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)]">Vaciar?</span>
+                    <span className="text-sm font-bold text-[var(--data-error-ink)]">¿Vaciar?</span>
                     <button
+                      type="button"
                       onClick={() => { clearCart(); setConfirmClear(false); }}
-                      className="px-2 py-0.5 rounded-lg text-[length:var(--ts-2xs)] font-bold bg-[var(--data-error-500)] text-white hover:bg-[var(--data-error-600)] transition-colors"
+                      className="h-10 px-3 rounded-lg text-sm font-bold bg-[var(--data-error-600)] text-white hover:bg-[var(--data-error-700)] transition-colors"
                       aria-label="Confirmar: vaciar carrito"
                     >
-                      Si
+                      Sí
                     </button>
                     <button
+                      type="button"
                       onClick={() => setConfirmClear(false)}
-                      className="px-2 py-0.5 rounded-lg text-[length:var(--ts-2xs)] font-bold border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] transition-colors"
+                      className="h-10 px-3 rounded-lg text-sm font-bold border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
                       aria-label="Cancelar: mantener carrito"
                     >
                       No
@@ -127,23 +142,14 @@ export default function POSCartPanel({ carrito, expanded, customerPhone, custome
                 )}
               </div>
             </div>
-            {/* Mejora 10: Paused Carts */}
-            <div className="mt-1.5">
-              <POSPausedCarts
-                currentCartItems={cart as { product: { id: number; name: string; price: number; unit: string; image?: string; [k: string]: unknown }; quantity: number; discount?: number }[]}
-                currentTotal={cartTotal}
-                onPause={handlePauseCart}
-                onResume={(items) => cambiarDeCarrito(() => handleResumeCart(items))}
-              />
-            </div>
           </div>
 
           {/* Cart items + extras (scrollable) */}
-          <div className="flex-1 overflow-y-auto min-h-0 p-3 space-y-1.5">
+          <div className="flex-1 overflow-y-auto min-h-0 p-2 sm:p-3 space-y-1.5">
             {cart.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-32 text-[var(--text-tertiary)] dark:text-muted">
-                <ShoppingBasket className="h-6 w-6 mb-1.5" />
-                <p className="text-xs">Carrito vacío</p>
+              <div className="flex flex-col items-center justify-center h-32 gap-1 text-[var(--text-tertiary)]">
+                <ShoppingBasket className="h-6 w-6" aria-hidden />
+                <p className="text-sm">Escanea o toca un producto</p>
               </div>
             ) : (
               cart.map(item => (
@@ -171,7 +177,7 @@ export default function POSCartPanel({ carrito, expanded, customerPhone, custome
               const cats = Object.entries(categoryTotals);
               if (cats.length < 2) return null;
               return (
-                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted px-3 pb-1">
+                <p className="text-sm text-[var(--text-tertiary)] px-1 pb-1">
                   {cats.map(([cat, total]) => `${cat}: S/${total.toFixed(0)}`).join(" · ")}
                 </p>
               );
@@ -187,20 +193,20 @@ export default function POSCartPanel({ carrito, expanded, customerPhone, custome
 
             {/* Cliente elegido en el cobro + lo que debe (Upgrade 5). */}
             {customerPhone && (
-              <div className="px-3 pb-1 space-y-1.5" data-pos-cliente-carrito>
+              <div className="px-1 pb-1 space-y-1.5" data-pos-cliente-carrito>
                 <div className="flex items-center gap-2 min-w-0">
-                  <User className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
-                  <span className="text-xs font-semibold text-[var(--text-primary)] truncate">{customerName || customerPhone}</span>
-                  {customerName && <span className="text-xs text-[var(--text-tertiary)] tabular-nums shrink-0">{customerPhone}</span>}
+                  <User className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+                  <span className="text-sm font-semibold text-[var(--text-primary)] truncate">{customerName || customerPhone}</span>
+                  {customerName && <span className="text-sm text-[var(--text-tertiary)] tabular-nums shrink-0">{customerPhone}</span>}
                   {onQuitarCliente && (
                     <button
                       type="button"
                       onClick={onQuitarCliente}
                       aria-label="Quitar cliente de esta venta"
                       title="Quitar cliente"
-                      className="ml-auto shrink-0 p-1 rounded-md text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--surface-sunken)] max-sm:min-h-10 max-sm:min-w-10 inline-flex items-center justify-center"
+                      className="ml-auto shrink-0 h-10 w-10 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-ink)] hover:bg-[var(--surface-sunken)] inline-flex items-center justify-center"
                     >
-                      <X className="h-3.5 w-3.5" />
+                      <X className="h-4 w-4" />
                     </button>
                   )}
                 </div>
@@ -209,58 +215,50 @@ export default function POSCartPanel({ carrito, expanded, customerPhone, custome
             )}
           </div>
 
-          {/* Cart total + pay button — sticky bottom */}
-          {cart.length > 0 && (
-            <div className="shrink-0 border-t border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 space-y-2 bg-[var(--surface-raised)] rounded-b-2xl shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-              {/* Mejora 5: Expandable cart detail */}
-              <div className="flex justify-between items-center">
-                <POSCartDetail
-                  items={cart.map(i => ({
-                    name: i.product.name,
-                    quantity: i.quantity,
-                    price: i.product.price,
-                    discount: i.discount,
-                  }))}
-                  count={cartCount}
+          {/* Cobrar, siempre abajo del carrito. El total en letras y el IGV, en la ⓘ: antes eran dos
+              renglones más y una lista desplegable que repetía las líneas de arriba. */}
+          {cart.length > 0 && (() => {
+            const { base, igv } = extractIgv(cartTotal);
+            return (
+              <div className="shrink-0 border-t border-[var(--rule-base)] p-2 sm:p-3 flex items-center gap-2 bg-[var(--surface-raised)] rounded-b-xl">
+                <InfoTip
+                  side="top"
+                  title={fmt(cartTotal)}
+                  what={<span className="capitalize">{numeroAPalabras(cartTotal)}</span>}
+                  affects={`Base ${formatCurrency(base)} · IGV ${formatCurrency(igv)}`}
                 />
-                <span className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(cartTotal)}</span>
-              </div>
-              {/* Mejora 4R2: Total en palabras */}
-              <p className="text-xs text-[var(--text-tertiary)] italic capitalize text-right">{numeroAPalabras(cartTotal)}</p>
-              {/* Desglose IGV. TODO: leer rate de settings del tenant (taxRate) cuando el SettingsCtx lo exponga; por ahora usa IGV_RATE default. */}
-              {(() => {
-                const { base, igv } = extractIgv(cartTotal);
-                return (
-                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-mono text-right">Sub: {formatCurrency(base)} · IGV: {formatCurrency(igv)}</p>
-                );
-              })()}
-
-              <div className="flex gap-2">
                 <button
+                  type="button"
                   onClick={openPaymentModal}
-                  className="flex-1 min-h-12 rounded-xl bg-primary text-white font-bold text-base hover:bg-primary-dark transition-colors flex flex-wrap items-center justify-center gap-2"
+                  data-pos-cobrar
+                  className={button({ variant: "primary", className: "flex-1 min-h-14 rounded-xl text-lg font-extrabold tabular-nums" })}
                 >
-                  <Banknote className="h-4 w-4" />
+                  <Banknote className="h-5 w-5" aria-hidden />
                   Cobrar {fmt(cartTotal)}
-                  <kbd className="ml-1 text-[length:var(--ts-2xs)] bg-white/20 px-1 rounded">F2</kbd>
+                  <kbd className="ml-1 text-xs font-semibold opacity-80 border border-current/30 px-1 rounded">F2</kbd>
                 </button>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
   );
 }
 
-/** A 400 px el carrito queda abajo: esta barra fija deja cobrar con el pulgar sin bajar. */
+/**
+ * A 400 px el carrito queda debajo de la grilla: esta barra deja cobrar con el pulgar sin bajar.
+ * Va ENCIMA de la barra de navegación del panel (antes la tapaba: las dos en bottom-0) y tocar la
+ * cuenta baja hasta el carrito para revisar o cambiar una línea.
+ */
 export function POSBarraCobroMovil({ cartCount, cartTotal, onCobrar }: { cartCount: number; cartTotal: number; onCobrar: () => void }) {
+  const verCarrito = () => document.querySelector("[data-pos-carrito]")?.scrollIntoView({ behavior: "smooth", block: "start" });
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-[var(--surface-raised)] border-t border-[var(--rule-base)] px-4 py-3 z-40 sm:hidden">
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <span className="text-sm font-medium text-[var(--text-primary)]">{cartCount} {cartCount === 1 ? "producto" : "productos"}</span>
-          <span className="text-lg font-bold font-mono ml-2 text-[var(--text-primary)]">{formatCurrency(cartTotal)}</span>
-        </div>
-        <button onClick={onCobrar} className="bg-primary text-white px-7 min-h-12 rounded-xl font-bold text-base">
+    <div className="fixed left-0 right-0 bottom-[calc(62px+max(env(safe-area-inset-bottom),4px))] bg-[var(--surface-raised)] border-t border-[var(--rule-base)] px-3 py-2 z-40 sm:hidden shadow-[var(--shadow-md)]" data-pos-barra-cobro>
+      <div className="flex items-center justify-between gap-2">
+        <button type="button" onClick={verCarrito} className="min-w-0 min-h-12 flex flex-col items-start justify-center rounded-xl px-2 text-left hover:bg-[var(--surface-sunken)]" title="Ver el carrito">
+          <span className="text-sm font-medium text-[var(--text-secondary)]">{cartCount} {cartCount === 1 ? "producto" : "productos"} · Ver</span>
+          <span className="text-lg font-bold font-mono text-[var(--text-primary)] tabular-nums">{formatCurrency(cartTotal)}</span>
+        </button>
+        <button type="button" onClick={onCobrar} className={button({ variant: "primary", className: "min-h-12 rounded-xl px-7 text-base" })}>
           Cobrar
         </button>
       </div>

@@ -1,10 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { SectionTitle } from "@buleje/design-system";
 import {
   ScanBarcode, Camera, Zap, MessageCircle, History, RotateCcw, RefreshCcw, Maximize2, Minimize2,
-  Type, Volume2, VolumeX, Printer, WifiOff, AlertTriangle,
+  Type, Volume2, VolumeX, Printer, WifiOff, AlertTriangle, Unlock,
 } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -12,8 +12,6 @@ import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import POSSearchBar from "@/components/admin/pos/POSSearchBar";
 import POSVoiceInput from "@/components/admin/pos/POSVoiceInput";
 import POSExpressMode from "@/components/admin/pos/POSExpressMode";
-import POSTodayStrip from "@/components/admin/pos/POSTodayStrip";
-import POSCategoryChips from "@/components/admin/pos/POSCategoryChips";
 import { estaAgotado } from "@/lib/pos/stock-vendible";
 import { edadCatalogo } from "@/components/admin/pos/pos-catalogo-offline";
 import { fmt, type CartItem, type Product } from "@/components/admin/pos/pos-shared";
@@ -29,12 +27,12 @@ const TAMANOS: { id: TamanoLetra; label: string }[] = [
 interface POSToolbarProps {
   products: Product[];
   carrito: POSCarrito;
-  category: string;
-  setCategory: (id: string) => void;
   cashRegisterOpen: boolean | null;
+  turnoAbierto: boolean | null;
   catalogoGuardadoEn: string | null;
   lastSaleInfo: { total: number; id: string; minutesAgo: number } | null;
-  metricsRefreshKey: number;
+  /** El botón «Indicadores» (usePOSIndicadores): va en esta fila; su panel, debajo. */
+  indicadores: ReactNode;
   expanded: boolean;
   setExpanded: (v: boolean) => void;
   fontSize: TamanoLetra;
@@ -52,12 +50,17 @@ interface POSToolbarProps {
 
 type DetectorDeCodigos = new (opts?: { formats: string[] }) => { detect: (img: ImageBitmap) => Promise<Array<{ rawValue: string }>> };
 
+const BOTON_48 = "shrink-0 inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors";
+
 /**
- * Cabecera de Vender en una fila (título ⓘ · estado · menú «Más») + buscador con lector.
- * Ley de la vista (08-10): a la vista sólo buscar, dictar y escanear; el resto, en el menú.
+ * Cabecera de Vender en UNA fila (10-10): buscador con lector, dictado y cámara · lo que falta para
+ * vender en regla (turno o caja) · «Indicadores» plegados · atajos ⓘ · «Más».
+ * Antes eran tres renglones (título con el estado y la tira «Hoy», el buscador, las categorías) más la
+ * tira del turno encima: las categorías bajaron a la grilla que filtran y las cifras, al botón.
+ * A 400 px el buscador ocupa su renglón y el resto pasa al de abajo.
  */
 export default function POSToolbar(props: POSToolbarProps) {
-  const { products, carrito, cashRegisterOpen, catalogoGuardadoEn, lastSaleInfo, expanded, fontSize, soundEnabled } = props;
+  const { products, carrito, cashRegisterOpen, turnoAbierto, catalogoGuardadoEn, lastSaleInfo, expanded, fontSize, soundEnabled } = props;
   const { confirm } = useConfirm();
   const fotoRef = useRef<HTMLInputElement>(null);
   const [expressOn, setExpressOn] = useState(() => {
@@ -110,63 +113,28 @@ export default function POSToolbar(props: POSToolbarProps) {
     { id: "whatsapp", seccion: "Agregar", label: "Pedido por WhatsApp", hint: "Pega el mensaje del cliente y arma el carrito", icon: MessageCircle, onSelect: props.onWhatsApp },
     ...(hayUltimaVenta ? [{ id: "repetir", seccion: "Agregar", label: "Repetir última venta", icon: RotateCcw, onSelect: () => void repetirUltimaVenta() }] : []),
     { id: "trueque", seccion: "Cobrar", label: "Cobrar con trueque", hint: "Lo que te da el cliente descuenta la venta; la diferencia, en efectivo, Yape o Plin", icon: RefreshCcw, disabled: carrito.cart.length === 0, onSelect: props.onTrueque },
-    { id: "historial", seccion: "Cobrar", label: "Ventas de hoy", hint: "Atajo F4", icon: History, onSelect: props.onHistorial },
+    { id: "historial", seccion: "Cobrar", label: "Ventas de hoy", hint: "Atajo F4 · el total del día y la lista", icon: History, onSelect: props.onHistorial },
+    // Antes era una píldora suelta en la fila del título («Última: S/ 12 · 3m»).
+    ...(lastSaleInfo ? [{
+      id: "reimprimir", seccion: "Cobrar", label: "Reimprimir la última venta",
+      hint: `${fmt(lastSaleInfo.total)} · hace ${Math.max(1, lastSaleInfo.minutesAgo)} min`, icon: Printer,
+      onSelect: () => { window.open(`/venta/${lastSaleInfo.id}/recibo`, "_blank", "noopener,noreferrer"); },
+    }] : []),
     { id: "devolucion", seccion: "Cobrar", label: "Devolución", icon: RotateCcw, tone: "danger", onSelect: props.onDevolucion },
     { id: "pantalla", seccion: "Pantalla", label: expanded ? "Salir de pantalla completa" : "Pantalla completa", icon: expanded ? Minimize2 : Maximize2, onSelect: () => props.setExpanded(!expanded) },
     ...TAMANOS.map((t) => ({ id: `letra-${t.id}`, seccion: "Pantalla", label: t.label, icon: Type, activo: fontSize === t.id, onSelect: () => props.changeFontSize(t.id) })),
     { id: "sonido", seccion: "Pantalla", label: soundEnabled ? "Sonido al vender: sí" : "Sonido al vender: no", icon: soundEnabled ? Volume2 : VolumeX, activo: soundEnabled, onSelect: props.toggleSound },
   ];
 
-  return (
-    <div className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-      <div className="flex items-center gap-2 px-3 pt-2.5 pb-2">
-        <div className="flex shrink-0 items-center gap-1.5">
-          <SectionTitle>Vender</SectionTitle>
-          <InfoTip
-            title="Atajos del mostrador"
-            what="F1 busca · F2 cobra · F3 vacía el carrito · F4 ventas de hoy · Enter agrega el primero de la búsqueda · + y − cambian la cantidad · Supr quita la línea."
-            affects="El lector de código funciona aunque el cursor no esté en el buscador; si el código no está en tu inventario, suena y te avisa."
-            example="Pasas el lector por una leche Gloria: entra al carrito con su precio y suena el ding."
-          />
-        </div>
-        <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-          {cashRegisterOpen === false && (
-            <button
-              type="button"
-              onClick={() => window.dispatchEvent(new CustomEvent("buleje:navigate-caja"))}
-              title="Abrir la caja: lo que cobres entra al arqueo"
-              className="shrink-0 inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-semibold text-[var(--data-warning-ink)] border border-[var(--data-warning-500)]/30 px-2.5 py-1 max-sm:min-h-9 rounded-lg hover:bg-[var(--data-warning-500)]/10 transition-colors"
-            >
-              <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-warning-500)]" aria-hidden />
-              Sin caja<span className="max-sm:hidden"> · Abrir</span>
-            </button>
-          )}
-          {cashRegisterOpen === true && (
-            <span className="shrink-0 inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-semibold text-[var(--data-success-500)] border border-[var(--data-success-500)]/30 px-2.5 py-1 rounded-lg">
-              <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-success-500)] animate-pulse" aria-hidden />
-              Caja abierta
-            </span>
-          )}
-          {catalogoGuardadoEn && <ChipListaGuardada guardadoEn={catalogoGuardadoEn} />}
-          <POSTodayStrip refreshKey={props.metricsRefreshKey} />
-          {lastSaleInfo && (
-            <a
-              href={`/venta/${lastSaleInfo.id}/recibo`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="shrink-0 hidden md:inline-flex items-center gap-1 text-xs bg-[var(--surface-sunken)] text-[var(--text-secondary)] rounded-full px-2 py-1 hover:text-[var(--text-primary)] transition-colors"
-              title="Reimprimir la última venta"
-            >
-              Última: {fmt(lastSaleInfo.total)} · {Math.max(1, lastSaleInfo.minutesAgo)}m
-              <Printer className="h-3 w-3" aria-hidden />
-            </a>
-          )}
-        </div>
-        <ActionMenu label="Más" soloIcono size="md" actions={acciones} title="Más acciones del mostrador" />
-      </div>
+  // Lo que falta para vender en regla. Con todo abierto no se dice nada: la barra de pestañas ya
+  // dice «Turno abierto». Abrir el turno abre la caja, así que sin turno se manda a Turnos.
+  const falta = turnoAbierto === false ? "turno" : cashRegisterOpen === false ? "caja" : null;
 
-      <div className="space-y-2 px-3 pb-3">
-        <div className="flex items-center gap-1.5 sm:gap-2">
+  return (
+    <div className="space-y-2" data-pos-cabecera>
+      <SectionTitle className="sr-only">Vender</SectionTitle>
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex min-w-0 flex-[1_1_22rem] items-center gap-2">
           <div className="min-w-0 flex-1">
             <POSSearchBar
               products={products as { id: number; name: string; price: number; image?: string; barcode?: string; stock?: number }[]}
@@ -178,40 +146,55 @@ export default function POSToolbar(props: POSToolbarProps) {
             products={products.map((p) => ({ id: p.id, name: p.name, price: p.price, stock: p.stock }))}
             onAddToCart={carrito.handleAddFromSearch}
           />
-          <button
-            type="button"
-            onClick={props.onScan}
-            aria-label="Escanear con la cámara"
-            title="Escanear con la cámara"
-            className="shrink-0 inline-flex h-11 w-11 items-center justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
-          >
+          <button type="button" onClick={props.onScan} aria-label="Escanear con la cámara" title="Escanear con la cámara" className={BOTON_48}>
             <ScanBarcode className="h-5 w-5 text-primary" aria-hidden />
           </button>
-          <input
-            ref={fotoRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            className="hidden"
-            aria-hidden
-            tabIndex={-1}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              e.target.value = "";
-              if (file) void leerFoto(file);
-            }}
-          />
         </div>
-        {expressOn && (
-          <POSExpressMode
-            products={products as { id: number; name: string; price: number; barcode?: string | null; stock?: number | null }[]}
-            onAddToCart={carrito.handleAddFromSearch}
-            enabled
-            onEnabledChange={cambiarExpress}
+        <div className="flex min-w-0 flex-1 basis-auto items-center justify-end gap-2 sm:flex-none">
+          {catalogoGuardadoEn && <ChipListaGuardada guardadoEn={catalogoGuardadoEn} />}
+          {falta && (
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent(falta === "turno" ? "buleje:navigate-turnos" : "buleje:navigate-caja"))}
+              title={falta === "turno" ? "Sin turno: lo que cobres no entra al arqueo ni a la comisión de nadie" : "Sin caja: lo que cobres no entra al arqueo"}
+              className="shrink-0 inline-flex h-12 items-center gap-2 rounded-2xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 px-3 text-sm font-bold text-[var(--data-warning-ink)] hover:bg-[var(--data-warning-500)]/20 transition-colors"
+            >
+              <Unlock className="h-4 w-4" aria-hidden />
+              {falta === "turno" ? "Abrir turno" : "Abrir caja"}
+            </button>
+          )}
+          {props.indicadores}
+          <InfoTip
+            title="Atajos del mostrador"
+            what="F1 busca · F2 cobra · F3 vacía el carrito · F4 ventas de hoy · Enter agrega el primero de la búsqueda · + y − cambian la cantidad de la primera línea del carrito · Supr la quita · Ctrl+M dicta por voz."
+            affects="El lector de código funciona aunque el cursor no esté en el buscador; si el código no está en tu inventario, suena y te avisa."
+            example="Pasas el lector por una leche Gloria: entra al carrito con su precio y suena el ding."
           />
-        )}
-        <POSCategoryChips products={products} category={props.category} setCategory={props.setCategory} />
+          <ActionMenu label="Más" soloIcono size="md" actions={acciones} title="Más acciones del mostrador" />
+        </div>
       </div>
+      <input
+        ref={fotoRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        aria-hidden
+        tabIndex={-1}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = "";
+          if (file) void leerFoto(file);
+        }}
+      />
+      {expressOn && (
+        <POSExpressMode
+          products={products as { id: number; name: string; price: number; barcode?: string | null; stock?: number | null }[]}
+          onAddToCart={carrito.handleAddFromSearch}
+          enabled
+          onEnabledChange={cambiarExpress}
+        />
+      )}
     </div>
   );
 }
@@ -226,7 +209,7 @@ function ChipListaGuardada({ guardadoEn }: { guardadoEn: string }) {
   if (!edad.viejo) {
     return (
       <span
-        className="shrink-0 inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold text-[var(--data-warning-ink)]"
+        className="shrink-0 inline-flex items-center gap-1 text-sm font-semibold text-[var(--data-warning-ink)]"
         title="Sin conexión: vendes con la lista guardada; las ventas se guardan y se suben al volver internet"
       >
         <WifiOff className="h-3.5 w-3.5" aria-hidden /> Lista {edad.etiqueta}
@@ -237,7 +220,7 @@ function ChipListaGuardada({ guardadoEn }: { guardadoEn: string }) {
     <span
       role="status"
       data-pos-lista-vieja
-      className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/10 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-ink)]"
+      className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/10 px-2 py-0.5 text-sm font-bold text-[var(--data-error-ink)]"
       title={`Sin conexión y la lista guardada tiene ${Math.floor(edad.horas / 24)} día(s): si cambiaste precios, cobra el de hoy. Al volver internet, una venta pagada por debajo del precio de hoy se rechaza.`}
     >
       <AlertTriangle className="h-3.5 w-3.5" aria-hidden />

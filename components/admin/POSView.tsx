@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { LoadingState } from "@buleje/design-system";
 import { Info, X } from "@buleje/design-system/icons";
@@ -14,7 +14,10 @@ import { usePOSCarrito } from "@/components/admin/pos/usePOSCarrito";
 import { usePOSCobro } from "@/components/admin/pos/usePOSCobro";
 import { usePOSLectorCodigo } from "@/components/admin/pos/usePOSLectorCodigo";
 import POSIdleScreen, { usePOSIdle } from "@/components/admin/pos/POSIdleScreen";
-import POSMetricsStrip from "@/components/admin/pos/POSMetricsStrip";
+import { usePOSIndicadores } from "@/components/admin/pos/usePOSIndicadores";
+import { useAltoDelMostrador } from "@/components/admin/pos/use-alto-del-mostrador";
+import { usePOSTamanoLetra } from "@/components/admin/pos/use-pos-tamano-letra";
+import POSCategoryChips from "@/components/admin/pos/POSCategoryChips";
 import POSOfflineBar from "@/components/admin/pos/POSOfflineBar";
 import POSToolbar from "@/components/admin/pos/POSToolbar";
 import POSProductGrid from "@/components/admin/pos/POSProductGrid";
@@ -27,18 +30,20 @@ import POSPaymentModal from "@/components/admin/pos/POSPaymentModal";
 import SaleCompleteModal from "@/components/admin/pos/POSSaleCompleteModal";
 import POSStockAlerts from "@/components/admin/pos/POSStockAlerts";
 import POSReturnModal from "@/components/admin/pos/POSReturnModal";
-import ShiftSummaryWidget from "@/components/admin/pos/POSShiftSummary";
 import type { PaymentMethod } from "@/components/admin/pos/pos-shared";
 import { precargarBilleteras } from "@/components/admin/pos/pago/useBilleteraNegocio";
 
 const BarcodeScanner = dynamic(() => import("@/components/admin/BarcodeScanner"), { ssr: false });
 
-type TamanoLetra = "normal" | "large" | "xlarge";
-
 /**
  * Vender (POS) — ?tab=ventas-caja&vista=pos.
  * Partido el 08-10 (2.727 → este orquestador): el estado vive en usePOSCatalogo / usePOSCarrito /
  * usePOSCobro / usePOSLectorCodigo y cada bloque en components/admin/pos/POS*.tsx.
+ *
+ * Compactado el 10-10: cabecera en una fila (POSToolbar), las cifras en «Indicadores» plegados
+ * (usePOSIndicadores reemplaza a la tira del turno, la tira «Hoy» y la píldora flotante, que repetían
+ * Turnos y Caja) y la grilla y el carrito llegan hasta el borde de la ventana (useAltoDelMostrador):
+ * «Cobrar» se ve sin bajar la página.
  */
 export default function POSView() {
   const sound = usePOSSound();
@@ -50,6 +55,10 @@ export default function POSView() {
   const cobro = usePOSCobro({ carrito, fetchProducts, playSaleComplete: sound.playSaleComplete, playError: sound.playError, posOffline });
   const { showPayment, setShowPayment, saleComplete, setSaleComplete, saleError, setSaleError, handlePaymentConfirm } = cobro;
   const { isIdle, setIsIdle } = usePOSIdle();
+  const { fontSize, changeFontSize, claseLetra, estilo } = usePOSTamanoLetra();
+  const indicadores = usePOSIndicadores(cobro.metricsRefreshKey);
+  const zonaRef = useRef<HTMLDivElement>(null);
+  const { alto, esEscritorio } = useAltoDelMostrador(zonaRef);
 
   const [category, setCategory] = useState("todos");
   const [showScanner, setShowScanner] = useState(false);
@@ -60,10 +69,6 @@ export default function POSView() {
   const [showNoCajaWarning, setShowNoCajaWarning] = useState(false);
   const [showWhatsAppOrder, setShowWhatsAppOrder] = useState(false);
   const [showTrueque, setShowTrueque] = useState(false);
-  const [fontSize, setFontSize] = useState<TamanoLetra>(() => {
-    if (typeof window === "undefined") return "normal";
-    return (localStorage.getItem("pos-font-size") as TamanoLetra) || "normal";
-  });
   const paymentMethod: PaymentMethod = "efectivo";
 
   useScrollLock(showPayment || !!saleComplete || expanded);
@@ -115,10 +120,6 @@ export default function POSView() {
     document.querySelector<HTMLInputElement>("[data-pos-search]")?.focus();
   };
 
-  const changeFontSize = useCallback((size: TamanoLetra) => {
-    setFontSize(size);
-    localStorage.setItem("pos-font-size", size);
-  }, []);
 
   // La grilla filtra sólo por categoría (la búsqueda vive en POSSearchBar).
   const filtered = category === "todos" ? products : products.filter((p) => p.category === category);
@@ -129,7 +130,6 @@ export default function POSView() {
 
   const posContent = (
     <>
-      <POSMetricsStrip refreshKey={cobro.metricsRefreshKey} />
       <POSOfflineBar
         isOnline={posOffline.isOnline}
         pendingCount={posOffline.pendingCount}
@@ -140,45 +140,52 @@ export default function POSView() {
         onClearErrors={posOffline.clearErrors}
         onClearQueue={posOffline.clearQueue}
       />
+      <POSToolbar
+        products={products}
+        carrito={carrito}
+        cashRegisterOpen={cashRegisterOpen}
+        turnoAbierto={turnoAbierto}
+        catalogoGuardadoEn={catalogo.catalogoGuardadoEn}
+        lastSaleInfo={cobro.lastSaleInfo}
+        indicadores={indicadores.boton}
+        expanded={expanded}
+        setExpanded={setExpanded}
+        fontSize={fontSize}
+        changeFontSize={changeFontSize}
+        soundEnabled={sound.enabled}
+        toggleSound={sound.toggle}
+        handleBarcode={handleBarcode}
+        setSaleError={setSaleError}
+        onScan={() => setShowScanner(true)}
+        onWhatsApp={() => setShowWhatsAppOrder(true)}
+        onHistorial={() => setShowHistory(true)}
+        onDevolucion={() => setShowReturn(true)}
+        onTrueque={() => setShowTrueque(true)}
+      />
+      {indicadores.panel}
       {saleError && (
-        <div role="alert" className="flex flex-wrap items-center gap-2 p-3 mb-3 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30">
-          <Info className="h-4 w-4 text-[var(--data-error-500)] shrink-0" aria-hidden />
-          <p className="text-xs text-[var(--data-error-500)] flex-1">{saleError}</p>
-          <button aria-label="Quitar" onClick={() => setSaleError(null)} className="p-0.5 text-[var(--data-error-500)]"><X className="h-3.5 w-3.5" /></button>
+        <div role="alert" className="flex items-center gap-2 pl-3 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30">
+          <Info className="h-4 w-4 text-[var(--data-error-ink)] shrink-0" aria-hidden />
+          <p className="text-sm text-[var(--data-error-ink)] flex-1">{saleError}</p>
+          <button type="button" aria-label="Quitar el aviso" onClick={() => setSaleError(null)} className="h-12 w-12 shrink-0 inline-flex items-center justify-center text-[var(--data-error-ink)]"><X className="h-4 w-4" /></button>
         </div>
       )}
 
-      <div className="flex flex-col lg:flex-row gap-2 sm:gap-4">
+      {/* La grilla y el carrito llegan al borde de la ventana: en escritorio la fila entera,
+          en celular sólo la grilla (el carrito queda abajo y la barra de cobro lo resume). */}
+      <div
+        ref={zonaRef}
+        className="flex flex-col lg:flex-row gap-2 sm:gap-3"
+        style={esEscritorio && alto ? { height: alto } : undefined}
+      >
         <div
-          className={cn(
-            "flex-1 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden flex flex-col",
-            expanded ? "min-h-[calc(100vh-12rem)]" : "",
-          )}
-          style={expanded ? undefined : { minHeight: "28rem", maxHeight: "calc(100vh - 14rem)" }}
+          className="lg:flex-1 min-w-0 min-h-0 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden flex flex-col"
+          style={!esEscritorio && alto ? { height: alto } : undefined}
         >
-          <POSToolbar
-            products={products}
-            carrito={carrito}
-            category={category}
-            setCategory={setCategory}
-            cashRegisterOpen={cashRegisterOpen}
-            catalogoGuardadoEn={catalogo.catalogoGuardadoEn}
-            lastSaleInfo={cobro.lastSaleInfo}
-            metricsRefreshKey={cobro.metricsRefreshKey}
-            expanded={expanded}
-            setExpanded={setExpanded}
-            fontSize={fontSize}
-            changeFontSize={changeFontSize}
-            soundEnabled={sound.enabled}
-            toggleSound={sound.toggle}
-            handleBarcode={handleBarcode}
-            setSaleError={setSaleError}
-            onScan={() => setShowScanner(true)}
-            onWhatsApp={() => setShowWhatsAppOrder(true)}
-            onHistorial={() => setShowHistory(true)}
-            onDevolucion={() => setShowReturn(true)}
-            onTrueque={() => setShowTrueque(true)}
-          />
+          {/* Las categorías van pegadas a la grilla que filtran. */}
+          <div className="shrink-0 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)] px-3 py-2">
+            <POSCategoryChips products={products} category={category} setCategory={setCategory} />
+          </div>
           <POSProductGrid
             products={products}
             filtered={filtered}
@@ -192,7 +199,6 @@ export default function POSView() {
 
         <POSCartPanel
           carrito={carrito}
-          expanded={expanded}
           customerPhone={cobro.customerPhone}
           customerName={cobro.customerName}
           onQuitarCliente={() => { cobro.setCustomerPhone(""); cobro.setCustomerName(""); }}
@@ -267,33 +273,22 @@ export default function POSView() {
       />
 
       <POSReturnModal isOpen={showReturn} onClose={() => setShowReturn(false)} onReturnComplete={() => fetchProducts()} />
-
-      <ShiftSummaryWidget />
     </>
   );
 
-  // Tamaño de letra del mostrador (menú «Más» › Pantalla)
-  const fontSizeStyle = fontSize !== "normal" ? (
-    <style>{`
-      .pos-large { font-size: 16px; }
-      .pos-large button { min-height: 48px; }
-      .pos-xlarge { font-size: 18px; }
-      .pos-xlarge button { min-height: 56px; }
-    `}</style>
-  ) : null;
 
   if (expanded) {
     return (
-      <div className={cn("fixed inset-0 z-modal bg-[var(--surface-sunken)] overflow-y-auto", fontSize === "large" && "pos-large", fontSize === "xlarge" && "pos-xlarge")}>
-        {fontSizeStyle}
-        <div className="max-w-480 mx-auto px-4 sm:px-6 py-4 space-y-4">{posContent}</div>
+      <div data-pos-scroll className={cn("fixed inset-0 z-modal bg-[var(--surface-sunken)] overflow-y-auto", claseLetra)}>
+        {estilo}
+        <div className="max-w-480 mx-auto px-4 sm:px-6 py-4 space-y-3">{posContent}</div>
       </div>
     );
   }
 
   return (
-    <div className={cn("space-y-4", fontSize === "large" && "pos-large", fontSize === "xlarge" && "pos-xlarge")}>
-      {fontSizeStyle}
+    <div className={cn("space-y-3", cart.length > 0 && "max-sm:pb-20", claseLetra)}>
+      {estilo}
       {posContent}
     </div>
   );

@@ -1,7 +1,6 @@
 "use client";
 
-import { Plus, Minus, X, Package, Percent } from "@buleje/design-system/icons";
-import Image from "next/image";
+import { Plus, Minus, X, Percent } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { Field } from "@/components/admin/shared/Field";
 import { fmt, type CartItem } from "@/components/admin/pos/pos-shared";
@@ -31,81 +30,76 @@ export default function POSCartItem({ item, lastAddedId, editingDiscount, setEdi
                 // se marca en rojo acá antes de que el cobro lo rechace (403).
                 const pasaTope = topeItemPct != null && excedeTopeItemCajero(item.discount ?? 0, topeItemPct);
                 const itemTotal = item.product.price * item.quantity * discountMultiplier;
+  const botonCantidad = "h-12 w-12 shrink-0 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--rule-soft)] dark:hover:bg-[var(--rule-base)] transition-colors";
+  const botonLinea = "h-12 w-12 shrink-0 rounded-xl flex items-center justify-center transition-colors";
+  // Dos renglones (10-10): con la foto, la cantidad, el precio, «%» y «×» en uno solo, a 352 px el
+  // nombre quedaba en 4 letras («Arro…», «Azú…»). Arriba el nombre entero y lo que suma la línea;
+  // abajo los botones de 48 px para el dedo y el precio unitario.
   return (
-                  <div className={cn("rounded-lg border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-3 hover:bg-[var(--surface-sunken)] transition-all duration-[var(--dur-base)]", lastAddedId === item.product.id && "ring-2 ring-[var(--data-success-500)]/40 bg-primary/10 dark:bg-primary/15")}>
-                    <div className="flex flex-wrap items-center gap-2">
-                      {item.product.image ? (
-                        <Image src={item.product.image} alt={item.product.name} width={48} height={48} className="rounded-lg object-cover shrink-0 w-12 h-12" />
-                      ) : (
-                        <div className="w-12 h-12 rounded-lg bg-[var(--surface-sunken)] dark:bg-accent flex items-center justify-center shrink-0">
-                          <Package className="h-5 w-5 text-[var(--text-tertiary)] dark:text-muted" />
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{item.product.name}</p>
-                        <div className="flex items-center gap-1.5">
-                          <p className={cn("text-[length:var(--ts-xs)]", item.discount ? "line-through text-[var(--text-tertiary)] dark:text-muted" : "text-[var(--text-tertiary)] dark:text-muted")}>
-                            {fmt(item.product.price)}
-                          </p>
-                          {item.discount && item.discount > 0 && (
-                            <span
-                              title={pasaTope ? `Pasa tu tope de ${pctLegible(topeItemPct ?? 0)} %: que lo cobre el dueño o un admin` : undefined}
-                              className={cn(
-                                "text-[length:var(--ts-2xs)] font-bold px-1 py-0.5 rounded",
-                                pasaTope
-                                  ? "text-[var(--data-error-600)] dark:text-[var(--data-error-500)] bg-[var(--data-error-500)]/12"
-                                  : "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12",
-                              )}
-                            >
-                              -{item.discount}%
-                            </span>
-                          )}
-                          {/* Mejora 7: Stock bajo badge */}
-                          {item.product.stock != null && item.product.stock > 0 && item.product.stock <= (item.product.stockMin || 5) && (
-                            <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-ink)] bg-[var(--data-warning-50)] px-1 py-0.5 rounded">
-                              Ultimas {item.product.stock}
-                            </span>
-                          )}
-                          {/* Mejora 3: Promo badge */}
-                          <PromoBadge productId={item.product.id} quantity={item.quantity} unitPrice={item.product.price} />
-                        </div>
+                  <div className={cn("rounded-lg border border-[var(--rule-soft)] dark:border-[var(--rule-base)] p-2 hover:bg-[var(--surface-sunken)] transition-all duration-[var(--dur-base)]", lastAddedId === item.product.id && "ring-2 ring-[var(--data-success-500)]/40 bg-primary/10 dark:bg-primary/15")} data-pos-linea>
+                    <div className="flex items-start gap-2 px-1">
+                      <p className="min-w-0 flex-1 text-sm font-semibold leading-snug text-[var(--text-primary)] line-clamp-2">{item.product.name}</p>
+                      <span className="shrink-0 text-base font-bold tabular-nums text-[var(--text-primary)]">{fmt(itemTotal)}</span>
+                    </div>
+                    <div className="mt-1 flex items-center gap-1">
+                      <button type="button" aria-label={`Disminuir cantidad de ${item.product.name}`} onClick={() => updateQuantity(item.product.id, -1)} className={botonCantidad}>
+                        <Minus className="h-4 w-4" aria-hidden />
+                      </button>
+                      <span className="w-8 text-center text-base font-bold tabular-nums text-[var(--text-primary)]">{item.quantity}</span>
+                      <button type="button" aria-label={`Aumentar cantidad de ${item.product.name}`} onClick={() => updateQuantity(item.product.id, 1)} className={botonCantidad}>
+                        <Plus className="h-4 w-4" aria-hidden />
+                      </button>
+                      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1 px-1">
+                        <span className={cn("text-sm tabular-nums", item.discount ? "line-through text-[var(--text-tertiary)]" : "text-[var(--text-secondary)]")}>
+                          {fmt(item.product.price)}
+                        </span>
+                        {(item.discount ?? 0) > 0 && (
+                          <span
+                            title={pasaTope ? `Pasa tu tope de ${pctLegible(topeItemPct ?? 0)} %: que lo cobre el dueño o un admin` : undefined}
+                            className={cn(
+                              "text-xs font-bold px-1 py-0.5 rounded",
+                              pasaTope
+                                ? "text-[var(--data-error-600)] dark:text-[var(--data-error-500)] bg-[var(--data-error-500)]/12"
+                                : "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12",
+                            )}
+                          >
+                            -{item.discount}%
+                          </span>
+                        )}
+                        {/* Mejora 7: Stock bajo badge */}
+                        {item.product.stock != null && item.product.stock > 0 && item.product.stock <= (item.product.stockMin || 5) && (
+                          <span className="text-xs font-bold text-[var(--data-warning-ink)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/12 px-1 py-0.5 rounded">
+                            Últimas {item.product.stock}
+                          </span>
+                        )}
+                        {/* Mejora 3: Promo badge */}
+                        <PromoBadge productId={item.product.id} quantity={item.quantity} unitPrice={item.product.price} />
                       </div>
-                      <div className="flex items-center gap-0.5 shrink-0">
-                        <button aria-label="Disminuir cantidad"
-                          onClick={() => updateQuantity(item.product.id, -1)}
-                          className="h-6 w-6 rounded-lg bg-[var(--surface-sunken)] dark:bg-accent flex items-center justify-center hover:bg-[var(--surface-sunken)] transition-colors"
-                        >
-                          <Minus className="h-3 w-3 text-[var(--text-secondary)] dark:text-muted" />
-                        </button>
-                        <span className="w-6 text-center text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{item.quantity}</span>
-                        <button aria-label="Aumentar cantidad"
-                          onClick={() => updateQuantity(item.product.id, 1)}
-                          className="h-6 w-6 rounded-lg bg-[var(--surface-sunken)] dark:bg-accent flex items-center justify-center hover:bg-[var(--surface-sunken)] transition-colors"
-                        >
-                          <Plus className="h-3 w-3 text-[var(--text-secondary)] dark:text-muted" />
-                        </button>
-                      </div>
-                      <span className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] shrink-0 w-14 text-right">{fmt(itemTotal)}</span>
                       <button
+                        type="button"
                         onClick={() => setEditingDiscount(editingDiscount === item.product.id ? null : item.product.id)}
+                        aria-pressed={editingDiscount === item.product.id}
+                        aria-label={`Descuento a ${item.product.name}`}
                         className={cn(
-                          "p-1 rounded transition-colors shrink-0",
-                          editingDiscount === item.product.id ? "text-primary bg-primary/10" : "text-[var(--text-tertiary)] dark:text-muted hover:text-primary"
+                          botonLinea,
+                          editingDiscount === item.product.id ? "text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/10" : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]",
                         )}
                         title="Aplicar descuento"
                       >
-                        <Percent className="h-3.5 w-3.5" />
+                        <Percent className="h-4 w-4" aria-hidden />
                       </button>
-                      <button aria-label="Quitar"
+                      <button
+                        type="button"
+                        aria-label={`Quitar ${item.product.name}`}
                         onClick={() => removeFromCart(item.product.id)}
-                        className="p-1 rounded text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error-500)] transition-colors shrink-0"
+                        className={cn(botonLinea, "text-[var(--text-tertiary)] hover:text-[var(--data-error-ink)] hover:bg-[var(--surface-sunken)]")}
                       >
-                        <X className="h-3.5 w-3.5" />
+                        <X className="h-4 w-4" aria-hidden />
                       </button>
                     </div>
                     {editingDiscount === item.product.id && (
                       <div className="mt-2 pt-2 border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] flex flex-wrap items-center gap-2">
-                        <Field label="Descuento:" labelClassName="text-xs text-[var(--text-secondary)] dark:text-muted font-medium">
+                        <Field label="Descuento:" labelClassName="text-sm text-[var(--text-secondary)] dark:text-muted font-medium">
                           <input
                             type="number"
                             min="0"
@@ -116,13 +110,13 @@ export default function POSCartItem({ item, lastAddedId, editingDiscount, setEdi
                               const v = Number(e.target.value);
                               updateDiscount(item.product.id, topeItemPct != null ? Math.min(v, topeItemPct) : v);
                             }}
-                            className="flex-1 px-2 py-1 text-xs border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
+                            className="flex-1 h-10 px-2 text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-lg bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] focus:border-primary outline-none"
                             placeholder="0"
                           />
                         </Field>
-                        <span className="text-xs text-[var(--text-tertiary)] dark:text-muted">%</span>
+                        <span className="text-sm text-[var(--text-tertiary)] dark:text-muted">%</span>
                         {topeItemPct != null && (
-                          <span className={cn("text-xs", pasaTope ? "font-semibold text-[var(--data-error-600)] dark:text-[var(--data-error-500)]" : "text-[var(--text-tertiary)] dark:text-muted")}>
+                          <span className={cn("text-sm", pasaTope ? "font-semibold text-[var(--data-error-600)] dark:text-[var(--data-error-500)]" : "text-[var(--text-tertiary)] dark:text-muted")}>
                             {pasaTope ? `Tu tope es ${pctLegible(topeItemPct)} %` : `hasta ${pctLegible(topeItemPct)} %`}
                           </span>
                         )}

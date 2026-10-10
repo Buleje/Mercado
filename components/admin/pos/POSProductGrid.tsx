@@ -23,7 +23,7 @@ const irAProductos = () => window.dispatchEvent(new CustomEvent("admin:navigate"
 /** Grilla de productos del POS: un toque agrega al carrito. */
 export default function POSProductGrid({ products, filtered, expanded, cart, favorites, addToCart, toggleFavorite }: POSProductGridProps) {
   return (
-          <div className="flex-1 overflow-y-auto p-3">
+          <div className="min-h-0 flex-1 overflow-y-auto p-3" data-pos-grilla>
             {products.length === 0 ? (
               <EmptyState
                 icon={ShoppingCart}
@@ -39,11 +39,12 @@ export default function POSProductGrid({ products, filtered, expanded, cart, fav
             ) : (
               <div className={cn(
                 "grid gap-1.5",
+                // Las columnas salen del ancho que queda (no del de la ventana): con el menú lateral
+                // abierto o en pantalla completa entran las que caben de ~6,5 rem. En celular, 2: con 3
+                // las tarjetas quedaban a ~106 px y los nombres se apretaban.
                 expanded
-                  ? "grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8"
-                  : // En phone 2 columnas: con 3 las cards quedaban a ~106px y los
-                    // nombres se apretaban a 2 líneas con clamp. 2-col = más legible.
-                    "grid-cols-2 sm:grid-cols-4 md:grid-cols-5 xl:grid-cols-5"
+                  ? "grid-cols-[repeat(auto-fill,minmax(6.5rem,1fr))]"
+                  : "grid-cols-2 sm:grid-cols-[repeat(auto-fill,minmax(6.5rem,1fr))]"
               )}>
                 {filtered.map(p => {
                   const inCart = cart.find(i => i.product.id === p.id);
@@ -60,10 +61,10 @@ export default function POSProductGrid({ products, filtered, expanded, cart, fav
                         outOfStock && "opacity-40 cursor-not-allowed"
                       )}
                     >
-                      <div className="aspect-[16/10] sm:aspect-[5/4] rounded-md overflow-hidden bg-[var(--surface-sunken)] mb-1 relative">
+                      <div className="aspect-[5/2] sm:aspect-[16/10] rounded-md overflow-hidden bg-[var(--surface-sunken)] mb-1 relative">
                         <POSProductImage src={p.image} name={p.name} />
                         {inCart && (
-                          <div className="absolute top-0.5 right-0.5 h-4 w-4 rounded-full bg-primary text-white text-[length:var(--ts-2xs)] font-bold flex items-center justify-center">
+                          <div className="absolute top-0.5 right-0.5 h-6 min-w-6 px-1 rounded-full bg-[var(--text-primary)] text-[var(--surface-raised)] text-xs font-bold flex items-center justify-center tabular-nums">
                             {inCart.quantity}
                           </div>
                         )}
@@ -87,20 +88,20 @@ export default function POSProductGrid({ products, filtered, expanded, cart, fav
                         )}
                         {outOfStock && (
                           <div className="absolute inset-0 bg-[var(--surface-raised)]/60 flex items-center justify-center">
-                            <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] bg-[var(--data-error-50)] px-1.5 py-0.5 rounded">Agotado</span>
+                            <span className="text-xs font-bold text-[var(--data-error-ink)] bg-[var(--data-error-50)] dark:bg-[var(--surface-raised)] px-1.5 py-0.5 rounded">Agotado</span>
                           </div>
                         )}
                         {p.type === "service" && (
-                          <span className="absolute bottom-0.5 left-0.5 z-10 rounded bg-[var(--accent)] px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-white shadow-sm">
+                          <span className="absolute bottom-0.5 left-0.5 z-10 rounded bg-[var(--text-primary)] px-1.5 py-0.5 text-xs font-bold uppercase tracking-wide text-[var(--surface-raised)] shadow-sm">
                             Servicio
                           </span>
                         )}
                       </div>
-                      <p className="text-xs font-semibold leading-tight text-[var(--text-primary)] dark:text-[var(--text-primary)] line-clamp-2 min-h-[2.2em]">{p.name}</p>
+                      <p className="text-sm font-semibold leading-tight text-[var(--text-primary)] dark:text-[var(--text-primary)] line-clamp-2 min-h-[2.5em]">{p.name}</p>
                       <div className="flex items-center justify-between mt-0.5">
-                        <span className="text-xs font-extrabold text-primary tabular-nums">{fmt(p.price)}</span>
+                        <span className="text-sm font-extrabold text-[var(--accent-ink)] dark:text-[var(--accent)] tabular-nums">{fmt(p.price)}</span>
                         {p.stock != null && (
-                          <span className={cn("text-[length:var(--ts-2xs)] tabular-nums", p.stock <= (p.stockMin || 5) ? "text-[var(--data-warning-ink)] font-semibold" : "text-[var(--text-tertiary)] dark:text-muted")}>
+                          <span className={cn("text-sm tabular-nums", p.stock <= (p.stockMin || 5) ? "text-[var(--data-warning-ink)] font-semibold" : "text-[var(--text-tertiary)] dark:text-muted")}>
                             {p.stock}
                           </span>
                         )}

@@ -30,7 +30,7 @@ export default function POSCategoryChips({ products, category, setCategory }: { 
 
   return (
             <div className="relative">
-              <div className="flex gap-2 overflow-x-auto scrollbar-hide scroll-smooth snap-x pt-1 pb-1">
+              <div className="flex gap-2 overflow-x-auto scrollbar-hide scroll-smooth snap-x">
                 {posCategories.map((c) => {
                   const Icon = CATEGORY_ICONS[c.id] ?? Package;
                   const active = category === c.id;
@@ -40,7 +40,7 @@ export default function POSCategoryChips({ products, category, setCategory }: { 
                       onClick={() => setCategory(c.id)}
                       aria-pressed={active}
                       className={cn(
-                        "snap-start shrink-0 inline-flex items-center gap-2 h-10 px-3.5 rounded-xl border text-sm font-semibold transition-all duration-[var(--dur-fast)]",
+                        "snap-start shrink-0 inline-flex items-center gap-2 h-12 px-4 rounded-2xl border text-sm font-semibold transition-all duration-[var(--dur-fast)]",
                         active
                           ? "bg-primary text-white border-primary shadow-[var(--shadow-sm)]"
                           : "bg-[var(--surface-raised)] text-[var(--text-secondary)] dark:text-muted border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary/40 hover:text-primary hover:bg-primary/5 dark:hover:bg-primary/10",

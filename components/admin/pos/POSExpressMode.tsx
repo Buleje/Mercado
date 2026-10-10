@@ -5,6 +5,7 @@ import { Zap, X, HelpCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { estaAgotado } from "@/lib/pos/stock-vendible";
 import { formatCurrency } from "@/lib/format";
+import { buscarPorCodigo } from "@/components/admin/pos/usePOSLectorCodigo";
 
 interface Product {
   id: number;
@@ -78,10 +79,10 @@ export default function POSExpressMode({
         quantity = Math.max(1, parseInt(xMatch[2], 10));
       }
 
-      // Find product by barcode or ID
+      // Código de barras o SKU exacto (sin importar mayúsculas), o el id
       const product =
-        products.find((p) => p.barcode === code) ||
-        products.find((p) => String(p.id) === code);
+        buscarPorCodigo(products, code) ||
+        products.find((p) => String(p.id) === code.trim());
 
       if (!product) {
         setFeedback(`No se encontro: "${code}"`);

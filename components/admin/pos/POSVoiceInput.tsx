@@ -34,7 +34,7 @@ export default function POSVoiceInput({ products, onAddToCart, onHighlightProduc
       <button
         onClick={togglePanel}
         className={cn(
-          "relative h-10 w-10 rounded-full flex items-center justify-center transition-all border-2 shrink-0",
+          "relative h-12 w-12 rounded-full flex items-center justify-center transition-all border-2 shrink-0",
           isListening
             ? "bg-[var(--data-error-500)] border-[var(--data-error-500)] text-white"
             : "bg-[var(--surface-raised)] border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-primary hover:text-primary",
