@@ -41,10 +41,13 @@ export default function AdminUserDropdown({ userName, userRole, onNavigate, onLo
     .slice(0, 2)
     .toUpperCase() || "U";
 
+  // Entradas fijas de la cuenta. «Mi perfil» ya no está en la barra lateral:
+  // ésta es su puerta (plan «panel unificado», ola 2), junto al enlace de
+  // Configuración › Usuarios y acceso. «plan» abre Configuración › Plan (alias).
   const MENU_ITEMS = [
+    { id: "mi-perfil", label: "Mi perfil", icon: UserCircle, color: "text-[var(--text-secondary)]" },
     { id: "config", label: "Configuración", icon: Settings, color: "text-[var(--text-secondary)]" },
-    { id: "plan", label: "Mi Plan", icon: CreditCard, color: "text-[var(--text-secondary)]" },
-    { id: "mi-perfil", label: "Mi Perfil", icon: UserCircle, color: "text-[var(--text-secondary)]" },
+    { id: "plan", label: "Mi plan", icon: CreditCard, color: "text-[var(--text-secondary)]" },
   ];
 
   return (
@@ -100,7 +103,7 @@ export default function AdminUserDropdown({ userName, userRole, onNavigate, onLo
                   <button
                     key={item.id}
                     onClick={() => { onNavigate(item.id); setOpen(false); }}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
+                    className="w-full flex items-center gap-3 px-3 min-h-12 rounded-xl text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
                   >
                     <Icon className={cn("h-4 w-4 shrink-0", item.color)} />
                     <span>{item.label}</span>

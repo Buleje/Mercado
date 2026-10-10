@@ -1,10 +1,11 @@
 "use client";
 
-import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { CardTitle } from "@buleje/design-system";
+import { button } from "@/components/ui-system/button-variants";
 import { leerJson } from "@/lib/errores/sin-dato";
 import React, { useState, useEffect } from "react";
 import { UserCircle, Mail, Phone, Shield, Key, Save, Loader2, CheckCircle } from "@buleje/design-system/icons";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { Field } from "@/components/admin/shared/Field";
@@ -16,6 +17,8 @@ interface UserProfile {
   role: string;
   createdAt?: string;
 }
+
+const MODULE_ID = "mi-perfil"; // id de la banda de identidad (sin pestañas)
 
 export default function MiPerfilTab() {
   const [profile, setProfile] = useState<UserProfile>({
@@ -129,11 +132,16 @@ export default function MiPerfilTab() {
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <AdminModuleHeader
-        title="Mi Perfil"
-        description="Tu información personal y preferencias de seguridad"
-        icon={UserCircle}
-      />
+      {/* Banda sin pestañas (`:empty` esconde el riel); se llega por el avatar y por
+          Configuración › Usuarios y acceso. La caja evita el aire extra del space-y. */}
+      <div>
+        <AdminTabBar
+          heading={{ title: "Mi perfil", icon: UserCircle,
+            description: "Tu información personal y la seguridad de tu cuenta: datos de contacto y contraseña." }}
+          tabs={[]} activeTab="perfil" onTabChange={() => undefined}
+          moduleId={MODULE_ID} className="[&_[role=tablist]:empty]:hidden"
+        />
+      </div>
 
       {/* Profile Card */}
       <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden">
@@ -148,8 +156,9 @@ export default function MiPerfilTab() {
                 <span className="text-white text-2xl font-bold">{initials}</span>
               </div>
             </div>
-            <div className="pb-1">
-              <SectionTitle className="text-[var(--text-primary)] capitalize">{profile.username || "Usuario"}</SectionTitle>
+            {/* Debajo de la franja: con `items-end` el nombre quedaba tapado. */}
+            <div className="min-w-0 self-start pt-11">
+              <CardTitle className="capitalize">{profile.username || "Usuario"}</CardTitle>
               <span className={cn(
                 "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold",
                 profile.role === "admin" ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" :
@@ -175,7 +184,7 @@ export default function MiPerfilTab() {
                       type="text"
                       value={profile.username}
                       onChange={e => setProfile(p => ({ ...p, username: e.target.value }))}
-                      className="w-full px-3 h-11 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                      className="w-full px-3 h-12 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                     />
                   </Field>
                 ) : (
@@ -203,7 +212,7 @@ export default function MiPerfilTab() {
                       value={profile.phone}
                       onChange={e => setProfile(p => ({ ...p, phone: e.target.value }))}
                       placeholder="+51 999 999 999"
-                      className="w-full px-3 h-11 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                      className="w-full px-3 h-12 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
                     />
                   </Field>
                 ) : (
@@ -232,14 +241,14 @@ export default function MiPerfilTab() {
                   <button
                     onClick={handleSave}
                     disabled={saving}
-                    className="flex items-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors disabled:opacity-50"
+                    className={button({ variant: "accent", className: "rounded-xl" })}
                   >
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                     Guardar
                   </button>
                   <button
                     onClick={() => setEditMode(false)}
-                    className="px-4 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] transition-colors"
+                    className={button({ variant: "ghost", className: "rounded-xl" })}
                   >
                     Cancelar
                   </button>
@@ -247,7 +256,7 @@ export default function MiPerfilTab() {
               ) : (
                 <button
                   onClick={() => setEditMode(true)}
-                  className="flex items-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
+                  className={button({ variant: "secondary", className: "rounded-xl" })}
                 >
                   Editar perfil
                 </button>
@@ -266,13 +275,13 @@ export default function MiPerfilTab() {
       <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-6">
         <div className="flex items-center gap-2 mb-4">
           <Key className="h-5 w-5 text-[var(--text-secondary)]" />
-          <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Seguridad</CardTitle>
+          <CardTitle>Seguridad</CardTitle>
         </div>
 
         {!showPasswordForm ? (
           <button
             onClick={() => setShowPasswordForm(true)}
-            className="flex items-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
+            className={button({ variant: "secondary", className: "rounded-xl" })}
           >
             <Key className="h-4 w-4" />
             Cambiar contraseña
@@ -284,7 +293,7 @@ export default function MiPerfilTab() {
                 type="password"
                 value={currentPassword}
                 onChange={e => setCurrentPassword(e.target.value)}
-                className="w-full px-3 h-11 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                className="w-full px-3 h-12 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               />
             </Field>
             <Field label="Nueva contraseña" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">
@@ -292,7 +301,7 @@ export default function MiPerfilTab() {
                 type="password"
                 value={newPassword}
                 onChange={e => setNewPassword(e.target.value)}
-                className="w-full px-3 h-11 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                className="w-full px-3 h-12 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               />
             </Field>
             <Field label="Confirmar contraseña" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">
@@ -300,7 +309,7 @@ export default function MiPerfilTab() {
                 type="password"
                 value={confirmPassword}
                 onChange={e => setConfirmPassword(e.target.value)}
-                className="w-full px-3 h-11 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                className="w-full px-3 h-12 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               />
             </Field>
             {passwordError && (
@@ -310,14 +319,14 @@ export default function MiPerfilTab() {
               <button
                 onClick={handlePasswordChange}
                 disabled={passwordSaving}
-                className="flex items-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors disabled:opacity-50"
+                className={button({ variant: "accent", className: "rounded-xl" })}
               >
                 {passwordSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Key className="h-4 w-4" />}
                 Cambiar
               </button>
               <button
                 onClick={() => { setShowPasswordForm(false); setPasswordError(""); }}
-                className="px-4 py-2.5 rounded-xl text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] transition-colors"
+                className={button({ variant: "ghost", className: "rounded-xl" })}
               >
                 Cancelar
               </button>

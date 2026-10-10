@@ -11,7 +11,7 @@
  */
 import { cn } from "@/lib/utils";
 import { SectionTitle } from "@buleje/design-system";
-import { AlertTriangle, CircleDot } from "@buleje/design-system/icons";
+import { AlertTriangle, CircleDot, Search, X } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { GRUPOS_AJUSTES, type SeccionAjustes, type SeccionMeta } from "./secciones";
@@ -39,6 +39,42 @@ function Contador({ n, className }: { n: number; className?: string }) {
   );
 }
 
+/**
+ * El buscador de ajustes. Vive en la banda de identidad de Configuración
+ * (antes, dentro del encabezado viejo); Enter salta a la primera sección que
+ * coincide. 48 px de alto, como todo filtro del panel (decisión de Brandon).
+ */
+export function BuscadorAjustes({ valor, onCambiar, onIrAPrimera }: {
+  valor: string;
+  onCambiar: (v: string) => void;
+  onIrAPrimera: () => void;
+}) {
+  return (
+    <div className="relative w-full sm:w-72">
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
+      <input
+        type="search"
+        aria-label="Buscar un ajuste"
+        value={valor}
+        onChange={(e) => onCambiar(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter") onIrAPrimera(); }}
+        placeholder="Buscar: yape, igv, logo…"
+        className="w-full pl-9 pr-11 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+      />
+      {valor && (
+        <button
+          type="button"
+          aria-label="Limpiar búsqueda"
+          onClick={() => onCambiar("")}
+          className="absolute right-1 top-1/2 -translate-y-1/2 grid h-10 w-10 place-items-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      )}
+    </div>
+  );
+}
+
 /** Celular: las secciones en una fila que se desliza. */
 export function MenuSeccionesMovil({ secciones, activa, pendientes, onIr }: MenuProps) {
   return (
@@ -53,7 +89,7 @@ export function MenuSeccionesMovil({ secciones, activa, pendientes, onIr }: Menu
             onClick={() => onIr(s.id)}
             aria-current={esta ? "page" : undefined}
             className={cn(
-              "shrink-0 inline-flex items-center gap-1.5 h-10 px-3 rounded-xl border text-sm font-semibold transition-colors",
+              "shrink-0 inline-flex items-center gap-1.5 h-12 px-3 rounded-xl border text-sm font-semibold transition-colors",
               esta
                 ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)]",
@@ -90,7 +126,7 @@ export function MenuSeccionesEscritorio({ secciones, activa, pendientes, onIr }:
                     aria-current={esta ? "page" : undefined}
                     title={s.desc}
                     className={cn(
-                      "w-full flex items-center gap-2.5 px-3 h-10 rounded-xl text-left text-sm transition-colors",
+                      "w-full flex items-center gap-2.5 px-3 h-12 rounded-xl text-left text-sm transition-colors",
                       esta
                         ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] font-bold"
                         : "text-[var(--text-secondary)] font-semibold hover:bg-[var(--surface-sunken)]",

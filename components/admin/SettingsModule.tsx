@@ -10,16 +10,29 @@
  * envoltorio de la respuesta y guardaban contra un PATCH que no existe. Quedan 8 secciones en un menú
  * agrupado; las columnas siguen en la base (no se borró ningún dato).
  * Las secciones y su buscador: `settings/secciones.ts`.
+ *
+ * Plan «panel unificado», ola 2 (2026-10-10): Configuración es el único
+ * destino de lo que era el grupo Sistema. «Plan» monta la pantalla entera del
+ * plan (`PlanTab`: uso del mes, funcionalidades, dominio, portal y comparar)
+ * con el selector de niveles plegado; «Sistema» trae un segundo nivel
+ * (`?sub=`: preferencias, velocidad, historial, salud, soporte, actividad,
+ * colas). La identidad va en la banda de `AdminTabBar` (contrato de diseño):
+ * título, ⓘ y el buscador en una fila, sin pestañas —el menú de la izquierda
+ * hace de primer nivel—.
  */
 import { useEffect, useCallback, useId, useMemo, useState } from "react";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import { m, AnimatePresence } from "@/components/admin/providers";
+import { DURATION, EASE } from "@/components/ui-system/motion";
+import { button } from "@/components/ui-system/button-variants";
 import type { StoreMode } from "@/lib/jsondb";
 import dynamic from "next/dynamic";
-import { AlertTriangle, SlidersHorizontal, Search, X } from "@buleje/design-system/icons";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { AlertTriangle, SlidersHorizontal } from "@buleje/design-system/icons";
+import AdminTabBar from "@/components/admin/shared/AdminTabBar";
+import Plegable from "@/components/admin/shared/Plegable";
+import { PermisoDe } from "@/components/admin/shared/PermisoDe";
 import { TABS, IDS_AJUSTES, filtrarSecciones, type SeccionAjustes } from "@/components/admin/settings/secciones";
-import { MenuSeccionesMovil, MenuSeccionesEscritorio, CabeceraSeccion } from "@/components/admin/settings/navegacion";
+import { MenuSeccionesMovil, MenuSeccionesEscritorio, CabeceraSeccion, BuscadorAjustes } from "@/components/admin/settings/navegacion";
 import { useAjustes } from "@/components/admin/settings/use-ajustes";
 import { ModalUbicacion } from "@/components/admin/settings/ModalUbicacion";
 import { SeccionNegocio } from "@/components/admin/settings/SeccionNegocio";
@@ -34,6 +47,10 @@ const PlanTierSelector = dynamic(
   () => import("@/components/admin/PlanTierSelector"),
   { ssr: false },
 );
+const PlanTab = dynamic(() => import("@/components/admin/PlanTab"), { ssr: false });
+const SistemaSubvistas = dynamic(() => import("@/components/admin/sistema/SistemaSubvistas"), { ssr: false });
+
+const MODULE_ID = "config";
 
 // Secciones que se llenan con /api/settings (Plan, Equipo, Mi panel y Sistema traen lo suyo).
 const SECCIONES_CON_DATOS: ReadonlySet<SeccionAjustes> = new Set(["negocio", "cobros", "delivery", "tienda"]);
@@ -84,11 +101,11 @@ export default function SettingsModule({
   const renderSection = () => {
     if (cargaFallida && SECCIONES_CON_DATOS.has(activeSection)) return (
       <div role="alert" className="flex flex-col items-start gap-3 rounded-xl border border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 p-5">
-        <p className="flex items-center gap-2 text-sm font-bold text-[var(--data-error-500)]">
+        <p className="flex items-center gap-2 text-sm font-bold text-[var(--data-error-ink)]">
           <AlertTriangle className="h-4 w-4 shrink-0" /> No se pudo cargar tu configuración
         </p>
         <p className="text-xs text-[var(--text-secondary)]">Para no guardar vacío encima de tus datos, esta sección queda bloqueada hasta que cargue.</p>
-        <button type="button" onClick={cargar} className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90">
+        <button type="button" onClick={cargar} className={button({ variant: "secondary", className: "rounded-xl" })}>
           Reintentar
         </button>
       </div>
@@ -98,10 +115,27 @@ export default function SettingsModule({
       case "cobros": return <SeccionCobros aj={aj} onNavigateTab={onNavigateTab} />;
       case "delivery": return <SeccionDelivery aj={aj} />;
       case "tienda": return <SeccionTienda aj={aj} />;
-      case "plan": return <PlanTierSelector />;
+      case "plan": return (
+        <div className="space-y-6">
+          {/* Lo que abría `?tab=plan`: se ve para quien lo veía ahí (R2). */}
+          <PermisoDe origen="plan">
+            <PlanTab />
+          </PermisoDe>
+          {/* Hay dos catálogos de planes (lib/plans y lib/billing/plan-tiers):
+              no se borra ninguno, decide Brandon. Éste es el de los niveles
+              que desbloquean pestañas. */}
+          <Plegable clave="ajustes-plegable-plan-niveles" titulo="Qué incluye cada nivel" resumen="Básico, Pro, Enterprise y Max: qué pestañas desbloquea cada uno">
+            <PlanTierSelector />
+          </Plegable>
+        </div>
+      );
       case "equipo": return <SeccionEquipo aj={aj} onNavigateTab={onNavigateTab} />;
       case "panel": return <SeccionPanel reorderCategories={reorderCategories} onSaveSidebarOrder={onSaveSidebarOrder} />;
-      case "sistema": return <SeccionSistema aj={aj} onResetTutorial={onResetTutorial} onNavigateTab={onNavigateTab} />;
+      case "sistema": return (
+        <SistemaSubvistas
+          preferencias={<SeccionSistema aj={aj} onResetTutorial={onResetTutorial} onNavigateTab={onNavigateTab} />}
+        />
+      );
     }
   };
 
@@ -113,31 +147,30 @@ export default function SettingsModule({
 
   return (
     <div className="space-y-5">
-      <AdminModuleHeader
-        title="Configuración"
-        description="Tu negocio, cobros, tienda y panel"
-        icon={SlidersHorizontal}
-        bgTint="bg-[var(--surface-sunken)] "
-        iconColorClass="text-[var(--text-secondary)] "
-      >
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
-          <input
-            type="search"
-            aria-label="Buscar un ajuste"
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter" && encontradas[0]) irASeccion(encontradas[0].id); }}
-            placeholder="Buscar: yape, igv, logo…"
-            className="w-full pl-9 pr-9 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-          />
-          {searchQuery && (
-            <button type="button" aria-label="Limpiar búsqueda" onClick={() => setSearchQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]">
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
-      </AdminModuleHeader>
+      {/* Banda de identidad sin pestañas: el `:empty` esconde el riel vacío.
+          En una caja: la barra devuelve dos hermanos (banda + panel vacío) y
+          el `space-y` del padre les daría aire de más. */}
+      <div>
+        <AdminTabBar
+          heading={{
+            title: "Configuración",
+            description: "Tu negocio, cobros, delivery, tienda, plan, usuarios, tu panel y el sistema",
+            icon: SlidersHorizontal,
+            actions: (
+              <BuscadorAjustes
+                valor={searchQuery}
+                onCambiar={setSearchQuery}
+                onIrAPrimera={() => { if (encontradas[0]) irASeccion(encontradas[0].id); }}
+              />
+            ),
+          }}
+          tabs={[]}
+          activeTab={activeSection}
+          onTabChange={(id) => irASeccion(id as SeccionAjustes)}
+          moduleId={MODULE_ID}
+          className="[&_[role=tablist]:empty]:hidden"
+        />
+      </div>
 
       <MenuSeccionesMovil secciones={encontradas} activa={activeSection} pendientes={pendientes} onIr={irASeccion} />
 
@@ -161,7 +194,7 @@ export default function SettingsModule({
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.15 }}
+              transition={{ duration: DURATION.fast, ease: EASE.editorial }}
             >
               {renderSection()}
             </m.div>

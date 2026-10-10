@@ -22,6 +22,7 @@ import dynamic from "next/dynamic";
 import { CardTitle } from "@buleje/design-system";
 import { AlertCircle, CheckCircle2, Loader2, Save, ShieldCheck } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 
 const SunatModoOficialCard = dynamic(() => import("./SunatModoOficialCard"), { ssr: false });
 
@@ -169,11 +170,16 @@ export default function SunatConexionTab() {
           no se vuelve a dibujar. */}
       <SunatModoOficialCard />
 
-      {/* Lo que esta pantalla NO puede hacer, dicho antes de que lo busque. */}
-      <p className="flex items-start gap-2 rounded-xl bg-[var(--surface-sunken)] px-4 py-3 text-sm text-[var(--text-secondary)]">
-        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
-        Esto conecta la <b className="text-[var(--text-primary)]">emisión</b> de boletas y facturas. La deuda
-        tributaria no se puede consultar desde acá: SUNAT sólo la muestra dentro de SOL con tu Clave SOL.
+      {/* Lo que esta pantalla NO puede hacer, dicho antes de que lo busque: una
+          línea a la vista y el detalle en el ⓘ (regla «explicar con ⓘ»). */}
+      <p className="flex items-center gap-2 rounded-xl bg-[var(--surface-sunken)] px-4 py-3 text-sm text-[var(--text-secondary)]">
+        <AlertCircle className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+        Conecta la <b className="text-[var(--text-primary)]">emisión</b> de boletas y facturas.
+        <InfoTip
+          title="Qué conecta esta pantalla"
+          what="La emisión de boletas y facturas electrónicas por Nubefact."
+          affects="La deuda tributaria no se puede consultar desde acá: SUNAT sólo la muestra dentro de SOL con tu Clave SOL."
+        />
       </p>
 
       <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">

@@ -1,13 +1,14 @@
 "use client";
 
-import { DataTable } from "@buleje/design-system";
+import { DataTable, StatCard } from "@buleje/design-system";
 import { EmptyState } from "@/components/admin/EmptyState";
+import SegmentedControl from "@/components/ui-system/SegmentedControl";
+import { LoadingSpinner } from "@/components/ui-system/LoadingSpinner";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Shield, Search, RefreshCw, ChevronLeft, ChevronRight, User, Clock, FileText, Globe,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import {
   categoryOf, actionLabel, CATEGORY_UI, CATEGORY_ORDER, type AuditCategory,
 } from "@/components/admin/tabs/audit-categories";
@@ -136,71 +137,42 @@ export default function AuditTrailModule() {
 
   return (
     <div className="space-y-4">
-      <AdminModuleHeader
-        title="Auditoría"
-        description="Quién hizo qué y cuándo — el registro completo de tu tienda"
-        icon={Shield}
-      />
+      {/* Sin encabezado propio (plan «panel unificado», ola 2): es la sub-vista
+          «Actividad» de Configuración › Sistema, que ya pone título y barra. */}
 
       {/* Resumen por categoría */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-        <div className="rounded-2xl border-2 border-[var(--accent)]/25 bg-primary/10 p-4">
-          <p className="text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-[var(--accent-dark)] dark:text-[var(--accent)]">
-            Total de acciones
-          </p>
-          <p className="mt-1 font-display text-3xl font-extrabold tabular-nums text-[var(--text-primary)]">
-            {summary ? formatNumber(summary.total) : "—"}
-          </p>
-        </div>
-        {CATEGORY_ORDER.filter((c) => c !== "otro" || catCounts.otro > 0).map((cat) => {
-          const ui = CATEGORY_UI[cat];
-          const Icon = ui.icon;
-          return (
-            <div key={cat} className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-              <div className="flex items-center gap-2">
-                <span
-                  className="flex h-7 w-7 items-center justify-center rounded-lg"
-                  style={{ backgroundColor: `color-mix(in srgb, ${ui.accentVar} 14%, transparent)`, color: ui.accentVar }}
-                >
-                  <Icon className="h-4 w-4" strokeWidth={2} aria-hidden />
-                </span>
-                <p className="text-sm font-semibold text-[var(--text-secondary)]">{ui.label}</p>
-              </div>
-              <p className="mt-1.5 font-display text-2xl font-extrabold tabular-nums text-[var(--text-primary)]">
-                {summary ? formatNumber(catCounts[cat]) : "—"}
-              </p>
-            </div>
-          );
-        })}
+      {/* Una fila a 1280: 5 cifras, o 6 cuando hay «Otros». */}
+      <div className={cn("grid grid-cols-2 gap-3 sm:grid-cols-3", catCounts.otro > 0 ? "lg:grid-cols-6" : "lg:grid-cols-5")}>
+        <StatCard density="compact" highlight label="Total de acciones" value={summary ? formatNumber(summary.total) : "—"} />
+        {CATEGORY_ORDER.filter((c) => c !== "otro" || catCounts.otro > 0).map((cat) => (
+          <StatCard
+            key={cat}
+            density="compact"
+            label={CATEGORY_UI[cat].label}
+            icon={CATEGORY_UI[cat].icon}
+            value={summary ? formatNumber(catCounts[cat]) : "—"}
+          />
+        ))}
       </div>
 
       {/* Filtros */}
       <div className="space-y-3">
         {/* Período segmentado */}
-        <div className="inline-flex rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-1">
-          {PERIODS.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => { setPeriod(p.id); setPage(0); }}
-              className={cn(
-                "rounded-xl px-4 min-h-10 text-sm font-semibold transition-colors",
-                period === p.id
-                  ? "bg-[var(--accent)] text-white"
-                  : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
-              )}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl<Period>
+          value={period}
+          onChange={(p) => { setPeriod(p); setPage(0); }}
+          options={PERIODS.map((p) => ({ value: p.id, label: p.label }))}
+          label="Período"
+          size="lg"
+        />
 
         <div className="flex flex-wrap gap-3">
           <div className="relative min-w-[220px] flex-1">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
             <input
               type="text"
-              placeholder="Buscar por usuario..."
+              placeholder="Buscar por usuario…"
+              aria-label="Buscar por usuario"
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(0); }}
               className={cn(FILTER_CLS, "w-full pl-12 pr-4 placeholder:text-[var(--text-tertiary)]")}
@@ -230,6 +202,7 @@ export default function AuditTrailModule() {
             ))}
           </select>
           <button
+            type="button"
             onClick={fetchLogs}
             className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
             title="Actualizar"
@@ -257,14 +230,14 @@ export default function AuditTrailModule() {
       {/* Contenido */}
       <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
         {loading ? (
-          <div className="p-10 text-center">
-            <div className="mx-auto h-7 w-7 animate-spin rounded-full border-2 border-[var(--accent)] border-t-transparent" />
+          <div className="flex justify-center p-10" role="status" aria-label="Cargando la actividad">
+            <LoadingSpinner size={32} />
           </div>
         ) : logs.length === 0 ? (
           <EmptyState
             icon={<Shield className="h-9 w-9" aria-hidden />}
             title="No hay registros para estos filtros"
-            description="La auditoría guarda quién hizo qué y cuándo. Si esperabas ver algo acá, lo más probable es que el período o los filtros estén dejando fuera esos movimientos."
+            description="Prueba con otro período o quita los filtros."
             actions={[{ label: "Quitar todos los filtros", variant: "primary", onClick: () => resetFiltros() }]}
           />
         ) : (
@@ -410,18 +383,20 @@ export default function AuditTrailModule() {
             <span className="text-sm text-[var(--text-secondary)]">{formatNumber(total)} registros</span>
             <div className="flex items-center gap-2">
               <button
+                type="button"
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={page === 0}
-                className="flex h-11 w-11 items-center justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] transition-colors hover:border-[var(--accent)] disabled:opacity-40 disabled:hover:border-[var(--rule-base)]"
+                className="flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] transition-colors hover:border-[var(--accent)] disabled:opacity-40 disabled:hover:border-[var(--rule-base)]"
                 aria-label="Página anterior"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
               <span className="text-sm font-semibold tabular-nums text-[var(--text-secondary)]">{page + 1} / {totalPages}</span>
               <button
+                type="button"
                 onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
-                className="flex h-11 w-11 items-center justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] transition-colors hover:border-[var(--accent)] disabled:opacity-40 disabled:hover:border-[var(--rule-base)]"
+                className="flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] transition-colors hover:border-[var(--accent)] disabled:opacity-40 disabled:hover:border-[var(--rule-base)]"
                 aria-label="Página siguiente"
               >
                 <ChevronRight className="h-4 w-4" />

@@ -1,7 +1,8 @@
 "use client";
 
-import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { CardTitle, LoadingState } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { button } from "@/components/ui-system/button-variants";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useEffect, useState } from "react";
 import {
@@ -61,9 +62,9 @@ function formatLimit(max: number) {
 
 const PLAN_COLORS: Record<string, string> = {
   free: "bg-[var(--rule-base)] text-[var(--text-primary)]",
-  pro: "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+  pro: "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-ink)]",
   business: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
-  enterprise: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/40 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
+  enterprise: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/20 text-[var(--data-warning-ink)]",
 };
 
 const PLAN_BAR_COLOR: Record<string, string> = {
@@ -97,9 +98,9 @@ function UsageBar({
           {icon}
           {label}
         </div>
-        <span className={`text-xs font-semibold ${isFull ? "text-[var(--data-error-500)]" : isWarning ? "text-[var(--data-warning-500)]" : "text-muted"}`}>
+        <span className={`text-xs font-semibold ${isFull ? "text-[var(--data-error-ink)]" : isWarning ? "text-[var(--data-warning-ink)]" : "text-muted"}`}>
           {unlimited ? (
-            <span className="text-[var(--data-success-500)] font-bold">∞ ilimitado</span>
+            <span className="text-[var(--data-success-ink)] font-bold">∞ ilimitado</span>
           ) : (
             <>{formatNumber(used)} / {formatNumber(max)}</>
           )}
@@ -114,12 +115,12 @@ function UsageBar({
         </div>
       )}
       {isWarning && !isFull && (
-        <p className="text-xs text-[var(--data-warning-500)] flex items-center gap-1">
+        <p className="text-xs text-[var(--data-warning-ink)] flex items-center gap-1">
           <AlertTriangle className="w-3 h-3" /> Cerca del límite ({percent}%)
         </p>
       )}
       {isFull && (
-        <p className="text-xs text-[var(--data-error-500)] flex items-center gap-1">
+        <p className="text-xs text-[var(--data-error-ink)] flex items-center gap-1">
           <XCircle className="w-3 h-3" /> Límite alcanzado — actualiza tu plan
         </p>
       )}
@@ -219,7 +220,7 @@ function PlanCard({
           <button
             onClick={onSelectStripe}
             disabled={loadingStripe || loadingMP}
-            className="w-full py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-1.5 min-h-[44px]"
+            className={button({ variant: "accent", fullWidth: true, className: "rounded-xl" })}
           >
             {loadingStripe ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -233,7 +234,7 @@ function PlanCard({
           <button
             onClick={onSelectMP}
             disabled={loadingStripe || loadingMP}
-            className="w-full py-2 rounded-xl text-white text-sm font-semibold hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-1.5 min-h-[44px]"
+            className={button({ variant: "ghost", fullWidth: true, className: "rounded-xl text-white hover:opacity-90" })}
             style={{ backgroundColor: loadingStripe || loadingMP ? "#009ee3cc" : "#009ee3" }}
           >
             {loadingMP ? (
@@ -447,18 +448,13 @@ export default function PlanTab() {
 
   return (
     <div className="space-y-6 max-w-4xl">
-      <AdminModuleHeader
-        eyebrow="Cuenta · Suscripción"
-        title="Mi Plan"
-        description="Tu plan actual, el uso del mes y las opciones para mejorar tu tienda."
-        icon={Zap}
-      />
+      {/* Sin encabezado propio: Configuración › Plan ya pone el título (ola 2). */}
 
       {/* Toast */}
       {toast && (
         <div
           className={`fixed top-4 right-4 z-50 px-2 sm:px-4 py-2 sm:py-3 rounded-lg text-white text-sm font-medium ${
-            toast.ok ? "bg-primary/10" : "bg-[var(--data-error-500)]"
+            toast.ok ? "bg-[var(--accent-dark)]" : "bg-[var(--data-error-600)]"
           }`}
         >
           {toast.msg}
@@ -470,10 +466,10 @@ export default function PlanTab() {
         <div className="flex flex-wrap items-center gap-3 bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] rounded-xl p-4">
           <AlertTriangle className="w-5 h-5 text-[var(--data-warning-500)] shrink-0" />
           <div>
-            <p className="font-semibold text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
+            <p className="font-semibold text-sm text-[var(--data-warning-ink)]">
               Período de prueba — {trialDaysLeft} día{trialDaysLeft !== 1 ? "s" : ""} restantes
             </p>
-            <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-0.5">
+            <p className="text-xs text-[var(--data-warning-ink)] mt-0.5">
               Actualiza tu plan antes de que venza para no perder el acceso.
             </p>
           </div>
@@ -483,10 +479,10 @@ export default function PlanTab() {
       {/* Current plan header */}
       <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-4">
         <div>
-          <SectionTitle className="flex flex-wrap items-center gap-2">
+          <CardTitle className="flex flex-wrap items-center gap-2">
             <Zap className="w-5 h-5 text-primary" />
             Plan actual
-          </SectionTitle>
+          </CardTitle>
           <p className="text-muted text-sm mt-1">Tienda: <strong>{tenant.name ?? tenant.slug}</strong></p>
         </div>
         <span className={`text-sm font-bold px-4 py-1.5 rounded-full ${PLAN_COLORS[plan] ?? PLAN_COLORS.free}`}>
@@ -496,8 +492,8 @@ export default function PlanTab() {
       </div>
 
       {/* Usage meters */}
-      <div className="bg--(--color-card) border border-(--color-card-border) rounded-xl p-3 sm:p-6 space-y-3 sm:space-y-6">
-        <CardTitle className="text-sm font-bold text-muted">Uso del mes actual</CardTitle>
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3 sm:p-6 space-y-3 sm:space-y-6">
+        <CardTitle>Uso del mes actual</CardTitle>
         <UsageBar
           label="Productos"
           icon={<ShoppingBag className="w-4 h-4 text-muted" />}
@@ -522,9 +518,9 @@ export default function PlanTab() {
       </div>
 
       {/* Features enabled */}
-      <div className="bg--(--color-card) border border-(--color-card-border) rounded-xl p-3 sm:p-6 space-y-3">
-        <CardTitle className="text-sm font-bold text-muted flex items-center gap-1.5">
-          <BarChart2 className="w-4 h-4" /> Funcionalidades incluidas
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3 sm:p-6 space-y-3">
+        <CardTitle className="flex items-center gap-1.5">
+          <BarChart2 className="w-4 h-4 text-[var(--text-tertiary)]" /> Funcionalidades incluidas
         </CardTitle>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <FeatureRow label="Analytics avanzado" available={limits.advancedAnalytics} />
@@ -538,14 +534,19 @@ export default function PlanTab() {
       </div>
 
       {/* Custom domain management */}
-      <div className="bg--(--color-card) border border-(--color-card-border) rounded-xl p-3 sm:p-6 space-y-4">
-        <CardTitle className="text-sm font-bold text-muted flex items-center gap-1.5">
-          <Globe className="w-4 h-4" /> Dominio personalizado
+      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3 sm:p-6 space-y-4">
+        <CardTitle className="flex items-center gap-1.5">
+          <Globe className="w-4 h-4 text-[var(--text-tertiary)]" /> Dominio personalizado
         </CardTitle>
         {!limits.customDomain ? (
-          <div className="flex flex-wrap items-start gap-3 text-sm text-muted">
-            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-[var(--data-warning-500)]" />
-            <span>El dominio personalizado está disponible en los planes <strong>Pro</strong>, <strong>Business</strong> y <strong>Enterprise</strong>. Actualiza tu plan para configurarlo.</span>
+          <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
+            <AlertTriangle className="w-4 h-4 shrink-0 text-[var(--data-warning-500)]" />
+            <span>Disponible desde el plan Pro.</span>
+            <InfoTip
+              title="Dominio personalizado"
+              what="Tu tienda con tu propia dirección (www.mitienda.com) en vez del subdominio de Buleje."
+              affects="Está en los planes Pro, Business y Enterprise: actualiza tu plan para configurarlo."
+            />
           </div>
         ) : (
           <div className="space-y-6">
@@ -558,13 +559,13 @@ export default function PlanTab() {
                   value={domainInput}
                   onChange={(e) => setDomainInput(e.target.value)}
                   placeholder="www.mitienda.com"
-                  className="w-full bg-transparent border border-(--color-card-border) rounded-xl pl-9 pr-4 h-11 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl pl-9 pr-4 h-12 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
               <button
                 onClick={handleSaveDomain}
                 disabled={domainSaving || !domainInput.trim()}
-                className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50 flex items-center gap-1.5"
+                className={button({ variant: "accent", className: "rounded-xl" })}
               >
                 {domainSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                 Guardar
@@ -574,7 +575,8 @@ export default function PlanTab() {
                   onClick={handleRemoveDomain}
                   disabled={domainRemoving}
                   title="Eliminar dominio"
-                  className="p-2.5 rounded-xl border border-[var(--data-error-500)] text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-red-950 disabled:opacity-50"
+                  aria-label="Eliminar dominio"
+                  className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-[var(--data-error-500)] text-[var(--data-error-ink)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/15 disabled:opacity-50"
                 >
                   {domainRemoving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                 </button>
@@ -583,7 +585,7 @@ export default function PlanTab() {
 
             {/* DNS instructions */}
             {tenant.customDomain && (
-              <div className="bg--(--color-surface) rounded-xl p-4 space-y-3">
+              <div className="bg-[var(--surface-sunken)] rounded-xl p-4 space-y-3">
                 <p className="text-sm font-semibold">Configura tu DNS</p>
                 <p className="text-xs text-muted">En el panel de tu proveedor de dominio, añade el siguiente registro:</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-xs font-mono bg-muted/10 rounded-lg p-3">
@@ -598,24 +600,24 @@ export default function PlanTab() {
                   <button
                     onClick={handleVerifyDomain}
                     disabled={domainVerifying}
-                    className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-(--color-card-border) hover:bg-(--color-surface) disabled:opacity-50"
+                    className={button({ variant: "secondary", className: "rounded-xl" })}
                   >
                     {domainVerifying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
                     Verificar CNAME
                   </button>
                   {domainVerified === true && (
-                    <span className="flex items-center gap-1 text-xs text-[var(--data-success-500)] font-medium">
+                    <span className="flex items-center gap-1 text-xs text-[var(--data-success-ink)] font-medium">
                       <CheckCircle2 className="w-3.5 h-3.5" /> Verificado
                     </span>
                   )}
                   {domainVerified === false && (
-                    <span className="flex items-center gap-1 text-xs text-[var(--data-error-500)]">
+                    <span className="flex items-center gap-1 text-xs text-[var(--data-error-ink)]">
                       <XCircle className="w-3.5 h-3.5" /> No verificado
                     </span>
                   )}
                 </div>
                 {domainVerifyMsg && (
-                  <p className={`text-xs mt-1 ${domainVerified ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"}`}>{domainVerifyMsg}</p>
+                  <p className={`text-xs mt-1 ${domainVerified ? "text-[var(--data-success-ink)]" : "text-[var(--data-error-ink)]"}`}>{domainVerifyMsg}</p>
                 )}
               </div>
             )}
@@ -625,7 +627,7 @@ export default function PlanTab() {
 
       {/* Manage subscription (only when on a paid plan with Stripe) */}
       {plan !== "free" && tenant.stripeCustomerId && (
-        <div className="flex items-center justify-between bg--(--color-card) border border-(--color-card-border) rounded-xl px-5 py-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl px-5 py-4">
           <div>
             <p className="font-semibold text-sm">Gestionar facturación</p>
             <p className="text-xs text-muted mt-0.5">Cambia tu método de pago, descarga facturas o cancela.</p>
@@ -633,7 +635,7 @@ export default function PlanTab() {
           <button
             onClick={handlePortal}
             disabled={redirecting}
-            className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl border border-(--color-card-border) text-sm font-semibold hover:bg-(--color-surface) disabled:opacity-60"
+            className={button({ variant: "secondary", className: "rounded-xl" })}
           >
             {redirecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
             Portal de facturación
@@ -643,7 +645,13 @@ export default function PlanTab() {
 
       {/* Plan comparison cards */}
       <div>
-        <CardTitle className="text-sm font-bold mb-4">Comparar planes</CardTitle>
+        <div className="mb-4 flex items-center gap-1.5">
+          <CardTitle>Comparar planes</CardTitle>
+          <InfoTip
+            title="Cómo pagar tu plan"
+            what="Paga con Stripe (tarjeta internacional) o con Mercado Pago (Yape, BCP, Plin y más)."
+          />
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
           {(Object.values(PLANS) as PlanDef[]).map((def) => (
             <PlanCard
@@ -671,9 +679,6 @@ export default function PlanTab() {
           </div>
         )}
 
-        <p className="text-xs text-muted mt-4 text-center">
-          Paga con Stripe (tarjeta internacional) o Mercado Pago (Yape, BCP, Plin y más).
-        </p>
       </div>
     </div>
   );

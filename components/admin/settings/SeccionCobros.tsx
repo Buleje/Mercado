@@ -1,11 +1,19 @@
 import { useRef } from "react";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { Upload, AlertTriangle, FileText, Landmark, Hash, Percent, Timer, ChevronRight } from "@buleje/design-system/icons";
-import { FieldLabel, TextInput, NumberInput, Toggle, SectionCard, SaveButton } from "@/components/admin/settings/campos";
+import { FieldLabel, TextInput, NumberInput, Toggle, SectionCard, SaveButton, Plegable } from "@/components/admin/settings/campos";
 import { LINK_A_OTRA_PANTALLA } from "@/components/admin/settings/enlaces";
 import type { AjustesEstado } from "@/components/admin/settings/use-ajustes";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { topeCajeroParaGuardar } from "@/lib/pos/descuento-cajero";
+import { PermisoDe } from "@/components/admin/shared/PermisoDe";
+
+/* La conexión con SUNAT (plan «panel unificado», ola 2): la configuración
+   SUNAT estaba partida entre esta sección y Facturación › Conexión SUNAT.
+   Se monta la MISMA pantalla, que trae la tarjeta «Modo oficial» una sola
+   vez. Facturación la sigue mostrando hasta la ola 3. */
+const SunatConexionTab = dynamic(() => import("@/components/admin/sunat/SunatConexionTab"), { ssr: false });
 
 export function SeccionCobros({ aj, onNavigateTab }: { aj: AjustesEstado; onNavigateTab?: (tab: string) => void }) {
   const { yapeEnabled, setYapeEnabled, yapeImage, setYapeImage, yapeName, setYapeName, yapePhone, setYapePhone, cashEnabled, setCashEnabled, plinEnabled, setPlinEnabled, plinImage, setPlinImage, plinName, setPlinName, plinPhone, setPlinPhone, transferEnabled, setTransferEnabled, transferBankName, setTransferBankName, transferAccountNum, setTransferAccountNum, transferAccountHolder, setTransferAccountHolder, taxRate, setTaxRate, sunatRuc, setSunatRuc, sunatDenominacion, setSunatDenominacion, cashAlertMax, setCashAlertMax, autoCloseTime, setAutoCloseTime, maxDiscountPercent, setMaxDiscountPercent, patch, handleFileUpload, saving, savedSection } = aj;
@@ -85,7 +93,7 @@ export function SeccionCobros({ aj, onNavigateTab }: { aj: AjustesEstado; onNavi
         </div>
         <button type="button" onClick={() => onNavigateTab?.("facturacion")} className={LINK_A_OTRA_PANTALLA}>
           <FileText className="h-4 w-4 text-primary shrink-0" />
-          <span className="flex-1 min-w-0 text-sm font-semibold text-[var(--text-primary)]">Series, correlativos y conexión con SUNAT</span>
+          <span className="flex-1 min-w-0 text-sm font-semibold text-[var(--text-primary)]">Tus boletas, facturas y notas emitidas</span>
           <span className="text-xs text-[var(--text-secondary)]">en Facturación</span>
           <ChevronRight className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" />
         </button>
@@ -98,6 +106,17 @@ export function SeccionCobros({ aj, onNavigateTab }: { aj: AjustesEstado; onNavi
         cashAlertMax, autoCloseTime, sunatRuc, sunatDenominacion, taxRate,
         maxDiscountPercent: topeCajeroParaGuardar(maxDiscountPercent),
       })} />
+
+      {/* Va después de «Guardar cambios»: tiene su propio botón y guarda en
+          otro lado (la conexión con Nubefact), así nadie cree que el de
+          arriba también la guarda. */}
+      {/* Se veía en Facturación (plan Enterprise) y en Documentos › Facturación
+          (Pro): sólo para quien la veía ahí (R2, permiso por origen). */}
+      <PermisoDe origen={["facturacion", "documentos"]}>
+        <Plegable clave="cobros-sunat" titulo="Conexión con SUNAT" resumen="Modo oficial, RUC, token de Nubefact, ambiente y series">
+          <SunatConexionTab />
+        </Plegable>
+      </PermisoDe>
     </div>
   );
 }

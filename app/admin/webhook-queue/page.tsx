@@ -1,144 +1,31 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+/**
+ * /admin/webhook-queue — página suelta (la enlazan el Control Center del
+ * superadmin y /panel). Su contenido vive en
+ * components/admin/sistema/WebhooksStripe.tsx desde la ola 2 del plan «panel
+ * unificado»: el mismo se ve como bloque en Configuración › Sistema › Colas.
+ * Esta página sigue abriendo igual.
+ */
+import React from "react";
 import { useRouter } from "next/navigation";
-import {
-  RefreshCw,
-  Trash2,
-  AlertTriangle,
-  CheckCircle2,
-  Clock,
-  RotateCcw,
-  ChevronLeft,
-  Inbox,
-} from "@buleje/design-system/icons";
-import { csrfHeaders } from "@/lib/csrf-client";
+import { ChevronLeft, Inbox } from "@buleje/design-system/icons";
 import AdminTabShell from "@/app/admin/_components/_shared/AdminTabShell";
-import AdminEmptyState from "@/app/admin/_components/_shared/AdminEmptyState";
-import { ADMIN_TOKENS } from "@/app/admin/_components/_shared/admin-tokens";
-import { DataTable } from "@buleje/design-system";
-
-interface QueueItem {
-  id: string;
-  stripeId: string;
-  eventType: string;
-  attempts: number;
-  lastError: string | null;
-  nextRetryAt: string | null;
-  processedAt: string | null;
-  createdAt: string;
-}
-
-function fmt(dateStr: string | null) {
-  if (!dateStr) return "—";
-  return new Date(dateStr).toLocaleString("es-PE", {
-    dateStyle: "short",
-    timeStyle: "short",
-  });
-}
-
-function StatusBadge({ item }: { item: QueueItem }) {
-  if (item.processedAt) {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-[var(--data-success-500)]">
-        <CheckCircle2 size={12} /> Procesado
-      </span>
-    );
-  }
-  if (item.attempts >= 6) {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-error-50)] px-2 py-0.5 text-xs font-semibold text-[var(--data-error-500)]">
-        <AlertTriangle size={12} /> Abandonado
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-100)] px-2 py-0.5 text-xs font-semibold text-[var(--data-warning-500)]">
-      <Clock size={12} /> Pendiente ({item.attempts}/6)
-    </span>
-  );
-}
+import { button } from "@/components/ui-system/button-variants";
+import { WebhooksStripeAcciones, WebhooksStripeContenido } from "@/components/admin/sistema/WebhooksStripe";
+import { useWebhooksStripe } from "@/components/admin/sistema/use-webhooks-stripe";
 
 export default function WebhookQueuePage() {
   const router = useRouter();
-  const [items, setItems] = useState<QueueItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [replayLoading, setReplayLoading] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [replayResult, setReplayResult] = useState<{ replayed: number; failed: number } | null>(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/billing/webhook-queue");
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setItems(await res.json());
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Error al cargar");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  const triggerReplay = async () => {
-    setReplayLoading(true);
-    setReplayResult(null);
-    try {
-      // SECURITY 2026-05-07 (audit P0-1): usar proxy server-side /api/admin/webhook-replay
-      // que valida la sesión admin (cookie httpOnly) y llama al endpoint con CRON_SECRET
-      // server-side. Antes el cliente leía NEXT_PUBLIC_CRON_SECRET que terminaba en el
-      // bundle público — cualquier usuario podía disparar los crons.
-      const res = await fetch("/api/admin/webhook-replay", {
-        method: "POST",
-        credentials: "include",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      setReplayResult({ replayed: data.replayed ?? 0, failed: data.failed ?? 0 });
-      await load();
-    } catch {
-      setError("Error al ejecutar replay.");
-    } finally {
-      setReplayLoading(false);
-    }
-  };
-
-  const dismissItem = async (id: string) => {
-    setDeletingId(id);
-    try {
-      // El replay de arriba manda CSRF y este DELETE no: devolvía 403 y la
-      // fila desaparecía de la pantalla igual, así que el evento seguía en la
-      // cola y volvía a aparecer al recargar.
-      const res = await fetch(`/api/billing/webhook-queue?id=${encodeURIComponent(id)}`, {
-        method: "DELETE",
-        headers: csrfHeaders(),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setItems((prev) => prev.filter((i) => i.id !== id));
-    } catch {
-      setError("Error al eliminar el evento");
-    } finally {
-      setDeletingId(null);
-    }
-  };
-
-  const pending = items.filter((i) => !i.processedAt && i.attempts < 6);
-  const abandoned = items.filter((i) => !i.processedAt && i.attempts >= 6);
-  const processed = items.filter((i) => !!i.processedAt);
+  const w = useWebhooksStripe();
 
   return (
     <div className="min-h-screen bg-[var(--surface-canvas)] p-4 sm:p-8">
       <div className="mb-4">
         <button
+          type="button"
           onClick={() => router.push("/admin")}
-          className={ADMIN_TOKENS.btnGhost}
+          className={button({ variant: "ghost", className: "rounded-xl px-3" })}
           aria-label="Volver al admin"
         >
           <ChevronLeft className="h-4 w-4" aria-hidden />
@@ -147,139 +34,12 @@ export default function WebhookQueuePage() {
       </div>
 
       <AdminTabShell
-        title="Cola de Webhooks Stripe"
-        description="Eventos fallidos pendientes de reintento. La cola reintenta automáticamente con backoff exponencial."
+        title="Webhooks de Stripe por reintentar"
+        description="Avisos de pago que no se procesaron: la cola los reintenta sola, cada vez más espaciado."
         icon={Inbox}
-        actions={
-          <>
-            <button
-              onClick={load}
-              disabled={loading}
-              className={ADMIN_TOKENS.btnSecondary}
-            >
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} aria-hidden />
-              Actualizar
-            </button>
-            <button
-              onClick={triggerReplay}
-              disabled={replayLoading || pending.length === 0}
-              className={ADMIN_TOKENS.btnPrimary}
-            >
-              <RotateCcw className={`h-4 w-4 ${replayLoading ? "animate-spin" : ""}`} aria-hidden />
-              Ejecutar replay ({pending.length})
-            </button>
-          </>
-        }
+        actions={<WebhooksStripeAcciones w={w} />}
       >
-        {replayResult && (
-          <div className={ADMIN_TOKENS.successBanner}>
-            Replay completado — <strong>{replayResult.replayed} procesados</strong>,{" "}
-            {replayResult.failed} fallidos
-          </div>
-        )}
-
-        {error && <div className={ADMIN_TOKENS.errorBanner}>{error}</div>}
-
-        <div className="grid grid-cols-3 gap-4">
-          {[
-            { label: "Pendientes", value: pending.length, tone: "warning" as const },
-            { label: "Abandonados", value: abandoned.length, tone: "error" as const },
-            { label: "Procesados", value: processed.length, tone: "success" as const },
-          ].map(({ label, value, tone }) => (
-            <div key={label} className={`${ADMIN_TOKENS.card} p-4`}>
-              <p className={ADMIN_TOKENS.hint}>{label}</p>
-              <p
-                className={`mt-1 text-2xl font-bold ${
-                  tone === "warning"
-                    ? "text-[var(--data-warning-500)]"
-                    : tone === "error"
-                    ? "text-[var(--data-error-500)]"
-                    : "text-[var(--data-success-500)]"
-                }`}
-              >
-                {value}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        {loading ? (
-          <div className="flex justify-center py-12 text-[var(--text-tertiary)]">
-            <RefreshCw size={24} className="animate-spin" aria-hidden />
-          </div>
-        ) : items.length === 0 ? (
-          <AdminEmptyState
-            icon={CheckCircle2}
-            title="Sin eventos en la cola"
-            description="Todos los webhooks de Stripe se procesaron correctamente."
-          />
-        ) : (
-          <div className={`overflow-hidden ${ADMIN_TOKENS.card}`}>
-            <div className="overflow-x-auto">
-              <DataTable className="w-full text-sm">
-                <thead className="bg-[var(--surface-sunken)]/60">
-                  <tr>
-                    {["Estado", "Tipo de evento", "Intentos", "Próximo retry", "Creado", "Último error", ""].map(
-                      (h) => (
-                        <th
-                          key={h}
-                          className="px-4 py-3 text-left text-xs font-semibold text-[var(--text-tertiary)]"
-                        >
-                          {h}
-                        </th>
-                      )
-                    )}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--rule-soft)]">
-                  {items.map((item) => (
-                    <tr key={item.id} className="hover:bg-[var(--surface-sunken)]/40">
-                      <td className="px-4 py-3">
-                        <StatusBadge item={item} />
-                      </td>
-                      <td className="px-4 py-3 font-mono text-xs text-[var(--text-secondary)]">
-                        {item.eventType}
-                      </td>
-                      <td className="px-4 py-3 text-center text-[var(--text-secondary)]">
-                        {item.attempts}
-                      </td>
-                      <td className="px-4 py-3 text-[var(--text-tertiary)]">
-                        {item.processedAt ? (
-                          <span className="text-[var(--data-success-500)]">{fmt(item.processedAt)}</span>
-                        ) : (
-                          fmt(item.nextRetryAt)
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-[var(--text-tertiary)]">
-                        {fmt(item.createdAt)}
-                      </td>
-                      <td className="max-w-xs truncate px-4 py-3 text-xs text-[var(--data-error-500)]">
-                        {item.lastError ?? "—"}
-                      </td>
-                      <td className="px-4 py-3">
-                        {!item.processedAt && (
-                          <button
-                            onClick={() => dismissItem(item.id)}
-                            disabled={deletingId === item.id}
-                            className="rounded p-1 text-[var(--text-tertiary)] hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-500)] disabled:opacity-50 transition-colors"
-                            aria-label="Descartar evento"
-                            title="Descartar evento de la cola"
-                          >
-                            {deletingId === item.id ? (
-                              <RefreshCw size={14} className="animate-spin" aria-hidden />
-                            ) : (
-                              <Trash2 size={14} aria-hidden />
-                            )}
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </DataTable>
-            </div>
-          </div>
-        )}
+        <WebhooksStripeContenido w={w} />
       </AdminTabShell>
     </div>
   );

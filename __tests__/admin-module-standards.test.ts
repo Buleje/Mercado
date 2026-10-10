@@ -47,6 +47,12 @@ const NO_TABS_MODULES = [
   // AutomatizacionesModule (ADR-387/388/391): cuatro paneles apilados
   // (salud IA, WhatsApp, Telegram, n8n), sin sub-tabs.
   "AutomatizacionesModule.tsx",
+  // Ola 2 del panel unificado (2026-10-10): sin barra propia; sus 4 vistas son
+  // sub-vistas de Configuración › Sistema, que pone la barra.
+  "RendimientoModule.tsx",
+  // Ola 3 (2026-10-10): ya no es un hub, es la vista «Facturas y boletas» de
+  // Comprobantes (ComprobantesHubModule pone la barra y el título del hub).
+  "FacturacionModule.tsx",
 ];
 // Sub-módulos que viven SIEMPRE dentro de la pestaña de un hub y no pintan
 // título propio: la pestaña marcada arriba ya lo dice, y su propia barra de
@@ -56,6 +62,9 @@ const NO_TABS_MODULES = [
 const NESTED_SIN_TITULO = [
   // Análisis → Analytics Pro → (Resumen · Ventas · Productos · Clientes · Predicciones)
   "AnalyticsBIModule.tsx",
+  // Comprobantes → Facturas y boletas: el título de la vista lo dibuja EInvoiceTab
+  // con TituloDeVista (ola 3, 2026-10-10).
+  "FacturacionModule.tsx",
 ];
 // Módulos con header custom (no usan AdminModuleHeader, patrón legítimo documentado)
 const CUSTOM_HEADER_MODULES = [
@@ -207,7 +216,9 @@ describe("Admin Modules — Estándares de estructura", () => {
 // Lo de arriba mira una carpeta (`unified/*Module.tsx`): una pestaña que vive en
 // otra (forestal, cacao, a-medida, OrdersTab, PlanTab…) quedaba fuera del
 // control. Acá la lista son los `import()` de app/admin/_components/TabRouter.tsx
-// —hoy 34—: una pestaña nueva entra sola. Las reglas son las del contrato:
+// —34 hasta la ola 2 del panel unificado, 28 desde entonces (Plan, Sistema,
+// Canales, Equipo viejo, Delivery y Trámites son vistas de otra pestaña)—: una
+// pestaña nueva entra sola. Las reglas son las del contrato:
 //   identidad  título de la pestaña: `AdminTabBar heading={{…}}`, `AdminModuleHeader`
 //              (vista única) o `LibroChrome` (libros). Un envoltorio sin barra propia
 //              (SettingsTab → SettingsModule) vale por el módulo que monta.
@@ -274,11 +285,11 @@ const REGLAS_PESTANA: Record<ReglaPestana, (rel: string) => boolean> = {
   },
 };
 
-describe("Pestañas de la barra — las 34 de TabRouter (contrato de diseño)", () => {
+describe("Pestañas de la barra — los módulos de TabRouter (contrato de diseño)", () => {
   const modulos = modulosDeTabRouter();
 
-  it("TabRouter monta al menos 30 pestañas (hoy 34)", () => {
-    expect(modulos.length).toBeGreaterThanOrEqual(30);
+  it("TabRouter monta al menos 25 módulos (hoy 28)", () => {
+    expect(modulos.length).toBeGreaterThanOrEqual(25);
   });
 
   for (const rel of modulos) {

@@ -17,9 +17,11 @@ export function SeccionEquipo({ aj, onNavigateTab }: { aj: AjustesEstado; onNavi
       <TeamTab />
 
       <SectionCard title="Tu acceso" desc="Tu contraseña, la sesión y desde dónde entraste">
+        {/* La puerta a Mi perfil desde Configuración (salió de la barra lateral;
+            la otra es el menú del avatar). */}
         <button type="button" onClick={() => onNavigateTab?.("mi-perfil")} className={LINK_A_OTRA_PANTALLA}>
           <Key className="h-4 w-4 text-primary shrink-0" />
-          <span className="flex-1 min-w-0 text-sm font-semibold text-[var(--text-primary)]">Cambiar mi contraseña</span>
+          <span className="flex-1 min-w-0 text-sm font-semibold text-[var(--text-primary)]">Tus datos y tu contraseña</span>
           <span className="text-xs text-[var(--text-secondary)]">en Mi perfil</span>
           <ChevronRight className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" />
         </button>

@@ -1,6 +1,9 @@
 "use client";
 
-import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
+import { CardTitle, LoadingState, StatCard } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { EmptyState } from "@/components/admin/EmptyState";
+import { button } from "@/components/ui-system/button-variants";
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Activity,
@@ -62,13 +65,13 @@ function StatBadge({ label, value, colorClasses, icon }: BadgeProps) {
   return (
     <div
       className={cn(
-        "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium",
+        "flex min-w-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium",
         colorClasses,
       )}
     >
       {icon}
-      <span className="hidden sm:inline">{label}</span>
-      <span className="ml-auto font-bold tabular-nums">{formatNumber(value)}</span>
+      <span className="min-w-0 truncate" title={label}>{label}</span>
+      <span className="ml-auto shrink-0 pl-1 font-bold tabular-nums">{formatNumber(value)}</span>
     </div>
   );
 }
@@ -82,8 +85,7 @@ function QueueCard({ queue }: { queue: QueueStats }) {
   return (
     <div
       className={cn(
-        "rounded-xl border bg-[var(--surface-raised)] p-5 transition-shadow hover:shadow-[var(--shadow-sm)]",
-        "dark:border-[var(--rule-base)] dark:bg-gray-800",
+        "rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 transition-shadow hover:shadow-[var(--shadow-sm)]",
         hasFailed && "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]",
       )}
     >
@@ -91,7 +93,7 @@ function QueueCard({ queue }: { queue: QueueStats }) {
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Activity className="h-5 w-5 text-[var(--accent)]" />
-          <CardTitle className="text-sm font-bold text-[var(--text-primary)]">
+          <CardTitle>
             {formatQueueName(queue.name)}
           </CardTitle>
         </div>
@@ -101,31 +103,31 @@ function QueueCard({ queue }: { queue: QueueStats }) {
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-2 gap-2">
         <StatBadge
           label="En espera"
           value={queue.waiting}
-          colorClasses="bg-amber-50 text-[var(--data-warning-700)] dark:bg-amber-900/20 dark:text-amber-400"
+          colorClasses="bg-[var(--data-warning-500)]/10 text-[var(--data-warning-ink)]"
           icon={<Clock className="h-4 w-4" />}
         />
         <StatBadge
           label="Activos"
           value={queue.active}
-          colorClasses="bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]"
+          colorClasses="bg-[var(--data-success-500)]/10 text-[var(--data-success-ink)]"
           icon={<Loader2 className="h-4 w-4" />}
         />
         <StatBadge
           label="Completados"
           value={queue.completed}
-          colorClasses="bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]"
+          colorClasses="bg-[var(--data-success-500)]/10 text-[var(--data-success-ink)]"
           icon={<CheckCircle className="h-4 w-4" />}
         />
         <StatBadge
           label="Fallidos"
           value={queue.failed}
           colorClasses={cn(
-            "bg-red-50 text-[var(--data-error-700)] dark:bg-red-900/20 dark:text-red-400",
-            hasFailed && "ring-1 ring-red-300 dark:ring-[var(--data-error-700)]",
+            "bg-[var(--data-error-500)]/10 text-[var(--data-error-ink)]",
+            hasFailed && "ring-1 ring-[var(--data-error-500)]/50",
           )}
           icon={<AlertTriangle className="h-4 w-4" />}
         />
@@ -202,12 +204,8 @@ export default function ColasTab() {
     return (
       <div className="flex min-h-[300px] flex-col items-center justify-center gap-4">
         <AlertTriangle className="h-10 w-10 text-[var(--data-error-500)]" />
-        <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{error}</p>
-        <button
-          type="button"
-          onClick={() => fetchStats(true)}
-          className="rounded-xl bg-[var(--accent-dark)] px-4 min-h-10 text-sm font-medium text-white hover:bg-[var(--accent-dark)] dark:bg-[var(--accent)] dark:hover:bg-[var(--accent-dark)]"
-        >
+        <p className="text-sm text-[var(--data-error-ink)]">{error}</p>
+        <button type="button" onClick={() => fetchStats(true)} className={button({ variant: "secondary", className: "rounded-xl" })}>
           Reintentar
         </button>
       </div>
@@ -218,15 +216,18 @@ export default function ColasTab() {
 
   if (stats.length === 0) {
     return (
-      <div className="flex min-h-[300px] flex-col items-center justify-center gap-3 text-center">
-        <Inbox className="h-12 w-12 text-[var(--text-tertiary)]" />
-        <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-secondary)]">
-          Colas deshabilitadas
-        </CardTitle>
-        <p className="max-w-md text-sm text-[var(--text-tertiary)]">
-          No se detectó conexión a Redis. Las colas de trabajo (BullMQ) requieren Redis para funcionar.
-          Configura la variable de entorno <code className="rounded bg-[var(--surface-sunken)] px-1.5 py-0.5 font-mono text-xs ">REDIS_URL</code> para habilitar el procesamiento asíncrono.
-        </p>
+      <div className="space-y-3">
+        {/* Ola 2 del panel unificado: la explicación va al ⓘ (regla «explicar
+            con ⓘ, no con párrafos»); a la vista, el estado en una frase. */}
+        <div className="flex items-center gap-1.5">
+          <CardTitle>Monitor de colas</CardTitle>
+          <InfoTip
+            title="Colas deshabilitadas"
+            what="Las colas de trabajo (BullMQ) necesitan Redis para funcionar y no se detectó la conexión."
+            example="Configura la variable de entorno REDIS_URL para habilitar el procesamiento en segundo plano."
+          />
+        </div>
+        <EmptyState icon={<Inbox aria-hidden />} title="Colas deshabilitadas: falta conectar Redis." className="py-8" />
       </div>
     );
   }
@@ -241,16 +242,18 @@ export default function ColasTab() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <SectionTitle className="text-[var(--text-primary)]">
-            Monitor de Colas
-          </SectionTitle>
-          <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-            Estado en tiempo real de las colas de procesamiento asíncrono
-          </p>
+        {/* Un título por pantalla: dentro de Configuración › Sistema el título
+            de la vista ya está arriba; éste es el de su bloque. */}
+        <div className="flex items-center gap-1.5">
+          <CardTitle>Monitor de colas</CardTitle>
+          <InfoTip
+            title="Monitor de colas"
+            what="Estado en tiempo real de las colas de procesamiento en segundo plano."
+            example="Si «Fallidos» sube, revisa abajo los crons que fallaron."
+          />
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {/* Last updated */}
           {lastUpdated && (
             <span className="text-xs text-[var(--text-tertiary)]">
@@ -262,13 +265,12 @@ export default function ColasTab() {
           <button
             type="button"
             onClick={() => setAutoRefresh((prev) => !prev)}
-            className={cn(
-              "flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
-              autoRefresh
-                ? "border-teal-300 bg-teal-50 text-[var(--accent-dark)] dark:border-[var(--accent-dark)] dark:bg-teal-900/20 dark:text-teal-400"
-                : "border-[var(--rule-base)] bg-[var(--surface-alt)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)]",
-            )}
-            title={autoRefresh ? "Desactivar auto-refresco" : "Activar auto-refresco"}
+            aria-pressed={autoRefresh}
+            className={button({
+              variant: "secondary",
+              className: cn("rounded-xl px-4", autoRefresh && "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"),
+            })}
+            title={autoRefresh ? "Pausar la actualización automática" : "Actualizar solo cada tanto"}
           >
             {autoRefresh ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />}
             {autoRefresh ? "Auto" : "Pausado"}
@@ -279,54 +281,28 @@ export default function ColasTab() {
             type="button"
             onClick={() => fetchStats(false)}
             disabled={loading}
-            className={cn(
-              "flex items-center gap-1.5 rounded-lg bg-[var(--accent-dark)] px-4 py-1.5 text-sm font-medium text-white transition-colors",
-              "hover:bg-[var(--accent-dark)] disabled:opacity-50 dark:bg-[var(--accent)] dark:hover:bg-[var(--accent-dark)]",
-            )}
+            className={button({ variant: "secondary", className: "rounded-xl px-4" })}
           >
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
-            Refrescar
+            Actualizar
           </button>
         </div>
       </div>
 
       {/* Error banner (non-blocking — shown when we have stale data) */}
       {error && stats.length > 0 && (
-        <div className="flex items-center gap-2 rounded-lg border border-[var(--data-error-500)] bg-[var(--data-error-50)] px-4 py-2 text-sm text-[var(--data-error-500)] dark:border-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/20 dark:text-[var(--data-error-500)]">
+        <div role="alert" className="flex items-center gap-2 rounded-lg border border-[var(--data-error-500)] bg-[var(--data-error-50)] px-4 py-2 text-sm text-[var(--data-error-ink)] dark:bg-[var(--data-error-500)]/15">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           <span>Error al actualizar: {error}. Mostrando datos anteriores.</span>
         </div>
       )}
 
       {/* Summary cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="flex items-center gap-3 rounded-xl border bg-[var(--data-warning-50)] p-4 dark:border-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/10">
-          <Clock className="h-8 w-8 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" />
-          <div>
-            <p className="text-2xl font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
-              {formatNumber(totalWaiting)}
-            </p>
-            <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">En espera (total)</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3 rounded-xl border bg-primary/10 p-4 dark:border-[var(--data-success-500)]/30 dark:bg-primary/15">
-          <Activity className="h-8 w-8 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" />
-          <div>
-            <p className="text-2xl font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
-              {formatNumber(totalActive)}
-            </p>
-            <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Activos (total)</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3 rounded-xl border bg-[var(--data-error-50)] p-4 dark:border-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/10">
-          <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" />
-          <div>
-            <p className="text-2xl font-bold text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
-              {formatNumber(totalFailed)}
-            </p>
-            <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">Fallidos (total)</p>
-          </div>
-        </div>
+      {/* Tres en una fila también a 400 px: apiladas eran una pantalla entera. */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+        <StatCard density="compact" label="En espera" icon={Clock} iconEmphasis value={formatNumber(totalWaiting)} emphasis={totalWaiting > 0 ? "warning" : "neutral"} />
+        <StatCard density="compact" label="Activos" icon={Activity} iconEmphasis value={formatNumber(totalActive)} emphasis={totalActive > 0 ? "success" : "neutral"} />
+        <StatCard density="compact" label="Fallidos" icon={AlertTriangle} iconEmphasis value={formatNumber(totalFailed)} emphasis={totalFailed > 0 ? "error" : "neutral"} />
       </div>
 
       {/* Queue cards */}

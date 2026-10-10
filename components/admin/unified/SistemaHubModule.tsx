@@ -1,52 +1,41 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import { Gauge, Shield, Activity } from "@buleje/design-system/icons";
-import { useVistaModulo } from "@/hooks/use-vista-modulo";
+import { Gauge } from "@buleje/design-system/icons";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
-import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
+import ContenidoSistema from "@/components/admin/sistema/ContenidoSistema";
+import { MODULE_ID_SISTEMA as MODULE_ID, useSubvistasSistema } from "@/components/admin/sistema/use-subvistas-sistema";
 
-// ── Hub de Sistema (consolidación 3→1) ───────────────────────────────────────
-// Antes: 3 entradas top-level sueltas (rendimiento, auditoria, colas). Ahora 1
-// centro técnico con 3 sub-tabs. El header "Sistema" se muestra SIEMPRE arriba
-// (coherencia admin, Brandon 2026-06-19) — los sub-módulos con header propio
-// quedan debajo dando jerarquía "Sistema → <sección>".
-const RendimientoModule = dynamic(() => import("@/components/admin/unified/RendimientoModule"), { loading: S });
-const AuditTab          = dynamic(() => import("@/components/admin/tabs/AuditTab"),             { loading: S });
-const ColasTab          = dynamic(() => import("@/components/admin/ColasTab"),                  { loading: S });
-
-const MODULE_ID = "sistema-hub";
-
-const TABS = [
-  { id: "rendimiento", label: "Rendimiento", icon: Gauge },
-  { id: "auditoria",   label: "Auditoría",   icon: Shield },
-  { id: "colas",       label: "Colas",       icon: Activity },
-];
-
-/** Los ids, estables: el hook los usa como dependencia. */
-const TAB_IDS = TABS.map((t) => t.id);
+// ── Hub de Sistema (lo que abren `?tab=rendimiento`, `auditoria` y `colas`) ──
+// Plan «panel unificado», ola 2 (2026-10-10): Sistema vive en Configuración ›
+// Sistema, con Preferencias y una sola barra de segundo nivel (`?sub=`). Este
+// hub suelto queda para los ids viejos mientras no pasen a ser alias: muestra
+// las MISMAS sub-vistas (sin Preferencias, que necesita el estado de Ajustes)
+// y con la misma barra. Antes eran Rendimiento › (otra barra de 4) · Auditoría
+// · Colas: tres niveles.
+//
+// `MODULE_ID` = el de Configuración › Sistema: retomar donde estabas vale en
+// los dos lugares.
 
 export default function SistemaHubModule({ initialTab }: { initialTab?: string } = {}) {
-  // La sub-vista vive en `?vista=`: así se comparte por link, el botón «atrás»
-  // la recorre y el buscador global puede mandar directo acá. `initialTab` gana
-  // cuando el módulo se abre desde un tab alias (ver useVistaModulo).
-  const { vista: sub, irA: setSub } = useVistaModulo(MODULE_ID, TAB_IDS, TAB_IDS[0], initialTab);
+  // `initialTab` (el id viejo) gana sobre la memoria pero no sobre un `?sub=`
+  // explícito (ver useVistaModulo).
+  const { tabs, activa, vista, irA } = useSubvistasSistema(false, initialTab);
 
   return (
     <div className="space-y-4">
       {/* El título va DENTRO de la barra de pestañas (patrón acordado con
-          Brandon 2026-09-07, piloto en Análisis): identidad a la izquierda,
-          pestañas a la derecha, una sola regla. Recupera ~90px verticales,
-          que en una laptop de 677px útiles es la diferencia entre ver los
-          datos o sólo los encabezados.
-          El `eyebrow` se fue con el header: decía la categoría del sidebar
-          («Abastecimiento · Compras» sobre un título «Compras») — el mismo
-          dato tres veces contando el ítem marcado en el sidebar. */}
+          Brandon 2026-09-07): identidad a la izquierda, pestañas a la
+          derecha, una sola regla. */}
       <AdminTabBar
-        heading={{ title: "Sistema", description: "Salud técnica, registro de actividad y colas de trabajo.", icon: Gauge }} tabs={TABS} activeTab={sub} onTabChange={setSub} moduleId={MODULE_ID}>
-        {sub === "rendimiento" && <RendimientoModule />}
-        {sub === "auditoria" && <AuditTab />}
-        {sub === "colas" && <ColasTab />}
+        heading={{ title: "Sistema", description: "Velocidad de tu tienda, salud técnica, registro de actividad y colas de trabajo.", icon: Gauge }}
+        tabs={tabs}
+        activeTab={activa ?? vista}
+        onTabChange={irA}
+        moduleId={MODULE_ID}
+        draggable={false}
+        className="[&_[role=tablist]:empty]:hidden"
+      >
+        <ContenidoSistema activa={activa} />
       </AdminTabBar>
     </div>
   );

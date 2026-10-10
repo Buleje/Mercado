@@ -213,8 +213,12 @@ describe("panel — encabezado del módulo en la misma banda que las pestañas",
   const HUBS = [
     "AnalisisHubModule", "AsistenteIAHubModule", "CRMClientesModule", "CatalogoTiendaModule",
     "ComprasModule", "CrecimientoHubModule", "DocumentosHubModule", "EquipoHubModule",
-    "FacturacionModule", "MensajesHubModule", "MetasLogrosModule", "MiTiendaHubModule",
-    "POSCajaModule", "RendimientoModule", "SistemaHubModule", "SugerenciasIAModule",
+    // FacturacionModule pasó a ser la vista «Facturas y boletas» (ola 3): el hub
+    // con barra y título es ComprobantesHubModule.
+    "ComprobantesHubModule", "MensajesHubModule", "MetasLogrosModule", "MiTiendaHubModule",
+    // RendimientoModule salió en la ola 2 del panel unificado (2026-10-10): ya
+    // no tiene barra ni título propios, es contenido de Configuración › Sistema.
+    "POSCajaModule", "SistemaHubModule", "SugerenciasIAModule",
     // Segunda tanda (misma fecha, «todo lo demás»): los que traían acciones en
     // el header (actualizar, reporte bancario, etiquetas, rango de fechas) y
     // las pasan por `heading.actions`.
