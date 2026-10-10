@@ -32,6 +32,7 @@ import ActionMenu from "@/components/admin/shared/action-menu";
 import BotonIconoTip from "@/components/admin/shared/boton-icono-tip";
 import { CardTitle, DataTable, StatCard } from "@buleje/design-system";
 import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
+import { SegundoNivelEnElHub, useRanuraDelSegundoNivel } from "@/components/admin/unified/finanzas/segundo-nivel";
 import { Field } from "@/components/admin/shared/Field";
 import { generateContractPDF } from "@/lib/assets-contract";
 import { formatDate, formatDateLong, formatMonth } from "@/lib/format";
@@ -95,6 +96,7 @@ export default function ActivosModule() {
   // La sub-vista vive en `?sub=` (useSubvistaModulo): este módulo se muestra dentro de un hub
   // que ya usa `?vista=`. Link compartible y «atrás» del navegador (antes era estado local).
   const { vista: view, irA: setView } = useSubvistaModulo<View>("activos", VISTAS, "flota");
+  const enHub = useRanuraDelSegundoNivel();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<AssetStats | null>(null);
   const [moveFor, setMoveFor] = useState<{ asset: AssetStats; kind: "income" | "expense" } | null>(null);
@@ -121,7 +123,9 @@ export default function ActivosModule() {
 
   const ACTIVOS_TAB_ITEMS: AdminTab[] = [
     { id: "flota", label: "Flota", icon: Construction, badge: alerts > 0 ? alerts : undefined },
-    { id: "cobrar", label: "Por cobrar", icon: CreditCard, badge: totals.pending > 0 ? "!" : undefined },
+    /* «Alquileres por cobrar» y no «Por cobrar»: dentro de Mi Plata, al lado de
+       «Por cobrar y pagar», el nombre corto se confundía con TODO lo que te deben. */
+    { id: "cobrar", label: "Alquileres por cobrar", icon: CreditCard, badge: totals.pending > 0 ? "!" : undefined },
     { id: "calendario", label: "Calendario", icon: Calendar },
     { id: "ranking", label: "Ranking", icon: BarChart3 },
   ];
@@ -153,28 +157,47 @@ export default function ActivosModule() {
     } catch { toast.error("Sin conexión"); }
   };
 
+  const acciones = (
+    <>
+      {/* Importar y exportar se usan de vez en cuando: al menú (ley de Brandon 2026-10-01). */}
+      <ActionMenu
+        label="Más acciones"
+        soloIcono
+        actions={[
+          { id: "importar", label: "Importar flota", hint: "Sube un Excel/CSV y crea varias máquinas de una", icon: Upload, onSelect: () => setShowImport(true) },
+          { id: "exportar", label: "Exportar reporte", hint: "Descarga la rentabilidad de cada máquina", icon: Download, onSelect: exportReport },
+        ]}
+      />
+      <button type="button" onClick={() => { setEditing(null); setShowForm(true); }} className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary/90 min-h-12">
+        <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden /> Nuevo activo
+      </button>
+    </>
+  );
+
   return (
     <div className="space-y-5">
-      <AdminModuleHeader
-        as="h2"
-        eyebrow="Finanzas · Maquinaria"
-        title="Activos & Maquinaria"
-        description="Alquila tus equipos y mira la ganancia real de cada máquina."
-        icon={Construction}
-      >
-        {/* Importar y exportar se usan de vez en cuando: al menú (ley de Brandon 2026-10-01). */}
-        <ActionMenu
-          label="Más acciones"
-          soloIcono
-          actions={[
-            { id: "importar", label: "Importar flota", hint: "Sube un Excel/CSV y crea varias máquinas de una", icon: Upload, onSelect: () => setShowImport(true) },
-            { id: "exportar", label: "Exportar reporte", hint: "Descarga la rentabilidad de cada máquina", icon: Download, onSelect: exportReport },
-          ]}
+      {/* Dentro de Mi Plata (ola 3, 2026-10-10): sus pestañas y sus acciones van
+          a la fila del título del hub, sin título ni barra propios. */}
+      {enHub ? (
+        <SegundoNivelEnElHub
+          ranura={enHub.ranura}
+          items={ACTIVOS_TAB_ITEMS}
+          activa={view}
+          onIr={(id) => setView(id as View)}
+          etiqueta="Pestañas de Activos"
+          acciones={acciones}
         />
-        <button type="button" onClick={() => { setEditing(null); setShowForm(true); }} className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary/90 min-h-[44px]">
-          <Plus className="h-4 w-4" strokeWidth={2.5} /> Nuevo activo
-        </button>
-      </AdminModuleHeader>
+      ) : (
+        <AdminModuleHeader
+          as="h2"
+          eyebrow="Finanzas · Maquinaria"
+          title="Activos & Maquinaria"
+          description="Alquila tus equipos y mira la ganancia real de cada máquina."
+          icon={Construction}
+        >
+          {acciones}
+        </AdminModuleHeader>
+      )}
 
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
@@ -194,12 +217,14 @@ export default function ActivosModule() {
 
       {/* Sub-tabs top-level: AdminTabBar da coherencia con el resto del admin
           (reorden por drag, registro en sidebar). Vistas quedan como hermanas. */}
-      <AdminTabBar
-        moduleId={ACTIVOS_MODULE_ID}
-        tabs={ACTIVOS_TAB_ITEMS}
-        activeTab={view}
-        onTabChange={(id) => setView(id as View)}
-      />
+      {!enHub && (
+        <AdminTabBar
+          moduleId={ACTIVOS_MODULE_ID}
+          tabs={ACTIVOS_TAB_ITEMS}
+          activeTab={view}
+          onTabChange={(id) => setView(id as View)}
+        />
+      )}
 
       {/* Vistas */}
       {loading ? (

@@ -21,7 +21,22 @@ function avisoGuardado(r: GastoGuardado): void {
 }
 type Summary = { category: string; total: number; count: number };
 
-export default function ExpensesTab() {
+interface Props {
+  /**
+   * «Ver el catálogo»: abre el catálogo de gastos fijos en esta misma vista
+   * (Mi Plata › Gastos y presupuesto). Desde la ola 3 del panel unificado el
+   * catálogo ya no vive en Compras › Comprar. Sin esto, no hay botón.
+   */
+  onVerCatalogo?: () => void;
+  /**
+   * Sube cuando algo de afuera cambió los gastos (un fijo pagado, quitado o
+   * agregado en el catálogo de abajo): relee la lista sin remontarla, así no
+   * se pierden las fechas, la categoría ni el formulario abierto.
+   */
+  recarga?: number;
+}
+
+export default function ExpensesTab({ onVerCatalogo, recarga = 0 }: Props = {}) {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [summary, setSummary] = useState<Summary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,6 +45,8 @@ export default function ExpensesTab() {
   const [categoria, setCategoria] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [tick, setTick] = useState(0);
+  /** Las relecturas propias (borrar, guardar) y las que pide quien la monta. */
+  const vuelta = tick + recarga;
   const [historicExpenses, setHistoricExpenses] = useState<Expense[]>([]);
   // Los gastos fijos configurados (Expense.recurring=true) son PLANTILLAS: el
   // acuerdo de pagar el alquiler, no el alquiler pagado. Desde que dejaron de
@@ -66,7 +83,7 @@ export default function ExpensesTab() {
       if (active) { setError(true); setLoading(false); }
     });
     return () => { active = false; };
-  }, [from, to, tick]);
+  }, [from, to, vuelta]);
 
   // Los últimos 6 meses para el gráfico (no dependen del filtro de fechas).
   useEffect(() => {
@@ -75,7 +92,7 @@ export default function ExpensesTab() {
       .then(r => r.ok ? r.json() : [])
       .then(data => setHistoricExpenses(Array.isArray(data) ? data : []))
       .catch((err) => console.warn("[ExpensesTab] /api/expenses failed:", err));
-  }, [tick]);
+  }, [vuelta]);
 
   const monthlyExpenseData = useMemo(() => {
     const hoy = limaDateKey();
@@ -132,12 +149,17 @@ export default function ExpensesTab() {
             por {formatCurrency(templates.reduce((s, t) => s + Number(t.amount), 0))} al período. No suman
             acá hasta que registres el pago.
           </p>
-          <a
-            href="?tab=compras&vista=punto-compra"
-            className="inline-flex h-9 items-center rounded-lg border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-raised)]"
-          >
-            Ver el catálogo
-          </a>
+          {/* Sin `onVerCatalogo` no hay catálogo a la vista (quien no veía
+              Compras no lo ve acá tampoco): un botón que no abre nada, no. */}
+          {onVerCatalogo && (
+            <button
+              type="button"
+              onClick={onVerCatalogo}
+              className="inline-flex h-12 items-center rounded-lg border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-raised)]"
+            >
+              Ver el catálogo
+            </button>
+          )}
         </div>
       )}
 

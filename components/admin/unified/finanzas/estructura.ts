@@ -25,26 +25,47 @@
  * NADA SE BORRÓ: las quince vistas siguen existiendo y siguen teniendo
  * dirección propia (`VISTAS`), y todos los nombres viejos siguen aterrizando
  * donde corresponde (`DONDE_VIVE`).
+ *
+ * DOS NIVELES (plan «panel unificado», ola 3, 2026-10-10). Préstamos,
+ * Adelantos y Activos subieron a pestañas: eran un TERCER nivel (Por cobrar ›
+ * Adelantos › sus 7 pestañas). Ahora sus pestañas propias son el segundo nivel
+ * y se dibujan en la fila del título (`segundo-nivel.tsx`), sin la barra ni el
+ * título de cada módulo. Fiados se fue a Ventas y caja › Me deben (su casa
+ * única); acá queda la cifra y el enlace, en «Todo lo que me deben». Impuestos
+ * y Obligaciones llegaron de Comprobantes, y Reportes dejó de apilar cuatro
+ * pantallas: cada una es una sección.
  */
 
 import {
   TrendingUp, TrendingDown, PieChart as PieChartIcon,
   FileBarChart, Waves, GitCompareArrows, ArrowRightLeft,
   BarChart3, CreditCard,
-  Landmark, HandCoins, Banknote, Coins, Construction, Gauge, ReceiptText,
+  Landmark, Banknote, Coins, Construction, Gauge, ReceiptText,
+  Calculator, Archive, Briefcase, ArrowUpDown,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 
 export const MODULE_ID = "plata";
 
-/** Las cinco pestañas de Mi Plata. */
+/**
+ * Las ocho pestañas de Mi Plata (el primer nivel).
+ *
+ * Préstamos, Adelantos y Activos no se dividen ACÁ: su segundo nivel son sus
+ * pestañas propias (`?sub=`), que cada módulo dibuja en la fila del título.
+ */
 export const TABS = [
-  { id: "resumen" as const,     label: "Resumen",     icon: BarChart3 },
-  { id: "resultado" as const,   label: "Resultado",   icon: TrendingUp },
-  { id: "movimientos" as const, label: "Movimientos", icon: ArrowRightLeft },
-  { id: "por-cobrar" as const,  label: "Por cobrar",  icon: CreditCard },
-  { id: "reportes" as const,    label: "Reportes",    icon: FileBarChart },
+  { id: "resumen" as const,            label: "Resumen",              icon: BarChart3 },
+  { id: "resultado" as const,          label: "Resultado",            icon: TrendingUp },
+  { id: "movimientos" as const,        label: "Movimientos",          icon: ArrowRightLeft },
+  { id: "por-cobrar" as const,         label: "Por cobrar y pagar",   icon: CreditCard },
+  { id: "prestamos" as const,          label: "Préstamos",            icon: Banknote },
+  { id: "adelantos" as const,          label: "Adelantos",            icon: Coins },
+  { id: "activos" as const,            label: "Activos",              icon: Construction },
+  { id: "impuestos-reportes" as const, label: "Impuestos y reportes", icon: FileBarChart },
 ];
+
+/** Las pestañas cuyo segundo nivel es el del módulo que montan (su `?sub=`). */
+export const CON_PESTANAS_PROPIAS: readonly TabId[] = ["prestamos", "adelantos", "activos"];
 
 export type TabId = (typeof TABS)[number]["id"];
 
@@ -73,7 +94,8 @@ export interface Seccion {
 /**
  * Lo que vive dentro de cada pestaña. Sin entrada = la pestaña no se divide.
  *
- * `Resumen` y `Reportes` no se dividen: un control de un solo botón es ruido.
+ * `Resumen` no se divide: un control de un solo botón es ruido. Préstamos,
+ * Adelantos y Activos tampoco ACÁ: su segundo nivel lo pone cada módulo.
  */
 export const SECCIONES: Partial<Record<TabId, Seccion[]>> = {
   resultado: [
@@ -90,7 +112,6 @@ export const SECCIONES: Partial<Record<TabId, Seccion[]>> = {
        chica cargadas y 0 por pagar, quedaba plegada en «+1 sin usar»). Va al
        lado de Caja porque la proyección arranca con el saldo de estas cuentas. */
     { id: "tesoreria",  label: "Tesorería",                             icon: Landmark,     dato: "tesoreria" },
-    { id: "activos",    label: "Activos",                               icon: Construction, dato: "assets" },
   ],
   "por-cobrar": [
     { id: "por-cobrar", label: "Todo lo que me deben", corto: "Todo", icon: CreditCard },
@@ -98,10 +119,19 @@ export const SECCIONES: Partial<Record<TabId, Seccion[]>> = {
        porque una persona puede estar en las dos con su neto, y va plegada si
        no le debes a nadie: se mide con el endpoint, no con una lista. */
     { id: "por-pagar",  label: "Lo que debo",          corto: "Debo", icon: ReceiptText, dato: "porPagar" },
-    { id: "fiados",     label: "Fiados",                              icon: HandCoins, dato: "fiados" },
-    { id: "prestamos",  label: "Préstamos",                           icon: Banknote,  dato: "prestamos" },
-    { id: "adelantos",  label: "Adelantos",                           icon: Coins,     dato: "adelantos" },
-    { id: "scoring",    label: "Scoring",                             icon: Gauge },
+    /* El scoring y «Quién te debe» de Análisis: a quién conviene fiarle. */
+    { id: "scoring",    label: "A quién fiarle",       corto: "Fiarle", icon: Gauge },
+  ],
+  /* Antes «Reportes» apilaba cuatro pantallas en una (4 títulos, ~6 pantallas
+     de scroll). Cada una es una sección, y los impuestos —contabilidad, no
+     comprobantes— llegaron de Comprobantes. `reportes` sigue siendo la
+     dirección del reporte mensual, que era lo primero del apilado. */
+  "impuestos-reportes": [
+    { id: "impuestos", label: "Impuestos del mes",   corto: "Impuestos", icon: Calculator },
+    { id: "reportes",  label: "Reporte mensual",     corto: "Mensual",   icon: FileBarChart },
+    { id: "contador",  label: "Para el contador",    corto: "Contador",  icon: Briefcase },
+    { id: "importar",  label: "Importar y exportar", corto: "Importar",  icon: ArrowUpDown },
+    { id: "cierres",   label: "Cierres",                                 icon: Archive },
   ],
 };
 
@@ -139,6 +169,12 @@ const ALIAS: Record<string, string> = {
   /* Pestañas que ya no existen: Gastos y Caja se fundieron en Movimientos. */
   caja: "flujo-caja",
   movimientos: "gastos",
+  /* Fiados vive en Ventas y caja › Me deben; un nombre viejo que todavía llegue
+     acá cae donde está su cifra y su enlace. */
+  fiados: "por-cobrar",
+  /* Llegaron de Comprobantes con otro nombre. */
+  obligaciones: "impuestos",
+  "importar-exportar": "importar",
 };
 
 /**

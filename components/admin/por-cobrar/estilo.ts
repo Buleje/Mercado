@@ -22,8 +22,12 @@ export const TIPOS: Record<PorCobrarTipo, {
   chip: string;
   destino: string;
   externo?: boolean;
+  /** La vista del módulo destino, cuando el cobro vive en una vista de otro módulo. */
+  vista?: string;
 }> = {
-  fiado:    { label: "Fiado",    plural: "Fiados",    icon: CreditCard, chip: "bg-[var(--accent)]/15 text-[var(--accent-ink)] dark:text-[var(--accent)]", destino: "fiados" },
+  /* Los fiados se cobran en Ventas y caja › Me deben (su casa única desde la
+     ola 3 del panel unificado, 2026-10-10): ya no son sección de Mi Plata. */
+  fiado:    { label: "Fiado",    plural: "Fiados",    icon: CreditCard, chip: "bg-[var(--accent)]/15 text-[var(--accent-ink)] dark:text-[var(--accent)]", destino: "ventas-caja", externo: true, vista: "cuentas-cobrar" },
   prestamo: { label: "Préstamo", plural: "Préstamos", icon: Landmark,   chip: "bg-[var(--data-info-500)]/15 text-[var(--data-info-500)]", destino: "prestamos" },
   adelanto: { label: "Adelanto", plural: "Adelantos", icon: DollarSign, chip: "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)]", destino: "adelantos" },
   /* La madera NO es sección hermana de Mi Plata: su detalle vive en el Libro

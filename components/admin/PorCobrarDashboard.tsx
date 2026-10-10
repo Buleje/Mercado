@@ -30,6 +30,7 @@ import { irAlOrigen } from "@/components/admin/unified/finanzas/resultado/ir-al-
 import { ACCION_LIQUIDAR, PARAM_ACCION, PARAM_PERSONA } from "@/components/admin/adelantos/cuentas/liquidar-por-url";
 import type { PorCobrarTipo } from "@/lib/db/por-cobrar.db";
 import FilaPorCobrar from "./por-cobrar/FilaPorCobrar";
+import FiadosEnVentasYCaja from "./por-cobrar/FiadosEnVentasYCaja";
 import { CHIP, CHIP_OFF, CHIP_ON, ORDEN, TIPOS, enMonedas } from "./por-cobrar/estilo";
 
 /** Salto a otro módulo del panel: recarga el módulo destino entero. */
@@ -73,9 +74,10 @@ export default function PorCobrarDashboard({ onIr }: { onIr?: (seccion: string) 
         rotulo: `Te deben en ${TIPOS[filtro].plural.toLowerCase()}`,
       };
 
-  /** Sección hermana → salto instantáneo; otro módulo (o sin padre) → recarga. */
-  const irASeccion = (destino: string, externo = false) => {
+  /** Sección hermana → salto instantáneo; vista de otro módulo → su enlace; otro módulo (o sin padre) → recarga. */
+  const irASeccion = (destino: string, externo = false, vista?: string) => {
     if (onIr && !externo) onIr(destino);
+    else if (vista) irAlOrigen({ tab: destino, params: { vista } });
     else goTab(destino);
   };
 
@@ -127,6 +129,9 @@ export default function PorCobrarDashboard({ onIr }: { onIr?: (seccion: string) 
           No se pudo cruzar con lo que debes: la lista está completa, pero sin los netos.
         </p>
       )}
+
+      {/* Los fiados ya no son sección de Mi Plata: su cifra y su casa. */}
+      {!loading && !error && <FiadosEnVentasYCaja fiados={deTipo("fiado")} />}
 
       {loading && data.items.length === 0 && !error && (
         <p className="text-sm text-[var(--text-tertiary)]">Cargando lo que te deben…</p>
@@ -205,7 +210,7 @@ export default function PorCobrarDashboard({ onIr }: { onIr?: (seccion: string) 
                   fila={f}
                   hoy={hoy}
                   cruce={(f.cruce && crucePorClave.get(f.cruce)) || null}
-                  onCobrar={() => irASeccion(TIPOS[f.tipo].destino, TIPOS[f.tipo].externo)}
+                  onCobrar={() => irASeccion(TIPOS[f.tipo].destino, TIPOS[f.tipo].externo, TIPOS[f.tipo].vista)}
                   onScoring={() => irASeccion("scoring")}
                   onLiquidar={irALiquidar}
                 />

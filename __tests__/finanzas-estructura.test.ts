@@ -1,21 +1,22 @@
 import { describe, expect, it } from "vitest";
 import {
-  DONDE_VIVE, SECCIONES, TABS, VISTAS, ubicar,
+  CON_PESTANAS_PROPIAS, DONDE_VIVE, SECCIONES, TABS, VISTAS, ubicar,
 } from "@/components/admin/unified/finanzas/estructura";
 
 /**
- * La unificación de Mi Plata (6 pestañas + 14 secciones → 5 pestañas) sólo es
- * válida si NADA se pierde: las quince vistas de antes siguen teniendo
- * dirección, y los atajos del menú del panel siguen aterrizando donde prometen.
+ * La unificación de Mi Plata (6 pestañas + 14 secciones → 5 pestañas, y desde
+ * la ola 3 del panel unificado, 2026-10-10, → 8 pestañas en DOS niveles) sólo
+ * es válida si NADA se pierde: las vistas de antes siguen teniendo dirección, y
+ * los atajos del menú del panel siguen aterrizando donde prometen.
  *
  * Este test es la red: si mañana alguien mueve una vista de pestaña y se olvida
  * del mapa, un enlace guardado caería en «Resumen» sin avisar.
  */
 
-/** Las quince vistas que existían antes del rediseño, con su nombre de entonces. */
+/** Las vistas que existían antes del rediseño, con su nombre de entonces (menos Fiados, ver abajo). */
 const VISTAS_VIEJAS = [
   "resumen", "pl", "rentabilidad", "comparador", "gastos", "presupuesto",
-  "flujo-caja", "tesoreria", "activos", "por-cobrar", "fiados", "prestamos",
+  "flujo-caja", "tesoreria", "activos", "por-cobrar", "prestamos",
   "adelantos", "scoring", "reportes",
 ] as const;
 
@@ -23,6 +24,9 @@ const VISTAS_VIEJAS = [
 const VISTAS_NUEVAS = [
   /* F10 (2026-09-29): «Lo que debo», el otro lado de Por cobrar. */
   "por-pagar",
+  /* Ola 3 (2026-10-10): Impuestos llegó de Comprobantes, y Reportes dejó de
+     apilar cuatro pantallas (`reportes` sigue siendo el reporte mensual). */
+  "impuestos", "contador", "importar", "cierres",
 ] as const;
 
 /** Los nombres por los que el menú del panel entra al módulo (`?tab=…`). */
@@ -32,11 +36,14 @@ const ATAJOS_DEL_MENU = ["plata", "fiados", "por-cobrar", "prestamos", "adelanto
 const PESTANAS_VIEJAS = ["dashboard", "resultado", "caja"] as const;
 
 describe("estructura de Mi Plata", () => {
-  it("tiene cinco pestañas", () => {
-    expect(TABS.map((t) => t.id)).toEqual(["resumen", "resultado", "movimientos", "por-cobrar", "reportes"]);
+  it("tiene ocho pestañas, en el orden del plan", () => {
+    expect(TABS.map((t) => t.label)).toEqual([
+      "Resumen", "Resultado", "Movimientos", "Por cobrar y pagar",
+      "Préstamos", "Adelantos", "Activos", "Impuestos y reportes",
+    ]);
   });
 
-  it("conserva las quince vistas, con dirección propia (y sólo suma las nuevas declaradas)", () => {
+  it("conserva las vistas viejas, con dirección propia (y sólo suma las nuevas declaradas)", () => {
     expect([...VISTAS].sort()).toEqual([...VISTAS_VIEJAS, ...VISTAS_NUEVAS].sort());
     // `VISTAS` es lo que `useVistaModulo` valida: lo que no está acá, no se puede linkear.
     for (const vieja of VISTAS_VIEJAS) expect(VISTAS).toContain(vieja);
@@ -51,14 +58,35 @@ describe("estructura de Mi Plata", () => {
   });
 
   it("los atajos del menú siguen entrando donde prometen", () => {
-    expect(ubicar("fiados")).toMatchObject({ tab: "por-cobrar", vista: "fiados" });
-    expect(ubicar("prestamos")).toMatchObject({ tab: "por-cobrar", vista: "prestamos" });
-    expect(ubicar("adelantos")).toMatchObject({ tab: "por-cobrar", vista: "adelantos" });
+    expect(ubicar("prestamos")).toMatchObject({ tab: "prestamos", vista: "prestamos" });
+    expect(ubicar("adelantos")).toMatchObject({ tab: "adelantos", vista: "adelantos" });
+    expect(ubicar("activos")).toMatchObject({ tab: "activos", vista: "activos" });
     expect(ubicar("scoring")).toMatchObject({ tab: "por-cobrar", vista: "scoring" });
     expect(ubicar("por-cobrar")).toMatchObject({ tab: "por-cobrar", vista: "por-cobrar" });
-    // Activos se mudó de Reportes a Movimientos: el atajo tiene que seguirlo.
-    expect(ubicar("activos")).toMatchObject({ tab: "movimientos", vista: "activos" });
     for (const atajo of ATAJOS_DEL_MENU) expect(DONDE_VIVE[atajo]).toBeDefined();
+  });
+
+  it("Fiados ya no es sección: un nombre viejo cae donde está su cifra y su enlace", () => {
+    expect(VISTAS).not.toContain("fiados");
+    expect(ubicar("fiados")).toMatchObject({ tab: "por-cobrar", vista: "por-cobrar" });
+  });
+
+  it("Préstamos, Adelantos y Activos son pestañas sin secciones de Mi Plata (su 2.º nivel es el suyo)", () => {
+    expect([...CON_PESTANAS_PROPIAS]).toEqual(["prestamos", "adelantos", "activos"]);
+    for (const t of CON_PESTANAS_PROPIAS) {
+      expect(SECCIONES[t]).toBeUndefined();
+      expect(TABS.map((x) => x.id)).toContain(t);
+    }
+  });
+
+  it("Impuestos y reportes: cinco secciones y la pestaña abre en los impuestos", () => {
+    expect((SECCIONES["impuestos-reportes"] ?? []).map((s) => s.id)).toEqual([
+      "impuestos", "reportes", "contador", "importar", "cierres",
+    ]);
+    expect(ubicar("impuestos-reportes")).toMatchObject({ tab: "impuestos-reportes", vista: "impuestos" });
+    expect(ubicar("reportes")).toMatchObject({ tab: "impuestos-reportes", vista: "reportes" });
+    expect(ubicar("obligaciones")).toMatchObject({ vista: "impuestos" });
+    expect(ubicar("importar-exportar")).toMatchObject({ vista: "importar" });
   });
 
   it("las pestañas que ya no existen caen en su contenido, no en Resumen", () => {

@@ -21,6 +21,7 @@ import {
   ChevronLeft,
 } from "@buleje/design-system/icons";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
+import { SegundoNivelEnElHub, useRanuraDelSegundoNivel } from "@/components/admin/unified/finanzas/segundo-nivel";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { AnalisisView } from "./AnalisisView";
@@ -92,6 +93,16 @@ const TABS = [
 /** Los ids, DERIVADOS de TABS: listarlos aparte los deja desincronizarse. */
 const TAB_IDS = TABS.map((t) => t.id);
 
+/**
+ * Dentro de Mi Plata la pastilla «Resumen» quedaba al lado del título y de la
+ * pestaña «Resumen» del propio hub: dos «Resumen» que no son lo mismo. Ahí se
+ * dice de qué es (a 400 px no entra: queda «Resumen», en otra fila que la del
+ * hub). Fuera del hub, la barra propia ya dice «Adelantos».
+ */
+const TABS_EN_EL_HUB = TABS.map((t) =>
+  t.id === "resumen" ? { ...t, label: "Resumen de adelantos", angosto: "Resumen" } : t,
+);
+
 const jsonHeaders = () => csrfHeaders({ "Content-Type": "application/json" });
 
 // ── Multi-moneda (ADR-118): formato por moneda + totales segmentados ───────────
@@ -106,6 +117,7 @@ export default function AdelantosModule() {
    * recorría.
    */
   const { vista: tab, irA: setTab } = useSubvistaModulo(MODULE_ID, TAB_IDS, TAB_IDS[0]);
+  const enHub = useRanuraDelSegundoNivel();
   /* `?accion=liquidar` (la Caja de Mi Plata): Liquidar vive en «Cuenta por
      persona», que está en Resumen. Desde otra sub-vista, primero se va ahí. */
   useEffect(() => {
@@ -172,6 +184,29 @@ export default function AdelantosModule() {
   /* El servidor ya guarda la dirección: sin eso, lo recibido se guardaría como dado. */
   const admiteRecibido = resumen?.recibido != null || adelantos.some((a) => "direccion" in a);
 
+  const botonNuevo = (
+    <button
+      type="button"
+      onClick={() => {
+        if (sinPersonas) { setTab("personas"); return; }
+        setTab("lista");
+        setCreando(true);
+      }}
+      className="inline-flex h-12 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
+    >
+      <Plus className="h-4 w-4" aria-hidden />
+      {sinPersonas ? "Agregar persona" : "Nuevo adelanto"}
+    </button>
+  );
+
+  const vistas = (
+    <VistasDeAdelantos
+      tab={tab} setTab={setTab} error={error} resumen={resumen} adelantos={adelantos} dados={dados}
+      recibidos={recibidos} beneficiarios={beneficiarios} admiteRecibido={admiteRecibido} loading={loading}
+      reload={reload} creando={creando} setCreando={setCreando}
+    />
+  );
+
   return (
     <div>
       {/* SIN encabezado propio: la pestaña «Adelantos» de Mi Plata ya dice
@@ -179,26 +214,48 @@ export default function AdelantosModule() {
           título — un header anidado no se dibuja, ver AdminModuleHeader).
           La acción primaria va en la barra de pestañas, pegada a lo que se
           está mirando. */}
-      <AdminTabBar
-        tabs={TABS}
-        activeTab={tab}
-        onTabChange={setTab}
-        moduleId={MODULE_ID}
-        rightSlot={
-          <button
-            onClick={() => {
-              if (sinPersonas) { setTab("personas"); return; }
-              setTab("lista");
-              setCreando(true);
-            }}
-            className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
-          >
-            <Plus className="h-4 w-4" />
-            {sinPersonas ? "Agregar persona" : "Nuevo adelanto"}
-          </button>
-        }
-      >
-        <div className="pt-5 lg:pt-6">
+      {/* Dentro de Mi Plata (ola 3, 2026-10-10) las 7 pestañas son el segundo
+          nivel del hub, en la fila del título, con «Nuevo adelanto» al lado:
+          ya no hay una barra propia debajo de la de Mi Plata. */}
+      {enHub && (
+        <SegundoNivelEnElHub
+          ranura={enHub.ranura}
+          items={TABS_EN_EL_HUB}
+          activa={tab}
+          onIr={setTab}
+          etiqueta="Pestañas de Adelantos"
+          acciones={botonNuevo}
+        />
+      )}
+      {enHub ? vistas : (
+        <AdminTabBar tabs={TABS} activeTab={tab} onTabChange={setTab} moduleId={MODULE_ID} rightSlot={botonNuevo}>
+          <div className="pt-5 lg:pt-6">{vistas}</div>
+        </AdminTabBar>
+      )}
+    </div>
+  );
+}
+
+/** Las siete vistas de Adelantos (dentro o fuera de Mi Plata, son las mismas). */
+function VistasDeAdelantos({
+  tab, setTab, error, resumen, adelantos, dados, recibidos, beneficiarios, admiteRecibido, loading, reload, creando, setCreando,
+}: {
+  tab: string;
+  setTab: (v: string) => void;
+  error: string | null;
+  resumen: Resumen | null;
+  adelantos: DbAdelanto[];
+  dados: DbAdelanto[];
+  recibidos: DbAdelanto[];
+  beneficiarios: BeneficiarioConSaldo[];
+  admiteRecibido: boolean;
+  loading: boolean;
+  reload: () => Promise<void>;
+  creando: boolean;
+  setCreando: React.Dispatch<React.SetStateAction<boolean>>;
+}) {
+  return (
+        <div>
           {error && (
             <div className="mb-4 rounded-xl border border-[var(--data-error)]/30 bg-[var(--data-error)]/10 px-4 py-3 text-base font-semibold text-[var(--data-error)]">
               {error}
@@ -238,8 +295,6 @@ export default function AdelantosModule() {
           {tab === "actividad" && <ActividadView adelantos={adelantos} loading={loading} />}
           {tab === "analisis" && <AnalisisView adelantos={dados} recibidos={recibidos} loading={loading} />}
         </div>
-      </AdminTabBar>
-    </div>
   );
 }
 

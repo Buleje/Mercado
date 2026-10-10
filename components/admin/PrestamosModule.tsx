@@ -20,6 +20,7 @@ import { BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, Tool
 import { CardTitle, DataTable, LoadingState, SectionTitle, WarningAlert, BlockTitle } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
+import { SegundoNivelEnElHub, useRanuraDelSegundoNivel } from "@/components/admin/unified/finanzas/segundo-nivel";
 import { Field } from "@/components/admin/shared/Field";
 import { FiltroColumnaMulti, FiltroColumnaRango } from "@/components/admin/shared/filtros-columna";
 import { useOrdenColumnas, EnOrden, BotonRestablecerColumnas } from "@/components/admin/shared/columnas-ordenables";
@@ -534,6 +535,7 @@ export default function PrestamosModule() {
   // La sub-vista vive en `?sub=` (useSubvistaModulo): este módulo se muestra dentro de un hub
   // que ya usa `?vista=`. Link compartible y «atrás» del navegador (antes era estado local).
   const { vista: activeTab, irA: setActiveTab } = useSubvistaModulo<PrestamosVista>("prestamos", PRESTAMOS_VISTAS, "dashboard");
+  const enHub = useRanuraDelSegundoNivel();
 
   // Mejora nueva: Filtro por estado en prestamos
   const [prestamoStatusFilter, setPrestamoStatusFilter] = useState<"" | PrestamoStatus>("");
@@ -1076,27 +1078,43 @@ export default function PrestamosModule() {
     ? `Préstamos a clientes con cuotas programadas. ${activos.length} activos${saldoPendiente > 0 ? ` — saldo pendiente ${formatCurrency(saldoPendiente)}.` : "."}`
     : "Préstamos a clientes con cuotas programadas. Registra, calcula cuotas y lleva el seguimiento de pagos.";
 
+  const pestanas = PRESTAMOS_TAB_ITEMS.map((t) =>
+    t.id === "cobros" && cobrosData && cobrosData.vencidas.length > 0
+      ? { ...t, badge: cobrosData.vencidas.length }
+      : t
+  );
+  const irAPestana = (id: string) => setActiveTab(id as PrestamosVista);
+
   return (
     <div className="space-y-4 sm:space-y-6">
-      <AdminModuleHeader
-        as="h2"
-        icon={DollarSign}
-        eyebrow="Finanzas · Créditos y cuotas"
-        title="Préstamos"
-        description={prestamosDescription}
-      />
-
-      {/* Tabs */}
-      <AdminTabBar
-        moduleId={PRESTAMOS_MODULE_ID}
-        tabs={PRESTAMOS_TAB_ITEMS.map((t) =>
-          t.id === "cobros" && cobrosData && cobrosData.vencidas.length > 0
-            ? { ...t, badge: cobrosData.vencidas.length }
-            : t
-        )}
-        activeTab={activeTab}
-        onTabChange={(id) => setActiveTab(id as "dashboard" | "activos" | "cobros" | "calculadora" | "historial")}
-      />
+      {/* Dentro de Mi Plata, sus pestañas son el segundo nivel del hub (en la
+          fila del título) y no dibuja título ni barra propios: eran el tercer
+          nivel. Fuera de un hub, como siempre. */}
+      {enHub ? (
+        <SegundoNivelEnElHub
+          ranura={enHub.ranura}
+          items={pestanas}
+          activa={activeTab}
+          onIr={irAPestana}
+          etiqueta="Pestañas de Préstamos"
+        />
+      ) : (
+        <>
+          <AdminModuleHeader
+            as="h2"
+            icon={DollarSign}
+            eyebrow="Finanzas · Créditos y cuotas"
+            title="Préstamos"
+            description={prestamosDescription}
+          />
+          <AdminTabBar
+            moduleId={PRESTAMOS_MODULE_ID}
+            tabs={pestanas}
+            activeTab={activeTab}
+            onTabChange={irAPestana}
+          />
+        </>
+      )}
 
       {/* ── Tab: Dashboard ────────────────────────────────────────────────── */}
       {activeTab === "dashboard" && !loading && <PrestamosDashboard prestamos={prestamos} resumen={resumen} />}
