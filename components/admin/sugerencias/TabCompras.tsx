@@ -10,6 +10,7 @@ import {
   ArrowRight,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { button } from "@/components/ui-system/button-variants";
 import ProductImage from "./ProductImage";
 import {
   normalizeProducts,
@@ -89,30 +90,6 @@ function fmt(n: number): string {
   return `${formatCurrency(n)}`;
 }
 
-function getMockProducts(): Product[] {
-  return [
-    { id: "1", name: "Arroz Costeño 5kg", stock: 3, stockMin: 10, price: 19, cost: 14, category: "Abarrotes", unit: "bolsa" },
-    { id: "2", name: "Aceite Primor 1L", stock: 1, stockMin: 6, price: 8.5, cost: 6.2, category: "Abarrotes", unit: "unidad" },
-    { id: "3", name: "Inca Kola 2L", stock: 4, stockMin: 12, price: 6.5, cost: 4.8, category: "Bebidas", unit: "botella" },
-    { id: "4", name: "Azúcar Rubia 1kg", stock: 8, stockMin: 15, price: 4.5, cost: 3.3, category: "Abarrotes", unit: "bolsa" },
-    { id: "5", name: "Fideos Don Vittorio 500g", stock: 6, stockMin: 10, price: 3.2, cost: 2.4, category: "Abarrotes", unit: "paquete" },
-  ];
-}
-
-const MOCK_SALES: SaleData[] = [
-  { productId: "1", quantity: 14 },
-  { productId: "2", quantity: 9 },
-  { productId: "3", quantity: 22 },
-  { productId: "4", quantity: 18 },
-  { productId: "5", quantity: 11 },
-];
-
-const MOCK_PURCH: PurchaseData[] = [
-  { productId: "1", supplierName: "Distribuidora Norte", unitCost: 14 },
-  { productId: "2", supplierName: "Distribuidora Norte", unitCost: 6.2 },
-  { productId: "3", supplierName: "Coca Cola Distr.", unitCost: 4.8 },
-];
-
 export default function TabCompras() {
   // Un solo stock mínimo (09-10): el propio o el del negocio.
   const minimoGlobal = useStockMinimoGlobal();
@@ -120,10 +97,11 @@ export default function TabCompras() {
   const [sales, setSales] = useState<SaleData[]>([]);
   const [purchases, setPurchases] = useState<PurchaseData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [usingMock, setUsingMock] = useState(false);
+  const [fallo, setFallo] = useState(false);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
+    setFallo(false);
     try {
       const [pr, sr, hr] = await Promise.all([
         fetch("/api/products?active=true&limit=200", { cache: "no-store" }),
@@ -136,10 +114,9 @@ export default function TabCompras() {
       if (hr.ok) setPurchases(aggregatePurchasesByProduct(await hr.json())); else failed = true;
       if (failed) throw new Error("partial");
     } catch {
-      setProducts(getMockProducts());
-      setSales(MOCK_SALES);
-      setPurchases(MOCK_PURCH);
-      setUsingMock(true);
+      // Antes caía a 5 productos inventados («datos demo»): una lista de compra
+      // falsa es peor que ninguna. Ahora la falla se dice y se reintenta.
+      setFallo(true);
     } finally {
       setLoading(false);
     }
@@ -231,13 +208,13 @@ export default function TabCompras() {
             </p>
             <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
               Lo que se va a acabar pronto, ordenado por urgencia
-              {usingMock && <span className="ml-2 text-[var(--data-warning-500)]">(datos demo)</span>}
             </p>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={exportCSV}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+              disabled={fallo || loading}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
             >
               <Download className="h-3.5 w-3.5" />
               CSV
@@ -253,7 +230,7 @@ export default function TabCompras() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {!fallo && <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {([
             { key: "critical", label: "Críticos", value: counts.critical, sub: "Se acaban en 2 días" },
             { key: "high", label: "Urgentes", value: counts.high, sub: "Se acaban esta semana" },
@@ -287,7 +264,7 @@ export default function TabCompras() {
               </div>
             );
           })}
-        </div>
+        </div>}
       </div>
 
       {/* Lista */}
@@ -297,6 +274,14 @@ export default function TabCompras() {
             <div key={i} className="h-28 rounded-2xl bg-[var(--surface-sunken)] animate-pulse" />
           ))}
         </div>
+      ) : fallo ? (
+        <p role="alert" className="flex flex-wrap items-center gap-3 text-sm font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+          No pudimos traer los productos, las ventas o las compras.
+          <button type="button" onClick={() => void fetchAll()} className={button({ variant: "secondary" })}>
+            <RefreshCw className="h-4 w-4" aria-hidden />
+            Reintentar
+          </button>
+        </p>
       ) : advised.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-[var(--rule-base)] p-12 text-center">
           <Package className="mx-auto mb-3 h-12 w-12 text-[var(--data-success-500)]" />

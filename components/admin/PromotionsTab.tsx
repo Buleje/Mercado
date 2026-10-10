@@ -12,6 +12,7 @@ import PromoDetalleModal from "@/components/admin/promociones/PromoDetalleModal"
 import PromoEnviarModal from "@/components/admin/promociones/PromoEnviarModal";
 import PromoVentanasChicas from "@/components/admin/promociones/PromoVentanasChicas";
 import CampanaFormModal from "@/components/admin/promociones/CampanaFormModal";
+import ProximaFechaComercial from "@/components/admin/promociones/ProximaFechaComercial";
 
 const CLAVE_KPIS_PROMOCIONES = "promociones:kpis-abiertos";
 
@@ -34,6 +35,7 @@ export default function PromotionsTab() {
       <PromocionesResumen prm={prm} abierto={kpisAbiertos} id={kpisId} />
 
       {/* Orden por pregunta: primero las promociones (lo que la tienda ofrece hoy), después las campañas. */}
+      <ProximaFechaComercial onArmarPromo={() => prm.setShowTemplates(true)} />
       <PromocionesLista prm={prm} />
 
       <CampanasProgramadas prm={prm} />
