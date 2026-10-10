@@ -202,7 +202,9 @@ const SUDO_DENYLIST = [
   { re: /\bsudo\b[^|;&]*>\s*\/dev\/(sd|nvme|vd|mmcblk|disk)/, label: "escritura a disco crudo" },
   { re: /\bsudo\b[^|;&]*\bchmod\s+-R\s+0?777\s+\/(?:\s|$|etc|usr|bin|boot|lib|var)/, label: "chmod -R 777 system" },
   { re: /\bsudo\b[^|;&]*\bchown\s+-R\b[^|;&]*\s\/(?:etc|usr|bin|boot|lib|var)(?:\s|\/|$)/, label: "chown -R system" },
-  { re: /\bsudo\s+(?:-i\b|-s\b|su\b|bash\b|sh\b|zsh\b)/, label: "shell root interactivo" },
+  // `sudo bash -c '…'` NO es interactivo: sudo ya no pide clave, y lo que va en -c pasa por
+  // los mismos filtros (textoEjecutable lo conserva). Solo se bloquea abrir una shell de root.
+  { re: /\bsudo\s+(?:-i\b|-s\b|su\b|(?:bash|sh|zsh)\b(?!\s+-c\b))/, label: "shell root interactivo" },
   { re: /\bsudo\b[^|;&]*\b(userdel|deluser|usermod|passwd)\b/, label: "gestión de usuarios" },
   { re: /\bsudo\b[^|;&]*\b(shutdown|reboot|halt|poweroff)\b/, label: "apagar/reiniciar" },
   { re: /\bsudo\b[^|;&]*\bvisudo\b/, label: "visudo (riesgo lockout)" },
@@ -210,33 +212,77 @@ const SUDO_DENYLIST = [
 ];
 
 const BLOCK_PATTERNS = [
-  { pattern: /\brm\s+(?:-[a-zA-Z]*[rR][a-zA-Z]*|--recursive)\b/, label: "rm -rf (recursivo)", severity: "critical", reason: "Borrado recursivo peligroso. Usá `git rm` o `rimraf` si es node_modules." },
-  { pattern: /\brm\b.*(--no-preserve-root|\s\/(?:\s|$)|\s~(?:\s|$|\/))/, label: "rm sobre / o ~", severity: "critical", reason: "rm apuntando a raíz o home. Bloqueado siempre." },
+  { pattern: /\brm\s+(?:-[a-zA-Z]*[rR][a-zA-Z]*|--recursive)\b/, label: "rm -rf (recursivo)", severity: "critical", reason: "Borrado recursivo fuera de las carpetas temporales (/tmp, /var/tmp, ~/.cache, %TEMP% de Windows). Usá `git rm` o `rimraf` si es node_modules.", sobre: "ejecutable" },
+  { pattern: /\brm\b.*(--no-preserve-root|\s\/\*?(?:\s|$)|\s(?:~|\$HOME)\/?\*?(?:\s|$))/, label: "rm sobre / o ~", severity: "critical", reason: "rm apuntando a raíz o home. Bloqueado siempre.", sobre: "ejecutable" },
   { pattern: /\bDROP\s+(TABLE|DATABASE|SCHEMA|INDEX)\b/i, label: "DROP SQL", severity: "critical", reason: "Usá migration Prisma + DIRECT_URL." },
   { pattern: /\bvitest\b[^|;&]*--root[= ]\/(?:\s|$)/, label: "vitest --root /", severity: "critical", reason: "Recorre TODO el disco: el 05-10 quedó 87 min colgado con 8,2 GB y tumbó el dev 2 veces. Agregá el caso a un test del repo o usá --root del proyecto." },
   { pattern: /\bTRUNCATE\s+TABLE\b/i, label: "TRUNCATE TABLE", severity: "critical", reason: "Usá soft-delete o migration formal." },
   { pattern: /\bDELETE\s+FROM\s+[A-Za-z_][A-Za-z0-9_]*\s*(?!WHERE|LIMIT)/i, label: "DELETE sin WHERE", severity: "critical", reason: "Agregá WHERE explícito." },
-  { pattern: /\bgit\s+push\s+(?:-[a-z]*f[a-z]*|--force(?!-with-lease))\s+.*(?:master|main)\b/, label: "git push --force a master/main", severity: "critical", reason: "Usá --force-with-lease en branch personal." },
-  { pattern: /\bgit\s+reset\s+--hard\s+origin\/(?:master|main)/, label: "git reset --hard origin", severity: "high", reason: "Stash o branch primero." },
-  { pattern: /\bgit\s+clean\s+-[a-z]*f[a-z]*[dx]/, label: "git clean -fdx", severity: "high", reason: "Respaldá antes." },
-  { pattern: /\bgit\s+checkout\s+\.\s*$/, label: "git checkout .", severity: "medium", reason: "Descarta TODO el working copy. Usá paths específicos." },
-  { pattern: /\bgit\s+restore\s+\.\s*$/, label: "git restore .", severity: "medium", reason: "Descarta TODO el working copy. Usá paths específicos." },
-  { pattern: /\bcurl\s+.*\|\s*(?:sh|bash|zsh|fish|python|node)\b/, label: "curl | sh pipe", severity: "critical", reason: "Descargá, leé, después ejecutá." },
-  { pattern: /\bwget\s+.*\|\s*(?:sh|bash|zsh|fish|python|node)\b/, label: "wget | sh pipe", severity: "critical", reason: "Descargá, leé, después ejecutá." },
+  { pattern: /\bgit\s+push\s+(?:-[a-z]*f[a-z]*|--force(?!-with-lease))\s+.*(?:master|main)\b/, label: "git push --force a master/main", severity: "critical", reason: "Usá --force-with-lease en branch personal.", sobre: "ejecutable" },
+  { pattern: /\bgit\s+reset\s+--hard\s+origin\/(?:master|main)/, label: "git reset --hard origin", severity: "high", reason: "Stash o branch primero.", sobre: "ejecutable" },
+  { pattern: /\bgit\s+clean\s+-[a-z]*f[a-z]*[dx]/, label: "git clean -fdx", severity: "high", reason: "Respaldá antes.", sobre: "ejecutable" },
+  { pattern: /\bgit\s+checkout\s+\.\s*$/, label: "git checkout .", severity: "medium", reason: "Descarta TODO el working copy. Usá paths específicos.", sobre: "ejecutable" },
+  { pattern: /\bgit\s+restore\s+\.\s*$/, label: "git restore .", severity: "medium", reason: "Descarta TODO el working copy. Usá paths específicos.", sobre: "ejecutable" },
+  { pattern: /\bcurl\s+.*\|\s*(?:sh|bash|zsh|fish|python|node)\b/, label: "curl | sh pipe", severity: "critical", reason: "Descargá, leé, después ejecutá.", sobre: "ejecutable" },
+  { pattern: /\bwget\s+.*\|\s*(?:sh|bash|zsh|fish|python|node)\b/, label: "wget | sh pipe", severity: "critical", reason: "Descargá, leé, después ejecutá.", sobre: "ejecutable" },
   { pattern: /\bdocker\s+(?:system|volume|image|container)\s+prune\s+(?:-[a-z]*f|--force)/, label: "docker prune --force", severity: "medium", reason: "Borrado masivo de recursos Docker." },
   { pattern: /\bkubectl\s+delete\s+(?:all|pods?|deployments?)\s+--all\b/, label: "kubectl delete --all", severity: "critical", reason: "Usá namespaces o label selectors." },
   { pattern: /\b(?:npm|pnpm|yarn)\s+(?:uninstall|remove)\s+(?:next|react|prisma|typescript)(?:\s|$)/, label: "desinstalar dep core", severity: "high", reason: "Rompe el build. Confirmá." },
 ];
+
+/**
+ * Lo que la shell va a EJECUTAR, sin el texto que solo viaja como dato (Brandon 09-10: «lo más
+ * libre posible»; un `grep` de un patrón, un mensaje de commit o un heredoc que escribe un
+ * archivo no borran nada, y el guard los bloqueaba). Se vacían los cuerpos de heredoc y el
+ * contenido entre comillas, SALVO lo que va a `-c` (bash -c, sh -c, sudo bash -c) o a `eval`,
+ * y el heredoc que se entuba a una shell (`cat <<EOF | bash`): eso sí se ejecuta.
+ */
+function textoEjecutable(cmd) {
+  const sinHeredoc = cmd.replace(
+    /<<-?\s*(['"]?)([A-Za-z_][A-Za-z0-9_]*)\1([^\n]*)\n[\s\S]*?\n\s*\2[ \t]*(?=\n|$)/g,
+    (m, _q, _tag, resto) => (/\|\s*(?:sudo\s+)?(?:ba|z)?sh\b/.test(resto) ? m : m.split("\n")[0]),
+  );
+  return sinHeredoc.replace(
+    /(\s-c\s+|\beval\s+)?(['"])((?:\\.|(?!\2)[\s\S])*)\2/g,
+    (_m, ejecuta, q, cuerpo) => (ejecuta ? `${ejecuta}${cuerpo}` : `${q}${q}`),
+  );
+}
+
+// Carpetas donde un borrado recursivo no pierde trabajo: temporales y cachés.
+const RAICES_SEGURAS = [
+  /^\/tmp\/[^/*\s]/,
+  /^\/var\/tmp\/[^/*\s]/,
+  /^(?:~|\$HOME|\/home\/usuario)\/\.cache\/[^/*\s]/,
+  /^\/mnt\/c\/Users\/Usuario\/AppData\/Local\/Temp\/[^/*\s]/,
+];
+
+/** true si TODOS los borrados recursivos del comando apuntan solo a temporales o cachés. */
+function rmRecursivoSeguro(ejecutable) {
+  for (const seg of ejecutable.split(/;|&&|\|\||\||\n/)) {
+    const m = seg.match(/\brm\s+(.*)$/);
+    if (!m) continue;
+    const args = m[1].trim().split(/\s+/).filter(Boolean);
+    const recursivo = args.some((a) => /^-[a-zA-Z]*[rR]/.test(a) || a === "--recursive");
+    if (!recursivo) continue;
+    const blancos = args.filter((a) => !a.startsWith("-"));
+    if (!blancos.length) return false;
+    for (const b of blancos) {
+      if (b.includes("..") || !RAICES_SEGURAS.some((r) => r.test(b))) return false;
+    }
+  }
+  return true;
+}
 
 /** @returns {null | {label,severity,reason}} */
 function bashGuard(toolInput) {
   if (process.env.BSM_ALLOW_INSTALL === "1") return null;
   const command = String(toolInput?.command ?? "");
   if (!command) return null;
+  const ejecutable = textoEjecutable(command);
 
-  if (/\bsudo\b/.test(command)) {
+  if (/\bsudo\b/.test(ejecutable)) {
     for (const d of SUDO_DENYLIST) {
-      if (d.re.test(command)) {
+      if (d.re.test(ejecutable)) {
         return {
           label: d.label,
           severity: "critical",
@@ -247,7 +293,12 @@ function bashGuard(toolInput) {
     }
   }
   for (const p of BLOCK_PATTERNS) {
-    if (p.pattern.test(command)) return p;
+    // Las reglas de forma de comando (rm, git, curl|sh) miran solo lo ejecutable; las de SQL
+    // miran el texto entero, porque el SQL viaja justamente entre comillas.
+    const texto = p.sobre === "ejecutable" ? ejecutable : command;
+    if (!p.pattern.test(texto)) continue;
+    if (p.sobre === "ejecutable" && p.severity === "critical" && /recursivo/.test(p.label) && rmRecursivoSeguro(ejecutable)) continue;
+    return p;
   }
   return null;
 }

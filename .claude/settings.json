@@ -244,7 +244,6 @@
     ]
   },
   "permissions": {
-    "defaultMode": "acceptEdits",
     "allow": [
       "Agent(*)",
       "Bash(awk *)",
@@ -407,16 +406,7 @@
       "mcp__postgres__query"
     ],
     "deny": [
-      "Bash(rm -rf *)",
       "Bash(rm -rf /)",
-      "Bash(rm -rf ~*)",
-      "Bash(rm -rf $HOME*)",
-      "Bash(rm -fr*)",
-      "Bash(rm -r *)",
-      "Bash(rm -R *)",
-      "Bash(rm -f /*)",
-      "Bash(rm /*)",
-      "Bash(sudo rm *)",
       "Bash(sudo dd *)",
       "Bash(sudo mkfs*)",
       "Bash(sudo wipefs*)",
@@ -427,8 +417,6 @@
       "Bash(sudo su*)",
       "Bash(sudo -i*)",
       "Bash(sudo -s*)",
-      "Bash(sudo bash*)",
-      "Bash(sudo sh *)",
       "Bash(sudo visudo*)",
       "Bash(sudo passwd*)",
       "Bash(sudo userdel*)",
