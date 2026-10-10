@@ -48,7 +48,7 @@ const BodySchema = z.object({
 export async function GET(req: NextRequest) {
   const rl = applyRateLimit(req, "MODERATE", "admin-sales-channels:get");
   if (rl) return rl;
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
   try {
@@ -56,7 +56,23 @@ export async function GET(req: NextRequest) {
     const channels = await SettingsDB.getSalesChannels(tenantId);
     const theme = await SettingsDB.getStoreThemeJson(tenantId);
     const analyticsId = typeof theme?.analyticsId === "string" ? theme.analyticsId : "";
-    return NextResponse.json({ channels, analyticsId });
+    // Redes y medición es el ÚNICO lugar donde se editan los pixels (Avanzado
+    // quedó de solo lectura). Un tenant que puso el Pixel en el Avanzado viejo
+    // tiene `storeTheme.pixelId` lleno y el blob vacío: sin esto vería «Sin
+    // configurar» y, al guardar sólo el GA4, el PATCH escribiría pixelId "".
+    const desdeTema = (clave: "pixelId" | "tiktokPixelId") => {
+      const v = theme?.[clave];
+      return typeof v === "string" ? v.trim() : "";
+    };
+    const metaPixel = channels.meta.pixelId.trim() || desdeTema("pixelId");
+    const tiktokPixel = channels.tiktok.pixelId.trim() || desdeTema("tiktokPixelId");
+    return NextResponse.json({
+      channels: {
+        meta: { ...channels.meta, pixelId: metaPixel, connected: metaPixel.length > 0 },
+        tiktok: { ...channels.tiktok, pixelId: tiktokPixel, connected: tiktokPixel.length > 0 },
+      },
+      analyticsId,
+    });
   } catch (e) {
     logger.error("[admin/sales-channels] GET error", {
       err: e instanceof Error ? e.message : String(e),
@@ -70,7 +86,7 @@ export async function PATCH(req: NextRequest) {
   if (rl) return rl;
   const csrfFail = assertCsrf(req);
   if (csrfFail) return csrfFail;
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
   const parsed = BodySchema.safeParse(await req.json().catch(() => ({})));

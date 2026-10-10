@@ -1,7 +1,11 @@
 "use client";
 
 /**
- * /admin?tab=pagina-inicio — Contenido publico del storefront del tenant.
+ * /admin?tab=pagina-inicio&vista=contenido — Tienda online › Contenido.
+ *
+ * 10-10 (panel unificado, ola 2): sin cabecera propia. El título es el de la
+ * barra de «Tienda online»; «Ver tienda» pasa al riel de estas pestañas
+ * (`heading.actions`: anidada, sólo se dibujan las acciones). Branding → «Marca».
  *
  * v2 mayo 2026 (Brandon · Opcion A — renombrar + reducir alcance):
  *   - Pasa de 9 tabs a 4 tabs unicos (sin duplicar otros modulos del admin)
@@ -23,7 +27,7 @@
  *   - Descuentos       → /admin?tab=promociones
  *   - Engagement       → /admin?tab=clientes (CRM/loyalty)
  *
- * Patrón estándar: AdminModuleHeader + AdminTabBar.
+ * Patrón: AdminTabBar anidada (2.º nivel de Tienda online, `?sub=`).
  */
 
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
@@ -34,12 +38,11 @@ import {
   Megaphone,
   ExternalLink,
   Sparkles,
-  Globe,
   Layers,
   Images,
 } from "@buleje/design-system/icons";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
+import { button } from "@/components/ui-system/button-variants";
 import MarketplaceBrandingTab from "./_components/MarketplaceBrandingTab";
 import PromotionsTab from "./_components/PromotionsTab";
 import SectionsTab from "./_components/SectionsTab";
@@ -67,10 +70,11 @@ type TabConfig = {
 // editor unificado "Identidad y tema"). Quedan solo los tabs ÚNICOS de
 // contenido de página. El icono `Palette` queda usado por `typeof Palette`.
 const TABS: TabConfig[] = [
-  { id: "sections",    label: "Secciones",            shortLabel: "Sec.",     icon: Layers },
-  { id: "branding",    label: "Branding marketplace", shortLabel: "Branding", icon: Sparkles },
-  { id: "banners",     label: "Banners de tienda",    shortLabel: "Banners",  icon: Images },
-  { id: "promotions",  label: "Promociones del home", shortLabel: "Promos",   icon: Megaphone },
+  { id: "sections",    label: "Secciones",               shortLabel: "Secciones", icon: Layers },
+  // Se queda acá hasta la ola 4, que la lleva a Marketplace › Mi tienda en el marketplace.
+  { id: "branding",    label: "Marca en el marketplace", shortLabel: "Marca",   icon: Sparkles },
+  { id: "banners",     label: "Banners",                 shortLabel: "Banners", icon: Images },
+  { id: "promotions",  label: "Promociones del inicio",  shortLabel: "Promociones", icon: Megaphone },
 ];
 
 const VALID_TABS = TABS.map((t) => t.id) as readonly TabId[];
@@ -85,7 +89,6 @@ export default function StorePageAdminPage() {
   const { vista: tab, irA: setTab } = useSubvistaModulo<TabId>(MODULE_ID, VALID_TABS, "sections");
   const [slug, setSlug] = useState("main");
 
-
   useEffect(() => {
     let active = true;
     void resolveActiveTenantSlug().then((resolved) => {
@@ -96,27 +99,21 @@ export default function StorePageAdminPage() {
 
   return (
     <div className="space-y-3 sm:space-y-6 overflow-x-hidden">
-      <AdminModuleHeader
-        eyebrow="Mi tienda pública"
-        title="Qué ve el cliente cuando entra a tu storefront"
-        // ADR-299 fase 3: Hero, Diseño, Contacto, SEO y Métricas se movieron al
-        // editor unificado "Identidad y tema" (fuente de verdad). Acá quedan los
-        // tabs ÚNICOS de contenido de página.
-        description="Secciones, branding, banners y promos del home. El hero, colores, contacto, SEO y métricas se editan en 'Identidad y tema'."
-        icon={Globe}
-      >
-        <Link
-          href={`/t/${slug}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
-        >
-          <ExternalLink className="h-4 w-4" />
-          Ver página pública
-        </Link>
-      </AdminModuleHeader>
-
       <AdminTabBar
+        heading={{
+          title: "Contenido",
+          actions: (
+            <Link
+              href={`/t/${slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={button({ variant: "secondary", className: "rounded-xl" })}
+            >
+              <ExternalLink className="h-4 w-4" aria-hidden />
+              Ver tienda
+            </Link>
+          ),
+        }}
         tabs={TABS.map((t) => ({
           id: t.id,
           label: t.label,

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef, useId } from "react";
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import Image from "next/image";
-import Link from "next/link";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
   Palette, Store, Layout, Phone, Settings2, Image as ImageIcon,
@@ -12,11 +12,11 @@ import {
   Megaphone, Grid3x3, ShoppingBag, Tag, Package, BookOpen,
   MessageSquare, HelpCircle, Map, Sun, Moon, Type, Sliders,
   Paintbrush, FileText, Sparkles, Square, LayoutGrid,
-  Smartphone, Monitor, Zap, Truck, Star, Clock, ExternalLink, AlertTriangle } from "@buleje/design-system/icons";
+  Smartphone, Monitor, Zap, Truck, Star, Clock, ExternalLink, AlertTriangle, RefreshCw } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import { LoadingState, PageTitle, PrimaryButton, SectionTitle, CardTitle } from "@buleje/design-system";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { LoadingState, PageTitle, SectionTitle, CardTitle } from "@buleje/design-system";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
+import { button } from "@/components/ui-system/button-variants";
 import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
@@ -27,16 +27,14 @@ const StoreCreativeMode = dynamic(() => import("./StoreCreativeMode"), { ssr: fa
 const CatalogoTiendaTab = dynamic(() => import("./store-page/CatalogoTiendaTab"), { ssr: false });
 const BrandConceptTab = dynamic(() => import("./BrandConceptTab"), { ssr: false });
 const CategoryBannersTab = dynamic(() => import("./CategoryBannersTab"), { ssr: false });
-// Métricas del storefront — absorbidas de "Mi tienda pública" (ADR-299 fase 2).
-const AnalyticsTab = dynamic(() => import("@/app/admin/store-page/_components/AnalyticsTab"), { ssr: false });
 import type { SectionKey } from "./StorefrontEditor";
 import ImageUpload from "./ImageUpload";
 import { Field } from "@/components/admin/shared/Field";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
-type Tab = "identidad" | "marca" | "colores" | "secciones" | "hero" | "promos" | "contacto" | "estilos" | "contenido" | "catalogo" | "avanzado";
-const TAB_IDS_CUSTOMIZER: readonly Tab[] = ["identidad", "marca", "colores", "secciones", "hero", "promos", "contacto", "estilos", "contenido", "catalogo", "avanzado"];
+type Tab = "identidad" | "marca" | "colores" | "secciones" | "portada" | "promos" | "contacto" | "estilos" | "contenido" | "catalogo" | "avanzado";
+const TAB_IDS_CUSTOMIZER: readonly Tab[] = ["identidad", "marca", "colores", "secciones", "portada", "promos", "contacto", "estilos", "contenido", "catalogo", "avanzado"];
 
 export interface StoreTheme {
   logo: string;
@@ -463,7 +461,7 @@ type SectionMeta = {
 
 const SECTION_LIST: SectionMeta[] = [
   { key: "announcement", label: "Banner de anuncio",    icon: <Megaphone className="h-3.5 w-3.5" /> },
-  { key: "hero",         label: "Hero principal",        icon: <Layout className="h-3.5 w-3.5" /> },
+  { key: "hero",         label: "Portada principal",     icon: <Layout className="h-3.5 w-3.5" /> },
   { key: "categories",   label: "Categorías",            icon: <Grid3x3 className="h-3.5 w-3.5" /> },
   { key: "popular",      label: "Productos populares",   icon: <ShoppingBag className="h-3.5 w-3.5" /> },
   { key: "deals",        label: "Ofertas del día",       icon: <Tag className="h-3.5 w-3.5" /> },
@@ -519,6 +517,23 @@ function ColorPicker({
       </div>
       <p className="text-xs text-muted font-mono tracking-wide">{value}</p>
     </div>
+  );
+}
+
+/**
+ * Encabezado de un bloque de Apariencia: ícono + título + ⓘ. Antes era un
+ * banner de 5 líneas con el párrafo a la vista (pasada de diseño 10-10: la
+ * ayuda va en el ⓘ, como en StyleSection).
+ */
+function EncabezadoBloque({ icon, titulo, ayuda }: { icon: React.ReactNode; titulo: string; ayuda: string }) {
+  return (
+    <header className="flex items-center gap-3">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10" aria-hidden>
+        {icon}
+      </span>
+      <CardTitle className="text-sm font-bold text-[var(--text-primary)]">{titulo}</CardTitle>
+      <InfoTip title={titulo} what={<span>{ayuda}</span>} />
+    </header>
   );
 }
 
@@ -612,19 +627,7 @@ function HeroTab({
 
   return (
     <div className="space-y-6">
-      {/* Banner explicativo */}
-      <div className="bg-primary/5 dark:bg-primary/10 border-2 border-primary/15 rounded-2xl p-5 flex items-start gap-3">
-        <div className="shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-          <ImageIcon className="h-5 w-5 text-primary" />
-        </div>
-        <div className="min-w-0">
-          <p className="text-base font-bold text-[var(--text-primary)]">El primer mensaje que ve tu cliente</p>
-          <p className="text-sm text-muted mt-0.5">
-            El hero es el banner grande arriba de tu tienda. Vende el por qué — qué problema resuelves,
-            en cuánto tiempo, con qué garantía. Cambia los textos abajo y mira el preview en vivo.
-          </p>
-        </div>
-      </div>
+      <EncabezadoBloque icon={<ImageIcon className="h-5 w-5 text-primary" />} titulo="El primer mensaje que ve tu cliente" ayuda="La portada es el banner grande arriba de tu tienda. Vende el por qué — qué problema resuelves, en cuánto tiempo, con qué garantía. Cambia los textos abajo y mira el preview en vivo." />
 
       {/* ── Layout 2-col (Brandon 2026-06-24): preview STICKY a la derecha
           (siempre visible mientras editas), form a la izquierda. Mismo patrón
@@ -636,7 +639,7 @@ function HeroTab({
       <StyleSection
         icon={<Eye className="h-5 w-5 text-primary" />}
         title="Vista previa en vivo"
-        description="Idéntico al hero real de tu tienda. Cambia entre desktop y mobile para ver ambos."
+        description="Idéntica a la portada real de tu tienda. Cambia entre computadora y celular para ver ambas."
       >
         <div className="space-y-3">
           {/* Device toggle + abrir tienda */}
@@ -724,7 +727,10 @@ function HeroTab({
                       {theme.heroBadge}
                     </span>
                   )}
+                  {/* `as="p"`: es la portada de la TIENDA en miniatura; como h1 era el
+                      2.º título de la pantalla del panel (pasada de diseño 10-10). */}
                   <PageTitle
+                    as="p"
                     className={cn(
                       "text-white",
                       previewDevice === "desktop" ? "sm:text-4xl" : ""
@@ -965,7 +971,7 @@ function HeroTab({
       <StyleSection
         icon={<Sparkles className="h-5 w-5 text-primary" />}
         title="Badge de origen"
-        description="Etiqueta debajo del logo circular en el hero — comunica de dónde es tu negocio."
+        description="Etiqueta debajo del logo circular en la portada — comunica de dónde es tu negocio."
       >
         <div className="space-y-3">
           <input
@@ -1160,7 +1166,7 @@ function HeroTab({
           altura, overlay, badges — antes solo en Modo Creativo. ── */}
       <StyleSection
         icon={<LayoutGrid className="h-5 w-5 text-primary" />}
-        title="Diseño del hero"
+        title="Diseño de la portada"
         description="Cómo se arma el banner: variante de layout, alineación, altura, oscurecido y badges."
       >
         <div className="space-y-5">
@@ -1239,7 +1245,7 @@ function HeroTab({
                 value={theme.heroOverlay ?? 0}
                 onChange={(e) => update("heroOverlay", Number(e.target.value))}
                 className="w-full accent-[var(--accent)]"
-                aria-label="Oscurecer la foto del hero"
+                aria-label="Oscurecer la foto de la portada"
               />
               <p className="text-xs text-muted">Más oscuro = el texto blanco se lee mejor sobre la imagen.</p>
             </div>
@@ -1255,7 +1261,7 @@ function HeroTab({
               type="button"
               onClick={() => update("heroShowBadges", !(theme.heroShowBadges ?? true))}
               aria-pressed={theme.heroShowBadges ?? true}
-              aria-label="Mostrar badges del hero"
+              aria-label="Mostrar insignias de la portada"
               className={cn("relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors", (theme.heroShowBadges ?? true) ? "bg-primary" : "bg-[var(--surface-sunken)] ")}
             >
               <span className={cn("inline-block h-4 w-4 rounded-full bg-[var(--surface-raised)] shadow transform transition-transform", (theme.heroShowBadges ?? true) ? "translate-x-6" : "translate-x-1")} />
@@ -1271,7 +1277,7 @@ function HeroTab({
             <Star className="h-5 w-5 text-[var(--data-success-500)]" />
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-bold text-[var(--text-primary)]">Checklist del hero perfecto</p>
+            <p className="text-sm font-bold text-[var(--text-primary)]">Lo que tiene una portada que vende</p>
             <ul className="text-xs text-muted mt-2 space-y-1.5">
               <li className="flex items-start gap-1.5">
                 <Check className="h-3.5 w-3.5 mt-0.5 text-[var(--data-success-500)] shrink-0" />
@@ -1299,6 +1305,34 @@ function HeroTab({
   );
 }
 
+/**
+ * «Hero» pasó a llamarse «Portada» (`?sub=portada`, 10-10). Un link viejo con
+ * `?sub=hero` o la memoria del navegador en «hero» abren Portada y no caen en
+ * Identidad: `useSubvistaModulo` no tiene alias, así que va como vista forzada
+ * (la URL válida le sigue ganando).
+ */
+function portadaDeSubVieja(): Tab | undefined {
+  if (typeof window === "undefined") return undefined;
+  const deUrl = new URLSearchParams(window.location.search).get("sub");
+  if (deUrl === "hero") return "portada";
+  if (deUrl) return undefined;
+  try {
+    return localStorage.getItem(`admin-last-tab-${MODULE_ID}`) === "hero" ? "portada" : undefined;
+  } catch {
+    return undefined; // sin localStorage (modo privado): sin memoria, sin bug
+  }
+}
+
+/** Un ID de medición (GA4, Meta Pixel) de solo lectura: se edita en Redes y medición. */
+function ValorDeMedicion({ valor, id }: { valor?: string | null; id?: string }) {
+  const v = valor?.trim();
+  return (
+    <div id={id} className="flex min-h-12 items-center break-all rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-3 py-2 font-mono text-sm text-[var(--text-primary)]">
+      {v || <span className="font-sans text-[var(--text-tertiary)]">Sin configurar</span>}
+    </div>
+  );
+}
+
 // ── Tabs del panel — formato AdminTabBar (horizontal, draggable como otros módulos) ──
 
 const MODULE_ID = "store-customizer";
@@ -1308,20 +1342,22 @@ const MODULE_ID = "store-customizer";
 // render (sin mover bloques) — los ids viejos quedan en el type pero sin botón.
 const TABS = [
   { id: "identidad" as Tab, label: "Identidad", shortLabel: "Identidad", icon: Store },
-  { id: "hero" as Tab, label: "Hero", icon: ImageIcon },
-  { id: "colores" as Tab, label: "Colores & Tipografía", shortLabel: "Colores", icon: Palette },
+  { id: "colores" as Tab, label: "Colores y tipografía", shortLabel: "Colores", icon: Palette },
   { id: "estilos" as Tab, label: "Estilos", icon: Paintbrush },
-  { id: "contacto" as Tab, label: "Página", shortLabel: "Página", icon: Layout },
+  { id: "portada" as Tab, label: "Portada", icon: ImageIcon },
+  // Antes «Página»: chocaba con «Páginas» de la barra de arriba. Junta contacto,
+  // horarios, secciones del inicio y qué productos se ven (por eso el `title`).
+  { id: "contacto" as Tab, label: "Contacto", title: "Contacto, horarios, secciones del inicio y productos visibles", icon: Layout },
   { id: "avanzado" as Tab, label: "Avanzado", icon: Settings2 },
 ] as const;
 
 // ── Salud de la marca (Brandon 2026-06-26): completitud por tab + avisos ──────
-type HealthTab = "identidad" | "hero" | "colores" | "contacto" | "avanzado";
+type HealthTab = "identidad" | "portada" | "colores" | "contacto" | "avanzado";
 const HEALTH_TABS: { id: HealthTab; label: string; keys: (keyof StoreTheme)[] }[] = [
   { id: "identidad", label: "Identidad", keys: ["logo", "storeName", "slogan", "description"] },
-  { id: "hero", label: "Hero", keys: ["heroTitle", "heroSubtitle", "heroImage"] },
+  { id: "portada", label: "Portada", keys: ["heroTitle", "heroSubtitle", "heroImage"] },
   { id: "colores", label: "Colores", keys: ["primaryColor", "secondaryColor", "accentColor"] },
-  { id: "contacto", label: "Página", keys: ["whatsapp", "email", "phone", "address"] },
+  { id: "contacto", label: "Contacto", keys: ["whatsapp", "email", "phone", "address"] },
   { id: "avanzado", label: "Avanzado", keys: ["analyticsId", "favicon"] },
 ];
 function fieldFilled(v: unknown): boolean {
@@ -1355,7 +1391,7 @@ function computeStoreHealth(theme: StoreTheme): StoreHealth {
   const issues: { label: string; tab: HealthTab }[] = [];
   if (!fieldFilled(theme.logo)) issues.push({ label: "Falta el logo de tu tienda", tab: "identidad" });
   if (!fieldFilled(theme.whatsapp)) issues.push({ label: "Sin número de WhatsApp para pedidos", tab: "contacto" });
-  if (!fieldFilled(theme.heroImage)) issues.push({ label: "El Hero no tiene imagen de fondo", tab: "hero" });
+  if (!fieldFilled(theme.heroImage)) issues.push({ label: "La portada no tiene imagen de fondo", tab: "portada" });
   const c = contrastWithWhite(theme.primaryColor);
   if (c != null && c < 3) issues.push({ label: `Color principal con contraste bajo (${c}:1) sobre texto blanco`, tab: "colores" });
   return { pct: total ? Math.round((filled / total) * 100) : 0, perTab, issues };
@@ -1433,7 +1469,7 @@ function _StorePreview({ theme }: { theme: StoreTheme }) {
           minHeight: "120px",
         }}
       >
-        <PageTitle className="text-white font-extrabold text-base leading-tight max-w-[220px]">
+        <PageTitle as="p" className="text-white font-extrabold text-base leading-tight max-w-[220px]">
           {theme.heroTitle || "Título principal"}
         </PageTitle>
         <p className="text-white/80 text-[length:var(--ts-xs)] mt-1 max-w-[200px] line-clamp-2">
@@ -1530,7 +1566,8 @@ function _StorePreview({ theme }: { theme: StoreTheme }) {
 export default function StoreCustomizer() {
   // La sub-vista vive en `?sub=` (useSubvistaModulo): este módulo se muestra dentro de un hub
   // que ya usa `?vista=`. Link compartible y «atrás» del navegador (antes era estado local).
-  const { vista: activeTab, irA: setActiveTab } = useSubvistaModulo<Tab>(MODULE_ID, TAB_IDS_CUSTOMIZER, "identidad");
+  const [subVieja] = useState(portadaDeSubVieja);
+  const { vista: activeTab, irA: setActiveTab } = useSubvistaModulo<Tab>(MODULE_ID, TAB_IDS_CUSTOMIZER, "identidad", subVieja);
   const [theme, setTheme] = useState<StoreTheme>(DEFAULT_THEME);
   const [savedTheme, setSavedTheme] = useState<StoreTheme>(DEFAULT_THEME);
   const [loading, setLoading] = useState(true);
@@ -1793,95 +1830,91 @@ export default function StoreCustomizer() {
         </div>
       )}
 
-      {/* ── Header editorial estandarizado ─────────────────────────── */}
-      <AdminModuleHeader
-        icon={Palette}
-        eyebrow="Mi tienda · Identidad y tema"
-        title="Cómo se ve tu tienda"
-        description={
-          hasUnsavedChanges ? (
-            <>
-              <strong>Tienes cambios sin guardar.</strong> Logo, colores, tipografía y CSS de tu tienda — la <strong>piel</strong>.
-            </>
-          ) : (
-            <>
-              Logo, colores, tipografía y CSS de tu tienda. Define la <strong>piel</strong> — no qué productos mostrar. Para eso, ve a{" "}
-              <Link
-                href="?tab=pagina-inicio"
-                className="font-semibold text-[var(--accent)] underline-offset-2 hover:underline"
-              >
-                Página de inicio →
-              </Link>
-            </>
-          )
-        }
-      >
-        <div className="flex items-center gap-2">
-          <a
-            href={`/t/${activeTenantSlug}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
-          >
-            <Store className="h-4 w-4" />
-            Ver tienda
-          </a>
-          <button
-            type="button"
-            onClick={() => setShowPreview(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-sm font-semibold hover:bg-primary/20 transition-colors"
-          >
-            <Eye className="h-4 w-4" />
-            Vista previa
-          </button>
-          <PrimaryButton
-            type="button"
-            onClick={() => setShowCreativeMode(true)}
-            size="lg"
-            leftIcon={<Paintbrush className="h-4 w-4" />}
-          >
-            Modo Creativo
-          </PrimaryButton>
-        </div>
-      </AdminModuleHeader>
+      {/* ── Sin cabecera propia (10-10, panel unificado): el título es el de la
+          barra de arriba («Tienda online» › Apariencia). Las acciones de la
+          cabecera vieja (Ver tienda, Vista previa, Modo Creativo) y el aviso de
+          cambios sin guardar viven en la fila de «Tu tienda: N % configurada»;
+          la explicación, en su ⓘ. ── */}
 
       {/* ── Salud de la marca: completitud + indicadores por-tab + avisos (Brandon 2026-06-26) ── */}
       <div className="mb-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-4">
         <div className="flex flex-wrap items-center gap-3">
-          <span className="shrink-0 text-sm font-bold text-[var(--text-primary)]">Tu tienda: {health.pct}% configurada</span>
+          <span className="flex shrink-0 items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
+            Tu tienda: {health.pct}% configurada
+            <InfoTip
+              title="Apariencia de tu tienda"
+              what={<span>Logo, colores, tipografía y CSS de tu tienda: la piel, cómo se ve.</span>}
+              affects={<span>Qué secciones, banners y promociones salen en el inicio se arma en Contenido.</span>}
+            />
+          </span>
           <div className="h-2 min-w-[120px] flex-1 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
             <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${health.pct}%` }} />
           </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {hasUnsavedChanges && (
+              <span className="inline-flex items-center rounded-full bg-[var(--data-warning-50)] px-2.5 py-1 text-xs font-bold text-[var(--data-warning-ink)]">
+                Cambios sin guardar
+              </span>
+            )}
+            <a
+              href={`/t/${activeTenantSlug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Ver tienda"
+              className={button({ variant: "secondary", className: "rounded-xl max-sm:w-12 max-sm:px-0" })}
+            >
+              <Store className="h-4 w-4" aria-hidden />
+              <span className="max-sm:sr-only">Ver tienda</span>
+            </a>
+            <button
+              type="button"
+              onClick={() => setShowPreview(true)}
+              title="Vista previa"
+              className={button({ variant: "secondary", className: "rounded-xl max-sm:w-12 max-sm:px-0" })}
+            >
+              <Eye className="h-4 w-4" aria-hidden />
+              <span className="max-sm:sr-only">Vista previa</span>
+            </button>
+            <button type="button" onClick={() => setShowCreativeMode(true)} className={button({ variant: "primary", className: "rounded-xl" })}>
+              <Paintbrush className="h-4 w-4" aria-hidden />
+              Modo Creativo
+            </button>
+          </div>
         </div>
-        <div className="mt-3 flex flex-wrap gap-1.5">
+        {/* Avance por pestaña: es estado, no navegación (pasada de diseño 10-10).
+            Eran 5 botones de 22 px que repetían la barra de pestañas de abajo;
+            los avisos de abajo traen su «Arreglar» de 48 px. */}
+        <div className="mt-3 flex flex-wrap items-center gap-1.5">
           {health.perTab.map((t) => {
             const done = t.filled === t.total;
             return (
-              <button
+              <span
                 key={t.id}
-                type="button"
-                onClick={() => setActiveTab(t.id as Tab)}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-2.5 py-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] hover:border-primary hover:text-[var(--text-primary)] transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)]"
               >
-                <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: done ? "var(--data-success-500)" : "var(--text-tertiary)" }} />
+                <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: done ? "var(--data-success-500)" : "var(--text-tertiary)" }} aria-hidden />
                 {t.label}<span className="text-[var(--text-tertiary)]">{t.filled}/{t.total}</span>
-              </button>
+              </span>
             );
           })}
+          {/* Era el «Página de inicio →» de la cabecera vieja. */}
+          <EnlacePanel href="/admin?tab=pagina-inicio&vista=contenido" className="ml-auto self-center text-xs">
+            Secciones, banners y promociones: Contenido →
+          </EnlacePanel>
         </div>
         {health.issues.length > 0 ? (
-          <ul className="mt-3 space-y-1.5 border-t border-[var(--rule-soft)] pt-3">
+          <ul className="mt-3 border-t border-[var(--rule-soft)] pt-1">
             {health.issues.map((i, idx) => (
-              <li key={idx} className="flex items-center justify-between gap-2 text-xs">
+              <li key={idx} className="flex items-center justify-between gap-2 text-sm">
                 <span className="flex items-center gap-1.5 text-[var(--text-secondary)]">
-                  <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-[var(--data-warning-500)]" /> {i.label}
+                  <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--data-warning-500)]" aria-hidden /> {i.label}
                 </span>
-                <button type="button" onClick={() => setActiveTab(i.tab as Tab)} className="shrink-0 font-bold text-[var(--accent)] hover:underline">Arreglar →</button>
+                <button type="button" onClick={() => setActiveTab(i.tab as Tab)} className={button({ variant: "ghost", className: "shrink-0 rounded-xl text-[var(--accent-ink)] dark:text-[var(--accent)]" })}>Arreglar →</button>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="mt-3 flex items-center gap-1.5 border-t border-[var(--rule-soft)] pt-3 text-xs font-bold text-[var(--data-success-500)]">
+          <p className="mt-3 flex items-center gap-1.5 border-t border-[var(--rule-soft)] pt-3 text-xs font-bold text-[var(--data-success-ink)]">
             <Check className="h-3.5 w-3.5" /> Tu tienda está lista — sin pendientes.
           </p>
         )}
@@ -1893,6 +1926,7 @@ export default function StoreCustomizer() {
           id: t.id,
           label: t.label,
           shortLabel: "shortLabel" in t ? t.shortLabel : undefined,
+          title: "title" in t ? t.title : undefined,
           icon: t.icon,
         }))}
         activeTab={activeTab}
@@ -2137,7 +2171,7 @@ export default function StoreCustomizer() {
               <StyleSection
                 icon={<FileText className="h-5 w-5 text-primary" />}
                 title="Acerca de tu tienda"
-                description="Sección 'sobre nosotros' del storefront. Opcional."
+                description="Sección «sobre nosotros» de tu tienda. Opcional."
               >
                 <div className="space-y-4">
                   <Field label="Título" labelClassName="text-sm font-semibold text-[var(--text-primary)]">
@@ -2176,18 +2210,7 @@ export default function StoreCustomizer() {
             {/* ── TAB: COLORES ───────────────────────────────────────── */}
             {activeTab === "colores" && (
               <div className="space-y-6">
-                {/* Banner explicativo */}
-                <div className="bg-primary/5 dark:bg-primary/10 border-2 border-primary/15 rounded-2xl p-5 flex items-start gap-3">
-                  <div className="shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <Palette className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-base font-bold text-[var(--text-primary)]">La paleta de tu marca</p>
-                    <p className="text-sm text-muted mt-0.5">
-                      Empieza con una plantilla ya curada o ajusta cada color manual. Cada cambio se previsualiza en vivo abajo y se aplica a botones, links, badges y CTAs en toda tu tienda.
-                    </p>
-                  </div>
-                </div>
+                <EncabezadoBloque icon={<Palette className="h-5 w-5 text-primary" />} titulo="La paleta de tu marca" ayuda="Empieza con una plantilla ya curada o ajusta cada color manual. Cada cambio se previsualiza en vivo abajo y se aplica a botones, links, badges y CTAs en toda tu tienda." />
 
                 {/* ── Layout 2-col (Brandon 2026-06-24): preview STICKY a la
                     derecha (siempre visible mientras eliges colores), form a la
@@ -2514,25 +2537,13 @@ export default function StoreCustomizer() {
             {/* Secciones → fusionado en "Página" (ADR-299) */}
             {activeTab === "contacto" && (
               <div className="space-y-8">
-                {/* Banner explicativo coherente con Estilos / Hero */}
-                <div className="bg-primary/5 dark:bg-primary/10 border-2 border-primary/15 rounded-2xl p-5 flex items-start gap-3">
-                  <div className="shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <Layout className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-base font-bold text-[var(--text-primary)]">Las secciones que ve tu cliente</p>
-                    <p className="text-sm text-muted mt-0.5">
-                      Activa, desactiva y reordena los bloques de tu tienda con drag &amp; drop.
-                      Las secciones desactivadas no se renderizan — la página se compacta automáticamente.
-                    </p>
-                  </div>
-                </div>
+                <EncabezadoBloque icon={<Layout className="h-5 w-5 text-primary" />} titulo="Las secciones que ve tu cliente" ayuda="Activa, desactiva y reordena los bloques de tu tienda con drag &amp; drop. Las secciones desactivadas no se renderizan — la página se compacta automáticamente." />
                 <StorefrontEditor />
               </div>
             )}
 
-            {/* ── TAB: HERO ──────────────────────────────────────────── */}
-            {activeTab === "hero" && (
+            {/* ── TAB: PORTADA ──────────────────────────────────────────── */}
+            {activeTab === "portada" && (
               <HeroTab
                 theme={theme}
                 update={update}
@@ -2543,18 +2554,7 @@ export default function StoreCustomizer() {
             {/* ── TAB: CONTACTO ──────────────────────────────────────── */}
             {activeTab === "contacto" && (
               <div className="space-y-8">
-                {/* Banner explicativo */}
-                <div className="bg-primary/5 dark:bg-primary/10 border-2 border-primary/15 rounded-2xl p-5 flex items-start gap-3">
-                  <div className="shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <Phone className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-base font-bold text-[var(--text-primary)]">Cómo te puede contactar el cliente</p>
-                    <p className="text-sm text-muted mt-0.5">
-                      Aparecen en el footer, mapa, sección de contacto y JSON-LD para Google. WhatsApp es el canal #1 — asegurate de que esté activo.
-                    </p>
-                  </div>
-                </div>
+                <EncabezadoBloque icon={<Phone className="h-5 w-5 text-primary" />} titulo="Cómo te puede contactar el cliente" ayuda="Aparecen en el footer, mapa, sección de contacto y JSON-LD para Google. WhatsApp es el canal #1 — asegurate de que esté activo." />
 
                 {/* ── 1. CANALES DE CONTACTO ──────────────────────── */}
                 <StyleSection
@@ -2677,18 +2677,7 @@ export default function StoreCustomizer() {
             {/* ── TAB: ESTILOS ───────────────────────────────────────── */}
             {activeTab === "estilos" && (
               <div className="space-y-8">
-                {/* Banner explicativo */}
-                <div className="bg-primary/5 dark:bg-primary/10 border-2 border-primary/15 rounded-2xl p-5 flex items-start gap-3">
-                  <div className="shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <Sparkles className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-base font-bold text-[var(--text-primary)]">Cómo se ven los elementos</p>
-                    <p className="text-sm text-muted mt-0.5">
-                      Cada opción muestra una vista previa real. Tus cambios se aplican al guardar y se ven inmediatamente en tu tienda online.
-                    </p>
-                  </div>
-                </div>
+                <EncabezadoBloque icon={<Sparkles className="h-5 w-5 text-primary" />} titulo="Cómo se ven los elementos" ayuda="Cada opción muestra una vista previa real. Tus cambios se aplican al guardar y se ven inmediatamente en tu tienda online." />
 
                 {/* ── 1. CARDS DE PRODUCTOS ─────────────────────────── */}
                 <StyleSection
@@ -2987,18 +2976,7 @@ export default function StoreCustomizer() {
             {/* Textos y popup → fusionado en "Avanzado" (ADR-299) */}
             {activeTab === "avanzado" && (
               <div className="space-y-8">
-                {/* Banner explicativo */}
-                <div className="bg-primary/5 dark:bg-primary/10 border-2 border-primary/15 rounded-2xl p-5 flex items-start gap-3">
-                  <div className="shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <FileText className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-base font-bold text-[var(--text-primary)]">Textos y mensajes de tu tienda</p>
-                    <p className="text-sm text-muted mt-0.5">
-                      Configura los mensajes que aparecen automáticamente al cliente: el saludo de WhatsApp, el footer con tu storytelling y el popup de bienvenida con cupón.
-                    </p>
-                  </div>
-                </div>
+                <EncabezadoBloque icon={<FileText className="h-5 w-5 text-primary" />} titulo="Textos y mensajes de tu tienda" ayuda="Configura los mensajes que aparecen automáticamente al cliente: el saludo de WhatsApp, el footer con tu storytelling y el popup de bienvenida con cupón." />
 
                 {/* ── 1. MENSAJES AUTOMÁTICOS ──────────────────────── */}
                 <StyleSection
@@ -3169,17 +3147,7 @@ export default function StoreCustomizer() {
             {/* Catálogo → fusionado en "Página" (ADR-299) */}
             {activeTab === "contacto" && (
               <div className="space-y-8">
-                <div className="bg-primary/5 dark:bg-primary/10 border-2 border-primary/15 rounded-2xl p-5 flex items-start gap-3">
-                  <div className="shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <Package className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-base font-bold text-[var(--text-primary)]">Qué productos ve el cliente</p>
-                    <p className="text-sm text-muted mt-0.5">
-                      Activa o pausa productos del inventario en tu tienda online sin borrarlos. Útil para retirar items de temporada o stockout temporario.
-                    </p>
-                  </div>
-                </div>
+                <EncabezadoBloque icon={<Package className="h-5 w-5 text-primary" />} titulo="Qué productos ve el cliente" ayuda="Activa o pausa productos del inventario en tu tienda online sin borrarlos. Útil para retirar items de temporada o stockout temporario." />
                 <CatalogoTiendaTab />
               </div>
             )}
@@ -3187,22 +3155,15 @@ export default function StoreCustomizer() {
             {/* ── TAB: AVANZADO ──────────────────────────────────────── */}
             {activeTab === "avanzado" && (
               <div className="space-y-8">
-                {/* Banner explicativo */}
-                <div className="bg-primary/5 dark:bg-primary/10 border-2 border-primary/15 rounded-2xl p-5 flex items-start gap-3">
-                  <div className="shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <Settings2 className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-base font-bold text-[var(--text-primary)]">Configuración fina y SEO</p>
-                    <p className="text-sm text-muted mt-0.5">
-                      Tipografía con preview real, densidad, favicon, tracking con validación, CSS custom con snippets y vista previa de cómo aparece tu tienda en Google.
-                    </p>
-                  </div>
-                </div>
+                <EncabezadoBloque icon={<Settings2 className="h-5 w-5 text-primary" />} titulo="Configuración fina y SEO" ayuda="Tipografía con vista previa real, densidad, favicon, los IDs de medición, CSS propio con fragmentos listos y cómo aparece tu tienda en Google." />
 
-                {/* Métricas del storefront — absorbidas de "Mi tienda pública"
-                    (ADR-299 fase 2). Read-only, componente self-contained. */}
-                <AnalyticsTab />
+                {/* Las visitas y compras de la tienda viven en Redes y medición
+                    (panel unificado, 10-10): una sola vista con las cifras y los
+                    IDs de Meta, TikTok y GA4. Antes se montaban acá y allá. */}
+                <p className="flex flex-wrap items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] px-4 py-3 text-sm text-[var(--text-secondary)]">
+                  Las visitas y compras de tu tienda se miran en
+                  <EnlacePanel href="/admin?tab=pagina-inicio&vista=redes">Redes y medición →</EnlacePanel>
+                </p>
 
                 {/* ── 1. TIPOGRAFÍA — visual font picker ─────────────── */}
                 <StyleSection
@@ -3412,8 +3373,8 @@ export default function StoreCustomizer() {
                 {/* ── 5. TRACKING Y ANALÍTICA con badges de estado ──── */}
                 <StyleSection
                   icon={<Sliders className="h-5 w-5 text-primary" />}
-                  title="Tracking y analítica"
-                  description="Pega tus IDs para medir tráfico y conversiones. Se inyectan en todas las páginas del storefront."
+                  title="Medición"
+                  description="Los IDs que miden tu tráfico y tus ventas en todas las páginas de tu tienda. Se editan en Redes y medición; aquí solo se ven."
                 >
                   <div className="space-y-5">
                     {/* Google Analytics */}
@@ -3423,11 +3384,11 @@ export default function StoreCustomizer() {
                           <>
                             <span>Google Analytics (GA4)</span>
                             {theme.analyticsId?.trim().startsWith("G-") ? (
-                              <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]">
+                              <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/15 text-[var(--data-success-ink)]">
                                 <Check className="h-3.5 w-3.5" /> Configurado
                               </span>
                             ) : theme.analyticsId?.trim() ? (
-                              <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)]">
+                              <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-500)]/15 text-[var(--data-warning-ink)]">
                                 <AlertTriangle className="h-3.5 w-3.5" aria-hidden /> Formato inválido
                               </span>
                             ) : (
@@ -3437,13 +3398,9 @@ export default function StoreCustomizer() {
                         }
                         labelClassName="text-sm font-semibold text-[var(--text-primary)] flex items-center justify-between gap-2"
                       >
-                        <input
-                          type="text"
-                          value={theme.analyticsId}
-                          onChange={(e) => update("analyticsId", e.target.value)}
-                          placeholder="G-XXXXXXXXXX"
-                          className={cn(inputCls, "font-mono")}
-                        />
+                        {/* GA4 se edita SOLO en Redes y medición (10-10): dos editores
+                            del mismo storeTheme.analyticsId se pisaban al guardar. */}
+                        <ValorDeMedicion valor={theme.analyticsId} />
                       </Field>
                       <p className="text-xs text-muted">
                         Empieza con <span className="font-mono">G-</span>. Lo obtienes en{" "}
@@ -3460,11 +3417,11 @@ export default function StoreCustomizer() {
                           <>
                             <span>Meta Pixel (Facebook / Instagram)</span>
                             {theme.pixelId && /^\d{14,17}$/.test(theme.pixelId.trim()) ? (
-                              <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]">
+                              <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/15 text-[var(--data-success-ink)]">
                                 <Check className="h-3.5 w-3.5" /> Configurado
                               </span>
                             ) : theme.pixelId?.trim() ? (
-                              <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-500)]/15 text-[var(--data-warning-500)]">
+                              <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--data-warning-500)]/15 text-[var(--data-warning-ink)]">
                                 <AlertTriangle className="h-3.5 w-3.5" aria-hidden /> Formato inválido
                               </span>
                             ) : (
@@ -3474,13 +3431,9 @@ export default function StoreCustomizer() {
                         }
                         labelClassName="text-sm font-semibold text-[var(--text-primary)] flex items-center justify-between gap-2"
                       >
-                        <input
-                          type="text"
-                          value={theme.pixelId}
-                          onChange={(e) => update("pixelId", e.target.value)}
-                          placeholder="1234567890123456"
-                          className={cn(inputCls, "font-mono")}
-                        />
+                        {/* Igual que GA4: Redes guarda el Pixel en storeTheme.pixelId y en
+                            su blob salesChannels; editarlo acá dejaba los dos distintos. */}
+                        <ValorDeMedicion valor={theme.pixelId} />
                       </Field>
                       <p className="text-xs text-muted">
                         14-17 dígitos. Lo encuentras en{" "}
@@ -3489,6 +3442,9 @@ export default function StoreCustomizer() {
                         </a>
                       </p>
                     </div>
+                    <EnlacePanel href="/admin?tab=pagina-inicio&vista=redes" apariencia="heredada" className={button({ variant: "secondary", className: "rounded-xl hover:no-underline" })}>
+                      Editar en Redes y medición →
+                    </EnlacePanel>
                   </div>
                 </StyleSection>
 
@@ -3496,7 +3452,7 @@ export default function StoreCustomizer() {
                 <StyleSection
                   icon={<Paintbrush className="h-5 w-5 text-primary" />}
                   title="CSS personalizado"
-                  description="Reglas CSS inyectadas en tu storefront. Solo si sabes CSS — un error puede romper tu tienda."
+                  description="Reglas CSS inyectadas en tu tienda. Solo si sabes CSS — un error puede romper tu tienda."
                 >
                   <div className="space-y-4">
                     {/* Snippets clickables */}
@@ -3614,37 +3570,37 @@ export default function StoreCustomizer() {
       {showPreview && (
         <div ref={previewPanelRef} role="dialog" aria-modal="true" aria-labelledby={previewTitleId} tabIndex={-1}
           className="fixed inset-0 z-modal bg-black/80 flex flex-col">
-          {/* Header del modal */}
-          <div className="flex items-center justify-between px-4 py-3 bg-neutral-900 shrink-0">
-            <div className="flex items-center gap-3">
-              <p id={previewTitleId} className="text-sm font-bold text-white">Vista previa en vivo</p>
-              {/* Toggle responsive */}
-              <div className="flex gap-0.5 bg-neutral-800 rounded-lg p-0.5">
-                {([
-                  { label: "Móvil", w: 375 },
-                  { label: "Tablet", w: 768 },
-                  { label: "Desktop", w: 0 },
-                ]).map((v) => (
-                  <button key={v.label} type="button" onClick={() => setPreviewWidth(v.w)}
-                    className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
-                      previewWidth === v.w ? "bg-[var(--surface-raised)] text-neutral-900 shadow" : "text-neutral-400 hover:text-white")}>
-                    {v.label}
-                  </button>
-                ))}
-              </div>
+          {/* Header del modal. Pasada de diseño 10-10: controles de 48 px; a
+              400 px los anchos bajan a su propia fila (antes se encimaban
+              «Tablet», «Desktop» y «Recargar»). */}
+          <div className="flex flex-wrap items-center gap-2 px-4 py-2 bg-neutral-900 shrink-0">
+            <p id={previewTitleId} className="mr-auto text-sm font-bold text-white">Vista previa en vivo</p>
+            {/* Toggle responsive */}
+            <div role="group" aria-label="Ancho de la vista previa" className="order-last flex w-full gap-0.5 rounded-xl bg-neutral-800 p-0.5 sm:order-none sm:w-auto">
+              {([
+                { label: "Móvil", w: 375 },
+                { label: "Tablet", w: 768 },
+                { label: "Desktop", w: 0 },
+              ]).map((v) => (
+                <button key={v.label} type="button" onClick={() => setPreviewWidth(v.w)} aria-pressed={previewWidth === v.w}
+                  className={cn("h-12 flex-1 rounded-lg px-4 text-sm font-bold transition-colors duration-[var(--dur-fast)]",
+                    previewWidth === v.w ? "bg-[var(--surface-raised)] text-neutral-900 shadow" : "text-neutral-300 hover:text-white")}>
+                  {v.label}
+                </button>
+              ))}
             </div>
-            <div className="flex items-center gap-3">
-              <button type="button" onClick={() => setPreviewKey((k) => k + 1)} className="text-xs text-[var(--data-success-500)] font-semibold hover:text-[var(--data-success-500)]">
-                Recargar
-              </button>
-              <a href={`/t/${activeTenantSlug}?preview=true`} target="_blank" rel="noopener noreferrer" className="text-xs text-[var(--text-tertiary)] hover:text-white">
-                Abrir en nueva pestaña
-              </a>
-              <button aria-label="Ocultar" type="button" onClick={() => setShowPreview(false)}
-                className="h-8 w-8 rounded-lg bg-neutral-800 hover:bg-neutral-700 flex items-center justify-center text-white transition-colors">
-                <EyeOff className="h-4 w-4" />
-              </button>
-            </div>
+            <button type="button" onClick={() => setPreviewKey((k) => k + 1)} title="Recargar"
+              className="inline-flex h-12 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold text-neutral-300 hover:bg-neutral-800 hover:text-white max-sm:w-12 max-sm:justify-center max-sm:px-0">
+              <RefreshCw className="h-4 w-4" aria-hidden /><span className="max-sm:sr-only">Recargar</span>
+            </button>
+            <a href={`/t/${activeTenantSlug}?preview=true`} target="_blank" rel="noopener noreferrer" title="Abrir en una pestaña nueva"
+              className="inline-flex h-12 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold text-neutral-300 hover:bg-neutral-800 hover:text-white max-sm:w-12 max-sm:justify-center max-sm:px-0">
+              <ExternalLink className="h-4 w-4" aria-hidden /><span className="max-sm:sr-only">Abrir en una pestaña nueva</span>
+            </a>
+            <button aria-label="Cerrar la vista previa" title="Cerrar" type="button" onClick={() => setShowPreview(false)}
+              className="flex h-12 w-12 items-center justify-center rounded-lg bg-neutral-800 text-white transition-colors hover:bg-neutral-700">
+              <EyeOff className="h-4 w-4" aria-hidden />
+            </button>
           </div>
           {/* Iframe */}
           <div className="flex-1 flex justify-center items-start p-4 overflow-auto bg-[var(--surface-sunken)]">

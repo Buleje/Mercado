@@ -20,9 +20,10 @@ import {
   Tag,
   Share2,
 } from "@buleje/design-system/icons";
-import { SectionTitle, LoadingState } from "@buleje/design-system";
+import { CardTitle, ErrorAlert, LoadingState, SectionTitle } from "@buleje/design-system";
+import { button } from "@/components/ui-system/button-variants";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { PermisoDe } from "@/components/admin/shared/PermisoDe";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
 import { EMPTY_SALES_CHANNELS, type SalesChannelsConfig } from "@/lib/types/sales-channels";
@@ -63,7 +64,7 @@ const GA_FEATURES: Feature[] = [
 ];
 
 const FIELD =
-  "w-full h-11 text-sm border border-[var(--rule-base)] rounded-xl px-3 bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
+  "w-full h-12 text-sm border border-[var(--rule-base)] rounded-xl px-3 bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
 
 export default function SalesChannelsTab() {
   const [config, setConfig] = useState<SalesChannelsConfig>(EMPTY_SALES_CHANNELS);
@@ -124,18 +125,19 @@ export default function SalesChannelsTab() {
 
   return (
     <div className="space-y-4">
-      {/* Header estándar del panel (AdminModuleHeader), no una tarjeta a
-          mano: era el único módulo con el título dentro de una caja con
-          borde doble, y sin la serif del resto de las cabeceras. */}
-      <AdminModuleHeader
-        title="Canales de venta"
-        icon={Share2}
-      />
-
-      {/* Estado de conexión — resumen de un vistazo */}
+      {/* Sin cabecera de módulo: el título de la pantalla es el de Tienda
+          online. La vista lleva SU título (SectionTitle, como Apariencia y
+          Páginas) en la misma fila que el estado de cada red: sin él, los 8
+          títulos de abajo quedaban sin jerarquía (medir-orden 10-10: puntaje 6). */}
       <div className="flex flex-wrap items-center gap-2">
+        <SectionTitle className="mr-2 flex items-center gap-2">
+          <Share2 className="h-5 w-5 text-[var(--accent)]" aria-hidden />
+          Redes y medición
+        </SectionTitle>
         <StatusChip label="Meta" connected={metaConnected} />
-        <StatusChip label="TikTok" connected={tiktokConnected} />
+        <PermisoDe origen="canales">
+          <StatusChip label="TikTok" connected={tiktokConnected} />
+        </PermisoDe>
         <StatusChip label="Google Analytics" connected={gaConnected} />
         <InfoTip
           title="Canales de venta"
@@ -154,13 +156,9 @@ export default function SalesChannelsTab() {
         />
       </div>
 
-      {error && (
-        <p className="text-sm font-semibold text-[var(--data-error-500)] rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 py-2">
-          {error}
-        </p>
-      )}
+      {error && <ErrorAlert description={error} />}
 
-      {/* Rendimiento por canal (tráfico + conversiones desde el tracking de visitas) */}
+      {/* Visitas de la tienda: la única vista de /api/store-page/analytics (10-10) */}
       <SalesChannelsAnalyticsPanel />
 
       {/* Meta */}
@@ -177,41 +175,47 @@ export default function SalesChannelsTab() {
           value={config.meta.pixelId}
           onChange={(v) => setConfig((c) => ({ ...c, meta: { ...c.meta, pixelId: v } }))}
         />
-        <Field
-          label="Token CAPI (opcional)"
-          placeholder="Token de la API de Conversiones"
-          value={config.meta.capiToken}
-          onChange={(v) => setConfig((c) => ({ ...c, meta: { ...c.meta, capiToken: v } }))}
-        />
-        <Field
-          label="ID de Catálogo (opcional)"
-          placeholder="Para anuncios dinámicos / Advantage+"
-          value={config.meta.catalogId}
-          onChange={(v) => setConfig((c) => ({ ...c, meta: { ...c.meta, catalogId: v } }))}
-        />
+        {/* R2 (10-10): el Pixel lo editaba también Mi Tienda (Básico) en
+            Avanzado; CAPI, catálogo y TikTok eran sólo de Canales (Pro). */}
+        <PermisoDe origen="canales">
+          <Field
+            label="Token CAPI (opcional)"
+            placeholder="Token de la API de Conversiones"
+            value={config.meta.capiToken}
+            onChange={(v) => setConfig((c) => ({ ...c, meta: { ...c.meta, capiToken: v } }))}
+          />
+          <Field
+            label="ID de Catálogo (opcional)"
+            placeholder="Para anuncios dinámicos / Advantage+"
+            value={config.meta.catalogId}
+            onChange={(v) => setConfig((c) => ({ ...c, meta: { ...c.meta, catalogId: v } }))}
+          />
+        </PermisoDe>
       </ChannelCard>
 
       {/* TikTok */}
-      <ChannelCard
-        Brand={Video}
-        name="TikTok Shop"
-        connected={tiktokConnected}
-        accent="var(--text-primary)"
-        features={TIKTOK_FEATURES}
-      >
-        <Field
-          label="TikTok Pixel ID"
-          placeholder="Ej. C1A2B3C4D5E6F7G8"
-          value={config.tiktok.pixelId}
-          onChange={(v) => setConfig((c) => ({ ...c, tiktok: { ...c.tiktok, pixelId: v } }))}
-        />
-        <Field
-          label="ID de Catálogo (opcional)"
-          placeholder="Catálogo de TikTok Shop"
-          value={config.tiktok.catalogId}
-          onChange={(v) => setConfig((c) => ({ ...c, tiktok: { ...c.tiktok, catalogId: v } }))}
-        />
-      </ChannelCard>
+      <PermisoDe origen="canales">
+        <ChannelCard
+          Brand={Video}
+          name="TikTok Shop"
+          connected={tiktokConnected}
+          accent="var(--text-primary)"
+          features={TIKTOK_FEATURES}
+        >
+          <Field
+            label="TikTok Pixel ID"
+            placeholder="Ej. C1A2B3C4D5E6F7G8"
+            value={config.tiktok.pixelId}
+            onChange={(v) => setConfig((c) => ({ ...c, tiktok: { ...c.tiktok, pixelId: v } }))}
+          />
+          <Field
+            label="ID de Catálogo (opcional)"
+            placeholder="Catálogo de TikTok Shop"
+            value={config.tiktok.catalogId}
+            onChange={(v) => setConfig((c) => ({ ...c, tiktok: { ...c.tiktok, catalogId: v } }))}
+          />
+        </ChannelCard>
+      </PermisoDe>
 
       {/* Google Analytics 4 — mismo storeTheme.analyticsId que Config/customizer */}
       <ChannelCard
@@ -220,7 +224,7 @@ export default function SalesChannelsTab() {
         connected={gaConnected}
         accent="var(--data-warning-500)"
         features={GA_FEATURES}
-        nota="Es el mismo ID que en Configuración → tu tienda: editarlo acá o allá es lo mismo."
+        nota="Se edita solo aquí. Apariencia › Avanzado muestra el mismo ID, sin editarlo."
       >
         <Field
           label="ID de medición (GA4)"
@@ -230,18 +234,19 @@ export default function SalesChannelsTab() {
         />
       </ChannelCard>
 
-      <div className="sticky bottom-0 z-10 -mx-4 sm:-mx-6 mt-2 flex items-center gap-3 border-t-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 sm:px-6 py-3">
+      {/* Sin -mx: el margen negativo sacaba la barra 4 px del ancho (medir-orden 10-10). */}
+      <div className="sticky bottom-0 z-10 mt-2 flex flex-wrap items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 shadow-[var(--shadow-sm)]">
         <button
           type="button"
           onClick={save}
           disabled={saving}
-          className="flex items-center gap-2 h-12 px-5 rounded-2xl bg-primary text-white text-base font-semibold hover:bg-primary/90 disabled:opacity-50"
+          className={button({ variant: "primary", className: "rounded-xl" })}
         >
-          {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Save className="h-4 w-4" aria-hidden />}
           Guardar canales
         </button>
         {saved && (
-          <span className="flex items-center gap-1.5 text-sm font-bold text-[var(--data-success-500)]">
+          <span className="flex items-center gap-1.5 text-sm font-bold text-[var(--data-success-ink)]" role="status">
             <CheckCircle2 className="h-4 w-4" /> Guardado · pixels activos en tu tienda
           </span>
         )}
@@ -255,9 +260,9 @@ function StatusChip({ label, connected }: { label: string; connected: boolean })
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border-2 px-3 py-1 text-xs font-bold",
+        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold",
         connected
-          ? "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-600)]"
+          ? "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-ink)]"
           : "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
       )}
     >
@@ -295,7 +300,7 @@ function ChannelCard({
           >
             <Brand className="h-5 w-5" />
           </span>
-          <SectionTitle as="h2" className="text-sm font-bold text-[var(--text-primary)]">{name}</SectionTitle>
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)]">{name}</CardTitle>
           <InfoTip
             title={`Qué desbloquea ${name}`}
             ancho="w-96"
@@ -316,7 +321,7 @@ function ChannelCard({
           className={cn(
             "flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full",
             connected
-              ? "bg-[var(--data-success-50)] text-[var(--data-success-600)]"
+              ? "bg-[var(--data-success-50)] text-[var(--data-success-ink)]"
               : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
           )}
         >

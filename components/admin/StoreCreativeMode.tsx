@@ -4675,11 +4675,14 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
 
             {panel === "avanzado" && (
               <>
-                <Field label="Google Analytics ID" labelClassName={LABEL_CLASS}>
-                  <input className={INPUT_CLASS} value={draft.analyticsId} onChange={(e) => patch("analyticsId", e.target.value)} placeholder="G-XXXXXXXXXX" />
+                {/* 10-10 (panel unificado): GA4 y el Pixel se editan SOLO en Tienda
+                    online › Redes y medición; acá se ven. Tres editores del mismo
+                    storeTheme se pisaban al guardar. */}
+                <Field label="Google Analytics ID · se edita en Redes y medición" labelClassName={LABEL_CLASS}>
+                  <input className={`${INPUT_CLASS} cursor-default opacity-70`} value={draft.analyticsId ?? ""} readOnly placeholder="Sin configurar" />
                 </Field>
-                <Field label="Facebook Pixel ID" labelClassName={LABEL_CLASS}>
-                  <input className={INPUT_CLASS} value={draft.pixelId} onChange={(e) => patch("pixelId", e.target.value)} />
+                <Field label="Facebook Pixel ID · se edita en Redes y medición" labelClassName={LABEL_CLASS}>
+                  <input className={`${INPUT_CLASS} cursor-default opacity-70`} value={draft.pixelId ?? ""} readOnly placeholder="Sin configurar" />
                 </Field>
                 {/* #6.2 Datos estructurados para Google */}
                 <div className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/10 px-2.5 py-2">
