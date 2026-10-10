@@ -112,6 +112,19 @@ const defs = (re) => (t) => {
   for (const x of t.matchAll(DEF)) if (re.test(x[1] || x[2])) n++;
   return n;
 };
+/**
+ * Como `defs`, pero no cuenta el archivo que sólo COMPONE un canónico de la
+ * familia (rinde `<PestanasDeVista>`, `<ActionMenu>`…) sin armar controles
+ * propios: ahí lo delataba el nombre, no lo hecho a mano. Ola 2 (10-10):
+ * `CtpDespachoPestanas` envuelve `PestanasDeVista` y `CtpRecepcionFiltro` es
+ * el `ActionMenu` que ya estaba dentro de Ingresos, sacado a su archivo.
+ */
+const CONTROLES_A_MANO = /<(?:input|select|textarea|button)\b|role=["']tablist["']/;
+const defsLocales = (re, canonicos) => {
+  const usaCanonico = new RegExp(`<(?:${canonicos.join("|")})\\b`);
+  const contar = defs(re);
+  return (t) => (usaCanonico.test(t) && !CONTROLES_A_MANO.test(t) ? 0 : contar(t));
+};
 /** Constantes de clase (`const BTN = "…"`). */
 const constantesTexto = (re) => (t) => {
   let n = 0;
@@ -180,7 +193,10 @@ export const FAMILIAS = {
     }),
   },
   filtros: {
-    filtrosLocales: m("baja", { porArchivo: defs(/(Filter|Filters|FilterBar|Filtro|Filtros|Search|SearchBar|Buscador|Busqueda)$/) }),
+    filtrosLocales: m("baja", {
+      nota: "no cuenta el que sólo compone SegmentedControl/ActionMenu sin controles propios",
+      porArchivo: defsLocales(/(Filter|Filters|FilterBar|Filtro|Filtros|Search|SearchBar|Buscador|Busqueda)$/, ["SegmentedControl", "ActionMenu"]),
+    }),
     alturasInput: m("baja", {
       nota: "alturas h-* distintas en <input>/<select> a mano",
       valores: (t) =>
@@ -264,7 +280,11 @@ export const FAMILIAS = {
     AdminTabBar: m("info", { porArchivo: etiqueta("AdminTabBar") }),
     AdminModuleHeader: m("info", { porArchivo: etiqueta("AdminModuleHeader") }),
     VistaHeader: m("baja", { porArchivo: etiqueta("VistaHeader") }),
-    tabsLocales: m("baja", { porArchivo: defs(/(Tabs|TabBar|Pestanas|Pestañas|Subtabs|SubTabs)$/) }),
+    tabsLocales: m("baja", {
+      nota: "no cuenta el que sólo compone AdminTabBar/PestanasDeVista sin tablist propio",
+      porArchivo: defsLocales(/(Tabs|TabBar|Pestanas|Pestañas|Subtabs|SubTabs)$/, ["AdminTabBar", "PestanasDeVista"]),
+    }),
+    PestanasDeVista: m("info", { nota: "2.º nivel de los libros forestales (regla R4)", porArchivo: etiqueta("PestanasDeVista") }),
     detailsNativo: m("baja", { nota: "<details> → Plegable", porArchivo: etiqueta("details") }),
     Plegable: m("info", { porArchivo: etiqueta("Plegable") }),
     useVistaModulo: m("info", { porArchivo: cuenta(/useVistaModulo\(/g) }),

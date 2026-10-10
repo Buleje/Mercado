@@ -294,5 +294,17 @@ function useVistaEnParam<T extends string>(
     return () => window.removeEventListener("popstate", onPop);
   }, [validas, param]);
 
+  /**
+   * Las válidas pueden crecer con el módulo montado: un enlace pide una vista
+   * que la plantilla escondía y el hub la suma a su barra (`useVistasPermitidas`
+   * relee la URL en el MISMO `popstate` en el que `onPop` todavía la rechazó).
+   * Si la URL pide una que ahora pasa, manda la URL. Sin esto, desde Tienda
+   * online › Redes un enlace a Apariencia cambiaba la URL y no la pantalla.
+   */
+  useEffect(() => {
+    const deUrl = vistaDeUrl(validas, param, aliasRef.current);
+    if (deUrl) setVista((actual) => (actual === deUrl ? actual : (deUrl as T)));
+  }, [validas, param]);
+
   return { vista, irA };
 }
