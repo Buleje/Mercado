@@ -14,6 +14,7 @@
  *     [--pasos '<json>' | --pasos-archivo pasos.json] [--salida <dir>] \
  *     [--nombre base] [--anchos 1280,400] [--temas claro,oscuro] [--completa] \
  *     [--preset cubicador-lote,resumenes-rolliza]   (recorridos de scripts/qa-pasos/, van antes) \
+ *     [--evals-todos]   (cada {"eval"} corre en todos los anchos y temas; el reporte trae {tema, ancho, valor})
  *     [--resumen]   (stdout sólo con lo esencial; el JSON completo igual queda en <salida>/reporte.json) \
  *     [--ls '{"clave":"valor"}']   (siembra localStorage antes de cargar: estados recordados sin recargar) \
  *     (sin QA_BASE prueba :3000 y :3001 y usa el que contesta: el dev reiniciado vuelve a veces en :3001) \
@@ -171,6 +172,7 @@ const salida = arg("salida", `reports/visual-verify/${hoy}-qa-capturas`);
 const anchos = arg("anchos", "1280,400").split(",").map(Number).filter(Boolean);
 const temas = arg("temas", "claro,oscuro").split(",");
 const completa = bandera("completa");
+const evalsTodos = bandera("evals-todos");
 const usuario = process.env.QA_USER ?? "qaadmin";
 const clave = process.env.QA_PASS ?? "Qa-admin-1234";
 
@@ -495,7 +497,20 @@ async function recorrido(t, primero) {
           await page.evaluate((r) => { history.pushState({}, "", r); dispatchEvent(new PopStateEvent("popstate")); }, String(valor));
           await esperarQuietud({ quieto: 500, tope: 1500 });
         }
-        else if (tipo === "marcar") await visible(page, valor).evaluate((el) => el.click()); else if (tipo === "eval") { const v = await page.evaluate(valor); if (primero) evals.push({ paso: i, valor: v }); }
+        else if (tipo === "marcar") await visible(page, valor).evaluate((el) => el.click()); else if (tipo === "eval") {
+          if (evalsTodos) {
+            /* `--evals-todos` (10-10): el eval corre en CADA ancho y CADA tema y queda rotulado.
+               4 carriles de la noche midieron a 400 con una corrida extra porque sólo se guardaba
+               el 1.er tema y el 1.er ancho. */
+            const vp = page.viewportSize();
+            for (const an of anchos) {
+              await page.setViewportSize({ width: an, height: vp?.height ?? 900 });
+              await page.waitForTimeout(400);
+              evals.push({ paso: i, tema: t, ancho: an, valor: await page.evaluate(valor) });
+            }
+            if (vp) await page.setViewportSize(vp);
+          } else { const v = await page.evaluate(valor); if (primero) evals.push({ paso: i, valor: v }); }
+        }
         else if (tipo === "evalDialogo") {
           const { texto, js } = valor;
           const v = await page.evaluate(({ texto, js }) => {
