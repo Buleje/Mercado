@@ -26,6 +26,9 @@ import { config } from "dotenv";
 
 config({ path: ".env.local", quiet: true });
 config({ quiet: true });
+/* Prisma guarda `DateTime` como `timestamp` SIN zona, en UTC; `pg` lo lee en la
+   zona local y lo corría 5 h (10-10: «hora de Lima = lo mostrado − 10 h»). */
+process.env.TZ = "UTC";
 
 const args = process.argv.slice(2);
 const json = args.includes("--json");

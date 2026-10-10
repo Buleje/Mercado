@@ -148,7 +148,7 @@ export function useKpisPlegables({
     >
       <BarChart3 className="h-4 w-4 shrink-0" aria-hidden />
       <span className={`shrink-0 ${compactoEnMovil ? "max-sm:sr-only" : ""}`}>Indicadores</span>
-      <span className="shrink-0 rounded-full bg-[var(--surface-sunken)] px-1.5 text-xs tabular-nums text-[var(--text-tertiary)]">
+      <span className="shrink-0 rounded-full bg-[var(--surface-sunken)] px-1.5 text-sm tabular-nums text-[var(--text-tertiary)]">
         {tarjetas.length}
       </span>
       {/* Con el panel cerrado, las cifras viajan en el botón: el titular sigue
@@ -167,7 +167,7 @@ export function useKpisPlegables({
       {filtrosActivos > 0 && (
         <span
           title="Los indicadores están mostrando sólo una parte del período"
-          className="shrink-0 rounded-full bg-[var(--accent-muted)] px-2 py-0.5 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]"
+          className="shrink-0 rounded-full bg-[var(--accent-muted)] px-2 py-0.5 text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]"
         >
           {filtrosActivos} filtro{filtrosActivos === 1 ? "" : "s"}
         </span>
