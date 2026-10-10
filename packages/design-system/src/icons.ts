@@ -486,6 +486,14 @@ export {
   // ── Types ────────────────────────────────────────────────────
   type LucideIcon,
   type LucideProps,
+  // ── Home «Dosel»: familias de producto ─────────────────────
+  CakeSlice,
+  IceCreamCone,
+  CupSoda,
+  Wheat,
+  Candy,
+  Hammer,
+  SprayCan,
 } from "lucide-react";
 
 // Aliases semánticos re-exportados para uso claro en el dominio:

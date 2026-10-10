@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
-import Link from "next/link";
 import { cacheLife, cacheTag } from "next/cache";
 import { resolveStoreContext } from "@/lib/store-metadata";
 import TenantStoreHome from "@/components/store/TenantStoreHome";
 import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 import { getLiveBannersForSlot } from "@/lib/promo-banners";
-import { getFeaturedStoresWithProducts } from "@/lib/db/marketplace-featured.db";
 // Brandon 2026-05-20 v5: LandingHeader removido — chrome unificado vive
 // en app/(store)/layout.tsx (mismo que /tiendas y /marketplace).
 
@@ -25,58 +23,27 @@ import { getFeaturedStoresWithProducts } from "@/lib/db/marketplace-featured.db"
 //    auto-oculta si no hay pedido previo). Recompra en 1 toque.
 //  - TopToday: "Lo más pedido hoy" cross-tienda con quick-add directo al carrito
 //    (se auto-oculta si no hay datos). Ambos self-fetch + self-contained.
-// Fila ANCHA de descubrimiento con pestañas (Nuevos / Lo más pedido / Ofertas /
-// Combos) — reemplaza las dos cajas lado a lado (Brandon 2026-06-14, opción
-// "carrusel ancho con tabs").
-const HomeDiscoveryTabs = dynamic(
-  () => import("@/components/marketplace/home/HomeDiscoveryTabs"),
-);
 // La Junta del Barrio — rail de compra colaborativa vecinal (self-fetch,
 // se auto-oculta si no hay juntas abiertas). Fase A3.
 const JuntaBarrioStrip = dynamic(
   () => import("@/components/marketplace/home/JuntaBarrioStrip"),
-);
-// Catálogo de productos completo (fusión /marketplace → /, Brandon 2026-06-08).
-const HomeCatalog = dynamic(
-  () => import("@/components/marketplace/home/HomeCatalog"),
 );
 // Hero rotativo full-width estilo marketplace pro (Brandon 2026-06-12): reemplaza
 // el viejo hero "Pedí en {ciudad}" + buscador por un banner deslizable (swipe).
 const HomeHeroBanner = dynamic(
   () => import("@/components/marketplace/home/HomeHeroBanner"),
 );
-// Banda animada con los logos de TODAS las tiendas (marquee infinito).
-const StoreLogosMarquee = dynamic(
-  () => import("@/components/marketplace/home/StoreLogosMarquee"),
-);
-// Brandon 2026-06-14: secciones de conversión cableadas a la home.
-//  - OfertasDelDiaHero: ofertas del día con countdown (urgencia). Auto-oculta
-//    si no hay destacados. Mismo lenguaje visual que el resto de la home
-//    (SectionHeading + max-w-[1760px], compacto).
-//  - WelcomeStrip: saludo + "repetir última compra" para el cliente logueado.
-//    Auto-oculta si no hay sesión. Contenedor propio (max-w-[1600px]).
-const OfertasDelDiaHero = dynamic(
-  () => import("@/components/marketplace/home/OfertasDelDiaHero"),
-);
 // WelcomeStrip retirado del inicio (Brandon 2026-07-06) — ver comentario abajo.
-import { Reveal } from "@/components/landing/Reveal";
 import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoading";
-import CatalogSortTabs from "@/components/marketplace/home/CatalogSortTabs";
-import SectionHeading from "@/components/marketplace/home/SectionHeading";
+import CategoriasBento from "@/components/marketplace/home/CategoriasBento";
+import DescubreSeccion from "@/components/marketplace/home/DescubreSeccion";
+import UrgenciaHoy from "@/components/marketplace/home/UrgenciaHoy";
+import TiendasDelBarrio from "@/components/marketplace/home/TiendasDelBarrio";
+import CatalogoSeccion from "@/components/marketplace/home/CatalogoSeccion";
+import HomeFaq from "@/components/marketplace/home/HomeFaq";
+import { HOME_FAQS } from "@/lib/marketplace/home-faqs";
 import HomeRecentlyViewed from "@/components/marketplace/home/HomeRecentlyViewed";
 import { ShowWhenAllVerticals } from "@/components/marketplace/home/MarketplaceVerticalChips";
-import {
-  UtensilsCrossed,
-  ShoppingCart,
-  ChevronDown,
-  MessageCircle,
-  Leaf,
-  GlassWater,
-  Sparkles,
-  Package,
-  type LucideIcon,
-} from "@buleje/design-system/icons";
-import { getProductCategoryIcon } from "@/components/marketplace/_category-icons";
 
 // Footer ya vive en app/(store)/layout.tsx (chrome unificado v5).
 
@@ -203,32 +170,6 @@ async function getTopProductsForJsonLd() {
   }));
 }
 
-// ── FAQ — fuente única de verdad ────────────────────────────────────────────
-// Audit SEO 2026-05-31: estas preguntas alimentan DOS cosas a la vez:
-//   1. El FAQPage JSON-LD (Rich Results de Google).
-//   2. La sección <HomeFaqSection /> VISIBLE al final de la home.
-// Google exige que el contenido del FAQPage schema sea visible en la página
-// (si es solo schema = "content mismatch", no da rich result y arriesga acción
-// manual). Tener una sola lista evita que el schema y el texto se desincronicen.
-// Copy real del marketplace + geo de lanzamiento (Ciudad Constitución).
-const HOME_FAQS: { q: string; a: string }[] = [
-  {
-    q: "¿Cómo hago un pedido en Buleje?",
-    a: "Eliges tu tienda en /tiendas, seleccionas los productos y pagas con Yape, Plin o efectivo. Tu pedido llega en 25–35 minutos.",
-  },
-  {
-    q: `¿Buleje hace delivery en ${BRAND_GEO.city}?`,
-    a: `Sí. Hacemos delivery en ${BRAND_GEO.city} y zonas cercanas de ${BRAND_GEO.province} (${BRAND_GEO.region}). Tenemos bodegas, restaurantes, farmacias y más.`,
-  },
-  {
-    q: "¿Puedo pagar con Yape o Plin en Buleje?",
-    a: "Sí, aceptamos Yape, Plin y efectivo contra entrega en todos los pedidos del marketplace.",
-  },
-  {
-    q: "¿Cuánto tarda el delivery de Buleje?",
-    a: "El tiempo estimado es de 25 a 35 minutos según tu ubicación y la tienda elegida. Las tiendas con horario abierto entregan el mismo día.",
-  },
-];
 
 // ── JSON-LD B2C marketplace ──────────────────────────────────────────────────
 async function BulejeJsonLd() {
@@ -474,426 +415,56 @@ async function HomeHero() {
   );
 }
 
-// perf audit P1: el marquee de logos también se resuelve en el SERVER (los
-// logos vienen ya pintados, sin fetch client). getFeaturedStoresWithProducts
-// cachea internamente (getOrSet). productsPerStore:0 = solo identidad de tienda.
-async function StoreLogosMarqueeRSC() {
-  const stores = await getFeaturedStoresWithProducts({ limit: 20, productsPerStore: 0 }).catch(
-    () => [] as Awaited<ReturnType<typeof getFeaturedStoresWithProducts>>,
-  );
-  return (
-    <StoreLogosMarquee
-      initialStores={stores.map((s) => ({
-        slug: s.slug,
-        name: s.name,
-        logo: s.logo,
-        category: s.category,
-        zone: s.zone,
-        rating: s.rating,
-        reviewCount: s.reviewCount,
-        productsCount: s.productsCount,
-      }))}
-    />
-  );
-}
-
-// ── 2. Categorías del superadmin — Brandon mayo 14 v3 ───────────────────────
-// Antes eran emojis hardcoded. Ahora vienen del JSON que administra el
-// superadmin (mismo storage que /api/marketplace/categories), con imageUrl
-// real. Mantenemos el layout Rappi: 2 cards XL destacados arriba +
-// resto en grid chico. Restaurantes y Bodegas (supermercado) son siempre
-// los destacados (los primeros en orden), el resto va al grid chico.
-// Emojis de fallback por slug si la imagen no está subida aún.
-
-// Brandon 2026-07-05 (audit #2): "pollo-brasa" → "Pollo brasa".
-function prettyCatLabel(id: string): string {
-  const spaced = id.replace(/[-_]+/g, " ").trim();
-  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
-}
-
-function hrefForCategory(id: string): string {
-  // Audit #2 (eje "por producto"): filtra el CATÁLOGO por categoría de producto
-  // (mismo destino que "Ver más" de los carruseles), en vez de /tiendas por rubro.
-  return `/?cat=${encodeURIComponent(id)}#catalogo`;
-}
-
-// ── Bloques temáticos (Brandon 2026-07-06) ──────────────────────────────────
-// Reemplaza el bento teal (neon, cada tile se inundaba de --accent en hover)
-// por un ÍNDICE EDITORIAL agrupado en bloques: cada categoría de producto cae
-// en el 1er bloque cuyo patrón matchea; lo no reconocido va a "Más". El color
-// se retira a mínimos del DS (superficies + hairlines + acento SOLO en el
-// cuadro del ícono y el hover de la fila). Minimalista pero estructurado.
-interface CategoryBlockDef {
-  id: string;
-  label: string;
-  icon: LucideIcon;
-  /** 1er match gana; el bloque sin `match` (último) es el catch-all "Más". */
-  match?: RegExp;
-}
-const CATEGORY_BLOCKS: CategoryBlockDef[] = [
-  {
-    id: "preparada",
-    label: "Comida preparada",
-    icon: UtensilsCrossed,
-    match: /pizza|calzon|brasa|broaster|alita|hamburgues|sandwich|salchipapa|shawarma|\bmenu|menú|combo|almuerzo|parrilla|guiso|caldo|sopa|crema|cebiche|ceviche|postre|helado|torta|keke|ensalada|guarnicion|acompan|desayuno|anticucho/i,
-  },
-  {
-    id: "frescos",
-    label: "Frescos",
-    icon: Leaf,
-    match: /fruta|verdura|carne|pollo|res|cerdo|chancho|pescado|marisco|paiche|fresco|huevo|lacteo|lácteo|queso|leche|yogur|embutido/i,
-  },
-  {
-    id: "bebidas",
-    label: "Bebidas",
-    icon: GlassWater,
-    match: /bebida|gaseosa|agua|jugo|refresco|cerveza|pilsen|licor|vino|pisco|ron|whisky|trago|energizante|café|cafe/i,
-  },
-  {
-    id: "despensa",
-    label: "Despensa",
-    icon: ShoppingCart,
-    match: /abarrote|snack|golosina|galleta|fideo|pasta|arroz|azucar|azúcar|aceite|conserva|enlatado|panaderia|panadería|\bpan\b|dulce|cereal|harina|menestra|grano|salsa|condimento/i,
-  },
-  {
-    id: "hogar",
-    label: "Hogar y cuidado",
-    icon: Sparkles,
-    match: /limpieza|hogar|aseo|ferreteria|ferretería|herramienta|construccion|construcción|madera|electro|tecnologia|tecnología|celular|farmacia|botica|salud|mascota|bebe|bebé|cuidado|regalo|papeleria|papelería/i,
-  },
-  { id: "mas", label: "Más categorías", icon: Package },
-];
-
-async function CategoriesGrid() {
-  // Audit #2 (eje "por producto"): categorías de PRODUCTO desde MarketplacePublicDB
-  // (misma fuente que header + mega-menú + carruseles). getProductCategories ya
-  // devuelve solo categorías con ≥1 producto real (cero muertas), ordenadas por
-  // cantidad. Los rubros de tienda siguen navegables desde /tiendas.
-  const flat = (await MarketplacePublicDB.getProductCategories().catch(() => []))
-    .filter((c) => c.id && c.count > 0);
-  if (flat.length === 0) return null;
-
-  // Clasificar cada categoría en su bloque (1er patrón que matchea; resto → "Más").
-  // Normaliza acentos/ñ antes del test → "Acompañamientos"/"Lácteos" matchean sus
-  // patrones sin duplicar cada forma acentuada en el regex.
-  const norm = (s: string) =>
-    s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
-  const blocks = CATEGORY_BLOCKS.map((b) => ({
-    ...b,
-    cats: [] as Array<{ id: string; label: string }>,
-  }));
-  const fallback = blocks[blocks.length - 1];
-  for (const c of flat) {
-    const key = norm(c.id);
-    const target = blocks.find((b) => b.match?.test(key)) ?? fallback;
-    target.cats.push({ id: c.id, label: prettyCatLabel(c.id) });
-  }
-  const visible = blocks.filter((b) => b.cats.length > 0);
-
-  return (
-    <section
-      aria-label="Categorías"
-      className="bg-[var(--surface-canvas)] py-5 sm:py-7"
-    >
-      <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8">
-        <SectionHeading
-          eyebrow="Categorías"
-          title="Explora por categoría"
-          subtitle={`Todo lo que tu barrio vende, ordenado por bloques — con delivery rápido en ${BRAND_GEO.city}.`}
-          actionLabel="Ver todas"
-          actionHref="/tiendas"
-        />
-
-        {/* ── Índice editorial por bloques (Brandon 2026-07-06): paneles calmos
-             sobre superficie, hairlines del DS, acento SOLO en el cuadro del
-             ícono. Cero relleno teal (adiós neon). Cada bloque = título serif +
-             GRILLA DE CUADRITOS (sin conteos) — cada categoría es un tile
-             cuadrado navegable. ── */}
-        {/* Masonry (Brandon 2026-07-06): `columns` empaqueta los bloques sin
-             huecos — los bloques cortos (Bebidas, Frescos) suben a rellenar el
-             espacio de los altos → todo uniforme, sin gaps grandes. */}
-        <div className="columns-1 sm:columns-2 lg:columns-3 gap-3 sm:gap-4">
-          {visible.map((b) => {
-            const BlockIcon = b.icon;
-            return (
-              <div
-                key={b.id}
-                className="mb-3 sm:mb-4 break-inside-avoid overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] transition-[border-color,box-shadow] duration-[var(--dur-base)] hover:border-[color-mix(in_srgb,var(--accent)_45%,transparent)] hover:shadow-[var(--shadow-md)]"
-              >
-                {/* Encabezado del bloque — sans bold (sin serif alargada), sin conteo */}
-                <div className="flex items-center gap-2.5 border-b border-[var(--rule-soft)] px-4 py-3.5">
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-[var(--accent-dark)] ring-1 ring-inset ring-[color-mix(in_srgb,var(--accent)_20%,transparent)] dark:text-[var(--accent)]">
-                    <BlockIcon className="h-4 w-4" strokeWidth={2} aria-hidden />
-                  </span>
-                  <span className="text-base font-extrabold tracking-tight text-[var(--text-primary)]">
-                    {b.label}
-                  </span>
-                </div>
-
-                {/* Cuadritos de categorías (grilla, sin números). Bloque de una
-                    sola categoría → tile a todo el ancho (sin celda vacía). */}
-                <ul
-                  className={`grid gap-2.5 p-3 ${
-                    b.cats.length === 1 ? "grid-cols-1" : "grid-cols-2"
-                  }`}
-                >
-                  {b.cats.map((c) => {
-                    const CatIcon = getProductCategoryIcon(c.id);
-                    return (
-                      <li key={c.id}>
-                        <Link
-                          href={hrefForCategory(c.id)}
-                          className="group/tile flex h-full flex-col items-center justify-center gap-2.5 rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-3 py-4 text-center transition-[border-color,background-color,transform] duration-[var(--dur-fast)] hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--accent)_45%,transparent)] hover:bg-[var(--surface-sunken)]"
-                        >
-                          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/15 text-[var(--accent-dark)] ring-1 ring-inset ring-[color-mix(in_srgb,var(--accent)_16%,transparent)] transition-transform duration-[var(--dur-fast)] group-hover/tile:scale-105 dark:text-[var(--accent)]">
-                            <CatIcon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-                          </span>
-                          <span className="text-sm font-semibold leading-tight text-[var(--text-primary)] line-clamp-2">
-                            {c.label}
-                          </span>
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ── 3. Tiendas destacadas — carrusel pro con rating, categoría y zona ──────────
-// v3 2026-05-26: cards enriquecidas (antes solo logo+nombre). Agrega rating
-// (estrellas), categoría y zona cuando la fuente los trae. Sin fetch nuevo:
-// getTopStores() ya devuelve category/zone/rating/reviewCount desde MarketplaceStatsDB.
-
-// ── 4. Trabajá con nosotros ──────────────────────────────────────────────────
-// Brandon 2026-05-31: extraído a components/marketing/JoinUsSection.tsx (importado
-// arriba) para reusarlo en /tiendas sin copy-paste (single source of truth).
-
-// ── Main Home ────────────────────────────────────────────────────────────────
-// Brandon 2026-05-20 v5: LandingHeader y Footer REMOVIDOS de la página.
-// El chrome unificado (MarketplaceNavbar + ConditionalPromoBar +
-// ConditionalSecondaryNav + BottomNav + Footer) vive ahora en
-// app/(store)/layout.tsx — único punto compartido con /tiendas y /marketplace.
-// ── FAQ visible — server component, accordeón nativo <details> (sin JS) ──────
-// Audit SEO 2026-05-31: el FAQPage schema necesitaba contenido VISIBLE en la
-// página (política de Google) — antes era schema-only. Esto también suma copy
-// indexable con keywords long-tail locales ("delivery en {city}", "pagar con
-// Yape"). Nativo <details>/<summary>: accesible por teclado, 0 JavaScript.
-function HomeFaqSection() {
-  return (
-    <section
-      id="preguntas-frecuentes"
-      aria-labelledby="faq-heading"
-      className="py-7 sm:py-9 bg-[var(--surface-sunken)]/40 border-y border-[var(--rule-soft)]"
-    >
-      <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8">
-        <SectionHeading
-          headingId="faq-heading"
-          eyebrow="Preguntas frecuentes"
-          title={`Todo sobre comprar y pedir en ${BRAND_GEO.city}`}
-        />
-
-        {/* 2 columnas masonry (Brandon 2026-06-01): llena el ancho y cada
-            columna se expande independiente al abrir un acordeón (sin saltos de
-            la otra). Reparto par/impar preservando el número original. Sigue
-            siendo native <details> → 0 JS, indexable, accesible. */}
-        <div className="grid gap-3 sm:gap-4 md:grid-cols-2 md:items-start">
-          {[0, 1].map((colIdx) => (
-            <div key={colIdx} className="space-y-3 sm:space-y-4">
-              {HOME_FAQS.filter((_, i) => i % 2 === colIdx).map((f) => {
-                const n = HOME_FAQS.indexOf(f) + 1;
-                return (
-                  /* Brandon 2026-06-13: rediseño editorial SIN bordes redondeados.
-                     Tarjeta cuadrada con regla de acento a la IZQUIERDA (gris →
-                     acento al abrir), tinte suave + número resaltado en open. */
-                  <details
-                    key={n}
-                    className="group border border-[var(--rule-base)] border-l-[3px] border-l-[var(--rule-strong)] bg-[var(--surface-raised)] transition-colors open:border-l-[var(--accent)] open:bg-primary/10"
-                  >
-                    <summary className="flex items-center gap-3.5 cursor-pointer list-none px-4 sm:px-5 py-4 [&::-webkit-details-marker]:hidden">
-                      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center bg-[var(--surface-sunken)] text-[length:var(--ts-sm)] font-black tabular-nums text-[var(--text-tertiary)] transition-colors group-open:bg-[var(--accent)] group-open:text-white">
-                        {String(n).padStart(2, "0")}
-                      </span>
-                      <span className="flex-1 text-base font-bold leading-snug text-[var(--text-primary)] transition-colors group-open:text-[var(--accent)]">
-                        {f.q}
-                      </span>
-                      <span className="grid h-7 w-7 shrink-0 place-items-center text-[var(--text-tertiary)] transition-colors group-open:text-[var(--accent)]">
-                        <ChevronDown
-                          className="h-5 w-5 transition-transform duration-200 group-open:rotate-180"
-                          strokeWidth={2.5}
-                          aria-hidden
-                        />
-                      </span>
-                    </summary>
-                    <div className="pl-[3.875rem] pr-5 pb-5 -mt-1">
-                      <p className="text-base text-[var(--text-secondary)] leading-relaxed">
-                        {f.a}
-                      </p>
-                    </div>
-                  </details>
-                );
-              })}
-            </div>
-          ))}
-        </div>
-
-        {/* Cierre — duda no resuelta → WhatsApp directo. Bloque cuadrado con
-            franja de acento a la izquierda (consistente con las tarjetas). */}
-        <div className="mt-6 sm:mt-8 flex flex-col gap-4 border border-[var(--rule-base)] border-l-[3px] border-l-[var(--accent)] bg-[var(--surface-raised)] px-5 sm:px-7 py-5 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-base sm:text-lg font-extrabold text-[var(--text-primary)]">
-              ¿Te quedó otra duda?
-            </p>
-            <p className="mt-0.5 text-sm text-[var(--text-secondary)]">
-              Escríbenos por WhatsApp y te respondemos al toque.
-            </p>
-          </div>
-          <a
-            href={`https://wa.me/${BRAND_GEO.phone.replace(/\D/g, "")}?text=${encodeURIComponent(
-              `Hola Buleje, tengo una pregunta sobre pedir en ${BRAND_GEO.city}`,
-            )}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex shrink-0 items-center justify-center gap-2 bg-[var(--accent)] px-6 h-12 text-sm font-extrabold text-white shadow-sm transition-all hover:gap-3 hover:shadow-md active:scale-95"
-          >
-            <MessageCircle className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-            Escribir por WhatsApp
-          </a>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 export default async function Home() {
-  // Tienda INDIVIDUAL del comerciante (subdominio / /t/<slug>): el inicio es una
-  // portada propia (TenantStoreHome) con CTA a su catálogo (/tienda) — AISLADA del
-  // marketplace. En el dominio principal se ve la home del marketplace. Brandon 2026-06-07.
+  // Tienda INDIVIDUAL del comerciante (subdominio / /t/<slug>): portada propia,
+  // AISLADA del marketplace. En el dominio principal se ve la home del marketplace.
   const { isTenant } = await resolveStoreContext();
   if (isTenant) return <TenantStoreHome />;
 
   return (
-    <main id="main-content">
+    <main id="main-content" className="flex flex-col [&>div:empty]:hidden">
       <BulejeJsonLd />
-
-      {/* 1. Hero = banner rotativo full-width (swipe) */}
+      {/* A · Hero (H1 visible para SEO) */}
       <HomeHero />
-
-      {/* 1.1 Bienvenida personalizada — QUITADA (Brandon 2026-07-06): la barra
-          "Hola {nombre} · repetir última compra · Mis pedidos" que aparecía al
-          loguearse se retiró del inicio (el perfil/pedidos ya viven en la cuenta
-          y el navbar). Deja el hero + descubrimiento sin la franja de perfil. */}
-      {/* <WelcomeStrip /> */}
-
-      {/* 1.2 Verticales — SOLO MOBILE (Brandon 2026-06-11): los chips
-          Comida/Bodega/Ferretería/Electro/Farmacia los aporta el chrome
-          (ConditionalSecondaryNav), apilados sobre la barra de categorías en un
-          bloque sticky. En DESKTOP se quitaron a pedido de Brandon: la pantalla
-          grande ya navega por el rail izquierdo + "Categorías", y el catálogo
-          muestra todo (sin filtro de vertical). */}
-
-      {/* Brandon 2026-06-12: estas secciones de descubrimiento (visto, nuevos,
-          tiendas destacadas, lo más pedido) SOLO aparecen en "Todo". Al elegir
-          una categoría específica (Comida/Ferretería) se ocultan y queda solo el
-          catálogo general FILTRADO. */}
-
-      {/* 1.5 Visto recientemente — self-hide si no vio nada. */}
+      {/* B · Retomar (se oculta solo) */}
       <Suspense fallback={null}>
         <ShowWhenAllVerticals>
           <HomeRecentlyViewed />
         </ShowWhenAllVerticals>
       </Suspense>
-
-      {/* 2. Categorías del superadmin (solo desktop lg+ — en mobile duplica los
-          chips de vertical). */}
-      <div className="hidden lg:block">
+      {/* B · ¿Qué se te antoja? (desktop; en celular mandan los chips del chrome) */}
+      <div className="hidden md:block">
         <Suspense fallback={<SectionSkeleton minH="min-h-[340px]" />}>
-          <Reveal>
-            <CategoriesGrid />
-          </Reveal>
+          <CategoriasBento />
         </Suspense>
       </div>
-
-      {/* 2.5 Descubrimiento — CARRUSEL ANCHO CON PESTAÑAS (Brandon 2026-06-14):
-          una sola fila a todo el ancho con tabs (Nuevos / Lo más pedido /
-          Ofertas / Combos) que cambian el contenido. Reemplaza las dos cajas
-          lado a lado y la fila Ofertas|Paquetes. */}
+      {/* B · Descubre */}
       <Suspense fallback={null}>
         <ShowWhenAllVerticals>
-          <Reveal>
-            <section
-              aria-label="Descubre en Buleje"
-              className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7"
-            >
-              <HomeDiscoveryTabs />
-            </section>
-          </Reveal>
+          <DescubreSeccion />
         </ShowWhenAllVerticals>
       </Suspense>
-
-      {/* 2.55 La Junta del Barrio — rail vecinal (self-fetch, auto-oculta si no
-          hay juntas abiertas). Fase A3. */}
+      {/* B · Se acaban hoy */}
+      <Suspense fallback={null}>
+        <ShowWhenAllVerticals>
+          <UrgenciaHoy />
+        </ShowWhenAllVerticals>
+      </Suspense>
+      {/* B · Tiendas de tu barrio */}
+      <Suspense fallback={null}>
+        <ShowWhenAllVerticals>
+          <TiendasDelBarrio />
+        </ShowWhenAllVerticals>
+      </Suspense>
       <JuntaBarrioStrip />
-
-      {/* 2.6 Ofertas del día — carrusel de destacados con countdown a medianoche
-          (urgencia comercial, Brandon 2026-06-14). Trae su propio contenedor
-          (MarketplaceSection). Auto-oculta si no hay productos destacados. */}
-      <Suspense fallback={null}>
-        <ShowWhenAllVerticals>
-          <Reveal>
-            <OfertasDelDiaHero />
-          </Reveal>
-        </ShowWhenAllVerticals>
-      </Suspense>
-
-      {/* 3. Marquee de logos (todas las tiendas). Ofertas/Combos se movieron a
-          las pestañas del carrusel de descubrimiento (2.5), Brandon 2026-06-14. */}
-      <Suspense fallback={null}>
-        <ShowWhenAllVerticals>
-          <Reveal>
-            <StoreLogosMarqueeRSC />
-          </Reveal>
-        </ShowWhenAllVerticals>
-      </Suspense>
-
-      {/* "Lo más pedido" ahora vive en la fila de descubrimiento (2.5), lado a
-          lado con "Recién llegados". Brandon 2026-06-12. */}
-
-      {/* 3.6 Catálogo de productos — el GRID completo que vivía en /marketplace
-          (fusión /marketplace → /, Brandon 2026-06-08). Scroll infinito: va antes
-          del FAQ; al agotarse el catálogo aparecen FAQ + footer. */}
-      <Reveal>
-        <section
-          id="catalogo"
-          aria-label="Catálogo de productos"
-          className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 pt-5 sm:pt-7 scroll-mt-24"
-        >
-          <SectionHeading eyebrow="Catálogo" title="Todos los productos" />
-          {/* Audit mobile #6: tabs de orden → un solo grid que se reordena
-              (Destacados/Nuevos/Menor precio/Mejor valorado), en vez de carruseles
-              con productos repetidos. Setea ?sort= que el catálogo ya consume. */}
-          <Suspense fallback={<div className="mb-3 h-11 border-b border-[var(--rule-soft)]" />}>
-            <CatalogSortTabs />
-          </Suspense>
-          <HomeCatalog />
-        </section>
-      </Reveal>
-
-      {/* 4. Preguntas frecuentes — contenido VISIBLE que matchea el FAQPage
-          schema (política Google) + copy local indexable. Es ayuda al COMPRADOR
-          (cómo pedir/pagar), por eso se queda; el "cómo funciona" para vendedores
-          se movió a /negocios. */}
-      <Reveal>
-        <HomeFaqSection />
-      </Reveal>
+      {/* C · Todo el mercado */}
+      <CatalogoSeccion />
+      {/* C · Preguntas frecuentes (matchean el FAQPage schema) */}
+      <HomeFaq />
     </main>
   );
 }
+
 
 // Reserva la altura aproximada de la sección que carga, para que al swapear
 // el contenido real NO salte la página (fix CLS 0.315 → objetivo <0.1).

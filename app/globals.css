@@ -4089,3 +4089,86 @@ body.tenant-storefront > nav[aria-label="Breadcrumb"] {
 @utility z-modal-3 { z-index: var(--z-modal-3); }
 @utility z-system { z-index: var(--z-system); }
 @utility z-tour { z-index: var(--z-tour); }
+
+/* ═══ Home del marketplace «Dosel» (2026-10-10) ════════════════════════════
+   Tintes por familia de producto + fondo del hero. Todo sale de la paleta
+   (teal/coral/neutros); lo único nuevo es el verde-teal profundo del dosel,
+   de la familia del #0d3b3b de SocioHero. Los componentes leen las variables
+   genéricas (--tinte-bg/-blob/-ink) que pone [data-familia]. */
+:root {
+  --dosel-900: #0b3a39;
+  --dosel-950: #062625;
+  --dosel-hoja: color-mix(in oklab, var(--accent) 55%, white);
+  --dosel-sol: var(--data-warning-500);
+  --ts-hero: clamp(1.875rem, 1.1rem + 2.6vw, 3.25rem);
+  --plato: var(--surface-sunken);
+
+  --tinte-comida-bg: color-mix(in oklab, var(--data-warning-500) 11%, var(--surface-raised));
+  --tinte-comida-blob: color-mix(in oklab, var(--data-warning-500) 24%, var(--surface-raised));
+  --tinte-comida-ink: var(--data-warning-700);
+  --tinte-frescos-bg: color-mix(in oklab, var(--accent) 12%, var(--surface-raised));
+  --tinte-frescos-blob: color-mix(in oklab, var(--accent) 28%, var(--surface-raised));
+  --tinte-frescos-ink: var(--accent-ink);
+  --tinte-bebidas-bg: color-mix(in oklab, var(--accent) 6%, var(--surface-sunken));
+  --tinte-bebidas-blob: color-mix(in oklab, var(--accent) 16%, var(--surface-raised));
+  --tinte-bebidas-ink: var(--accent-dark);
+  --tinte-despensa-bg: color-mix(in oklab, var(--data-warning-500) 6%, var(--surface-sunken));
+  --tinte-despensa-blob: color-mix(in oklab, var(--data-warning-500) 13%, var(--surface-sunken));
+  --tinte-despensa-ink: var(--data-warning-700);
+  --tinte-hogar-bg: var(--surface-sunken);
+  --tinte-hogar-blob: color-mix(in oklab, var(--text-primary) 8%, var(--surface-sunken));
+  --tinte-hogar-ink: var(--text-secondary);
+}
+.dark {
+  --dosel-900: #0a2f2e;
+  --dosel-950: #041a19;
+  --plato: color-mix(in oklab, white 90%, var(--surface-raised));
+
+  --tinte-comida-bg: color-mix(in oklab, var(--data-warning-500) 14%, var(--surface-raised));
+  --tinte-comida-blob: color-mix(in oklab, var(--data-warning-500) 26%, var(--surface-raised));
+  --tinte-comida-ink: var(--data-warning-500);
+  --tinte-frescos-bg: color-mix(in oklab, var(--accent) 14%, var(--surface-raised));
+  --tinte-frescos-blob: color-mix(in oklab, var(--accent) 28%, var(--surface-raised));
+  --tinte-frescos-ink: var(--accent);
+  --tinte-bebidas-bg: color-mix(in oklab, var(--accent) 9%, var(--surface-raised));
+  --tinte-bebidas-blob: color-mix(in oklab, var(--accent) 20%, var(--surface-raised));
+  --tinte-bebidas-ink: var(--accent);
+  --tinte-despensa-bg: color-mix(in oklab, var(--data-warning-500) 8%, var(--surface-raised));
+  --tinte-despensa-blob: color-mix(in oklab, var(--data-warning-500) 16%, var(--surface-raised));
+  --tinte-despensa-ink: var(--data-warning-500);
+  --tinte-hogar-bg: var(--surface-sunken);
+  --tinte-hogar-blob: color-mix(in oklab, var(--text-primary) 10%, var(--surface-sunken));
+  --tinte-hogar-ink: var(--text-secondary);
+}
+
+[data-familia="comida"]   { --tinte-bg: var(--tinte-comida-bg);   --tinte-blob: var(--tinte-comida-blob);   --tinte-ink: var(--tinte-comida-ink);
+  --patron: url("data:image/svg+xml;utf8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2716%27 height=%2716%27%3E%3Cpath d=%27M0 0h8v8H0zM8 8h8v8H8z%27/%3E%3C/svg%3E"); --patron-size: 16px; }
+[data-familia="frescos"]  { --tinte-bg: var(--tinte-frescos-bg);  --tinte-blob: var(--tinte-frescos-blob);  --tinte-ink: var(--tinte-frescos-ink);
+  --patron: url("data:image/svg+xml;utf8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2728%27 height=%2728%27%3E%3Cpath d=%27M5 21c0-7 5-12 15-14-1 9-6 14-15 14z%27/%3E%3C/svg%3E"); --patron-size: 28px; }
+[data-familia="bebidas"]  { --tinte-bg: var(--tinte-bebidas-bg);  --tinte-blob: var(--tinte-bebidas-blob);  --tinte-ink: var(--tinte-bebidas-ink);
+  --patron: url("data:image/svg+xml;utf8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2724%27 height=%2712%27%3E%3Cpath d=%27M0 6q6-6 12 0t12 0%27 fill=%27none%27 stroke=%27black%27 stroke-width=%271.6%27/%3E%3C/svg%3E"); --patron-size: 24px 12px; }
+[data-familia="despensa"] { --tinte-bg: var(--tinte-despensa-bg); --tinte-blob: var(--tinte-despensa-blob); --tinte-ink: var(--tinte-despensa-ink);
+  --patron: url("data:image/svg+xml;utf8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2714%27 height=%2714%27%3E%3Ccircle cx=%273.5%27 cy=%273.5%27 r=%271.6%27/%3E%3Ccircle cx=%2710.5%27 cy=%2710.5%27 r=%271.6%27/%3E%3C/svg%3E"); --patron-size: 14px; }
+[data-familia="hogar"], [data-familia="mas"] { --tinte-bg: var(--tinte-hogar-bg); --tinte-blob: var(--tinte-hogar-blob); --tinte-ink: var(--tinte-hogar-ink);
+  --patron: url("data:image/svg+xml;utf8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2720%27 height=%2720%27%3E%3Cpath d=%27M0 15h5v-5h5v5h5v-5h5%27 fill=%27none%27 stroke=%27black%27 stroke-width=%271.6%27/%3E%3C/svg%3E"); --patron-size: 20px; }
+
+@layer components {
+  /* Capa con el motivo de la familia. Va DENTRO de un padre `relative` con data-familia. */
+  .patron-familia {
+    position: absolute; inset: 0; pointer-events: none;
+    background-color: var(--tinte-ink);
+    opacity: 0.07;
+    -webkit-mask-image: var(--patron); mask-image: var(--patron);
+    -webkit-mask-size: var(--patron-size); mask-size: var(--patron-size);
+  }
+  .dark .patron-familia { opacity: 0.1; }
+
+  @keyframes dosel-flotar {
+    0%, 100% { transform: translateY(0) rotate(var(--giro, 0deg)); }
+    50% { transform: translateY(-4px) rotate(var(--giro, 0deg)); }
+  }
+  .dosel-flotar { animation: dosel-flotar 6s var(--ease-editorial) infinite; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dosel-flotar { animation: none; }
+}
