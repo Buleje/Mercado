@@ -1,6 +1,7 @@
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
+import { RUTAS_PANEL } from "@/lib/auth/roles-rutas-panel";
 import { AlertsDB } from "@/lib/db/alerts.db";
 import { logger } from "@/lib/logger";
 
@@ -16,7 +17,7 @@ import { logger } from "@/lib/logger";
  */
 export async function GET(req: NextRequest) {
   try {
-    const auth = await requireAdmin(req, ["admin", "manager", "cajero"]);
+    const auth = await requireAdmin(req, RUTAS_PANEL["/api/admin/alerts-summary"]);
     if (auth instanceof NextResponse) return auth;
 
     const payload = await AlertsDB.getSummary(auth.tenantId);

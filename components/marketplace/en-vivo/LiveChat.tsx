@@ -142,7 +142,7 @@ export function LiveChat({ initialMessages, hostName, active = true, liveId: _li
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder={active ? "Escribí tu comentario o pregunta..." : "Chat cerrado"}
+          placeholder={active ? "Escribe tu comentario o pregunta..." : "Chat cerrado"}
           disabled={!active}
           maxLength={240}
           aria-label="Escribir mensaje en el chat"

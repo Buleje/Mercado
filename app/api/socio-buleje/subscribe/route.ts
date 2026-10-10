@@ -37,8 +37,34 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
-    const { plan, userId } = parsed.data;
+    const { plan, userId, ref } = parsed.data;
     const membership = await SocioBulejeDB.subscribe(tenantId, userId, plan);
+
+    // Referidos: si vino un código válido y es un alta NUEVA (status trial),
+    // acreditamos la recompensa al referrer. Fire-and-forget + guardado: un
+    // código falso o un referrer inexistente simplemente no hace nada.
+    if (ref && membership.status === "trial") {
+      void (async () => {
+        try {
+          const { decodeReferralCode, REFERRAL_REWARD_SOLES } = await import("@/lib/socio/referral");
+          const referrerId = decodeReferralCode(ref);
+          if (referrerId && referrerId !== userId) {
+            await SocioBulejeDB.earnCashback(
+              tenantId,
+              referrerId,
+              null,
+              REFERRAL_REWARD_SOLES,
+              "Referido: un vecino se hizo Socio 🎉",
+            );
+          }
+        } catch (err) {
+          logger.warn("[api/socio-buleje/subscribe] referral reward skipped", {
+            traceId,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        }
+      })();
+    }
 
     return NextResponse.json({ ok: true, membership, traceId });
   } catch (err) {

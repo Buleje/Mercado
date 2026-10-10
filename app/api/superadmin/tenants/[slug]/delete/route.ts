@@ -7,6 +7,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { requireTotpStepUp } from "@/lib/auth/totp-step-up";
 import { logSuperadminAction } from "@/lib/audit/superadmin-audit";
+import { esTenantProtegido } from "@/lib/tenancy/negocio-por-defecto";
 
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
@@ -95,7 +96,7 @@ export async function DELETE(
     }
 
     // Proteger tenants del sistema
-    if (slug === "main") {
+    if (esTenantProtegido(slug)) {
       return NextResponse.json(
         { error: "No se puede eliminar la tienda principal del sistema" },
         { status: 403 },

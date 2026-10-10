@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Zap, X, HelpCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { estaAgotado } from "@/lib/pos/stock-vendible";
+import { formatCurrency } from "@/lib/format";
 
 interface Product {
   id: number;
@@ -15,20 +17,27 @@ interface Product {
 interface POSExpressModeProps {
   products: Product[];
   onAddToCart: (productId: number, quantity?: number) => void;
+  /** Controlado desde el menú «Más» del POS: sin botón propio, se muestra sólo encendido. */
+  enabled?: boolean;
+  onEnabledChange?: (enabled: boolean) => void;
 }
 
 function fmt(n: number) {
-  return `S/${n.toFixed(2)}`;
+  return `${formatCurrency(n)}`;
 }
 
 export default function POSExpressMode({
   products,
   onAddToCart,
+  enabled: enabledProp,
+  onEnabledChange,
 }: POSExpressModeProps) {
-  const [enabled, setEnabled] = useState(() => {
+  const [enabledLocal, setEnabledLocal] = useState(() => {
     if (typeof window === "undefined") return false;
     return localStorage.getItem("pos-express-mode") === "true";
   });
+  const enabled = enabledProp ?? enabledLocal;
+  const setEnabled = (v: boolean) => (onEnabledChange ? onEnabledChange(v) : setEnabledLocal(v));
   const [input, setInput] = useState("");
   const [recentExpress, setRecentExpress] = useState<
     { id: number; name: string; price: number }[]
@@ -80,7 +89,7 @@ export default function POSExpressMode({
         return;
       }
 
-      if (product.stock != null && product.stock <= 0) {
+      if (estaAgotado(product)) {
         setFeedback(`Sin stock: ${product.name}`);
         setInput("");
         return;
@@ -107,10 +116,11 @@ export default function POSExpressMode({
   );
 
   if (!enabled) {
+    if (onEnabledChange) return null;
     return (
       <button
         onClick={() => setEnabled(true)}
-        className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--text-primary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] px-3 py-2 rounded-lg transition-colors"
+        className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--text-primary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] px-3 py-2 rounded-xl transition-colors shrink-0"
         title="Modo Express - escaneo rápido por codigo"
       >
         <Zap className="h-4 w-4 text-[var(--data-warning-500)]" /> Express
@@ -123,7 +133,7 @@ export default function POSExpressMode({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <Zap className="h-4 w-4 text-[var(--data-warning-500)]" />
-          <span className="text-xs font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] inline-flex items-center gap-1">
+          <span className="text-xs font-bold text-[var(--data-warning-ink)] inline-flex items-center gap-1">
             Modo Express
             <span className="text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] cursor-help" title="Escribe el código del producto + Enter para agregar rápido sin buscar">
               <HelpCircle className="h-3.5 w-3.5" />
@@ -132,6 +142,7 @@ export default function POSExpressMode({
         </div>
         <button
           onClick={() => setEnabled(false)}
+          aria-label="Salir del modo Express"
           className="p-1 rounded text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors"
         >
           <X className="h-3.5 w-3.5" />
@@ -145,7 +156,7 @@ export default function POSExpressMode({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Codigo + Enter (ej: 003x5 = producto 003, cant. 5)"
-          className="w-full px-3 py-2.5 rounded-lg border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 bg-[var(--surface-raised)] text-center"
+          className="w-full px-3 h-11 rounded-xl border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 bg-[var(--surface-raised)] text-center"
           autoComplete="off"
         />
       </form>
@@ -155,7 +166,7 @@ export default function POSExpressMode({
           className={cn(
             "text-xs font-semibold text-center px-2 py-1 rounded-lg",
             feedback.startsWith("+")
-              ? "text-[var(--data-success-500)] bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]"
+              ? "text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 dark:text-[var(--data-success-500)]"
               : "text-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-red-950/20 dark:text-[var(--data-error-500)]"
           )}
         >

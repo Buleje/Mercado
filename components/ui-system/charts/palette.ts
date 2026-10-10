@@ -28,11 +28,11 @@ export const CHART_PALETTE = {
   accent: "var(--section-accent, var(--data-5, var(--accent)))",
   /** v4 — para dashboards con 8 categorias */
   info: "var(--section-info, var(--data-6, #0ea5e9))",
-  amber: "var(--section-amber, var(--data-7, #d97706))",
+  amber: "var(--section-amber, var(--data-7, #f0503f))",
   purple: "var(--section-purple, var(--data-8, #8b5cf6))",
 
   success: "var(--data-success, #047857)",
-  warning: "var(--data-warning, #b45309)",
+  warning: "var(--data-warning, #c93b2c)",
   error: "var(--data-error, #b91c1c)",
 } as const;
 
@@ -76,11 +76,17 @@ export const SERIES_PALETTE = [
  * contraste para diferenciar vecinos sin romper la estetica minimalista.
  *
  * Paleta inspirada en Stripe/Linear dashboards — grises + acentos muted.
+ *
+ * 2026-10-09: los tonos «tinta» (slate-900/700) iban en hex y en modo oscuro
+ * quedaban negro sobre negro (KPI «Por pagar» y la serie «Ingresos» de Caja en
+ * el Resumen, medido a 400 px). Ahora son `--data-1/-2`, que se invierten solos.
+ * Para un concepto con color fijo en todas las pestañas usar `COLOR_CONCEPTO`
+ * (`lib/admin/inicio/formato-tablero.ts`), no esta rotación.
  */
 export const SECTION_PALETTE: ReadonlyArray<Record<string, string>> = [
   // 0 · Neutral dark (default)
   {
-    "--section-primary": "#0f172a",   // slate-900
+    "--section-primary": "var(--data-1)", // tinta (era slate-900: invisible en oscuro)
     "--section-accent":  "#14b8a6",   // teal-500
     "--section-secondary": "#475569", // slate-600
     "--section-tertiary":  "#94a3b8", // slate-400
@@ -88,15 +94,15 @@ export const SECTION_PALETTE: ReadonlyArray<Record<string, string>> = [
   // 1 · Ocean
   {
     "--section-primary": "#0891b2",   // cyan-600
-    "--section-accent":  "#0f172a",   // slate-900
+    "--section-accent":  "var(--data-1)", // tinta (era slate-900)
     "--section-secondary": "#67e8f9", // cyan-300
     "--section-tertiary":  "#94a3b8",
   },
   // 2 · Sunset
   {
     "--section-primary": "#c2410c",   // orange-700
-    "--section-accent":  "#0f172a",
-    "--section-secondary": "#fdba74", // orange-300
+    "--section-accent":  "var(--data-1)",
+    "--section-secondary": "#ffa89d", // orange-300
     "--section-tertiary":  "#94a3b8",
   },
   // 3 · Forest
@@ -115,7 +121,7 @@ export const SECTION_PALETTE: ReadonlyArray<Record<string, string>> = [
   },
   // 5 · Steel
   {
-    "--section-primary": "#334155",   // slate-700
+    "--section-primary": "var(--data-2)", // gris tinta (era slate-700: invisible en oscuro)
     "--section-accent":  "#dc2626",   // red-600
     "--section-secondary": "#94a3b8",
     "--section-tertiary":  "#cbd5e1",

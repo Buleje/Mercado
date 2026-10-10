@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { AnalyticsRentabilidadDB } from "@/lib/db/analytics-rentabilidad.db";
 import { logger } from "@/lib/logger";
+import { startOfLimaDayDaysAgo, limaDateKey } from "@/lib/utils";
 
 type DiaRentabilidad = {
   fecha: string;
@@ -22,7 +23,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const now = new Date();
-    const thirtyDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29);
+    const thirtyDaysAgo = new Date(startOfLimaDayDaysAgo(29));
     const tenantId = auth.tenantId;
 
     // Fetch all sales and their cost items for the period in two parallel queries
@@ -51,7 +52,7 @@ export async function GET(req: NextRequest) {
     }
 
     for (const sale of sales) {
-      const key = new Date(sale.createdAt).toISOString().slice(0, 10);
+      const key = limaDateKey(sale.createdAt);
       const day = dayMap.get(key);
       if (day) {
         // DB class ya convirtió Decimal → number

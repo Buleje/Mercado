@@ -24,8 +24,7 @@ import { getCatalogCategoryIcon } from "@/lib/catalog/catalog-icons";
 import {
   generateSoftwareApplicationLD,
   generateItemListLD,
-  zoneBreadcrumbs,
-} from "@/lib/seo/json-ld";
+  zoneBreadcrumbs, safeJsonLdStringify } from "@/lib/seo/json-ld";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 
 const BASE_URL =
@@ -260,13 +259,13 @@ async function ZoneProductContent({
       {/* JSON-LD: Product */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(productLD) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(productLD) }}
       />
       {/* JSON-LD: SoftwareApplication context */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(generateSoftwareApplicationLD(zone)),
+          __html: safeJsonLdStringify(generateSoftwareApplicationLD(zone)),
         }}
       />
       {/* JSON-LD: Related products list */}
@@ -274,7 +273,7 @@ async function ZoneProductContent({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(
+            __html: safeJsonLdStringify(
               generateItemListLD(
                 `Productos relacionados en ${zone.name}`,
                 relatedItems,

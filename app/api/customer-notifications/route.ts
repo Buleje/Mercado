@@ -3,7 +3,7 @@ import { CustomerNotificationsDB } from "@/lib/db/customer-notifications.db";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { requireAdmin, tryAdmin } from "@/lib/require-admin";
 import { getTenantIdFromRequest } from "@/lib/tenant";
-import { CUSTOMER_SESSION, getCustomerPayload } from "@/lib/auth/customer-session";
+import { CUSTOMER_SESSION, getCustomerPayload, telefonoDeLaSesion } from "@/lib/auth/customer-session";
 
 /**
  * GET  /api/customer-notifications?phone=XXX       — list notifications (latest 50)
@@ -34,7 +34,8 @@ async function authorizeAccess(req: NextRequest, phone: string): Promise<{ tenan
   // El customer puede leer SUS propias notificaciones. customerId del JWT
   // es Customer.phone según `lib/auth/customer-session.ts`. Comparamos
   // phones normalizados (sin separadores).
-  const sessionPhone = normalizePhone(payload.customerId ?? "");
+  // Solo el teléfono que la sesión PROBÓ (código), 9 dígitos exactos.
+  const sessionPhone = telefonoDeLaSesion(payload) ?? "";
   const queryPhone = normalizePhone(phone);
   if (!sessionPhone || sessionPhone !== queryPhone) {
     return { error: "forbidden", status: 403 };

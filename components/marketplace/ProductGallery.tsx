@@ -42,7 +42,8 @@ export default function ProductGallery({ images, productName, fallbackImage }: P
     if (touchStart === null) return;
     const diff = touchStart - (e.changedTouches[0]?.clientX ?? 0);
     if (Math.abs(diff) > 40) {
-      diff > 0 ? next() : prev();
+      if (diff > 0) next();
+      else prev();
     }
     setTouchStart(null);
   };

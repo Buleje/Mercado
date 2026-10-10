@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { withCronAuth } from "@/lib/cron-auth";
 import { withCronRetry } from "@/lib/cron-retry";
 import { logger } from "@/lib/logger";
@@ -66,7 +66,7 @@ function estimateValue(items: CartItem[]): number {
   }, 0);
 }
 
-export const GET = withCronAuth("abandoned-cart", async (req) => {
+export const GET = withCronAuth("abandoned-cart", async (_req) => {
   try {
     const result = await withCronRetry("abandoned-cart", async () => {
       const cutoff = new Date(Date.now() - 2 * 60 * 60 * 1000); // 2 horas atras

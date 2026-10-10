@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { leerJson } from "@/lib/errores/sin-dato";
 import { toast } from "sonner";
 import { tenantFetch } from "@/lib/tenant-fetch";
 import type { DbOrder, OrderStatus } from "@/lib/jsondb";
@@ -31,7 +32,7 @@ export function useOrderActions({ orders, setOrders, setDetailOrder, load }: Use
       return;
     }
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
-    const data = await res.json().catch(() => null);
+    const data = await leerJson<{ whatsappLink?: string; whatsappSent?: boolean }>(res);
     if (data?.whatsappLink && !data.whatsappSent) {
       window.open(data.whatsappLink, "_blank", "noopener,noreferrer");
     }

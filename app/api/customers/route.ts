@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { CustomersDB, normalizePhone } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
+import { RUTAS_PANEL } from "@/lib/auth/roles-rutas-panel";
 import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { prismaForTenant } from "@/lib/tenant";
 import { invalidate } from "@/lib/cache";
 import { withDbRetry } from "@/lib/db-retry";
+import { cumpleParaGuardar } from "@/lib/clientes/cumpleanos";
 
 const LocationSchema = z.object({
   id: z.string().min(1),
@@ -49,7 +51,7 @@ const CustomerPostSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin"]);
+  const auth = await requireAdmin(req, RUTAS_PANEL["/api/customers"]);
   if (auth instanceof NextResponse) return auth;
   const rl = applyRateLimit(req, "GENEROUS", "customers-get");
   if (rl) return rl;
@@ -61,7 +63,8 @@ export async function GET(req: NextRequest) {
     const cursorParam = sp.get("cursor");
     const search     = sp.get("q");
 
-    let customers = await withDbRetry(() => CustomersDB.getAll(auth.tenantId));
+    // creditBalance = lo que debe de fiados ACTIVO+VENCIDO (la columna no los sigue).
+    let customers = await withDbRetry(() => CustomersDB.getAllConDeuda(auth.tenantId));
 
     if (search) {
       const q = search.toLowerCase();
@@ -132,7 +135,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin"]);
+  const auth = await requireAdmin(req, RUTAS_PANEL["/api/customers"]);
   if (auth instanceof NextResponse) return auth;
   const blocked = await requireActiveSubscription(auth.tenantId);
   if (blocked) return blocked;
@@ -187,7 +190,17 @@ export async function POST(req: NextRequest) {
     if (body.vendedorAsignado !== undefined) fichaUpdate.vendedorAsignado = body.vendedorAsignado;
     if (body.diasCredito !== undefined) fichaUpdate.diasCredito = body.diasCredito;
     if (body.alertasWhatsapp !== undefined) fichaUpdate.alertasWhatsapp = body.alertasWhatsapp;
-    if (body.fechaNacimiento !== undefined) fichaUpdate.fechaNacimiento = body.fechaNacimiento ? new Date(body.fechaNacimiento) : null;
+    // Un solo cumpleaños: la ficha escribe las DOS columnas (`birthday` es la
+    // que leen cupón, saludo y campañas; antes sólo iba a fechaNacimiento).
+    // Este POST es un upsert por teléfono y el formulario manda `null` cuando
+    // el campo queda vacío: «Nuevo cliente» desde POS o Fiados con un teléfono
+    // que ya existe borraba el cumpleaños que el cliente dio en la tienda.
+    // En el alta sólo se escribe si trae fecha; borrarlo es cosa del PATCH.
+    const cumple = cumpleParaGuardar(body.fechaNacimiento);
+    if (cumple) {
+      fichaUpdate.fechaNacimiento = cumple;
+      fichaUpdate.birthday = cumple;
+    }
     if (body.genero !== undefined) fichaUpdate.genero = body.genero;
     if (body.comoLlego !== undefined) fichaUpdate.comoLlego = body.comoLlego;
     if (body.observaciones !== undefined) fichaUpdate.observaciones = body.observaciones;

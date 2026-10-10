@@ -1,211 +1,326 @@
 "use client";
 
 /**
- * GroupBuyCard — Compra grupal vecinal: 4 vecinos → 15% OFF.
+ * GroupBuyCard — panel de acción de La Junta del Barrio (compra colaborativa).
  *
- * Flow:
- *   1. Usuario selecciona producto que quiere comprar grupal
- *   2. Tap "Invitar 3 vecinos mas" → genera link compartible
- *   3. Cuando 4 familias confirman: 15% OFF automatico a todos
- *   4. Cada quien paga lo suyo, entrega conjunta (ahorra costo delivery)
- *
- * MVP UI-only: el backend de grupos se implementa en siguiente iteracion.
- * Por ahora el componente genera link share + muestra progress visual
- * de 1/4 → 4/4 y explica el mecanismo.
- *
- * Impacto esperado: +80% volumen por agregacion social, viralidad en
- * grupos de WhatsApp de vecinos/condominio.
+ * Rediseño 2026-06-18 v3 (rectas + minimalista + desktop): bordes rectos (sin
+ * radio), plano (sin sombras ni gradiente), acento de marca como hairline. Es el
+ * panel derecho del layout 2-col; la narrativa (cómo funciona, confianza) vive
+ * en la página. Sub-piezas en ./junta/* y lógica en useGroupBuyCard.
  */
 
-import { useState, useCallback } from "react";
 import {
-  Users,
-  Share2,
   MessageCircle,
-  TrendingDown,
   Check,
   Copy,
+  MapPin,
+  ShoppingBag,
+  Gift,
+  Share2,
+  RotateCcw,
+  Users,
 } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
+import { JUNTA_COUPON_PERCENT } from "@/lib/junta/constants";
+import { useGroupBuyCard } from "./hooks/useGroupBuyCard";
+import { CountdownTimer } from "./junta/CountdownTimer";
+import { MemberStack } from "./junta/MemberStack";
+import { GuestJoinForm } from "./junta/GuestJoinForm";
+import { JuntaQR } from "./junta/JuntaQR";
+
+type JuntaStatus = "OPEN" | "COMPLETE" | "EXPIRED";
 
 interface Props {
-  productName?: string;
-  unitPrice?: number;
-  /** Descuento al alcanzar el tope del grupo (default 15%) */
-  discountPercent?: number;
-  /** Vecinos necesarios (default 4) */
-  groupSize?: number;
-  /** Cuantos vecinos ya confirmaron (0-groupSize) */
-  currentMembers?: number;
-  /** Link dinamico del grupo — si no se provee, se usa el origen + slug */
-  groupUrl?: string;
+  code: string;
+  zoneLabel: string;
+  productLabel?: string;
+  count: number;
+  target: number;
+  status: JuntaStatus;
+  /** ISO de cierre de la junta — para la cuenta regresiva en vivo. */
+  windowEnd?: string;
+  /** Cupón emitido al completar la junta (Fase A2). */
+  couponCode?: string;
+  /** Pedidos ya hechos dentro de la junta (Fase A4). */
+  orderCount?: number;
+  /** ISO del último vecino que se sumó — prueba social en vivo. */
+  lastJoinedAt?: string;
 }
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
-
 export default function GroupBuyCard({
-  productName = "Arroz Costeño 5 kg",
-  unitPrice = 22.5,
-  discountPercent = 15,
-  groupSize = 4,
-  currentMembers = 1,
-  groupUrl,
+  code,
+  zoneLabel,
+  productLabel,
+  count: initialCount,
+  target,
+  status: initialStatus,
+  windowEnd,
+  couponCode,
+  orderCount = 0,
+  lastJoinedAt,
 }: Props) {
-  const [copied, setCopied] = useState(false);
-
-  const progress = Math.min(100, Math.round((currentMembers / groupSize) * 100));
-  const remainingMembers = Math.max(0, groupSize - currentMembers);
-  const finalPrice = unitPrice * (1 - discountPercent / 100);
-  const saved = unitPrice - finalPrice;
-
-  const computedUrl = useCallback(() => {
-    if (groupUrl) return groupUrl;
-    if (typeof window === "undefined") return "#";
-    return `${window.location.origin}/marketplace/grupo?producto=${encodeURIComponent(productName)}`;
-  }, [groupUrl, productName]);
-
-  const handleCopy = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(computedUrl());
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      /* silent */
-    }
-  }, [computedUrl]);
-
-  const handleWhatsApp = useCallback(() => {
-    const url = computedUrl();
-    const msg = encodeURIComponent(
-      `Vecinos, estoy armando una compra grupal en Buleje: ${productName} a S/ ${finalPrice.toFixed(2)} (${discountPercent}% OFF) si somos ${groupSize}. Faltan ${remainingMembers} — sumate acá: ${url}`,
-    );
-    window.open(`https://wa.me/?text=${msg}`, "_blank", "noopener,noreferrer");
-  }, [computedUrl, productName, finalPrice, discountPercent, groupSize, remainingMembers]);
-
-  const isComplete = currentMembers >= groupSize;
+  const {
+    count,
+    remaining,
+    progress,
+    isComplete,
+    isExpired,
+    almostThere,
+    countdownLabel,
+    countdownTimer,
+    bumped,
+    joining,
+    joined,
+    error,
+    copied,
+    couponCopied,
+    needsPhone,
+    guestPhone,
+    setGuestPhone,
+    lastJoinedLabel,
+    pageUrl,
+    handleShopForJunta,
+    handleStartNew,
+    handleCopyCoupon,
+    handleWhatsApp,
+    handleNativeShare,
+    handleJoin,
+  } = useGroupBuyCard({
+    code,
+    productLabel,
+    initialCount,
+    target,
+    initialStatus,
+    windowEnd,
+    couponCode,
+    initialLastJoinedAt: lastJoinedAt,
+  });
 
   return (
     <section
-      aria-label="Compra grupal vecinal"
-      className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden"
+      aria-label="La Junta del Barrio"
+      className="border border-[var(--rule-base)] bg-[var(--surface-raised)]"
     >
-      {/* Header editorial */}
-      <div className="px-5 py-5 sm:px-6">
-        <div className="flex items-start gap-3">
-          <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
-            <Users className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-          </span>
-          <div className="flex-1">
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">
-              Compra grupal vecinal
-            </p>
-            <h3 className="text-base font-extrabold tracking-tight text-[var(--text-primary)] mt-0.5">
-              {groupSize} vecinos, {discountPercent}% OFF
-            </h3>
-            <p className="text-sm text-[var(--text-tertiary)] mt-1 leading-relaxed">
-              Armá un grupo con {groupSize - 1} vecinos/as y todos pagan menos.
-              Entrega conjunta ahorra delivery también.
+      {/* Acento de marca recto (sin gradiente) */}
+      <div className="h-1 bg-[var(--accent)]" aria-hidden />
+
+      {/* ── Header ── */}
+      <div className="border-b border-[var(--rule-soft)] px-6 py-5">
+        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[0.14em] text-[var(--accent)]">
+          La Junta del Barrio
+        </p>
+        <h2 className="mt-1 text-2xl font-extrabold leading-tight tracking-tight text-[var(--text-primary)]">
+          {target} vecinos, una entrega
+        </h2>
+        <p className="mt-1.5 inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--text-secondary)]">
+          <MapPin className="h-4 w-4" strokeWidth={2} aria-hidden />
+          {zoneLabel}
+        </p>
+      </div>
+
+      {/* ── Cuerpo ── */}
+      <div className="space-y-5 px-6 py-5">
+        {/* Premio (recto, acento a la izquierda) — oculto si venció */}
+        {!isExpired && (
+          <div className="flex items-center gap-3 border-l-4 border-[var(--accent)] bg-primary/10 px-4 py-3">
+            <Gift
+              className="h-5 w-5 shrink-0 text-[var(--accent)]"
+              strokeWidth={2}
+              aria-hidden
+            />
+            <p className="text-base font-bold text-[var(--text-primary)]">
+              Al completar, todos llevan{" "}
+              <span className="text-[var(--accent)]">
+                {JUNTA_COUPON_PERCENT}% de descuento
+              </span>
             </p>
           </div>
-        </div>
-      </div>
+        )}
 
-      {/* Producto + precio con y sin descuento */}
-      <div className="mx-5 sm:mx-6 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-4">
-        <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1">
-          Producto del grupo
-        </p>
-        <p className="text-sm font-bold text-[var(--text-primary)]">{productName}</p>
-        <div className="mt-3 flex items-baseline gap-3">
-          <p className="text-2xl font-extrabold tabular-nums text-[var(--accent)]">
-            {fmt(finalPrice)}
-          </p>
-          <p className="text-sm font-medium text-[var(--text-tertiary)] line-through tabular-nums">
-            {fmt(unitPrice)}
-          </p>
-          <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold">
-            <TrendingDown className="h-3 w-3" strokeWidth={2} aria-hidden />
-            −{discountPercent}%
-          </span>
-        </div>
-        <p className="mt-1 text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
-          Ahorrás {fmt(saved)} por unidad
-        </p>
-      </div>
+        {/* Vecinos: fichas + progreso */}
+        <MemberStack
+          count={count}
+          target={target}
+          remaining={remaining}
+          progress={progress}
+          isComplete={isComplete}
+          isExpired={isExpired}
+          bumped={bumped}
+        />
 
-      {/* Progress bar */}
-      <div className="px-5 sm:px-6 mt-5">
-        <div className="flex items-baseline justify-between mb-2">
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-            Progreso del grupo
+        {orderCount > 0 && (
+          <p className="text-sm font-semibold text-[var(--text-tertiary)]">
+            {orderCount} {orderCount === 1 ? "pedido ya hecho" : "pedidos ya hechos"}{" "}
+            en esta junta
           </p>
-          <p className="text-sm font-extrabold tabular-nums text-[var(--text-primary)]">
-            {currentMembers} / {groupSize}
+        )}
+
+        {/* Prueba social en vivo: el último vecino que se sumó */}
+        {!isExpired && lastJoinedLabel && (
+          <p className="flex items-center gap-2 text-sm font-semibold text-[var(--text-secondary)]">
+            <span className="relative flex h-2 w-2" aria-hidden>
+              <span className="absolute inline-flex h-full w-full animate-ping bg-[var(--accent)] opacity-75" />
+              <span className="relative inline-flex h-2 w-2 bg-[var(--accent)]" />
+            </span>
+            Un vecino se sumó {lastJoinedLabel}
           </p>
-        </div>
-        <div
-          aria-hidden
-          className="h-2 w-full rounded-full bg-[var(--surface-sunken)] overflow-hidden"
-        >
-          <div
-            className="h-full rounded-full bg-[var(--accent)] transition-[width] duration-700 ease-out"
-            style={{ width: `${progress}%` }}
+        )}
+
+        {/* Urgencia máxima: solo falta 1 vecino */}
+        {almostThere && (
+          <div className="flex items-center gap-2.5 bg-[var(--accent)] px-4 py-3 text-white">
+            <Users className="h-5 w-5 shrink-0" strokeWidth={2.25} aria-hidden />
+            <p className="text-sm font-bold leading-snug">
+              ¡Solo falta 1 vecino! Comparte y cierra la junta hoy.
+            </p>
+          </div>
+        )}
+
+        {/* Urgencia: cuenta regresiva en cajas */}
+        {countdownTimer && (
+          <CountdownTimer
+            parts={countdownTimer}
+            ariaLabel={countdownLabel ?? undefined}
           />
-        </div>
-        <p className="mt-2 text-xs text-[var(--text-secondary)]">
-          {isComplete
-            ? "¡Grupo completo! Todos tienen el descuento activo"
-            : `Faltan ${remainingMembers} vecino${remainingMembers === 1 ? "" : "s"} para activar ${discountPercent}% OFF`}
-        </p>
-      </div>
+        )}
 
-      {/* CTAs share */}
-      <div className="px-5 sm:px-6 pt-4 pb-5 space-y-2">
-        <button
-          type="button"
-          onClick={handleWhatsApp}
-          className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-[#25D366] text-white py-3 text-sm font-bold hover:bg-[#1ea34d] transition-colors active:scale-[0.98]"
-        >
-          <MessageCircle className="h-4 w-4" strokeWidth={2} aria-hidden />
-          Invitar vecinos por WhatsApp
-        </button>
-        <button
-          type="button"
-          onClick={handleCopy}
-          className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] py-3 text-sm font-bold hover:border-[var(--accent)]/40 transition-colors active:scale-[0.98]"
-        >
-          {copied ? (
-            <>
-              <Check className="h-4 w-4 text-[var(--accent)]" strokeWidth={2.5} aria-hidden />
-              ¡Link copiado!
-            </>
+        {/* Cupón (junta completa) — recto */}
+        {isComplete && couponCode && (
+          <div className="border-l-4 border-[var(--accent)] bg-primary/10 p-4">
+            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">
+              Tu cupón de la junta · {JUNTA_COUPON_PERCENT}% off
+            </p>
+            <div className="mt-2 flex items-center justify-between gap-3">
+              <span className="font-mono text-xl font-extrabold tracking-wide text-[var(--text-primary)]">
+                {couponCode}
+              </span>
+              <button
+                type="button"
+                onClick={handleCopyCoupon}
+                className="inline-flex items-center gap-1.5 border-2 border-[var(--accent)] px-3.5 py-2 text-sm font-bold text-[var(--accent)] transition hover:bg-[var(--accent)] hover:text-white active:scale-95"
+              >
+                {couponCopied ? (
+                  <>
+                    <Check className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+                    Copiado
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+                    Copiar
+                  </>
+                )}
+              </button>
+            </div>
+            <p className="mt-1.5 text-sm text-[var(--text-secondary)]">
+              Aplícalo en tu próximo pedido. Cada vecino de la junta puede usarlo.
+            </p>
+          </div>
+        )}
+
+        {/* ── Acciones (rectas, planas) ── */}
+        <div className="space-y-2.5">
+          {isExpired ? (
+            <button
+              type="button"
+              onClick={handleStartNew}
+              className="inline-flex w-full items-center justify-center gap-2 bg-[var(--accent)] py-4 text-base font-extrabold text-white transition hover:opacity-90 active:scale-[0.99]"
+            >
+              <RotateCcw className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+              Empezar una junta nueva
+            </button>
           ) : (
             <>
-              <Copy className="h-4 w-4" strokeWidth={1.75} aria-hidden />
-              Copiar link del grupo
+              <button
+                type="button"
+                onClick={handleShopForJunta}
+                className="inline-flex w-full items-center justify-center gap-2 bg-[var(--accent)] py-4 text-base font-extrabold text-white transition hover:opacity-90 active:scale-[0.99]"
+              >
+                <ShoppingBag className="h-5 w-5" strokeWidth={2.25} aria-hidden />
+                Comprar para esta junta
+              </button>
+
+              {!isComplete &&
+                (needsPhone && !joined ? (
+                  <GuestJoinForm
+                    phone={guestPhone}
+                    onPhoneChange={setGuestPhone}
+                    onSubmit={handleJoin}
+                    joining={joining}
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleJoin}
+                    disabled={joining || joined}
+                    className="inline-flex w-full items-center justify-center gap-2 border-2 border-[var(--accent)] py-3 text-base font-bold text-[var(--accent)] transition hover:bg-primary/10 disabled:opacity-60 active:scale-[0.99]"
+                  >
+                    {joined ? (
+                      <>
+                        <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+                        Ya estás en la junta
+                      </>
+                    ) : joining ? (
+                      "Uniéndote…"
+                    ) : (
+                      "Súmate (sin comprar todavía)"
+                    )}
+                  </button>
+                ))}
             </>
           )}
-        </button>
-      </div>
 
-      {/* Cómo funciona — edu */}
-      <details className="border-t border-[var(--rule-soft)] bg-[var(--surface-sunken)]">
-        <summary className="list-none flex items-center justify-between px-5 sm:px-6 py-3 cursor-pointer hover:bg-[var(--surface-raised)]">
-          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-            ¿Cómo funciona?
-          </span>
-          <Share2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" strokeWidth={1.75} aria-hidden />
-        </summary>
-        <ol className="px-5 sm:px-6 pb-4 space-y-1.5 text-xs text-[var(--text-secondary)] leading-relaxed">
-          <li>1. Compartís el link con vecinos de tu barrio o condominio.</li>
-          <li>2. Cada uno confirma su compra en el link.</li>
-          <li>
-            3. Cuando son {groupSize}, se activa el {discountPercent}% OFF para todos.
-          </li>
-          <li>4. Entrega conjunta el mismo día — repartidor pasa una vez.</li>
-        </ol>
-      </details>
+          <div className="grid grid-cols-2 gap-2.5">
+            <button
+              type="button"
+              onClick={handleWhatsApp}
+              className="inline-flex items-center justify-center gap-2 bg-[#25D366] py-3 text-sm font-bold text-white transition hover:bg-[#1ea34d] active:scale-[0.99]"
+            >
+              <MessageCircle className="h-4 w-4" strokeWidth={2} aria-hidden />
+              WhatsApp
+            </button>
+            <button
+              type="button"
+              onClick={handleNativeShare}
+              className="inline-flex items-center justify-center gap-2 border-2 border-[var(--rule-base)] py-3 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)] active:scale-[0.99]"
+            >
+              {copied ? (
+                <>
+                  <Check
+                    className="h-4 w-4 text-[var(--accent)]"
+                    strokeWidth={2.5}
+                    aria-hidden
+                  />
+                  Copiado
+                </>
+              ) : (
+                <>
+                  <Share2 className="h-4 w-4" strokeWidth={2} aria-hidden />
+                  Compartir
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* QR para compartir en persona (pegar en la puerta del edificio) */}
+          {!isExpired && pageUrl && (
+            <JuntaQR
+              code={code}
+              url={pageUrl}
+              posterTitle="Súmate a la junta del barrio"
+              posterSubtitle={`Si juntamos ${target} vecinos, todos llevamos ${JUNTA_COUPON_PERCENT}% off`}
+            />
+          )}
+
+          {error && (
+            <p
+              className="text-sm font-semibold text-[var(--data-error-600)]"
+              role="alert"
+            >
+              {error}
+            </p>
+          )}
+        </div>
+      </div>
     </section>
   );
 }

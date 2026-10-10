@@ -4,10 +4,13 @@
  * OfferCard — tarjeta de oferta de entrega para el repartidor.
  * Extraído de PartnerDashboard para habilitar memo y evitar re-renders
  * cuando el array de ofertas cambia por polling (el comparador solo
- * re-renderiza si cambia id, status, expiresAt o feeOffered).
+ * re-renderiza si cambia id, status, expiresAt, feeOffered o secsRemaining).
+ *
+ * El countdown NO vive aquí: PartnerDashboard mantiene un único setInterval(1000)
+ * y pasa secsRemaining como prop. Así N ofertas = 1 timer en lugar de N timers.
  */
 
-import { memo, useEffect, useState } from "react";
+import { memo } from "react";
 import Link from "next/link";
 import { ArrowRight } from "@buleje/design-system/icons";
 import { MotoIcon, PinIcon, TimerIcon } from "./icons";
@@ -30,6 +33,7 @@ export interface Offer {
 
 interface OfferCardProps {
   offer: Offer;
+  secsRemaining: number;
 }
 
 function arePropsEqual(prev: OfferCardProps, next: OfferCardProps): boolean {
@@ -39,22 +43,13 @@ function arePropsEqual(prev: OfferCardProps, next: OfferCardProps): boolean {
     a.id === b.id &&
     a.status === b.status &&
     a.expiresAt === b.expiresAt &&
-    a.feeOffered === b.feeOffered
+    a.feeOffered === b.feeOffered &&
+    prev.secsRemaining === next.secsRemaining
   );
 }
 
-function OfferCardImpl({ offer }: OfferCardProps) {
-  const [secs, setSecs] = useState(() =>
-    Math.max(0, Math.floor((new Date(offer.expiresAt).getTime() - Date.now()) / 1000)),
-  );
-
-  useEffect(() => {
-    const id = setInterval(() => {
-      setSecs(Math.max(0, Math.floor((new Date(offer.expiresAt).getTime() - Date.now()) / 1000)));
-    }, 1000);
-    return () => clearInterval(id);
-  }, [offer.expiresAt]);
-
+function OfferCardImpl({ offer, secsRemaining }: OfferCardProps) {
+  const secs = secsRemaining;
   const urgent = secs <= 30;
   const mins = Math.floor(secs / 60);
   const ss = secs % 60;
@@ -62,7 +57,7 @@ function OfferCardImpl({ offer }: OfferCardProps) {
   return (
     <Link
       href={`/delivery-app/oferta/${offer.id}`}
-      className={`group block rounded-3xl border-2 bg-[var(--surface-raised)] p-5 transition-all hover:translate-y-[-2px] hover:shadow-lg ${
+      className={`group block border-2 bg-[var(--surface-raised)] p-5 transition-all hover:translate-y-[-2px] hover:shadow-lg ${
         urgent ? "border-[var(--brand-danger)]" : "border-[var(--accent)]"
       }`}
     >
@@ -76,10 +71,10 @@ function OfferCardImpl({ offer }: OfferCardProps) {
           </p>
         </div>
         <span
-          className={`inline-flex items-center gap-1.5 rounded-full px-3 h-9 text-sm font-extrabold tabular-nums ${
+          className={`inline-flex items-center gap-1.5 px-3 h-9 text-sm font-extrabold tabular-nums ${
             urgent
               ? "bg-[var(--brand-danger)] text-white"
-              : "bg-[var(--accent-soft)] text-[var(--accent)]"
+              : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
           }`}
         >
           <TimerIcon className="h-4 w-4" />

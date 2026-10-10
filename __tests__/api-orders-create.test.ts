@@ -65,6 +65,7 @@ vi.mock("@/lib/plans", () => ({
 
 // ── Mock: cache — pass-through (execute the fn immediately) ──────────────────
 vi.mock("@/lib/cache", () => ({
+  revalidateTenantTag: vi.fn(),
   getOrSet: vi.fn(async (_key: string, _ttl: number, fn: () => Promise<unknown>) => fn()),
 }));
 
@@ -90,6 +91,13 @@ vi.mock("@/lib/pricing/discount-strategies", () => ({
   createDefaultDiscountEngine: vi.fn(() => ({
     apply: vi.fn(() => ({ bestDiscount: null, allResults: [] })),
   })),
+}));
+
+// ── Mock: invalidación del Tablero de Ventas (tag de "use cache") ─────────────
+const { mockInvalidarVentas } = vi.hoisted(() => ({ mockInvalidarVentas: vi.fn() }));
+vi.mock("@/lib/caja/invalidar-ventas-overview", () => ({
+  invalidarVentasOverview: mockInvalidarVentas,
+  tagVentasOverview: (t: string) => `ventas-overview-${t}`,
 }));
 
 // ── Mock: require-admin — default: authenticated ─────────────────────────────
@@ -221,6 +229,14 @@ vi.mock("@/lib/tenant", () => ({
 
 // ── Import handler AFTER all mocks are set up ─────────────────────────────────
 import { POST, GET } from "@/app/api/orders/route";
+import {
+  createCustomerToken,
+  getCustomerPayload,
+  getSeguimientoPedidos,
+} from "@/lib/auth/customer-session";
+import { calcularTotalPedido } from "@/lib/pricing/total-pedido";
+import { canjeDeLaVista } from "@/components/checkout/hooks/checkout-submit-helpers";
+import { LoyaltyInsufficientBalanceError } from "@/lib/db/loyalty.db";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -419,6 +435,30 @@ describe("POST /api/orders", () => {
       expect(mockRequireAdmin).not.toHaveBeenCalled();
     });
 
+    it("la venta online baja el stock UNA vez: decrementFEFO solo anota el kardex", async () => {
+      const { InventoryMovementsDB } = await import("@/lib/db/inventory.db");
+      const fefo = vi.mocked(InventoryMovementsDB.decrementFEFO);
+      fefo.mockClear();
+      const res = await POST(makePostReq(VALID_BODY), defaultCtx);
+      expect(res.status).toBe(201);
+      expect(fefo).toHaveBeenCalled();
+      for (const llamada of fefo.mock.calls) {
+        expect(llamada[5]).toEqual({ stockYaAplicado: true });
+      }
+    });
+
+    it("purga el Tablero de Ventas del tenant tras crear el pedido", async () => {
+      const res = await POST(makePostReq(VALID_BODY), defaultCtx);
+      expect(res.status).toBe(201);
+      expect(mockInvalidarVentas).toHaveBeenCalledWith("main");
+    });
+
+    it("un pedido rechazado (400) NO purga el Tablero de Ventas", async () => {
+      const res = await POST(makePostReq({}), defaultCtx);
+      expect(res.status).toBe(400);
+      expect(mockInvalidarVentas).not.toHaveBeenCalled();
+    });
+
     it("returns 422 TOTAL_MISMATCH when client-provided total diverges from server total", async () => {
       // audit P0 #1 (2026-05-18): el servidor ahora rechaza cuando el
       // client envía un total que no cuadra con el recálculo (>1 centavo).
@@ -505,6 +545,80 @@ describe("POST /api/orders", () => {
       expect(body.customer.name).toBe("Cliente Anónimo");
     });
   });
+
+  // ── Seguimiento del invitado (security 2026-10-08, Ley 29733) ──────────────
+  // El teléfono del pedido viene del CUERPO: la cookie que deja el POST no es
+  // una sesión; solo abre los pedidos hechos desde ese navegador.
+  describe("cookie del invitado = seguimiento, no sesión", () => {
+    const COOKIE = "buleje-customer-sess";
+    const conCookie = (qs: string, token: string) =>
+      new NextRequest(`https://host/api/orders${qs}`, {
+        method: "GET",
+        headers: { cookie: `${COOKIE}=${encodeURIComponent(token)}`, "x-tenant-id": "main" },
+      });
+    const sesionVerificada = (telefono: string) =>
+      createCustomerToken({
+        customerId: telefono,
+        email: `${telefono}@x.pe`,
+        name: "Dueña del número",
+        tenantId: "main",
+        provider: "phone",
+      });
+
+    it("el invitado recibe un token de seguimiento con SOLO su pedido", async () => {
+      const res = await POST(makePostReq(VALID_BODY), defaultCtx);
+      expect(res.status).toBe(201);
+      const token = (res as NextResponse).cookies.get(COOKIE)?.value;
+      expect(token).toBeTruthy();
+      expect(await getCustomerPayload(token!)).toBeNull();
+      expect(await getSeguimientoPedidos(token!)).toMatchObject({
+        telefono: "987654321",
+        pedidos: [SAVED_ORDER.id],
+      });
+    });
+
+    it("con ese token, GET ?phone= trae solo su pedido; el historial del dueño del número no", async () => {
+      const res = await POST(makePostReq(VALID_BODY), defaultCtx);
+      const token = (res as NextResponse).cookies.get(COOKIE)!.value;
+      mockOrdersGetPage.mockResolvedValue({ orders: [SAVED_ORDER], nextCursor: null, total: 1 });
+
+      const propio = await GET(conCookie("?phone=987654321", token), defaultCtx);
+      expect(propio.status).toBe(200);
+      expect(mockOrdersGetPage).toHaveBeenCalledWith(
+        expect.objectContaining({ phone: "987654321", ids: [SAVED_ORDER.id] }),
+      );
+
+      mockOrdersGetPage.mockClear();
+      const ajeno = await GET(conCookie("?phone=911222333", token), defaultCtx);
+      expect(await ajeno.json()).toEqual([]);
+      expect(mockOrdersGetPage).not.toHaveBeenCalled();
+    });
+
+    it("la sesión VERIFICADA del teléfono ve todo su historial (sin filtro de ids)", async () => {
+      mockOrdersGetPage.mockResolvedValue({ orders: [SAVED_ORDER], nextCursor: null, total: 1 });
+      const res = await GET(conCookie("?phone=987654321", await sesionVerificada("987654321")), defaultCtx);
+      expect(res.status).toBe(200);
+      const llamada = mockOrdersGetPage.mock.calls[0][0] as Record<string, unknown>;
+      expect(llamada.phone).toBe("987654321");
+      expect(llamada).not.toHaveProperty("ids");
+    });
+
+    it("un pedido con sesión verificada NO pisa la cookie de sesión", async () => {
+      const token = await sesionVerificada("987654321");
+      const res = await POST(
+        makePostReq(VALID_BODY, { cookie: `${COOKIE}=${encodeURIComponent(token)}` }),
+        defaultCtx,
+      );
+      expect(res.status).toBe(201);
+      expect((res as NextResponse).cookies.get(COOKIE)).toBeUndefined();
+    });
+
+    it("fiado sin sesión verificada del teléfono → 401 y no crea pedido", async () => {
+      const res = await POST(makePostReq({ ...VALID_BODY, paymentMethod: "fiado" }), defaultCtx);
+      expect(res.status).toBe(401);
+      expect(mockOrdersAdd).not.toHaveBeenCalled();
+    });
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -573,5 +687,122 @@ describe("GET /api/orders", () => {
     expect(res.status).toBe(500);
     const body = await res.json();
     expect(body.error).toBe("Internal server error");
+  });
+});
+
+// ── Canje de puntos (2026-10-08) ─────────────────────────────────────────────
+// 100 pts = S/ 1, tope 50 % del total sin puntos. Solo con sesión VERIFICADA
+// del mismo teléfono y negocio; el débito real va en OrdersDB.add (misma tx
+// que crea el pedido: tests en orders-db-canje-puntos.test.ts).
+describe("POST /api/orders — canje de puntos", () => {
+  const COOKIE = "buleje-customer-sess";
+  const TEL = "987654321";
+  const sesion = (telefono = TEL, tenantId = "main") =>
+    createCustomerToken({
+      customerId: telefono,
+      email: `${telefono}@x.pe`,
+      name: "Dueña del número",
+      tenantId,
+      provider: "phone",
+    });
+  const conSesion = (body: unknown, token?: string, extra: Record<string, string> = {}) =>
+    makePostReq(body, {
+      "x-tenant-id": "main",
+      ...(token && { cookie: `${COOKIE}=${encodeURIComponent(token)}` }),
+      ...extra,
+    });
+  /** El saldo que lee LoyaltyDB.getBalance (Customer.loyaltyPoints). */
+  const saldo = (puntos: number) =>
+    mockCustomerFindUnique.mockResolvedValue({ phone: TEL, tenantId: "main", loyaltyPoints: puntos });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockOrderFindFirst.mockResolvedValue(null);
+    mockOrderCount.mockResolvedValue(0);
+    mockTenantFindFirst.mockResolvedValue({ plan: "free" });
+    mockProductFindMany.mockResolvedValue([{ id: 1, price: dec(5.5), costPrice: dec(3.85), stock: null }]);
+    mockCustomerNotifCreate.mockResolvedValue(undefined);
+    mockOrdersAdd.mockResolvedValue(SAVED_ORDER);
+    mockOrdersGetByCustomerPhone.mockResolvedValue([SAVED_ORDER]);
+    mockCouponsGetByCode.mockResolvedValue(null);
+    mockPromotionsGetAll.mockResolvedValue([]);
+  });
+
+  it("canje válido: 201, total menor y OrdersDB.add descuenta en la misma tx; total = vista previa", async () => {
+    saldo(500);
+    // Vista previa del checkout (mismas funciones que el servidor).
+    const vista = canjeDeLaVista(
+      { points: 500, redemptionSoles: 5, sesionVerificada: true, telefono: TEL },
+      TEL,
+      calcularTotalPedido({ subtotal: 11 }),
+    );
+    const totalVista = calcularTotalPedido({ subtotal: 11, descuentoPuntos: vista.soles });
+    expect(vista).toMatchObject({ disponible: true, puntos: 500, soles: 5 });
+    expect(totalVista).toBe(6);
+
+    const res = await POST(
+      conSesion({ ...VALID_BODY, total: totalVista, puntosACanjear: vista.puntos }, await sesion()),
+      defaultCtx,
+    );
+    expect(res.status).toBe(201);
+    const [order, tenant, opts] = mockOrdersAdd.mock.calls[0];
+    expect(order.total).toBe(totalVista);
+    expect(order.notes).toContain("Canje de puntos: 500 pts");
+    expect(tenant).toBe("main");
+    expect(opts).toEqual({ canjePuntos: { clienteId: TEL, puntos: 500, soles: 5 } });
+    expect((await res.json()).puntosCanjeados).toEqual({ puntos: 500, soles: 5 });
+  });
+
+  it("canje mayor que el saldo: 409 y no se crea el pedido", async () => {
+    saldo(300);
+    const res = await POST(conSesion({ ...VALID_BODY, total: 6, puntosACanjear: 500 }, await sesion()), defaultCtx);
+    expect(res.status).toBe(409);
+    expect((await res.json()).code).toBe("PUNTOS_INSUFICIENTES");
+    expect(mockOrdersAdd).not.toHaveBeenCalled();
+  });
+
+  it("canje sobre el tope (50 % del total): 400 con el máximo", async () => {
+    saldo(5000);
+    const res = await POST(conSesion({ ...VALID_BODY, total: 5, puntosACanjear: 600 }, await sesion()), defaultCtx);
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ code: "PUNTOS_SOBRE_TOPE", maxPuntos: 550 });
+    expect(mockOrdersAdd).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["invitado (sin cookie)", undefined],
+    ["sesión de OTRO teléfono", "sesion-otro"],
+    ["sesión de OTRO negocio", "sesion-otro-negocio"],
+  ])("%s con puntosACanjear: 401 y los puntos no se leen ni se tocan", async (_caso, cual) => {
+    saldo(500);
+    const token =
+      cual === "sesion-otro" ? await sesion("912345678") : cual === "sesion-otro-negocio" ? await sesion(TEL, "otro") : undefined;
+    const res = await POST(conSesion({ ...VALID_BODY, total: 6, puntosACanjear: 500 }, token), defaultCtx);
+    expect(res.status).toBe(401);
+    expect((await res.json()).code).toBe("CANJE_REQUIERE_SESION");
+    expect(mockOrdersAdd).not.toHaveBeenCalled();
+    expect(mockCustomerFindUnique).not.toHaveBeenCalled();
+  });
+
+  it("otro pedido gastó los puntos entre la validación y el débito: 409, sin pedido", async () => {
+    saldo(500);
+    mockOrdersAdd.mockRejectedValueOnce(new LoyaltyInsufficientBalanceError(0, 500));
+    const res = await POST(conSesion({ ...VALID_BODY, total: 6, puntosACanjear: 500 }, await sesion()), defaultCtx);
+    expect(res.status).toBe(409);
+    expect((await res.json()).code).toBe("PUNTOS_INSUFICIENTES");
+  });
+
+  it("reintento simultáneo con la misma clave: 200 con el pedido del primero", async () => {
+    saldo(500);
+    mockOrderFindFirst.mockResolvedValueOnce(null).mockResolvedValueOnce(SAVED_ORDER);
+    mockOrdersAdd.mockRejectedValueOnce(
+      Object.assign(new Error("Unique constraint failed"), { code: "P2002", meta: { target: ["idempotencyKey"] } }),
+    );
+    const res = await POST(
+      conSesion({ ...VALID_BODY, total: 6, puntosACanjear: 500 }, await sesion(), { "x-idempotency-key": "clave-1" }),
+      defaultCtx,
+    );
+    expect(res.status).toBe(200);
+    expect((await res.json()).id).toBe(SAVED_ORDER.id);
   });
 });

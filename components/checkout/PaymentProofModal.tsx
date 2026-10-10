@@ -475,8 +475,8 @@ export function PaymentProofModal({
                 className={cn(
                   "w-full rounded-2xl border-2 border-dashed p-8 text-center transition-all",
                   dragOver
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)]"
-                    : "border-[var(--rule-base)] bg-[var(--surface-sunken)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]",
+                    ? "border-[var(--accent)] bg-primary/10"
+                    : "border-[var(--rule-base)] bg-[var(--surface-sunken)] hover:border-[var(--accent)] hover:bg-primary/10",
                 )}
               >
                 <Upload
@@ -487,7 +487,7 @@ export function PaymentProofModal({
                   Arrastra la captura aquí
                 </p>
                 <p className="text-sm text-[var(--text-tertiary)] mt-1">
-                  o tocá para elegir desde tu galería
+                  o toca para elegir desde tu galería
                 </p>
                 <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-2">
                   JPG · PNG · WebP · HEIC · máx 5 MB
@@ -503,7 +503,7 @@ export function PaymentProofModal({
                     className="w-full max-h-72 object-contain"
                   />
                   {uploadedUrl && (
-                    <div className="absolute top-2 right-2 inline-flex items-center gap-1.5 bg-[var(--data-success-500)] text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg">
+                    <div className="absolute top-2 right-2 inline-flex items-center gap-1.5 bg-[var(--data-success-500)] text-white dark:text-[var(--text-inverse)] px-3 py-1.5 rounded-full text-xs font-bold shadow-lg">
                       <CheckCircle2
                         className="h-3.5 w-3.5"
                         strokeWidth={2.5}
@@ -584,7 +584,7 @@ export function PaymentProofModal({
                 className="h-5 w-5 text-[var(--data-error-500)] shrink-0 mt-0.5"
                 strokeWidth={2}
               />
-              <p className="text-sm font-semibold text-[var(--data-error-700)]">
+              <p className="text-sm font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
                 {error}
               </p>
             </div>

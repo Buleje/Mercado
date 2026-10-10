@@ -191,6 +191,7 @@ export async function GET(req: NextRequest) {
             where: { tenantId: { in: tenantIds } },
             select: { businessPhone: true },
           });
+          // TODO(ADR-457 §Excepciones): excepción de negocio — el teléfono de aviso de `main` sale de NOTIFY_PHONE. Debe ser una opción del dueño (campo/pantalla), no un `=== "main"`; requiere schema + pantalla, por eso queda escrita.
           const phone = settings?.businessPhone || (tenant.slug === "main" ? process.env.NOTIFY_PHONE : null);
 
           if (phone) {

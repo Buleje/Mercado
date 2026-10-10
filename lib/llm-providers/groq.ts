@@ -11,10 +11,24 @@ import type { LLMCallOptions, LLMProvider, LLMResponse, ToolCallResult } from ".
 export const groqProvider: LLMProvider = {
   name: "groq",
 
+  /**
+   * ⚠️ Groq DA DE BAJA modelos sin aviso y el error es un 404 con
+   * `model_not_found` — que el router traduce a «no pude responder», así que
+   * desde el chat parece un problema de conexión y no un modelo muerto.
+   *
+   * Verificado 2026-09-04: los tres `llama-*` que estaban acá (3.1-8b-instant,
+   * 3.3-70b-versatile, llama-4-scout) ya NO existen en la cuenta; el asistente
+   * entero estaba caído. Reemplazados por los `gpt-oss` que Groq sirve hoy,
+   * probados con tool-calling (que es lo que el asistente necesita: sin tools
+   * no puede ni leer datos ni anotar nada).
+   *
+   * Para revisar qué hay disponible:
+   *   curl https://api.groq.com/openai/v1/models -H "Authorization: Bearer $GROQ_API_KEY"
+   */
   models: {
-    cheap: "llama-3.1-8b-instant",
-    balanced: "llama-3.3-70b-versatile",
-    premium: "meta-llama/llama-4-scout-17b-16e-instruct",
+    cheap: "openai/gpt-oss-20b",
+    balanced: "openai/gpt-oss-120b",
+    premium: "openai/gpt-oss-120b",
   },
 
   isAvailable() {
@@ -37,6 +51,19 @@ export const groqProvider: LLMProvider = {
     if (opts.tools && opts.tools.length > 0) {
       payload.tools = opts.tools;
       payload.tool_choice = opts.toolChoice ?? "auto";
+    }
+    /**
+     * Los `gpt-oss` piensan en voz alta antes de contestar, y ese razonamiento
+     * SALE del mismo `max_tokens` que la respuesta: una pregunta simple gastaba
+     * 94 tokens de los que 55 eran deliberación. Con esfuerzo bajo el mismo
+     * resumen sale en 39 y el contenido llega igual (medido 2026-09-04).
+     *
+     * Importa el doble acá porque la cuenta es free tier y el límite se cuenta
+     * POR MINUTO: cada token de razonamiento es un token que le falta a la
+     * llamada siguiente, que es justo la que anota la operación.
+     */
+    if (model.includes("gpt-oss")) {
+      payload.reasoning_effort = "low";
     }
 
     const res = await fetchGroqWithRetry(apiKey, payload, opts.label ?? "llm-router");

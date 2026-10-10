@@ -2,6 +2,9 @@ import "server-only";
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { tryAdmin } from "@/lib/require-admin";
+import { sinDato } from "@/lib/errores/sin-dato";
+import { TenantsDB } from "@/lib/db/tenants.db";
+import { CODIGO_CORTO_RE, codigoCortoNegocio, duenosDeCodigosCortos } from "@/lib/tenant-url-publica";
 
 /** Custom-domain prefix injected by edge middleware */
 const CUSTOM_PREFIX = "custom--";
@@ -84,7 +87,7 @@ export async function resolveTenantSlugToId(slugOrId: string): Promise<string> {
 
   const promise = prisma.tenant
     .findUnique({ where: { slug: slugOrId }, select: { id: true } })
-    .catch(() => null)
+    .catch(sinDato("resolve-tenant id del tenant por slug"))
     .then((tenant) => {
       const id = tenant?.id ?? slugOrId;
       slugToIdCache.set(slugOrId, { id, expiresAt: Date.now() + CACHE_TTL_MS });
@@ -96,6 +99,95 @@ export async function resolveTenantSlugToId(slugOrId: string): Promise<string> {
 
   slugInflight.set(slugOrId, promise);
   return promise;
+}
+
+/**
+ * tenantIdPublico — el id REAL del negocio para las páginas públicas sin
+ * sesión (`/verificar/**`, `/verificar-cacao/**`), a partir del `x-tenant-id`
+ * que puso el proxy: slug del subdominio, `custom--<dominio>`, el slug de
+ * `/t/<slug>/…` o el negocio por defecto. Las DB classes filtran por el CUID:
+ * con el slug crudo, ningún QR de un negocio ≠ el principal se encontraba
+ * (medido 08-10, contrato K4 (d)). `null` = dominio propio desconocido o sin
+ * cabecera: la página dice «no encontrado», nunca cae en otro negocio.
+ */
+export async function tenantIdPublico(rawXTenantId: string | null): Promise<string | null> {
+  const crudo = (rawXTenantId ?? "").trim();
+  if (!crudo) return null;
+  const slug = await resolveTenantSlug(crudo);
+  if (!slug) return null;
+  const id = await resolveTenantSlugToId(slug);
+  // Un negocio dado de baja no sigue publicando sus guías (security 08-10: el
+  // dominio propio ya pedía `active`, el subdominio y `/t/<slug>` no).
+  return id && (await negocioActivo(id)) ? id : null;
+}
+
+const activoCache = new Map<string, { activo: boolean; expiresAt: number }>();
+
+async function negocioActivo(id: string): Promise<boolean> {
+  const hit = activoCache.get(id);
+  if (hit && hit.expiresAt > Date.now()) return hit.activo;
+  const tenant = await prisma.tenant
+    .findUnique({ where: { id }, select: { active: true } })
+    .catch(sinDato("resolve-tenant negocio activo"));
+  const activo = tenant?.active === true;
+  activoCache.set(id, { activo, expiresAt: Date.now() + CACHE_TTL_MS });
+  return activo;
+}
+
+/* ───────────── Código corto del negocio en los QR (ADR-486) ───────────── */
+
+type DuenosCodigos = Map<string, { id: string; activo: boolean }>;
+let codigosCortos: { mapa: DuenosCodigos; armadoEn: number } | null = null;
+let codigosEnCurso: Promise<DuenosCodigos> | null = null;
+/** Un código que no está puede ser de un negocio recién creado: se relee, a lo sumo una vez por minuto. */
+const RELEER_CODIGOS_MS = 60 * 1000;
+
+async function duenosDeCodigos(forzar = false): Promise<DuenosCodigos> {
+  const actual = codigosCortos;
+  if (actual && !forzar && Date.now() - actual.armadoEn < CACHE_TTL_MS) return actual.mapa;
+  codigosEnCurso ??= TenantsDB.listParaCodigoCorto()
+    .catch(sinDato("resolve-tenant códigos cortos"))
+    .then((filas) => {
+      // Si la base falló se sigue con el mapa anterior (y se reintenta en un minuto).
+      if (!filas) return actual?.mapa ?? new Map();
+      const mapa = duenosDeCodigosCortos(filas);
+      codigosCortos = { mapa, armadoEn: Date.now() };
+      return mapa;
+    })
+    .finally(() => {
+      codigosEnCurso = null;
+    });
+  return codigosEnCurso;
+}
+
+async function duenoDeCodigo(codigo: string) {
+  const dueno = (await duenosDeCodigos()).get(codigo);
+  if (dueno) return dueno;
+  const armadoEn = codigosCortos?.armadoEn ?? 0;
+  return Date.now() - armadoEn > RELEER_CODIGOS_MS ? (await duenosDeCodigos(true)).get(codigo) : undefined;
+}
+
+/**
+ * El negocio de un código corto de QR (`/v/<código>/…`). `null` si el código
+ * no existe o su negocio está dado de baja: la página dice «no encontrado»,
+ * igual que con un id inventado, y nunca cae en otro negocio.
+ */
+export async function tenantIdPorCodigoCorto(codigo: string): Promise<string | null> {
+  const c = codigo.trim().toLowerCase();
+  if (!CODIGO_CORTO_RE.test(c)) return null;
+  const dueno = await duenoDeCodigo(c);
+  return dueno?.activo ? dueno.id : null;
+}
+
+/**
+ * El código corto que puede imprimir este negocio, o `null` si no le toca
+ * (otro más viejo tiene el mismo, o está dado de baja): entonces sus QR salen
+ * con la dirección larga.
+ */
+export async function codigoCortoPublicable(tenantId: string): Promise<string | null> {
+  const c = codigoCortoNegocio(tenantId);
+  const dueno = await duenoDeCodigo(c);
+  return dueno?.id === tenantId && dueno.activo ? c : null;
 }
 
 /**

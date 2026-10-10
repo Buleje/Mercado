@@ -2,6 +2,14 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/lib/generated/prisma/client";
 import { logger } from "@/lib/logger";
+import { moverCajaEnTx, type MetodoPago, type ResultadoMovimiento } from "@/lib/adelantos/movimiento-caja";
+import { etiquetaCobroFiado } from "@/lib/fiados/cobro-metodo";
+import {
+  aCentimos,
+  FiadoNoCobrableError,
+  repartirCobroMasivo,
+  type PedidoCobroMasivo,
+} from "@/lib/fiados/reparto-cobro-masivo";
 
 // ── Error classes ─────────────────────────────────────────────────────────────
 
@@ -19,6 +27,21 @@ export class FiadoConflictError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "FiadoConflictError";
+  }
+}
+
+/**
+ * El pago tipeado excede el saldo pendiente. Es un error de VALIDACIÓN (el
+ * cajero se equivocó de monto), no de infraestructura — antes registerPago
+ * lo lanzaba como Error plano y el handler HTTP lo confundía con una falla
+ * de DB, respondiendo 503 "Database error" en vez del motivo real (audit
+ * 2026-08-26).
+ */
+export class FiadoOverpaymentError extends Error {
+  readonly code = "FIADO_OVERPAYMENT";
+  constructor(message: string) {
+    super(message);
+    this.name = "FiadoOverpaymentError";
   }
 }
 
@@ -48,6 +71,8 @@ export type DbFiado = {
   tenantId: string;
   customerId: string;
   customerName?: string;
+  /** Límite de crédito del cliente (0 = sin tope). Sólo lo trae `list()`. */
+  customerCreditLimit?: number;
   total: number;
   saldo: number;
   descripcion?: string;
@@ -56,6 +81,23 @@ export type DbFiado = {
   cuotas: DbFiadoCuota[];
   createdAt: string;
   updatedAt: string;
+};
+
+/**
+ * El cobro también entra a la caja abierta (ingreso), en la MISMA transacción
+ * que el pago: si no hay caja abierta el pago se registra igual y se avisa
+ * con `sinCaja`. Mismo patrón que los adelantos (ADR-448,
+ * `lib/adelantos/movimiento-caja.ts`): la caja es el ÚLTIMO lock de la tx.
+ */
+export type CajaDelCobro = { metodo: MetodoPago; etiqueta: string };
+
+/** Un fiado abonado por el cobro masivo. */
+export type ResultadoCobroMasivo = {
+  fiadoId: string;
+  montoPagado: number;
+  nuevoSaldo: number;
+  status: string;
+  customerId: string;
 };
 
 export type DbFiadoCuota = {
@@ -84,6 +126,7 @@ function mapFiado(f: any): DbFiado {
     tenantId: f.tenantId,
     customerId: f.customerId,
     ...(f.customer?.name && { customerName: f.customer.name }),
+    ...(f.customer?.creditLimit != null && { customerCreditLimit: Number(f.customer.creditLimit) || 0 }),
     total: toNum(f.total),
     saldo: toNum(f.saldo),
     ...(f.descripcion != null && { descripcion: f.descripcion }),
@@ -133,11 +176,14 @@ export const FiadosDB = {
     const customers = customerPhones.length > 0
       ? await prisma.customer.findMany({
           where: { tenantId, phone: { in: customerPhones } },
-          select: { phone: true, name: true },
+          select: { phone: true, name: true, creditLimit: true },
         })
       : [];
-    const customerMap = new Map(customers.map(c => [c.phone, c.name]));
-    return rows.map(r => mapFiado({ ...r, customer: { name: customerMap.get(r.customerId) || null } }));
+    const customerMap = new Map(customers.map(c => [c.phone, c]));
+    return rows.map(r => {
+      const c = customerMap.get(r.customerId);
+      return mapFiado({ ...r, customer: { name: c?.name || null, creditLimit: c?.creditLimit ?? null } });
+    });
   },
 
   async getById(tenantId: string, id: string): Promise<DbFiado | null> {
@@ -280,8 +326,9 @@ export const FiadosDB = {
     tenantId: string,
     fiadoId: string,
     monto: number,
-    notas?: string
-  ): Promise<DbFiado | null> {
+    notas?: string,
+    caja?: CajaDelCobro,
+  ): Promise<(DbFiado & { caja?: ResultadoMovimiento }) | null> {
     // Y1 FIX 2026-05-07: findFirst DENTRO de la tx para evitar race entre 2
     // cobros simultáneos que leían el saldo fuera de tx y calculaban en JS.
     // Ahora usamos `decrement` atómico + re-lectura post-decrement para
@@ -290,6 +337,7 @@ export const FiadosDB = {
     // Audit 2026-05-17 P1-3: conflictos de Prisma (P2034) ahora propagan como
     // FiadoConflictError para que el handler responda 409 en vez de 503.
     let updated: Awaited<ReturnType<typeof prisma.fiado.findUnique>> | null = null;
+    let movCaja: ResultadoMovimiento | undefined;
     try {
       updated = await prisma.$transaction(async (tx) => {
       const fiado = await tx.fiado.findFirst({ where: { id: fiadoId, tenantId } });
@@ -321,18 +369,21 @@ export const FiadosDB = {
 
       const saldoFinal = Number(afterDecrement.saldo);
       if (saldoFinal < -0.01) {
-        throw new Error(`Overpayment: el pago excede el saldo en ${Math.abs(saldoFinal).toFixed(2)}`);
+        throw new FiadoOverpaymentError(`El pago excede el saldo en S/${Math.abs(saldoFinal).toFixed(2)}`);
       }
 
-      if (saldoFinal <= 0.01) {
-        return tx.fiado.update({
-          where: { id: fiadoId, tenantId },
-          data: { status: "PAGADO" },
-          include: { cuotas: { orderBy: { createdAt: "asc" } } },
-        });
-      }
+      const final = saldoFinal <= 0.01
+        ? await tx.fiado.update({
+            where: { id: fiadoId, tenantId },
+            data: { status: "PAGADO" },
+            include: { cuotas: { orderBy: { createdAt: "asc" } } },
+          })
+        : afterDecrement;
 
-      return afterDecrement;
+      // La caja va AL FINAL: es el último lock de la transacción (orden global).
+      if (caja) movCaja = await moverCajaEnTx(tx, tenantId, { tipo: "ingreso", monto, metodo: caja.metodo, etiqueta: caja.etiqueta });
+
+      return final;
       });
     } catch (err) {
       if (isPrismaConflict(err)) {
@@ -341,7 +392,8 @@ export const FiadosDB = {
       throw err;
     }
 
-    return updated ? mapFiado(updated) : null;
+    if (!updated) return null;
+    return movCaja ? { ...mapFiado(updated), caja: movCaja } : mapFiado(updated);
   },
 
   async updateStatus(
@@ -365,6 +417,29 @@ export const FiadosDB = {
   },
 
   /**
+   * Audit 2026-08-26: el PATCH de /api/fiados/[id] sólo aceptaba `status`,
+   * así que el compromiso de pago con firma digital (que manda `descripcion`)
+   * era rechazado por Zod SIEMPRE — el cajero veía "guardado" porque el
+   * caller no revisaba la respuesta y de todos modos imprimía. Este método
+   * habilita el otro campo que ese flujo necesita escribir.
+   */
+  async updateDescripcion(tenantId: string, id: string, descripcion: string): Promise<DbFiado | null> {
+    const result = await prisma.fiado.updateMany({
+      where: { id, tenantId },
+      data: { descripcion },
+    });
+    if (result.count === 0) return null;
+    const row = await prisma.fiado.findFirst({
+      where: { id, tenantId },
+      include: { cuotas: { orderBy: { createdAt: "asc" } } },
+    }).catch((err) => {
+      logger.warn("FiadosDB.updateDescripcion: lookup failed", { fiadoId: id, err: String(err) });
+      return null;
+    });
+    return row ? mapFiado(row) : null;
+  },
+
+  /**
    * Resumen de fiados activos de un cliente. Centraliza la lógica que
    * antes vivía inline en /api/customers/[phone]/fiado-resumen (regla #1
    * CLAUDE.md). 2 queries paralelas: aggregate + oldest.
@@ -380,7 +455,9 @@ export const FiadosDB = {
     diasVencido: number;
     hasFiadosVencidos: boolean;
   }> {
-    const baseWhere = { tenantId, customerId, status: "ACTIVO" as const };
+    // VENCIDO también es deuda viva (la más urgente): con sólo ACTIVO, el POS no avisaba
+    // «Fiado pendiente» al cliente que más debía cobrarse (08-10).
+    const baseWhere = { tenantId, customerId, status: { in: ["ACTIVO" as const, "VENCIDO" as const] } };
 
     const [agg, oldest] = await Promise.all([
       prisma.fiado.aggregate({
@@ -415,93 +492,124 @@ export const FiadosDB = {
   },
 
   /**
-   * Batch cobranza atómica sobre N fiados específicos. Centraliza la
-   * transacción que antes vivía inline en /api/fiados/cobro-masivo (regla
-   * #1 CLAUDE.md). tenantId siempre en el where de cada update —
-   * defense-in-depth.
+   * Cobro masivo atómico sobre N fiados elegidos (regla #1: la transacción vive
+   * acá, no en la ruta). tenantId en el where de cada update.
    *
-   * Lanza FiadoConflictError si Prisma detecta race-condition (P2034 o
-   * SQLSTATE 40001/40P01). Lanza Error genérico si algún fiadoId no existe
-   * o está cancelado.
+   * Dos formas de pedirlo:
+   * - `{ fiadoIds, monto }`: el SERVIDOR reparte el monto del fiado más viejo al
+   *   más nuevo, en céntimos, con los saldos leídos DENTRO de la transacción
+   *   (`repartirCobroMasivo`, la misma regla que la vista previa). Lo usa la ventana.
+   * - `[{ fiadoId, monto }]`: el detalle por fiado (contrato viejo); cada monto
+   *   se topa al saldo y se redondea a céntimos (antes un resto de 3,5e-15 del
+   *   reparto del navegador anotaba una cuota de S/ 0,00).
    *
-   * Audit 2026-05-17 P1-3 + P1-5.
+   * Con `caja`, lo cobrado entra a la caja abierta en la MISMA transacción: un
+   * ingreso por cliente («Cobro de fiado · Rosa Pérez»), como ÚLTIMO lock (orden
+   * global fiado → caja, ver `moverCajaEnTx`). Sin caja abierta el cobro igual
+   * se guarda y vuelve `caja.sinCaja = true`.
+   *
+   * Los fiados se bloquean en orden de id, no en el del reparto: dos cobros
+   * masivos que se cruzan toman los mismos fiados en el mismo orden.
+   *
+   * TOCTOU (audit 2026-08-26): cada decrement lleva `saldo >= pago` en el WHERE;
+   * si otro cobro ya consumió el saldo, count=0 y se aborta el lote entero
+   * (FiadoConflictError → 409 reintentable). FiadoNoCobrableError si un fiado no
+   * existe en el negocio o ya no está ACTIVO/VENCIDO.
    */
   async cobroMasivo(
     tenantId: string,
-    payments: Array<{ fiadoId: string; monto: number }>,
+    pedido: PedidoCobroMasivo,
     notas?: string,
-  ): Promise<
-    Array<{
-      fiadoId: string;
-      montoPagado: number;
-      nuevoSaldo: number;
-      status: string;
-      customerId: string;
-    }>
-  > {
-    const results: Array<{
-      fiadoId: string;
-      montoPagado: number;
-      nuevoSaldo: number;
-      status: string;
-      customerId: string;
-    }> = [];
+    caja?: { metodo: MetodoPago },
+  ): Promise<{
+    resultados: ResultadoCobroMasivo[];
+    /** Suma de lo abonado (a céntimos): lo que entró de verdad. */
+    cobrado: number;
+    /** Lo pedido que no se cobró porque los fiados debían menos. */
+    sobrante: number;
+    caja?: { sinCaja: boolean; movimientos: number };
+  }> {
+    const resultados: ResultadoCobroMasivo[] = [];
+    let sobrante = 0;
+    let movCaja: { sinCaja: boolean; movimientos: number } | undefined;
+    const fiadoIds = Array.isArray(pedido) ? pedido.map((p) => p.fiadoId) : pedido.fiadoIds;
 
     try {
       await prisma.$transaction(async (tx) => {
-        // Perf 2026-05-26 (P0-5): pre-fetch de todos los fiados en 1 sola query
-        // en vez de un findFirst por payment (N+1). La lectura sigue DENTRO de
-        // la tx → atomicidad preservada. tenantId en where: aislamiento.
-        const fiadoIds = payments.map((p) => p.fiadoId);
-        const fiadosPrefetched = await tx.fiado.findMany({
-          where: { id: { in: fiadoIds }, tenantId },
-        });
-        const fiadoById = new Map(fiadosPrefetched.map((f) => [f.id, f]));
-        for (const payment of payments) {
-          const fiado = fiadoById.get(payment.fiadoId);
-          if (!fiado) {
-            throw new Error(`Fiado ${payment.fiadoId.slice(-6)} no encontrado`);
+        // Una sola lectura (sin N+1), dentro de la tx: valida y arma el reparto.
+        // El guard de cada update vuelve a mirar el saldo de verdad.
+        const filas = await tx.fiado.findMany({ where: { id: { in: fiadoIds }, tenantId } });
+        const porId = new Map(filas.map((f) => [f.id, f]));
+        for (const id of fiadoIds) {
+          const f = porId.get(id);
+          if (!f) throw new FiadoNoCobrableError(`Fiado ${id.slice(-6)} no encontrado`);
+          if (f.status !== "ACTIVO" && f.status !== "VENCIDO") {
+            throw new FiadoNoCobrableError(`Fiado ${id.slice(-6)} no esta activo`);
           }
-          if (fiado.status !== "ACTIVO" && fiado.status !== "VENCIDO") {
-            throw new Error(`Fiado ${payment.fiadoId.slice(-6)} no esta activo`);
-          }
+        }
 
-          const currentSaldo = Number(fiado.saldo);
-          const paymentAmount = Math.min(payment.monto, currentSaldo);
+        let plan: Array<{ fiadoId: string; pago: number }>;
+        if (Array.isArray(pedido)) {
+          plan = pedido.map((p) => ({
+            fiadoId: p.fiadoId,
+            pago: Math.min(aCentimos(p.monto), aCentimos(Number(porId.get(p.fiadoId)?.saldo ?? 0))) / 100,
+          }));
+        } else {
+          const reparto = repartirCobroMasivo(
+            filas.map((f) => ({ id: f.id, saldo: Number(f.saldo), createdAt: f.createdAt })),
+            pedido.monto,
+          );
+          plan = reparto.pagos.map(({ fiadoId, pago }) => ({ fiadoId, pago }));
+          sobrante = reparto.sobrante;
+        }
+        const aplicar = plan
+          .filter((p) => p.pago >= 0.01)
+          .sort((a, b) => (a.fiadoId < b.fiadoId ? -1 : a.fiadoId > b.fiadoId ? 1 : 0));
 
-          // Brandon perf P1 #5: update retorna el registro directamente con select.
-          // Antes: update (void) + findFirst extra = 2 queries por fiado.
-          // Ahora: 1 sola query — el update ya devuelve el saldo actualizado.
-          const updated = await tx.fiado.update({
-            where: { id: payment.fiadoId, tenantId },
-            data: { saldo: { decrement: paymentAmount } },
-            select: { saldo: true, status: true },
+        for (const { fiadoId, pago } of aplicar) {
+          const fiado = porId.get(fiadoId);
+          if (!fiado) continue;
+          const guard = await tx.fiado.updateMany({
+            where: { id: fiadoId, tenantId, status: { in: ["ACTIVO", "VENCIDO"] }, saldo: { gte: pago } },
+            data: { saldo: { decrement: pago } },
           });
-          const finalSaldo = updated ? Number(updated.saldo) : 0;
-          const newStatus = finalSaldo <= 0.01 ? "PAGADO" : fiado.status;
-          if (newStatus !== fiado.status) {
-            await tx.fiado.update({
-              where: { id: payment.fiadoId, tenantId },
-              data: { status: newStatus },
-            });
+          if (guard.count === 0) {
+            throw new FiadoConflictError(`Fiado ${fiadoId.slice(-6)}: el saldo cambió antes de aplicar el cobro`);
           }
-
+          const despues = await tx.fiado.findFirst({ where: { id: fiadoId, tenantId }, select: { saldo: true } });
+          const saldoFinal = despues ? Number(despues.saldo) : 0;
+          const status = saldoFinal <= 0.01 ? "PAGADO" : fiado.status;
+          if (status !== fiado.status) {
+            await tx.fiado.update({ where: { id: fiadoId, tenantId }, data: { status } });
+          }
           await tx.fiadoCuota.create({
-            data: {
-              fiadoId: payment.fiadoId,
-              monto: paymentAmount,
-              pagadoEn: new Date(),
-              notas: notas || "Cobro masivo",
-            },
+            data: { fiadoId, monto: pago, pagadoEn: new Date(), notas: notas || "Cobro masivo" },
           });
+          resultados.push({ fiadoId, montoPagado: pago, nuevoSaldo: Math.max(0, saldoFinal), status, customerId: fiado.customerId });
+        }
 
-          results.push({
-            fiadoId: payment.fiadoId,
-            montoPagado: paymentAmount,
-            nuevoSaldo: Math.max(0, finalSaldo),
-            status: newStatus,
-            customerId: fiado.customerId,
+        // La caja AL FINAL (último lock): un ingreso por cliente, en céntimos.
+        if (caja && resultados.length > 0) {
+          const porCliente = new Map<string, number>();
+          for (const r of resultados) porCliente.set(r.customerId, (porCliente.get(r.customerId) ?? 0) + aCentimos(r.montoPagado));
+          const clientes = await tx.customer.findMany({
+            where: { tenantId, phone: { in: [...porCliente.keys()] } },
+            select: { phone: true, name: true },
           });
+          const nombres = new Map(clientes.map((c) => [c.phone, c.name.trim()]));
+          movCaja = { sinCaja: false, movimientos: 0 };
+          for (const [customerId, centimos] of porCliente) {
+            const mov = await moverCajaEnTx(tx, tenantId, {
+              tipo: "ingreso",
+              monto: centimos / 100,
+              metodo: caja.metodo,
+              etiqueta: etiquetaCobroFiado(nombres.get(customerId) || customerId),
+            });
+            // Sin caja abierta en el primero = sin caja en todos (la toma
+            // FOR SHARE del primero la retiene hasta el commit).
+            if (mov.sinCaja) { movCaja = { sinCaja: true, movimientos: 0 }; break; }
+            movCaja.movimientos += 1;
+          }
         }
       });
     } catch (err) {
@@ -511,7 +619,8 @@ export const FiadosDB = {
       throw err;
     }
 
-    return results;
+    const cobrado = resultados.reduce((s, r) => s + aCentimos(r.montoPagado), 0) / 100;
+    return { resultados, cobrado, sobrante, ...(movCaja && { caja: movCaja }) };
   },
 
   /**
@@ -524,11 +633,14 @@ export const FiadosDB = {
     customerId: string,
     monto: number,
     notas?: string,
+    caja?: CajaDelCobro,
   ): Promise<{
     totalCobrado: number;
     payments: Array<{ id: string; fiadoId: string; monto: number }>;
     remaining: number;
+    caja?: ResultadoMovimiento;
   }> {
+    let movCaja: ResultadoMovimiento | undefined;
     // Y2 FIX 2026-05-07: findMany DENTRO de la tx interactiva para que la
     // lectura y escritura sean atómicas. Sin esto, entre el findMany externo
     // y los updates internos otro cobro concurrente podía modificar los mismos
@@ -541,8 +653,10 @@ export const FiadosDB = {
 
     try {
       await prisma.$transaction(async (tx) => {
+        // VENCIDO también se debe: antes sólo ACTIVO y un cliente con su
+        // fiado vencido daba «No hay fiados activos» (Me deben 08-10).
         const fiados = await tx.fiado.findMany({
-          where: { tenantId, customerId, status: "ACTIVO" },
+          where: { tenantId, customerId, status: { in: ["ACTIVO", "VENCIDO"] } },
           orderBy: { createdAt: "asc" },
         });
 
@@ -551,8 +665,9 @@ export const FiadosDB = {
         for (const fiado of fiados) {
           if (remaining <= 0) break;
           const saldoLeido = Number(fiado.saldo);
-          const paymentTentativo = Math.min(remaining, saldoLeido);
-          if (paymentTentativo <= 0) continue;
+          // A céntimos: 50 − 33.3 deja 3.5e-15 de resto y creaba una cuota de S/ 0.00 en el fiado siguiente.
+          const paymentTentativo = Math.round(Math.min(remaining, saldoLeido) * 100) / 100;
+          if (paymentTentativo < 0.01) continue;
 
           // Audit 2026-05-17 B-P0-2 (v2): TOCTOU guard real anti-overpayment.
           //
@@ -571,7 +686,7 @@ export const FiadosDB = {
             where: {
               id: fiado.id,
               tenantId,
-              status: "ACTIVO",
+              status: { in: ["ACTIVO", "VENCIDO"] },
               saldo: { gte: paymentTentativo },
             },
             data: { saldo: { decrement: paymentTentativo } },
@@ -606,8 +721,12 @@ export const FiadosDB = {
           });
 
           payments.push({ id: cuota.id, fiadoId: fiado.id, monto: paymentTentativo });
-          remaining -= paymentTentativo;
+          remaining = Math.round((remaining - paymentTentativo) * 100) / 100;
         }
+
+        // Lo cobrado de verdad (no lo pedido) entra a la caja, como último lock.
+        const cobrado = monto - remaining;
+        if (caja && cobrado > 0) movCaja = await moverCajaEnTx(tx, tenantId, { tipo: "ingreso", monto: cobrado, metodo: caja.metodo, etiqueta: caja.etiqueta });
       });
     } catch (err) {
       if (isPrismaConflict(err)) {
@@ -620,6 +739,7 @@ export const FiadosDB = {
       totalCobrado: monto - remaining,
       payments,
       remaining: Math.max(0, remaining),
+      ...(movCaja && { caja: movCaja }),
     };
   },
 };

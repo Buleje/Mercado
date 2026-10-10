@@ -1,5 +1,13 @@
 import * as Sentry from "@sentry/nextjs";
 
+/* El reproductor de Hik-Connect (EZUIKit, ADR-471) pone el permiso de video en la URL de sus
+   pedidos (`accessToken=`). Sentry guarda URLs completas como migas y Replay las graba:
+   se tachan antes de salir (security 05-10, hallazgo alto). */
+const TOKEN_EN_URL = /\b(access_?token|app_?token)=[^&#"'\s\\]+/gi;
+const tacharTokens = (s: string) => s.replace(TOKEN_EN_URL, "$1=[tachado]");
+/* Sin `g`: `.test()` con una expresión global guarda `lastIndex` entre llamadas. */
+const HAY_TOKEN = /\b(access_?token|app_?token)=/i;
+
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
@@ -26,6 +34,17 @@ Sentry.init({
    * The middleware echoes this header on every response so the browser
    * can read it and include it in crash reports for log correlation.
    */
+  beforeBreadcrumb(miga) {
+    if (typeof miga.message === "string") miga.message = tacharTokens(miga.message);
+    if (miga.data) {
+      for (const k of ["url", "from", "to"] as const) {
+        const v = miga.data[k];
+        if (typeof v === "string") miga.data[k] = tacharTokens(v);
+      }
+    }
+    return miga;
+  },
+
   beforeSend(event, hint) {
     // Ignore errors from browser extensions (password managers, autofill overlays, etc.)
     const err = hint?.originalException;
@@ -67,6 +86,11 @@ if (typeof window !== "undefined" && process.env.NODE_ENV === "production") {
         replay({
           maskAllText: true,
           blockAllMedia: true,
+          // Las URLs de red que graba Replay también pueden traer el permiso de video.
+          beforeAddRecordingEvent: (ev: object): object => {
+            const s = JSON.stringify(ev);
+            return HAY_TOKEN.test(s) ? JSON.parse(tacharTokens(s)) : ev;
+          },
         }),
       );
     } catch {

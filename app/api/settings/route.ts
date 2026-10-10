@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { SettingsDB, type DbSettings } from "@/lib/jsondb";
 import { enqueueActivityLog } from "@/lib/queue";
 import { requireAdmin, tryAdmin } from "@/lib/require-admin";
@@ -8,6 +9,7 @@ import { logger } from "@/lib/logger";
 import { withDbRetry } from "@/lib/db-retry";
 import { invalidateByPrefix } from "@/lib/cache";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { esTenantPorDefecto } from "@/lib/tenancy/negocio-por-defecto";
 import {
   resolveTenantSlugToId,
   syncBrandingToTenant,
@@ -18,6 +20,34 @@ import {
 
 // [SECURITY] Defense-in-depth: validar formato slug antes de findUnique.
 const TENANT_SLUG_RE = /^[a-z0-9-]{2,40}$/i;
+
+// [SECURITY] Sanea el blob storeTheme ANTES de persistir. La validación hex de
+// los colores top-level (más abajo) NO cubre storeTheme.* — pero /t/[slug]
+// renderiza esos colores y customFontUrl crudos en un <style>. El render ya
+// sanea (lib/store-design-tokens.ts:sanitizeCssColor + safeCustomFontUrl en la
+// page), pero acá descartamos el valor inválido en el WRITE para no persistir
+// payloads de inyección (stored XSS / CSS-injection). Valor inválido → se omite
+// y el merge conserva el valor previo válido.
+const STORE_THEME_COLOR_KEYS = [
+  "primaryColor", "secondaryColor", "accentColor", "backgroundColor", "textColor",
+  "heroGradientFrom", "heroGradientTo", "pageBgColor", "navbarBgColor", "navbarTextColor",
+];
+const SAFE_THEME_COLOR_RE = /^(#[0-9a-fA-F]{3,8}|rgba?\([\d.,%\s]+\)|hsla?\([\d.,%\s]+\)|[a-zA-Z]{1,30})$/;
+const SAFE_THEME_FONT_URL_RE = /^https:\/\/[^\s"'()<>;]+\.(woff2?|ttf|otf)(\?[^\s"'()<>;]*)?$/i;
+function sanitizeStoreThemeInput(theme: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...theme };
+  for (const k of STORE_THEME_COLOR_KEYS) {
+    const val = out[k];
+    if (typeof val === "string" && val.trim() !== "" && !SAFE_THEME_COLOR_RE.test(val.trim())) {
+      delete out[k];
+    }
+  }
+  const fu = out.customFontUrl;
+  if (typeof fu === "string" && fu.trim() !== "" && !SAFE_THEME_FONT_URL_RE.test(fu.trim())) {
+    delete out.customFontUrl;
+  }
+  return out;
+}
 
 // [SECURITY 2026-06-13] Campos de configuración INTERNA que solo el panel admin
 // (sesión autenticada) necesita. El GET público (storefront, recibos, botón WA)
@@ -44,6 +74,8 @@ const ADMIN_ONLY_SETTING_FIELDS = [
   // PII de personal
   "riders", "deliveryMaxRadius", "deliveryHours",
 ] as const;
+
+const TOPE_CAJERO_SCHEMA = z.number().min(0).max(100).nullable();
 
 export async function GET(req: NextRequest) {
   try {
@@ -128,7 +160,7 @@ export async function PUT(req: NextRequest) {
     // crea filas duplicadas (una con slug, otra con cuid) y el dueño nunca
     // ve sus uploads porque GET lee de un row distinto.
     let tenantId = rawTenantId;
-    if (rawTenantId && !rawTenantId.startsWith("cm") && rawTenantId !== "main") {
+    if (rawTenantId && !rawTenantId.startsWith("cm") && !esTenantPorDefecto(rawTenantId)) {
       // [SECURITY] Validar formato slug antes de findUnique. Defensa en
       // profundidad: el header ya viene canonicalizado por proxy, pero un
       // refactor futuro podría romper la invariante.
@@ -143,6 +175,14 @@ export async function PUT(req: NextRequest) {
     if (body.mode && body.mode !== "whatsapp" && body.mode !== "checkout") {
       return NextResponse.json({ error: "mode must be 'whatsapp' or 'checkout'" }, { status: 400 });
     }
+    // Tope de descuento del cajero (Ajustes › Cobros › Caja): número de 0 a 100,
+    // o null = 15 % de fábrica. Lo aplica POST /api/sales (`topeCajeroPct`).
+    if (body.maxDiscountPercent !== undefined) {
+      const tope = TOPE_CAJERO_SCHEMA.safeParse(body.maxDiscountPercent);
+      if (!tope.success) {
+        return NextResponse.json({ error: "El descuento máximo del cajero va de 0 a 100 %" }, { status: 400 });
+      }
+    }
     const current = await SettingsDB.get(tenantId);
 
     // Si SOLO viene storeTheme, guardar solo eso (no todo el objeto settings)
@@ -152,7 +192,7 @@ export async function PUT(req: NextRequest) {
     // Mantenemos los campos existentes y aplicamos solo lo que llega.
     if (body.storeTheme && Object.keys(body).length === 1) {
       try {
-        const merged = { ...(current.storeTheme ?? {}), ...body.storeTheme };
+        const merged = { ...current.storeTheme, ...sanitizeStoreThemeInput(body.storeTheme as Record<string, unknown>) };
         await upsertStoreThemeJson(tenantId, merged as Record<string, unknown>);
         // CRÍTICO: invalidar cache de SettingsDB (TTL 60s) — sino la storefront
         // sirve datos viejos hasta que expire. Bug detectado al testear que los
@@ -204,6 +244,7 @@ export async function PUT(req: NextRequest) {
       ...(body.currency !== undefined && { currency: body.currency }),
       ...(body.timezone !== undefined && { timezone: body.timezone }),
       ...(body.businessType !== undefined && { businessType: body.businessType }),
+      ...(body.regimenTributario !== undefined && { regimenTributario: body.regimenTributario }),
       ...(body.socialLinks !== undefined && { socialLinks: body.socialLinks }),
       // SECURITY 2026-05-06 (audit CI #1): validar regex hex. Antes un admin
       // malicioso podía guardar `primaryColor: "red}body{display:none}/*"` y
@@ -285,7 +326,7 @@ export async function PUT(req: NextRequest) {
       // borraba logo / storeName / colores / hero del row. Detectado tras
       // guardar visibilidad de secciones — la tienda perdia branding completo.
       ...(body.storeTheme !== undefined && {
-        storeTheme: { ...(current.storeTheme ?? {}), ...body.storeTheme },
+        storeTheme: { ...current.storeTheme, ...sanitizeStoreThemeInput(body.storeTheme as Record<string, unknown>) },
       }),
     };
     const changed = Object.keys(body).filter(k => k !== "adminPassword").join(", ");

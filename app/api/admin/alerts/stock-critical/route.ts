@@ -6,6 +6,8 @@ import { logger } from "@/lib/logger";
 import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
+import { enStockBajo, stockMinimoDe } from "@/lib/inventario/stock-minimo";
+import { minimoGlobalDelNegocio } from "@/lib/inventario/stock-minimo.server";
 
 const bodySchema = z.object({
   /** fuerza recorrer todos los productos aunque no estén críticos */
@@ -40,14 +42,18 @@ export async function POST(req: NextRequest) {
     // BUG-FIX (audit 2026-05-05): tenantId desde JWT no header
     const tenantId = admin.tenantId;
 
-    const allProducts = await ProductsDB.getAll(tenantId);
-    const critical = allProducts.filter((p) => {
-      if (!p.active) return false;
-      const stock = p.stock ?? 0;
-      const min = p.stockMin ?? 5;
-      if (opts.includeAll) return stock <= min;
-      return stock <= min && stock >= 0;
-    });
+    // Un solo stock mínimo (09-10): el propio o el global del negocio, y sin
+    // contar los que no controlan stock (antes `stock ?? 0` los hacía críticos).
+    const [allProducts, minimoGlobal] = await Promise.all([
+      ProductsDB.getAll(tenantId),
+      minimoGlobalDelNegocio(tenantId),
+    ]);
+    const critical = allProducts
+      .filter((p) => {
+        if (!p.active || !enStockBajo(p, minimoGlobal)) return false;
+        return opts.includeAll || (p.stock ?? 0) >= 0;
+      })
+      .map((p) => ({ ...p, stockMin: stockMinimoDe(p, minimoGlobal) }));
 
     if (critical.length === 0) {
       return NextResponse.json({
@@ -63,13 +69,13 @@ export async function POST(req: NextRequest) {
       .slice(0, 10)
       .map(
         (p) =>
-          `• ${p.name} — stock ${p.stock ?? 0} / min ${p.stockMin ?? "—"}`,
+          `• ${p.name} — stock ${p.stock ?? 0} / min ${p.stockMin}`,
       )
       .join("\n");
     const subject = `⚠️ ${critical.length} SKU${critical.length > 1 ? "s" : ""} en stock crítico`;
     const body = `Bodega San Martín · alerta automática\n\n${topList}${
       critical.length > 10 ? `\n...y ${critical.length - 10} más` : ""
-    }\n\nRevisá en /admin · módulo Inventario.`;
+    }\n\nRevisa en /admin · módulo Inventario.`;
 
     let inAppCreated = 0;
     let whatsappOk = false;

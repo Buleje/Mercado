@@ -6,6 +6,7 @@ import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { withDbRetry } from "@/lib/db-retry";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { ApiError, toErrorPayload } from "@/lib/api-error";
 
 const CreateMovementSchema = z.object({
   cashRegisterId: z.string().min(1),
@@ -48,7 +49,7 @@ export async function POST(req: NextRequest) {
     const description = [motivo, descripcion].filter(Boolean).join(" — ") || (type === "ingreso" ? "Ingreso manual" : "Egreso manual");
 
     const movement = await withDbRetry(() =>
-      CashRegistersMovementsDB.createMovement({
+      CashRegistersMovementsDB.createMovement(auth.tenantId, {
         cashRegisterId,
         type,
         amount,
@@ -60,11 +61,18 @@ export async function POST(req: NextRequest) {
     logActivity(
       "Crear", "movimiento_caja",
       `${type === "ingreso" ? "Ingreso" : "Egreso"} manual de S/${amount.toFixed(2)} — ${description}`,
-      movement.id, auth.username,
+      movement.id, auth.username, undefined, auth.tenantId,
     ).catch((err) => logger.warn("[cash-movements] activity log failed", { err: String(err) }));
 
     return NextResponse.json(movement, { status: 201 });
   } catch (e) {
+    /* La caja se cerró entre la verificación y el INSERT (`CajaNoAbiertaError`,
+       F4): 409 con el mensaje en español, no un «Database error» 503 que invita
+       a reintentar sobre una caja cerrada. */
+    if (e instanceof ApiError) {
+      const { payload, status } = toErrorPayload(e);
+      return NextResponse.json(payload, { status });
+    }
     logger.error("[cash-movements] POST error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }

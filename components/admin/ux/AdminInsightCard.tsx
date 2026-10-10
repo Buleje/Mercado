@@ -5,6 +5,7 @@ import { Sparkles, ArrowUpRight, Lightbulb } from "@buleje/design-system/icons";
 import NumberFlow from "@number-flow/react";
 import { cn } from "@/lib/utils";
 import { PrimaryButton } from "@buleje/design-system";
+import { formatNumber } from "@/lib/format";
 
 /**
  * AdminInsightCard — hero card "Hoy" del admin.
@@ -115,7 +116,7 @@ function WeekStripChart({ data, labels }: { data: number[]; labels?: string[] })
   }, [data, labels]);
 
   // Formateador soles: 4520 -> "S/ 4,520", 342 -> "S/ 342"
-  const fmtS = (n: number) => `S/ ${Math.round(n).toLocaleString("es-PE")}`;
+  const fmtS = (n: number) => `S/ ${formatNumber(Math.round(n))}`;
 
   // Brandon mayo 2026 v4: reemplazado el strip de barras críptico (con
   // "PROM · 18", "PICO", "HOY") por 3 insights numéricos directos —

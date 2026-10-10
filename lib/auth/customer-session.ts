@@ -28,7 +28,95 @@ export interface CustomerPayload {
   email: string;
   name: string;
   tenantId: string;
-  provider: string; // "google", "facebook", "apple", "email"
+  provider: string; // "phone" (OTP), "google", "facebook", "e2e" | "checkout" (seguimiento)
+  /**
+   * Solo en el token de SEGUIMIENTO (`provider: "checkout"`): ids de los
+   * pedidos hechos desde este navegador. Es lo único que ese token abre.
+   */
+  pedidos?: string[];
+}
+
+/**
+ * SECURITY (Ley 29733, security 2026-10-08). Hay dos clases de cookie:
+ *
+ *  - VERIFICADA: el login probó que el teléfono/correo es de quien la tiene
+ *    (código por WhatsApp/SMS = "phone", Google, Facebook; "e2e" solo existe
+ *    en test/desarrollo). Abre el historial del teléfono, mi cuenta, fiado,
+ *    descuentos personales, exportar/borrar datos, etc.
+ *  - SEGUIMIENTO ("checkout"): la firma `POST /api/orders` con el teléfono que
+ *    vino en el CUERPO del pedido. No prueba nada: cualquiera puede escribir
+ *    el teléfono de otro. Solo abre los pedidos cuyo id lleva adentro
+ *    (`pedidos`), y solo por `getSeguimientoPedidos`.
+ *
+ * Antes (b63ac273e, 06-05) el token del pedido valía como sesión: un
+ * invitado con el teléfono de otro veía todos sus pedidos.
+ *
+ * Lista CERRADA a propósito: un proveedor nuevo (o desconocido) no abre nada
+ * hasta que alguien lo agregue acá sabiendo que verifica la identidad.
+ */
+const PROVEEDORES_VERIFICADOS: ReadonlySet<string> = new Set([
+  "phone",
+  "google",
+  "facebook",
+  "e2e",
+]);
+
+/** `provider` del token que firma un pedido de invitado. */
+export const PROVEEDOR_SEGUIMIENTO = "checkout";
+
+/** Cuántos pedidos recuerda un token de seguimiento (los más nuevos). */
+export const MAX_PEDIDOS_SEGUIMIENTO = 20;
+
+/** ¿El token prueba que el teléfono/correo es de quien lo tiene? */
+export function esSesionVerificada(p: { provider: string }): boolean {
+  // `e2e` nunca vale en el despliegue de producción, aunque alguien prenda
+  // ALLOW_E2E_TEST_AUTH ahí (security 08-10: bastaba la variable para sacar la
+  // sesión de cualquier teléfono). `next start` local y los previews no tienen
+  // VERCEL_ENV=production: los e2e siguen andando.
+  if (p.provider === "e2e" && process.env.VERCEL_ENV === "production") return false;
+  return PROVEEDORES_VERIFICADOS.has(p.provider);
+}
+
+/**
+ * Proveedores cuyo login PRUEBA un teléfono: el código por WhatsApp/SMS, y
+ * `e2e` solo fuera de producción (`esSesionVerificada`). Google y Facebook
+ * prueban un correo o una cuenta, nunca un teléfono (security 2026-10-08).
+ */
+const PROVEEDORES_DE_TELEFONO: ReadonlySet<string> = new Set(["phone", "e2e"]);
+
+/**
+ * El teléfono que esta sesión PRUEBA (9 dígitos), o null. Es la única llave
+ * para leer o gastar lo de un teléfono: historial, puntos, canje, fiado,
+ * notificaciones, juntas, chat.
+ *
+ * `customerId` tiene que ser EXACTAMENTE 9 dígitos: `normalizePhone` se queda
+ * con los últimos 9, así que «google_1177…987654321» se volvía el teléfono
+ * 987654321 de otra persona.
+ */
+export function telefonoDeLaSesion(
+  p: Pick<CustomerPayload, "customerId" | "provider"> | null | undefined,
+): string | null {
+  if (!p?.customerId || !esSesionVerificada(p) || !PROVEEDORES_DE_TELEFONO.has(p.provider)) {
+    return null;
+  }
+  return /^\d{9}$/.test(p.customerId) ? p.customerId : null;
+}
+
+/**
+ * Ficha propia de cada login social: Google y Facebook SIEMPRE crean y usan
+ * la ficha `google_<id>` / `facebook_<id>`. Un token de Google con otro
+ * `customerId` es de antes del 08-10, cuando el callback vinculaba por correo
+ * y ese correo podía haberlo escrito un invitado: no vale (se vuelve a entrar
+ * y queda en su ficha propia).
+ */
+const PREFIJO_FICHA_SOCIAL: Readonly<Record<string, string>> = {
+  google: "google_",
+  facebook: "facebook_",
+};
+
+function fichaSocialPropia(p: { customerId?: string; provider: string }): boolean {
+  const prefijo = PREFIJO_FICHA_SOCIAL[p.provider];
+  return !prefijo || (p.customerId?.startsWith(prefijo) ?? false);
 }
 
 // ── Internal crypto helpers (same pattern as lib/session.ts) ──
@@ -138,12 +226,10 @@ export async function createCustomerToken(
 }
 
 /**
- * Verify and decode a customer session token.
- * Returns null if invalid, tampered, or expired.
+ * Firma + vencimiento + campos mínimos. Devuelve el payload de CUALQUIER
+ * clase de token (verificada o seguimiento): uso interno.
  */
-export async function getCustomerPayload(
-  token: string,
-): Promise<CustomerPayload | null> {
+async function leerToken(token: string): Promise<CustomerPayload | null> {
   try {
     const dotIdx = token.lastIndexOf(".");
     if (dotIdx < 0) return null;
@@ -159,11 +245,18 @@ export async function getCustomerPayload(
       name: string;
       tenantId: string;
       provider: string;
+      pedidos?: unknown;
       exp: number;
     };
 
     if (raw.exp < Date.now()) return null;
     if (!raw.email || !raw.tenantId || !raw.provider) return null;
+
+    const pedidos = Array.isArray(raw.pedidos)
+      ? raw.pedidos
+          .filter((x): x is string => typeof x === "string" && x.length > 0 && x.length <= 64)
+          .slice(-MAX_PEDIDOS_SEGUIMIENTO)
+      : undefined;
 
     return {
       customerId: raw.customerId,
@@ -171,10 +264,82 @@ export async function getCustomerPayload(
       name: raw.name,
       tenantId: raw.tenantId,
       provider: raw.provider,
+      ...(pedidos ? { pedidos } : {}),
     };
   } catch {
     return null;
   }
+}
+
+/**
+ * Verify and decode a customer session token.
+ * Returns null if invalid, tampered, expired — or NOT VERIFIED.
+ *
+ * Solo sesiones VERIFICADAS (`esSesionVerificada`). El token de seguimiento
+ * de un pedido de invitado devuelve null acá: todos los lectores de la
+ * cookie (historial, mi cuenta, fiado, descuentos, exportar/borrar datos…)
+ * lo tratan como «sin sesión». Para ver los pedidos propios del invitado:
+ * `getSeguimientoPedidos`.
+ */
+export async function getCustomerPayload(
+  token: string,
+): Promise<CustomerPayload | null> {
+  const p = await leerToken(token);
+  if (!p || !esSesionVerificada(p) || !fichaSocialPropia(p)) return null;
+  return p;
+}
+
+/** Lo que abre un token de seguimiento: estos pedidos de este teléfono y negocio. */
+export interface SeguimientoPedidos {
+  telefono: string;
+  tenantId: string;
+  pedidos: string[];
+}
+
+/**
+ * Token de SEGUIMIENTO válido → los ids de pedido que lleva. Null si no es un
+ * token de seguimiento (una sesión verificada se lee con `getCustomerPayload`).
+ * Un token de seguimiento viejo (sin lista de ids) no abre ningún pedido.
+ */
+export async function getSeguimientoPedidos(
+  token: string,
+): Promise<SeguimientoPedidos | null> {
+  const p = await leerToken(token);
+  if (!p || p.provider !== PROVEEDOR_SEGUIMIENTO || !p.customerId) return null;
+  return { telefono: p.customerId, tenantId: p.tenantId, pedidos: p.pedidos ?? [] };
+}
+
+/**
+ * Cookie que deja `POST /api/orders` tras crear un pedido.
+ *  - Si el navegador ya tiene una sesión VERIFICADA → null: no se toca (no se
+ *    rebaja a seguimiento ni se cambia de persona).
+ *  - Si tiene un token de seguimiento del MISMO teléfono y negocio → el mismo
+ *    token con este pedido sumado (máx. `MAX_PEDIDOS_SEGUIMIENTO`).
+ *  - Si no → token de seguimiento nuevo con solo este pedido.
+ *
+ * `telefono` debe venir ya normalizado (el del pedido guardado).
+ */
+export async function tokenTrasPedido(
+  tokenPrevio: string | undefined,
+  p: { telefono: string; nombre: string; tenantId: string; pedidoId: string },
+): Promise<string | null> {
+  const previo = tokenPrevio ? await leerToken(tokenPrevio) : null;
+  if (previo && esSesionVerificada(previo)) return null;
+
+  const mismo =
+    previo?.provider === PROVEEDOR_SEGUIMIENTO &&
+    previo.customerId === p.telefono &&
+    previo.tenantId === p.tenantId;
+  const anteriores = mismo ? (previo.pedidos ?? []).filter((id) => id !== p.pedidoId) : [];
+
+  return createCustomerToken({
+    customerId: p.telefono,
+    email: `${p.telefono}@phone.local`,
+    name: p.nombre,
+    tenantId: p.tenantId,
+    provider: PROVEEDOR_SEGUIMIENTO,
+    pedidos: [...anteriores, p.pedidoId].slice(-MAX_PEDIDOS_SEGUIMIENTO),
+  });
 }
 
 /**

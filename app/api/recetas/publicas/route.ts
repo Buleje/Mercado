@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { esMarketplace } from "@/lib/tenancy/negocio-por-defecto";
 
 export async function GET(req: NextRequest) {
   try {
@@ -8,7 +9,7 @@ export async function GET(req: NextRequest) {
     // endpoint público devolvía TODAS las recetas activas de TODOS los
     // tenants con costos+ingredientes+proveedores → fuga competitiva.
     const tenantIdHeader = req.headers.get("x-tenant-id");
-    if (!tenantIdHeader || tenantIdHeader === "main") {
+    if (!tenantIdHeader || esMarketplace(tenantIdHeader)) {
       return NextResponse.json({ recetas: [] });
     }
     const tenantId = tenantIdHeader;
@@ -121,9 +122,9 @@ export async function GET(req: NextRequest) {
 // Category color mappings for visual placeholders
 const DEMO_COLORS: Record<string, { from: string; to: string }> = {
   "Entradas": { from: "#60a5fa", to: "#06b6d4" },
-  "Platos de fondo": { from: "#f97316", to: "#ef4444" },
+  "Platos de fondo": { from: "#ff6b5b", to: "#ef4444" },
   "Postres": { from: "#f472b6", to: "#a855f7" },
-  "Bebidas": { from: "#facc15", to: "#f59e0b" },
+  "Bebidas": { from: "#facc15", to: "#ff6b5b" },
   "Sopas": { from: "#4ade80", to: "#14C2C2" },
 };
 
@@ -325,7 +326,7 @@ function getRecetasDemo() {
       ],
       totalIngredientes: 34.50,
       pasos: [
-        "Sancoca el pollo y deshilachalo en tiras finas",
+        "Sancoca el pollo y deshiláchalo en tiras finas",
         "Licua el aji amarillo con la leche y las galletas remojadas",
         "Sofrie cebolla y ajo, agrega la crema de aji",
         "Incorpora el pollo deshilachado y cocina 10 minutos",
@@ -542,7 +543,7 @@ function getRecetasDemo() {
       ],
       totalIngredientes: 29.22,
       pasos: [
-        "Cocina el arroz y dejalo enfriar (mejor si es del dia anterior)",
+        "Cocina el arroz y déjalo enfriar (mejor si es del dia anterior)",
         "Corta el pollo en cubos pequenos y saltea en wok a fuego alto",
         "Retira el pollo y prepara tortilla de huevo, corta en tiras",
         "En el mismo wok con aceite, agrega el arroz frio y saltea",

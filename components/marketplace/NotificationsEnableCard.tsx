@@ -100,7 +100,7 @@ export default function NotificationsEnableCard() {
   ) {
     if (justEnabled) {
       return (
-        <section className="rounded-2xl border border-[var(--accent)]/30 bg-[var(--accent-soft)] p-4 flex items-center gap-3">
+        <section className="rounded-2xl border border-[var(--accent)]/30 bg-primary/10 p-4 flex items-center gap-3">
           <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-600,var(--accent))] text-white shrink-0">
             <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden />
           </span>
@@ -142,15 +142,15 @@ export default function NotificationsEnableCard() {
       </button>
 
       <div className="flex items-start gap-3 mb-3 pr-8">
-        <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+        <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
           <BellRing className="h-5 w-5" strokeWidth={1.75} aria-hidden />
         </span>
         <div className="flex-1">
           <h3 className="text-base font-extrabold tracking-tight text-[var(--text-primary)]">
-            Activá notificaciones
+            Activa notificaciones
           </h3>
           <p className="text-sm text-[var(--text-tertiary)] mt-1 leading-relaxed">
-            Enterate al momento cuando tu pedido esté listo, hay ofertas en tu
+            Entérate al momento cuando tu pedido esté listo, hay ofertas en tu
             bodega favorita o tu reposición del mes está armada.
           </p>
         </div>
@@ -188,7 +188,7 @@ export default function NotificationsEnableCard() {
         {enabling ? "Solicitando permiso…" : "Activar notificaciones"}
       </button>
       <p className="mt-2 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] text-center">
-        Podés desactivarlas cuando quieras desde tu navegador
+        Puedes desactivarlas cuando quieras desde tu navegador
       </p>
     </section>
   );

@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prismaForTenant } from "@/lib/tenant";
 import { hash } from "bcryptjs";
 import { z } from "zod";
-import { newPasswordSchema, newPasswordSchemaOptional } from "@/lib/auth/password-schema";
+import { newPasswordSchemaOptional } from "@/lib/auth/password-schema";
 import { enqueueActivityLog } from "@/lib/queue";
 import { toErrorPayload, newTraceId, NotFoundError } from "@/lib/api-error";
 import { applyRateLimit } from "@/lib/rate-limit";

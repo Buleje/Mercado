@@ -3,7 +3,7 @@
  *
  * Dashboard agregado de billing platform-level. NO devuelve secretos
  * Stripe/MP — sólo IDs públicos y status; los amounts vienen de la
- * tabla de precios local (PLAN_PRICE_PEN) para evitar drift cuando
+ * tabla de precios de plan-tiers.ts (precioMensualDePlan) para evitar drift cuando
  * Stripe está desconectado en dev.
  *
  * KPIs:
@@ -21,31 +21,21 @@ import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
  
-import { prisma } from "@/lib/prisma";
+import { TenantBillingDB } from "@/lib/db/tenant-billing.db";
+import { PaymentProofsDB } from "@/lib/db/payment-proofs.db";
+import {
+  computeMrrMovement,
+  computeDunning,
+  type MrrMovement,
+  type Dunning,
+} from "@/lib/billing/dunning";
+import { etiquetaDePlan, precioMensualDePlan } from "@/lib/billing/plan-tiers";
+import { estadoDeCobro, type EstadoDeCobro } from "@/lib/billing/mrr-plataforma";
+import { mesLima, rangoDelMesLima } from "@/lib/finance/ingresos-del-periodo";
 
-// ── Tabla de precios PEN (ADR-076 / pricing 2026-05) ────────────────────────
-// Si querés cambiar precios, hacelo acá — single source of truth para el
-// summary. El cobro real lo manda Stripe/MP con su propio Price.
-const PLAN_PRICE_PEN: Record<string, number> = {
-  free: 0,
-  starter: 89,
-  pro: 179,
-  business: 349,
-  // Aliases legacy del modelo viejo
-  basico: 0,
-  enterprise: 179,
-  max: 349,
-};
-
-const PLAN_LABEL: Record<string, string> = {
-  free: "Free",
-  starter: "Starter",
-  pro: "Pro",
-  business: "Business",
-  basico: "Free",
-  enterprise: "Pro",
-  max: "Business",
-};
+// Precio y nombre de cada plan: `precioMensualDePlan` / `etiquetaDePlan`
+// (lib/billing/plan-tiers.ts, lo que se cobra). Antes esta ruta tenía su propia
+// tabla y contaba «pro» (Starter S/ 89) a S/ 179 con etiqueta «Pro».
 
 const NO_STORE_HEADERS = {
   "Cache-Control": "no-store, max-age=0",
@@ -60,8 +50,8 @@ interface TenantBillingRow {
   planLabel: string;
   industry: string;
   active: boolean;
-  /** "paid" | "trial" | "canceled" | "free" */
-  status: "paid" | "trial" | "canceled" | "free";
+  /** expired = prueba vencida sin pago (solo lectura). Tipo único en mrr-plataforma. */
+  status: EstadoDeCobro;
   monthlyPEN: number;
   source: "stripe" | "mp" | "none";
   trialEndsAt: string | null;
@@ -75,11 +65,23 @@ interface BillingSummary {
   generatedAt: string;
   mrrPEN: number;
   arrPEN: number;
+  /** Plata que ENTRÓ por vouchers aprobados (no es el MRR estimado). */
+  cobrado: {
+    mes: string;
+    mesPEN: number;
+    pagosMes: number;
+    historicoPEN: number;
+    pagosHistorico: number;
+  };
+  mrrMovement: MrrMovement;
+  dunning: Dunning;
   counts: {
     total: number;
     paid: number;
     trial: number;
     canceled: number;
+    /** Prueba vencida sin pago: la app la tiene en solo lectura. */
+    expired: number;
     free: number;
     activeNonFree: number;
   };
@@ -96,68 +98,6 @@ interface BillingSummary {
   tenants: TenantBillingRow[];
 }
 
-function classify(t: {
-  plan: string;
-  active: boolean;
-  trialEndsAt: Date | null;
-  stripeSubscriptionId: string | null;
-  stripeCurrentPeriodEnd: Date | null;
-  cancelAtPeriodEnd: boolean;
-  mpSubscriptionId: string | null;
-}): {
-  status: TenantBillingRow["status"];
-  source: TenantBillingRow["source"];
-  nextBillAt: Date | null;
-  trialDaysLeft: number | null;
-} {
-  const source: TenantBillingRow["source"] = t.stripeSubscriptionId
-    ? "stripe"
-    : t.mpSubscriptionId
-      ? "mp"
-      : "none";
-
-  // Trial activo (futuro trialEndsAt)
-  const now = Date.now();
-  const trialDaysLeft = t.trialEndsAt
-    ? Math.max(
-        0,
-        Math.ceil((t.trialEndsAt.getTime() - now) / (24 * 60 * 60 * 1000)),
-      )
-    : null;
-  const isTrial = !!t.trialEndsAt && t.trialEndsAt.getTime() > now;
-
-  // Plan free → free
-  if (t.plan === "free" || t.plan === "basico") {
-    return { status: "free", source, nextBillAt: null, trialDaysLeft };
-  }
-
-  if (!t.active || t.cancelAtPeriodEnd) {
-    return {
-      status: "canceled",
-      source,
-      nextBillAt: t.stripeCurrentPeriodEnd ?? null,
-      trialDaysLeft,
-    };
-  }
-
-  if (isTrial) {
-    return {
-      status: "trial",
-      source,
-      nextBillAt: t.trialEndsAt,
-      trialDaysLeft,
-    };
-  }
-
-  // Pagado
-  return {
-    status: "paid",
-    source,
-    nextBillAt: t.stripeCurrentPeriodEnd ?? null,
-    trialDaysLeft,
-  };
-}
-
 export async function GET(req: NextRequest) {
   const rl = await applyRateLimit(
     req,
@@ -170,35 +110,22 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    const tenants = await prisma.tenant.findMany({
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        plan: true,
-        industry: true,
-        active: true,
-        trialEndsAt: true,
-        stripeSubscriptionId: true,
-        stripeCurrentPeriodEnd: true,
-        cancelAtPeriodEnd: true,
-        mpSubscriptionId: true,
-        createdAt: true,
-      },
-      orderBy: { createdAt: "desc" },
-      take: 1000,
-    });
+    const now = Date.now();
+    const rangoMes = rangoDelMesLima(mesLima(new Date(now)));
+    const [tenants, cobrado] = await Promise.all([
+      TenantBillingDB.listParaMrr(),
+      PaymentProofsDB.resumenCobrado(rangoMes.start, rangoMes.end),
+    ]);
 
     const rows: TenantBillingRow[] = tenants.map((t) => {
-      const c = classify(t);
-      const price = PLAN_PRICE_PEN[t.plan] ?? 0;
-      const monthlyPEN = c.status === "paid" ? price : 0;
+      const c = estadoDeCobro(t, now);
+      const monthlyPEN = c.status === "paid" ? precioMensualDePlan(t.plan) : 0;
       return {
         id: t.id,
         slug: t.slug,
         name: t.name,
         plan: t.plan,
-        planLabel: PLAN_LABEL[t.plan] ?? t.plan,
+        planLabel: etiquetaDePlan(t.plan),
         industry: t.industry,
         active: t.active,
         status: c.status,
@@ -219,6 +146,7 @@ export async function GET(req: NextRequest) {
       paid: rows.filter((r) => r.status === "paid").length,
       trial: rows.filter((r) => r.status === "trial").length,
       canceled: rows.filter((r) => r.status === "canceled").length,
+      expired: rows.filter((r) => r.status === "expired").length,
       free: rows.filter((r) => r.status === "free").length,
       activeNonFree: rows.filter(
         (r) => r.status === "paid" || r.status === "trial",
@@ -240,8 +168,8 @@ export async function GET(req: NextRequest) {
     const byPlan = Array.from(byPlanMap.entries())
       .map(([plan, agg]) => ({
         plan,
-        label: PLAN_LABEL[plan] ?? plan,
-        pricePEN: PLAN_PRICE_PEN[plan] ?? 0,
+        label: etiquetaDePlan(plan),
+        pricePEN: precioMensualDePlan(plan),
         activeCount: agg.activeCount,
         mrrPEN: agg.mrrPEN,
       }))
@@ -258,7 +186,6 @@ export async function GET(req: NextRequest) {
 
     // Próximos vencimientos 7 días
     const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
-    const now = Date.now();
     const upcoming7d = rows
       .filter(
         (r) =>
@@ -279,16 +206,30 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => (a.trialDaysLeft ?? 999) - (b.trialDaysLeft ?? 999))
       .slice(0, 100);
 
+    // ── Movimiento de MRR + cobranza/riesgo (lógica pura, testeable) ─────────
+    const mrrMovement: MrrMovement = computeMrrMovement(rows, precioMensualDePlan, now);
+    const dunning: Dunning = computeDunning(rows, precioMensualDePlan, now);
+
     const summary: BillingSummary = {
       generatedAt: new Date().toISOString(),
       mrrPEN,
       arrPEN: mrrPEN * 12,
+      cobrado: {
+        mes: mesLima(new Date(now)),
+        mesPEN: cobrado.mesPen,
+        pagosMes: cobrado.pagosMes,
+        historicoPEN: cobrado.historicoPen,
+        pagosHistorico: cobrado.pagosHistorico,
+      },
+      mrrMovement,
+      dunning,
       counts,
       byPlan,
       byIndustry,
       upcoming7d,
       trials,
-      tenants: rows,
+      // Detalle acotado para el payload; los KPIs de arriba ya son sobre TODOS.
+      tenants: rows.slice(0, 1000),
     };
 
     logger.info("[billing-summary] generated", {

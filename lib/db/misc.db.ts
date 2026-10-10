@@ -80,6 +80,11 @@ export type DbProduct = {
   taxType?: string;
   weightKg?: number;
   dimensions?: string;
+  // ── Contenido rico (estilo Amazon) ──
+  /** Ficha técnica editable: JSON string de [{ label, value }]. */
+  specsJson?: string | null;
+  /** Contenido A+: JSON string de [{ heading?, body?, imageUrl? }]. */
+  richContentJson?: string | null;
   // ── Servicio ──
   durationLabel?: string;
   /** fijo | hora | m3 | unidad | dia. */
@@ -115,7 +120,7 @@ export type DbOrder = {
   totalCogs?: number;
   status: OrderStatus;
   notes?: string;
-  paymentMethod?: "yape" | "plin" | "transfer" | "efectivo";
+  paymentMethod?: "yape" | "plin" | "transfer" | "efectivo" | "fiado";
   yapeOperationNumber?: string;
   /** FK opcional a PaymentApproval — contiene la captura del Yape/Plin/Transferencia. */
   paymentApprovalId?: string | null;
@@ -198,6 +203,8 @@ export type DbSettings = {
   currency?: string;
   timezone?: string;
   businessType?: string;
+  /** Régimen tributario SUNAT: nrus | rer | rmt | general. */
+  regimenTributario?: string;
   socialLinks?: { facebook?: string; instagram?: string; tiktok?: string };
 
   // ── Apariencia ──
@@ -295,6 +302,20 @@ export type DbSettings = {
   storeTheme?: Record<string, unknown>;
 };
 
+/**
+ * La ficha del proveedor, completa.
+ *
+ * Hasta el 2026-08-11 este tipo declaraba 7 campos de los 24 que tiene la
+ * tabla, y la lista de proveedores devolvía sólo esos. El formulario captura
+ * los 24, así que abrir una ficha desde la lista y guardarla mandaba `""` en
+ * todo lo que la lista no había traído: **razón social, banco, categoría,
+ * persona de contacto, ubicación, cuenta y observaciones se borraban** con
+ * sólo abrir y guardar. Medido sobre `main`: 7 campos perdidos por edición.
+ *
+ * Es la trampa del serializador con whitelist: la columna está en la base y
+ * aun así el dato no llega. Columna nueva → tocar TAMBIÉN este tipo, el
+ * mapper y el `add`.
+ */
 export type DbSupplier = {
   id: string;
   name: string;
@@ -303,6 +324,35 @@ export type DbSupplier = {
   email?: string;
   address?: string;
   notes?: string;
+
+  // Identificación
+  tipoPersona?: string;
+  tipoDocumento?: string;
+  documento?: string;
+  razonSocial?: string;
+  estado?: string;
+
+  // Contacto
+  whatsappSecundario?: string;
+  personaContacto?: string;
+
+  // Ubicación
+  departamento?: string;
+  provincia?: string;
+  distrito?: string;
+  direccion?: string;
+
+  // Comercial
+  categoria?: string;
+  /** Forma de pago pactada: contado | credito_7 | credito_15 | credito_30. */
+  condicionPago?: string;
+  diasCredito?: number;
+  /** Días que tarda en entregar (ADR-376): de acá sale el punto de reorden. */
+  leadTimeDias?: number;
+  cuentaBancaria?: string;
+  banco?: string;
+
+  observaciones?: string;
   createdAt: string;
 };
 
@@ -325,8 +375,20 @@ export type DbPurchaseOrder = {
   status: PurchaseStatus;
   notes?: string;
   paymentMethod?: string;
+  /** Fecha PROMETIDA por el proveedor. La real es `receivedDate`. */
   deliveryDate?: string;
   discount?: number;
+  // ADR-377 — el papel del proveedor y el costo real de la mercadería.
+  invoiceNumber?: string;
+  invoiceType?: string;
+  igvIncluded?: boolean;
+  /** Flete: se prorratea entre los items al recibir. */
+  flete?: number;
+  otrosCostos?: number;
+  receivedDate?: string;
+  createdBy?: string;
+  receivedBy?: string;
+  cancelReason?: string;
   createdAt: string;
   updatedAt: string;
 };

@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { limaDayRange } from "@/lib/utils";
 
 /**
  * DeliveryAssignmentsDB
@@ -20,11 +21,9 @@ export const DeliveryAssignmentsDB = {
     if (filters.status) where.status = filters.status;
     if (filters.partnerId) where.partnerId = filters.partnerId;
     if (filters.date) {
-      const from = new Date(filters.date);
-      from.setHours(0, 0, 0, 0);
-      const to = new Date(filters.date);
-      to.setHours(23, 59, 59, 999);
-      where.createdAt = { gte: from, lte: to };
+      // El día de LIMA de «YYYY-MM-DD» (el servidor corre en UTC).
+      const { start, end } = limaDayRange(filters.date);
+      where.createdAt = { gte: start, lt: end };
     }
     return prisma.deliveryAssignment.findMany({
       where,
@@ -71,6 +70,46 @@ export const DeliveryAssignmentsDB = {
   async findAssignmentInTenant(tenantId: string, id: string) {
     return prisma.deliveryAssignment.findFirst({
       where: { id, tenantId },
+    });
+  },
+
+  /**
+   * Todos los assignments ACTIVOS de un partner (pedidos apilados).
+   * Devuelve las coords del Order para que el caller arme la ruta óptima.
+   *
+   * Scope = partnerId (NO tenantId): la sesión HMAC del repartidor prueba su
+   * identidad y es la frontera de seguridad. Un repartidor puede tener pedidos
+   * de varias tiendas, así que `assignment.tenantId` = tenant del pedido, no del
+   * repartidor — filtrar por el tenant del repartidor devolvería vacío. Mismo
+   * criterio que el endpoint auditado /api/delivery/me/current (audit #19).
+   */
+  async listActiveForPartner(partnerId: string) {
+    return prisma.deliveryAssignment.findMany({
+      where: {
+        partnerId,
+        status: { in: ["assigned", "picked_up", "in_transit"] },
+      },
+      orderBy: { createdAt: "asc" },
+      select: {
+        id: true,
+        status: true,
+        fee: true,
+        tipAmount: true,
+        createdAt: true,
+        order: {
+          select: {
+            id: true,
+            customerName: true,
+            customerPhone: true,
+            customerLocation: true,
+            customerReference: true,
+            total: true,
+            dropoffLat: true,
+            dropoffLng: true,
+            items: { select: { name: true, quantity: true, unit: true } },
+          },
+        },
+      },
     });
   },
 

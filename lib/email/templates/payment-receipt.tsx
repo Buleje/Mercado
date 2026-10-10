@@ -212,7 +212,7 @@ export default function PaymentReceiptEmail({
                   color: TEXT,
                   fontSize: "13px",
                   fontWeight: "600",
-                  ...(row.valueStyle ?? {}),
+                  ...row.valueStyle,
                 }}
               >
                 {row.value}

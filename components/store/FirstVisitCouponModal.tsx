@@ -1,26 +1,40 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { Check, Copy, Gift, Sparkles, X } from "@buleje/design-system/icons";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Copy,
+  Gift,
+  Sparkles,
+  X,
+} from "@buleje/design-system/icons";
 import Link from "next/link";
 import { useSettings } from "@/contexts/settings-context";
 
 const STORAGE_KEY = "first-visit-coupon-shown";
 const COUPON_CODE = "BIENVENIDO";
 const DELAY_MS = 5000;
+const PANEL_ID = "cupon-bienvenida-panel";
 
 /**
  * FirstVisitCouponModal — bienvenida con cupón al primer visit del cliente.
  *
- * Rediseñado 2026-05-02: jerarquía visual centrada en "10% OFF" como hero,
- * cupón clickable en toda su área, cierre por backdrop + tecla Escape,
- * tokens del DS (var(--accent)) en lugar de var(--accent) hardcoded, animación
- * scale-in con easing custom y micro-shimmer en el cupón.
+ * Rediseñado 2026-10-02 (Brandon: «tapa media pantalla en el celular»): entra
+ * como UNA franja de una línea («10 % en tu primer pedido · Ver») y sólo se
+ * abre al panel completo si la persona la toca. Misma franja en celular y en
+ * escritorio (en la ficha el panel de 240 px tapaba «Agregar al carrito»).
+ * Escape: panel abierto → vuelve a la franja; franja → se cierra y no vuelve.
  */
 export default function FirstVisitCouponModal() {
   const [show, setShow] = useState(false);
+  const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const { storeTheme, businessName } = useSettings();
+  const stripBtnRef = useRef<HTMLButtonElement>(null);
+  const collapseBtnRef = useRef<HTMLButtonElement>(null);
+  const moverFoco = useRef(false);
 
   const storeName =
     storeTheme?.name?.trim() ||
@@ -30,11 +44,17 @@ export default function FirstVisitCouponModal() {
 
   const handleClose = useCallback(() => {
     setShow(false);
+    setOpen(false);
     try {
       localStorage.setItem(STORAGE_KEY, "true");
     } catch {
       /* silent */
     }
+  }, []);
+
+  const cambiar = useCallback((abrir: boolean) => {
+    moverFoco.current = true;
+    setOpen(abrir);
   }, []);
 
   const handleCopy = useCallback(async () => {
@@ -59,108 +79,96 @@ export default function FirstVisitCouponModal() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Escape key closes
+  // Escape: del panel a la franja; de la franja, cierra
   useEffect(() => {
     if (!show) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") handleClose();
+      if (e.key !== "Escape") return;
+      if (open) cambiar(false);
+      else handleClose();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [show, handleClose]);
+  }, [show, open, handleClose, cambiar]);
+
+  // El foco acompaña al cambio franja <-> panel (sólo si lo pidió la persona)
+  useEffect(() => {
+    if (!moverFoco.current) return;
+    moverFoco.current = false;
+    (open ? collapseBtnRef : stripBtnRef).current?.focus();
+  }, [open]);
 
   if (!show) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-[8000] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-[var(--text-primary)]/55 backdrop-blur-md motion-safe:animate-[fadeIn_0.22s_ease-out]"
-      onClick={handleClose}
-      role="presentation"
+    // Brandon 2026-07-06 — NO bloqueante. Mobile: sobre el BottomNav.
+    <aside
+      role="region"
+      aria-label="Cupón de bienvenida"
+      className="fixed z-[7000] inset-x-3 bottom-[calc(env(safe-area-inset-bottom,0px)+4.75rem)] sm:inset-x-auto sm:right-5 sm:bottom-5 sm:w-[20rem] motion-safe:animate-[slideUp_0.4s_cubic-bezier(0.34,1.3,0.64,1)]"
     >
-      {/* Brandon 2026-05-18 — rediseño mobile:
-          · bottom-sheet en xs (items-end + rounded-t-[28px]) → más natural
-            con el pulgar, no obliga a estirar para el cierre superior.
-          · max-h-[92vh] + overflow-y-auto → en pantallas bajas (iPhone SE)
-            o con teclado abierto, el modal scrollea internamente.
-          · pb safe-area → el "Tal vez después" no queda debajo del home
-            indicator del iPhone.
-          · Hero text 4xl→5xl responsive; antes 5xl fijo se veía achaparrado
-            en pantallas <360px.
-          · Botón X 10x10 (40px) — meta WCAG 2.1 AA tap target (≥40x40). */}
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="welcome-coupon-title"
-        onClick={(e) => e.stopPropagation()}
-        className="relative w-full sm:max-w-sm bg-[var(--surface-raised)] rounded-t-[28px] sm:rounded-[28px] shadow-[var(--shadow-xl)] overflow-hidden max-h-[92vh] sm:max-h-[88vh] overflow-y-auto motion-safe:animate-[slideUp_0.36s_cubic-bezier(0.34,1.3,0.64,1)] sm:motion-safe:animate-[scaleInModal_0.32s_cubic-bezier(0.34,1.4,0.64,1)] border border-[var(--rule-soft)]"
-      >
-        {/* Drag handle mobile — afirma "esto es bottom sheet, podés cerrarlo" */}
+      {open ? (
         <div
-          aria-hidden
-          className="sm:hidden absolute top-2 left-1/2 -translate-x-1/2 h-1 w-10 rounded-full bg-[var(--text-tertiary)]/30"
-        />
-
-        {/* Close — alto contraste, área de toque ≥40x40 (WCAG AA) */}
-        <button
-          type="button"
-          onClick={handleClose}
-          aria-label="Cerrar bienvenida"
-          className="absolute top-3 right-3 z-20 h-10 w-10 inline-flex items-center justify-center rounded-full bg-[var(--surface-canvas)]/85 hover:bg-[var(--surface-canvas)] backdrop-blur text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors border border-[var(--rule-soft)] active:scale-95"
+          id={PANEL_ID}
+          className="relative overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)]"
         >
-          <X className="h-4 w-4" strokeWidth={2.5} />
-        </button>
-
-        {/* Hero compacto — un solo bloque, no dos secciones partidas */}
-        <div className="relative px-6 sm:px-7 pt-9 sm:pt-9 pb-5 sm:pb-6 text-center">
-          {/* Sutil radial glow del accent atrás del icono */}
           <div
             aria-hidden
-            className="absolute inset-x-0 top-0 h-32 bg-linear-to-b from-[var(--accent)]/12 via-[var(--accent)]/4 to-transparent pointer-events-none"
+            className="absolute inset-x-0 top-0 h-16 bg-linear-to-b from-[var(--accent)]/12 to-transparent pointer-events-none"
           />
 
-          <div className="relative inline-flex items-center justify-center h-14 w-14 rounded-full bg-[var(--accent)]/12 text-[var(--accent)] mb-4">
-            <Gift className="h-7 w-7" strokeWidth={2} />
+          {/* Achicar a la franja + cerrar del todo — áreas de toque ≥36px */}
+          <div className="absolute top-2 right-2 z-20 flex items-center">
+            <button
+              ref={collapseBtnRef}
+              type="button"
+              onClick={() => cambiar(false)}
+              aria-label="Achicar el cupón"
+              className="h-9 w-9 inline-flex items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--text-primary)]"
+            >
+              <ChevronDown className="h-4 w-4" strokeWidth={2.5} />
+            </button>
+            <button
+              type="button"
+              onClick={handleClose}
+              aria-label="Cerrar cupón de bienvenida"
+              className="h-9 w-9 inline-flex items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--text-primary)]"
+            >
+              <X className="h-4 w-4" strokeWidth={2.5} />
+            </button>
           </div>
 
-          <p className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
-            <Sparkles className="h-3 w-3" strokeWidth={2.25} />
-            Cupón de bienvenida
-          </p>
+          <div className="relative p-4">
+            <div className="flex items-center gap-3 pr-16">
+              <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--accent)]/12 text-[var(--accent)]">
+                <Gift className="h-5 w-5" strokeWidth={2} />
+              </span>
+              <div className="min-w-0">
+                <p className="inline-flex items-center gap-1 text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-secondary)]">
+                  <Sparkles className="h-3 w-3" strokeWidth={2.25} />
+                  Cupón de bienvenida
+                </p>
+                <p className="mt-0.5 text-xl font-extrabold leading-none tracking-tight text-[var(--text-primary)]">
+                  10<span className="text-[var(--accent)]">%</span> OFF{" "}
+                  <span className="text-sm font-semibold text-[var(--text-secondary)]">
+                    en tu 1er pedido
+                  </span>
+                </p>
+              </div>
+            </div>
 
-          {/* HERO discount — el dato más importante. 4xl en xs (cabe en 320px),
-              5xl desde sm+ donde hay espacio. */}
-          <h2
-            id="welcome-coupon-title"
-            className="mt-3 text-4xl sm:text-5xl font-extrabold tracking-tight text-[var(--text-primary)] leading-none"
-          >
-            10<span className="text-[var(--accent)]">%</span>
-            <span className="ml-1 text-2xl sm:text-3xl tracking-tight">OFF</span>
-          </h2>
-
-          <p className="mt-3 text-sm text-[var(--text-secondary)] font-medium px-2">
-            En tu primer pedido en{" "}
-            <span className="font-bold text-[var(--text-primary)]">{storeName}</span>
-          </p>
-        </div>
-
-        {/* Card del cupón — toda la zona clickable para copiar */}
-        <div className="px-6 sm:px-7 pb-2">
-          <button
-            type="button"
-            onClick={handleCopy}
-            aria-label={copied ? "Código copiado" : "Copiar código BIENVENIDO"}
-            className="group w-full relative overflow-hidden rounded-2xl border-2 border-dashed border-[var(--accent)]/35 bg-[var(--surface-sunken)] hover:border-[var(--accent)] hover:bg-[var(--accent)]/5 transition-all px-4 sm:px-5 py-4 text-left active:scale-[0.985]"
-          >
-            <p className="text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">
-              Código
-            </p>
-            <div className="flex items-center justify-between gap-3">
-              <span className="font-mono text-xl sm:text-2xl font-extrabold tracking-[var(--ls-wider)] text-[var(--text-primary)] select-all truncate">
+            <button
+              type="button"
+              onClick={handleCopy}
+              aria-label={copied ? "Código copiado" : "Copiar código BIENVENIDO"}
+              className="group mt-3 flex w-full items-center justify-between gap-3 rounded-xl border-2 border-dashed border-[var(--accent)]/35 bg-[var(--surface-sunken)] px-3 py-2 text-left transition-all hover:border-[var(--accent)] hover:bg-[var(--accent)]/5 active:scale-[0.985]"
+            >
+              <span className="font-mono text-base font-extrabold tracking-[var(--ls-wider)] text-[var(--text-primary)] select-all truncate">
                 {COUPON_CODE}
               </span>
               <span
                 className={[
-                  "inline-flex items-center gap-1.5 h-10 sm:h-9 px-3 rounded-lg text-xs font-extrabold uppercase tracking-wide transition-colors shrink-0",
+                  "inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-xs font-extrabold uppercase tracking-wide transition-colors shrink-0",
                   copied
                     ? "bg-[var(--data-success-500)]/15 text-[var(--data-success-500)]"
                     : "bg-[var(--accent)]/12 text-[var(--accent)] group-hover:bg-[var(--accent)]/18",
@@ -178,38 +186,52 @@ export default function FirstVisitCouponModal() {
                   </>
                 )}
               </span>
-            </div>
-          </button>
+            </button>
 
-          <p className="mt-2.5 text-center text-[length:var(--ts-2xs,0.6875rem)] text-[var(--text-tertiary)]">
-            Válido sólo en tu primer pedido · Sin monto mínimo
-          </p>
+            <Link
+              href="/tiendas"
+              onClick={handleClose}
+              className="mt-2.5 inline-flex w-full h-11 items-center justify-center rounded-xl bg-[var(--text-primary)] text-[var(--surface-raised)] text-sm font-extrabold uppercase tracking-wide hover:opacity-90 transition-opacity active:scale-[0.985]"
+            >
+              Ir a comprar
+            </Link>
+            <p className="mt-2 text-center text-[length:var(--ts-2xs,0.6875rem)] text-[var(--text-tertiary)]">
+              Primer pedido en{" "}
+              <span className="font-semibold text-[var(--text-secondary)]">{storeName}</span> · Sin monto mínimo
+            </p>
+          </div>
         </div>
-
-        {/* CTA — pb respeta safe-area-inset-bottom para no quedar tras el
-            home indicator del iPhone (notch family). */}
-        <div
-          className="px-6 sm:px-7 pt-3 space-y-2"
-          style={{
-            paddingBottom: "max(1.75rem, env(safe-area-inset-bottom))",
-          }}
-        >
-          <Link
-            href="/tiendas"
-            onClick={handleClose}
-            className="w-full inline-flex items-center justify-center h-12 rounded-2xl bg-[var(--text-primary)] text-[var(--surface-raised)] font-extrabold text-sm uppercase tracking-wide hover:opacity-90 transition-opacity active:scale-[0.985]"
+      ) : (
+        <div className="flex items-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-lg)]">
+          <button
+            ref={stripBtnRef}
+            type="button"
+            onClick={() => cambiar(true)}
+            aria-expanded={false}
+            aria-controls={PANEL_ID}
+            className="flex h-12 min-w-0 flex-1 items-center gap-2.5 rounded-full pl-2 pr-1 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--text-primary)]"
           >
-            Ir a comprar
-          </Link>
+            <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--accent)]/12 text-[var(--accent)]">
+              <Gift className="h-4 w-4" strokeWidth={2} aria-hidden />
+            </span>
+            <span className="min-w-0 flex-1 truncate text-sm font-bold text-[var(--text-primary)]">
+              10 % en tu primer pedido
+            </span>
+            <span className="inline-flex shrink-0 items-center gap-0.5 text-sm font-extrabold text-[var(--text-primary)]">
+              Ver
+              <ChevronUp className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+            </span>
+          </button>
           <button
             type="button"
             onClick={handleClose}
-            className="w-full h-11 rounded-xl text-sm font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
+            aria-label="Cerrar cupón de bienvenida"
+            className="mr-1 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] transition-colors active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--text-primary)]"
           >
-            Tal vez después
+            <X className="h-4 w-4" strokeWidth={2.5} />
           </button>
         </div>
-      </div>
-    </div>
+      )}
+    </aside>
   );
 }

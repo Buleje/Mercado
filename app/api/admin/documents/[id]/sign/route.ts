@@ -2,14 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
-import { logger } from "@/lib/logger";
-import { DocumentsDB } from "@/lib/db/documents.db";
-import {
-  buildStoragePath,
-  downloadFromStorage,
-  uploadToStorage,
-} from "@/lib/documents/storage";
-import { signPdfVisually } from "@/lib/documents/pdf-signer";
+import { applySignature } from "@/lib/documents/sign-document";
 import { assertCsrf } from "@/lib/auth/csrf";
 
 
@@ -36,67 +29,19 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     return NextResponse.json({ error: "invalid_body", issues: parsed.error.issues }, { status: 400 });
   }
 
-  const doc = await DocumentsDB.getById(auth.tenantId, id);
-  if (!doc) return NextResponse.json({ error: "not_found" }, { status: 404 });
+  const result = await applySignature(auth.tenantId, id, {
+    signerName: parsed.data.signerName,
+    signerRole: parsed.data.signerRole,
+    signatureImagePngBase64: parsed.data.signatureImagePngBase64,
+    actorId: auth.username,
+    ipAddress: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? undefined,
+    viewerRole: auth.role,
+  });
+  if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
 
-  if (doc.mimeType !== "application/pdf") {
-    return NextResponse.json({ error: "only_pdf_signable" }, { status: 415 });
-  }
-
-  try {
-    const original = await downloadFromStorage(doc.storagePath);
-    if (!original) {
-      return NextResponse.json({ error: "storage_download_fail" }, { status: 502 });
-    }
-
-    const result = await signPdfVisually({
-      pdfBytes: original,
-      signerName: parsed.data.signerName,
-      signerRole: parsed.data.signerRole,
-      signatureImagePngBase64: parsed.data.signatureImagePngBase64,
-      ipAddress: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? undefined,
-    });
-
-    const newPath = buildStoragePath({
-      tenantId: auth.tenantId,
-      documentId: id,
-      versionLabel: "signed",
-      originalName: doc.originalName,
-    });
-    const up = await uploadToStorage(newPath, result.signedBytes, "application/pdf");
-    if (!up.ok) {
-      return NextResponse.json({ error: "storage_upload_fail", detail: up.error }, { status: 502 });
-    }
-
-    const v = await DocumentsDB.addVersion(auth.tenantId, id, {
-      storagePath: newPath,
-      size: result.signedBytes.length,
-      mimeType: "application/pdf",
-      uploadedById: auth.username,
-      changeNote: `Firmado por ${parsed.data.signerName}`,
-    });
-
-    DocumentsDB.log(auth.tenantId, {
-      documentId: id,
-      actorId: auth.username,
-      action: "sign",
-      metadata: {
-        signerName: parsed.data.signerName,
-        signerRole: parsed.data.signerRole,
-        originalSha256: result.originalSha256,
-        signedAt: result.signedAt,
-        versionNumber: v?.versionNumber,
-      },
-      ipAddress: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? undefined,
-    }).catch((err) => logger.warn("documents.audit.fail", { err: String(err) }));
-
-    return NextResponse.json({
-      version: v,
-      originalSha256: result.originalSha256,
-      signedAt: result.signedAt,
-    });
-  } catch (err) {
-    logger.error("documents.sign.exception", { err: String(err) });
-    return NextResponse.json({ error: "internal_error" }, { status: 500 });
-  }
+  return NextResponse.json({
+    version: result.version,
+    originalSha256: result.originalSha256,
+    signedAt: result.signedAt,
+  });
 }

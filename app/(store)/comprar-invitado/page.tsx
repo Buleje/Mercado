@@ -27,7 +27,7 @@ export default function ComprarInvitadoPage() {
             Comprar sin cuenta
           </h1>
           <p className="mt-2 text-[length:var(--ts-sm)] text-[var(--text-secondary)]">
-            Rápido y sin contraseña. Completá tus datos una vez y te enviamos el
+            Rápido y sin contraseña. Completa tus datos una vez y te enviamos el
             seguimiento por WhatsApp.
           </p>
         </header>

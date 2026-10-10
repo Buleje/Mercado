@@ -10,6 +10,8 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
+import AdminModal from "@/components/admin/shared/AdminModal";
 import {
   Gift,
   DollarSign,
@@ -22,14 +24,15 @@ import {
   Calendar,
   Trash2,
 } from "@buleje/design-system/icons";
+import { DataTable, StatCard } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import KPICard from "@/components/admin/shared/KPICard";
 import {
   GiftCardDetailsModal,
   type GiftCardDetails,
 } from "./gift-cards-admin/GiftCardDetailsModal";
 import { CreateManualGiftCardModal } from "./gift-cards-admin/CreateManualGiftCardModal";
+import { formatDate, formatNumber } from "@/lib/format";
 
 // ADR-077: cargar data real desde el backend.
 type AdminStats = {
@@ -152,16 +155,12 @@ const MOCK_CARDS: GiftCardDetails[] = [
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 function fmt(n: number) {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `S/ ${formatNumber(n, 2)}`;
 }
 
 function fmtDate(iso: string) {
   try {
-    return new Date(iso).toLocaleDateString("es-PE", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
+    return formatDate(iso);
   } catch {
     return iso;
   }
@@ -209,13 +208,14 @@ const STATUS_LABELS: Record<GiftCardDetails["status"], string> = {
 const STATUS_STYLES: Record<GiftCardDetails["status"], string> = {
   pendiente: "bg-[var(--data-success-100)] text-[var(--data-success-500)]",
   canjeada: "bg-[var(--data-info-100)] text-[var(--data-info-500)]",
-  expirada: "bg-gray-100 text-[var(--text-secondary)]",
+  expirada: "bg-[var(--rule-soft)] text-[var(--text-secondary)]",
   cancelada: "bg-[var(--data-error-100)] text-[var(--data-error-500)]",
 };
 
 // ── Main Component ──────────────────────────────────────────────────────────
 
 export default function GiftCardsAdminModule() {
+  const { prompt } = useConfirm();
   const [cards, setCards] = useState<GiftCardDetails[]>([]);
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -283,7 +283,12 @@ export default function GiftCardsAdminModule() {
       .reduce((sum, c) => sum + c.balance, 0);
 
   const handleCancel = async (id: string) => {
-    const reason = window.prompt("Motivo de la cancelacion:", "Solicitud del cliente");
+    const reason = await prompt({
+      title: "Motivo de la cancelación",
+      label: "Motivo",
+      defaultValue: "Solicitud del cliente",
+      inputType: "text",
+    });
     if (!reason || reason.trim().length < 3) return;
 
     try {
@@ -304,13 +309,23 @@ export default function GiftCardsAdminModule() {
     }
   };
 
-  // TODO(ADR-077 follow-up): implementar endpoint /extend. Por ahora queda
-  // como optimistic local update — no persiste. La UI avisa cuando hay API.
-  const handleExtend = (id: string, newExpiry: string) => {
-    setCards((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, expiresAt: newExpiry } : c)),
-    );
-    setSelected((s) => (s?.id === id ? { ...s, expiresAt: newExpiry } : s));
+  const handleExtend = async (id: string, newExpiry: string) => {
+    try {
+      const res = await fetch(`/api/admin/gift-cards/${id}/extend`, {
+        method: "POST",
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ expiresAt: newExpiry }),
+      });
+      if (!res.ok) return;
+      const iso = new Date(newExpiry).toISOString();
+      setCards((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, expiresAt: iso } : c)),
+      );
+      setSelected((s) => (s?.id === id ? { ...s, expiresAt: iso } : s));
+      void refetch();
+    } catch {
+      /* noop: la UI no cambia si falla la persistencia */
+    }
   };
 
   const handleCreate = async (data: {
@@ -360,7 +375,7 @@ export default function GiftCardsAdminModule() {
       >
         <button
           onClick={() => setShowCreate(true)}
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors"
+          className="inline-flex items-center gap-2 px-3 min-h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors"
         >
           <Plus className="h-4 w-4" />
           Emitir manual
@@ -369,34 +384,31 @@ export default function GiftCardsAdminModule() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KPICard
+        <StatCard
           label="Vendidas (30d)"
           value={vendidasEsteMes}
           icon={Gift}
-          color="var(--accent)"
-          subtitle="Tarjetas emitidas"
+          subValue="Tarjetas emitidas"
         />
-        <KPICard
+        <StatCard
           label="Ingreso (30d)"
           value={fmt(ingresoEsteMes)}
           icon={DollarSign}
-          color="#10B981"
-          subtitle="Monto vendido"
+          emphasis="success"
+          subValue="Monto vendido"
         />
-        <KPICard
+        <StatCard
           label="Canjeadas (30d)"
           value={canjeadasEsteMes}
           icon={CheckCircle}
-          color="#3B82F6"
-          subtitle="Tarjetas redimidas"
+          subValue="Tarjetas redimidas"
         />
-        <KPICard
+        <StatCard
           label="Saldo pendiente"
           value={fmt(saldoPendiente)}
           icon={Wallet}
-          color="#F59E0B"
-          subtitle="Pasivo por canjear"
-          alert={saldoPendiente > 2000}
+          emphasis={saldoPendiente > 2000 ? "error" : "warning"}
+          subValue="Pasivo por canjear"
         />
       </div>
 
@@ -405,23 +417,14 @@ export default function GiftCardsAdminModule() {
       )}
 
       {/* Modal cuando un admin emite gift card manual — muestra el plainCode UNA vez */}
-      {issuedCode && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
-          onClick={() => setIssuedCode(null)}
-        >
-          <div
-            className="bg-white dark:bg-[var(--color-card)] rounded-2xl shadow-2xl w-full max-w-md p-5"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-lg font-extrabold text-[var(--text-primary)]">
-              Codigo generado
-            </h3>
-            <p className="mt-2 text-sm text-[var(--text-secondary)]">
-              Este codigo solo se muestra UNA vez. Copialo y entregalo al destinatario
-              (WhatsApp, email, impreso). No lo podemos recuperar despues.
-            </p>
-            <div className="mt-4 flex items-center justify-between gap-2 rounded-xl bg-gray-100 px-3 py-3">
+      <AdminModal open={!!issuedCode} onClose={() => setIssuedCode(null)} title="Código generado" variant="default" aboveModals>
+        <div className="p-5">
+          <p className="text-sm text-[var(--text-secondary)]">
+            Este codigo solo se muestra UNA vez. Copialo y entregalo al destinatario
+            (WhatsApp, email, impreso). No lo podemos recuperar despues.
+          </p>
+          {issuedCode && (
+            <div className="mt-4 flex items-center justify-between gap-2 rounded-xl bg-[var(--rule-soft)] px-3 py-3">
               <code className="font-mono text-base font-bold tracking-wider text-[var(--text-primary)]">
                 {issuedCode}
               </code>
@@ -436,18 +439,18 @@ export default function GiftCardsAdminModule() {
                 Copiar
               </button>
             </div>
-            <div className="mt-5 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setIssuedCode(null)}
-                className="px-4 py-2 rounded-xl text-sm font-semibold bg-gray-900 text-white hover:bg-gray-800 transition-colors"
-              >
-                Listo
-              </button>
-            </div>
+          )}
+          <div className="mt-5 flex justify-end">
+            <button
+              type="button"
+              onClick={() => setIssuedCode(null)}
+              className="px-4 min-h-10 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors"
+            >
+              Listo
+            </button>
           </div>
         </div>
-      )}
+      </AdminModal>
 
       {/* Filtros */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
@@ -458,13 +461,14 @@ export default function GiftCardsAdminModule() {
             placeholder="Buscar por destinatario, código o ID..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+            className="w-full pl-9 pr-3 h-10 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
           />
         </div>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as GiftCardDetails["status"] | "all")}
-          className="px-3 py-2 rounded-xl border border-gray-200 text-sm cursor-pointer"
+          aria-label="Filtrar por estado"
+          className="px-3 h-10 rounded-xl border border-[var(--rule-base)] text-sm cursor-pointer"
         >
           <option value="all">Todos los estados</option>
           <option value="pendiente">Pendientes</option>
@@ -474,7 +478,7 @@ export default function GiftCardsAdminModule() {
         </select>
         <button
           onClick={() => exportCSV(filtered)}
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-gray-100 hover:bg-gray-200 transition-colors"
+          className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-[var(--rule-soft)] hover:bg-[var(--rule-base)] transition-colors"
         >
           <Download className="h-4 w-4" />
           CSV
@@ -483,16 +487,16 @@ export default function GiftCardsAdminModule() {
 
       {/* Tabla */}
       {filtered.length === 0 ? (
-        <div className="text-center py-16 text-[var(--text-tertiary)] bg-white dark:bg-[var(--color-card)] border border-gray-100 rounded-2xl">
+        <div className="text-center py-16 text-[var(--text-tertiary)] bg-[var(--surface-raised)] border border-[var(--rule-soft)] rounded-2xl">
           <Gift className="h-10 w-10 mx-auto mb-3 opacity-40" />
           <p className="text-sm font-semibold">Sin gift cards para mostrar</p>
           <p className="text-xs mt-1">Ajusta los filtros o emite una gift card manual.</p>
         </div>
       ) : (
-        <div className="bg-white dark:bg-[var(--color-card)] border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+            <DataTable className="w-full text-sm">
+              <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
                 <tr>
                   <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Código</th>
                   <th className="text-left px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide hidden sm:table-cell">Destinatario</th>
@@ -503,9 +507,9 @@ export default function GiftCardsAdminModule() {
                   <th className="text-right px-4 py-3 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wide">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-[var(--rule-soft)]">
                 {filtered.map((c) => (
-                  <tr key={c.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={c.id} className="hover:bg-[var(--surface-sunken)] transition-colors">
                     <td className="px-4 py-3">
                       <p className="font-mono text-xs font-bold text-[var(--text-primary)]">{maskCode(c.code)}</p>
                       <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{c.id}</p>
@@ -537,7 +541,7 @@ export default function GiftCardsAdminModule() {
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => setSelected(c)}
-                          className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10 transition-colors"
+                          className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
                           title="Ver detalles"
                         >
                           <Eye className="h-4 w-4" />
@@ -545,7 +549,7 @@ export default function GiftCardsAdminModule() {
                         {c.status === "pendiente" && (
                           <button
                             onClick={() => handleCancel(c.id)}
-                            className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors"
+                            className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors"
                             title="Cancelar y reembolsar"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -556,7 +560,7 @@ export default function GiftCardsAdminModule() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </DataTable>
           </div>
         </div>
       )}

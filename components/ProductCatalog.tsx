@@ -29,7 +29,7 @@ import { CanastaVacia } from "@/components/ui-system/illustrations";
 // QuickViewModal loaded on-demand only when user clicks "Vista rápida"
 const QuickViewModal = dynamic(() => import("@/components/QuickViewModal"), {});
 
-type LiveProduct = Product & { stock?: number; stockMin?: number; rating?: number; reviewCount?: number };
+type LiveProduct = Product & { stock?: number; stockMin?: number; rating?: number; reviewCount?: number; brand?: string };
 
 // realCategories se deriva dinámicamente de productList en el componente
 
@@ -149,8 +149,8 @@ const CAT_THEME: Record<string, { emojiBg: string; dot: string; pillHover: strin
 const DEFAULT_CAT_THEME = {
   emojiBg:       "bg-primary/8 dark:bg-primary/15",
   dot:           "bg-primary",
-  pillHover:     "hover:border-primary hover:text-primary hover:bg-primary/5",
-  linkBtn:       "bg-primary/8 dark:bg-primary/15 text-primary hover:bg-primary hover:text-white",
+  pillHover:     "hover:border-primary hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/5",
+  linkBtn:       "bg-primary/8 dark:bg-primary/15 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary hover:text-white",
   sectionBorder: "border-l-4 border-l-primary/40",
 };
 function getCatTheme(id: string) { return CAT_THEME[id] ?? DEFAULT_CAT_THEME; }
@@ -267,7 +267,7 @@ function ListProductRowBase({ product, onQuickView }: { product: LiveProduct; on
         <div className="flex items-center gap-2">
           <p className="text-sm text-muted">{product.unit}</p>
           {isLowStock && (
-            <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] bg-[var(--accent-soft)] px-1.5 py-0.5 rounded-full">¡Quedan {product.stock}!</span>
+            <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] bg-primary/10 px-1.5 py-0.5 rounded-full">¡Quedan {product.stock}!</span>
           )}
         </div>
       </div>
@@ -362,10 +362,20 @@ function fuzzyScore(text: string, query: string): number {
   return qi === q.length ? Math.max(1, score) : 0;
 }
 
+/**
+ * Rótulo de una categoría: «frutas-verduras» → «Frutas verduras»; un nombre ya
+ * escrito («Lácteos», «Frutas y Verduras») queda igual con la primera en
+ * mayúscula. Antes era `\b\w` → mayúscula: `\b` corta en cada letra con tilde
+ * y salía «LáCteos», «PanaderíA», «Frutas Y Verduras».
+ */
+function etiquetaCategoria(id: string): string {
+  const t = id.includes(" ") ? id : id.replace(/-/g, " ");
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function ProductCatalog({ initialProducts = [] }: { initialProducts?: LiveProduct[] }) {
   const settings = useContext(SettingsContext);
-  const storeName = settings?.storeTheme?.name || settings?.businessName || "tu tienda";
   const storeSlogan = settings?.storeTheme?.slogan || settings?.storeTheme?.description || "Compra online con delivery a domicilio. Paga con Yape o efectivo.";
   const [highlighted, setHighlighted] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -475,7 +485,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
     const catIds = [...new Set(productList.map(p => p.category).filter(Boolean))];
     return catIds.map(id => ({
       id,
-      label: id.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase()),
+      label: etiquetaCategoria(id),
       emoji: "📦",
     }));
   }, [productList]);
@@ -558,6 +568,32 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
     return unsub;
   }, []);
 
+  // Llegar con `?q=` (buscar), `?oferta=1` (sólo rebajados) o `?categoria=` (saltar
+  // a esa categoría): los enlaces de la portada de la tienda y de una página propia
+  // (ADR-458) traen al catálogo ya filtrado. La categoría espera a estar dibujada:
+  // los productos de la API pueden llegar después de montar.
+  const categoriaPedida = useRef<string | null>(null);
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    const q = p.get("q")?.trim();
+    const oferta = p.get("oferta") === "1";
+    categoriaPedida.current = p.get("categoria");
+    startTransition(() => {
+      if (q) setSearch(q);
+      if (oferta) setFilterOnSale(true);
+    });
+    if (q || oferta) requestAnimationFrame(() => document.getElementById("productos")?.scrollIntoView({ block: "start" }));
+  }, []);
+  useEffect(() => {
+    const cat = categoriaPedida.current;
+    if (!cat || !realCategories.some((c) => c.id === cat)) return;
+    categoriaPedida.current = null;
+    startTransition(() => setHighlighted(cat));
+    clearTimeout(highlightTimer.current);
+    highlightTimer.current = setTimeout(() => setHighlighted(null), 2500);
+    requestAnimationFrame(() => document.getElementById(`cat-${cat}`)?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  }, [realCategories]);
+
   // Reset to first page whenever search term or filters change
   useEffect(() => {
     startTransition(() => setSearchPage(1));
@@ -576,7 +612,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
     const sorted = sortProducts(
       (searchTerm
         ? productList
-            .map(p => ({ p, score: fuzzyScore(p.name, searchTerm) + fuzzyScore(p.category, searchTerm) }))
+            .map(p => ({ p, score: fuzzyScore(p.name, searchTerm) + fuzzyScore(p.category, searchTerm) + fuzzyScore(p.brand ?? "", searchTerm) }))
             .filter(({ score }) => score > 0)
             .sort((a, b) => b.score - a.score)
             .map(({ p }) => p)
@@ -653,7 +689,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                   "w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl text-sm font-bold transition-all mb-1.5",
                   !highlighted
                     ? "bg-primary text-white shadow-[var(--shadow-md)] shadow-primary/20"
-                    : "text-[var(--text-primary)] hover:bg-primary/8 hover:text-primary"
+                    : "text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:bg-primary/8 hover:text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 )}
               >
                 <span className="flex items-center gap-2">
@@ -683,7 +719,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                       className={cn(
                         "w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all",
                         active
-                          ? "bg-primary/10 text-primary"
+                          ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                           : "text-[var(--text-primary)] hover:bg-gray-50 dark:hover:bg-surface"
                       )}
                     >
@@ -694,7 +730,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                       <span className={cn(
                         "text-sm font-mono px-1.5 py-0.5 rounded-md shrink-0",
                         active
-                          ? "bg-primary/15 text-primary"
+                          ? "bg-primary/15 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                           : "bg-gray-100 dark:bg-surface text-muted"
                       )}>
                         {cat.count}
@@ -759,7 +795,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
               <div className="absolute top-full left-0 right-0 mt-1 bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl shadow-[var(--shadow-lg)] z-20 overflow-hidden">
                 {suggestions.map((p, i) => (
                   <button key={p.id} onMouseDown={() => { setSearch(p.name); setSuggestions([]); setSuggestionIdx(-1); }}
-                    className={cn("flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-[var(--text-primary)] transition-colors text-left", i === suggestionIdx ? "bg-primary/10" : "hover:bg-gray-50 dark:hover:bg-surface")}>
+                    className={cn("flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] transition-colors text-left", i === suggestionIdx ? "bg-primary/10" : "hover:bg-gray-50 dark:hover:bg-surface")}>
                     {p.image && <Image src={p.image} alt="" width={28} height={28} className="w-7 h-7 rounded-md object-cover shrink-0" unoptimized />}
                     <span className="flex-1 truncate">{p.name}</span>
                     <span className="text-xs text-muted shrink-0">S/{Number(p.price).toFixed(2)}</span>
@@ -814,7 +850,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
               className={cn(
                 "flex items-center gap-2 px-5 h-14 rounded-2xl border-2 text-base font-semibold transition-all shadow-[var(--shadow-sm)]",
                 showPriceFilter
-                  ? "border-primary bg-primary/10 text-primary"
+                  ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                   : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-primary"
               )}
             >
@@ -902,9 +938,9 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-semibold text-[var(--text-primary)]">Filtrar por precio</span>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-primary bg-primary/8 px-2.5 py-0.5 rounded-lg">S/{priceRange[0].toFixed(0)}</span>
+                <span className="text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/8 px-2.5 py-0.5 rounded-lg">S/{priceRange[0].toFixed(0)}</span>
                 <span className="text-xs text-muted">—</span>
-                <span className="text-sm font-bold text-primary bg-primary/8 px-2.5 py-0.5 rounded-lg">S/{priceRange[1].toFixed(0)}</span>
+                <span className="text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-primary/8 px-2.5 py-0.5 rounded-lg">S/{priceRange[1].toFixed(0)}</span>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -918,7 +954,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                   style={{
                     left: `${(priceRange[0] / maxPrice) * 100}%`,
                     right: `${100 - (priceRange[1] / maxPrice) * 100}%`,
-                    background: "linear-gradient(90deg, #f97316, #2563EB)",
+                    background: "linear-gradient(90deg, #ff6b5b, #2563EB)",
                   }}
                 />
                 <input
@@ -948,7 +984,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
           <div className="max-w-3xl mx-auto mb-3 flex items-center gap-2 flex-wrap">
             <span className="text-sm font-semibold text-muted">Filtros activos:</span>
             {search && (
-              <span className="flex items-center gap-1.5 text-sm font-semibold bg-primary/10 text-primary px-3 py-1.5 rounded-full">
+              <span className="flex items-center gap-1.5 text-sm font-semibold bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-3 py-1.5 rounded-full">
                 &ldquo;{search}&rdquo;
                 <button onClick={() => setSearch("")} className="ml-0.5 hover:text-primary-dark"><X className="h-3.5 w-3.5" /></button>
               </span>
@@ -1106,7 +1142,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                                 "h-8 w-8 rounded-full text-sm font-bold transition-all",
                                 pg === searchPage
                                   ? "bg-primary text-white shadow-[var(--shadow-md)] shadow-primary/25"
-                                  : "text-gray-500 hover:bg-primary/10 hover:text-primary"
+                                  : "text-gray-500 hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:text-[var(--accent)]"
                               )}
                             >
                               {pg}
@@ -1153,7 +1189,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                                 "h-8 w-8 rounded-full text-sm font-bold transition-all",
                                 pg === searchPage
                                   ? "bg-primary text-white shadow-[var(--shadow-md)] shadow-primary/25"
-                                  : "text-gray-500 hover:bg-primary/10 hover:text-primary"
+                                  : "text-gray-500 hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:text-[var(--accent)]"
                               )}
                             >
                               {pg}
@@ -1196,7 +1232,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                   <div
                     key={cat.id}
                     id={`cat-${cat.id}`}
-                    className={highlighted === cat.id ? "ring-2 ring-primary ring-offset-4 rounded-xl p-3 scroll-mt-4" : "scroll-mt-4"}
+                    className={highlighted === cat.id ? "ring-2 ring-primary ring-offset-4 rounded-xl p-3 scroll-mt-24" : "scroll-mt-24"}
                   >
                     <div className={cn("flex items-center gap-3 mb-4 pl-3", theme.sectionBorder)}>
                       <span className={cn("h-2.5 w-2.5 rounded-full shrink-0", theme.dot)} aria-hidden="true" />

@@ -52,12 +52,12 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const result = await processPayment(installmentId, amount);
+    const result = await processPayment(auth.tenantId, installmentId, amount);
 
     // Si el pago cierra el plan, recalcular el score del cliente
     if (result.isFullyPaid) {
-      updateCreditProfile(auth.tenantId, plan.creditProfile.customerId).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
+      updateCreditProfile(auth.tenantId, plan.creditProfile.customerId).catch((err) => {
+      logger.error("[credit/pay] updateCreditProfile failed", { error: String(err), tenantId: auth.tenantId });
     });
     }
 
@@ -67,8 +67,8 @@ export async function POST(req: NextRequest) {
       `Pago de S/${amount} registrado en plan ${installmentId}${result.isFullyPaid ? " — plan completado" : ` — quedan S/${result.remainingAmount}`}`,
       installmentId,
       auth.username,
-    ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
+    ).catch((err) => {
+      logger.error("[credit/pay] logActivity failed", { error: String(err), tenantId: auth.tenantId });
     });
 
     return NextResponse.json(result);

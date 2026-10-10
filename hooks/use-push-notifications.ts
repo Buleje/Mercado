@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { csrfHeaders } from "@/lib/csrf-client";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -103,7 +104,7 @@ export function usePushNotifications(): UsePushNotificationsReturn {
       // Send subscription to our marketplace API
       const res = await fetch("/api/marketplace/push/subscribe", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           subscription: subscription.toJSON(),
         }),
@@ -142,7 +143,7 @@ export function usePushNotifications(): UsePushNotificationsReturn {
         // Notify server
         await fetch("/api/marketplace/push/subscribe", {
           method: "DELETE",
-          headers: { "Content-Type": "application/json" },
+          headers: csrfHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ endpoint: subscription.endpoint }),
         }).catch(() => {});
 

@@ -522,6 +522,56 @@ export const SocioBulejeDB: ISocioBulejeDB = {
     return hydrateWithBalance(updated);
   },
 
+  /**
+   * Admin: extiende el período de la membresía `months` meses (regalo o
+   * corrección desde el panel). Parte del fin de período vigente si es futuro,
+   * o de hoy si ya venció. Reactiva la membresía; rechaza si está cancelada.
+   */
+  async extendPeriod(
+    tenantId: string,
+    userId: string,
+    months: number,
+  ): Promise<SocioMembershipWithBalance | null> {
+    const existing = await pdb.socioMembership.findUnique({
+      where: { tenantId_userId: { tenantId, userId } },
+    });
+    if (!existing) return null;
+    if (existing.status === "cancelled") {
+      throw new ConflictError(
+        "Membership cancelada — no se puede extender. Suscribite de nuevo.",
+      );
+    }
+
+    const now = new Date();
+    const base = existing.currentPeriodEnd > now ? existing.currentPeriodEnd : now;
+    const nextPeriodEnd = new Date(base);
+    nextPeriodEnd.setMonth(nextPeriodEnd.getMonth() + months);
+
+    const updated = await pdb.socioMembership.update({
+      where: { tenantId_userId: { tenantId, userId } },
+      data: {
+        currentPeriodEnd: nextPeriodEnd,
+        status: "active",
+        cancelAtPeriodEnd: false,
+      },
+    });
+
+    invalidateByPrefix(cachePrefix(tenantId, userId));
+    invalidateByPrefix(`socio:${tenantId}:stats`);
+
+    logActivity(
+      "socio_extend_period",
+      "SocioMembership",
+      `+${months} mes(es)`,
+      updated.id,
+      "system",
+      undefined,
+      tenantId,
+    ).catch((err) => logger.warn("[socio] activity log failed", { error: String(err) }));
+
+    return hydrateWithBalance(updated);
+  },
+
   async resume(
     tenantId: string,
     userId: string,
@@ -587,6 +637,16 @@ export const SocioBulejeDB: ISocioBulejeDB = {
       // past_due permite earn, pero no redeem (regla ADR-078).
       if (membership.status === "cancelled" || membership.status === "paused") {
         throw new SocioInactiveError(membership.status);
+      }
+
+      // Idempotencia por orderId: si ya se acreditó cashback earned de este
+      // pedido, devolvemos esa entry (evita doble crédito en reintentos).
+      if (orderId) {
+        const dup = (await tx.socioCashbackEntry.findFirst({
+          where: { tenantId, orderId, type: "earned" },
+          orderBy: [{ createdAt: "desc" }],
+        })) as PrismaCashbackEntry | null;
+        if (dup && "type" in dup) return dup;
       }
 
       const last = await tx.socioCashbackEntry.findFirst({
@@ -1013,6 +1073,46 @@ export { SOCIO_CASHBACK_PCT, SOCIO_PLAN_PRICES, SOCIO_TRIAL_DAYS, SOCIO_GRACE_PE
 // Para retrocompatibilidad con el mock.
 export function getPlanPrice(plan: SocioPlanInput): number {
   return planPriceSoles(canonicalPlan(plan));
+}
+
+/**
+ * Ahorro mensual REAL del socio, derivado del ledger de cashback (entradas
+ * "earned"/"bonus"). Devuelve los últimos `months` meses (rellena con 0 los
+ * meses sin actividad) + el total del mes en curso. Datos reales, no mock.
+ */
+export async function getSocioMonthlySavings(
+  tenantId: string,
+  userId: string,
+  months = 6,
+): Promise<{ monthly: Array<{ month: string; amount: number }>; thisMonth: number; hasData: boolean }> {
+  const entries = await SocioBulejeDB.getCashbackHistory(tenantId, userId, 300);
+  const MONTHS_ES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Set", "Oct", "Nov", "Dic"];
+
+  // Suma de "ganado" por clave YYYY-MM.
+  const byKey = new Map<string, number>();
+  let hasData = false;
+  for (const e of entries) {
+    if (e.type !== "earned" && e.type !== "bonus") continue;
+    if (e.amountSoles <= 0) continue;
+    hasData = true;
+    const d = new Date(e.createdAt);
+    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+    byKey.set(key, (byKey.get(key) ?? 0) + e.amountSoles);
+  }
+
+  // Construir la ventana de los últimos `months` meses (incluye el actual).
+  const now = new Date();
+  const monthly: Array<{ month: string; amount: number }> = [];
+  for (let i = months - 1; i >= 0; i--) {
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
+    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+    monthly.push({ month: MONTHS_ES[d.getUTCMonth()], amount: Math.round((byKey.get(key) ?? 0) * 100) / 100 });
+  }
+
+  const thisKey = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+  const thisMonth = Math.round((byKey.get(thisKey) ?? 0) * 100) / 100;
+
+  return { monthly, thisMonth, hasData };
 }
 
 // Logger dev-only para diagnosticar unused warnings.

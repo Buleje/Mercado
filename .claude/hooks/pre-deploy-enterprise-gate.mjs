@@ -117,7 +117,7 @@ if (consoleCheck.ok && consoleCheck.output.length > 0) {
 }
 
 // ── Gate 2: TypeScript type-check ──────────────────────────────────────
-const tscCheck = run("npx tsc --noEmit 2>&1 | head -20");
+const tscCheck = run("node scripts/tsc7.mjs --noEmit 2>&1 | head -20");
 if (!tscCheck.ok) {
   block(
     "TypeScript type-check falló (tsc --noEmit)",

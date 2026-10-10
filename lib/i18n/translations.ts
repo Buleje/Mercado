@@ -136,7 +136,7 @@ export const TRANSLATIONS: Record<string, TranslationEntry> = {
   "common.day": { es: "día", en: "day", shi: "punchaw" },
   "common.firstMonthFree": { es: "Primer mes gratis", en: "First month free", shi: "Ñawpaq killa mana paguspa" },
   "common.noCard": { es: "Sin tarjeta", en: "No card", shi: "Mana tarjeta" },
-  "common.cancelAnytime": { es: "Cancelás cuando quieras", en: "Cancel anytime", shi: "Ima horatapas sayachiy" },
+  "common.cancelAnytime": { es: "Cancelas cuando quieras", en: "Cancel anytime", shi: "Ima horatapas sayachiy" },
   "common.save": { es: "Guardar", en: "Save", shi: "Waqaychay" },
   "common.cancel": { es: "Cancelar", en: "Cancel", shi: "Amakoi" },
   "common.edit": { es: "Editar", en: "Edit", shi: "Ya'kati" },
@@ -164,7 +164,7 @@ export const TRANSLATIONS: Record<string, TranslationEntry> = {
   "landing.nav.inicio": { es: "Inicio", en: "Home", shi: "Yoba" },
   "landing.nav.tiendas": { es: "Tiendas", en: "Stores", shi: "Xobokoni" },
   "landing.nav.negocios": { es: "Negocios", en: "Business", shi: "Tsain" },
-  "landing.nav.conoceBuleje": { es: "Conocé Buleje", en: "Learn more", shi: "Onan Buleje" },
+  "landing.nav.conoceBuleje": { es: "Conoce Buleje", en: "Learn more", shi: "Onan Buleje" },
   "landing.nav.signin": { es: "Ingresar", en: "Sign in", shi: "Ichinon" },
   "landing.nav.startStore": { es: "Empezar mi tienda", en: "Start my store", shi: "Mi xobo kichay" },
 
@@ -174,7 +174,7 @@ export const TRANSLATIONS: Record<string, TranslationEntry> = {
   "landing.hero.title2": { es: "Más pedidos.", en: "More orders.", shi: "Más" },
   "landing.hero.titleAccent": { es: "Cero tecnología.", en: "Zero tech.", shi: "Cero" },
   "landing.hero.description": {
-    es: "Catálogo, pagos Yape, delivery y reportes — todo listo en 5 minutos. Tú te enfocás en vender.",
+    es: "Catálogo, pagos Yape, delivery y reportes — todo listo en 5 minutos. Tú te enfocas en vender.",
     en: "Catalog, Yape payments, delivery and reports — all ready in 5 minutes. You focus on selling.",
     shi: "Catalogo, pagos, delivery, todo listo.",
   },
@@ -267,7 +267,7 @@ export const TRANSLATIONS: Record<string, TranslationEntry> = {
 
   // ── Promo Banners (Sumate a Buleje) ─────────────────────────────────
   "landing.promo.business.kicker": { es: "Para dueños", en: "For owners", shi: "Dueños" },
-  "landing.promo.business.title1": { es: "Vendé sin comisión", en: "Sell with no fees", shi: "Rantichiy" },
+  "landing.promo.business.title1": { es: "Vende sin comisión", en: "Sell with no fees", shi: "Rantichiy" },
   "landing.promo.business.titleAccent": { es: "los primeros 90 días.", en: "the first 90 days.", shi: "ñawpaq 90." },
   "landing.promo.business.desc": {
     es: "Tu bodega online en 5 minutos. Yape, efectivo, delivery propio. Cero costo fijo.",
@@ -282,7 +282,7 @@ export const TRANSLATIONS: Record<string, TranslationEntry> = {
   "landing.promo.driver.title1": { es: "Tu moto, tu horario,", en: "Your bike, your hours,", shi: "Mi moto" },
   "landing.promo.driver.titleAccent": { es: "tu ingreso extra.", en: "your extra income.", shi: "qullqi" },
   "landing.promo.driver.desc": {
-    es: "Recibí pedidos cerca tuyo. Cobrás cada viaje + propinas. Sin jefe, sin esperas.",
+    es: "Recibe pedidos cerca tuyo. Cobras cada viaje + propinas. Sin jefe, sin esperas.",
     en: "Receive orders near you. Earn per trip + tips. No boss, no waiting.",
     shi: "Pedidos cerca tuyo.",
   },
@@ -293,9 +293,9 @@ export const TRANSLATIONS: Record<string, TranslationEntry> = {
   // ── Planes section ──────────────────────────────────────────────────
   "landing.plans.kicker": { es: "Planes", en: "Plans", shi: "Plankuna" },
   "landing.plans.title": { es: "Prueba un mes,", en: "Try one month,", shi: "Killata probay" },
-  "landing.plans.titleAccent": { es: "pagá solo si te conviene.", en: "pay only if it fits.", shi: "pagay" },
+  "landing.plans.titleAccent": { es: "paga solo si te conviene.", en: "pay only if it fits.", shi: "pagay" },
   "landing.plans.description": {
-    es: "Cambiás de plan cuando quieras. Sin contratos, sin permanencia, sin sorpresas en la factura.",
+    es: "Cambias de plan cuando quieras. Sin contratos, sin permanencia, sin sorpresas en la factura.",
     en: "Change your plan anytime. No contracts, no lock-in, no billing surprises.",
     shi: "Cambia plan.",
   },
@@ -317,7 +317,7 @@ export const TRANSLATIONS: Record<string, TranslationEntry> = {
   "plans.annual": { es: "Anual", en: "Annual", shi: "Wata" },
   "plans.upTo25off": { es: "Hasta -25%", en: "Up to -25%", shi: "Hasta -25%" },
   "plans.allInclude": {
-    es: "Todos los planes incluyen actualizaciones, soporte y backups diarios · Cancelás en 1 click sin preguntas.",
+    es: "Todos los planes incluyen actualizaciones, soporte y backups diarios · Cancelas en 1 click sin preguntas.",
     en: "All plans include updates, support and daily backups · Cancel in 1 click, no questions asked.",
     shi: "Tukuy plankuna incluyen actualizaciones.",
   },
@@ -346,7 +346,7 @@ export const TRANSLATIONS: Record<string, TranslationEntry> = {
     shi: "Cadena · mana límite",
   },
   "plans.afterMonthly": {
-    es: "Después · cancelás cuando quieras",
+    es: "Después · cancelas cuando quieras",
     en: "Then · cancel anytime",
     shi: "Qhipaman · sayachiy",
   },
@@ -356,7 +356,7 @@ export const TRANSLATIONS: Record<string, TranslationEntry> = {
     shi: "Mana tarjeta",
   },
   "plans.savings": {
-    es: "Ahorrás al año",
+    es: "Ahorras al año",
     en: "You save per year",
     shi: "Waqaychay",
   },
@@ -424,7 +424,7 @@ export const TRANSLATIONS: Record<string, TranslationEntry> = {
   "faq.title": { es: "Todo lo que", en: "Everything you", shi: "Tukuy" },
   "faq.titleAccent": { es: "quieres saber.", en: "want to know.", shi: "yachayta munanki." },
   "faq.subhead": {
-    es: "Si no encontrás tu respuesta, escríbenos — somos humanos, no bots.",
+    es: "Si no encuentras tu respuesta, escríbenos — somos humanos, no bots.",
     en: "If you don't find your answer, write to us — we're humans, not bots.",
     shi: "Qillqamuwayku.",
   },
@@ -437,7 +437,7 @@ export const TRANSLATIONS: Record<string, TranslationEntry> = {
     shi: "Equipo respond.",
   },
   "faq.directWhatsapp": { es: "WhatsApp directo", en: "Direct WhatsApp", shi: "WhatsApp" },
-  "faq.cat1.label": { es: "Vendé más", en: "Sell more", shi: "Astawan rantichiy" },
+  "faq.cat1.label": { es: "Vende más", en: "Sell more", shi: "Astawan rantichiy" },
   "faq.cat1.q1": { es: "¿Cómo me ayuda Buleje a atraer clientes?", en: "How does Buleje help me attract customers?", shi: "Imayna Buleje rantiqkunata?" },
   "faq.cat1.a1": {
     es: "Tu negocio aparece en buscadores, mapa local y app. Cupones, ofertas del día y notificaciones push automáticas. Tus clientes te encuentran sin que pagues publicidad.",
@@ -446,7 +446,7 @@ export const TRANSLATIONS: Record<string, TranslationEntry> = {
   },
   "faq.cat1.q2": { es: "¿Qué pasa si ya tengo clientes fieles?", en: "What if I already have loyal customers?", shi: "Achka rantiqkuna kapuwantin?" },
   "faq.cat1.a2": {
-    es: "Buleje los retiene mejor: historial de compras, recordatorios, cumpleaños y promociones personalizadas. Convertís compradores ocasionales en habituales.",
+    es: "Buleje los retiene mejor: historial de compras, recordatorios, cumpleaños y promociones personalizadas. Conviertes compradores ocasionales en habituales.",
     en: "Buleje retains them better: purchase history, reminders, birthdays and personalized promos. Turn occasional buyers into regulars.",
     shi: "Astawan retención.",
   },
@@ -465,7 +465,7 @@ export const TRANSLATIONS: Record<string, TranslationEntry> = {
   "faq.cat2.label": { es: "Precios y planes", en: "Prices and plans", shi: "Chanin, plankuna" },
   "faq.cat2.q1": { es: "¿Cuánto cuesta usar Buleje?", en: "How much does Buleje cost?", shi: "Hayk'ataq?" },
   "faq.cat2.a1": {
-    es: "Plan Gratis con 0% de comisión por 90 días. Plan Pro S/ 49/mes con herramientas avanzadas. Plan Enterprise a medida. Sin contratos, cancelás cuando quieras.",
+    es: "Plan Gratis con 0% de comisión por 90 días. Plan Pro S/ 49/mes con herramientas avanzadas. Plan Enterprise a medida. Sin contratos, cancelas cuando quieras.",
     en: "Free plan with 0% commission for 90 days. Pro plan S/ 49/month with advanced tools. Enterprise tailored. No contracts, cancel anytime.",
     shi: "Mana paguy 90.",
   },
@@ -477,20 +477,20 @@ export const TRANSLATIONS: Record<string, TranslationEntry> = {
   },
   "faq.cat2.q3": { es: "¿Qué pasa si dejo de usarlo?", en: "What if I stop using it?", shi: "Sayachiyta munaspa?" },
   "faq.cat2.a3": {
-    es: "Cancelás con un click. Te llevás todos tus datos exportados (clientes, pedidos, productos) en CSV. No hay permanencia.",
+    es: "Cancelas con un click. Te llevas todos tus datos exportados (clientes, pedidos, productos) en CSV. No hay permanencia.",
     en: "Cancel with one click. Take all your exported data (customers, orders, products) in CSV. No lock-in.",
     shi: "Huk click sayachiy.",
   },
   "faq.cat2.q4": { es: "¿Necesito tarjeta de crédito para registrarme?", en: "Do I need a credit card to sign up?", shi: "Tarjeta necesitan?" },
   "faq.cat2.a4": {
-    es: "No. Empezás con Yape o efectivo y migras a tarjeta cuando quieras.",
+    es: "No. Empiezas con Yape o efectivo y migras a tarjeta cuando quieras.",
     en: "No. Start with Yape or cash and switch to card whenever.",
     shi: "Mana. Yape kayniyki.",
   },
   "faq.cat3.label": { es: "Setup y soporte", en: "Setup and support", shi: "Setup, yanapay" },
   "faq.cat3.q1": { es: "¿Cuánto demora el setup?", en: "How long does setup take?", shi: "Hayk'a setup?" },
   "faq.cat3.a1": {
-    es: "5 minutos. Subís logo, catálogo y horarios. Te ayudamos por WhatsApp si quieres.",
+    es: "5 minutos. Subes logo, catálogo y horarios. Te ayudamos por WhatsApp si quieres.",
     en: "5 minutes. Upload logo, catalog and hours. We help via WhatsApp if you want.",
     shi: "5 minutos.",
   },
@@ -528,8 +528,8 @@ export const TRANSLATIONS: Record<string, TranslationEntry> = {
   "footer.cookies": { es: "Cookies", en: "Cookies", shi: "Cookies" },
   "footer.marketplace": { es: "Marketplace", en: "Marketplace", shi: "Marketplace" },
   "footer.myAccount": { es: "Mi cuenta", en: "My account", shi: "Cuentay" },
-  "footer.sellOnBuleje": { es: "Vendé en Buleje", en: "Sell on Buleje", shi: "Buleje-pi rantichiy" },
-  "footer.openYourStore": { es: "Abrí tu tienda", en: "Open your store", shi: "Qhatuyki kichay" },
+  "footer.sellOnBuleje": { es: "Vende en Buleje", en: "Sell on Buleje", shi: "Buleje-pi rantichiy" },
+  "footer.openYourStore": { es: "Abre tu tienda", en: "Open your store", shi: "Qhatuyki kichay" },
 };
 
 /**

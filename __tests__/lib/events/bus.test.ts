@@ -37,6 +37,7 @@ vi.mock("@/lib/activity-logger", () => ({
 
 // Mock cache (used by on-order-created and on-payment-settled handlers)
 vi.mock("@/lib/cache", () => ({
+  revalidateTenantTag: vi.fn(),
   invalidate: vi.fn(),
   invalidateByPrefix: vi.fn(),
 }));

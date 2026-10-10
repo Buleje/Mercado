@@ -25,6 +25,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { LeadsDB } from "@/lib/db/leads.db";
 import { logger } from "@/lib/logger";
+import { leerJson } from "@/lib/errores/sin-dato";
 
 // Brandon 2026-05-16: removido `force-dynamic` (incompatible con
 // cacheComponents Next 16, ADR-019). requireAdmin lee cookies →
@@ -88,7 +89,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   try {
-    const body = await req.json().catch(() => null);
+    const body = await leerJson(req);
     const parsed = UpdateSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(

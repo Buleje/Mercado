@@ -37,7 +37,7 @@ export function CategorySuggestionInline({
   }
 
   return (
-    <div className="mt-2 flex items-center justify-between gap-2 rounded-lg border border-[var(--accent)]/40 bg-[var(--accent-soft)] px-3 py-2">
+    <div className="mt-2 flex items-center justify-between gap-2 rounded-lg border border-[var(--accent)]/40 bg-primary/10 px-3 py-2">
       <div className="min-w-0 flex-1">
         <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">
           Sugerencia automática
@@ -52,7 +52,7 @@ export function CategorySuggestionInline({
       <button
         type="button"
         onClick={() => onApply(detection.id)}
-        className="shrink-0 inline-flex items-center gap-1 rounded-md bg-[var(--accent)] px-3 py-1.5 text-xs font-bold text-white hover:opacity-90 active:scale-95 transition-all"
+        className="shrink-0 inline-flex items-center gap-1 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-bold text-white hover:opacity-90 active:scale-95 transition-all"
       >
         Aplicar
       </button>

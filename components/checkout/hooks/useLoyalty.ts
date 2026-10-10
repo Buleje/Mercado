@@ -6,20 +6,6 @@ import type { CheckoutDispatch } from "./useCheckoutState";
  * Falla en silencio: la lealtad es opcional, no debe romper el checkout.
  */
 
-export const TIER_DISCOUNT: Record<string, number> = {
-  plata: 2,
-  oro: 4,
-  diamante: 6,
-};
-
-/**
- * Devuelve el % de descuento que aplica el tier (0 si no hay tier conocido).
- */
-export function getTierDiscountPct(tier: string | null): number {
-  if (!tier) return 0;
-  return TIER_DISCOUNT[tier] ?? 0;
-}
-
 export function useLoyalty(dispatch: CheckoutDispatch) {
   const fetchPoints = useCallback(
     async (phone: string) => {
@@ -36,7 +22,16 @@ export function useLoyalty(dispatch: CheckoutDispatch) {
         });
         if (!auth.ok) return;
         const authData = await auth.json();
-        if (!authData?.authenticated) return;
+        // Sin sesión VERIFICADA no hay canje: el checkout muestra «Inicia
+        // sesión para usar tus puntos» (el token de un pedido de invitado
+        // también responde `authenticated: false`).
+        if (!authData?.authenticated) {
+          dispatch({
+            type: "SET_LOYALTY",
+            patch: { sesionVerificada: false, points: null, telefono: null, redemptionSoles: 0 },
+          });
+          return;
+        }
 
         const res = await fetch(`/api/loyalty/${encodeURIComponent(clean)}`, {
           credentials: "include",
@@ -51,6 +46,8 @@ export function useLoyalty(dispatch: CheckoutDispatch) {
           patch: {
             points: data.loyaltyPoints ?? null,
             tier: data.loyaltyTier ?? null,
+            sesionVerificada: true,
+            telefono: clean,
           },
         });
       } catch {

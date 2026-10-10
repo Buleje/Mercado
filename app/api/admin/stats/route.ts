@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
+import { RUTAS_PANEL } from "@/lib/auth/roles-rutas-panel";
 import { getOrSet } from "@/lib/cache";
 import { logger } from "@/lib/logger";
 import { AdminStatsDB } from "@/lib/db/admin-stats.db";
@@ -14,7 +15,7 @@ import { AdminStatsDB } from "@/lib/db/admin-stats.db";
  * Uses COUNT and SUM queries directly instead of loading full datasets.
  */
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin"]);
+  const auth = await requireAdmin(req, RUTAS_PANEL["/api/admin/stats"]);
   if (auth instanceof NextResponse) return auth;
   const tenantId = auth.tenantId;
 

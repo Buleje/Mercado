@@ -1,4 +1,5 @@
 "use client";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 
 /**
  * EmptyDateRangeState — empty-state contextual cuando no hay datos
@@ -7,14 +8,32 @@
  * Muestra:
  *   - Icono temático (paiche o el icono propio del módulo)
  *   - Headline con la métrica + el rango ("No hay ventas hoy")
- *   - Descripción con sugerencia útil
- *   - 3 chips para saltar a "Hoy / Esta semana / Este mes"
+ *   - Descripción con sugerencia útil (UNA frase)
+ *   - Chips «Prueba con» de los OTROS períodos (Hoy · Esta semana · Este mes ·
+ *     Este año, menos el actual)
+ *   - Botón principal de la pestaña (`action`)
+ *
+ * Regla R1 del tablero (2026-10-09): pestaña sin NINGÚN dato en el rango →
+ * sólo esto, sin KPIs en cero debajo. Decidirlo con `algunDato()` de
+ * `lib/admin/inicio/hay-datos`. Ejemplo (la imagen que pidió Brandon):
+ *
+ *   <EmptyDateRangeState
+ *     dateRange={dateRange}
+ *     metric="ventas"                      // título: «Sin ventas este mes»
+ *     onChangeRange={onChangeRange}        // sin esto no hay chips
+ *     action={{ label: "Registrar venta manual", href: "/admin?tab=ventas-caja" }}
+ *   />
+ *
+ * `title` y `description` pisan el texto armado; `icon` cambia el paiche por
+ * un ícono del módulo. El contenedor lleva `data-estado-vacio="rango"` para
+ * medirlo desde qa-capturas.
  *
  * Reutilizable en VentasDashboard, CajaDashboard, InventarioDashboard,
  * ComprasDashboard, ProductosDashboard, ClientesDashboard, InicioDashboardV2.
  */
 
 import { useCallback } from "react";
+import { CardTitle } from "@buleje/design-system";
 import { Calendar, ArrowRight, type LucideIcon } from "@buleje/design-system/icons";
 import {
   type DateRange,
@@ -26,8 +45,11 @@ import { PaicheMascot } from "@/components/ui-system/illustrations/PaicheMascot"
 interface Props {
   /** Rango actual del dashboard. */
   dateRange: DateRange;
-  /** Etiqueta de la métrica vacía: "ventas", "compras", "clientes nuevos", etc. */
-  metric: string;
+  /**
+   * Etiqueta de la métrica vacía: "ventas", "compras", "clientes nuevos", etc.
+   * Arma el título «Sin <metric> <período>». Opcional si se pasa `title`.
+   */
+  metric?: string;
   /** Callback opcional para saltar a un preset. Si se da, muestra los chips. */
   onChangeRange?: (range: DateRange) => void;
   /** Icono específico del módulo (default Calendar). Reemplaza al paiche. */
@@ -77,7 +99,7 @@ function computeQuickRange(
 
 export default function EmptyDateRangeState({
   dateRange,
-  metric,
+  metric = "datos",
   onChangeRange,
   icon: Icon,
   title,
@@ -90,7 +112,7 @@ export default function EmptyDateRangeState({
     `Sin ${metric} ${dateRange.preset === "especifica" ? describeRange(dateRange) : rangeTxt}`;
   const desc =
     description ??
-    "Probá ampliar el rango o cambiá a otro período. Cuando empieces a registrar movimientos, los datos van a aparecer acá.";
+    "Prueba ampliar el rango o cambia a otro período. Cuando empieces a registrar movimientos, los datos van a aparecer acá.";
 
   const handleQuick = useCallback(
     (p: Exclude<DatePreset, "personalizado" | "especifica">) => {
@@ -105,7 +127,10 @@ export default function EmptyDateRangeState({
   );
 
   return (
-    <div className="relative overflow-hidden border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-6 py-12 sm:py-16">
+    <div
+      data-estado-vacio="rango"
+      className="relative overflow-hidden border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-6 py-12 sm:py-16"
+    >
       {/* Aura sutil */}
       <div
         aria-hidden
@@ -131,9 +156,9 @@ export default function EmptyDateRangeState({
         </div>
 
         {/* Headline */}
-        <h3 className="text-[length:clamp(1.25rem,2.5vw,1.625rem)] font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
+        <CardTitle as="h3" className="text-[length:var(--ts-xl)] font-bold tracking-tight text-[var(--text-primary)] leading-tight">
           {headline}
-        </h3>
+        </CardTitle>
 
         {/* Descripción */}
         <p className="mt-3 text-[length:var(--ts-base)] font-medium text-[var(--text-secondary)] leading-relaxed">
@@ -145,14 +170,14 @@ export default function EmptyDateRangeState({
           <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
             <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
               <Calendar className="h-3.5 w-3.5" />
-              Probá con
+              Prueba con
             </span>
             {chips.map((p) => (
               <button
                 key={p}
                 type="button"
                 onClick={() => handleQuick(p)}
-                className="inline-flex items-center gap-1.5 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 py-2 text-[length:var(--ts-sm)] font-bold text-[var(--text-primary)] transition-all hover:border-[var(--accent)] hover:text-[var(--accent)] hover:shadow-md"
+                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 py-2 text-[length:var(--ts-sm)] font-bold text-[var(--text-primary)] transition-all hover:border-[var(--accent)] hover:text-[var(--accent)] hover:shadow-md"
               >
                 {p === "diario"
                   ? "Hoy"
@@ -170,13 +195,13 @@ export default function EmptyDateRangeState({
         {action && (
           <div className="mt-6">
             {action.href ? (
-              <a
+              <EnlacePanel apariencia="heredada"
                 href={action.href}
-                className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent)] px-5 py-2.5 text-[length:var(--ts-sm)] font-extrabold text-white shadow-md hover:gap-2 transition-all"
+                className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent)] px-5 py-2.5 text-[length:var(--ts-sm)] font-extrabold text-white shadow-md hover:gap-2 transition-all hover:no-underline"
               >
                 {action.label}
                 <ArrowRight className="h-4 w-4" />
-              </a>
+              </EnlacePanel>
             ) : (
               <button
                 type="button"

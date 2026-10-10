@@ -1,12 +1,16 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import type { VendorDashboardData } from "@/components/admin/vendor-dashboard/vendor-dashboard.types";
 import { usePlanTier } from "@/hooks/use-plan-tier";
+import { useEnabledSpecs } from "@/hooks/use-enabled-specs";
+import { useMiRol } from "@/hooks/use-mi-rol";
+import { CLAVE_ELIGIO_A_MANO, vistaInicialDelInicio, type VentasDelPeriodo } from "@/lib/admin/vista-inicial-inicio";
+import { puedeVerInicioForestal } from "@/lib/forestal/inicio-forestal";
 import { useAdminTemplateOverlay } from "@/app/admin/_hooks/useAdminTemplateOverlay";
 import type { Tab } from "@/app/admin/_lib/tabs.types";
 import { DashboardDataProvider } from "@/contexts/dashboard-data-context";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import type { AdminTab } from "@/components/admin/shared/AdminTabBar";
 import {
@@ -19,27 +23,20 @@ import {
   Truck,
   Users,
   Wallet,
+  TreePine,
 } from "@buleje/design-system/icons";
 import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
 import DashboardDateRange, { getDefaultRange, type DateRange } from "@/components/admin/inicio/DashboardDateRange";
 import { ChartsVisibilityProvider, ChartsVisibilityButton } from "@/lib/admin/charts-visibility";
 import dynamic from "next/dynamic";
 import { BulejeLoader } from "@/components/admin/inicio/_shared";
-import EmptyDateRangeState from "@/components/admin/inicio/EmptyDateRangeState";
+import { formatTime } from "@/lib/format";
 
 // ── Lazy-loaded components (tab-gated, not immediately visible) ─────────────
 const DashboardLoading = () => <BulejeLoader variant="card" size={48} label="Cargando dashboard..." />;
-const VendorKPICards = dynamic(() => import("@/components/admin/vendor-dashboard/VendorKPICards").then(m => ({ default: m.VendorKPICards })), { ssr: false });
-const VendorPendingOrders = dynamic(() => import("@/components/admin/vendor-dashboard/VendorPendingOrders").then(m => ({ default: m.VendorPendingOrders })), { ssr: false });
-const VendorLowStockList = dynamic(() => import("@/components/admin/vendor-dashboard/VendorLowStockList").then(m => ({ default: m.VendorLowStockList })), { ssr: false });
-const VendorRecentSales = dynamic(() => import("@/components/admin/vendor-dashboard/VendorRecentSales").then(m => ({ default: m.VendorRecentSales })), { ssr: false });
-const VendorWeeklyChart = dynamic(() => import("@/components/admin/vendor-dashboard/VendorWeeklyChart").then(m => ({ default: m.VendorWeeklyChart })), { ssr: false });
-const VendorQuickActions = dynamic(() => import("@/components/admin/vendor-dashboard/VendorQuickActions").then(m => ({ default: m.VendorQuickActions })), { ssr: false });
-const StockoutPredictionWidget = dynamic(() => import("@/components/marketplace/StockoutPredictionWidget"), { ssr: false });
-const SponsoredAdminPanel = dynamic(() => import("@/components/marketplace/SponsoredAdminPanel"), { ssr: false });
-const SalesAnomalyAlert = dynamic(() => import("@/components/marketplace/SalesAnomalyAlert"), { ssr: false });
-const MarketplaceAdvancedCharts = dynamic(
-  () => import("@/components/admin/inicio/MarketplaceAdvancedCharts").then((m) => ({ default: m.MarketplaceAdvancedCharts })),
+// Pestaña Marketplace entera (KPIs, listas, gráficos y su vacío): 2026-10-09.
+const VendorMarketplaceTab = dynamic(
+  () => import("@/components/admin/vendor-dashboard/VendorMarketplaceTab").then((m) => ({ default: m.VendorMarketplaceTab })),
   { ssr: false, loading: DashboardLoading },
 );
 const VentasDashboard = dynamic(() => import("@/components/admin/inicio/VentasDashboard"), { ssr: false, loading: DashboardLoading });
@@ -52,6 +49,8 @@ const CajaDashboard = dynamic(() => import("@/components/admin/inicio/CajaDashbo
 const InventarioDashboard = dynamic(() => import("@/components/admin/inicio/InventarioDashboard"), { ssr: false, loading: DashboardLoading });
 const ComprasDashboard = dynamic(() => import("@/components/admin/inicio/ComprasDashboard"), { ssr: false, loading: DashboardLoading });
 const ClientesDashboard = dynamic(() => import("@/components/admin/inicio/ClientesDashboard"), { ssr: false, loading: DashboardLoading });
+// 2026-10-08 (N7): el aserradero y la plantación en el Inicio. Sólo si el negocio usa los libros forestales.
+const ForestalDashboard = dynamic(() => import("@/components/admin/inicio/ForestalDashboard"), { ssr: false, loading: DashboardLoading });
 // Brandon 2026-06-07 (idea #2): tarjeta "Tu tienda pública" — puente admin↔tienda.
 const StorePublicCard = dynamic(() => import("@/components/admin/inicio/StorePublicCard"), { ssr: false });
 
@@ -76,11 +75,13 @@ const MorningBriefingCard = dynamic(
 
 const MODULE_ID = "vendor-dashboard";
 
-type InicioTab = "general" | "ventas" | "caja" | "inventario" | "compras" | "clientes" | "marketplace";
+type InicioTab = "general" | "forestal" | "ventas" | "caja" | "inventario" | "compras" | "clientes" | "marketplace";
+const INICIO_TABS: readonly InicioTab[] = ["general", "forestal", "ventas", "caja", "inventario", "compras", "clientes", "marketplace"];
 
 // ── Prefetch map: preload tab chunks on hover ──────────────────────────────
 const TAB_PREFETCH: Record<InicioTab, () => void> = {
   general:     () => { void import("@/components/admin/inicio/InicioDashboardV2"); },
+  forestal:    () => { void import("@/components/admin/inicio/ForestalDashboard"); },
   ventas:      () => { void import("@/components/admin/inicio/VentasDashboard"); },
   caja:        () => { void import("@/components/admin/inicio/CajaDashboard"); },
   inventario:  () => { void import("@/components/admin/inicio/InventarioDashboard"); },
@@ -91,6 +92,7 @@ const TAB_PREFETCH: Record<InicioTab, () => void> = {
 
 const TABS: AdminTab[] = [
   { id: "general",     label: "Resumen",     icon: LayoutDashboard },
+  { id: "forestal",    label: "Forestal",    icon: TreePine },
   { id: "ventas",      label: "Ventas",      icon: ShoppingCart },
   { id: "caja",        label: "Caja",        icon: Wallet },
   { id: "inventario",  label: "Inventario",  icon: Package },
@@ -119,7 +121,10 @@ export default function VendorDashboardModule() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [tab, setTab] = useState<InicioTab>("general");
+  // La sub-vista vive en `?vista=` (useVistaModulo): link compartible, «atrás» del
+  // navegador y destino de avisos y del buscador. Antes era estado local y `?vista=`
+  // se ignoraba (medido 2026-09-14: `?vista=` se ignoraba en 16 módulos).
+  const { vista: tab, irA: setTab } = useVistaModulo<InicioTab>(MODULE_ID, INICIO_TABS, "general");
   const [storeSlug, setStoreSlug] = useState("main");
   const [dateRange, setDateRange] = useState<DateRange>(getDefaultRange);
 
@@ -132,14 +137,61 @@ export default function VendorDashboardModule() {
     (m?: Tab) => !m || (hasTab(m) && !isHiddenByTemplate(m)),
     [hasTab, isHiddenByTemplate],
   );
+  // «Forestal» no depende del plan sino de la especialización del negocio
+  // (ADR-124, la misma bandera que prende los libros en el menú): una bodega
+  // sin libros forestales no la ve.
+  const { enabledModuleIds, isLoading: cargandoSpecs } = useEnabledSpecs();
+  const rol = useMiRol();
+  const tieneForestal =
+    (enabledModuleIds.has("ctp-libro-operaciones") || enabledModuleIds.has("loth-libro-operaciones")) &&
+    puedeVerInicioForestal(rol);
   const availableTabs = useMemo(
-    () => TABS.filter((t) => moduleAvailable(SUBTAB_MODULE[t.id])),
-    [moduleAvailable],
+    () =>
+      TABS.filter((t) =>
+        t.id === "forestal" ? tieneForestal : moduleAvailable(SUBTAB_MODULE[t.id]),
+      ),
+    [moduleAvailable, tieneForestal],
   );
-  // Si el sub-tab activo dejó de estar disponible, volver a Resumen.
+  // Si el sub-tab activo dejó de estar disponible, volver a Resumen. Mientras
+  // las especializaciones cargan, «Forestal» todavía no se sabe: un link con
+  // `?vista=forestal` no tiene que rebotar a Resumen por llegar antes.
+  // Pestaña por defecto (N24): negocio forestal sin ventas en el período abre en
+  // «Forestal». Lo elegido a mano (click o ?vista=) manda; ver `vista-inicial-inicio`.
+  // Sin consultas nuevas: el Resumen ya pide /api/admin/overview y avisa el resultado.
+  const [ventas, setVentas] = useState<VentasDelPeriodo>("desconocido");
+  const vistaEnUrlRef = useRef<boolean | null>(null);
+  if (vistaEnUrlRef.current === null && typeof window !== "undefined") {
+    vistaEnUrlRef.current = new URLSearchParams(window.location.search).has("vista");
+  }
+  const eligioAMano = useRef(false);
+  const yaDecidida = useRef(false);
   useEffect(() => {
+    try { eligioAMano.current = localStorage.getItem(CLAVE_ELIGIO_A_MANO) === "1"; } catch { /* sin memoria */ }
+  }, []);
+  useEffect(() => {
+    if (yaDecidida.current || cargandoSpecs || rol == null) return;
+    const destino = vistaInicialDelInicio({
+      vistaActual: tab,
+      vistaEnUrl: vistaEnUrlRef.current === true,
+      eligioAMano: eligioAMano.current,
+      tieneForestal,
+      ventas,
+    });
+    if (destino) {
+      yaDecidida.current = true;
+      setTab(destino);
+    }
+  }, [tab, tieneForestal, ventas, cargandoSpecs, rol, setTab]);
+  const elegirPestana = useCallback((t: string) => {
+    eligioAMano.current = true;
+    try { localStorage.setItem(CLAVE_ELIGIO_A_MANO, "1"); } catch { /* sin memoria */ }
+    setTab(t as InicioTab);
+  }, [setTab]);
+
+  useEffect(() => {
+    if (tab === "forestal" && (cargandoSpecs || rol == null)) return;
     if (!availableTabs.some((t) => t.id === tab)) setTab("general");
-  }, [availableTabs, tab]);
+  }, [availableTabs, tab, setTab, cargandoSpecs, rol]);
 
   useEffect(() => {
     let active = true;
@@ -201,13 +253,14 @@ export default function VendorDashboardModule() {
 
   const TAB_DESCRIPTIONS: Record<InicioTab, string> = {
     general: `Resumen ${rangeTxt} con KPIs, ventas, caja, inventario y clientes vinculados.`,
+    forestal: `Aserradero y plantación ${rangeTxt}.`,
     ventas: `Ventas ${rangeTxt}: tendencias, tickets y top productos.`,
     caja: `Movimientos de caja ${rangeTxt}: ingresos, egresos y flujo.`,
     inventario: `Inventario y catálogo ${rangeTxt}: stock crítico, rotación, agotados y unidades vendidas.`,
     compras: `Compras ${rangeTxt}: proveedores, deudas y órdenes.`,
     clientes: `Clientes ${rangeTxt}: nuevos, recurrentes y ticket promedio.`,
     marketplace: lastUpdated
-      ? `Marketplace actualizado a las ${lastUpdated.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}`
+      ? `Marketplace actualizado a las ${formatTime(lastUpdated)}`
       : "Panel consolidado del canal marketplace.",
   };
 
@@ -218,35 +271,48 @@ export default function VendorDashboardModule() {
         persiste prefs por tab. */}
     <ChartsVisibilityProvider moduleId={`vendor-dashboard:${tab}`} key={tab}>
     <div className="space-y-4">
-      <AdminModuleHeader
-        title="Inicio"
-        description={TAB_DESCRIPTIONS[tab]}
-        icon={LayoutDashboard}
-        bgTint="bg-[var(--accent-soft)]"
-        iconColorClass="text-[var(--data-success-500)]"
+      {/* El título va DENTRO de la barra de pestañas (patrón acordado con
+          Brandon 2026-09-07, piloto en Análisis): identidad a la izquierda,
+          pestañas a la derecha, una sola regla; las acciones del módulo, en
+          la misma banda. Recupera ~90px verticales por pantalla. */}
+      <AdminTabBar
+        heading={{
+          title: "Inicio",
+          description: TAB_DESCRIPTIONS[tab],
+          icon: LayoutDashboard,
+          actions: (
+            <>
+              {tab !== "marketplace" && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <ChartsVisibilityButton />
+                  <DashboardDateRange value={dateRange} onChange={setDateRange} />
+                </div>
+              )}
+              {tab === "marketplace" && (
+                <div className="flex items-center gap-2">
+                  <ChartsVisibilityButton />
+                  <button
+                    onClick={() => void fetchDashboard(false)}
+                    disabled={loading}
+                    className="flex min-h-11 min-w-11 items-center justify-center rounded-xl p-2 text-[var(--text-tertiary)] transition-colors hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] disabled:opacity-50"
+                    title="Actualizar marketplace"
+                    aria-label="Actualizar datos del marketplace"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+                  </button>
+                </div>
+              )}
+            </>
+          ),
+        }}
+        tabs={availableTabs}
+        activeTab={tab}
+        onTabChange={elegirPestana}
+        onTabHover={(id) => TAB_PREFETCH[id as InicioTab]?.()}
+        moduleId={MODULE_ID}
       >
-        {tab !== "marketplace" && (
-          <div className="flex items-center gap-2 flex-wrap">
-            <ChartsVisibilityButton />
-            <DashboardDateRange value={dateRange} onChange={setDateRange} />
-          </div>
-        )}
-        {tab === "marketplace" && (
-          <button
-            onClick={() => void fetchDashboard(false)}
-            disabled={loading}
-            className="flex min-h-11 min-w-11 items-center justify-center rounded-lg p-2 text-[var(--text-tertiary)] transition-colors hover:bg-primary/10 hover:text-primary disabled:opacity-50"
-            title="Actualizar marketplace"
-            aria-label="Actualizar datos del marketplace"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          </button>
-        )}
-      </AdminModuleHeader>
-
-      <AdminTabBar tabs={availableTabs} activeTab={tab} onTabChange={(t) => setTab(t as InicioTab)} onTabHover={(id) => TAB_PREFETCH[id as InicioTab]?.()} moduleId={MODULE_ID}>
         {tab === "general" && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Brandon 2026-06-07 (idea #2): puente admin ↔ tienda pública —
                 ver / compartir / editar la portada del storefront. */}
             <StorePublicCard storeSlug={storeSlug} />
@@ -264,8 +330,11 @@ export default function VendorDashboardModule() {
             <MorningBriefingCard />
             {/* 3) Dashboard denso: meta del mes + compound charts. Su hero se
                    removió para complementar a TodayHub (no duplica KPIs). */}
-            <InicioDashboardV2 dateRange={dateRange} onChangeRange={setDateRange} />
+            <InicioDashboardV2 dateRange={dateRange} onChangeRange={setDateRange} onSinVentas={(sin) => setVentas(sin ? "sin" : "con")} />
           </div>
+        )}
+        {tab === "forestal" && tieneForestal && (
+          <ForestalDashboard dateRange={dateRange} conAdelantos={moduleAvailable("adelantos")} />
         )}
         {tab === "ventas" && <VentasDashboard dateRange={dateRange} onChangeRange={setDateRange} />}
         {tab === "caja" && <CajaDashboard dateRange={dateRange} onChangeRange={setDateRange} />}
@@ -281,7 +350,7 @@ export default function VendorDashboardModule() {
                 <p className="text-sm font-medium text-[var(--text-primary)] text-center">{error}</p>
                 <button
                   onClick={() => void fetchDashboard(false)}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-[var(--accent-soft)] transition-colors"
+                  className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl bg-[var(--accent-dark)] text-white text-sm font-semibold hover:bg-[var(--accent-600)] transition-colors"
                 >
                   <RefreshCw className="h-4 w-4" /> Reintentar
                 </button>
@@ -292,48 +361,8 @@ export default function VendorDashboardModule() {
               <BulejeLoader variant="card" size={56} label="Cargando marketplace..." />
             )}
 
-            {!loading && data && (() => {
-              // Brandon mayo 2026: si el vendor marketplace no tiene
-              // actividad (sin ventas, pedidos ni weekly revenue), mostramos
-              // un solo empty-state en vez del wall de KPIs en cero.
-              const noActivity =
-                data.kpis.salesToday === 0 &&
-                data.kpis.salesYesterday === 0 &&
-                data.kpis.salesLastWeek === 0 &&
-                data.pendingOrders.length === 0 &&
-                data.recentSales.length === 0 &&
-                data.weeklyRevenue.every((d) => d.total === 0);
-              if (noActivity) {
-                return (
-                  <EmptyDateRangeState
-                    dateRange={dateRange}
-                    metric="actividad de marketplace"
-                    icon={Store}
-                    title="Tu tienda todavía no tiene ventas en el marketplace"
-                    description="Cuando tu primera venta entre desde el marketplace de Buleje, vas a ver acá ingresos por día, pedidos pendientes, top productos y predicción de quiebre de stock."
-                    action={{ label: "Ver mis productos", href: "/admin?tab=inventario" }}
-                  />
-                );
-              }
-              return (
-                <div className="space-y-6">
-                  <SalesAnomalyAlert storeSlug={storeSlug} />
-                  <VendorKPICards kpis={data.kpis} />
-                  <VendorQuickActions />
-                  <StockoutPredictionWidget storeSlug={storeSlug} />
-                  <VendorWeeklyChart data={data.weeklyRevenue} />
-                  <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                    <VendorPendingOrders orders={data.pendingOrders} />
-                    <VendorLowStockList products={data.lowStockProducts} />
-                  </div>
-                  <VendorRecentSales sales={data.recentSales} />
-                  <SponsoredAdminPanel storeSlug={storeSlug} />
-
-                  {/* ── Charts especializados marketplace (6 draggables: funnel, ingresos 6m, top productos, ratings, comparativa, heatmap) ── */}
-                  <MarketplaceAdvancedCharts />
-                </div>
-              );
-            })()}
+            {/* Con datos ya cargados, «Actualizar» no deja la pestaña en blanco: el giro va en el botón. */}
+            {data && <VendorMarketplaceTab data={data} storeSlug={storeSlug} />}
           </div>
         )}
       </AdminTabBar>

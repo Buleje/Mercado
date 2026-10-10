@@ -144,12 +144,12 @@ export default function EmptyState({
           <Icon className="h-7 w-7 text-primary" />
         </div>
       ) : null}
-      <CardTitle className="text-lg font-semibold text-[var(--text-secondary)] mt-4">{title}</CardTitle>
+      <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-secondary)] mt-4">{title}</CardTitle>
       <p className="text-sm text-[var(--text-tertiary)] mt-1 max-w-xs">{description}</p>
       {action && (
         <button
           onClick={action.onClick}
-          className="mt-4 px-4 py-2 text-xs font-semibold rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors"
+          className="mt-4 px-4 py-2 text-xs font-semibold rounded-xl bg-primary text-white hover:bg-primary/90 transition-colors"
         >
           {action.label}
         </button>

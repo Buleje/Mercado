@@ -16,6 +16,7 @@ import { prisma } from "@/lib/prisma";
 import { haversineKm } from "@/lib/geo-utils";
 import { cacheLife, cacheTag } from "next/cache";
 import { publicStoreWhere } from "@/lib/marketplace/public-store-filter";
+import { StoreReviewsDB } from "@/lib/db/store-reviews.db";
 
 export interface FeaturedNearbyProduct {
   id: string;
@@ -24,6 +25,9 @@ export interface FeaturedNearbyProduct {
   image: string;
   retailPrice: number;
   discountPrice: number | null;
+  /** Hasta cuándo vale la oferta. `null` = sin caducidad. Sin este campo la
+   *  tarjeta no puede saber si la rebaja sigue viva (ver `precio-vigente.ts`). */
+  discountUntil: string | null;
   discountLabel: string | null;
 }
 
@@ -70,7 +74,8 @@ export async function getFeaturedNearby(
   const latDelta = radiusKm / 110.574;
   const lngDelta = radiusKm / (111.32 * Math.cos((lat * Math.PI) / 180) || 1);
 
-  const rows = await prisma.store.findMany({
+  // Estrellas = reseñas aprobadas REALES, no la columna sembrada (09-10).
+  const rows = await StoreReviewsDB.conRatingReal(await prisma.store.findMany({
     where: {
       isPublished: true,
       lat: { not: null, gte: lat - latDelta, lte: lat + latDelta },
@@ -98,6 +103,7 @@ export async function getFeaturedNearby(
           productId: true,
           retailPrice: true,
           discountPrice: true,
+          discountUntil: true,
           discountLabel: true,
           product: {
             select: { name: true, image: true },
@@ -107,7 +113,7 @@ export async function getFeaturedNearby(
     },
     // Trae el doble del límite para tener margen post-haversine.
     take: limit * 4,
-  });
+  }));
 
   const enriched = rows
     .filter((s) => s.lat != null && s.lng != null)
@@ -132,6 +138,7 @@ export async function getFeaturedNearby(
           image: p.product.image,
           retailPrice: Number(p.retailPrice),
           discountPrice: p.discountPrice != null ? Number(p.discountPrice) : null,
+          discountUntil: p.discountUntil ? p.discountUntil.toISOString() : null,
           discountLabel: p.discountLabel,
         })),
       } satisfies FeaturedNearbyStore;
@@ -174,6 +181,8 @@ export interface ShowcaseProduct {
   image: string;
   retailPrice: number;
   discountPrice: number | null;
+  /** Sin esto la card Premium no puede saber si la rebaja venció. */
+  discountUntil: string | null;
   category: string;
 }
 
@@ -203,6 +212,7 @@ export async function getStoreShowcaseByCategory(
           productId: true,
           retailPrice: true,
           discountPrice: true,
+          discountUntil: true,
           product: { select: { name: true, image: true, category: true } },
         },
       },
@@ -223,6 +233,7 @@ export async function getStoreShowcaseByCategory(
         image: p.product.image ?? "",
         retailPrice: Number(p.retailPrice),
         discountPrice: p.discountPrice != null ? Number(p.discountPrice) : null,
+        discountUntil: p.discountUntil ? p.discountUntil.toISOString() : null,
         category: cat,
       });
       if (picked.length >= maxCategories) break;
@@ -242,10 +253,12 @@ export async function getFeaturedStoresWithProducts(opts: {
 
   const { limit, productsPerStore } = opts;
 
-  const rows = await prisma.store.findMany({
+  // Se trae holgura y se reordena por reseñas REALES: la columna Store.rating
+  // puede venir sembrada (09-10: mi-pollo 4,8 / «24 reseñas» con 0 aprobadas).
+  const crudas = await prisma.store.findMany({
     where: { ...publicStoreWhere, vacationMode: { not: true } },
     orderBy: [{ rating: "desc" }, { reviewCount: "desc" }],
-    take: limit,
+    take: Math.max(limit * 3, 30),
     select: {
       id: true,
       slug: true,
@@ -266,12 +279,22 @@ export async function getFeaturedStoresWithProducts(opts: {
           productId: true,
           retailPrice: true,
           discountPrice: true,
+          discountUntil: true,
           discountLabel: true,
           product: { select: { name: true, image: true } },
         },
       },
     },
   });
+
+  const rows = (await StoreReviewsDB.conRatingReal(crudas))
+    .sort(
+      (a, b) =>
+        b.rating - a.rating ||
+        b.reviewCount - a.reviewCount ||
+        b._count.products - a._count.products,
+    )
+    .slice(0, limit);
 
   return rows.map((s) => ({
     id: s.id,
@@ -291,6 +314,7 @@ export async function getFeaturedStoresWithProducts(opts: {
       image: p.product.image ?? "",
       retailPrice: Number(p.retailPrice),
       discountPrice: p.discountPrice != null ? Number(p.discountPrice) : null,
+      discountUntil: p.discountUntil ? p.discountUntil.toISOString() : null,
       discountLabel: p.discountLabel,
     })),
   }));

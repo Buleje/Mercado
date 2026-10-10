@@ -149,8 +149,7 @@ export default function MarketplaceContent({
 
   const search = searchParams.get("buscar") ?? "";
   // Visibilidad de secciones del home — controlada desde superadmin/stores → Navegación
-  const sectionVisibility = useNavVisibility("marketplace-sections");
-  const isVisible = (id: string) => sectionVisibility[id] !== false;
+  useNavVisibility("marketplace-sections");
 
   // ── Import shared cart from ?cart= param ──
   useEffect(() => {
@@ -285,7 +284,7 @@ export default function MarketplaceContent({
             </span>
           </h2>
           <p className="mt-8 text-xl sm:text-2xl text-[var(--text-secondary)] max-w-2xl mx-auto leading-[1.4]">
-            Publica tus productos, recibe pedidos automáticamente y llegá a
+            Publica tus productos, recibe pedidos automáticamente y llega a
             miles de clientes. Sin costo de inscripción.
           </p>
           <div className="mt-12 flex flex-wrap justify-center gap-3">
@@ -377,7 +376,7 @@ function MarketplaceCenterFeed({
           {/* Barra de filtros aplicados — debajo de la zona de fidelidad */}
           <div className="flex flex-wrap items-center gap-2 bg-[var(--surface-raised)] px-4 py-3">
             <span className="text-sm font-bold text-[var(--text-primary)]">Filtrando por</span>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent-soft)] py-1 pl-3 pr-1.5 text-sm font-bold text-[var(--accent)]">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 py-1 pl-3 pr-1.5 text-sm font-bold text-[var(--accent)]">
               {prettyCategoryLabel(activeCategory)}
               <button
                 type="button"

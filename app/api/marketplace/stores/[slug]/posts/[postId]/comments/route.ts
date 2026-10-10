@@ -29,7 +29,7 @@ export async function POST(
     const session = sessionToken ? await getCustomerPayload(sessionToken) : null;
     if (!session?.name) {
       return NextResponse.json(
-        { error: "Iniciá sesión para comentar" },
+        { error: "Inicia sesión para comentar" },
         { status: 401 },
       );
     }

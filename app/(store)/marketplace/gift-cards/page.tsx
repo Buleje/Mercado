@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import GiftCardsClient from "@/components/marketplace/gift-cards/GiftCardsClient";
-import MarketplaceNavbar from "@/components/marketplace/MarketplaceNavbar";
 
 export const metadata: Metadata = {
   title: "Tarjetas de Regalo Buleje — Regala lo que mas se disfruta en el barrio",
@@ -21,10 +20,5 @@ export const metadata: Metadata = {
 };
 
 export default function GiftCardsPage() {
-  return (
-    <>
-      <MarketplaceNavbar />
-      <GiftCardsClient />
-    </>
-  );
+  return <GiftCardsClient />;
 }

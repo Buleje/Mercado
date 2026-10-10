@@ -2,9 +2,16 @@
 
 // Sistema de visibility de gráficos para los dashboards del admin.
 // Brandon mayo 2026: cada gráfico se registra con un id estable. El usuario
-// puede abrir un modal y togglear cuáles ver. Los gráficos sin datos se
-// ocultan por default (defaultVisible=false). Persiste en localStorage por
+// puede abrir un modal y togglear cuáles ver. Persiste en localStorage por
 // moduleId (resumen, ventas, caja, inventario, compras, clientes).
+//
+// Sin datos (Brandon 2026-10-09: «ocultar gráficos que no tienen ninguna
+// información hasta que se muestre algún dato»): un gráfico con hasData=false
+// se oculta AUNQUE el usuario lo haya prendido antes (esa preferencia guardada
+// era la que dejaba gráficos vacíos a la vista) y figura en el botón como «Sin
+// datos todavía», no como apagado. Se puede mostrar igual a mano; eso vale para
+// la visita (no se guarda) y, apenas llega un dato, manda otra vez la
+// preferencia guardada. hasData se calcula con `lib/admin/inicio/hay-datos`.
 
 import {
   createContext,
@@ -45,6 +52,11 @@ interface ChartsVisibilityState {
    * de re-render cuando cada chart se registra.
    */
   registryRef: { current: Map<string, ChartMeta> };
+  /**
+   * Gráficos SIN datos que el usuario pidió ver igual en esta visita (no se
+   * guardan: al volver, un gráfico vacío arranca oculto).
+   */
+  vaciosALaVista: Record<string, boolean>;
   /** Setter público para que el usuario toggle */
   setVisible: (id: string, visible: boolean) => void;
   /** Llamado por cada chart para registrarse */
@@ -67,6 +79,7 @@ export function ChartsVisibilityProvider({ moduleId, children }: ProviderProps) 
   const storageKey = `bsm-charts-visibility:${moduleId}`;
   const registryRef = useRef<Map<string, ChartMeta>>(new Map());
   const [visibility, setVisibilityState] = useState<Record<string, boolean>>({});
+  const [vaciosALaVista, setVaciosALaVista] = useState<Record<string, boolean>>({});
   // Brandon mayo 2026 v6: bug del badge "3/8" — el contador no se
   // actualizaba cuando los charts montaban async (cohort, heatmap, churn
   // se registran después del primer paint del Button). Solución: un
@@ -91,6 +104,12 @@ export function ChartsVisibilityProvider({ moduleId, children }: ProviderProps) 
 
   const setVisible = useCallback(
     (id: string, visible: boolean) => {
+      // Sin datos: «mostrar igual» es de esta visita; no pisa la preferencia
+      // guardada (que vuelve a mandar cuando llegue un dato).
+      if (registryRef.current.get(id)?.hasData === false) {
+        setVaciosALaVista((prev) => ({ ...prev, [id]: visible }));
+        return;
+      }
       setVisibilityState((prev) => {
         const next = { ...prev, [id]: visible };
         try {
@@ -130,12 +149,13 @@ export function ChartsVisibilityProvider({ moduleId, children }: ProviderProps) 
   const value = useMemo<ChartsVisibilityState>(
     () => ({
       visibility,
+      vaciosALaVista,
       registryRef,
       setVisible,
       register,
       unregister,
     }),
-    [visibility, setVisible, register, unregister],
+    [visibility, vaciosALaVista, setVisible, register, unregister],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
@@ -171,13 +191,27 @@ export function useChartRegistration(
     return () => ctx.unregister(id);
   }, [ctx, id, label, hasData, defaultVisible]);
 
+  // Sin provider (legacy): siempre a la vista, como antes.
   if (!ctx) return { visible: true };
-
-  // Prioridad: pref explícita del user > defaultVisible (si tiene datos) > false
-  const userPref = ctx.visibility[id];
-  if (typeof userPref === "boolean") return { visible: userPref };
-  return { visible: hasData && defaultVisible };
+  return { visible: visibleSegun(ctx, { id, hasData, defaultVisible }) };
 }
+
+/**
+ * La regla única (la usan el gráfico y el modal, para que nunca digan cosas
+ * distintas): sin datos → oculto salvo «mostrar igual» de esta visita; con
+ * datos → preferencia guardada del usuario, y si no hay, `defaultVisible`.
+ */
+function visibleSegun(
+  ctx: Pick<ChartsVisibilityState, "visibility" | "vaciosALaVista">,
+  m: Pick<ChartMeta, "id" | "hasData" | "defaultVisible">,
+): boolean {
+  if (!m.hasData) return ctx.vaciosALaVista[m.id] === true;
+  const userPref = ctx.visibility[m.id];
+  return typeof userPref === "boolean" ? userPref : m.defaultVisible;
+}
+
+/** Por qué un gráfico está fuera de la vista (lo muestra el modal). */
+export type MotivoOculto = "sin-datos" | "lo-ocultaste" | "avanzado" | null;
 
 // ── Modal-side hook ────────────────────────────────────────────────────────
 
@@ -190,27 +224,35 @@ export function useChartsVisibilityManager() {
   const ctx = useContext(Ctx);
   if (!ctx) {
     return {
-      charts: [] as Array<ChartMeta & { visible: boolean }>,
+      charts: [] as Array<ChartMeta & { visible: boolean; motivo: MotivoOculto }>,
       setVisible: () => {},
       visibleCount: 0,
       totalCount: 0,
+      sinDatosCount: 0,
     };
   }
   const charts = Array.from(ctx.registryRef.current.values()).map((m) => {
+    // Misma regla que el hook (visibleSegun): sin esto el modal decía
+    // «VISIBLE» y el gráfico no estaba (doble click en el toggle).
+    const visible = visibleSegun(ctx, m);
     const userPref = ctx.visibility[m.id];
-    // Misma lógica que el hook: userPref > (hasData && defaultVisible) > false.
-    // Sin esto, el modal mostraba "VISIBLE" para charts con defaultVisible=false
-    // pero el DashboardSection retornaba null — inconsistencia que forzaba
-    // doble click en el toggle.
-    const visible =
-      typeof userPref === "boolean" ? userPref : m.hasData && m.defaultVisible;
-    return { ...m, visible };
+    const motivo: MotivoOculto = visible
+      ? null
+      : !m.hasData
+        ? "sin-datos"
+        : userPref === false
+          ? "lo-ocultaste"
+          : "avanzado";
+    return { ...m, visible, motivo };
   });
+  const sinDatosCount = charts.filter((c) => c.motivo === "sin-datos").length;
   return {
     charts,
     setVisible: ctx.setVisible,
     visibleCount: charts.filter((c) => c.visible).length,
-    totalCount: charts.length,
+    /** Los que dependen del usuario: los vacíos ocultos no cuentan como «apagados». */
+    totalCount: charts.length - sinDatosCount,
+    sinDatosCount,
   };
 }
 
@@ -218,20 +260,29 @@ export function useChartsVisibilityManager() {
 
 export function ChartsVisibilityButton({ label = "Gráficos" }: { label?: string }) {
   const [open, setOpen] = useState(false);
-  const { charts, setVisible, visibleCount, totalCount } = useChartsVisibilityManager();
+  const { charts, setVisible, visibleCount, totalCount, sinDatosCount } = useChartsVisibilityManager();
+  const resumen =
+    totalCount > 0
+      ? `${label} · ${visibleCount}/${totalCount} a la vista` +
+        (sinDatosCount > 0 ? ` · ${sinDatosCount} sin datos todavía` : "")
+      : label;
 
   return (
     <>
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-2 h-10 px-4 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-extrabold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] hover:border-[color:var(--accent,var(--rule-base))] transition-colors whitespace-nowrap"
+        className="inline-flex items-center gap-2 h-10 px-4 @max-[30rem]:px-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-extrabold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] hover:border-[color:var(--accent,var(--rule-base))] transition-colors whitespace-nowrap"
         aria-label="Abrir gestor de gráficos"
+        title={resumen}
       >
         <BarChart3 className="h-4 w-4 text-[var(--text-secondary)]" strokeWidth={2.5} aria-hidden />
-        {label}
+        {/* En la banda angosta (celular) queda sólo el ícono (texto y cuenta
+            van al tooltip): así entra en la fila del rango de fechas (08-10:
+            con la cuenta faltaban 13 px y eran dos filas). */}
+        <span className="@max-[30rem]:sr-only">{label}</span>
         {totalCount > 0 && (
-          <span className="inline-flex items-center justify-center min-w-6 h-5 px-1.5 rounded-full bg-[var(--surface-sunken)] text-xs font-extrabold tabular-nums text-[var(--text-secondary)]">
+          <span className="inline-flex @max-[30rem]:hidden items-center justify-center min-w-6 h-5 px-1.5 rounded-full bg-[var(--surface-sunken)] text-xs font-extrabold tabular-nums text-[var(--text-secondary)]">
             {visibleCount}/{totalCount}
           </span>
         )}
@@ -244,6 +295,7 @@ export function ChartsVisibilityButton({ label = "Gráficos" }: { label?: string
         setVisible={setVisible}
         visibleCount={visibleCount}
         totalCount={totalCount}
+        sinDatosCount={sinDatosCount}
       />
     </>
   );
@@ -251,20 +303,23 @@ export function ChartsVisibilityButton({ label = "Gráficos" }: { label?: string
 
 // ── Modal de gestion (rediseñado mayo 2026) ─────────────────────────────────
 
+type ChartFila = ChartMeta & { visible: boolean; motivo: MotivoOculto };
+
 interface ModalProps {
   open: boolean;
   onClose: () => void;
-  charts: Array<ChartMeta & { visible: boolean }>;
+  charts: ChartFila[];
   setVisible: (id: string, v: boolean) => void;
   visibleCount: number;
   totalCount: number;
+  sinDatosCount: number;
 }
 
-function ChartsVisibilityModal({ open, onClose, charts, setVisible, visibleCount, totalCount }: ModalProps) {
-  // Separamos en 3 grupos para jerarquía visual clara:
-  //  - Activos (visibles)
-  //  - Disponibles (con datos pero ocultos por el user o defaultVisible=false)
-  //  - Sin datos (hasData=false → no se pueden activar útilmente)
+function ChartsVisibilityModal({ open, onClose, charts, setVisible, visibleCount, totalCount, sinDatosCount }: ModalProps) {
+  // Tres grupos, uno por motivo (2026-10-09):
+  //  - A la vista (incluye los vacíos que el usuario pidió ver igual)
+  //  - Ocultos (con datos: los apagó el usuario o son avanzados)
+  //  - Sin datos todavía (se esconden solos; se pueden mostrar igual)
   const activos = charts.filter((c) => c.visible);
   const disponibles = charts.filter((c) => !c.visible && c.hasData);
   const sinDatos = charts.filter((c) => !c.visible && !c.hasData);
@@ -280,36 +335,28 @@ function ChartsVisibilityModal({ open, onClose, charts, setVisible, visibleCount
     <Modal isOpen={open} onClose={onClose} title="Gestión de gráficos" size="md">
       <div className="flex flex-col max-h-[calc(100vh-8rem)]">
         {/* ── HEADER ───────────────────────────────────────────────────── */}
-        <header className="px-5 sm:px-6 pt-5 sm:pt-6 pb-4 border-b-2 border-[var(--rule-soft)]">
-          <div className="flex items-start gap-4">
-            <div className="hidden sm:flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)]">
-              <BarChart3 className="h-6 w-6 text-[color:var(--accent,var(--text-primary))]" strokeWidth={2.5} aria-hidden />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
-                Gestión de gráficos
-              </h2>
-              <p className="mt-1 text-sm text-[var(--text-secondary)] leading-relaxed">
-                Activá solo los gráficos que te sirven. Los que no tienen datos quedan automáticamente fuera.
-              </p>
-            </div>
-          </div>
+        {/* 2026-10-09: el título ya lo pone el Modal; el h2 repetido de 48 px
+            se comía el pie («Listo») a 900 px de alto. Queda una línea. */}
+        <header className="px-5 sm:px-6 pt-1 pb-4 border-b-2 border-[var(--rule-soft)]">
+          <p className="text-sm text-[var(--text-secondary)] leading-snug">
+            Activa los que te sirven. Los que todavía no tienen datos se esconden solos y vuelven cuando haya.
+          </p>
 
           {/* Contador + bulk actions */}
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
             <div className="inline-flex items-center gap-2 h-9 px-3.5 rounded-full bg-[var(--surface-sunken)] border-2 border-[var(--rule-base)]">
               <span className="text-sm font-extrabold tabular-nums text-[var(--text-primary)]">
                 {visibleCount}/{totalCount}
               </span>
               <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                activos
+                a la vista{sinDatosCount > 0 ? ` · ${sinDatosCount} sin datos` : ""}
               </span>
             </div>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setAll(true)}
-                disabled={activos.length === totalCount - sinDatos.length}
+                disabled={disponibles.length === 0}
                 className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-xs font-extrabold uppercase tracking-wider border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 <Eye className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
@@ -341,7 +388,7 @@ function ChartsVisibilityModal({ open, onClose, charts, setVisible, visibleCount
 
           {activos.length > 0 && (
             <ChartGroup
-              title="Activos"
+              title="A la vista"
               count={activos.length}
               tone="success"
               charts={activos}
@@ -351,8 +398,8 @@ function ChartsVisibilityModal({ open, onClose, charts, setVisible, visibleCount
 
           {disponibles.length > 0 && (
             <ChartGroup
-              title="Disponibles"
-              hint="Tenés datos para mostrarlos."
+              title="Ocultos"
+              hint="Tienen datos; actívalos si te sirven."
               count={disponibles.length}
               tone="neutral"
               charts={disponibles}
@@ -362,8 +409,8 @@ function ChartsVisibilityModal({ open, onClose, charts, setVisible, visibleCount
 
           {sinDatos.length > 0 && (
             <ChartGroup
-              title="Sin datos"
-              hint="No hay info suficiente en el período actual."
+              title="Sin datos todavía"
+              hint="Aparecen solos cuando haya datos."
               count={sinDatos.length}
               tone="muted"
               charts={sinDatos}
@@ -398,7 +445,7 @@ interface GroupProps {
   hint?: string;
   count: number;
   tone: "success" | "neutral" | "muted";
-  charts: Array<ChartMeta & { visible: boolean }>;
+  charts: ChartFila[];
   setVisible: (id: string, v: boolean) => void;
 }
 
@@ -438,28 +485,35 @@ function ChartGroup({ title, hint, count, tone, charts, setVisible }: GroupProps
 // ── Fila individual con switch toggle ──────────────────────────────────────
 
 interface RowProps {
-  chart: ChartMeta & { visible: boolean };
+  chart: ChartFila;
   setVisible: (id: string, v: boolean) => void;
 }
 
+/** Línea chica bajo el nombre: por qué está como está. */
+function estadoDeFila(chart: ChartFila): string | null {
+  if (!chart.hasData) return chart.visible ? "Sin datos todavía · lo estás viendo vacío" : "Sin datos todavía · tócalo para verlo igual";
+  if (chart.motivo === "lo-ocultaste") return "Lo ocultaste tú";
+  if (chart.motivo === "avanzado") return "Avanzado · actívalo si te sirve";
+  return null;
+}
+
 function ChartRow({ chart, setVisible }: RowProps) {
+  // «disabled» quedó como nombre del aspecto apagado (sin datos), pero ya no
+  // bloquea: mostrar a mano un gráfico vacío tiene que seguir funcionando.
   const disabled = !chart.hasData;
+  const estado = estadoDeFila(chart);
   return (
     <li>
       <button
         type="button"
-        onClick={() => {
-          if (disabled && !chart.visible) return;
-          setVisible(chart.id, !chart.visible);
-        }}
+        onClick={() => setVisible(chart.id, !chart.visible)}
         aria-pressed={chart.visible}
-        disabled={disabled && !chart.visible}
         className={
           "group w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left " +
           (chart.visible
             ? "border-[color:var(--data-success-500)]/40 bg-[color:var(--data-success-500)]/5 hover:border-[color:var(--data-success-500)]/60"
             : disabled
-              ? "border-[var(--rule-soft)] bg-[var(--surface-sunken)]/50 cursor-not-allowed"
+              ? "border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)]/50 hover:bg-[var(--surface-sunken)]"
               : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] hover:border-[var(--text-tertiary)]")
         }
       >
@@ -495,9 +549,9 @@ function ChartRow({ chart, setVisible }: RowProps) {
           >
             {chart.label}
           </p>
-          {disabled && (
-            <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] mt-0.5">
-              Sin datos en el período
+          {estado && (
+            <p className="text-xs font-semibold text-[var(--text-tertiary)] mt-0.5">
+              {estado}
             </p>
           )}
         </div>

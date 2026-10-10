@@ -1,521 +1,166 @@
 "use client";
-import { SectionTitle } from "@buleje/design-system";
-import { useState, useEffect, useMemo, useCallback } from "react";
-import {
-  DollarSign, TrendingUp, TrendingDown, AlertTriangle,
-  Calendar, ArrowUpRight, ArrowDownRight, RefreshCw, MessageCircle,
-} from "@buleje/design-system/icons";
-import {
-  AreaChart, Area, XAxis, YAxis,
-  CartesianGrid, Tooltip, ResponsiveContainer,
-} from "recharts";
+
+/**
+ * Tesorería — dónde está la plata hoy: cada cuenta de banco, la caja física y
+ * las billeteras, con su saldo, y lo que entró y salió de cada una.
+ *
+ * ANTES (hasta 2026-09-29) esta vista se llamaba Tesorería pero no leía la
+ * tesorería: pintaba ventas, fiados y cuentas por pagar con fórmulas propias,
+ * y las cuentas cargadas (en `main`, BCP S/ 15 000 y caja chica S/ 5 500) no
+ * aparecían en ningún lado. Lo que mostraba tiene hoy su casa, medida:
+ *   · saldo del mes, ingresos y gastos → Resumen (`/api/finanzas/monthly-summary`);
+ *   · vencimientos de cuentas por pagar → Por cobrar › Lo que debo;
+ *   · fiados pendientes con recordatorio por WhatsApp → Por cobrar › Fiados;
+ *   · flujo de 30 días → Movimientos › Caja (la proyección de 13 semanas).
+ *
+ * Todo sale de `/api/treasury/*` vía `useTesoreria`; los totales los suma el
+ * servidor (`/api/treasury/resumen`). SÓLO LECTURA: ver el porqué en el hook.
+ */
+
+import { useCallback, useMemo, useState } from "react";
+import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { Landmark, RefreshCw } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import KPICard from "@/components/admin/shared/KPICard";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { montoEnMoneda } from "@/lib/adelantos/cuenta-unificada";
+import { TOPE_MOVIMIENTOS, useTesoreria } from "@/hooks/use-tesoreria";
+import TarjetaCuenta from "@/components/admin/unified/finanzas/tesoreria/TarjetaCuenta";
+import MovimientosTesoreria from "@/components/admin/unified/finanzas/tesoreria/MovimientosTesoreria";
+import { CHIP, CHIP_OFF, enMonedas } from "@/components/admin/unified/finanzas/tesoreria/estilo";
 
-// ── Types ──────────────────────────────────────────────────────────────────────
-
-interface SaleItem {
-  id: string;
-  total: number;
-  createdAt: string;
-}
-
-interface Payable {
-  id: string;
-  supplier?: string;
-  description?: string;
-  amount: number;
-  dueDate: string;
-  paid: boolean;
-}
-
-interface Fiado {
-  id: string;
-  customerName: string;
-  amount: number;
-  paidAmount?: number;
-  dueDate?: string;
-  createdAt: string;
-  status: string;
-  phone?: string;
-  customerPhone?: string;
-  customer?: { phone?: string };
-}
-
-interface ExpenseSummary {
-  total: number;
-  byDay?: { date: string; amount: number }[];
-}
-
-interface DayFlow {
-  date: string;
-  label: string;
-  ingresos: number;
-  gastos: number;
-  delta: number;
-}
-
-// ── Helpers ────────────────────────────────────────────────────────────────────
-
-function fmt(n: number) {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
-
-function fmtShort(n: number) {
-  if (n >= 1000) return `S/ ${(n / 1000).toFixed(1)}k`;
-  return `S/ ${n.toFixed(0)}`;
-}
-
-function daysUntil(isoDate: string): number {
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-  const due = new Date(isoDate);
-  due.setHours(0, 0, 0, 0);
-  return Math.round((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-}
-
-function urgencyLabel(days: number): string {
-  if (days < 0) return `Vencido hace ${Math.abs(days)}d`;
-  if (days === 0) return "Vence hoy";
-  if (days === 1) return "Mañana";
-  return `En ${days} días`;
-}
-
-function urgencyBadge(days: number): string {
-  if (days < 0) return "bg-red-100 dark:bg-red-900/30 text-[var(--data-error-700)] dark:text-red-400";
-  if (days <= 7) return "bg-amber-100 dark:bg-amber-900/30 text-[var(--data-warning-700)] dark:text-amber-400";
-  return "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] text-[var(--data-success-500)] dark:text-[var(--data-success-500)]";
-}
-
-// ── Custom Tooltip ─────────────────────────────────────────────────────────────
-
-function FlowTooltip({ active, payload, label }: {
-  active?: boolean;
-  payload?: { name: string; value: number; color: string }[];
-  label?: string;
-}) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3 text-xs">
-      <p className="font-semibold text-[var(--text-secondary)] mb-1">{label}</p>
-      {payload.map((p) => (
-        <p key={p.name} style={{ color: p.color }} className="font-mono">
-          {p.name === "ingresos" ? "Ingresos" : p.name === "gastos" ? "Gastos" : "Delta"}: {fmtShort(p.value)}
-        </p>
-      ))}
-    </div>
-  );
-}
-
-// ── Skeleton ───────────────────────────────────────────────────────────────────
-
-function Skeleton({ className }: { className?: string }) {
-  return (
-    <div className={cn("animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700", className)} />
-  );
-}
-
-// ── Main Component ─────────────────────────────────────────────────────────────
+const AVISO_ERROR = "rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/10 px-4 py-3 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]";
+const AVISO_NEUTRO = "flex items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3 text-sm font-bold text-[var(--text-secondary)]";
 
 export default function TreasuryDashboard() {
-  const [sales, setSales] = useState<SaleItem[]>([]);
-  const [payables, setPayables] = useState<Payable[]>([]);
-  const [fiados, setFiados] = useState<Fiado[]>([]);
-  const [expenses, setExpenses] = useState<ExpenseSummary | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0);
+  /** La cuenta cuyos movimientos se miran; `null` = todas. */
+  const [elegida, setElegida] = useState<string | null>(null);
+  const { cuentas, resumen, movimientos, transferencias, recargar } = useTesoreria(elegida);
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [salesRes, payablesRes, fiadosRes, expensesRes] = await Promise.all([
-        fetch("/api/sales"),
-        fetch("/api/payables"),
-        fetch("/api/fiados"),
-        fetch("/api/expenses/summary"),
-      ]);
-      if (!salesRes.ok) throw new Error(`Sales HTTP ${salesRes.status}`);
-      if (!payablesRes.ok) throw new Error(`Payables HTTP ${payablesRes.status}`);
-      if (!fiadosRes.ok) throw new Error(`Fiados HTTP ${fiadosRes.status}`);
-      if (!expensesRes.ok) throw new Error(`Expenses HTTP ${expensesRes.status}`);
-
-      const [salesData, payablesData, fiadosData, expensesData] = await Promise.all([
-        salesRes.json(),
-        payablesRes.json(),
-        fiadosRes.json(),
-        expensesRes.json(),
-      ]);
-
-      setSales(Array.isArray(salesData) ? salesData : salesData?.items ?? []);
-      setPayables(Array.isArray(payablesData) ? payablesData : payablesData?.items ?? []);
-      setFiados(Array.isArray(fiadosData) ? fiadosData : fiadosData?.items ?? []);
-      setExpenses(expensesData ?? null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData, refreshKey]);
-
-  // ── KPIs ─────────────────────────────────────────────────────────────────────
-
-  const kpis = useMemo(() => {
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-    const ingresosMes = sales
-      .filter(s => new Date(s.createdAt) >= startOfMonth)
-      .reduce((sum, s) => sum + (s.total ?? 0), 0);
-
-    const gastosMes = expenses?.total ?? 0;
-    const saldoActual = ingresosMes - gastosMes;
-
-    const porCobrar = fiados
-      .filter(f => f.status !== "pagado")
-      .reduce((sum, f) => sum + ((f.amount ?? 0) - (f.paidAmount ?? 0)), 0);
-
-    const porPagar = payables
-      .filter(p => !p.paid)
-      .reduce((sum, p) => sum + (p.amount ?? 0), 0);
-
-    const flujoProyectado = saldoActual + porCobrar - porPagar;
-
-    return { saldoActual, porCobrar, porPagar, flujoProyectado, ingresosMes, gastosMes };
-  }, [sales, payables, fiados, expenses]);
-
-  // ── Flow chart data (last 30 days) ────────────────────────────────────────────
-
-  const flowData = useMemo((): DayFlow[] => {
-    const days: DayFlow[] = [];
-    const today = new Date();
-
-    for (let i = 29; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(today.getDate() - i);
-      d.setHours(0, 0, 0, 0);
-      const next = new Date(d);
-      next.setDate(d.getDate() + 1);
-
-      const dayStr = d.toISOString().slice(0, 10);
-      const label = d.toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
-
-      const ingresos = sales
-        .filter(s => {
-          const sd = new Date(s.createdAt);
-          return sd >= d && sd < next;
-        })
-        .reduce((sum, s) => sum + (s.total ?? 0), 0);
-
-      // Distribute monthly expense evenly if no daily breakdown
-      const byDay = expenses?.byDay;
-      let gastos = 0;
-      if (byDay) {
-        gastos = byDay.find(e => e.date === dayStr)?.amount ?? 0;
-      } else if (expenses?.total) {
-        const daysInMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
-        gastos = expenses.total / daysInMonth;
-      }
-
-      days.push({ date: dayStr, label, ingresos, gastos, delta: ingresos - gastos });
-    }
-    return days;
-  }, [sales, expenses]);
-
-  // ── Payables sorted by urgency ────────────────────────────────────────────────
-
-  const pendingPayables = useMemo(() =>
-    payables
-      .filter(p => !p.paid && p.dueDate)
-      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
-      .slice(0, 8),
-    [payables],
+  const lista = useMemo(() => cuentas.datos ?? [], [cuentas.datos]);
+  /* Las dadas de baja van al final: su historia sigue, pero no suman. */
+  const ordenadas = useMemo(() => [...lista.filter((c) => c.activa), ...lista.filter((c) => !c.activa)], [lista]);
+  const monedas = useMemo(() => new Map(lista.map((c) => [c.id, c.moneda])), [lista]);
+  const notas = useMemo(
+    () => new Map((transferencias.datos ?? []).map((t) => [t.id, t.descripcion.trim()])),
+    [transferencias.datos],
   );
+  const monedaDe = useCallback((id: string) => monedas.get(id) ?? "PEN", [monedas]);
+  const notaDe = useCallback((id: string | null) => (id ? notas.get(id) || null : null), [notas]);
 
-  // ── Fiados sorted by amount ───────────────────────────────────────────────────
+  /* Mientras llega el pedido de la cuenta recién elegida, lo que ya estaba se
+     filtra a esa cuenta: el cambio se ve al instante y no muestra otra. */
+  const filas = (movimientos.datos ?? []).filter((m) => !elegida || m.cuentaId === elegida);
+  const cuentaElegida = lista.find((c) => c.id === elegida) ?? null;
 
-  const pendingFiados = useMemo(() =>
-    fiados
-      .filter(f => f.status !== "pagado")
-      .sort((a, b) => {
-        const pendA = (a.amount ?? 0) - (a.paidAmount ?? 0);
-        const pendB = (b.amount ?? 0) - (b.paidAmount ?? 0);
-        return pendB - pendA;
-      })
-      .slice(0, 8),
-    [fiados],
-  );
-
-  // ── Render ────────────────────────────────────────────────────────────────────
+  const r = resumen.datos;
+  const porMoneda = r?.saldoPorMoneda ?? {};
+  const unaMoneda = Object.keys(porMoneda).length <= 1 ? (Object.keys(porMoneda)[0] ?? "PEN") : null;
+  const error = cuentas.error ?? resumen.error;
+  const cargando = cuentas.cargando || resumen.cargando || movimientos.cargando;
+  const sinCuentas = !cuentas.cargando && !cuentas.error && lista.length === 0;
 
   return (
-    <div className="space-y-6 pb-8">
-      <AdminModuleHeader
-        title="Tesorería"
-        description="Flujo de caja, vencimientos y cobranzas"
-        icon={DollarSign}
-        iconColor="var(--accent)"
-      >
-        <button
-          onClick={() => setRefreshKey(k => k + 1)}
-          disabled={loading}
-          aria-label="Actualizar datos"
-          className={cn(
-            "h-9 w-9 rounded-xl flex items-center justify-center transition-all",
-            "bg-[var(--surface-sunken)] hover:bg-gray-200 dark:hover:bg-gray-700",
-            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
-            loading && "animate-spin opacity-60",
+    <div className="space-y-5">
+      {/* Una sola fila: la cifra y «Actualizar». Dentro de Mi Plata no va
+          cabecera propia (el título del hub ya está arriba). */}
+      <div className="flex items-start gap-3">
+        <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-3 gap-y-1">
+          {r && r.cuentasActivas > 0 ? (
+            <>
+              <SectionTitle as="h3">Tienes</SectionTitle>
+              <span className="text-2xl font-extrabold tabular-nums text-[var(--text-primary)]">{enMonedas(porMoneda)}</span>
+              <span className="text-sm text-[var(--text-tertiary)]">
+                en {r.cuentasActivas} {r.cuentasActivas === 1 ? "cuenta" : "cuentas"}
+              </span>
+              {/* El mes del resumen suma todas las monedas juntas: sólo se
+                  muestra si hay una sola. */}
+              {unaMoneda && (r.ingresosMes > 0 || r.egresosMes > 0) && (
+                <span className="text-sm font-semibold text-[var(--text-secondary)]">
+                  · este mes entró {montoEnMoneda(r.ingresosMes, unaMoneda)} y salió {montoEnMoneda(r.egresosMes, unaMoneda)}
+                </span>
+              )}
+            </>
+          ) : (
+            <SectionTitle as="h3">Tus cuentas</SectionTitle>
           )}
+          <InfoTip
+            title="Tesorería"
+            what="Lo que hay hoy en cada cuenta de banco, en tu caja física y en tus billeteras digitales, sumado por moneda. Las cuentas dadas de baja se ven al final y no suman."
+            affects="La proyección de caja (Movimientos › Caja) arranca con esta suma. Sin cuentas cargadas, la estima con lo vendido menos lo gastado en los últimos 30 días."
+            example="BCP con S/ 15 000 y la caja chica con S/ 5 500: tienes S/ 20 500. Toca una cuenta para ver solo sus movimientos."
+          />
+        </div>
+        <button
+          type="button"
+          onClick={recargar}
+          className="shrink-0 rounded-xl p-2 text-[var(--text-tertiary)] transition-colors hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
+          title="Actualizar"
+          aria-label="Actualizar las cuentas y sus movimientos"
         >
-          <RefreshCw className="h-4 w-4 text-[var(--text-secondary)]" />
+          <RefreshCw className={cn("h-4 w-4", cargando && "animate-spin")} aria-hidden="true" />
         </button>
-      </AdminModuleHeader>
+      </div>
 
-      {/* Error */}
-      {error && (
-        <div className="flex items-center gap-2 rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] p-4 text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
-          <AlertTriangle className="h-4 w-4 shrink-0" />
-          <span>Error al cargar datos: {error}</span>
+      {error && <p className={AVISO_ERROR}>No se pudieron cargar tus cuentas: {error}</p>}
+
+      {cuentas.cargando && lista.length === 0 && (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true" aria-label="Cargando tus cuentas">
+          {[0, 1].map((i) => <div key={i} className="h-32 animate-pulse rounded-xl bg-[var(--surface-sunken)]" />)}
         </div>
       )}
 
-      {/* KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {loading ? (
-          Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-24 rounded-xl" />
-          ))
-        ) : (
-          <>
-            <KPICard
-              label="Saldo del mes"
-              value={fmt(kpis.saldoActual)}
-              icon={kpis.saldoActual >= 0 ? TrendingUp : TrendingDown}
-              color={kpis.saldoActual >= 0 ? "var(--accent)" : "#e63946"}
-              alert={kpis.saldoActual < 0}
-              subtitle={`Ingresos ${fmt(kpis.ingresosMes)} − Gastos ${fmt(kpis.gastosMes)}`}
-            />
-            <KPICard
-              label="Por cobrar (fiados)"
-              value={fmt(kpis.porCobrar)}
-              icon={ArrowUpRight}
-              color="#f97316"
-              subtitle={`${fiados.filter(f => f.status === "ACTIVO" || f.status === "VENCIDO").length} clientes pendientes`}
-            />
-            <KPICard
-              label="Por pagar"
-              value={fmt(kpis.porPagar)}
-              icon={ArrowDownRight}
-              color="#e63946"
-              alert={kpis.porPagar > 0 && pendingPayables.some(p => daysUntil(p.dueDate) < 0)}
-              subtitle={`${pendingPayables.length} facturas pendientes`}
-            />
-            <KPICard
-              label="Flujo neto proyectado"
-              value={fmt(kpis.flujoProyectado)}
-              icon={kpis.flujoProyectado >= 0 ? TrendingUp : TrendingDown}
-              color={kpis.flujoProyectado >= 0 ? "var(--accent)" : "#e63946"}
-              alert={kpis.flujoProyectado < 0}
-              subtitle="Saldo + cobrar − pagar"
-            />
-          </>
-        )}
-      </div>
+      {sinCuentas && (
+        <p className={AVISO_NEUTRO}>
+          <Landmark className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden="true" />
+          Todavía no hay cuentas de banco, caja ni billeteras registradas.
+        </p>
+      )}
 
-      {/* Gráfico flujo 30 días */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 ">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <SectionTitle className="text-sm font-semibold text-[var(--text-primary)]">Flujo de caja — últimos 30 días</SectionTitle>
-            <p className="text-xs text-[var(--text-tertiary)] mt-0.5">Ingresos vs gastos diarios</p>
-          </div>
-          <div className="flex items-center gap-3 text-xs text-[var(--text-tertiary)]">
-            <span className="flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-primary" />
-              Ingresos
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-[var(--data-warning-500)]" />
-              Gastos
-            </span>
-          </div>
+      {ordenadas.length > 0 && (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {ordenadas.map((c) => (
+            <TarjetaCuenta
+              key={c.id}
+              cuenta={c}
+              elegida={c.id === elegida}
+              onElegir={(id) => setElegida((e) => (e === id ? null : id))}
+            />
+          ))}
         </div>
-        {loading ? (
-          <Skeleton className="h-52 w-full" />
-        ) : (
-          <ResponsiveContainer minWidth={0} width="100%" height={220}>
-            <AreaChart data={flowData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="ingGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.25} />
-                  <stop offset="95%" stopColor="var(--accent)" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="gasGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#f97316" stopOpacity={0.25} />
-                  <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(156,163,175,0.2)" />
-              <XAxis
-                dataKey="label"
-                tick={{ fontSize: 10, fill: "#9ca3af" }}
-                tickLine={false}
-                axisLine={false}
-                interval={4}
-              />
-              <YAxis
-                tickFormatter={fmtShort}
-                tick={{ fontSize: 10, fill: "#9ca3af" }}
-                tickLine={false}
-                axisLine={false}
-                width={56}
-              />
-              <Tooltip content={<FlowTooltip />} />
-              <Area type="monotone" dataKey="ingresos" name="ingresos" stroke="var(--accent)" strokeWidth={2} fill="url(#ingGrad)" dot={false} />
-              <Area type="monotone" dataKey="gastos" name="gastos" stroke="#f97316" strokeWidth={2} fill="url(#gasGrad)" dot={false} />
-            </AreaChart>
-          </ResponsiveContainer>
-        )}
-      </div>
+      )}
 
-      {/* Tablas lado a lado en desktop */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-
-        {/* Tabla de vencimientos */}
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 ">
-          <div className="flex items-center gap-2 mb-4">
-            <Calendar className="h-4 w-4 text-[var(--data-warning-500)]" />
-            <SectionTitle className="text-sm font-semibold text-[var(--text-primary)]">Próximos vencimientos</SectionTitle>
-            <span className="ml-auto text-xs text-[var(--text-tertiary)]">{pendingPayables.length} pendientes</span>
+      {lista.length > 0 && (
+        <section className="space-y-3" aria-labelledby="tesoreria-movimientos">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <CardTitle className="text-sm font-bold" id="tesoreria-movimientos">
+              {cuentaElegida ? `Movimientos de ${cuentaElegida.nombre}` : "Movimientos"}
+            </CardTitle>
+            {cuentaElegida && (
+              <button type="button" onClick={() => setElegida(null)} className={cn(CHIP, CHIP_OFF)}>
+                Ver todas las cuentas
+              </button>
+            )}
           </div>
 
-          {loading ? (
-            <div className="space-y-2">
-              {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
-            </div>
-          ) : pendingPayables.length === 0 ? (
-            <div className="text-center py-8">
-              <TrendingUp className="h-10 w-10 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] mx-auto mb-2" />
-              <p className="text-sm text-[var(--text-tertiary)]">Sin cuentas por pagar pendientes</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-[var(--rule-base)]">
-                    <th className="text-left pb-2 text-[var(--text-tertiary)] font-medium">Proveedor / Concepto</th>
-                    <th className="text-right pb-2 text-[var(--text-tertiary)] font-medium">Monto</th>
-                    <th className="text-right pb-2 text-[var(--text-tertiary)] font-medium">Vence</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pendingPayables.map(p => {
-                    const days = daysUntil(p.dueDate);
-                    return (
-                      <tr key={p.id} className="border-b border-gray-50 dark:border-[var(--rule-base)] last:border-0">
-                        <td className="py-2.5 text-[var(--text-secondary)] truncate max-w-[120px]">
-                          {p.supplier ?? p.description ?? "Sin nombre"}
-                        </td>
-                        <td className="py-2.5 text-right font-mono font-semibold text-[var(--text-primary)]">
-                          {fmt(p.amount)}
-                        </td>
-                        <td className="py-2.5 text-right">
-                          <span className={cn("px-1.5 py-0.5 rounded-md text-[length:var(--ts-2xs)] font-medium", urgencyBadge(days))}>
-                            {urgencyLabel(days)}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+          {movimientos.error && <p className={AVISO_ERROR}>No se pudieron cargar los movimientos: {movimientos.error}</p>}
+          {movimientos.cargando && filas.length === 0 && !movimientos.error && (
+            <p className="text-sm text-[var(--text-tertiary)]">Cargando los movimientos…</p>
           )}
-        </div>
-
-        {/* Tabla de cobranzas */}
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 ">
-          <div className="flex items-center gap-2 mb-4">
-            <DollarSign className="h-4 w-4 text-primary" />
-            <SectionTitle className="text-sm font-semibold text-[var(--text-primary)]">Cobranzas pendientes (fiados)</SectionTitle>
-            <span className="ml-auto text-xs text-[var(--text-tertiary)]">{pendingFiados.length} clientes</span>
-          </div>
-
-          {loading ? (
-            <div className="space-y-2">
-              {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
-            </div>
-          ) : pendingFiados.length === 0 ? (
-            <div className="text-center py-8">
-              <TrendingUp className="h-10 w-10 text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] mx-auto mb-2" />
-              <p className="text-sm text-[var(--text-tertiary)]">Todos los fiados al día</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-[var(--rule-base)]">
-                    <th className="text-left pb-2 text-[var(--text-tertiary)] font-medium">Cliente</th>
-                    <th className="text-right pb-2 text-[var(--text-tertiary)] font-medium">Pendiente</th>
-                    <th className="text-right pb-2 text-[var(--text-tertiary)] font-medium">Mora</th>
-                    <th className="text-right pb-2 text-[var(--text-tertiary)] font-medium">Acción</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pendingFiados.map(f => {
-                    const pending = (f.amount ?? 0) - (f.paidAmount ?? 0);
-                    const moraDays = f.dueDate ? Math.max(0, -daysUntil(f.dueDate)) : 0;
-                    const phone = f.phone ?? f.customerPhone ?? f.customer?.phone;
-                    return (
-                      <tr key={f.id} className="border-b border-gray-50 dark:border-[var(--rule-base)] last:border-0">
-                        <td className="py-2.5 text-[var(--text-secondary)] truncate max-w-[130px]">
-                          {f.customerName}
-                        </td>
-                        <td className="py-2.5 text-right font-mono font-semibold text-[var(--text-primary)]">
-                          {fmt(pending)}
-                        </td>
-                        <td className="py-2.5 text-right">
-                          {moraDays > 0 ? (
-                            <span className="px-1.5 py-0.5 rounded-md text-[length:var(--ts-2xs)] font-medium bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">
-                              {moraDays}d mora
-                            </span>
-                          ) : (
-                            <span className="px-1.5 py-0.5 rounded-md text-[length:var(--ts-2xs)] font-medium bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
-                              Al día
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-2.5 text-right">
-                          {phone && (
-                            <a
-                              href={`https://wa.me/${phone.replace(/\D/g, "")}?text=${encodeURIComponent(
-                                `Hola! Soy Buleje. Te recuerdo que tienes una cuenta pendiente de S/${pending.toFixed(2)}. Agradecemos tu pronto pago. Gracias!`
-                              )}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 px-2 py-1 bg-[var(--accent-soft)] hover:bg-[var(--accent-soft)] text-white rounded-lg text-[length:var(--ts-2xs)] font-medium transition-colors"
-                              title="Enviar recordatorio por WhatsApp"
-                            >
-                              <MessageCircle className="h-3 w-3" />
-                              Cobrar
-                            </a>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+          {!movimientos.cargando && !movimientos.error && filas.length === 0 && (
+            <p className={AVISO_NEUTRO}>
+              {cuentaElegida ? `${cuentaElegida.nombre} no tiene movimientos todavía.` : "Tus cuentas no tienen movimientos todavía."}
+            </p>
           )}
-        </div>
-      </div>
+          {filas.length > 0 && (
+            <MovimientosTesoreria movimientos={filas} monedaDe={monedaDe} notaDe={notaDe} conCuenta={!cuentaElegida} />
+          )}
+          {filas.length >= TOPE_MOVIMIENTOS && (
+            <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+              Son los últimos {TOPE_MOVIMIENTOS}. Toca una cuenta para ver solo los suyos.
+            </p>
+          )}
+        </section>
+      )}
     </div>
   );
 }

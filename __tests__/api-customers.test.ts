@@ -15,6 +15,7 @@ vi.mock("@/lib/logger", () => ({
 }));
 
 vi.mock("@/lib/cache", () => ({
+  revalidateTenantTag: vi.fn(),
   invalidate: vi.fn(),
   getOrSet: vi.fn(async (_k: string, _t: number, fn: () => Promise<unknown>) => fn()),
 }));
@@ -43,6 +44,8 @@ const { mockCustomersGetAll, mockCustomersUpsert, mockNormalizePhone } = vi.hois
 vi.mock("@/lib/jsondb", () => ({
   CustomersDB: {
     getAll: mockCustomersGetAll,
+    // GET usa la variante con la deuda real de fiados (09-10); el contrato de la lista es el mismo.
+    getAllConDeuda: mockCustomersGetAll,
     upsert: mockCustomersUpsert,
   },
   normalizePhone: mockNormalizePhone,

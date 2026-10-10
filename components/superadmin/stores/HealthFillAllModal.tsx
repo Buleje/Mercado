@@ -17,7 +17,10 @@
  * Auto-load del snapshot actual al abrir. Save batch al cerrar.
  */
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { csrfHeaders } from "@/lib/csrf-client";
 import {
   X,
@@ -123,8 +126,22 @@ export default function HealthFillAllModal({
   tenantName,
   onSaved,
 }: HealthFillAllModalProps) {
+  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
+  /* `activo: open` no es decorativo: el componente NO se desmonta al
+     cerrarse —sólo su contenido— así que sin esto el efecto corre una vez
+     con el ref vacío y no vuelve a mirar cuando el modal aparece. */
+  const cajaRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
+       el foco, la trampa de Tab y el scroll, no una segunda salida. */
+  useModalAccesible(cajaRef, { onCerrar: saving ? undefined : onClose, cerrarConEscape: false, activo: open });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventana = useVentanaDeModal(open, {
+    ref: cajaRef,
+    aplicarTranslate: true,
+    claveMemoria: "health-fill-all",
+  });
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [openSections, setOpenSections] = useState<Set<string>>(
     new Set(["identidad", "pagos", "comercial"]),
@@ -250,7 +267,7 @@ export default function HealthFillAllModal({
     const errs = validate(form);
     if (Object.keys(errs).length > 0) {
       setValidationErrors(errs);
-      setError(`Hay ${Object.keys(errs).length} campo(s) con formato inválido. Revisá los marcados.`);
+      setError(`Hay ${Object.keys(errs).length} campo(s) con formato inválido. Revisa los marcados.`);
       return;
     }
     setValidationErrors({});
@@ -333,17 +350,20 @@ export default function HealthFillAllModal({
 
   return (
     <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={`Rellenar datos de ${tenantName}`}
       className="fixed inset-0 z-[80] flex items-start sm:items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget && !ventana.fijado) onClose();
       }}
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
-      <div className="w-full max-w-3xl my-4 rounded-2xl bg-[var(--surface-canvas)] shadow-2xl flex flex-col max-h-[90vh]">
+      <div ref={cajaRef} tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Rellenar datos de ${tenantName}`}
+        className="relative w-full max-w-3xl my-4 rounded-2xl bg-[var(--surface-canvas)] shadow-2xl flex flex-col max-h-[90vh]"
+      >
         {/* Header */}
-        <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-[var(--rule-base)] shrink-0">
+        <div {...ventana.asaProps} className="flex items-start justify-between gap-3 px-5 py-4 border-b border-[var(--rule-base)] shrink-0">
           <div className="min-w-0">
             <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
               Rellenar datos del tenant
@@ -352,9 +372,12 @@ export default function HealthFillAllModal({
               {tenantName}
             </p>
             <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
-              /{tenantSlug} · Llená todo lo que falte y guardá una sola vez
+              /{tenantSlug} · Llena todo lo que falte y guarda una sola vez
             </p>
           </div>
+          <span className="ml-auto flex items-center gap-1 shrink-0">
+            <ControlesDeVentana ventana={ventana} />
+          </span>
           <button
             type="button"
             onClick={onClose}
@@ -375,7 +398,7 @@ export default function HealthFillAllModal({
           )}
 
           {error && (
-            <div className="flex items-start gap-2 rounded-lg bg-rose-50 border border-rose-200 p-3 text-sm text-[var(--data-error-500)]">
+            <div className="flex items-start gap-2 rounded-lg bg-[var(--data-error-50)] border border-[var(--data-error-500)] p-3 text-sm text-[var(--data-error-500)]">
               <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
@@ -394,9 +417,9 @@ export default function HealthFillAllModal({
               >
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
+                    <span className="block text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
                       Logo
-                    </label>
+                    </span>
                     <ImageUploader
                       value={form.logo || null}
                       onChange={(url) => update("logo", url ?? "")}
@@ -406,9 +429,9 @@ export default function HealthFillAllModal({
                     />
                   </div>
                   <div>
-                    <label className="block text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
+                    <span className="block text-[length:var(--ts-xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
                       Banner
-                    </label>
+                    </span>
                     <ImageUploader
                       value={form.banner || null}
                       onChange={(url) => update("banner", url ?? "")}
@@ -535,7 +558,7 @@ export default function HealthFillAllModal({
                     value={form.ruc}
                     onChange={(e) => update("ruc", e.target.value.replace(/[^0-9]/g, ""))}
                     placeholder="20XXXXXXXXX (RUC) o 0XXXXXXX (DNI)"
-                    className={`${inputCls} ${validationErrors.ruc ? "border-rose-400" : ""}`}
+                    className={`${inputCls} ${validationErrors.ruc ? "border-[var(--data-error-500)]" : ""}`}
                   />
                 </Field>
               </Section>
@@ -600,8 +623,8 @@ export default function HealthFillAllModal({
                 <div
                   className={`rounded-lg border p-3 text-sm ${
                     saveResult.failed.length === 0
-                      ? "bg-emerald-50 border-emerald-200 text-[var(--data-success-700)]"
-                      : "bg-amber-50 border-amber-200 text-amber-800"
+                      ? "bg-[var(--data-success-50)] border-[var(--data-success-500)]/30 text-[var(--data-success-700)]"
+                      : "bg-teal-50 border-teal-200 text-teal-800"
                   }`}
                 >
                   {saveResult.failed.length === 0 ? (
@@ -625,7 +648,7 @@ export default function HealthFillAllModal({
 
         {/* Progress bar mientras saving — feedback live */}
         {saving && (
-          <div className="px-5 py-2 border-t border-[var(--rule-base)] bg-[var(--accent-soft)]/30">
+          <div className="px-5 py-2 border-t border-[var(--rule-base)] bg-primary/10">
             <div className="flex items-center justify-between text-[length:var(--ts-xs)] font-bold text-[var(--accent)] mb-1">
               <span>Guardando...</span>
               <span className="tabular-nums">{saveProgress}/13</span>
@@ -644,7 +667,7 @@ export default function HealthFillAllModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm font-bold rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:bg-[var(--surface-raised)]"
+            className="px-4 min-h-10 text-sm font-semibold rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] hover:bg-[var(--surface-raised)]"
           >
             Cancelar
           </button>
@@ -652,7 +675,7 @@ export default function HealthFillAllModal({
             type="button"
             onClick={saveAll}
             disabled={saving || loading}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold rounded-lg bg-[var(--accent-600,var(--accent))] text-white hover:opacity-90 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-4 min-h-10 text-sm font-semibold rounded-xl bg-[var(--accent-600,var(--accent))] text-white hover:opacity-90 disabled:opacity-50"
           >
             {saving ? (
               <>
@@ -669,6 +692,8 @@ export default function HealthFillAllModal({
             )}
           </button>
         </div>
+
+        <TiradorDeVentana ventana={ventana} />
       </div>
     </div>
   );
@@ -711,10 +736,10 @@ function Section({
               <span
                 className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider ${
                   isComplete
-                    ? "bg-emerald-100 text-[var(--data-success-700)]"
+                    ? "bg-[var(--data-success-100)] text-[var(--data-success-700)]"
                     : scorePct >= 50
-                      ? "bg-amber-100 text-[var(--data-warning-700)]"
-                      : "bg-rose-100 text-[var(--data-error-500)]"
+                      ? "bg-teal-100 text-teal-700"
+                      : "bg-[var(--data-error-50)] text-[var(--data-error-500)]"
                 }`}
               >
                 {score.ok}/{score.total}

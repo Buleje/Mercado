@@ -1,0 +1,56 @@
+# ADR-464 — La Distribución de rolliza escribe en el Libro CTP: el bloque recuerda sus trozas y arma un lote por bloque
+
+- **Estado:** aceptado (2026-10-03). Fases 1 a 4 construidas (3 y 4 sin commitear al 03-10). Sin cambio de schema (los campos nuevos viven dentro del JSON de la distribución guardada).
+- **Relacionados:** ADR-334 (lote de aserrío), ADR-393 (un lote, un título habilitante), ADR-326/T1 (consumo por pieza), ADR-404 (sugerencia de reproceso), ADR-463 (variado); «Lotes que puedes armar» (2026-09-27).
+- **Pedido (Brandon, 03-10):** que la Distribución de rolliza deje de ser una hoja aparte y escriba en el Libro: el bloque traído del Libro arma su lote y, después, cada jornada suya es una producción.
+
+## Contexto (medido)
+
+- `BloqueRolliza` sabía etiqueta, especie, m³, permiso y `loteId`/`paqueteId`, **pero no sus trozas**. Los tres caminos que siembran desde el Libro (`bloquesDeGuiaDe` en Resumen por permiso, `bloquesDesdeCapacidad` en Saldos «Llevar al cubicador» y el lote sobrante del mismo modal) agrupaban por guía + especie y tiraban la lista de piezas. Sin ella, crear un lote desde un bloque era volver a elegir trozas a ojo: inventar el origen (T1).
+- El guardado de distribuciones (`/api/admin/forestal/distribuciones`) valida con un schema **whitelist**: un campo nuevo se borra en silencio si no se declara (el mismo agujero que ya costó `tipo` y `paqueteId`).
+- «Lotes que puedes armar» propone **un lote por especie + permiso** y deduplica los pedidos por esa clave: dos bloques de Tornillo del mismo permiso (dos guías) daban UN lote y el segundo pedido se saltaba sin aviso.
+- Datos (lectura, 03-10): Blas tiene 7 ingresos y 17 trozas libres, **las 17 sin permiso** en el ingreso; `main` (QA) tiene 9 trozas libres, también sin permiso. Hoy ningún bloque de esos puede armar lote: el motivo tiene que decir dónde se arregla.
+
+## Decisión
+
+1. **El bloque guarda sus trozas.** `BloqueRolliza.trozaIds?: string[] | null` (las piezas reales) y `corridaIds?: string[] | null` (lo ya escrito en el Libro, para la fase 3). Lo llenan sólo los caminos que siembran desde trozas sueltas: `bloquesDeGuiaDe` y las fuentes de patio de `bloquesDesdeCapacidad`. Un bloque que sale de un lote ya creado lleva `loteId` (y `origen: "lote"` en el modal del permiso), que es su referencia. Ambos se declaran en el Zod del guardado (`max 500` trozas, `MAX_TROZAS_POR_BLOQUE`); quien siembra un bloque con más no le pega la lista.
+2. **Volver a traer un bloque viejo le pone sus trozas** (`unirSiembra`) sólo si es la misma madera: misma huella y el mismo m³ (±0,0005 m³, la unidad de la GTF). Si el m³ cambió, las trozas de hoy no son las de ese bloque y no se pegan.
+3. **Un lote por bloque** (decisión de Brandon). «Crear lotes» en la Distribución pide al servidor, por cada bloque traído del Libro y sin lote, UN lote acotado **exactamente** a sus trozas. Se reusa la ruta de propuestas (`POST /lotes-aserrio/propuestas` con `{modo: "previsualizar" | "crear", bloques}`) y las dos puertas de siempre (`ForestLoteAserrioDB.create` + `agregarTrozas`, lock `FOR UPDATE ORDER BY id`, L-A1, ADR-393, LM4, `motivoNoElegible`). El agrupado lo sigue decidiendo `proponerLotes`: el bloque sólo se arma si sus trozas forman una única propuesta.
+4. **Todo o nada por bloque.** Si una sola troza ya no puede (ya en un lote, consumida, guía sin recibir, sin especie, sin permiso, otra especie u otro permiso, de otro negocio), el bloque no se arma y se dice el motivo exacto («El ingreso no tiene permiso: corrígelo en Ingresos (guía X)»). Si en la carrera entre leer y lockear el escritor rechaza una pieza, el lote recién abierto se deshace (`softDelete` devuelve las que entraron). Un lote con menos piezas que el bloque haría declarar en la Distribución madera que el lote no tiene (I1/I2: `≤`, nunca atribuir de más).
+5. **Sólo bloques traídos del Libro escriben.** Un bloque cargado a mano, importado o traído del cubicador de trozas aparece apagado con «Tráelo del Libro»; uno con `loteId` dice «Ya tiene lote» (no se arma otro: doble consumo); uno de aserrada directa no lleva lote de aserrío. El servidor no confía en eso: la pieza que ya está en un lote se rechaza igual.
+6. **Rastro.** Cada lote creado audita `ctp_lote_aserrio_desde_distribucion` con el bloque de donde salió (además del alta y del `trozas_add` de las puertas). El bloque guarda el `loteId` y la distribución se persiste: en el dispositivo siempre, y en el servidor si hay una guardada abierta.
+
+## Alternativas descartadas
+
+- **Lote por permiso + especie** (lo que ya hace «Lotes que puedes armar»): juntaría dos guías aserradas en días distintos en un lote, y la fase 3 no podría decir qué jornada de qué bloque produjo qué.
+- **Lote de inventario sin trozas** (`ORIGEN_LOTE_INVENTARIO`): cierra el número pero corta la trazabilidad pieza → GTF que exige SERFOR; es para madera que nunca pasó por la sierra.
+- **Lote parcial** con las piezas que todavía se pueden: más permisivo, pero desalinea el bloque (m³ declarado) del lote (m³ real) sin que nadie lo note.
+
+## Consecuencias
+
+- Las distribuciones guardadas antes de este ADR siguen abriendo igual (campos `nullish`); sus bloques dicen «Tráelo del Libro» hasta que se vuelvan a traer.
+- Crear el lote no consume nada: cierre de mes y `congeladoAt` aplican en la fase 3, al escribir la producción (las puertas de consumo ya los respetan).
+- En Blas y en `main` hoy no se arma ningún lote: todos sus ingresos están sin permiso. El primer uso real pasa por poner el permiso en Ingresos.
+
+## Fase 3 — cada jornada del bloque es una corrida (construida)
+
+- **Plan puro** `lib/forestal/jornadas-de-bloque.ts` (`planLibroDeBloque`): abre el bloque en sus `trozaIds` libres EN SU LOTE (lo que dice el Libro manda sobre la lista guardada) y reparte **trozas enteras** entre los días pendientes, en proporción a lo aserrado de cada día (la más grande al día que más le falta). La producción se declara por producto: el plan sale del reparto «Por tipo» con el volumen oficial (el del Anexo 04), mire la tabla lo que mire.
+- **Se apaga con motivo**, antes de abrir la corrida: bloque a mano («Tráelo del Libro»), sin lote («Crea su lote primero»), día que no pasó, día que pasaría el 56 % con sus trozas, menos trozas que días (T1), día anterior sin registrar (el Libro se llena en orden), línea ya completada, y **trozas del bloque consumidas por una corrida que no salió de acá** (puede ser la misma jornada registrada desde otro equipo: repartir lo que queda declararía dos veces).
+- **Escritura**: las puertas de siempre (`consumir` en `/lotes-aserrio` + `declarar_produccion` en `/ctp`, línea LP) vía `useRegistrarJornadas`, con `exigirTodas`: si entraron menos trozas que las pedidas no se declara (I1) y la corrida queda abierta con su N°. Sin ruta nueva.
+- **Idempotencia**: `BloqueRolliza.jornadasLibro` (día → corrida, N°, estado) + `corridaIds`, en el dispositivo y en la guardada abierta (sólo esos campos: `anotarLibroEnLaGuardada`). Botón apagado mientras escribe (candado síncrono). Si la corrida se anuló, el día vuelve a poder registrarse. La segunda llave es el servidor: una troza consumida no entra dos veces.
+
+## Fase 4 — «Completar el lote» (construida)
+
+- Se ofrece en un bloque cuyo lote ya declaró producción, cuando ninguna jornada se puede registrar. Lo que falta = las líneas de los días no escritos desde acá, sin las ya completadas (`BloqueRolliza.complementos`).
+- **LPC**: con rolliza libre en el lote, corrida **nueva** (consume esa rolliza, declara en LPC, tope propio). **Sin rolliza libre, se suma a una corrida del lote con margen** (`ampliar_produccion`, ADR-361: filas nuevas, tope al 56 % acumulado). Una corrida nueva sin materia prima no se crea: `declararProduccion` no mide el tope cuando la entrada es 0, sería el agujero. Si se quiere una línea LPC sin rolliza, hace falta un vínculo corrida↔lote que hoy no existe (schema + ADR).
+- **LRE**: abre el mismo `CtpReprocesoModal` desde la corrida del lote elegida, con lo elegido como sugerencia; al terminar se anota el complemento (el reproceso no devuelve el id de su corrida).
+
+## Panel «Lotes» (construido 03-10)
+
+Pedido de Brandon: crear lotes desde la Distribución, usar uno ya creado y elegir ahí mismo las trozas del lote. Botón «Lotes» en la barra, un modal con tres pestañas (`reparto-panel-lotes.tsx`; lógica en `hooks/use-panel-lotes.ts` y `lib/forestal/panel-lotes-reparto.ts`). Sin ruta nueva:
+
+- **Sugeridos**: lo que propone el patio (`GET /lotes-aserrio/propuestas`, especie + permiso) con casillas y «Crear N lotes» (`POST {propuestas}` → `ForestLotePropuestaDB.crear`, que ahora devuelve también los `trozaIds` que entraron). Cada lote creado entra como bloque `origen: "lote"` con `loteId` y sus trozas. Sin propuestas, el motivo con dónde se arregla (sin permiso → Ingresos).
+- **Lotes del Libro**: un lote abierto con rolliza libre se trae como bloque (con sus trozas libres; también el «Agregar bloque → Lote X» de siempre) o se vincula a un bloque sin lote, con avisos si la especie, el permiso o el m³ no coinciden.
+- **Trozas**: bloque con lote abierto → piezas libres del patio de su especie y permiso → `PATCH {accion: "agregar"}` (rechazadas con motivo) y «Quitar» (`accion: "quitar"`, nunca la última: un lote no queda vacío). Bloque sin lote → «Crear su lote» con exactamente lo elegido (`modo: "crear"` por bloque, todo o nada).
+- **Permiso**: un lote nuevo exige permiso en el ingreso (igual que la creación por bloque); un lote con permiso sólo admite trozas de ese permiso (más estricto que `agregarTrozas`, que deja entrar una troza sin permiso); un lote viejo «de todos» no exige.
+- La guardada abierta recibe sólo `loteId` + `trozaIds` del bloque tocado (`anotarLoteEnLaGuardada`); un bloque nuevo vive en el dispositivo hasta que se guarde. El descuento de volumen sigue siendo el consumo al registrar la producción.

@@ -3,7 +3,6 @@
 import { useState, lazy, Suspense } from "react";
 import { Store, Package, ShoppingCart, DollarSign, RefreshCw, TrendingUp, Star, BarChart3, Ticket, Gift } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { useMarketplaceKpis } from "@/components/admin/marketplace/hooks/use-marketplace-kpis";
 import { Spinner, MODULE_ID } from "@/components/admin/marketplace/shared";
@@ -20,6 +19,11 @@ import { MarketplaceOrdenesTab } from "@/components/admin/marketplace/tabs/Orden
 const CompetitivePricingTab = lazy(() => import("@/components/admin/CompetitivePricingTab"));
 // Dynamic import del dashboard del marketplace (charts unificados)
 const MarketplaceDashboardTab = lazy(() => import("@/components/admin/marketplace/MarketplaceDashboard"));
+
+// ── Programas de crecimiento MOVIDOS al hub Crecimiento (2026-06-21) ──
+// Antes vivían enterrados acá como sub-tabs (subscriptions, gift-cards, socio,
+// lives). Ahora son sub-tabs visibles del hub Crecimiento (Marketing &
+// Fidelización), su hogar natural. El Marketplace queda enfocado en la tienda.
 
 // Spinner · TableSkeleton · SortIcon · KpiTile · MODULE_ID · ORDER_STATUS_CONFIG
 // + StoreData/COMMISSION/REVIEW/TIER configs → movidos a marketplace/shared.tsx
@@ -42,30 +46,36 @@ type TabId = string;
 // CATEGORIAS y ZONAS legacy migrados a <CategoryZonePicker /> (consume catálogo
 // del superadmin via /api/marketplace/categories + lib/marketplace-zones).
 
-export default function MarketplaceModule() {
-  const [tab, setTab] = useState<TabId>(TABS[0].id);
+export default function MarketplaceModule({ initialTab }: { initialTab?: string } = {}) {
+  const [tab, setTab] = useState<TabId>(initialTab ?? TABS[0].id);
   const { kpis, loading: kpisLoading, refresh: refreshKpis } = useMarketplaceKpis();
 
   return (
     <div className="space-y-4">
-      <AdminModuleHeader
-        title="Marketplace"
-        description="Gestiona tu tienda en la plataforma de ventas"
-        icon={Store}
-      >
-        <button
-          onClick={refreshKpis}
-          className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-primary hover:bg-primary/10 transition-colors"
-          title="Actualizar"
-        >
-          <RefreshCw className={cn("h-4 w-4", kpisLoading && "animate-spin")} />
-        </button>
-      </AdminModuleHeader>
-
       {/* KPI strip removido — Brandon decisión 2026-05-09. Los KPIs detallados
           están dentro del sub-tab "Resumen" (MarketplaceDashboardTab). */}
 
+      {/* El título va DENTRO de la barra de pestañas (patrón acordado con
+          Brandon 2026-09-07, piloto en Análisis): identidad a la izquierda,
+          pestañas a la derecha, una sola regla; las acciones del módulo, en
+          la misma banda. Recupera ~90px verticales por pantalla. */}
       <AdminTabBar
+        heading={{
+          title: "Marketplace",
+          description: "Gestiona tu tienda en la plataforma de ventas.",
+          icon: Store,
+          actions: (
+            <>
+              <button
+                onClick={refreshKpis}
+                className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"
+                title="Actualizar"
+              >
+                <RefreshCw className={cn("h-4 w-4", kpisLoading && "animate-spin")} />
+              </button>
+            </>
+          ),
+        }}
         tabs={TABS}
         activeTab={tab}
         onTabChange={(id) => setTab(id)}

@@ -4,6 +4,15 @@ import { ActivityLogDB } from "@/lib/db/activity-log.db";
 import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import { soloAdminODueno } from "@/lib/forestal/plata-de-guia-rol";
+
+/**
+ * Lo de las cámaras (quién miró el video, quién movió/desarmó) es sólo de
+ * admin y dueño, igual que `/api/admin/camaras/miradas`: cajero, almacenero
+ * y encargado no lo leen ni pidiéndolo (`?entity=camara`) ni en el listado
+ * general (security 05-10).
+ */
+const ENTIDAD_CAMARA = "camara";
 
 const PostSchema = z.object({
   action: z.string().min(1).max(100),
@@ -32,16 +41,31 @@ export async function GET(req: NextRequest) {
     const PAGE = Math.min(parseInt(req.nextUrl.searchParams.get("limit") ?? "50", 10), 100);
     const cursor = req.nextUrl.searchParams.get("cursor") ?? undefined;
     const entity = req.nextUrl.searchParams.get("entity") ?? undefined;
+    // Para la ficha de un registro: su propia historia, no la del módulo entero.
+    const entityId = req.nextUrl.searchParams.get("entityId") ?? undefined;
     const user = req.nextUrl.searchParams.get("user") ?? undefined;
     const action = req.nextUrl.searchParams.get("action") ?? undefined;
+
+    const veCamaras = soloAdminODueno(auth.role) === null;
+    if (!veCamaras) {
+      const pideCamaras =
+        entity?.trim().toLowerCase() === ENTIDAD_CAMARA ||
+        !!action?.trim().toLowerCase().startsWith(`${ENTIDAD_CAMARA}.`);
+      const prohibido = pideCamaras
+        ? soloAdminODueno(auth.role, "ver el registro de las cámaras")
+        : null;
+      if (prohibido) return prohibido;
+    }
 
     // Audit project-wide 2026-05-19: migrado a ActivityLogDB.listWithCursor.
     const { items, nextCursor } = await ActivityLogDB.listWithCursor(auth.tenantId, {
       entity,
+      entityId,
       user,
       action,
       limit: PAGE,
       cursor,
+      ...(!veCamaras && { ocultarEntidad: ENTIDAD_CAMARA }),
     });
 
     const entries: ActivityEntry[] = items.map((r) => ({

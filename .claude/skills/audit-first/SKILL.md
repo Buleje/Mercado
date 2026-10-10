@@ -8,7 +8,7 @@ description: |
   commits del área y documentación del módulo ANTES de escribir código.
 disable-model-invocation: false
 user-invocable: true
-allowed-tools: Read, Bash, Grep, Glob, TaskCreate
+allowed-tools: Read, Bash, Grep, Glob
 argument-hint: "[módulo | ruta | 'all']"
 model: sonnet
 ---

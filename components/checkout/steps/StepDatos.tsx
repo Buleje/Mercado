@@ -95,7 +95,7 @@ function SectionHeader({
         >
           {title}
         </p>
-        {hint && <p className="text-xs text-muted mt-0.5">{hint}</p>}
+        {hint && <p className="text-xs text-muted dark:text-[var(--text-tertiary)] mt-0.5">{hint}</p>}
       </div>
     </div>
   );

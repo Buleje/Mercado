@@ -36,10 +36,6 @@ const TARGETS = [
   ["components/admin/CustomKPITab.tsx", [
     ['trend === "up" ? "#10b981"', 'trend === "up" ? "#00B4A6"'],
   ]],
-  // ExecutiveDashboardTab: Ingresos sparkColor -> success
-  ["components/admin/ExecutiveDashboardTab.tsx", [
-    ['sparkColor: "#10b981"', 'sparkColor: "#00B4A6"'],
-  ]],
   // LiveSalesWidget: goal reached -> success
   ["components/admin/LiveSalesWidget.tsx", [
     ['goalPct >= 100 ? "#10B981"', 'goalPct >= 100 ? "#00B4A6"'],
@@ -63,14 +59,6 @@ const TARGETS = [
     ['tasaRecuperacion > 80 ? "#10b981"', 'tasaRecuperacion > 80 ? "#00B4A6"'],
     ['.paid { color: #059669; font-weight: bold; }', '.paid { color: #00B4A6; font-weight: bold; }'],
     ['.paid { color: #059669; }', '.paid { color: #00B4A6; }'],
-  ]],
-  // DashboardTab: Entregados/completado success
-  ["components/admin/DashboardTab.tsx", [
-    ['{ label: "Entregados", count: allPeriodOrders.filter(o => o.status === "entregado").length, color: "#10b981" }',
-     '{ label: "Entregados", count: allPeriodOrders.filter(o => o.status === "entregado").length, color: "#00B4A6" }'],
-    ['{ label: "Pedido completado", count: completedOrders, pct: 20, color: "#10b981" }',
-     '{ label: "Pedido completado", count: completedOrders, pct: 20, color: "#00B4A6" }'],
-    ['"emerald-500": "#10b981"', '"emerald-500": "#00B4A6"'],
   ]],
   // shared/RevenueChart.tsx: Revenue area stroke -> success (es el chart principal del hero)
   ["components/admin/shared/RevenueChart.tsx", [

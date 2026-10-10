@@ -45,23 +45,6 @@ function getInitials(name: string): string {
   return (parts[0]![0]! + parts[parts.length - 1]![0]!).toUpperCase();
 }
 
-function buildSummary(reviews: Array<{ rating: number }>): StoreRatingSummary {
-  if (reviews.length === 0) return EMPTY_SUMMARY;
-  const total = reviews.length;
-  const sum = reviews.reduce((a, r) => a + r.rating, 0);
-  const average = sum / total;
-  const counts = new Map<number, number>([[1, 0], [2, 0], [3, 0], [4, 0], [5, 0]]);
-  for (const r of reviews) {
-    const k = Math.max(1, Math.min(5, Math.round(r.rating)));
-    counts.set(k, (counts.get(k) ?? 0) + 1);
-  }
-  const breakdown = [5, 4, 3, 2, 1].map((stars) => {
-    const count = counts.get(stars) ?? 0;
-    return { stars, count, percentage: Math.round((count / total) * 100) };
-  });
-  return { average: Math.round(average * 10) / 10, total, breakdown };
-}
-
 function buildSummaryFromGroups(
   groups: Array<{ rating: number; _count: { rating: number } }>,
 ): StoreRatingSummary {
@@ -184,6 +167,23 @@ export const StoreReviewsDB = {
       });
       return map;
     }
+  },
+
+  /**
+   * Pisa `rating`/`reviewCount` de cada tienda con el agregado REAL de sus
+   * reseñas aprobadas (una sola consulta para N tiendas). Sin reseñas → 0/0 y
+   * la tarjeta dice «Nueva». La columna Store.rating puede venir sembrada
+   * (09-10: mi-pollo mostraba 4,8 con «24 reseñas» y tenía 0 aprobadas).
+   */
+  async conRatingReal<T extends { id: string; rating: number; reviewCount: number }>(
+    rows: T[],
+  ): Promise<T[]> {
+    if (rows.length === 0) return rows;
+    const agg = await this.getApprovedAggregatesByStoreIds(rows.map((r) => r.id));
+    return rows.map((r) => {
+      const real = agg.get(r.id);
+      return { ...r, rating: real?.average ?? 0, reviewCount: real?.total ?? 0 };
+    });
   },
 
   /** Azúcar para una sola tienda. Devuelve null si no hay reseñas reales. */

@@ -4,6 +4,7 @@ import { AnalyticsKpisV2DB } from "@/lib/db/analytics-kpis-v2.db";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { getOrSet } from "@/lib/cache";
 import { logger } from "@/lib/logger";
+import { startOfLimaDay } from "@/lib/utils";
 
 /**
  * GET /api/analytics/kpis-v2
@@ -19,7 +20,7 @@ export async function GET(req: NextRequest) {
     // sin compartir cache → ~780 queries/hora/tenant duplicadas.
     const payload = await getOrSet(`analytics:kpis-v2:${auth.tenantId}`, 60, async () => {
     const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayStart = new Date(startOfLimaDay(now));
 
     // Date ranges
     const thirtyDaysAgo = new Date(now);

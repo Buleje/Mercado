@@ -23,7 +23,10 @@ interface Series {
 }
 
 interface Props {
-  data: Array<Record<string, string | number>>;
+  /** `null` en una serie = ese punto no se midió: la línea se corta ahí
+   *  (`connectNulls` de Recharts es false por defecto) en vez de inventar el
+   *  tramo. */
+  data: Array<Record<string, string | number | null>>;
   xKey: string;
   series: Series[];
   height?: number;
@@ -31,6 +34,16 @@ interface Props {
   yTicks?: number;
   strokeWidth?: number;
   showDots?: boolean;
+  /**
+   * Rango del eje Y. Por omisión lo elige Recharts a partir de los datos.
+   *
+   * Sirve para series ACOTADAS cuyo rango útil no arranca en cero — un score de
+   * 0-100 que en la práctica vive entre 90 y 100, por ejemplo: con el eje desde
+   * el cero, una caída de 8 puntos y una línea plana se dibujan casi iguales.
+   * Usarlo sólo cuando el techo o el piso son parte del significado (y decirlo
+   * en la etiqueta), no para agrandar variaciones sin sentido.
+   */
+  yDomain?: [number | "auto" | "dataMin" | "dataMax", number | "auto" | "dataMin" | "dataMax"];
 }
 
 /**
@@ -46,6 +59,7 @@ export function BulejeLineChart({
   yTicks = 4,
   strokeWidth = 1.5,
   showDots = false,
+  yDomain,
 }: Props) {
   return (
     <ResponsiveContainer width="100%" height={height} minWidth={0}>
@@ -70,6 +84,7 @@ export function BulejeLineChart({
           tick={{ fontSize: CHART_FONT.axisSize, fontFamily: CHART_FONT.family, fill: CHART_AXIS_COLOR }}
           tickCount={yTicks}
           width={40}
+          {...(yDomain ? { domain: yDomain } : {})}
         />
         <Tooltip content={<ChartTooltip format={format} />} cursor={{ stroke: CHART_GRID_STROKE, strokeWidth: 1 }} />
         {series.map((s, i) => (

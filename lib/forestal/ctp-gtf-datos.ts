@@ -1,0 +1,468 @@
+/**
+ * ctp-gtf-datos — el cuerpo de la Guía de Transporte Forestal de salida.
+ *
+ * ## Qué dice la norma (verificado contra fuente primaria)
+ *
+ * · **Ley 29763 art. 124** — la guía de transporte ampara la movilización, tiene
+ *   **carácter de declaración jurada** y la emite el titular del derecho o el
+ *   regente. El SERFOR fija el formato único.
+ * · **D.S. 018-2015-MINAGRI art. 172** — emisores. Inciso **c)** el titular del
+ *   centro de transformación, para el traslado de productos de transformación
+ *   primaria, "debiendo consignarse los datos establecidos en el formato que
+ *   aprueba el SERFOR". Inciso **d)** la ARFFS, a pedido del **propietario del
+ *   producto que no sea el titular** del título habilitante ni del centro de
+ *   transformación — por eso propietario y emisor son campos DISTINTOS.
+ * · **RDE 122-2015-SERFOR-DE** — art. 3: Arial, **prenumerada**, papel **A4**,
+ *   autocopiativo. Art. 4: el talonario se remite a la ARFFS, que **consigna una
+ *   marca (visado)** en cada guía antes de usarla. Art. 5: se imprime **original
+ *   + 2 copias**: el original viaja con el producto y se muestra en cada puesto
+ *   de control; una copia queda en el primer puesto de control para el registro
+ *   de la ARFFS; una copia la conserva el emisor.
+ * · **RDE D000014-2024-MIDAGRI-SERFOR-DE** — formato vigente: mismas reglas de
+ *   impresión + una hoja adicional para el **registro de control** y 4 anexos.
+ *
+ * ## Qué NO hace este módulo
+ *
+ * Los campos exactos del formato viven en los anexos gráficos de la RDE, que no
+ * son legibles desde acá. Así que se capturan los datos que la norma NOMBRA y
+ * los que la práctica exige en un puesto de control, y el documento se imprime
+ * con las reglas formales verificadas — pero **no se presenta como el formato
+ * oficial**: el original se llena sobre el talonario visado por la ARFFS. Un
+ * papel que se hace pasar por el oficial es peor que ninguno.
+ *
+ * PURO: sin React, sin fetch, sin Prisma.
+ */
+
+import { z } from "zod";
+import { leerPlaca } from "./placa-peru";
+
+// ── Esquema ─────────────────────────────────────────────────────────────────
+
+const texto = (max: number) => z.string().trim().max(max);
+const docTipo = z.enum(["RUC", "DNI", "CE", "PASAPORTE"]);
+
+/** Una persona/empresa que interviene en el traslado. */
+const parteSchema = z.object({
+  nombre: texto(200).default(""),
+  docTipo: docTipo.default("RUC"),
+  docNumero: texto(20).default(""),
+  direccion: texto(250).default(""),
+  /**
+   * Ubicación de la parte — casilleros (17)(18)(19) del propietario y
+   * (26)(27)(28) del destinatario.
+   *
+   * Va desarmada y no dentro de `direccion` porque el formato tiene un casillero
+   * por cada una: un puesto de control pide "el (27)", y una dirección que dice
+   * "Jr. X, Puerto Bermúdez, Oxapampa, Pasco" obliga a leerla entera para
+   * contestar. El directorio ya las guarda separadas — hasta ahora la guía las
+   * aplanaba al elegir una parte y el dato se perdía.
+   */
+  departamento: texto(80).default(""),
+  provincia: texto(80).default(""),
+  distrito: texto(80).default(""),
+  /**
+   * "Zona" del formato del SNIFFS (casillero del destinatario): el sector, el
+   * caserío o el kilómetro cuando la dirección no alcanza para encontrar el
+   * lugar. En la selva es habitual que el domicilio sea "Km 12 carretera
+   * Federico Basadre" y la zona la que ubica de verdad al aserradero.
+   */
+  zona: texto(120).default(""),
+});
+
+/** Un punto del traslado desarmado en los casilleros del ubigeo. */
+const ubicacionSchema = z.object({
+  direccion: texto(200).default(""),
+  departamento: texto(80).default(""),
+  provincia: texto(80).default(""),
+  distrito: texto(80).default(""),
+});
+
+export type UbicacionTraslado = z.infer<typeof ubicacionSchema>;
+
+const UBICACION_VACIA = { direccion: "", departamento: "", provincia: "", distrito: "" };
+
+/**
+ * El punto como se imprime y como lo publica SERFOR: «JR. X MZA. 24, Constitución,
+ * OXAPAMPA, PASCO» — dirección, distrito, provincia, departamento, sin huecos.
+ */
+export function componerPunto(u: Partial<UbicacionTraslado> | null | undefined): string {
+  if (!u) return "";
+  return [u.direccion, u.distrito, u.provincia, u.departamento].map((x) => (x ?? "").trim()).filter(Boolean).join(", ");
+}
+
+
+const recorte = (v: string | null | undefined): string => (v ?? "").trim();
+
+/** El punto de llegada que sale del destinatario: su dirección y su ubigeo. */
+export function llegadaDelDestinatario(d: GtfDatos): UbicacionTraslado {
+  const x = d.destinatario;
+  return { direccion: recorte(x.direccion), departamento: recorte(x.departamento), provincia: recorte(x.provincia), distrito: recorte(x.distrito) };
+}
+
+/** ¿Dicen el mismo lugar? (sin mirar mayúsculas ni espacios de más) */
+export function mismaUbicacion(a: Partial<UbicacionTraslado> | null | undefined, b: Partial<UbicacionTraslado> | null | undefined): boolean {
+  return componerPunto(a).toLocaleUpperCase("es") === componerPunto(b).toLocaleUpperCase("es");
+}
+
+/**
+ * Cambia la partida o la llegada y deja el texto que se imprime al día
+ * (`puntoPartida`/`puntoLlegada` = `componerPunto`): los dos dicen siempre lo
+ * mismo, porque el papel lee el texto y el formulario, los casilleros.
+ */
+export function conPunto(
+  traslado: GtfDatos["traslado"],
+  cual: "partida" | "llegada",
+  cambio: Partial<UbicacionTraslado>,
+): GtfDatos["traslado"] {
+  const u = { ...traslado[cual], ...cambio };
+  const nuevo =
+    cual === "partida"
+      ? { ...traslado, partida: u, puntoPartida: componerPunto(u) }
+      : { ...traslado, llegada: u, puntoLlegada: componerPunto(u) };
+  /* La ruta que se armó sola («partida → llegada», o sólo la partida si la
+     llegada todavía no estaba) sigue a los puntos; una escrita a mano no se
+     toca. Se compara también con los casilleros: otro bloque pudo tocar el
+     texto de un punto sin pasar por acá («Es mi planta»). */
+  const sola = (a: string, b: string) => [recorte(a), recorte(b)].filter(Boolean).join(" → ");
+  const armadas = new Set([
+    sola(traslado.puntoPartida, traslado.puntoLlegada),
+    sola(componerPunto(traslado.partida) || traslado.puntoPartida, componerPunto(traslado.llegada)),
+    sola(traslado.puntoPartida, ""),
+    sola("", traslado.puntoLlegada),
+  ]);
+  const ruta = recorte(traslado.ruta);
+  return { ...nuevo, ruta: !ruta || armadas.has(ruta) ? sola(nuevo.puntoPartida, nuevo.puntoLlegada) : traslado.ruta };
+}
+
+/**
+ * El punto tal como lo ve el formulario: sus casilleros, o —en una guía
+ * anterior a la partida desarmada— el texto que traía, puesto en la dirección
+ * para poder verlo y desarmarlo a mano. No inventa nada: es el mismo texto.
+ */
+export function ubicacionDelPunto(traslado: GtfDatos["traslado"], cual: "partida" | "llegada"): UbicacionTraslado {
+  const u = traslado[cual];
+  if (componerPunto(u)) return u;
+  const viejo = recorte(cual === "partida" ? traslado.puntoPartida : traslado.puntoLlegada);
+  return viejo ? { ...u, direccion: viejo } : u;
+}
+
+/** ¿Hay algo escrito en el punto (dirección, ubigeo o el texto viejo)? */
+export function puntoConAlgo(traslado: GtfDatos["traslado"], cual: "partida" | "llegada"): boolean {
+  return Boolean(componerPunto(ubicacionDelPunto(traslado, cual)));
+}
+
+/** Parte en blanco. Centralizado: repetir el literal en cada `.default()` hizo
+ *  que agregar la ubicación rompiera el tipo en tres lugares a la vez. */
+const PARTE_VACIA = {
+  nombre: "", docTipo: "RUC" as const, docNumero: "", direccion: "",
+  departamento: "", provincia: "", distrito: "", zona: "",
+};
+
+export const gtfDatosSchema = z.object({
+  /**
+   * Dueño de la madera que viaja. Puede NO ser el CTP: el art. 172 inciso d)
+   * contempla al propietario del producto que no es titular del centro.
+   */
+  propietario: parteSchema.extend({
+    /** El CTP es el dueño (caso más común): se copia su identidad y se marca. */
+    esElCtp: z.boolean().default(true),
+  }).default({ ...PARTE_VACIA, esElCtp: true }),
+
+  /** A quién se le entrega el producto en destino. */
+  destinatario: parteSchema.default({ ...PARTE_VACIA }),
+
+  /** Empresa o persona que transporta. */
+  transportista: parteSchema.extend({
+    /** Registro del MTC, cuando es empresa de transporte. */
+    registroMtc: texto(40).default(""),
+  }).default({ ...PARTE_VACIA, registroMtc: "" }),
+
+  vehiculo: z.object({
+    /**
+     * Cómo viaja la madera. En la selva central NO es un detalle: buena parte
+     * sale por río, y una guía fluvial no lleva placa sino matrícula de
+     * embarcación. Un puesto de control fluvial pide otra cosa que uno de
+     * carretera, y el formulario tiene que pedir lo que corresponde.
+     */
+    modo: z.enum(["terrestre", "fluvial", "multimodal"]).default("terrestre"),
+    /** Placa del camión o MATRÍCULA de la embarcación, según el modo. */
+    placa: texto(15).default(""),
+    /**
+     * Placa del REMOLQUE / semirremolque. Es un casillero propio del formato:
+     * en un tráiler la carga viaja en la carreta, y el control compara esa
+     * placa —no la del tracto— contra lo que declara la guía.
+     */
+    placaRemolque: texto(15).default(""),
+    marca: texto(40).default(""),
+    tipo: texto(40).default(""),
+    /** Nombre de la embarcación / chata. Sólo aplica cuando viaja por río. */
+    embarcacion: texto(80).default(""),
+    /** Conductor y su brevete: es lo que pide el puesto de control. */
+    conductor: texto(120).default(""),
+    conductorDni: texto(15).default(""),
+    licencia: texto(30).default(""),
+    /**
+     * "Tipo de transporte" del formato: quién mueve la carga. Público = empresa
+     * de transporte inscrita en el MTC (por eso el registro MTC va con ella);
+     * privado = el vehículo del propio titular.
+     */
+    tipoTransporte: z.enum(["privado", "publico"]).default("privado"),
+  }).default({ modo: "terrestre", placa: "", placaRemolque: "", marca: "", tipo: "", embarcacion: "", conductor: "", conductorDni: "", licencia: "", tipoTransporte: "privado" }),
+
+  traslado: z.object({
+    /** De dónde sale (la planta, normalmente) y a dónde va. */
+    puntoPartida: texto(250).default(""),
+    puntoLlegada: texto(250).default(""),
+    /** Ruta declarada: los puestos de control la cotejan. */
+    ruta: texto(400).default(""),
+    /** `YYYY-MM-DD`. Fecha de inicio del traslado y hasta cuándo vale la guía. */
+    fechaInicio: texto(10).default(""),
+    fechaFin: texto(10).default(""),
+    /**
+     * El punto de partida DESARMADO (Brandon 29-09-2026: «ponle para poner la
+     * dirección, departamento, provincia, distrito»). `puntoPartida` sigue
+     * siendo el texto que se imprime y lo que leen las guías viejas; cuando
+     * esto trae algo, `puntoPartida` se arma con `componerPunto` (mismo orden
+     * que publica SERFOR: «dirección, distrito, provincia, departamento»).
+     */
+    partida: ubicacionSchema.default({ ...UBICACION_VACIA }),
+    /** Ídem para el punto de llegada. */
+    llegada: ubicacionSchema.default({ ...UBICACION_VACIA }),
+  }).default({
+    puntoPartida: "", puntoLlegada: "", ruta: "", fechaInicio: "", fechaFin: "",
+    partida: { ...UBICACION_VACIA }, llegada: { ...UBICACION_VACIA },
+  }),
+
+  /**
+   * Títulos habilitantes que amparan el origen de ESTE despacho. Se copian de la
+   * Ficha del CTP pero se guardan en la guía: si mañana la ficha cambia, la guía
+   * emitida tiene que seguir diciendo con qué título salió.
+   */
+  titulos: z.array(texto(80)).max(10).default([]),
+
+  /** Permiso CITES cuando la especie lo requiere. */
+  citesPermiso: texto(60).default(""),
+
+  /**
+   * El comprobante que ampara la VENTA de esta madera. La GTF ampara el
+   * traslado; la factura, la operación. Van juntas en el control y hasta ahora
+   * el número de la factura sólo vivía en observaciones.
+   */
+  comprobante: z.object({
+    tipo: z.enum(["ninguno", "factura", "boleta", "guia_remision", "otro"]).default("ninguno"),
+    numero: texto(40).default(""),
+  }).default({ tipo: "ninguno", numero: "" }),
+
+  /**
+   * Casilleros del formato que no pertenecen a ninguna de las partes y que
+   * hasta ahora no tenían dónde vivir (ADR-336). Los tienen las dos guías —la
+   * que trae la madera y la que la saca— así que van en el esquema compartido.
+   */
+  guia: z.object({
+    /** (2) Autoridad Regional Forestal y de Fauna Silvestre que la ampara. */
+    autoridad: texto(120).default(""),
+    /** (9) Tipo de plan de manejo: DEMA, PMFI, PGMF… */
+    planManejoTipo: texto(80).default(""),
+    /**
+     * (29) N° de guía de remisión del transportista. NO es el comprobante de
+     * compra/venta (20)(21): son dos papeles distintos y el control pide los dos.
+     */
+    guiaRemisionNro: texto(40).default(""),
+    /** (35) N° de la lista de trozas o cuartones que acompaña la guía. */
+    listaTrozasNro: texto(40).default(""),
+    /** (36) N° de la GTF de origen, cuando la madera viene amparada por otra. */
+    gtfOrigenNro: texto(40).default(""),
+    /*
+     * El título habilitante tal como sale en la guía — casilleros (5), (8),
+     * el representante bajo el (7) y (10)(11)(12).
+     *
+     * En la guía del CTP salen de la Ficha y acá quedan vacíos. La guía del
+     * Libro TH (28-09-2026) los guarda CON la guía: la emite el titular del
+     * bosque, su identidad sale de la carátula y del plan de manejo, y si
+     * mañana alguien corrige la carátula, la guía que ya viajó tiene que seguir
+     * diciendo lo que dijo.
+     */
+    /** (5) Origen del recurso: la casilla que se cruza (`concesion`, `permiso`, `autorizacion`…). */
+    origenRecurso: texto(40).default(""),
+    /** (8) N° de la resolución que aprobó el título. */
+    resolucion: texto(120).default(""),
+    /** Representante legal del titular (va bajo el casillero (7)). */
+    representanteLegal: texto(200).default(""),
+    /** (10)(11)(12) Dónde está el título habilitante. */
+    departamento: texto(80).default(""),
+    provincia: texto(80).default(""),
+    distrito: texto(80).default(""),
+  }).default({
+    autoridad: "", planManejoTipo: "", guiaRemisionNro: "", listaTrozasNro: "", gtfOrigenNro: "",
+    origenRecurso: "", resolucion: "", representanteLegal: "", departamento: "", provincia: "", distrito: "",
+  }),
+
+  observaciones: texto(600).default(""),
+});
+
+export type GtfDatos = z.infer<typeof gtfDatosSchema>;
+
+/**
+ * Los defaults del esquema, para arrancar un formulario vacío.
+ *
+ * `safeParse` y no `parse`, aunque la entrada sea un literal: si algún día se
+ * agrega un campo requerido sin default, `.parse()` tiraría en tiempo de render
+ * y rompería el formulario entero. Así devuelve el objeto vacío y el operador
+ * ve un formulario en blanco en vez de una pantalla rota.
+ */
+export function gtfDatosVacio(): GtfDatos {
+  const r = gtfDatosSchema.safeParse({});
+  return r.success ? r.data : ({} as GtfDatos);
+}
+
+/**
+ * Lee lo guardado en la columna JSON con desconfianza: puede venir de una versión
+ * anterior del formulario o estar a medio llenar. Nunca tira — devuelve los
+ * defaults para lo que no entienda (un formulario que no abre es peor que uno
+ * con un campo vacío).
+ */
+export function leerGtfDatos(raw: unknown): GtfDatos {
+  const parsed = gtfDatosSchema.safeParse(raw ?? {});
+  return parsed.success ? parsed.data : gtfDatosVacio();
+}
+
+// ── Completitud ─────────────────────────────────────────────────────────────
+
+export interface FaltanteGtf {
+  /** Sección donde está el campo, para llevar al operador ahí. */
+  seccion: "propietario" | "destinatario" | "transportista" | "vehiculo" | "traslado" | "titulos";
+  campo: string;
+  /** Por qué lo pide un puesto de control (no "es obligatorio"). */
+  motivo: string;
+}
+
+/**
+ * Qué le falta a la guía para poder viajar. No bloquea guardar (el operador llena
+ * en dos ratos y a veces el transportista se define a última hora): bloquea
+ * IMPRIMIR el original, que es el papel que se muestra en un puesto de control.
+ *
+ * Mismo criterio que el resto del libro: guardar admite huecos, el documento que
+ * se presenta ante la autoridad no.
+ */
+export function faltantesGtf(d: GtfDatos): FaltanteGtf[] {
+  const faltan: FaltanteGtf[] = [];
+
+  if (!d.propietario.nombre.trim()) {
+    faltan.push({
+      seccion: "propietario",
+      campo: "Propietario del producto",
+      motivo: "La guía declara de quién es la madera que viaja",
+    });
+  }
+  if (!d.destinatario.nombre.trim()) {
+    faltan.push({
+      seccion: "destinatario",
+      campo: "Destinatario",
+      motivo: "Sin destinatario no se puede verificar la entrega en el destino",
+    });
+  }
+  if (!d.destinatario.direccion.trim()) {
+    faltan.push({
+      seccion: "destinatario",
+      campo: "Dirección del destinatario",
+      motivo: "Es el punto de llegada que cotejan los puestos de control",
+    });
+  }
+  if (!d.transportista.nombre.trim()) {
+    faltan.push({
+      seccion: "transportista",
+      campo: "Transportista",
+      motivo: "Responde por el producto durante el traslado",
+    });
+  }
+  // Cada modo pide lo suyo: un control fluvial no busca una placa, busca la
+  // matrícula y el nombre de la embarcación. Pedir "placa" en una balsa haría
+  // que el operador invente un dato para poder imprimir.
+  const fluvial = d.vehiculo.modo === "fluvial";
+  if (!d.vehiculo.placa.trim()) {
+    faltan.push({
+      seccion: "vehiculo",
+      campo: fluvial ? "Matrícula de la embarcación" : "Placa del vehículo",
+      motivo: "Es lo primero que compara un puesto de control con la carga",
+    });
+  }
+  // La placa tiene que poder existir (placa-peru): «WRFWR242» o «QA-450» no
+  // son un camión. En río el casillero lleva la matrícula, que es otra cosa.
+  if (!fluvial) {
+    for (const [valor, nombre] of [[d.vehiculo.placa, "Placa del vehículo"], [d.vehiculo.placaRemolque, "Placa del remolque"]] as const) {
+      const l = leerPlaca(valor);
+      if (l.estado === "invalida") faltan.push({ seccion: "vehiculo", campo: `${nombre}: formato no válido`, motivo: l.motivo });
+    }
+  }
+  if (fluvial && !d.vehiculo.embarcacion.trim()) {
+    faltan.push({
+      seccion: "vehiculo",
+      campo: "Nombre de la embarcación",
+      motivo: "Es como se identifica la nave en el control fluvial",
+    });
+  }
+  if (!d.vehiculo.conductor.trim()) {
+    faltan.push({
+      seccion: "vehiculo",
+      campo: fluvial ? "Patrón de la embarcación" : "Conductor",
+      motivo: "La guía viaja con él y la muestra en cada control",
+    });
+  }
+  if (!d.traslado.puntoPartida.trim() || !d.traslado.puntoLlegada.trim()) {
+    faltan.push({
+      seccion: "traslado",
+      campo: "Punto de partida y de llegada",
+      motivo: "Definen la ruta que se está autorizando",
+    });
+  }
+  /* La partida desarmada va con su ubigeo completo: un control coteja el
+     distrito de salida. Sólo se pide cuando la guía usa los casilleros; una
+     guía anterior, con el punto en texto, se imprime como estaba. */
+  const p = d.traslado.partida;
+  if (componerPunto(p)) {
+    for (const [valor, nombre] of [[p.departamento, "departamento"], [p.provincia, "provincia"], [p.distrito, "distrito"]] as const) {
+      if (!recorte(valor)) faltan.push({ seccion: "traslado", campo: `Partida: ${nombre}`, motivo: "El punto de partida va con su ubigeo completo" });
+    }
+  }
+  if (!d.traslado.fechaInicio.trim()) {
+    faltan.push({
+      seccion: "traslado",
+      campo: "Fecha de inicio del traslado",
+      motivo: "Sin fecha no se puede saber si la guía está vigente",
+    });
+  }
+  if (d.titulos.filter((t) => t.trim()).length === 0) {
+    faltan.push({
+      seccion: "titulos",
+      campo: "Título habilitante",
+      motivo: "Es lo que acredita el origen legal de la madera",
+    });
+  }
+  return faltan;
+}
+
+/** `true` cuando la guía puede imprimirse como original. */
+export const gtfCompleta = (d: GtfDatos): boolean => faltantesGtf(d).length === 0;
+
+/**
+ * ¿Está vigente el traslado al día `hoy`? Sin `fechaFin` no se juzga (la vigencia
+ * la fija la ARFFS por ruta y distancia; el módulo no la inventa).
+ */
+export function trasladoVigente(d: GtfDatos, hoy: Date): boolean | null {
+  const fin = d.traslado.fechaFin.trim();
+  if (!fin) return null;
+  const f = new Date(`${fin}T23:59:59.999Z`);
+  if (Number.isNaN(f.getTime())) return null;
+  return f.getTime() >= Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth(), hoy.getUTCDate());
+}
+
+/**
+ * Las tres impresiones que manda el art. 5 de la RDE 122-2015, con su destino.
+ * Van en el pie de cada copia: sin eso, tres papeles iguales no le dicen a nadie
+ * cuál se queda en el puesto de control.
+ */
+export const COPIAS_GTF = [
+  { clave: "original", titulo: "ORIGINAL", destino: "Acompaña el transporte · se muestra en cada puesto de control" },
+  { clave: "control", titulo: "COPIA 1", destino: "Se entrega en el primer puesto de control (registro ARFFS)" },
+  { clave: "emisor", titulo: "COPIA 2", destino: "La conserva el emisor para el control posterior" },
+] as const;

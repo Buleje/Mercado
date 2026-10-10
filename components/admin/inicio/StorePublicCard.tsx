@@ -10,6 +10,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import { CardTitle } from "@buleje/design-system";
 import { Store, ExternalLink, Share2, Pencil, Check } from "@buleje/design-system/icons";
 
@@ -33,11 +34,11 @@ export default function StorePublicCard({ storeSlug }: { storeSlug: string }) {
   return (
     <section className="border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:p-5">
       <div className="flex items-start gap-3">
-        <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+        <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
           <Store className="h-5 w-5" strokeWidth={2} aria-hidden />
         </span>
         <div className="min-w-0 flex-1">
-          <CardTitle>Tu tienda pública</CardTitle>
+          <CardTitle className="text-sm font-bold">Tu tienda pública</CardTitle>
           <p className="mt-0.5 truncate text-sm text-[var(--text-secondary)]">{prettyUrl}</p>
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -64,13 +65,13 @@ export default function StorePublicCard({ storeSlug }: { storeSlug: string }) {
               {copied ? "¡Copiado!" : "Compartir"}
             </button>
 
-            <Link
+            <EnlacePanel apariencia="heredada"
               href="/admin?tab=store-customizer"
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)]"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] hover:no-underline"
             >
               <Pencil className="h-4 w-4" strokeWidth={2} aria-hidden />
               Editar portada
-            </Link>
+            </EnlacePanel>
           </div>
         </div>
       </div>

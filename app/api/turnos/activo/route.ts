@@ -32,6 +32,7 @@ export async function GET(req: NextRequest) {
         ...(isManagement ? {} : { adminUserId: adminUserId ?? "__none__" }),
       },
       orderBy: { abrioEn: "desc" },
+      include: { adminUser: { select: { name: true, username: true } } },
     });
 
     if (!turno) {
@@ -43,6 +44,11 @@ export async function GET(req: NextRequest) {
       turno: {
         id: turno.id,
         adminUserId: turno.adminUserId,
+        /* La caja del turno y quién atiende: sin la caja, el cierre buscaba «la que
+           esté abierta» y sin el nombre la tarjeta decía «Yo mismo» cuando la
+           cajera no puede listar usuarios (GET /api/admin-users es de gestión). */
+        cashRegisterId: turno.cashRegisterId ?? undefined,
+        cajeroNombre: turno.adminUser?.name?.trim() || turno.adminUser?.username || undefined,
         inicioEfectivo: Number(turno.inicioEfectivo),
         ventasTotal: Number(turno.ventasTotal),
         status: turno.status,

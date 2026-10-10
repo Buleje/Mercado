@@ -1,0 +1,98 @@
+"use client";
+
+/**
+ * use-trozas-patio — una sola lectura del patio para toda la pestaña.
+ *
+ * El resumen de arriba y la lista de abajo tienen que contar lo MISMO. Si cada
+ * uno pide sus datos por su lado, en un patio que se mueve terminan discrepando
+ * por unos segundos y el operador ve un total que no cierra con las filas que
+ * está mirando —el peor bug posible en una pantalla de inventario—.
+ *
+ * `truncado` se propaga a propósito: el endpoint trae hasta 5.000 piezas y quien
+ * muestre totales tiene que poder decir «hay N y estás viendo M».
+ */
+
+import { useCallback, useEffect, useState } from "react";
+import type { TrozaPatio } from "@/lib/forestal/trozas-patio";
+import type { DatosKpiPatio } from "@/lib/forestal/trozas-patio-kpis";
+
+/** La pieza tal como la devuelve `/api/admin/forestal/trozas/patio`. */
+export interface TrozaPatioAPI extends TrozaPatio, DatosKpiPatio {
+  woodEntryId: string;
+  codificacion: string | null;
+  codigoPlanta: string | null;
+  parcela: string | null;
+  especieCientifica: string | null;
+  d1Cm: number | null;
+  d2Cm: number | null;
+  largoM: number | null;
+  proveedor: string | null;
+  resolucion: string | null;
+  guiaRecepcionada: boolean;
+  loteAserrioId: string | null;
+  /* Las otras fuentes de las puntas (`medidasDePieza`) y lo que cuentan los
+     indicadores nuevos del patio. Ya venían en el JSON (`trozasComoConsumibles`);
+     faltaba declararlas para que la pantalla las lea. */
+  d1d2MedidoEnPlanta?: boolean;
+  recibidaD1Cm?: number | null;
+  recibidaD2Cm?: number | null;
+  oxD1Pulg?: number | null;
+  oxD2Pulg?: number | null;
+  oxPt?: number | null;
+  etiquetadaEn?: string | null;
+}
+
+export interface PatioMeta {
+  total: number;
+  devueltas: number;
+  truncado: boolean;
+  /**
+   * El rendimiento REAL del libro (corridas registradas con entrada, ponderado
+   * por m³). Sólo para ESTIMAR pies tablares de lo libre; `null` = no hay
+   * corridas con qué medirlo, y entonces no se estima nada.
+   */
+  rendimientoLibro?: { pct: number; entradaM3: number; corridas: number } | null;
+}
+
+export function useTrozasPatio() {
+  const [trozas, setTrozas] = useState<TrozaPatioAPI[]>([]);
+  const [meta, setMeta] = useState<PatioMeta>({ total: 0, devueltas: 0, truncado: false });
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const recargar = useCallback(async () => {
+    setCargando(true);
+    setError(null);
+    try {
+      const r = await fetch("/api/admin/forestal/trozas/patio", { credentials: "include" });
+      if (!r.ok) {
+        const j = (await r.json().catch(() => ({}))) as { error?: string };
+        throw new Error(j.error ?? `HTTP ${r.status}`);
+      }
+      const j = (await r.json()) as {
+        trozas?: TrozaPatioAPI[];
+        total?: number;
+        devueltas?: number;
+        truncado?: boolean;
+        rendimientoLibro?: PatioMeta["rendimientoLibro"];
+      };
+      setTrozas(j.trozas ?? []);
+      setMeta({
+        total: j.total ?? 0,
+        devueltas: j.devueltas ?? 0,
+        truncado: Boolean(j.truncado),
+        rendimientoLibro: j.rendimientoLibro ?? null,
+      });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setCargando(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void recargar();
+  }, [recargar]);
+
+  return { trozas, meta, cargando, error, recargar };
+}

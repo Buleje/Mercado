@@ -1,10 +1,14 @@
 "use client";
 import { useState } from "react";
+import { toast } from "sonner";
+import { DataTable } from "@buleje/design-system";
 import { AlertCircle, ChevronDown, Download, Eye, MessageCircle, MoreHorizontal, RefreshCw, Search, ShoppingCart, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { useMarketplaceOrders, type MarketplaceOrderDetail, type OrderTargetStatus } from "@/components/admin/marketplace/hooks/use-marketplace-orders";
 import { OrderDetailModal } from "@/components/admin/marketplace/OrderDetailModal";
 import { ORDER_STATUS_CONFIG, SortIcon, TableSkeleton, CounterChip } from "@/components/admin/marketplace/shared";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
+import { formatCurrency, formatDateNumeric, formatDateShort, formatTime } from "@/lib/format";
 
 // ─────────────────────────────────────────────
 // Sub-tab: Órdenes
@@ -45,6 +49,7 @@ export function MarketplaceOrdenesTab() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [openStatusMenuFor, setOpenStatusMenuFor] = useState<string | null>(null);
   const [openBulkMenu, setOpenBulkMenu] = useState(false);
+  const { confirm, prompt } = useConfirm();
 
   if (loading) return <TableSkeleton />;
 
@@ -151,7 +156,7 @@ export function MarketplaceOrdenesTab() {
     const message =
       `Hola ${o.customerName}, te escribo de la tienda. ` +
       `Tu pedido #${idShort} está actualmente *${statusLabel}*. ` +
-      `Total: S/ ${o.total.toFixed(2)}. ¿Te confirmamos los detalles?`;
+      `Total: ${formatCurrency(o.total)}. ¿Te confirmamos los detalles?`;
     return { message, encoded: encodeURIComponent(message) };
   }
 
@@ -177,8 +182,8 @@ export function MarketplaceOrdenesTab() {
       const d = new Date(o.createdAt);
       return [
         `#${o.id.slice(-8).toUpperCase()}`,
-        d.toLocaleDateString("es-PE"),
-        d.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit", hour12: false }),
+        formatDateNumeric(d),
+        formatTime(d),
         o.customerName,
         o.customerPhone ?? "",
         o.customerLocation ?? "",
@@ -209,13 +214,13 @@ export function MarketplaceOrdenesTab() {
   async function handleStatusChange(orderId: string, status: OrderTargetStatus) {
     setOpenStatusMenuFor(null);
     if (status === "cancelado") {
-      const reason = window.prompt("Motivo de cancelación (opcional):") ?? undefined;
+      const reason = (await prompt({ title: "Motivo de cancelación", label: "Motivo (opcional)" })) ?? undefined;
       const res = await updateStatus(orderId, status, reason);
-      if (!res.ok && res.error) window.alert(res.error);
+      if (!res.ok && res.error) toast.error(res.error);
       return;
     }
     const res = await updateStatus(orderId, status);
-    if (!res.ok && res.error) window.alert(res.error);
+    if (!res.ok && res.error) toast.error(res.error);
   }
 
   async function handleBulkStatus(status: OrderTargetStatus) {
@@ -224,18 +229,21 @@ export function MarketplaceOrdenesTab() {
     if (ids.length === 0) return;
     let reason: string | undefined;
     if (status === "cancelado") {
-      const r = window.prompt(`Cancelar ${ids.length} órdenes. Motivo (opcional):`);
+      const r = await prompt({ title: `Cancelar ${ids.length} órdenes`, label: "Motivo (opcional)" });
       if (r === null) return;
       reason = r || undefined;
     } else {
-      const ok = window.confirm(`¿Marcar ${ids.length} órdenes como "${STATUS_ACTION_LABEL[status]}"?`);
+      const ok = await confirm({
+        title: `¿Marcar ${ids.length} órdenes como "${STATUS_ACTION_LABEL[status]}"?`,
+        confirmLabel: "Sí, marcar",
+      });
       if (!ok) return;
     }
     const res = await bulkUpdateStatus(ids, status, reason);
     if (res.ok) {
       setSelectedIds(new Set());
       if (res.skipped && res.skipped.length > 0) {
-        window.alert(`Actualizadas: ${res.updatedCount}. Omitidas: ${res.skipped.length} (transiciones no válidas).`);
+        toast.info(`Actualizadas: ${res.updatedCount}. Omitidas: ${res.skipped.length} (transiciones no válidas).`);
       }
     }
   }
@@ -282,7 +290,7 @@ export function MarketplaceOrdenesTab() {
             // Reusamos handleWhatsApp del listado — el detalle ya tiene phone real.
             const phoneDigits = (o.customerPhone ?? "").replace(/\D/g, "");
             if (phoneDigits.length < 8) {
-              window.alert("Esta orden no tiene teléfono válido.");
+              toast.error("Esta orden no tiene teléfono válido.");
               return;
             }
             const intl = phoneDigits.length === 9 ? `51${phoneDigits}` : phoneDigits;
@@ -291,7 +299,7 @@ export function MarketplaceOrdenesTab() {
             const message =
               `Hola ${o.customerName}, te escribo de la tienda. ` +
               `Tu pedido #${idShort} está actualmente *${statusLabel}*. ` +
-              `Total: S/ ${o.total.toFixed(2)}. ¿Te confirmamos los detalles?`;
+              `Total: ${formatCurrency(o.total)}. ¿Te confirmamos los detalles?`;
             window.open(
               `https://wa.me/${intl}?text=${encodeURIComponent(message)}`,
               "_blank",
@@ -363,7 +371,7 @@ export function MarketplaceOrdenesTab() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar por cliente, #orden, teléfono o dirección…"
-            className="w-full h-10 pl-10 pr-9 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] outline-none focus:border-[var(--accent)] transition-colors"
+            className="w-full h-10 pl-10 pr-9 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] outline-none focus:border-[var(--accent)] transition-colors"
           />
           {query && (
             <button
@@ -376,7 +384,7 @@ export function MarketplaceOrdenesTab() {
             </button>
           )}
         </div>
-        <div className="inline-flex rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-0.5 gap-0.5">
+        <div className="inline-flex rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-0.5 gap-0.5">
           {(["hoy", "7d", "30d", "todo"] as OrdersDateFilter[]).map((d) => (
             <button
               key={d}
@@ -396,7 +404,7 @@ export function MarketplaceOrdenesTab() {
         </div>
         <button
           onClick={load}
-          className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] text-[var(--text-primary)] text-sm font-extrabold hover:bg-[var(--surface-sunken)] transition-colors"
+          className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-primary)] text-sm font-semibold hover:bg-[var(--surface-sunken)] transition-colors"
         >
           <RefreshCw className="h-4 w-4" />
           Actualizar
@@ -404,7 +412,7 @@ export function MarketplaceOrdenesTab() {
         <button
           onClick={exportCsv}
           disabled={filtered.length === 0}
-          className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] text-[var(--text-primary)] text-sm font-extrabold hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-primary)] text-sm font-semibold hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           title="Descargar CSV de las órdenes filtradas (para Excel/SUNAT)"
         >
           <Download className="h-4 w-4" />
@@ -414,7 +422,7 @@ export function MarketplaceOrdenesTab() {
 
       {/* ── Bulk actions bar (visible cuando hay selección) ───────── */}
       {selectedIds.size > 0 && (
-        <div className="flex items-center justify-between gap-2 p-3 rounded-xl bg-[var(--accent-soft)] border-2 border-[var(--accent)]/40">
+        <div className="flex items-center justify-between gap-2 p-3 rounded-xl bg-primary/10 border-2 border-[var(--accent)]/40">
           <p className="text-sm font-extrabold text-[var(--accent)]">
             {selectedIds.size} {selectedIds.size === 1 ? "orden seleccionada" : "órdenes seleccionadas"}
           </p>
@@ -430,7 +438,7 @@ export function MarketplaceOrdenesTab() {
                 <ChevronDown className="h-3.5 w-3.5" />
               </button>
               {openBulkMenu && bulkAvailableStatuses.length > 0 && (
-                <div className="absolute right-0 mt-1 w-56 z-30 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl overflow-hidden">
+                <div className="absolute right-0 mt-1 w-56 z-30 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl overflow-hidden">
                   {bulkAvailableStatuses.map((s) => (
                     <button
                       key={s}
@@ -447,7 +455,7 @@ export function MarketplaceOrdenesTab() {
             <button
               type="button"
               onClick={() => setSelectedIds(new Set())}
-              className="inline-flex items-center gap-1 h-9 px-3 rounded-lg bg-[var(--surface-raised)] border-2 border-[var(--rule-base)] text-[var(--text-secondary)] text-xs font-extrabold hover:bg-[var(--surface-sunken)]"
+              className="inline-flex items-center gap-1 h-9 px-3 rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-secondary)] text-xs font-extrabold hover:bg-[var(--surface-sunken)]"
             >
               <X className="h-3.5 w-3.5" />
               Limpiar
@@ -485,7 +493,7 @@ export function MarketplaceOrdenesTab() {
       ) : (
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden">
           <div className="overflow-x-auto max-h-[calc(100vh-24rem)]">
-            <table className="w-full text-sm">
+            <DataTable className="w-full text-sm">
               <thead className="bg-[var(--surface-sunken)] sticky top-0 z-10 border-b border-[var(--rule-base)]">
                 <tr>
                   <th className="text-left px-3 py-3 w-10">
@@ -497,7 +505,7 @@ export function MarketplaceOrdenesTab() {
                       }}
                       onChange={toggleSelectAll}
                       aria-label="Seleccionar todas"
-                      className="h-4 w-4 rounded border-2 border-[var(--rule-base)] accent-[var(--accent)] cursor-pointer"
+                      className="h-4 w-4 rounded border border-[var(--rule-base)] accent-[var(--accent)] cursor-pointer"
                     />
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">Orden</th>
@@ -546,16 +554,26 @@ export function MarketplaceOrdenesTab() {
                   return (
                     <tr
                       key={o.id}
+                      tabIndex={0}
+                      role="button"
+                      aria-label={`Ver orden ${o.id.slice(-8).toUpperCase()}`}
                       className={cn(
-                        "transition-colors cursor-pointer",
+                        "transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--accent)]",
                         isSelected
-                          ? "bg-[var(--accent-soft)]/40"
+                          ? "bg-primary/10"
                           : "hover:bg-[var(--surface-sunken)]/50",
                       )}
                       onClick={(e) => {
                         // Solo abre detalle si el click NO fue sobre un botón/input/menu.
                         const target = e.target as HTMLElement;
                         if (target.closest("button, input, a, [data-no-row-click]")) return;
+                        openDetail(o.id);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key !== "Enter" && e.key !== " ") return;
+                        const target = e.target as HTMLElement;
+                        if (target.closest("button, input, a, [data-no-row-click]")) return;
+                        e.preventDefault();
                         openDetail(o.id);
                       }}
                     >
@@ -565,7 +583,7 @@ export function MarketplaceOrdenesTab() {
                           checked={isSelected}
                           onChange={() => toggleSelect(o.id)}
                           aria-label={`Seleccionar orden ${o.id.slice(-8)}`}
-                          className="h-4 w-4 rounded border-2 border-[var(--rule-base)] accent-[var(--accent)] cursor-pointer"
+                          className="h-4 w-4 rounded border border-[var(--rule-base)] accent-[var(--accent)] cursor-pointer"
                         />
                       </td>
                       <td className="px-4 py-2.5">
@@ -593,7 +611,7 @@ export function MarketplaceOrdenesTab() {
                         </p>
                       </td>
                       <td className="px-3 py-2.5 text-right font-extrabold text-[var(--text-primary)] tabular-nums">
-                        S/ {o.total.toFixed(2)}
+                        {formatCurrency(o.total)}
                       </td>
                       <td className="px-3 py-2.5 text-center">
                         <span className={cn("inline-flex px-2.5 py-1 rounded-full text-xs font-extrabold", statusConfig.className)}>
@@ -602,10 +620,10 @@ export function MarketplaceOrdenesTab() {
                       </td>
                       <td className="px-3 py-2.5 text-right text-xs">
                         <p className="font-semibold text-[var(--text-primary)] tabular-nums">
-                          {created.toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}
+                          {formatDateShort(created)}
                         </p>
                         <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] tabular-nums">
-                          {created.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit", hour12: false })}
+                          {formatTime(created)}
                         </p>
                       </td>
                       <td className="px-3 py-2.5 text-right" data-no-row-click>
@@ -650,7 +668,7 @@ export function MarketplaceOrdenesTab() {
                                 )}
                               </button>
                               {openStatusMenuFor === o.id && (
-                                <div className="absolute right-0 mt-1 w-52 z-30 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl overflow-hidden">
+                                <div className="absolute right-0 mt-1 w-52 z-30 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl overflow-hidden">
                                   {nextOptions.map((s) => (
                                     <button
                                       key={s}
@@ -676,7 +694,7 @@ export function MarketplaceOrdenesTab() {
                   );
                 })}
               </tbody>
-            </table>
+            </DataTable>
           </div>
           {filtered.length < orders.length && (
             <div className="border-t border-[var(--rule-base)] px-4 py-2 bg-[var(--surface-sunken)] text-xs font-bold text-[var(--text-secondary)] flex items-center justify-between">

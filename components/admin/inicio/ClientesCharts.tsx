@@ -1,188 +1,171 @@
 "use client";
 
 /**
- * ClientesCharts — charts base del módulo Clientes.
- * Rediseñado con DashboardSection + primitivas Buleje + DraggableSections.
+ * ClientesCharts — gráficos base de Inicio › Clientes.
+ *
+ * Brandon 2026-10-09 («ocultar gráficos que no tienen ninguna información… y
+ * mejorarlos con buen diseño y formato»):
+ *  - cada gráfico se oculta si no tiene qué decir (`queSeMuestraClientes`);
+ *  - las distribuciones por rango (gasto, frecuencia) son barras horizontales
+ *    ordenadas con «N clientes · %», no donas: se leen a 1 m y no esconden el orden;
+ *  - «Cuánto gastan por visita» ya no usa dos ejes: es un ranking con las visitas al lado;
+ *  - colores fijos (`COLOR_CONCEPTO`): nuevos = azul de clientes; «ya te habían comprado» = gris tinta;
+ *  - 2×2 a 1280 px (ranking | por día, gasto | frecuencia): con todo a lo ancho
+ *    la grilla de filas iguales estiraba cada tarjeta a 640 px y eran 2,7 pantallas.
  */
 
-import { useMemo } from "react";
-import type { ClientesData } from "./ClientesDashboard";
-import {
-  BulejeComposedChart,
-  BulejeDonutChart,
-} from "@/components/ui-system/charts";
-import { DashboardSection, MicroList } from "./_shared";
+import { useState, type CSSProperties } from "react";
+import { BulejeStackedBar } from "@/components/ui-system/charts";
+import { DashboardSection, MicroList, type MicroListItem } from "./_shared";
 import { DraggableSections, type DraggableItem } from "./DraggableSections";
+import { COLOR_CONCEPTO, cantidad, fechaConDia, numeroEje, porcentaje, soles } from "@/lib/admin/inicio/formato-tablero";
+import { COLOR_YA_CLIENTES, cifraONinguno, pct, queSeMuestraClientes, sinAnonimos, type ClientesData } from "./clientes-tablero";
 
-function fmtS(v: number) {
-  return `S/ ${v.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`;
+/** Eje de personas: sólo enteros (antes salía «0.5 · 1.5» con pocos clientes). */
+const ejeEntero = (v: number) => (Number.isInteger(v) ? numeroEje(v) : "");
+
+/**
+ * Ranuras de color de `BulejeStackedBar` fijadas por concepto: `DraggableSections`
+ * rota `--section-*` por posición y «nuevos» cambiaba de color según el lugar.
+ */
+export const COLORES_CLIENTES = {
+  "--section-info": COLOR_CONCEPTO.clientes,
+  "--section-primary": COLOR_YA_CLIENTES,
+} as CSSProperties;
+
+/** Leyenda/tooltip: «Ya te habían comprado» (gris tinta) abajo, «Nuevos» (azul) arriba. */
+const PILAS = [
+  { key: "volvieron", label: "Ya te habían comprado", color: "primary" as const },
+  { key: "nuevos", label: "Nuevos", color: "info" as const },
+];
+
+const plural = (n: number, uno: string, varios: string) => `${cantidad(n)} ${n === 1 ? uno : varios}`;
+
+/** Filas de una distribución por rango: «12 clientes» + «80% de …». */
+function filasDeRango(filas: { nombre: string; cantidad: number }[], total: number, de: string): MicroListItem[] {
+  return filas.map((f) => ({
+    name: f.nombre,
+    value: f.cantidad,
+    label: plural(f.cantidad, "cliente", "clientes"),
+    sublabel: f.cantidad > 0 ? `${porcentaje(pct(f.cantidad, total))} ${de}` : undefined,
+  }));
+}
+
+/** Cuántos clientes del ranking se ven de entrada (el resto, con «Ver los 10»). */
+const TOPE_LISTA = 5;
+
+/** Ranking con los 5 primeros a la vista: 10 filas fijas llevaban la pestaña a 2,7 pantallas. */
+function ListaTop({ items }: { items: MicroListItem[] }) {
+  const [todos, setTodos] = useState(false);
+  return (
+    <div className="space-y-2">
+      <MicroList items={todos ? items : items.slice(0, TOPE_LISTA)} barColor={COLOR_CONCEPTO.clientes} showRank />
+      {items.length > TOPE_LISTA && (
+        <button
+          type="button"
+          onClick={() => setTodos((v) => !v)}
+          aria-expanded={todos}
+          className="min-h-10 px-2.5 text-sm font-semibold text-[var(--accent-ink)] hover:underline"
+        >
+          {todos ? "Ver menos" : `Ver los ${items.length}`}
+        </button>
+      )}
+    </div>
+  );
 }
 
 export default function ClientesCharts({ data }: { data: ClientesData }) {
-  const topRows = data.topClientes.slice(0, 10).map((c) => ({
-    name: c.nombre.length > 22 ? c.nombre.slice(0, 21) + "…" : c.nombre,
+  const muestra = queSeMuestraClientes(data);
+
+  // ── Quién más te compra ──
+  const ranking = sinAnonimos(data.topClientes).filter((c) => c.gasto > 0);
+  const gastoTop = ranking.reduce((s, c) => s + c.gasto, 0);
+  const comprasTop = ranking.reduce((s, c) => s + c.pedidos, 0);
+  const filasTop: MicroListItem[] = ranking.map((c) => ({
+    name: c.nombre,
     value: c.gasto,
-    label: `${fmtS(c.gasto)} · ${c.pedidos} ped.`,
+    label: soles(c.gasto),
+    sublabel: `${plural(c.pedidos, "compra", "compras")} · ticket ${soles(c.gasto / Math.max(1, c.pedidos))}`,
   }));
 
-  const topKpis = useMemo(() => {
-    const total = data.topClientes.reduce((s, c) => s + c.gasto, 0);
-    const pedidos = data.topClientes.reduce((s, c) => s + c.pedidos, 0);
-    const ticket = pedidos > 0 ? total / pedidos : 0;
-    return { total, pedidos, ticket, lider: data.topClientes[0] };
-  }, [data.topClientes]);
+  // ── Por mes (6 meses) y por día ──
+  const nuevos6m = data.retencion.reduce((s, m) => s + m.nuevos, 0);
+  const total6m = data.retencion.reduce((s, m) => s + m.total, 0);
+  const rec6m = data.retencion.reduce((s, m) => s + m.recurrentes, 0);
+  const mesesConCompras = data.retencion.filter((m) => m.total > 0).length;
+  const porMes = data.retencion.map((m) => ({ mes: m.mes, volvieron: m.recurrentes, nuevos: m.nuevos }));
+  const porDia = data.clientesPorDia.map((d) => ({ dia: d.dia, volvieron: Math.max(0, d.activos - d.nuevos), nuevos: d.nuevos }));
+  const pico = data.clientesPorDia.reduce<(typeof data.clientesPorDia)[number] | null>(
+    (best, d) => (!best || d.activos > best.activos ? d : best),
+    null,
+  );
+  const promDia = data.clientesPorDia.length
+    ? data.clientesPorDia.reduce((s, d) => s + d.activos, 0) / data.clientesPorDia.length
+    : null;
 
-  const retencionKpis = useMemo(() => {
-    const total = data.retencion.reduce((s, m) => s + m.total, 0);
-    const nuevos = data.retencion.reduce((s, m) => s + m.nuevos, 0);
-    const recurrentes = data.retencion.reduce((s, m) => s + m.recurrentes, 0);
-    const retPct = total > 0 ? Math.round((recurrentes / total) * 100) : 0;
-    return { total, nuevos, recurrentes, retPct };
-  }, [data.retencion]);
+  // ── Distribuciones ──
+  const vip = data.distribucionGasto[data.distribucionGasto.length - 1]?.cantidad ?? 0;
+  const sinCompras = Math.max(0, data.totalClientes - data.clientesConGasto);
+  const activosFreq = data.frecuenciaCompra.reduce((s, r) => s + r.cantidad, 0);
+  const fieles = data.frecuenciaCompra.slice(2).reduce((s, r) => s + r.cantidad, 0);
+  const unaVez = data.frecuenciaCompra[0]?.cantidad ?? 0;
 
-  const porDiaKpis = useMemo(() => {
-    const nuevos = data.clientesPorDia.reduce((s, d) => s + d.nuevos, 0);
-    const activosMax = data.clientesPorDia.reduce(
-      (best, d) => (d.activos > best.activos ? d : best),
-      { dia: "—", nuevos: 0, activos: 0 },
-    );
-    const promActivos = data.clientesPorDia.length
-      ? Math.round(
-          data.clientesPorDia.reduce((s, d) => s + d.activos, 0) /
-            data.clientesPorDia.length,
-        )
-      : 0;
-    return { nuevos, pico: activosMax, prom: promActivos };
-  }, [data.clientesPorDia]);
-
-  const gastoKpis = useMemo(() => {
-    const total = data.distribucionGasto.reduce((s, r) => s + r.cantidad, 0);
-    const top = data.distribucionGasto.reduce(
-      (best, r) => (r.cantidad > best.cantidad ? r : best),
-      { rango: "—", cantidad: 0, color: "" },
-    );
-    const top500 = data.distribucionGasto.find((r) => r.rango === "S/ 500+")?.cantidad ?? 0;
-    return { total, top, top500 };
-  }, [data.distribucionGasto]);
-
-  const freqKpis = useMemo(() => {
-    const total = data.frecuenciaCompra.reduce((s, r) => s + r.cantidad, 0);
-    const loyal =
-      (data.frecuenciaCompra.find((r) => r.frecuencia === "8+ compras")?.cantidad ?? 0) +
-      (data.frecuenciaCompra.find((r) => r.frecuencia === "4-7 compras")?.cantidad ?? 0);
-    const oneShot = data.frecuenciaCompra.find((r) => r.frecuencia === "1 compra")?.cantidad ?? 0;
-    return { total, loyal, oneShot };
-  }, [data.frecuenciaCompra]);
-
-  const ticketChart = data.ticketPorCliente.map((c) => ({
-    cliente: c.nombre.length > 14 ? c.nombre.slice(0, 13) + "…" : c.nombre,
-    ticket: Math.round(c.ticket),
-    visitas: c.visitas,
-  }));
+  // ── Ticket por cliente ──
+  const tickets = sinAnonimos(data.ticketPorCliente).filter((c) => c.ticket > 0).sort((a, b) => b.ticket - a.ticket);
+  const promTicket = tickets.length ? tickets.reduce((s, c) => s + c.ticket, 0) / tickets.length : null;
 
   const sections: DraggableItem[] = [
     {
       id: "top-10-clientes",
-      span: "full",
       render: () => (
         <DashboardSection
           chartId="clientes.top-10-clientes"
-          hasData={true}
-          kicker="Ranking · top 10 clientes del periodo"
+          hasData={muestra.top !== "oculto"}
+          kicker="Ranking del período"
           title="Quién más te compra"
-          description="Tus 10 clientes que más gastan."
+          description="Tus clientes con teléfono que más gastaron en el período. Las ventas sin cliente no entran. Llámalos o agradéceles: vuelven más cuando los tratas por su nombre."
           kpis={[
-            { label: "Top-10 gastó", value: fmtS(topKpis.total), tone: "primary" },
-            { label: "Pedidos top-10", value: String(topKpis.pedidos), tone: "neutral" },
-            { label: "Ticket prom. top-10", value: fmtS(topKpis.ticket), tone: "success" },
+            { label: "Gastaron", value: soles(gastoTop), sub: plural(comprasTop, "compra", "compras"), tone: "primary" },
             {
-              label: "Líder",
-              value: topKpis.lider?.nombre?.slice(0, 18) ?? "—",
-              tone: "success",
+              label: "Por compra",
+              value: soles(comprasTop > 0 ? gastoTop / comprasTop : null),
+              hint: "Ticket promedio: lo que gasta en promedio cada vez que te compra uno de estos clientes.",
             },
           ]}
         >
-          {topRows.length > 0 ? (
-            <MicroList items={topRows} barColor="var(--brand-primary)" showRank />
-          ) : (
-            <div className="rounded-lg border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
-              Aún no hay clientes en el periodo.
-            </div>
-          )}
-        </DashboardSection>
-      ),
-    },
-    {
-      id: "retencion-6m",
-      render: () => (
-        <DashboardSection
-          chartId="clientes.retencion-6m"
-          hasData={true}
-          defaultVisible={false}
-          kicker="Retención · rango activo"
-          title="Nuevos vs recurrentes por mes"
-          kpis={[
-            { label: "Total 6m", value: String(retencionKpis.total), tone: "primary" },
-            { label: "Nuevos 6m", value: String(retencionKpis.nuevos), tone: "success" },
-            { label: "Recurrentes 6m", value: String(retencionKpis.recurrentes), tone: "success" },
-            {
-              label: "Retención",
-              value: `${retencionKpis.retPct}%`,
-              tone:
-                retencionKpis.retPct >= 50
-                  ? "success"
-                  : retencionKpis.retPct >= 30
-                    ? "primary"
-                    : "warning",
-            },
-          ]}
-        >
-          <BulejeComposedChart
-            data={data.retencion}
-            xKey="mes"
-            bars={[
-              { key: "nuevos", label: "Nuevos", color: "primary", yAxis: "left" },
-              { key: "recurrentes", label: "Recurrentes", color: "tertiary", yAxis: "left" },
-            ]}
-            lines={[{ key: "total", label: "Total activos", color: "accent", yAxis: "left" }]}
-            leftAxisFormat={(v) => v.toString()}
-            tooltipFormat={(v) => Number(v).toString()}
-            height={300}
-            minDataPoints={2}
-          />
+          <ListaTop items={filasTop} />
         </DashboardSection>
       ),
     },
     {
       id: "clientes-por-dia",
-      span: "full",
       render: () => (
         <DashboardSection
           chartId="clientes.clientes-por-dia"
-          hasData={true}
-          kicker="Actividad · rango activo"
-          title="Clientes nuevos y activos por día"
+          hasData={muestra.porDia}
+          kicker="Días con compras"
+          title="Clientes que te compraron por día"
+          description="Sólo aparecen los días en que algún cliente con teléfono te compró (los últimos 14). Azul: clientes nuevos en el período; oscuro: los que ya te habían comprado antes."
           kpis={[
-            { label: "Nuevos 14d", value: String(porDiaKpis.nuevos), tone: "success" },
-            { label: "Día pico", value: porDiaKpis.pico.dia, tone: "success" },
             {
-              label: "Activos pico",
-              value: String(porDiaKpis.pico.activos),
-              tone: "primary",
+              label: "Por día",
+              value: promDia === null ? null : cantidad(promDia, promDia < 10 ? 1 : 0),
+              sub: `promedio · ${plural(data.clientesPorDia.length, "día", "días")}`,
+              hint: "Clientes distintos que te compran en promedio cada día con compras.",
             },
-            { label: "Prom. activos/día", value: String(porDiaKpis.prom), tone: "neutral" },
+            { label: "Mejor día", value: pico ? plural(pico.activos, "cliente", "clientes") : null, sub: pico ? fechaConDia(pico.clave) : undefined },
           ]}
         >
-          <BulejeComposedChart
-            data={data.clientesPorDia}
-            xKey="dia"
-            bars={[{ key: "nuevos", label: "Nuevos", color: "primary", yAxis: "left" }]}
-            lines={[{ key: "activos", label: "Activos", color: "accent", yAxis: "left" }]}
-            leftAxisFormat={(v) => v.toString()}
-            tooltipFormat={(v) => Number(v).toString()}
-            height={280}
-            minDataPoints={2}
-          />
+          <div style={COLORES_CLIENTES}>
+            <BulejeStackedBar
+              data={porDia}
+              xKey="dia"
+              stacks={PILAS}
+              height={200}
+              yAxisFormat={ejeEntero}
+              tooltipFormat={(v) => plural(Number(v), "cliente", "clientes")}
+            />
+          </div>
         </DashboardSection>
       ),
     },
@@ -191,45 +174,24 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
       render: () => (
         <DashboardSection
           chartId="clientes.distribucion-gasto"
-          hasData={true}
-          kicker="Distribución · gasto histórico"
-          title="Cuántos clientes en cada rango de gasto"
-          description="Clientes por rango de gasto histórico."
+          hasData={muestra.gasto}
+          kicker="Desde que te compran"
+          title="Cuánto te ha comprado cada cliente"
+          description="Tus clientes registrados según todo lo que te compraron desde siempre. «Hasta S/ 50» incluye a los que todavía no te compran; «Sin compras» son justamente esos."
           kpis={[
-            { label: "Total clientes", value: String(gastoKpis.total), tone: "primary" },
-            { label: "Rango líder", value: gastoKpis.top.rango, tone: "success" },
+            { label: "Más de S/ 500", value: cifraONinguno(vip), sub: vip > 0 ? `${porcentaje(pct(vip, data.totalClientes))} de tu lista` : undefined, tone: vip > 0 ? "success" : "neutral" },
             {
-              label: "VIP (S/ 500+)",
-              value: String(gastoKpis.top500),
-              tone: gastoKpis.top500 > 0 ? "success" : "neutral",
-            },
-            {
-              label: "% VIP",
-              value: `${gastoKpis.total > 0 ? Math.round((gastoKpis.top500 / gastoKpis.total) * 100) : 0}%`,
-              tone: "primary",
+              label: "Sin compras",
+              value: cifraONinguno(sinCompras),
+              tone: sinCompras > 0 ? "warning" : "neutral",
             },
           ]}
         >
-          <div className="flex items-center justify-center py-2">
-            <div className="w-full max-w-md">
-              <BulejeDonutChart
-                data={data.distribucionGasto.map((d) => ({ name: d.rango, value: d.cantidad }))}
-                height={240}
-                format={(v) => `${v} clientes`}
-                label={
-                  <div className="text-center">
-                    <p className="text-[length:var(--ts-3xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                      Total
-                    </p>
-                    <p className="text-xl font-extrabold text-[var(--text-primary)]">
-                      {gastoKpis.total}
-                    </p>
-                    <p className="text-[length:var(--ts-xs)] text-[var(--text-secondary)]">clientes</p>
-                  </div>
-                }
-              />
-            </div>
-          </div>
+          <MicroList
+            items={filasDeRango(data.distribucionGasto.map((r) => ({ nombre: r.rango, cantidad: r.cantidad })), data.totalClientes, "de tu lista")}
+            barColor={COLOR_CONCEPTO.clientes}
+            showRank={false}
+          />
         </DashboardSection>
       ),
     },
@@ -238,36 +200,52 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
       render: () => (
         <DashboardSection
           chartId="clientes.frecuencia-compra"
-          hasData={true}
-          kicker="Frecuencia · en el periodo"
-          title="Cuántas veces compran tus clientes"
-          description="Veces que volvieron en el periodo."
+          hasData={muestra.frecuencia}
+          kicker="En el período"
+          title="Cuántas veces te compraron"
           kpis={[
-            { label: "Total activos", value: String(freqKpis.total), tone: "primary" },
-            { label: "Fieles (4+)", value: String(freqKpis.loyal), tone: "success" },
+            { label: "Fieles (4+)", value: cifraONinguno(fieles), sub: fieles > 0 ? `${porcentaje(pct(fieles, activosFreq))} del total` : undefined, tone: fieles > 0 ? "success" : "neutral" },
+            { label: "Una sola vez", value: cifraONinguno(unaVez), sub: unaVez > 0 ? `${porcentaje(pct(unaVez, activosFreq))} del total` : undefined, tone: unaVez > 0 ? "warning" : "neutral" },
+          ]}
+        >
+          <MicroList
+            items={filasDeRango(data.frecuenciaCompra.map((r) => ({ nombre: r.frecuencia, cantidad: r.cantidad })), activosFreq, "de los que compraron")}
+            barColor={COLOR_CONCEPTO.clientes}
+            showRank={false}
+          />
+        </DashboardSection>
+      ),
+    },
+    {
+      id: "retencion-6m",
+      render: () => (
+        <DashboardSection
+          chartId="clientes.retencion-6m"
+          hasData={muestra.retencion}
+          defaultVisible={false}
+          kicker="Últimos 6 meses"
+          title="Nuevos y los que vuelven, por mes"
+          description="Cada barra son los clientes distintos que te compraron ese mes: en azul los que compraban por primera vez, en oscuro los que ya te habían comprado antes."
+          kpis={[
+            { label: "Nuevos en 6 meses", value: cifraONinguno(nuevos6m) },
+            { label: "Clientes por mes", value: mesesConCompras ? cantidad(total6m / mesesConCompras, 0) : null, sub: "promedio de los meses con compras" },
             {
-              label: "Solo 1 compra",
-              value: String(freqKpis.oneShot),
-              tone: freqKpis.oneShot > 0 ? "warning" : "neutral",
-            },
-            {
-              label: "% fieles",
-              value: `${freqKpis.total > 0 ? Math.round((freqKpis.loyal / freqKpis.total) * 100) : 0}%`,
-              tone: "primary",
+              label: "Vuelven",
+              value: porcentaje(pct(rec6m, total6m)),
+              hint: "De cada 100 clientes que te compran en un mes, cuántos ya te habían comprado antes.",
+              tone: (pct(rec6m, total6m) ?? 0) >= 50 ? "success" : "neutral",
             },
           ]}
         >
-          <div className="flex items-center justify-center py-2">
-            <div className="w-full max-w-md">
-              <BulejeDonutChart
-                data={data.frecuenciaCompra.map((d) => ({
-                  name: d.frecuencia,
-                  value: d.cantidad,
-                }))}
-                height={240}
-                format={(v) => `${v} clientes`}
-              />
-            </div>
+          <div style={COLORES_CLIENTES}>
+            <BulejeStackedBar
+              data={porMes}
+              xKey="mes"
+              stacks={PILAS}
+              height={200}
+              yAxisFormat={ejeEntero}
+              tooltipFormat={(v) => plural(Number(v), "cliente", "clientes")}
+            />
           </div>
         </DashboardSection>
       ),
@@ -277,70 +255,34 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
       render: () => (
         <DashboardSection
           chartId="clientes.ticket-por-cliente"
-          hasData={true}
+          hasData={muestra.ticket !== "oculto"}
           defaultVisible={false}
-          kicker="Ticket promedio · top clientes"
+          kicker="Tus mejores clientes"
           title="Cuánto gastan por visita"
-          description="Gasto promedio por visita."
+          description="Lo que gasta en promedio cada uno de tus mejores clientes cada vez que te compra."
           kpis={[
-            {
-              label: "Top 1",
-              value: ticketChart[0]?.cliente ?? "—",
-              tone: "success",
-            },
-            {
-              label: "Ticket top 1",
-              value: fmtS(ticketChart[0]?.ticket ?? 0),
-              tone: "primary",
-            },
-            {
-              label: "Visitas top 1",
-              value: String(ticketChart[0]?.visitas ?? 0),
-              tone: "neutral",
-            },
-            {
-              label: "Promedio top",
-              value: fmtS(
-                ticketChart.length > 0
-                  ? ticketChart.reduce((s, c) => s + c.ticket, 0) / ticketChart.length
-                  : 0,
-              ),
-              tone: "neutral",
-            },
+            { label: "Ticket más alto", value: tickets[0] ? soles(tickets[0].ticket) : null, sub: tickets[0]?.nombre },
+            { label: "Promedio de ellos", value: soles(promTicket) },
           ]}
         >
-          <BulejeComposedChart
-            data={ticketChart}
-            xKey="cliente"
-            bars={[{ key: "ticket", label: "Ticket S/", color: "primary", yAxis: "left" }]}
-            lines={[{ key: "visitas", label: "Visitas", color: "accent", yAxis: "right" }]}
-            leftAxisFormat={(v) => `S/${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`}
-            rightAxisFormat={(v) => v.toString()}
-            tooltipFormat={(v, name) =>
-              name?.toLowerCase().includes("ticket")
-                ? fmtS(Number(v))
-                : `${v} visitas`
-            }
-            height={280}
-            minDataPoints={1}
+          <MicroList
+            items={tickets.map((c) => ({
+              name: c.nombre,
+              value: c.ticket,
+              label: soles(c.ticket),
+              sublabel: plural(c.visitas, "compra", "compras"),
+            }))}
+            barColor={COLOR_CONCEPTO.clientes}
+            showRank
           />
         </DashboardSection>
       ),
     },
   ];
 
-  // Brandon mayo 2026 v6: layout="grid" — los charts sin span ocupan media
-  // fila (distribución de gasto + frecuencia quedan lado a lado).
-  // Los charts con span="full" (clientes-por-dia) siguen full-width.
-  // minColumnWidth="22rem" para que las 2 cols aparezcan aún con la barra
-  // lateral del admin reduciendo el ancho útil del contenido.
+  // layout="grid": las secciones sin span van de a dos (gasto + frecuencia lado a
+  // lado); minColumnWidth="22rem" deja las 2 columnas aun con la barra lateral.
   return (
-    <DraggableSections
-      items={sections}
-      storageKey="clientes-base-order"
-      layout="grid"
-      gap={4}
-      minColumnWidth="22rem"
-    />
+    <DraggableSections items={sections} storageKey="clientes-base-order" layout="grid" gap={4} minColumnWidth="22rem" />
   );
 }

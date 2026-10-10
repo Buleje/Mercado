@@ -8,6 +8,7 @@
 import { useMemo } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { ChartWrapper, useChartTokens } from "@buleje/design-system";
+import { PLAN_ID_LABEL } from "@/lib/billing/plan-mapping";
 
 type Plan = "free" | "pro" | "business" | "enterprise";
 
@@ -22,12 +23,8 @@ const PLAN_COLORS: Record<Plan, string> = {
   enterprise: "var(--data-success, #10b981)",
 };
 
-const PLAN_LABELS: Record<Plan, string> = {
-  free: "Free",
-  pro: "Pro",
-  business: "Business",
-  enterprise: "Enterprise",
-};
+/** Nombre visible de la fuente única: pro = Starter, business = Pro, enterprise = Business. */
+const PLAN_LABELS: Record<Plan, string> = PLAN_ID_LABEL;
 
 function DonutTooltip({
   active,
@@ -90,7 +87,7 @@ export function PlanDistributionDonut({ distribution }: Props) {
       ) : (
         <div className="flex flex-col gap-4">
           <div className="relative" style={{ width: "100%", height: 200, minHeight: 160 }}>
-            <ResponsiveContainer width="99%" height="99%" debounce={50}>
+            <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} width="99%" height="99%" debounce={50}>
               <PieChart>
                 <Pie
                   data={data}

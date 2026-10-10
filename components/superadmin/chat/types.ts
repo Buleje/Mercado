@@ -43,14 +43,14 @@ export interface PlatformMessage {
 
 export const PRIORITY_META: Record<PlatformPriority, { label: string; dot: string }> = {
   high: { label: "Alta", dot: "bg-[var(--data-error-500,#ef4444)]" },
-  medium: { label: "Media", dot: "bg-[var(--data-warning-500,#f59e0b)]" },
+  medium: { label: "Media", dot: "bg-[#0d9488]" },
   low: { label: "Baja", dot: "bg-[var(--text-tertiary)]" },
 };
 
 // Plantillas de respuesta rápida (variables {tienda} se resuelven al insertar).
 export const QUICK_TEMPLATES: { label: string; body: string }[] = [
   { label: "Bienvenida", body: "Hola {tienda} 👋 Soy del equipo de Buleje. ¿En qué te puedo ayudar hoy?" },
-  { label: "Pago pendiente", body: "Hola {tienda}, te escribo por el pago de tu plan. ¿Querés que te pase el link de Yape para regularizarlo?" },
+  { label: "Pago pendiente", body: "Hola {tienda}, te escribo por el pago de tu plan. ¿Quieres que te pase el link de Yape para regularizarlo?" },
   { label: "Seguimiento", body: "Hola {tienda}, ¿pudiste revisar lo que conversamos? Quedo atento para ayudarte." },
-  { label: "Cierre", body: "¡Listo {tienda}! Cualquier otra cosa que necesites, escribime por acá. Que vendas mucho." },
+  { label: "Cierre", body: "¡Listo {tienda}! Cualquier otra cosa que necesites, escríbeme por aquí. Que vendas mucho." },
 ];

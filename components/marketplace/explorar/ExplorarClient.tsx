@@ -225,7 +225,7 @@ export default function ExplorarClient() {
               <PreviewSectionBox
                 eyebrow="Lo que viene volando"
                 title="Las bodegas más buscadas"
-                subtitle="Vecinos como vos las están eligiendo esta semana"
+                subtitle="Vecinos como tú las están eligiendo esta semana"
                 ctaHref="/marketplace"
                 ctaLabel="Ver todas las bodegas"
               >
@@ -268,7 +268,7 @@ export default function ExplorarClient() {
             <RevealOnScroll>
               <PreviewSectionBox
                 eyebrow="Tu mercado completo"
-                title="Filtrá por lo que buscás"
+                title="Filtra por lo que buscas"
                 subtitle="Desde una gaseosa hasta el almuerzo del domingo"
                 ctaHref="/tiendas"
                 ctaLabel="Explorar catálogo"

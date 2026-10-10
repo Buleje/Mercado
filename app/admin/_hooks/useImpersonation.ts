@@ -18,6 +18,7 @@
 
 import { useEffect, useState } from "react";
 import { clearAllTenantCache } from "@/lib/tenant-cache";
+import { esMarketplace } from "@/lib/tenancy/negocio-por-defecto";
 
 export type TenantType = "tienda" | "proveedor" | "delivery";
 
@@ -50,7 +51,7 @@ export function useImpersonation(): UseImpersonationResult {
     const slug = impersonateSlug ?? tenantSlug;
 
     if (impersonateSlug) setIsSuperAdminImpersonating(true);
-    if (!slug || slug === "main") return;
+    if (!slug || esMarketplace(slug)) return;
 
     setActiveTenantSlug(slug);
 

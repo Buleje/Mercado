@@ -91,7 +91,7 @@ export default function FAQ() {
       />
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <span className="inline-flex items-center gap-1.5 bg-primary/8 text-primary text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-4">
+          <span className="inline-flex items-center gap-1.5 bg-primary/8 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-4">
             <HelpCircle className="w-3.5 h-3.5" />
             Ayuda
           </span>
@@ -129,7 +129,7 @@ export default function FAQ() {
                 >
                   <div className="flex items-center gap-3">
                     <span className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold shrink-0 transition-colors duration-[var(--dur-fast)] ${
-                      isOpen ? "bg-primary text-white" : "bg-primary/8 text-primary"
+                      isOpen ? "bg-primary text-white" : "bg-primary/8 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                     }`}>
                       {i + 1}
                     </span>

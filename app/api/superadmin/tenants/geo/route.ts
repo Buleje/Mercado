@@ -18,8 +18,8 @@ export async function GET(req: NextRequest) {
   const auth = await requirePlatformAPI(req);
   if ("status" in auth) return auth;
   try {
-    const rows = await prisma.$queryRawUnsafe<{ slug: string; name: string; lat: number | null; lng: number | null; active: boolean }[]>(
-      `SELECT slug, name, lat, lng, active FROM "Tenant" ORDER BY name ASC`,
+    const rows = await prisma.$queryRawUnsafe<{ slug: string; name: string; lat: number | null; lng: number | null; active: boolean; plan: string }[]>(
+      `SELECT slug, name, lat, lng, active, plan FROM "Tenant" ORDER BY name ASC`,
     );
     const located = rows.filter((r) => r.lat != null && r.lng != null);
     return NextResponse.json({ rows, located: located.length, total: rows.length });

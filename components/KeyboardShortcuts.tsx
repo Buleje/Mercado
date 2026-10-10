@@ -212,11 +212,21 @@ export function KeyboardShortcutHint() {
   
   return (
     <>
-      <button
+      {/* La píldora lleva su propia «×» adentro, así que no puede ser un
+          `<button>`: un botón dentro de otro es anidado inválido. */}
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setShowModal(true)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setShowModal(true);
+          }
+        }}
         className={cn(
           "fixed bottom-4 right-4 z-30",
-          "flex items-center gap-2 px-3 py-2",
+          "flex cursor-pointer items-center gap-2 px-3 py-2",
           "bg-[var(--surface-raised)]",
           "border border-[var(--rule-base)]",
           "rounded-full shadow-[var(--shadow-lg)]",
@@ -240,7 +250,7 @@ export function KeyboardShortcutHint() {
         >
           ×
         </button>
-      </button>
+      </div>
       
       <KeyboardShortcutsModal
         isOpen={showModal}

@@ -14,9 +14,19 @@ import { StepPago } from "./steps/StepPago";
 import { StepConfirmar, StepConfirmarFooter } from "./steps/StepConfirmar";
 import { MiniCartSummary } from "./parts/MiniCartSummary";
 import { CheckoutModalShell } from "./parts/CheckoutModalShell";
-import { useCheckoutState } from "./hooks/useCheckoutState";
+import { useCheckoutFlow } from "./checkout-flow-context";
 import { useCoupon } from "./hooks/useCoupon";
-import { useLoyalty, getTierDiscountPct } from "./hooks/useLoyalty";
+import { useLoyalty } from "./hooks/useLoyalty";
+import { useDescuentoAutomatico } from "./hooks/useDescuentoAutomatico";
+import {
+  canjeDeLaVista,
+  resolveEffectiveValues,
+  telefonoDelPedido,
+} from "./hooks/checkout-submit-helpers";
+import {
+  calcularTotalPedido,
+  porcentajeDe,
+} from "@/lib/pricing/total-pedido";
 import { useDniLookup } from "./hooks/useDniLookup";
 import { useGeolocation } from "./hooks/useGeolocation";
 import { usePhoneSearch } from "./hooks/usePhoneSearch";
@@ -26,6 +36,7 @@ import { useCheckoutSubmit } from "./hooks/useCheckoutSubmit";
 import { useCheckoutHandlers } from "./hooks/useCheckoutHandlers";
 import { useCheckoutInit } from "./hooks/useCheckoutInit";
 import { validatePhone } from "./parts/phone-validation";
+import { getSupabaseBrowser, isSupabaseAuthConfigured } from "@/lib/supabase/client";
 
 /**
  * CheckoutModal — orquestador del wizard de checkout.
@@ -60,7 +71,7 @@ export default function CheckoutModal() {
   } = useSettings();
   const { getBestPromotion } = usePromotions();
 
-  const { state, dispatch, reset } = useCheckoutState();
+  const { state, dispatch, reset } = useCheckoutFlow();
   const phoneSearch = usePhoneSearch({ findByPhone });
   const [editingCustomerData, setEditingCustomerData] = useState(false);
   const [skippedAccount, setSkippedAccount] = useState(false);
@@ -89,15 +100,38 @@ export default function CheckoutModal() {
     cartTotal,
     state.customer.phone || customer?.phone
   );
-  const discount = promo ? cartTotal * (promo.discountPercent / 100) : 0;
-  const tierDiscountPct = getTierDiscountPct(state.loyalty.tier);
-  const tierDiscount = cartTotal * (tierDiscountPct / 100);
+  const discount = promo ? porcentajeDe(cartTotal, promo.discountPercent) : 0;
 
-  // El backend recompone — esto solo es UI/preview
-  const finalTotal = Math.max(
-    0,
-    cartTotal - discount - state.coupon.discount - tierDiscount - state.loyalty.redemptionSoles + state.payment.tip
+  // Descuento automático (primera compra, volumen, cliente frecuente): lo
+  // cotiza el servidor con la misma función que cobra el pedido.
+  const telefonoPedido = telefonoDelPedido(resolveEffectiveValues(state, effectiveCustomer).phone);
+  const autoDescuento = useDescuentoAutomatico({
+    telefono: telefonoPedido,
+    subtotal: cartTotal,
+    unidades: items.reduce((sum, i) => sum + i.quantity, 0),
+    activo: checkoutOpen,
+  });
+
+  // Vista previa con la fórmula ÚNICA del servidor (lib/pricing/total-pedido).
+  // Sin el «tier» de lealtad (el servidor no lo cobra). El canje de puntos sí
+  // entra, con el mismo tope que valida POST /api/orders y solo con sesión
+  // verificada del teléfono del pedido. La propina NO entra: se da en mano al
+  // repartidor y el pedido no la guarda.
+  const descuentosSinPuntos = {
+    subtotal: cartTotal,
+    descuentoCupon: state.coupon.discount,
+    descuentoPromo: discount,
+    descuentoAutomatico: autoDescuento.descuento?.monto ?? 0,
+  };
+  const canjeVista = canjeDeLaVista(
+    state.loyalty,
+    telefonoPedido,
+    calcularTotalPedido(descuentosSinPuntos),
   );
+  const totalVistaPrevia = calcularTotalPedido({
+    ...descuentosSinPuntos,
+    descuentoPuntos: canjeVista.soles,
+  });
 
   // ── Hooks de side effects ───────────────────────────────────────
   const coupon = useCoupon({ state: state.coupon, cartTotal, dispatch });
@@ -114,15 +148,21 @@ export default function CheckoutModal() {
   const submitter = useCheckoutSubmit({
     state,
     items,
-    finalTotal,
+    finalTotal: totalVistaPrevia,
     effectiveCustomer,
     promo,
     discount,
+    puntosACanjear: canjeVista.puntos,
     dispatch,
     cartActions: { clear, closeCart, markOrderPending, removeItem },
     customerActions: { register, openOrderStatusModal },
     closeCheckout,
   });
+  // Si un 422 corrigió el total (p. ej. la cotización falló por 429 o red),
+  // el resumen muestra el del servidor antes de volver a confirmar.
+  const ajuste = submitter.ajusteServidor;
+  const descuentoMostrado = ajuste ? ajuste.descuentoAutomatico : autoDescuento.descuento;
+  const finalTotal = ajuste?.serverTotal ?? totalVistaPrevia;
 
   const handlers = useCheckoutHandlers({
     state,
@@ -197,11 +237,29 @@ export default function CheckoutModal() {
             phoneNotFound={phoneSearch.notFound}
             onPhoneSearch={handlers.handlePhoneSearchSubmit}
             onSkipAccount={handlers.handleSkipAccount}
-            onGoogleSignIn={() => {
-              // Redirige al OAuth flow del tenant. El backend resuelve `x-tenant-id`
-              // desde middleware → la cuenta se crea/asocia al tenant actual.
+            onGoogleSignIn={async () => {
+              // IGUAL QUE EL MARKETPLACE (Brandon 2026-06-22): Google sign-in vía
+              // Supabase OAuth (el mismo flujo que `OAuthButton` usa en /marketplace
+              // y el login). Vuelve a la ruta actual; el callback
+              // `/api/auth/oauth/callback` crea la sesión de customer (tenant-aware
+              // por `x-tenant-id` del middleware, igual que el marketplace).
               const here = typeof window !== "undefined" ? window.location.pathname + window.location.search : "/";
-              window.location.href = `/api/auth/google?redirect=${encodeURIComponent(here)}`;
+              if (!isSupabaseAuthConfigured()) {
+                // Fallback al flujo custom si Supabase no está configurado.
+                window.location.href = `/api/auth/google?redirect=${encodeURIComponent(here)}`;
+                return;
+              }
+              const supabase = getSupabaseBrowser();
+              const origin = typeof window !== "undefined" ? window.location.origin : "";
+              const { error } = await supabase.auth.signInWithOAuth({
+                provider: "google",
+                options: { redirectTo: `${origin}/api/auth/oauth/callback?next=${encodeURIComponent(here)}` },
+              });
+              if (error) {
+                // Si Supabase falla, degradamos al flujo custom para no dejar al
+                // cliente sin opción de continuar con Google.
+                window.location.href = `/api/auth/google?redirect=${encodeURIComponent(here)}`;
+              }
             }}
           />
         )}
@@ -235,10 +293,19 @@ export default function CheckoutModal() {
             cartTotal={cartTotal}
             discount={discount}
             promo={promo}
-            tierDiscount={tierDiscount}
-            tierDiscountPct={tierDiscountPct}
+            descuentoAutomatico={descuentoMostrado}
             effectiveCustomer={effectiveCustomer}
             loyaltyPoints={state.loyalty.points}
+            canje={{
+              sesionVerificada: state.loyalty.sesionVerificada,
+              saldo: canjeVista.disponible ? state.loyalty.points : null,
+              maxSoles: canjeVista.maxSoles,
+              soles: canjeVista.soles,
+              onSolesChange: (soles) =>
+                dispatch({ type: "SET_LOYALTY", patch: { redemptionSoles: soles } }),
+              onIniciarSesion: () => dispatch({ type: "SET_STEP", step: "cuenta" }),
+            }}
+            descuentoPuntos={canjeVista.soles}
             yape={yape}
             cashEnabled={cashEnabled}
             onValidateCoupon={coupon.validate}
@@ -256,6 +323,8 @@ export default function CheckoutModal() {
             finalTotal={finalTotal}
             cartTotal={cartTotal}
             discount={discount}
+            descuentoAutomatico={descuentoMostrado}
+            descuentoPuntos={canjeVista.soles}
             effectiveCustomer={effectiveCustomer}
             onEditAddress={() => dispatch({ type: "SET_STEP", step: "datos" })}
           />
@@ -264,6 +333,7 @@ export default function CheckoutModal() {
         {state.step === "exito" && (
           <CheckoutSuccessStep
             orderId={state.ui.orderId}
+            value={finalTotal}
             onClose={closeCheckout}
           />
         )}

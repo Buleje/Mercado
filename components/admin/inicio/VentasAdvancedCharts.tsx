@@ -1,17 +1,38 @@
 "use client";
 
-import { memo, useMemo } from "react";
+/**
+ * VentasAdvancedCharts — gráficos especializados de Inicio › Ventas (ocultos por
+ * defecto; se prenden desde «Gráficos»).
+ *
+ * 2026-10-09 (Brandon: «ocultar gráficos que no tienen ninguna información…
+ * mejóralos con buen diseño y formato»): cada uno decide `hasData` con el helper
+ * único (antes `true` fijo: un Pareto vacío con «S/ 0» se podía prender), títulos
+ * como la pregunta del dueño, períodos honestos (eran «rango activo» pero cuentan
+ * 30 días, 14 días o la semana), plata con `soles`/`solesEje` y colores fijos por
+ * concepto (`COLOR_CONCEPTO`, no la rotación `--section-*` de la grilla).
+ */
+
+import { memo, useMemo, type CSSProperties } from "react";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
 import {
-  BulejeComposedChart,
   BulejeHeatmap,
   BulejeStackedBar,
   BulejeWaterfallChart,
   BulejeComparisonOverlay,
   type HeatmapCell,
 } from "@/components/ui-system/charts";
-import { DashboardSection } from "./_shared";
+import { hayDatosEnSerie, modoRanking } from "@/lib/admin/inicio/hay-datos";
+import {
+  COLOR_CONCEPTO,
+  cantidad,
+  fechaCorta,
+  porcentaje,
+  soles,
+  solesEje,
+} from "@/lib/admin/inicio/formato-tablero";
+import { DashboardSection, MicroList } from "./_shared";
 import { DraggableSections, type DraggableItem } from "./DraggableSections";
+import { ConTonoVentas } from "./VentasBarras";
 
 type Product = {
   id: number | string;
@@ -50,13 +71,44 @@ const CAT_LABEL: Record<string, string> = {
   otros: "Otros",
 };
 
-const CAT_COLOR_KEYS = ["primary", "secondary", "tertiary", "quaternary", "accent", "amber", "purple", "info"] as const;
+const CAT_COLOR_KEYS = [
+  "primary",
+  "secondary",
+  "tertiary",
+  "quaternary",
+  "accent",
+  "amber",
+  "purple",
+  "info",
+] as const;
+
+/**
+ * Los primitivos leen `--section-*`/`--accent`, que la grilla rota por posición.
+ * Fijarlos en el contenedor del gráfico deja el mismo color para lo mismo en
+ * todas las pestañas: ventas teal, período anterior gris, utilidad/total tinta.
+ */
+const vars = (v: Record<string, string>) => v as CSSProperties;
+const COLORES_COMPARATIVA = vars({
+  "--section-primary": COLOR_CONCEPTO.ventas,
+  "--section-tertiary": COLOR_CONCEPTO.anterior,
+});
+const COLORES_CASCADA = vars({
+  "--section-primary": COLOR_CONCEPTO.utilidad,
+  "--section-accent": COLOR_CONCEPTO.ventas,
+});
+const COLORES_CALOR = vars({ "--accent": COLOR_CONCEPTO.ventas });
+const COLORES_CATEGORIAS = vars({
+  "--section-primary": COLOR_CONCEPTO.ventas,
+  "--section-secondary": "var(--data-6)",
+  "--section-tertiary": "var(--data-8)",
+  "--section-accent": "var(--data-2)",
+});
+const DIA_COMPLETO = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
 function dayKey(iso: string) {
   const d = new Date(iso);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
-
 
 export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
   const { data } = useDashboardData();
@@ -68,7 +120,6 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
   // ── 1. PARETO 80/20 ─────────────────────────────────────────────────────
   // Top 15 productos por ingresos últimos 30d + curva acumulada %.
   const pareto = useMemo(() => {
-     
     const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
     const byId = new Map<string | number, { name: string; ingresos: number }>();
     const priceCost = (id: string | number) => {
@@ -103,6 +154,7 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
       acc += r.ingresos;
       return {
         producto: r.name.length > 14 ? r.name.slice(0, 13) + "…" : r.name,
+        nombre: r.name,
         ingresos: Math.round(r.ingresos),
         acumuladoPct: grandTotal > 0 ? Math.round((acc / grandTotal) * 1000) / 10 : 0,
       };
@@ -110,13 +162,13 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
     const pct80Idx = rows.findIndex((r) => r.acumuladoPct >= 80);
     const skusFor80 = pct80Idx >= 0 ? pct80Idx + 1 : rows.length;
     const skusTotal = sorted.length;
-    const concentracion = grandTotal > 0 ? Math.round((top[0]?.ingresos ?? 0) / grandTotal * 100) : 0;
+    const concentracion =
+      grandTotal > 0 ? Math.round(((top[0]?.ingresos ?? 0) / grandTotal) * 100) : 0;
     return { rows, grandTotal, skusFor80, skusTotal, concentracion };
   }, [products, orders, sales]);
 
   // ── 2. HEATMAP hora × día (últimos 30d) ─────────────────────────────────
   const heatmap = useMemo(() => {
-     
     const last30 = Date.now() - 30 * 24 * 60 * 60 * 1000;
     const cells: HeatmapCell[] = [];
     const m = new Map<string, number>();
@@ -129,7 +181,9 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
       const k = `${day}-${hour}`;
       m.set(k, (m.get(k) ?? 0) + value);
     };
-    orders.filter((o) => o.status === "entregado").forEach((o) => add(o.createdAt, Number(o.total ?? 0)));
+    orders
+      .filter((o) => o.status === "entregado")
+      .forEach((o) => add(o.createdAt, Number(o.total ?? 0)));
     sales.forEach((s) => add(s.createdAt, Number(s.total ?? 0)));
     m.forEach((value, k) => {
       const [day, hour] = k.split("-").map(Number);
@@ -137,7 +191,7 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
     });
     const total = Array.from(m.values()).reduce((a, b) => a + b, 0);
     const top = Array.from(m.entries()).sort(([, a], [, b]) => b - a)[0];
-    const bestDay = top ? ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"][Number(top[0].split("-")[0])] : "—";
+    const bestDay = top ? DIA_COMPLETO[Number(top[0].split("-")[0])] : "—";
     const bestHour = top ? `${top[0].split("-")[1]}:00` : "—";
     const bestAmount = top ? Math.round(top[1]) : 0;
     return { cells, bestDay, bestHour, bestAmount, total: Math.round(total) };
@@ -146,7 +200,6 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
   // ── 3. WATERFALL — descomposición del cambio semanal ────────────────────
   // Semana actual vs semana pasada: Δ = Δ volumen (# tickets) + Δ ticket prom.
   const waterfall = useMemo(() => {
-     
     const now = Date.now();
     const wkA_start = now - 7 * 24 * 60 * 60 * 1000;
     const wkB_start = now - 14 * 24 * 60 * 60 * 1000;
@@ -158,7 +211,9 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
     const collect = (filter: (iso: string) => boolean) => {
       const oA = orders.filter((o) => o.status === "entregado" && filter(o.createdAt));
       const sA = sales.filter((s) => filter(s.createdAt));
-      const total = oA.reduce((a, o) => a + Number(o.total ?? 0), 0) + sA.reduce((a, s) => a + Number(s.total ?? 0), 0);
+      const total =
+        oA.reduce((a, o) => a + Number(o.total ?? 0), 0) +
+        sA.reduce((a, s) => a + Number(s.total ?? 0), 0);
       const tickets = oA.length + sA.length;
       const prom = tickets > 0 ? total / tickets : 0;
       return { total, tickets, prom };
@@ -169,10 +224,18 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
     const dVolumen = (cur.tickets - prev.tickets) * prev.prom;
     const dTicket = (cur.prom - prev.prom) * cur.tickets;
     const steps = [
-      { label: "Sem. pasada", value: Math.round(prev.total), type: "baseline" as const },
-      { label: "Δ Volumen", value: Math.round(dVolumen), type: (dVolumen >= 0 ? "positive" : "negative") as "positive" | "negative" },
-      { label: "Δ Ticket prom.", value: Math.round(dTicket), type: (dTicket >= 0 ? "positive" : "negative") as "positive" | "negative" },
-      { label: "Sem. actual", value: Math.round(cur.total), type: "total" as const },
+      { label: "Pasada", value: Math.round(prev.total), type: "baseline" as const },
+      {
+        label: "Cantidad",
+        value: Math.round(dVolumen),
+        type: (dVolumen >= 0 ? "positive" : "negative") as "positive" | "negative",
+      },
+      {
+        label: "Ticket",
+        value: Math.round(dTicket),
+        type: (dTicket >= 0 ? "positive" : "negative") as "positive" | "negative",
+      },
+      { label: "Actual", value: Math.round(cur.total), type: "total" as const },
     ];
     const delta = cur.total - prev.total;
     const deltaPct = prev.total > 0 ? Math.round((delta / prev.total) * 100) : 0;
@@ -181,7 +244,6 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
 
   // ── 4. MIX POR CATEGORÍA — stacked 100% últimos 14d ─────────────────────
   const mix = useMemo(() => {
-     
     const last14 = Date.now() - 14 * 24 * 60 * 60 * 1000;
     const byDate = new Map<string, Map<string, number>>();
     const priceCost = (id: string | number) => {
@@ -207,12 +269,17 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
     );
     // top 5 categorías global
     const catTotal = new Map<string, number>();
-    byDate.forEach((inner) => inner.forEach((v, cat) => catTotal.set(cat, (catTotal.get(cat) ?? 0) + v)));
-    const topCats = Array.from(catTotal.entries()).sort(([, a], [, b]) => b - a).slice(0, 5).map(([c]) => c);
+    byDate.forEach((inner) =>
+      inner.forEach((v, cat) => catTotal.set(cat, (catTotal.get(cat) ?? 0) + v)),
+    );
+    const topCats = Array.from(catTotal.entries())
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 5)
+      .map(([c]) => c);
     const days = Array.from(byDate.keys()).sort();
     const rows = days.map((k) => {
       const inner = byDate.get(k)!;
-      const row: Record<string, string | number> = { day: new Date(k + "T12:00:00").toLocaleDateString("es-PE", { day: "2-digit", month: "short" }) };
+      const row: Record<string, string | number> = { day: fechaCorta(k) };
       topCats.forEach((cat) => {
         row[cat] = Math.round(inner.get(cat) ?? 0);
       });
@@ -226,17 +293,23 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
     // KPIs
     const grand = Array.from(catTotal.values()).reduce((a, b) => a + b, 0);
     const leader = Array.from(catTotal.entries()).sort(([, a], [, b]) => b - a)[0];
-    const leaderName = leader ? CAT_LABEL[leader[0]] ?? leader[0] : "—";
+    const leaderName = leader ? (CAT_LABEL[leader[0]] ?? leader[0]) : "—";
     const leaderPct = leader && grand > 0 ? Math.round((leader[1] / grand) * 100) : 0;
-    return { rows, stacks, grand: Math.round(grand), leaderName, leaderPct, topCatsCount: topCats.length };
+    return {
+      rows,
+      stacks,
+      grand: Math.round(grand),
+      leaderName,
+      leaderPct,
+      topCatsCount: topCats.length,
+    };
   }, [products, orders, sales]);
 
   // ── 5. COMPARATIVA — esta semana vs semana pasada ───────────────────────
   const comparison = useMemo(() => {
-     
     const now = Date.now();
     const DAYS_LABEL = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-    const buckets = Array.from({ length: 7 }).map((_, i) => ({
+    const buckets = Array.from({ length: 7 }).map((_, _i) => ({
       day: "",
       current: 0,
       previous: 0,
@@ -283,160 +356,177 @@ export const VentasAdvancedCharts = memo(function VentasAdvancedCharts() {
     return buckets;
   }, [orders, sales]);
 
-  const fmtPEN = (v: number) =>
-    `S/ ${v.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`;
+  // ── ¿Qué se muestra? (R2: sin información → oculto hasta que haya dato) ──
+  const modoPareto = modoRanking(pareto.rows, "ingresos");
+  const celdasConVenta = heatmap.cells.filter((c) => c.value > 0).length;
+  const hayCascada = waterfall.prev.total > 0 && waterfall.cur.total > 0;
+  const hayMix = mix.grand > 0 && mix.rows.length >= 2;
+  const hayComparativa = hayDatosEnSerie(comparison, ["current", "previous"], { minPuntos: 2 });
+  // Pareto como lista: el nombre entero se lee; en barras verticales se cortaba a 13 letras.
+  const itemsPareto = pareto.rows.slice(0, 10).map((r, i) => ({
+    name: r.nombre,
+    value: r.ingresos,
+    label: soles(r.ingresos),
+    sublabel: `acumulado ${porcentaje(r.acumuladoPct)}`,
+    color: i < pareto.skusFor80 ? COLOR_CONCEPTO.ventas : COLOR_CONCEPTO.anterior,
+  }));
 
   const sections: DraggableItem[] = [
     {
       id: "pareto-80-20",
       render: () => (
-        <DashboardSection
-          chartId="ventas.advanced.pareto-80-20"
-          hasData={true}
-          defaultVisible={false}
-kicker="Análisis Pareto · rango activo"
-          title="Top 15 productos y concentración 80/20"
-          kpis={[
-            { label: "Ingresos 30d", value: fmtPEN(pareto.grandTotal), tone: "primary" },
-            { label: "SKUs para 80%", value: String(pareto.skusFor80), tone: "success" },
-            { label: "SKUs totales", value: String(pareto.skusTotal), tone: "neutral" },
-            {
-              label: "Top-1 concentra",
-              value: `${pareto.concentracion}%`,
-              tone: pareto.concentracion >= 25 ? "warning" : "neutral",
-            },
-          ]}
-        >
-          <BulejeComposedChart
-            data={pareto.rows}
-            xKey="producto"
-            bars={[{ key: "ingresos", label: "Ingresos S/", color: "primary", yAxis: "left" }]}
-            lines={[
-              { key: "acumuladoPct", label: "Acumulado %", color: "accent", yAxis: "right" },
+        <ConTonoVentas>
+          <DashboardSection
+            chartId="ventas.advanced.pareto-80-20"
+            hasData={modoPareto !== "oculto"}
+            defaultVisible={false}
+            kicker="Últimos 30 días · regla 80/20"
+            title="¿Qué productos te dejan más plata?"
+            description="Tus productos ordenados por lo vendido. Los de color teal son los pocos que juntan el 80 % de tus ventas: que nunca te falten."
+            kpis={[
+              { label: "Vendido en 30 días", value: soles(pareto.grandTotal), tone: "primary" },
+              {
+                label: "Hacen el 80 %",
+                value: `${cantidad(pareto.skusFor80)} de ${cantidad(pareto.skusTotal)}`,
+                hint: "Cuántos productos juntan el 80 % de lo que vendiste.",
+              },
+              {
+                label: "El primero se lleva",
+                value: porcentaje(pareto.concentracion),
+                tone: pareto.concentracion >= 25 ? "warning" : "neutral",
+                hint: "Parte de tus ventas que viene de un solo producto. Más de 25 % = dependes mucho de él.",
+              },
             ]}
-            leftAxisFormat={(v) => `S/${(v / 1000).toFixed(0)}k`}
-            rightAxisFormat={(v) => `${v}%`}
-            tooltipFormat={(v, name) =>
-              name?.toLowerCase().includes("acumulado")
-                ? `${Number(v).toFixed(1)}%`
-                : `S/ ${Number(v).toLocaleString("es-PE")}`
-            }
-            height={320}
-            minDataPoints={1}
-          />
-        </DashboardSection>
+          >
+            <MicroList items={itemsPareto} showRank />
+          </DashboardSection>
+        </ConTonoVentas>
       ),
     },
     {
       id: "heatmap-hora-dia",
       render: () => (
-        <DashboardSection
-          chartId="ventas.advanced.heatmap-hora-dia"
-          hasData={true}
-          defaultVisible={false}
-kicker="Densidad de ventas · rango activo"
-          title="Heatmap hora × día de la semana"
-          kpis={[
-            { label: "Total 30d", value: fmtPEN(heatmap.total), tone: "primary" },
-            { label: "Mejor día", value: heatmap.bestDay, tone: "success" },
-            { label: "Mejor hora", value: heatmap.bestHour, tone: "success" },
-            { label: "Pico S/", value: fmtPEN(heatmap.bestAmount), tone: "primary" },
-          ]}
-        >
-          <BulejeHeatmap
-            data={heatmap.cells}
-            valueFormat={(v) => `S/ ${v.toLocaleString("es-PE")}`}
-          />
-        </DashboardSection>
+        <ConTonoVentas>
+          <DashboardSection
+            chartId="ventas.advanced.heatmap-hora-dia"
+            hasData={celdasConVenta >= 2}
+            defaultVisible={false}
+            kicker="Últimos 30 días"
+            title="¿Qué día y a qué hora vendes más?"
+            description="Cada cuadro es un día de la semana a una hora: más oscuro, más vendiste. Sirve para decidir turnos y cuándo reponer."
+            kpis={[
+              {
+                label: "Mejor momento",
+                value: `${heatmap.bestDay} ${heatmap.bestHour}`,
+                tone: "primary",
+                sub: soles(heatmap.bestAmount),
+              },
+              { label: "Vendido en 30 días", value: soles(heatmap.total) },
+            ]}
+          >
+            <div style={COLORES_CALOR}>
+              <BulejeHeatmap data={heatmap.cells} valueFormat={(v) => soles(v)} />
+            </div>
+          </DashboardSection>
+        </ConTonoVentas>
       ),
     },
     {
       id: "waterfall-semanal",
       render: () => (
-        <DashboardSection
-          chartId="ventas.advanced.waterfall-semanal"
-          hasData={true}
-          defaultVisible={false}
-kicker="Descomposición semanal · qué movió las ventas"
-          title="De la semana pasada a la actual"
-          kpis={[
-            { label: "Sem. pasada", value: fmtPEN(waterfall.prev.total), tone: "neutral" },
-            { label: "Sem. actual", value: fmtPEN(waterfall.cur.total), tone: "primary" },
-            {
-              label: "Δ absoluto",
-              value: `${waterfall.delta >= 0 ? "+" : ""}${fmtPEN(Math.abs(waterfall.delta))}`,
-              tone: waterfall.delta >= 0 ? "success" : "warning",
-            },
-            {
-              label: "Δ %",
-              value: `${waterfall.deltaPct >= 0 ? "+" : ""}${waterfall.deltaPct}%`,
-              tone: waterfall.deltaPct >= 0 ? "success" : "warning",
-            },
-          ]}
-        >
-          <BulejeWaterfallChart steps={waterfall.steps} currency="S/" height={280} />
-        </DashboardSection>
+        <ConTonoVentas>
+          <DashboardSection
+            chartId="ventas.advanced.waterfall-semanal"
+            hasData={hayCascada}
+            defaultVisible={false}
+            kicker="Esta semana vs la pasada"
+            title="¿Por qué cambiaron tus ventas?"
+            description="De la semana pasada a esta, en dos pasos: «Cantidad» es lo que cambió por vender más o menos veces; «Ticket» es por vender más o menos en cada venta."
+            kpis={[
+              {
+                label: "Esta semana",
+                value: soles(waterfall.cur.total),
+                tone: "primary",
+                delta: waterfall.deltaPct,
+                deltaLabel: "vs semana pasada",
+              },
+              { label: "Semana pasada", value: soles(waterfall.prev.total) },
+            ]}
+          >
+            <div style={COLORES_CASCADA}>
+              <BulejeWaterfallChart
+                steps={waterfall.steps}
+                currency="S/"
+                formatValue={(v) => solesEje(v)}
+                height={280}
+              />
+            </div>
+          </DashboardSection>
+        </ConTonoVentas>
       ),
     },
     {
       id: "mix-categoria",
       render: () => (
-        <DashboardSection
-          chartId="ventas.advanced.mix-categoria"
-          hasData={true}
-          defaultVisible={false}
-kicker="Mix de categorías · rango activo"
-          title="Composición diaria de ingresos por categoría"
-          kpis={[
-            { label: "Total 14d", value: fmtPEN(mix.grand), tone: "primary" },
-            { label: "Líder", value: mix.leaderName, tone: "success" },
-            {
-              label: "Share líder",
-              value: `${mix.leaderPct}%`,
-              tone: mix.leaderPct >= 40 ? "warning" : "neutral",
-            },
-            { label: "Categorías", value: String(mix.topCatsCount), tone: "neutral" },
-          ]}
-        >
-          {mix.rows.length > 0 ? (
-            <BulejeStackedBar
-              data={mix.rows}
-              xKey="day"
-              stacks={mix.stacks}
-              yAxisFormat={(v) => `S/${(v / 1000).toFixed(0)}k`}
-              tooltipFormat={(v) => `S/ ${Number(v).toLocaleString("es-PE")}`}
-              height={300}
-            />
-          ) : (
-            <div className="rounded-lg border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
-              Sin datos en los rango activo.
+        <ConTonoVentas>
+          <DashboardSection
+            chartId="ventas.advanced.mix-categoria"
+            hasData={hayMix}
+            defaultVisible={false}
+            kicker="Últimos 14 días"
+            title="¿Qué categorías vendes cada día?"
+            description="Lo vendido por día, partido en tus 5 categorías principales."
+            kpis={[
+              {
+                label: "Categoría líder",
+                value: mix.grand > 0 ? mix.leaderName : null,
+                tone: "primary",
+                sub: `${porcentaje(mix.leaderPct)} de lo vendido`,
+              },
+              { label: "Vendido en 14 días", value: soles(mix.grand) },
+            ]}
+          >
+            <div style={COLORES_CATEGORIAS}>
+              <BulejeStackedBar
+                data={mix.rows}
+                xKey="day"
+                stacks={mix.stacks}
+                yAxisFormat={(v) => solesEje(v)}
+                tooltipFormat={(v) => soles(v)}
+                height={300}
+              />
             </div>
-          )}
-        </DashboardSection>
+          </DashboardSection>
+        </ConTonoVentas>
       ),
     },
     {
       id: "comparativa-semanal",
       render: () => (
-        <DashboardSection
-          chartId="ventas.advanced.comparativa-semanal"
-          hasData={true}
-          defaultVisible={false}
-kicker="Comparativa · semana a semana"
-          title="Esta semana vs semana pasada"
-        >
-          <BulejeComparisonOverlay
-            data={comparison}
-            xKey="day"
-            currentKey="current"
-            previousKey="previous"
-            currentLabel="Esta semana"
-            previousLabel="Semana pasada"
-            yAxisFormat={(v) => `S/${v.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`}
-            tooltipFormat={(v) => `S/ ${Number(v).toLocaleString("es-PE")}`}
-            height={280}
-          />
-        </DashboardSection>
+        <ConTonoVentas>
+          <DashboardSection
+            chartId="ventas.advanced.comparativa-semanal"
+            hasData={hayComparativa}
+            defaultVisible={false}
+            kicker="Últimos 14 días"
+            title="Esta semana vs la pasada"
+            description="Día por día: la línea llena es esta semana; la punteada, la pasada."
+          >
+            <div style={COLORES_COMPARATIVA}>
+              <BulejeComparisonOverlay
+                data={comparison}
+                xKey="day"
+                currentKey="current"
+                previousKey="previous"
+                currentLabel="Esta semana"
+                previousLabel="Semana pasada"
+                yAxisFormat={(v) => solesEje(v)}
+                tooltipFormat={(v) => soles(v)}
+                height={280}
+              />
+            </div>
+          </DashboardSection>
+        </ConTonoVentas>
       ),
     },
   ];

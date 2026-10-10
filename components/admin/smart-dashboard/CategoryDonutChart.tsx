@@ -12,7 +12,7 @@ import {
 const DONUT_COLORS = [
   "var(--color-primary)",
   "#8b5cf6",
-  "#f97316",
+  "#ff6b5b",
   "#264653",
   "#e76f51",
   "#00BDBD",
@@ -27,7 +27,7 @@ interface Props {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function renderActiveShape(props: any) {
-  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, value, percent } = props;
+  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent } = props;
   return (
     <g>
       <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius + 6} startAngle={startAngle} endAngle={endAngle} fill={fill} />
@@ -69,7 +69,7 @@ export default function CategoryDonutChart({ data, fmtR }: Props) {
   return (
     <div className="flex flex-col sm:flex-row items-center gap-4">
       <div className="relative w-full sm:w-[200px] h-[200px] shrink-0">
-        <ResponsiveContainer minWidth={0} width="100%" height="100%">
+        <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} minWidth={0} width="100%" height="100%">
           <PieChart>
             <Pie
               data={filteredData}
@@ -105,7 +105,7 @@ export default function CategoryDonutChart({ data, fmtR }: Props) {
             <button
               key={item.name}
               onClick={() => toggleCategory(item.name)}
-              className="flex items-center gap-2 w-full text-left rounded-lg px-2 py-1 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
+              className="flex items-center gap-2 w-full text-left rounded-lg px-2 py-1 hover:bg-[var(--surface-sunken)] transition-colors"
             >
               <div
                 className="w-2.5 h-2.5 rounded-full shrink-0 transition-opacity"
@@ -114,13 +114,13 @@ export default function CategoryDonutChart({ data, fmtR }: Props) {
                   opacity: isHidden ? 0.2 : 1,
                 }}
               />
-              <span className={`text-xs flex-1 truncate ${isHidden ? "text-[var(--text-tertiary)] dark:text-zinc-600 line-through" : "text-[var(--text-primary)] dark:text-zinc-300"}`}>
+              <span className={`text-xs flex-1 truncate ${isHidden ? "text-[var(--text-tertiary)] line-through" : "text-[var(--text-primary)] "}`}>
                 {item.name}
               </span>
-              <span className={`text-xs font-mono tabular-nums ${isHidden ? "text-[var(--text-tertiary)] dark:text-zinc-600" : "text-[var(--text-secondary)] dark:text-zinc-400"}`}>
+              <span className={`text-xs font-mono tabular-nums ${isHidden ? "text-[var(--text-tertiary)] " : "text-[var(--text-secondary)] "}`}>
                 {isHidden ? "--" : `${pct}%`}
               </span>
-              <span className={`text-xs font-semibold tabular-nums ${isHidden ? "text-[var(--text-tertiary)] dark:text-zinc-600" : "text-[var(--text-primary)]"}`}>
+              <span className={`text-xs font-semibold tabular-nums ${isHidden ? "text-[var(--text-tertiary)] " : "text-[var(--text-primary)]"}`}>
                 {isHidden ? "--" : fmtR(item.value)}
               </span>
             </button>

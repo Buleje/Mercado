@@ -17,9 +17,19 @@ export const ReorderAlertsDB = {
    * @cross-tenant intentional — cron platform-wide.
    */
   async listProductsWithMinStock() {
+    // Un solo stock mínimo (09-10): también los que no tienen mínimo propio
+    // (el caller los mide contra el global de su negocio con `enStockBajo`).
     return prisma.product.findMany({
-      where: { active: true, stock: { not: null }, stockMin: { not: null } },
-      select: { id: true, name: true, stock: true, stockMin: true, stockMax: true, category: true, unit: true },
+      where: {
+        active: true,
+        deletedAt: null,
+        stock: { not: null },
+        OR: [
+          { stockMin: { not: null }, stock: { lte: prisma.product.fields.stockMin } },
+          { stockMin: null },
+        ],
+      },
+      select: { id: true, name: true, stock: true, stockMin: true, stockMax: true, category: true, unit: true, tenantId: true },
     });
   },
 

@@ -167,7 +167,7 @@ export default function EditorialFeature() {
                 RECETA.ingredientes.map((i) => i.productId),
               );
             }}
-            className="group mt-3 w-full py-2.5 px-4 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)] hover:bg-[var(--accent-soft)] transition-all text-xs font-bold text-[var(--text-primary)]"
+            className="group mt-3 w-full py-2.5 px-4 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--accent)] hover:bg-primary/10 transition-all text-xs font-bold text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]"
           >
             Agregar todos al carrito
           </button>

@@ -107,7 +107,7 @@ export default function StickyMobileCTA({
             className={cn(
               "shrink-0 h-11 w-11 rounded-full border inline-flex items-center justify-center transition-colors",
               extraAction.active
-                ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-[var(--text-primary)]",
             )}
           >

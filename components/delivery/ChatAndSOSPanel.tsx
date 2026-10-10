@@ -71,7 +71,7 @@ function InlineToast({
         visible ? "max-h-16 opacity-100 mt-3" : "max-h-0 opacity-0 mt-0",
       ].join(" ")}
     >
-      <p className="rounded-2xl bg-[var(--data-success-500)]/10 border-2 border-[var(--data-success-500)]/30 px-4 py-2.5 text-sm font-bold text-[var(--data-success-500)] text-center">
+      <p className=" bg-[var(--data-success-500)]/10 border-2 border-[var(--data-success-500)]/30 px-4 py-2.5 text-sm font-bold text-[var(--data-success-500)] text-center">
         {message}
       </p>
     </div>
@@ -102,13 +102,13 @@ function CustomerContactCard({
   const callHref = displayPhone ? `tel:${displayPhone}` : "#";
 
   return (
-    <div className="rounded-3xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 lg:p-6 space-y-5">
+    <div className=" border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 lg:p-6 space-y-5">
       {/* Encabezado: avatar + nombre + dirección */}
       <div className="flex items-center gap-4">
         {/* Avatar con inicial */}
         <div
           aria-hidden
-          className="h-14 w-14 shrink-0 rounded-2xl bg-[var(--accent-600,var(--accent))] text-white flex items-center justify-center text-2xl font-extrabold select-none"
+          className="h-14 w-14 shrink-0 bg-[var(--accent-600,var(--accent))] text-white flex items-center justify-center text-2xl font-extrabold select-none"
         >
           {initial}
         </div>
@@ -137,7 +137,7 @@ function CustomerContactCard({
           aria-label={`Llamar a ${displayName}`}
           className={[
             "inline-flex items-center justify-center gap-2.5",
-            "h-12 lg:h-14 rounded-2xl border-2 border-[var(--rule-base)]",
+            "h-12 lg:h-14 border-2 border-[var(--rule-base)]",
             "bg-white dark:bg-white/5 text-[var(--text-primary)]",
             "text-base font-extrabold",
             "transition-transform duration-150 motion-safe:active:scale-95",
@@ -159,7 +159,7 @@ function CustomerContactCard({
           aria-label={`WhatsApp a ${displayName}`}
           className={[
             "inline-flex items-center justify-center gap-2.5",
-            "h-12 lg:h-14 rounded-2xl",
+            "h-12 lg:h-14",
             "bg-[#25D366] text-white",
             "text-base font-extrabold",
             "transition-transform duration-150 motion-safe:active:scale-95",
@@ -264,7 +264,7 @@ function SOSButton() {
         aria-controls="sos-options-panel"
         data-no-translate
         className={[
-          "w-full h-12 rounded-2xl border-2 text-base font-extrabold",
+          "w-full h-12 border-2 text-base font-extrabold",
           "inline-flex items-center justify-center gap-2",
           "transition-all duration-200 motion-safe:transition-all",
           expanded
@@ -318,7 +318,7 @@ function SOSButton() {
           <a
             href="tel:+51000000000"
             // TODO: reemplazar con número real de soporte Buleje 24/7
-            className="flex items-center gap-3 h-12 lg:h-14 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-base font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+            className="flex items-center gap-3 h-12 lg:h-14 border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-base font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
           >
             <Phone className="h-5 w-5 shrink-0" strokeWidth={2.25} aria-hidden />
             <span>Llamar a Buleje 24/7</span>
@@ -329,7 +329,7 @@ function SOSButton() {
             type="button"
             onClick={handleShareLocation}
             disabled={sosLoading}
-            className="w-full flex items-center gap-3 h-12 lg:h-14 rounded-2xl border-2 border-[var(--brand-danger)]/40 bg-[var(--brand-danger)]/5 px-4 text-base font-bold text-[var(--brand-danger)] transition-colors hover:bg-[var(--brand-danger)]/10 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full flex items-center gap-3 h-12 lg:h-14 border-2 border-[var(--brand-danger)]/40 bg-[var(--brand-danger)]/5 px-4 text-base font-bold text-[var(--brand-danger)] transition-colors hover:bg-[var(--brand-danger)]/10 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <MapPin className="h-5 w-5 shrink-0" strokeWidth={2.25} aria-hidden />
             <span>{sosLoading ? "Enviando..." : "Compartir mi ubicación"}</span>
@@ -338,7 +338,7 @@ function SOSButton() {
           {/* Opción 3: Policía 105 */}
           <a
             href="tel:105"
-            className="flex items-center gap-3 h-12 lg:h-14 rounded-2xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-base font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--brand-danger)] hover:text-[var(--brand-danger)]"
+            className="flex items-center gap-3 h-12 lg:h-14 border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-base font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--brand-danger)] hover:text-[var(--brand-danger)]"
           >
             <ShieldAlert className="h-5 w-5 shrink-0" strokeWidth={2.25} aria-hidden />
             <span>Llamar policía 105</span>

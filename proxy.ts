@@ -33,6 +33,7 @@ import {
   guardWriteProtectedApi,
 } from "@/lib/middleware/auth-guards";
 import { auditCrossTenantHeader } from "@/lib/middleware/cross-tenant-audit";
+import { guardThreats } from "@/lib/middleware/threat-detection";
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -71,6 +72,13 @@ export async function proxy(request: NextRequest) {
     if (rlResponse) return rlResponse;
   }
 
+  // ── 4a. WAF: detección de ataques + blocklist de IPs ───────────────────────
+  // Firmas SQLi/XSS/traversal/scanner en path+query+UA → bloqueo inline (403)
+  // de firmas críticas + reporte fire-and-forget (auto-ban de reincidentes).
+  // Fail-open: cualquier fallo deja pasar la request. Ver lib/middleware/threat-detection.
+  const threatResponse = await guardThreats(request, pathname, tenantId, requestId);
+  if (threatResponse) return threatResponse;
+
   // ── 4b. CSRF double-submit cookie validation on mutations ─────────────────
   // Validates X-CSRF-Token header matches csrf-token cookie for POST/PATCH/PUT/DELETE.
   // Skips API-key auth, webhooks, cron, and health endpoints (see lib/csrf.ts).
@@ -99,7 +107,13 @@ export async function proxy(request: NextRequest) {
 
   // ── 8. Superadmin pages guard ──────────────────────────────────────────────
   const superadminPages = await guardSuperadminPages(request, pathname, withTenant);
-  if (superadminPages) return superadminPages;
+  if (superadminPages) {
+    // Las páginas superadmin retornan acá y NUNCA llegan al paso 12 → sin esto
+    // la cookie csrf-token no se siembra en /superadmin/* y todo endpoint con
+    // assertCsrf responde 403 "CSRF token inválido" al mutar (bug specializations
+    // 2026-07-14). ensureCsrfCookie es idempotente (no pisa cookie válida).
+    return ensureCsrfCookie(request, superadminPages);
+  }
 
   // ── 9. Admin pages guard (/admin/*) ────────────────────────────────────────
   const adminPages = await guardAdminPages(request, pathname);

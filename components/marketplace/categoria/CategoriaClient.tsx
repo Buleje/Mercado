@@ -238,7 +238,7 @@ export default function CategoriaClient({
       {/* Chip "Buscando: <query>" — visible si el usuario llegó con ?q=  */}
       {query.length > 0 && (
         <div className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-          <div className="inline-flex items-center gap-2 rounded-full bg-[var(--accent-soft)] px-4 py-2 text-sm">
+          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm">
             <span className="text-[var(--text-tertiary)]">Buscando:</span>
             <strong className="text-[var(--accent)]">&ldquo;{query}&rdquo;</strong>
             <button

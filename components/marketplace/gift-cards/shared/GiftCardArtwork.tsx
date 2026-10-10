@@ -19,7 +19,7 @@ const PALETTES: Record<
 > = {
   cumpleanos:     { bg: "#FDF2F8", ink: "#9D174D", muted: "#F9A8D4" },
   navidad:        { bg: "#F0FDF4", ink: "#166534", muted: "#86EFAC" },
-  felicitaciones: { bg: "#FFFBEB", ink: "#92400E", muted: "#FCD34D" },
+  felicitaciones: { bg: "#FFFBEB", ink: "#842e25", muted: "#ff8676" },
   aniversario:    { bg: "#F5F3FF", ink: "#5B21B6", muted: "#C4B5FD" },
   gracias:        { bg: "#F0F9FF", ink: "#075985", muted: "#7DD3FC" },
   "anio-nuevo":   { bg: "#EEF2FF", ink: "#3730A3", muted: "#A5B4FC" },

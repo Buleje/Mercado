@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { findTenantBillingByIdOrSlug } from "@/lib/tenant";
-import { tryAdmin } from "@/lib/require-admin";
+import { requireAdmin } from "@/lib/require-admin";
+import { soloAdminODueno } from "@/lib/forestal/plata-de-guia-rol";
 import { createApiKey, revokeApiKey, listApiKeys } from "@/lib/api-keys";
 import { getPlanLimits } from "@/lib/plans";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -10,9 +11,15 @@ import { applyRateLimit } from "@/lib/rate-limit";
 // Antes un admin de tenant A podía listar/crear/revocar API keys de tenant B
 // inyectando el header. Ahora `tryAdmin` retorna `tenantId` validado del JWT.
 
-async function authAdmin(req: NextRequest): Promise<{ tenantId: string } | null> {
-  const session = await tryAdmin(req);
-  if (!session) return null;
+// SECURITY 2026-10-04: una clave API abre `/api/sync/*`, que entrega el Drive
+// entero sin mirar el rol de carpeta. Con `tryAdmin` cualquier sesión del panel
+// (un cajero) se creaba una y bajaba documentos restringidos. Ahora sólo admin y
+// dueño, estricto: `requireAdmin` deja pasar al management tier (encargado).
+async function authAdmin(req: NextRequest): Promise<{ tenantId: string } | NextResponse> {
+  const session = await requireAdmin(req, ["admin", "owner"]);
+  if (session instanceof NextResponse) return session;
+  const prohibido = soloAdminODueno(session.role, "manejar las claves API");
+  if (prohibido) return prohibido;
   return { tenantId: session.tenantId };
 }
 
@@ -30,9 +37,7 @@ async function requireApiAccess(tenantId: string): Promise<boolean> {
 
 export async function GET(req: NextRequest) {
   const auth = await authAdmin(req);
-  if (!auth) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (auth instanceof NextResponse) return auth;
   const { tenantId } = auth;
 
   if (!(await requireApiAccess(tenantId))) {
@@ -52,9 +57,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const _rl = await applyRateLimit(req, "STRICT", "api-keys"); if (_rl) return _rl;
   const auth = await authAdmin(req);
-  if (!auth) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (auth instanceof NextResponse) return auth;
   const { tenantId } = auth;
 
   if (!(await requireApiAccess(tenantId))) {
@@ -93,9 +96,7 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const _rl = await applyRateLimit(req, "STRICT", "api-keys"); if (_rl) return _rl;
   const auth = await authAdmin(req);
-  if (!auth) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (auth instanceof NextResponse) return auth;
   const { tenantId } = auth;
   const id = req.nextUrl.searchParams.get("id") ?? "";
 

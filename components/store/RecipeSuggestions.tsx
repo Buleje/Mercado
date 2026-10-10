@@ -128,7 +128,7 @@ function RecipeCard({ recipe, cartItems, onAddIngredient }: RecipeCardProps) {
         matchPct === 100
           ? "border-[var(--accent)]"
           : matchPct >= 50
-            ? "border-[#f97316]"
+            ? "border-[#ff6b5b]"
             : "border-[var(--rule-base)]"
       )}
     >
@@ -139,7 +139,7 @@ function RecipeCard({ recipe, cartItems, onAddIngredient }: RecipeCardProps) {
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <ChefHat className="w-4 h-4 text-[#f97316] flex-shrink-0" />
+              <ChefHat className="w-4 h-4 text-[#ff6b5b] flex-shrink-0" />
               <h3 className="font-bold text-[var(--text-primary)] text-sm">
                 {recipe.name}
               </h3>
@@ -155,7 +155,7 @@ function RecipeCard({ recipe, cartItems, onAddIngredient }: RecipeCardProps) {
                 matchPct === 100
                   ? "bg-[var(--accent)]/10 text-[var(--accent)] dark:text-[#14C2C2]"
                   : matchPct >= 50
-                    ? "bg-[#f97316]/10 text-[#f97316]"
+                    ? "bg-[#ff6b5b]/10 text-[#ff6b5b]"
                     : "bg-[var(--surface-sunken)] text-gray-500"
               )}
             >
@@ -173,7 +173,7 @@ function RecipeCard({ recipe, cartItems, onAddIngredient }: RecipeCardProps) {
           <div
             className={cn(
               "h-full rounded-full transition-all",
-              matchPct === 100 ? "bg-[var(--accent)]" : matchPct >= 50 ? "bg-[#f97316]" : "bg-[var(--rule-base)]"
+              matchPct === 100 ? "bg-[var(--accent)]" : matchPct >= 50 ? "bg-[#ff6b5b]" : "bg-[var(--rule-base)]"
             )}
             style={{ width: `${matchPct}%` }}
           />
@@ -247,7 +247,7 @@ export default function RecipeSuggestions({ cartItems, onAddIngredient }: Props)
   return (
     <div className="bg-[var(--surface-canvas)] rounded-2xl p-4">
       <div className="flex items-center gap-2 mb-4">
-        <ChefHat className="w-5 h-5 text-[#f97316]" />
+        <ChefHat className="w-5 h-5 text-[#ff6b5b]" />
         <h2 className="text-base font-bold text-[var(--text-primary)]">
           Recetas sugeridas
         </h2>

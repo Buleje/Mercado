@@ -287,7 +287,7 @@ class Orchestrator {
       traceId,
     };
 
-    const ctx = createAgentContext(task);
+    const ctx = { ...createAgentContext(task), actorRole: input.actorRole };
 
     try {
       const result = await withCircuitBreaker(

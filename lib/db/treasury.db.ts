@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { startOfLimaMonth } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -412,7 +413,7 @@ export const TreasuryDB = {
 
     // This month's movements
     const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfMonth = new Date(startOfLimaMonth(0, now));
 
     const movsMes = await prisma.treasuryMovimiento.findMany({
       where: {

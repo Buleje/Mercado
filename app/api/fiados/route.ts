@@ -78,7 +78,7 @@ async function resolveCustomerId(tenantId: string, input: string): Promise<Resol
 
 // GET /api/fiados — list fiados for tenant
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 
   try {
@@ -161,7 +161,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const csrfFail = assertCsrf(req); if (csrfFail) return csrfFail;
   const _rl = await applyRateLimit(req, "MODERATE", "fiados"); if (_rl) return _rl;
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 
   try {
@@ -253,7 +253,7 @@ export async function POST(req: NextRequest) {
     logActivity(
       "Crear", "fiado",
       `Nuevo fiado de S/${parsed.data.total.toFixed(2)} para cliente ${resolvedPhone}`,
-      fiado.id, auth.username,
+      fiado.id, auth.username, undefined, auth.tenantId,
     ).catch((err) => logger.warn("[fiados] activity log failed", { err: String(err) }));
 
     return NextResponse.json(fiado, { status: 201 });

@@ -6,11 +6,11 @@ import {
   Package, AlertTriangle, Timer, TrendingUp,
   DollarSign,
 } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
 import { inventoryValueAtCost, realUnitCost } from "@/lib/chart-helpers";
 import dynamic from "next/dynamic";
 import { useDashboardData } from "@/contexts/dashboard-data-context";
-import type { DateRange } from "./DashboardDateRange";
+import { describeRange, type DateRange } from "./DashboardDateRange";
+import BarraDeuda from "@/components/admin/shared/BarraDeuda";
 
 const InventarioCharts = dynamic(() => import("./InventarioCharts"), { ssr: false });
 const InventarioAdvancedCharts = dynamic(
@@ -20,6 +20,8 @@ const InventarioAdvancedCharts = dynamic(
 // DashboardSectionHeader removido 2026-04-24 — ver decision UX en render.
 import { BulejeDashboardSkeleton } from "./_shared";
 import EmptyDateRangeState from "./EmptyDateRangeState";
+import { formatNumber } from "@/lib/format";
+import { COLOR_CONCEPTO, fechaCorta } from "@/lib/admin/inicio/formato-tablero";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -42,13 +44,16 @@ export interface InventarioData {
   agotados: number;
   sinMovimiento: number;
   rotacionGeneral: number;
+  /** Unidades vendidas en el rango (la base de la rotación). */
+  unidadesVendidas: number;
   // Deltas
   dValor: number | null;
   // Charts
-  stockPorCategoria: { nombre: string; valor: number; cantidad: number; color: string }[];
+  stockPorCategoria: { nombre: string; valor: number; cantidad: number }[];
   proyeccionAgotamiento: { nombre: string; stock: number; diasRestantes: number; diario: number; status: "critico" | "alerta" | "ok" }[];
   productosCriticos: { nombre: string; stock: number; stockMin: number; categoria: string; reorder: number }[];
-  movimientoDiario: { dia: string; entradas: number; salidas: number }[];
+  /** Últimos ≤14 días del rango, día por día (los días sin venta van en 0). */
+  movimientoDiario: { clave: string; dia: string; entradas: number; salidas: number }[];
   topSalidas: { nombre: string; unidades: number; tendencia: "up" | "down" | "flat" }[];
   coberturaDias: { nombre: string; dias: number; status: "critico" | "alerta" | "ok" }[];
   distribucionStock: { rango: string; cantidad: number; color: string }[];
@@ -59,21 +64,20 @@ export interface InventarioData {
 // Brandon 2026-06-04: valor headline con separador de miles es-PE, redondeado
 // al sol (sin centavos) para que el KPI no rompa en 2 líneas. Antes daba
 // "S/ 10984.80" (sin separador, partía feo) — ahora "S/ 10,985".
-function fmt(n: number) { return `S/ ${Math.round(n).toLocaleString("es-PE")}`; }
+function fmt(n: number) { return `S/ ${formatNumber(Math.round(n))}`; }
 function dateKey(d: Date) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }
-function dayLabel(dk: string) { return new Date(dk + "T12:00:00").toLocaleDateString("es-PE", { day: "2-digit", month: "short" }); }
 
 const CAT_LABELS: Record<string, string> = { "frutas-verduras": "Frutas y Verduras", abarrotes: "Abarrotes", carnes: "Carnes", lacteos: "Lácteos", bebidas: "Bebidas", limpieza: "Limpieza" };
-const CAT_COLORS: Record<string, string> = { "frutas-verduras": "#10b981", abarrotes: "#f59e0b", carnes: "#ef4444", lacteos: "#3b82f6", bebidas: "#8b5cf6", limpieza: "#06b6d4" };
 
 // ── Main Component ───────────────────────────────────────────────────────────
 
 interface InventarioDashboardProps {
   dateRange: DateRange;
+  /** Lo pasa el módulo; el inventario no lo usa: su estado vacío no depende del período. */
   onChangeRange?: (r: DateRange) => void;
 }
 
-export default function InventarioDashboard({ dateRange, onChangeRange }: InventarioDashboardProps) {
+export default function InventarioDashboard({ dateRange }: InventarioDashboardProps) {
   const [now] = useState(() => Date.now());
   const { data: shared, loading, error, refresh } = useDashboardData();
 
@@ -135,7 +139,7 @@ export default function InventarioDashboard({ dateRange, onChangeRange }: Invent
       catMap.set(cat, e);
     });
     const stockPorCategoria = [...catMap.entries()].map(([c, v]) => ({
-      nombre: CAT_LABELS[c] ?? c, valor: v.valor, cantidad: v.cantidad, color: CAT_COLORS[c] ?? "#94a3b8",
+      nombre: CAT_LABELS[c] ?? c, valor: v.valor, cantidad: v.cantidad,
     })).sort((a, b) => b.valor - a.valor);
 
     // Stockout projection (30-day based)
@@ -170,11 +174,20 @@ export default function InventarioDashboard({ dateRange, onChangeRange }: Invent
     periodOrders.forEach(o => { const k = dateKey(new Date(o.createdAt)); o.items.forEach(i => { exitMap.set(k, (exitMap.get(k) ?? 0) + i.quantity); }); });
     periodSales.forEach(s => { const k = dateKey(new Date(s.createdAt)); s.items.forEach(i => { exitMap.set(k, (exitMap.get(k) ?? 0) + i.quantity); }); });
     // For entries we don't have purchase data yet so we estimate 0 (API doesn't return detailed purchase line items)
-    const allDays = new Set([...exitMap.keys(), ...entryMap.keys()]);
-    const sortedDays = [...allDays].sort();
-    const movimientoDiario = sortedDays.slice(-14).map(k => ({
-      dia: dayLabel(k), entradas: entryMap.get(k) ?? 0, salidas: exitMap.get(k) ?? 0,
-    }));
+    // Día por día (2026-10-09): antes sólo salían los días CON venta, así que
+    // el eje saltaba fechas y un día flojo no se veía. Ahora son los últimos
+    // ≤14 días del rango (hasta hoy) y el día sin venta va en 0.
+    const finSerie = new Date(Math.min(to.getTime(), now));
+    const inicioSerie = new Date(Math.max(from.getTime(), finSerie.getTime() - 13 * 86400000));
+    const movimientoDiario: InventarioData["movimientoDiario"] = [];
+    for (
+      let d = new Date(inicioSerie.getFullYear(), inicioSerie.getMonth(), inicioSerie.getDate());
+      d.getTime() <= finSerie.getTime() && movimientoDiario.length < 14;
+      d.setDate(d.getDate() + 1)
+    ) {
+      const k = dateKey(d);
+      movimientoDiario.push({ clave: k, dia: fechaCorta(k), entradas: entryMap.get(k) ?? 0, salidas: exitMap.get(k) ?? 0 });
+    }
 
     // Top products by units exiting
     const exitProd = new Map<number, { name: string; units: number }>();
@@ -203,11 +216,12 @@ export default function InventarioDashboard({ dateRange, onChangeRange }: Invent
 
     // Stock distribution
     const ranges = [
-      { label: "Sin stock", min: 0, max: 0, color: "#ef4444" },
-      { label: "1-10 uds", min: 1, max: 10, color: "#f59e0b" },
-      { label: "11-50 uds", min: 11, max: 50, color: "#3b82f6" },
-      { label: "51-100 uds", min: 51, max: 100, color: "#06b6d4" },
-      { label: "100+ uds", min: 101, max: Infinity, color: "var(--accent)" },
+      // Escala de tinta: más stock = más oscuro; «sin stock» = color de alerta.
+      { label: "Sin stock", min: 0, max: 0, color: COLOR_CONCEPTO.alerta },
+      { label: "1 a 10 u", min: 1, max: 10, color: "var(--data-4)" },
+      { label: "11 a 50 u", min: 11, max: 50, color: "var(--data-3)" },
+      { label: "51 a 100 u", min: 51, max: 100, color: "var(--data-2)" },
+      { label: "Más de 100 u", min: 101, max: Infinity, color: "var(--data-1)" },
     ];
     const distribucionStock = ranges.map(r => ({
       rango: r.label,
@@ -219,7 +233,8 @@ export default function InventarioDashboard({ dateRange, onChangeRange }: Invent
     }));
 
     return {
-      valorInventario, productosSinCosto, totalProductos, stockCritico, agotados, sinMovimiento, rotacionGeneral, dValor,
+      valorInventario, productosSinCosto, totalProductos, stockCritico, agotados, sinMovimiento, rotacionGeneral,
+      unidadesVendidas: unitsSold, dValor,
       stockPorCategoria, proyeccionAgotamiento, productosCriticos, movimientoDiario,
       topSalidas, coberturaDias, distribucionStock,
     };
@@ -230,124 +245,112 @@ export default function InventarioDashboard({ dateRange, onChangeRange }: Invent
     <div className="flex flex-col items-center justify-center gap-4 py-16">
       <AlertTriangle className="h-10 w-10 text-[var(--data-warning-500)]" />
       <p className="text-sm text-[var(--text-secondary)]">{error}</p>
-      <button onClick={() => void refresh()} className="px-4 py-2 rounded-lg bg-[var(--brand-primary)] text-white text-sm font-bold hover:opacity-90 transition-opacity">Reintentar</button>
+      <button onClick={() => void refresh()} className="px-4 min-h-10 rounded-xl bg-[var(--brand-primary)] text-white text-sm font-semibold hover:opacity-90 transition-opacity">Reintentar</button>
     </div>
   );
   if (!data) return null;
 
-  // Empty state: sin productos cargados — invariante del rango porque
-  // inventario es estado actual; pero si no hay ni productos ni movimientos
-  // mostramos onboarding inventario.
+  // R1 (2026-10-09): el inventario es estado ACTUAL, no del rango. La pestaña
+  // queda vacía sólo si no hay productos; cambiar de período no lo arregla,
+  // por eso el estado vacío va sin los chips de otros períodos.
   if (data.totalProductos === 0) {
     return (
       <EmptyDateRangeState
         dateRange={dateRange}
         metric="productos en inventario"
-        onChangeRange={onChangeRange}
         icon={Package}
         title="Tu inventario está vacío"
-        description="Agregá productos para empezar a ver stock crítico, rotación, valor invertido y proyección de agotamiento."
+        description="Agrega tu primer producto y aquí verás su valor, lo que se agota y lo que más se vende."
         action={{ label: "Agregar producto", href: "/admin?tab=productos" }}
       />
     );
   }
 
-  // Contexto para los sub-valores de los KPIs (Brandon 2026-06-04: las cards
-  // tenían mucho espacio vacío y cero contexto — ahora cada número dice algo).
+  // Contexto de cada cifra (Brandon 2026-06-04: cada número dice algo).
   const totalUnidades = data.stockPorCategoria.reduce((a, c) => a + c.cantidad, 0);
   const categorias = data.stockPorCategoria.length;
+  const periodo = describeRange(dateRange);
+  // Sin ventas en el rango, «sin movimiento» (= todos) y la rotación (= 0) no
+  // dicen nada: van como «—» atenuado con el porqué (regla R3).
+  const huboVentas = data.unidadesVendidas > 0;
+  const sinDato = <span data-sin-dato="true" className="text-[var(--text-tertiary)]">—</span>;
 
   return (
     <div className="space-y-6">
-      {/* Hero removido 2026-04-24: los KPI tiles ya comunican el contenido. */}
-
-      {/* ── KPI Hero Row · ADR-068 armonía estricta ── */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      {/* ── Cifras de cabecera · ADR-068 armonía estricta ── */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard
-          label="Valor Inventario"
+          label="Valor inventario"
           value={fmt(data.valorInventario)}
           subValue={
             data.productosSinCosto > 0
-              ? `${data.productosSinCosto} sin costo · valor parcial`
-              : `${totalUnidades.toLocaleString("es-PE")} uds · a costo real`
+              ? `${formatNumber(totalUnidades)} u · ${data.productosSinCosto} sin costo`
+              : `${formatNumber(totalUnidades)} u · a costo real`
           }
           icon={DollarSign}
         />
         <StatCard
-          label="Productos"
-          value={String(data.totalProductos)}
+          label="Productos activos"
+          value={formatNumber(data.totalProductos)}
           subValue={`${categorias} ${categorias === 1 ? "categoría" : "categorías"}`}
           icon={Package}
         />
         <StatCard
-          label="Stock Crítico"
-          value={String(data.stockCritico)}
-          subValue={data.stockCritico > 0 ? "bajo el mínimo" : "todo sobre el mínimo"}
-          icon={AlertTriangle}
-          emphasis={data.stockCritico > 0 ? "error" : "success"}
-        />
-        <StatCard
-          label="Agotados"
-          value={String(data.agotados)}
-          subValue={data.agotados > 0 ? "reponer ya" : "ninguno"}
-          icon={Package}
-          emphasis={data.agotados > 0 ? "error" : "success"}
-        />
-        <StatCard
-          label="Sin Movimiento"
-          value={String(data.sinMovimiento)}
-          subValue="sin ventas en el rango"
+          label="Sin vender"
+          value={huboVentas ? formatNumber(data.sinMovimiento) : sinDato}
+          subValue={huboVentas ? `de ${formatNumber(data.totalProductos)} · ${periodo}` : `no hubo ventas ${periodo}`}
           icon={Timer}
-          emphasis={data.sinMovimiento > 5 ? "warning" : "neutral"}
+          emphasis={huboVentas && data.sinMovimiento > 5 ? "warning" : "neutral"}
         />
         <StatCard
           label="Rotación"
-          value={Number(data.rotacionGeneral).toFixed(2)}
-          subValue="veces en el periodo"
+          value={huboVentas ? `${formatNumber(data.rotacionGeneral, 2)}×` : sinDato}
+          subValue={huboVentas ? `${formatNumber(data.unidadesVendidas)} u vendidas` : "sale cuando vendas"}
           icon={TrendingUp}
-          delta={data.dValor}
-          deltaLabel="vs periodo previo"
+          delta={huboVentas ? data.dValor : null}
+          deltaLabel={huboVentas && data.dValor != null ? "vs período anterior" : undefined}
         />
       </div>
 
-      {/* ── Alert bar (critical) ── */}
-      {(data.agotados > 0 || data.stockCritico > 0) && (
-        <div className="flex items-center gap-3 bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/30 px-5 py-3">
-          <AlertTriangle className="h-4 w-4 text-[var(--data-error-500)] shrink-0" />
-          <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-medium">
-            {data.agotados > 0 && <span>{data.agotados} producto{data.agotados > 1 ? "s" : ""} agotado{data.agotados > 1 ? "s" : ""}</span>}
-            {data.agotados > 0 && data.stockCritico > 0 && <span className="mx-1.5 text-[var(--data-error-500)]">·</span>}
-            {data.stockCritico > 0 && <span>{data.stockCritico} en stock crítico</span>}
-          </p>
-        </div>
-      )}
+      {/* Lo que pide reponer, en una línea (`BarraDeuda`).
+          Antes eran dos tarjetas en la grilla MÁS un cartel rojo debajo que
+          repetía los mismos dos números («N agotados · N en stock crítico»),
+          sin llevar a ninguna parte. Ahora cada pastilla es el enlace a la
+          pantalla donde se repone. «Sin Movimiento» se queda arriba: describe
+          la rotación, no pide una acción de hoy. */}
+      <BarraDeuda
+        items={[
+          ...(data.agotados > 0
+            ? [{
+                key: "agotados",
+                valor: data.agotados,
+                label: `producto${data.agotados > 1 ? "s" : ""} agotado${data.agotados > 1 ? "s" : ""}`,
+                hint: "reponer ya",
+                tono: "error" as const,
+                href: "/admin?tab=inventario",
+                title: "Productos en cero: se reponen desde Inventario",
+              }]
+            : []),
+          ...(data.stockCritico > 0
+            ? [{
+                key: "stock-critico",
+                valor: data.stockCritico,
+                label: "en stock crítico",
+                hint: "bajo el mínimo",
+                tono: "warning" as const,
+                href: "/admin?tab=inventario",
+                title: "Productos por debajo de su stock mínimo",
+              }]
+            : []),
+        ]}
+        vacio="Todo el catálogo está sobre su stock mínimo."
+      />
 
       {/* ── Charts base (valor cat, movimiento 14d, top salidas, distribución, cobertura, proyección) ── */}
       <InventarioCharts data={data} />
 
       {/* ── Charts especializados (ABC, salud, rotación cat, salidas stacked, waterfall, comparativa) ── */}
       <InventarioAdvancedCharts />
-    </div>
-  );
-}
-
-// ── Skeleton ──────────────────────────────────────────────────────────────────
-
-function DashboardSkeleton() {
-  return (
-    <div className="space-y-5 animate-pulse">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        {Array.from({ length: 6 }).map((_, i) => <div key={i} className="bg-[var(--surface-sunken)] rounded-xl h-28" />)}
-      </div>
-      <div className="bg-[var(--surface-sunken)] rounded-xl h-12" />
-      <div className="bg-[var(--surface-sunken)] rounded-xl h-[380px]" />
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="bg-[var(--surface-sunken)] rounded-xl h-[320px]" />
-        <div className="bg-[var(--surface-sunken)] rounded-xl h-[320px]" />
-      </div>
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, i) => <div key={i} className="bg-[var(--surface-sunken)] rounded-xl h-[260px]" />)}
-      </div>
     </div>
   );
 }

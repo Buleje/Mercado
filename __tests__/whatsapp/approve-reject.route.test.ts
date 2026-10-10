@@ -61,9 +61,11 @@ vi.mock("@/lib/db/order-payment-link.db", () => ({
 
 // OrdersDB
 const mockOrdersUpdate = vi.fn();
+const mockCancelarConReposicion = vi.fn(async (..._args: unknown[]) => ({ repuesto: true, items: 1 }));
 vi.mock("@/lib/db/orders.db", () => ({
   OrdersDB: {
     update: (...args: unknown[]) => mockOrdersUpdate(...args),
+    cancelarConReposicion: (...args: unknown[]) => mockCancelarConReposicion(...args),
   },
 }));
 
@@ -364,10 +366,14 @@ describe("POST /api/superadmin/payment-approvals/[id]/reject", () => {
       "superadmin_juan",
       "El monto detectado no coincide con el esperado",
     );
-    expect(mockOrdersUpdate).toHaveBeenCalledWith(
+    // Solo `cancelarConReposicion` (cancelado + cancelledAt + una sola
+    // reposición, en el negocio del pedido). Antes un `update` a «cancelado»
+    // iba primero y la condición «no entregado» ya no frenaba.
+    expect(mockOrdersUpdate).not.toHaveBeenCalled();
+    expect(mockCancelarConReposicion).toHaveBeenCalledWith(
       "test-tenant-1",
       "order-001",
-      { status: "cancelado" },
+      "El monto detectado no coincide con el esperado",
     );
     expect(mockNotifyRejected).toHaveBeenCalledOnce();
   });
@@ -511,6 +517,21 @@ describe("POST /api/superadmin/payment-approvals/[id]/reject", () => {
     expect(res.status).toBe(200);
     expect(data.ok).toBe(true);
     expect(data.customerNotified).toBe(false);
+  });
+
+  it("pedido ENTREGADO → no se cancela ni repone stock (no se cuenta)", async () => {
+    mockGetById.mockResolvedValue(makeApproval({ status: "pending" }));
+    mockFindByApprovalId.mockResolvedValue([makeLinkedOrder({ status: "entregado" })]);
+    // El WHERE de cancelarConReposicion salta los entregados.
+    mockCancelarConReposicion.mockResolvedValueOnce({ repuesto: false, items: 0 });
+
+    const res = await rejectHandler(makeRejectRequest(), { params: PARAMS });
+    const data = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(data.ordersUpdated).toBe(0);
+    expect(mockOrdersUpdate).not.toHaveBeenCalled();
+    expect(mockCancelarConReposicion).toHaveBeenCalledTimes(1);
   });
 
   it("order ya cancelado → se cuenta pero no llama OrdersDB.update", async () => {

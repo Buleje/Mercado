@@ -2,6 +2,9 @@
 // Static plan config — no DB model needed. Plans are referenced by the
 // `plan` string field on the Tenant model ("free" | "pro" | "business" | "enterprise").
 
+import { precioMensualDePlan } from "@/lib/billing/plan-tiers";
+
+// Precio mensual: sale de plan-tiers.ts (lo que se cobra), no se escribe acá.
 export type PlanId = "free" | "pro" | "business" | "enterprise";
 
 export interface PlanLimits {
@@ -57,7 +60,7 @@ export const PLANS: Record<PlanId, PlanDef> = {
     id: "pro",
     name: "Starter",
     description: "Para bodegas con flujo diario que ya quieren crecer",
-    priceMonthly: 89,
+    priceMonthly: precioMensualDePlan("pro"),
     priceYearly: 854, // ~20% off anual (~S/71/mo)
     color: "blue",
     popular: false, // el "Mas elegido" pasa a business (label "Pro")
@@ -80,7 +83,7 @@ export const PLANS: Record<PlanId, PlanDef> = {
     id: "business",
     name: "Pro",
     description: "Sweet spot: bodega establecida que ya vende online",
-    priceMonthly: 179,
+    priceMonthly: precioMensualDePlan("business"),
     priceYearly: 1720, // ~20% off anual (~S/143/mo)
     color: "violet",
     popular: true, // badge "Mas elegido" — el 60% del mercado va aqui
@@ -107,7 +110,7 @@ export const PLANS: Record<PlanId, PlanDef> = {
     // Stripe Price ID: ver STRIPE_PRICE_IDS.max en plan-tiers.ts.
     // NOTE: static default — runtime consumers usan `getPlanPrice("enterprise")`
     // que lee del PlatformSetting("plan-prices") en DB.
-    priceMonthly: 349,
+    priceMonthly: precioMensualDePlan("enterprise"),
     priceYearly: 3140, // ~25% off anual (~S/261/mo)
     color: "amber",
     limits: {
@@ -178,9 +181,9 @@ export function planLimitPayload(resource: string, current: number, max: number,
 /** Defaults canónicos — si no hay override en DB, se usan estos. */
 export const DEFAULT_PLAN_PRICES: Record<PlanId, number> = {
   free: 0,
-  pro: 89,
-  business: 179,
-  enterprise: 349,
+  pro: precioMensualDePlan("pro"),
+  business: precioMensualDePlan("business"),
+  enterprise: precioMensualDePlan("enterprise"),
 };
 
 /**

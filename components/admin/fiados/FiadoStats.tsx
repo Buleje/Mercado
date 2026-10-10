@@ -4,12 +4,16 @@ import { useState } from "react";
 import {
   DollarSign, Calendar, AlertTriangle,
   CheckCircle2, TrendingUp, Shield, MessageCircle,
-  ChevronLeft, ChevronRight, Search, Plus, Clock, XCircle, Ban,
+  ChevronLeft, ChevronRight,
   UtensilsCrossed, Home, Package, User,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { waLink } from "@/lib/whatsapp-link";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
+import { activateProps } from "@/components/admin/shared/a11y";
+import { formatCurrency, formatCurrencyCompact } from "@/lib/format";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 
 type FiadoStatus = "ACTIVO" | "PAGADO" | "VENCIDO" | "CANCELADO";
 
@@ -78,8 +82,9 @@ type MejorPagadorMes = {
  *  - "resumen"  → KPI + progreso + proyección + banners (pagaron, mejor pagador, más antiguo).
  *  - "analisis" → gráfica tendencia 12m + ranking riesgo + calendario + tags por zona.
  *  - "deudores" → ninguna sección de FiadoStats (la tabla la pinta FiadosModule).
+ *  - "cobranza" → ninguna sección de FiadoStats (CobranzaView pinta la suya).
  */
-export type FiadoStatsView = "all" | "resumen" | "analisis" | "deudores";
+export type FiadoStatsView = "all" | "resumen" | "analisis" | "deudores" | "cobranza";
 
 type FiadoStatsProps = {
   fiados: Fiado[];
@@ -102,21 +107,7 @@ type FiadoStatsProps = {
   view?: FiadoStatsView;
 };
 
-/**
- * STATUS_META — mapeo estado -> variante semantica StatusBadge.
- * ADR-074 Phase 2: eliminamos los bg-amber-100/emerald-100/red-100/gray-100
- * hardcoded. La variante es lo único que importa; el color cae via tokens.
- */
-const STATUS_META: Record<FiadoStatus, { label: string; variant: "warning" | "success" | "error" | "neutral"; icon: typeof CheckCircle2 }> = {
-  ACTIVO: { label: "Activo", variant: "warning", icon: Clock },
-  PAGADO: { label: "Pagado", variant: "success", icon: CheckCircle2 },
-  VENCIDO: { label: "Vencido", variant: "error", icon: XCircle },
-  CANCELADO: { label: "Cancelado", variant: "neutral", icon: Ban },
-};
-
-function formatCurrency(n: number) { return `S/${n.toFixed(2)}`; }
-
-export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMorosidad, proyeccionCobro, fiadoMasAntiguo, pagosEstaSemana, mejorPagadorMes, openDetail, search, setSearch, setSelected, setShowQuickClient, statusFilter, setStatusFilter, FiadoTendenciaCobro, view = "all" }: FiadoStatsProps) {
+export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMorosidad, proyeccionCobro, fiadoMasAntiguo, pagosEstaSemana, mejorPagadorMes, openDetail, setSearch, setSelected, FiadoTendenciaCobro, view = "all" }: FiadoStatsProps) {
   const [calMes, setCalMes] = useState(() => { const d = new Date(); return { year: d.getFullYear(), month: d.getMonth() }; });
   const [calDiaSeleccionado, setCalDiaSeleccionado] = useState<string | null>(null);
 
@@ -125,6 +116,12 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
   const showHeaderKpi = view === "all" || view === "resumen" || view === "analisis";
   const showResumen = view === "all" || view === "resumen";
   const showAnalisis = view === "all" || view === "analisis";
+  const waAntiguo = fiadoMasAntiguo
+    ? waLink(
+        fiadoMasAntiguo.customerId,
+        `Hola ${fiadoMasAntiguo.customerName || ""}! Le recuerdo que tiene un saldo pendiente de ${formatCurrency(fiadoMasAntiguo.saldo)} en Buleje. Gracias!`,
+      )
+    : null;
 
   return (
     <>
@@ -192,13 +189,27 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
 
       {/* Mejora QW-11f: Progreso de cobro del mes — tab Resumen */}
       {showResumen && !loading && (tendenciaMorosidad.cobradoEsteMes > 0 || tendenciaMorosidad.prestadoEsteMes > 0 || totalSaldo > 0) && (() => {
-        const meta = tendenciaMorosidad.prestadoEsteMes + totalSaldo;
+        /*
+         * La meta contaba la misma plata dos veces.
+         *
+         * Era `prestadoEsteMes + totalSaldo`: lo que se fió MÁS lo que falta
+         * cobrar. Pero lo que falta cobrar es el remanente de lo que se fió —
+         * ya está adentro. Medido en datos reales: se fiaron S/496.30, quedan
+         * S/345.50 por cobrar, y la barra pedía cobrar S/841.80. Una meta
+         * inflada 2.4x que deja el avance siempre en rojo («Falta mucho por
+         * cobrar») aunque la cobranza vaya bien.
+         *
+         * Lo cobrable del período es lo que YA entró más lo que todavía se
+         * debe: así el porcentaje es el avance real de la cobranza y no puede
+         * pasar de 100 por construcción.
+         */
         const cobrado = tendenciaMorosidad.cobradoEsteMes;
+        const meta = cobrado + totalSaldo;
         const pct = meta > 0 ? Math.min(100, Math.round((cobrado / meta) * 100)) : 0;
         return (
           <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-bold text-[var(--text-primary)]">Cobro del mes: {formatCurrency(cobrado)} de {formatCurrency(meta)} ({pct}%)</span>
+              <span className="text-sm font-bold text-[var(--text-primary)]">Cobrado este mes: {formatCurrency(cobrado)} de {formatCurrency(meta)} cobrable ({pct}%)</span>
               {pct > 80 ? (
                 <span className="text-xs font-bold text-[var(--data-success-500)]">Casi todo cobrado!</span>
               ) : pct < 30 ? (
@@ -308,11 +319,15 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
         const mostPaid = pagosEstaSemana.pagaron > pagosEstaSemana.total / 2;
         const tone = allPaid ? "success" : mostPaid ? "success" : "neutral";
         const intensity = allPaid ? "18%" : mostPaid ? "10%" : "0%";
+        /* «Abonó», no «al día»: decía «¡Todos al día!» con un cliente que pagó S/ 5 de S/ 150 y
+           llevaba 69 días vencido (08-10). Esto cuenta quién abonó, no quién terminó de pagar. */
         const text = allPaid
-          ? `Todos al dia! (${pagosEstaSemana.total} clientes)`
+          ? pagosEstaSemana.total === 1
+            ? "Tu único cliente con deuda abonó esta semana"
+            : `Los ${pagosEstaSemana.total} clientes con deuda abonaron esta semana`
           : mostPaid
-            ? `Mas de la mitad ya pago! ${pagosEstaSemana.pagaron} de ${pagosEstaSemana.total} clientes esta semana`
-            : `${pagosEstaSemana.pagaron} de ${pagosEstaSemana.total} clientes ya pagaron esta semana`;
+            ? `Más de la mitad ya abonó: ${pagosEstaSemana.pagaron} de ${pagosEstaSemana.total} clientes esta semana`
+            : `${pagosEstaSemana.pagaron} de ${pagosEstaSemana.total} clientes abonaron esta semana`;
         const bgVar = tone === "success" ? `color-mix(in oklch, var(--data-success) ${intensity}, transparent)` : "var(--surface-sunken)";
         const textColor = tone === "success" ? "var(--data-success)" : "var(--text-secondary)";
         return (
@@ -346,15 +361,15 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
           <div className="flex-1 min-w-0">
             <p className="text-xs font-bold text-[var(--data-error-500)]">Fiado mas antiguo</p>
             <p className="text-sm text-[var(--text-primary)] mt-0.5 truncate">
-              <span className="font-bold">{fiadoMasAntiguo.customerName || fiadoMasAntiguo.customerId}</span>
+              <EnlacePanel cosa="cliente" id={fiadoMasAntiguo.customerId} className="font-bold">{fiadoMasAntiguo.customerName || fiadoMasAntiguo.customerId}</EnlacePanel>
               {" · "}<span className="font-bold">{formatCurrency(fiadoMasAntiguo.saldo)}</span>
               {" · "}hace {fiadoMasAntiguo.dias} dias
             </p>
           </div>
           <div className="flex gap-2 shrink-0">
-            {fiadoMasAntiguo.customerId && (
+            {waAntiguo && (
               <a
-                href={`https://wa.me/51${fiadoMasAntiguo.customerId.replace(/\D/g, "")}?text=${encodeURIComponent(`Hola ${fiadoMasAntiguo.customerName || ""}! Le recuerdo que tiene un saldo pendiente de ${formatCurrency(fiadoMasAntiguo.saldo)} en Buleje. Gracias!`)}`}
+                href={waAntiguo}
                 target="_blank" rel="noopener noreferrer"
                 // WhatsApp brand color (#25D366) — no token equivalent, se mantiene como excepcion documentada
                 className="text-xs font-bold text-white bg-[#25D366] hover:opacity-90 px-3 py-1.5 rounded-lg transition-opacity"
@@ -459,7 +474,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
         if (activos.length === 0) {
           return (
             <div className="bg-[var(--surface-raised)] border border-[var(--rule-soft)] rounded-xl p-6 flex flex-col items-center gap-2 text-center">
-              <div className="h-10 w-10 rounded-full bg-[var(--accent-soft)] flex items-center justify-center">
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                 <Shield className="h-5 w-5 text-[var(--data-success-500)]" strokeWidth={2} />
               </div>
               <p className="text-sm font-bold text-[var(--text-primary)]">Sin deudores pendientes</p>
@@ -512,8 +527,8 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                 return (
                   <div
                     key={f.id}
+                    {...activateProps(() => openDetail(f))}
                     className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] hover:shadow-[var(--shadow-sm)] transition-shadow cursor-pointer overflow-hidden"
-                    onClick={() => openDetail(f)}
                   >
                     <div className="flex items-center gap-3 p-3">
                       {/* Avatar circular numerado por riesgo */}
@@ -565,9 +580,9 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                               onClick={e => {
                                 e.stopPropagation();
                                 const nombre = f.customerName || f.customerId;
-                                const msg = `Hola ${nombre}, te recordamos que tienes un pendiente de S/${Number(f.saldo).toFixed(2)} en Buleje. Cuando puedas pasa a regularizarlo!`;
-                                const cleanPhone = f.customerId.replace(/\D/g, "");
-                                window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, "_blank");
+                                const msg = `Hola ${nombre}, te recordamos que tienes un pendiente de ${formatCurrency(Number(f.saldo))} en Buleje. Cuando puedas pasa a regularizarlo!`;
+                                const wa = waLink(f.customerId, msg);
+                                if (wa) window.open(wa, "_blank");
                               }}
                               aria-label="Enviar recordatorio por WhatsApp"
                               className="text-xs font-bold p-1.5 rounded-lg bg-[#25D366]/12 text-[#25D366] hover:bg-[#25D366]/20 transition-colors"
@@ -638,9 +653,9 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
             <button
               key={diaKey}
               onClick={() => fiadosDia.length > 0 && setCalDiaSeleccionado(calDiaSeleccionado === diaKey ? null : diaKey)}
-              aria-label={fiadosDia.length > 0 ? `Día ${d}: ${fiadosDia.length} fiados, S/${montoDia.toFixed(2)}` : `Día ${d}: sin vencimientos`}
+              aria-label={fiadosDia.length > 0 ? `Día ${d}: ${fiadosDia.length} fiados, ${formatCurrency(montoDia)}` : `Día ${d}: sin vencimientos`}
               className={cn(
-                "p-1 min-h-[44px] rounded-lg text-center transition-colors relative flex flex-col items-center justify-start gap-0.5",
+                "p-1 min-h-[44px] rounded-xl text-center transition-colors relative flex flex-col items-center justify-start gap-0.5",
                 esHoy && "ring-2 ring-[var(--accent)] ring-offset-1 ring-offset-[var(--surface-raised)]",
                 tieneVencidos && "bg-[color-mix(in_oklch,var(--data-error)_10%,transparent)] border border-[var(--data-error-500)]/20",
                 tienePorVencer && "bg-[color-mix(in_oklch,var(--data-warning)_10%,transparent)] border border-[var(--data-warning-500)]/20",
@@ -663,7 +678,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                     tieneVencidos ? "text-[var(--data-error-500)]" : "text-[var(--data-warning-500)]",
                   )}
                 >
-                  S/{montoDia >= 1000 ? `${(montoDia / 1000).toFixed(1)}k` : montoDia.toFixed(0)}
+                  {formatCurrencyCompact(montoDia)}
                 </span>
               )}
             </button>
@@ -702,7 +717,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                 <button
                   onClick={() => setCalMes(p => { const d = new Date(p.year, p.month - 1); return { year: d.getFullYear(), month: d.getMonth() }; })}
                   aria-label="Mes anterior"
-                  className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors"
+                  className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors"
                 >
                   <ChevronLeft className="h-4 w-4 text-[var(--text-secondary)]" />
                 </button>
@@ -710,7 +725,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                 <button
                   onClick={() => setCalMes(p => { const d = new Date(p.year, p.month + 1); return { year: d.getFullYear(), month: d.getMonth() }; })}
                   aria-label="Mes siguiente"
-                  className="p-1.5 rounded-lg hover:bg-[var(--surface-sunken)] transition-colors"
+                  className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors"
                 >
                   <ChevronRight className="h-4 w-4 text-[var(--text-secondary)]" />
                 </button>
@@ -742,14 +757,14 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                 {porDia[calDiaSeleccionado].map(f => (
                   <div key={f.id} className="flex items-center gap-3 p-2 bg-[var(--surface-sunken)] rounded-lg">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-[var(--text-primary)] truncate">{f.customerName || f.customerId}</p>
+                      <p className="text-sm font-bold text-[var(--text-primary)] truncate"><EnlacePanel cosa="cliente" id={f.customerId} className="font-bold">{f.customerName || f.customerId}</EnlacePanel></p>
                       <p className="text-xs text-[var(--text-secondary)]">{formatCurrency(f.saldo)}</p>
                     </div>
                     <button
                       onClick={() => {
-                        const cleanPhone = f.customerId.replace(/\D/g, "");
-                        const msg = `Hola ${f.customerName || f.customerId}, te recordamos que tienes un pendiente de S/${Number(f.saldo).toFixed(2)} en Buleje.`;
-                        window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, "_blank");
+                        const msg = `Hola ${f.customerName || f.customerId}, te recordamos que tienes un pendiente de ${formatCurrency(Number(f.saldo))} en Buleje.`;
+                        const wa = waLink(f.customerId, msg);
+                        if (wa) window.open(wa, "_blank");
                       }}
                       // WhatsApp brand color (#25D366) — excepcion documentada (no token equivalent)
                       className="shrink-0 px-2 py-1 rounded-lg text-xs font-bold bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 transition-colors"

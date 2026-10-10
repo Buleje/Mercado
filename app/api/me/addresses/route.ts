@@ -18,6 +18,7 @@ import { requireCustomer } from "@/lib/auth/require-customer";
 import { anonymousGate } from "@/lib/auth/anonymous-gate";
 import { prisma } from "@/lib/prisma";
 import { MeAddressesDB } from "@/lib/db/me-addresses.db";
+import { CustomersDB } from "@/lib/db/customers.db";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 
@@ -30,6 +31,10 @@ const AddressBody = z.object({
 });
 
 const DeleteBody = z.object({
+  id: z.string().min(1),
+});
+
+const SetActiveBody = z.object({
   id: z.string().min(1),
 });
 
@@ -200,6 +205,51 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ ok: true, message: "Direccion eliminada" });
   } catch (err) {
     logger.error("[me/addresses] DELETE error", { error: err instanceof Error ? err.message : String(err) });
+    return NextResponse.json({ error: "Error interno" }, { status: 500 });
+  }
+}
+
+// ── PATCH: marcar dirección como principal (activeLocationId) ────────
+
+export async function PATCH(req: NextRequest) {
+  const _rl = await applyRateLimit(req, "MODERATE", "me-addresses"); if (_rl) return _rl;
+  const customer = await requireCustomer(req);
+  if (customer instanceof NextResponse) return customer;
+
+  const { customerId: customerPhone, tenantId: sessionTenantId } = customer;
+
+  if (!customerPhone) {
+    return NextResponse.json({ error: "Cuenta no vinculada" }, { status: 400 });
+  }
+
+  const blocked = await assertCustomerBelongsToTenant(customerPhone, sessionTenantId);
+  if (blocked) return blocked;
+
+  const body = await req.json().catch((err) => {
+    logger.warn("Invalid JSON body in me/addresses PATCH", { err: err instanceof Error ? err.message : String(err) });
+    return null;
+  });
+  const parsed = SetActiveBody.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "id requerido" }, { status: 400 });
+  }
+
+  try {
+    // Verify ownership before marking active (customerPhone scope on top of tenant guard).
+    const address = await MeAddressesDB.findOwned(parsed.data.id, customerPhone);
+
+    if (!address) {
+      return NextResponse.json({ error: "Direccion no encontrada" }, { status: 404 });
+    }
+
+    const ok = await CustomersDB.setActiveLocation(sessionTenantId, customerPhone, parsed.data.id);
+    if (!ok) {
+      return NextResponse.json({ error: "Cliente no encontrado" }, { status: 404 });
+    }
+
+    return NextResponse.json({ ok: true, message: "Direccion principal actualizada" });
+  } catch (err) {
+    logger.error("[me/addresses] PATCH error", { error: err instanceof Error ? err.message : String(err) });
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
 }

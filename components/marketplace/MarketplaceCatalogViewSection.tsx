@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import CatalogSections from "@/components/marketplace/CatalogSections";
+import CatalogCategorySections from "@/components/marketplace/CatalogCategorySections";
 
 /* ── Catalog skeleton — shown while CatalogView bundle loads ───────────────── */
 
@@ -55,6 +56,10 @@ export default function MarketplaceCatalogViewSection({
       </div>
 
       {/* Sección "Para ti" removida por pedido del usuario (2026-04-21) */}
+
+      {/* ── Bloques por categoría (audit comprador #2) — filas cortas + "Ver más".
+           Solo en "explorar todo"; al filtrar se ocultan y manda el grid plano. ── */}
+      <CatalogCategorySections />
 
       {/* ── CatalogView — filtered product grid ── */}
       <CatalogView

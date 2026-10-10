@@ -11,12 +11,22 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import ProductImage from "./ProductImage";
+import {
+  normalizeProducts,
+  aggregateSalesByProduct,
+  aggregatePurchasesByProduct,
+  isoDaysAgo,
+} from "./normalize";
+import { formatCurrency } from "@/lib/format";
+import { stockMinimoDe } from "@/lib/inventario/stock-minimo";
+import { useStockMinimoGlobal } from "@/lib/inventario/use-stock-minimo-global";
 
 interface Product {
   id: string | number;
   name: string;
-  stock: number;
-  stockMin: number;
+  /** null = no controla stock (ver `normalizeProducts`). */
+  stock: number | null;
+  stockMin: number | null;
   price: number;
   cost?: number;
   category: string;
@@ -63,20 +73,20 @@ const URGENCY = {
     text: "text-[var(--data-warning-500)]",
     bar: "bg-[var(--data-warning-500)]",
     border: "border-[var(--data-warning-500)]",
-    barTrack: "bg-[var(--data-warning-100,#fef3c7)]",
+    barTrack: "bg-[var(--data-warning-100,#fff1ef)]",
   },
   medium: {
     label: "Esta semana",
-    bg: "bg-[var(--accent-soft)]",
+    bg: "bg-primary/10",
     text: "text-[var(--data-success-500)]",
     bar: "bg-[var(--data-success-500)]",
     border: "border-[var(--data-success-500)]",
-    barTrack: "bg-[var(--accent-soft)]",
+    barTrack: "bg-primary/10",
   },
 } as const;
 
 function fmt(n: number): string {
-  return `S/${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(n)}`;
 }
 
 function getMockProducts(): Product[] {
@@ -104,6 +114,8 @@ const MOCK_PURCH: PurchaseData[] = [
 ];
 
 export default function TabCompras() {
+  // Un solo stock mínimo (09-10): el propio o el del negocio.
+  const minimoGlobal = useStockMinimoGlobal();
   const [products, setProducts] = useState<Product[]>([]);
   const [sales, setSales] = useState<SaleData[]>([]);
   const [purchases, setPurchases] = useState<PurchaseData[]>([]);
@@ -115,13 +127,13 @@ export default function TabCompras() {
     try {
       const [pr, sr, hr] = await Promise.all([
         fetch("/api/products?active=true&limit=200", { cache: "no-store" }),
-        fetch("/api/sales?days=7&groupBy=product", { cache: "no-store" }),
+        fetch(`/api/sales?from=${isoDaysAgo(7)}`, { cache: "no-store" }),
         fetch("/api/purchases?limit=200", { cache: "no-store" }),
       ]);
       let failed = false;
-      if (pr.ok) setProducts((await pr.json()).products ?? []); else failed = true;
-      if (sr.ok) setSales((await sr.json()).items ?? []); else failed = true;
-      if (hr.ok) setPurchases((await hr.json()).purchases ?? []); else failed = true;
+      if (pr.ok) setProducts(normalizeProducts(await pr.json())); else failed = true;
+      if (sr.ok) setSales(aggregateSalesByProduct(await sr.json())); else failed = true;
+      if (hr.ok) setPurchases(aggregatePurchasesByProduct(await hr.json())); else failed = true;
       if (failed) throw new Error("partial");
     } catch {
       setProducts(getMockProducts());
@@ -156,16 +168,20 @@ export default function TabCompras() {
 
   const advised = useMemo<AdvisedItem[]>(() => {
     return products
+      // Sin control de stock (servicio, plato preparado) no se repone por
+      // existencias: antes el stock vacío llegaba como 0 y pedía 5 de cada uno.
+      .filter((p): p is Product & { stock: number } => p.stock != null)
       .map((p) => {
         const weekly = salesMap[String(p.id)] ?? 0;
         const daily = weekly / 7;
         const days = daily > 0 ? Math.floor(p.stock / daily) : 99;
-        const target = Math.max(p.stockMin ?? 0, daily * 14);
+        const minimo = stockMinimoDe(p, minimoGlobal);
+        const target = Math.max(minimo, daily * 14);
         const qty = Math.max(0, Math.ceil(target - p.stock));
         const sup = supplierMap[String(p.id)] ?? null;
         const total = qty * (sup?.cost ?? p.cost ?? p.price * 0.7);
         const urgency: AdvisedItem["urgency"] = days <= 2 ? "critical" : days <= 5 ? "high" : "medium";
-        const fillPct = Math.min(100, Math.round((p.stock / Math.max(p.stockMin || 1, 1)) * 100));
+        const fillPct = Math.min(100, Math.round((p.stock / Math.max(minimo, 1)) * 100));
         return {
           product: p,
           daysUntilOut: days,
@@ -180,7 +196,7 @@ export default function TabCompras() {
       })
       .filter((i) => i.suggestedQty > 0)
       .sort((a, b) => ({ critical: 0, high: 1, medium: 2 }[a.urgency] - { critical: 0, high: 1, medium: 2 }[b.urgency]));
-  }, [products, salesMap, supplierMap]);
+  }, [products, salesMap, supplierMap, minimoGlobal]);
 
   const totalEstimated = useMemo(() => advised.reduce((s, i) => s + i.estimatedTotal, 0), [advised]);
   const counts = useMemo(() => ({
@@ -205,9 +221,9 @@ export default function TabCompras() {
   }, [advised]);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/* Header con KPIs */}
-      <div className="rounded-2xl border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] p-5">
+      <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
         <div className="flex items-center justify-between gap-3 mb-4">
           <div>
             <p className="text-base font-extrabold text-[var(--text-primary)]">
@@ -221,7 +237,7 @@ export default function TabCompras() {
           <div className="flex items-center gap-2">
             <button
               onClick={exportCSV}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
             >
               <Download className="h-3.5 w-3.5" />
               CSV
@@ -229,7 +245,7 @@ export default function TabCompras() {
             <button
               onClick={fetchAll}
               disabled={loading}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-white dark:bg-[var(--color-card)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
             >
               <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
               Refrescar
@@ -297,7 +313,7 @@ export default function TabCompras() {
               <div
                 key={String(item.product.id)}
                 className={cn(
-                  "rounded-2xl border bg-white dark:bg-[var(--color-card)] p-4 sm:p-5 flex items-stretch gap-4",
+                  "rounded-2xl border bg-[var(--surface-raised)] p-4 sm:p-5 flex items-stretch gap-4",
                   u.border,
                 )}
               >
@@ -388,7 +404,7 @@ export default function TabCompras() {
             </div>
             <button
               onClick={() => (window.location.href = "/admin/compras")}
-              className="inline-flex items-center gap-2 rounded-lg bg-[var(--text-primary)] px-4 py-2 text-sm font-bold text-white hover:bg-[var(--text-secondary)]"
+              className="inline-flex items-center gap-2 rounded-xl bg-[var(--text-primary)] px-4 min-h-10 text-sm font-semibold text-white hover:bg-[var(--text-secondary)]"
             >
               <ShoppingCart className="h-4 w-4" />
               Crear orden de compra

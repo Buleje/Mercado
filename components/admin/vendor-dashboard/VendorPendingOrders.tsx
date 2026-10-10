@@ -3,7 +3,8 @@
 import { CardTitle } from "@buleje/design-system";
 import type { VendorOrder } from "./vendor-dashboard.types";
 import { Package, Clock, CheckCircle2 } from "@buleje/design-system/icons";
-import Link from "next/link";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
+import { formatCurrency } from "@/lib/format";
 
 type Props = {
   orders: VendorOrder[];
@@ -27,15 +28,15 @@ function statusLabel(status: string): string {
 
 function statusColor(status: string): string {
   if (status === "pendiente") return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300";
-  if (status === "confirmado") return "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)] dark:text-[var(--data-success-500)]";
-  return "bg-gray-100 text-[var(--text-primary)]";
+  if (status === "confirmado") return "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]";
+  return "bg-[var(--rule-soft)] text-[var(--text-primary)]";
 }
 
 export function VendorPendingOrders({ orders }: Props) {
   if (orders.length === 0) {
     return (
       <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-6 ">
-        <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4 flex items-center gap-2">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4 flex items-center gap-2">
           <Package className="h-5 w-5 text-[var(--data-warning-500)]" />
           Pedidos sin atender
         </CardTitle>
@@ -57,22 +58,22 @@ export function VendorPendingOrders({ orders }: Props) {
   return (
     <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-6 ">
       <div className="flex items-center justify-between mb-4">
-        <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
           <Package className="h-5 w-5 text-[var(--data-warning-500)]" />
           Pedidos sin atender
           <span className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-[var(--data-warning-500)] text-white text-xs font-bold">
             {orders.length}
           </span>
         </CardTitle>
-        <Link
+        <EnlacePanel apariencia="heredada"
           href="/admin?tab=pedidos"
           className="text-xs font-semibold text-primary hover:underline"
         >
           Ver todos
-        </Link>
+        </EnlacePanel>
       </div>
 
-      <ul className="divide-y divide-gray-100 dark:divide-card-border">
+      <ul className="divide-y divide-[var(--rule-soft)] dark:divide-card-border">
         {orders.map((order) => (
           <li key={order.id} className="py-3 flex items-start gap-3">
             <div className="flex-1 min-w-0">
@@ -94,7 +95,7 @@ export function VendorPendingOrders({ orders }: Props) {
             </div>
             <div className="shrink-0 text-right">
               <p className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-                S/ {Number(order.total).toFixed(2)}
+                {formatCurrency(Number(order.total))}
               </p>
             </div>
           </li>

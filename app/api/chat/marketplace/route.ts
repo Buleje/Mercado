@@ -1,11 +1,12 @@
 import "server-only";
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { withApiHandler } from "@/lib/api-handler";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { requireCustomer } from "@/lib/auth/require-customer";
+import { telefonoDeLaSesion } from "@/lib/auth/customer-session";
 import { requireAdmin } from "@/lib/require-admin";
 
 // ---------- helpers ----------
@@ -38,7 +39,7 @@ function normalizePhone(phone: string): string {
 // ---------- GET: obtener mensajes de un chat marketplace ----------
 // ?storeId=xxx&customerPhone=9xxxxxxxx&limit=50
 
-export const GET = withApiHandler("chat-marketplace-get", async (req, ctx) => {
+export const GET = withApiHandler("chat-marketplace-get", async (req, _ctx) => {
   // GENEROUS: la conversación abierta POLLEA cada 5s (chat "en vivo") —
   // MODERATE (20/5min) cortaba el chat a los ~100 segundos (Brandon 2026-06-06).
   const limited = applyRateLimit(req, "GENEROUS", "chat-mkt-get");
@@ -71,7 +72,7 @@ export const GET = withApiHandler("chat-marketplace-get", async (req, ctx) => {
     }
 
     // Ownership check: el phone del query debe coincidir con el de la sesión
-    if (normalizePhone(customer.customerId) !== phone) {
+    if (telefonoDeLaSesion(customer) !== phone) {
       return NextResponse.json({ error: "forbidden" }, { status: 403 });
     }
 
@@ -109,7 +110,7 @@ export const GET = withApiHandler("chat-marketplace-get", async (req, ctx) => {
 // ---------- POST: enviar mensaje ----------
 // Body: { storeId, storePhone, storeName, customerPhone, customerName, message, senderType: "store"|"customer" }
 
-export const POST = withApiHandler("chat-marketplace-post", async (req, ctx) => {
+export const POST = withApiHandler("chat-marketplace-post", async (req, _ctx) => {
   const limited = applyRateLimit(req, "MODERATE", "chat-mkt-post");
   if (limited) return limited;
 
@@ -139,10 +140,11 @@ export const POST = withApiHandler("chat-marketplace-post", async (req, ctx) => 
       const customer = await requireCustomer(req);
       if (customer instanceof NextResponse) return customer;
 
-      if (!customer.customerId) {
+      const telSesion = telefonoDeLaSesion(customer);
+      if (!telSesion) {
         return NextResponse.json({ error: "Cuenta no vinculada a un teléfono" }, { status: 400 });
       }
-      customerPhone = normalizePhone(customer.customerId);
+      customerPhone = telSesion;
     } else {
       // senderType === "store" — requiere admin del tenant
       const admin = await requireAdmin(req, ["admin", "cajero", "tienda_owner"]);

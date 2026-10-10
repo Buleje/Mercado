@@ -46,7 +46,7 @@ export default function FamilyCartBanner() {
   const handleWhatsApp = useCallback(() => {
     const url = buildShareUrl();
     const msg = encodeURIComponent(
-      `Armé el pedido de la familia. Agregá lo que te falte y se lo pagamos juntos — acá: ${url}`,
+      `Armé el pedido de la familia. Agrega lo que te falte y se lo pagamos juntos — acá: ${url}`,
     );
     window.open(`https://wa.me/?text=${msg}`, "_blank", "noopener,noreferrer");
   }, [buildShareUrl]);
@@ -59,7 +59,7 @@ export default function FamilyCartBanner() {
       className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 sm:p-6"
     >
       <div className="flex items-start gap-3 mb-4">
-        <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
+        <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
           <Users className="h-5 w-5" strokeWidth={1.75} aria-hidden />
         </span>
         <div className="flex-1">
@@ -67,7 +67,7 @@ export default function FamilyCartBanner() {
             ¿Varios en tu casa van a sumar productos?
           </h3>
           <p className="text-sm text-[var(--text-tertiary)] mt-1 leading-relaxed">
-            Compartí este carrito — cada uno agrega lo que quiera y pagás al
+            Comparte este carrito — cada uno agrega lo que quiera y pagas al
             final todo junto.
           </p>
         </div>

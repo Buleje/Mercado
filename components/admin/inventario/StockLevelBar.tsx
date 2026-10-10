@@ -27,8 +27,8 @@ const STOCK_META: Record<StockState, { label: string; bar: string; text: string;
   out:      { label: "Agotado",      bar: "bg-[var(--data-error-500)]",   text: "text-[var(--data-error-500)]", chip: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-red-950/30" },
   critical: { label: "Crítico",      bar: "bg-[var(--data-error-500)]",   text: "text-[var(--data-error-500)]", chip: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-red-950/30" },
   low:      { label: "Bajo",         bar: "bg-[var(--data-warning-500)]", text: "text-[var(--data-warning-500)]", chip: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-amber-950/30" },
-  ok:       { label: "Saludable",    bar: "bg-[var(--data-success-500)]", text: "text-[var(--data-success-500)]", chip: "bg-[var(--accent-soft)] text-[var(--data-success-500)] dark:bg-[var(--accent-muted)]" },
-  over:     { label: "Exceso",       bar: "bg-[var(--accent)]",           text: "text-[var(--accent)]",        chip: "bg-[var(--accent-soft)] text-[var(--accent)]" },
+  ok:       { label: "Saludable",    bar: "bg-[var(--data-success-500)]", text: "text-[var(--data-success-500)]", chip: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/20 dark:text-[var(--data-success-500)]" },
+  over:     { label: "Exceso",       bar: "bg-[var(--accent)]",           text: "text-[var(--accent)]",        chip: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" },
 };
 
 export function StockLevelBar({
@@ -60,7 +60,7 @@ export function StockLevelBar({
 
   if (variant === "full") {
     return (
-      <div className="rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
+      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
         <div className="flex items-baseline justify-between gap-2">
           <span className="flex items-baseline gap-1">
             <span className={cn("text-2xl font-black tabular-nums leading-none", meta.text)}>{stock}</span>

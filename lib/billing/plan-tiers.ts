@@ -29,6 +29,7 @@
  */
 
 import type { Tab } from "@/app/admin/_lib/tabs.types";
+import { PLAN_ID_TO_TIER } from "@/lib/billing/plan-mapping";
 
 export type PlanTier = "basico" | "pro" | "enterprise" | "max";
 
@@ -133,6 +134,8 @@ export const PLAN_BASICO: PlanDefinition = {
     // Inicio (limitado: solo dashboard + asistente)
     "vendor-dashboard",
     "asistente-ia",
+    // WhatsApp del negocio (core: el bot toma pedidos 24/7 en todos los planes)
+    "whatsapp-inbox",
     // Ventas (POS + pedidos basicos)
     "ventas-caja",
     "pedidos",
@@ -148,6 +151,13 @@ export const PLAN_BASICO: PlanDefinition = {
     // Activos & Maquinaria — alquiler de equipos (forestal: cargador, oruga,
     // camión). En basico para que sea visible/usable desde el free.
     "activos",
+    // Equipo — tareas + notas de turno. Herramientas operativas internas,
+    // visibles desde el free (sin costo asociado, igual que adelantos/activos).
+    "tareas",
+    "notas",
+    // Recursos Humanos (ADR-414) — herramienta interna, igual criterio que
+    // adelantos/tareas: sin costo asociado, visible desde el free.
+    "rrhh",
     // Config (siempre)
     "config",
     "plan",
@@ -189,6 +199,9 @@ export const PLAN_PRO: PlanDefinition = {
     // Clientes + fiados
     "clientes",
     "fiados",
+    // Por cobrar — tablero consolidado de cuentas por cobrar (agrega fiados).
+    // Acompaña a fiados/plata en el plan Starter.
+    "por-cobrar",
     // Documentos basicos (boleta interna, no SUNAT todavia)
     "documentos",
     // Plata basico (ingresos/egresos)
@@ -197,6 +210,10 @@ export const PLAN_PRO: PlanDefinition = {
     "metas-logros",
     "support-inbox",
     "turnos",
+    // Canales de venta social (TikTok Shop + Meta pixel) — tracking/marketing
+    // básico. Desde Starter (S/89) para que el negocio que ya vende a diario
+    // pueda optimizar sus anuncios. enterprise/max lo heredan vía spread.
+    "canales",
   ]),
   features: new Set<PlanFeature>([]),
   limits: {
@@ -233,15 +250,25 @@ export const PLAN_ENTERPRISE: PlanDefinition = {
     "compras",
     "contratos",
     "devoluciones-proveedor",
+    "dropship",
     // Documentos SUNAT
     "cotizaciones",
     "guias-remision",
     "notas-credito",
     "facturacion",
+    // Cámaras del patio o del local (ADR-411): la foto de lo que pasó, con su
+    // hora. Va en Pro y no en Básico porque cuesta storage y lectura con IA.
+    "camaras",
     // Promociones, scoring, prestamos
     "promociones",
     "prestamos",
     "scoring",
+    // Crecimiento (Marketing & Fidelización) — campañas segmentadas + puntos.
+    // Consistente con el highlight "Promociones, fidelizacion y chat".
+    // (Los 4 programas premium — gift cards, socio, suscripciones, lives —
+    //  siguen en Business/max.)
+    "campanas",
+    "puntos",
     // Recetas + tesoreria
     "recetas",
     "tesoreria",
@@ -420,4 +447,39 @@ export function monthlyEquivalentAnnual(plan: PlanDefinition): number {
 /** Cuánto ahorra el usuario en un año vs pagar mensual. */
 export function annualSavings(plan: PlanDefinition): number {
   return Math.round(plan.monthlyPrice * 12 - annualPrice(plan));
+}
+
+// ── Precio del plan GUARDADO en la tienda (fuente única, 2026-10-09) ────────
+//
+// `Tenant.plan` NO guarda el id de tier: guarda el id legacy
+// (`free | pro | business | enterprise`, equivalencia en plan-mapping.ts).
+// Ojo con «enterprise»: en la tienda es el tier `max` (Business S/ 349), no el
+// tier `enterprise` (Pro S/ 179). Antes había 4 tablas de precios distintas
+// (Facturación contaba «pro» a 179, Analítica usaba 49/149/299); ahora toda
+// pantalla de plata de la plataforma pregunta acá.
+
+/** Alias que aparecen en tablas viejas; lo demás sale de plan-mapping. */
+const PLAN_GUARDADO_A_TIER = new Map<string, PlanTier>([
+  ...Object.entries(PLAN_ID_TO_TIER),
+  ["basico", "basico"],
+  ["starter", "pro"],
+  ["max", "max"],
+]);
+
+/** Tier de un `Tenant.plan` (o alias). `null` si el texto no es un plan conocido. */
+export function tierDePlanGuardado(plan: string | null | undefined): PlanTier | null {
+  if (!plan) return null;
+  return PLAN_GUARDADO_A_TIER.get(plan.trim().toLowerCase()) ?? null;
+}
+
+/** Precio de lista mensual (S/) del plan guardado en la tienda. 0 si es gratis o desconocido. */
+export function precioMensualDePlan(plan: string | null | undefined): number {
+  const tier = tierDePlanGuardado(plan);
+  return tier ? PLANS[tier].monthlyPrice : 0;
+}
+
+/** Nombre visible del plan guardado («Starter», «Pro»…); el texto crudo si no se conoce. */
+export function etiquetaDePlan(plan: string | null | undefined): string {
+  const tier = tierDePlanGuardado(plan);
+  return tier ? PLANS[tier].label : (plan ?? "—");
 }

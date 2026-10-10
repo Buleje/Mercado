@@ -102,7 +102,7 @@ export default function ComoFuncionaSection() {
                 <div className="relative shrink-0 md:mb-5">
                   <span
                     aria-hidden
-                    className="inline-flex h-11 w-11 md:h-14 md:w-14 items-center justify-center rounded-xl md:rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] shadow-sm transition-all duration-[var(--dur-base)] md:group-hover:bg-[var(--accent)] md:group-hover:text-white md:group-hover:scale-105"
+                    className="inline-flex h-11 w-11 md:h-14 md:w-14 items-center justify-center rounded-xl md:rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shadow-sm transition-all duration-[var(--dur-base)] md:group-hover:bg-[var(--accent)] md:group-hover:text-white md:group-hover:scale-105"
                   >
                     <Icon className="h-5 w-5 md:h-6 md:w-6" strokeWidth={2} />
                   </span>
@@ -114,7 +114,7 @@ export default function ComoFuncionaSection() {
                     <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--accent)]">
                       <T k="landing.how.step" fallback="Paso" /> {num}
                     </span>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold tabular-nums">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-extrabold tabular-nums">
                       {time}
                     </span>
                   </div>

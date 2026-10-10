@@ -1,0 +1,300 @@
+"use client";
+
+/**
+ * CtpGuiasEmitidasView — las guías que salieron del CTP (ADR-321).
+ *
+ * Hasta acá una GTF de salida sólo se podía ver desde su despacho: para
+ * reimprimir había que acordarse de qué línea era. Esta vista responde las tres
+ * preguntas que se hacen de verdad: *"¿qué guías emití este mes?"*, *"¿cuáles
+ * quedaron a medio llenar?"* y *"¿dónde está la del camión que se fue ayer?"*.
+ *
+ * No guarda nada: cada fila ES un despacho con número de guía.
+ *
+ * Las guías se tildan para llevarlas a un trámite ya lleno (relación de guías,
+ * anulación, pérdida, talonario), igual que en la vista GTF del Libro TH.
+ */
+
+import { useEffect, useMemo, useState } from "react";
+import CtpKpiFiltros from "./CtpKpiFiltros";
+import { StatCard } from "@buleje/design-system";
+import { AlertTriangle, Check, FileText, Loader2, Search } from "@buleje/design-system/icons";
+import type { CtpPeriod } from "@/lib/forestal/ctp-period";
+import { filtrarGuias, numerosRepetidos, resumirGuias, type GuiaEmitida } from "@/lib/forestal/guias-emitidas";
+import { Btn, I, TablaSkeleton, VistaHeader, useKpisPlegables } from "./ctp-shared";
+import CtpGuiasEmitidasLista from "./CtpGuiasEmitidasLista";
+import CtpGuiasEmitidasBarra from "./CtpGuiasEmitidasBarra";
+import { useSeleccionGuias } from "./hooks/use-seleccion-guias";
+
+export default function CtpGuiasEmitidasView({
+  period,
+  onAbrirDespacho,
+}: {
+  period: CtpPeriod;
+  /** Lleva a la línea de despacho, que es donde se imprime y se completa. */
+  onAbrirDespacho?: () => void;
+}) {
+  const [guias, setGuias] = useState<GuiaEmitida[]>([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [q, setQ] = useState("");
+  const [soloIncompletas, setSoloIncompletas] = useState(false);
+  /**
+   * Los filtros que gobiernan las cifras de arriba (ADR-400).
+   *
+   * `soloIncompletas` NO entra acá: es el desglose que las propias tarjetas
+   * ofrecen, y recortarlas con lo que se elige EN ellas las dejaría en cero.
+   */
+  /* Listas: dos especies o dos destinos a la vez (Brandon, 2026-09-10). */
+  const [especie, setEspecie] = useState<string[]>([]);
+  const [producto, setProducto] = useState<string[]>([]);
+  const [destino, setDestino] = useState<string[]>([]);
+  /**
+   * Las tildadas, por id de despacho. Se cruzan con TODO lo cargado del
+   * período, no con lo filtrado: buscar otra guía no destilda las anteriores
+   * (una relación se arma buscando de a un N°). Con otro período, las que no
+   * están en él dejan de contar.
+   */
+  const seleccion = useSeleccionGuias();
+  const elegidas = useMemo(() => guias.filter((g) => seleccion.tiene(g.despachoId)), [guias, seleccion]);
+
+  useEffect(() => {
+    let vivo = true;
+    setCargando(true);
+    setError(null);
+    const qs = new URLSearchParams();
+    if (period.from) qs.set("desde", period.from);
+    if (period.to) qs.set("hasta", period.to);
+    fetch(`/api/admin/forestal/ctp/guias-emitidas?${qs}`, { credentials: "include", cache: "no-store" })
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`No se pudieron leer las guías (${r.status})`);
+        return (await r.json()) as { guias: GuiaEmitida[] };
+      })
+      .then((j) => { if (vivo) setGuias(j.guias ?? []); })
+      .catch((e: unknown) => { if (vivo) setError(e instanceof Error ? e.message : String(e)); })
+      .finally(() => { if (vivo) setCargando(false); });
+    return () => { vivo = false; };
+  }, [period.from, period.to]);
+
+  /**
+   * Las guías que describen las cifras: todas, recortadas por especie, producto
+   * y destino. Antes el resumen contaba SIEMPRE el período entero mientras la
+   * lista de abajo mostraba otra cosa.
+   */
+  const delFiltro = useMemo(
+    () =>
+      /* OR adentro de cada filtro, AND entre filtros. */
+      guias.filter(
+        (g) =>
+          (especie.length === 0 || especie.includes(g.especie ?? "")) &&
+          (producto.length === 0 || producto.includes(g.producto ?? "")) &&
+          (destino.length === 0 || destino.includes(g.destino ?? "")),
+      ),
+    [guias, especie, producto, destino],
+  );
+  /* Las opciones salen del período ENTERO: de lo ya filtrado, quitar un filtro
+     no se podría hacer desde el propio desplegable. */
+  const opciones = useMemo(() => {
+    const contar = (get: (g: GuiaEmitida) => string | null) => {
+      const m = new Map<string, number>();
+      for (const g of guias) {
+        const v = (get(g) ?? "").trim();
+        if (!v) continue;
+        m.set(v, (m.get(v) ?? 0) + 1);
+      }
+      return [...m.entries()]
+        .map(([value, count]) => ({ value, count }))
+        .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value));
+    };
+    return {
+      especies: contar((g) => g.especie),
+      productos: contar((g) => g.producto),
+      destinos: contar((g) => g.destino),
+    };
+  }, [guias]);
+
+  const resumen = useMemo(() => resumirGuias(delFiltro), [delFiltro]);
+  const repetidos = useMemo(() => numerosRepetidos(guias), [guias]);
+  const visibles = useMemo(() => {
+    const base = soloIncompletas ? delFiltro.filter((g) => g.estado === "incompleta") : delFiltro;
+    return filtrarGuias(base, q);
+  }, [delFiltro, q, soloIncompletas]);
+
+  /* Los filtros y las cifras, plegables (Brandon 05-10): el botón va en la fila
+     del título; con el período en cero queda sólo la tarjeta del total. */
+  const filtros = (
+    <CtpKpiFiltros
+        campos={[
+          {
+            key: "especie",
+            label: "Especie",
+            todos: "Todas las especies",
+            valor: especie,
+            opciones: opciones.especies.map((o) => ({ value: o.value, label: o.value, hint: `${o.count} guía${o.count === 1 ? "" : "s"}` })),
+            onChange: setEspecie,
+          },
+          {
+            key: "producto",
+            label: "Producto",
+            todos: "Todos los productos",
+            valor: producto,
+            opciones: opciones.productos.map((o) => ({ value: o.value, label: o.value, hint: `${o.count} guía${o.count === 1 ? "" : "s"}` })),
+            onChange: setProducto,
+          },
+          {
+            key: "destino",
+            label: "Destino",
+            todos: "Todos los destinos",
+            valor: destino,
+            opciones: opciones.destinos.map((o) => ({ value: o.value, label: o.value, hint: `${o.count} guía${o.count === 1 ? "" : "s"}` })),
+            onChange: setDestino,
+          },
+        ]}
+        onLimpiar={() => { setEspecie([]); setProducto([]); setDestino([]); }}
+        nota={
+          [especie, producto, destino].some((v) => v.length > 0)
+            ? `Las cifras y la lista muestran sólo ${[
+                especie.length > 0 ? `especie: ${especie.join(" o ")}` : "",
+                producto.length > 0 ? `producto: ${producto.join(" o ")}` : "",
+                destino.length > 0 ? `destino: ${destino.join(" o ")}` : "",
+              ]
+                .filter(Boolean)
+                .join(" · ")}`
+            : null
+        }
+      />
+  );
+  const kpis = useKpisPlegables({
+    claveMemoria: "ctp-guias",
+    filtros,
+    filtrosActivos: [especie, producto, destino].filter((v) => v.length > 0).length,
+    resumen:
+      resumen.total === 0
+        ? "Sin guías emitidas en el período"
+        : `${resumen.total} guía${resumen.total === 1 ? "" : "s"} · ${resumen.incompletas} a medio llenar · ${resumen.sinVerificar} sin verificar${resumen.sinOrigen > 0 ? ` · ${resumen.sinOrigen} sin origen` : ""}`,
+    tarjetas: [
+        <StatCard key="total" density="compact" label="Guías emitidas" value={String(resumen.total)} subValue={period.label} icon={FileText} emphasis="neutral" />,
+      ...(resumen.total > 0
+        ? [
+          <StatCard key="listas"
+            density="compact"
+            label="Listas para imprimir"
+            value={String(resumen.completas)}
+            subValue={resumen.completas === resumen.total - resumen.anuladas ? "todas completas" : "con todos sus datos"}
+            icon={Check}
+            emphasis="success"
+          />,
+          <StatCard key="medio"
+            density="compact"
+            label="A medio llenar"
+            value={String(resumen.incompletas)}
+            subValue={resumen.incompletas > 0 ? "no se pueden imprimir así" : "ninguna pendiente"}
+            icon={AlertTriangle}
+            emphasis={resumen.incompletas > 0 ? "warning" : "neutral"}
+          />,
+          <StatCard key="verificar"
+            density="compact"
+            label="Sin verificar en SERFOR"
+            value={String(resumen.sinVerificar)}
+            subValue={resumen.sinVerificar > 0 ? "lo primero que mira un control" : "todas verificadas"}
+            icon={AlertTriangle}
+            emphasis={resumen.sinVerificar > 0 ? "warning" : "success"}
+          />,
+          <StatCard key="origen"
+            density="compact"
+            label="Amparan madera sin origen"
+            value={String(resumen.sinOrigen)}
+            subValue={resumen.sinOrigen > 0 ? "el documento ya salió" : "todas con origen declarado"}
+            icon={AlertTriangle}
+            emphasis={resumen.sinOrigen > 0 ? "warning" : "success"}
+          />,
+          ]
+        : []),
+    ],
+  });
+
+  return (
+    <div className="space-y-3">
+      {/*
+        Los cuatro conteos de calidad SÓLO cuando hay guías.
+
+        Con el período en cero decían «todas completas», «todas verificadas»,
+        «todas con origen declarado»: cuatro tarjetas felicitando por un
+        conjunto vacío. No es un cero neutro como el de un tramo de antigüedad
+        —es una afirmación FALSA sobre documentos que se presentan ante SERFOR—
+        y encima repetía lo que el estado vacío de abajo ya dice mejor
+        («Todavía no se emitió ninguna guía»), con el botón para ir a Despacho.
+      */}
+      <VistaHeader
+        titulo="Guías emitidas"
+        meta={`${visibles.length} de ${guias.length}`}
+        hint="Las GTF de salida del CTP. Cada fila es un despacho: para imprimir o completar, se abre desde Despacho."
+      >
+        {kpis.boton}
+        {onAbrirDespacho && (
+          <Btn size="sm" variant="secondary" onClick={onAbrirDespacho}>
+            <FileText className="h-4 w-4" />
+            Ir a Despacho
+          </Btn>
+        )}
+      </VistaHeader>
+
+      {kpis.panel}
+
+      {repetidos.length > 0 && (
+        <p className="flex items-start gap-2 rounded-xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] p-3 text-sm font-medium text-[var(--data-warning-700)]">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          Número repetido en más de un despacho vigente: {repetidos.join(", ")}. Puede ser una guía que ampara varias
+          líneas, o un error de tipeo — conviene revisarlo antes de que lo haga un control.
+        </p>
+      )}
+
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
+          <input
+            type="search"
+            className={`${I} pl-9`}
+            placeholder="Buscar por N° de guía, destino, destinatario o placa…"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
+        </div>
+        <Btn
+          size="md"
+          variant={soloIncompletas ? "dark" : "secondary"}
+          aria-pressed={soloIncompletas}
+          onClick={() => setSoloIncompletas((v) => !v)}
+        >
+          <AlertTriangle className="h-4 w-4" />
+          Sólo las incompletas
+        </Btn>
+      </div>
+
+      {error && (
+        <p role="alert" className="rounded-xl border-2 border-[var(--data-error-500)]/40 bg-[var(--surface-sunken)] p-3 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+          {error}
+        </p>
+      )}
+
+      {cargando ? (
+        <TablaSkeleton />
+      ) : visibles.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-8 text-center text-sm text-[var(--text-tertiary)]">
+          {guias.length === 0
+            ? "Todavía no se emitió ninguna guía de salida en el período."
+            : "Ninguna guía coincide con el filtro."}
+        </p>
+      ) : (
+        <CtpGuiasEmitidasLista guias={visibles} todas={guias} sel={seleccion} />
+      )}
+
+      {cargando && guias.length > 0 && (
+        <p className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]">
+          <Loader2 className="h-4 w-4 animate-spin" /> Actualizando…
+        </p>
+      )}
+
+      <CtpGuiasEmitidasBarra elegidas={elegidas} onLimpiar={seleccion.limpiar} />
+    </div>
+  );
+}

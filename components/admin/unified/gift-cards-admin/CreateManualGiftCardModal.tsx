@@ -10,6 +10,7 @@
 import { useState } from "react";
 import { Gift, Save, AlertCircle } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
+import { Field } from "@/components/admin/shared/Field";
 
 interface Props {
   onClose: () => void;
@@ -66,7 +67,7 @@ export function CreateManualGiftCardModal({ onClose, onCreate }: Props) {
 
   return (
     <AdminModal open onClose={onClose} title="Emitir gift card manual">
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 px-5 py-5 sm:px-6">
           <div className="flex items-center gap-2 p-2 bg-primary/5 rounded-xl">
             <div className="h-8 w-8 rounded-lg bg-primary text-white flex items-center justify-center shrink-0">
               <Gift className="h-4 w-4" />
@@ -87,87 +88,81 @@ export function CreateManualGiftCardModal({ onClose, onCreate }: Props) {
             </p>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-[var(--text-secondary)]">Motivo *</label>
+          <Field label="Motivo *" labelClassName="text-xs font-bold text-[var(--text-secondary)]" className="space-y-1.5">
             <select
               value={form.reason}
               onChange={(e) => setForm((p) => ({ ...p, reason: e.target.value }))}
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white dark:bg-[var(--color-card)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+              className="w-full px-3 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
             >
               <option value="compensacion">Compensación por incidencia</option>
               <option value="premio">Premio de campaña</option>
               <option value="prueba">Cortesía por producto defectuoso</option>
               <option value="otro">Otro</option>
             </select>
-          </div>
+          </Field>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-[var(--text-secondary)]">Monto (S/) *</label>
+          <Field label="Monto (S/) *" labelClassName="text-xs font-bold text-[var(--text-secondary)]" className="space-y-1.5">
             <input
               type="number"
               min={1}
               step={0.5}
               value={form.amount}
               onChange={(e) => setForm((p) => ({ ...p, amount: parseFloat(e.target.value) || 0 }))}
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+              className="w-full px-3 h-11 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
             />
-          </div>
+          </Field>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-[var(--text-secondary)]">Destinatario *</label>
+          <Field label="Destinatario *" labelClassName="text-xs font-bold text-[var(--text-secondary)]" className="space-y-1.5">
             <input
               type="text"
               value={form.recipientName}
               onChange={(e) => setForm((p) => ({ ...p, recipientName: e.target.value }))}
               placeholder="Nombre completo"
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+              className="w-full px-3 h-11 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
             />
-          </div>
+          </Field>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-[var(--text-secondary)]">Teléfono</label>
+          <Field label="Teléfono" labelClassName="text-xs font-bold text-[var(--text-secondary)]" className="space-y-1.5">
             <input
               type="tel"
               value={form.recipientPhone}
               onChange={(e) => setForm((p) => ({ ...p, recipientPhone: e.target.value }))}
               placeholder="987654321"
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+              className="w-full px-3 h-11 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
             />
-          </div>
+          </Field>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-[var(--text-secondary)]">Dedicatoria (opcional)</label>
+          <Field label="Dedicatoria (opcional)" labelClassName="text-xs font-bold text-[var(--text-secondary)]" className="space-y-1.5">
             <textarea
               value={form.message}
               onChange={(e) => setForm((p) => ({ ...p, message: e.target.value }))}
               rows={2}
               placeholder="Mensaje para el destinatario"
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none resize-none"
+              className="w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none resize-none"
             />
-          </div>
+          </Field>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-[var(--text-secondary)]">Vence el</label>
+          <Field label="Vence el" labelClassName="text-xs font-bold text-[var(--text-secondary)]" className="space-y-1.5">
             <input
               type="date"
               value={form.expiresAt || defaultExpiry}
               onChange={(e) => setForm((p) => ({ ...p, expiresAt: e.target.value }))}
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+              className="w-full px-3 h-11 rounded-xl border border-[var(--rule-base)] text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
             />
-          </div>
+          </Field>
 
           <div className="flex gap-3 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 h-10 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-gray-100 hover:bg-gray-200 transition-colors"
+              className="flex-1 h-10 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-[var(--rule-soft)] hover:bg-[var(--rule-base)] transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 h-10 inline-flex items-center justify-center gap-2 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50"
+              className="flex-1 h-10 inline-flex items-center justify-center gap-2 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50"
             >
               {saving ? (
                 <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

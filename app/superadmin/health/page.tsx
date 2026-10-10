@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   XCircle,
+  Info,
   Clock,
   Wifi,
   HardDrive,
@@ -20,11 +21,38 @@ import {
 } from "@buleje/design-system/icons";
 import SAHealthScore from "@/components/superadmin/_shared/SAHealthScore";
 import { AdminTabShell } from "../_components/_shared";
+import { SystemHealthMetrics } from "@/components/superadmin/health/SystemHealthMetrics";
+import { TenantsHealthRollup } from "@/components/superadmin/health/TenantsHealthRollup";
+import { SuperAdminModuleTabs, SALUD_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 
-const TenantMonitorPanel = dynamic(
-  () => import("@/components/superadmin/TenantMonitorPanel"),
-  { ssr: false },
-);
+const TenantMonitorPanel = dynamic(() => import("@/components/superadmin/TenantMonitorPanel"), {
+  ssr: false,
+});
+
+// Tono por severidad del incidente (API /api/admin/health: critical|warning|info).
+const INCIDENT_TONE = {
+  critical: {
+    icon: XCircle,
+    border: "border-[var(--data-error-500)]",
+    bg: "bg-[var(--data-error-50)]",
+    chip: "bg-[var(--data-error-500)]/15 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
+    text: "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
+  },
+  warning: {
+    icon: AlertTriangle,
+    border: "border-[var(--data-warning-500)]/50",
+    bg: "bg-[var(--data-warning-50)]",
+    chip: "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]",
+    text: "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]",
+  },
+  info: {
+    icon: Info,
+    border: "border-[var(--rule-base)]",
+    bg: "bg-[var(--surface-raised)]",
+    chip: "bg-[var(--data-info-500)]/12 text-[var(--data-info-700)] dark:text-[var(--data-info-500)]",
+    text: "text-[var(--text-primary)]",
+  },
+} as const;
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -60,15 +88,12 @@ interface AdminHealthMetric {
 interface AdminHealthData {
   services: Array<{ name: string; status: string; latencyMs: number; detail?: string }>;
   metrics: AdminHealthMetric[];
-  incidents: Array<{ id: string; severity: string; message: string; since: string }>;
+  incidents: Array<{ id: string; severity: string; title: string; createdAt: string }>;
 }
 
 // ── Status helpers ────────────────────────────────────────────────────────
 
-const STATUS_META: Record<
-  HealthCheck["status"],
-  { label: string; cls: string; dot: string }
-> = {
+const STATUS_META: Record<HealthCheck["status"], { label: string; cls: string; dot: string }> = {
   ok: {
     label: "Operativo",
     cls: "border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/5 text-[var(--data-success-500)]",
@@ -76,13 +101,13 @@ const STATUS_META: Record<
   },
   degraded: {
     label: "Degradado",
-    cls: "border-amber-300/60 bg-amber-50/60 text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300",
-    dot: "bg-amber-500",
+    cls: "border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]",
+    dot: "bg-[var(--data-warning-500)]",
   },
   error: {
     label: "Error",
-    cls: "border-rose-300/60 bg-rose-50/60 text-[var(--accent)] dark:border-rose-700/40 dark:bg-rose-950/30 dark:text-[var(--accent)]",
-    dot: "bg-rose-500",
+    cls: "border-[var(--data-error-500)] bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
+    dot: "bg-[var(--data-error-500)]",
   },
   checking: {
     label: "Verificando…",
@@ -150,7 +175,8 @@ export default function SystemHealthPage() {
         icon: <Server className="w-4 h-4" strokeWidth={1.75} aria-hidden />,
       });
 
-      const dbStatus: HealthCheck["status"] = data.checks?.database?.status === "ok" ? "ok" : "error";
+      const dbStatus: HealthCheck["status"] =
+        data.checks?.database?.status === "ok" ? "ok" : "error";
       results.push({
         name: "Base de datos",
         status: dbStatus,
@@ -209,7 +235,7 @@ export default function SystemHealthPage() {
     // 3. Static assets
     try {
       const start = Date.now();
-      const res = await fetch("/icon?health-check", { method: "HEAD" });
+      const res = await fetch("/icon.png?health-check", { method: "HEAD" });
       const latency = Date.now() - start;
       results.push({
         name: "Archivos estáticos",
@@ -306,8 +332,7 @@ export default function SystemHealthPage() {
     const headers = ["Check", "Estado", "Latencia (ms)", "Detalle"];
     const rows = checks.map((c) => [c.name, c.status, c.latency ?? "", c.detail ?? ""]);
     const csv =
-      "﻿" +
-      [headers.map(esc).join(","), ...rows.map((r) => r.map(esc).join(","))].join("\r\n");
+      "﻿" + [headers.map(esc).join(","), ...rows.map((r) => r.map(esc).join(","))].join("\r\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -347,14 +372,14 @@ export default function SystemHealthPage() {
     degraded: {
       icon: AlertTriangle,
       label: "Algunos servicios degradados",
-      bg: "border-amber-300/60 bg-amber-50/40 dark:border-amber-700/40 dark:bg-amber-950/20",
-      iconCls: "text-amber-600 dark:text-amber-400",
+      bg: "border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)]",
+      iconCls: "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]",
     },
     error: {
       icon: XCircle,
       label: "Problemas detectados",
-      bg: "border-rose-300/60 bg-rose-50/40 dark:border-rose-700/40 dark:bg-rose-950/20",
-      iconCls: "text-rose-600 dark:text-rose-400",
+      bg: "border-[var(--data-error-500)] bg-[var(--data-error-50)]",
+      iconCls: "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
     },
     checking: {
       icon: RefreshCw,
@@ -367,304 +392,305 @@ export default function SystemHealthPage() {
   const OverallIcon = overallMeta.icon;
 
   return (
-    <AdminTabShell
-      title="Salud del sistema"
-      description="Estado en tiempo real de servicios, latencia y métricas operativas. Auto-refresh cada 30 segundos."
-      icon={HeartPulse}
-      kicker="Plataforma · Observabilidad"
-      stats={
-        <>
-          <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2 min-w-[88px]">
-            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
-              Score
-            </p>
-            <p
-              className={`font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none ${
-                healthScore >= 80
-                  ? "text-[var(--data-success-500)]"
-                  : healthScore >= 50
-                    ? "text-amber-600 dark:text-amber-400"
-                    : "text-[var(--accent)] dark:text-[var(--accent)]"
-              }`}
-            >
-              {healthScore}
-            </p>
-          </div>
-          {uptime > 0 && (
-            <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3.5 py-2 min-w-[88px]">
-              <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-none">
-                Uptime
-              </p>
-              <p className="font-display text-xl font-extrabold tabular-nums tracking-tight mt-1 leading-none text-[var(--text-primary)]">
-                {formatUptime(uptime)}
-              </p>
-            </div>
-          )}
-        </>
-      }
-    >
-      {/* ─── Overall status banner ──────────────────────────────── */}
-      <section
-        className={`flex flex-col sm:flex-row items-start sm:items-center gap-5 rounded-2xl border-2 p-5 ${overallMeta.bg}`}
+    <>
+      <SuperAdminModuleTabs tabs={SALUD_TABS} />
+      <AdminTabShell
+        info={{
+          what: "Verifica en vivo que la API, la base de datos, la autenticación y los archivos estáticos respondan correctamente.",
+          affects:
+            "Solo visible en el superadmin. Si un servicio aparece en error, puede impactar a todas las tiendas y clientes.",
+          example:
+            "Si la base de datos tarda más de 1000 ms en responder, el indicador cambia a 'Degradado' y el health score baja.",
+        }}
+        title="Salud del sistema"
+        description="Estado en tiempo real de servicios, latencia y métricas operativas. Auto-refresh cada 30 segundos."
+        icon={HeartPulse}
+        kicker="Plataforma · Observabilidad"
       >
-        <SAHealthScore score={healthScore} />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2.5">
-            <OverallIcon
-              className={`h-6 w-6 ${overallMeta.iconCls}`}
-              strokeWidth={1.75}
-              aria-hidden
-            />
-            <h2 className="font-display text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
-              {overallMeta.label}
-            </h2>
+        {/* ─── Overall status banner ──────────────────────────────── */}
+        <section
+          className={`flex flex-col sm:flex-row items-start sm:items-center gap-5 rounded-2xl border-2 p-5 ${overallMeta.bg}`}
+        >
+          <SAHealthScore score={healthScore} />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2.5">
+              <OverallIcon
+                className={`h-6 w-6 ${overallMeta.iconCls}`}
+                strokeWidth={1.75}
+                aria-hidden
+              />
+              <h2 className="font-display text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
+                {overallMeta.label}
+              </h2>
+            </div>
+            <div className="flex items-center gap-4 mt-2 text-xs text-[var(--text-tertiary)] flex-wrap">
+              {uptime > 0 && (
+                <span className="inline-flex items-center gap-1">
+                  <Clock className="h-3 w-3" strokeWidth={2.25} aria-hidden />
+                  Uptime:{" "}
+                  <strong className="text-[var(--text-secondary)]">{formatUptime(uptime)}</strong>
+                </span>
+              )}
+              {lastChecked && (
+                <span className="inline-flex items-center gap-1">
+                  <RefreshCw className="h-3 w-3" strokeWidth={2.25} aria-hidden />
+                  Último chequeo:{" "}
+                  <strong className="text-[var(--text-secondary)]">
+                    {lastChecked.toLocaleTimeString("es-PE")}
+                  </strong>
+                </span>
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-4 mt-2 text-xs text-[var(--text-tertiary)] flex-wrap">
-            {uptime > 0 && (
-              <span className="inline-flex items-center gap-1">
-                <Clock className="h-3 w-3" strokeWidth={2.25} aria-hidden />
-                Uptime: <strong className="text-[var(--text-secondary)]">{formatUptime(uptime)}</strong>
-              </span>
-            )}
-            {lastChecked && (
-              <span className="inline-flex items-center gap-1">
-                <RefreshCw className="h-3 w-3" strokeWidth={2.25} aria-hidden />
-                Último chequeo:{" "}
-                <strong className="text-[var(--text-secondary)]">
-                  {lastChecked.toLocaleTimeString("es-PE")}
-                </strong>
-              </span>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={() => {
-              runChecks();
-              setCountdown(AUTO_REFRESH_SECONDS);
-            }}
-            disabled={loading}
-            title="Verificar (R)"
-            className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3.5 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-50"
-          >
-            <RefreshCw
-              className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`}
-              strokeWidth={2.25}
-            />
-            Verificar
-          </button>
-          <button
-            onClick={exportCsv}
-            disabled={checks.length === 0}
-            title="Exportar CSV"
-            className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3.5 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-50"
-          >
-            <Download className="h-3.5 w-3.5" strokeWidth={2.25} />
-            CSV
-          </button>
-          <button
-            onClick={() => setAutoRefresh(!autoRefresh)}
-            className={`inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-xs font-extrabold uppercase tracking-wider transition ${
-              autoRefresh
-                ? "bg-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20"
-                : "border border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)]/40"
-            }`}
-          >
-            <Timer className="h-3 w-3" strokeWidth={2.5} />
-            {autoRefresh ? `Auto ${countdown}s` : "Auto off"}
-          </button>
-        </div>
-      </section>
-
-      {/* ─── Tabs ───────────────────────────────────────────────── */}
-      <div className="flex gap-1 rounded-xl bg-[var(--surface-sunken)] p-1 w-fit">
-        {([
-          { key: "system" as const, label: "Sistema", icon: HeartPulse },
-          { key: "tenants" as const, label: "Tiendas", icon: Activity },
-        ]).map(({ key, label, icon: Icon }) => {
-          const isActive = activeTab === key;
-          return (
+          <div className="flex items-center gap-2 shrink-0">
             <button
-              key={key}
-              type="button"
-              onClick={() => setActiveTab(key)}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-bold transition ${
-                isActive
-                  ? "bg-[var(--surface-raised)] text-[var(--accent)] shadow-sm"
-                  : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+              onClick={() => {
+                runChecks();
+                setCountdown(AUTO_REFRESH_SECONDS);
+              }}
+              disabled={loading}
+              title="Verificar (R)"
+              className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3.5 text-sm font-semibold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-50"
+            >
+              <RefreshCw
+                className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`}
+                strokeWidth={2.25}
+              />
+              Verificar
+            </button>
+            <button
+              onClick={exportCsv}
+              disabled={checks.length === 0}
+              title="Exportar CSV"
+              className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] px-3.5 text-sm font-semibold text-[var(--text-primary)] transition hover:border-[var(--accent)]/40 hover:text-[var(--accent)] disabled:opacity-50"
+            >
+              <Download className="h-3.5 w-3.5" strokeWidth={2.25} />
+              CSV
+            </button>
+            <button
+              onClick={() => setAutoRefresh(!autoRefresh)}
+              className={`inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-xs font-extrabold uppercase tracking-wider transition ${
+                autoRefresh
+                  ? "bg-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20"
+                  : "border border-[var(--rule-soft)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)]/40"
               }`}
             >
-              <Icon className="h-4 w-4" strokeWidth={1.75} />
-              {label}
+              <Timer className="h-3 w-3" strokeWidth={2.5} />
+              {autoRefresh ? `Auto ${countdown}s` : "Auto off"}
             </button>
-          );
-        })}
-      </div>
+          </div>
+        </section>
 
-      {activeTab === "system" && (
-        <>
-          {/* ─── Active incidents ──────────────────────────────── */}
-          {incidents.length > 0 && (
-            <section className="rounded-2xl border-2 border-rose-300/60 bg-rose-50/40 dark:border-rose-700/40 dark:bg-rose-950/30 overflow-hidden">
-              <header className="flex items-center gap-3 border-b border-rose-300/40 dark:border-rose-700/30 px-5 py-3.5">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]">
-                  <AlertTriangle className="h-4 w-4" strokeWidth={1.75} aria-hidden />
-                </span>
-                <div>
-                  <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--accent)] dark:text-[var(--accent)]">
-                    Incidentes activos
-                  </h3>
-                  <p className="text-xs text-[var(--accent)]/80 dark:text-[var(--accent)]/80">
-                    {incidents.length} incidente{incidents.length === 1 ? "" : "s"} requieren atención
-                  </p>
-                </div>
-              </header>
-              <ul className="divide-y divide-rose-200/60 dark:divide-rose-800/40">
-                {incidents.map((inc) => (
-                  <li
-                    key={inc.id}
-                    className="flex items-center gap-3 px-5 py-3 text-sm text-[var(--accent)] dark:text-[var(--accent)]"
-                  >
-                    <XCircle className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden />
-                    <span className="font-semibold flex-1">{inc.message}</span>
-                    <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]/80 dark:text-[var(--accent)]/80 shrink-0">
-                      {(() => {
-                        // Brandon 2026-05-21 audit fix #9: guard contra
-                        // "Invalid Date" cuando inc.since es null/undefined
-                        // o no parseable. Antes mostraba "DESDE INVALID DATE".
-                        if (!inc.since) return "ahora";
-                        const d = new Date(inc.since);
-                        if (isNaN(d.getTime())) return "ahora";
-                        return `desde ${d.toLocaleTimeString("es-PE")}`;
-                      })()}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
+        {/* ─── Tabs ───────────────────────────────────────────────── */}
+        <div className="flex gap-1 rounded-xl bg-[var(--surface-sunken)] p-1 w-fit">
+          {[
+            { key: "system" as const, label: "Sistema", icon: HeartPulse },
+            { key: "tenants" as const, label: "Tiendas", icon: Activity },
+          ].map(({ key, label, icon: Icon }) => {
+            const isActive = activeTab === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setActiveTab(key)}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-bold transition ${
+                  isActive
+                    ? "bg-[var(--surface-raised)] text-[var(--accent)] shadow-sm"
+                    : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+                }`}
+              >
+                <Icon className="h-4 w-4" strokeWidth={1.75} />
+                {label}
+              </button>
+            );
+          })}
+        </div>
 
-          {/* ─── Admin metrics (KPIs) ───────────────────────────── */}
-          {adminMetrics.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {adminMetrics.map((m) => {
-                const tone =
-                  m.status === "ok" ? "accent" : m.status === "warning" ? "warning" : "danger";
-                const iconBg = {
-                  accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
-                  warning: "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
-                  danger: "bg-rose-100 text-[var(--accent)] dark:bg-rose-900/50 dark:text-[var(--accent)]",
-                }[tone];
-                const valueTone =
-                  m.status === "ok"
-                    ? "text-[var(--text-primary)]"
-                    : m.status === "warning"
-                      ? "text-amber-700 dark:text-amber-300"
-                      : "text-[var(--accent)] dark:text-[var(--accent)]";
-                return (
-                  <div
-                    key={m.label}
-                    className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <span
-                        className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${iconBg}`}
-                      >
-                        <Activity className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+        {activeTab === "system" && (
+          <>
+            {/* ─── Active incidents ──────────────────────────────── */}
+            {incidents.length > 0 && (() => {
+              // 2026-10-08: el tono sale de la severidad. Antes todo incidente
+              // (hasta un `info` como «Redis no configurado») salía en caja roja
+              // con texto teal (accent) y XCircle, debajo de «Todos los sistemas
+              // operativos»: alarma y color que no decían lo mismo.
+              const peor = incidents.some((i) => i.severity === "critical")
+                ? "critical"
+                : incidents.some((i) => i.severity === "warning")
+                  ? "warning"
+                  : "info";
+              const caja = INCIDENT_TONE[peor];
+              const CajaIcon = caja.icon;
+              return (
+              <section className={`rounded-2xl border-2 ${caja.border} ${caja.bg} overflow-hidden`}>
+                <header className={`flex items-center gap-3 border-b ${caja.border} px-5 py-3.5`}>
+                  <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${caja.chip}`}>
+                    <CajaIcon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+                  </span>
+                  <div>
+                    <h3 className={`font-display text-base font-extrabold tracking-tight ${caja.text}`}>
+                      {peor === "info" ? "Avisos" : "Incidentes activos"} · {incidents.length}
+                    </h3>
+                  </div>
+                </header>
+                <ul className="divide-y divide-[var(--rule-soft)]">
+                  {incidents.map((inc) => {
+                    const tono = INCIDENT_TONE[inc.severity as keyof typeof INCIDENT_TONE] ?? INCIDENT_TONE.warning;
+                    const IncIcon = tono.icon;
+                    return (
+                    <li
+                      key={inc.id}
+                      className={`flex items-center gap-3 px-5 py-3 text-sm ${tono.text}`}
+                    >
+                      <IncIcon className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden />
+                      <span className="font-semibold flex-1">{inc.title}</span>
+                      <span className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] shrink-0">
+                        {(() => {
+                          // Brandon 2026-05-21 audit fix #9: guard contra
+                          // "Invalid Date" cuando inc.since es null/undefined
+                          // o no parseable. Antes mostraba "DESDE INVALID DATE".
+                          if (!inc.createdAt) return "ahora";
+                          const d = new Date(inc.createdAt);
+                          if (isNaN(d.getTime())) return "ahora";
+                          return `desde ${d.toLocaleTimeString("es-PE")}`;
+                        })()}
                       </span>
-                      <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-tight">
-                        {m.label}
+                    </li>
+                    );
+                  })}
+                </ul>
+              </section>
+              );
+            })()}
+
+            {/* ─── Admin metrics (KPIs) ───────────────────────────── */}
+            {adminMetrics.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {adminMetrics.map((m) => {
+                  const tone =
+                    m.status === "ok" ? "accent" : m.status === "warning" ? "warning" : "danger";
+                  const iconBg = {
+                    accent: "bg-[var(--accent)]/10 text-[var(--accent)]",
+                    warning: "bg-[var(--data-warning-50)] text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]",
+                    danger:
+                      "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)]",
+                  }[tone];
+                  const valueTone =
+                    m.status === "ok"
+                      ? "text-[var(--text-primary)]"
+                      : m.status === "warning"
+                        ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+                        : "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]";
+                  return (
+                    <div
+                      key={m.label}
+                      className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span
+                          className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${iconBg}`}
+                        >
+                          <Activity className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+                        </span>
+                        <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] leading-tight">
+                          {m.label}
+                        </p>
+                      </div>
+                      <p
+                        className={`mt-3 font-display text-3xl font-extrabold tabular-nums tracking-tight ${valueTone}`}
+                      >
+                        {m.value}
+                        {m.unit && (
+                          <span className="text-base font-bold ml-1 opacity-70">{m.unit}</span>
+                        )}
                       </p>
                     </div>
-                    <p
-                      className={`mt-3 font-display text-3xl font-extrabold tabular-nums tracking-tight ${valueTone}`}
-                    >
-                      {m.value}
-                      {m.unit && (
-                        <span className="text-base font-bold ml-1 opacity-70">{m.unit}</span>
-                      )}
+                  );
+                })}
+              </div>
+            )}
+
+            {/* ─── Métricas reales del sistema (DB/servicios/app) ──── */}
+            <SystemHealthMetrics />
+
+            {/* ─── Individual service checks ──────────────────────── */}
+            <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden">
+              <header className="flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-3.5">
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]">
+                    <Server className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+                  </span>
+                  <div>
+                    <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">
+                      Servicios monitoreados
+                    </h3>
+                    <p className="text-xs text-[var(--text-tertiary)]">
+                      {checks.length} check{checks.length === 1 ? "" : "s"} ejecutados ·{" "}
+                      {checks.filter((c) => c.status === "ok").length} OK
                     </p>
                   </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* ─── Individual service checks ──────────────────────── */}
-          <section className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-hidden">
-            <header className="flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-5 py-3.5">
-              <div className="flex items-center gap-3">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]">
-                  <Server className="h-4 w-4" strokeWidth={1.75} aria-hidden />
-                </span>
-                <div>
-                  <h3 className="font-display text-base font-extrabold tracking-tight text-[var(--text-primary)]">
-                    Servicios monitoreados
-                  </h3>
-                  <p className="text-xs text-[var(--text-tertiary)]">
-                    {checks.length} check{checks.length === 1 ? "" : "s"} ejecutados ·{" "}
-                    {checks.filter((c) => c.status === "ok").length} OK
+                </div>
+              </header>
+              {checks.length === 0 ? (
+                <div className="px-5 py-12 text-center">
+                  <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--surface-sunken)] mb-3">
+                    <HeartPulse className="h-5 w-5 text-[var(--text-tertiary)]" aria-hidden />
+                  </div>
+                  <p className="font-display text-sm font-extrabold text-[var(--text-primary)]">
+                    Iniciando verificación de sistemas…
                   </p>
                 </div>
-              </div>
-            </header>
-            {checks.length === 0 ? (
-              <div className="px-5 py-12 text-center">
-                <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--surface-sunken)] mb-3">
-                  <HeartPulse
-                    className="h-5 w-5 text-[var(--text-tertiary)]"
-                    aria-hidden
-                  />
-                </div>
-                <p className="font-display text-sm font-extrabold text-[var(--text-primary)]">
-                  Iniciando verificación de sistemas…
-                </p>
-              </div>
-            ) : (
-              <ul className="divide-y divide-[var(--rule-soft)]">
-                {checks.map((check) => (
-                  <li
-                    key={check.name}
-                    className="flex items-center gap-4 px-5 py-3.5 transition hover:bg-[var(--surface-sunken)]/50"
-                  >
-                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)] shrink-0">
-                      {check.icon}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-bold text-sm text-[var(--text-primary)]">
-                          {check.name}
-                        </span>
-                        <StatusBadge status={check.status} />
-                      </div>
-                      {check.detail && (
-                        <p className="text-xs text-[var(--text-tertiary)] mt-0.5 truncate">
-                          {check.detail}
-                        </p>
-                      )}
-                    </div>
-                    <div className="text-right shrink-0">
-                      <span
-                        className={`font-mono text-sm font-extrabold tabular-nums ${
-                          check.latency > 1000
-                            ? "text-[var(--accent)] dark:text-[var(--accent)]"
-                            : check.latency > 500
-                              ? "text-amber-600 dark:text-amber-400"
-                              : "text-[var(--text-secondary)]"
-                        }`}
-                      >
-                        {check.latency > 0 ? `${check.latency}ms` : "—"}
+              ) : (
+                <ul className="divide-y divide-[var(--rule-soft)]">
+                  {checks.map((check) => (
+                    <li
+                      key={check.name}
+                      className="flex items-center gap-4 px-5 py-3.5 transition hover:bg-[var(--surface-sunken)]/50"
+                    >
+                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)] shrink-0">
+                        {check.icon}
                       </span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        </>
-      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-sm text-[var(--text-primary)]">
+                            {check.name}
+                          </span>
+                          <StatusBadge status={check.status} />
+                        </div>
+                        {check.detail && (
+                          <p className="text-xs text-[var(--text-tertiary)] mt-0.5 truncate">
+                            {check.detail}
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span
+                          className={`font-mono text-sm font-extrabold tabular-nums ${
+                            check.latency > 1000
+                              ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
+                              : check.latency > 500
+                                ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+                                : "text-[var(--text-secondary)]"
+                          }`}
+                        >
+                          {check.latency > 0 ? `${check.latency}ms` : "—"}
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          </>
+        )}
 
-      {activeTab === "tenants" && <TenantMonitorPanel />}
-    </AdminTabShell>
+        {activeTab === "tenants" && (
+          <>
+            <TenantsHealthRollup />
+            <TenantMonitorPanel />
+          </>
+        )}
+      </AdminTabShell>
+    </>
   );
 }

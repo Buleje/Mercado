@@ -42,18 +42,33 @@ import MarketplaceSideRailShell from "@/components/marketplace/MarketplaceSideRa
 import { HideInCheckoutMode, CheckoutModeBar } from "@/components/marketplace/CheckoutModeChrome";
 // Chrome propio de la TIENDA INDIVIDUAL (aislado del marketplace). Brandon 2026-06-07.
 import StorefrontNavbar from "@/components/store/StorefrontNavbar";
-import { SettingsDB } from "@/lib/db/settings.db";
+// Footer dedicado white-label + marker de "bordes rectos" — solo tienda individual.
+import TenantFooter from "@/components/store/TenantFooter";
+import TenantStoreChrome from "@/components/store/TenantStoreChrome";
+// Barra de progreso "envío gratis" — opt-in por tienda (flag "shipping", ADR-298).
+import FreeShippingBar from "@/components/store/tenant/FreeShippingBar";
 import { getCachedSettings, resolveStoreContext } from "@/lib/store-metadata";
 import { tenantExists } from "@/lib/tenant-check";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
+// Audit #9 (SSR-auth): validación server-side de la sesión de cliente para
+// resolver el estado de auth antes del primer render (sin skeleton en el navbar).
+import { getCustomerPayload, CUSTOMER_SESSION } from "@/lib/auth/customer-session";
+import type { Customer } from "@/contexts/customer-context";
 import {
   GoogleAnalytics,
   GoogleTagManager,
   GTMNoScript,
   MicrosoftClarity,
   MetaPixel,
+  TikTokPixel,
 } from "@/components/Analytics";
+import { parseSalesChannels } from "@/lib/types/sales-channels";
 import { SkipLink } from "@/components/ui-system/SkipLink";
+import { esMarketplace } from "@/lib/tenancy/negocio-por-defecto";
+// ADR-460 · la página propia de un negocio «viste» toda su tienda (marco).
+import { marcoDeLaTienda, paginaPropiaDeLaTienda } from "@/lib/extensiones/pagina-propia-tienda";
+import { BordeDePieza } from "@/lib/extensiones/BordeDePieza";
+import { MarcoEnElDocumento } from "@/lib/extensiones/MarcoEnElDocumento";
 
 // ── Metadata dinámica desde la DB ─────────────────────────────────────────────
 export async function generateMetadata(): Promise<Metadata> {
@@ -127,12 +142,34 @@ async function StoreLayoutContent({
 }: {
   children: React.ReactNode;
 }) {
+  // ADR-460 · ¿página propia con marco? Arranca YA, en paralelo con lo de abajo
+  // (la página del catálogo la comparte: `cache`); así a la tienda general no
+  // le suma una espera en fila. Nunca tira: ante cualquier error, sin marco.
+  const propiaEnCamino = paginaPropiaDeLaTienda().catch(() => null);
+
   // Read tenantId inside Suspense to avoid Next 16 blocking route error
   const hdrs = await headers();
   const tenantId = hdrs.get("x-tenant-id") ?? "main";
 
+  // Audit #9 (SSR-auth): resolvemos el estado de cliente desde la cookie
+  // buleje-customer-sess EN EL SERVER → el navbar pinta el estado real (avatar
+  // logueado / "Ingresar" deslogueado) en el primer byte, sin el skeleton gris
+  // ni el layout-shift. `null` = deslogueado (cookie ausente/inválida); el
+  // cliente arranca con este mismo valor → sin hydration mismatch.
+  const cookieStore = await cookies();
+  const custToken = cookieStore.get(CUSTOMER_SESSION.COOKIE_NAME)?.value;
+  const custPayload = custToken ? await getCustomerPayload(custToken).catch(() => null) : null;
+  const initialCustomer: Customer | null = custPayload?.name
+    ? {
+        name: custPayload.name,
+        ...(custPayload.customerId ? { phone: custPayload.customerId } : {}),
+        location: "",
+        reference: "",
+      }
+    : null;
+
   // Validate tenant exists — return 404 for invalid slugs
-  if (tenantId !== "main") {
+  if (!esMarketplace(tenantId)) {
     const exists = await tenantExists(tenantId);
     if (!exists) notFound();
   }
@@ -149,12 +186,38 @@ async function StoreLayoutContent({
   // del marketplace. Si no, el chrome del marketplace queda intacto. Brandon 2026-06-07.
   const ctx = await resolveStoreContext();
   const isTenant = ctx.isTenant;
+  // Sin marco (o si falla al cargar/armarse) la tienda sigue EXACTA como siempre, más abajo.
+  const propia = isTenant ? await propiaEnCamino : null;
+  const marco = marcoDeLaTienda(propia);
   const storeName = ctx.name;
   const storeLogo =
     (settings as { logoUrl?: string | null } | null)?.logoUrl ?? null;
 
+  // Flags PRO opt-in por tienda (ADR-298) viven en settings.storeTheme.features.
+  // "shipping" → barra de progreso de envío gratis con umbral configurable.
+  const storeTheme = (settings as { storeTheme?: Record<string, unknown> } | null)?.storeTheme;
+  const tenantFeatures = Array.isArray(storeTheme?.features)
+    ? (storeTheme!.features as unknown[]).filter((f): f is string => typeof f === "string")
+    : [];
+  const freeShipThreshold =
+    typeof storeTheme?.freeShippingThreshold === "number" ? storeTheme.freeShippingThreshold : 99;
+  const showFreeShipBar = isTenant && tenantFeatures.includes("shipping");
+
+  // Canales de venta social (Pixel IDs del tenant). En la tienda individual se
+  // usa el pixel del comercio; en el marketplace MetaPixel cae al pixel global (env).
+  const salesChannels = parseSalesChannels(
+    (storeTheme as Record<string, unknown> | undefined)?.salesChannels,
+  );
+  const metaPixelId =
+    isTenant && salesChannels.meta.pixelId ? salesChannels.meta.pixelId : undefined;
+  const tiktokPixelId =
+    isTenant && salesChannels.tiktok.pixelId ? salesChannels.tiktok.pixelId : undefined;
+
   return (
-    <StoreProviders tenantSlug={tenantId}>
+    <>
+      <MetaPixel pixelId={metaPixelId} />
+      <TikTokPixel pixelId={tiktokPixelId} />
+      <StoreProviders tenantSlug={tenantId} initialCustomer={initialCustomer} {...(marco ? { temaDelEditor: false } : {})}>
       <MotionProvider>
         {/* QuickAddProvider envuelve toda la tienda — al click en producto
             se abre el drawer en lugar de navegar a una PDP.
@@ -163,20 +226,60 @@ async function StoreLayoutContent({
             /negocios tengan la misma UX que /tiendas. */}
         <QuickAddProvider>
           <AddedToCartDrawerProvider>
-            {isTenant ? (
+            {propia && marco ? (
+              /* ── Marco de la PÁGINA PROPIA (ADR-460) ──
+                  El encabezado, el pie y la bolsa del negocio en TODAS sus
+                  páginas. Sin TenantStoreChrome (sus bordes rectos `!important`
+                  le cuadrarían el diseño) ni los flotantes generales; el
+                  carrito, el checkout y los modales de pedido, los de siempre.
+                  Si una parte del marco falla al dibujarse, se ve la general. */
+              <div data-marco={propia.piezaId} className="contents">
+                {marco.tema}
+                <MarcoEnElDocumento piezaId={propia.piezaId} />
+                <BordeDePieza
+                  piezaId={propia.piezaId}
+                  fallback={<StorefrontNavbar name={storeName} logo={storeLogo} />}
+                  mientrasCarga={marco.esqueletoEncabezado}
+                >
+                  {marco.encabezado}
+                </BordeDePieza>
+                {showFreeShipBar && <FreeShippingBar threshold={freeShipThreshold} />}
+                {children}
+                <BordeDePieza
+                  piezaId={propia.piezaId}
+                  fallback={<TenantFooter slug={tenantId} storeName={storeName} />}
+                  mientrasCarga={null}
+                >
+                  {marco.pie}
+                </BordeDePieza>
+                <StoreClientShell liveChat={false} />
+                {marco.flotantes && (
+                  <BordeDePieza piezaId={propia.piezaId} fallback={null}>
+                    {marco.flotantes}
+                  </BordeDePieza>
+                )}
+                <QuickAddModal />
+                <Suspense fallback={null}>
+                  <OrderSuccessModal />
+                </Suspense>
+              </div>
+            ) : isTenant ? (
               /* ── Chrome AISLADO de la TIENDA INDIVIDUAL (Brandon 2026-06-07) ──
                   Sin navbar/sub-nav/footer/bottom-nav del marketplace ni sus
                   floating widgets. Solo el mundo de la tienda. El carrito y los
                   modales de pedido se mantienen (mismo flujo de checkout). */
               <>
+                {/* Marker para bordes rectos de la tienda individual (CSS scoped
+                    en globals.css). No afecta el marketplace. Brandon 2026-06-21. */}
+                <TenantStoreChrome />
                 <StorefrontNavbar name={storeName} logo={storeLogo} />
+                {showFreeShipBar && <FreeShippingBar threshold={freeShipThreshold} />}
                 {children}
-                {/* Brandon 2026-06-08: footer ÚNICO de Buleje en TODAS las páginas
-                    (incluidas las tiendas individuales) — antes StorefrontFooter. */}
-                <Footer />
-                <Suspense fallback={null}>
-                  <QuickAddDrawer />
-                </Suspense>
+                {/* Footer dedicado de la tienda (white-label) — sin branding del
+                    marketplace. Brandon 2026-06-21: revierte el "footer único".
+                    QuickAddDrawer (marketplace) removido del chrome tenant: duplicaba
+                    el modal con QuickAddModal (ambos useQuickAdd → doble modal). */}
+                <TenantFooter slug={tenantId} storeName={storeName} />
                 {/* El bottom-nav mobile lo aporta el MobileBottomNav legacy de
                     las páginas single-tenant (TiendaClientShell etc.), que usa el
                     cart legacy correcto. No montamos uno extra acá para no duplicar. */}
@@ -237,6 +340,7 @@ async function StoreLayoutContent({
         </QuickAddProvider>
       </MotionProvider>
     </StoreProviders>
+    </>
   );
 }
 
@@ -251,7 +355,8 @@ export default function StoreLayout({
       <GoogleAnalytics />
       <GoogleTagManager />
       <MicrosoftClarity />
-      <MetaPixel />
+      {/* MetaPixel/TikTokPixel se montan dentro de StoreLayoutContent con el
+          Pixel ID del tenant (Canales de venta) — el global cae al env. */}
       {/* Skip-link WCAG 2.4.1 — ADR-075 tokens DS, sin colores hardcodeados. */}
       <SkipLink />
       <Suspense fallback={null}>

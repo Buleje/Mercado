@@ -1,0 +1,153 @@
+"use client";
+
+/**
+ * Cuenta por persona (ADR-412 §5): Adelantos y la cuenta corriente forestal,
+ * unidas en una sola fila.
+ *
+ * Por qué existe: medido en el tenant real, eran DOS libretas que no se
+ * hablaban —3 personas de un lado, 4 partes del otro, 0 en común— así que a
+ * quien se le presta aserrío Y se le adelanta plata se le veía media deuda en
+ * cada pantalla. Pedido de Brandon: «que toda esa información con la fecha
+ * vaya a la cuenta del dueño o cliente… para llevar un mejor control y menor
+ * manejo».
+ */
+
+import { useEffect, useMemo, useState } from "react";
+import { CardTitle } from "@buleje/design-system";
+import { ChevronDown, Users } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { useCuentasPersonas } from "@/hooks/use-cuentas-personas";
+import { useMiRol } from "@/hooks/use-mi-rol";
+import { EmptyState, fmtMon } from "../shared";
+import FilaCuentaPersona from "./FilaCuentaPersona";
+import { borrarPedidoLiquidar, leerPedidoLiquidar, personaDelPedido, type PedidoLiquidar } from "./liquidar-por-url";
+
+/** Cuántas personas se ven antes de «Ver las N»: más largo que eso, la pantalla se vuelve una lista infinita. */
+const VISIBLES = 3;
+
+export default function CuentasPorPersona({ onGoTab }: { onGoTab: (tab: string) => void }) {
+  const { forestal, personas, truncado, loading, error, vincularParte, reload } = useCuentasPersonas();
+  // ADR-413: liquidar/anular sólo admin y dueño — si el rol no alcanza, el
+  // botón «Liquidar» ni se muestra (el servidor lo rechazaría igual).
+  const rol = useMiRol();
+  const puedeLiquidar = rol === "admin" || rol === "owner";
+
+  // Partes sueltas: sin persona de Adelantos unida — son las candidatas que se
+  // ofrecen en "¿Es la misma persona que...?" de una fila SIN vínculo.
+  const candidatos = useMemo(() => personas.filter((p) => p.parteId && !p.beneficiarioId), [personas]);
+  const teDeben = useMemo(() => personas.filter((p) => p.neto > 0.005).reduce((s, p) => s + p.neto, 0), [personas]);
+  const leDebes = useMemo(() => personas.filter((p) => p.neto < -0.005).reduce((s, p) => s + Math.abs(p.neto), 0), [personas]);
+
+  /* `?accion=liquidar&persona=<id>` (la Caja de Mi Plata lo manda): cuando llegan
+     las filas, se abre Liquidar en la de esa persona y el pedido sale de la URL.
+     Se relee con el «atrás» y con el popstate que dispara la navegación del panel. */
+  const [pedido, setPedido] = useState<PedidoLiquidar | null>(() => leerPedidoLiquidar());
+  const [abrirLiquidarDe, setAbrirLiquidarDe] = useState<string | null>(null);
+  /* `&liquidacion=<código>` (el Resultado del negocio): queda resaltada en el
+     historial de Liquidar de ESA persona. No se borra con el pedido atendido:
+     el modal se monta después. */
+  const [liquidacionResaltada, setLiquidacionResaltada] = useState<{ clave: string; codigo: string } | null>(null);
+  const [verTodas, setVerTodas] = useState(false);
+  useEffect(() => {
+    const releer = () => setPedido(leerPedidoLiquidar());
+    window.addEventListener("popstate", releer);
+    return () => window.removeEventListener("popstate", releer);
+  }, []);
+  useEffect(() => {
+    if (!pedido || loading || rol == null) return;
+    const destino = personaDelPedido(pedido, personas);
+    borrarPedidoLiquidar();
+    setPedido(null);
+    if (!destino) return;
+    setAbrirLiquidarDe(destino.clave);
+    setLiquidacionResaltada(pedido.liquidacion ? { clave: destino.clave, codigo: pedido.liquidacion } : null);
+  }, [pedido, loading, rol, personas]);
+
+  return (
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
+      <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5">
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Cuenta por persona</CardTitle>
+          <InfoTip
+            title="Cuenta por persona"
+            what="Adelantos, aserríos, ventas de madera y pagos de cada uno, en una sola cuenta."
+            example="Si le adelantaste plata y a la vez le debes por una guía, ves las dos deudas y el neto."
+          />
+        </div>
+        {personas.length > 0 && (
+          <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm font-bold">
+            {/* El token base no pasa AA en 14px 700 (medido: contraste 2.03 y
+                2.61) — el `-700`/`-500` es el mismo patrón que ya usa
+                CtpCuentaCorriente.tsx. */}
+            <span className="text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">Te deben {fmtMon(teDeben)}</span>
+            <span className="text-[var(--data-info-700)] dark:text-[var(--data-info-500)]">Le debes {fmtMon(leDebes)}</span>
+          </div>
+        )}
+      </div>
+      <div className="mb-3" />
+
+      {error && (
+        <div className="mb-3 rounded-xl border border-[var(--data-error)]/30 bg-[var(--data-error)]/10 px-4 py-3 text-sm font-semibold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+          {error}
+        </div>
+      )}
+
+      {/* La cuenta forestal tocó el tope de lectura (ver route.ts): mostrarla
+          como si fuera completa sería la misma mentira que el tope de 500
+          adelantos que esto vino a corregir. */}
+      {!loading && truncado && (
+        <div className="mb-3 rounded-xl border border-[var(--data-warning)]/30 bg-[var(--data-warning)]/10 px-4 py-3 text-sm font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+          Hay más movimientos de los que entran acá.
+        </div>
+      )}
+
+      {/* El esqueleto sólo en la PRIMERA carga. Al recargar (tras liquidar,
+          anular o vincular) la lista sigue montada: con el esqueleto, la fila
+          —y el modal de Liquidar que vive adentro— se desmontaba y la pantalla
+          «Liquidación confirmada» nunca llegaba a verse (medido 28-09 en el
+          navegador: POST 201 y el modal desaparecía). */}
+      {loading && personas.length === 0 ? (
+        <div className="space-y-2" aria-hidden>
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-20 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] animate-pulse" />
+          ))}
+        </div>
+      ) : personas.length === 0 ? (
+        <EmptyState
+          icon={Users}
+          title="Nadie tiene cuentas pendientes"
+          hint="Cuando alguien tenga un adelanto abierto o un movimiento en la cuenta forestal, va a aparecer acá."
+        />
+      ) : (
+        <ul className="space-y-3">
+          {personas
+            .filter((p, i) => verTodas || i < VISIBLES || p.clave === abrirLiquidarDe)
+            .map((p) => (
+            <FilaCuentaPersona
+              key={p.clave}
+              persona={p}
+              forestal={forestal}
+              candidatos={candidatos.filter((c) => c.parteId !== p.parteId)}
+              onVincular={vincularParte}
+              onGoTab={onGoTab}
+              puedeLiquidar={puedeLiquidar}
+              abrirLiquidar={abrirLiquidarDe === p.clave}
+              liquidacionResaltada={liquidacionResaltada?.clave === p.clave ? liquidacionResaltada.codigo : null}
+              onLiquidarPedidoAtendido={() => setAbrirLiquidarDe(null)}
+              onCambio={reload}
+            />
+          ))}
+        </ul>
+      )}
+      {personas.length > VISIBLES && !verTodas && (
+        <button
+          type="button"
+          onClick={() => setVerTodas(true)}
+          className="mt-3 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl text-sm font-bold text-primary transition-colors hover:bg-[var(--surface-sunken)]"
+        >
+          <ChevronDown className="h-4 w-4" aria-hidden /> Ver las {personas.length} personas
+        </button>
+      )}
+    </div>
+  );
+}

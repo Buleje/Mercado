@@ -92,7 +92,7 @@ export default function LiveOrderCounter({ variant = "inline", className }: Prop
   return (
     <div
       className={cn(
-        "inline-flex items-center gap-2 rounded-full bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] px-3 py-1.5",
+        "inline-flex items-center gap-2 rounded-full bg-primary/10 dark:bg-primary/15 px-3 py-1.5",
         className,
       )}
       aria-live="polite"

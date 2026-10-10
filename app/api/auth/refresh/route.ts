@@ -12,6 +12,7 @@ import { logger } from "@/lib/logger";
 import { cacheStore } from "@/lib/cache";
 import { AdminUsersDB } from "@/lib/db/admin-users.db";
 import { isSessionRevoked } from "@/lib/auth/session-revocation";
+import { anotarSucesor, anularSucesores, decidirReuso } from "@/lib/auth/refresh-sucesor";
 
 /**
  * POST /api/auth/refresh
@@ -56,39 +57,38 @@ export async function POST(req: NextRequest) {
     return res;
   }
 
-  // SECURITY 2026-05-06 (pentest H007) + FIX 2026-06: jti rotation con ventana
-  // de gracia. El blacklist evita REPLAY de un refresh token robado/viejo, pero
-  // el cliente legítimamente dispara refresh CONCURRENTES al cargar (varios
-  // hooks + React StrictMode double-mount). Sin gracia, el 2º request (mismo
-  // jti, enviado antes de que llegue la cookie rotada) caía como "replay" → 401
-  // + logout, rebotando al usuario a /login tras cada deploy/restart.
-  // Fix: dentro de GRACE_MS desde el 1er consumo es un refresh concurrente
-  // benigno → re-rota (re-emite par válido). Pasada la gracia = replay real → 401.
-  // Tokens viejos sin jti (pre-fix) se aceptan una vez para back-compat.
+  // SECURITY 2026-05-06 (pentest H007) + FIX 2026-06 + 2026-10-09: rotación con
+  // detección de reuso. Gracia de 30 s para pedidos simultáneos (varios hooks,
+  // StrictMode). Fuera de la gracia, si NINGÚN token emitido a partir de éste se
+  // usó todavía, la respuesta anterior se perdió (reinicio del servidor, 4G que
+  // se corta, recarga a mitad): se rota otra vez y se anulan esos sucesores sin
+  // usar. Si alguno ya se usó, hay dos copias → replay real → 401 (ver
+  // lib/auth/refresh-sucesor.ts). Tokens viejos sin jti se aceptan una vez.
+  let anularTrasRotar: string[] = [];
   if (payload.jti) {
-    const blacklistKey = `refresh-jti:consumed:${payload.jti}`;
-    const GRACE_MS = 30_000;
-    const consumedAt = cacheStore.get<number>(blacklistKey);
-    if (typeof consumedAt === "number") {
-      if (Date.now() - consumedAt > GRACE_MS) {
-        logger.warn("[auth/refresh] jti replay attempt (beyond grace)", {
-          username: payload.username,
-          jti: payload.jti,
-        });
-        const res = NextResponse.json({ error: "refresh token already used" }, { status: 401 });
-        res.cookies.set(SESSION.COOKIE_NAME, "", { maxAge: 0, path: "/" });
-        res.cookies.set(REFRESH.COOKIE_NAME, "", { maxAge: 0, path: "/" });
-        return res;
-      }
-      // Dentro de la ventana de gracia → refresh concurrente legítimo. NO
-      // limpiar cookies ni bloquear; se re-rota abajo (par nuevo y válido).
+    const decision = decidirReuso(cacheStore, payload.jti, Date.now());
+    if (decision.tipo === "robo") {
+      logger.warn("[auth/refresh] jti replay attempt (beyond grace, successor already used)", {
+        username: payload.username,
+        jti: payload.jti,
+      });
+      const res = NextResponse.json({ error: "refresh token already used" }, { status: 401 });
+      res.cookies.set(SESSION.COOKIE_NAME, "", { maxAge: 0, path: "/" });
+      res.cookies.set(REFRESH.COOKIE_NAME, "", { maxAge: 0, path: "/" });
+      return res;
+    }
+    if (decision.tipo === "respuesta-perdida") {
+      logger.warn("[auth/refresh] lost rotation response — re-rotating, unused successors voided", {
+        username: payload.username,
+        jti: payload.jti,
+        anulados: decision.anular.length,
+      });
+      anularTrasRotar = decision.anular;
+    } else if (decision.tipo === "concurrente") {
       logger.debug("[auth/refresh] concurrent refresh within grace window", {
         username: payload.username,
         jti: payload.jti,
       });
-    } else {
-      // Primer consumo — marcar con timestamp (TTL 7 días, igual al refresh).
-      cacheStore.set(blacklistKey, Date.now(), 7 * 24 * 60 * 60);
     }
   }
 
@@ -120,6 +120,14 @@ export async function POST(req: NextRequest) {
     createSessionToken(payload.role, payload.username, payload.tenantId, payload.name ?? ""),
     createRefreshToken(payload.role, payload.username, payload.tenantId, payload.name ?? ""),
   ]);
+
+  // Anotar el sucesor (para distinguir respuesta perdida de robo) y anular los
+  // que se emitieron y nunca llegaron al navegador.
+  if (payload.jti) {
+    const nuevo = await getRefreshPayload(newRefresh);
+    if (nuevo?.jti) anotarSucesor(cacheStore, payload.jti, nuevo.jti);
+    if (anularTrasRotar.length) anularSucesores(cacheStore, anularTrasRotar);
+  }
 
   const response = NextResponse.json({
     ok: true,

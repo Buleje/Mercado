@@ -1,57 +1,45 @@
 "use client";
 
-import { CardTitle } from "@buleje/design-system";
+/**
+ * Acciones del marketplace en UNA fila de botones (2026-10-09). Antes eran 3
+ * bloques de color de 74 px (ámbar, teal y gris) con su propio título; ahora
+ * van al pie de «Cómo va tu tienda hoy»: la principal llena, las otras con borde.
+ */
+
 import { useEffect, useMemo, useState } from "react";
-import { Package, PlusSquare, Store, ExternalLink } from "@buleje/design-system/icons";
-import Link from "next/link";
+import { ExternalLink, Package, PlusSquare, Store } from "@buleje/design-system/icons";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
+import { esMarketplace } from "@/lib/tenancy/negocio-por-defecto";
 
 type QuickAction = {
   label: string;
-  description: string;
   href: string;
   icon: React.ElementType;
-  color: string;
+  principal?: boolean;
   external?: boolean;
 };
 
 function buildActions(slug: string): QuickAction[] {
   return [
-    {
-      label: "Ver pedidos",
-      description: "Atiende los pedidos pendientes",
-      href: "/admin?tab=pedidos",
-      icon: Package,
-      color: "bg-[var(--data-warning-500)] hover:bg-[var(--data-warning-500)]",
-    },
-    {
-      label: "Cargar producto",
-      description: "Agrega un nuevo producto",
-      href: "/admin?tab=productos",
-      icon: PlusSquare,
-      color: "bg-primary hover:bg-[var(--accent)]",
-    },
-    {
-      label: "Ver mi tienda",
-      description: "Abre tu tienda en el marketplace",
-      href: slug ? `/t/${slug}/tienda` : "/marketplace",
-      icon: Store,
-      color: "bg-gray-700 hover:bg-gray-800 dark:bg-gray-600 dark:hover:bg-gray-500",
-      external: true,
-    },
+    { label: "Ver pedidos", href: "/admin?tab=pedidos", icon: Package, principal: true },
+    { label: "Cargar producto", href: "/admin?tab=productos", icon: PlusSquare },
+    { label: "Ver mi tienda", href: slug ? `/t/${slug}/tienda` : "/marketplace", icon: Store, external: true },
   ];
 }
 
-export function VendorQuickActions() {
+const BASE = "inline-flex min-h-11 w-full items-center justify-center gap-2 px-4 sm:w-auto sm:justify-start text-sm font-bold transition-colors hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]";
+const PRINCIPAL = "bg-[var(--accent-dark)] text-white hover:bg-[var(--accent-600)]";
+const SECUNDARIA = "border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]";
+
+export function VendorQuickActions({ pendientes = 0 }: { pendientes?: number }) {
   const [slug, setSlug] = useState("");
 
   useEffect(() => {
     let active = true;
-
     void resolveActiveTenantSlug().then((resolved) => {
-      if (active && resolved !== "main") setSlug(resolved);
+      if (active && !esMarketplace(resolved)) setSlug(resolved);
     });
-
     return () => {
       active = false;
     };
@@ -60,28 +48,28 @@ export function VendorQuickActions() {
   const actions = useMemo(() => buildActions(slug), [slug]);
 
   return (
-    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-6 ">
-      <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4">Acciones rápidas</CardTitle>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        {actions.map((action) => {
-          const Icon = action.icon;
-          return (
-            <Link
-              key={action.label}
-              href={action.href}
-              {...(action.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-              className={`flex items-center gap-3 p-4 rounded-xl text-white transition-colors min-h-14 ${action.color}`}
-            >
-              <Icon className="h-6 w-6 shrink-0" />
-              <div className="min-w-0 flex-1">
-                <p className="font-bold text-sm leading-tight">{action.label}</p>
-                <p className="text-xs opacity-80 leading-tight mt-0.5 truncate">{action.description}</p>
-              </div>
-              {action.external && <ExternalLink className="h-4 w-4 shrink-0 opacity-60" />}
-            </Link>
-          );
-        })}
-      </div>
-    </div>
+    <nav aria-label="Acciones del marketplace" className="flex flex-wrap gap-2">
+      {actions.map((action) => {
+        const Icon = action.icon;
+        return (
+          <EnlacePanel
+            apariencia="heredada"
+            key={action.label}
+            href={action.href}
+            {...(action.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+            className={`${BASE} ${action.principal ? PRINCIPAL : SECUNDARIA}`}
+          >
+            <Icon className="h-4 w-4 shrink-0" aria-hidden />
+            {action.label}
+            {action.principal && pendientes > 0 && (
+              <span className="ml-0.5 inline-flex min-w-6 items-center justify-center rounded-full bg-[color-mix(in_srgb,currentColor_22%,transparent)] px-1.5 text-xs font-extrabold tabular-nums">
+                {pendientes}
+              </span>
+            )}
+            {action.external && <ExternalLink className="h-3.5 w-3.5 shrink-0 opacity-70" aria-label="Se abre en otra pestaña" />}
+          </EnlacePanel>
+        );
+      })}
+    </nav>
   );
 }

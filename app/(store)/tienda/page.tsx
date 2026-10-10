@@ -1,8 +1,8 @@
-import { Suspense } from "react";
+import { safeJsonLdStringify } from "@/lib/seo/json-ld";
+import { Suspense, type ComponentProps } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import { cacheLife, cacheTag } from "next/cache";
 import TiendaClientShell from "@/components/TiendaClientShell";
 import type { TiendaSectionKey } from "@/components/admin/StorefrontEditor";
@@ -11,9 +11,9 @@ import {
   SectionSkeleton,
 } from "@/components/LoadingSkeleton";
 import { zones } from "@/data/zones";
-import { categories } from "@/data/products";
-import { SettingsDB } from "@/lib/db/settings.db";
 import { getCachedSettings, resolveStoreContext } from "@/lib/store-metadata";
+import { catalogoPropio } from "@/lib/extensiones/CatalogoPropio";
+import type { ParametrosDeBusqueda } from "@/extensiones/_contrato";
 
 /**
  * Metadata dinámica: cuando se entra vía /t/<slug>/tienda el middleware
@@ -28,8 +28,19 @@ export async function generateMetadata(): Promise<Metadata> {
     const settings = await getCachedSettings(ctx.tenantId);
     const slogan = settings?.slogan ?? "Delivery rápido y seguro";
 
-    const title = `${ctx.name} — Catálogo`;
-    const description = `Explora el catálogo de ${ctx.name}. ${slogan}. Delivery con Yape y efectivo.`;
+    let title = `${ctx.name} — Catálogo`;
+    let description = `Explora el catálogo de ${ctx.name}. ${slogan}. Delivery con Yape y efectivo.`;
+    // #6.1 Meta por página: el dueño sobreescribe título/descripción del catálogo
+    // desde el editor (storeTheme.catalogMetaTitle/Description). Solo en tenant.
+    // Usamos el MISMO `settings` ya cargado (getCachedSettings con el id que sí
+    // resuelve el nombre) para evitar un id distinto (slug vs CUID).
+    if (ctx.isTenant) {
+      const stJson = (settings as { storeTheme?: Record<string, unknown> } | null)?.storeTheme;
+      const ct = typeof stJson?.["catalogMetaTitle"] === "string" ? (stJson["catalogMetaTitle"] as string).trim() : "";
+      const cd = typeof stJson?.["catalogMetaDescription"] === "string" ? (stJson["catalogMetaDescription"] as string).trim() : "";
+      if (ct) title = ct;
+      if (cd) description = cd;
+    }
 
     // SEO 2026-05-24: og:image dinámico (share visual en WhatsApp/FB) — el
     // twitter card era summary_large_image pero sin imagen. Sirve para /tienda
@@ -65,8 +76,6 @@ export async function generateMetadata(): Promise<Metadata> {
 
 // ── Main catalog (still loaded individually — always visible) ──
 const ProductCatalog    = dynamic(() => import("@/components/ProductCatalog"));
-const Footer            = dynamic(() => import("@/components/Footer"));
-const TenantFooter      = dynamic(() => import("@/components/store/TenantFooter"));
 
 // ── Tienda section defaults (same order as StorefrontEditor) ────────────────
 const TIENDA_DEFAULT_ORDER: TiendaSectionKey[] = [
@@ -152,8 +161,14 @@ async function getTiendaSectionConfig(): Promise<{
   }
 }
 
-export default async function TiendaPage() {
-  const { visible } = await getTiendaSectionConfig();
+export default async function TiendaPage({ searchParams }: { searchParams: Promise<ParametrosDeBusqueda> }) {
+  // ADR-460 · un negocio con página propia puede traer su catálogo; si no (o
+  // si falla), el general de siempre. Las dos lecturas van en paralelo: al
+  // catálogo general no se le suma una espera en fila. La búsqueda sólo se
+  // espera en la rama del catálogo propio.
+  const [propio, { visible }] = await Promise.all([catalogoPropio(searchParams), getTiendaSectionConfig()]);
+  if (propio) return propio;
+
   const show = (key: TiendaSectionKey) => visible.has(key);
 
   // Server-side product prefetch — #42: uses cached function for 5min revalidation
@@ -191,7 +206,7 @@ export default async function TiendaPage() {
           <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{
-              __html: JSON.stringify({
+              __html: safeJsonLdStringify({
                 "@context": "https://schema.org",
                 "@type": "ItemList",
                 name: "Categorías de productos — Buleje",
@@ -216,10 +231,10 @@ export default async function TiendaPage() {
       <main id="main-content">
         {/* Brandon 2026-06-07: la tienda individual muestra SOLO el catálogo.
             Quitados TiendaHero ("Tu bodega en {ciudad}"), TrustBar ("¿Por qué
-            comprarme?") y TiendaSections (franja "Ofertas que no te podés perder")
+            comprarme?") y TiendaSections (franja "Ofertas que no te puedes perder")
             → página limpia, sin marketing del marketplace. */}
         <Suspense fallback={<CatalogLoadingSkeleton />}>
-          <ProductCatalog initialProducts={initialProducts as any} />
+          <ProductCatalog initialProducts={initialProducts as unknown as ComponentProps<typeof ProductCatalog>["initialProducts"]} />
         </Suspense>
 
         {/* Below-fold sections + modals (client-only shell) */}

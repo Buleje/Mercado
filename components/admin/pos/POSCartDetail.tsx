@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "@buleje/design-system/icons";
 import { m, AnimatePresence } from "@/components/admin/providers";
+import { formatCurrency } from "@/lib/format";
 
 interface CartDetailItem {
   name: string;
@@ -17,7 +18,7 @@ interface POSCartDetailProps {
 }
 
 function fmt(n: number) {
-  return `S/${n.toFixed(2)}`;
+  return `${formatCurrency(n)}`;
 }
 
 export default function POSCartDetail({ items, count }: POSCartDetailProps) {

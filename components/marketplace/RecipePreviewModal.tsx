@@ -250,7 +250,7 @@ export default function RecipePreviewModal({ recipe, onClose }: Props) {
               "shrink-0 px-5 sm:px-6 py-3 flex items-center gap-3 border-b text-sm font-semibold",
               cookable
                 ? "bg-[var(--data-success-50,#ecfdf5)] border-[var(--data-success-200,#a7f3d0)] text-[var(--data-success-700,#047857)] dark:bg-emerald-950/40 dark:border-emerald-800/40 dark:text-emerald-300"
-                : "bg-[var(--data-warning-50,#fffbeb)] border-[var(--data-warning-200,#fde68a)] text-[var(--data-warning-700,#b45309)] dark:bg-amber-950/40 dark:border-amber-800/40 dark:text-amber-300",
+                : "bg-[var(--data-warning-50,#fffbeb)] border-[var(--data-warning-200,#ffe1dd)] text-[var(--data-warning-700,#c93b2c)] dark:bg-amber-950/40 dark:border-amber-800/40 dark:text-amber-300",
             )}
           >
             {cookable ? (
@@ -351,7 +351,7 @@ export default function RecipePreviewModal({ recipe, onClose }: Props) {
                           aria-disabled="true"
                         >
                           <div className="flex items-center gap-2.5">
-                            <span className="h-5 w-5 inline-flex items-center justify-center rounded-md bg-[var(--data-warning-50,#fffbeb)] text-[var(--data-warning-600,#d97706)] shrink-0">
+                            <span className="h-5 w-5 inline-flex items-center justify-center rounded-md bg-[var(--data-warning-50,#fffbeb)] text-[var(--data-warning-600,#f0503f)] shrink-0">
                               <AlertTriangle className="h-3 w-3" strokeWidth={2.5} aria-hidden />
                             </span>
                             <div className="flex-1 min-w-0">
@@ -375,7 +375,7 @@ export default function RecipePreviewModal({ recipe, onClose }: Props) {
                           className={cn(
                             "w-full flex items-start gap-2.5 rounded-lg border-2 px-3.5 py-3 transition-all text-left",
                             checked
-                              ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                              ? "border-[var(--accent)] bg-primary/10"
                               : "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:border-[var(--text-tertiary)]",
                           )}
                         >
@@ -450,11 +450,11 @@ export default function RecipePreviewModal({ recipe, onClose }: Props) {
                 )}
 
                 {countFaltantes > 0 && cookable && (
-                  <div className="rounded-lg border border-[var(--data-warning-200,#fde68a)] bg-[var(--data-warning-50,#fffbeb)] px-4 py-3 dark:bg-amber-950/40 dark:border-amber-800/40">
-                    <p className="text-[length:var(--ts-xs)] font-bold text-[var(--data-warning-700,#b45309)] dark:text-amber-300">
+                  <div className="rounded-lg border border-[var(--data-warning-200,#ffe1dd)] bg-[var(--data-warning-50,#fffbeb)] px-4 py-3 dark:bg-amber-950/40 dark:border-amber-800/40">
+                    <p className="text-[length:var(--ts-xs)] font-bold text-[var(--data-warning-700,#c93b2c)] dark:text-amber-300">
                       {countFaltantes} ingrediente{countFaltantes !== 1 ? "s" : ""} opcional{countFaltantes !== 1 ? "es" : ""} sin stock
                     </p>
-                    <p className="text-[length:var(--ts-xs)] text-[var(--data-warning-700,#b45309)]/80 dark:text-amber-300/80 mt-0.5">
+                    <p className="text-[length:var(--ts-xs)] text-[var(--data-warning-700,#c93b2c)]/80 dark:text-amber-300/80 mt-0.5">
                       Puedes cocinar el plato sin ellos o esperar a que alguna tienda los reponga.
                     </p>
                   </div>

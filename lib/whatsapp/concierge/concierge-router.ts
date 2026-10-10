@@ -2,7 +2,6 @@ import "server-only";
 
 // Import ADR-043 classifier WITHOUT modifying the file (ADR-046 constraint)
 import { classifyWhatsappIntent, shouldTrustAi } from "../ai-intent";
-import { formatWelcomeMenu } from "../message-templates";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
 

@@ -16,6 +16,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { BarChart3 } from "@buleje/design-system/icons";
+import { formatNumber } from "@/lib/format";
 
 interface ChartEntry {
   name: string;
@@ -60,7 +61,7 @@ export default function TurnosChart({ chartData }: TurnosChartProps) {
         />
         <Tooltip
           formatter={(value: unknown) => [
-            `S/${Number(value).toLocaleString("es-PE")}`,
+            `S/${formatNumber(Number(value))}`,
             "Ventas",
           ]}
         />

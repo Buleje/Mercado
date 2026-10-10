@@ -123,8 +123,8 @@ export default function ProductCommentsSection({
         }
         setError(
           res.status === 429
-            ? "Muy rápido — esperá un momento antes de comentar de nuevo."
-            : (j?.error ?? "No se pudo publicar. Probá de nuevo."),
+            ? "Muy rápido — espera un momento antes de comentar de nuevo."
+            : (j?.error ?? "No se pudo publicar. Prueba de nuevo."),
         );
         return;
       }
@@ -132,7 +132,7 @@ export default function ProductCommentsSection({
       setComments((prev) => [j.data as ProductComment, ...prev]);
       setText("");
     } catch {
-      setError("Sin conexión. Probá de nuevo.");
+      setError("Sin conexión. Prueba de nuevo.");
     } finally {
       setPosting(false);
     }
@@ -144,7 +144,7 @@ export default function ProductCommentsSection({
     <div className={cn("pt-1", className)}>
       {/* Header */}
       <div className="flex items-center gap-2 mb-3">
-        <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent)]">
+        <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
           <MessageCircle className="h-4 w-4" strokeWidth={2.25} aria-hidden />
         </span>
         <p className="text-sm font-black text-[var(--text-primary)]">
@@ -177,8 +177,8 @@ export default function ProductCommentsSection({
               value={text}
               onChange={(e) => { setText(e.target.value.slice(0, 300)); if (error) setError(null); }}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void submit(); } }}
-              placeholder={`Comentá como ${firstName.split(" ")[0] || "vos"}…`}
-              aria-label="Escribí tu comentario"
+              placeholder={`Comenta como ${firstName.split(" ")[0] || "tú"}…`}
+              aria-label="Escribe tu comentario"
               className="block min-w-0 flex-1 h-12 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-medium text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
             />
             <button
@@ -209,14 +209,14 @@ export default function ProductCommentsSection({
         <button
           type="button"
           onClick={openAuthModal}
-          className="group flex w-full items-center gap-3 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 text-left transition-all hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]"
+          className="group flex w-full items-center gap-3 rounded-2xl border-2 border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 text-left transition-all hover:border-[var(--accent)] hover:bg-primary/10"
         >
           <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--surface-sunken)] text-[var(--text-tertiary)] transition-colors group-hover:bg-[var(--accent)] group-hover:text-white">
             <Lock className="h-4 w-4" strokeWidth={2.25} aria-hidden />
           </span>
           <span className="min-w-0 flex-1 leading-tight">
             <span className="block text-sm font-extrabold text-[var(--text-primary)] group-hover:text-[var(--accent)]">
-              Iniciá sesión para comentar
+              Inicia sesión para comentar
             </span>
             <span className="block text-[length:var(--ts-xs)] font-medium text-[var(--text-tertiary)]">
               Tu nombre aparece automático — gratis y en segundos

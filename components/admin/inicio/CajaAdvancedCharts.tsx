@@ -20,8 +20,11 @@ import {
   BulejeStackedBar,
   BulejeComparisonOverlay,
 } from "@/components/ui-system/charts";
-import { DashboardSection } from "./_shared";
+import { DashboardSection, MicroList } from "./_shared";
 import { DraggableSections, type DraggableItem } from "./DraggableSections";
+import { coloresFijos, colorDeMetodo, ejeSoles, PAY_LABELS } from "./caja-presentacion";
+import { hayDatosEnSerie, hayTendencia, modoRanking, valorConDato } from "@/lib/admin/inicio/hay-datos";
+import { cantidad, COLOR_CONCEPTO, fechaCorta, porcentaje, soles, solesEje } from "@/lib/admin/inicio/formato-tablero";
 
 type Product = {
   id: number | string;
@@ -56,22 +59,16 @@ type Payable = {
   dueDate?: string;
 };
 
-const PAY_LABELS: Record<string, string> = {
-  efectivo: "Efectivo",
-  yape: "Yape",
-  plin: "Plin",
-  tarjeta: "Tarjeta",
-  transferencia: "Transferencia",
-};
-const PAY_COLOR_KEYS = ["primary", "secondary", "tertiary", "accent", "amber", "purple"] as const;
+/** Ranuras de color del apilado: cada una se fija al color del método con `coloresFijos`. */
+const RANURAS_METODO = ["primary", "secondary", "tertiary", "accent", "info"] as const;
+const tooltipSoles = (v: number | string) => soles(v);
 
 function dayKey(iso: string) {
   const d = new Date(iso);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
-function dayLabel(dk: string) {
-  return new Date(dk + "T12:00:00").toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
-}
+/** «09 oct» con meses escritos a mano. */
+const dayLabel = (dk: string) => fechaCorta(dk);
 
 export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
   const { data } = useDashboardData();
@@ -190,9 +187,12 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
     const stacks = topMethods.map((m, i) => ({
       key: m,
       label: m,
-      color: PAY_COLOR_KEYS[i % PAY_COLOR_KEYS.length],
+      color: RANURAS_METODO[i % RANURAS_METODO.length],
     }));
-    return { rows, stacks, methods: topMethods };
+    const colores = coloresFijos(
+      Object.fromEntries(topMethods.map((m, i) => [RANURAS_METODO[i % RANURAS_METODO.length], colorDeMetodo(m)])),
+    );
+    return { rows, stacks, methods: topMethods, colores };
   }, [orders, sales]);
 
   // ── 4. COMPARATIVA SEMANAL INGRESOS + EGRESOS ───────────────────────────
@@ -340,7 +340,16 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
     return { rows, minAcc: Math.round(minAcc), maxAcc: Math.round(maxAcc), finalAcc };
   }, [orders, sales, purchases]);
 
-  const fmtS = (v: number) => `S/ ${v.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`;
+  // Derivados de presentación (no cambian las cuentas de arriba).
+  const modoPareto = modoRanking(pareto.rows, "monto");
+  const total14 = metodosStacked.rows.reduce(
+    (s, r) => s + metodosStacked.methods.reduce((ss, m) => ss + Number(r[m] ?? 0), 0),
+    0,
+  );
+  const diasConVenta = margenTrend.rows.filter((r) => r.ingresos > 0);
+  const mejorMargen = diasConVenta.length ? [...diasConVenta].sort((a, b) => b.margen - a.margen)[0] : null;
+  const utilidad14 = margenTrend.rows.reduce((s, r) => s + r.utilidad, 0);
+  const coloresUtilidad = coloresFijos({ primary: COLOR_CONCEPTO.utilidad });
 
   const sections: DraggableItem[] = [
     {
@@ -348,39 +357,37 @@ export const CajaAdvancedCharts = memo(function CajaAdvancedCharts() {
       render: () => (
         <DashboardSection
           chartId="caja.advanced.cash-runway"
-          hasData={true}
+          hasData={valorConDato(runway.egresos30d)}
           defaultVisible={false}
-kicker="Cash runway · rango activo"
-          title="Días de operación con balance actual"
+          kicker="Caja · últimos 30 días"
+          title="¿Cuántos días aguantas?"
+          description="Lo que quedó en 30 días (entró − salió) dividido entre lo que sale por día. Es una estimación, no el saldo contado de tu caja."
           kpis={[
             {
-              label: "Runway",
-              value: `${runway.runwayDias} días`,
-              tone:
-                runway.runwayDias >= 30
-                  ? "success"
-                  : runway.runwayDias >= 15
-                    ? "primary"
-                    : "warning",
+              label: "Días que aguantas", value: `${cantidad(runway.runwayDias)} días`,
+              tone: runway.runwayDias >= 30 ? "success" : runway.runwayDias >= 15 ? "neutral" : "warning",
             },
-            { label: "Balance 30d", value: fmtS(runway.balance), tone: runway.balance >= 0 ? "success" : "warning" },
-            { label: "Egreso prom./día", value: fmtS(runway.avgEgresoDia), tone: "neutral" },
-            { label: "Pendiente pago", value: fmtS(runway.pendientePago), tone: "warning" },
+            { label: "Quedó en 30 días", value: soles(runway.balance), tone: runway.balance < 0 ? "warning" : "success" },
+            { label: "Sale por día", value: soles(runway.avgEgresoDia) },
+            {
+              label: "Por pagar", value: runway.pendientePago > 0 ? soles(runway.pendientePago) : "Al día",
+              tone: runway.pendientePago > 0 ? "warning" : "success", hint: "Cuentas por pagar sin cancelar.",
+            },
           ]}
         >
           <div className="flex items-center justify-center py-2">
             <BulejeGaugeChart
               value={runway.runwayPct}
               max={100}
-              label="Runway de efectivo"
+              label="Días de caja (60 = lleno)"
               sublabel={
                 runway.runwayDias >= 60
-                  ? "Excelente — +60 días"
+                  ? "Más de 60 días"
                   : runway.runwayDias >= 30
-                    ? "Saludable"
+                    ? "Vas bien"
                     : runway.runwayDias >= 15
-                      ? "Ajustado — vigilar"
-                      : "Crítico — tomar acción"
+                      ? "Ajustado"
+                      : "Crítico"
               }
               format="percentage"
               size={260}
@@ -394,38 +401,43 @@ kicker="Cash runway · rango activo"
       render: () => (
         <DashboardSection
           chartId="caja.advanced.pareto-metodos"
-          hasData={true}
+          hasData={modoPareto !== "oculto"}
           defaultVisible={false}
-kicker="Pareto · métodos de pago · rango activo"
-          title="Qué métodos concentran el cash"
+          kicker="Cobros · últimos 30 días"
+          title="Qué métodos concentran tus cobros"
           kpis={[
-            { label: "Total 30d", value: fmtS(pareto.total), tone: "primary" },
-            { label: "Métodos para 80%", value: String(pareto.metodosFor80), tone: "success" },
-            { label: "Métodos totales", value: String(pareto.totalMetodos), tone: "neutral" },
+            { label: "Cobrado en 30 días", value: soles(pareto.total) },
             {
-              label: "Líder",
-              value: pareto.rows[0]?.metodo ?? "—",
-              tone: "success",
+              label: "Métodos para el 80 %", value: `${cantidad(pareto.metodosFor80)} de ${cantidad(pareto.totalMetodos)}`,
+              hint: "Cuántos métodos, de mayor a menor, juntan el 80 % de lo cobrado.",
             },
           ]}
         >
-          <BulejeComposedChart
-            data={pareto.rows}
-            xKey="metodo"
-            bars={[{ key: "monto", label: "Monto S/", color: "primary", yAxis: "left" }]}
-            lines={[
-              { key: "acumuladoPct", label: "Acumulado %", color: "accent", yAxis: "right" },
-            ]}
-            leftAxisFormat={(v) => `S/${(v / 1000).toFixed(0)}k`}
-            rightAxisFormat={(v) => `${v}%`}
-            tooltipFormat={(v, name) =>
-              name?.toLowerCase().includes("acumulado")
-                ? `${Number(v).toFixed(1)}%`
-                : `S/ ${Number(v).toLocaleString("es-PE")}`
-            }
-            height={300}
-            minDataPoints={1}
-          />
+          {modoPareto === "grafico" ? (
+            <div style={coloresFijos({ primary: COLOR_CONCEPTO.cajaEntra })}>
+              <BulejeComposedChart
+                data={pareto.rows}
+                xKey="metodo"
+                bars={[{ key: "monto", label: "Cobrado", color: "primary", yAxis: "left" }]}
+                leftAxisFormat={ejeSoles}
+                tooltipFormat={tooltipSoles}
+                tooltipExtras={(e) => (
+                  <p className="mt-1 text-xs text-[var(--text-secondary)]">Acumulado: {porcentaje(Number(e.acumuladoPct), 1)}</p>
+                )}
+                valueFormat={(v) => solesEje(v)}
+                showLegend={false}
+                height={260}
+                minDataPoints={1}
+              />
+            </div>
+          ) : (
+            <MicroList
+              items={pareto.rows.map((r) => ({
+                name: r.metodo, value: r.monto, label: soles(r.monto),
+                sublabel: `acum. ${porcentaje(r.acumuladoPct)}`, color: colorDeMetodo(r.metodo),
+              }))}
+            />
+          )}
         </DashboardSection>
       ),
     },
@@ -434,46 +446,26 @@ kicker="Pareto · métodos de pago · rango activo"
       render: () => (
         <DashboardSection
           chartId="caja.advanced.metodos-stacked"
-          hasData={true}
+          hasData={hayTendencia(metodosStacked.rows, metodosStacked.methods)}
           defaultVisible={false}
-kicker="Evolución de métodos · rango activo"
-          title="Composición diaria de cobros por método"
+          kicker="Cobros · últimos 14 días"
+          title="Cobros por método, día por día"
           kpis={[
-            { label: "Días con data", value: String(metodosStacked.rows.length), tone: "neutral" },
-            { label: "Métodos", value: String(metodosStacked.methods.length), tone: "neutral" },
-            {
-              label: "Método top",
-              value: metodosStacked.methods[0] ?? "—",
-              tone: "success",
-            },
-            {
-              label: "Total 14d",
-              value: fmtS(
-                metodosStacked.rows.reduce(
-                  (s, r) =>
-                    s +
-                    metodosStacked.methods.reduce((ss, m) => ss + Number(r[m] ?? 0), 0),
-                  0,
-                ),
-              ),
-              tone: "primary",
-            },
+            { label: "Cobrado en 14 días", value: soles(total14) },
+            { label: "Método top", value: metodosStacked.methods[0] ?? null },
+            { label: "Días con cobros", value: cantidad(metodosStacked.rows.length) },
           ]}
         >
-          {metodosStacked.rows.length > 0 ? (
+          <div style={metodosStacked.colores}>
             <BulejeStackedBar
               data={metodosStacked.rows}
               xKey="day"
               stacks={metodosStacked.stacks}
-              yAxisFormat={(v) => `S/${(v / 1000).toFixed(0)}k`}
-              tooltipFormat={(v) => `S/ ${Number(v).toLocaleString("es-PE")}`}
-              height={300}
+              yAxisFormat={ejeSoles}
+              tooltipFormat={tooltipSoles}
+              height={280}
             />
-          ) : (
-            <div className="rounded-lg border border-dashed border-[var(--rule-base)] p-8 text-center text-sm text-[var(--text-tertiary)]">
-              Sin datos en los rango activo.
-            </div>
-          )}
+          </div>
         </DashboardSection>
       ),
     },
@@ -482,22 +474,26 @@ kicker="Evolución de métodos · rango activo"
       render: () => (
         <DashboardSection
           chartId="caja.advanced.comparativa-semana"
-          hasData={true}
+          hasData={hayDatosEnSerie(compSemana, ["current", "previous"])}
           defaultVisible={false}
-kicker="Comparativa · semana a semana"
-          title="Balance neto — esta semana vs pasada"
+          kicker="Caja · 7 días vs 7 anteriores"
+          title="Lo que quedó: esta semana vs la pasada"
+          description="Cada día: lo que entró menos las compras. La línea punteada es la semana pasada."
         >
-          <BulejeComparisonOverlay
-            data={compSemana}
-            xKey="day"
-            currentKey="current"
-            previousKey="previous"
-            currentLabel="Esta semana"
-            previousLabel="Semana pasada"
-            yAxisFormat={(v) => `S/${v.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`}
-            tooltipFormat={(v) => `S/ ${Number(v).toLocaleString("es-PE")}`}
-            height={280}
-          />
+          <div style={coloresFijos({ primary: COLOR_CONCEPTO.utilidad, tertiary: COLOR_CONCEPTO.anterior })}>
+            <BulejeComparisonOverlay
+              data={compSemana}
+              xKey="day"
+              currentKey="current"
+              previousKey="previous"
+              currentLabel="Esta semana"
+              previousLabel="Semana pasada"
+              // Su cabecera («Esta semana -S/ 4.2 mil») usa este mismo formato: con «S/».
+              yAxisFormat={solesEje}
+              tooltipFormat={tooltipSoles}
+              height={260}
+            />
+          </div>
         </DashboardSection>
       ),
     },
@@ -506,49 +502,43 @@ kicker="Comparativa · semana a semana"
       render: () => (
         <DashboardSection
           chartId="caja.advanced.margen-trend"
-          hasData={true}
+          hasData={hayTendencia(margenTrend.rows, ["utilidad"])}
           defaultVisible={false}
-kicker="Evolución del margen · rango activo"
-          title="Utilidad neta y margen día a día"
+          kicker="Utilidad · últimos 14 días"
+          title="Utilidad día a día"
+          description="Ventas − costo de lo vendido − compras de cada día. El margen de cada día sale al pasar el mouse."
           kpis={[
             {
-              label: "Margen prom.",
-              value: `${margenTrend.margenProm}%`,
-              tone:
-                margenTrend.margenProm >= 20
-                  ? "success"
-                  : margenTrend.margenProm >= 10
-                    ? "primary"
-                    : "warning",
-            },
-            { label: "Mejor día", value: margenTrend.mejor.dia, tone: "success" },
-            {
-              label: "Margen mejor día",
-              value: `${margenTrend.mejor.margen}%`,
-              tone: "success",
+              label: "Margen promedio", value: porcentaje(margenTrend.margenProm, 1),
+              sinDato: !diasConVenta.length || Math.abs(margenTrend.margenProm) > 999,
+              sinDatoHint: "Sin ventas en estos días, o el % es tan grande que no se puede leer.",
+              tone: margenTrend.margenProm >= 20 ? "success" : margenTrend.margenProm >= 10 ? "neutral" : "warning",
             },
             {
-              label: "Utilidad acum.",
-              value: fmtS(margenTrend.rows.reduce((s, r) => s + r.utilidad, 0)),
-              tone: "primary",
+              label: "Mejor día", value: mejorMargen ? porcentaje(mejorMargen.margen, 1) : null,
+              sub: mejorMargen?.dia, tone: "success", sinDatoHint: "Ningún día con ventas en estos 14 días.",
             },
+            { label: "Utilidad 14 días", value: soles(utilidad14), tone: utilidad14 < 0 ? "warning" : "success" },
           ]}
         >
-          <BulejeComposedChart
-            data={margenTrend.rows}
-            xKey="dia"
-            bars={[{ key: "utilidad", label: "Utilidad S/", color: "primary", yAxis: "left" }]}
-            lines={[{ key: "margen", label: "Margen %", color: "accent", yAxis: "right" }]}
-            leftAxisFormat={(v) => `S/${(v / 1000).toFixed(0)}k`}
-            rightAxisFormat={(v) => `${v}%`}
-            tooltipFormat={(v, name) =>
-              name?.toLowerCase().includes("margen")
-                ? `${Number(v).toFixed(1)}%`
-                : `S/ ${Number(v).toLocaleString("es-PE")}`
-            }
-            height={280}
-            minDataPoints={2}
-          />
+          <div style={coloresUtilidad}>
+            <BulejeComposedChart
+              data={margenTrend.rows}
+              xKey="dia"
+              // Línea y no barras: con todos los días en negativo el eje del DS
+              // ([0, "auto"]) arrancaba en -600 y las barras de -600 medían 0 px.
+              lines={[{ key: "utilidad", label: "Utilidad", color: "primary", yAxis: "left" }]}
+              leftAxisFormat={ejeSoles}
+              tooltipFormat={tooltipSoles}
+              tooltipExtras={(e) => (
+                <p className="mt-1 text-xs text-[var(--text-secondary)]">
+                  {Number(e.ingresos) > 0 ? `Margen: ${porcentaje(Number(e.margen), 1)}` : "Sin ventas ese día"}
+                </p>
+              )}
+              showLegend={false}
+              height={260}
+            />
+          </div>
         </DashboardSection>
       ),
     },
@@ -557,32 +547,30 @@ kicker="Evolución del margen · rango activo"
       render: () => (
         <DashboardSection
           chartId="caja.advanced.balance-acumulado"
-          hasData={true}
+          hasData={hayTendencia(runningBalance.rows, ["acumulado"])}
           defaultVisible={false}
-kicker="Balance acumulado · rango activo"
-          title="Trayectoria de caja (running total)"
+          kicker="Caja · últimos 30 días"
+          title="Cómo se fue moviendo la caja"
+          description="La línea suma día a día lo que entró menos las compras; las barras grises son lo de cada día."
           kpis={[
-            { label: "Final", value: fmtS(runningBalance.finalAcc), tone: runningBalance.finalAcc >= 0 ? "success" : "warning" },
-            { label: "Máximo", value: fmtS(runningBalance.maxAcc), tone: "success" },
-            { label: "Mínimo", value: fmtS(runningBalance.minAcc), tone: runningBalance.minAcc >= 0 ? "neutral" : "warning" },
-            {
-              label: "Rango",
-              value: fmtS(runningBalance.maxAcc - runningBalance.minAcc),
-              tone: "primary",
-            },
+            { label: "Hoy vas en", value: soles(runningBalance.finalAcc), tone: runningBalance.finalAcc < 0 ? "warning" : "success" },
+            { label: "Lo más alto", value: soles(runningBalance.maxAcc) },
+            { label: "Lo más bajo", value: soles(runningBalance.minAcc), tone: runningBalance.minAcc < 0 ? "warning" : "neutral" },
           ]}
         >
-          <BulejeComposedChart
-            data={runningBalance.rows}
-            xKey="dia"
-            bars={[{ key: "deltaDia", label: "Δ Día", color: "tertiary", yAxis: "left" }]}
-            lines={[{ key: "acumulado", label: "Acumulado", color: "primary", yAxis: "right" }]}
-            leftAxisFormat={(v) => `S/${(v / 1000).toFixed(0)}k`}
-            rightAxisFormat={(v) => `S/${(v / 1000).toFixed(0)}k`}
-            tooltipFormat={(v) => `S/ ${Number(v).toLocaleString("es-PE")}`}
-            height={300}
-            minDataPoints={2}
-          />
+          <div style={coloresFijos({ primary: COLOR_CONCEPTO.cajaSaldo, tertiary: COLOR_CONCEPTO.anterior })}>
+            <BulejeComposedChart
+              data={runningBalance.rows}
+              xKey="dia"
+              bars={[{ key: "deltaDia", label: "Lo del día", color: "tertiary", yAxis: "left" }]}
+              lines={[{ key: "acumulado", label: "Acumulado", color: "primary", yAxis: "left" }]}
+              leftAxisFormat={ejeSoles}
+              tooltipFormat={tooltipSoles}
+              showValues={false}
+              maxXTicks={10}
+              height={280}
+            />
+          </div>
         </DashboardSection>
       ),
     },
@@ -593,7 +581,7 @@ kicker="Balance acumulado · rango activo"
       items={sections}
       storageKey="caja-advanced-order"
       layout="grid"
-      gap={4}
+      gap={1}
       minColumnWidth="22rem"
     />
   );

@@ -8,6 +8,9 @@ import {
   ShoppingCart, DollarSign, Calendar, Shield,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { useMiRol } from "@/hooks/use-mi-rol";
+import { logger } from "@/lib/logger";
+import { puedePedir } from "@/lib/auth/roles-rutas-panel";
 import NotificationItem from "./NotificationItem";
 import type {
   NotificationItem as NotificationItemType,
@@ -209,6 +212,10 @@ export default function NotificationHub({
   refetch,
 }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
+  // /api/admin/stats sólo deja pasar a admin (roles-rutas-panel): sin este gate
+  // el almacenero recibía 403 al abrir el panel de notificaciones.
+  const rol = useMiRol();
+  const puedeStats = puedePedir("/api/admin/stats", rol);
   const [hubTab, setHubTab] = useState<HubTab>("todas");
   const [alerts, setAlerts] = useState<ConsolidatedAlert[]>([]);
   const [alertsLoading, setAlertsLoading] = useState(false);
@@ -226,9 +233,11 @@ export default function NotificationHub({
     try {
       // Fetch stats (stock bajo, pedidos pendientes, pagos vencidos)
       const [statsRes, batchRes, remindersRes] = await Promise.all([
-        fetch("/api/admin/stats", { credentials: "include" }).catch(() => null),
-        fetch("/api/batches/expiring", { credentials: "include" }).catch(() => null),
-        fetch("/api/reminders", { credentials: "include" }).catch(() => null),
+        puedeStats
+          ? fetch("/api/admin/stats", { credentials: "include" }).catch((err) => { logger.warn("[notification-hub] stats no respondió", { error: String(err) }); return null; })
+          : Promise.resolve(null),
+        fetch("/api/batches/expiring", { credentials: "include" }).catch((err) => { logger.warn("[notification-hub] lotes por vencer no respondió", { error: String(err) }); return null; }),
+        fetch("/api/reminders", { credentials: "include" }).catch((err) => { logger.warn("[notification-hub] recordatorios no respondió", { error: String(err) }); return null; }),
       ]);
 
       // Stats → alertas de stock, pedidos, finanzas
@@ -354,7 +363,7 @@ export default function NotificationHub({
 
     loadAlerts();
     return () => { cancelled = true; };
-  }, [open, refreshKey]);
+  }, [open, refreshKey, puedeStats]);
 
   // Total alert count for badge
   const totalAlertCount = useMemo(() => {

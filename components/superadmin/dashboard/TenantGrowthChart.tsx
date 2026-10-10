@@ -22,7 +22,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   LabelList,
 } from "recharts";
 import { TrendingUp, ShoppingBag, Banknote, Loader2 } from "@buleje/design-system/icons";
@@ -138,9 +137,9 @@ export function TenantGrowthChart({ range }: Props) {
             type="button"
             onClick={() => setMetric("orders")}
             className={[
-              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors",
+              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
               metric === "orders"
-                ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
             ].join(" ")}
           >
@@ -150,9 +149,9 @@ export function TenantGrowthChart({ range }: Props) {
             type="button"
             onClick={() => setMetric("revenue")}
             className={[
-              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors",
+              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
               metric === "revenue"
-                ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
             ].join(" ")}
           >
@@ -168,7 +167,7 @@ export function TenantGrowthChart({ range }: Props) {
       )}
 
       {error && (
-        <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-[var(--data-error-500)]">
+        <div className="rounded-lg border border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-500)]">
           {error}
         </div>
       )}
@@ -182,7 +181,7 @@ export function TenantGrowthChart({ range }: Props) {
       {!loading && !error && data && data.series.length > 0 && (
         <>
           <div className="h-[320px] sm:h-[360px]" style={{ width: "100%", minHeight: 240 }}>
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} debounce={50}>
+            <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} width="100%" height="100%" minWidth={0} debounce={50}>
               <LineChart data={chartData} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--rule-soft)" vertical={false} />
                 <XAxis

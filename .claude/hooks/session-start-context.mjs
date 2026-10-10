@@ -13,7 +13,7 @@
  *
  * Budget: <1s. Non-blocking. Exit 0 always.
  */
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, statSync } from "node:fs";
 import { execSync } from "node:child_process";
 import { join } from "node:path";
 
@@ -22,11 +22,11 @@ const projectRoot =
   process.env.BSM_PROJECT_ROOT ||
   process.cwd();
 
-function runGit(cmd) {
+function runGit(cmd, timeout = 2_000) {
   try {
     return execSync(`git -C "${projectRoot}" ${cmd}`, {
       encoding: "utf8",
-      timeout: 2_000,
+      timeout,
       stdio: ["ignore", "pipe", "ignore"],
     }).trim();
   } catch {
@@ -54,12 +54,22 @@ const filesDirty = statusPorcelain
 
 const testFailedFlag = existsSync(join(projectRoot, ".husky/.last-test-run.FAILED"));
 
-const sessionState = readJSON(join(projectRoot, ".claude/session-state.json"));
 const evolutionLog = readJSON(join(projectRoot, ".claude/evolution-log.json"));
 
 // ── Build minimal context message ───────────────────────────────
 const lines = [];
 lines.push(`**Branch:** \`${branch}\` → \`${upstream}\` · **Dirty:** ${filesDirty} archivos`);
+
+/* 2026-10-04: dos sesiones trabajaron 5 días sobre esta misma rama sin verse
+   (28 commits remotos vs 117 locales, 18 conflictos del Libro TH). Un fetch
+   corto al arrancar lo avisa el primer día, no al hacer push. */
+if (upstream !== "(sin upstream)") {
+  runGit(`fetch -q --no-tags origin ${branch}`, 4_000);
+  const [adelante, atras] = (runGit(`rev-list --left-right --count HEAD...${upstream}`) || "0 0").split(/\s+/).map(Number);
+  if (atras > 0) {
+    lines.push(`⚠️ **GitHub tiene ${atras} commit(s) que no están acá** (otra sesión u otra PC) · local adelante: ${adelante}. Juntar ANTES de trabajar: \`git pull --no-rebase\` (o avisar a Brandon si hay WIP).`);
+  }
+}
 
 if (recentCommits) {
   lines.push("");
@@ -74,13 +84,32 @@ if (testFailedFlag) {
   lines.push("⚠️ **TESTS FALLANDO** en ultimo post-commit. Correr `/self-heal test`.");
 }
 
-if (sessionState?.nextActions?.length > 0) {
-  lines.push("");
-  lines.push("**📋 Sesion anterior dejo trabajo pendiente:**");
-  sessionState.nextActions.slice(0, 3).forEach((a, i) => {
-    lines.push(`  ${i + 1}. ${a}`);
-  });
-}
+// ── Pendiente real = la PRIMERA entrada de SESSION_HANDOFF.md ────
+// Antes salía de `session-state.json → nextActions`, que nadie reescribía:
+// stop-checkpoint lo arrastraba con `...existingState` y cada sesión arrancaba
+// (hasta 2026-09-23) con los pendientes de ABRIL (drag&drop, Plan Fundador).
+// El handoff es lo que la sesión anterior escribió a mano: título + su lista
+// «Para retomar». Más de 7 días sin tocarse = ya no es «la sesión anterior».
+try {
+  const handoffPath = join(projectRoot, "SESSION_HANDOFF.md");
+  const edadDias = (Date.now() - statSync(handoffPath).mtimeMs) / 86_400_000;
+  if (edadDias < 7) {
+    const bloque = readFileSync(handoffPath, "utf8").split(/^# SESSION HANDOFF/m)[1] ?? "";
+    const titulo = bloque.split("\n")[0].replace(/^\s*[—-]\s*/, "").trim();
+    const desde = bloque.search(/para retomar/i);
+    const pasos = (desde >= 0 ? bloque.slice(desde) : bloque)
+      .split("\n")
+      .filter((l) => /^\d+\.\s/.test(l))
+      .slice(0, 3)
+      .map((l) => (l.length > 220 ? `${l.slice(0, 217)}…` : l));
+    if (titulo) {
+      lines.push("");
+      lines.push(`**📋 Handoff (${titulo}):**`);
+      pasos.forEach((p) => lines.push(`  ${p}`));
+      lines.push("  → detalle en `SESSION_HANDOFF.md` (sólo la primera entrada está vigente).");
+    }
+  }
+} catch {}
 
 if (filesDirty > 5) {
   lines.push("");
@@ -93,6 +122,50 @@ if (evolutionLog?.evolutions?.length > 0) {
   lines.push(`**🧬 Ultima evolucion:** ${lastEvo.agent} — ${lastEvo.changes?.length ?? 0} cambios (${lastEvo.status})`);
 }
 
+// ── Paralelismo de la sesión anterior ──────────────────────────
+// Medido 2026-09-19 «1,00 por mensaje» era un artefacto del conteo por línea;
+// recontado por `message.id` (2026-09-23): 1,20 histórico, 11,9 % con 2+.
+// El wall-clock ≈ número de TANDAS, así que la cifra va acá arriba.
+try {
+  const out = execSync(`node ${join(projectRoot, "scripts/medir-paralelismo.mjs")} --json`, {
+    encoding: "utf8", timeout: 4000,
+  });
+  const p = JSON.parse(out);
+  if (p.llamadas > 20) {
+    const enMeta = p.ratio >= p.meta;
+    lines.push("");
+    lines.push(
+      `**⚡ Paralelismo (sesión anterior):** ${p.ratio.toFixed(2)} tool-calls/mensaje ` +
+      `${enMeta ? "✅" : `⚠️ meta ${p.meta}`} · ${p.pctMulti}% de mensajes con 2+ llamadas · ` +
+      `${p.ratioAgente.toFixed(2)} subagentes por tanda`
+    );
+    if (!enMeta) {
+      lines.push("  → lo independiente viaja JUNTO en un mensaje (lecturas, greps, gates, agentes con archivos disjuntos).");
+    }
+  }
+} catch {}
+
+// ── Economía de la sesión anterior (Brandon 02-10: «que te autosustentes») ──
+// Cada sesión arranca viendo en qué se le fue el tiempo a la anterior contra la
+// base del 02-10; las señales son cifras peores con arreglo conocido (tabla
+// «Economía» de agentic-style). ~0,4 s.
+try {
+  const out = execSync(
+    `node ${join(projectRoot, "scripts/medir-economia.mjs")} --anterior --json --comparar ${join(projectRoot, ".claude/economia-baseline-2026-10-02.json")}`,
+    { encoding: "utf8", timeout: 4000 },
+  );
+  const e = JSON.parse(out);
+  if (e.sesiones > 0) {
+    const g = e["gates a mano por sesión"] ?? {};
+    lines.push("");
+    lines.push(
+      `**🏎️ Economía (sesión anterior):** ${e["turnos por subagente"]} turnos/subagente · ${e["capturas leídas por subagente"]} capturas/subagente · ` +
+      `gates a mano: ${g.typecheck ?? 0} tipos, ${g.lint ?? 0} lint, ${g.vitest ?? 0} tests · más usada: ${e.top?.[0]?.[0] ?? "—"}`,
+    );
+    for (const sn of (e.senales ?? []).slice(0, 3)) lines.push(`  → ${sn}`);
+  }
+} catch {}
+
 // ── Improvement Radar (propuestas pendientes) ──────────────────
 const radarPath = join(projectRoot, ".claude/improvement-radar.md");
 if (existsSync(radarPath)) {
@@ -102,12 +175,14 @@ if (existsSync(radarPath)) {
       .split("\n")
       .filter((l) => l.startsWith("### [pending]"))
       .slice(0, 5)
-      .map((l) => l.replace(/^### \[pending\] \d{4}-\d{2}-\d{2} — /, "  • "));
+      .map((l) => l.replace(/^### \[pending\] \d{4}-\d{2}-\d{2} — /, ""))
+      // Solo el título: el detalle vive en el archivo (antes ~2,5 K de texto por sesión).
+      .map((l) => "  • " + (l.match(/^\*\*[^*]+\*\*/)?.[0] ?? (l.length > 110 ? l.slice(0, 110) + "…" : l)));
     if (pending.length > 0) {
       lines.push("");
       lines.push(`**🎯 Improvement Radar (${pending.length} pending):**`);
       pending.forEach((p) => lines.push(p));
-      lines.push("  → leé `.claude/improvement-radar.md` y proponé las top 3 al usuario.");
+      lines.push("  → solo si la sesión arranca SIN pedido concreto: leé `.claude/improvement-radar.md` y proponé las top 3.");
     }
   } catch {}
 }

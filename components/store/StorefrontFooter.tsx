@@ -8,7 +8,8 @@
  */
 
 import { useState, useEffect } from "react";
-import { ShieldCheck, CreditCard, Wallet, Truck, BookText, MessageCircle } from "lucide-react";
+import { ShieldCheck, Truck, BookText, MessageCircle } from "lucide-react";
+import { PaymentMethodIcon } from "@/components/marketplace/PaymentIcons";
 import { useSettingsSafe } from "@/contexts/settings-context";
 import { extractWaNumber } from "@/lib/wa-number";
 import { LEGAL, LEGAL_COMPLETO } from "@/lib/legal";
@@ -29,7 +30,7 @@ export default function StorefrontFooter({ name }: { name: string }) {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-base font-extrabold text-[var(--text-primary)]">{storeName}</p>
-            <p className="mt-0.5 text-sm">Pedí online · delivery con Yape, Plin o efectivo.</p>
+            <p className="mt-0.5 text-sm">Pide online · delivery con Yape, Plin o efectivo.</p>
           </div>
           {wa && (
             <a
@@ -44,22 +45,25 @@ export default function StorefrontFooter({ name }: { name: string }) {
           )}
         </div>
 
-        {/* Medios de pago / confianza */}
+        {/* Medios de pago / confianza — íconos de marca para los pagos */}
         <div className="mt-6 flex flex-wrap items-center gap-1.5">
-          {([
-            { Icon: ShieldCheck, label: "Sitio seguro" },
-            { Icon: CreditCard, label: "Yape · Plin" },
-            { Icon: Wallet, label: "Efectivo" },
-            { Icon: Truck, label: "Delivery" },
-          ] as const).map(({ Icon, label }) => (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)]">
+            <ShieldCheck className="h-3.5 w-3.5 text-[var(--accent)]" strokeWidth={2.5} aria-hidden />
+            Sitio seguro
+          </span>
+          {["Yape", "Plin", "Efectivo"].map((m) => (
             <span
-              key={label}
-              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)]"
+              key={m}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] py-1 pl-1 pr-2.5 text-xs font-bold text-[var(--text-secondary)]"
             >
-              <Icon className="h-3.5 w-3.5 text-[var(--accent)]" strokeWidth={2.5} aria-hidden />
-              {label}
+              <PaymentMethodIcon method={m} size={18} />
+              {m}
             </span>
           ))}
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)]">
+            <Truck className="h-3.5 w-3.5 text-[var(--accent)]" strokeWidth={2.5} aria-hidden />
+            Delivery
+          </span>
         </div>
 
         {/* Copyright + legales (sin links de marketplace) */}

@@ -33,7 +33,7 @@ const RECIPES: Recipe[] = [
     Icon: Beef,
     time: "30 min",
     servings: 4,
-    gradient: "linear-gradient(135deg, #ef4444, #ea580c)",
+    gradient: "linear-gradient(135deg, #ef4444, #f0503f)",
     ingredients: ["carne", "tomate", "cebolla", "arroz", "aceite"],
   },
   {
@@ -49,7 +49,7 @@ const RECIPES: Recipe[] = [
     Icon: Drumstick,
     time: "45 min",
     servings: 6,
-    gradient: "linear-gradient(135deg, #f59e0b, #ca8a04)",
+    gradient: "linear-gradient(135deg, #ff6b5b, #ca8a04)",
     ingredients: ["arroz", "pollo", "arveja", "zanahoria", "cerveza"],
   },
 ];
@@ -199,7 +199,7 @@ export default function RecipeSuggestions() {
         <div className="text-center mt-10">
           <Link
             href="/recetas"
-            className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-primary/10 hover:bg-primary/15 text-primary font-bold text-base transition-all hover:gap-3"
+            className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-primary/10 hover:bg-primary/15 text-[var(--accent-ink)] dark:text-[var(--accent)] font-bold text-base transition-all hover:gap-3"
           >
             Ver todas las recetas <ArrowRight className="h-5 w-5" />
           </Link>

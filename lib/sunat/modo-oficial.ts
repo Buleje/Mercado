@@ -7,6 +7,7 @@ import {
   type SunatActivationBlocker,
   type SunatModoOficialState,
 } from "./modo-oficial.types";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 /**
  * Helpers del Modo SUNAT Oficial. Ver ADR-123 + `modo-oficial.types.ts`.
@@ -49,7 +50,7 @@ export async function computeBlockers(tenantId: string): Promise<{
     // verifyRuc puede caer a "mock" (siempre válido) si no hay provider real;
     // ante error de red lo tratamos como no verificado (no bloquea duro, pero
     // se refleja en rucVerificado=false para que el superadmin lo sepa).
-    const rucRes = await verifyRuc(config.ruc).catch(() => null);
+    const rucRes = await verifyRuc(config.ruc).catch(sinDato("sunat/modo-oficial verificación del RUC"));
     rucVerificado = rucRes ? isInvoiceable(rucRes) : false;
     if (rucRes && !rucVerificado) bloqueos.push("ruc_invalido");
   }

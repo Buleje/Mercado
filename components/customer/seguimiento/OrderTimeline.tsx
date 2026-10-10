@@ -43,7 +43,7 @@ export function OrderTimeline({ timeline, className }: Props) {
     <section
       aria-labelledby="tracking-timeline-heading"
       className={cn(
-        "rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6",
+        "border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6",
         className,
       )}
     >
@@ -78,7 +78,7 @@ export function OrderTimeline({ timeline, className }: Props) {
             <li key={step.step} className="relative flex items-start gap-3 pl-0">
               <span
                 className={cn(
-                  "relative inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 z-10 transition-colors",
+                  "relative inline-flex h-7 w-7 shrink-0 items-center justify-center border-2 z-10 transition-colors",
                   isDone &&
                     "bg-foreground border-foreground text-white dark:text-background",
                   isCurrent && "bg-primary border-primary text-white",
@@ -93,7 +93,7 @@ export function OrderTimeline({ timeline, className }: Props) {
                   <Icon className="h-3.5 w-3.5" strokeWidth={1.75} />
                 )}
                 {isCurrent && (
-                  <span className="absolute inset-0 rounded-full bg-primary opacity-40 animate-ping" />
+                  <span className="absolute inset-0 bg-primary opacity-40 animate-ping" />
                 )}
               </span>
 

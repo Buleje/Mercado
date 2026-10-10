@@ -94,34 +94,70 @@ export const NotificationCenterDB = {
   },
 
   /**
-   * Crea o reusa una notification existente con el mismo (tenantId, type,
-   * entityId) creada en las ultimas N horas y aun no leida. Patron usado
-   * por crons periodicos que disparan la misma alerta hasta que el problema
-   * se resuelve — evita spam del Notification Center.
+   * Un aviso por problema, no uno por día (OPER-1, 09-10).
    *
-   * Default dedupWindowHours = 24h.
+   * La clave es estable: negocio + tipo + entidad (sin entidad = el aviso
+   * general de ese tipo, p. ej. «Adelantos vencidos por cobrar»). Con un aviso
+   * igual SIN LEER:
+   *   · dentro de la ventana (`dedupWindowHours`, 24 h por defecto) se reusa tal
+   *     cual: es la misma corrida o una repetida;
+   *   · fuera de la ventana se ACTUALIZA (texto, gravedad, enlace y hora, así
+   *     sube arriba de la campana) y las copias viejas de la misma clave quedan
+   *     leídas. Antes se creaba otro: Blas juntó 14 «Adelantos vencidos» en dos
+   *     semanas, 134 de 134 sin leer.
+   * Si el anterior ya se leyó, el problema que vuelve es un aviso nuevo.
+   *
+   * `created` conserva lo que los crons ya usaban para decidir si avisar por
+   * otro canal (Telegram, WhatsApp): `true` = no había uno igual sin leer en la
+   * ventana. `refreshed` = no se insertó fila: se puso al día la que había.
    */
-  async createOrReuse(data: CreateOrReuseData): Promise<{ id: string; created: boolean }> {
+  async createOrReuse(
+    data: CreateOrReuseData,
+  ): Promise<{ id: string; created: boolean; refreshed: boolean }> {
     const dedupWindowHours = data.dedupWindowHours ?? 24;
     const since = new Date(Date.now() - dedupWindowHours * 60 * 60 * 1000);
 
-    const where: Record<string, unknown> = {
+    const clave = {
       tenantId: data.tenantId,
       type: data.type,
+      entityId: data.entityId ?? null,
       readAt: null,
-      createdAt: { gte: since },
     };
-    if (data.entityId !== undefined) where.entityId = data.entityId;
 
     const existing = await prisma.notification.findFirst({
-      where,
-      select: { id: true },
+      where: clave,
+      orderBy: { createdAt: "desc" },
+      select: { id: true, createdAt: true },
     });
+    if (existing && existing.createdAt >= since) {
+      return { id: existing.id, created: false, refreshed: false };
+    }
+
     if (existing) {
-      return { id: existing.id, created: false };
+      const ahora = new Date();
+      // La condición va en el WHERE: si alguien lo leyó entre la búsqueda y
+      // esto, no se «des-lee»; se crea uno nuevo abajo.
+      const { count } = await prisma.notification.updateMany({
+        where: { id: existing.id, tenantId: data.tenantId, readAt: null },
+        data: {
+          severity: data.severity,
+          title: data.title,
+          body: data.body,
+          actionUrl: data.actionUrl ?? null,
+          actionLabel: data.actionLabel ?? null,
+          createdAt: ahora,
+        },
+      });
+      if (count > 0) {
+        await prisma.notification.updateMany({
+          where: { ...clave, tenantId: data.tenantId, id: { not: existing.id } },
+          data: { readAt: ahora },
+        });
+        return { id: existing.id, created: true, refreshed: true };
+      }
     }
 
     const { id } = await this.create(data);
-    return { id, created: true };
+    return { id, created: true, refreshed: false };
   },
 };

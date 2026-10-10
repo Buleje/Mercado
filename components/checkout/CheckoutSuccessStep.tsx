@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { m } from "framer-motion";
 import {
   MapPin,
@@ -10,9 +11,12 @@ import {
   PackageCheck,
   Sparkles,
 } from "@buleje/design-system/icons";
+import { fireTenantPurchase } from "@/lib/tenant-pixels";
 
 export interface CheckoutSuccessStepProps {
   orderId: string;
+  /** Total del pedido — dispara el evento Purchase a los pixels del tenant. */
+  value?: number;
   onClose: () => void;
 }
 
@@ -26,8 +30,15 @@ export interface CheckoutSuccessStepProps {
  */
 export function CheckoutSuccessStep({
   orderId,
+  value,
   onClose,
 }: CheckoutSuccessStepProps) {
+  // Conversión: al confirmarse el pedido disparamos Purchase a Meta/TikTok/GA4
+  // del comerciante (si los configuró). Deduplicado por orderId en el helper.
+  useEffect(() => {
+    if (orderId) fireTenantPurchase({ orderId, value: value ?? 0 });
+  }, [orderId, value]);
+
   return (
     <m.div
       key="exito"
@@ -49,7 +60,7 @@ export function CheckoutSuccessStep({
               "var(--color-primary-dark, #009690)",
               "color-mix(in oklch, var(--color-primary, #00A0A0) 60%, white)",
               "color-mix(in oklch, var(--color-primary, #00A0A0) 30%, white)",
-              "var(--data-warning-400, #fbbf24)",
+              "var(--data-warning-400, #ff8676)",
             ];
             const isCircle = i % 3 === 0;
             return (
@@ -150,7 +161,7 @@ export function CheckoutSuccessStep({
           >
             ¡Pedido confirmado!
           </h3>
-          <p className="text-sm text-muted">
+          <p className="text-sm text-muted dark:text-[var(--text-tertiary)]">
             Tu pedido se está preparando con mucho cariño
           </p>
         </m.div>
@@ -256,7 +267,7 @@ export function CheckoutSuccessStep({
                     {s.label}
                   </span>
                   {s.sub && (
-                    <span className="text-[10px] text-muted font-medium">
+                    <span className="text-[10px] text-muted dark:text-[var(--text-tertiary)] font-medium">
                       {s.sub}
                     </span>
                   )}

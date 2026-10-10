@@ -13,7 +13,7 @@
         "id": "restaurante-sub-1779113445101",
         "label": "Pollos",
         "description": "",
-        "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/marketplace-categories/1779113603726-polleria.webp",
+        "imageUrl": null,
         "active": true,
         "linkedStoreSlugs": [
           "mi-pollo"
@@ -23,7 +23,7 @@
         "id": "restaurante-sub-1779113639670",
         "label": "Pizzas",
         "description": "",
-        "imageUrl": "https://sofkgguriggocouiuamx.supabase.co/storage/v1/object/public/media/superadmin/marketplace-categories/1779113781665-Pizzeria.webp",
+        "imageUrl": null,
         "active": true,
         "linkedStoreSlugs": [
           "pizza-pucallpa"

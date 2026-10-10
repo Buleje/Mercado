@@ -7,7 +7,8 @@
  * pantalla escribía a mano. Provee:
  *   - kicker (uppercase pequeña sobre el título)
  *   - title (h3 grande, ~1.25rem)
- *   - description (subtítulo)
+ *   - description (subtítulo corto o dato; a la vista)
+ *   - info (explicación larga: va en un ⓘ junto al título, no en un párrafo)
  *   - period (pill chico a la derecha, ej. "30 días")
  *   - actions slot (toggles, exportar, etc.)
  *
@@ -16,10 +17,17 @@
  */
 
 import type { ReactNode } from "react";
+import { InfoTip } from "./InfoTip";
+
+// Superficie canónica = ADMIN_TOKENS.card (rounded-xl · rule-soft · surface-raised).
+// Inline para no acoplar el componente al re-export del admin layer.
+const SA_CARD = "rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)]";
 
 interface Props {
   title: string;
   description?: string;
+  /** Explicación: se ve al pasar por el ⓘ junto al título (regla «sin párrafos»). */
+  info?: string;
   /** Etiqueta de período, render como pill */
   period?: string;
   /** Botones/toggles a la derecha del header */
@@ -35,6 +43,7 @@ interface Props {
 export default function SuperadminChartCard({
   title,
   description,
+  info,
   period,
   actions,
   kicker,
@@ -48,7 +57,7 @@ export default function SuperadminChartCard({
   return (
     <section
       className={[
-        "rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)]",
+        SA_CARD,
         padding,
         className ?? "",
       ].join(" ")}
@@ -60,9 +69,10 @@ export default function SuperadminChartCard({
               {kicker}
             </p>
           )}
-          <h3 className="text-xl font-extrabold text-[var(--text-primary)] mt-1 truncate">
-            {title}
-          </h3>
+          <div className="mt-1 flex min-w-0 items-center gap-1">
+            <h3 className="truncate text-xl font-extrabold text-[var(--text-primary)]">{title}</h3>
+            {info && <InfoTip title={title} what={info} />}
+          </div>
           {description && (
             <p className="text-sm text-[var(--text-secondary)] mt-1">{description}</p>
           )}

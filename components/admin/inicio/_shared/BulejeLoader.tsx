@@ -17,6 +17,7 @@
  * Compatible con LazyMotion strict (usa `m` de admin/providers).
  */
 
+import { KPI_GRID_6 } from "./kpi-grid";
 import { m } from "@/components/admin/providers";
 import { BulejeMark } from "@/components/ui-system/illustrations/BulejeLogo";
 import { cn } from "@/lib/utils";
@@ -173,12 +174,12 @@ export function BulejeSkeleton({
  */
 export function BulejeDashboardSkeleton() {
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/* Logo loader arriba */}
       <BulejeLoader variant="inline" label="Cargando datos..." size={40} />
 
       {/* KPI row skeletons */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className={KPI_GRID_6}>
         {Array.from({ length: 6 }).map((_, i) => (
           <BulejeSkeleton key={i} height={112} delay={i * 0.04} />
         ))}

@@ -1,0 +1,11 @@
+[
+ {
+  "eval": "(localStorage.setItem('camaras:mosaico-acople', JSON.stringify({ lado: 'izquierda', ultimoLado: 'izquierda', ancho: 40 })), 'cámaras al lado (izquierda, 40 %)')"
+ },
+ {
+  "click": "[data-mosaico-boton]"
+ },
+ {
+  "esperar": "[data-mosaico-panel=\"acoplado\"]"
+ }
+]

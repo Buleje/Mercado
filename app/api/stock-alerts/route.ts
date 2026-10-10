@@ -4,6 +4,9 @@ import { NotificationLogsDB } from "@/lib/db/notifications.db";
 import { broadcastPush } from "@/lib/push-sender";
 import { sendStockAlertEmail } from "@/lib/mailer-stock";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
+import { enStockBajo, stockMinimoDe, STOCK_MINIMO_GLOBAL_POR_DEFECTO } from "@/lib/inventario/stock-minimo";
+import { minimosGlobalesPorNegocio } from "@/lib/inventario/stock-minimo.server";
 
 /**
  * GET /api/stock-alerts — Check products below stockMin and fire alerts.
@@ -16,9 +19,13 @@ async function checkAndAlert() {
   // Audit project-wide 2026-05-19: migrado a StockAlertsDB.
   const lowStock = await StockAlertsDB.listActiveWithMinStock();
 
-  const alerts = lowStock.filter(
-    (p) => p.stock !== null && p.stockMin !== null && p.stock <= p.stockMin,
-  );
+  // Un solo stock mínimo (09-10): el propio o el global de cada negocio,
+  // leído una vez por tenant. `stockMin` sale como el mínimo efectivo.
+  const minimos = await minimosGlobalesPorNegocio(lowStock.map((p) => p.tenantId));
+  const alerts = lowStock
+    .map((p) => ({ p, minimoGlobal: minimos.get(p.tenantId) ?? STOCK_MINIMO_GLOBAL_POR_DEFECTO }))
+    .filter(({ p, minimoGlobal }) => enStockBajo(p, minimoGlobal))
+    .map(({ p, minimoGlobal }) => ({ ...p, stockMin: stockMinimoDe(p, minimoGlobal) }));
 
   // ── Velocity-based stock-out prediction ──────────────────────────
   // Calculate average daily sales over the last 14 days for all active products
@@ -33,7 +40,7 @@ async function checkAndAlert() {
       const daysLeft = (p.stock ?? 0) / dailyRate;
       return daysLeft <= 7 ? { ...p, dailyRate: Math.round(dailyRate * 10) / 10, daysLeft: Math.round(daysLeft * 10) / 10 } : null;
     })
-    .filter(Boolean) as Array<{ id: number; name: string; stock: number | null; stockMin: number | null; category: string; unit: string; dailyRate: number; daysLeft: number }>;
+    .filter(Boolean) as Array<{ id: number; name: string; stock: number | null; stockMin: number | null; category: string; unit: string; tenantId: string; dailyRate: number; daysLeft: number }>;
 
   const hasAlerts = alerts.length > 0 || velocityAlerts.length > 0;
 
@@ -41,55 +48,63 @@ async function checkAndAlert() {
     return { alerts: [], velocityAlerts: [], notified: false };
   }
 
-  const pushLines: string[] = [];
-  if (alerts.length > 0) {
-    pushLines.push(...alerts.slice(0, 3).map(p => `${p.name}: ${p.stock}/${p.stockMin}`));
-  }
-  if (velocityAlerts.length > 0) {
-    pushLines.push(...velocityAlerts.slice(0, 2).map(p => `${p.name}: ~${p.daysLeft}d restante`));
-  }
+  // Cada negocio recibe sólo lo suyo (09-10): antes el push iba a TODOS los
+  // suscriptores (sin tenantId) con nombres de productos de todos los
+  // negocios, y el registro de cada negocio llevaba las «se agotan pronto»
+  // de los demás.
+  const tenantIds = [...new Set([...alerts, ...velocityAlerts].map((p) => p.tenantId))];
+  await Promise.allSettled(
+    tenantIds.map(async (tenantId) => {
+      const bajos = alerts.filter((p) => p.tenantId === tenantId);
+      const pronto = velocityAlerts.filter((p) => p.tenantId === tenantId);
+      const total = bajos.length + pronto.length;
+      const lineas = [
+        ...bajos.slice(0, 3).map((p) => `${p.name}: ${p.stock}/${p.stockMin}`),
+        ...pronto.slice(0, 2).map((p) => `${p.name}: ~${p.daysLeft}d restante`),
+      ];
+      try {
+        await broadcastPush(
+          {
+            title: `⚠️ ${total} alerta${total > 1 ? "s" : ""} de stock`,
+            // «y N más» = lo que no entró en las líneas (antes restaba 5 fijo).
+            body: lineas.join(", ") + (total > lineas.length ? ` y ${total - lineas.length} más` : ""),
+            url: "/admin?tab=inventario",
+          },
+          tenantId,
+        );
+      } catch (err) {
+        logger.warn("[stock-alerts] push falló", { tenantId, error: String(err) });
+      }
+      try {
+        const logParts: string[] = [];
+        if (bajos.length > 0) logParts.push(`${bajos.length} con stock bajo: ${bajos.map((p) => p.name).join(", ")}`);
+        if (pronto.length > 0) logParts.push(`${pronto.length} se agotan pronto: ${pronto.map((p) => `${p.name} (~${p.daysLeft}d)`).join(", ")}`);
+        await NotificationLogsDB.add({
+          type: "low_stock",
+          recipient: "admin",
+          message: logParts.join(" | "),
+          status: "sent",
+        }, tenantId);
+      } catch (err) {
+        logger.warn("[stock-alerts] registro falló", { tenantId, error: String(err) });
+      }
+    }),
+  );
 
-  // Push notification to all admin subscribers
-  try {
-    const totalCount = alerts.length + velocityAlerts.length;
-    await broadcastPush({
-      title: `⚠️ ${totalCount} alerta${totalCount > 1 ? "s" : ""} de stock`,
-      body: pushLines.join(", ") +
-        (alerts.length + velocityAlerts.length > 5 ? ` y ${totalCount - 5} más` : ""),
-      url: "/admin?tab=inventario",
-    });
-  } catch { /* push optional */ }
-
-  // Email notification
+  // Correo al dueño de la plataforma (NOTIFY_EMAIL / SMTP_USER del deploy).
   try {
     await sendStockAlertEmail(
       alerts.map((p) => ({
         name: p.name,
         stock: p.stock ?? 0,
-        stockMin: p.stockMin ?? 0,
+        stockMin: p.stockMin,
         category: p.category,
         unit: p.unit,
       })),
     );
-  } catch { /* email optional */ }
-
-  // Log to NotificationLog — one entry per tenant
-  try {
-    const tenantIds = [...new Set(alerts.map(p => p.tenantId))];
-    for (const tenantId of tenantIds) {
-      const tenantAlerts = alerts.filter(p => p.tenantId === tenantId);
-      const logParts: string[] = [];
-      if (tenantAlerts.length > 0) logParts.push(`${tenantAlerts.length} con stock bajo: ${tenantAlerts.map(p => p.name).join(", ")}`);
-      if (velocityAlerts.length > 0) logParts.push(`${velocityAlerts.length} se agotan pronto: ${velocityAlerts.map(p => `${p.name} (~${p.daysLeft}d)`).join(", ")}`);
-      // Audit project-wide 2026-05-19: migrado a NotificationLogsDB.add.
-      await NotificationLogsDB.add({
-        type: "low_stock",
-        recipient: "admin",
-        message: logParts.join(" | "),
-        status: "sent",
-      }, tenantId);
-    }
-  } catch { /* logging optional */ }
+  } catch (err) {
+    logger.warn("[stock-alerts] correo falló", { error: String(err) });
+  }
 
   return {
     alerts: alerts.map((p) => ({

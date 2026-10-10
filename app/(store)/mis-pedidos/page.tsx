@@ -15,8 +15,6 @@ import {
 import { useCustomer } from "@/contexts/customer-context";
 import { useCart } from "@/contexts/cart-context";
 import { cn } from "@/lib/utils";
-import Header from "@/components/Header";
-import AnnouncementBar from "@/components/AnnouncementBar";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import {
   CanastaVacia,
@@ -25,7 +23,6 @@ import {
 } from "@/components/ui-system/illustrations";
 import type { MockOrderItem } from "@/lib/customer-orders.mock";
 const CartSidebar = dynamic(() => import("@/components/CartSidebar"));
-const MobileBottomNav = dynamic(() => import("@/components/MobileBottomNav"));
 const QuickReorderModal = dynamic(() => import("@/components/QuickReorderModal"));
 
 // ── Types (mantiene compatibilidad con API real) ────────────────────
@@ -501,7 +498,7 @@ function OrderTimeline({ status }: { status: Order["status"] }) {
                   isCurrent
                     ? "bg-primary text-white shadow-md shadow-primary/30 scale-110"
                     : isCompleted
-                      ? "bg-primary/20 text-primary"
+                      ? "bg-primary/20 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "bg-[var(--surface-sunken)] dark:bg-surface text-[var(--text-tertiary)]",
                 )}
               >
@@ -1232,7 +1229,7 @@ export default function MisPedidosPage() {
         setIdentified(true);
         setError(
           err instanceof Error && err.message.startsWith("HTTP")
-            ? "No pudimos cargar tus pedidos. Intentá de nuevo en un momento."
+            ? "No pudimos cargar tus pedidos. Intenta de nuevo en un momento."
             : "",
         );
       });
@@ -1479,7 +1476,7 @@ export default function MisPedidosPage() {
             </div>
             <div>
               <h2 className="text-xl font-extrabold text-[var(--text-primary)]">
-                Consultá tu historial
+                Consulta tu historial
               </h2>
               <p className="text-base text-muted mt-2 leading-relaxed">
                 Identificate desde la barra de navegación para ver todos tus pedidos.
@@ -1637,14 +1634,14 @@ export default function MisPedidosPage() {
                       ? "Nada coincide con tu búsqueda"
                       : filter !== "todos"
                         ? "Nada coincide con este filtro"
-                        : "Hacé tu primer pedido"
+                        : "Haz tu primer pedido"
                   }
                   description={
                     search
-                      ? "Probá con otro término o limpiá la búsqueda."
+                      ? "Prueba con otro término o limpia la búsqueda."
                       : filter !== "todos"
-                        ? "Probá cambiando el filtro para ver otros pedidos."
-                        : "Realizá tu primer pedido y verás acá el historial con estado y tiempo de entrega."
+                        ? "Prueba cambiando el filtro para ver otros pedidos."
+                        : "Realiza tu primer pedido y verás acá el historial con estado y tiempo de entrega."
                   }
                   primaryAction={
                     filter === "todos" && !search ? (
@@ -1679,7 +1676,7 @@ export default function MisPedidosPage() {
                   />
                   <div className="relative">
                     <p className="text-base font-extrabold text-[var(--text-primary)]">
-                      ¿Necesitás algo más?
+                      ¿Necesitas algo más?
                     </p>
                     <p className="text-sm text-muted mt-1 mb-4">
                       Delivery rápido · Paga con Yape o efectivo

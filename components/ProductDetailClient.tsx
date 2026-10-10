@@ -126,14 +126,16 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
 
   // Fetch detailed reviews with attribute ratings
   // TODO: conectar a API real cuando backend termine → /api/marketplace/products/${product.id}/reviews-detailed
-  const { data: reviewsDetailed } = useCachedData<{ summary: ReviewSummary; reviews: DetailedReview[] }>(
+  const { data: reviewsDetailed } = useCachedData<{ summary: ReviewSummary; reviews: DetailedReview[] } | null>(
     `product-reviews-detailed-${product.id}`,
     async () => {
       try {
         const res = await fetch(`/api/marketplace/products/${product.id}/reviews-detailed`);
         if (!res.ok) return null;
-        const data = await res.json();
-        return data?.data ?? null;
+        // La ruta responde `{ data: reseñas[], summary }`: devolver `data` (un arreglo)
+        // dejaba `summary` en undefined y la ficha entera caía al error (02-10).
+        const data = (await res.json()) as { data?: DetailedReview[]; summary?: ReviewSummary } | null;
+        return data?.summary ? { summary: data.summary, reviews: Array.isArray(data.data) ? data.data : [] } : null;
       } catch { return null; }
     },
     { staleTime: 5 * 60 * 1000, refetchOnFocus: false },
@@ -625,7 +627,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                 className={cn(
                   "h-12 w-12 rounded-xl flex items-center justify-center border-2 transition-all shrink-0",
                   compare
-                    ? "bg-primary/10 border-primary/30 text-primary"
+                    ? "bg-primary/10 border-primary/30 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                     : "border-[var(--rule-base)] text-gray-400 hover:text-primary hover:border-primary/30",
                 )}
                 aria-label={compare ? "Quitar de comparar" : "Comparar"}
@@ -778,10 +780,12 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
         {/* Reviews section */}
         <div id="resenas" className="mt-12 lg:mt-16">
           <ProductReviewsSection productId={product.id} productName={product.name} />
-          {reviewsDetailed && (
+          {/* Sólo con reseñas: con 0, «Aún no hay reseñas» ya lo dice la sección de
+              arriba y este bloque repetía «Sé el primero» (revisión ADR-460). */}
+          {reviewsDetailed && reviewsDetailed.summary.totalReviews > 0 && (
             <div className="mt-8 bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] p-6">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">
-                Resenas detalladas
+                Reseñas detalladas
               </h3>
               <RatingByAttribute
                 summary={reviewsDetailed.summary}

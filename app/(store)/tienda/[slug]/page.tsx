@@ -1,3 +1,4 @@
+import { safeJsonLdStringify } from "@/lib/seo/json-ld";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { connection } from "next/server";
@@ -8,10 +9,12 @@ import type { Product } from "@/data/products";
 import { ProductsDB } from "@/lib/db/products.db";
 import ProductDetailClient from "@/components/ProductDetailClient";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
-import Breadcrumbs from "@/components/store/Breadcrumbs";
+import type { MetadatosFicha, ParametrosDeBusqueda } from "@/extensiones/_contrato";
+import { fichaPropia, metadatosDeFichaPropia } from "@/lib/extensiones/FichaPropia";
 
 interface Props {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<ParametrosDeBusqueda>;
 }
 
 // No pre-rendered pages — products are dynamic (DB-based, per-tenant).
@@ -29,8 +32,34 @@ async function getProductBySlugFromDB(slug: string): Promise<Product | null> {
   return found ? (found as unknown as Product) : null;
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+/** ADR-460 · los metadatos de una ficha propia (`null` = el producto no es de esa tienda). */
+async function metadatosPropios(m: MetadatosFicha | null): Promise<Metadata> {
+  const { resolveStoreContext } = await import("@/lib/store-metadata");
+  const ctx = await resolveStoreContext();
+  if (!m) return { title: { absolute: `Producto no encontrado — ${ctx.name}` }, robots: { index: false, follow: true } };
+  const url = `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.buleje.pe"}${m.ruta}`;
+  return {
+    title: { absolute: m.titulo },
+    description: m.descripcion,
+    alternates: { canonical: url, languages: { "es-PE": url, "x-default": url } },
+    openGraph: {
+      title: m.titulo,
+      description: m.descripcion,
+      url,
+      ...(m.imagen ? { images: [{ url: m.imagen, alt: m.titulo }] } : {}),
+      type: "website",
+      locale: "es_PE",
+      siteName: ctx.name,
+    },
+    twitter: { card: "summary_large_image", title: m.titulo, description: m.descripcion, ...(m.imagen ? { images: [m.imagen] } : {}) },
+  };
+}
+
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { slug } = await params;
+  // ADR-460 · un negocio con ficha propia da sus metadatos (sin ella: los de siempre).
+  const propios = await metadatosDeFichaPropia(slug, searchParams);
+  if (propios !== undefined) return metadatosPropios(propios);
   const product = await getProductBySlugFromDB(slug);
   // Tienda individual: nombre del comercio dinámico para títulos.
   const { resolveStoreContext } = await import("@/lib/store-metadata");
@@ -89,7 +118,7 @@ function ProductDetailSkeleton() {
   );
 }
 
-async function ProductDetailContent({ params }: Props) {
+async function ProductDetailContent({ params }: Pick<Props, "params">) {
   await connection();
   const { slug } = await params;
   const product = await getProductBySlugFromDB(slug);
@@ -107,21 +136,17 @@ async function ProductDetailContent({ params }: Props) {
     { name: product.name, url: `https://www.buleje.pe/tienda/${slug}` },
   ];
 
-  const visualBreadcrumbs = [
-    { label: "Inicio", href: "/" },
-    { label: "Tienda", href: "/tienda" },
-    ...(category ? [{ label: category.label, href: `/tienda/categoria/${category.id}` }] : []),
-    { label: product.name },
-  ];
 
   return (
     <>
-      <BreadcrumbSchema items={breadcrumbs} />
-      <Breadcrumbs items={visualBreadcrumbs} />
+      {/* Una sola miga a la vista: la de la ficha (alineada con la foto). Se
+          dibujaban TRES —la del esquema, ésta y la de ProductDetailClient— en
+          todas las tiendas (medido 02-10-2026). El esquema queda para Google. */}
+      <BreadcrumbSchema items={breadcrumbs} visible={false} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: safeJsonLdStringify({
             "@context": "https://schema.org",
             "@type": "Product",
             name: product.name,
@@ -178,7 +203,12 @@ async function ProductDetailContent({ params }: Props) {
   );
 }
 
-export default function ProductDetailPage({ params }: Props) {
+export default async function ProductDetailPage({ params, searchParams }: Props) {
+  // ADR-460 · un negocio con página propia puede traer su ficha (la de su
+  // salón, su bodega…); si no la trae, o si falla, la general de siempre. La
+  // búsqueda sólo se espera en la rama de la ficha propia.
+  const propia = await fichaPropia((await params).slug, searchParams);
+  if (propia) return propia;
   return (
     <Suspense fallback={<ProductDetailSkeleton />}>
       <ProductDetailContent params={params} />

@@ -25,7 +25,9 @@ import {
   AdminTabShell,
   AdminButton,
 } from "../_components/_shared";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import SidebarConfigPanel from "@/components/superadmin/SidebarConfigPanel";
+import { SuperAdminModuleTabs, SETTINGS_TABS } from "@/components/superadmin/_shared/ModuleTabs";
 
 // Items canónicos del sidebar — debe matchear lo que renderiza
 // SuperAdminShell.tsx (NAV_ITEMS). Refresh 2026-05-19 — sincronía con los
@@ -181,12 +183,6 @@ export default function SettingsPage() {
     try {
       const payload = {
         settings: {
-          "plan-prices": {
-            free: settings.priceFree,
-            pro: settings.pricePro,
-            business: settings.priceBusiness,
-            enterprise: settings.priceEnterprise,
-          },
           "commission-default": settings.commissionDefault,
           "limits-free-products": settings.limitsFreeProducts,
           "limits-free-users": settings.limitsFreeUsers,
@@ -219,10 +215,16 @@ export default function SettingsPage() {
   };
 
   return (
+    <>
+      <SuperAdminModuleTabs tabs={SETTINGS_TABS} />
     <AdminTabShell
+      info={{
+        what: "Muestra los precios de planes (S//mes) y controla los límites por plan (productos, usuarios, pedidos), la comisión default y controles globales como modo mantenimiento.",
+        affects: "El precio de cada plan es uno solo en toda la plataforma (lo que ve el cliente = lo que suma el MRR). Los límites se aplican a cada tienda según su plan. El modo mantenimiento afecta a todos los usuarios.",
+        example: "El plan Pro cuesta S/ 179 en la página de precios, en Facturación y en el Dashboard: no hay otro número.",
+      }}
       title="Configuración de plataforma"
       kicker="Control global"
-      description="Ajusta precios, comisiones, límites y controles de toda la plataforma. Los precios alimentan el MRR del dashboard en tiempo real."
       icon={Settings}
       stats={
         <>
@@ -256,7 +258,7 @@ export default function SettingsPage() {
       {loading && (
         <div className="flex items-center gap-2 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-4 py-3 text-sm text-[var(--text-secondary)]">
           <Loader2 className="h-4 w-4 animate-spin text-[var(--accent)]" aria-hidden />
-          Cargando configuración desde la base de datos…
+          Cargando…
         </div>
       )}
       {error && (
@@ -266,25 +268,30 @@ export default function SettingsPage() {
         </div>
       )}
       {dirty && !saving && !saved && (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent-soft)]/40 px-4 py-3">
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--accent)]/30 bg-primary/10 px-4 py-3">
           <div className="flex items-center gap-2 text-sm">
             <Sparkles className="h-4 w-4 text-[var(--accent)]" aria-hidden />
             <span className="font-semibold text-[var(--text-primary)]">
               Tienes cambios sin guardar
             </span>
-            <span className="text-[var(--text-secondary)]">— recordá presionar Guardar.</span>
+            <span className="text-[var(--text-secondary)]">— no olvides guardar.</span>
           </div>
         </div>
       )}
 
-      <SidebarConfigPanel items={SIDEBAR_ITEMS} />
+      <JumpNav />
+
+      <div id="set-sidebar" className="scroll-mt-28">
+        <SidebarConfigPanel items={SIDEBAR_ITEMS} />
+      </div>
 
       {/* ─── Precios de planes ─────────────────────────────────────── */}
       <SectionHeader
+        id="set-precios"
         eyebrow="Monetización"
         icon={DollarSign}
         title="Precios de planes"
-        subtitle="Precio mensual en soles (S/) que se cobra a cada tenant. Estos números alimentan directamente el MRR del dashboard."
+        subtitle="Un solo precio por plan: el mismo que ve el cliente al elegir plan y el que suman Facturación, el Dashboard y Gastos. Se cambia en la tabla de planes del sistema, no acá."
       />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {PLAN_TIERS.map((tier) => (
@@ -292,7 +299,7 @@ export default function SettingsPage() {
             key={tier.key}
             tier={tier}
             value={settings[tier.key]}
-            disabled={loading}
+            disabled
             onChange={(v) => update(tier.key, v)}
           />
         ))}
@@ -303,7 +310,8 @@ export default function SettingsPage() {
         eyebrow="Marketplace"
         icon={Percent}
         title="Comisión por defecto"
-        subtitle="Porcentaje que la plataforma retiene de cada venta cross-vendor. Puede sobreescribirse por categoría o por vendor."
+        subtitle="Lo que la plataforma retiene de cada venta del marketplace. Se puede cambiar por categoría o por vendedor."
+        id="set-comision"
       />
       <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -347,10 +355,11 @@ export default function SettingsPage() {
 
       {/* ─── Límites por plan ────────────────────────────────────────── */}
       <SectionHeader
+        id="set-limites"
         eyebrow="Cuotas"
         icon={BarChart3}
         title="Límites por plan"
-        subtitle="Topes que dispara el upsell al siguiente plan. Cuando un tenant los supera, el banner de upgrade aparece automáticamente."
+        subtitle="Topes de cada plan. Cuando un negocio los supera, ve el aviso para subir de plan."
       />
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <PlanLimitsCard
@@ -393,16 +402,17 @@ export default function SettingsPage() {
 
       {/* ─── Controles ───────────────────────────────────────────────── */}
       <SectionHeader
+        id="set-controles"
         eyebrow="Operativa"
         icon={Settings}
         title="Controles de plataforma"
-        subtitle="Switches globales con efecto inmediato sobre todos los tenants. Usá modo mantenimiento solo durante deploys o incidencias críticas."
+        subtitle="Interruptores globales: afectan al instante a todos los negocios."
       />
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
         <ToggleCard
           icon={Store}
           title="Permitir nuevas tiendas"
-          desc="Abre o cierra el formulario público de registro de tenants."
+          desc="Abre o cierra el registro público."
           active={settings.allowNewStores}
           tone="primary"
           disabled={loading}
@@ -411,7 +421,8 @@ export default function SettingsPage() {
         <ToggleCard
           icon={AlertTriangle}
           title="Modo mantenimiento"
-          desc="Bloquea el acceso público con pantalla de mantenimiento. Usar solo durante deploys críticos."
+          desc="Bloquea el acceso público."
+          info="Muestra una pantalla de mantenimiento a todos los visitantes. Úsalo solo en deploys o incidencias críticas."
           active={settings.maintenanceMode}
           tone="warning"
           disabled={loading}
@@ -419,6 +430,7 @@ export default function SettingsPage() {
         />
       </div>
     </AdminTabShell>
+    </>
   );
 }
 
@@ -437,7 +449,7 @@ function StatPill({
     tone === "primary"
       ? "border-[var(--accent)]/30 bg-[var(--accent-soft,var(--accent))]/10 text-[var(--accent)]"
       : tone === "warning"
-        ? "border-amber-300/60 bg-amber-50/60 text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300"
+        ? "border-teal-300/60 bg-teal-50/60 text-teal-700 dark:border-teal-700/40 dark:bg-teal-950/30 dark:text-teal-300"
         : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-primary)]";
   return (
     <div className={`rounded-xl border px-3.5 py-2 min-w-[88px] ${cls}`}>
@@ -452,31 +464,92 @@ function StatPill({
 }
 
 function SectionHeader({
+  id,
   eyebrow,
   icon: Icon,
   title,
   subtitle,
 }: {
+  id?: string;
   eyebrow: string;
   icon: LucideIcon;
   title: string;
   subtitle: string;
 }) {
   return (
-    <div className="flex items-start gap-3 border-b border-[var(--rule-soft)] pb-3 pt-2">
-      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+    <div id={id} className="scroll-mt-28 flex items-start gap-3 border-b border-[var(--rule-soft)] pb-3 pt-2">
+      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
         <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
       </span>
       <div className="min-w-0 flex-1">
         <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--accent)]">
           {eyebrow}
         </p>
-        <h2 className="font-display text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
-          {title}
-        </h2>
-        <p className="mt-1 text-sm text-[var(--text-secondary)]">{subtitle}</p>
+        <div className="flex items-center gap-1.5">
+          <h2 className="font-display text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
+            {title}
+          </h2>
+          <InfoTip title={title} what={subtitle} side="bottom" />
+        </div>
       </div>
     </div>
+  );
+}
+
+// ── Barra de salto entre secciones (sticky) — página muy larga (~4000px) ─────
+function useActiveSection(ids: string[]): string {
+  const [active, setActive] = useState(ids[0] ?? "");
+  useEffect(() => {
+    const obs = new IntersectionObserver(
+      (entries) => {
+        const vis = entries.filter((e) => e.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+        if (vis[0]) setActive(vis[0].target.id);
+      },
+      { rootMargin: "-112px 0px -60% 0px", threshold: [0.05, 0.4] },
+    );
+    ids.forEach((id) => { const el = document.getElementById(id); if (el) obs.observe(el); });
+    return () => obs.disconnect();
+  }, [ids]);
+  return active;
+}
+
+const JUMP_SECTIONS = [
+  { id: "set-sidebar", label: "Barra lateral" },
+  { id: "set-precios", label: "Precios" },
+  { id: "set-comision", label: "Comisión" },
+  { id: "set-limites", label: "Límites" },
+  { id: "set-controles", label: "Controles" },
+];
+
+function JumpNav() {
+  const ids = useMemo(() => JUMP_SECTIONS.map((s) => s.id), []);
+  const active = useActiveSection(ids);
+  return (
+    <nav
+      aria-label="Ir a sección"
+      className="sticky top-2 z-20 -mx-1 overflow-x-auto rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]/95 px-2 py-1.5 backdrop-blur"
+    >
+      <ul className="flex min-w-full items-center gap-1">
+        {JUMP_SECTIONS.map((s) => {
+          const isActive = active === s.id;
+          return (
+            <li key={s.id}>
+              <a
+                href={`#${s.id}`}
+                aria-current={isActive ? "true" : undefined}
+                className={`inline-flex whitespace-nowrap rounded-xl px-3.5 py-2 text-sm font-bold transition-colors ${
+                  isActive
+                    ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                    : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+                }`}
+              >
+                {s.label}
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
   );
 }
 
@@ -499,13 +572,13 @@ function PlanPriceCard({
     },
     primary: {
       border: "border-[var(--accent)]/30",
-      badge: "bg-[var(--accent-soft)] text-[var(--accent)]",
+      badge: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
       ring: "focus-within:ring-[var(--accent)]/40",
     },
     violet: {
       border: "border-violet-300/40 dark:border-violet-700/40",
       badge:
-        "bg-violet-100 dark:bg-violet-950/40 text-[var(--accent)] dark:text-[var(--accent)]",
+        "bg-primary/10 bg-primary/10 text-[var(--accent)] dark:text-[var(--accent)]",
       ring: "focus-within:ring-violet-400/40",
     },
     indigo: {
@@ -573,11 +646,11 @@ function PlanLimitsCard({
   ];
   const accent =
     tone === "primary"
-      ? "border-[var(--accent)]/30 bg-[var(--accent-soft)]/30"
+      ? "border-[var(--accent)]/30 bg-primary/10"
       : "border-[var(--rule-soft)] bg-[var(--surface-canvas)]";
   const badge =
     tone === "primary"
-      ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+      ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
       : "bg-[var(--surface-canvas)] border border-[var(--rule-base)] text-[var(--text-secondary)]";
 
   return (
@@ -621,6 +694,7 @@ function ToggleCard({
   icon: Icon,
   title,
   desc,
+  info,
   active,
   tone,
   disabled,
@@ -629,6 +703,7 @@ function ToggleCard({
   icon: LucideIcon;
   title: string;
   desc: string;
+  info?: string;
   active: boolean;
   tone: "primary" | "warning";
   disabled: boolean;
@@ -636,21 +711,21 @@ function ToggleCard({
 }) {
   const activeBorder =
     tone === "warning"
-      ? "border-amber-400/50 dark:border-amber-600/50"
+      ? "border-teal-400/50 dark:border-teal-600/50"
       : "border-[var(--accent)]/40";
   const inactiveBorder = "border-[var(--rule-soft)]";
   const iconBg =
     tone === "warning"
       ? active
-        ? "bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400"
+        ? "bg-teal-100 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400"
         : "bg-[var(--surface-canvas)] text-[var(--text-tertiary)]"
       : active
-        ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+        ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
         : "bg-[var(--surface-canvas)] text-[var(--text-tertiary)]";
   const switchBg =
     tone === "warning"
       ? active
-        ? "bg-amber-500"
+        ? "bg-teal-500"
         : "bg-[var(--surface-sunken)]"
       : active
         ? "bg-[var(--accent)]"
@@ -669,9 +744,12 @@ function ToggleCard({
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-3">
-          <h3 className="font-display text-base font-bold text-[var(--text-primary)]">
-            {title}
-          </h3>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <h3 className="font-display text-base font-bold text-[var(--text-primary)]">
+              {title}
+            </h3>
+            {info && <InfoTip title={title} what={info} side="bottom" />}
+          </div>
           <button
             type="button"
             onClick={onToggle}
@@ -682,15 +760,15 @@ function ToggleCard({
             aria-label={title}
           >
             <span
-              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition-transform ${
-                active ? "translate-x-5" : "translate-x-0"
-              }`}
+              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-[var(--surface-raised)] shadow ring-0 transition-transform ${
+ active ? "translate-x-5" : "translate-x-0"
+ }`}
             />
           </button>
         </div>
-        <p className="mt-1 text-sm leading-relaxed text-[var(--text-secondary)]">{desc}</p>
+        <p className="mt-1 text-sm text-[var(--text-secondary)]">{desc}</p>
         {active && tone === "warning" && (
-          <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-amber-700 dark:bg-amber-950/50 dark:text-amber-400">
+          <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-teal-100 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-teal-700 dark:bg-teal-950/50 dark:text-teal-400">
             <AlertTriangle className="h-3 w-3" aria-hidden />
             Activo · público bloqueado
           </p>

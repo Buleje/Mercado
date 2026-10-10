@@ -5,6 +5,8 @@ import nodemailer from "nodemailer";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { withCronRetry } from "@/lib/cron-retry";
 import { logger } from "@/lib/logger";
+import { enStockBajo, stockMinimoDe, STOCK_MINIMO_GLOBAL_POR_DEFECTO } from "@/lib/inventario/stock-minimo";
+import { minimosGlobalesPorNegocio } from "@/lib/inventario/stock-minimo.server";
 
 /**
  * GET /api/reorder-alerts — Check low-stock products and send reorder suggestions.
@@ -27,9 +29,13 @@ async function checkAndAlert() {
   // Audit project-wide 2026-05-19: migrado a ReorderAlertsDB.
   const products = await ReorderAlertsDB.listProductsWithMinStock();
 
-  const lowStock = products.filter(
-    (p) => p.stock !== null && p.stockMin !== null && p.stock <= p.stockMin
-  );
+  // Un solo stock mínimo (09-10): el propio o el global de cada negocio
+  // (una lectura por tenant). `stockMin` sigue como el mínimo efectivo.
+  const minimos = await minimosGlobalesPorNegocio(products.map((p) => p.tenantId));
+  const lowStock = products
+    .map((p) => ({ p, minimoGlobal: minimos.get(p.tenantId) ?? STOCK_MINIMO_GLOBAL_POR_DEFECTO }))
+    .filter(({ p, minimoGlobal }) => enStockBajo(p, minimoGlobal))
+    .map(({ p, minimoGlobal }) => ({ ...p, stockMin: stockMinimoDe(p, minimoGlobal) }));
 
   if (lowStock.length === 0) {
     return { alerts: 0, sent: false };
@@ -47,18 +53,19 @@ async function checkAndAlert() {
   }
 
   const items: LowStockItem[] = lowStock.map((p) => {
-    const max = p.stockMax ?? (p.stockMin ?? 0) * 3;
+    const max = p.stockMax ?? p.stockMin * 3;
     const current = p.stock ?? 0;
     return {
       id: p.id,
       name: p.name,
       stock: current,
-      stockMin: p.stockMin ?? 0,
+      stockMin: p.stockMin,
       stockMax: max,
       category: p.category,
       unit: p.unit,
       supplier: supplierMap.get(p.id),
-      suggestedQty: Math.max(max - current, p.stockMin ?? 1),
+      // Al menos 1: un mínimo 0 («avisar sólo al agotarse») igual pide algo.
+      suggestedQty: Math.max(max - current, p.stockMin, 1),
     };
   });
 
@@ -90,7 +97,7 @@ async function checkAndAlert() {
           (p) =>
             `<tr>
               <td style="padding:5px 8px;border-bottom:1px solid #eee;font-size:13px;">${p.name}</td>
-              <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:center;font-size:13px;color:${p.stock <= 0 ? "#dc2626" : "#f59e0b"};font-weight:bold;">${p.stock}</td>
+              <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:center;font-size:13px;color:${p.stock <= 0 ? "#dc2626" : "#ff6b5b"};font-weight:bold;">${p.stock}</td>
               <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:center;font-size:13px;">${p.stockMin}</td>
               <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:center;font-size:13px;color:#16a34a;font-weight:bold;">${p.suggestedQty} ${p.unit}</td>
             </tr>`
@@ -162,7 +169,10 @@ export async function GET(req: NextRequest) {
           if (!supplier) continue;
 
           const poId = `auto-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-          const total = items.reduce((s, i) => s + i.suggestedQty * (i.stockMin || 1), 0);
+          // Σ cantidad × costo de las líneas: el borrador va con unitCost 0
+          // (lo pone quien la confirma). Antes multiplicaba por el stock
+          // mínimo y la OC nacía con un total que ninguna línea sumaba.
+          const total = 0;
 
           await ReorderAlertsDB.createDraftPurchaseOrder({
             poId,

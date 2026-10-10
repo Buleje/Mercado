@@ -2,7 +2,9 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Search, ArrowRight, Package, Users, Zap, Loader2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import type { ComponentType } from "react";
+import { formatCurrency } from "@/lib/format";
 
 // Historial de búsqueda eliminado (Brandon 2026-05-29): el palette solo busca
 // los módulos actuales del negocio + productos/clientes, sin recientes.
@@ -42,6 +44,11 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
   const inputRef  = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
+  // Escape ya lo maneja el listener global de abajo (cerrarConEscape: false);
+  // el hook agrega la trampa de Tab y devuelve el foco al cerrar.
+  const panelRef = useRef<HTMLDivElement>(null);
+  const cerrarPalette = useCallback(() => setOpen(false), []);
+  useModalAccesible(panelRef, { onCerrar: cerrarPalette, cerrarConEscape: false, activo: open });
 
   // ── Ctrl+K / Cmd+K toggle ──────────────────────────────────────────────────
   useEffect(() => {
@@ -90,7 +97,7 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
           setDynProducts(products.map(p => ({
             id: `product-${p.id}`,
             label: p.name,
-            subtitle: `S/ ${Number(p.price).toFixed(2)}${p.category ? ` · ${p.category}` : ""}`,
+            subtitle: `${formatCurrency(Number(p.price))}${p.category ? ` · ${p.category}` : ""}`,
             category: "Producto",
             iconComponent: Package,
             onSelect: () => {
@@ -184,11 +191,13 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
 
   return (
     <div
+      ref={panelRef}
       className="modal-backdrop flex items-start justify-center pt-[15vh] " style={{ zIndex: 9999 }}
       onClick={() => setOpen(false)}
       role="dialog"
       aria-modal="true"
       aria-label="Busqueda global"
+      tabIndex={-1}
     >
       <div
         className="bg-[var(--surface-raised)] rounded-xl w-full max-w-lg mx-4 overflow-hidden border border-[var(--rule-base)]"
@@ -243,8 +252,8 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
                       className={cn(
                         "w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left transition-colors",
                         idx === selectedIdx
-                          ? "bg-[var(--surface-sunken)] dark:bg-white/10"
-                          : "text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] dark:hover:bg-white/5",
+                          ? "bg-[var(--surface-sunken)] "
+                          : "text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] ",
                       )}
                     >
                       {/* Icon: Lucide component with tinted bg, or emoji fallback */}

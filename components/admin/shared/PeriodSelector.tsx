@@ -28,7 +28,7 @@ export default function PeriodSelector({ value, onChange, className }: PeriodSel
             "px-3 py-1 rounded-full text-xs font-medium transition-colors",
             value === p.id
               ? "bg-primary text-white"
-              : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] dark:bg-surface dark:text-[var(--text-tertiary)] dark:hover:bg-card-border",
+              : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] dark:text-[var(--text-tertiary)] dark:hover:bg-card-border",
           )}
         >
           {p.label}

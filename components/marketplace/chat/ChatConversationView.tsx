@@ -18,7 +18,7 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowLeft, Send, Store as StoreIcon, Loader2, ArrowRight, Check, CheckCheck,
-  ReceiptText, Smile, Undo2, X, ShoppingCart, Wallet, Copy, Bot, Paperclip, MapPin, Star, Mic, Square, Trash2,
+  ReceiptText, Smile, Undo2, X, ShoppingCart, Wallet, Copy, Bot, Paperclip, MapPin, Star, Mic, Trash2,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -123,7 +123,7 @@ function dayLabel(iso: string): string {
 }
 
 export default function ChatConversationView({
-  threadId: threadIdProp, storeId, storeName, storeSlug, storeLogo,
+  threadId: threadIdProp, storeId: _storeId, storeName, storeSlug, storeLogo,
   customerPhone, customerName, onBack, onActivity, onThreadCreated,
 }: Props) {
   const [threadId, setThreadId] = useState<string | null>(threadIdProp);
@@ -316,8 +316,8 @@ export default function ChatConversationView({
       if (!res.ok) {
         setError(
           res.status === 429
-            ? "Muy rápido — esperá un momento."
-            : (j?.error ?? "No se pudo enviar. Probá de nuevo."),
+            ? "Muy rápido — espera un momento."
+            : (j?.error ?? "No se pudo enviar. Prueba de nuevo."),
         );
         return;
       }
@@ -333,7 +333,7 @@ export default function ChatConversationView({
       // Refresca al toque para ver el mensaje persistido (y sus checks).
       window.setTimeout(() => { void fetchMessages(); }, 300);
     } catch {
-      setError("Sin conexión. Probá de nuevo.");
+      setError("Sin conexión. Prueba de nuevo.");
     } finally {
       setSending(false);
     }
@@ -343,7 +343,7 @@ export default function ChatConversationView({
       Sube la imagen y manda un mensaje con attachmentUrl + messageType image. */
   const sendImage = async (file: File) => {
     if (!file || sending || uploading || unavailable || !storeSlug) return;
-    if (!threadId) { setError("Mandá un mensaje primero para abrir el chat."); return; }
+    if (!threadId) { setError("Manda un mensaje primero para abrir el chat."); return; }
     setUploading(true);
     setError(null);
     try {
@@ -376,7 +376,7 @@ export default function ChatConversationView({
       if (!res.ok) { setError("No se pudo enviar la imagen."); return; }
       window.setTimeout(() => { void fetchMessages(); }, 300);
     } catch {
-      setError("Sin conexión. Probá de nuevo.");
+      setError("Sin conexión. Prueba de nuevo.");
     } finally {
       setUploading(false);
     }
@@ -386,7 +386,7 @@ export default function ChatConversationView({
       entrega. Va en metadataJson.location (lo arma el server desde campos validados). */
   const shareLocation = () => {
     if (sending || uploading || locating || unavailable || !storeSlug) return;
-    if (!threadId) { setError("Mandá un mensaje primero para abrir el chat."); return; }
+    if (!threadId) { setError("Manda un mensaje primero para abrir el chat."); return; }
     if (typeof navigator === "undefined" || !navigator.geolocation) {
       setError("Tu dispositivo no soporta ubicación."); return;
     }
@@ -408,12 +408,12 @@ export default function ChatConversationView({
           if (!res.ok) { setError("No se pudo enviar la ubicación."); return; }
           window.setTimeout(() => { void fetchMessages(); }, 300);
         } catch {
-          setError("Sin conexión. Probá de nuevo.");
+          setError("Sin conexión. Prueba de nuevo.");
         } finally {
           setLocating(false);
         }
       },
-      () => { setError("No pudimos obtener tu ubicación. Activá el GPS."); setLocating(false); },
+      () => { setError("No pudimos obtener tu ubicación. Activa el GPS."); setLocating(false); },
       { enableHighAccuracy: true, timeout: 10000 },
     );
   };
@@ -448,7 +448,7 @@ export default function ChatConversationView({
       if (!res.ok) { setError("No se pudo enviar la nota de voz."); return; }
       window.setTimeout(() => { void fetchMessages(); }, 300);
     } catch {
-      setError("Sin conexión. Probá de nuevo.");
+      setError("Sin conexión. Prueba de nuevo.");
     } finally {
       setSendingVoice(false);
     }
@@ -457,7 +457,7 @@ export default function ChatConversationView({
   /** Tanda 4: arranca a grabar (pide permiso de micrófono). */
   const startRecording = async () => {
     if (recording || sendingVoice || unavailable) return;
-    if (!threadId) { setError("Mandá un mensaje primero para abrir el chat."); return; }
+    if (!threadId) { setError("Manda un mensaje primero para abrir el chat."); return; }
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
       setError("Tu navegador no soporta grabar audio."); return;
     }
@@ -514,9 +514,9 @@ export default function ChatConversationView({
     setRespondedSubs((prev) => new Set(prev).add(messageId));
     if (accept) {
       addSharedToCart(sub.replacement);
-      await send(`✅ Dale, mandame ${sub.replacement.name} en lugar de "${sub.originalName}".`);
+      await send(`✅ Dale, mándame ${sub.replacement.name} en lugar de "${sub.originalName}".`);
     } else {
-      await send(`❌ No, gracias. Mejor sacá "${sub.originalName}" del pedido.`);
+      await send(`❌ No, gracias. Mejor saca "${sub.originalName}" del pedido.`);
     }
   };
 
@@ -596,7 +596,7 @@ export default function ChatConversationView({
         {storeSlug && (
           <Link
             href={`/marketplace/${storeSlug}`}
-            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2.5 py-1.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--accent)] transition-colors hover:bg-[var(--accent)] hover:text-white"
+            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--accent)] transition-colors hover:bg-[var(--accent)] hover:text-white"
             aria-label={`Ir a la tienda ${storeName}`}
           >
             Ver tienda
@@ -642,10 +642,10 @@ export default function ChatConversationView({
         ) : messages.length === 0 ? (
           <div className="px-4 py-8 text-center">
             <p className="text-sm font-extrabold text-[var(--text-primary)]">
-              Escribile a {storeName}
+              Escríbele a {storeName}
             </p>
             <p className="mt-1 text-sm font-medium text-[var(--text-tertiary)]">
-              Preguntá por productos, precios o tu pedido — te responden en vivo.
+              Pregunta por productos, precios o tu pedido — te responden en vivo.
             </p>
             {/* Quick replies — un tap y arranca la conversación */}
             <div className="mt-4 flex flex-col items-center gap-2">
@@ -655,7 +655,7 @@ export default function ChatConversationView({
                   type="button"
                   onClick={() => void send(q)}
                   disabled={sending}
-                  className="rounded-full border-2 border-[var(--accent)]/40 bg-[var(--accent-soft)] px-4 py-2 text-sm font-bold text-[var(--accent)] transition-all hover:border-[var(--accent)] hover:bg-[var(--accent)] hover:text-white active:scale-95"
+                  className="rounded-full border-2 border-[var(--accent)]/40 bg-primary/10 px-4 py-2 text-sm font-bold text-[var(--accent)] transition-all hover:border-[var(--accent)] hover:bg-[var(--accent)] hover:text-white active:scale-95"
                 >
                   {q}
                 </button>
@@ -705,7 +705,7 @@ export default function ChatConversationView({
                         tabIndex={0}
                         onClick={() => setActiveMsgId((id) => (id === m.id ? null : m.id))}
                         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setActiveMsgId((id) => (id === m.id ? null : m.id)); } }}
-                        aria-label="Tocá para reaccionar o responder"
+                        aria-label="Toca para reaccionar o responder"
                         className={cn(
                           "max-w-[80%] cursor-pointer rounded-2xl shadow-sm outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40",
                           isOrder && "w-full max-w-[88%]",
@@ -722,7 +722,7 @@ export default function ChatConversationView({
                               "mx-2 mt-2 rounded-lg border-l-[3px] px-2 py-1",
                               mine
                                 ? "border-white/70 bg-white/15"
-                                : "border-[var(--accent)] bg-[var(--accent-soft)]",
+                                : "border-[var(--accent)] bg-primary/10",
                             )}
                           >
                             <p className={cn(
@@ -769,7 +769,7 @@ export default function ChatConversationView({
                               <button
                                 type="button"
                                 onClick={(e) => { e.stopPropagation(); addSharedToCart(sharedProduct); }}
-                                className="flex w-full items-center justify-center gap-1.5 border-t border-[var(--rule-soft)] py-2 text-sm font-bold text-[var(--accent)] transition-colors hover:bg-[var(--accent-soft)]"
+                                className="flex w-full items-center justify-center gap-1.5 border-t border-[var(--rule-soft)] py-2 text-sm font-bold text-[var(--accent)] transition-colors hover:bg-primary/10"
                               >
                                 {addedProductId === sharedProduct.storeProductId ? (
                                   <><Check className="h-4 w-4" strokeWidth={2.5} aria-hidden /> Agregado ✓</>
@@ -786,7 +786,7 @@ export default function ChatConversationView({
                             "m-2 overflow-hidden rounded-xl border bg-[var(--surface-canvas)]",
                             mine ? "border-white/30" : "border-[var(--rule-base)]",
                           )}>
-                            <div className="flex items-center gap-2 border-b border-[var(--rule-soft)] bg-[var(--accent-soft)] px-3 py-2">
+                            <div className="flex items-center gap-2 border-b border-[var(--rule-soft)] bg-primary/10 px-3 py-2">
                               <ReceiptText className="h-4 w-4 text-[var(--accent)]" aria-hidden />
                               <span className="text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--accent)]">
                                 Pedido armado por la tienda
@@ -860,7 +860,7 @@ export default function ChatConversationView({
                                   <button
                                     type="button"
                                     onClick={(e) => { e.stopPropagation(); void respondSubstitution(m.id, substitution, true); }}
-                                    className="flex flex-1 items-center justify-center gap-1.5 py-2 text-sm font-bold text-[var(--accent)] transition-colors hover:bg-[var(--accent-soft)]"
+                                    className="flex flex-1 items-center justify-center gap-1.5 py-2 text-sm font-bold text-[var(--accent)] transition-colors hover:bg-primary/10"
                                   >
                                     <Check className="h-4 w-4" strokeWidth={2.5} aria-hidden /> Sí, dale
                                   </button>
@@ -883,7 +883,7 @@ export default function ChatConversationView({
                             "m-2 overflow-hidden rounded-xl border bg-[var(--surface-canvas)]",
                             mine ? "border-white/30" : "border-[var(--rule-base)]",
                           )}>
-                            <div className="flex items-center justify-between gap-2 bg-[var(--accent-soft)] px-3 py-2">
+                            <div className="flex items-center justify-between gap-2 bg-primary/10 px-3 py-2">
                               <span className="inline-flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider text-[var(--accent)]">
                                 <Wallet className="h-4 w-4" aria-hidden /> Cobro por {chatPayment.method === "plin" ? "Plin" : "Yape"}
                               </span>
@@ -935,7 +935,7 @@ export default function ChatConversationView({
                             <div className="flex flex-col items-center gap-1 px-3 pt-3">
                               <div className="flex items-center gap-0.5">
                                 {[0, 1, 2, 3, 4].map((i) => (
-                                  <Star key={i} className="h-5 w-5 fill-[var(--data-warning-400)] text-[var(--data-warning-500)]" aria-hidden />
+                                  <Star key={i} className="h-5 w-5 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" aria-hidden />
                                 ))}
                               </div>
                               <p className="text-center text-sm font-bold text-[var(--text-primary)]">
@@ -960,7 +960,7 @@ export default function ChatConversationView({
                         {isOrder && (
                           <div className={cn(
                             "flex items-center gap-2 rounded-t-2xl px-3 py-2",
-                            mine ? "bg-white/15" : "bg-[var(--accent-soft)]",
+                            mine ? "bg-white/15" : "bg-primary/10",
                           )}>
                             <ReceiptText
                               className={cn("h-4 w-4 shrink-0", mine ? "text-white" : "text-[var(--accent)]")}
@@ -978,7 +978,7 @@ export default function ChatConversationView({
                         <div className="px-3 py-2">
                           {/* Bot AI-first (Tanda 3) — honestidad: el cliente sabe que es automático */}
                           {meta.autoReply && !mine && (
-                            <span className="mb-1 inline-flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wide text-[var(--accent)]">
+                            <span className="mb-1 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wide text-[var(--accent)]">
                               <Bot className="h-3 w-3" aria-hidden /> Asistente
                             </span>
                           )}
@@ -1108,11 +1108,11 @@ export default function ChatConversationView({
                               key={`${r.by}-${idx}`}
                               type="button"
                               onClick={() => { if (r.by === "buyer") void react(m.id, r.emoji); }}
-                              aria-label={`Reacción ${r.emoji}${r.by === "buyer" ? " (tuya, tocá para quitar)" : " de la tienda"}`}
+                              aria-label={`Reacción ${r.emoji}${r.by === "buyer" ? " (tuya, toca para quitar)" : " de la tienda"}`}
                               className={cn(
                                 "inline-flex items-center rounded-full border px-1.5 py-0.5 text-xs leading-none shadow-sm",
                                 r.by === "buyer"
-                                  ? "border-[var(--accent)]/40 bg-[var(--accent-soft)]"
+                                  ? "border-[var(--accent)]/40 bg-primary/10"
                                   : "border-[var(--rule-soft)] bg-[var(--surface-raised)]",
                               )}
                             >
@@ -1140,10 +1140,10 @@ export default function ChatConversationView({
           <>
             {/* Tira "Respondiendo a…" — cita activa (Tanda 1) */}
             {replyTo && (
-              <div className="mb-1.5 flex items-center gap-2 rounded-xl border-l-[3px] border-[var(--accent)] bg-[var(--accent-soft)] px-2.5 py-1.5">
+              <div className="mb-1.5 flex items-center gap-2 rounded-xl border-l-[3px] border-[var(--accent)] bg-primary/10 px-2.5 py-1.5">
                 <div className="min-w-0 flex-1 leading-tight">
                   <p className="text-[length:var(--ts-2xs)] font-black text-[var(--accent)]">
-                    Respondiendo a {replyTo.senderType === "buyer" ? "vos" : storeName}
+                    Respondiendo a {replyTo.senderType === "buyer" ? "ti" : storeName}
                   </p>
                   <p className="truncate text-[length:var(--ts-xs)] font-medium text-[var(--text-secondary)]">
                     {replyTo.body}
@@ -1217,7 +1217,7 @@ export default function ChatConversationView({
                 className={cn(
                   "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-colors",
                   emojiOpen
-                    ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                    ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                     : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
                 )}
               >
@@ -1265,7 +1265,7 @@ export default function ChatConversationView({
                 value={text}
                 onChange={(e) => { setText(e.target.value.slice(0, 1000)); if (error) setError(null); pingTyping(); }}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(); } }}
-                placeholder={`Escribile a ${storeName}…`}
+                placeholder={`Escríbele a ${storeName}…`}
                 aria-label={`Mensaje para ${storeName}`}
                 className="block h-12 min-w-0 flex-1 rounded-full border-2 border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 text-sm font-medium text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
               />

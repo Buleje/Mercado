@@ -11,7 +11,7 @@
  *      `stashPendingApproval(...)` en vez de ejecutar el tool directamente.
  *   3. El tool result devuelto al LLM es un mensaje: "Esta acción requiere
  *      aprobación humana. ID: xxx".
- *   4. El frontend (AICommandCenter.tsx en sesión futura) hace polling a
+ *   4. El frontend (Comandos IA › Lo que hizo la IA) hace polling a
  *      GET `/api/ai-assistant/approvals` para mostrar el modal.
  *   5. El admin aprueba/rechaza via POST `/api/ai-assistant/approvals`.
  *   6. Al aprobar, el endpoint ejecuta el tool vía el orchestrator con el

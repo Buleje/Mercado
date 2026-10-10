@@ -441,6 +441,38 @@ async function categoryBreakdown(
   };
 }
 
+/**
+ * Lo que el asistente te contaría hoy sin que le preguntes.
+ *
+ * Es EXACTAMENTE la misma lista que el cron `asistente-avisos` manda a la
+ * campana y al bot: una sola fuente. Si acá dijera otra cosa que en el celular,
+ * la próxima pregunta sería cuál de las dos creerle.
+ *
+ * Vive en `analytics` y no en `plata` a propósito: el ruteo de herramientas
+ * manda el núcleo (analítica, pedidos, inventario) cuando la frase no nombra
+ * ningún dominio, y «¿qué hay de nuevo?» es justamente una frase así.
+ */
+async function avisos(task: AgentTask, ctx: AgentContext): Promise<AgentResult> {
+  const { calcularAvisos } = await import("@/lib/asistente/avisos");
+  const lista = await calcularAvisos(task.tenantId);
+  scopedLogger(ctx).info("Calculando avisos del asistente", { cantidad: lista.length });
+  return {
+    success: true,
+    data: {
+      cantidad: lista.length,
+      avisos: lista.map((a) => ({
+        urgencia: a.severidad,
+        titulo: a.titulo,
+        detalle: a.cuerpo,
+        pantalla: a.pantalla,
+      })),
+      ...(lista.length === 0 && {
+        mensaje: "No hay nada que necesite atención hoy. Decilo tal cual: inventar una alerta para no venir con las manos vacías es peor que no avisar.",
+      }),
+    },
+  };
+}
+
 // ── Agent definition ─────────────────────────────────────────────────────────
 
 export const analyticsAgent: DomainAgent = {
@@ -451,6 +483,7 @@ export const analyticsAgent: DomainAgent = {
     "margin-analysis",
     "sales-trend",
     "category-breakdown",
+    "avisos",
   ],
   description:
     "KPIs, reportes y analisis de negocio",
@@ -482,6 +515,9 @@ export const analyticsAgent: DomainAgent = {
           break;
         case "category-breakdown":
           result = await categoryBreakdown(task, ctx);
+          break;
+        case "avisos":
+          result = await avisos(task, ctx);
           break;
         default:
           result = {

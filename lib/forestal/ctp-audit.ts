@@ -1,0 +1,553 @@
+/**
+ * ctp-audit — trazabilidad de QUIÉN hizo QUÉ en el Libro de Operaciones CTP.
+ *
+ * POR QUÉ EXISTE:
+ * el Libro CTP es un registro que fiscaliza SERFOR y que cae bajo Ley 29733.
+ * Hasta 2026-07-15 las 3 DB classes del módulo (`wood-entries`, `forest-ctp`,
+ * `forest-ctp-consumo`) no escribían NI UNA entrada de auditoría: se podía
+ * validar un ingreso, reatribuir el origen de una corrida o congelar un costo
+ * sin dejar rastro de quién ni cuándo. A diferencia de casi todo lo demás, esto
+ * NO se puede reconstruir después — el evento que no se registró se perdió.
+ *
+ * Este módulo centraliza el vocabulario (acciones + entidades) para que las 3
+ * clases registren igual y el Security Center pueda filtrar por `entity`.
+ *
+ * Fire-and-forget: auditar nunca puede tumbar la operación de negocio, pero el
+ * fallo SIEMPRE se loguea — un catch vacío acá dejaría el libro sin trazas y sin
+ * que nadie se entere (regla 4 de code-quality).
+ */
+import { logActivity } from "@/lib/activity-logger";
+import { errorSinDatos } from "@/lib/error-sin-datos";
+import { logger } from "@/lib/logger";
+import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
+
+/** Entidades del libro — coinciden con los modelos Prisma para poder cruzarlas.
+ * `ForestCtpFicha` no es un modelo Prisma: la ficha legal del CTP vive en el KV
+ * `PlatformSetting` (key `ctp-ficha:{tenantId}`), pero se audita igual porque es
+ * la identidad legal que encabeza cada certificado, GTF y export ante SERFOR. */
+export type CtpAuditEntity =
+  /** El libro entero, cuando la acción no es sobre una fila sino sobre todo. */
+  | "ForestCtpLibro"
+  /** Una troza de la lista de la GTF, o un pedazo suyo tras retrozar (ADR-313). */
+  | "WoodEntryTroza"
+  | "WoodEntry"
+  | "ForestCtpEntry"
+  /** Un paquete declarado de una corrida (ADR-349): su código, sus piezas y su escuadría. */
+  | "ForestCtpPaquete"
+  /** Una reserva sobre un producto del patio (ADR-418): quién lo tiene apartado
+   *  mientras se arma la guía. No mueve stock, pero decide a quién se le vende
+   *  la madera — y eso es exactamente lo que se reclama después. */
+  | "ForestCtpApartado"
+  | "ForestCtpConsumo"
+  | "ForestProdLote"
+  /** Lote de ASERRÍO (ADR-334): la materia prima agrupada antes de la sierra. */
+  | "ForestLoteAserrio"
+  /** Lote MIXTO (ADR-441): la pila escaneada de varias especies, antes de repartirse. */
+  | "ForestLoteMixto"
+  /** El permiso bajo el que se trabaja (ADR-421): a él se le imputan la madera,
+   *  los gastos, los fletes y los adelantos. Quién lo creó y quién le ató
+   *  registros es parte de la trazabilidad de la plata, no sólo del papel. */
+  | "ForestContrato"
+  /** El trato de precio con un cliente (ADR-430): a cuánto se le cobra el pie.
+   *  Es plata de un tercero — quién pactó qué y desde cuándo deja rastro. */
+  | "ForestParteTarifa"
+  /** Un vínculo parte↔parte o parte↔permiso del Directorio (ADR-430). */
+  | "ForestParteVinculo"
+  /** Plan de Manejo del Libro de Títulos Habilitantes (ADR-126): el documento
+   *  aprobado que autoriza especies y volúmenes. De él cuelgan el censo, los
+   *  asientos del LO-TH y las guías, así que darlo de baja deja rastro. */
+  | "ForestPlan"
+  /** Una especie del plan (o del registro de una plantación, ADR-459): su
+   *  volumen es el techo de T6, así que subirlo deja rastro. */
+  | "ForestPlanSpecies"
+  | "ForestCtpFicha"
+  // KV (como ForestCtpFicha): la foto de referencia de una especie. No es una
+  // prueba documental, pero orienta a quien recibe la troza — y quien la pone
+  // tiene que quedar registrado.
+  | "ForestEspecieFoto"
+  // KV (como ForestEspecieFoto): el catálogo de especies propio del aserradero.
+  | "ForestEspecieCatalogo"
+  // No es modelo Prisma (como ForestCtpFicha): un evento de importación LO-CTP es
+  // un lote, no una fila. Se audita porque un fiscalizador quiere saber CÓMO
+  // entraron los datos al libro (qué archivo, cuántas filas, quién) — ADR-138.
+  | "ForestCtpImport"
+  // KV (como ForestCtpFicha): el cierre de período fiscal del libro (ADR-139).
+  | "ForestCtpCierre"
+  // KV: geolocalización de orígenes para el dossier EUDR (ADR-140).
+  | "ForestOrigenGeo"
+  // KV: zonas físicas del aserradero para el Mapa de Planta (ADR-142).
+  | "ForestPlantaZona"
+  // KV: croquis del aserradero en metros, imagen y máquinas (ADR-465).
+  | "ForestPlantaCroquis"
+  // KV: cubicaciones guardadas del cubicador — la medición del lote, previa al
+  // libro (al libro entra después como producción, con su propio registro).
+  | "ForestCubicacion"
+  | "ForestDistribucion"
+  /** Guía guardada antes del ingreso (ADR-442): el N° de registro, la GTF, el
+   *  titular y el permiso con que se reconocerá al llegar el camión. */
+  | "ForestGuiaGuardada"
+  /** Trámite/oficio presentado a la autoridad (ADR-308). */
+  | "ForestTramite"
+  /** Registro de Plantación Forestal — RNPF (ADR-380). */
+  | "ForestPlantacionTramite"
+  /** Parte del directorio forestal: proveedor/destinatario/transportista/conductor (ADR-317). */
+  | "ForestParty"
+  /** Vehículo del directorio forestal (ADR-317). */
+  | "ForestVehiculo"
+  /** Viaje que trajo materia prima o se llevó producto (ADR-318). */
+  | "ForestFlete"
+  /** Movimiento de cuenta corriente con una parte del directorio (ADR-322). */
+  | "ForestCuentaMov"
+  // KV (como ForestEspecieCatalogo): la tarifa del servicio de aserrío por
+  // encargo (ADR-412). Es lo que después se le cobra a un tercero, así que
+  // quién la puso y desde qué día rige queda con nombre.
+  | "ForestTarifaAserrio"
+  // KV: ANEXO N° 04 emitido (lista de productos transformados de la GTF). No es
+  // modelo Prisma: es el PAPEL que se entregó, guardado para poder re-imprimir
+  // el mismo documento ante una fiscalización.
+  | "ForestAnexo04"
+  /** Un reporte diario por correo/WhatsApp (ADR-439): a quién le llega qué del libro. */
+  | "ForestReporteDiario"
+  /** El acta de un conteo físico del patio (2026-09-26): qué faltó y qué sobró. */
+  | "ForestPatioConteo"
+  /** Una cubicación de trozas guardada con dueño y, al aplicarla, plata en sus adelantos (ADR-478). */
+  | "ForestCubicacionTrozas"
+  | "Tenant";
+
+/**
+ * Acciones auditables. Prefijo `ctp_` para aislarlas del resto del ActivityLog
+ * (que es compartido por todo el ERP) y poder greppear el libro entero.
+ */
+export type CtpAuditAction =
+  // Vaciado total del libro. Va primero porque es el asiento que un fiscalizador
+  // busca antes que ninguno: un libro que aparece vacío sin este registro es un
+  // libro que alguien borró sin dejar rastro.
+  | "ctp_libro_purga"
+  // Vaciado PARCIAL por alcance (Brandon, 2026-09-01): trozas disponibles,
+  // madera aserrada disponible, o sólo Consumos — nunca toca lo que un
+  // despacho, reproceso o lote de producción todavía referencia.
+  | "ctp_libro_purga_parcial"
+  // ── Lote de aserrío (ADR-334): armar la materia prima antes de la corrida ──
+  /** Cargó o corrigió la escuadría de un paquete ya declarado (ADR-417). */
+  | "ctp_paquete_escuadria"
+  | "ctp_lote_aserrio_create"
+  /** Armó el lote de UN bloque de la Distribución de rolliza, con sus trozas (ADR-464). */
+  | "ctp_lote_aserrio_desde_distribucion"
+  // Lote declarado como inventario (Brandon, 2026-08-31): entra y sale en el
+  // mismo acto, sin trozas reales — ver `ORIGEN_LOTE_INVENTARIO`.
+  | "ctp_lote_aserrio_inventario_create"
+  | "ctp_lote_aserrio_update"
+  /** Guardó (o borró) lo que el SNIFFS declara del lote, para cotejar (ADR-398). */
+  | "ctp_lote_aserrio_sniffs"
+  | "ctp_lote_aserrio_delete"
+  | "ctp_lote_aserrio_trozas_add"
+  | "ctp_lote_aserrio_trozas_remove"
+  // ── Lote mixto (ADR-441): la pila escaneada que se reparte por especie+permiso ──
+  | "ctp_lote_mixto_create"
+  | "ctp_lote_mixto_trozas_add"
+  | "ctp_lote_mixto_trozas_remove"
+  /** Terminó la pila: un lote de aserrío por especie+permiso, en una transacción. */
+  | "ctp_lote_mixto_repartir"
+  | "ctp_lote_mixto_anular"
+  /** Anular/rechazar/borrar un ingreso soltó las trozas que tenía apartadas en un mixto. */
+  | "ctp_lote_mixto_soltado"
+  | "ctp_lote_aserrio_consumir"
+  // Piezas sumadas a una corrida que todavía no declaró (ADR-364). Va aparte de
+  // `consumir` porque no abre un asiento: le CAMBIA la materia prima a uno que
+  // ya existe, y eso mueve su rendimiento — es justo lo que un fiscalizador
+  // querría poder reconstruir.
+  | "ctp_corrida_sumar_piezas"
+  // Una corrida SIN origen se vincula con las trozas de uno o más lotes, todo
+  // en un acto (ADR-441): volumen, consumo por guía, piezas y cierre de lotes.
+  | "ctp_corrida_vincular"
+  // Y el reverso: piezas mal tildadas que salen de una corrida abierta. Va
+  // aparte de `annul` porque la corrida sobrevive — es una corrección, no un
+  // asiento muerto.
+  | "ctp_corrida_quitar_piezas"
+  // Soltar trozas de una corrida YA declarada (ADR-447 §6): las piezas vuelven
+  // al patio, el m³ por guía baja y la producción queda intacta. Va aparte de
+  // `quitar_piezas` porque ésa es sólo para corridas abiertas.
+  | "ctp_corrida_soltar_trozas"
+  // Un lote parcial que no va a terminar de aserrarse: se cierra con motivo y su
+  // madera libre vuelve al patio. No es `delete` — el lote y sus corridas siguen
+  // siendo parte del libro.
+  | "ctp_lote_aserrio_cerrar"
+  /* Volver a abrir un lote aserrado para seguir cargándolo (2026-09-02). Se
+     audita como cualquier cambio de estado: un lote que vuelve a admitir
+     madera después de haber producido tiene que poder explicarse. */
+  | "ctp_lote_aserrio_reabrir"
+  // Reparación de datos de un lote que se contradecía (2026-09-27): estado o
+  // apertura corregidos, con el antes → después en el detalle.
+  | "ctp_lote_aserrio_reparar"
+  // Contratos/permisos (ADR-421)
+  | "ctp_contrato_create"
+  | "ctp_contrato_update"
+  | "ctp_contrato_vincular"
+  | "ctp_contrato_baja"
+  // Ingresos de materia prima
+  | "ctp_ingreso_create"
+  // Corrección de un ingreso pendiente (typo de GTF, volumen mal tipeado): el
+  // detalle narra campo por campo qué cambió — un libro fiscalizable tiene que
+  // poder responder "¿esto siempre dijo 5.20 m³?".
+  | "ctp_ingreso_update"
+  // Cuánto se pagó por la madera. Va aparte de `update` porque se carga cuando
+  // llega la factura —con el ingreso ya validado— y porque el costo es lo que
+  // sostiene el COGS: quién lo puso y cuándo es media auditoría del margen.
+  | "ctp_ingreso_costo"
+  /** Un precio por m³ aplicado a todas las guías de un proveedor × especie
+   *  (2026-09-25). Un renglón por tanda —cuántas, cuántos m³, cuánta plata y
+   *  qué se saltó—, además del `ctp_ingreso_costo` de cada guía. */
+  | "ctp_ingreso_costo_tanda"
+  // Piezas agregadas a la lista de trozas de un ingreso ya registrado (ADR-320).
+  // Va aparte de `update` porque no corrige un campo: suma madera al detalle que
+  // ampara el ingreso, y el fiscalizador pregunta cuándo apareció cada pieza.
+  | "ctp_ingreso_trozas_add"
+  /* Trozas de una guía de varias especies llevadas a la fila de SU especie
+     (ADR-435). Va aparte de `trozas_add`: no suma madera, la cambia de fila
+     dentro del mismo documento — y lo declarado no se toca. */
+  | "ctp_ingreso_trozas_acomodar"
+  /* Cuadre de una guía que se contradice a sí misma (ADR-353): la cabecera por
+     especie (37) y la lista de trozas (35) declaran volúmenes distintos y el
+     operador dijo cuál vale. Va aparte de `update` porque no es corregir un
+     tipeo: es dejar asentado qué parte del documento se tomó por buena. */
+  | "ctp_ingreso_cuadre"
+  | "ctp_ingreso_validate"
+  /** Recepción de la guía en el patio: fecha + piezas + validación (ADR-339). */
+  | "ctp_ingreso_recepcion"
+  /** Corrigió la fecha de llegada de una guía ya recibida, con motivo: antes → después (ADR-434). */
+  | "ctp_ingreso_recepcion_corregida"
+  /**
+   * Recibió o corrigió una guía con una llegada POSTERIOR a su vencimiento,
+   * confirmándolo con motivo (ADR-434 §Vencimiento). Aparte, para que «qué
+   * madera viajó con la guía vencida» sea un filtro y no una búsqueda en texto.
+   */
+  | "ctp_ingreso_recepcion_vencida"
+  | "ctp_ingreso_reject"
+  | "ctp_ingreso_annul"
+  | "ctp_ingreso_delete"
+  /** Recepción física de las trozas de una guía (ADR-325): qué llegó y qué no. */
+  | "ctp_troza_recepcion"
+  /** Al anular/rechazar/borrar un ingreso, sus trozas SUELTAN el código de
+   *  planta (el índice único lo seguía ocupando): el renglón dice cuál tenía cada una. */
+  | "ctp_troza_codigo_soltado"
+  /** Cubicó (o corrigió) trozas en fórmula Oxapampa: pulgadas, pies y el pt
+   *  CONGELADO con el que se paga (2026-09-26). El detalle narra antes → después:
+   *  es plata de un tercero. Aparte de la recepción: no es un dato del libro. */
+  | "ctp_troza_cubicacion_oxapampa"
+  /** Cargó en planta los D1/D2 en cm que la guía no traía. Sólo sobre vacío:
+   *  el dato de SERFOR no se pisa. Éste SÍ es del libro (lo frena el cierre). */
+  | "ctp_troza_d1d2_planta"
+  /** Trajo de la ficha SERFOR de la guía (lista de trozas, por codificación) los
+   *  D1/D2 que el ingreso no tenía (05-10, ADR-469). Sólo sobre vacío, con el mes
+   *  abierto y si la ficha es de ESA guía; si la ficha vino recién de SERFOR,
+   *  queda guardada en el ingreso. */
+  | "ctp_troza_d1d2_guia"
+  /** Declaró el título habilitante (código de origen, resolución, permiso) de
+   *  un ingreso ya asentado que no lo traía (05-10). Sólo sobre vacío y con el
+   *  mes abierto: llena un hueco, no corrige lo declarado. */
+  | "ctp_ingreso_titulo_declarado"
+  /** Guardó (o actualizó) el acta de un conteo físico del patio. */
+  | "ctp_patio_conteo"
+  /** Alguien abrió una foto privada de la carga (GPS + nombre: Ley 29733). */
+  | "ctp_foto_ver"
+  // Líneas de producción / despacho
+  | "ctp_linea_create"
+  /** Cerró una corrida abierta en el patio declarando qué salió (ADR-340). */
+  | "ctp_linea_produccion_declarada"
+  /**
+   * Campos VACÍOS de una corrida rellenados (ADR-401 §1.2). Va aparte de un
+   * `update` porque no corrige nada: completa lo que el asiento nunca dijo, y
+   * un fiscalizador tiene que poder distinguir «acá siempre estuvo en blanco y
+   * se llenó» de «acá decía otra cosa».
+   */
+  | "ctp_linea_completar"
+  /**
+   * Campos YA CARGADOS de una corrida corregidos (ADR-401 §4). Se distingue de
+   * `ctp_linea_completar` a propósito: acá el libro **decía otra cosa**, y el
+   * detalle narra el antes y el después de cada campo. Una corrección sin ese
+   * rastro es indistinguible de una adulteración.
+   */
+  | "ctp_linea_update"
+  | "ctp_linea_annul"
+  | "ctp_linea_delete"
+  /** Marcado a mano como "ya se usó": sale de Productos disponibles sin
+   *  despacharse ni reprocesarse (Brandon, 2026-09-01). Reversible. */
+  | "ctp_linea_marcar_usado"
+  | "ctp_linea_desmarcar_usado"
+  /** Apartar un producto del patio y soltarlo (ADR-418). Va aparte de
+   *  `marcar_usado` —que dice «esto ya no está»— porque una reserva dice «esto
+   *  es de fulano»: cuando dos clientes reclaman los mismos paquetes, lo que se
+   *  consulta es quién lo apartó primero y quién lo liberó. */
+  | "ctp_apartar"
+  | "ctp_liberar_apartado"
+  /** A quién, hasta cuándo o la nota de una reserva viva; «Extender» desde los
+   *  pendientes del libro es esto con sólo el plazo (2026-09-23). */
+  | "ctp_cambiar_apartado"
+  /** Existencia de apertura declarada / deshecha (ADR-394). */
+  | "ctp_apertura_declarar"
+  | "ctp_apertura_deshacer"
+  /** Operaciones hermanas del CTP (ADR-395). */
+  | "ctp_operacion_crear"
+  | "ctp_operacion_quitar"
+  | "ctp_operacion_cambiar"
+  // Atribución de origen y costeo — lo más sensible del módulo
+  | "ctp_consumos_set"
+  /** Qué PIEZAS entraron a la sierra en una corrida (ADR-326). */
+  | "ctp_trozas_consumidas"
+  /** Qué PIEZAS salieron sin aserrar en un despacho (ADR-363). */
+  | "ctp_trozas_despachadas"
+  /** Se imprimieron etiquetas QR de piezas y, si faltaba, se les dio su código
+   *  de planta correlativo (ADR-436). El código nuevo es la marca que se pinta
+   *  en el palo: un fiscalizador tiene que poder ver cuándo nació. */
+  | "ctp_trozas_etiquetadas"
+  | "ctp_origenes_set"
+  /** Qué corridas alimentan un reproceso (ADR-316). Espeja `ctp_origenes_set`:
+   *  también descuenta stock, así que también deja rastro. */
+  | "ctp_reproceso_set"
+  | "ctp_costo_congelar"
+  // Lotes de producción / comercialización (ADR-136)
+  | "ctp_lote_create"
+  | "ctp_lote_miembros_set"
+  | "ctp_lote_status"
+  | "ctp_lote_delete"
+  // Ficha legal del CTP (identidad SERFOR — Código de CTP, registro ARFFS, TH)
+  | "ctp_ficha_update"
+  /** Foto de referencia de una especie: la pone alguien y tiene que saberse quién. */
+  | "ctp_especie_foto"
+  /** El catálogo de especies que edita el aserradero: crear, renombrar, ocultar.
+   *  La especie es lo que el libro declara ante SERFOR — quién cambió la lista
+   *  que se ofrece al cargar tiene que quedar registrado. */
+  | "ctp_especie_catalogo"
+  /** Unificar las grafías de una especie REESCRIBE filas del libro («TORNILLO»
+   *  pasa a decir «Tornillo»). No cambia volúmenes ni atribuciones, pero toca
+   *  un acta: queda con el conteo por tabla y las formas que se reemplazaron. */
+  | "ctp_especie_unificar"
+  // GTF de salida formal (serie autorizada ARFFS + correlativo auto)
+  | "ctp_gtf_emitir"
+  /** Se completaron los datos de la guía (propietario/destinatario/transportista). */
+  | "ctp_gtf_datos"
+  // Importación del libro desde el Excel LO-CTP (ADR-138) — evento por lote
+  | "ctp_import"
+  // Cierre de período fiscal del libro (ADR-139) — congela + bloquea el mes
+  | "ctp_periodo_cerrar"
+  | "ctp_periodo_reabrir"
+  // Geolocalización de origen para el dossier EUDR (ADR-140)
+  | "ctp_origen_geo_set"
+  // Valor de venta del despacho para el P&L (ADR-141)
+  | "ctp_venta_set"
+  // Zonas físicas del aserradero para el Mapa de Planta (ADR-142)
+  | "ctp_planta_zona_set"
+  | "ctp_planta_zona_delete"
+  // Ubicación de una troza/ingreso en una zona de la planta (ADR-142 follow-up)
+  | "ctp_planta_asignar"
+  // Croquis del aserradero en metros (ADR-465): ubicar varias a la vez, el
+  // plano (medidas, imagen, máquinas) y la limpieza de ubicaciones huérfanas.
+  | "ctp_planta_asignar_lote"
+  | "ctp_planta_croquis_set"
+  | "ctp_planta_limpiar"
+  // Cubicaciones guardadas del cubicador (la medición del lote, previa al libro)
+  | "ctp_cubicacion_create"
+  // Trámites y oficios ante la autoridad (ADR-308): qué se presentó y cuándo es
+  // parte del expediente, no metadata — va al mismo rastro que el libro.
+  | "ctp_tramite_create"
+  | "ctp_tramite_update"
+  | "ctp_tramite_delete"
+  // Registro de Plantación Forestal — RNPF (ADR-380): lo que se declaró ante
+  // SERFOR/ARFFS para inscribir o actualizar una plantación es parte del
+  // expediente, mismo criterio que los trámites/oficios.
+  | "ctp_plantacion_create"
+  | "ctp_plantacion_update"
+  | "ctp_plantacion_delete"
+  // Directorio forestal (ADR-317): quién le compra, quién le vende y quién
+  // transporta es parte del expediente — un fiscalizador cruza esas identidades
+  // contra las guías, así que cambiarlas deja rastro.
+  | "ctp_parte_upsert"
+  | "ctp_parte_delete"
+  | "ctp_vehiculo_upsert"
+  | "ctp_vehiculo_delete"
+  // Fletes (ADR-318): es plata que sale de la caja y deuda con un tercero —
+  // quién la anotó y quién la dio por pagada deja rastro.
+  | "ctp_flete_create"
+  | "ctp_flete_update"
+  | "ctp_flete_pago"
+  | "ctp_flete_delete"
+  // Cuenta corriente con terceros (ADR-322): es plata de otro, así que cada
+  // movimiento y cada corrección quedan con nombre y fecha.
+  | "ctp_cuenta_create"
+  | "ctp_cuenta_update"
+  | "ctp_cuenta_delete"
+  // Aserrío por encargo (ADR-412): la tarifa versionada por fecha y el cargo
+  // que cada corrida deja en la cuenta de su dueño. Van aparte de
+  // `ctp_cuenta_*` porque los escribe el servidor al declarar, no alguien
+  // anotando a mano — y el fiscalizador de la plata tiene que distinguirlos.
+  | "ctp_tarifa_aserrio_guardar"
+  | "ctp_tarifa_aserrio_quitar"
+  | "ctp_aserrio_cobrar"
+  | "ctp_aserrio_quitar"
+  /** Un renglón por tanda, además de los individuales: quién cobró cuántas
+   *  corridas de una vez y por cuánto (ADR-412). */
+  | "ctp_aserrio_cobrar_tanda"
+  // Precios por cliente y vínculos del Directorio (ADR-430): el trato que
+  // después decide un cobro, y con quién está atada cada parte.
+  | "ctp_tarifa_cliente_guardar"
+  | "ctp_tarifa_cliente_quitar"
+  /** Adelantó el inicio de un trato para cobrar corridas que quedaron antes (23-09). */
+  | "ctp_tarifa_cliente_adelantar"
+  | "ctp_vinculo_parte_crear"
+  | "ctp_vinculo_parte_quitar"
+  | "ctp_cubicacion_update"
+  | "ctp_cubicacion_delete"
+  // Distribuciones de rolliza guardadas (Brandon, 2026-09-01): los bloques
+  // cargados en "Distribución de rolliza sobre lo aserrado", con nombre.
+  | "ctp_distribucion_create"
+  | "ctp_distribucion_update"
+  | "ctp_distribucion_delete"
+  // ANEXO N° 04 emitido con la GTF (lista de productos transformados)
+  // Baja lógica del Plan de Manejo (ADR-126). Es el papel que autoriza todo el
+  // LO-TH: sacarlo del selector no borra sus asientos ni sus guías, pero sí
+  // cambia qué plan se declara — y eso no puede pasar sin nombre y fecha.
+  | "ctp_plan_baja"
+  // Revertir una baja y corregir el titular de un plan (Blas, 02-10-2026).
+  | "ctp_plan_reactivado"
+  | "ctp_plan_titular_corregido"
+  // ADR-459: el alta del plan (con su registro) y cada cambio de una especie.
+  // El volumen de la especie es el techo del despacho (T6): quién lo subió y de
+  // cuánto a cuánto es lo primero que pregunta un fiscalizador.
+  | "ctp_plan_alta"
+  // Baja de árboles del censo (uno, varios o «borrar todos»), 08-10: hasta acá
+  // no dejaba rastro y 65 árboles del censo de una plantación quedaron borrados
+  // sin que el historial dijera quién ni cuándo.
+  | "ctp_plan_censo_baja"
+  | "ctp_plan_especie_alta"
+  | "ctp_plan_especie_editar"
+  | "ctp_plan_especie_baja"
+  // Carga del volumen autorizado por especie, varias de una vez (30-09): es el
+  // cupo contra el que se mide cada tala — quién lo escribió queda escrito.
+  | "ctp_plan_especies_lote"
+  | "ctp_anexo04_emit"
+  | "ctp_anexo04_update"
+  | "ctp_anexo04_delete"
+  // Reportes diarios por correo y WhatsApp (ADR-439): el libro sale del panel
+  // hacia terceros (contador, regente), así que quién lo prendió y a quién va
+  // tiene que quedar escrito. «Enviar ahora» también.
+  | "ctp_reporte_diario_crear"
+  | "ctp_reporte_diario_actualizar"
+  | "ctp_reporte_diario_eliminar"
+  | "ctp_reporte_diario_enviar"
+  // Guía guardada antes del ingreso (ADR-442).
+  | "ctp_guia_guardada_crear"
+  | "ctp_guia_guardada_editar"
+  | "ctp_guia_guardada_eliminar"
+  // «Recibir» una guía que viene del Libro TH del mismo negocio (28-09-2026):
+  // entra con sus trozas y su llegada. Propio para poder filtrarlo.
+  | "ctp_guia_th_recibir"
+  // Guías sin registrar (ADR-446): la salida que sólo vivía como Anexo 04 entra
+  // al libro. Se narran la guía, cada montón que se parte y el anexo que queda
+  // reemplazado por otro de la misma guía.
+  | "ctp_guia_desde_anexo"
+  | "ctp_paquete_partido"
+  | "ctp_anexo04_reemplazado"
+  // Cubicación de trozas → cuenta de la persona (ADR-478). Aplicar y anular
+  // mueven plata en sus adelantos: van con `auditCtpEsperando`.
+  | "ctp_cubicacion_trozas_guardar"
+  | "ctp_cubicacion_trozas_aplicar"
+  | "ctp_cubicacion_trozas_anular"
+  | "ctp_cubicacion_trozas_borrar";
+
+/** Lo que describe un evento del libro. */
+export interface CtpAuditParams {
+  tenantId: string;
+  action: CtpAuditAction;
+  entity: CtpAuditEntity;
+  entityId: string;
+  /** Qué pasó, en español y legible por un humano (o un fiscalizador). */
+  detail: string;
+  /** Username del admin. Nunca inventes uno: si no se sabe, "unknown". */
+  user: string;
+}
+
+/**
+ * Esperas entre intentos. Bajo carga el renglón se perdía en silencio (8 cobros
+ * a la vez sobre la misma corrida: 13 de 16 renglones, medido 23-09 en QA — y
+ * el que faltaba era el del cargo de verdad): la transacción del log no
+ * conseguía conexión mientras las otras esperaban el lock. Al segundo intento,
+ * con el lock ya liberado, entra.
+ */
+const ESPERAS_REINTENTO_MS = [300, 900] as const;
+/** Tope de tiempo para REINTENTAR (security 23-09): con el pool lleno cada
+ *  intento puede esperar ~2 s por una conexión, y `auditCtpEsperando` va antes
+ *  de responder. Pasado esto no se reintenta más: se loguea y se sigue. */
+const PLAZO_REINTENTOS_MS = 2_000;
+
+const esperar = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+/** Escribe el renglón, reintentando. Nunca tira: el fallo final se loguea como error. */
+async function escribirEvento(params: CtpAuditParams): Promise<void> {
+  let ultimo: unknown = null;
+  let intentos = 0;
+  const t0 = Date.now();
+  for (let intento = 0; intento <= ESPERAS_REINTENTO_MS.length; intento++) {
+    if (intento > 0) {
+      const espera = ESPERAS_REINTENTO_MS[intento - 1];
+      if (Date.now() - t0 + espera > PLAZO_REINTENTOS_MS) break;
+      await esperar(espera);
+    }
+    intentos++;
+    try {
+      await logActivity(
+        params.action,
+        params.entity,
+        params.detail,
+        params.entityId,
+        params.user || "unknown",
+        undefined,
+        params.tenantId,
+        { tirar: true },
+      );
+      return;
+    } catch (err) {
+      ultimo = err;
+    }
+  }
+  // Si esto falla, el libro pierde trazabilidad: es un error, no un detalle.
+  logger.error("[ctp-audit] no se pudo registrar el evento", {
+    error: errorSinDatos(ultimo),
+    intentos,
+    action: params.action,
+    entity: params.entity,
+    entityId: params.entityId,
+    tenantId: params.tenantId,
+  });
+}
+
+/**
+ * Registra un evento del libro. No se await-ea a propósito: la auditoría no
+ * debe agregar latencia ni romper el write si el log falla. Reintenta igual
+ * que `auditCtpEsperando`.
+ */
+export function auditCtp(params: CtpAuditParams): void {
+  escribirEvento(params).catch((err) =>
+    logger.error("[ctp-audit] no se pudo registrar el evento", {
+      error: errorSinDatos(err),
+      action: params.action,
+      entityId: params.entityId,
+      tenantId: params.tenantId,
+    }),
+  );
+}
+
+/**
+ * Igual que `auditCtp`, pero se espera. Para el renglón que tiene que quedar
+ * escrito ANTES de responder: en Vercel lo que sigue corriendo después de la
+ * respuesta puede no terminar, y el resumen de una tanda de cobros no puede
+ * perderse así. Nunca tira: auditar no tumba la operación, pero el fallo se
+ * loguea — y antes se reintenta, porque «esperar» un renglón que se perdió en
+ * silencio no garantizaba nada.
+ */
+export async function auditCtpEsperando(params: CtpAuditParams): Promise<void> {
+  await escribirEvento(params);
+}
+
+/** m³ con la precisión forestal del módulo, para los detalles del log. */
+export const m3 = (v: number | string | null | undefined): string =>
+  v == null ? "—" : `${fmtM3(Number(v))} m³`;

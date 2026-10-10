@@ -28,7 +28,6 @@ export async function GET(req: NextRequest) {
 
   const now = Date.now();
   const in1Day = new Date(now + 24 * 60 * 60 * 1000);
-  const in3Days = new Date(now + 3 * 24 * 60 * 60 * 1000);
   const in4Days = new Date(now + 4 * 24 * 60 * 60 * 1000);
 
   // Tenants en plan free con trial entre +1d y +4d (cubre la ventana
@@ -71,8 +70,8 @@ export async function GET(req: NextRequest) {
 
     const message =
       daysLeft === 1
-        ? `Hola, somos Buleje. Tu prueba gratis vence MAÑANA. Para no perder acceso al panel de "${t.name}", contratá un plan: https://www.buleje.pe/planes — o respondé este WhatsApp y te ayudamos.`
-        : `Hola, somos Buleje. Te quedan 3 días de prueba gratis en "${t.name}". Si querés seguir gestionando tu negocio sin cortes, mirá los planes acá: https://www.buleje.pe/planes`;
+        ? `Hola, somos Buleje. Tu prueba gratis vence MAÑANA. Para no perder acceso al panel de "${t.name}", contrata un plan: https://www.buleje.pe/planes — o responde este WhatsApp y te ayudamos.`
+        : `Hola, somos Buleje. Te quedan 3 días de prueba gratis en "${t.name}". Si quieres seguir gestionando tu negocio sin cortes, mira los planes acá: https://www.buleje.pe/planes`;
 
     try {
       await sendWhatsAppQueued(t.ownerPhone, message, {

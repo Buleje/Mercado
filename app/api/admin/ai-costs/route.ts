@@ -16,37 +16,34 @@
  *     capUsd: number,
  *     percentUsed: number,        // 0-100
  *     remainingUsd: number,
- *     plan: "free" | "pro" | "business" | "enterprise",
+ *     plan: string,               // Tenant.plan real
+ *     planEnTabla: boolean,       // false = el plan usa el tope de free
  *   }
+ *
+ * 2026-10-09: el plan y el tope salen de `topeDelPlan` (lib/ai/cost-control.ts),
+ * la MISMA resolución que `canSpend`. Antes leía `plan` de la sesión (no lo
+ * trae) y tenía su propia tabla: todos veían el tope de free ($0,50).
  */
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { aiCostGuard } from "@/lib/ai/cost-control";
+import { aiCostGuard, topeDelPlan } from "@/lib/ai/cost-control";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
-// Pricing duplicado del cost-control para no exponer internals.
-// Mantener sincronizado con PLAN_BUDGETS_CENTS en lib/ai/cost-control.ts.
-const PLAN_CAPS_USD: Record<string, number> = {
-  free: 0.5,
-  pro: 5.0,
-  business: 20.0,
-  enterprise: 100.0,
-};
-
 export async function GET(req: NextRequest) {
-  const rl = await applyRateLimit(req, "MODERATE", "admin-ai-costs");
+  // GENEROUS: el medidor va arriba de cada vista de Comandos IA.
+  const rl = applyRateLimit(req, "GENEROUS", "admin-ai-costs");
   if (rl) return rl;
 
   const auth = await requireAdmin(req, ["admin", "owner"]);
   if (auth instanceof NextResponse) return auth;
 
   try {
-    const usage = await aiCostGuard.getUsage(auth.tenantId);
-    // El plan está en el tenant config — para MVP usamos "free" si no se sabe.
-    const plan = (auth as { plan?: string }).plan ?? "free";
-    const capUsd = PLAN_CAPS_USD[plan] ?? PLAN_CAPS_USD.free;
+    const [usage, { plan, capUsd, planEnTabla }] = await Promise.all([
+      aiCostGuard.getUsage(auth.tenantId),
+      topeDelPlan(auth.tenantId),
+    ]);
     const percentUsed = capUsd > 0 ? Math.min(100, (usage.spentUsd / capUsd) * 100) : 0;
     const remainingUsd = Math.max(0, capUsd - usage.spentUsd);
 
@@ -60,6 +57,7 @@ export async function GET(req: NextRequest) {
       percentUsed: +percentUsed.toFixed(1),
       remainingUsd: +remainingUsd.toFixed(4),
       plan,
+      planEnTabla,
       callCount: usage.count,
     });
   } catch (err) {

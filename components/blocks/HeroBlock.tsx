@@ -84,7 +84,9 @@ export default function HeroBlock(props: Partial<HeroBlockProps>) {
       {backgroundImage ? (
         <div 
           className="absolute inset-0 bg-cover bg-center opacity-50"
-          style={{ backgroundImage: `url(${backgroundImage})` }}
+          /* Entre comillas y codificada: una URL permitida con `)` y `;` cerraba
+             el `url(` y metía CSS propio (revisión de seguridad 2026-10-01). */
+          style={{ backgroundImage: `url(${JSON.stringify(encodeURI(backgroundImage))})` }}
           aria-hidden="true"
         />
       ) : (

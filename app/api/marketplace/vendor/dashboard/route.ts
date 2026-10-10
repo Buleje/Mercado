@@ -4,19 +4,17 @@ import { requireAdmin } from "@/lib/require-admin";
 import { OrdersDB } from "@/lib/db/orders.db";
 import { ProductsDB } from "@/lib/db/products.db";
 import { logger } from "@/lib/logger";
+import { startOfLimaDay } from "@/lib/utils";
 
 // ── Helpers de rango de fechas ────────────────────────────────────────────────
 
+// Días de LIMA: el servidor corre en UTC y `setHours(0)` eran las 19:00 de Lima.
 function startOfDay(date = new Date()): Date {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d;
+  return new Date(startOfLimaDay(date));
 }
 
 function endOfDay(date = new Date()): Date {
-  const d = new Date(date);
-  d.setHours(23, 59, 59, 999);
-  return d;
+  return new Date(startOfLimaDay(date) + 24 * 60 * 60 * 1000 - 1);
 }
 
 function daysAgo(n: number): Date {

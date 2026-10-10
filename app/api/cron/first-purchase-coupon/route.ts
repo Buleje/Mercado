@@ -14,7 +14,7 @@ import { enqueueNotification } from "@/lib/queue";
  * que las ejecuciones queden en CronHealthLog (consistencia con el resto
  * de crons del audit P0-2). withCronHealth ya valida CRON_SECRET.
  */
-export const GET = withCronHealth("first-purchase-coupon", async (req: NextRequest) => {
+export const GET = withCronHealth("first-purchase-coupon", async (_req: NextRequest) => {
   try {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);

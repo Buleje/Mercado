@@ -64,6 +64,29 @@ export async function PATCH(
       return NextResponse.json({ error: "Nada que actualizar" }, { status: 400 });
     }
 
+    // Otorgar un plan pago a mano tiene que DESBLOQUEAR de verdad.
+    //
+    // Hasta ahora esto sólo escribía `plan`, y `getTrialStatus` no mira `plan`
+    // antes de caer al chequeo de trial: un tenant con la prueba vencida seguía
+    // en read-only —402 en toda escritura— aunque el panel dijera "enterprise".
+    // Pasó con un tenant real (Inversiones Agroforestales BLAS, 2026-08-12):
+    // plan enterprise, prueba vencida el 03-07, sin poder crear una sola orden
+    // de compra.
+    //
+    // Al asignar un plan pago SIN pasarela (socio, canje, cobro por
+    // transferencia o Yape), se limpia `trialEndsAt`: ya no está de prueba, está
+    // en un plan otorgado. Si hay suscripción de Stripe/MP no se toca nada — ahí
+    // manda la pasarela y su período de vigencia.
+    if (typeof updates.plan === "string" && updates.plan !== "free") {
+      const actual = await prisma.tenant.findUnique({
+        where: { slug },
+        select: { stripeSubscriptionId: true, mpSubscriptionId: true },
+      });
+      if (actual && !actual.stripeSubscriptionId && !actual.mpSubscriptionId) {
+        updates.trialEndsAt = null;
+      }
+    }
+
     const tenant = await prisma.tenant.update({
       where: { slug },
       data: updates,
@@ -78,10 +101,13 @@ export async function PATCH(
       data: {
         action: body.active !== undefined ? (body.active ? "tenant_reactivated" : "tenant_suspended") : "plan_changed",
         entity: "tenant",
-        entityId: slug,
+        // [AUDIT FIX] usar el CUID canónico, no el slug. Antes guardaba el slug
+        // → el audit trail quedaba desfasado del resto de rutas superadmin (que
+        // usan tenant.id) y no joineaba contra Tenant.id.
+        entityId: tenant.id,
         detail: details.join(", "),
         user: `superadmin:${session.username}`,
-        tenantId: slug,
+        tenantId: tenant.id,
       },
     }).catch((err) => logger.error("[superadmin/tenants/[slug]] operation failed", { error: String(err) }));
 

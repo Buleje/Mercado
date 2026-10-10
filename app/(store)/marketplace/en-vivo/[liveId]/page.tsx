@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { LiveDetailPage } from "@/components/marketplace/en-vivo/detalle/LiveDetailPage";
-import { getLiveById as getMockLiveById } from "@/lib/mocks/lives.mock";
+import { logger } from "@/lib/logger";
 import { LiveSessionsDB } from "@/lib/db/live-sessions.db";
 import { toUiLive } from "@/lib/lives/client";
 
@@ -10,8 +10,8 @@ interface PageProps {
 }
 
 /**
- * Carga desde la DB real primero. Si no existe (ej. desde dev antes del backfill),
- * cae al mock. Devuelve null si ninguno matchea.
+ * Solo transmisiones REALES (live_sessions). Sin fila → 404: nunca se arma la
+ * ficha con el mock (09-10: tiendas inventadas con «en vivo» falso).
  */
 async function resolveLive(liveId: string) {
   try {
@@ -19,10 +19,10 @@ async function resolveLive(liveId: string) {
     if (result) {
       return toUiLive(result.session as unknown as Record<string, unknown>, result.products, result.messages);
     }
-  } catch {
-    // DB no accesible (ej. antes de migration) → fallback mock
+  } catch (err) {
+    logger.warn("[en-vivo] getById failed", { liveId, error: String(err).slice(0, 200) });
   }
-  return getMockLiveById(liveId);
+  return null;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

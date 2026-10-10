@@ -1,0 +1,300 @@
+"use client";
+
+/**
+ * Cámaras — lo que la cámara del patio manda, lo que la IA leyó, y la
+ * dirección para que mande (ADR-411, ADR-456).
+ *
+ * La cámara es 4G con panel solar: nadie puede «entrar» a verla (CGNAT), y un
+ * stream continuo no se sostiene ni en datos ni en batería. Así que esta
+ * pantalla no es un monitor de video: es **el historial de lo que pasó**, que es
+ * lo que sirve a la mañana siguiente — quién entró, a qué hora, y la foto.
+ *
+ * Cuatro vistas (`?vista=`), por la pregunta que responden:
+ *  · **Fotos** — cada foto con lo que leyó la IA: chalecos, placa con su guía,
+ *    actividad y la pila. La placa y el chaleco son propuestas que se confirman.
+ *  · **Hoy en el patio** — el día entero en una pantalla, de cualquier fecha.
+ *  · **Personas** — las fotos del detector local del mosaico (van al Drive).
+ *  · **Cámaras** — alta, dirección para copiar, avisos, pila y chalecos: lo que
+ *    se configura una vez.
+ *
+ * Arriba, en todas, sólo lo que hace que la cámara funcione o no: el túnel
+ * cerrado, la IA sin clave, la cámara que dejó de mandar.
+ *
+ * Los datos y las escrituras viven en `camaras/use-camaras.ts`; la dirección
+ * pública en `use-direccion-publica.ts`; la conexión directa en
+ * `use-conexion-directa.ts`.
+ */
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import { CalendarDays, Camera, Image as ImageIcon, MoreHorizontal, RefreshCw, Tv, Users } from "@buleje/design-system/icons";
+import ActionMenu from "@/components/admin/shared/action-menu";
+import SegmentedControl from "@/components/ui-system/SegmentedControl";
+import { useVistaModulo } from "@/hooks/use-vista-modulo";
+import { estaCallada } from "@/lib/camaras/camaras";
+import { normalizarChaleco } from "@/lib/camaras/cruces";
+import ConectarCamaraModal from "./camaras/ConectarCamaraModal";
+import ChalecosModal from "./camaras/ChalecosModal";
+import HistorialFotos from "./camaras/HistorialFotos";
+import HoyEnElPatio from "./camaras/HoyEnElPatio";
+import OtraPantallaModal, { type PestanaOtraPantalla } from "./camaras/OtraPantallaModal";
+import VistaCamaras from "./camaras/VistaCamaras";
+import VistaPersonas from "./camaras/VistaPersonas";
+import { CalladasAviso, DireccionAviso, MensajeAccion, SinIaAviso } from "./camaras/AvisosCamaras";
+import { useCamaras } from "./camaras/use-camaras";
+import { EVENTO_FOTO_NUEVA } from "./camaras/use-analizar-cuadro";
+import { useConexionDirecta } from "./camaras/use-conexion-directa";
+import { useDireccionPublica } from "./camaras/use-direccion-publica";
+import { usePantallaAngosta } from "./camaras/use-pantalla-angosta";
+import EstadoCamaras from "./camaras/EstadoCamaras";
+import { VisorNubeProvider } from "./camaras/VisorNubeContexto";
+import { BTN, faltaClaveIa, porQueNoSeCopia } from "./camaras/camaras-ui";
+
+const VISTAS = ["fotos", "patio", "personas", "camaras"] as const;
+
+/** «Ver en otra pantalla» abierto (Modo TV), y en qué pestaña. */
+type OtraPantalla = { pestana: PestanaOtraPantalla; codigo?: string } | null;
+
+/* La cuenta de Hik-Connect for Teams y su visor, compartidos por todas las vistas (ADR-471).
+   «Ver en otra pantalla» vive arriba del proveedor: el visor de la nube lo abre con
+   «Verlo en el televisor» (su video es un canvas y no se puede transmitir). */
+export default function CamarasView() {
+  const [otra, setOtra] = useState<OtraPantalla>(null);
+  return (
+    <VisorNubeProvider onVerEnTv={() => setOtra({ pestana: "tv" })}>
+      <PantallaCamaras otra={otra} setOtra={setOtra} />
+    </VisorNubeProvider>
+  );
+}
+
+function PantallaCamaras({ otra, setOtra }: { otra: OtraPantalla; setOtra: (o: OtraPantalla) => void }) {
+  const d = useCamaras();
+  const conexion = useConexionDirecta(d);
+  const dir = useDireccionPublica();
+  const { vista, irA } = useVistaModulo("camaras", VISTAS, "fotos");
+  /* A 400 px «Hoy en el patio» partía el control en dos renglones y dejaba
+     «Actualizar» solo en una fila: en el celular la pestaña dice «Hoy» y van
+     sin ícono (medido: 373 px de 368 con los íconos). Con «Personas» (cuatro
+     pestañas, 348 px) ya no entraban los dos botones: «Actualizar» pasa a «⋯» y
+     el control se desliza de costado, todo en una fila. */
+  const angosta = usePantallaAngosta();
+  const [recarga, setRecarga] = useState(0);
+  const [conectando, setConectando] = useState<string | null>(null);
+  const [chalecos, setChalecos] = useState<{ numero: string | null } | null>(null);
+  /* «En vivo» desde Fotos de una cámara con visor propio: el visor vive en
+     «Cámaras». Se cambia de vista y, ya montada, se baja hasta esa cámara. */
+  const focoRef = useRef<string | null>(null);
+  const verVisor = (id: string) => {
+    focoRef.current = id;
+    irA("camaras");
+  };
+  useEffect(() => {
+    const id = focoRef.current;
+    if (vista !== "camaras" || !id) return;
+    focoRef.current = null;
+    document.getElementById(`camara-${id}`)?.scrollIntoView({ block: "start", behavior: "smooth" });
+  }, [vista]);
+
+  /* El QR del televisor trae `?vincularTv=CODIGO`: se abre «Ver en otra pantalla»
+     con el código puesto y se saca de la URL (un refresco no lo vuelve a abrir). */
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const codigo = url.searchParams.get("vincularTv");
+    if (!codigo) return;
+    url.searchParams.delete("vincularTv");
+    window.history.replaceState(window.history.state, "", url.toString());
+    setOtra({ pestana: "tv", codigo });
+  }, [setOtra]);
+
+  /* «Analizar» del vivo guarda la foto por fuera de `useCamaras`: se recarga en
+     silencio para que «Fotos» la muestre (y otra vez cuando llega la lectura). */
+  const { cargar } = d;
+  useEffect(() => {
+    const alGuardar = () => void cargar({ silenciosa: true });
+    window.addEventListener(EVENTO_FOTO_NUEVA, alGuardar);
+    return () => window.removeEventListener(EVENTO_FOTO_NUEVA, alGuardar);
+  }, [cargar]);
+
+  const calladas = useMemo(() => d.camaras.filter((c) => estaCallada(c)), [d.camaras]);
+  const sinIa = useMemo(() => faltaClaveIa(d.capturas), [d.capturas]);
+  const camaraAConectar = d.camaras.find((c) => c.id === conectando) ?? null;
+
+  /* Los números que la IA leyó y no son de nadie: el modal los ofrece para
+     asignarlos sin tipearlos. Cuenta fotos, no lecturas repetidas. */
+  const vistosSinAsignar = useMemo(() => {
+    const fotos = new Map<string, number>();
+    for (const c of d.capturas) {
+      const numeros = new Set<string>();
+      for (const x of c.cruces?.chalecos ?? []) if (!x.colaboradorId) numeros.add(x.numero);
+      for (const n of c.lectura?.chalecos ?? []) {
+        const k = normalizarChaleco(n);
+        if (k && !d.chalecos[k]) numeros.add(k);
+      }
+      for (const n of numeros) if (!d.chalecos[n]) fotos.set(n, (fotos.get(n) ?? 0) + 1);
+    }
+    return [...fotos.entries()]
+      .map(([numero, n]) => ({ numero, fotos: n }))
+      .sort((a, b) => a.numero.localeCompare(b.numero, "es", { numeric: true }));
+  }, [d.capturas, d.chalecos]);
+
+  const abrirChalecos = (numero: string | null) => {
+    d.setError(null);
+    setChalecos({ numero });
+  };
+  /* Asignar cambia quién es quién también en el resumen del día: se lo vuelve a
+     pedir (el servidor lo arma con la lista viva de chalecos). */
+  const asignarChaleco = async (numero: string, colaboradorId: string | null) => {
+    const r = await d.asignarChaleco(numero, colaboradorId);
+    if (r) setRecarga((n) => n + 1);
+    return r;
+  };
+  const actualizar = () => {
+    void d.cargar();
+    void dir.recargar();
+    setRecarga((n) => n + 1);
+  };
+
+  return (
+    <div className="space-y-4" data-vista="camaras">
+      <div className="flex items-center gap-2 sm:flex-wrap">
+        <SegmentedControl
+          value={vista}
+          onChange={(v) => irA(v)}
+          label="Qué mirar de las cámaras"
+          className="mr-auto min-w-0 max-w-full overflow-x-auto whitespace-nowrap"
+          options={[
+            /* El conteo va en el rótulo y no en `badge`: la pastilla del control
+               marcado da 2,98:1 (blanco sobre turquesa a 12 px, medido con axe). */
+            {
+              value: "fotos",
+              label: d.capturas.length ? `Fotos (${d.capturas.length})` : "Fotos",
+              icon: angosta ? undefined : <ImageIcon className="h-4 w-4" aria-hidden />,
+            },
+            {
+              value: "patio",
+              label: angosta ? "Hoy" : "Hoy en el patio",
+              icon: angosta ? undefined : <CalendarDays className="h-4 w-4" aria-hidden />,
+            },
+            {
+              value: "personas",
+              label: "Personas",
+              icon: angosta ? undefined : <Users className="h-4 w-4" aria-hidden />,
+            },
+            {
+              value: "camaras",
+              label: "Cámaras",
+              icon: angosta ? undefined : <Camera className="h-4 w-4" aria-hidden />,
+            },
+          ]}
+        />
+        {!angosta && (
+          <button type="button" onClick={actualizar} title="Actualizar" className={BTN}>
+            <RefreshCw className={`h-4 w-4 ${d.cargando ? "animate-spin" : ""}`} aria-hidden />
+            <span className="max-sm:sr-only">Actualizar</span>
+          </button>
+        )}
+        <ActionMenu
+          label="Más acciones de cámaras"
+          icon={MoreHorizontal}
+          soloIcono
+          size="sm"
+          actions={[
+            ...(angosta ? [{ id: "actualizar", label: "Actualizar", icon: RefreshCw, onSelect: actualizar }] : []),
+            {
+              id: "otra-pantalla",
+              label: "Ver en otra pantalla",
+              hint: "En tu Smart TV o en tu celular",
+              icon: Tv,
+              onSelect: () => setOtra({ pestana: "tv" }),
+            },
+          ]}
+        />
+      </div>
+
+      {/* En «Cámaras» el aviso va con la lista (también en verde): acá sólo los problemas, y una vez. */}
+      {vista !== "camaras" && <DireccionAviso estado={dir.estado} soloProblemas />}
+      {sinIa && <SinIaAviso />}
+      <CalladasAviso calladas={calladas} />
+      <MensajeAccion error={chalecos ? null : d.error} aviso={chalecos ? null : d.aviso} />
+
+      {vista === "fotos" && (
+        <EstadoCamaras
+          camaras={d.camaras}
+          direccionParaCamara={dir.direccionParaCamara}
+          motivoSinDireccion={porQueNoSeCopia(dir.estado)}
+          guardando={d.guardando}
+          onRotar={(id) => void d.rotar(id)}
+          onErrorCopia={() =>
+            d.setError("El navegador no dejó copiar. Selecciona la dirección a mano.")
+          }
+          onVerVisor={verVisor}
+        />
+      )}
+      {vista === "fotos" && (
+        <HistorialFotos
+          camaras={d.camaras}
+          capturas={d.capturas}
+          cargando={d.cargando}
+          guardando={d.guardando}
+          onBorrar={(id) => void d.borrarCaptura(id)}
+          onConfirmar={d.confirmarCruce}
+          onAsignarChaleco={abrirChalecos}
+          chalecosVivos={d.chalecos}
+          onIrACamaras={() => irA("camaras")}
+          onVerVisor={verVisor}
+        />
+      )}
+      {vista === "patio" && (
+        <HoyEnElPatio activo recarga={recarga} onAsignarChaleco={abrirChalecos} />
+      )}
+      {vista === "personas" && <VistaPersonas activo recarga={recarga} camaras={d.camaras} />}
+      {vista === "camaras" && (
+        <VistaCamaras
+          datos={d}
+          conexion={conexion}
+          estadoDireccion={dir.estado}
+          direccionParaCamara={dir.direccionParaCamara}
+          onConectar={setConectando}
+          onAbrirChalecos={() => abrirChalecos(null)}
+          onAsignarChaleco={abrirChalecos}
+        />
+      )}
+
+      {camaraAConectar && (
+        <ConectarCamaraModal
+          /* Uno por cámara: al montarse lee la conexión que ya tiene, y así una
+             recarga de la lista mientras se escribe no pisa lo tipeado. */
+          key={camaraAConectar.id}
+          camara={camaraAConectar}
+          onCerrar={() => setConectando(null)}
+          onConectar={(datos) => conexion.conectar(camaraAConectar, datos)}
+          onDesconectar={async () => {
+            await d.desconectar(camaraAConectar.id);
+          }}
+          onGuardarPuente={(campos) => d.ajustarPuente(camaraAConectar.id, campos)}
+          error={d.error}
+        />
+      )}
+      {otra && (
+        <OtraPantallaModal
+          camaras={d.camaras}
+          pestanaInicial={otra.pestana}
+          codigoInicial={otra.codigo}
+          onCerrar={() => setOtra(null)}
+        />
+      )}
+      {chalecos && (
+        <ChalecosModal
+          key={chalecos.numero ?? "nuevo"}
+          chalecos={d.chalecos}
+          colaboradores={d.colaboradores}
+          vistosSinAsignar={vistosSinAsignar}
+          numeroInicial={chalecos.numero}
+          guardando={d.guardando}
+          error={d.error}
+          onAsignar={asignarChaleco}
+          onCerrar={() => setChalecos(null)}
+        />
+      )}
+    </div>
+  );
+}

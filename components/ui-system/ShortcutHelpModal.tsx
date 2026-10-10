@@ -28,6 +28,8 @@ import {
   getRegisteredShortcuts,
 } from "@/hooks/use-keyboard-shortcuts";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { cn } from "@/lib/utils";
 
 interface ShortcutItem {
@@ -52,6 +54,12 @@ interface Props {
 export default function ShortcutHelpModal({ shortcuts, showFab = true, triggerKey = "?" }: Props) {
   const [open, setOpen] = useState(false);
   const focusTrapRef = useFocusTrap<HTMLDivElement>({ enabled: open, onEscape: () => setOpen(false) });
+  /** Ventana: se mueve, se achica y se fija (ADR-420). */
+  const ventana = useVentanaDeModal(open, {
+    ref: focusTrapRef,
+    aplicarTranslate: true,
+    claveMemoria: "atajos-de-teclado-ui-system",
+  });
 
   useKeyboardShortcut({
     key: triggerKey.toLowerCase() === "?" ? "?" : triggerKey,
@@ -88,32 +96,37 @@ export default function ShortcutHelpModal({ shortcuts, showFab = true, triggerKe
 
       {open && (
         <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="shortcut-help-title"
+          role="presentation"
           className="fixed inset-0 z-50 flex items-center justify-center p-4 motion-safe:animate-[fadeIn_0.2s]"
         >
           <button
             type="button"
             aria-label="Cerrar modal"
             tabIndex={-1}
-            onClick={() => setOpen(false)}
+            onClick={() => { if (!ventana.fijado) setOpen(false); }}
             className="absolute inset-0 bg-[var(--text-primary)]/60 backdrop-blur-sm"
           />
           <div
             ref={focusTrapRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="shortcut-help-title"
+            tabIndex={-1}
             className={cn(
               "relative w-full max-w-md rounded-3xl bg-[var(--surface-raised)] shadow-2xl overflow-hidden",
               "motion-safe:animate-[scaleIn_0.25s_ease-out]",
             )}
           >
-            <div className="px-6 pt-6 pb-4 border-b border-[var(--rule-base)] flex items-center justify-between">
+            <div {...ventana.asaProps} className="px-6 pt-6 pb-4 border-b border-[var(--rule-base)] flex items-center justify-between">
               <div>
                 <h2 id="shortcut-help-title" className="text-lg font-extrabold text-[var(--text-primary)] tracking-tight">
                   Atajos de teclado
                 </h2>
                 <p className="text-xs text-[var(--text-tertiary)] mt-0.5">Navegá más rápido sin mouse</p>
               </div>
+              <span className="ml-auto flex items-center gap-1">
+                <ControlesDeVentana ventana={ventana} />
+              </span>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
@@ -149,6 +162,7 @@ export default function ShortcutHelpModal({ shortcuts, showFab = true, triggerKe
                 </p>
               )}
             </div>
+            <TiradorDeVentana ventana={ventana} />
           </div>
         </div>
       )}

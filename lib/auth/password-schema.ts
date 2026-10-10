@@ -49,7 +49,7 @@ export const newPasswordSchema = z
   )
   .refine(
     (v) => !COMMON_PASSWORDS.has(v.toLowerCase().replace(/\s/g, "")),
-    "Esa contraseña es demasiado común — elegí una más segura",
+    "Esa contraseña es demasiado común — elige una más segura",
   );
 
 /**

@@ -16,16 +16,16 @@ type ChipColor = "emerald" | "violet" | "blue" | "amber" | "red";
 
 const COLOR_MAP: Record<ChipColor, { chip: string; badge: string }> = {
   emerald: {
-    chip: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
-    badge: "bg-[var(--accent-soft)] text-white",
+    chip: "bg-primary/10 dark:bg-primary/15 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+    badge: "bg-primary/10 text-white",
   },
   violet: {
     chip: "bg-[var(--surface-sunken)] border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
     badge: "bg-[var(--accent-600,var(--accent))] text-white",
   },
   blue: {
-    chip: "bg-[var(--accent-soft)] dark:bg-[var(--accent-muted)] border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
-    badge: "bg-[var(--accent-soft)] text-white",
+    chip: "bg-primary/10 dark:bg-primary/15 border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+    badge: "bg-primary/10 text-white",
   },
   amber: {
     chip: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
@@ -66,7 +66,7 @@ export default function FilterChip({
         "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-all",
         active
           ? palette.chip
-          : "border-[var(--rule-base)] dark:border-zinc-700 text-[var(--text-secondary)] dark:text-zinc-400 bg-white dark:bg-zinc-900 hover:bg-[var(--surface-alt)] dark:hover:bg-zinc-800",
+          : "border-[var(--rule-base)] text-[var(--text-secondary)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] ",
       )}
     >
       {label}
@@ -76,7 +76,7 @@ export default function FilterChip({
             "text-[length:var(--ts-2xs)] font-bold rounded-full min-w-[18px] h-[18px] inline-flex items-center justify-center px-1",
             active
               ? palette.badge
-              : "bg-[var(--rule-soft)] dark:bg-zinc-700 text-[var(--text-secondary)] dark:text-zinc-300",
+              : "bg-[var(--rule-soft)] text-[var(--text-secondary)] ",
           )}
         >
           {count > 99 ? "99+" : count}

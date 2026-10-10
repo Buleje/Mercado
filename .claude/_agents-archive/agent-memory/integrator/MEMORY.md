@@ -1,0 +1,1 @@
+- [Auditoría SEO 2026-05-24](project_seo_audit_2026-05-24.md) — score 74/100, hallazgos H1/OG/hreflang/JSON-LD, 3 fixes prioritarios

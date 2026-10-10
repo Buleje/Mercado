@@ -1,366 +1,164 @@
 "use client";
- 
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { DollarSign, Download, Loader2, AlertTriangle, Settings, RefreshCw, Users } from "@buleje/design-system/icons";
+
+import { useId, useState } from "react";
+import { SectionTitle } from "@buleje/design-system";
+import { AlertTriangle, Download, MoreHorizontal, RefreshCw, Settings } from "@buleje/design-system/icons";
+import ActionMenu from "@/components/admin/shared/action-menu";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { useLocalStorage } from "@/hooks/use-local-storage";
 import { cn, exportToCSV } from "@/lib/utils";
+import { formatNumber } from "@/lib/format";
+import { BotonIndicadores } from "@/components/admin/arqueo/KpisCuadre";
+import { useComisiones } from "@/components/admin/comisiones/use-comisiones";
+import ReglasComision from "@/components/admin/comisiones/ReglasComision";
+import TablaComisiones from "@/components/admin/comisiones/TablaComisiones";
 
-/* ── Helpers ── */
-const fmt = (n: number) =>
-  `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2 })}`;
+const fmt = (n: number) => `S/ ${formatNumber(n, { min: 2 })}`;
 
-const STORAGE_KEY = "commission_rates";
-
-/* ── Types ── */
-type SaleRecord = {
-  id: string;
-  total: number;
-  cashierId: string;
-  cashierName: string;
-  createdAt: string;
-};
-
-type CashierSummary = {
-  cashierId: string;
-  cashierName: string;
-  totalSales: number;
-  saleCount: number;
-  commission: number;
-  rate: number;
-};
-
-/* ── Component ── */
+/**
+ * «Comisiones» de Ventas & Caja. Todo el cálculo es del backend
+ * (`/api/commissions/calculo`); acá se elige el período, se ajustan las
+ * reglas y se paga — el pago queda como gasto «Comisiones».
+ */
 export default function CommissionCalculator() {
-  const [sales, setSales] = useState<SaleRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [defaultRate, setDefaultRate] = useState(2);
-  const [customRates, setCustomRates] = useState<Record<string, number>>({});
-  const [showSettings, setShowSettings] = useState(false);
-  const [period, setPeriod] = useState<"month" | "week">("month");
+  const c = useComisiones();
+  const { confirm } = useConfirm();
+  const [verReglas, setVerReglas] = useState(false);
+  const [kpisAbiertos, setKpisAbiertos] = useLocalStorage<boolean>("ventas-caja:comisiones:kpis-abiertos", false);
+  const [medio, setMedio] = useState("efectivo");
+  const [pagando, setPagando] = useState<string | null>(null);
+  const [aviso, setAviso] = useState<{ ok: boolean; msg: string } | null>(null);
+  const kpisId = useId();
+  const t = c.datos?.totales;
 
-  /* Cargar tasas desde localStorage */
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        setDefaultRate(parsed.defaultRate ?? 2);
-        setCustomRates(parsed.customRates ?? {});
-      }
-    } catch {
-      /* silencio */
-    }
-  }, []);
+  async function pagar(cashierId: string, nombre: string, monto: number) {
+    // El período de la cifra en pantalla, no el que se está cargando.
+    const visto = c.datos ? { desde: c.datos.desde, hasta: c.datos.hasta } : null;
+    if (!visto || c.loading) return;
+    const ok = await confirm({
+      title: `¿Pagar ${fmt(monto)} a ${nombre}?`,
+      description: `Se registra como gasto «Comisiones» del ${visto.desde} al ${visto.hasta}, pagado en ${medio}. Si el monto cambió, el sistema no paga y te muestra el nuevo.`,
+      confirmLabel: "Sí, pagar",
+    });
+    if (!ok) return;
+    setPagando(cashierId);
+    setAviso(null);
+    const err = await c.pagar(cashierId, medio, visto, monto);
+    setPagando(null);
+    setAviso(err ? { ok: false, msg: err } : { ok: true, msg: `Comisión de ${nombre} pagada: quedó en Gastos › Comisiones.` });
+  }
 
-  /* Guardar tasas */
-  const saveRates = useCallback(() => {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ defaultRate, customRates })
-    );
-  }, [defaultRate, customRates]);
-
-  useEffect(() => {
-    saveRates();
-  }, [defaultRate, customRates, saveRates]);
-
-  const load = useCallback(() => {
-    setLoading(true);
-    setError(null);
-    const now = new Date();
-    let from: string;
-    if (period === "month") {
-      from = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
-    } else {
-      const day = now.getDay();
-      const monday = new Date(now);
-      monday.setDate(now.getDate() - ((day + 6) % 7));
-      from = monday.toISOString().split("T")[0];
-    }
-    const to = now.toISOString().split("T")[0];
-
-    fetch(`/api/sales?from=${from}&to=${to}&limit=500`)
-      .then((r) => r.json())
-      .then((data) => {
-        const rows: SaleRecord[] = Array.isArray(data)
-          ? data
-          : data?.sales ?? [];
-        setSales(rows);
-      })
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, [period]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  /* ── Calculos ── */
-  const { summaries, totalCommissions } = useMemo(() => {
-    const byId: Record<string, { name: string; total: number; count: number }> = {};
-
-    for (const s of sales) {
-      const id = s.cashierId || "unknown";
-      const name = s.cashierName || "Sin cajero";
-      if (!byId[id]) byId[id] = { name, total: 0, count: 0 };
-      byId[id].total += s.total;
-      byId[id].count++;
-    }
-
-    const summaries: CashierSummary[] = Object.entries(byId).map(
-      ([id, { name, total, count }]) => {
-        const rate = customRates[id] ?? defaultRate;
-        return {
-          cashierId: id,
-          cashierName: name,
-          totalSales: total,
-          saleCount: count,
-          commission: (total * rate) / 100,
-          rate,
-        };
-      }
+  const exportar = () =>
+    exportToCSV(
+      (c.datos?.filas ?? []).map((f) => ({
+        Vendedor: f.cashierName, Ventas: f.ventas, Vendido: f.vendido.toFixed(2), "% comisión": f.tasa, Regla: f.fuente,
+        Comisión: f.comision.toFixed(2), Pagado: f.pagado.toFixed(2), Pendiente: f.pendiente.toFixed(2),
+      })),
+      `comisiones-${c.rango.desde}-a-${c.rango.hasta}.csv`,
     );
 
-    summaries.sort((a, b) => b.totalSales - a.totalSales);
-    const totalCommissions = summaries.reduce((s, c) => s + c.commission, 0);
+  const indicadores = t
+    ? [
+        { label: "Vendedores", valor: String(c.datos?.filas.length ?? 0) },
+        { label: "Vendido", valor: fmt(t.vendido) },
+        { label: "Comisiones", valor: fmt(t.comision) },
+        { label: "Pagado", valor: fmt(t.pagado) },
+        { label: "Por pagar", valor: fmt(t.pendiente), tono: t.pendiente > 0 },
+      ]
+    : [];
 
-    return { summaries, totalCommissions };
-  }, [sales, defaultRate, customRates]);
-
-  /* ── Export CSV ── */
-  const handleExport = () => {
-    const rows = summaries.map((s) => ({
-      Cajero: s.cashierName,
-      "Ventas totales": Number(s.totalSales).toFixed(2),
-      "% Comision": s.rate,
-      "Comision S/": Number(s.commission).toFixed(2),
-      "Nro ventas": s.saleCount,
-    }));
-    exportToCSV(rows, `comisiones-${new Date().toISOString().split("T")[0]}.csv`);
-  };
-
-  /* ── Render ── */
   return (
     <div className="space-y-4">
-
-      {/* Toolbar (sin titulo redundante — el nav ya indica el modulo) */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-end gap-3">
-        <div className="flex items-center gap-2">
-          <select
-            value={period}
-            onChange={(e) => setPeriod(e.target.value as "month" | "week")}
-            className="rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-1.5 text-sm text-[var(--text-secondary)]"
-          >
-            <option value="month">Este mes</option>
-            <option value="week">Esta semana</option>
-          </select>
+      <div className="flex items-center gap-2">
+        <SectionTitle>Comisiones del equipo</SectionTitle>
+        <InfoTip
+          title="Comisiones"
+          what="Lo que gana cada vendedor por lo que vendió en el período, neto de devoluciones. Lo calcula el sistema con las reglas guardadas, igual en todas las computadoras."
+          affects="«Pagar» registra el pago como gasto «Comisiones» por lo pendiente del período: no se puede pagar dos veces lo mismo, ni un período que se pisa con otro ya pagado."
+          example="María vendió S/ 6,000 con regla de 3 %: gana S/ 180. Si ya le pagaste S/ 60 de la primera semana, quedan S/ 120 por pagar."
+        />
+        <div className="ml-auto flex items-center gap-2">
+          <BotonIndicadores abierto={kpisAbiertos} onAlternar={() => setKpisAbiertos((v) => !v)} controla={kpisId} />
           <button
-            onClick={() => setShowSettings((s) => !s)}
+            type="button"
+            onClick={() => setVerReglas((v) => !v)}
+            aria-expanded={verReglas}
             className={cn(
-              "p-1.5 rounded-lg border transition-colors",
-              showSettings
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-[var(--rule-base)] text-[var(--text-tertiary)] hover:bg-[var(--surface-alt)] dark:hover:bg-gray-750"
+              "inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-sm font-bold transition-colors",
+              verReglas ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
             )}
           >
-            <Settings className="w-4 h-4" />
+            <Settings className="h-4 w-4" aria-hidden /> <span className="hidden sm:inline">Reglas</span>
           </button>
-          <button
-            onClick={load}
-            disabled={loading}
-            className="p-1.5 rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:bg-[var(--surface-alt)] dark:hover:bg-gray-750 transition-colors"
-          >
-            <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
-          </button>
+          <ActionMenu
+            label="Más acciones"
+            soloIcono
+            icon={MoreHorizontal}
+            actions={[
+              { id: "actualizar", label: "Actualizar", icon: RefreshCw, onSelect: () => void c.cargar(), busy: c.loading },
+              { id: "exportar", label: "Exportar CSV", hint: "El período elegido", icon: Download, onSelect: exportar, disabled: !c.datos?.filas.length },
+            ]}
+          />
         </div>
       </div>
 
-      {/* Panel de configuracion */}
-      {showSettings && (
-        <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 space-y-3">
-          <p className="text-sm font-medium text-[var(--text-secondary)]">
-            Configuracion de comisiones
+      {t && (
+        kpisAbiertos ? (
+          <div id={kpisId} className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            {indicadores.map((k) => (
+              <div key={k.label} className={cn("rounded-xl border p-4", k.tono ? "border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/10" : "border-[var(--rule-base)] bg-[var(--surface-raised)]")}>
+                <p className="libro-kicker">{k.label}</p>
+                <p className={cn("mt-0.5 text-xl font-extrabold tabular-nums", k.tono ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" : "text-[var(--text-primary)]")}>{k.valor}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p id={kpisId} className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-[var(--text-secondary)]">
+            {indicadores.map((k) => (
+              <span key={k.label}>{k.label} <strong className={cn("font-bold tabular-nums", k.tono ? "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" : "text-[var(--text-primary)]")}>{k.valor}</strong></span>
+            ))}
           </p>
-          <div className="flex items-center gap-3">
-            <label className="text-sm text-[var(--text-secondary)] w-40">
-              Porcentaje por defecto
-            </label>
-            <div className="flex items-center gap-1.5">
-              <input
-                type="number"
-                min={0}
-                max={100}
-                step={0.5}
-                value={defaultRate}
-                onChange={(e) => setDefaultRate(Number(e.target.value))}
-                className="w-20 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1 text-sm text-center text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-              <span className="text-sm text-[var(--text-secondary)]">%</span>
-            </div>
-          </div>
+        )
+      )}
 
-          {summaries.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-xs text-[var(--text-tertiary)]">
-                Tasa individual por cajero
-              </p>
-              {summaries.map((s) => (
-                <div key={s.cashierId} className="flex items-center gap-3">
-                  <span className="text-sm text-[var(--text-secondary)] w-40 truncate">
-                    {s.cashierName}
-                  </span>
-                  <div className="flex items-center gap-1.5">
-                    <input
-                      type="number"
-                      min={0}
-                      max={100}
-                      step={0.5}
-                      value={customRates[s.cashierId] ?? defaultRate}
-                      onChange={(e) =>
-                        setCustomRates((prev) => ({
-                          ...prev,
-                          [s.cashierId]: Number(e.target.value),
-                        }))
-                      }
-                      className="w-20 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-1 text-sm text-center text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                    <span className="text-sm text-[var(--text-secondary)]">%</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+      {verReglas && (
+        <ReglasComision
+          reglas={c.reglas}
+          equipo={c.equipo}
+          nombreDe={c.nombreDe}
+          onAgregar={c.agregarRegla}
+          onBorrar={c.borrarRegla}
+          localesPendientes={c.localesPendientes}
+          onPasarLocales={c.pasarLocales}
+        />
+      )}
+
+      {(c.error || aviso) && (
+        <div role={c.error || !aviso?.ok ? "alert" : "status"} className={cn(
+          "flex flex-wrap items-center gap-2 rounded-xl px-4 py-3 text-sm",
+          c.error || !aviso?.ok ? "bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]" : "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
+        )}>
+          {(c.error || !aviso?.ok) && <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />}
+          {c.error ?? aviso?.msg}
+          {c.error && <button type="button" onClick={() => void c.cargar()} className="ml-auto min-h-10 px-2 font-bold underline">Reintentar</button>}
         </div>
       )}
 
-      {/* Error */}
-      {error && (
-        <div className="flex items-center gap-2 rounded-lg bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] px-4 py-3 text-sm">
-          <AlertTriangle className="w-4 h-4 shrink-0" />
-          {error}
-        </div>
-      )}
-
-      {/* Loading */}
-      {loading && (
-        <div className="flex items-center justify-center py-10 text-[var(--text-tertiary)]">
-          <Loader2 className="w-5 h-5 animate-spin mr-2" />
-          Calculando comisiones...
-        </div>
-      )}
-
-      {/* Resumen total */}
-      {!loading && !error && summaries.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-            <div className="flex items-center gap-2 mb-2">
-              <Users className="w-5 h-5 text-primary" />
-              <p className="text-sm text-[var(--text-tertiary)]">Cajeros activos</p>
-            </div>
-            <p className="text-3xl font-extrabold text-[var(--text-primary)] tabular-nums">
-              {summaries.length}
-            </p>
-          </div>
-          <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-            <p className="text-sm text-[var(--text-tertiary)] mb-2">Ventas totales</p>
-            <p className="text-3xl font-extrabold text-primary tabular-nums">
-              {fmt(summaries.reduce((s, c) => s + c.totalSales, 0))}
-            </p>
-          </div>
-          <div className="rounded-2xl border border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/5 p-5">
-            <p className="text-sm text-[var(--text-tertiary)] mb-2">
-              Total a pagar en comisiones
-            </p>
-            <p className="text-3xl font-extrabold text-[var(--data-warning-500)] tabular-nums">{fmt(totalCommissions)}</p>
-          </div>
-        </div>
-      )}
-
-      {/* Tabla de cajeros */}
-      {!loading && !error && summaries.length > 0 && (
-        <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-x-auto">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)]">
-            <p className="text-base font-bold text-[var(--text-primary)]">
-              Detalle por cajero
-            </p>
-            <button
-              onClick={handleExport}
-              className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
-            >
-              <Download className="w-4 h-4" />
-              Exportar CSV
-            </button>
-          </div>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[var(--rule-soft)] bg-[var(--surface-alt)]/50">
-                <th className="px-4 py-3.5 text-sm uppercase tracking-wide text-left font-semibold text-[var(--text-tertiary)]">
-                  Cajero
-                </th>
-                <th className="px-4 py-3.5 text-sm uppercase tracking-wide text-right font-semibold text-[var(--text-tertiary)]">
-                  Ventas totales
-                </th>
-                <th className="px-4 py-3.5 text-sm uppercase tracking-wide text-right font-semibold text-[var(--text-tertiary)]">
-                  Nro ventas
-                </th>
-                <th className="px-4 py-3.5 text-sm uppercase tracking-wide text-right font-semibold text-[var(--text-tertiary)]">
-                  % Comisión
-                </th>
-                <th className="px-4 py-3.5 text-sm uppercase tracking-wide text-right font-semibold text-[var(--text-tertiary)]">
-                  Comisión
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--rule-soft)]">
-              {summaries.map((s) => (
-                <tr
-                  key={s.cashierId}
-                  className="hover:bg-[var(--surface-alt)] dark:hover:bg-gray-750 transition-colors"
-                >
-                  <td className="px-4 py-4 text-base font-semibold text-[var(--text-primary)]">
-                    {s.cashierName}
-                  </td>
-                  <td className="px-4 py-4 text-right text-base text-[var(--text-primary)] tabular-nums">
-                    {fmt(s.totalSales)}
-                  </td>
-                  <td className="px-4 py-4 text-right text-base text-[var(--text-secondary)] tabular-nums">
-                    {s.saleCount}
-                  </td>
-                  <td className="px-4 py-4 text-right text-base text-[var(--text-secondary)] tabular-nums">
-                    {s.rate}%
-                  </td>
-                  <td className="px-4 py-4 text-right text-base font-bold text-[var(--data-warning-500)] tabular-nums">
-                    {fmt(s.commission)}
-                  </td>
-                </tr>
-              ))}
-              <tr className="bg-[var(--surface-alt)] dark:bg-gray-750 font-bold">
-                <td className="px-4 py-4 text-base text-[var(--text-primary)]">Total</td>
-                <td className="px-4 py-4 text-right text-base text-[var(--text-primary)] tabular-nums">
-                  {fmt(summaries.reduce((s, c) => s + c.totalSales, 0))}
-                </td>
-                <td className="px-4 py-4 text-right text-base text-[var(--text-secondary)] tabular-nums">
-                  {summaries.reduce((s, c) => s + c.saleCount, 0)}
-                </td>
-                <td className="px-4 py-4" />
-                <td className="px-4 py-4 text-right text-lg font-extrabold text-[var(--data-warning-500)] tabular-nums">
-                  {fmt(totalCommissions)}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {!loading && !error && summaries.length === 0 && (
-        <div className="py-12 px-4 text-center bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl">
-          <div className="h-12 w-12 rounded-xl bg-[var(--surface-sunken)] flex items-center justify-center mx-auto mb-3">
-            <Users className="h-6 w-6 text-[var(--text-tertiary)]" strokeWidth={1.5} aria-hidden />
-          </div>
-          <p className="text-base font-semibold text-[var(--text-primary)] mb-1">Sin ventas en el periodo</p>
-          <p className="text-sm text-[var(--text-secondary)] max-w-md mx-auto">Las comisiones se calculan a partir de las ventas registradas. Genera tu primera venta desde POS para ver el desglose.</p>
-        </div>
-      )}
+      <TablaComisiones
+        datos={c.datos}
+        periodo={c.periodo}
+        onPeriodo={c.setPeriodo}
+        propio={c.propio}
+        onPropio={c.setPropio}
+        medio={medio}
+        onMedio={setMedio}
+        pagando={pagando}
+        onPagar={pagar}
+        onVerRango={c.verRango}
+        loading={c.loading}
+        onVerReglas={() => setVerReglas(true)}
+      />
     </div>
   );
 }

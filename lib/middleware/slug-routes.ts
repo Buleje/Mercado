@@ -17,6 +17,18 @@
 
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+
+/**
+ * `decodeURIComponent` sin try tiraba 500 con un %-escape roto (`/t/%E0%A4%A`,
+ * security 08-10): un slug que no se puede decodificar no es un negocio → 404.
+ */
+function decodeSlug(raw: string): string | null {
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return null;
+  }
+}
 import { applySecurityHeaders } from "./security-headers";
 
 const COOKIE_MAX_AGE = 7 * 24 * 60 * 60; // 7 days
@@ -35,7 +47,8 @@ export function handleSlugRoute(
   // Case 1: /t/{slug}/<rest> where rest does NOT start with /admin
   const slugStoreMatch = pathname.match(/^\/t\/([^/]+)(\/(?!admin).+)$/);
   if (slugStoreMatch) {
-    const slug = decodeURIComponent(slugStoreMatch[1]);
+    const slug = decodeSlug(slugStoreMatch[1]);
+    if (slug === null) return new NextResponse("Not found", { status: 404 });
     const restPath = slugStoreMatch[2]; // e.g., "/tienda", "/carrito"
     return rewriteWithTenant(req, restPath, slug, nonce, requestId);
   }
@@ -43,7 +56,8 @@ export function handleSlugRoute(
   // Case 2: /t/{slug}/admin...
   const slugAdminMatch = pathname.match(/^\/t\/([^/]+)(\/admin.*)$/);
   if (slugAdminMatch) {
-    const slug = decodeURIComponent(slugAdminMatch[1]);
+    const slug = decodeSlug(slugAdminMatch[1]);
+    if (slug === null) return new NextResponse("Not found", { status: 404 });
     const adminPath = slugAdminMatch[2]; // e.g. /admin, /admin/login
     return rewriteWithTenant(req, adminPath, slug, nonce, requestId);
   }
@@ -51,7 +65,8 @@ export function handleSlugRoute(
   // Case 3: /t/{slug} (exact landing page, with or without trailing slash)
   const slugLandingMatch = pathname.match(/^\/t\/([^/]+)\/?$/);
   if (slugLandingMatch) {
-    const slug = decodeURIComponent(slugLandingMatch[1]);
+    const slug = decodeSlug(slugLandingMatch[1]);
+    if (slug === null) return new NextResponse("Not found", { status: 404 });
     return passThroughWithTenant(req, pathname, slug, nonce, requestId);
   }
 

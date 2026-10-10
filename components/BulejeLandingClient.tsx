@@ -112,67 +112,6 @@ function MobileNav() {
   );
 }
 
-// ── Scroll reveal animations ──
-// Mantiene el contenido visible por default (SSR-safe, a prueba de JS lento,
-// screenshots y lectores de pantalla). Solo aplica la animacion de entrada
-// cuando el observer realmente ve la sección entrar al viewport. Usa
-// `will-animate` como flag opt-in, no `opacity:0` global.
-function ScrollRevealStyles() {
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    // Respetar prefers-reduced-motion
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced) return;
-
-    const style = document.createElement("style");
-    style.textContent = `
-      .will-animate {
-        opacity: 0;
-        transform: translateY(24px);
-        transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-      }
-      .will-animate.visible {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    `;
-    document.head.appendChild(style);
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("visible");
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { rootMargin: "0px 0px -60px 0px", threshold: 0.01 }
-    );
-
-    const main = document.getElementById("main-content");
-    if (main) {
-      const sections = main.querySelectorAll(":scope > section");
-      sections.forEach((s) => {
-        const rect = s.getBoundingClientRect();
-        // Solo animar secciones que estan fuera del viewport inicial;
-        // las que ya estan visibles se dejan renderizadas sin animacion.
-        if (rect.top > window.innerHeight) {
-          s.classList.add("will-animate");
-          observer.observe(s);
-        }
-      });
-    }
-
-    return () => {
-      observer.disconnect();
-      style.remove();
-    };
-  }, []);
-
-  return null;
-}
-
 // ── Combined client component ──
 // ScrollRevealStyles eliminado: dejaba secciones con opacity:0 visibles solo
 // tras IntersectionObserver, y rompía en screenshots/SSR/JS lento. Las

@@ -1,3 +1,5 @@
+import { stockMinimoDe } from "@/lib/inventario/stock-minimo";
+
 export interface PurchaseProduct {
   id: number;
   name: string;
@@ -32,12 +34,31 @@ export type PurchaseSortBy = "stock" | "price" | "name";
 export type PurchaseViewMode = "grid" | "list";
 
 /** Calcula cantidad sugerida para reposición */
-export function calculateSuggestedQty(product: Pick<PurchaseProduct, "stock" | "stockMin" | "stockMax">): number {
-  const targetStock = product.stockMax ?? (((product.stockMin ?? 0) * 3) || 10);
+export function calculateSuggestedQty(
+  product: Pick<PurchaseProduct, "stock" | "stockMin" | "stockMax">,
+  /** `Settings.globalMinStock` (minimoGlobalDe). Sin él, como antes: 0. */
+  minimoGlobal = 0,
+): number {
+  const targetStock = product.stockMax ?? ((stockMinimoDe(product, minimoGlobal) * 3) || 10);
   return Math.max(1, targetStock - (product.stock ?? 0));
 }
 
-/** Verifica si un producto necesita reposición */
-export function needsReorder(product: Pick<PurchaseProduct, "stock" | "stockMin">): boolean {
-  return (product.stock ?? 0) <= (product.stockMin ?? 0);
+/**
+ * Verifica si un producto necesita reposición.
+ *
+ * FIX 2026-07-08 (reporte QA Compras): antes `(stock ?? 0) <= (stockMin ?? 0)`
+ * marcaba como "a reponer" TODO producto sin control de stock (stock/min null →
+ * `0 <= 0` = true) — ej. servicios/gastos como "Aserrado de madera" que ni
+ * rastrean inventario. Eso contradecía la pestaña Sugerencias, que solo
+ * considera productos con `stockMin > 0`. Ahora exige un mínimo REAL configurado
+ * y un stock rastreado en/por debajo de él → ambas superficies coinciden.
+ */
+export function needsReorder(
+  product: Pick<PurchaseProduct, "stock" | "stockMin">,
+  /** `Settings.globalMinStock` (minimoGlobalDe) para los que no tienen mínimo
+   *  propio — así Compras coincide con el cierre y las alertas. Sin él: 0. */
+  minimoGlobal = 0,
+): boolean {
+  const min = stockMinimoDe(product, minimoGlobal);
+  return min > 0 && product.stock != null && product.stock <= min;
 }

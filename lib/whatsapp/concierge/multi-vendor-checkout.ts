@@ -3,7 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { OrdersDB } from "@/lib/db/orders.db";
 import { calculateCommission, recordCommission } from "@/lib/commissions";
 import { logger } from "@/lib/logger";
+import { precioVigente } from "@/lib/marketplace/precio-vigente";
 import type { CartItem } from "./types";
+import { sinDato } from "@/lib/errores/sin-dato";
 
 // TODO F3: PaymentApproval model will be added by agent F3.
 // Fields assumed: id, status, expectedAmount, customerPhone, conversationId.
@@ -228,16 +230,13 @@ export async function checkoutMultiVendor(
                 }>,
             )
         : [];
-      const toNum = (v: DecOrNum): number =>
-        typeof v === "number" ? v : (v?.toNumber?.() ?? 0);
       const livePriceById = new Map<number, number>();
       for (const sp of storeProducts) {
-        const discountActive =
-          sp.discountUntil != null && new Date(sp.discountUntil) > new Date();
-        const live = discountActive && sp.discountPrice != null
-          ? toNum(sp.discountPrice)
-          : toNum(sp.retailPrice);
-        livePriceById.set(sp.productId, live);
+        // Una sola regla para el precio, compartida con la vidriera. Antes acá
+        // se exigía `discountUntil != null`, así que una oferta SIN caducidad
+        // —la que el schema define como permanente— se anunciaba rebajada en la
+        // tarjeta y se cobraba entera en la caja.
+        livePriceById.set(sp.productId, precioVigente(sp).precio);
       }
 
       // Recompute subtotal usando precios live (no los del cart cliente).
@@ -256,7 +255,7 @@ export async function checkoutMultiVendor(
       // Fetch live commission rate
       const store = await prisma.store
         .findUnique({ where: { id: storeId }, select: { commission: true } })
-        .catch(() => null);
+        .catch(sinDato("multi-vendor-checkout comisión de la tienda (pedido reusado)"));
       // P0 schema fix 2026-05-24: Store.commission ahora es Decimal — normalizamos a number.
       const rate = store?.commission ? store.commission.toNumber() : 5;
       const commission = round2(calculateCommission(subtotal, rate));
@@ -294,7 +293,7 @@ export async function checkoutMultiVendor(
         where: { id: storeId },
         select: { commission: true, isPublished: true, name: true },
       })
-      .catch(() => null);
+      .catch(sinDato("multi-vendor-checkout tienda del pedido"));
 
     if (!store || !store.isPublished) {
       logger.warn("[multi-vendor-checkout] store not published — refusing order", {
@@ -316,7 +315,7 @@ export async function checkoutMultiVendor(
     // Check if an order with this idempotency key already exists
     const existingOrder = await prisma.order
       .findUnique({ where: { idempotencyKey }, select: { id: true } })
-      .catch(() => null);
+      .catch(sinDato("multi-vendor-checkout pedido por clave de idempotencia"));
 
     let orderId: string;
 

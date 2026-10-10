@@ -34,4 +34,23 @@ export const TenantsDB = {
       select: { id: true, slug: true, name: true },
     });
   },
+
+  /**
+   * TODOS los negocios (activos o no) con su alta: el código corto de los QR
+   * (ADR-486) es del más viejo cuando dos caen en el mismo, así que hacen falta
+   * también los dados de baja. Sólo lectura.
+   */
+  async listParaCodigoCorto(): Promise<Array<{ id: string; active: boolean; createdAt: Date }>> {
+    return prisma.tenant.findMany({ select: { id: true, active: true, createdAt: true } });
+  },
+
+  /** Datos básicos de un tenant por id (nombre/slug) — para páginas públicas. */
+  async getBasicById(
+    id: string,
+  ): Promise<{ id: string; slug: string; name: string } | null> {
+    return prisma.tenant.findUnique({
+      where: { id },
+      select: { id: true, slug: true, name: true },
+    });
+  },
 };

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { AdelantosDB } from "@/lib/db/adelantos.db";
 import { requireAdmin } from "@/lib/require-admin";
+import { permisoAdelantos } from "@/lib/adelantos/permisos";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
@@ -14,6 +15,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const _rl = await applyRateLimit(req, "MODERATE", "adelantos-recurrentes"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
+  const sinPermiso = permisoAdelantos(auth.role, "write");
+  if (sinPermiso) return sinPermiso;
   try {
     const { id } = await params;
     const parsed = PatchSchema.safeParse(await req.json());
@@ -32,11 +35,13 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const _rl = await applyRateLimit(req, "MODERATE", "adelantos-recurrentes"); if (_rl) return _rl;
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
+  const sinPermiso = permisoAdelantos(auth.role, "delete");
+  if (sinPermiso) return sinPermiso;
   try {
     const { id } = await params;
     const ok = await AdelantosDB.deleteRecurrente(auth.tenantId, id);
     if (!ok) return NextResponse.json({ error: "Recurrente no encontrado" }, { status: 404 });
-    logActivity("Eliminar", "adelanto", `Adelanto recurrente ${id}`, id, auth.username).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
+    logActivity("Eliminar", "adelanto", `Adelanto recurrente ${id}`, id, auth.username, undefined, auth.tenantId).catch((err) => logger.error("[adelantos] logActivity failed", { error: String(err) }));
     return NextResponse.json({ ok: true });
   } catch (e) {
     logger.error("[adelantos/recurrentes/id] DELETE error", { err: e instanceof Error ? e.message : String(e) });

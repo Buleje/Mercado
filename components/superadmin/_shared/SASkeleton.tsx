@@ -6,7 +6,7 @@ interface SASkeletonProps {
 
 export function SASkeleton({ className = "" }: SASkeletonProps) {
   return (
-    <div className={`animate-pulse bg-gray-200 dark:bg-gray-800 rounded ${className}`} />
+    <div className={`animate-pulse bg-[var(--rule-base)] rounded ${className}`} />
   );
 }
 
@@ -21,11 +21,11 @@ export function CardGridSkeleton({ count = 6 }: { count?: number }) {
           className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 animate-pulse"
         >
           <div className="flex items-center gap-2 mb-3">
-            <div className="w-4 h-4 rounded bg-gray-200 dark:bg-gray-700" />
-            <div className="h-3 w-24 rounded bg-gray-200 dark:bg-gray-700" />
+            <div className="w-4 h-4 rounded bg-[var(--rule-base)] " />
+            <div className="h-3 w-24 rounded bg-[var(--rule-base)] " />
           </div>
-          <div className="h-8 w-20 rounded bg-gray-200 dark:bg-gray-700 mb-2" />
-          <div className="h-3 w-32 rounded bg-gray-200 dark:bg-gray-700" />
+          <div className="h-8 w-20 rounded bg-[var(--rule-base)] mb-2" />
+          <div className="h-3 w-32 rounded bg-[var(--rule-base)] " />
         </div>
       ))}
     </div>
@@ -38,9 +38,9 @@ export function TableSkeleton({ count = 5 }: { count?: number }) {
   return (
     <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden">
       <div className="flex items-center gap-4 px-4 py-3 border-b border-[var(--rule-base)] animate-pulse">
-        <div className="h-3 flex-1 rounded bg-gray-200 dark:bg-gray-700" />
-        <div className="h-3 w-24 rounded bg-gray-200 dark:bg-gray-700" />
-        <div className="h-3 w-16 rounded bg-gray-200 dark:bg-gray-700" />
+        <div className="h-3 flex-1 rounded bg-[var(--rule-base)] " />
+        <div className="h-3 w-24 rounded bg-[var(--rule-base)] " />
+        <div className="h-3 w-16 rounded bg-[var(--rule-base)] " />
       </div>
       {Array.from({ length: count }).map((_, i) => (
         <div
@@ -50,13 +50,13 @@ export function TableSkeleton({ count = 5 }: { count?: number }) {
             i < count - 1 ? "border-b border-[var(--rule-base)]" : "",
           ].join(" ")}
         >
-          <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 shrink-0" />
+          <div className="w-8 h-8 rounded-full bg-[var(--rule-base)] shrink-0" />
           <div className="flex-1 space-y-1.5">
-            <div className="h-3 w-1/3 rounded bg-gray-200 dark:bg-gray-700" />
-            <div className="h-2.5 w-1/4 rounded bg-gray-200 dark:bg-gray-700" />
+            <div className="h-3 w-1/3 rounded bg-[var(--rule-base)] " />
+            <div className="h-2.5 w-1/4 rounded bg-[var(--rule-base)] " />
           </div>
-          <div className="h-5 w-16 rounded-full bg-gray-200 dark:bg-gray-700" />
-          <div className="h-3 w-14 rounded bg-gray-200 dark:bg-gray-700" />
+          <div className="h-5 w-16 rounded-full bg-[var(--rule-base)] " />
+          <div className="h-3 w-14 rounded bg-[var(--rule-base)] " />
         </div>
       ))}
     </div>
@@ -73,7 +73,7 @@ export function ChartSkeleton({ count = 1 }: { count?: number }) {
           key={i}
           className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 animate-pulse"
         >
-          <div className="h-4 w-32 rounded bg-gray-200 dark:bg-gray-700 mb-4" />
+          <div className="h-4 w-32 rounded bg-[var(--rule-base)] mb-4" />
           <div className="h-48 w-full rounded-xl bg-[var(--surface-sunken)]" />
         </div>
       ))}

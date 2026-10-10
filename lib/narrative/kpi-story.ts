@@ -52,7 +52,7 @@ export function ventasStory(ctx: KPIContext): KPIStory {
     return {
       headline: `Tu mejor ${dayName} del año 🎯`,
       cause: previousValue ? `+${((value - previousValue) / previousValue * 100).toFixed(0)}% vs ayer` : undefined,
-      nextAction: "Anotá qué hiciste diferente — repetí el próximo.",
+      nextAction: "Anota qué hiciste diferente — repite el próximo.",
       tone: "celebrate",
     };
   }
@@ -73,7 +73,7 @@ export function ventasStory(ctx: KPIContext): KPIStory {
     return {
       headline: `Vas ${((value / avgValue - 1) * 100).toFixed(0)}% arriba del promedio`,
       cause: `El promedio de ${dayName}s es ${ctx.prefix ?? ""}${avgValue.toFixed(0)}.`,
-      nextAction: "Ritmo bueno — proyectá para el mes.",
+      nextAction: "Ritmo bueno — proyecta para el mes.",
       tone: "celebrate",
     };
   }
@@ -145,7 +145,7 @@ export function pedidosStory(ctx: KPIContext): KPIStory {
   if (avgValue && value > avgValue * 1.3) {
     return {
       headline: `${value} pedidos — ${((value / avgValue - 1) * 100).toFixed(0)}% sobre lo normal`,
-      cause: "Demanda alta — asegurá stock y delivery.",
+      cause: "Demanda alta — asegura stock y delivery.",
       nextAction: "Activa modo 'preparación rápida' si tienes repartidores extra.",
       tone: "celebrate",
     };
@@ -176,7 +176,7 @@ export function clientesStory(ctx: KPIContext): KPIStory {
     return {
       headline: `+${newCount} clientes nuevos hoy`,
       cause: "Buena visibilidad o recomendaciones.",
-      nextAction: "Agregalos a tu lista WhatsApp para ofertas recurrentes.",
+      nextAction: "Agrégalos a tu lista WhatsApp para ofertas recurrentes.",
       tone: "celebrate",
     };
   }
@@ -229,8 +229,8 @@ export function projectionStory(
   if (projected >= target * 1.1) {
     return {
       headline: `Vas a romper tu meta — ${prefix ?? ""}${(projected - target).toFixed(0)} por encima`,
-      cause: `Si sigues así, cerrás con ${prefix ?? ""}${projected.toFixed(0)}.`,
-      nextAction: "Anotá qué funcionó este mes — replicá el formato.",
+      cause: `Si sigues así, cierras con ${prefix ?? ""}${projected.toFixed(0)}.`,
+      nextAction: "Anota qué funcionó este mes — replica el formato.",
       tone: "celebrate",
     };
   }
@@ -238,7 +238,7 @@ export function projectionStory(
   if (projected >= target) {
     return {
       headline: "Vas a llegar a tu meta",
-      cause: `Llevás ${prefix ?? ""}${current.toFixed(0)} acumulado — ritmo bueno.`,
+      cause: `Llevas ${prefix ?? ""}${current.toFixed(0)} acumulado — ritmo bueno.`,
       tone: "celebrate",
     };
   }
@@ -255,7 +255,7 @@ export function projectionStory(
   return {
     headline: `Te faltan ${prefix ?? ""}${gap.toFixed(0)} para la meta`,
     cause: `Ritmo actual: ${prefix ?? ""}${dailyPace.toFixed(0)}/día. Necesitas ${prefix ?? ""}${((target - current) / daysLeft).toFixed(0)}/día.`,
-    nextAction: "Evaluá subir precios de productos sin competencia local.",
+    nextAction: "Evalúa subir precios de productos sin competencia local.",
     tone: "alert",
   };
 }

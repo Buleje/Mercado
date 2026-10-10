@@ -46,8 +46,8 @@ export default function TenantTiendaError({
             No pudimos cargar la tienda
           </h2>
           <p className="mt-2 text-sm text-[var(--text-tertiary)] dark:text-muted">
-            Tuvimos un problema momentáneo. Probá reintentar; si persiste,
-            volvé al inicio de la tienda.
+            Tuvimos un problema momentáneo. Prueba reintentar; si persiste,
+            vuelve al inicio de la tienda.
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">

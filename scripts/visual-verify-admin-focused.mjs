@@ -65,7 +65,9 @@ async function main() {
 
   const loginResp = await page.request.post(`${BASE}/api/auth/login`, {
     headers: { "content-type": "application/json", "x-tenant-id": SLUG },
-    data: { username: USER, password: PASS },
+    // tenantSlug: qaadmin existe en varios tenants — sin scope el login devuelve
+    // el selector de tienda y el goto posterior cae en la página de login.
+    data: { username: USER, password: PASS, tenantSlug: SLUG },
   });
   if (loginResp.status() !== 200) {
     console.error("Login fail", loginResp.status());

@@ -17,8 +17,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AdminPage,
-  AdminSection,
-  BodyText,
   Kicker,
   cn,
 } from "@buleje/design-system";
@@ -26,7 +24,6 @@ import { AdminTabShell } from "../_components/_shared";
 import {
   Activity,
   AlertOctagon,
-  ArrowUpRight,
   Award,
   BarChart3,
   BookOpen,
@@ -38,7 +35,6 @@ import {
   Code,
   Compass,
   CreditCard,
-  Database,
   DollarSign,
   Eye,
   FileCheck,
@@ -58,19 +54,16 @@ import {
   LayoutDashboard,
   Lock,
   LogIn,
-  Mail,
   Map as MapIcon,
   MapPin,
   MessageSquare,
   Package,
   Palette,
   PartyPopper,
-  Phone,
   PiggyBank,
   Receipt,
   Rocket,
   Search,
-  Send,
   Server,
   Settings,
   ShieldCheck,
@@ -86,17 +79,17 @@ import {
   Trophy,
   Truck,
   User,
-  Users,
-  Wallet,
   Warehouse,
   Webhook,
   WandSparkles,
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { PlatformCard } from "@/components/superadmin/control-center/PlatformCard";
+import { SeccionConInfo } from "@/components/superadmin/SeccionConInfo";
 import { CredentialRow } from "@/components/superadmin/control-center/CredentialRow";
 import { SystemInfoCard } from "@/components/superadmin/control-center/SystemInfoCard";
 import { SAStatChip } from "@/components/superadmin/_shared/SAStatChip";
+import { CommandCenterAttention } from "./CommandCenterAttention";
 import type { EnvStatus } from "@/lib/superadmin/env-status";
 import type { PlatformHealthMap, PlatformHealthStatus } from "@/lib/superadmin/platform-health";
 
@@ -422,9 +415,14 @@ export function ControlCenterClient({
   };
 
   // Quick stats — overview del estado del Control Center
+  // «Sin datos» NO es incidencia: sólo cuenta lo que un chequeo marcó mal.
   const operationalCount = PLATFORMS.filter(
     (p) => (healthMap[p.id]?.status ?? "unknown") === "operational",
   ).length;
+  const incidentCount = PLATFORMS.filter((p) => {
+    const st = healthMap[p.id]?.status;
+    return st === "degraded" || st === "maintenance";
+  }).length;
   const configuredCreds = CREDENTIALS.filter((c) => envStatus[c.envKey]).length;
 
   // Search filter — busca en name, description y href.
@@ -476,22 +474,31 @@ export function ControlCenterClient({
   return (
     <AdminPage>
       <AdminTabShell
+      info={{
+        what: "Acceso rápido a todas las consolas (Stripe, Vercel, Supabase…) con el estado de credenciales e info del sistema.",
+        affects: "Solo el superadmin. Es un hub de accesos y diagnóstico; no cambia nada en las tiendas.",
+        example: "¿Quieres revisar un pago en Stripe? Entras desde aquí y ves si la credencial está activa.",
+      }}
         title="Centro de control"
-        description="Acceso rápido a todas las plataformas + estado de credenciales + info del sistema."
         icon={Gauge}
         kicker="Plataforma Buleje"
       >
+      {/* ── Cockpit: lo que necesita atención AHORA ─────────────────── */}
+      <CommandCenterAttention />
+
       {/* ── Quick stats — visión del estado en un golpe ─────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <SAStatChip
           icon={Activity}
-          label="Plataformas activas"
-          value={`${operationalCount}/${PLATFORMS.length}`}
+          label={operationalCount > 0 ? "Plataformas activas" : "Páginas"}
+          value={operationalCount > 0 ? `${operationalCount}/${PLATFORMS.length}` : String(PLATFORMS.length)}
           tone="teal"
           hint={
-            operationalCount === PLATFORMS.length
-              ? "Todas operativas"
-              : `${PLATFORMS.length - operationalCount} con incidencias`
+            incidentCount > 0
+              ? `${incidentCount} con incidencias`
+              : operationalCount === PLATFORMS.length
+                ? "Todas operativas"
+                : "Sin chequeo automático"
           }
         />
         <SAStatChip
@@ -522,9 +529,9 @@ export function ControlCenterClient({
       </div>
 
       {/* ── A. Launchpad ────────────────────────────────────────────── */}
-      <AdminSection
+      <SeccionConInfo
         title={`Plataformas · ${PLATFORMS.length} páginas`}
-        description="Todas las rutas navegables del proyecto agrupadas. Click en una card para abrir en nueva pestaña."
+        info={{ what: "Todas las rutas del proyecto, agrupadas. Pulsa una tarjeta para abrirla en una pestaña nueva." }}
       >
         {/* Search filter — input grande para buscar entre 110+ rutas */}
         <div className="mb-5 relative">
@@ -575,7 +582,7 @@ export function ControlCenterClient({
               Sin coincidencias
             </p>
             <p className="text-xs text-[var(--text-tertiary)] mt-1">
-              No encontramos plataformas con &ldquo;{query}&rdquo;. Intentá con otra palabra.
+              No encontramos plataformas con &ldquo;{query}&rdquo;. Prueba con otra palabra.
             </p>
           </div>
         )}
@@ -583,7 +590,7 @@ export function ControlCenterClient({
         <div className="space-y-6">
           {platformsByCategory.map((group) => (
             <div key={group.category}>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">
+              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">
                 {group.category}
                 <span className="ml-2 text-[var(--text-tertiary)]/60 font-semibold">
                   · {group.items.length}
@@ -616,12 +623,15 @@ export function ControlCenterClient({
             </div>
           ))}
         </div>
-      </AdminSection>
+      </SeccionConInfo>
 
       {/* ── B. Credenciales — agrupadas por dominio ──────────────────── */}
-      <AdminSection
+      <SeccionConInfo
         title="Credenciales del sistema"
-        description="Los valores nunca se muestran; sólo se reporta existencia y se ofrecen accesos a los dashboards de cada proveedor."
+        info={{
+          what: "Solo ves si cada credencial está puesta. Los valores nunca se muestran ni salen del servidor.",
+          affects: "Cada fila te lleva al panel del proveedor para rotarla.",
+        }}
       >
         <div className="space-y-5">
           {CRED_GROUP_ORDER.map((group) => {
@@ -643,20 +653,20 @@ export function ControlCenterClient({
                     <span
                       className={cn(
                         "h-2 w-2 rounded-full shrink-0",
-                        allOk ? "bg-[var(--data-success-500)]" : "bg-[var(--data-warning-500)]",
+                        allOk ? "bg-[var(--data-success-500)]" : "bg-teal-500",
                       )}
                       aria-hidden
                     />
-                    <p className="text-[13px] font-bold text-[var(--text-primary)] truncate">
+                    <p className="text-sm font-bold text-[var(--text-primary)] truncate">
                       {group}
                     </p>
                   </div>
                   <span
                     className={cn(
-                      "shrink-0 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider",
+                      "shrink-0 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider",
                       allOk
                         ? "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]"
-                        : "bg-[var(--data-warning-500)]/10 text-[var(--data-warning-500)]",
+                        : "bg-teal-500/10 text-teal-500",
                     )}
                   >
                     {okCount}/{inGroup.length} OK
@@ -701,20 +711,8 @@ export function ControlCenterClient({
               </div>
             );
           })}
-          <div
-            className={cn(
-              "flex items-center gap-2 rounded-xl border border-[var(--rule-base)]",
-              "bg-[var(--surface-sunken)]/50 px-4 py-2.5",
-            )}
-          >
-            <Lock className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" aria-hidden />
-            <BodyText className="text-[var(--text-tertiary)]">
-              Ningún secreto se envía al cliente. Solo se reporta si la variable
-              está presente en producción.
-            </BodyText>
-          </div>
         </div>
-      </AdminSection>
+      </SeccionConInfo>
 
       {/* ── C. Info del sistema (timestamp deploy detallado) ─────────── */}
       <SystemInfoCard

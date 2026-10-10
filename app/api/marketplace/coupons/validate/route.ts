@@ -72,10 +72,27 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Las gift cards (discountType="giftcard") consumen saldo: el descuento
+    // sale de `balance`, no del valor nominal, y hay que deducirlo al canjear.
+    // Este canal nunca implementó esa deducción — aplicarlas acá regalaría el
+    // valor nominal completo en cada pedido, para siempre. Se canjean en la
+    // tienda (/api/coupons/validate + /api/orders, que sí manejan el saldo).
+    if (coupon.discountType === "giftcard") {
+      return NextResponse.json({
+        valid: false,
+        reason: "Las gift cards se canjean desde la tienda, no en el marketplace",
+      });
+    }
+
     // Calculate discount
     let discount = 0;
     if (coupon.discountType === "percent") {
-      discount = Math.round((cartTotal * discountValueNum) / 100 * 100) / 100;
+      // Cap al 100% aunque el dato persistido diga más (cupones legacy creados
+      // antes de que este endpoint validara ≤100 al crear). Mismo guard que
+      // /api/coupons/validate — el cliente nunca ve un descuento > cartTotal.
+      const capped = Math.min(discountValueNum, 100);
+      discount = Math.round((cartTotal * capped) / 100 * 100) / 100;
+      discount = Math.min(discount, cartTotal);
     } else {
       discount = Math.min(discountValueNum, cartTotal);
     }

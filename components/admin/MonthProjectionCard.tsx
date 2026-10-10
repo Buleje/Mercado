@@ -2,8 +2,9 @@
 
 import { LoadingState, PageTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
-import { TrendingUp, TrendingDown, Minus, Loader2, RefreshCw } from "@buleje/design-system/icons";
+import { TrendingUp, TrendingDown, Minus, RefreshCw } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -21,7 +22,7 @@ type MonthStats = {
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function fmt(n: number) {
-  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `${formatCurrency(n)}`;
 }
 
 function getDaysInMonth(year: number, month: number) {
@@ -154,7 +155,7 @@ export default function MonthProjectionCard() {
         ) : error ? (
           <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)] text-center py-6">{error}</p>
         ) : (
-          <div className="space-y-5">
+          <div className="space-y-4">
             {/* Mes actual */}
             <div>
               <p className="text-xs text-[var(--text-tertiary)] mb-1">
@@ -203,7 +204,7 @@ export default function MonthProjectionCard() {
                           "w-full rounded-t-sm min-h-[2px] transition-all",
                           isToday
                             ? "bg-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]"
-                            : "bg-primary dark:bg-[var(--accent-soft)]"
+                            : "bg-primary dark:bg-primary/10"
                         )}
                         style={{ height: `${Math.max(h, 2)}%` }}
                         title={`Dia ${d.label}: ${fmt(d.total)}`}

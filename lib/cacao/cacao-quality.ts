@@ -9,7 +9,13 @@
  *  - NTP-ISO 2291 — determinación de humedad.
  */
 
-export const CACAO_VARIEDADES = ["CCN-51", "criollo", "trinitario", "forastero", "nacional"] as const;
+export const CACAO_VARIEDADES = [
+  "CCN-51",
+  "criollo",
+  "trinitario",
+  "forastero",
+  "nacional",
+] as const;
 export const CACAO_CERTIFICACIONES = ["organico", "comercio_justo", "convencional"] as const;
 export const CACAO_TIPO_GRANO = ["humedo", "seco"] as const;
 
@@ -45,9 +51,13 @@ export function cacaoFermentationIndex(cut: CutTest): number {
  * Si no hay datos de corte ni humedad, retorna null (sin clasificar).
  */
 export function cacaoGrade(cut: CutTest): CacaoGrado | null {
-  const moh = cut.pctMohoso, piz = cut.pctPizarroso, hum = cut.humedadPct;
+  const moh = cut.pctMohoso,
+    piz = cut.pctPizarroso,
+    hum = cut.humedadPct;
   if (moh == null && piz == null && hum == null) return null;
-  const m = num(moh), p = num(piz), h = hum == null ? 0 : Number(hum);
+  const m = num(moh),
+    p = num(piz),
+    h = hum == null ? 0 : Number(hum);
   if (m <= 3 && p <= 3 && h <= 7.5) return "I";
   if (m <= 4 && p <= 8 && h <= 8) return "II";
   return "fuera_norma";
@@ -65,7 +75,9 @@ export function cacaoLiquidacion(
   precioPorKg: number | null | undefined,
   premioPorKg: number | null | undefined = 0,
 ): number {
-  const peso = num(pesoKg), precio = num(precioPorKg), premio = num(premioPorKg);
+  const peso = num(pesoKg),
+    precio = num(precioPorKg),
+    premio = num(premioPorKg);
   return Math.round(peso * (precio + premio) * 100) / 100;
 }
 
@@ -85,8 +97,12 @@ export const CACAO_BENEFICIO_ESTADOS = ["fermentando", "secando", "terminado"] a
  * Típico en cacao ~58-62% (de 100 kg baba → ~38-42 kg seco). Retorna null si
  * faltan datos o el seco supera al húmedo (dato inválido).
  */
-export function cacaoMerma(pesoHumedoKg: number | null | undefined, pesoSecoKg: number | null | undefined): number | null {
-  const h = num(pesoHumedoKg), s = num(pesoSecoKg);
+export function cacaoMerma(
+  pesoHumedoKg: number | null | undefined,
+  pesoSecoKg: number | null | undefined,
+): number | null {
+  const h = num(pesoHumedoKg),
+    s = num(pesoSecoKg);
   if (h <= 0 || s <= 0 || s > h) return null;
   return Math.round((1 - s / h) * 1000) / 10; // 1 decimal
 }
@@ -109,8 +125,12 @@ export function cacaoProyeccionSeco(
 }
 
 /** Rendimiento del beneficio (kg seco / kg húmedo) en %. Inverso de la merma. */
-export function cacaoRendimiento(pesoHumedoKg: number | null | undefined, pesoSecoKg: number | null | undefined): number | null {
-  const h = num(pesoHumedoKg), s = num(pesoSecoKg);
+export function cacaoRendimiento(
+  pesoHumedoKg: number | null | undefined,
+  pesoSecoKg: number | null | undefined,
+): number | null {
+  const h = num(pesoHumedoKg),
+    s = num(pesoSecoKg);
   if (h <= 0 || s <= 0 || s > h) return null;
   return Math.round((s / h) * 1000) / 10;
 }
@@ -130,7 +150,8 @@ export function cacaoVentaTotalPen(
   moneda: string = "PEN",
   tipoCambio: number | null | undefined = null,
 ): number {
-  const peso = num(pesoKg), precio = num(precioPorKg);
+  const peso = num(pesoKg),
+    precio = num(precioPorKg);
   if (peso <= 0 || precio <= 0) return 0;
   const enMoneda = peso * precio;
   if (moneda === "USD") {
@@ -141,11 +162,69 @@ export function cacaoVentaTotalPen(
 }
 
 /** Margen bruto de la venta vs. costo de acopio: (ingreso − costo) / costo (%). */
-export function cacaoVentaMargen(totalPen: number | null | undefined, pesoKg: number | null | undefined, costoPorKg: number | null | undefined): number | null {
-  const total = num(totalPen), peso = num(pesoKg), costoKg = num(costoPorKg);
+export function cacaoVentaMargen(
+  totalPen: number | null | undefined,
+  pesoKg: number | null | undefined,
+  costoPorKg: number | null | undefined,
+): number | null {
+  const total = num(totalPen),
+    peso = num(pesoKg),
+    costoKg = num(costoPorKg);
   if (total <= 0 || peso <= 0 || costoKg <= 0) return null;
   const costo = peso * costoKg;
   return Math.round(((total - costo) / costo) * 1000) / 10;
+}
+
+// ─── Seguimiento de pago de una venta (ADR-128 v4) ──────────────────────────
+
+export const CACAO_ESTADO_PAGO = ["pendiente", "parcial", "pagado"] as const;
+export type CacaoEstadoPago = (typeof CACAO_ESTADO_PAGO)[number];
+export const ESTADO_PAGO_LABEL: Record<CacaoEstadoPago, string> = {
+  pendiente: "Pendiente",
+  parcial: "Parcial",
+  pagado: "Pagado",
+};
+
+/**
+ * Estado de pago derivado del total (soles) y lo cobrado hasta ahora.
+ *  - cobrado ≥ total (>0) → pagado (saldo 0)
+ *  - 0 < cobrado < total   → parcial
+ *  - cobrado = 0           → pendiente
+ * `saldo` = max(0, total − cobrado).
+ */
+export function cacaoEstadoPago(
+  totalPen: number | null | undefined,
+  montoCobrado: number | null | undefined,
+): { estado: CacaoEstadoPago; saldo: number } {
+  const total = num(totalPen),
+    cobrado = num(montoCobrado);
+  const saldo = Math.round(Math.max(0, total - cobrado) * 100) / 100;
+  if (total > 0 && cobrado >= total) return { estado: "pagado", saldo: 0 };
+  if (cobrado > 0) return { estado: "parcial", saldo };
+  return { estado: "pendiente", saldo };
+}
+
+// ─── Ajustes manuales de inventario (ADR-128 v4) ────────────────────────────
+
+export const CACAO_AJUSTE_TIPOS = [
+  "merma",
+  "muestra",
+  "perdida",
+  "ajuste_pos",
+  "ajuste_neg",
+] as const;
+export type CacaoAjusteTipo = (typeof CACAO_AJUSTE_TIPOS)[number];
+export const CACAO_AJUSTE_LABEL: Record<CacaoAjusteTipo, string> = {
+  merma: "Merma física",
+  muestra: "Muestra",
+  perdida: "Pérdida",
+  ajuste_pos: "Ajuste (entra)",
+  ajuste_neg: "Ajuste (sale)",
+};
+
+/** Signo del ajuste sobre el stock disponible: +1 suma, −1 resta. Solo `ajuste_pos` suma. */
+export function cacaoAjusteSigno(tipo: string): 1 | -1 {
+  return tipo === "ajuste_pos" ? 1 : -1;
 }
 
 // ─── Alertas de proceso del beneficio (ADR-128 v3) ──────────────────────────
@@ -168,13 +247,16 @@ export function cacaoBeneficioAlerta(
 ): { nivel: CacaoBeneficioAlerta; motivo: string } {
   const d = diasEnEtapa == null ? null : Math.max(0, Math.floor(Number(diasEnEtapa)));
   if (estado === "fermentando" && d != null) {
-    if (d >= FERM_DIAS_MAX + 3) return { nivel: "urgente", motivo: `${d} días fermentando — riesgo de sobre-fermentación` };
-    if (d > FERM_DIAS_MAX) return { nivel: "atencion", motivo: `${d} días fermentando — revisá el punto y volteá` };
+    if (d >= FERM_DIAS_MAX + 3)
+      return { nivel: "urgente", motivo: `${d} días fermentando — riesgo de sobre-fermentación` };
+    if (d > FERM_DIAS_MAX)
+      return { nivel: "atencion", motivo: `${d} días fermentando — revisa el punto y voltea` };
   }
   if (estado === "secando" && d != null) {
-    if (d >= SEC_DIAS_MAX + 6) return { nivel: "urgente", motivo: `${d} días secando — riesgo de moho/rancidez` };
-    if (d > SEC_DIAS_MAX) return { nivel: "atencion", motivo: `${d} días secando — revisá la humedad para cerrar` };
+    if (d >= SEC_DIAS_MAX + 6)
+      return { nivel: "urgente", motivo: `${d} días secando — riesgo de moho/rancidez` };
+    if (d > SEC_DIAS_MAX)
+      return { nivel: "atencion", motivo: `${d} días secando — revisa la humedad para cerrar` };
   }
   return { nivel: "ok", motivo: "" };
 }
-

@@ -28,23 +28,23 @@ const STEPS: Step[] = [
   {
     num: "01",
     icon: Search,
-    title: "Buscá tu bodega",
+    title: "Busca tu bodega",
     description:
-      "Filtrá por barrio, categoría o lo que necesités. Mostramos solo las que están abiertas ahora.",
+      "Filtra por barrio, categoría o lo que necesites. Mostramos solo las que están abiertas ahora.",
     chip: "Cerca de tu casa",
   },
   {
     num: "02",
     icon: ShoppingBag,
-    title: "Armá el pedido",
+    title: "Arma el pedido",
     description:
-      "Agregá productos al carrito, sumá modificadores y notas. Vas viendo el total en vivo.",
+      "Agrega productos al carrito, suma modificadores y notas. Vas viendo el total en vivo.",
     chip: "Precio claro",
   },
   {
     num: "03",
     icon: Truck,
-    title: "Pagá y recibí",
+    title: "Paga y recibe",
     description:
       "Yape, Plin o efectivo al recibir. Te llega a la puerta en 25 min promedio.",
     chip: "Pago seguro",
