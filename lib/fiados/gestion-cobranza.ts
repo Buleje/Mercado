@@ -20,11 +20,29 @@ import {
   type TipoGestion,
   type AvanceMeta,
 } from "@/lib/adelantos/gestion-cobranza";
+import { limaDateKey } from "@/lib/utils";
 
 export { TRAMOS, tramoDe, etiquetaTramo, TIPOS_GESTION, etiquetaGestion, avanceDeMeta };
 export type { TramoId, TipoGestion, AvanceMeta };
 
 const DIA = 86_400_000;
+
+/**
+ * `YYYY-MM-DD` del día de Lima, o «» si la fecha no sirve. Una fecha elegida en
+ * un calendario (vencimiento, promesa) puede llegar como medianoche UTC: ésa se
+ * lee tal cual, porque pasada a Lima caería el día anterior. Un momento (un
+ * cobro, una promesa anotada a mediodía) se pasa a Lima.
+ */
+export function diaDe(fecha: string | null | undefined): string {
+  if (!fecha) return "";
+  if (/T00:00:00(\.000)?Z$/.test(fecha) || /^\d{4}-\d{2}-\d{2}$/.test(fecha)) return fecha.slice(0, 10);
+  return limaDateKey(fecha);
+}
+
+/** Días entre dos claves `YYYY-MM-DD` (positivo = `b` es después de `a`). */
+export function diasEntre(a: string, b: string): number {
+  return Math.round((Date.parse(`${b}T12:00:00Z`) - Date.parse(`${a}T12:00:00Z`)) / DIA);
+}
 
 export type Gestion = {
   id: string;
@@ -59,23 +77,24 @@ export type PromesaVigente = {
 /**
  * La promesa que todavía cuenta, por cliente — sólo la MÁS RECIENTE (ver
  * misma regla en el original de Adelantos).
+ *
+ * «Hoy» y el día prometido son días de Lima (10-10): con la hora del navegador
+ * una promesa guardada a medianoche UTC caía el día anterior y la de hoy salía
+ * «no cumplió», mientras «Por vencer» la ponía en «Hoy».
  */
 export function promesasVigentes(gestiones: readonly Gestion[], ahora: number = Date.now()): Map<string, PromesaVigente> {
-  const hoy = new Date(ahora);
-  hoy.setHours(0, 0, 0, 0);
+  const hoy = limaDateKey(ahora);
 
   const ultimaPorCliente = new Map<string, Gestion>();
   for (const g of gestiones) {
-    if (g.tipo !== "PROMESA" || !g.fechaPrometida) continue;
+    if (g.tipo !== "PROMESA" || !diaDe(g.fechaPrometida)) continue;
     const previa = ultimaPorCliente.get(g.customerId);
     if (!previa || g.fecha > previa.fecha) ultimaPorCliente.set(g.customerId, g);
   }
 
   const out = new Map<string, PromesaVigente>();
   for (const [id, g] of ultimaPorCliente) {
-    const dia = new Date(g.fechaPrometida!);
-    dia.setHours(0, 0, 0, 0);
-    const faltan = Math.round((dia.getTime() - hoy.getTime()) / DIA);
+    const faltan = diasEntre(hoy, diaDe(g.fechaPrometida));
     out.set(id, {
       gestion: g,
       faltan,
@@ -89,27 +108,4 @@ export function promesasVigentes(gestiones: readonly Gestion[], ahora: number = 
 export function diasSinGestion(ultima: Gestion | undefined, ahora: number = Date.now()): number | null {
   if (!ultima) return null;
   return Math.floor((ahora - new Date(ultima.fecha).getTime()) / DIA);
-}
-
-/**
- * Lo cobrado dentro del mes en curso, mirando las cuotas una por una.
- *
- * Fiados es soles-only (sin `moneda` en el schema) — a diferencia de
- * Adelantos no hace falta partir por moneda; devuelve un número directo.
- */
-export function recuperadoDelMes(
-  fiados: readonly { cuotas: readonly { pagadoEn?: string | null; monto: number }[] }[],
-  ahora: number = Date.now(),
-): number {
-  const hoy = new Date(ahora);
-  const desde = new Date(hoy.getFullYear(), hoy.getMonth(), 1).getTime();
-  let total = 0;
-  for (const f of fiados) {
-    for (const c of f.cuotas) {
-      if (!c.pagadoEn) continue;
-      const t = new Date(c.pagadoEn).getTime();
-      if (t >= desde && t <= ahora) total += c.monto;
-    }
-  }
-  return Math.round(total * 100) / 100;
 }

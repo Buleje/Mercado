@@ -7,33 +7,33 @@
  */
 import { CheckCircle2, Flame, Star } from "@buleje/design-system/icons";
 import StatusBadge from "@/components/admin/shared/StatusBadge";
-import { cn } from "@/lib/utils";
+import { cn, limaDateKey } from "@/lib/utils";
+import { diaDe, diasEntre } from "@/lib/fiados/gestion-cobranza";
 import { computeReliabilityScore, type ReliabilityScore } from "@/lib/fiados/reliability";
+import { yaVencio } from "./cifras-me-deben";
 import type { Fiado } from "./tipos";
 
 const DIA_MS = 24 * 60 * 60 * 1000;
 
 export function FiadoSemaphore({ fiado }: { fiado: { status: string; fechaVence?: string } }) {
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-
   if (fiado.status === "PAGADO") return <StatusBadge variant="success" label="Pagado" icon={CheckCircle2} size="sm" />;
   if (fiado.status === "CANCELADO") return null;
 
-  const vence = fiado.fechaVence ? new Date(fiado.fechaVence) : null;
-  if (vence) vence.setHours(0, 0, 0, 0);
+  /* Días de Lima, como Indicadores y «Por vencer» (10-10): el que vence hoy no está vencido. */
+  const hoy = limaDateKey();
+  const dia = diaDe(fiado.fechaVence);
+  const faltan = dia ? diasEntre(hoy, dia) : null;
 
   // Bloqueado: vencido hace más de 60 días
-  if (vence && vence.getTime() < now.getTime() - 60 * DIA_MS) {
+  if (faltan != null && faltan < -60) {
     return <StatusBadge variant="error" label="Bloqueado" dot size="sm" pulse />;
   }
-  if (fiado.status === "VENCIDO" || (vence && vence < now)) {
-    const diasVencido = vence ? Math.floor((now.getTime() - vence.getTime()) / DIA_MS) : 0;
+  if (yaVencio(fiado, hoy)) {
+    const diasVencido = faltan != null ? -faltan : 0;
     return <StatusBadge variant="error" label={`Vencido${diasVencido > 0 ? ` hace ${diasVencido}d` : ""}`} dot size="sm" />;
   }
-  if (vence) {
-    const diasRestantes = Math.floor((vence.getTime() - now.getTime()) / DIA_MS);
-    if (diasRestantes <= 7) return <StatusBadge variant="warning" label={`Vence en ${diasRestantes}d`} dot size="sm" pulse />;
+  if (faltan != null && faltan <= 7) {
+    return <StatusBadge variant="warning" label={faltan === 0 ? "Vence hoy" : `Vence en ${faltan}d`} dot size="sm" pulse />;
   }
   return <StatusBadge variant="success" label="Al día" dot size="sm" />;
 }
@@ -55,7 +55,7 @@ export function FiadoStreakBadge({ customerId, fiados }: { customerId: string; f
   const Icono = streak >= 5 ? Star : Flame;
   return (
     <span className={cn(
-      "inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-xs font-bold",
+      "inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-sm font-bold",
       streak >= 5 ? "bg-[var(--data-warning-100)] text-[var(--data-warning-700)]" : "bg-[var(--data-success-100)] text-[var(--data-success-700)]",
     )}>
       <Icono className="h-3 w-3" aria-hidden /> {streak} pagos a tiempo
@@ -81,10 +81,10 @@ export function FiadoReliabilityBadge({ customerId, fiados }: { customerId: stri
     score = computeReliabilityScore(fiados.filter((f) => f.customerId === customerId));
     reliabilityCache.set(cacheKey, score);
   }
-  if (!score.sufficientHistory) return <span className="ml-1 text-xs italic text-[var(--text-tertiary)]">Sin historial</span>;
+  if (!score.sufficientHistory) return <span className="ml-1 text-sm italic text-[var(--text-secondary)]">Sin historial</span>;
   return (
     <span
-      className={cn("ml-1 text-xs font-bold", COLOR_ESTRELLAS[score.score] ?? "text-[var(--text-tertiary)]")}
+      className={cn("ml-1 text-sm font-bold", COLOR_ESTRELLAS[score.score] ?? "text-[var(--text-tertiary)]")}
       title={`Calificación por pagos a tiempo. 5 estrellas = siempre puntual. A tiempo: ${score.pagosATiempo}/${score.pagosTotal} · Promedio: ${Math.round(score.diasPromedioPago)} días`}
     >
       {score.label}
@@ -108,7 +108,7 @@ export function FiadoAvatar({ nombre, className }: { nombre: string; className?:
   const color = COLORES_AVATAR[Math.abs(h) % COLORES_AVATAR.length];
   const iniciales = nombre.split(" ").map((w) => w[0]).join("").substring(0, 2).toUpperCase();
   return (
-    <div aria-hidden className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white", className)} style={{ backgroundColor: color }}>
+    <div aria-hidden className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white", className)} style={{ backgroundColor: color }}>
       {iniciales}
     </div>
   );

@@ -10,9 +10,10 @@ import { LoadingState } from "@buleje/design-system";
 import { AlertTriangle, ArrowDown, ArrowUp, ChevronLeft, ChevronRight, MessageCircle, Search } from "@buleje/design-system/icons";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import { cn } from "@/lib/utils";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { formatCurrency } from "@/lib/format";
 import { FiadoAvatar, FiadoReliabilityBadge, FiadoSemaphore, FiadoStreakBadge } from "./FiadoBadges";
 import { diasDeAtraso, recordarPorWhatsApp } from "./recordar";
+import { diaLeido } from "./fechas";
 import { STATUS_META, estaAbierto, type ColumnaOrden, type Fiado, type FiadoStatus } from "./tipos";
 import type { EstadoFiados } from "./use-fiados";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
@@ -26,9 +27,6 @@ const STATUS_FILTERS: { key: FiadoStatus | ""; label: string }[] = [
 
 type Props = {
   estado: EstadoFiados;
-  totalSaldo: number;
-  activosCount: number;
-  vencidosCount: number;
   selectedIds: Set<string>;
   toggleSelect: (id: string) => void;
   openDetail: (f: Fiado) => void;
@@ -48,36 +46,31 @@ function Cabecera({ col, label, estado, alinear = "left" }: { col: ColumnaOrden;
   );
 }
 
-export default function FiadosDeudoresTabla({ estado, totalSaldo, activosCount, vencidosCount, selectedIds, toggleSelect, openDetail, onNuevo, onRecordado }: Props) {
+export default function FiadosDeudoresTabla({ estado, selectedIds, toggleSelect, openDetail, onNuevo, onRecordado }: Props) {
   const { loading, error, fiados, filtrados, paginated, page, setPage, totalPages, densidad } = estado;
+  const saldoFiltrado = filtrados.reduce((s, f) => s + (estaAbierto(f) ? f.saldo : 0), 0);
   return (
     <div className={cn("overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]", densidad === "compact" ? "table-compact" : densidad === "wide" ? "table-wide" : "")}>
       {/* Filtros pegados a la tabla */}
       <div className="flex flex-wrap items-center gap-2 border-b border-[var(--rule-soft)] p-3">
-        <div className="relative min-w-[13rem] max-w-sm flex-1">
+        <div className="relative w-full sm:w-72 sm:flex-none">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" strokeWidth={1.75} aria-hidden />
           <input type="search" value={estado.search} onChange={(e) => estado.setSearch(e.target.value)} placeholder="Buscar cliente, celular o detalle…" aria-label="Buscar fiado o cliente"
-            className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-10 pr-4 text-sm outline-none transition-all focus:border-primary/40 focus:ring-1 focus:ring-primary/30 sm:h-10" />
+            className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-10 pr-4 text-base outline-none transition-all focus:border-primary/40 focus:ring-1 focus:ring-primary/30" />
         </div>
         <div className="flex flex-wrap items-center gap-1" role="group" aria-label="Filtrar por estado">
           {STATUS_FILTERS.map((f) => (
             <button key={f.key} type="button" aria-pressed={estado.statusFilter === f.key} onClick={() => estado.setStatusFilter(f.key)}
-              className={cn("inline-flex items-center rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors",
-                estado.statusFilter === f.key ? "border-primary bg-primary text-white" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary/40 hover:text-primary")}>
+              className={cn("inline-flex min-h-12 items-center rounded-xl border px-3.5 text-sm font-semibold transition-colors",
+                estado.statusFilter === f.key ? "border-[var(--accent)] bg-primary/12 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary/40 hover:text-[var(--text-primary)]")}>
               {f.label}
             </button>
           ))}
         </div>
-        <span className="ml-auto text-xs tabular-nums text-[var(--text-tertiary)]">
-          {totalSaldo > 0 && (
-            <>
-              Te deben <b className="font-mono text-sm text-[var(--text-primary)]">{formatCurrency(totalSaldo)}</b>
-              {" · "}<b className="text-[var(--data-success-500)]">{activosCount}</b>
-              {vencidosCount > 0 && <> · <b className="text-[var(--data-error-500)]">{vencidosCount} venc.</b></>}
-              {" · "}
-            </>
-          )}
-          {filtrados.length} {filtrados.length === 1 ? "resultado" : "resultados"}
+        {/* Lo de lo filtrado: «Te deben» del total ya está en Indicadores (10-10). */}
+        <span className="ml-auto text-sm tabular-nums text-[var(--text-secondary)]">
+          {filtrados.length} {filtrados.length === 1 ? "fiado" : "fiados"}
+          {saldoFiltrado > 0 && <> · saldo <b className="font-mono text-[var(--text-primary)]">{formatCurrency(saldoFiltrado)}</b></>}
         </span>
       </div>
 
@@ -87,7 +80,7 @@ export default function FiadosDeudoresTabla({ estado, totalSaldo, activosCount, 
         <div className="flex flex-col items-center justify-center gap-2 py-12">
           <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)]" />
           <p className="text-sm text-[var(--data-error-500)]">{error}</p>
-          <button type="button" onClick={estado.fetchFiados} className="mt-1 text-xs font-semibold text-primary hover:underline">Reintentar</button>
+          <button type="button" onClick={estado.fetchFiados} className="h-12 rounded-xl px-4 text-sm font-semibold text-[var(--accent-ink)] hover:bg-[var(--surface-sunken)] dark:text-[var(--accent)]">Reintentar</button>
         </div>
       ) : fiados.length === 0 ? (
         <EmptyState illustration="generic" title="Sin fiados registrados" description="Los créditos a clientes aparecerán aquí." action={{ label: "Crear primer fiado", onClick: onNuevo }} />
@@ -159,7 +152,7 @@ export default function FiadosDeudoresTabla({ estado, totalSaldo, activosCount, 
                                 <FiadoStreakBadge customerId={f.customerId} fiados={fiados} />
                               </div>
                               {f.descripcion && (
-                                <p className="text-xs text-[var(--text-tertiary)] truncate max-w-[200px]">{f.descripcion}</p>
+                                <p className="text-sm text-[var(--text-secondary)] truncate max-w-[200px]">{f.descripcion}</p>
                               )}
                             </div>
                           </div>
@@ -167,11 +160,11 @@ export default function FiadosDeudoresTabla({ estado, totalSaldo, activosCount, 
                         <td className="px-4 py-3 text-right font-medium text-[var(--text-primary)]">{formatCurrency(f.total)}</td>
                         <td className={cn("px-4 py-3 text-right font-bold font-mono", f.status === "PAGADO" ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{formatCurrency(f.saldo)}</td>
                         <td className="px-4 py-3 text-[var(--text-secondary)] hidden sm:table-cell">
-                          {f.fechaVence ? formatDate(f.fechaVence) : "—"}
+                          {f.fechaVence ? diaLeido(f.fechaVence) : "—"}
                         </td>
                         <td className="px-4 py-3">
-                          <span className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold", meta.bg, meta.color)}>
-                            <StatusIcon className="h-3 w-3" />
+                          <span className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-lg text-sm font-bold", meta.bg, meta.color)}>
+                            <StatusIcon className="h-4 w-4" />
                             {meta.label}
                           </span>
                         </td>
@@ -185,9 +178,9 @@ export default function FiadosDeudoresTabla({ estado, totalSaldo, activosCount, 
                               }}
                               title="Recordar por WhatsApp"
                               aria-label={`Recordar a ${f.customerName || f.customerId} por WhatsApp`}
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary/12 text-[var(--accent-ink)] transition-colors hover:bg-primary/20 dark:text-[var(--accent)]"
+                              className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/12 text-[var(--accent-ink)] transition-colors hover:bg-primary/20 dark:text-[var(--accent)]"
                             >
-                              <MessageCircle className="h-3.5 w-3.5" />
+                              <MessageCircle className="h-5 w-5" />
                             </button>
                           )}
                         </td>
@@ -200,21 +193,21 @@ export default function FiadosDeudoresTabla({ estado, totalSaldo, activosCount, 
             {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)]">
-                <p className="text-xs text-[var(--text-secondary)]">
+                <p className="text-sm text-[var(--text-secondary)]">
                   {filtrados.length} fiado{filtrados.length !== 1 ? "s" : ""} · pág. {page}/{totalPages}
                 </p>
                 <div className="flex gap-1">
                   <button aria-label="Anterior"
                     disabled={page <= 1}
                     onClick={() => setPage((p) => p - 1)}
-                    className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors"
+                    className="flex h-12 w-12 items-center justify-center rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors"
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </button>
                   <button aria-label="Siguiente"
                     disabled={page >= totalPages}
                     onClick={() => setPage((p) => p + 1)}
-                    className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors"
+                    className="flex h-12 w-12 items-center justify-center rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30 transition-colors"
                   >
                     <ChevronRight className="h-4 w-4" />
                   </button>

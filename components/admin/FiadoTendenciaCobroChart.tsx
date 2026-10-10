@@ -13,6 +13,8 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { TrendingUp, TrendingDown } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { cn } from "@/lib/utils";
 import ChartsEmptyState from "@/components/admin/shared/ChartsEmptyState";
 import { formatNumber } from "@/lib/format";
@@ -125,82 +127,47 @@ export default function FiadoTendenciaCobroChart() {
 
   return (
     <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
-      {/* Header con KPI mes actual y delta */}
-      <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-            Tendencia de cobro
-          </p>
-          <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-            Últimos 6 meses · cuánto cobras vs cuánto prestas
-          </p>
-        </div>
-        {header && (
-          <div className="flex items-center gap-4 ml-auto">
-            <div className="text-right">
-              <p className="text-xs text-[var(--text-tertiary)] uppercase tracking-wider">{header.currLabel}</p>
-              <p className="text-lg font-extrabold text-[var(--data-success-500)] tabular-nums leading-tight">
-                {fmt(header.currCobrados)}
-              </p>
-              <p className="text-xs text-[var(--text-tertiary)]">cobrado</p>
-            </div>
-            {header.hasPrev && (
-              <div
-                className={cn(
-                  "flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold",
-                  header.deltaCobrado >= 0
-                    ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
-                    : "bg-[var(--data-error-50)] text-[var(--data-error-500)]",
-                )}
-              >
-                {header.deltaCobrado >= 0 ? (
-                  <TrendingUp className="h-3.5 w-3.5" strokeWidth={2.5} />
-                ) : (
-                  <TrendingDown className="h-3.5 w-3.5" strokeWidth={2.5} />
-                )}
-                {header.deltaPct >= 0 ? "+" : ""}{header.deltaPct.toFixed(0)}%
-              </div>
+      {/* Título + ⓘ y, a la derecha, cómo va contra el mes pasado. La cifra del mes ya está en
+          «Indicadores» de Me deben (10-10: salía tres veces en esta tarjeta y una en la franja). */}
+      <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+        <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Tendencia de cobro</CardTitle>
+        <InfoTip
+          what="Los últimos 6 meses: cuánto cobraste de fiados (verde) contra cuánto fiaste (gris). La línea es la diferencia: abajo de cero, fiaste más de lo que cobraste."
+          example={header ? `${header.currLabel}: cobraste ${fmt(header.currCobrados)} y fiaste ${fmt(header.currNuevos)}.` : undefined}
+        />
+        {header?.hasPrev && (
+          <span
+            className={cn(
+              "ml-auto inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-sm font-bold",
+              header.deltaCobrado >= 0
+                ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-ink)]"
+                : "bg-[var(--data-error-500)]/12 text-[var(--data-error-ink)]",
             )}
-          </div>
+            title="Lo cobrado este mes contra el mes pasado"
+          >
+            {header.deltaCobrado >= 0 ? <TrendingUp className="h-4 w-4" strokeWidth={2.5} aria-hidden /> : <TrendingDown className="h-4 w-4" strokeWidth={2.5} aria-hidden />}
+            {header.deltaPct >= 0 ? "+" : ""}{Number(header.deltaPct).toFixed(0)} % vs mes pasado
+          </span>
         )}
       </div>
-
-      {/* Resumen barras simbólicas: cuánto verde (cobrado) vs gris (nuevo) este mes */}
-      {header && (header.currCobrados > 0 || header.currNuevos > 0) && (
-        <div className="mb-3 px-1">
-          <div className="flex items-center gap-3 text-xs">
-            <span className="flex items-center gap-1.5">
-              <span className="inline-block w-2.5 h-2.5 rounded-sm bg-[var(--data-success-500)]" />
-              <span className="text-[var(--text-secondary)]">Cobrado este mes</span>
-              <span className="font-bold text-[var(--text-primary)] tabular-nums">{fmt(header.currCobrados)}</span>
-            </span>
-            <span className="text-[var(--text-tertiary)]">·</span>
-            <span className="flex items-center gap-1.5">
-              <span className="inline-block w-2.5 h-2.5 rounded-sm bg-[var(--text-tertiary)]/60" />
-              <span className="text-[var(--text-secondary)]">Prestado este mes</span>
-              <span className="font-bold text-[var(--text-primary)] tabular-nums">{fmt(header.currNuevos)}</span>
-            </span>
-          </div>
-        </div>
-      )}
 
       <ResponsiveContainer minWidth={0} width="100%" height={220}>
         <ComposedChart data={chartData} margin={{ top: 8, right: 12, left: 0, bottom: 4 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--rule-soft)" vertical={false} />
           <XAxis
             dataKey="label"
-            tick={{ fontSize: 11, fill: "var(--text-tertiary)" }}
+            tick={{ fontSize: 14, fill: "var(--text-secondary)" }}
             axisLine={{ stroke: "var(--rule-base)" }}
             tickLine={false}
           />
           <YAxis
-            tick={{ fontSize: 11, fill: "var(--text-tertiary)" }}
+            tick={{ fontSize: 14, fill: "var(--text-secondary)" }}
             axisLine={false}
             tickLine={false}
             domain={[0, yMax]}
             allowDataOverflow={false}
             tickFormatter={(v: number) => `S/${v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v}`}
-            width={48}
+            width={64}
           />
           <Tooltip
             cursor={{ fill: "var(--surface-sunken)", opacity: 0.5 }}
@@ -208,7 +175,7 @@ export default function FiadoTendenciaCobroChart() {
               background: "var(--surface-raised)",
               border: "1px solid var(--rule-base)",
               borderRadius: 8,
-              fontSize: 12,
+              fontSize: 14,
             }}
             labelStyle={{ fontWeight: 700, color: "var(--text-primary)" }}
             formatter={(value: unknown, name: unknown) => {
@@ -219,7 +186,7 @@ export default function FiadoTendenciaCobroChart() {
             }}
           />
           <Legend
-            wrapperStyle={{ fontSize: 12 }}
+            wrapperStyle={{ fontSize: 14 }}
             iconType="circle"
             formatter={(value: unknown) => {
               const v = String(value);

@@ -6,7 +6,8 @@
  */
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { useVistaModulo } from "@/hooks/use-vista-modulo";
+import { useSubvistaModulo, useVistaModulo } from "@/hooks/use-vista-modulo";
+import { FIADO_VISTAS, FIADO_VISTAS_ALIAS, type FiadoTab } from "@/components/admin/fiados/tipos";
 
 type V = "secciones" | "extraccion" | "rentabilidad";
 const VALIDAS: readonly V[] = ["secciones", "extraccion", "rentabilidad"];
@@ -54,5 +55,32 @@ describe("useVistaModulo con alias de vistas fusionadas", () => {
     expect(result.current.vista).toBe("secciones");
     act(() => result.current.irA("inventada"));
     expect(result.current.vista).toBe("secciones");
+  });
+});
+
+/* Me deben (10-10): las pestañas Resumen y Análisis se fundieron en «Quién debe» y «Cobrado»;
+   el alias viaja también por `?sub=` (la sección dentro de la vista del hub). */
+describe("useSubvistaModulo con alias (Me deben)", () => {
+  const montarSub = () =>
+    renderHook(() => useSubvistaModulo<FiadoTab>("fiados-test", FIADO_VISTAS, "cobranza", undefined, { alias: FIADO_VISTAS_ALIAS }));
+
+  it("?sub=analisis abre «Cobrado» y reescribe el parámetro", () => {
+    window.history.replaceState(null, "", "/admin?tab=ventas-caja&vista=cuentas-cobrar&sub=analisis");
+    const { result } = montarSub();
+    expect(result.current.vista).toBe("cobrado");
+    expect(new URLSearchParams(window.location.search).get("sub")).toBe("cobrado");
+    expect(new URLSearchParams(window.location.search).get("vista")).toBe("cuentas-cobrar");
+  });
+
+  it("la memoria con «resumen» cae en «Quién debe»", () => {
+    localStorage.setItem("admin-last-tab-fiados-test", "resumen");
+    const { result } = montarSub();
+    expect(result.current.vista).toBe("cobranza");
+  });
+
+  it("?sub=deudores (el enlace de Inicio) sigue en «Cada fiado»", () => {
+    window.history.replaceState(null, "", "/admin?tab=ventas-caja&vista=cuentas-cobrar&sub=deudores&filter=overdue");
+    const { result } = montarSub();
+    expect(result.current.vista).toBe("deudores");
   });
 });

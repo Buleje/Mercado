@@ -176,7 +176,11 @@ export function useSubvistaModulo<T extends string>(
    * «Sincronización» porque ahí quedaste la vez pasada sería una sorpresa, no
    * una comodidad.
    */
-  opciones?: { recordar?: boolean },
+  opciones?: {
+    recordar?: boolean;
+    /** Nombres viejos de una sección que se fundió o se renombró (Me deben, 10-10). */
+    alias?: AliasDeVista<T>;
+  },
 ): UseVistaModuloResult<T> {
   return useVistaEnParam(
     moduleId,
@@ -185,6 +189,8 @@ export function useSubvistaModulo<T extends string>(
     forzada,
     PARAM_SUB,
     opciones?.recordar ?? true,
+    undefined,
+    opciones?.alias,
   );
 }
 
