@@ -1,46 +1,47 @@
 import { NextRequest, NextResponse } from "next/server";
-import { StorePageDB } from "@/lib/db/store-page.db";
+import { CatalogoPublicoDB } from "@/lib/db/catalogo-publico.db";
+import { resolverNegocioPublico } from "@/lib/tienda-publica/negocio-publico";
 import { logger } from "@/lib/logger";
 import { withDbRetry } from "@/lib/db-retry";
 
 /**
  * GET /api/store-page/public-catalog
  *
- * Endpoint PÚBLICO (sin auth) que devuelve solo productos con `visible=true`
- * para la tienda individual `/t/[slug]/tienda`. Si un producto no tiene
- * override, se considera visible por default.
+ * Endpoint PÚBLICO (sin auth) con los productos que muestra la tienda
+ * individual `/t/[slug]/tienda`: activos y sin ocultar en «Página de la tienda».
  *
- * - Respeta `tenantId` del header `x-tenant-id` (seteado por el middleware
- *   tenant.ts a partir del segmento de URL).
- * - Solo devuelve campos seguros para público (sin costPrice, stockMin, etc).
+ * - El negocio sale de `x-tenant-id` (el proxy lo arma con el host o la página
+ *   `/t/<slug>` de origen) y pasa por `resolverNegocioPublico`: antes la
+ *   cabecera cruda (slug del subdominio, `custom--<dominio>`) iba directo al
+ *   WHERE y esas tiendas recibían una lista vacía.
+ * - Solo campos públicos: sin costo y sin la cantidad en stock (`disponible`).
  */
 export async function GET(req: NextRequest) {
-  const tenantId = req.headers.get("x-tenant-id");
-  if (!tenantId) {
+  const tenantCrudo = req.headers.get("x-tenant-id");
+  if (!tenantCrudo) {
     return NextResponse.json({ error: "tenant required" }, { status: 400 });
   }
 
   try {
-    const list = await withDbRetry(() =>
-      StorePageDB.listCatalogWithVisibility(tenantId),
+    const r = await resolverNegocioPublico({ tienda: null, tenantCrudo, origen: req.nextUrl.origin });
+    if (!r.ok) return NextResponse.json({ error: "No encontramos esa tienda." }, { status: 404 });
+
+    const list = await withDbRetry(() => CatalogoPublicoDB.productos(r.negocio.tenantId));
+    return NextResponse.json(
+      list.map((p) => ({
+        productId: p.id,
+        name: p.nombre,
+        image: p.imagen,
+        category: p.categoria,
+        unit: p.unidad,
+        price: p.precio,
+        disponible: p.disponible,
+      })),
     );
-    // Filtra visible=true + active y expone solo campos públicos
-    const publicItems = list
-      .filter((p) => p.visible && p.active)
-      .map((p) => ({
-        productId: p.productId,
-        name: p.name,
-        image: p.image,
-        category: p.category,
-        unit: p.unit,
-        price: p.price,
-        stock: p.stock,
-      }));
-    return NextResponse.json(publicItems);
   } catch (e) {
     logger.error("[store-page/public-catalog] GET error", {
       err: e instanceof Error ? e.message : String(e),
-      tenantId,
+      tenantCrudo,
     });
     return NextResponse.json([], { status: 200 });
   }

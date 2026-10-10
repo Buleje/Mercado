@@ -297,7 +297,6 @@ export const PRISMA_DIRECT_LEGACY = [
   "app/api/products/co-purchased/route.ts",
   "app/api/products/csv/route.ts",
   "app/api/products/frecuentes/route.ts",
-  "app/api/products/share/route.ts",
   "app/api/products/stock-check/route.ts",
   "app/api/proveedores/[id]/scorecard/route.ts",
   "app/api/purchases/[id]/route.ts",
