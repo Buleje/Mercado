@@ -49,7 +49,7 @@ export default function NcAsistente({ nc }: { nc: NotasCreditoVista }) {
                     <span className="ml-auto flex items-center gap-1">
                       <ControlesDeVentana ventana={ventanaWizard} />
                     </span>
-                    <button onClick={resetWizard} aria-label="Cerrar" className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
+                    <button onClick={resetWizard} aria-label="Cerrar" className="inline-flex h-12 w-12 items-center justify-center rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
                       <X className="h-5 w-5" />
                     </button>
                   </div>

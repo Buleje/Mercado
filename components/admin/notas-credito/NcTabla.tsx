@@ -3,9 +3,9 @@
 import { CardTitle, DataTable, LoadingState } from "@buleje/design-system";
 import { AnimatePresence } from "@/components/admin/providers";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { ChevronLeft, ChevronRight, AlertTriangle, Copy, Trash2, Send, FileText } from "@buleje/design-system/icons";
+import { ChevronLeft, ChevronRight, AlertTriangle, Copy, Trash2, Send, FileText, Link2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import { STATUS_META, getDocIcon } from "@/components/admin/notas-credito/nc-compartido";
+import { STATUS_META } from "@/components/admin/notas-credito/nc-compartido";
 import { NCCard } from "@/components/admin/notas-credito/NcPiezas";
 import type { NotasCreditoVista } from "@/components/admin/notas-credito/hooks/use-notas-credito";
 
@@ -27,7 +27,7 @@ export default function NcTabla({ nc }: { nc: NotasCreditoVista }) {
           <div className="flex flex-col items-center justify-center py-12 gap-2">
             <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)]" />
             <p className="text-sm text-[var(--data-error-500)]">{error}</p>
-            <button onClick={fetchNotas} className="text-xs text-primary hover:underline font-semibold mt-1">Reintentar</button>
+            <button onClick={fetchNotas} className="min-h-12 px-4 text-sm text-primary hover:underline font-semibold">Reintentar</button>
           </div>
         ) : filteredNotas.length === 0 ? (
           <div className="text-center py-16 px-4">
@@ -36,7 +36,7 @@ export default function NcTabla({ nc }: { nc: NotasCreditoVista }) {
             </div>
             <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] mb-2">Sin notas de crédito</CardTitle>
             <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-md mx-auto">Las notas de crédito se crean al hacer devoluciones, anulaciones o ajustes a documentos existentes</p>
-            <button onClick={() => { setShowNew(true); setCreateError(null); setWizardStep(0); }} className="bg-primary text-white px-6 min-h-11 rounded-xl font-medium hover:bg-primary-dark">Crear NC</button>
+            <button onClick={() => { setShowNew(true); setCreateError(null); setWizardStep(0); }} className="bg-primary text-white px-6 min-h-12 rounded-xl font-medium hover:bg-primary-dark">Crear NC</button>
           </div>
         ) : viewMode === "cards" ? (
           <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -48,13 +48,15 @@ export default function NcTabla({ nc }: { nc: NotasCreditoVista }) {
           </div>
         ) : (
           <>
-            <DataTable className="min-w-175">
+            <DataTable className="min-w-175 [&_thead_th]:text-sm!">
                 <thead>
                   <tr>
-                    <th className="w-10">
-                      <button onClick={toggleAll} className={cn("w-5 h-5 rounded border-2 flex items-center justify-center transition-colors",
-                        allChecked ? "bg-primary border-primary text-white" : "border-[var(--rule-base)]")}>
-                        {allChecked && <span className="text-[length:var(--ts-2xs)]">{"\u2713"}</span>}
+                    <th className="w-14">
+                      <button onClick={toggleAll} aria-label="Elegir todas" aria-pressed={allChecked} className="flex h-12 w-12 items-center justify-center">
+                        <span className={cn("flex h-5 w-5 items-center justify-center rounded border-2 transition-colors",
+                          allChecked ? "bg-primary border-primary text-white" : "border-[var(--rule-base)]")}>
+                          {allChecked && <span className="text-sm leading-none">{"\u2713"}</span>}
+                        </span>
                       </button>
                     </th>
                     <th className="cursor-pointer select-none" onClick={() => toggleSort("numero")}>
@@ -80,9 +82,11 @@ export default function NcTabla({ nc }: { nc: NotasCreditoVista }) {
                     return (
                       <tr key={nc.id} className="group">
                         <td>
-                          <button onClick={() => toggleCheck(nc.id)} className={cn("w-5 h-5 rounded border-2 flex items-center justify-center transition-colors",
-                            checkedIds.has(nc.id) ? "bg-primary border-primary text-white" : "border-[var(--rule-base)]")}>
-                            {checkedIds.has(nc.id) && <span className="text-[length:var(--ts-2xs)]">{"\u2713"}</span>}
+                          <button onClick={() => toggleCheck(nc.id)} aria-label={`Elegir ${nc.numero}`} aria-pressed={checkedIds.has(nc.id)} className="flex h-12 w-12 items-center justify-center">
+                            <span className={cn("flex h-5 w-5 items-center justify-center rounded border-2 transition-colors",
+                              checkedIds.has(nc.id) ? "bg-primary border-primary text-white" : "border-[var(--rule-base)]")}>
+                              {checkedIds.has(nc.id) && <span className="text-sm leading-none">{"\u2713"}</span>}
+                            </span>
                           </button>
                         </td>
                         <td
@@ -93,44 +97,44 @@ export default function NcTabla({ nc }: { nc: NotasCreditoVista }) {
                           onKeyDown={(e) => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelected(nc); } }}
                         >
                           <span className="flex items-center gap-2">
-                            <span className="text-base">{getDocIcon(nc.numero)}</span>
-                            <span className="font-mono text-xs font-bold text-[var(--text-primary)]">{nc.numero}</span>
+                            <FileText className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+                            <span className="font-mono text-sm font-bold text-[var(--text-primary)]">{nc.numero}</span>
                           </span>
-                          {nc.clienteNombre && <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5">{nc.clienteNombre}</p>}
+                          {nc.clienteNombre && <p className="text-sm text-[var(--text-tertiary)] mt-0.5">{nc.clienteNombre}</p>}
                         </td>
                         <td className="hidden sm:table-cell">
                           {nc.orderNumero ? (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
-                              {"\u{1F517}"} {nc.orderNumero}
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-sm font-bold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+                              <Link2 className="h-3.5 w-3.5" aria-hidden /> {nc.orderNumero}
                             </span>
                           ) : <span className="text-[var(--text-tertiary)]">{"\u2014"}</span>}
                         </td>
-                        <td className="text-[var(--text-primary)] truncate max-w-45">
-                          <span className="text-xs text-[var(--text-tertiary)] mr-1">[{nc.motivoCodigo}]</span>
+                        <td className="text-[var(--text-primary)] sm:truncate sm:max-w-45">
+                          <span className="text-sm text-[var(--text-tertiary)] mr-1">[{nc.motivoCodigo}]</span>
                           {nc.motivoDesc}
                         </td>
-                        <td className="text-right font-bold text-[var(--text-primary)]">{formatCurrency(nc.total)}</td>
+                        <td className="text-right font-bold whitespace-nowrap text-[var(--text-primary)]">{formatCurrency(nc.total)}</td>
                         <td>
-                          <span className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold", meta.bg, meta.color)}>
+                          <span className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-lg text-sm font-bold", meta.bg, meta.color)}>
                             <span className={cn("w-1.5 h-1.5 rounded-full", meta.dot)} />
                             {meta.label}
                           </span>
                         </td>
-                        <td className="text-[var(--text-secondary)] hidden md:table-cell text-xs">{formatDate(nc.createdAt)}</td>
+                        <td className="text-[var(--text-secondary)] hidden md:table-cell text-sm whitespace-nowrap">{formatDate(nc.createdAt)}</td>
                         <td>
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100 transition-opacity">
                             {nc.status === "BORRADOR" && (
-                              <button onClick={(e) => { e.stopPropagation(); handleEmitSunat(nc); }} className="p-1 rounded-xl hover:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" title="Emitir">
-                                <Send className="h-3.5 w-3.5" />
+                              <button onClick={(e) => { e.stopPropagation(); handleEmitSunat(nc); }} className="inline-flex h-12 w-12 items-center justify-center rounded-xl hover:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" title="Emitir">
+                                <Send className="h-4 w-4" />
                               </button>
                             )}
                             {nc.status !== "ANULADA" && (
-                              <button onClick={(e) => { e.stopPropagation(); handleAnular(nc); }} className="p-1 rounded-xl hover:bg-[var(--data-error-50)] text-[var(--data-error-500)]" title="Anular">
-                                <Trash2 className="h-3.5 w-3.5" />
+                              <button onClick={(e) => { e.stopPropagation(); handleAnular(nc); }} className="inline-flex h-12 w-12 items-center justify-center rounded-xl hover:bg-[var(--data-error-50)] text-[var(--data-error-500)]" title="Anular">
+                                <Trash2 className="h-4 w-4" />
                               </button>
                             )}
-                            <button onClick={(e) => { e.stopPropagation(); handleDuplicate(nc); }} className="p-1 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]" title="Duplicar">
-                              <Copy className="h-3.5 w-3.5" />
+                            <button onClick={(e) => { e.stopPropagation(); handleDuplicate(nc); }} className="inline-flex h-12 w-12 items-center justify-center rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]" title="Duplicar">
+                              <Copy className="h-4 w-4" />
                             </button>
                           </div>
                         </td>
@@ -141,10 +145,10 @@ export default function NcTabla({ nc }: { nc: NotasCreditoVista }) {
               </DataTable>
             {totalPages > 1 && (
               <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)]">
-                <p className="text-xs text-[var(--text-secondary)]">{filteredNotas.length} doc{filteredNotas.length !== 1 ? "s" : ""} {"\u2014"} P{"\u00e1"}g. {page}/{totalPages}</p>
+                <p className="text-sm text-[var(--text-secondary)]">{filteredNotas.length} doc{filteredNotas.length !== 1 ? "s" : ""} {"\u2014"} P{"\u00e1"}g. {page}/{totalPages}</p>
                 <div className="flex gap-1">
-                  <button aria-label="Anterior" disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30"><ChevronLeft className="h-4 w-4" /></button>
-                  <button aria-label="Siguiente" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30"><ChevronRight className="h-4 w-4" /></button>
+                  <button aria-label="Anterior" disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="inline-flex h-12 w-12 items-center justify-center rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30"><ChevronLeft className="h-4 w-4" /></button>
+                  <button aria-label="Siguiente" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="inline-flex h-12 w-12 items-center justify-center rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30"><ChevronRight className="h-4 w-4" /></button>
                 </div>
               </div>
             )}

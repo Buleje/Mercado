@@ -1,4 +1,4 @@
-import { FileText, Receipt, CreditCard } from "@buleje/design-system/icons";
+import { FileText, Receipt, CreditCard, Ticket, ClipboardList, Ban, Hash, Pencil, Wallet, Tag, Undo2, Package, Gift, TrendingDown, type LucideIcon } from "@buleje/design-system/icons";
 import { extractIgv } from "@/lib/tax";
 
 /** Tipos, constantes y ayudas de Notas de crédito (antes arriba de NotasCreditoModule). */
@@ -73,17 +73,17 @@ export const STATUS_META: Record<NCStatus, { label: string; color: string; bg: s
   ANULADA:  { label: "Anulada",  color: "text-[var(--data-error-500)]", bg: "bg-[var(--data-error-100)]", dot: "bg-[var(--data-error-500)]" },
 };
 
-export const DOC_STYLE: Record<string, { bg: string; border: string; icon: string; badge: string; label: string; accent: string }> = {
-  factura: { bg: "bg-primary/10", border: "border-[var(--data-success-500)]/30", icon: "\u{1F4CB}", badge: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]", label: "Factura", accent: "text-[var(--data-success-500)]" },
-  boleta:  { bg: "bg-primary/10", border: "border-[var(--data-success-500)]/30", icon: "\u{1F4C4}", badge: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]", label: "Boleta", accent: "text-[var(--data-success-500)]" },
-  ticket:  { bg: "bg-[var(--data-warning-50)]", border: "border-[var(--data-warning-500)]", icon: "\u{1F3AB}", badge: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]", label: "Ticket", accent: "text-[var(--data-warning-500)]" },
+export const DOC_STYLE: Record<string, { bg: string; border: string; icon: LucideIcon; badge: string; label: string; accent: string }> = {
+  factura: { bg: "bg-primary/10", border: "border-[var(--data-success-500)]/30", icon: Receipt, badge: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]", label: "Factura", accent: "text-[var(--data-success-500)]" },
+  boleta:  { bg: "bg-primary/10", border: "border-[var(--data-success-500)]/30", icon: FileText, badge: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]", label: "Boleta", accent: "text-[var(--data-success-500)]" },
+  ticket:  { bg: "bg-[var(--data-warning-50)]", border: "border-[var(--data-warning-500)]", icon: Ticket, badge: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]", label: "Ticket", accent: "text-[var(--data-warning-500)]" },
 };
 
-export const PICKER_TABS: { id: PickerDocType; label: string; icon: string }[] = [
-  { id: "all", label: "Todos", icon: "\u{1F4D1}" },
-  { id: "factura", label: "Facturas", icon: "\u{1F4CB}" },
-  { id: "boleta", label: "Boletas", icon: "\u{1F4C4}" },
-  { id: "ticket", label: "Tickets", icon: "\u{1F3AB}" },
+export const PICKER_TABS: { id: PickerDocType; label: string; icon: LucideIcon }[] = [
+  { id: "all", label: "Todos", icon: ClipboardList },
+  { id: "factura", label: "Facturas", icon: Receipt },
+  { id: "boleta", label: "Boletas", icon: FileText },
+  { id: "ticket", label: "Tickets", icon: Ticket },
 ];
 
 export const DOC_TYPES: { id: DocType; label: string; icon: React.ElementType; prefix: string }[] = [
@@ -94,26 +94,19 @@ export const DOC_TYPES: { id: DocType; label: string; icon: React.ElementType; p
 ];
 
 export const MOTIVOS_SUNAT = [
-  { code: "01", label: "Anulaci\u00f3n de la operaci\u00f3n", icon: "\u{1F6AB}", desc: "Se cancela toda la operaci\u00f3n" },
-  { code: "02", label: "Anulaci\u00f3n por error en el RUC", icon: "\u{1F522}", desc: "RUC incorrecto en el comprobante" },
-  { code: "03", label: "Correcci\u00f3n por error en la descripci\u00f3n", icon: "\u270F\uFE0F", desc: "Texto o descripci\u00f3n equivocada" },
-  { code: "04", label: "Descuento global", icon: "\u{1F4B0}", desc: "Descuento aplicado al total" },
-  { code: "05", label: "Descuento por \u00edtem", icon: "\u{1F3F7}\uFE0F", desc: "Descuento en productos espec\u00edficos" },
-  { code: "06", label: "Devoluci\u00f3n total", icon: "\u21A9\uFE0F", desc: "Devuelve todos los productos" },
-  { code: "07", label: "Devoluci\u00f3n parcial", icon: "\u{1F4E6}", desc: "Devuelve algunos productos" },
-  { code: "08", label: "Bonificaci\u00f3n", icon: "\u{1F381}", desc: "Productos regalados o de cortes\u00eda" },
-  { code: "09", label: "Disminuci\u00f3n en el valor", icon: "\u{1F4C9}", desc: "Se reduce el precio original" },
-  { code: "10", label: "Otros conceptos", icon: "\u{1F4DD}", desc: "Otro motivo no listado" },
+  { code: "01", label: "Anulaci\u00f3n de la operaci\u00f3n", icon: Ban, desc: "Se cancela toda la operaci\u00f3n" },
+  { code: "02", label: "Anulaci\u00f3n por error en el RUC", icon: Hash, desc: "RUC incorrecto en el comprobante" },
+  { code: "03", label: "Correcci\u00f3n por error en la descripci\u00f3n", icon: Pencil, desc: "Texto o descripci\u00f3n equivocada" },
+  { code: "04", label: "Descuento global", icon: Wallet, desc: "Descuento aplicado al total" },
+  { code: "05", label: "Descuento por \u00edtem", icon: Tag, desc: "Descuento en productos espec\u00edficos" },
+  { code: "06", label: "Devoluci\u00f3n total", icon: Undo2, desc: "Devuelve todos los productos" },
+  { code: "07", label: "Devoluci\u00f3n parcial", icon: Package, desc: "Devuelve algunos productos" },
+  { code: "08", label: "Bonificaci\u00f3n", icon: Gift, desc: "Productos regalados o de cortes\u00eda" },
+  { code: "09", label: "Disminuci\u00f3n en el valor", icon: TrendingDown, desc: "Se reduce el precio original" },
+  { code: "10", label: "Otros conceptos", icon: FileText, desc: "Otro motivo no listado" },
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-export function getDocIcon(número: string): string {
-  if (número.startsWith("F")) return "\u{1F9FE}";
-  if (número.startsWith("B")) return "\u{1F4C4}";
-  if (número.startsWith("NC")) return "\u{1F4CB}";
-  return "\u{1F4CE}";
-}
 
 export const PER_PAGE = 15;
 
