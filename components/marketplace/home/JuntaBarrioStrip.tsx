@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Users, ArrowRight } from "@buleje/design-system/icons";
+import HomeSeccionTitulo from "@/components/marketplace/home/HomeSeccionTitulo";
 
 type Junta = {
   code: string;
@@ -15,7 +16,8 @@ type Junta = {
 /**
  * JuntaBarrioStrip — rail del home con las juntas abiertas del barrio.
  * Self-fetch + se auto-oculta si no hay juntas (mismo patrón que QuickReorder/
- * TopToday). Cada tarjeta lleva a /junta/[code] para sumarse.
+ * TopToday). Cada tarjeta lleva a /junta/[code] para sumarse. Home «Dosel»
+ * (2026-10-10): título único de la home y tarjeta con tinte teal.
  */
 export default function JuntaBarrioStrip() {
   const [juntas, setJuntas] = useState<Junta[] | null>(null);
@@ -37,69 +39,73 @@ export default function JuntaBarrioStrip() {
 
   return (
     <section
-      aria-label="La Junta del Barrio"
-      className="max-w-[1760px] mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7"
+      aria-labelledby="juntas-titulo"
+      className="mx-auto w-full max-w-[1760px] px-4 sm:px-6 lg:px-8"
     >
-      <div className="rounded-2xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] p-5 sm:p-6">
-        <div className="flex items-center gap-2.5 mb-4">
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
-            <Users className="h-5 w-5" strokeWidth={1.75} aria-hidden />
-          </span>
-          <div>
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--accent)]">
-              Compra colaborativa vecinal
-            </p>
-            <h2 className="text-lg font-extrabold tracking-tight text-[var(--text-primary)]">
-              Juntas abiertas en tu barrio
-            </h2>
-          </div>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {juntas.map((j) => {
-            const remaining = Math.max(0, j.targetMembers - j.memberCount);
-            const progress = Math.min(
-              100,
-              Math.round((j.memberCount / j.targetMembers) * 100),
-            );
-            return (
+      <HomeSeccionTitulo
+        id="juntas-titulo"
+        titulo="Juntas abiertas en tu barrio"
+        bajada="Compra en grupo con tus vecinos."
+        accion={{ label: "Ver juntas", href: "/juntas" }}
+      />
+      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {juntas.map((j) => {
+          const remaining = Math.max(0, j.targetMembers - j.memberCount);
+          const progress = Math.min(
+            100,
+            Math.round((j.memberCount / Math.max(1, j.targetMembers)) * 100),
+          );
+          return (
+            <li key={j.code}>
               <Link
-                key={j.code}
                 href={`/junta/${j.code}`}
-                className="group rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-4 transition hover:border-[var(--accent)]/40"
+                data-familia="frescos"
+                className="group relative isolate flex h-full flex-col rounded-[var(--radius-xl)] bg-[var(--tinte-bg)] p-4 outline-none transition-[transform,box-shadow] duration-[var(--dur-fast)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] motion-reduce:hover:translate-y-0"
               >
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="truncate text-sm font-extrabold text-[var(--text-primary)]">
-                    {j.zoneLabel}
+                <span className="patron-familia rounded-[inherit]" aria-hidden />
+                <span className="relative flex items-center gap-3">
+                  <span
+                    aria-hidden
+                    className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--tinte-blob)] text-[var(--tinte-ink)]"
+                  >
+                    <Users className="h-5 w-5" strokeWidth={1.75} />
                   </span>
-                  <span className="shrink-0 text-sm font-extrabold tabular-nums text-[var(--accent)]">
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-base font-bold text-[var(--text-primary)]">
+                      {j.zoneLabel}
+                    </span>
+                    {j.productLabel && (
+                      <span className="block truncate text-xs text-[var(--text-secondary)]">
+                        {j.productLabel}
+                      </span>
+                    )}
+                  </span>
+                  <span className="shrink-0 text-base font-extrabold tabular-nums text-[var(--tinte-ink)]">
                     {j.memberCount}/{j.targetMembers}
                   </span>
-                </div>
-                {j.productLabel && (
-                  <p className="mt-0.5 truncate text-xs text-[var(--text-tertiary)]">
-                    {j.productLabel}
-                  </p>
-                )}
-                <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-raised)]">
-                  <div
-                    className="h-full rounded-full bg-[var(--accent)] transition-[width]"
+                </span>
+                <span
+                  aria-hidden
+                  className="relative mt-3 block h-1.5 w-full overflow-clip rounded-full bg-[var(--surface-raised)]"
+                >
+                  <span
+                    className="block h-full rounded-full bg-[var(--accent)] transition-[width] duration-[var(--dur-slow)]"
                     style={{ width: `${progress}%` }}
                   />
-                </div>
-                <p className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-[var(--accent)]">
+                </span>
+                <span className="relative mt-2 inline-flex items-center gap-1 text-sm font-bold text-[var(--accent-ink)]">
                   {remaining > 0 ? `Faltan ${remaining} · únete` : "¡Completa!"}
                   <ArrowRight
-                    className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5"
+                    className="h-4 w-4 transition-transform duration-[var(--dur-fast)] group-hover:translate-x-0.5 motion-reduce:group-hover:translate-x-0"
                     strokeWidth={2}
                     aria-hidden
                   />
-                </p>
+                </span>
               </Link>
-            );
-          })}
-        </div>
-      </div>
+            </li>
+          );
+        })}
+      </ul>
     </section>
   );
 }
