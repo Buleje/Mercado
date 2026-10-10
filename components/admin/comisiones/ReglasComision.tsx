@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CardTitle, DataTable } from "@buleje/design-system";
 import { Plus, Trash2 } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { button } from "@/components/ui-system/button-variants";
 import { formatNumber } from "@/lib/format";
 import { REGLA_GENERAL, TASA_POR_DEFECTO, type ReglaComision } from "@/lib/comisiones/calcular";
 
@@ -17,7 +18,7 @@ type Props = {
   onPasarLocales: () => Promise<string | null>;
 };
 
-const CAMPO = "h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40";
+const CAMPO = "h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/40";
 
 /**
  * Las reglas de comisión guardadas en el sistema (`/api/commission-rules`):
@@ -66,7 +67,7 @@ export default function ReglasComision({ reglas, equipo, nombreDe, onAgregar, on
             Esta computadora tenía porcentajes guardados sólo aquí (general {localesPendientes.defaultRate ?? TASA_POR_DEFECTO} %
             {Object.keys(localesPendientes.customRates ?? {}).length > 0 && <>, {Object.keys(localesPendientes.customRates ?? {}).length} propios</>}).
           </span>
-          <button type="button" disabled={ocupado} onClick={() => void correr(onPasarLocales)} className="min-h-10 font-bold text-[var(--accent-ink)] hover:underline disabled:opacity-50 dark:text-[var(--accent)]">
+          <button type="button" disabled={ocupado} onClick={() => void correr(onPasarLocales)} className="min-h-12 font-bold text-[var(--accent-ink)] hover:underline disabled:opacity-50 dark:text-[var(--accent)]">
             Pasarlos al sistema
           </button>
         </div>
@@ -83,7 +84,7 @@ export default function ReglasComision({ reglas, equipo, nombreDe, onAgregar, on
                 <td className="text-right tabular-nums">{r.maxSales == null ? "sin tope" : `S/ ${formatNumber(r.maxSales)}`}</td>
                 <td className="text-right font-bold tabular-nums">{r.rate} %</td>
                 <td className="text-right">
-                  <button type="button" disabled={ocupado} aria-label={`Borrar la regla de ${nombreDe(r.cashierId)}`} onClick={() => void correr(() => onBorrar(r.id))} className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--data-error-700)] disabled:opacity-50">
+                  <button type="button" disabled={ocupado} aria-label={`Borrar la regla de ${nombreDe(r.cashierId)}`} onClick={() => void correr(() => onBorrar(r.id))} className="inline-flex h-12 w-12 items-center justify-center rounded-lg text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--data-error-700)] disabled:opacity-50">
                     <Trash2 className="h-4 w-4" aria-hidden />
                   </button>
                 </td>
@@ -96,26 +97,26 @@ export default function ReglasComision({ reglas, equipo, nombreDe, onAgregar, on
       )}
 
       <div className="flex flex-wrap items-end gap-2">
-        <label className="flex flex-col gap-1 text-xs font-semibold text-[var(--text-secondary)]">
+        <label className="flex flex-col gap-1 text-sm font-semibold text-[var(--text-secondary)]">
           Vendedor
           <select value={nueva.cashierId} onChange={(e) => setNueva((n) => ({ ...n, cashierId: e.target.value }))} className={`${CAMPO} min-w-[10rem]`}>
             <option value={REGLA_GENERAL}>Todo el equipo</option>
             {equipo.map((u) => <option key={u.username} value={u.username}>{u.name || u.username}</option>)}
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-xs font-semibold text-[var(--text-secondary)]">
+        <label className="flex flex-col gap-1 text-sm font-semibold text-[var(--text-secondary)]">
           Desde S/
           <input inputMode="decimal" value={nueva.desde} onChange={(e) => setNueva((n) => ({ ...n, desde: e.target.value }))} className={`${CAMPO} w-24 text-right`} />
         </label>
-        <label className="flex flex-col gap-1 text-xs font-semibold text-[var(--text-secondary)]">
+        <label className="flex flex-col gap-1 text-sm font-semibold text-[var(--text-secondary)]">
           Hasta S/
           <input inputMode="decimal" value={nueva.hasta} placeholder="sin tope" onChange={(e) => setNueva((n) => ({ ...n, hasta: e.target.value }))} className={`${CAMPO} w-24 text-right`} />
         </label>
-        <label className="flex flex-col gap-1 text-xs font-semibold text-[var(--text-secondary)]">
+        <label className="flex flex-col gap-1 text-sm font-semibold text-[var(--text-secondary)]">
           %
           <input inputMode="decimal" value={nueva.tasa} onChange={(e) => setNueva((n) => ({ ...n, tasa: e.target.value }))} className={`${CAMPO} w-20 text-right`} />
         </label>
-        <button type="button" disabled={ocupado} onClick={agregar} className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-50">
+        <button type="button" disabled={ocupado} onClick={agregar} className={button({ variant: "primary", className: "rounded-xl" })}>
           <Plus className="h-4 w-4" aria-hidden /> Agregar regla
         </button>
       </div>
