@@ -11,7 +11,7 @@
  */
 
 import { etiquetaCorta, etiquetaDia, minutosDeHora } from "./fechas";
-import type { EstadoAsistencia, EstadoColaborador, FechaKey, MotivoRechazo } from "./tipos";
+import type { EstadoAsistencia, EstadoColaborador, FechaKey, MotivoRechazo, OrigenMarca } from "./tipos";
 
 // ── Horas ────────────────────────────────────────────────────────────────────
 
@@ -104,7 +104,7 @@ export interface RevisarMarcaCtx {
   /** La de `ventanaDeMarcado`. */
   ventana: { desde: FechaKey | null; hasta: FechaKey };
   marcadoPor: string;
-  origen: "manual" | "masivo";
+  origen: OrigenMarca;
 }
 
 /** Ya normalizada y lista para escribir — o para leer, si `quitar`. */
@@ -119,7 +119,7 @@ export interface MarcaNormalizada {
   horas: number | null;
   nota: string | null;
   marcadoPor: string;
-  origen: "manual" | "masivo";
+  origen: OrigenMarca;
 }
 
 export type RevisionMarca =

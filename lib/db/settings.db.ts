@@ -171,6 +171,31 @@ function mapSettings(s: PSettings): DbSettings {
 
 // ── Settings DB ───────────────────────────────────────────────────────────────
 
+/**
+ * `featureFlagsJson` (text) como objeto jsonb, tolerante a NULL y a vacío.
+ * Texto que no es JSON hace fallar la sentencia: mejor eso que pisar los
+ * flags de todos. Constantes de SQL (sin valores): los valores van en $1, $2.
+ */
+const FLAGS_JSONB = `COALESCE(NULLIF(btrim("featureFlagsJson"), '')::jsonb, '{}'::jsonb)`;
+export const SQL_FLAGS_OBJETO = `(CASE WHEN jsonb_typeof(${FLAGS_JSONB}) = 'object' THEN ${FLAGS_JSONB} ELSE '{}'::jsonb END)`;
+/** El objeto guardado en la clave $1 de los flags (`{}` si falta o no es objeto). */
+export const SQL_SUBCLAVE_FLAGS = `(CASE WHEN jsonb_typeof(${SQL_FLAGS_OBJETO} -> $1::text) = 'object' THEN ${SQL_FLAGS_OBJETO} -> $1::text ELSE '{}'::jsonb END)`;
+/** $1 claves (json) · $2 tenantId. */
+const SQL_PISAR_CLAVES_FLAGS = `UPDATE "Settings" SET "featureFlagsJson" = (${SQL_FLAGS_OBJETO} || $1::jsonb)::text WHERE "tenantId" = $2`;
+/** $1 clave · $2 subclaves (json) · $3 tenantId. Se le puede sumar `AND …` al WHERE. */
+export const SQL_PISAR_SUBCLAVES_FLAGS = `UPDATE "Settings" SET "featureFlagsJson" = (${SQL_FLAGS_OBJETO} || jsonb_build_object($1::text, ${SQL_SUBCLAVE_FLAGS} || $2::jsonb))::text WHERE "tenantId" = $3`;
+
+/** Corre una escritura de flags; si el negocio no tiene fila de Settings, la crea vacía y repite. */
+async function escribirFlags(tenantId: string, sql: string, ...valores: string[]): Promise<void> {
+  let n = await prisma.$executeRawUnsafe(sql, ...valores);
+  if (n === 0) {
+    await prisma.settings.upsert({ where: { tenantId }, create: { tenantId }, update: {} });
+    n = await prisma.$executeRawUnsafe(sql, ...valores);
+  }
+  if (n === 0) throw new Error("settings: no se pudo guardar featureFlagsJson");
+  invalidateByPrefix(`settings:${tenantId}`);
+}
+
 export const SettingsDB = {
   async get(tenantId: string): Promise<DbSettings> {
     return getOrSet<DbSettings>(`settings:${tenantId}`, 60, async () => {
@@ -443,6 +468,28 @@ export const SettingsDB = {
       update: { featureFlagsJson: JSON.stringify(flags) },
     });
     invalidateByPrefix(`settings:${tenantId}`);
+  },
+
+  /**
+   * Pisa SÓLO las claves de `cambios` dentro de `featureFlagsJson`, en una
+   * sentencia. Lo comparten webhooks, etiquetas, preferencias, n8n, el kiosko
+   * de asistencia…: un leer-mezclar-escribir desde Node devolvía a la vida lo
+   * que otro cambió en el medio (un enlace de kiosko revocado volvía a servir,
+   * security 10-10 H3). Usar esto en vez de `setFeatureFlags` para una clave.
+   */
+  async pisarClavesFlags(tenantId: string, cambios: Record<string, unknown>): Promise<void> {
+    if (!tenantId) throw new Error("tenantId is required");
+    await escribirFlags(tenantId, SQL_PISAR_CLAVES_FLAGS, JSON.stringify(cambios), tenantId);
+  },
+
+  /**
+   * Igual, un nivel más adentro: pisa sólo `cambios` dentro del objeto
+   * `featureFlagsJson[clave]` (lo demás de esa clave queda). Un valor
+   * `undefined` no se escribe (no borra la subclave): usar `null`.
+   */
+  async pisarSubclavesFlags(tenantId: string, clave: string, cambios: Record<string, unknown>): Promise<void> {
+    if (!tenantId) throw new Error("tenantId is required");
+    await escribirFlags(tenantId, SQL_PISAR_SUBCLAVES_FLAGS, clave, JSON.stringify(cambios), tenantId);
   },
 
   // ── storeThemeJson (config visual del storefront) ─────────────────────────

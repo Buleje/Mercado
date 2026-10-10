@@ -19,6 +19,7 @@ import { enmascararDocumento } from "./documento";
 import {
   GRUPOS_SANGUINEOS,
   TIPOS_DOCUMENTO,
+  esMarcaDelKiosko,
   type AsistenciaDTO,
   type ColaboradorDTO,
   type ColaboradorMinDTO,
@@ -220,7 +221,7 @@ export function aAsistenciaDTO(row: AsistenciaRow, conHistorial = false): Asiste
     refrigerioMin: row.refrigerioMin,
     horas: row.horas,
     nota: row.nota,
-    origen: row.origen === "masivo" ? "masivo" : "manual",
+    origen: esMarcaDelKiosko(row.origen, row.marcadoPor) ? "kiosko" : row.origen === "masivo" ? "masivo" : "manual",
     marcadoPor: row.marcadoPor,
     marcadoEn: row.createdAt.toISOString(),
     ...(conHistorial

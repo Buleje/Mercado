@@ -59,9 +59,13 @@ export function applySecurityHeaders(
     pathname.startsWith("/admin") ||
     pathname.startsWith("/superadmin") ||
     /^\/t\/[^/]+\/admin/.test(pathname);
+  // camera=(self) SOLO en el kiosko de asistencia (2026-10-10): la tablet del
+  // local lee el QR del fotocheck y saca la foto de la marca con su cámara.
+  // Esta cabecera es la que llega (pisa la de next.config.ts).
+  const esKiosko = pathname.startsWith("/kiosko/");
   response.headers.set(
     "Permissions-Policy",
-    `camera=(), microphone=(${isAdminSurface ? "self" : ""}), geolocation=(self)`,
+    `camera=(${esKiosko ? "self" : ""}), microphone=(${isAdminSurface ? "self" : ""}), geolocation=(self)`,
   );
 
   return response;

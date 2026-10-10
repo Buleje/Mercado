@@ -13,6 +13,7 @@
  * es publicable por diseño: viaja al navegador igual que la de GA.
  */
 import posthog from "posthog-js";
+import { tacharSecretosEnObjeto } from "@/lib/telemetry/secretos-en-url";
 
 if (process.env.NEXT_PUBLIC_POSTHOG_KEY) {
   posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
@@ -33,6 +34,19 @@ if (process.env.NEXT_PUBLIC_POSTHOG_KEY) {
      * En producción el filtro queda ACTIVO, que es para lo que existe.
      */
     opt_out_useragent_filter: process.env.NODE_ENV !== "production",
+    /**
+     * El enlace del kiosko de asistencia lleva su secreto en la ruta
+     * (`/kiosko/asistencia/<token>`): PostHog guarda la URL de cada visita
+     * ($current_url, $pathname, $referrer, $session_entry_url…). Se tacha en
+     * TODAS las propiedades antes de salir (security 10-10, H2).
+     */
+    before_send: (ev) => {
+      if (!ev) return ev;
+      tacharSecretosEnObjeto(ev.properties);
+      tacharSecretosEnObjeto(ev.$set);
+      tacharSecretosEnObjeto(ev.$set_once);
+      return ev;
+    },
   });
   // Para poder excluir el tráfico de desarrollo en los insights sin proyectos
   // separados: toda captura de dev viaja etiquetada.

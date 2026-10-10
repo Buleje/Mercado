@@ -93,8 +93,7 @@ import RootDeferredWidgets from "@/components/RootDeferredWidgets";
 import ChunkErrorReloader from "@/components/ChunkErrorReloader";
 import { SkipLink } from "@/components/ui-system/SkipLink";
 import NavProgress from "@/components/NavProgress";
-import { SpeedInsights } from "@vercel/speed-insights/next";
-import { Analytics } from "@vercel/analytics/next";
+import MedicionVercel from "@/components/MedicionVercel";
 import { BRAND_GEO, GEO_PLACENAME, GEO_POSITION } from "@/lib/geo";
 
 export const metadata: Metadata = {
@@ -459,12 +458,7 @@ export default function RootLayout({
         />
         {/* Solo en producción: en dev local pegan a /_vercel/insights/* que no
             existe → 403 rojo en consola. En Vercel funcionan normal. */}
-        {process.env.NODE_ENV === "production" && (
-          <>
-            <SpeedInsights />
-            <Analytics />
-          </>
-        )}
+        {process.env.NODE_ENV === "production" && <MedicionVercel />}
         </ErrorBoundary>
         </CurrencyProvider>
         </LocaleProvider>

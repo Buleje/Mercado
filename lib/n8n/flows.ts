@@ -22,6 +22,7 @@ import "server-only";
 
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { prisma } from "@/lib/prisma";
+import { SettingsDB } from "@/lib/db/settings.db";
 import { logger } from "@/lib/logger";
 import { safeFetch, SsrfBlockedError } from "@/lib/safe-fetch";
 
@@ -83,16 +84,11 @@ export async function saveN8nConfig(
   tenantId: string,
   cambios: Partial<N8nConfig>,
 ): Promise<void> {
-  const flags = await leerFlags(tenantId);
-  const actualizado = {
-    ...flags,
+  // Sólo estas claves, en una sentencia: leer-mezclar-escribir el JSON entero
+  // pisaba lo que otro guardó en el medio (security 10-10 H3).
+  await SettingsDB.pisarClavesFlags(tenantId, {
     ...(cambios.flujos !== undefined ? { [CLAVE]: cambios.flujos } : {}),
     ...(cambios.tokenVersion !== undefined ? { [CLAVE_VERSION]: cambios.tokenVersion } : {}),
-  };
-  await prisma.settings.upsert({
-    where: { tenantId },
-    update: { featureFlagsJson: JSON.stringify(actualizado) },
-    create: { tenantId, featureFlagsJson: JSON.stringify(actualizado) },
   });
 }
 

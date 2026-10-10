@@ -12,7 +12,7 @@ import {
 } from "@/lib/rrhh/asistencia";
 import type { AsistenciaRow as DtoAsistenciaRow } from "@/lib/rrhh/dto";
 import type { MasivoInput } from "@/lib/rrhh/schemas";
-import type { EstadoAsistencia, EstadoColaborador, FechaKey } from "@/lib/rrhh/tipos";
+import type { EstadoAsistencia, EstadoColaborador, FechaKey, OrigenMarca } from "@/lib/rrhh/tipos";
 
 /**
  * AsistenciaDB — la marca de asistencia de cada persona, un día a la vez
@@ -130,12 +130,22 @@ async function darDeBajaVivaEnTx(
   if (baja.count === 0) throw new VivaCambiadaError();
 }
 
+/**
+ * El origen que acepta la base: el CHECK `Asistencia_origen_chk` (ADR-414)
+ * sólo admite manual|masivo, así que la marca del kiosko se guarda como
+ * "manual" firmada con `MARCADO_POR_KIOSKO` (la DTO la devuelve como
+ * "kiosko"). Cuando una migración sume 'kiosko' al CHECK, esto se borra.
+ */
+export function origenEnBase(origen: OrigenMarca): "manual" | "masivo" {
+  return origen === "masivo" ? "masivo" : "manual";
+}
+
 export async function escribirMarcaEnTx(
   tx: Pick<Prisma.TransactionClient, "asistencia">,
   tenantId: string,
   m: MarcaNormalizada,
   viva: { id: string } | null,
-  ctx: { origen: "manual" | "masivo"; motivo?: string },
+  ctx: { origen: OrigenMarca; motivo?: string },
 ): Promise<AsistenciaPrismaRow> {
   if (!m.estado) throw new Error("escribirMarcaEnTx: la marca no tiene estado (¿era un quitar?)");
 
@@ -154,7 +164,7 @@ export async function escribirMarcaEnTx(
       refrigerioMin: m.refrigerioMin,
       horas: m.horas != null ? new Prisma.Decimal(m.horas) : undefined,
       nota: m.nota,
-      origen: ctx.origen,
+      origen: origenEnBase(ctx.origen),
       marcadoPor: m.marcadoPor,
     },
   });
@@ -231,7 +241,7 @@ export const AsistenciaDB = {
   async guardar(
     tenantId: string,
     marcas: MarcaNormalizada[],
-    ctx: { usuario: string; motivo?: string; origen: "manual" | "masivo" },
+    ctx: { usuario: string; motivo?: string; origen: OrigenMarca },
   ): Promise<{ guardadas: AsistenciaRow[]; quitadas: number; sinCambio: number }> {
     if (!tenantId) throw new Error("tenantId is required");
     if (marcas.length === 0) return { guardadas: [], quitadas: 0, sinCambio: 0 };

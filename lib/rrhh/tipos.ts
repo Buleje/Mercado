@@ -22,6 +22,21 @@ export const ESTADOS_ASISTENCIA = [
 ] as const;
 export type EstadoAsistencia = (typeof ESTADOS_ASISTENCIA)[number];
 
+/** Quién escribió la marca: a mano, «Todos presentes» o el propio trabajador en el kiosko. */
+export type OrigenMarca = "manual" | "masivo" | "kiosko";
+
+/**
+ * `marcadoPor` de las marcas del kiosko (`lib/rrhh/kiosko.ts`). Con espacios a
+ * propósito: ningún usuario del panel se llama así. Mientras el CHECK
+ * `Asistencia_origen_chk` sólo admita manual|masivo (ADR-414), la marca del
+ * kiosko se guarda con origen "manual" y se reconoce por esta firma.
+ */
+export const MARCADO_POR_KIOSKO = "Kiosko de asistencia";
+
+export function esMarcaDelKiosko(origen: string, marcadoPor: string): boolean {
+  return origen === "kiosko" || marcadoPor === MARCADO_POR_KIOSKO;
+}
+
 export const MODALIDADES = ["HORA", "DIA", "SEMANA", "MES", "SIN_PAGO"] as const;
 export type Modalidad = (typeof MODALIDADES)[number];
 export type ModalidadPagada = Exclude<Modalidad, "SIN_PAGO">;
@@ -151,7 +166,7 @@ export interface AsistenciaDTO {
   refrigerioMin: number;
   horas: number | null;
   nota: string | null;
-  origen: "manual" | "masivo";
+  origen: OrigenMarca;
   marcadoPor: string;
   marcadoEn: string;
   /** Sólo en el historial. */
