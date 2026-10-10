@@ -30,28 +30,11 @@ import { ChevronLeft, ChevronRight, ArrowRight } from "@buleje/design-system/ico
 import { cn } from "@/lib/utils";
 import { BRAND_GEO } from "@/lib/geo";
 import PromoBannerRenderer, { type PromoBanner } from "../PromoBannerRenderer";
+import { trackBanner } from "@/lib/marketplace/track-banner";
 
 const ROTATE_MS = 6000;
 const SWIPE_THRESHOLD = 50; // px para confirmar un swipe
 const DRAG_GUARD = 10; // px: por encima de esto, un "click" es en realidad arrastre
-
-// Tracking fire-and-forget (sendBeacon) — no bloquea navegación.
-function trackBanner(event: "impression" | "click", ids: string[]) {
-  if (typeof navigator === "undefined" || ids.length === 0) return;
-  const body = JSON.stringify(
-    event === "impression" ? { event, bannerIds: ids } : { event, bannerId: ids[0] },
-  );
-  try {
-    const url = "/api/marketplace/promo-banners/track";
-    if (navigator.sendBeacon) {
-      navigator.sendBeacon(url, new Blob([body], { type: "application/json" }));
-    } else {
-      void fetch(url, { method: "POST", body, headers: { "Content-Type": "application/json" }, keepalive: true });
-    }
-  } catch {
-    /* fire-and-forget */
-  }
-}
 
 // Slides de marca curados (Brandon 2026-07-06 audit inicio) — la home nunca
 // queda sin portada y, aunque el superadmin cargue 1 solo banner, el hero

@@ -28,11 +28,12 @@ import { getLiveBannersForSlot } from "@/lib/promo-banners";
 const JuntaBarrioStrip = dynamic(
   () => import("@/components/marketplace/home/JuntaBarrioStrip"),
 );
-// Hero rotativo full-width estilo marketplace pro (Brandon 2026-06-12): reemplaza
-// el viejo hero "Pedí en {ciudad}" + buscador por un banner deslizable (swipe).
-const HomeHeroBanner = dynamic(
-  () => import("@/components/marketplace/home/HomeHeroBanner"),
-);
+// Hero «Dosel» (2026-10-10): tile con H1 visible + bodegón con fotos reales +
+// tickets de promo sin autoplay. Reemplaza al carrusel rotativo HomeHeroBanner
+// (que sigue en /recetas).
+import HomeHeroDosel from "@/components/marketplace/home/HomeHeroDosel";
+import type { TicketPromoDatos } from "@/components/marketplace/home/HomePromoTickets";
+import { logger } from "@/lib/logger";
 // WelcomeStrip retirado del inicio (Brandon 2026-07-06) — ver comentario abajo.
 import { PaicheLoading } from "@/components/ui-system/illustrations/PaicheLoading";
 import CategoriasBento from "@/components/marketplace/home/CategoriasBento";
@@ -387,31 +388,39 @@ async function BulejeJsonLd() {
   );
 }
 
-// ── 1. Hero = banner rotativo full-width (Brandon 2026-06-12) ────────────────
-// Antes: hero "Pedí en {ciudad}" + buscador + stats. Ahora: un banner grande
-// estilo marketplace pro (AliExpress/Temu) que abarca todo el ancho y se
-// desliza (swipe). El buscador vive en el header (chrome), por eso acá no va.
-// SEO INTACTO: el <h1> con keyword geo sigue presente (sr-only) — Google lo
-// indexa igual; los metadatos y el JSON-LD viven aparte (generateMetadata +
-// BulejeJsonLd) y no se tocan. Los banners salen del slot `tiendas-hero`
-// (los MISMOS que antes vivían en la columna "Publicidad" del catálogo).
+// ── 1. Hero «Dosel» (2026-10-10) ─────────────────────────────────────────────
+// H1 VISIBLE con la keyword geo (antes era sr-only sobre un carrusel). Banners y
+// cifras se resuelven en el server: el hero se pinta en el primer byte. El
+// banner que repite el claim del H1 (trae el nombre de la ciudad) se descarta.
+// Si algo falla, el hero se pinta igual con los datos de respaldo.
 async function HomeHero() {
-  // perf audit P1: resolvemos los banners en el SERVER (lectura del JSON de
-  // slots, sin red) y los pasamos como initialBanners → el hero se pinta en el
-  // primer byte, sin la cascada hidratar→fetch→pintar del fetch client.
-  const initialBanners = (await getLiveBannersForSlot("tiendas-hero"))
-    .filter((b) => b.active)
-    .sort((a, b) => a.order - b.order);
+  const [banners, stats] = await Promise.all([
+    getLiveBannersForSlot("tiendas-hero").catch((err: unknown) => {
+      logger.warn("[home] banners del hero sin datos", { error: String(err) });
+      return [];
+    }),
+    MarketplacePublicDB.getLiveStats().catch((err: unknown) => {
+      logger.warn("[home] cifras del hero sin datos", { error: String(err) });
+      return null;
+    }),
+  ]);
+  const tickets: TicketPromoDatos[] = banners
+    .filter((b) => b.active && b.title?.trim() && !b.title.includes(BRAND_GEO.city))
+    .sort((a, b) => a.order - b.order)
+    .map((b) => ({
+      id: b.id,
+      title: b.title,
+      subtitle: b.subtitle,
+      ctaHref: b.ctaHref,
+      ctaLabel: b.ctaLabel,
+      imageUrl: b.imageUrl,
+    }));
   return (
-    <section aria-label="Inicio" className="relative">
-      {/* H1 de la home — invisible pero presente (SEO). Mantiene la keyword geo
-          que Google pondera fuerte en el H1 de la portada. */}
-      <h1 className="sr-only">
-        Pide online en {BRAND_GEO.city}, {BRAND_GEO.region} — bodegas,
-        restaurantes y farmacias con delivery rápido (Yape, Plin o efectivo)
-      </h1>
-      <HomeHeroBanner initialBanners={initialBanners} />
-    </section>
+    <HomeHeroDosel
+      banners={tickets}
+      minutos={stats?.avgDeliveryMin ?? 25}
+      tiendas={stats?.activeStores ?? null}
+    />
   );
 }
 
@@ -422,9 +431,9 @@ export default async function Home() {
   if (isTenant) return <TenantStoreHome />;
 
   return (
-    <main id="main-content" className="flex flex-col [&>div:empty]:hidden">
+    <main id="main-content" className="flex flex-col gap-10 pb-16 lg:gap-14 [&>div:empty]:hidden">
       <BulejeJsonLd />
-      {/* A · Hero (H1 visible para SEO) */}
+      {/* A · Hero «Dosel» + tickets (H1 visible) */}
       <HomeHero />
       {/* B · Retomar (se oculta solo) */}
       <Suspense fallback={null}>
