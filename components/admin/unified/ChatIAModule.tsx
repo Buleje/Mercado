@@ -1,539 +1,71 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { CardTitle } from "@buleje/design-system";
-import { useEffect, useState, useCallback } from "react";
-import {
-  MessageSquare,
-  Maximize2,
-  Minimize2,
-  Settings2,
-  X,
-  Sparkles,
-  Thermometer,
-  Brain,
-  Zap,
-  Info,
-} from "@buleje/design-system/icons";
+import { useCallback, useRef, useState } from "react";
+import { MessageSquare } from "@buleje/design-system/icons";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { cn } from "@/lib/utils";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
-import { formatDateShort } from "@/lib/format";
+import { useModalAccesible } from "@/hooks/use-modal-accesible";
+import { useAltoDelChat } from "@/components/admin/chat-ia/use-alto-del-chat";
 
-const MODULE_ID = "chat-ia";
-
-// ChatIAClean: componente nuevo con diseño limpio (2026-04-24) que reemplaza
-// al antiguo AIAssistant (widget complejo con ~1245 líneas). ChatIAClean
-// consume el mismo endpoint /api/ai-assistant vía SSE streaming.
+// ChatIAClean consume /api/ai-assistant por SSE. Va sin SSR: el historial y el
+// tono viven en localStorage.
 const ChatIAClean = dynamic(() => import("@/components/admin/chat-ia/ChatIAClean"), {
   ssr: false,
   loading: S,
 });
 
-// ── Config persistente ──────────────────────────────────────────────────────
-
-interface ChatSettings {
-  model: "fast" | "balanced" | "smart";
-  tone: "feynman" | "ejecutivo" | "tecnico";
-  showSources: boolean;
-  autoplay: boolean;
-  maxTokens: number;
-}
-
-const DEFAULT_SETTINGS: ChatSettings = {
-  model: "balanced",
-  tone: "feynman",
-  showSources: true,
-  autoplay: false,
-  maxTokens: 1500,
-};
-
-const STORAGE_KEY = "chat-ia-settings";
-
-function useChatSettings() {
-  const [settings, setSettings] = useState<ChatSettings>(DEFAULT_SETTINGS);
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(raw) });
-    } catch {
-      /* noop */
-    }
-  }, []);
-
-  const update = useCallback(<K extends keyof ChatSettings>(key: K, value: ChatSettings[K]) => {
-    setSettings((prev) => {
-      const next = { ...prev, [key]: value };
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      } catch {
-        /* noop */
-      }
-      return next;
-    });
-  }, []);
-
-  return { settings, update };
-}
-
-// ── Limite de consultas ──────────────────────────────────────────────────────
-
-interface UsageStats {
-  used: number;
-  limit: number;
-  resetAt: string;
-  plan: string;
-}
-
-const USAGE_STORAGE = "chat-ia-usage";
-
-/** free/starter/pro/enterprise (lib/billing/wire-up/usage-tiers.ts) → copy en español. */
-const PLAN_LABELS_ES: Record<string, string> = {
-  free: "Gratis",
-  starter: "Starter",
-  pro: "Pro",
-  enterprise: "Empresa",
-};
-
-function etiquetaPlan(plan: string): string {
-  return PLAN_LABELS_ES[plan.toLowerCase()] ?? plan;
-}
-
-function useUsage() {
-  const [usage, setUsage] = useState<UsageStats>({
-    used: 0,
-    limit: 100,
-    resetAt: getNextReset(),
-    plan: "free",
-  });
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(USAGE_STORAGE);
-      if (raw) {
-        const parsed = JSON.parse(raw) as UsageStats;
-        // Reset si ya pasó el día del reset
-        if (new Date(parsed.resetAt).getTime() < Date.now()) {
-          const fresh = { ...parsed, used: 0, resetAt: getNextReset() };
-          setUsage(fresh);
-          localStorage.setItem(USAGE_STORAGE, JSON.stringify(fresh));
-        } else {
-          setUsage(parsed);
-        }
-      }
-    } catch {
-      /* noop */
-    }
-  }, []);
-
-  // Listen para eventos de uso del chat (disparados por AIAssistant via custom event)
-  useEffect(() => {
-    const onQuery = () => {
-      setUsage((prev) => {
-        const next = { ...prev, used: prev.used + 1 };
-        try {
-          localStorage.setItem(USAGE_STORAGE, JSON.stringify(next));
-        } catch {
-          /* noop */
-        }
-        return next;
-      });
-    };
-    window.addEventListener("chat-ia:query", onQuery);
-    return () => window.removeEventListener("chat-ia:query", onQuery);
-  }, []);
-
-  return usage;
-}
-
-function getNextReset(): string {
-  // Reset: primer día del próximo mes a las 00:00
-  const d = new Date();
-  d.setMonth(d.getMonth() + 1, 1);
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString();
-}
-
-// ── Componente principal ─────────────────────────────────────────────────────
-
+/**
+ * Chat IA: la conversación con el asistente, en una tarjeta de alto fijo que se
+ * puede llevar a pantalla completa.
+ *
+ * Lo que tenía arriba se fue (Brandon 2026-10-10, «cada pestaña cumple su tarea,
+ * sin repetir»): la franja «Asistente Ejecutivo IA» repetía el título del hub, el
+ * contador «Consultas · Gratis 0 de 100» lo contaba el navegador (el consumo
+ * real lo muestra el hub) y de los cinco ajustes sólo el tono llegaba al
+ * servidor — ese quedó en la fila de arriba del chat.
+ */
 export default function ChatIAModule() {
-  void MODULE_ID;
-  const [maximized, setMaximized] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const { settings, update } = useChatSettings();
-  const usage = useUsage();
+  const [maximizado, setMaximizado] = useState(false);
+  const cajaRef = useRef<HTMLDivElement | null>(null);
+  const salir = useCallback(() => setMaximizado(false), []);
+  const alternar = useCallback(() => setMaximizado((m) => !m), []);
 
-  const usagePct = Math.min(100, (usage.used / usage.limit) * 100);
-  const usageColor =
-    usagePct >= 90
-      ? "bg-[var(--data-error-500)]"
-      : usagePct >= 70
-        ? "bg-[var(--data-warning-500)]"
-        : "bg-[var(--data-success-500)]";
-
-  // ESC sale de maximize
-  useEffect(() => {
-    if (!maximized) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMaximized(false);
-    };
-    document.addEventListener("keydown", onKey);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prevOverflow;
-    };
-  }, [maximized]);
-
-  const toolbar = (
-    <div className="flex items-center gap-1 sm:gap-2 shrink-0 flex-wrap">
-      <button
-        type="button"
-        onClick={() => setSettingsOpen((s) => !s)}
-        aria-label="Configuración"
-        title="Configuración del asistente"
-        className={cn(
-          "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-colors min-h-[44px]",
-          settingsOpen
-            ? "bg-[var(--surface-sunken)] border-[var(--rule-base)] text-[var(--text-primary)]"
-            : "border-[var(--rule-soft)] text-[var(--text-secondary)] hover:border-[var(--rule-base)] hover:text-[var(--text-primary)]",
-        )}
-      >
-        <Settings2 className="h-3.5 w-3.5" />
-        <span>Configuración</span>
-      </button>
-      <button
-        type="button"
-        onClick={() => setMaximized((m) => !m)}
-        aria-label={maximized ? "Minimizar" : "Maximizar"}
-        title={maximized ? "Volver al panel" : "Pantalla completa (Esc para salir)"}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[var(--rule-soft)] text-xs font-semibold text-[var(--text-secondary)] hover:border-[var(--rule-base)] hover:text-[var(--text-primary)] transition-colors min-h-[44px]"
-      >
-        {maximized ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
-        <span>{maximized ? "Salir" : "Maximizar"}</span>
-      </button>
-    </div>
-  );
-
-  const usageBar = (
-    <div className="shrink-0 min-w-[220px]">
-      <div className="flex items-center justify-between gap-3 mb-1">
-        <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-          Consultas · {etiquetaPlan(usage.plan)}
-        </span>
-        <span className="text-xs font-extrabold tabular-nums text-[var(--text-primary)] whitespace-nowrap">
-          {usage.used} de {usage.limit}
-        </span>
-      </div>
-      <div className="h-1.5 rounded-full bg-[var(--surface-sunken)] overflow-hidden">
-        <div
-          className={cn("h-full rounded-full transition-all duration-300", usageColor)}
-          style={{ width: `${usagePct}%` }}
-          role="progressbar"
-          aria-label={`Consultas usadas del plan ${etiquetaPlan(usage.plan)}`}
-          aria-valuenow={usage.used}
-          aria-valuemin={0}
-          aria-valuemax={usage.limit}
-        />
-      </div>
-      <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
-        Reinicia el{" "}
-        {formatDateShort(usage.resetAt)}
-      </p>
-    </div>
-  );
-
-  const content = (
-    <div
-      className={cn(
-        "flex flex-col overflow-hidden bg-[var(--surface-raised)]",
-        maximized
-          ? "fixed inset-0 z-tour"
-          // Brandon 2026-05-27: en móvil descontamos el bottom nav fijo
-          // (~96px) para que el composer no quede tapado; min-h menor para no
-          // desbordar en pantallas chicas. En desktop (sin bottom nav) queda igual.
-          : "rounded-xl border border-[var(--rule-base)] min-h-[420px] h-[calc(100dvh-260px)] sm:min-h-[600px] sm:h-[calc(100dvh-220px)]",
-      )}
-    >
-      {/* Barra superior: progress + toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 px-4 sm:px-5 py-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] shrink-0">
-        <div className="flex items-center gap-3 min-w-0">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-            <Sparkles className="h-4 w-4 text-[var(--data-success-500)]" />
-          </span>
-          <div className="min-w-0">
-            <p className="text-sm font-extrabold text-[var(--text-primary)] leading-tight truncate">
-              Asistente Ejecutivo IA
-            </p>
-            <p className="text-xs text-[var(--text-tertiary)] leading-tight">
-              Análisis en tiempo real · Feynman simple · {modelLabel(settings.model)}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 sm:gap-4 shrink-0 flex-wrap">
-          {usageBar}
-          {toolbar}
-        </div>
-      </div>
-
-      {/* Layout chat + settings side panel */}
-      <div className="flex-1 flex flex-col sm:flex-row overflow-hidden">
-        <div className="flex-1 overflow-hidden transition-all">
-          <ChatIAClean
-            tone={settings.tone}
-            model={settings.model}
-            maxTokens={settings.maxTokens}
-          />
-        </div>
-
-        {/* Settings panel (slide-in from right) */}
-        {settingsOpen && (
-          <aside className="w-full sm:w-[320px] shrink-0 border-t sm:border-t-0 sm:border-l border-[var(--rule-soft)] bg-[var(--surface-raised)] overflow-y-auto">
-            <SettingsPanel
-              settings={settings}
-              onUpdate={update}
-              onClose={() => setSettingsOpen(false)}
-            />
-          </aside>
-        )}
-      </div>
-    </div>
-  );
+  // Pantalla completa = diálogo: Tab atrapado, Escape sale, scroll de atrás
+  // bloqueado y el foco vuelve al botón que la abrió.
+  useModalAccesible(cajaRef, { onCerrar: salir, activo: maximizado });
+  const alto = useAltoDelChat(cajaRef, !maximizado);
 
   return (
     <div className="space-y-4">
-      {!maximized && (
+      {/* Anidado en el hub no se dibuja (el hub ya dice «Asistente IA»); suelto
+          es la identidad del módulo. */}
+      {!maximizado && (
         <AdminModuleHeader
           title="Chat IA"
-          description="Pregúntale cualquier cosa de tu negocio. Respuestas simples con ejemplos reales (método Feynman)."
+          description="Pregúntale por tu negocio o díctale lo que quieres anotar."
           icon={MessageSquare}
         />
       )}
-      {content}
-    </div>
-  );
-}
-
-function modelLabel(m: ChatSettings["model"]): string {
-  return m === "fast" ? "Rápido" : m === "smart" ? "Inteligente" : "Balanceado";
-}
-
-// ── Settings Panel ───────────────────────────────────────────────────────────
-
-function SettingsPanel({
-  settings,
-  onUpdate,
-  onClose,
-}: {
-  settings: ChatSettings;
-  onUpdate: <K extends keyof ChatSettings>(key: K, value: ChatSettings[K]) => void;
-  onClose: () => void;
-}) {
-  return (
-    <div className="p-4 sm:p-5 space-y-6">
-      <header className="flex items-center justify-between">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-            Configuración
-          </p>
-          <CardTitle className="text-sm font-bold leading-tight">
-            Personaliza tu IA
-          </CardTitle>
-        </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="h-8 w-8 inline-flex items-center justify-center rounded-lg hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
-          aria-label="Cerrar configuración"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </header>
-
-      {/* Modelo */}
-      <section>
-        <div className="flex items-center gap-2 mb-2">
-          <Brain className="h-4 w-4 text-[var(--text-secondary)]" />
-          <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-            Modelo
-          </p>
-        </div>
-        <div className="space-y-1.5">
-          {(["fast", "balanced", "smart"] as const).map((m) => {
-            const active = settings.model === m;
-            return (
-              <button
-                key={m}
-                type="button"
-                onClick={() => onUpdate("model", m)}
-                className={cn(
-                  "w-full text-left px-3 min-h-11 rounded-xl border text-sm transition-colors flex items-start gap-3",
-                  active
-                    ? "border-[var(--text-primary)] bg-[var(--surface-sunken)]"
-                    : "border-[var(--rule-soft)] hover:border-[var(--rule-base)]",
-                )}
-              >
-                <span
-                  className={cn(
-                    "h-4 w-4 rounded-full border-2 shrink-0 mt-0.5",
-                    active ? "border-[var(--text-primary)] bg-[var(--text-primary)]" : "border-[var(--rule-base)]",
-                  )}
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-[var(--text-primary)]">{modelLabel(m)}</p>
-                  <p className="text-xs text-[var(--text-tertiary)] leading-snug mt-0.5">
-                    {m === "fast"
-                      ? "Responde en 1-2 seg. Ideal para preguntas simples."
-                      : m === "smart"
-                        ? "Más lento pero razona mejor. Ideal para análisis estratégico."
-                        : "Balance entre velocidad y profundidad. Default."}
-                  </p>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* Tono */}
-      <section>
-        <div className="flex items-center gap-2 mb-2">
-          <MessageSquare className="h-4 w-4 text-[var(--text-secondary)]" />
-          <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-            Tono de respuesta
-          </p>
-        </div>
-        <div className="space-y-1.5">
-          {(["feynman", "ejecutivo", "tecnico"] as const).map((t) => {
-            const active = settings.tone === t;
-            return (
-              <button
-                key={t}
-                type="button"
-                onClick={() => onUpdate("tone", t)}
-                className={cn(
-                  "w-full text-left px-3 min-h-11 rounded-xl border text-sm transition-colors",
-                  active
-                    ? "border-[var(--text-primary)] bg-[var(--surface-sunken)]"
-                    : "border-[var(--rule-soft)] hover:border-[var(--rule-base)]",
-                )}
-              >
-                <p className="font-bold text-[var(--text-primary)] capitalize">
-                  {t === "feynman" ? "Simple (Feynman)" : t === "ejecutivo" ? "Ejecutivo" : "Técnico"}
-                </p>
-                <p className="text-xs text-[var(--text-tertiary)] leading-snug mt-0.5">
-                  {t === "feynman"
-                    ? "Explica con ejemplos del día a día. Define cada término técnico."
-                    : t === "ejecutivo"
-                      ? "Directo, números, sin explicaciones largas."
-                      : "Jerga técnica completa. Para usuarios avanzados."}
-                </p>
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* Flags */}
-      <section>
-        <div className="flex items-center gap-2 mb-3">
-          <Zap className="h-4 w-4 text-[var(--text-secondary)]" />
-          <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-            Opciones
-          </p>
-        </div>
-        <div className="space-y-2.5">
-          <ToggleRow
-            label="Mostrar fuentes"
-            description="Cita de dónde sacó los datos (módulo + fecha)"
-            checked={settings.showSources}
-            onChange={(v) => onUpdate("showSources", v)}
-          />
-          <ToggleRow
-            label="Auto-leer respuestas"
-            description="Texto a voz automático al recibir respuesta"
-            checked={settings.autoplay}
-            onChange={(v) => onUpdate("autoplay", v)}
-          />
-        </div>
-      </section>
-
-      {/* MaxTokens */}
-      <section>
-        <div className="flex items-center gap-2 mb-2">
-          <Thermometer className="h-4 w-4 text-[var(--text-secondary)]" />
-          <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-            Longitud máxima
-          </p>
-        </div>
-        <input
-          type="range"
-          min={500}
-          max={4000}
-          step={100}
-          value={settings.maxTokens}
-          onChange={(e) => onUpdate("maxTokens", Number(e.target.value))}
-          aria-label="Longitud máxima de la respuesta"
-          className="w-full accent-[var(--text-primary)]"
-        />
-        <div className="flex justify-between text-xs text-[var(--text-tertiary)] mt-1">
-          <span>Corto</span>
-          <span className="font-bold text-[var(--text-primary)] tabular-nums">
-            {settings.maxTokens} tokens
-          </span>
-          <span>Largo</span>
-        </div>
-      </section>
-
-      {/* Info */}
-      <section className="rounded-lg bg-[var(--surface-sunken)] p-3 flex items-start gap-2">
-        <Info className="h-4 w-4 text-[var(--text-tertiary)] shrink-0 mt-0.5" />
-        <p className="text-xs text-[var(--text-secondary)] leading-snug">
-          Tu configuración se guarda localmente. Afecta a todas tus conversaciones futuras
-          hasta que la cambies.
-        </p>
-      </section>
-    </div>
-  );
-}
-
-function ToggleRow({
-  label,
-  description,
-  checked,
-  onChange,
-}: {
-  label: string;
-  description: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  return (
-    <span className="flex items-start gap-3 cursor-pointer">
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        aria-label={label}
-        onClick={() => onChange(!checked)}
+      <div
+        ref={cajaRef}
+        role={maximizado ? "dialog" : undefined}
+        aria-modal={maximizado ? true : undefined}
+        aria-label={maximizado ? "Chat IA en pantalla completa" : undefined}
+        tabIndex={maximizado ? -1 : undefined}
+        style={alto ? { height: alto } : undefined}
         className={cn(
-          "relative h-5 w-9 rounded-full transition-colors shrink-0 mt-0.5",
-          checked ? "bg-[var(--text-primary)]" : "bg-[var(--rule-base)]",
+          "flex flex-col overflow-hidden bg-[var(--surface-raised)]",
+          maximizado
+            ? "fixed inset-0 z-modal-3"
+            : // El alto lo mide `useAltoDelChat`; el `calc` es sólo el del primer
+              // pintado.
+              "h-[calc(100dvh-260px)] min-h-[420px] rounded-xl border border-[var(--rule-base)] sm:h-[calc(100dvh-220px)] sm:min-h-[480px]",
         )}
       >
-        <span
-          className={cn(
-            "absolute top-0.5 h-4 w-4 rounded-full bg-[var(--surface-raised)] transition-all shadow-sm",
-            checked ? "left-4" : "left-0.5",
-          )}
-        />
-      </button>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-[var(--text-primary)] leading-tight">{label}</p>
-        <p className="text-xs text-[var(--text-tertiary)] leading-snug mt-0.5">{description}</p>
+        <ChatIAClean maximizado={maximizado} onMaximizar={alternar} />
       </div>
-    </span>
+    </div>
   );
 }
