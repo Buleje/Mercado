@@ -6,6 +6,7 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { estaAgotado } from "@/lib/pos/stock-vendible";
 import { formatCurrency } from "@/lib/format";
+import { hayModalEncima } from "@/lib/keyboard-guards";
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -114,6 +115,8 @@ function useFocoAlEntrar() {
       const el = ref.current;
       if (!el || e.ctrlKey || e.altKey || e.metaKey) return;
       if (e.key.length !== 1) return; // sólo caracteres imprimibles
+      // Con una ventana encima (p. ej. un acceso rápido) la tecla es de esa ventana.
+      if (hayModalEncima(el)) return;
       const activo = document.activeElement as HTMLElement | null;
       const escribiendo =
         activo &&

@@ -16,7 +16,7 @@
  * 7 columnas iguales); su tendencia pasó a «Por día» y su parte del día se
  * abre desde el detalle de cada cuadre.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { LoadingState } from "@buleje/design-system";
 import { AlertTriangle, Unlock } from "@buleje/design-system/icons";
 import { button } from "@/components/ui-system/button-variants";
@@ -114,10 +114,12 @@ export default function CashRegisterTab({ subInicial }: Props = {}) {
   const abrirIngreso = useCallback(() => setModal("ingreso"), []);
   const abrirRetiro = useCallback(() => setModal("egreso"), []);
   /* «I» y «R» en cualquier sección de «Hoy» con la caja abierta. */
-  useAtajosCaja(grupoDe(vista) === "hoy" && !!caja && modal === null && !detalle, {
-    ingreso: abrirIngreso,
-    retiro: abrirRetiro,
-  });
+  const raizRef = useRef<HTMLDivElement>(null);
+  useAtajosCaja(
+    grupoDe(vista) === "hoy" && !!caja && modal === null && !detalle,
+    { ingreso: abrirIngreso, retiro: abrirRetiro },
+    raizRef,
+  );
 
   if (loading) return <LoadingState message="" size="sm" />;
 
@@ -190,7 +192,7 @@ export default function CashRegisterTab({ subInicial }: Props = {}) {
   };
 
   return (
-    <div className="space-y-4" data-caja-raiz>
+    <div ref={raizRef} className="space-y-4" data-caja-raiz>
       {vista !== "historial" && cabecera()}
 
       {/* El contenido de la sección es el `tabpanel` de la barra de secciones

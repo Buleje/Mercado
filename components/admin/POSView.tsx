@@ -104,6 +104,7 @@ export default function POSView() {
     onRemoveSelected: () => { if (cart[0]) removeFromCart(cart[0].product.id); },
     onAddTopResult: handleAddTopResult,
     cartLength: cart.length,
+    raiz: zonaRef,
   });
 
   const handleNewSale = () => {

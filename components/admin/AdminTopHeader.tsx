@@ -6,7 +6,8 @@
  * Header sticky del panel admin (escritorio + mobile). Contiene:
  *  - Botón hamburger (mobile)
  *  - Search bar global con shortcut Ctrl+K
- *  - NotificationBell (desktop)
+ *  - Accesos rápidos al lado del buscador (abren su módulo en un modal)
+ *  - NotificationBell (todos los anchos; abre el centro como modal central)
  *  - Botón "Cerrar día"
  *  - Toggle focus mode (desktop only)
  *  - Toggle presentation mode (desktop only)
@@ -25,6 +26,7 @@ import NotificationBell from "@/components/notifications/NotificationBell";
 import AdminMensajesMenu from "@/components/admin/AdminMensajesMenu";
 import AdminUserDropdown from "@/components/admin/AdminUserDropdown";
 import AdminOptionsDropdown from "@/components/admin/AdminOptionsDropdown";
+import AccesosRapidos from "@/components/admin/header/AccesosRapidos";
 import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { cn } from "@/lib/utils";
 
@@ -203,6 +205,8 @@ export const AdminTopHeader = memo(function AdminTopHeader({
           </kbd>
         </button>
 
+        {/* Brandon 2026-10-10: «accesos directos al lado de Buscar módulos». */}
+        <AccesosRapidos onDarkHeader={isAutoDarkTheme} />
       </div>
 
       {/* Right: actions */}
@@ -236,9 +240,9 @@ export const AdminTopHeader = memo(function AdminTopHeader({
             total sin leer. Eran dos íconos sueltos con badges que competían
             entre sí y llenaban la barra (ADR-132 + Messenger 2026-06-06). */}
         <AdminMensajesMenu onDarkHeader={isAutoDarkTheme} />
-        <div className="hidden @min-[44rem]:block">
-          <NotificationBell onDarkHeader={isAutoDarkTheme} />
-        </div>
+        {/* En todos los anchos (10-10): escondida bajo 44 rem, en el celular
+            no había por dónde llegar a las notificaciones. */}
+        <NotificationBell onDarkHeader={isAutoDarkTheme} />
 
         <AdminOptionsDropdown
           focusMode={focusMode}

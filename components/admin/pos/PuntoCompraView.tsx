@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { hayModalEncima } from "@/lib/keyboard-guards";
 import dynamic from "next/dynamic";
 import { Receipt, ScanLine, ShoppingBasket } from "@buleje/design-system/icons";
 import EnlacePanel from "@/components/admin/shared/EnlacePanel";
@@ -63,10 +64,13 @@ export default function PuntoCompraView() {
     return () => clearTimeout(t);
   }, [toastMsg]);
 
-  // Atajo F2 para el lector de código de barras
+  // Atajo F2 para el lector de código de barras (no con una ventana encima: la tecla es de ella)
+  const raizRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "F2") { e.preventDefault(); setShowScanner((s) => !s); }
+      if (e.key !== "F2" || hayModalEncima(raizRef.current)) return;
+      e.preventDefault();
+      setShowScanner((s) => !s);
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
@@ -75,7 +79,7 @@ export default function PuntoCompraView() {
   const { cart, total, cartTotalQty } = carrito;
 
   return (
-    <div className="print-area">
+    <div ref={raizRef} className="print-area">
       {/* El header del módulo (Compras) lo da el padre ComprasModule. */}
       <CompraBarraControles
         catalogo={catalogo}

@@ -32,7 +32,7 @@
  * quiere ser un módulo.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 
 /** Nivel 1: la vista del módulo. Nivel 2: la del módulo anidado adentro. */
 const PARAM_VISTA = "vista";
@@ -194,6 +194,25 @@ export function useSubvistaModulo<T extends string>(
   );
 }
 
+/**
+ * Un módulo abierto DENTRO de un modal (accesos rápidos de la cabecera,
+ * Brandon 2026-10-10: «que salga su versión modal ahí mismo, no que se vaya a
+ * la página»). La URL es de la pantalla de atrás: adentro, la vista vive en
+ * memoria del componente — no lee `?vista=`/`?sub=`, no los escribe, no sigue
+ * al «atrás» ni toca la memoria del módulo. `vista`/`sub` son las vistas con
+ * las que abre (ganan sobre `forzada`).
+ */
+export interface VistaEmbebida {
+  vista?: string;
+  sub?: string;
+}
+const VistaEmbebidaContext = createContext<VistaEmbebida | null>(null);
+export const VistaEmbebidaProvider = VistaEmbebidaContext.Provider;
+/** `null` = el módulo es la pantalla (la URL manda); objeto = va en un modal. */
+export function useVistaEmbebida(): VistaEmbebida | null {
+  return useContext(VistaEmbebidaContext);
+}
+
 function useVistaEnParam<T extends string>(
   moduleId: string,
   validas: readonly T[],
@@ -212,7 +231,14 @@ function useVistaEnParam<T extends string>(
   const aliasRef = useRef(alias);
   aliasRef.current = alias;
 
+  const embebida = useContext(VistaEmbebidaContext);
   const [vista, setVista] = useState<T>(() => {
+    if (embebida) {
+      const pedida = param === PARAM_VISTA ? embebida.vista : embebida.sub;
+      const valida = pedida ? aVistaValida(pedida, validas, alias) : null;
+      if (valida) return valida as T;
+      return forzada && (validas as readonly string[]).includes(forzada) ? (forzada as T) : porDefecto;
+    }
     if (typeof window === "undefined") {
       return forzada && (validas as readonly string[]).includes(forzada)
         ? (forzada as T)
@@ -236,15 +262,15 @@ function useVistaEnParam<T extends string>(
     return porDefecto;
   });
 
-  // La memoria se escribe siempre, venga la vista de donde venga.
+  // La memoria se escribe siempre, venga la vista de donde venga (no desde un modal).
   useEffect(() => {
-    if (!recordar) return;
+    if (!recordar || embebida) return;
     try {
       localStorage.setItem(storageKey, vista);
     } catch {
       // sin persistencia, sin bug
     }
-  }, [storageKey, vista, recordar]);
+  }, [storageKey, vista, recordar, embebida]);
 
   /**
    * Al montar con una vista que NO viene de la URL (memoria o default), se
@@ -255,6 +281,7 @@ function useVistaEnParam<T extends string>(
   useEffect(() => {
     if (sincronizado.current) return;
     sincronizado.current = true;
+    if (embebida) return;
     // Si la URL ya trae ESA vista, no hay nada que sincronizar; si la decidió el
     // tab alias, la memoria o un nombre viejo (`?vista=analitica`), se escribe
     // el nombre de hoy para que el link sea copiable.
@@ -275,6 +302,7 @@ function useVistaEnParam<T extends string>(
       const v = aVistaValida(pedida, validas, aliasRef.current);
       if (!v) return;
       setVista(v as T);
+      if (embebida) return;
       try {
         const url = new URL(window.location.href);
         const saliendo = url.searchParams.get(param);
@@ -287,18 +315,19 @@ function useVistaEnParam<T extends string>(
         // history no disponible
       }
     },
-    [validas, param],
+    [validas, param, embebida],
   );
 
   /** Atrás/adelante → seguir a la URL. Sin esto el historial mentiría. */
   useEffect(() => {
+    if (embebida) return;
     const onPop = () => {
       const deUrl = vistaDeUrl(validas, param, aliasRef.current);
       if (deUrl) setVista(deUrl as T);
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
-  }, [validas, param]);
+  }, [validas, param, embebida]);
 
   /**
    * Las válidas pueden crecer con el módulo montado: un enlace pide una vista
@@ -308,9 +337,10 @@ function useVistaEnParam<T extends string>(
    * online › Redes un enlace a Apariencia cambiaba la URL y no la pantalla.
    */
   useEffect(() => {
+    if (embebida) return;
     const deUrl = vistaDeUrl(validas, param, aliasRef.current);
     if (deUrl) setVista((actual) => (actual === deUrl ? actual : (deUrl as T)));
-  }, [validas, param]);
+  }, [validas, param, embebida]);
 
   return { vista, irA };
 }

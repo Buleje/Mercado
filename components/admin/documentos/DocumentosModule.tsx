@@ -1988,6 +1988,9 @@ export default function DocumentosModule() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
               <input
                 type="text"
+                // Lo enfoca el acceso «Archivos» de la cabecera (components/admin/header).
+                data-buscar-archivos=""
+                aria-label="Buscar archivos"
                 placeholder={semantic ? "Describe lo que buscas… ej: el contrato del local" : "Buscar por nombre, tag o contenido OCR…"}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}

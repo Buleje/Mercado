@@ -1,188 +1,40 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { m as motion, AnimatePresence } from "framer-motion";
-import {
-  X, CheckCheck, Bell, RefreshCw,
-  AlertTriangle, Package, Clock,
-  ShoppingCart, DollarSign, Calendar, Shield,
-} from "@buleje/design-system/icons";
+/**
+ * Centro de notificaciones: modal central, ordenado y clasificado (Brandon
+ * 2026-10-10). Antes era un panel lateral de 420 px con pestañas que sólo
+ * filtraban las alertas calculadas (Alertas / Vencimientos / Recordatorios):
+ * los avisos guardados no se clasificaban y había 168 textos de menos de 14 px.
+ *
+ * Ahora:
+ *  - `AdminModal` (Radix): centrado, Escape y clic afuera cierran, el foco
+ *    queda adentro y vuelve a la campana. `aboveModals`: es un aviso global y
+ *    puede abrirse con otro modal a la vista.
+ *  - Pestañas por categoría real (`notificaciones-categorias.ts`) con su
+ *    conteo, y «No leídas» (el mismo filtro `unread` del endpoint).
+ *  - Arriba «Para atender ahora» (estado de hoy), abajo los avisos por día.
+ *  - Cada aviso con su acción de 48 px; «Marcar todas leídas» en la cabecera.
+ */
+import { useMemo, useState } from "react";
+import { Bell, CheckCheck, RefreshCw, WifiOff, X } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
+import AdminModal, { CabeceraPropia, MODAL_GUTTER } from "@/components/admin/shared/AdminModal";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { cn } from "@/lib/utils";
-import { useMiRol } from "@/hooks/use-mi-rol";
-import { logger } from "@/lib/logger";
-import { puedePedir } from "@/lib/auth/roles-rutas-panel";
+import AlertaAhoraFila from "./AlertaAhoraFila";
 import NotificationItem from "./NotificationItem";
+import PestanasNotificaciones from "./PestanasNotificaciones";
+import {
+  agruparPorDia,
+  categoriaDeTipo,
+  etiquetaDeCategoria,
+  type FiltroCategoria,
+} from "./notificaciones-categorias";
+import { useAlertasConsolidadas } from "./use-alertas-consolidadas";
 import type {
   NotificationItem as NotificationItemType,
   NotificationFilter,
 } from "./useNotificationCenter";
-
-// ── Tipos para alertas consolidadas ──────────────────────────────────────────
-
-type AlertSource = "sistema" | "stock" | "vencimientos" | "finanzas" | "pedidos" | "recordatorios";
-
-interface ConsolidatedAlert {
-  id: string;
-  source: AlertSource;
-  severity: "critical" | "warning" | "info";
-  title: string;
-  description: string;
-  timestamp: number;
-  action?: { label: string; href?: string; moduleId?: string; tabId?: string };
-}
-
-// ── Tabs del hub ─────────────────────────────────────────────────────────────
-
-type HubTab = "todas" | "alertas" | "vencimientos" | "recordatorios";
-
-const HUB_TABS: { key: HubTab; label: string; icon: React.ElementType }[] = [
-  { key: "todas", label: "Todas", icon: Bell },
-  { key: "alertas", label: "Alertas", icon: AlertTriangle },
-  { key: "vencimientos", label: "Vencimientos", icon: Calendar },
-  { key: "recordatorios", label: "Recordatorios", icon: Clock },
-];
-
-// ── Severity styles ──────────────────────────────────────────────────────────
-
-const SEVERITY_STYLES = {
-  critical: {
-    border: "border-l-red-500",
-    icon: "text-[var(--data-error-500)]",
-    bg: "bg-red-50 dark:bg-red-950/10",
-    badge: "bg-red-100 text-[var(--data-error-700)] dark:bg-red-900/30 dark:text-red-400",
-  },
-  warning: {
-    border: "border-l-amber-400",
-    icon: "text-[var(--data-warning-500)]",
-    bg: "bg-amber-50 dark:bg-amber-950/10",
-    badge: "bg-amber-100 text-[var(--data-warning-700)] dark:bg-amber-900/30 dark:text-amber-400",
-  },
-  info: {
-    border: "border-l-emerald-400",
-    icon: "text-[var(--data-success-500)]",
-    bg: "bg-emerald-50/50 dark:bg-emerald-950/10",
-    badge: "bg-emerald-100 text-[var(--data-success-700)] dark:bg-emerald-900/30 dark:text-emerald-400",
-  },
-};
-
-const SOURCE_ICONS: Record<AlertSource, React.ElementType> = {
-  sistema: Shield,
-  stock: Package,
-  vencimientos: Calendar,
-  finanzas: DollarSign,
-  pedidos: ShoppingCart,
-  recordatorios: Clock,
-};
-
-// ── Skeleton ─────────────────────────────────────────────────────────────────
-
-function SkeletonItem() {
-  return (
-    <div className="px-4 py-3 flex items-start gap-3 animate-pulse">
-      <div className="w-8 h-8 rounded-lg bg-gray-200 dark:bg-surface shrink-0" />
-      <div className="flex-1 space-y-2">
-        <div className="h-3.5 bg-gray-200 dark:bg-surface rounded w-3/4" />
-        <div className="h-3 bg-gray-200 dark:bg-surface rounded w-1/2" />
-        <div className="h-2.5 bg-gray-200 dark:bg-surface rounded w-1/4" />
-      </div>
-    </div>
-  );
-}
-
-// ── Helper: timeAgo ──────────────────────────────────────────────────────────
-
-function timeAgo(ts: number): string {
-  const diffSec = Math.floor((Date.now() - ts) / 1000);
-  if (diffSec < 60) return "ahora";
-  const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `hace ${diffMin} min`;
-  const diffHrs = Math.floor(diffMin / 60);
-  if (diffHrs < 24) return `hace ${diffHrs}h`;
-  return `hace ${Math.floor(diffHrs / 24)}d`;
-}
-
-// ── Grouping ─────────────────────────────────────────────────────────────────
-
-function groupByDay(items: NotificationItemType[]) {
-  const groups: { label: string; items: NotificationItemType[] }[] = [];
-  const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const yesterdayStart = todayStart - 86_400_000;
-  const weekStart = todayStart - 6 * 86_400_000;
-
-  const buckets: Record<string, NotificationItemType[]> = {
-    Hoy: [],
-    Ayer: [],
-    "Esta semana": [],
-    Anteriores: [],
-  };
-
-  for (const item of items) {
-    const t = new Date(item.createdAt).getTime();
-    if (t >= todayStart) buckets["Hoy"].push(item);
-    else if (t >= yesterdayStart) buckets["Ayer"].push(item);
-    else if (t >= weekStart) buckets["Esta semana"].push(item);
-    else buckets["Anteriores"].push(item);
-  }
-
-  for (const [label, list] of Object.entries(buckets)) {
-    if (list.length > 0) groups.push({ label, items: list });
-  }
-
-  return groups;
-}
-
-// ── Alert Item ───────────────────────────────────────────────────────────────
-
-function AlertItem({ alert, onNavigate }: { alert: ConsolidatedAlert; onNavigate?: (moduleId: string, tabId?: string) => void }) {
-  const severity = SEVERITY_STYLES[alert.severity];
-  const SourceIcon = SOURCE_ICONS[alert.source] || Bell;
-
-  const handleActionClick = () => {
-    if (alert.action?.moduleId && onNavigate) {
-      onNavigate(alert.action.moduleId, alert.action.tabId);
-    }
-  };
-
-  return (
-    <div
-      className={cn(
-        "px-4 py-3 border-l-4 flex items-start gap-3 transition-colors hover:bg-gray-50 dark:hover:bg-accent/50",
-        severity.border
-      )}
-    >
-      <div className={cn("shrink-0 w-8 h-8 rounded-lg flex items-center justify-center", severity.bg)}>
-        <SourceIcon className={cn("h-4 w-4", severity.icon)} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-gray-900 dark:text-[var(--text-primary)] leading-tight">
-          {alert.title}
-        </p>
-        <p className="text-xs text-gray-500 dark:text-muted mt-0.5 line-clamp-2">
-          {alert.description}
-        </p>
-        <div className="flex items-center gap-2 mt-1.5">
-          <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">
-            {timeAgo(alert.timestamp)}
-          </span>
-          <span className={cn("text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full", severity.badge)}>
-            {alert.severity === "critical" ? "Urgente" : alert.severity === "warning" ? "Atención" : "Info"}
-          </span>
-          {alert.action && (
-            <button
-              onClick={handleActionClick}
-              className="text-[length:var(--ts-2xs)] font-medium text-primary cursor-pointer hover:underline"
-            >
-              {alert.action.label} →
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Props ────────────────────────────────────────────────────────────────────
 
 type Props = {
   open: boolean;
@@ -190,6 +42,8 @@ type Props = {
   notifications: NotificationItemType[];
   unreadCount: number;
   isLoading: boolean;
+  /** La última lectura falló: se dice en vez de «Todo al día». */
+  cargaFallida?: boolean;
   filter: NotificationFilter;
   setFilter: (f: NotificationFilter) => void;
   markAsRead: (id: string) => void;
@@ -197,7 +51,18 @@ type Props = {
   refetch: () => void;
 };
 
-// ── Component ────────────────────────────────────────────────────────────────
+const BOTON_ICONO =
+  "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]";
+
+function Esqueleto() {
+  return (
+    <div className="space-y-2" aria-hidden>
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="h-24 animate-pulse rounded-xl bg-[var(--surface-sunken)]" />
+      ))}
+    </div>
+  );
+}
 
 export default function NotificationHub({
   open,
@@ -205,468 +70,211 @@ export default function NotificationHub({
   notifications,
   unreadCount,
   isLoading,
+  cargaFallida = false,
   filter,
-  setFilter: _setFilter,
+  setFilter,
   markAsRead,
   markAllRead,
   refetch,
 }: Props) {
-  const panelRef = useRef<HTMLDivElement>(null);
-  // /api/admin/stats sólo deja pasar a admin (roles-rutas-panel): sin este gate
-  // el almacenero recibía 403 al abrir el panel de notificaciones.
-  const rol = useMiRol();
-  const puedeStats = puedePedir("/api/admin/stats", rol);
-  const [hubTab, setHubTab] = useState<HubTab>("todas");
-  const [alerts, setAlerts] = useState<ConsolidatedAlert[]>([]);
-  const [alertsLoading, setAlertsLoading] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [categoria, setCategoria] = useState<FiltroCategoria>("todas");
+  const [recarga, setRecarga] = useState(0);
+  const { alertas, cargando: cargandoAlertas } = useAlertasConsolidadas(open, recarga);
+  const soloSinLeer = filter === "unread";
 
-  // Fetch consolidated alerts from multiple sources when panel opens
-  useEffect(() => {
-    if (!open) return;
-    let cancelled = false;
-
-    async function loadAlerts() {
-    setAlertsLoading(true);
-    const consolidated: ConsolidatedAlert[] = [];
-
-    try {
-      // Fetch stats (stock bajo, pedidos pendientes, pagos vencidos)
-      const [statsRes, batchRes, remindersRes] = await Promise.all([
-        puedeStats
-          ? fetch("/api/admin/stats", { credentials: "include" }).catch((err) => { logger.warn("[notification-hub] stats no respondió", { error: String(err) }); return null; })
-          : Promise.resolve(null),
-        fetch("/api/batches/expiring", { credentials: "include" }).catch((err) => { logger.warn("[notification-hub] lotes por vencer no respondió", { error: String(err) }); return null; }),
-        fetch("/api/reminders", { credentials: "include" }).catch((err) => { logger.warn("[notification-hub] recordatorios no respondió", { error: String(err) }); return null; }),
-      ]);
-
-      // Stats → alertas de stock, pedidos, finanzas
-      if (statsRes?.ok) {
-        const stats = await statsRes.json();
-        if (stats?.lowStockProducts > 0) {
-          consolidated.push({
-            id: "stock-bajo",
-            source: "stock",
-            severity: stats.lowStockProducts > 10 ? "critical" : "warning",
-            title: `${stats.lowStockProducts} productos con stock bajo`,
-            description: "Revisa tu inventario — hay productos que se están acabando",
-            timestamp: Date.now(),
-            action: { label: "Ver inventario", moduleId: "inventario", tabId: "alertas-stock" },
-          });
-        }
-        if (stats?.pendingOrders > 0) {
-          consolidated.push({
-            id: "pedidos-pendientes",
-            source: "pedidos",
-            severity: stats.pendingOrders > 5 ? "critical" : "warning",
-            title: `${stats.pendingOrders} pedidos pendientes`,
-            description: "Tienes pedidos que necesitan atención",
-            timestamp: Date.now(),
-            action: { label: "Ver pedidos", moduleId: "pedidos", tabId: "pedidos" },
-          });
-        }
-        if (stats?.overduePayables > 0) {
-          consolidated.push({
-            id: "pagos-vencidos",
-            source: "finanzas",
-            severity: "warning",
-            title: `${stats.overduePayables} pagos a proveedores vencidos`,
-            description: "Tienes deudas con proveedores que ya pasaron su fecha",
-            timestamp: Date.now(),
-            action: { label: "Ver deudas", moduleId: "compras", tabId: "cuentas-pagar" },
-          });
-        }
-      }
-
-      // Batch expiry → alertas de vencimiento
-      if (batchRes?.ok) {
-        const batches = await batchRes.json();
-        const items = Array.isArray(batches) ? batches : batches?.items ?? [];
-        const now = new Date();
-        now.setHours(0, 0, 0, 0);
-
-        let critical = 0;
-        let warning = 0;
-        for (const b of items) {
-          const exp = new Date(b.expiryDate || b.fechaVencimiento);
-          const days = Math.round((exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-          if (days <= 3) critical++;
-          else if (days <= 7) warning++;
-        }
-
-        if (critical > 0) {
-          consolidated.push({
-            id: "vencimiento-critico",
-            source: "vencimientos",
-            severity: "critical",
-            title: `${critical} productos vencen en 3 días o menos`,
-            description: "¡Vende o retira estos productos antes de que venzan!",
-            timestamp: Date.now(),
-            action: { label: "Ver lotes", moduleId: "inventario", tabId: "lotes" },
-          });
-        }
-        if (warning > 0) {
-          consolidated.push({
-            id: "vencimiento-pronto",
-            source: "vencimientos",
-            severity: "warning",
-            title: `${warning} productos vencen esta semana`,
-            description: "Ponlos en oferta para que salgan rápido",
-            timestamp: Date.now(),
-            action: { label: "Ver lotes", moduleId: "inventario", tabId: "lotes" },
-          });
-        }
-      }
-
-      // Reminders → recordatorios
-      if (remindersRes?.ok) {
-        const reminders = await remindersRes.json();
-        const list = Array.isArray(reminders) ? reminders : [];
-        const pending = list.filter((r: { status: string }) => r.status === "pendiente");
-        const overdue = list.filter((r: { status: string }) => r.status === "vencido");
-        const highPriority = pending.filter((r: { priority: string }) => r.priority === "alta");
-
-        if (overdue.length > 0) {
-          consolidated.push({
-            id: "recordatorios-vencidos",
-            source: "recordatorios",
-            severity: "critical",
-            title: `${overdue.length} recordatorio${overdue.length > 1 ? "s" : ""} vencido${overdue.length > 1 ? "s" : ""}`,
-            description: "Tienes tareas que ya pasaron su fecha límite",
-            timestamp: Date.now(),
-          });
-        }
-        if (highPriority.length > 0) {
-          consolidated.push({
-            id: "recordatorios-alta",
-            source: "recordatorios",
-            severity: "warning",
-            title: `${highPriority.length} recordatorio${highPriority.length > 1 ? "s" : ""} de alta prioridad`,
-            description: "Tareas importantes que necesitan tu atención hoy",
-            timestamp: Date.now(),
-          });
-        }
-      }
-    } catch {
-      // Silent fail — graceful degradation
+  const conteos = useMemo(() => {
+    const c: Record<string, number> = { todas: notifications.length + alertas.length };
+    for (const n of notifications) {
+      const id = categoriaDeTipo(n.type);
+      c[id] = (c[id] ?? 0) + 1;
     }
+    for (const a of alertas) c[a.categoria] = (c[a.categoria] ?? 0) + 1;
+    return c;
+  }, [notifications, alertas]);
 
-    // Sort: critical first, then warning, then info
-    const severityOrder = { critical: 0, warning: 1, info: 2 };
-    consolidated.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
+  const avisos = useMemo(
+    () =>
+      categoria === "todas"
+        ? notifications
+        : notifications.filter((n) => categoriaDeTipo(n.type) === categoria),
+    [notifications, categoria],
+  );
+  const ahora = useMemo(
+    () => (categoria === "todas" ? alertas : alertas.filter((a) => a.categoria === categoria)),
+    [alertas, categoria],
+  );
+  const grupos = useMemo(() => agruparPorDia(avisos), [avisos]);
+  const nombreCategoria = categoria === "todas" ? null : etiquetaDeCategoria(categoria);
+  const sinNada = !isLoading && !cargaFallida && avisos.length === 0 && ahora.length === 0;
 
-    if (!cancelled) {
-      setAlerts(consolidated);
-      setAlertsLoading(false);
-    }
-    }
-
-    loadAlerts();
-    return () => { cancelled = true; };
-  }, [open, refreshKey, puedeStats]);
-
-  // Total alert count for badge
-  const totalAlertCount = useMemo(() => {
-    const critical = alerts.filter(a => a.severity === "critical").length;
-    return critical + unreadCount;
-  }, [alerts, unreadCount]);
-
-  // Filtered alerts by hub tab
-  const filteredAlerts = useMemo(() => {
-    if (hubTab === "todas") return alerts;
-    if (hubTab === "alertas") return alerts.filter(a => a.source === "stock" || a.source === "pedidos" || a.source === "finanzas" || a.source === "sistema");
-    if (hubTab === "vencimientos") return alerts.filter(a => a.source === "vencimientos");
-    if (hubTab === "recordatorios") return alerts.filter(a => a.source === "recordatorios");
-    return alerts;
-  }, [alerts, hubTab]);
-
-  // Close on click outside
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-        onClose();
-      }
-    };
-    const timeout = setTimeout(() => {
-      document.addEventListener("mousedown", handler);
-    }, 100);
-    return () => {
-      clearTimeout(timeout);
-      document.removeEventListener("mousedown", handler);
-    };
-  }, [open, onClose]);
-
-  // Close on Escape
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [open, onClose]);
-
-  const groups = groupByDay(notifications);
-  const _notifFilter = filter;
-
-  // Navigate to module from alert action
-  const handleAlertNavigate = useCallback((moduleId: string, tabId?: string) => {
-    // Dispatch custom event that admin page listens to
-    window.dispatchEvent(new CustomEvent("admin:navigate", { detail: { moduleId, tabId } }));
-    onClose();
-  }, [onClose]);
+  const actualizar = () => {
+    refetch();
+    setRecarga((k) => k + 1);
+  };
 
   return (
-    <AnimatePresence>
-      {open && (
-        <>
-          {/* Overlay */}
-          <motion.div
-            key="hub-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/20 dark:bg-black/40"
-            style={{ zIndex: 60 }}
-            aria-hidden="true"
-          />
-
-          {/* Panel */}
-          <motion.div
-            key="hub-panel"
-            ref={panelRef}
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
-            transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className="fixed right-0 top-0 bottom-0 w-full sm:w-[420px] bg-[var(--surface-raised)] border-l border-[var(--rule-base)] shadow-[var(--shadow-xl)] flex flex-col"
-            style={{ zIndex: 61 }}
-          >
-            {/* Header */}
-            <div className="px-4 py-3 border-b border-[var(--rule-base)] flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Bell className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <h2 className="font-bold text-gray-900 dark:text-[var(--text-primary)] text-sm">
-                    Centro de Notificaciones
-                  </h2>
-                  <p className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">
-                    Todo lo que necesitas saber en un solo lugar
-                  </p>
-                </div>
-                {totalAlertCount > 0 && (
-                  <span className="text-xs bg-[var(--data-error-500)] text-white font-bold px-1.5 py-0.5 rounded-full min-w-5 text-center">
-                    {totalAlertCount > 99 ? "99+" : totalAlertCount}
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-1">
+    <AdminModal
+      open={open}
+      onClose={onClose}
+      variant="wide"
+      className="sm:max-w-[52rem]"
+      hideCloseButton
+      aboveModals
+      claveVentana="centro-de-notificaciones"
+    >
+      {/* Alto propio con tope: la cabecera y las categorías quedan fijas y sólo
+          la lista se desliza (a 400 px y con 100 avisos, la fila de categorías
+          no se va con el scroll). */}
+      <div className="flex max-h-[85vh] flex-col sm:max-h-[min(44rem,80vh)]">
+        <div className="shrink-0 border-b border-[var(--rule-base)] bg-[var(--surface-raised)]">
+          <CabeceraPropia
+            className={cn("flex items-center justify-between gap-2 py-2", MODAL_GUTTER)}
+            acciones={
+              <>
                 <button
-                  onClick={() => { refetch(); setRefreshKey(k => k + 1); }}
-                  className="p-1.5 rounded-lg text-gray-400 hover:text-primary hover:bg-gray-100 dark:hover:bg-accent transition-colors"
-                  title="Actualizar todo"
+                  type="button"
+                  onClick={actualizar}
+                  className={BOTON_ICONO}
+                  aria-label="Actualizar"
+                  title="Actualizar"
                 >
-                  <RefreshCw className={cn("h-4 w-4", (isLoading || alertsLoading) && "animate-spin")} />
+                  <RefreshCw
+                    className={cn("h-5 w-5", (isLoading || cargandoAlertas) && "animate-spin")}
+                    aria-hidden
+                  />
                 </button>
                 <button
+                  type="button"
+                  onClick={() => unreadCount > 0 && markAllRead()}
+                  aria-disabled={unreadCount === 0}
+                  aria-label="Marcar todas como leídas"
+                  title="Marcar todas como leídas"
+                  className={cn(
+                    BOTON_ICONO,
+                    "sm:w-auto sm:gap-2 sm:px-3 sm:text-sm sm:font-semibold aria-disabled:opacity-50",
+                  )}
+                >
+                  <CheckCheck className="h-5 w-5" aria-hidden />
+                  <span className="hidden sm:inline">Marcar todas leídas</span>
+                </button>
+                <button
+                  type="button"
                   onClick={onClose}
-                  className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-[var(--text-primary)] hover:bg-gray-100 dark:hover:bg-accent transition-colors"
+                  className={BOTON_ICONO}
+                  aria-label="Cerrar"
                   title="Cerrar (Esc)"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-5 w-5" aria-hidden />
                 </button>
-              </div>
-            </div>
-
-            {/* Hub Tabs */}
-            <div className="px-3 py-2 border-b border-[var(--rule-base)] flex gap-1 shrink-0 overflow-x-auto">
-              {HUB_TABS.map((tab) => {
-                const TabIcon = tab.icon;
-                const count = tab.key === "todas"
-                  ? alerts.length + unreadCount
-                  : tab.key === "alertas"
-                    ? alerts.filter(a => a.source !== "vencimientos" && a.source !== "recordatorios").length
-                    : tab.key === "vencimientos"
-                      ? alerts.filter(a => a.source === "vencimientos").length
-                      : alerts.filter(a => a.source === "recordatorios").length;
-                return (
-                  <button
-                    key={tab.key}
-                    onClick={() => setHubTab(tab.key)}
-                    className={cn(
-                      "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap",
-                      hubTab === tab.key
-                        ? "bg-primary text-white"
-                        : "text-gray-500 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
-                    )}
-                  >
-                    <TabIcon className="h-3 w-3" />
-                    {tab.label}
-                    {count > 0 && (
-                      <span className={cn(
-                        "text-[length:var(--ts-2xs)] font-bold px-1 py-0 rounded-full min-w-3.5 text-center",
-                        hubTab === tab.key ? "bg-white/20 text-white" : "bg-gray-200 dark:bg-surface text-gray-600 dark:text-muted"
-                      )}>
-                        {count > 99 ? "99+" : count}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto">
-              {hubTab === "todas" ? (
-                <>
-                  {/* Critical alerts first */}
-                  {alerts.filter(a => a.severity === "critical").length > 0 && (
-                    <div>
-                      <div className="px-4 py-2 bg-red-50 dark:bg-red-950/20 border-b border-red-100 dark:border-red-900/30">
-                        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-600)] dark:text-red-400 uppercase tracking-wider flex items-center gap-1">
-                          <AlertTriangle className="h-3 w-3" /> Urgente
-                        </span>
-                      </div>
-                      {alerts.filter(a => a.severity === "critical").map(alert => (
-                        <AlertItem key={alert.id} alert={alert} onNavigate={handleAlertNavigate} />
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Warning alerts */}
-                  {alerts.filter(a => a.severity === "warning").length > 0 && (
-                    <div>
-                      <div className="px-4 py-2 bg-amber-50 dark:bg-amber-950/20 border-b border-amber-100 dark:border-amber-900/30">
-                        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-600)] dark:text-amber-400 uppercase tracking-wider flex items-center gap-1">
-                          <AlertTriangle className="h-3 w-3" /> Atención
-                        </span>
-                      </div>
-                      {alerts.filter(a => a.severity === "warning").map(alert => (
-                        <AlertItem key={alert.id} alert={alert} onNavigate={handleAlertNavigate} />
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Divider */}
-                  {alerts.length > 0 && notifications.length > 0 && (
-                    <div className="px-4 py-2 bg-gray-50 dark:bg-surface/50 border-y border-[var(--rule-base)] flex items-center justify-between">
-                      <span className="text-[length:var(--ts-2xs)] font-bold text-gray-500 dark:text-muted uppercase tracking-wider">
-                        Notificaciones recientes
-                      </span>
-                      {unreadCount > 0 && (
-                        <button
-                          onClick={markAllRead}
-                          className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-medium text-primary hover:underline"
-                        >
-                          <CheckCheck className="h-3 w-3" />
-                          Leer todo
-                        </button>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Notifications */}
-                  {isLoading ? (
-                    <>
-                      <SkeletonItem />
-                      <SkeletonItem />
-                      <SkeletonItem />
-                    </>
-                  ) : notifications.length === 0 && alerts.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-                      <div className="w-14 h-14 rounded-2xl bg-green-50 dark:bg-green-950/30 flex items-center justify-center mb-4">
-                        <CheckCheck className="h-7 w-7 text-green-500" />
-                      </div>
-                      <p className="font-semibold text-gray-900 dark:text-[var(--text-primary)] text-sm">
-                        Todo al día
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-muted mt-1">
-                        No tienes notificaciones ni alertas pendientes
-                      </p>
-                    </div>
-                  ) : (
-                    groups.map((group) => (
-                      <div key={group.label}>
-                        <div className="px-4 py-2 bg-gray-50 dark:bg-surface/50 border-b border-[var(--rule-base)]">
-                          <span className="text-[length:var(--ts-2xs)] font-semibold text-gray-400 dark:text-muted uppercase tracking-wider">
-                            {group.label}
-                          </span>
-                        </div>
-                        {group.items.map((notif) => (
-                          <NotificationItem
-                            key={notif.id}
-                            notification={notif}
-                            onMarkRead={markAsRead}
-                          />
-                        ))}
-                      </div>
-                    ))
-                  )}
-                </>
-              ) : (
-                /* Filtered views for alertas/vencimientos/recordatorios */
-                <>
-                  {alertsLoading ? (
-                    <>
-                      <SkeletonItem />
-                      <SkeletonItem />
-                    </>
-                  ) : filteredAlerts.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-                      <div className="w-14 h-14 rounded-2xl bg-green-50 dark:bg-green-950/30 flex items-center justify-center mb-4">
-                        <CheckCheck className="h-7 w-7 text-green-500" />
-                      </div>
-                      <p className="font-semibold text-gray-900 dark:text-[var(--text-primary)] text-sm">
-                        Sin {hubTab === "alertas" ? "alertas" : hubTab === "vencimientos" ? "vencimientos" : "recordatorios"}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-muted mt-1">
-                        {hubTab === "alertas"
-                          ? "No hay alertas de stock, pedidos ni finanzas"
-                          : hubTab === "vencimientos"
-                            ? "Ningún producto está por vencer próximamente"
-                            : "No tienes recordatorios pendientes"}
-                      </p>
-                    </div>
-                  ) : (
-                    filteredAlerts.map(alert => (
-                      <AlertItem key={alert.id} alert={alert} onNavigate={handleAlertNavigate} />
-                    ))
-                  )}
-                </>
+              </>
+            }
+          >
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="hidden h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 sm:grid text-[var(--accent-ink)] dark:bg-primary/20 dark:text-[var(--accent)]">
+                <Bell className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+              </span>
+              <h2 className="truncate font-display text-lg font-semibold tracking-tight text-[var(--text-primary)]">
+                Notificaciones
+              </h2>
+              {unreadCount > 0 && (
+                <span className="shrink-0 rounded-full bg-[var(--data-error-500)]/10 px-2 py-0.5 text-sm font-bold tabular-nums text-[var(--data-error-ink)]">
+                  {unreadCount > 999 ? "999+" : unreadCount}
+                  <span className="sr-only"> sin leer</span>
+                </span>
               )}
             </div>
+          </CabeceraPropia>
+        </div>
 
-            {/* Footer summary */}
-            {alerts.length > 0 && (
-              <div className="px-4 py-2.5 border-t border-[var(--rule-base)] bg-gray-50 dark:bg-surface/50 shrink-0">
-                <div className="flex items-center justify-between text-[length:var(--ts-2xs)]">
-                  <div className="flex items-center gap-3">
-                    {alerts.filter(a => a.severity === "critical").length > 0 && (
-                      <span className="flex items-center gap-1 text-[var(--data-error-600)] dark:text-red-400 font-bold">
-                        <span className="w-2 h-2 rounded-full bg-[var(--data-error-500)] animate-pulse" />
-                        {alerts.filter(a => a.severity === "critical").length} urgente{alerts.filter(a => a.severity === "critical").length > 1 ? "s" : ""}
-                      </span>
-                    )}
-                    {alerts.filter(a => a.severity === "warning").length > 0 && (
-                      <span className="flex items-center gap-1 text-[var(--data-warning-600)] dark:text-amber-400 font-medium">
-                        <span className="w-2 h-2 rounded-full bg-[var(--data-warning-500)]" />
-                        {alerts.filter(a => a.severity === "warning").length} atención
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-gray-400 dark:text-muted">
-                    Actualizado ahora
-                  </span>
-                </div>
-              </div>
+        <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+          <PestanasNotificaciones
+            categoria={categoria}
+            onCategoria={setCategoria}
+            conteos={conteos}
+            soloSinLeer={soloSinLeer}
+            onSoloSinLeer={(v) => setFilter(v ? "unread" : "all")}
+            ayuda={
+              /* Al final de la fila, no al lado del título: el foco inicial del
+               modal va al primer control, y un ⓘ primero se abría solo al
+               entrar con teclado (tecla N). */
+              <InfoTip
+                title="Notificaciones"
+                what="Arriba, lo que hay que atender hoy (stock bajo, pedidos pendientes, lotes por vencer). Abajo, los avisos que dejó el sistema, del más nuevo al más viejo."
+                affects="El número rojo son los avisos sin leer de todo el negocio; las pestañas cuentan los 100 más recientes. «Marcar todas leídas» marca todos, no sólo los de la pestaña."
+                example="Un aviso de adelantos vencidos: «Ver cobranza» lo marca leído y te lleva a Mi Plata › Adelantos."
+                side="bottom"
+              />
+            }
+          />
+
+          <div className={cn("min-h-0 flex-1 space-y-5 overflow-y-auto py-4", MODAL_GUTTER)}>
+            {ahora.length > 0 && (
+              <section aria-labelledby="notif-ahora" className="space-y-2">
+                <CardTitle
+                  id="notif-ahora"
+                  className="text-sm font-bold text-[var(--text-secondary)]"
+                >
+                  Para atender ahora
+                </CardTitle>
+                {ahora.map((a) => (
+                  <AlertaAhoraFila key={a.id} alerta={a} onNavegar={onClose} />
+                ))}
+              </section>
             )}
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+
+            {cargaFallida && avisos.length === 0 ? (
+              <div
+                role="alert"
+                className="flex items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3"
+              >
+                <WifiOff className="h-5 w-5 shrink-0 text-[var(--text-secondary)]" aria-hidden />
+                <p className="flex-1 text-sm text-[var(--text-primary)]">
+                  No se pudieron traer los avisos.
+                </p>
+                <button
+                  type="button"
+                  onClick={actualizar}
+                  className="h-12 rounded-xl px-3 text-sm font-semibold text-[var(--accent-ink)] hover:bg-[var(--accent)]/10 dark:text-[var(--accent)]"
+                >
+                  Reintentar
+                </button>
+              </div>
+            ) : isLoading && avisos.length === 0 ? (
+              <Esqueleto />
+            ) : sinNada ? (
+              <div className="flex flex-col items-center gap-2 py-10 text-center">
+                <span
+                  className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--data-success-500)]/10"
+                  aria-hidden
+                >
+                  <CheckCheck className="h-6 w-6 text-[var(--data-success-ink)]" />
+                </span>
+                <p className="text-base font-semibold text-[var(--text-primary)]">Todo al día</p>
+                <p className="text-sm text-[var(--text-secondary)]">
+                  {soloSinLeer ? "No te queda nada sin leer" : "No tienes avisos"}
+                  {nombreCategoria ? ` en ${nombreCategoria}.` : "."}
+                </p>
+              </div>
+            ) : (
+              grupos.map((g) => (
+                <section key={g.grupo} aria-label={g.grupo} className="space-y-2">
+                  <CardTitle className="text-sm font-bold text-[var(--text-secondary)]">
+                    {g.grupo}
+                  </CardTitle>
+                  {g.items.map((n) => (
+                    <NotificationItem
+                      key={n.id}
+                      notification={n}
+                      onMarkRead={markAsRead}
+                      onNavegar={onClose}
+                    />
+                  ))}
+                </section>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    </AdminModal>
   );
 }

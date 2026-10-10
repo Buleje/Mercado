@@ -119,21 +119,22 @@ interface NotificationBellProps {
 }
 
 export default function NotificationBell({ onDarkHeader = false }: NotificationBellProps) {
+  const [open, setOpen] = useState(false);
   const {
     notifications,
     unreadCount,
     isLoading,
+    cargaFallida,
     filter,
     setFilter,
     markAsRead,
     markAllRead,
     refetch,
-  } = useNotificationCenter();
+  } = useNotificationCenter(open);
 
   const criticalCount = useCriticalAlertCount();
   const totalBadge = unreadCount + criticalCount;
 
-  const [open, setOpen] = useState(false);
   const [pulse, setPulse] = useState(false);
   const prevCount = useRef(unreadCount);
   const prevCritical = useRef(criticalCount);
@@ -178,12 +179,18 @@ export default function NotificationBell({ onDarkHeader = false }: NotificationB
   return (
     <>
       <button
+        type="button"
         onClick={toggle}
+        // 48 px como el resto de la cabecera (eran 32): el centro ahora es un
+        // modal (`aria-haspopup="dialog"`) y el nombre accesible dice cuántos hay.
+        aria-label={`Notificaciones${totalBadge > 0 ? `, ${totalBadge} pendientes` : ""}`}
+        aria-haspopup="dialog"
+        aria-expanded={open}
         title={`Notificaciones${totalBadge > 0 ? ` (${totalBadge} pendientes)` : ""} — tecla N`}
         className={cn(
-          "relative flex items-center justify-center h-8 w-8 rounded-lg transition-colors",
+          "relative flex items-center justify-center h-12 w-12 shrink-0 rounded-xl transition-colors",
           open && "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
-          !open && !onDarkHeader && "text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-primary",
+          !open && !onDarkHeader && "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]",
           // onDarkHeader usa el token en vez de la clase literal `text-gray-400`
           // a propósito: `globals.css` tiene `.dark .text-gray-400 { ...
           // !important }` (parche WCAG P1 2026-05-08) que le gana a CUALQUIER
@@ -192,12 +199,12 @@ export default function NotificationBell({ onDarkHeader = false }: NotificationB
           !open && onDarkHeader && "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--accent)] sm:text-white/60 sm:hover:bg-white/10 sm:hover:text-white"
         )}
       >
-        <Bell className={cn("h-4 w-4", pulse && "animate-bounce")} />
+        <Bell className={cn("h-5 w-5", pulse && "animate-bounce")} aria-hidden />
         {/* Badge */}
         {totalBadge > 0 && (
           <span
             className={cn(
-              "absolute -top-1 -right-1 min-w-4.5 h-4.5 flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-white rounded-full px-1 shadow-sm",
+              "absolute top-1 right-1 min-w-4.5 h-4.5 flex items-center justify-center text-[length:var(--ts-2xs)] font-bold text-white rounded-full px-1 shadow-sm",
               criticalCount > 0 ? "bg-[var(--data-error-600)] animate-pulse" : "bg-[var(--data-error-500)]",
               pulse && "animate-pulse"
             )}
@@ -213,6 +220,7 @@ export default function NotificationBell({ onDarkHeader = false }: NotificationB
         notifications={notifications}
         unreadCount={unreadCount}
         isLoading={isLoading}
+        cargaFallida={cargaFallida}
         filter={filter}
         setFilter={setFilter}
         markAsRead={markAsRead}

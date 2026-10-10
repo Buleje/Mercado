@@ -1,233 +1,217 @@
 "use client";
 
-import React, { useState } from "react";
+/**
+ * Un aviso del centro de notificaciones (rediseño 10-10, modal central).
+ *
+ * Antes la fila entera era un botón que marcaba leído y navegaba con
+ * `window.location.href` (recargaba el panel; un enlace de WhatsApp se llevaba
+ * el panel entero). Ahora la fila se lee y las acciones son botones propios
+ * de 48 px: «Ir a…» (marca leído y navega sin recargar, o abre WhatsApp en
+ * otra pestaña) y «Marcar como leída».
+ */
+import { useState } from "react";
 import {
-  CreditCard,
-  Package,
-  TrendingUp,
-  Clock,
   AlertTriangle,
-  Truck,
-  Target,
-  UserMinus,
   BellRing,
-  Loader2,
-} from "lucide-react";
+  Camera,
+  Check,
+  Clock,
+  CreditCard,
+  ExternalLink,
+  FileText,
+  Package,
+  ShoppingBag,
+  Target,
+  TrendingUp,
+  Trees,
+  Truck,
+  UserMinus,
+  UserPlus,
+  Wallet,
+  type LucideIcon,
+} from "@buleje/design-system/icons";
 import { useMiRol } from "@/hooks/use-mi-rol";
-import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
+import CobroExpressFiado from "./CobroExpressFiado";
+import {
+  abrirAccionDeAviso,
+  categoriaDeTipo,
+  cuandoFue,
+  esEnlaceExterno,
+  etiquetaDeCategoria,
+} from "./notificaciones-categorias";
 import type { NotificationItem as NotificationItemType } from "./useNotificationCenter";
 
-const SEVERITY_BORDER: Record<string, string> = {
-  HIGH: "border-l-red-500",
-  MEDIUM: "border-l-amber-400",
-  LOW: "border-l-emerald-400",
-};
-
-const TYPE_ICON: Record<string, React.ComponentType<{ className?: string }>> = {
+const ICONO_DE_TIPO: Record<string, LucideIcon> = {
   FIADO_VENCIDO: CreditCard,
+  FIADO_REMINDER: CreditCard,
+  ADELANTO_VENCIDO: Wallet,
   STOCK_CRITICO: Package,
+  forecast_daily: TrendingUp,
   VENTA_ALTA: TrendingUp,
   TURNO_SIN_CERRAR: Clock,
   DIFERENCIA_CAJA: AlertTriangle,
   PROVEEDOR_VENCIDO: Truck,
   META_ALCANZADA: Target,
   CLIENTE_INACTIVO: UserMinus,
+  CLIENTE_NUEVO: UserPlus,
+  marketplace_order: ShoppingBag,
+  CARRITO_ABANDONADO: ShoppingBag,
+  DRIVER_APPLICATION: Truck,
+  camaras: Camera,
+  DOCUMENTO_VENCIMIENTO: FileText,
+  DOCUMENTO_APROBACION: FileText,
+  CTP_PLAZO_SERFOR: Trees,
+  LOTH_PLAZO_SERFOR: Trees,
+  CACAO_BENEFICIO_ATENCION: Trees,
 };
 
-const SEVERITY_ICON_COLOR: Record<string, string> = {
-  HIGH: "text-[var(--data-error-500)]",
-  MEDIUM: "text-[var(--data-warning-500)]",
-  LOW: "text-[var(--data-success-500)]",
+/** Franja e ícono por gravedad. Ícono en `-ink`: el -500 del aviso medio da 2:1 sobre blanco. */
+const TONO: Record<string, { franja: string; icono: string; chip: string }> = {
+  HIGH: {
+    franja: "border-l-[var(--data-error-500)]",
+    icono: "text-[var(--data-error-ink)]",
+    chip: "bg-[var(--data-error-500)]/10",
+  },
+  MEDIUM: {
+    franja: "border-l-[var(--data-warning-500)]",
+    icono: "text-[var(--data-warning-ink)]",
+    chip: "bg-[var(--data-warning-500)]/10",
+  },
+  LOW: {
+    franja: "border-l-[var(--data-success-500)]",
+    icono: "text-[var(--data-success-ink)]",
+    chip: "bg-[var(--data-success-500)]/10",
+  },
 };
 
-function timeAgo(dateStr: string): string {
-  const now = Date.now();
-  const then = new Date(dateStr).getTime();
-  const diffMs = now - then;
-  const diffMin = Math.floor(diffMs / 60_000);
-  const diffH = Math.floor(diffMs / 3_600_000);
-  const diffD = Math.floor(diffMs / 86_400_000);
-
-  if (diffMin < 1) return "ahora";
-  if (diffMin < 60) return `hace ${diffMin} min`;
-  if (diffH < 24) return `hace ${diffH}h`;
-  if (diffD === 1) return "ayer";
-  if (diffD < 7) return `hace ${diffD} días`;
-  return new Date(dateStr).toLocaleDateString("es-PE", { day: "numeric", month: "short" });
-}
+const BOTON =
+  "inline-flex h-12 items-center justify-center gap-1.5 rounded-xl px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]";
 
 type Props = {
   notification: NotificationItemType;
   onMarkRead: (id: string) => void;
+  /** Se llamó cuando la acción navegó DENTRO del panel (el modal se cierra). */
+  onNavegar?: () => void;
 };
 
-export default function NotificationItem({ notification, onMarkRead }: Props) {
-  const isUnread = !notification.readAt;
-  const Icon = TYPE_ICON[notification.type] || BellRing;
-  const borderColor = SEVERITY_BORDER[notification.severity] || "border-l-gray-300";
-  const iconColor = SEVERITY_ICON_COLOR[notification.severity] || "text-gray-400";
+export default function NotificationItem({ notification: n, onMarkRead, onNavegar }: Props) {
+  const sinLeer = !n.readAt;
+  const Icono = ICONO_DE_TIPO[n.type] ?? BellRing;
+  const tono = TONO[n.severity] ?? TONO.LOW;
+  const externo = n.actionUrl ? esEnlaceExterno(n.actionUrl) : false;
 
-  // Mejora M-8: Cobro express inline
-  const [showCobroExpress, setShowCobroExpress] = useState(false);
-  const [cobroMonto, setCobroMonto] = useState("");
-  const [cobroLoading, setCobroLoading] = useState(false);
-  const [cobroDone, setCobroDone] = useState(false);
-  const [cobroError, setCobroError] = useState<string | null>(null);
-  // /api/fiados/[id]/pagar pide admin o cajero (owner y manager pasan como admin): el resto no ve el botón.
+  // /api/fiados/[id]/pagar pide admin o cajero (owner y manager pasan como admin): el resto no ve «Cobrar».
   const rol = useMiRol();
   const puedeCobrar = rol === "admin" || rol === "cajero" || rol === "owner" || rol === "manager";
+  const conCobro = n.type === "FIADO_VENCIDO" && puedeCobrar && Boolean(n.entityId);
+  const [cobrando, setCobrando] = useState(false);
+  const [cobrado, setCobrado] = useState(false);
 
-  const handleClick = () => {
-    if (isUnread) onMarkRead(notification.id);
-    if (notification.actionUrl) {
-      window.location.href = notification.actionUrl;
-    }
+  const irALaAccion = () => {
+    if (!n.actionUrl) return;
+    if (sinLeer) onMarkRead(n.id);
+    if (abrirAccionDeAviso(n.actionUrl)) onNavegar?.();
   };
 
-  const isFiadoVencido = notification.type === "FIADO_VENCIDO";
-
   return (
-    <div className="w-full">
-      {/* La fila entera es clickeable pero NO puede ser un `<button>`: adentro
-          vive el botón «Cobrar», y un botón dentro de otro es anidado inválido
-          — el navegador lo desarma al parsear y React avisa. */}
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={handleClick}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            handleClick();
-          }
-        }}
-        className={cn(
-          "w-full cursor-pointer text-left px-4 py-3 border-l-4 transition-colors duration-[var(--dur-fast)] hover:bg-gray-50 dark:hover:bg-accent/50 flex items-start gap-3 group",
-          borderColor,
-          isUnread ? "bg-emerald-50/50 dark:bg-emerald-950/10" : "bg-transparent"
-        )}
-      >
-        {/* Icon */}
-        <div
-          className={cn(
-            "shrink-0 w-8 h-8 rounded-lg flex items-center justify-center mt-0.5",
-            isUnread ? "bg-[var(--surface-raised)] shadow-sm" : "bg-gray-100 dark:bg-surface"
-          )}
+    <article
+      data-notificacion={n.id}
+      className={cn(
+        "rounded-xl border border-l-4 border-[var(--rule-base)] px-3 py-3 transition-colors",
+        tono.franja,
+        sinLeer ? "bg-[var(--surface-raised)]" : "bg-[var(--surface-sunken)]",
+      )}
+    >
+      <div className="flex items-start gap-3">
+        <span
+          className={cn("grid h-10 w-10 shrink-0 place-items-center rounded-xl", tono.chip)}
+          aria-hidden
         >
-          <Icon className={cn("h-4 w-4", iconColor)} />
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 min-w-0">
+          <Icono className={cn("h-5 w-5", tono.icono)} />
+        </span>
+        <div className="min-w-0 flex-1">
           <p
             className={cn(
-              "text-sm leading-tight",
-              isUnread
-                ? "font-semibold text-gray-900 dark:text-[var(--text-primary)]"
-                : "font-normal text-gray-600 dark:text-muted"
+              "text-sm leading-snug text-[var(--text-primary)]",
+              sinLeer ? "font-bold" : "font-medium",
             )}
           >
-            {notification.title}
+            {sinLeer && <span className="sr-only">Sin leer: </span>}
+            {n.title}
           </p>
-          <p className="text-xs text-gray-500 dark:text-muted mt-0.5 line-clamp-2">
-            {notification.body}
-          </p>
-          <div className="flex items-center gap-2 mt-1.5">
-            <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-muted">
-              {timeAgo(notification.createdAt)}
+          {n.body && (
+            <p className="mt-0.5 line-clamp-2 text-sm text-[var(--text-secondary)]">{n.body}</p>
+          )}
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+            <span className="text-sm text-[var(--text-secondary)]">
+              {cuandoFue(n.createdAt)} · {etiquetaDeCategoria(categoriaDeTipo(n.type))}
             </span>
-            {notification.actionLabel && notification.actionUrl && (
-              <span className="text-[length:var(--ts-2xs)] font-medium text-primary hover:underline">
-                {notification.actionLabel}
-              </span>
-            )}
-            {/* Mejora M-8: Boton cobrar para FIADO_VENCIDO */}
-            {isFiadoVencido && puedeCobrar && !cobroDone && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowCobroExpress(!showCobroExpress);
-                }}
-                className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-600)] hover:text-[var(--data-success-700)] hover:underline"
-              >
-                Cobrar
-              </button>
-            )}
-            {cobroDone && (
-              <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-600)]">Pago registrado</span>
-            )}
-          </div>
-        </div>
-
-        {/* Unread dot */}
-        {isUnread && (
-          <div className="shrink-0 mt-2">
-            <div className="w-2 h-2 rounded-full bg-primary" />
-          </div>
-        )}
-      </div>
-
-      {/* Mejora M-8: Cobro express inline panel */}
-      {showCobroExpress && isFiadoVencido && puedeCobrar && (
-        <div className="px-4 py-2 bg-gray-50 dark:bg-surface border-l-4 border-l-emerald-400">
-          <p className="text-[length:var(--ts-2xs)] font-bold text-gray-600 dark:text-[var(--text-primary)] mb-1.5">
-            Registrar pago
-          </p>
-          <div className="flex gap-1.5">
-            <div className="relative flex-1">
-              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-[length:var(--ts-2xs)] font-bold">S/</span>
-              <input
-                type="number"
-                inputMode="decimal"
-                step="0.10"
-                value={cobroMonto}
-                onChange={(e) => setCobroMonto(e.target.value)}
-                placeholder="Monto"
-                onClick={(e) => e.stopPropagation()}
-                className="w-full pl-6 pr-2 py-1.5 rounded-lg border border-[var(--rule-base)] text-xs font-bold text-gray-900 dark:text-[var(--text-primary)] outline-none focus:border-primary"
-              />
+            <div className="flex flex-wrap items-center gap-1">
+              {cobrado && (
+                <span className="text-sm font-semibold text-[var(--data-success-ink)]">
+                  Pago registrado
+                </span>
+              )}
+              {conCobro && !cobrado && !cobrando && (
+                <button
+                  type="button"
+                  onClick={() => setCobrando(true)}
+                  className={cn(
+                    BOTON,
+                    "text-[var(--data-success-ink)] hover:bg-[var(--data-success-500)]/10",
+                  )}
+                >
+                  Cobrar
+                </button>
+              )}
+              {n.actionUrl && (
+                <button
+                  type="button"
+                  onClick={irALaAccion}
+                  className={cn(
+                    BOTON,
+                    "text-[var(--accent-ink)] hover:bg-[var(--accent)]/10 dark:text-[var(--accent)]",
+                  )}
+                >
+                  {n.actionLabel || (externo ? "Abrir" : "Ver")}
+                  {externo ? (
+                    <ExternalLink className="h-4 w-4" aria-hidden />
+                  ) : (
+                    <span aria-hidden>→</span>
+                  )}
+                  {externo && <span className="sr-only"> (se abre en otra pestaña)</span>}
+                </button>
+              )}
+              {sinLeer && (
+                <button
+                  type="button"
+                  onClick={() => onMarkRead(n.id)}
+                  aria-label={`Marcar como leída: ${n.title}`}
+                  title="Marcar como leída"
+                  className={cn(
+                    BOTON,
+                    "w-12 px-0 text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
+                  )}
+                >
+                  <Check className="h-5 w-5" aria-hidden />
+                </button>
+              )}
             </div>
-            <button
-              onClick={async (e) => {
-                e.stopPropagation();
-                const monto = Number(cobroMonto);
-                if (!monto || monto <= 0) return;
-                setCobroLoading(true);
-                setCobroError(null);
-                try {
-                  const entityId = (notification as unknown as { entityId?: string }).entityId;
-                  if (entityId) {
-                    const res = await fetch(`/api/fiados/${entityId}/pagar`, {
-                      method: "POST",
-                      headers: csrfHeaders({ "Content-Type": "application/json" }),
-                      body: JSON.stringify({ monto }),
-                    });
-                    if (res.ok) {
-                      setCobroDone(true);
-                      setShowCobroExpress(false);
-                      onMarkRead(notification.id);
-                    } else {
-                      const cuerpo = (await res.json().catch(() => null)) as { error?: string; message?: string } | null;
-                      setCobroError(res.status === 403 ? "Tu rol no puede registrar cobros." : cuerpo?.message ?? cuerpo?.error ?? "No se pudo registrar el pago.");
-                    }
-                  }
-                } catch {
-                  setCobroError("No se pudo registrar el pago. Revisa tu conexión.");
-                }
-                setCobroLoading(false);
-              }}
-              disabled={cobroLoading || !cobroMonto || Number(cobroMonto) <= 0}
-              className="px-2.5 py-1.5 rounded-lg bg-[var(--accent-600,var(--accent))] text-white text-[length:var(--ts-2xs)] font-bold hover:bg-[var(--accent-dark)] transition-colors disabled:opacity-50"
-            >
-              {cobroLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Confirmar"}
-            </button>
           </div>
-          {cobroError && (
-            <p role="alert" className="mt-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{cobroError}</p>
+          {cobrando && n.entityId && (
+            <CobroExpressFiado
+              fiadoId={n.entityId}
+              onCancelar={() => setCobrando(false)}
+              onPagado={() => {
+                setCobrando(false);
+                setCobrado(true);
+                onMarkRead(n.id);
+              }}
+            />
           )}
         </div>
-      )}
-    </div>
+      </div>
+    </article>
   );
 }

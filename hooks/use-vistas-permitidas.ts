@@ -42,6 +42,7 @@ import {
 } from "@/lib/admin/permiso-vista";
 import { vistasDelModulo } from "@/lib/admin/subvistas-modulos";
 import { cachedJson, cachedJsonVigente } from "@/lib/client-cache-fetch";
+import { useVistaEmbebida } from "@/hooks/use-vista-modulo";
 import { logger } from "@/lib/logger";
 
 interface RespuestaAuthMe {
@@ -196,12 +197,17 @@ function paramDeUrl(param: string): string | null {
  * Sólo amplía lo que la plantilla esconde: el plan y el rol se siguen mirando.
  */
 export function useParamPedido(param: string): string | null {
-  const [pedido, setPedido] = useState<string | null>(() => paramDeUrl(param));
+  /* En un modal (accesos de la cabecera) la URL es de la pantalla de atrás:
+     lo «pedido» es la vista con la que se abrió el modal. */
+  const embebida = useVistaEmbebida();
+  const [pedido, setPedido] = useState<string | null>(() => (embebida ? null : paramDeUrl(param)));
   useEffect(() => {
+    if (embebida) return;
     const releer = () => setPedido(paramDeUrl(param));
     window.addEventListener("popstate", releer);
     return () => window.removeEventListener("popstate", releer);
-  }, [param]);
+  }, [param, embebida]);
+  if (embebida) return (param === "vista" ? embebida.vista : param === "sub" ? embebida.sub : undefined) ?? null;
   return pedido;
 }
 

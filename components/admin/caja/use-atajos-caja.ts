@@ -5,9 +5,19 @@
  * disparan escribiendo en un campo, con una ventana abierta ni con Ctrl/Alt/⌘
  * (para no pisar ⌘K del buscador ni los atajos del navegador).
  */
-import { useEffect } from "react";
+import { useEffect, type RefObject } from "react";
+import { hayModalEncima } from "@/lib/keyboard-guards";
 
-export function useAtajosCaja(activo: boolean, acciones: { ingreso: () => void; retiro: () => void }) {
+/**
+ * `raiz`: la caja. Con una ventana encima que no la contiene (un acceso rápido
+ * de la cabecera, otro modal) la tecla es de esa ventana; con la caja ADENTRO
+ * de un acceso rápido, los atajos siguen andando.
+ */
+export function useAtajosCaja(
+  activo: boolean,
+  acciones: { ingreso: () => void; retiro: () => void },
+  raiz: RefObject<HTMLElement | null>,
+) {
   const { ingreso, retiro } = acciones;
   useEffect(() => {
     if (!activo) return;
@@ -15,7 +25,7 @@ export function useAtajosCaja(activo: boolean, acciones: { ingreso: () => void; 
       if (e.defaultPrevented || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
       const t = e.target as HTMLElement | null;
       if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
-      if (document.querySelector('[role="dialog"][aria-modal="true"]')) return;
+      if (hayModalEncima(raiz.current)) return;
       const k = e.key.toLowerCase();
       if (k === "i") {
         e.preventDefault();
@@ -27,5 +37,5 @@ export function useAtajosCaja(activo: boolean, acciones: { ingreso: () => void; 
     };
     window.addEventListener("keydown", alTeclear);
     return () => window.removeEventListener("keydown", alTeclear);
-  }, [activo, ingreso, retiro]);
+  }, [activo, ingreso, retiro, raiz]);
 }
