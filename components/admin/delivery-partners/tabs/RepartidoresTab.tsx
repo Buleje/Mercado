@@ -1,329 +1,27 @@
 "use client";
-import { useState, useEffect, useCallback, useRef } from "react";
-import dynamic from "next/dynamic";
-import { CardTitle, DataTable } from "@buleje/design-system";
-import { AlertCircle, CheckCircle, ChevronDown, Download, Edit2, MapPin, MessageCircle, Phone, Plus, Save, Search, Star, Trash2, Truck, Users, X } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
-import { tenantFetch } from "@/lib/tenant-fetch";
-import { TableSkeleton, VehicleIcon, vehicleKind, vehicleLabel, toNum, type DeliveryPartner } from "@/components/admin/delivery-partners/shared";
-import { Field } from "@/components/admin/shared/Field";
-import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
-import { useOrdenColumnas, EnOrden, BotonRestablecerColumnas } from "@/components/admin/shared/columnas-ordenables";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
-import { formatCurrency } from "@/lib/format";
 
-const NetworkToggleCard = dynamic(
-  () => import("@/components/admin/delivery/NetworkToggleCard"),
-  { ssr: false, loading: () => <div className="h-[180px] rounded-2xl bg-[var(--surface-sunken)] animate-pulse" /> },
-);
-
-
-
-const VEHICLE_TYPES = ["Moto", "Bicicleta", "Auto", "A pie", "Motokar"];
-const ZONAS = [
-  "Yarinacocha", "Callería", "Manantay", "Centro",
-  "Pueblo Libre", "Ica Yanayacu", "Todos",
-];
-// FIX 2026-05-06 (audit team): claves SINCRONIZADAS con backend.
-// Antes UI usaba "pendiente/en_camino/entregado" pero schema/route handler
-// usan los valores reales abajo → status badges nunca matcheaban y los KPIs
-// daban siempre 0. VALID_TRANSITIONS en /api/delivery/assignments enforce
-// la state machine: assigned → picked_up → in_transit → delivered.
-
-const EMPTY_PARTNER: Omit<DeliveryPartner, "id" | "createdAt"> = {
-  name: "", phone: "", zone: "Centro", vehicleType: "Moto",
-  fee: 5, rating: 5, isActive: true,
-};
-
-function PartnerModal({
-  partner,
-  onClose,
-  onSave,
-}: {
-  partner: Partial<DeliveryPartner> | null;
-  onClose: () => void;
-  onSave: (data: Omit<DeliveryPartner, "id" | "createdAt">) => Promise<void>;
-}) {
-  const [form, setForm] = useState<Omit<DeliveryPartner, "id" | "createdAt">>(
-    partner
-      ? {
-          name: partner.name ?? "",
-          phone: partner.phone ?? "",
-          zone: partner.zone ?? "Centro",
-          vehicleType: partner.vehicleType ?? "Moto",
-          fee: partner.fee ?? 5,
-          rating: partner.rating ?? 5,
-          isActive: partner.isActive ?? true,
-        }
-      : { ...EMPTY_PARTNER }
-  );
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
-  // El propio Escape de abajo ya cierra el modal — el hook sólo aporta foco
-  // inicial + trampa de Tab (por eso cerrarConEscape: false).
-  useModalAccesible(panelRef, { cerrarConEscape: false });
-  /** Ventana: se mueve, se achica y se fija (ADR-420). */
-  const ventana = useVentanaDeModal(true, {
-    ref: panelRef,
-    aplicarTranslate: true,
-    claveMemoria: "repartidor-form",
-  });
-
-  // FIX 2026-05-06 (audit team): a11y modal — Esc cierra
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.name.trim()) { setError("El nombre es obligatorio."); return; }
-    setSaving(true);
-    setError(null);
-    try {
-      await onSave(form);
-      onClose();
-    } catch {
-      setError("Error al guardar el repartidor. Intenta nuevamente.");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div
-      className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/50"
-      onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) onClose(); }}
-      role="presentation"
-    >
-      <div
-        ref={panelRef}
-        className="relative bg-[var(--surface-raised)] rounded-2xl w-full max-w-md shadow-[var(--shadow-xl)] border border-[var(--rule-base)]"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="partner-modal-title"
-        tabIndex={-1}
-      >
-        <div {...ventana.asaProps} className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)]">
-          <CardTitle id="partner-modal-title" className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">
-            {partner?.id ? "Editar repartidor" : "Nuevo repartidor"}
-          </CardTitle>
-          <span className="ml-auto flex items-center gap-1">
-            <ControlesDeVentana ventana={ventana} />
-          </span>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar modal"
-            className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
-          {error && (
-            <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error-500)] rounded-xl text-sm text-[var(--data-error-500)]">
-              <AlertCircle className="h-4 w-4 shrink-0" /> {error}
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2 space-y-1.5">
-              <Field label="Nombre completo *" labelClassName="text-xs font-bold text-[var(--text-secondary)]">
-                <input
-                  type="text"
-                  value={form.name}
-                  onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-                  placeholder="Juan Pérez"
-                  className="w-full px-3 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                />
-              </Field>
-            </div>
-
-            <div className="space-y-1.5">
-              <Field label="Teléfono" labelClassName="text-xs font-bold text-[var(--text-secondary)]">
-                <input
-                  type="tel"
-                  value={form.phone}
-                  onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
-                  placeholder="987654321"
-                  className="w-full px-3 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                />
-              </Field>
-            </div>
-
-            <div className="space-y-1.5">
-              <Field label="Tarifa base (S/)" labelClassName="text-xs font-bold text-[var(--text-secondary)]">
-                <input
-                  type="number"
-                  min={0}
-                  step={0.5}
-                  value={form.fee}
-                  onChange={(e) => setForm((p) => ({ ...p, fee: parseFloat(e.target.value) || 0 }))}
-                  className="w-full px-3 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                />
-              </Field>
-            </div>
-
-            <div className="space-y-1.5">
-              <Field label="Zona" labelClassName="text-xs font-bold text-[var(--text-secondary)]">
-                {(id) => (
-                  <div className="relative">
-                    <select
-                      id={id}
-                      value={form.zone}
-                      onChange={(e) => setForm((p) => ({ ...p, zone: e.target.value }))}
-                      className="w-full px-3 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
-                    >
-                      {ZONAS.map((z) => <option key={z} value={z}>{z}</option>)}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
-                  </div>
-                )}
-              </Field>
-            </div>
-
-            <div className="space-y-1.5">
-              <Field label="Vehículo" labelClassName="text-xs font-bold text-[var(--text-secondary)]">
-                {(id) => (
-                  <div className="relative">
-                    <select
-                      id={id}
-                      value={form.vehicleType}
-                      onChange={(e) => setForm((p) => ({ ...p, vehicleType: e.target.value }))}
-                      className="w-full px-3 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
-                    >
-                      {VEHICLE_TYPES.map((v) => <option key={v} value={v}>{v}</option>)}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" />
-                  </div>
-                )}
-              </Field>
-            </div>
-          </div>
-
-          {/* Activo toggle — a11y: role="switch" + aria-checked */}
-          <div className="flex items-center justify-between p-3 bg-[var(--surface-sunken)] rounded-xl border border-[var(--rule-base)]">
-            <label htmlFor="partner-active-toggle" className="text-sm font-bold text-[var(--text-primary)] cursor-pointer">
-              Activo
-            </label>
-            <button
-              type="button"
-              id="partner-active-toggle"
-              role="switch"
-              aria-checked={form.isActive}
-              aria-label={form.isActive ? "Desactivar repartidor" : "Activar repartidor"}
-              onClick={() => setForm((p) => ({ ...p, isActive: !p.isActive }))}
-              className={cn(
-                "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30",
-                form.isActive ? "bg-primary" : "bg-[var(--rule-base)]",
-              )}
-            >
-              <span className={cn(
-                "inline-block h-4 w-4 transform rounded-full bg-[var(--surface-raised)] transition-transform",
-                form.isActive ? "translate-x-6" : "translate-x-1"
-              )} />
-            </button>
-          </div>
-
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 min-h-11 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-[var(--surface-sunken)] hover:brightness-95 border border-[var(--rule-base)] transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex-1 inline-flex items-center justify-center gap-2 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50"
-            >
-              {saving ? (
-                <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <Save className="h-4 w-4" />
-              )}
-              {saving ? "Guardando..." : "Guardar"}
-            </button>
-          </div>
-        </form>
-        <TiradorDeVentana ventana={ventana} />
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────
-// Sub-tab: Repartidores
-// ─────────────────────────────────────────────
 /**
- * Brandon mayo 2026 v7: helpers para mejoras de RepartidoresTab.
- *  - zoneColor: hash determinístico zona → color de avatar (5 paletas).
- *  - downloadCSV: export plano para SUNAT/contabilidad/pagos.
- *  - waLink: link wa.me con template auto en español-PE.
+ * Reparto › Equipo: tus repartidores. Una fila arriba con el selector Tu
+ * equipo / Postulantes (lo pone la cabecera), el buscador, la descarga y
+ * «Nuevo repartidor»; abajo la tabla (`RepartidoresTabla`). Las cifras del
+ * equipo (en el equipo, activos, pausados, calificación) van en los
+ * Indicadores de la cabecera de Reparto.
+ *
+ * 10-10 (Brandon: «compactar; cada pestaña su tarea»): antes arrancaba con la
+ * tarjeta de la Red de repartidores Buleje (hoy en Reparto › Más) y una
+ * tarjeta grande con título, párrafo y cuatro cifras de 30 px.
  */
-const ZONE_PALETTE = [
-  { bg: "bg-emerald-100 dark:bg-emerald-900/40", text: "text-emerald-700 dark:text-emerald-300" },
-  { bg: "bg-sky-100 dark:bg-sky-900/40",         text: "text-sky-700 dark:text-sky-300" },
-  { bg: "bg-amber-100 dark:bg-amber-900/40",     text: "text-amber-700 dark:text-amber-300" },
-  { bg: "bg-teal-100 dark:bg-teal-900/40",       text: "text-teal-700 dark:text-teal-300" },
-  { bg: "bg-orange-100 dark:bg-orange-900/40",   text: "text-orange-700 dark:text-orange-300" },
-  { bg: "bg-cyan-100 dark:bg-cyan-900/40",       text: "text-cyan-700 dark:text-cyan-300" },
-] as const;
+import { useState, useEffect, useCallback, type ReactNode } from "react";
+import { AlertCircle, CheckCircle, Plus, Star, Users, X } from "@buleje/design-system/icons";
+import { tenantFetch } from "@/lib/tenant-fetch";
+import { TableSkeleton, vehicleKind, toNum, type DeliveryPartner } from "@/components/admin/delivery-partners/shared";
+import { useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
+import { useIndicadoresReparto } from "@/components/admin/delivery/reparto-indicadores";
+import { ConfirmarBorrarRepartidor, PartnerModal } from "../PartnerModal";
+import { RepartidoresTabla } from "../RepartidoresTabla";
+import { AccionesEnBloque, BusquedaEquipo } from "../RepartidoresBarra";
 
-function zoneColor(zone: string): (typeof ZONE_PALETTE)[number] {
-  const z = (zone ?? "").toLowerCase().trim() || "default";
-  let hash = 0;
-  for (let i = 0; i < z.length; i++) hash = ((hash << 5) - hash) + z.charCodeAt(i);
-  return ZONE_PALETTE[Math.abs(hash) % ZONE_PALETTE.length];
-}
-
-function downloadCSV(rows: DeliveryPartner[]) {
-  const header = ["Nombre", "Telefono", "Zona", "Vehiculo", "Tarifa (S/)", "Rating", "Estado"];
-  const lines = rows.map((p) => [
-    p.name,
-    p.phone ?? "",
-    p.zone,
-    vehicleLabel(p.vehicleType),
-    toNum(p.fee).toFixed(2),
-    toNum(p.rating).toFixed(1),
-    p.isActive ? "Activo" : "Inactivo",
-  ]);
-  const all = [header, ...lines].map((r) =>
-    r.map((c) => {
-      const s = String(c ?? "");
-      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-    }).join(","),
-  );
-  const csv = "﻿" + all.join("\r\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `repartidores-${new Date().toISOString().slice(0, 10)}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-function waLink(phone: string, name: string): string {
-  const digits = (phone ?? "").replace(/\D/g, "");
-  if (digits.length < 8) return "";
-  const intl = digits.length === 9 ? `51${digits}` : digits;
-  const text = `Hola ${name}, te escribo del negocio. ¿Estás disponible para una entrega ahora?`;
-  return `https://wa.me/${intl}?text=${encodeURIComponent(text)}`;
-}
-
-export function RepartidoresTab() {
+export function RepartidoresTab({ selector }: { selector?: ReactNode } = {}) {
   const [partners, setPartners] = useState<DeliveryPartner[]>([]);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState<string | null>(null);
@@ -436,16 +134,38 @@ export function RepartidoresTab() {
     });
   }
 
-  if (loading) return <TableSkeleton />;
+  // Las cifras del equipo, en los Indicadores de la cabecera (el hook va antes del «cargando»).
+  const activos = partners.filter((p) => p.isActive).length;
+  const conCalificacion = partners.filter((p) => toNum(p.rating) > 0);
+  const calificacion = conCalificacion.length > 0 ? conCalificacion.reduce((s, p) => s + toNum(p.rating), 0) / conCalificacion.length : 0;
+  const kpis = useIndicadoresReparto({
+    clave: "equipo",
+    cargando: loading,
+    resumen: `${activos} de ${partners.length} ${partners.length === 1 ? "activo" : "activos"}`,
+    indicadores: [
+      { icono: Users, rotulo: "En el equipo", valor: String(partners.length), ayuda: "Repartidores dados de alta en tu negocio." },
+      { icono: CheckCircle, rotulo: "Activos", valor: String(activos), ayuda: "Pueden recibir pedidos. Los pausados no.", tono: activos > 0 ? "ok" : undefined },
+      { icono: X, rotulo: "Pausados", valor: String(partners.length - activos) },
+      {
+        icono: Star,
+        rotulo: "Calificación promedio",
+        valor: calificacion > 0 ? `${calificacion.toFixed(1)} de 5` : "—",
+        ayuda: "El promedio de lo que les pusieron los clientes. Quién entrega más y mejor en el período: Ranking.",
+      },
+    ],
+  });
 
-  // Derived KPIs
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        {kpis.boton}
+        {selector}
+        <TableSkeleton />
+      </div>
+    );
+  }
+
   const totalCount = partners.length;
-  const activeCount = partners.filter((p) => p.isActive).length;
-  const inactiveCount = totalCount - activeCount;
-  const avgRating =
-    totalCount > 0
-      ? partners.reduce((s, p) => s + toNum(p.rating), 0) / totalCount
-      : 0;
 
   // Brandon mayo 2026 v7: filtros aplicados + zonas/vehículos únicos para dropdowns.
   const uniqueZones = Array.from(new Set(partners.map((p) => p.zone).filter(Boolean))).sort();
@@ -478,479 +198,87 @@ export function RepartidoresTab() {
     setStatusFilter([]);
   }
 
+
   return (
-    <div className="space-y-6">
-      {/* ── 0. Toggle Red Buleje (Brandon mayo 2026 v7) ─────────────── */}
-      <NetworkToggleCard />
+    <div className="space-y-4">
+      {kpis.boton}
+      {kpis.panel}
 
-      {/* ── 1. Hero card con KPIs ──────────────────────────────────── */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
-        <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
-          <div className="flex items-start gap-3">
-            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
-              <Users className="h-5 w-5" />
-            </span>
-            <div>
-              <CardTitle className="text-[length:var(--ts-xl)] font-bold leading-tight">
-                Repartidores
-              </CardTitle>
-              <p className="text-sm text-[var(--text-secondary)] mt-1 leading-snug">
-                {totalCount === 0
-                  ? "Aún no tienes repartidores registrados. Agrega uno para empezar a gestionar entregas."
-                  : `${totalCount} ${totalCount === 1 ? "repartidor registrado" : "repartidores registrados"} · gestiona tarifas, zonas y disponibilidad.`}
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => setModal({ open: true, partner: null })}
-            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors shrink-0"
-          >
-            <Plus className="h-4 w-4" />
-            Nuevo repartidor
-          </button>
-        </div>
-
+      {/* Una fila: selector · buscador · filtros del celular · CSV · columnas · Nuevo repartidor. */}
+      <div className="flex flex-wrap items-center gap-2">
+        {selector}
         {totalCount > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
-                  <Users className="h-5 w-5 text-primary" />
-                </span>
-              </div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                Total
-              </p>
-              <p className="text-3xl font-extrabold tabular-nums text-[var(--text-primary)] leading-tight mt-2">
-                {totalCount}
-              </p>
-              <p className="text-sm text-[var(--text-tertiary)] mt-1">Registrados</p>
-            </div>
-            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
-                  <CheckCircle className="h-5 w-5 text-[var(--data-success-500)]" />
-                </span>
-              </div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                Activos
-              </p>
-              <p className="text-3xl font-extrabold tabular-nums text-[var(--data-success-500)] leading-tight mt-2">
-                {activeCount}
-              </p>
-              <p className="text-sm text-[var(--text-tertiary)] mt-1">Disponibles</p>
-            </div>
-            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--surface-sunken)]">
-                  <X className="h-5 w-5 text-[var(--text-tertiary)]" />
-                </span>
-              </div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                Inactivos
-              </p>
-              <p className="text-3xl font-extrabold tabular-nums text-[var(--text-tertiary)] leading-tight mt-2">
-                {inactiveCount}
-              </p>
-              <p className="text-sm text-[var(--text-tertiary)] mt-1">Pausados</p>
-            </div>
-            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--data-warning-50)]">
-                  <Star className="h-5 w-5 fill-[var(--data-warning-500)] text-[var(--data-warning-500)]" />
-                </span>
-              </div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                Rating promedio
-              </p>
-              <p className="text-3xl font-extrabold tabular-nums text-[var(--data-warning-500)] leading-tight mt-2">
-                {avgRating > 0 ? avgRating.toFixed(1) : "—"}
-              </p>
-              <p className="text-sm text-[var(--text-tertiary)] mt-1">de 5 estrellas</p>
-            </div>
-          </div>
+          <>
+            <BusquedaEquipo
+              query={query}
+              setQuery={setQuery}
+              zoneFilter={zoneFilter}
+              setZoneFilter={setZoneFilter}
+              vehicleFilter={vehicleFilter}
+              setVehicleFilter={setVehicleFilter}
+              statusFilter={statusFilter}
+              setStatusFilter={setStatusFilter}
+              uniqueZones={uniqueZones}
+              uniqueVehicles={uniqueVehicles}
+              filtered={filtered}
+              ordenRepartidores={ordenRepartidores}
+            />
+          </>
         )}
+        <button
+          type="button"
+          onClick={() => setModal({ open: true, partner: null })}
+          className="ml-auto inline-flex h-12 shrink-0 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
+        >
+          <Plus className="h-4 w-4" aria-hidden />
+          Nuevo repartidor
+        </button>
       </div>
 
-      {/* ── 1.5 Toolbar (search + filters + CSV) ───────────────────── */}
-      {totalCount > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative flex-1 min-w-[220px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" aria-hidden />
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar por nombre, teléfono o zona…"
-              className="w-full h-11 pl-10 pr-9 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] transition-colors"
-            />
-            {query && (
-              <button
-                type="button"
-                onClick={() => setQuery("")}
-                aria-label="Limpiar búsqueda"
-                className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full flex items-center justify-center text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
+      <AccionesEnBloque
+        selectedIds={selectedIds}
+        setSelectedIds={setSelectedIds}
+        bulkBusy={bulkBusy}
+        handleBulkSetActive={(activo) => void handleBulkSetActive(activo)}
+      />
 
-          {/* Zona, Vehículo y Estado ya tienen su autofiltro en el `<th>` — pero
-              en el celular la tabla es tarjetas y `.admin-mobile-cards` esconde
-              el `<thead>` ENTERO (no sólo las columnas con `hidden sm:table-cell`):
-              los tres necesitan este atajo, mismo estado, un solo valor a la vez.
-              (El comentario anterior decía que Estado no lo necesitaba porque su
-              `<th>` "siempre se ve" — falso, el `<thead>` completo desaparece.) */}
-          <select
-            aria-label="Filtrar por zona"
-            value={zoneFilter[0] ?? "todas"}
-            onChange={(e) => setZoneFilter(e.target.value === "todas" ? [] : [e.target.value])}
-            className="sm:hidden h-11 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
-          >
-            <option value="todas">Todas las zonas</option>
-            {uniqueZones.map((z) => (
-              <option key={z} value={z}>{z}</option>
-            ))}
-          </select>
-
-          <select
-            aria-label="Filtrar por vehículo"
-            value={vehicleFilter[0] ?? "todos"}
-            onChange={(e) => setVehicleFilter(e.target.value === "todos" ? [] : [e.target.value])}
-            className="sm:hidden h-11 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
-          >
-            <option value="todos">Todo vehículo</option>
-            {uniqueVehicles.map((v) => (
-              <option key={v} value={v} className="capitalize">{vehicleLabel(v)}</option>
-            ))}
-          </select>
-
-          <select
-            aria-label="Filtrar por estado"
-            value={statusFilter[0] ?? "todos"}
-            onChange={(e) => setStatusFilter(e.target.value === "todos" ? [] : [e.target.value])}
-            className="sm:hidden h-11 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
-          >
-            <option value="todos">Todos los estados</option>
-            <option value="Activo">Activo</option>
-            <option value="Inactivo">Inactivo</option>
-          </select>
-
-          <button
-            type="button"
-            onClick={() => downloadCSV(filtered)}
-            disabled={filtered.length === 0}
-            className="inline-flex items-center gap-2 h-11 px-4 rounded-xl bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-primary)] text-sm font-semibold hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            title="Descargar CSV de los repartidores filtrados"
-          >
-            <Download className="h-4 w-4" />
-            CSV
-          </button>
-          <BotonRestablecerColumnas cambiado={ordenRepartidores.cambiado} onRestablecer={ordenRepartidores.restablecer} />
-        </div>
-      )}
-
-      {/* ── 1.6 Bulk action bar ────────────────────────────────────── */}
-      {selectedIds.size > 0 && (
-        <div className="flex items-center justify-between gap-2 p-3 rounded-xl bg-primary/10 border-2 border-[var(--accent)]/40">
-          <p className="text-sm font-extrabold text-[var(--accent)]">
-            {selectedIds.size} {selectedIds.size === 1 ? "repartidor seleccionado" : "repartidores seleccionados"}
-          </p>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              disabled={bulkBusy}
-              onClick={() => handleBulkSetActive(true)}
-              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-[var(--accent-dark)] text-white text-xs font-extrabold hover:brightness-110 transition-colors disabled:opacity-40"
-            >
-              <CheckCircle className="h-3.5 w-3.5" />
-              Activar todos
-            </button>
-            <button
-              type="button"
-              disabled={bulkBusy}
-              onClick={() => handleBulkSetActive(false)}
-              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-primary)] text-xs font-extrabold hover:bg-[var(--surface-sunken)] transition-colors disabled:opacity-40"
-            >
-              <X className="h-3.5 w-3.5" />
-              Pausar todos
-            </button>
-            <button
-              type="button"
-              onClick={() => setSelectedIds(new Set())}
-              className="inline-flex items-center gap-1 h-9 px-3 rounded-lg text-[var(--text-secondary)] text-xs font-extrabold hover:bg-[var(--surface-raised)] transition-colors"
-            >
-              Limpiar
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── 2. Banner error ─────────────────────────────────────────── */}
       {error && (
-        <div className="flex items-center gap-3 px-5 py-4 bg-[var(--data-error-50)] border border-[var(--data-error-500)]/30 rounded-xl">
+        <div className="flex items-center gap-3 py-1 pl-4 pr-1 bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10 border border-[var(--data-error-500)]/30 rounded-xl">
           <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--data-error-500)]/15 shrink-0">
             <AlertCircle className="h-4 w-4 text-[var(--data-error-500)]" />
           </span>
-          <p className="text-sm font-bold text-[var(--data-error-500)] flex-1">{error}</p>
+          <p className="text-sm font-bold text-[var(--data-error-ink)] flex-1">{error}</p>
           <button aria-label="Quitar"
             type="button"
             onClick={() => setError(null)}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/10 shrink-0"
+            className="inline-flex h-12 w-12 items-center justify-center rounded-lg text-[var(--data-error-ink)] hover:bg-[var(--data-error-500)]/10 shrink-0"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
       )}
 
-      {/* ── 3. Tabla / Empty state ─────────────────────────────────── */}
-      {partners.length === 0 && !error ? (
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-12 text-center shadow-sm">
-          <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--surface-sunken)] mb-4">
-            <Truck className="h-8 w-8 text-[var(--text-tertiary)]" />
-          </span>
-          <p className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">
-            Sin repartidores registrados
-          </p>
-          <p className="text-base text-[var(--text-secondary)] mt-2 max-w-md mx-auto leading-relaxed">
-            Agrega tu primer repartidor para empezar a asignar entregas y gestionar tu flota.
-          </p>
-          <button
-            type="button"
-            onClick={() => setModal({ open: true, partner: null })}
-            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors mt-6"
-          >
-            <Plus className="h-4 w-4" />
-            Agregar primer repartidor
-          </button>
-        </div>
-      ) : (
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden shadow-sm">
-          <div className="overflow-x-auto">
-            <DataTable className="w-full">
-              <thead ref={ordenRepartidores.refCabecera} className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
-                <tr>
-                  <th className="text-left px-3 py-4 w-10">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.size > 0 && selectedIds.size === filtered.length}
-                      ref={(el) => {
-                        if (el) el.indeterminate = selectedIds.size > 0 && selectedIds.size < filtered.length;
-                      }}
-                      onChange={toggleSelectAll}
-                      aria-label="Seleccionar todos"
-                      className="h-4 w-4 rounded border border-[var(--rule-base)] accent-[var(--accent)] cursor-pointer"
-                    />
-                  </th>
-                  <EnOrden
-                    orden={ordenRepartidores.orden}
-                    celdas={{
-                      repartidor: <th data-col="repartidor" className="text-left px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Repartidor</th>,
-                      zona: (
-                        <th data-col="zona" className="text-left px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden sm:table-cell">
-                          <span className="block">Zona / Vehículo</span>
-                          <div className="mt-1.5 flex flex-col gap-1">
-                            <FiltroColumnaMulti
-                              label="Zona"
-                              value={zoneFilter}
-                              options={uniqueZones.map((z) => ({ value: z, count: partners.filter((p) => p.zone === z).length }))}
-                              onChange={setZoneFilter}
-                              placeholder="Todas"
-                            />
-                            <FiltroColumnaMulti
-                              label="Vehículo"
-                              value={vehicleFilter}
-                              options={uniqueVehicles.map((v) => ({ value: v, count: partners.filter((p) => vehicleKind(p.vehicleType) === v).length }))}
-                              etiqueta={vehicleLabel}
-                              onChange={setVehicleFilter}
-                              placeholder="Todos"
-                            />
-                          </div>
-                        </th>
-                      ),
-                      tarifa: <th data-col="tarifa" className="text-right px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Tarifa</th>,
-                      rating: <th data-col="rating" className="text-center px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Rating</th>,
-                      estado: (
-                        <th data-col="estado" className="text-center px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                          <span className="block">Estado</span>
-                          <FiltroColumnaMulti
-                            label="Estado"
-                            value={statusFilter}
-                            options={[
-                              { value: "Activo", count: partners.filter((p) => p.isActive).length },
-                              { value: "Inactivo", count: partners.filter((p) => !p.isActive).length },
-                            ]}
-                            onChange={setStatusFilter}
-                            placeholder="Todos"
-                            className="mx-auto"
-                          />
-                        </th>
-                      ),
-                    }}
-                  />
-                  <th className="text-right px-4 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--rule-soft)]">
-                {filtered.map((p) => {
-                  const isSelected = selectedIds.has(p.id);
-                  const zc = zoneColor(p.zone);
-                  const wa = p.phone ? waLink(p.phone, p.name) : "";
-                  return (
-                  <tr
-                    key={p.id}
-                    className={cn(
-                      "transition-colors",
-                      isSelected ? "bg-primary/10" : "hover:bg-[var(--surface-sunken)]",
-                    )}
-                  >
-                    <td className="px-3 py-4">
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => toggleSelect(p.id)}
-                        aria-label={`Seleccionar ${p.name}`}
-                        className="h-4 w-4 rounded border border-[var(--rule-base)] accent-[var(--accent)] cursor-pointer"
-                      />
-                    </td>
-                    <EnOrden
-                      orden={ordenRepartidores.orden}
-                      celdas={{
-                        repartidor: (
-                          <td className="px-4 py-4">
-                            <div className="flex items-center gap-3">
-                              <div
-                                className={cn(
-                                  "h-12 w-12 rounded-2xl flex items-center justify-center text-xl font-extrabold shrink-0 border border-transparent",
-                                  zc.bg,
-                                  zc.text,
-                                )}
-                                title={`Zona: ${p.zone}`}
-                              >
-                                {(p.name || "?").trim().split(/\s+/).slice(0, 2).map((s) => s[0]?.toUpperCase() ?? "").join("")}
-                              </div>
-                              <div className="min-w-0">
-                                <p className="text-sm font-extrabold text-[var(--text-primary)] leading-tight">{p.name}</p>
-                                {p.phone && (
-                                  <p className="text-xs text-[var(--text-tertiary)] font-mono flex items-center gap-1 mt-1">
-                                    <Phone className="h-3 w-3 shrink-0" />
-                                    {p.phone}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          </td>
-                        ),
-                        zona: (
-                          <td className="px-4 py-4 hidden sm:table-cell">
-                            <p className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-1.5">
-                              <MapPin className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" />
-                              {p.zone}
-                            </p>
-                            <p className="text-xs text-[var(--text-tertiary)] mt-1 flex items-center gap-1.5">
-                              <VehicleIcon type={p.vehicleType} className="h-3.5 w-3.5" />
-                              <span className="font-semibold capitalize">{vehicleLabel(p.vehicleType)}</span>
-                            </p>
-                          </td>
-                        ),
-                        tarifa: (
-                          <td className="px-4 py-4 text-right text-base font-extrabold tabular-nums text-[var(--text-primary)]">
-                            {formatCurrency(toNum(p.fee))}
-                          </td>
-                        ),
-                        rating: (
-                          <td className="px-4 py-4 text-center">
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-extrabold bg-[var(--data-warning-50)] text-[var(--data-warning-500)] tabular-nums">
-                              <Star className="h-3.5 w-3.5 fill-[var(--data-warning-500)]" />
-                              {toNum(p.rating).toFixed(1)}
-                            </span>
-                          </td>
-                        ),
-                        estado: (
-                          <td className="px-4 py-4 text-center">
-                            <span className={cn(
-                              "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold",
-                              p.isActive
-                                ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
-                                : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
-                            )}>
-                              <span className={cn("h-1.5 w-1.5 rounded-full", p.isActive ? "bg-[var(--data-success-500)]" : "bg-[var(--text-tertiary)]")} />
-                              {p.isActive ? "Activo" : "Inactivo"}
-                            </span>
-                          </td>
-                        ),
-                      }}
-                    />
-                    <td className="px-4 py-4 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        {wa && (
-                          <a
-                            href={wa}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center h-10 w-10 rounded-xl text-[var(--data-success)] hover:bg-[var(--data-success)]/15 transition-colors"
-                            title={`WhatsApp a ${p.name}`}
-                            aria-label="WhatsApp"
-                          >
-                            <MessageCircle className="h-4 w-4" />
-                          </a>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => setModal({ open: true, partner: p })}
-                          className="inline-flex items-center gap-2 px-4 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-primary/10 hover:border-primary/30 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] transition-colors"
-                        >
-                          <Edit2 className="h-4 w-4" />
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setConfirmDelete(p.id)}
-                          className="inline-flex items-center justify-center w-10 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-tertiary)] hover:bg-[var(--data-error-50)] hover:border-[var(--data-error-500)]/40 hover:text-[var(--data-error-500)] transition-colors"
-                          title="Eliminar"
-                          aria-label="Eliminar"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                  );
-                })}
-              </tbody>
-            </DataTable>
-          </div>
-          {filtered.length === 0 && (
-            <div className="px-6 py-10 text-center">
-              <p className="text-sm font-bold text-[var(--text-secondary)]">Sin resultados con esos filtros.</p>
-              <button
-                type="button"
-                onClick={clearFilters}
-                className="mt-2 text-xs font-extrabold text-[var(--accent)] hover:underline"
-              >
-                Limpiar filtros
-              </button>
-            </div>
-          )}
-          {filtered.length > 0 && filtered.length < partners.length && (
-            <div className="border-t border-[var(--rule-base)] px-4 py-2 bg-[var(--surface-sunken)] text-xs font-bold text-[var(--text-secondary)] flex items-center justify-between">
-              <span>
-                Mostrando <strong className="tabular-nums">{filtered.length}</strong> de{" "}
-                <strong className="tabular-nums">{partners.length}</strong> repartidores
-              </span>
-              <button
-                type="button"
-                onClick={clearFilters}
-                className="text-[var(--accent)] hover:underline"
-              >
-                Limpiar filtros
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+      <RepartidoresTabla
+        partners={partners}
+        filtered={filtered}
+        error={error}
+        selectedIds={selectedIds}
+        toggleSelect={toggleSelect}
+        toggleSelectAll={toggleSelectAll}
+        orden={ordenRepartidores}
+        zoneFilter={zoneFilter}
+        setZoneFilter={setZoneFilter}
+        vehicleFilter={vehicleFilter}
+        setVehicleFilter={setVehicleFilter}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+        uniqueZones={uniqueZones}
+        uniqueVehicles={uniqueVehicles}
+        clearFilters={clearFilters}
+        onNuevo={() => setModal({ open: true, partner: null })}
+        onEditar={(p) => setModal({ open: true, partner: p })}
+        onBorrar={setConfirmDelete}
+      />
 
       {/* Modal crear/editar */}
       {modal.open && (
@@ -961,49 +289,13 @@ export function RepartidoresTab() {
         />
       )}
 
-      {/* Confirm delete */}
       {confirmDelete && (
-        <div
-          className="fixed inset-0 z-modal flex items-center justify-center p-4 bg-black/50"
-          onClick={(e) => e.target === e.currentTarget && setConfirmDelete(null)}
-          role="presentation"
-        >
-          <div
-            className="bg-[var(--surface-raised)] rounded-2xl w-full max-w-sm p-6 border border-[var(--rule-base)] shadow-[var(--shadow-xl)]"
-            role="dialog"
-            aria-modal="true"
-          >
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-[var(--data-error-100)] flex items-center justify-center shrink-0">
-                <AlertCircle className="h-5 w-5 text-[var(--data-error-500)]" />
-              </div>
-              <div>
-                <CardTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">¿Eliminar repartidor?</CardTitle>
-                <p className="text-sm text-[var(--text-secondary)]">Esta acción no se puede deshacer.</p>
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setConfirmDelete(null)}
-                className="flex-1 min-h-11 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-[var(--surface-sunken)] hover:brightness-95 border border-[var(--rule-base)] transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={() => handleDelete(confirmDelete)}
-                disabled={!!deleting}
-                className="flex-1 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors disabled:opacity-50"
-              >
-                {deleting ? "Eliminando..." : "Sí, eliminar"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmarBorrarRepartidor
+          borrando={!!deleting}
+          onCancelar={() => setConfirmDelete(null)}
+          onConfirmar={() => handleDelete(confirmDelete)}
+        />
       )}
     </div>
   );
 }
-
-// ─────────────────────────────────────────────
-// Sub-tab: Asignaciones
-// ─────────────────────────────────────────────

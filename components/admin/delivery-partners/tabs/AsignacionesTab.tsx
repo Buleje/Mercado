@@ -1,12 +1,12 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { CardTitle, DataTable } from "@buleje/design-system";
-import { AlertCircle, CheckCircle, ChevronDown, ClipboardList, Clock, DollarSign, Plus, Truck, X } from "@buleje/design-system/icons";
+import { DataTable } from "@buleje/design-system";
+import { AlertCircle, CheckCircle, ClipboardList, Clock, DollarSign, Plus, Truck, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { tenantFetch } from "@/lib/tenant-fetch";
 import { TableSkeleton, toNum, type DeliveryPartner } from "@/components/admin/delivery-partners/shared";
-import { Field } from "@/components/admin/shared/Field";
-import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+import { useIndicadoresReparto } from "@/components/admin/delivery/reparto-indicadores";
+import { AsignarPedidoModal } from "../AsignarPedidoModal";
 import { formatCurrency, formatDateTimeShort } from "@/lib/format";
 
 interface DeliveryAssignment {
@@ -124,8 +124,6 @@ export function AsignacionesTab() {
     }
   };
 
-  if (loading) return <TableSkeleton />;
-
   // Derivados para KPIs — usa los status reales del backend (VALID_TRANSITIONS)
   const pendientes  = assignments.filter((a) => a.status === "assigned").length;
   const enCamino    = assignments.filter((a) => ["picked_up", "in_transit"].includes(a.status)).length;
@@ -136,166 +134,94 @@ export function AsignacionesTab() {
     .reduce((acc, a) => acc + toNum(a.fee), 0);
   const partnersActivos = partners.length;
 
+  const kpis = useIndicadoresReparto({
+    clave: "asignaciones",
+    cargando: loading,
+    resumen: `${pendientes} por despachar · ${enCamino} en camino`,
+    indicadores: [
+      { icono: Clock, rotulo: "Por despachar", valor: String(pendientes), ayuda: "Asignadas a un repartidor que todavía no las recoge.", tono: pendientes > 0 ? "alerta" : undefined },
+      { icono: Truck, rotulo: "En camino", valor: String(enCamino), ayuda: "Recogidas o en ruta." },
+      { icono: CheckCircle, rotulo: "Entregadas", valor: String(entregadas), extra: canceladas > 0 ? `${canceladas} ${canceladas === 1 ? "cancelada" : "canceladas"}` : undefined, tono: entregadas > 0 ? "ok" : undefined },
+      {
+        icono: DollarSign,
+        rotulo: "Tarifas de lo entregado",
+        valor: formatCurrency(ingresos),
+        ayuda: "La suma de las tarifas de las entregas hechas de esta lista: lo que ganan los repartidores por ellas. Para tu negocio es un costo, no un ingreso; lo que ya les pagaste está en Pagos.",
+      },
+    ],
+  });
+
+  if (loading) {
+    return (
+      <>
+        {kpis.boton}
+        <TableSkeleton />
+      </>
+    );
+  }
+
+  const botonAsignar = (texto: string) => (
+    <button
+      type="button"
+      onClick={() => setAssignModal({ open: true })}
+      disabled={partnersActivos === 0}
+      title={partnersActivos === 0 ? "Primero agrega un repartidor en Equipo" : "Asignar un pedido a un repartidor"}
+      className="inline-flex h-12 shrink-0 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
+    >
+      <Plus className="h-4 w-4" aria-hidden />
+      {texto}
+    </button>
+  );
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      {kpis.boton}
+      {kpis.panel}
       {error && (
-        <div className="flex items-center gap-3 p-4 bg-[var(--data-error-50)] border border-[var(--data-error-500)]/30 rounded-2xl text-sm text-[var(--data-error-500)]">
+        <div className="flex items-center gap-3 py-1 pl-4 pr-1 bg-[var(--data-error-50)] border border-[var(--data-error-500)]/30 rounded-2xl text-sm text-[var(--data-error-ink)] dark:bg-[var(--data-error-500)]/10">
           <AlertCircle className="h-5 w-5 shrink-0" />
           <span className="font-bold">{error}</span>
           <button aria-label="Quitar"
             type="button"
             onClick={() => setError(null)}
-            className="ml-auto p-1 rounded-xl hover:bg-[var(--data-error-100)] transition-colors"
+            className="ml-auto inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl hover:bg-[var(--data-error-100)] transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
       )}
 
-      {/* ── 1. Hero card con KPIs ──────────────────────────────────── */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
-        <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
-          <div className="flex items-start gap-3">
-            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
-              <ClipboardList className="h-5 w-5" />
-            </span>
-            <div>
-              <CardTitle className="text-[length:var(--ts-xl)] font-bold leading-tight">
-                Asignaciones de delivery
-              </CardTitle>
-              <p className="text-sm text-[var(--text-secondary)] mt-1 leading-snug">
-                {assignments.length === 0
-                  ? "Acá vas a ver las órdenes asignadas a cada repartidor en tiempo real."
-                  : `${assignments.length} ${assignments.length === 1 ? "asignación" : "asignaciones"} · ${partnersActivos} ${partnersActivos === 1 ? "repartidor activo" : "repartidores activos"}.`}
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => setAssignModal({ open: true })}
-            disabled={partnersActivos === 0}
-            title={partnersActivos === 0 ? "No hay repartidores activos disponibles" : "Asignar nueva orden"}
-            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 shrink-0"
-          >
-            <Plus className="h-4 w-4" />
-            Asignar orden
-          </button>
-        </div>
-
-        {assignments.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--data-warning-50)] p-5">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--data-warning-100)]">
-                  <Clock className="h-5 w-5 text-[var(--data-warning-500)]" />
-                </span>
-              </div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                Pendientes
-              </p>
-              <p className={cn(
-                "text-3xl font-extrabold tabular-nums leading-tight mt-2",
-                pendientes > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)]",
-              )}>
-                {pendientes}
-              </p>
-              <p className="text-sm text-[var(--text-tertiary)] mt-1">Por despachar</p>
-            </div>
-            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
-                  <Truck className="h-5 w-5 text-primary" />
-                </span>
-              </div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                En camino
-              </p>
-              <p className="text-3xl font-extrabold tabular-nums text-primary leading-tight mt-2">
-                {enCamino}
-              </p>
-              <p className="text-sm text-[var(--text-tertiary)] mt-1">Activas ahora</p>
-            </div>
-            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
-                  <CheckCircle className="h-5 w-5 text-[var(--data-success-500)]" />
-                </span>
-              </div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                Entregadas
-              </p>
-              <p className="text-3xl font-extrabold tabular-nums text-[var(--data-success-500)] leading-tight mt-2">
-                {entregadas}
-              </p>
-              <p className="text-sm text-[var(--text-tertiary)] mt-1">Completadas</p>
-            </div>
-            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
-                  <DollarSign className="h-5 w-5 text-[var(--data-success-500)]" />
-                </span>
-              </div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                Ingresos
-              </p>
-              <p className="text-3xl font-extrabold tabular-nums text-[var(--text-primary)] leading-tight mt-2">
-                S/{ingresos.toFixed(0)}
-              </p>
-              <p className="text-sm text-[var(--text-tertiary)] mt-1">Tarifas cobradas</p>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* ── 2. Tabla / Empty state ─────────────────────────────────── */}
       {assignments.length === 0 && !error ? (
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-12 text-center shadow-sm">
-          <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--surface-sunken)] mb-4">
-            <ClipboardList className="h-8 w-8 text-[var(--text-tertiary)]" />
-          </span>
-          <p className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">
-            Sin asignaciones registradas
-          </p>
-          <p className="text-base text-[var(--text-secondary)] mt-2 max-w-md mx-auto leading-relaxed">
-            Asigna un repartidor a una orden pendiente y se mostrará acá con su estado en vivo.
-          </p>
-          <button
-            type="button"
-            onClick={() => setAssignModal({ open: true })}
-            disabled={partnersActivos === 0}
-            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 mt-6"
-          >
-            <Plus className="h-4 w-4" />
-            Crear primera asignación
-          </button>
+        <div className="flex flex-wrap items-center justify-center gap-3 rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-8 text-center">
+          <ClipboardList className="h-5 w-5 text-[var(--text-tertiary)]" aria-hidden />
+          <p className="text-sm font-semibold text-[var(--text-secondary)]">Todavía no asignaste pedidos a un repartidor.</p>
+          {botonAsignar("Asignar el primero")}
         </div>
       ) : assignments.length > 0 ? (
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-[var(--rule-base)] flex items-center justify-between gap-3 flex-wrap">
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-              Listado de asignaciones
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--rule-base)] py-2 pl-4 pr-2">
+            <p className="text-sm font-semibold text-[var(--text-secondary)]">
+              {assignments.length} {assignments.length === 1 ? "asignación" : "asignaciones"}
             </p>
-            <p className="text-sm text-[var(--text-tertiary)] font-bold">
-              {assignments.length} {assignments.length === 1 ? "registro" : "registros"}
-            </p>
+            {botonAsignar("Asignar pedido")}
           </div>
           <div className="overflow-x-auto">
             <DataTable className="w-full text-sm">
               <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
                 <tr>
-                  <th className="text-left px-6 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-[var(--text-secondary)]">
                     Orden
                   </th>
-                  <th className="text-left px-6 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                  <th className="text-left px-6 py-4 text-sm font-semibold text-[var(--text-secondary)]">
                     Repartidor
                   </th>
-                  <th className="text-right px-6 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                  <th className="text-right px-6 py-4 text-sm font-semibold text-[var(--text-secondary)]">
                     Tarifa
                   </th>
-                  <th className="text-center px-6 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                  <th className="text-center px-6 py-4 text-sm font-semibold text-[var(--text-secondary)]">
                     Estado
                   </th>
-                  <th className="text-right px-6 py-4 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] hidden sm:table-cell">
+                  <th className="text-right px-6 py-4 text-sm font-semibold text-[var(--text-secondary)] hidden sm:table-cell">
                     Asignado
                   </th>
                 </tr>
@@ -358,79 +284,15 @@ export function AsignacionesTab() {
         </div>
       ) : null}
 
-      {/* ── 3. Modal asignar ───────────────────────────────────────── */}
-      <AdminModal
-        open={assignModal.open}
-        onClose={() => setAssignModal({ open: false })}
-        title="Nueva asignación"
-        icon={Plus}
-        variant="default"
-        footer={
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={() => setAssignModal({ open: false })}
-              className="flex-1 h-12 rounded-xl text-sm font-semibold text-[var(--text-primary)] bg-[var(--surface-sunken)] hover:brightness-95 border border-[var(--rule-base)] transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={handleAssign}
-              disabled={assigning || !selectedPartner}
-              className="flex-[2] inline-flex items-center justify-center gap-2 h-12 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50"
-            >
-              {assigning ? (
-                <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <CheckCircle className="h-4 w-4" />
-              )}
-              {assigning ? "Asignando..." : "Confirmar asignación"}
-            </button>
-          </div>
-        }
-      >
-        <div className={cn(MODAL_BODY, "space-y-4")}>
-          <Field className="space-y-2" label="ID de orden (opcional)" labelClassName="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-            <input
-              type="text"
-              value={assignModal.orderId ?? ""}
-              onChange={(e) => setAssignModal((p) => ({ ...p, orderId: e.target.value }))}
-              placeholder="Ej: ORD-12345"
-              className="w-full px-4 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-            />
-          </Field>
-
-          <Field className="space-y-2" label="Repartidor *" labelClassName="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-            {(id) => (
-              <>
-                <div className="relative">
-                  <select
-                    id={id}
-                    value={selectedPartner}
-                    onChange={(e) => setSelectedPartner(e.target.value)}
-                    className="w-full px-4 h-12 pr-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base font-medium text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none transition-all"
-                  >
-                    <option value="">Seleccionar repartidor...</option>
-                    {partners.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name} — {p.zone} — {formatCurrency(toNum(p.fee))}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[var(--text-tertiary)] pointer-events-none" />
-                </div>
-                {partners.length === 0 && (
-                  <p className="text-sm text-[var(--data-warning-500)] font-bold flex items-center gap-1.5 mt-2">
-                    <AlertCircle className="h-4 w-4" />
-                    No hay repartidores activos. Activa uno desde la pestaña Repartidores.
-                  </p>
-                )}
-              </>
-            )}
-          </Field>
-        </div>
-      </AdminModal>
+      <AsignarPedidoModal
+        assignModal={assignModal}
+        setAssignModal={setAssignModal}
+        partners={partners}
+        selectedPartner={selectedPartner}
+        setSelectedPartner={setSelectedPartner}
+        assigning={assigning}
+        handleAssign={() => void handleAssign()}
+      />
     </div>
   );
 }

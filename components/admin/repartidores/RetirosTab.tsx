@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { CardTitle, SectionTitle } from "@buleje/design-system";
-import { CheckCircle, Copy, MoreHorizontal, RefreshCw, RotateCcw, ThumbsUp, Wallet, XCircle } from "@buleje/design-system/icons";
+import { CardTitle } from "@buleje/design-system";
+import { CheckCircle, Copy, MoreHorizontal, RotateCcw, ThumbsUp, Wallet, XCircle } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { BOTON, CLASE_CHIP, claseChipFiltro } from "@/components/admin/rrhh/rrhh-form";
+import { BOTON, CLASE_CHIP } from "@/components/admin/rrhh/rrhh-form";
+import { useIndicadoresReparto } from "@/components/admin/delivery/reparto-indicadores";
+import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import { formatCurrency, formatDateTimeShort } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { ResolverRetiroModal } from "./ResolverRetiroModal";
@@ -48,7 +50,7 @@ const VACIO: Record<FiltroHistorial, string> = {
  */
 export function RetirosTab() {
   const [filtro, setFiltro] = useState<FiltroHistorial>("todos");
-  const { datos, cargando, error, recargar, resolver } = useRetiros(filtro);
+  const { datos, cargando, error, resolver } = useRetiros(filtro);
   const [modal, setModal] = useState<{ retiro: RetiroFila; modo: "pagar" | "rechazar" | "deshacer" } | null>(null);
   const [aviso, setAviso] = useState<{ tono: "ok" | "error"; texto: string } | null>(null);
   const [aprobando, setAprobando] = useState<string | null>(null);
@@ -98,33 +100,47 @@ export function RetirosTab() {
 
   const historial = datos?.historial ?? [];
   const resumen = datos?.resumen;
+  const kpis = useIndicadoresReparto({
+    clave: "pagos",
+    cargando: !datos && cargando,
+    resumen: resumen ? `${formatCurrency(resumen.porPagar.monto)} por pagar` : undefined,
+    indicadores: resumen
+      ? [
+          {
+            icono: Wallet,
+            rotulo: "Por pagar",
+            valor: formatCurrency(resumen.porPagar.monto),
+            extra: `${resumen.porPagar.cantidad} ${resumen.porPagar.cantidad === 1 ? "retiro" : "retiros"}`,
+            tono: resumen.porPagar.cantidad > 0 ? "alerta" : undefined,
+          },
+          {
+            icono: CheckCircle,
+            rotulo: "Pagado este mes",
+            valor: formatCurrency(resumen.pagadoEsteMes.monto),
+            ayuda: "Cada pago quedó también como gasto «Pago a repartidor» en Transporte.",
+          },
+        ]
+      : [],
+  });
 
   return (
     <div className="space-y-4">
+      {kpis.boton}
+      {kpis.panel}
       <div className="flex flex-wrap items-center gap-2">
-        <SectionTitle>Retiros por pagar</SectionTitle>
+        <CardTitle>Por pagar</CardTitle>
+        {resumen && resumen.porPagar.cantidad > 0 && (
+          <span className="text-sm tabular-nums text-[var(--text-secondary)]">
+            {resumen.porPagar.cantidad} {resumen.porPagar.cantidad === 1 ? "retiro" : "retiros"} · {formatCurrency(resumen.porPagar.monto)}
+          </span>
+        )}
         <InfoTip
+          title="Retiros por pagar"
           what="Lo que cada repartidor pidió retirar de lo que ganó, desde su app."
-          affects="Al pagar se anota el gasto «Pago a repartidor» en Transporte; en efectivo puede salir de la caja abierta. Rechazar le devuelve la plata a su saldo. Si pagaste por error: «Deshacer pago» en el historial (borra el gasto y el efectivo vuelve a la caja abierta)."
+          affects="Al pagar se anota el gasto «Pago a repartidor» en Transporte; en efectivo puede salir de la caja abierta. Rechazar le devuelve la plata a su saldo. Si pagaste por error: «Deshacer pago» en el historial."
           example="Juan pidió S/ 80 a su Yape: lo yapeas, tocas Pagar y queda en Gastos."
         />
-        <button type="button" onClick={() => void recargar()} className={cn(BOTON.chico, "ml-auto")} aria-label="Actualizar retiros">
-          <RefreshCw className={cn("h-4 w-4", cargando && "animate-spin")} />
-        </button>
       </div>
-
-      {resumen && (
-        <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-[var(--text-secondary)]">
-          <span>
-            Debes <strong className="tabular-nums text-[var(--text-primary)]">{formatCurrency(resumen.porPagar.monto)}</strong> en{" "}
-            {resumen.porPagar.cantidad} {resumen.porPagar.cantidad === 1 ? "retiro" : "retiros"}
-          </span>
-          <span>
-            Pagado este mes <strong className="tabular-nums text-[var(--text-primary)]">{formatCurrency(resumen.pagadoEsteMes.monto)}</strong>
-          </span>
-        </div>
-      )}
-
       {aviso && (
         <p
           role="status"
@@ -151,7 +167,7 @@ export function RetirosTab() {
             <li key={r.id} className="flex flex-wrap items-center gap-3 p-3">
               <div className="flex-[1_1_12rem]">
                 <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{r.partnerName}</p>
-                <p className="text-xs text-[var(--text-tertiary)] tabular-nums">
+                <p className="text-sm text-[var(--text-secondary)] tabular-nums">
                   Yape {r.yapeNumber} · pidió el {formatDateTimeShort(r.createdAt)}
                 </p>
               </div>
@@ -159,11 +175,11 @@ export function RetirosTab() {
               <span className="w-24 text-right text-base font-bold tabular-nums text-[var(--text-primary)]">{formatCurrency(r.amount)}</span>
               {datos.puedeResolver && (
                 <div className="flex items-center gap-1.5">
-                  <button type="button" onClick={() => setModal({ retiro: r, modo: "pagar" })} className={BOTON.chicoPrimario}>
+                  <button type="button" onClick={() => setModal({ retiro: r, modo: "pagar" })} className={cn(BOTON.chicoPrimario, "h-12 rounded-xl px-4")}>
                     <Wallet className="h-4 w-4" aria-hidden />
                     Pagar
                   </button>
-                  <ActionMenu label="Más acciones" icon={MoreHorizontal} soloIcono size="sm" actions={acciones(r)} />
+                  <ActionMenu label="Más acciones" icon={MoreHorizontal} soloIcono size="md" className="w-12" actions={acciones(r)} />
                 </div>
               )}
             </li>
@@ -174,19 +190,18 @@ export function RetirosTab() {
       <section className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           <CardTitle>Historial</CardTitle>
-          <div className="ml-auto flex gap-1.5">
-            {(
-              [
-                ["todos", "Todos"],
-                ["paid", "Pagados"],
-                ["rejected", "Rechazados"],
-              ] as const
-            ).map(([id, label]) => (
-              <button key={id} type="button" onClick={() => setFiltro(id)} className={claseChipFiltro(filtro === id)} aria-pressed={filtro === id}>
-                {label}
-              </button>
-            ))}
-          </div>
+          <SegmentedControl<FiltroHistorial>
+            value={filtro}
+            onChange={setFiltro}
+            label="Qué retiros ver en el historial"
+            size="lg"
+            className="ml-auto"
+            options={[
+              { value: "todos", label: "Todos" },
+              { value: "paid", label: "Pagados" },
+              { value: "rejected", label: "Rechazados" },
+            ]}
+          />
         </div>
         {historial.length === 0 ? (
           <p className="text-sm text-[var(--text-tertiary)]">{VACIO[filtro]}</p>
@@ -201,7 +216,7 @@ export function RetirosTab() {
                 )}
                 <div className="flex-[1_1_12rem]">
                   <p className="truncate text-sm text-[var(--text-primary)]">{r.partnerName}</p>
-                  <p className="truncate text-xs text-[var(--text-tertiary)]">
+                  <p className="truncate text-sm text-[var(--text-secondary)]">
                     {r.resolvedAt ? formatDateTimeShort(r.resolvedAt) : formatDateTimeShort(r.createdAt)}
                     {r.note ? ` · ${r.note}` : ""}
                   </p>
@@ -213,7 +228,8 @@ export function RetirosTab() {
                     label="Más acciones"
                     icon={MoreHorizontal}
                     soloIcono
-                    size="sm"
+                    size="md"
+                    className="w-12"
                     actions={[
                       {
                         id: "deshacer",

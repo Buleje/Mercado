@@ -224,7 +224,10 @@ describe("panel — encabezado del módulo en la misma banda que las pestañas",
     // el header (actualizar, reporte bancario, etiquetas, rango de fechas) y
     // las pasan por `heading.actions`.
     "FinanzasModule", "InventarioAlmacenesModule", "VendorDashboardModule",
-    "MarketplaceModule", "DeliveryPartnersModule",
+    "MarketplaceModule",
+    // DeliveryPartnersModule (Pedidos y reparto › Reparto) dejó la barra de
+    // pestañas el 10-10: es una vista con `BarraDeSecciones` en `?sub=` y la
+    // cabecera en una fila, como Turnos y Me deben (el título lo da el hub).
   ];
 
   it("los hubs pasan el título por `heading`, no como header aparte", () => {

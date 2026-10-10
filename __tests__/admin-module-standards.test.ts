@@ -53,6 +53,9 @@ const NO_TABS_MODULES = [
   // Ola 3 (2026-10-10): ya no es un hub, es la vista «Facturas y boletas» de
   // Comprobantes (ComprobantesHubModule pone la barra y el título del hub).
   "FacturacionModule.tsx",
+  // Pedidos y reparto › Reparto (2026-10-10): sus cinco secciones van en
+  // `BarraDeSecciones` (`?sub=`), como Turnos y Me deben; no usa AdminTabBar.
+  "DeliveryPartnersModule.tsx",
 ];
 // Sub-módulos que viven SIEMPRE dentro de la pestaña de un hub y no pintan
 // título propio: la pestaña marcada arriba ya lo dice, y su propia barra de
@@ -65,6 +68,9 @@ const NESTED_SIN_TITULO = [
   // Comprobantes → Facturas y boletas: el título de la vista lo dibuja EInvoiceTab
   // con TituloDeVista (ola 3, 2026-10-10).
   "FacturacionModule.tsx",
+  // Pedidos y reparto → Reparto: TabRouter manda `?tab=delivery-partners` al hub
+  // (la pestaña «Reparto» es el título); montado suelto dibuja «Reparto».
+  "DeliveryPartnersModule.tsx",
 ];
 // Módulos con header custom (no usan AdminModuleHeader, patrón legítimo documentado)
 const CUSTOM_HEADER_MODULES = [

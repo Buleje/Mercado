@@ -20,7 +20,12 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { tenantFetch } from "@/lib/tenant-fetch";
 
 import { SectionTitle } from "@buleje/design-system";
-export default function NetworkToggleCard() {
+/**
+ * `enVentana` (10-10): dentro de la ventana que abre Reparto › Más, que ya
+ * trae el título; sin caja ni encabezado propios, sólo la explicación corta y
+ * las dos opciones.
+ */
+export default function NetworkToggleCard({ enVentana = false }: { enVentana?: boolean } = {}) {
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -73,9 +78,15 @@ export default function NetworkToggleCard() {
 
   return (
     <section
-      aria-labelledby="network-toggle-title"
-      className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6"
+      aria-labelledby={enVentana ? undefined : "network-toggle-title"}
+      aria-label={enVentana ? "Red de repartidores Buleje" : undefined}
+      className={enVentana ? "" : "rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-6"}
     >
+      {enVentana ? (
+        <p className="mb-4 text-sm text-[var(--text-secondary)]">
+          Si la activas, los repartidores de Buleje ven tu tienda en su mapa y pueden aceptar tus pedidos. Si no, sólo tu equipo los atiende.
+        </p>
+      ) : (
       <header className="flex items-start gap-3 mb-5">
         <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
           <Truck className="h-6 w-6" strokeWidth={2.25} aria-hidden />
@@ -92,6 +103,7 @@ export default function NetworkToggleCard() {
           </p>
         </div>
       </header>
+      )}
 
       {loading ? (
         <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)] py-6 justify-center">

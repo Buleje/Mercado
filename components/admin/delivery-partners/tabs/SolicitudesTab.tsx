@@ -1,13 +1,15 @@
 "use client";
 import { useState, useEffect, useCallback, type ReactNode } from "react";
-import { CardTitle } from "@buleje/design-system";
-import { AlertCircle, CheckCircle, Clock, FileText, MapPin, Phone, RefreshCw, ThumbsDown, ThumbsUp, X, Check } from "@buleje/design-system/icons";
+import { AlertCircle, CheckCircle, Clock, FileText, MapPin, Phone, ThumbsDown, ThumbsUp, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { tenantFetch } from "@/lib/tenant-fetch";
 import { TableSkeleton, VehicleIcon } from "@/components/admin/delivery-partners/shared";
+import { useIndicadoresReparto } from "@/components/admin/delivery/reparto-indicadores";
+import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import { formatDateNumeric, formatDateTime } from "@/lib/format";
+import { AVAILABILITY_LABELS, consentIcon, isKycComplete, KycSection, parseApplicationBody, VEHICLE_LABELS, type DriverApplication } from "../solicitudes-helpers";
 
-export function SolicitudesTab() {
+export function SolicitudesTab({ selector }: { selector?: ReactNode } = {}) {
   const [apps, setApps] = useState<DriverApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
@@ -66,198 +68,74 @@ export function SolicitudesTab() {
   }).length;
   const incompleteCount = pendingCount - readyToApprove;
 
+  const kpis = useIndicadoresReparto({
+    clave: "postulantes",
+    cargando: loading && apps.length === 0,
+    resumen: `${pendingCount} por revisar · ${readyToApprove} ${readyToApprove === 1 ? "lista" : "listas"}`,
+    indicadores: [
+      { icono: FileText, rotulo: "Recibidas", valor: String(apps.length), extra: reviewedCount > 0 ? `${reviewedCount} ya ${reviewedCount === 1 ? "revisada" : "revisadas"}` : undefined },
+      { icono: Clock, rotulo: "Por revisar", valor: String(pendingCount), tono: pendingCount > 0 ? "alerta" : undefined },
+      {
+        icono: CheckCircle,
+        rotulo: "Listas para aprobar",
+        valor: String(readyToApprove),
+        ayuda: "Por revisar y con todos sus documentos (KYC) completos.",
+        tono: readyToApprove > 0 ? "ok" : undefined,
+      },
+      {
+        icono: AlertCircle,
+        rotulo: "Les faltan documentos",
+        valor: String(incompleteCount),
+        ayuda: "Por revisar, pero sin todos sus documentos: aprobarlas es aceptar sin KYC completo.",
+        tono: incompleteCount > 0 ? "error" : undefined,
+      },
+    ],
+  });
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      {kpis.boton}
+      {kpis.panel}
       {error && (
-        <div className="flex items-center gap-3 p-4 bg-[var(--data-error-50)] border border-[var(--data-error-500)]/30 rounded-2xl text-sm text-[var(--data-error-500)]">
+        <div className="flex items-center gap-3 py-1 pl-4 pr-1 bg-[var(--data-error-50)] border border-[var(--data-error-500)]/30 rounded-2xl text-sm text-[var(--data-error-ink)] dark:bg-[var(--data-error-500)]/10">
           <AlertCircle className="h-5 w-5 shrink-0" />
           <span className="font-bold">{error}</span>
           <button aria-label="Quitar"
             type="button"
             onClick={() => setError(null)}
-            className="ml-auto p-1 rounded-xl hover:bg-[var(--data-error-100)] transition-colors"
+            className="ml-auto inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl hover:bg-[var(--data-error-100)] transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
       )}
 
-      {/* ── 1. Hero card con KPIs ──────────────────────────────────── */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
-        <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
-          <div className="flex items-start gap-3">
-            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] shrink-0">
-              <FileText className="h-5 w-5" />
-            </span>
-            <div>
-              <CardTitle className="text-[length:var(--ts-xl)] font-bold leading-tight">
-                Solicitudes de repartidores
-              </CardTitle>
-              <p className="text-sm text-[var(--text-secondary)] mt-1 leading-snug">
-                {apps.length === 0
-                  ? "Aún no llegaron solicitudes. Los nuevos repartidores aparecerán acá para que las revises."
-                  : `${apps.length} ${apps.length === 1 ? "solicitud recibida" : "solicitudes recibidas"} · revisa KYC, aprueba o rechaza.`}
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={fetchApps}
-            disabled={loading}
-            className="inline-flex items-center gap-2 px-5 h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 shrink-0"
-          >
-            <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
-            Actualizar
-          </button>
-        </div>
-
+      {/* Una fila: Tu equipo / Postulantes · Por revisar / Todas. */}
+      <div className="flex flex-wrap items-center gap-2">
+        {selector}
         {apps.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
-                  <FileText className="h-5 w-5 text-primary" />
-                </span>
-              </div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                Total
-              </p>
-              <p className="text-3xl font-extrabold tabular-nums text-[var(--text-primary)] leading-tight mt-2">
-                {apps.length}
-              </p>
-              <p className="text-sm text-[var(--text-tertiary)] mt-1">Recibidas</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setFilter("pending")}
-              disabled={pendingCount === 0}
-              className={cn(
-                "text-left rounded-xl border p-5 transition-colors",
-                pendingCount > 0
-                  ? "border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)] hover:brightness-95"
-                  : "border-[var(--rule-soft)] bg-[var(--surface-sunken)] cursor-default",
-              )}
-            >
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--data-warning-100)]">
-                  <Clock className="h-5 w-5 text-[var(--data-warning-500)]" />
-                </span>
-              </div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                Pendientes
-              </p>
-              <p className={cn(
-                "text-3xl font-extrabold tabular-nums leading-tight mt-2",
-                pendingCount > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--text-primary)]",
-              )}>
-                {pendingCount}
-              </p>
-              <p className="text-sm text-[var(--text-tertiary)] mt-1">Por revisar</p>
-            </button>
-            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
-                  <CheckCircle className="h-5 w-5 text-[var(--data-success-500)]" />
-                </span>
-              </div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                Listas para aprobar
-              </p>
-              <p className="text-3xl font-extrabold tabular-nums text-[var(--data-success-500)] leading-tight mt-2">
-                {readyToApprove}
-              </p>
-              <p className="text-sm text-[var(--text-tertiary)] mt-1">KYC completo</p>
-            </div>
-            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--data-error-100)]">
-                  <AlertCircle className="h-5 w-5 text-[var(--data-error-500)]" />
-                </span>
-              </div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                Incompletas
-              </p>
-              <p className={cn(
-                "text-3xl font-extrabold tabular-nums leading-tight mt-2",
-                incompleteCount > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-primary)]",
-              )}>
-                {incompleteCount}
-              </p>
-              <p className="text-sm text-[var(--text-tertiary)] mt-1">Falta KYC</p>
-            </div>
-          </div>
+          <SegmentedControl<"pending" | "all">
+            value={filter}
+            onChange={setFilter}
+            label="Qué solicitudes ver"
+            size="lg"
+            options={[
+              { value: "pending", label: "Por revisar", badge: pendingCount },
+              { value: "all", label: "Todas", badge: apps.length },
+            ]}
+          />
         )}
       </div>
-
-      {/* ── 2. Filtros ─────────────────────────────────────────────── */}
-      {apps.length > 0 && (
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-5 sm:p-6 shadow-sm">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mr-2">
-              Filtrar
-            </span>
-            <button
-              type="button"
-              onClick={() => setFilter("pending")}
-              className={cn(
-                "inline-flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-semibold transition-colors border",
-                filter === "pending"
-                  ? "bg-primary text-white border-primary"
-                  : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]",
-              )}
-            >
-              Pendientes
-              <span className={cn(
-                "inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-full text-xs font-extrabold tabular-nums",
-                filter === "pending" ? "bg-white/25" : "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
-              )}>
-                {pendingCount}
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilter("all")}
-              className={cn(
-                "inline-flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-semibold transition-colors border",
-                filter === "all"
-                  ? "bg-primary text-white border-primary"
-                  : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]",
-              )}
-            >
-              Todas
-              <span className={cn(
-                "inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-full text-xs font-extrabold tabular-nums",
-                filter === "all" ? "bg-white/25" : "bg-[var(--surface-sunken)] text-[var(--text-primary)]",
-              )}>
-                {apps.length}
-              </span>
-            </button>
-            {reviewedCount > 0 && (
-              <span className="ml-auto text-sm text-[var(--text-tertiary)] font-bold">
-                {reviewedCount} {reviewedCount === 1 ? "ya revisada" : "ya revisadas"}
-              </span>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* ── 3. Lista / Empty state ─────────────────────────────────── */}
       {loading ? (
         <TableSkeleton />
       ) : filtered.length === 0 ? (
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-12 text-center shadow-sm">
-          <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--surface-sunken)] mb-4">
-            <FileText className="h-8 w-8 text-[var(--text-tertiary)]" />
-          </span>
-          <p className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">
-            {filter === "pending" ? "No hay solicitudes pendientes" : "No hay solicitudes"}
-          </p>
-          <p className="text-base text-[var(--text-secondary)] mt-2 max-w-md mx-auto leading-relaxed">
-            {filter === "pending"
-              ? "Cuando lleguen nuevos postulantes, aparecerán acá para que los revises."
-              : "Aún no se recibieron solicitudes de repartidores."}
-          </p>
-        </div>
+        <p className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-8 text-center text-sm font-semibold text-[var(--text-secondary)]">
+          {filter === "pending"
+            ? "No hay postulantes por revisar: cuando alguien postule desde la app, aparece acá."
+            : "Todavía no llegó ninguna solicitud de repartidor."}
+        </p>
       ) : (
         <div className="space-y-3">
           {filtered.map((app) => {
@@ -351,7 +229,7 @@ export function SolicitudesTab() {
                           {AVAILABILITY_LABELS[data.availability] ?? data.availability}
                         </span>
                       </div>
-                      <p className="text-xs text-[var(--text-tertiary)] mt-2 font-bold">
+                      <p className="text-sm text-[var(--text-secondary)] mt-2 font-bold">
                         Recibida:{" "}
                         {formatDateTime(app.createdAt)}
                       </p>
@@ -365,7 +243,7 @@ export function SolicitudesTab() {
                         onClick={() => handleAction(app.id, "approve")}
                         disabled={isProcessing || !canApprove}
                         title={canApprove ? "Aprobar repartidor" : `Falta: ${kycCheck.missing.join(", ")}`}
-                        className="inline-flex items-center gap-2 px-4 h-11 rounded-xl text-sm font-semibold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] border border-[var(--data-success-500)]/30 hover:brightness-95 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        className="inline-flex items-center gap-2 px-4 h-12 rounded-xl text-sm font-semibold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] border border-[var(--data-success-500)]/30 hover:brightness-95 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                       >
                         <ThumbsUp className="h-4 w-4" />
                         {isProcessing ? "..." : "Aprobar"}
@@ -374,7 +252,7 @@ export function SolicitudesTab() {
                         type="button"
                         onClick={() => handleAction(app.id, "reject")}
                         disabled={isProcessing}
-                        className="inline-flex items-center gap-2 px-4 h-11 rounded-xl text-sm font-semibold bg-[var(--data-error-50)] text-[var(--data-error-500)] border border-[var(--data-error-500)]/30 hover:bg-[var(--data-error-100)] disabled:opacity-50 transition-colors"
+                        className="inline-flex items-center gap-2 px-4 h-12 rounded-xl text-sm font-semibold bg-[var(--data-error-50)] text-[var(--data-error-ink)] dark:bg-[var(--data-error-500)]/10 border border-[var(--data-error-500)]/30 hover:bg-[var(--data-error-100)] disabled:opacity-50 transition-colors"
                       >
                         <ThumbsDown className="h-4 w-4" />
                         Rechazar
@@ -403,7 +281,7 @@ export function SolicitudesTab() {
                         ]}
                       />
                     ) : (
-                      <div className="text-xs text-[var(--text-tertiary)]">
+                      <div className="text-sm text-[var(--text-secondary)]">
                         Vehículo no motorizado — sin licencia.
                       </div>
                     )}
@@ -430,7 +308,7 @@ export function SolicitudesTab() {
                       ]}
                     />
                     {!kycCheck.ok && (
-                      <div className="sm:col-span-2 rounded-xl bg-[var(--data-error-100)] text-[var(--data-error-500)] px-3 py-2 text-xs font-bold">
+                      <div className="sm:col-span-2 rounded-xl bg-[var(--data-error-100)] text-[var(--data-error-500)] px-3 py-2 text-sm font-bold">
                         Faltan datos para aprobar: {kycCheck.missing.join(" · ")}
                       </div>
                     )}
@@ -444,143 +322,3 @@ export function SolicitudesTab() {
     </div>
   );
 }
-
-function consentIcon(ok: boolean) {
-  return ok
-    ? <Check className="ml-auto h-4 w-4 text-[var(--data-success-500)]" aria-label="Sí" />
-    : <X className="ml-auto h-4 w-4 text-[var(--data-error-500)]" aria-label="No" />;
-}
-
-function KycSection({ title, rows }: { title: string; rows: [string, ReactNode][] }) {
-  return (
-    <div className="rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-base)] px-3 py-2.5">
-      <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5">
-        {title}
-      </p>
-      <dl className="space-y-0.5">
-        {rows.map(([k, v]) => (
-          <div key={k} className="flex justify-between gap-2 text-xs">
-            <dt className="text-[var(--text-tertiary)]">{k}</dt>
-            <dd className="font-bold text-[var(--text-primary)] truncate">{v}</dd>
-          </div>
-        ))}
-      </dl>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────
-// Componente principal
-// ─────────────────────────────────────────────
-
-
-// ── Tipos/helpers movidos de DeliveryPartnersModule (refactor 2026-06-15) ──
-interface DriverKycSummary {
-  schemaVersion: 1;
-  applicationStatus: "pendiente" | "aprobada" | "rechazada";
-  availability: string;
-  kyc: {
-    dni: string;
-    birthDate: string;
-    license: { number: string | null; category: string | null; expiresAt: string | null } | null;
-    vehicle: { plate: string | null; soatNumber: string | null; soatExpiresAt: string | null } | null;
-  };
-  consents: {
-    acceptedTerms: boolean;
-    acceptedPrivacy: boolean;
-    confirmAdult: boolean;
-    acceptedAt: string;
-    termsVersion: string;
-    privacyVersion: string;
-  };
-  reviewedAt?: string;
-  reviewedBy?: string;
-  reviewNotes?: string;
-}
-
-interface DriverApplication {
-  id: string;
-  title: string;
-  body: string;
-  readAt: string | null;
-  createdAt: string;
-  partner: { id: string; isActive: boolean; vehicleType: string; zone: string } | null;
-  kyc: DriverKycSummary | null;
-}
-
-function parseApplicationBody(body: string) {
-  // Soporta dos formatos:
-  //   v1 legacy:   "Name (Phone) - Zona: zone - Vehículo: type - Horario: avail"
-  //   v2 KYC:      "Name · DNI 12345678 | Tel 999333222 | ... | Horario: full"
-  const v1 = body.match(
-    /^(.+?)\s*\((.+?)\)\s*-\s*Zona:\s*(.+?)\s*-\s*Vehículo:\s*(.+?)\s*-\s*Horario:\s*(.+)$/,
-  );
-  if (v1) {
-    return {
-      name: v1[1].trim(),
-      phone: v1[2].trim(),
-      zone: v1[3].trim(),
-      vehicle: v1[4].trim(),
-      availability: v1[5].trim(),
-      dni: "",
-    };
-  }
-  // v2: extraer por tokens.
-  const nameMatch = body.match(/^([^·|]+)/);
-  const phoneMatch = body.match(/Tel\s+(\d{6,15})/i);
-  const dniMatch = body.match(/DNI\s+(\d{8})/i);
-  const vehicleMatch = body.match(/Vehículo:\s*([^·|]+)/i);
-  const availMatch = body.match(/Horario:\s*([^·|]+)/i);
-  return {
-    name: nameMatch?.[1]?.trim() ?? body,
-    phone: phoneMatch?.[1] ?? "",
-    zone: "",
-    vehicle: vehicleMatch?.[1]?.trim()?.split(/\s+/)?.[0] ?? "",
-    availability: availMatch?.[1]?.trim() ?? "",
-    dni: dniMatch?.[1] ?? "",
-  };
-}
-
-/** Verifica que el KYC esté completo según el tipo de vehículo (gate de aprobación). */
-function isKycComplete(kyc: DriverKycSummary | null, vehicleType: string): { ok: boolean; missing: string[] } {
-  if (!kyc) return { ok: false, missing: ["KYC no enviado (formulario antiguo)"] };
-  const missing: string[] = [];
-  if (!/^\d{8}$/.test(kyc.kyc.dni)) missing.push("DNI inválido");
-  if (!kyc.kyc.birthDate) missing.push("Fecha de nacimiento");
-  if (!kyc.consents.acceptedTerms) missing.push("Términos no aceptados");
-  if (!kyc.consents.acceptedPrivacy) missing.push("Privacidad no aceptada");
-  if (!kyc.consents.confirmAdult) missing.push("Edad no confirmada");
-  // FIX 2026-05-06: case-insensitive — VEHICLE_TYPES en UI usa "Moto"/"Auto"
-  // (capital), antes la comparación lowercase saltaba la validación de
-  // licencia/SOAT silenciosamente — riesgo legal/operacional crítico.
-  const vt = (vehicleType ?? "").toLowerCase();
-  const isMotor = vt === "moto" || vt === "auto";
-  if (isMotor) {
-    if (!kyc.kyc.license?.number) missing.push("Licencia");
-    if (!kyc.kyc.license?.category) missing.push("Categoría licencia");
-    if (!kyc.kyc.license?.expiresAt || new Date(kyc.kyc.license.expiresAt) < new Date()) {
-      missing.push("Licencia vigente");
-    }
-    if (!kyc.kyc.vehicle?.plate) missing.push("Placa");
-    if (!kyc.kyc.vehicle?.soatNumber) missing.push("SOAT");
-    if (!kyc.kyc.vehicle?.soatExpiresAt || new Date(kyc.kyc.vehicle.soatExpiresAt) < new Date()) {
-      missing.push("SOAT vigente");
-    }
-  }
-  return { ok: missing.length === 0, missing };
-}
-
-const AVAILABILITY_LABELS: Record<string, string> = {
-  manana: "Mañana",
-  tarde: "Tarde",
-  noche: "Noche",
-  full: "Todo el día",
-  fines: "Fines de semana",
-};
-
-const VEHICLE_LABELS: Record<string, string> = {
-  moto: "Moto",
-  bicicleta: "Bicicleta",
-  auto: "Auto",
-  a_pie: "A pie",
-};

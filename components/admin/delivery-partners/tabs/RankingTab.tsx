@@ -1,10 +1,13 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { CardTitle, DataTable } from "@buleje/design-system";
+import { DataTable } from "@buleje/design-system";
 import { CheckCircle, Clock, DollarSign, Star, Trophy, Users, Crown } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { tenantFetch } from "@/lib/tenant-fetch";
 import { TableSkeleton, VehicleIcon, toNum } from "@/components/admin/delivery-partners/shared";
+import { useIndicadoresReparto } from "@/components/admin/delivery/reparto-indicadores";
+import SegmentedControl from "@/components/ui-system/SegmentedControl";
+import { formatCurrency } from "@/lib/format";
 
 export function RankingTab() {
   const [data, setData] = useState<RankingEntry[]>([]);
@@ -35,135 +38,68 @@ export function RankingTab() {
   const periodLabel = PERIODS.find((p) => p.id === period)?.label.toLowerCase() ?? "";
   const topPartner = data[0];
 
+  const pct = summary ? Math.round(summary.avgCompletionRate * 100) : 0;
+  const kpis = useIndicadoresReparto({
+    clave: "ranking",
+    cargando: loading && !summary,
+    resumen: summary ? `${summary.totalDelivered} entregas · ${pct}% completas` : undefined,
+    indicadores: summary
+      ? [
+          { icono: Users, rotulo: "Repartidores", valor: String(summary.totalPartners), ayuda: `Los que entran en el ranking de ${periodLabel}.` },
+          { icono: CheckCircle, rotulo: "Entregas", valor: String(summary.totalDelivered), tono: summary.totalDelivered > 0 ? "ok" : undefined },
+          {
+            icono: DollarSign,
+            rotulo: "Ganado en tarifas",
+            valor: formatCurrency(toNum(summary.totalEarnings)),
+            ayuda: "Lo que sumaron las tarifas de sus entregas en el período. No es lo pagado: los retiros pagados están en Pagos.",
+          },
+          {
+            icono: Trophy,
+            rotulo: "Completadas",
+            valor: `${pct}%`,
+            ayuda: "De los pedidos que aceptaron, cuántos terminaron entregados (promedio de todos).",
+            tono: summary.avgCompletionRate >= 0.85 ? "ok" : summary.avgCompletionRate >= 0.5 ? "alerta" : "error",
+          },
+        ]
+      : [],
+  });
+
   return (
-    <div className="space-y-6">
-      {/* ── 1. Hero card con period selector + KPIs ─────────────── */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-6 sm:p-8 shadow-sm">
-        <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
-          <div className="flex items-start gap-3">
-            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--data-warning-100)] text-[var(--data-warning-500)] shrink-0">
-              <Trophy className="h-5 w-5" />
+    <div className="space-y-4">
+      {kpis.boton}
+      {kpis.panel}
+
+      {/* Una fila: período · quién lidera. */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <SegmentedControl<"week" | "month" | "all">
+          value={period}
+          onChange={setPeriod}
+          label="Período del ranking"
+          size="lg"
+          options={PERIODS.map((p) => ({ value: p.id, label: p.label }))}
+        />
+        {topPartner && (
+          <p className="flex min-w-0 items-center gap-1.5 text-sm text-[var(--text-secondary)]">
+            <Crown className="h-4 w-4 shrink-0 text-[var(--data-warning-500)]" aria-hidden />
+            <span>
+              <span className="font-bold text-[var(--text-primary)]">{topPartner.name}</span> lidera {periodLabel} con {topPartner.delivered}{" "}
+              {topPartner.delivered === 1 ? "entrega" : "entregas"} y {toNum(topPartner.rating).toFixed(1)} de calificación.
             </span>
-            <div>
-              <CardTitle className="text-[length:var(--ts-xl)] font-bold leading-tight">
-                Ranking de repartidores
-              </CardTitle>
-              <p className="flex items-start gap-1 text-sm text-[var(--text-secondary)] mt-1 leading-snug">
-                {topPartner
-                  ? <><Crown className="h-4 w-4 shrink-0 mt-0.5 text-[var(--data-warning-500)]" aria-hidden /> <span><span className="font-bold text-[var(--text-primary)]">{topPartner.name}</span> lidera {periodLabel} con {topPartner.delivered} entregas y rating {toNum(topPartner.rating).toFixed(1)}.</span></>
-                  : `Métricas de rendimiento ${periodLabel}. Aceptación, entregas, ratings y ganancias.`}
-              </p>
-            </div>
-          </div>
-
-          {/* Period pills */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {PERIODS.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => setPeriod(p.id)}
-                className={cn(
-                  "px-4 h-10 rounded-xl text-sm font-semibold transition-colors border",
-                  period === p.id
-                    ? "bg-primary text-white border-primary"
-                    : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)]",
-                )}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {summary ? (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
-                  <Users className="h-5 w-5 text-primary" />
-                </span>
-              </div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                Repartidores
-              </p>
-              <p className="text-3xl font-extrabold tabular-nums text-[var(--text-primary)] leading-tight mt-2">
-                {summary.totalPartners}
-              </p>
-              <p className="text-sm text-[var(--text-tertiary)] mt-1">Activos en ranking</p>
-            </div>
-            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
-                  <CheckCircle className="h-5 w-5 text-[var(--data-success-500)]" />
-                </span>
-              </div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                Entregados
-              </p>
-              <p className="text-3xl font-extrabold tabular-nums text-[var(--data-success-500)] leading-tight mt-2">
-                {summary.totalDelivered}
-              </p>
-              <p className="text-sm text-[var(--text-tertiary)] mt-1">Total entregas</p>
-            </div>
-            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
-                  <DollarSign className="h-5 w-5 text-[var(--data-success-500)]" />
-                </span>
-              </div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                Pagado a riders
-              </p>
-              <p className="text-3xl font-extrabold tabular-nums text-[var(--text-primary)] leading-tight mt-2">
-                S/{toNum(summary.totalEarnings).toFixed(0)}
-              </p>
-              <p className="text-sm text-[var(--text-tertiary)] mt-1">Tarifas acumuladas</p>
-            </div>
-            <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-5">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
-                  <Trophy className="h-5 w-5 text-primary" />
-                </span>
-              </div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                Completion avg
-              </p>
-              <p className={cn(
-                "text-3xl font-extrabold tabular-nums leading-tight mt-2",
-                summary.avgCompletionRate >= 0.85
-                  ? "text-[var(--data-success-500)]"
-                  : summary.avgCompletionRate >= 0.5
-                    ? "text-[var(--data-warning-500)]"
-                    : "text-[var(--data-error-500)]",
-              )}>
-                {Math.round(summary.avgCompletionRate * 100)}%
-              </p>
-              <p className="text-sm text-[var(--text-tertiary)] mt-1">Tasa de éxito</p>
-            </div>
-          </div>
-        ) : null}
+          </p>
+        )}
       </div>
 
       {/* ── 2. Tabla / Empty / Loading ──────────────────────────── */}
       {loading ? (
         <TableSkeleton />
       ) : data.length === 0 ? (
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-12 text-center shadow-sm">
-          <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--surface-sunken)] mb-4">
-            <Trophy className="h-8 w-8 text-[var(--text-tertiary)]" />
-          </span>
-          <p className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">
-            Sin datos de ranking
-          </p>
-          <p className="text-base text-[var(--text-secondary)] mt-2 max-w-md mx-auto leading-relaxed">
-            No hay entregas registradas {periodLabel}. Cambia el periodo o espera a que tus repartidores acumulen actividad.
-          </p>
-        </div>
+        <p className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-8 text-center text-sm font-semibold text-[var(--text-secondary)]">
+          Nadie entregó {periodLabel}: elige otro período o espera a que tus repartidores sumen entregas.
+        </p>
       ) : (
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-[var(--rule-base)] flex items-center justify-between gap-3 flex-wrap">
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+            <p className="text-sm font-semibold text-[var(--text-secondary)]">
               Tabla de posiciones · {periodLabel}
             </p>
             <p className="text-sm text-[var(--text-tertiary)] font-bold">
@@ -173,7 +109,7 @@ export function RankingTab() {
           <div className="overflow-x-auto">
             <DataTable className="w-full text-sm">
               <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
-                <tr className="text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                <tr className="text-left text-sm font-semibold text-[var(--text-secondary)]">
                   <th className="px-6 py-4 w-16">#</th>
                   <th className="px-6 py-4">Repartidor</th>
                   <th className="px-4 py-4 text-center">Rating</th>
@@ -256,7 +192,7 @@ export function RankingTab() {
                         </span>
                       </td>
                       <td className="px-4 py-4 text-right text-base font-extrabold text-[var(--text-primary)] tabular-nums">
-                        S/{toNum(entry.totalEarnings).toFixed(0)}
+                        {formatCurrency(toNum(entry.totalEarnings))}
                       </td>
                       <td className="px-6 py-4 text-center">
                         <span className={cn(
