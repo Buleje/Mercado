@@ -82,9 +82,49 @@ const CARPETA_VOZ_WIN = "C:\\Users\\Public\\claude-voz";
 // Dos sesiones que terminan juntas no deben hablar encima: la reproducción hace fila.
 const CANDADO_VOZ = "/tmp/claude-voz.lock";
 
-/** Lo que se lee en voz alta: el primer párrafo de prosa (sin tablas, código ni rutas), ≤ 280 letras. */
+/** Markdown → frase que suena bien: sin enlaces, código, emojis ni «S/» leído como «ese barra». */
+function limpiarParaVoz(s) {
+  return s
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/`[^`]*`/g, "")
+    .replace(/https?:\/\/\S+/g, "")
+    // Como se dice en voz alta: «S/ 95,00» → «95,00 soles», «8 ms» → «8 milisegundos».
+    .replace(/S\/\.?\s?([\d.,]+)(?:\s*PEN)?/g, "$1 soles")
+    .replace(/S\/\.?\s?/g, "soles ")
+    .replace(/(\d)\s?ms\b/g, "$1 milisegundos")
+    .replace(/[→·]/g, ", ")
+    .replace(/[*_~]+/g, "")
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, "")
+    .replace(/\s+([,.;:])/g, "$1")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
+/** Corta en el último punto o dos puntos antes de `max` letras, para no dejar la frase colgada. */
+function recortar(salida, max = 280) {
+  if (salida.length <= max) return salida;
+  const corte = salida.slice(0, max);
+  const fin = Math.max(corte.lastIndexOf(". "), corte.lastIndexOf(": "), corte.lastIndexOf("? "));
+  return fin > 80 ? corte.slice(0, fin + 1) : `${corte.replace(/\s+\S*$/, "")}.`;
+}
+
+/**
+ * Lo que se lee en voz alta. Al terminar: el primer párrafo de prosa (sin tablas, código ni
+ * rutas). Además (Brandon 09-10, «más cosas como esta»): una pregunta con opciones y un pedido
+ * de permiso también se dicen, porque ahí el turno espera y el aviso de fin no suena.
+ */
 function textoParaLeer(input) {
-  if (input?.hook_event_name === "StopFailure") return "Brandon, me detuve por un error. Revisa la terminal, por favor.";
+  const evento = input?.hook_event_name;
+  if (evento === "StopFailure") return "Brandon, me detuve por un error. Revisa la terminal, por favor.";
+  if (evento === "Notification") {
+    return input?.notification_type === "permission_prompt"
+      ? "Brandon, necesito tu permiso en la terminal."
+      : "Brandon, te necesito en la terminal.";
+  }
+  if (evento === "PreToolUse" && input?.tool_name === "AskUserQuestion") {
+    const pregunta = limpiarParaVoz(String(input?.tool_input?.questions?.[0]?.question ?? ""));
+    return recortar(`Brandon, tengo una pregunta para ti. ${pregunta}`, 220);
+  }
   const texto = (input?.last_assistant_message ?? "").trim();
   if (!texto) return "Terminé.";
   const parrafos = [];
@@ -110,31 +150,12 @@ function textoParaLeer(input) {
     actual.push(l.replace(/^[-*>]\s+/, "").replace(/^\d+\.\s+/, ""));
   }
   cerrar();
-  const limpiar = (s) =>
-    s
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-      .replace(/`[^`]*`/g, "")
-      .replace(/https?:\/\/\S+/g, "")
-      // Como se dice en voz alta: «S/ 95,00» → «95,00 soles», «8 ms» → «8 milisegundos».
-      .replace(/S\/\.?\s?([\d.,]+)(?:\s*PEN)?/g, "$1 soles")
-      .replace(/S\/\.?\s?/g, "soles ")
-      .replace(/(\d)\s?ms\b/g, "$1 milisegundos")
-      .replace(/[→·]/g, ", ")
-      .replace(/[*_~]+/g, "")
-      .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, "")
-      .replace(/\s+([,.;:])/g, "$1")
-      .replace(/\s{2,}/g, " ")
-      .trim();
   let salida = "";
-  for (const p of parrafos.map(limpiar).filter(Boolean)) {
+  for (const p of parrafos.map(limpiarParaVoz).filter(Boolean)) {
     salida = salida ? `${salida} ${p}` : p;
     if (salida.length >= 60) break;
   }
-  if (!salida) return "Terminé.";
-  if (salida.length <= 280) return salida;
-  const corte = salida.slice(0, 280);
-  const fin = Math.max(corte.lastIndexOf(". "), corte.lastIndexOf(": "));
-  return fin > 80 ? corte.slice(0, fin + 1) : `${corte.replace(/\s+\S*$/, "")}.`;
+  return salida ? recortar(salida) : "Terminé.";
 }
 
 /** Genera el mp3 con la voz; null si está apagada o falla (sin internet, uvx ausente). */
@@ -186,7 +207,9 @@ async function main() {
   const resumen =
     input?.hook_event_name === "StopFailure"
       ? `⚠️ Claude se detuvo por error de API: ${input.error ?? "unknown"}${input.error_details ? ` (${String(input.error_details).slice(0, 60)})` : ""}. Revisá la terminal.`
-      : resumenDelTurno(input);
+      : input?.hook_event_name === "Stop" || !input?.hook_event_name
+        ? resumenDelTurno(input)
+        : textoParaLeer(input);
   const mensaje = psEscape(resumen);
 
   // Corre en paralelo con el toast local — no esperar a Telegram para sonar.

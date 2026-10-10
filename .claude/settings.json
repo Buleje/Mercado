@@ -25,6 +25,17 @@
             "timeout": 180
           }
         ]
+      },
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/avisar-terminado.mjs",
+            "async": true,
+            "timeout": 30
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -214,6 +225,19 @@
             "type": "command",
             "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/mantener-pantalla-despierta.mjs soltar",
             "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "permission_prompt|elicitation_dialog",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/avisar-terminado.mjs",
+            "async": true,
+            "timeout": 30
           }
         ]
       }
