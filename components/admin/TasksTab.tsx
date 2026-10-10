@@ -1,9 +1,14 @@
 "use client";
 
-import AdminModal from "@/components/admin/shared/AdminModal";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { ClipboardList, ListChecks, Plus, Check, Pencil, Trash2, User, Clock, AlertCircle, CheckCircle2, X, Search } from "@buleje/design-system/icons";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { ListChecks, Plus, Check, Pencil, Trash2, User, Clock, AlertCircle, CheckCircle2, X, Search } from "@buleje/design-system/icons";
+import { EmptyState, LoadingState } from "@buleje/design-system";
+import TituloDeVista from "@/components/admin/rrhh/TituloDeVista";
+import BotonIconoTip from "@/components/admin/shared/boton-icono-tip";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
+import { Casilla } from "@/components/ui-system/Casilla";
+import { button } from "@/components/ui-system/button-variants";
 import { cn, limaDateKey } from "@/lib/utils";
 import { fechaParaMostrar } from "@/lib/admin/metas-tareas";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -15,9 +20,9 @@ import { CLASE_CAMPO_TAREA, CLASE_ROTULO_TAREA, EMPTY, MODULES, PRIORITY_META, t
 
 const STATUS_META: Record<TaskStatus, { label: string; color: string; icon: React.ElementType }> = {
   pendiente:    { label: "Pendiente",    color: "text-[var(--text-secondary)]",   icon: Clock },
-  en_progreso:  { label: "En progreso",  color: "text-[var(--data-success-500)]",   icon: AlertCircle },
-  completada:   { label: "Completada",   color: "text-[var(--data-success-500)]",icon: CheckCircle2 },
-  cancelada:    { label: "Cancelada",    color: "text-[var(--data-error-500)]",    icon: X },
+  en_progreso:  { label: "En progreso",  color: "text-[var(--data-success-ink)]",  icon: AlertCircle },
+  completada:   { label: "Completada",   color: "text-[var(--data-success-ink)]",  icon: CheckCircle2 },
+  cancelada:    { label: "Cancelada",    color: "text-[var(--data-error-ink)]",    icon: X },
 };
 
 export default function TasksTab() {
@@ -122,32 +127,36 @@ export default function TasksTab() {
 
   return (
     <div className="space-y-3 sm:space-y-6">
-      {/* El título de la pantalla vive acá (antes era un h2 y el hub tenía que
-          poner el suyo): AdminModuleHeader ya resuelve el responsive del
-          encabezado + acciones. */}
-      <AdminModuleHeader
-        title="Tareas & Asignaciones"
-        description="Coordina el trabajo del equipo"
-        icon={ClipboardList}
+      {/* El título de la vista con su acción principal en la misma fila
+          (Equipo › Tareas; antes, AdminModuleHeader con subtítulo a la vista). */}
+      <TituloDeVista
+        titulo="Lo que hay que hacer"
+        ayuda={{
+          what: "Las tareas del equipo: qué hay que hacer, con qué prioridad, para cuándo y a quién le toca.",
+          affects: "Una tarea vencida y sin completar sale en rojo. Completarla la saca de Pendientes.",
+          example: "«Contar el stock de gaseosas» para Luis, prioridad alta, para el jueves.",
+        }}
       >
-        <button onClick={openCreate} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
-          <Plus className="h-4 w-4" /> Nueva Tarea
+        <button type="button" onClick={openCreate} className={button({ variant: "accent" })}>
+          <Plus className="h-4 w-4" aria-hidden /> Nueva tarea
         </button>
-      </AdminModuleHeader>
+      </TituloDeVista>
 
       {/* Estado + buscador, en una fila pegada a la lista que filtran. */}
-      <div className="flex flex-wrap items-center gap-1.5">
-        {([["todas", "Todas"], ["pendiente", `Pendientes (${counts.pendiente})`], ["en_progreso", `En progreso (${counts.en_progreso})`], ["completada", `Completadas (${counts.completada})`]] as [string, string][]).map(([s, label]) => (
-          <button
-            key={s}
-            onClick={() => setFilterStatus(s as TaskStatus | "todas")}
-            className={cn("px-3 py-1.5 rounded-xl text-xs font-bold transition-all border",
-              filterStatus === s ? "bg-primary text-white border-transparent " : "bg-[var(--surface-raised)] text-[var(--text-secondary)] dark:text-muted border-[var(--rule-base)] dark:border-card-border hover:border-gray-300"
-            )}
-          >
-            {label}
-          </button>
-        ))}
+      <div className="flex flex-wrap items-center gap-2">
+        <div role="group" aria-label="Filtrar por estado" className="flex flex-wrap gap-2">
+          {([["todas", "Todas"], ["pendiente", `Pendientes (${counts.pendiente})`], ["en_progreso", `En progreso (${counts.en_progreso})`], ["completada", `Completadas (${counts.completada})`]] as [string, string][]).map(([s, label]) => (
+            <button
+              key={s}
+              type="button"
+              aria-pressed={filterStatus === s}
+              onClick={() => setFilterStatus(s as TaskStatus | "todas")}
+              className={button({ variant: "secondary", className: cn("rounded-xl px-4", filterStatus === s && "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]") })}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <label className="relative ml-auto w-full sm:w-72">
           <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
           <input
@@ -156,21 +165,19 @@ export default function TasksTab() {
             onChange={e => setBusqueda(e.target.value)}
             placeholder="Buscar por título o encargado"
             aria-label="Buscar tareas por título o encargado"
-            className={cn(CLASE_CAMPO_TAREA, "h-9 pl-9 bg-[var(--surface-raised)]")}
+            className={cn(CLASE_CAMPO_TAREA, "h-12 pl-9 bg-[var(--surface-raised)]")}
           />
         </label>
       </div>
 
       {/* Task list */}
       {loading ? (
-        <div className="h-40 flex items-center justify-center text-[var(--text-tertiary)] dark:text-muted">Cargando…</div>
+        <LoadingState message="Cargando las tareas..." />
       ) : filtered.length === 0 ? (
-        <div className="bg-[var(--surface-raised)] border border-dashed border-[var(--rule-base)] dark:border-card-border rounded-xl p-12 text-center">
-          <ListChecks className="h-12 w-12 text-[var(--text-tertiary)] dark:text-muted mx-auto mb-3" />
-          <p className="text-[var(--text-secondary)] dark:text-muted font-semibold">
-            {busqueda.trim() ? `Ninguna tarea coincide con «${busqueda.trim()}»` : `No hay tareas${filterStatus !== "todas" ? ` con estado «${STATUS_META[filterStatus].label.toLowerCase()}»` : ""}`}
-          </p>
-        </div>
+        <EmptyState
+          icon={ListChecks}
+          title={busqueda.trim() ? `Ninguna tarea coincide con «${busqueda.trim()}»` : `No hay tareas${filterStatus !== "todas" ? ` con estado «${STATUS_META[filterStatus].label.toLowerCase()}»` : ""}`}
+        />
       ) : (
         <div className="space-y-2.5">
           {filtered.map(t => {
@@ -186,26 +193,21 @@ export default function TasksTab() {
                 )}
               >
                 <div className="flex flex-wrap items-start gap-3">
-                  {/* Status toggle */}
-                  <button
-                    onClick={() => changeStatus(t.id, t.status === "completada" ? "pendiente" : "completada")}
-                    className={cn("mt-0.5 w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center transition-all",
-                      t.status === "completada" ? "border-[var(--data-success-500)]/30 bg-primary/10" : "border-[var(--rule-base)] dark:border-card-border hover:border-[var(--data-success-500)]/30"
-                    )}
-                  >
-                    {t.status === "completada" && <Check className="h-3 w-3 text-white" />}
-                  </button>
+                  {/* Completar o reabrir: la casilla del DS, con 44 px de dedo alrededor. */}
+                  <label className="-m-3 grid h-11 w-11 shrink-0 cursor-pointer place-items-center">
+                    <Casilla
+                      checked={t.status === "completada"}
+                      onChange={() => changeStatus(t.id, t.status === "completada" ? "pendiente" : "completada")}
+                      aria-label={t.status === "completada" ? `Reabrir «${t.title}»` : `Completar «${t.title}»`}
+                    />
+                  </label>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <p className={cn("font-semibold text-sm text-[var(--text-primary)] dark:text-foreground", t.status === "completada" && "line-through text-[var(--text-tertiary)]")}>{t.title}</p>
                       <div className="flex items-center gap-1 shrink-0">
-                        <button aria-label="Editar" onClick={() => openEdit(t)} className="p-1 rounded-xl hover:bg-[var(--rule-soft)] transition-colors">
-                          <Pencil className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
-                        </button>
-                        <button aria-label="Eliminar" onClick={() => deleteTask(t.id)} className="p-1 rounded-xl hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/30 transition-colors">
-                          <Trash2 className="h-3.5 w-3.5 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)]" />
-                        </button>
+                        <BotonIconoTip label="Editar" icon={Pencil} tamano="sm" onClick={() => openEdit(t)} />
+                        <BotonIconoTip label="Eliminar" icon={Trash2} tamano="sm" tono="peligro" onClick={() => deleteTask(t.id)} />
                       </div>
                     </div>
                     {t.description && <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5 line-clamp-2">{t.description}</p>}
@@ -221,18 +223,16 @@ export default function TasksTab() {
                       )}
                       {t.module && <span className="text-[length:var(--ts-2xs)] bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] px-2 py-0.5 rounded-full font-semibold">{t.module}</span>}
                       {t.dueDate && (
-                        <span className={cn("flex items-center gap-1 text-[length:var(--ts-2xs)]", t.dueDate < limaDateKey() && t.status !== "completada" ? "text-[var(--data-error-500)] font-bold" : "text-[var(--text-tertiary)] dark:text-muted")}>
+                        <span className={cn("flex items-center gap-1 text-[length:var(--ts-2xs)]", t.dueDate < limaDateKey() && t.status !== "completada" ? "text-[var(--data-error-ink)] font-bold" : "text-[var(--text-tertiary)] dark:text-muted")}>
                           <Clock className="h-3 w-3" />{fechaParaMostrar(t.dueDate)}
                         </span>
                       )}
                     </div>
-                    {/* Status change dropdown */}
                     {t.status !== "completada" && (
-                      <div className="flex items-center gap-1.5 mt-2">
+                      <div className="flex flex-wrap items-center gap-1.5 mt-2">
                         <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Cambiar estado:</span>
                         {(["pendiente", "en_progreso", "completada"] as TaskStatus[]).filter(s => s !== t.status).map(s => (
-                          <button key={s} onClick={() => changeStatus(t.id, s)}
-                            className="text-[length:var(--ts-2xs)] px-2 py-0.5 rounded-full border border-[var(--rule-base)] dark:border-card-border text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] transition-colors">
+                          <button key={s} type="button" onClick={() => changeStatus(t.id, s)} className={button({ variant: "secondary", size: "sm" })}>
                             {STATUS_META[s].label}
                           </button>
                         ))}
@@ -247,10 +247,27 @@ export default function TasksTab() {
       )}
 
       {/* Modal */}
-      <AdminModal open={showForm} onClose={() => setShowForm(false)} title={editId ? "Editar tarea" : "Nueva tarea"} variant="default">
-        <div className="space-y-4 px-5 py-5 sm:px-6">
-          <input type="text" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Título de la tarea" className="w-full px-3 h-11 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-sunken)] text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all" />
-          <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Descripción (opcional)" rows={2} className="w-full px-3 py-2.5 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-sunken)] text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all resize-none" />
+      <AdminModal
+        open={showForm}
+        onClose={() => setShowForm(false)}
+        title={editId ? "Editar tarea" : "Nueva tarea"}
+        variant="default"
+        footer={
+          <ModalFooter>
+            <button type="button" onClick={() => setShowForm(false)} className={button({ variant: "secondary" })}>Cancelar</button>
+            <button type="button" onClick={save} disabled={saving || !form.title.trim()} className={button({ variant: "accent" })}>
+              {saving ? "Guardando…" : <><Check className="h-4 w-4" aria-hidden />{editId ? "Guardar" : "Crear tarea"}</>}
+            </button>
+          </ModalFooter>
+        }
+      >
+        <div className={cn("space-y-4", MODAL_BODY)}>
+          <Field label="Título" labelClassName={CLASE_ROTULO_TAREA}>
+            <input type="text" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Ej.: contar el stock de gaseosas" className={CLASE_CAMPO_TAREA} />
+          </Field>
+          <Field label="Descripción (opcional)" labelClassName={CLASE_ROTULO_TAREA}>
+            <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={2} className={cn(CLASE_CAMPO_TAREA, "h-auto py-2.5 resize-none")} />
+          </Field>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="Prioridad" labelClassName={CLASE_ROTULO_TAREA}>
               <select value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value as Priority }))} className={CLASE_CAMPO_TAREA}>
@@ -269,12 +286,6 @@ export default function TasksTab() {
             <Field label="Fecha límite" labelClassName={CLASE_ROTULO_TAREA}>
               <input type="date" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} className={CLASE_CAMPO_TAREA} />
             </Field>
-          </div>
-          <div className="flex flex-wrap gap-3 pt-1">
-            <button onClick={() => setShowForm(false)} className="flex-1 min-h-11 rounded-xl border border-[var(--rule-base)] dark:border-card-border text-[var(--text-primary)] dark:text-foreground text-sm font-semibold hover:bg-[var(--surface-sunken)] transition-colors">Cancelar</button>
-            <button onClick={save} disabled={saving || !form.title.trim()} className="flex-1 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 disabled:opacity-60 flex flex-wrap items-center justify-center gap-2 transition-colors">
-              {saving ? "Guardando…" : <><Check className="h-4 w-4" />{editId ? "Guardar" : "Crear tarea"}</>}
-            </button>
           </div>
         </div>
       </AdminModal>

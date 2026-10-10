@@ -21,19 +21,24 @@
 
 import { Info } from "@buleje/design-system/icons";
 import { useEffect, useMemo, useState } from "react";
-import { DataTable, EmptyState, LoadingState, StatCard } from "@buleje/design-system";
+import { DataTable, EmptyState, ErrorAlert, LoadingState, StatCard } from "@buleje/design-system";
 import { Wallet } from "@buleje/design-system/icons";
 import { Field } from "@/components/admin/shared/Field";
 import { useRrhhGanado } from "@/hooks/use-rrhh-ganado";
 import { diasDelMes, mesDe, semanaDe, sumarDias } from "@/lib/rrhh/fechas";
 import { totalQuedaPorPagar } from "@/lib/rrhh/ganado";
-import { limaDateKey } from "@/lib/utils";
+import { cn, limaDateKey } from "@/lib/utils";
+import { button } from "@/components/ui-system/button-variants";
 import { AvisoRrhh, CLASE_CAMPO, claseChipFiltro } from "../rrhh-form";
 import { COPY_REFERENCIA, formatearFecha, formatearPEN, pluralizar } from "../rrhh-ui";
 import FilaGanado from "./FilaGanado";
 import DescuentoPlanillaModal from "@/components/admin/adelantos/DescuentoPlanillaModal";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import { useDescontarAdelantos } from "./use-descontar-adelantos";
+
+/** 48 px, la altura de botones y filtros del panel (Brandon 2026-10-09). `claseChipFiltro` y
+ *  `CLASE_CAMPO` son de todo RRHH (h-9/h-11): se suben acá hasta que la ola 5 los cambie allá. */
+const ALTO = "h-12";
 
 type Chip = "esta-semana" | "semana-pasada" | "este-mes" | "mes-pasado" | "rango";
 
@@ -103,7 +108,7 @@ export default function GanadoView() {
 
       <div role="group" aria-label="Filtrar por período" className="flex flex-wrap gap-1.5">
         {CHIPS.map((c) => (
-          <button key={c.id} type="button" aria-pressed={chip === c.id} onClick={() => setChip(c.id)} className={claseChipFiltro(chip === c.id)}>
+          <button key={c.id} type="button" aria-pressed={chip === c.id} onClick={() => setChip(c.id)} className={cn(claseChipFiltro(chip === c.id), ALTO)}>
             {c.label}
           </button>
         ))}
@@ -118,7 +123,7 @@ export default function GanadoView() {
                 type="date"
                 value={rangoManual.desde}
                 onChange={(e) => setRangoManual((r) => ({ ...r, desde: e.target.value }))}
-                className={CLASE_CAMPO}
+                className={cn(CLASE_CAMPO, ALTO)}
               />
             )}
           </Field>
@@ -129,7 +134,7 @@ export default function GanadoView() {
                 type="date"
                 value={rangoManual.hasta}
                 onChange={(e) => setRangoManual((r) => ({ ...r, hasta: e.target.value }))}
-                className={CLASE_CAMPO}
+                className={cn(CLASE_CAMPO, ALTO)}
               />
             )}
           </Field>
@@ -174,9 +179,10 @@ export default function GanadoView() {
 
       {loading && <LoadingState message="Calculando lo ganado..." />}
       {error && !loading && (
-        <div className="rounded-xl border border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/5 p-4 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
-          {error} <button type="button" onClick={recargar} className="ml-2 font-bold underline">Reintentar</button>
-        </div>
+        <ErrorAlert
+          title={error}
+          action={<button type="button" onClick={recargar} className={button({ variant: "secondary" })}>Reintentar</button>}
+        />
       )}
 
       {ganado && !loading && (
@@ -241,8 +247,9 @@ export default function GanadoView() {
               </tfoot>
             </DataTable>
             <p className="text-xs leading-relaxed text-[var(--text-tertiary)]">
-              «Queda por pagar» = lo ganado del período − lo ya descontado por planilla para este período − los adelantos abiertos. Ese saldo de adelantos es el de hoy
-              {" "}({formatearFecha(ganado.hoy)}), no el de este período: si el adelanto se dio antes, igual se resta.
+              {/* La fórmula de «Queda por pagar» vive en la ⓘ del título de la vista
+                  (EncabezadoDeVista); acá queda lo que cambia con los datos. */}
+              Adelantos al {formatearFecha(ganado.hoy)}.
               {queda.personas === 0
                 ? ` Nadie tiene cuenta de Adelantos vinculada (${pluralizar(ganado.personas.length, "persona", "personas")} en el período), así que no hay nada que restar: vincula su cuenta desde Personal.`
                 : ` El total suma ${pluralizar(queda.personas, "persona", "personas")} de ${ganado.personas.length}${queda.sinCuenta > 0 ? ` — ${pluralizar(queda.sinCuenta, "persona", "personas")} sin cuenta vinculada queda${queda.sinCuenta === 1 ? "" : "n"} en «—»` : ""}.`}

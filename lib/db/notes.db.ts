@@ -22,10 +22,22 @@ interface UpdateData {
   pinned?: boolean;
 }
 
+/**
+ * Prefijo de las notas «de sistema»: singletons que otro módulo guarda como
+ * nota (el presupuesto mensual es `__PRESUPUESTO_MENSUAL__`). No son apuntes
+ * de nadie: la lista de Notas no las muestra.
+ */
+export const PREFIJO_NOTA_DE_SISTEMA = "__";
+
 export const NotesDB = {
+  /**
+   * Las notas del equipo (Equipo › Notas), sin las de sistema. Sin este filtro,
+   * guardar el presupuesto del mes lo hacía aparecer como una nota más, con su
+   * JSON adentro, y borrarla desde ahí borraba el presupuesto.
+   */
   async list(tenantId: string) {
     return prisma.note.findMany({
-      where: { tenantId },
+      where: { tenantId, NOT: { title: { startsWith: PREFIJO_NOTA_DE_SISTEMA } } },
       orderBy: [{ pinned: "desc" }, { updatedAt: "desc" }],
     });
   },
