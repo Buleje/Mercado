@@ -3,47 +3,47 @@
 /**
  * CalendarioMes — la sub-vista «Calendario» de Metas y logros (ex Semana/Mes, ADR-488).
  *
- * Antes la meta del mes eran S/ 50.000 en el localStorage y cada venta caía en
- * el día de `toISOString()` (las de después de las 19:00 de Lima, en el día
- * siguiente). Ahora los días son los de Lima que arma `/api/goals/serie`, las
- * metas (diaria, semanal y mensual de ventas) son las de la base, y se puede ir
- * al mes anterior o al siguiente.
+ * Los días son los de Lima que arma `/api/goals/serie`, las metas (diaria,
+ * semanal y mensual de ventas) son las de la base, y se puede ir al mes
+ * anterior o al siguiente.
+ *
+ * Tarea propia (auditoría de duplicados 10-10): «el mes día por día contra la
+ * meta». Brandon: «compactar para que la información central esté bien vista».
+ *  · Una sola fila de cabecera: mes ‹ ›, ⓘ, «Este mes», «Indicadores» (con la
+ *    meta del mes en el titular), Ventas › y actualizar.
+ *  · La grilla es lo central (`GrillaDelMes`): trae el total de cada semana,
+ *    la fila ✓ por día de la semana y el detalle del día tocado.
+ *  · Se fueron la tarjeta «Esta semana» (repetía la fila de la grilla) y el
+ *    ticket promedio (está en Inicio › Ventas); el mejor día es la estrella de
+ *    la grilla. La meta del mes y las cifras nuevas van plegadas
+ *    (`useIndicadoresDelMes`).
  */
-import { useState } from "react";
-import { CardTitle, StatCard } from "@buleje/design-system";
-import {
-  Calendar,
-  ChevronLeft,
-  ChevronRight,
-  RefreshCw,
-  ShoppingCart,
-  Star,
-  TrendingUp,
-} from "@buleje/design-system/icons";
-import WeeklyGoalCard from "@/components/admin/WeeklyGoalCard";
+import { useMemo, useState } from "react";
+import { CardTitle } from "@buleje/design-system";
+import { ChevronLeft, ChevronRight, RefreshCw, ShoppingCart, Target } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import { ModalMeta } from "@/components/admin/metas/ModalMeta";
 import type { PresetMeta } from "@/components/admin/metas/PlantillasMeta";
 import { AvisoDeCarga } from "@/components/admin/metas/AvisoDeCarga";
-import { BadgeArea } from "@/components/admin/metas/TarjetaMeta";
+import { BOTON_SECUNDARIO } from "@/components/admin/metas/clases-meta";
 import { useMetas } from "@/hooks/use-metas";
 import { useSerieMes } from "@/hooks/use-metas-serie";
 import { hrefDeMeta } from "@/lib/admin/metas-catalogo";
-import { metaDeVentas } from "@/lib/metas/logros-reglas";
+import { metaDeVentas, type VentasPorDia } from "@/lib/metas/logros-reglas";
 import { cifraDeMeta } from "@/components/admin/metas/formato-meta";
 import { cn, limaDateKey } from "@/lib/utils";
 import { GrillaDelMes } from "./GrillaDelMes";
-import { MetaDelMes } from "./MetaDelMes";
-import { moverMes, nombreDelMes, resumirMes } from "./calendario-calculos";
+import { useIndicadoresDelMes } from "./IndicadoresDelMes";
+import { cumplimientoPorDiaSemana, diasDelMes, moverMes, nombreDelMes, resumirMes } from "./calendario-calculos";
 
 const soles = (n: number) => cifraDeMeta(n, "S/");
 const BOTON_ICONO =
-  "inline-flex h-10 w-10 items-center justify-center rounded-xl text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40";
-const VACIO = {};
+  "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40";
+const VACIO: VentasPorDia = {};
 
 export function CalendarioMes() {
-  const { metas, recargar: recargarMetas } = useMetas();
+  const { metas, cargando: cargandoMetas, recargar: recargarMetas } = useMetas();
   const [mes, setMes] = useState<string | null>(null);
   const serie = useSerieMes(mes);
   const [preset, setPreset] = useState<PresetMeta | null>(null);
@@ -53,15 +53,44 @@ export function CalendarioMes() {
   const pedido = mes ?? mesHoy;
   const delMes = serie.datos?.mes === pedido ? serie.datos : null;
   const listo = delMes !== null;
-  /** Lo que muestran las cifras sin dato: «…» mientras carga; «—» si la carga falló. */
-  const pendiente = serie.error ? "—" : "…";
+  /** La grilla sin dato: pulsa mientras carga; quieta si la carga falló. */
+  const pendiente = !serie.error;
   const dias = delMes?.dias ?? VACIO;
   const anterior = delMes?.anterior.dias ?? VACIO;
+  const mesAnterior = delMes?.anterior.mes ?? moverMes(pedido, -1);
 
   const metaDiaria = metaDeVentas(metas, "diario")?.target ?? null;
   const metaSemanal = metaDeVentas(metas, "semanal")?.target ?? null;
   const metaMensual = metaDeVentas(metas, "mensual")?.target ?? null;
-  const r = resumirMes(pedido, dias, anterior, hoy, metaDiaria);
+  const r = useMemo(() => resumirMes(pedido, dias, anterior, hoy), [pedido, dias, anterior, hoy]);
+  const leidos = useMemo(() => ({ ...anterior, ...dias }), [anterior, dias]);
+  const meses = useMemo(() => [pedido, mesAnterior], [pedido, mesAnterior]);
+  const { cumpleMes, cumpleDosMeses } = useMemo(() => {
+    const fechas = diasDelMes(pedido).dias;
+    return {
+      cumpleMes: cumplimientoPorDiaSemana(fechas, dias, hoy, metaDiaria),
+      cumpleDosMeses: cumplimientoPorDiaSemana(
+        [...diasDelMes(mesAnterior).dias, ...fechas],
+        leidos,
+        hoy,
+        metaDiaria,
+      ),
+    };
+  }, [pedido, mesAnterior, dias, leidos, hoy, metaDiaria]);
+
+  const indicadores = useIndicadoresDelMes({
+    mes: pedido,
+    hoy,
+    r,
+    metaMensual,
+    metaDiaria,
+    cumpleMes,
+    cumpleDosMeses,
+    mesAnterior,
+    listo,
+    onPonerMeta: () => setPreset({ category: "ventas", period: "mensual" }),
+  });
+
   const href = hrefDeMeta("ventas");
   const ir = (n: number) => {
     const destino = moverMes(pedido, n);
@@ -70,17 +99,11 @@ export function CalendarioMes() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-x-1 gap-y-1">
-        <button
-          type="button"
-          className={BOTON_ICONO}
-          aria-label="Mes anterior"
-          title="Mes anterior"
-          onClick={() => ir(-1)}
-        >
+      <div className="flex flex-wrap items-center gap-x-1 gap-y-2">
+        <button type="button" className={BOTON_ICONO} aria-label="Mes anterior" title="Mes anterior" onClick={() => ir(-1)}>
           <ChevronLeft aria-hidden="true" className="h-5 w-5" />
         </button>
-        <CardTitle className="text-center sm:min-w-[9.5rem] text-sm font-bold capitalize">
+        <CardTitle className="text-center text-sm font-bold capitalize sm:min-w-[8.5rem]">
           {nombreDelMes(pedido)}
         </CardTitle>
         <button
@@ -95,33 +118,47 @@ export function CalendarioMes() {
         </button>
         <InfoTip
           title="Calendario"
-          what="Cada día del mes (día de Lima) con lo que vendiste: ventas del POS más pedidos que entran."
+          what="Cada día del mes (día de Lima) con lo que vendiste: ventas del POS más pedidos que entran. Toca un día y abajo sale su venta y la de su semana."
           body={
             metaDiaria !== null
-              ? `Verde = vendió al menos tu meta diaria (${soles(metaDiaria)}); rojo suave = no llegó.`
-              : "Sin meta diaria, el color más fuerte es el día que más vendiste."
+              ? `Verde = vendió al menos tu meta diaria (${soles(metaDiaria)}); rojo suave = no llegó; la estrella, el mejor día del mes. La fila ✓ dice cuántos lunes, martes… cumplieron y la columna «Semana» suma de lunes a domingo contra tu meta semanal.`
+              : "Sin meta diaria, el color más fuerte es el día que más vendiste; la estrella, el mejor día del mes. La columna «Semana» suma de lunes a domingo."
           }
-          example="Una venta de las 20:00 del 8 cuenta en el 8, no en el 9."
+          example="Una venta de las 20:00 del 8 cuenta en el 8, no en el 9. El ticket promedio está en Inicio › Ventas."
         />
         {pedido !== mesHoy && (
           <button
             type="button"
-            className="min-h-10 px-2 text-sm font-semibold text-[var(--accent-ink)] underline-offset-2 hover:underline dark:text-[var(--accent)]"
+            className="min-h-12 px-2 text-sm font-semibold text-[var(--accent-ink)] underline-offset-2 hover:underline dark:text-[var(--accent)]"
             onClick={() => setMes(null)}
           >
-            Volver a este mes
+            Este mes
           </button>
         )}
-        <span className="ml-auto flex items-center gap-1">
+        <span className="ml-auto flex min-w-0 items-center gap-1">
+          {!serie.sinPermiso && indicadores.boton}
+          {!cargandoMetas && metaDiaria === null && (
+            <button
+              type="button"
+              className={cn(BOTON_SECUNDARIO, "h-12 px-3 max-sm:w-12 max-sm:px-0")}
+              aria-label="Ponle una meta diaria de ventas"
+              title="Ponle una meta diaria de ventas: pinta de verde los días que llegan"
+              onClick={() => setPreset({ category: "ventas", period: "diario" })}
+            >
+              <Target aria-hidden="true" className="h-4 w-4" />
+              <span className="max-sm:sr-only">Meta diaria</span>
+            </button>
+          )}
           {href && (
             <EnlacePanel
               href={href}
               apariencia="heredada"
               title="Son metas de Ventas: abre Ventas y caja"
               aria-label="Ver en Ventas"
-              className="inline-flex min-h-10 items-center gap-1 px-1 text-sm font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)]"
+              className="hidden min-h-12 items-center gap-1 px-2 text-sm font-semibold text-[var(--accent-ink)] sm:inline-flex dark:text-[var(--accent)]"
             >
-              <BadgeArea category="ventas" />
+              <ShoppingCart aria-hidden="true" className="h-4 w-4" />
+              Ventas
               <span aria-hidden="true">›</span>
             </EnlacePanel>
           )}
@@ -151,95 +188,41 @@ export function CalendarioMes() {
       {/* Sin permiso no se dibujan cifras en 0: serían falsas, no ocultas. */}
       {!serie.sinPermiso && (
         <>
-          <div className={cn("grid items-start gap-3", pedido === mesHoy && "lg:grid-cols-2")}>
-            <MetaDelMes
-              mes={pedido}
-              hoy={hoy}
-              total={r.total}
-              meta={metaMensual}
-              cargando={!listo}
-              onPonerMeta={() => setPreset({ category: "ventas", period: "mensual" })}
-            />
-            {pedido === mesHoy && listo && (
-              <WeeklyGoalCard
-                hoy={hoy}
-                dias={{ ...anterior, ...dias }}
-                metaSemanal={metaSemanal}
-                metaDiaria={metaDiaria}
-                onPonerMeta={() => setPreset({ category: "ventas", period: "semanal" })}
-              />
-            )}
-          </div>
-
+          {indicadores.panel}
           <section
             aria-label={`Días de ${nombreDelMes(pedido)}`}
-            className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-4"
+            className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-2 sm:p-4"
           >
             {listo ? (
               <GrillaDelMes
+                key={pedido}
                 mes={pedido}
                 dias={dias}
+                leidos={leidos}
+                meses={meses}
                 hoy={hoy}
                 metaDiaria={metaDiaria}
+                metaSemanal={metaSemanal}
+                metaMensual={metaMensual}
+                mesTotal={r.total}
                 maximo={r.maximo}
+                mejorDia={r.mejorDia?.fecha ?? null}
+                cumpleMes={cumpleMes}
               />
             ) : (
-              <div className="grid grid-cols-7 gap-1" aria-busy={pendiente === "…"}>
+              <div className="grid grid-cols-7 gap-1 sm:gap-1.5" aria-busy={pendiente}>
                 {Array.from({ length: 35 }, (_, i) => (
                   <span
                     key={i}
                     className={cn(
-                      "min-h-11 rounded-lg bg-[var(--surface-sunken)] sm:min-h-14",
-                      pendiente === "…" && "animate-pulse motion-reduce:animate-none",
+                      "h-12 rounded-lg bg-[var(--surface-sunken)] sm:h-18",
+                      pendiente && "animate-pulse motion-reduce:animate-none",
                     )}
                   />
                 ))}
               </div>
             )}
           </section>
-
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <StatCard
-              density="compact"
-              label="Total del mes"
-              value={listo ? soles(r.total) : pendiente}
-              icon={TrendingUp}
-              delta={r.delta ?? undefined}
-              deltaLabel={r.delta !== null ? "vs el mes anterior al mismo día" : undefined}
-              subValue={
-                listo && r.delta === null
-                  ? `Mes anterior al mismo día: ${soles(r.anteriorAlDia)}`
-                  : undefined
-              }
-            />
-            <StatCard
-              density="compact"
-              label="Ticket promedio"
-              value={!listo ? pendiente : r.n > 0 ? soles(r.total / r.n) : "Sin ventas"}
-              icon={ShoppingCart}
-              subValue={listo ? `${r.n} ${r.n === 1 ? "venta" : "ventas"}` : undefined}
-            />
-            <StatCard
-              density="compact"
-              label="Mejor día"
-              value={
-                !listo
-                  ? pendiente
-                  : r.mejorDia
-                    ? `${r.mejorDia.fecha.slice(8, 10)}/${r.mejorDia.fecha.slice(5, 7)}`
-                    : "—"
-              }
-              icon={Star}
-              subValue={!listo ? undefined : r.mejorDia ? soles(r.mejorDia.total) : "Sin ventas"}
-            />
-            <StatCard
-              density="compact"
-              label={metaDiaria !== null ? "Días con meta" : "Días con venta"}
-              value={listo ? `${r.cumplidos}/${r.transcurridos}` : pendiente}
-              icon={Calendar}
-              subValue={metaDiaria !== null ? `Meta diaria ${soles(metaDiaria)}` : "Sin meta diaria"}
-            />
-          </div>
         </>
       )}
 

@@ -48,7 +48,7 @@ export function MetaDelMes({
         <CalendarDays aria-hidden="true" className="h-4 w-4 text-[var(--text-tertiary)]" />
         <span className="font-semibold text-[var(--text-primary)]">Meta del mes</span>
         <span>· sin meta mensual de ventas.</span>
-        <button type="button" className={BOTON_SECUNDARIO} onClick={onPonerMeta}>
+        <button type="button" className={cn(BOTON_SECUNDARIO, "h-12")} onClick={onPonerMeta}>
           Ponle una meta al mes
         </button>
       </div>

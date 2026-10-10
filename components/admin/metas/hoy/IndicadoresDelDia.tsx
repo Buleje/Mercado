@@ -13,42 +13,16 @@
  * «S/ 0» de relleno se lee como el dato real).
  */
 import type { ReactNode } from "react";
-import { Flame, History, Sunset, type LucideIcon } from "@buleje/design-system/icons";
+import { Flame, History, Sunset } from "@buleje/design-system/icons";
 import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
 import { cifraDeMeta } from "@/components/admin/metas/formato-meta";
-import { TEXTO_TONO, type TonoMeta } from "@/components/admin/metas/clases-meta";
+import { CifraMeta as Cifra } from "@/components/admin/metas/CifraMeta";
+import { TEXTO_TONO } from "@/components/admin/metas/clases-meta";
 import { cn } from "@/lib/utils";
 import { etiquetaHora, HORA_CIERRE, type CorteDelDia, type ResumenDelDia } from "./hoy-calculos";
 
 const soles = (n: number) => cifraDeMeta(n, "S/");
 const ventas = (n: number) => `${n} ${n === 1 ? "venta" : "ventas"}`;
-
-function Cifra({
-  etiqueta,
-  valor,
-  detalle,
-  icono: Icono,
-  tono,
-}: {
-  etiqueta: string;
-  valor: string;
-  detalle?: ReactNode;
-  icono: LucideIcon;
-  tono?: TonoMeta;
-}) {
-  return (
-    <div className="flex h-full flex-col gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3">
-      <span className="flex items-center justify-between gap-2 text-sm font-semibold text-[var(--text-secondary)]">
-        {etiqueta}
-        <Icono aria-hidden="true" className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
-      </span>
-      <span className={cn("text-2xl font-bold tabular-nums text-[var(--text-primary)]", tono && TEXTO_TONO[tono])}>
-        {valor}
-      </span>
-      {detalle && <span className="text-sm text-[var(--text-secondary)]">{detalle}</span>}
-    </div>
-  );
-}
 
 /** «hoy +12 %» al lado de lo de otro día a esta hora; sólo si hoy ya vendió y ese día también. */
 function HoyContra({ hoy, otro }: { hoy: number; otro: number }) {
