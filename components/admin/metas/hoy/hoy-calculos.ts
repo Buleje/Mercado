@@ -22,16 +22,32 @@ export function etiquetaHora(h: number): string {
   return `${h - 12}pm`;
 }
 
+/** Al céntimo: con `Math.round` a secas S/ 0.10 de venta pronosticaba «cierras con S/ 0». */
+const alCentimo = (n: number) => Math.round(n * 100) / 100;
+
+/** Lo vendido hasta una hora y en todo el día. */
+export interface CorteDelDia {
+  aEstaHora: number;
+  total: number;
+}
+
+export interface HoraDeVenta {
+  hora: number;
+  total: number;
+  n: number;
+}
+
 export interface ResumenDelDia {
   total: number;
   n: number;
-  /** Lo que se había vendido AYER hasta esta misma hora (inclusive). */
-  ayerAEstaHora: number;
-  nAyerAEstaHora: number;
-  ayerTotal: number;
-  /** % contra ayer a esta hora; `null` si ayer a esta hora iba en 0. */
-  deltaVsAyer: number | null;
-  mejorHora: { hora: number; total: number; n: number } | null;
+  /** Ayer hasta esta misma hora (inclusive) y entero. */
+  ayer: CorteDelDia;
+  /** El mismo día de la semana pasada, hasta esta hora y entero. */
+  semana: CorteDelDia;
+  /** Con cuánto cierra hoy (proyección, no dato). `null` si no hay con qué estimarlo. */
+  cierre: CierreEstimado | null;
+  /** La hora más fuerte del mismo día de la semana pasada que todavía no llegó. */
+  horaFuerte: HoraDeVenta | null;
 }
 
 const sumar = (horas: readonly TramoVenta[], hasta = 23) =>
@@ -42,26 +58,66 @@ const sumar = (horas: readonly TramoVenta[], hasta = 23) =>
       n: 0,
     });
 
+const corte = (horas: readonly TramoVenta[], horaActual: number): CorteDelDia => ({
+  aEstaHora: sumar(horas, horaActual).total,
+  total: sumar(horas).total,
+});
+
+export interface CierreEstimado {
+  monto: number;
+  /**
+   * `semana`: lo de hoy + lo que el mismo día de la semana pasada se vendió
+   * DESPUÉS de esta hora. `ritmo`: lo de hoy estirado al horario (sin semana pasada).
+   */
+  base: "semana" | "ritmo";
+}
+
+/**
+ * Con cuánto cierra el día. Primero con la semana pasada: «si de aquí al
+ * cierre vendes lo mismo que ese día desde esta hora» (sirve aun sin ventas
+ * hoy, y no se dispara como un cociente cuando a esta hora iba casi en 0).
+ * Sin semana pasada, el ritmo de hoy dentro del horario. Sin nada: `null`.
+ */
+export function cierreEstimado(
+  total: number,
+  horaActual: number,
+  semana: CorteDelDia,
+): CierreEstimado | null {
+  if (semana.total > 0)
+    return { monto: alCentimo(total + Math.max(0, semana.total - semana.aEstaHora)), base: "semana" };
+  if (!(total > 0) || horaActual >= HORA_CIERRE) return null;
+  const p = pronosticoDelDia(total, horaActual);
+  return p === null ? null : { monto: p, base: "ritmo" };
+}
+
+/** La hora con más venta, DESPUÉS de la actual, en `horas` (el mismo día de la semana pasada). */
+export function horaFuerteQueViene(
+  horas: readonly TramoVenta[],
+  horaActual: number,
+): HoraDeVenta | null {
+  let mejor: HoraDeVenta | null = null;
+  horas.forEach((h, hora) => {
+    if (hora > horaActual && h.total > 0 && (!mejor || h.total > mejor.total))
+      mejor = { hora, total: h.total, n: h.n };
+  });
+  return mejor;
+}
+
 export function resumirDia(
   horas: readonly TramoVenta[],
   horasAyer: readonly TramoVenta[],
+  horasSemana: readonly TramoVenta[],
   horaActual: number,
 ): ResumenDelDia {
   const hoy = sumar(horas);
-  const ayerHora = sumar(horasAyer, horaActual);
-  let mejorHora: ResumenDelDia["mejorHora"] = null;
-  horas.forEach((h, hora) => {
-    if (h.total > 0 && (!mejorHora || h.total > mejorHora.total))
-      mejorHora = { hora, total: h.total, n: h.n };
-  });
+  const semana = corte(horasSemana, horaActual);
   return {
     total: hoy.total,
     n: hoy.n,
-    ayerAEstaHora: ayerHora.total,
-    nAyerAEstaHora: ayerHora.n,
-    ayerTotal: sumar(horasAyer).total,
-    deltaVsAyer: ayerHora.total > 0 ? ((hoy.total - ayerHora.total) / ayerHora.total) * 100 : null,
-    mejorHora,
+    ayer: corte(horasAyer, horaActual),
+    semana,
+    cierre: cierreEstimado(hoy.total, horaActual, semana),
+    horaFuerte: horaFuerteQueViene(horasSemana, horaActual),
   };
 }
 
@@ -84,9 +140,6 @@ export function fraccionDelHorario(horaActual: number): number {
   return (horaActual - HORA_APERTURA + 1) / (HORA_CIERRE - HORA_APERTURA + 1);
 }
 
-/** Al céntimo: con `Math.round` a secas S/ 0.10 de venta pronosticaba «cierras con S/ 0». */
-const alCentimo = (n: number) => Math.round(n * 100) / 100;
-
 /** A este ritmo, con cuánto cierra el día. `null` antes de abrir. */
 export function pronosticoDelDia(total: number, horaActual: number): number | null {
   if (horaActual < HORA_APERTURA) return null;
@@ -98,15 +151,20 @@ export function pronosticoDelDia(total: number, horaActual: number): number | nu
 
 export type TonoLinea = "exito" | "aviso" | "error" | "neutro";
 
-/** La línea que dice cómo va el día contra la meta. */
+/**
+ * La línea que dice cómo va el día contra la meta y qué hace falta para
+ * llegar: cuánto por hora en lo que queda del horario. El tono sale del
+ * cierre estimado (el mismo de «Indicadores»), no de otra cuenta.
+ */
 export function lineaDelDia(
   total: number,
   meta: number,
   horaActual: number,
   fmt: (n: number) => string,
+  cierre: number | null = null,
 ): { texto: string; tono: TonoLinea } {
-  if (total >= meta) return { texto: `Meta superada por ${fmt(total - meta)}`, tono: "exito" };
-  const falta = meta - total;
+  if (total >= meta) return { texto: `Meta superada por ${fmt(alCentimo(total - meta))}`, tono: "exito" };
+  const falta = alCentimo(meta - total);
   if (horaActual < HORA_APERTURA)
     return {
       texto: `Te faltan ${fmt(falta)} · el día arranca a las ${HORA_APERTURA}:00`,
@@ -115,14 +173,10 @@ export function lineaDelDia(
   if (horaActual >= HORA_CIERRE)
     return { texto: `Día cerrado: faltaron ${fmt(falta)}`, tono: "error" };
   const quedan = HORA_CIERRE - horaActual;
-  if (fraccionDelHorario(horaActual) > 0.7 && total < meta / 2) {
-    return {
-      texto: `Te faltan ${fmt(falta)}: necesitas ${fmt(alCentimo(falta / quedan))} por hora en las ${quedan} h que quedan`,
-      tono: "error",
-    };
-  }
-  const pron = pronosticoDelDia(total, horaActual) ?? total;
-  return pron >= meta
-    ? { texto: `Te faltan ${fmt(falta)} · a este ritmo cierras con ${fmt(pron)}`, tono: "exito" }
-    : { texto: `Te faltan ${fmt(falta)} · a este ritmo cierras con ${fmt(pron)}`, tono: "aviso" };
+  const texto = `Te faltan ${fmt(falta)}: vende ${fmt(alCentimo(falta / quedan))} por hora en ${
+    quedan === 1 ? "la hora que queda" : `las ${quedan} h que quedan`
+  }`;
+  if (cierre !== null && cierre >= meta) return { texto, tono: "exito" };
+  if (fraccionDelHorario(horaActual) > 0.7 && total < meta / 2) return { texto, tono: "error" };
+  return { texto, tono: "aviso" };
 }

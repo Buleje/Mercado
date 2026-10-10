@@ -11,8 +11,9 @@ import type { RespuestaSerieDia, RespuestaSerieHora } from "@/lib/metas/logros-r
 /**
  * GET /api/goals/serie — lo vendido por hora o por día de Lima (ADR-488).
  *
- * - `?por=hora&dia=YYYY-MM-DD` → las 24 horas del día y las de la víspera
- *   (la comparación con ayer de «Hoy»). Sin `dia`: hoy.
+ * - `?por=hora&dia=YYYY-MM-DD` → las 24 horas del día, las de la víspera y
+ *   las del mismo día de la semana pasada (con qué comparar y cómo suele
+ *   seguir el día en «Hoy»). Sin `dia`: hoy.
  * - `?por=dia&mes=YYYY-MM` → los días del mes y los del mes anterior (el
  *   calendario y «vs el mes pasado al mismo día»). Sin `mes`: el de hoy.
  *
@@ -64,9 +65,11 @@ export async function GET(req: NextRequest) {
     if (parsed.data.por === "hora") {
       const dia = parsed.data.dia ?? hoy;
       const ayer = sumarDiasAFecha(dia, -1);
-      const [horas, horasAyer] = await Promise.all([
+      const semanaPasada = sumarDiasAFecha(dia, -7);
+      const [horas, horasAyer, horasSemana] = await Promise.all([
         MetasSerieDB.porHora(auth.tenantId, dia),
         MetasSerieDB.porHora(auth.tenantId, ayer),
+        MetasSerieDB.porHora(auth.tenantId, semanaPasada),
       ]);
       const cuerpo: RespuestaSerieHora = {
         por: "hora",
@@ -74,6 +77,7 @@ export async function GET(req: NextRequest) {
         dia,
         horas,
         ayer: { dia: ayer, horas: horasAyer },
+        semanaPasada: { dia: semanaPasada, horas: horasSemana },
       };
       return NextResponse.json(cuerpo, { headers: SIN_CACHE });
     }

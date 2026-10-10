@@ -1,7 +1,9 @@
 /**
- * GraficoPorHora — lo vendido en cada hora de Lima, con la marca de ayer a la
- * misma hora. La hora actual va en ámbar. Sin interactividad: el detalle de
- * cada barra va en su `title` y en el texto para lector de pantalla.
+ * GraficoPorHora — lo vendido en cada hora de Lima, con la marca del mismo día
+ * de la semana pasada a esa hora (un sábado se compara con un sábado: contra
+ * ayer, el viernes, no dice cómo suele seguir el día). La hora actual va en
+ * ámbar. Sin interactividad: el detalle de cada barra va en su `title` y en el
+ * texto para lector de pantalla.
  */
 import { CardTitle } from "@buleje/design-system";
 import { TrendingUp } from "@buleje/design-system/icons";
@@ -15,19 +17,23 @@ const pct = (v: number, max: number) => (max > 0 ? (v / max) * 100 : 0);
 
 export function GraficoPorHora({
   horas,
-  horasAyer,
+  horasComparar,
+  nombreComparar,
   visibles,
   horaActual,
 }: {
   horas: readonly TramoVenta[];
-  horasAyer: readonly TramoVenta[];
+  /** El mismo día de la semana pasada. */
+  horasComparar: readonly TramoVenta[];
+  /** «sábado». */
+  nombreComparar: string;
   /** Las horas que se dibujan, en orden. */
   visibles: readonly number[];
   horaActual: number;
 }) {
   const max = Math.max(
     1,
-    ...visibles.map((h) => Math.max(horas[h]?.total ?? 0, horasAyer[h]?.total ?? 0)),
+    ...visibles.map((h) => Math.max(horas[h]?.total ?? 0, horasComparar[h]?.total ?? 0)),
   );
   return (
     <section
@@ -45,25 +51,25 @@ export function GraficoPorHora({
         <InfoTip
           title="Ventas por hora"
           what="Lo que entró en cada hora de Lima: ventas del POS más pedidos confirmados, en camino o entregados."
-          body="La raya gris es lo que vendiste ayer a esa misma hora; la barra ámbar es la hora en que estás."
+          body={`La raya gris es lo que vendiste el ${nombreComparar} pasado a esa misma hora; la barra ámbar es la hora en que estás.`}
         />
-        <span className="ml-auto flex items-center gap-3 text-xs text-[var(--text-tertiary)]">
+        <span className="ml-auto flex items-center gap-3 text-sm text-[var(--text-secondary)]">
           <span className="inline-flex items-center gap-1">
             <span aria-hidden="true" className="h-2.5 w-2.5 rounded-sm bg-[var(--accent)]" /> Hoy
           </span>
           <span className="inline-flex items-center gap-1">
             <span aria-hidden="true" className="h-0.5 w-3 rounded-full bg-[var(--text-tertiary)]" />{" "}
-            Ayer
+            {nombreComparar.charAt(0).toUpperCase() + nombreComparar.slice(1)} pasado
           </span>
         </span>
       </div>
       <ol className="flex items-end gap-0.5 sm:gap-1" aria-label="Ventas de hoy por hora">
         {visibles.map((h, i) => {
           const hoy = horas[h] ?? { total: 0, n: 0 };
-          const ayer = horasAyer[h] ?? { total: 0, n: 0 };
+          const otro = horasComparar[h] ?? { total: 0, n: 0 };
           const actual = h === horaActual;
           const futura = h > horaActual;
-          const texto = `${etiquetaHora(h)}: ${formatCurrency(hoy.total)} (${hoy.n} ${hoy.n === 1 ? "venta" : "ventas"}) · ayer ${formatCurrency(ayer.total)}`;
+          const texto = `${etiquetaHora(h)}: ${formatCurrency(hoy.total)} (${hoy.n} ${hoy.n === 1 ? "venta" : "ventas"}) · el ${nombreComparar} pasado ${formatCurrency(otro.total)}`;
           return (
             <li key={h} className="flex min-w-0 flex-1 flex-col items-center gap-1" title={texto}>
               <span className="sr-only">{texto}</span>
@@ -84,21 +90,23 @@ export function GraficoPorHora({
                   )}
                   style={{ height: `${Math.max(pct(hoy.total, max), hoy.total > 0 ? 6 : 3)}%` }}
                 />
-                {ayer.total > 0 && (
+                {otro.total > 0 && (
                   <span
                     className="absolute inset-x-0 h-0.5 rounded-full bg-[var(--text-tertiary)]"
-                    style={{ bottom: `${pct(ayer.total, max)}%` }}
+                    style={{ bottom: `${pct(otro.total, max)}%` }}
                   />
                 )}
               </span>
               <span
                 aria-hidden="true"
                 className={cn(
-                  "text-[length:var(--ts-2xs)] leading-none tabular-nums",
+                  "whitespace-nowrap text-sm leading-none tabular-nums",
                   actual
-                    ? "font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
-                    : "text-[var(--text-tertiary)]",
-                  i % 2 === 1 && !actual && "invisible sm:visible",
+                    ? "font-bold text-[var(--data-warning-ink)]"
+                    : "text-[var(--text-secondary)]",
+                  // A 400 px no entran 16 etiquetas de 14 px: una cada tres, la actual
+                  // siempre, y ninguna pegada a la actual (se pisaban «8am9am»).
+                  !actual && (i % 3 !== 0 || Math.abs(h - horaActual) === 1) && "invisible sm:visible",
                 )}
               >
                 {etiquetaHora(h)}

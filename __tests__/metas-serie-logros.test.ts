@@ -229,10 +229,54 @@ describe("Hoy — pronóstico al céntimo", () => {
     // 16:00: 11 horas pasadas desde las 6:00, quedan 5 → 0.10 + 0.10/11·5 = 0.145…
     expect(pronosticoDelDia(0.1, 16)).toBe(0.15);
     const fmt = (n: number) => `S/ ${n}`;
+    // Lo que falta, repartido en las horas que quedan hasta las 21:00, al céntimo.
     expect(lineaDelDia(0.1, 5, 16, fmt).texto).toBe(
-      "Te faltan S/ 4.9 · a este ritmo cierras con S/ 0.15",
+      "Te faltan S/ 4.9: vende S/ 0.98 por hora en las 5 h que quedan",
     );
-    // Muy atrasado: lo que hace falta por hora también va al céntimo.
-    expect(lineaDelDia(0.1, 5, 18, fmt).texto).toContain("necesitas S/ 1.63 por hora");
+    expect(lineaDelDia(0.1, 5, 18, fmt).texto).toContain("vende S/ 1.63 por hora");
+    expect(lineaDelDia(0.1, 5, 20, fmt).texto).toContain("en la hora que queda");
+  });
+
+  it("el tono de la línea sale del cierre estimado, no de otra cuenta", async () => {
+    const { lineaDelDia } = await import("@/components/admin/metas/hoy/hoy-calculos");
+    const fmt = (n: number) => `S/ ${n}`;
+    expect(lineaDelDia(100, 300, 12, fmt, 320).tono).toBe("exito");
+    expect(lineaDelDia(100, 300, 12, fmt, 250).tono).toBe("aviso");
+    expect(lineaDelDia(100, 300, 12, fmt, null).tono).toBe("aviso");
+    expect(lineaDelDia(320, 300, 12, fmt, null).texto).toBe("Meta superada por S/ 20");
+  });
+});
+
+describe("Hoy — cierre estimado y hora fuerte con la semana pasada", () => {
+  const tramos = (porHora: Record<number, number>) =>
+    Array.from({ length: 24 }, (_, h) => ({ total: porHora[h] ?? 0, n: porHora[h] ? 1 : 0 }));
+
+  it("cierre = lo de hoy + lo que la semana pasada vendió DESPUÉS de esta hora", async () => {
+    const { resumirDia } = await import("@/components/admin/metas/hoy/hoy-calculos");
+    // Sábado pasado: S/ 50 a las 9, S/ 200 a las 19. Hoy a las 10 llevas S/ 80.
+    const r = resumirDia(tramos({ 8: 30, 10: 50 }), tramos({ 9: 5 }), tramos({ 9: 50, 19: 200 }), 10);
+    expect(r.total).toBe(80);
+    expect(r.semana).toEqual({ aEstaHora: 50, total: 250 });
+    expect(r.ayer).toEqual({ aEstaHora: 5, total: 5 });
+    expect(r.cierre).toEqual({ monto: 280, base: "semana" });
+    expect(r.horaFuerte).toEqual({ hora: 19, total: 200, n: 1 });
+  });
+
+  it("sin ventas hoy igual estima con la semana pasada; casi 0 a esta hora no dispara un cociente", async () => {
+    const { cierreEstimado } = await import("@/components/admin/metas/hoy/hoy-calculos");
+    expect(cierreEstimado(0, 8, { aEstaHora: 0.1, total: 3000.1 })).toEqual({ monto: 3000, base: "semana" });
+  });
+
+  it("sin semana pasada: el ritmo de hoy dentro del horario; sin nada, null", async () => {
+    const { cierreEstimado, horaFuerteQueViene } = await import(
+      "@/components/admin/metas/hoy/hoy-calculos"
+    );
+    const vacio = { aEstaHora: 0, total: 0 };
+    expect(cierreEstimado(0.1, 16, vacio)).toEqual({ monto: 0.15, base: "ritmo" });
+    expect(cierreEstimado(0, 16, vacio)).toBeNull();
+    expect(cierreEstimado(100, 22, vacio)).toBeNull();
+    // La hora fuerte es la que todavía no llegó: las de antes no cuentan.
+    expect(horaFuerteQueViene(tramos({ 9: 500, 18: 40 }), 12)).toEqual({ hora: 18, total: 40, n: 1 });
+    expect(horaFuerteQueViene(tramos({ 9: 500 }), 12)).toBeNull();
   });
 });

@@ -33,6 +33,8 @@ export interface RespuestaSerieHora {
   /** 24 tramos, uno por hora de Lima. */
   horas: TramoVenta[];
   ayer: { dia: string; horas: TramoVenta[] };
+  /** El mismo día de la semana pasada: con qué comparar y cómo suele seguir el día. */
+  semanaPasada: { dia: string; horas: TramoVenta[] };
 }
 
 export interface RespuestaSerieDia {

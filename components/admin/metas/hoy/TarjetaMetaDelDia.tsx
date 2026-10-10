@@ -1,8 +1,12 @@
 /**
  * TarjetaMetaDelDia — lo vendido hoy contra la meta diaria de ventas de la base
  * (la misma que la tarjeta de «Metas»), con la marca del ritmo según la hora y
- * una línea de cómo va. Sin meta: sólo lo vendido.
+ * una línea con lo que falta y cuánto vender por hora para llegar.
+ *
+ * Sin venta todavía no se dibuja un «S/ 0.00» gigante: una frase. Sin meta, el
+ * aviso para ponerla va al pie de la MISMA tarjeta (`pie`), no en otra caja.
  */
+import type { ReactNode } from "react";
 import { BarraAvance } from "@/components/admin/metas/BarraAvance";
 import { TEXTO_TONO } from "@/components/admin/metas/clases-meta";
 import { estadoDeMeta } from "@/lib/admin/metas-periodo";
@@ -15,15 +19,24 @@ const soles = (n: number) =>
 
 export function TarjetaMetaDelDia({
   total,
+  n,
   meta,
   horaActual,
+  cierre,
   cargando,
+  pie,
 }: {
   total: number;
+  /** Ventas y pedidos de hoy. */
+  n: number;
   /** El objetivo de la meta diaria de ventas; `null` si no hay. */
   meta: number | null;
   horaActual: number;
+  /** El cierre estimado de «Indicadores» (decide el tono de la línea). */
+  cierre: number | null;
   cargando: boolean;
+  /** Lo que va al pie, dentro de la tarjeta (el aviso «sin meta»). */
+  pie?: ReactNode;
 }) {
   if (cargando) {
     return (
@@ -40,31 +53,45 @@ export function TarjetaMetaDelDia({
   const estado = conMeta
     ? estadoDeMeta({ avance: total, target: meta, esperado: null, sentido: "sube", cerrada: false })
     : null;
-  const linea = conMeta ? lineaDelDia(total, meta, horaActual, soles) : null;
+  const linea = conMeta ? lineaDelDia(total, meta, horaActual, soles, cierre) : null;
   const cumplida = estado === "cumplida";
+  const vendio = total > 0;
   return (
     <div
       className={cn(
-        "rounded-xl border p-5",
+        "rounded-xl border px-5 py-4",
         cumplida
           ? "border-[var(--data-success)]/40 bg-[var(--data-success)]/10"
           : "border-[var(--rule-base)] bg-[var(--surface-raised)]",
       )}
     >
-      <div className="flex flex-wrap items-baseline justify-center gap-x-2 text-center">
-        <span className="text-4xl font-black leading-none tracking-tight tabular-nums text-[var(--text-primary)] sm:text-5xl">
-          {formatCurrency(total)}
-        </span>
-        <span className="text-sm font-medium text-[var(--text-secondary)]">
-          {conMeta ? (
-            <>
-              de <b className="tabular-nums">{soles(meta)}</b> · meta del día
-            </>
-          ) : (
-            "vendido hoy"
+      {vendio ? (
+        <div className="flex flex-wrap items-baseline justify-center gap-x-2 text-center">
+          <span className="text-4xl font-black leading-none tracking-tight tabular-nums text-[var(--text-primary)] sm:text-5xl">
+            {formatCurrency(total)}
+          </span>
+          <span className="text-sm font-medium text-[var(--text-secondary)]">
+            {conMeta ? (
+              <>
+                de <b className="tabular-nums">{soles(meta)}</b> · meta del día
+              </>
+            ) : (
+              "vendido hoy"
+            )}{" "}
+            · {n} {n === 1 ? "venta" : "ventas"}
+          </span>
+        </div>
+      ) : (
+        <p className="text-center text-base font-semibold text-[var(--text-primary)]">
+          Todavía no hay ventas hoy
+          {conMeta && (
+            <span className="font-normal text-[var(--text-secondary)]">
+              {" "}
+              · tu meta: <b className="tabular-nums">{soles(meta)}</b>
+            </span>
           )}
-        </span>
-      </div>
+        </p>
+      )}
       {conMeta && estado && linea && (
         <div className="mt-4 space-y-2">
           <BarraAvance
@@ -80,6 +107,7 @@ export function TarjetaMetaDelDia({
           </p>
         </div>
       )}
+      {pie && <div className="mt-4 border-t border-[var(--rule-soft)] pt-3 dark:border-[var(--rule-base)]">{pie}</div>}
     </div>
   );
 }

@@ -29,11 +29,24 @@ function metaDeEsteEquipo(): number | null {
   return null;
 }
 
-export function AvisoSinMeta({ onPoner }: { onPoner: (objetivo?: number) => void }) {
+export function AvisoSinMeta({
+  onPoner,
+  embebido = false,
+}: {
+  onPoner: (objetivo?: number) => void;
+  /** Va al pie de otra tarjeta: sin caja propia (nada de tarjeta dentro de tarjeta). */
+  embebido?: boolean;
+}) {
   const [local, setLocal] = useState<number | null>(null);
   useEffect(() => setLocal(metaDeEsteEquipo()), []);
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-dashed border-[var(--rule-strong)]/30 bg-[var(--surface-sunken)] px-4 py-3 sm:flex-row sm:items-center">
+    <div
+      className={cn(
+        "flex flex-col gap-3 sm:flex-row sm:items-center",
+        !embebido &&
+          "rounded-xl border border-dashed border-[var(--rule-strong)]/30 bg-[var(--surface-sunken)] px-4 py-3",
+      )}
+    >
       <span className="flex min-w-0 flex-1 items-start gap-2 text-sm text-[var(--text-primary)] sm:items-center">
         <Target
           aria-hidden="true"
@@ -64,7 +77,7 @@ export function AvisoSinMeta({ onPoner }: { onPoner: (objetivo?: number) => void
         {local !== null && (
           <button
             type="button"
-            className={cn(BOTON_PRIMARIO, "flex-1 sm:flex-none")}
+            className={cn(BOTON_PRIMARIO, "h-12 flex-1 sm:flex-none")}
             onClick={() => onPoner(local)}
           >
             Guardarla para todos
@@ -72,7 +85,7 @@ export function AvisoSinMeta({ onPoner }: { onPoner: (objetivo?: number) => void
         )}
         <button
           type="button"
-          className={cn(local !== null ? BOTON_SECUNDARIO : BOTON_PRIMARIO, "flex-1 sm:flex-none")}
+          className={cn(local !== null ? BOTON_SECUNDARIO : BOTON_PRIMARIO, "h-12 flex-1 sm:flex-none")}
           onClick={() => onPoner()}
         >
           Ponle una meta al día

@@ -61,6 +61,17 @@ export interface KpisPlegablesProps {
    * la pantalla vacía. Lo que se elija después se recuerda igual.
    */
   abiertoPorDefecto?: boolean;
+  /**
+   * Con pocas tarjetas, que cada una conserve su ancho (`auto-fill`) en vez de
+   * estirarse a toda la fila (`auto-fit`): una sola cifra de 960 px de ancho
+   * se lee como un aviso, no como un indicador. Default `false` (como siempre).
+   */
+  anchoFijo?: boolean;
+  /**
+   * Debajo de `sm` el botón queda en ícono + cuenta (la palabra va al lector de
+   * pantalla y el titular se calla): así entra en la fila del título a 400 px.
+   */
+  compactoEnMovil?: boolean;
 }
 
 export function useKpisPlegables({
@@ -75,6 +86,8 @@ export function useKpisPlegables({
   alto = "sm",
   sinDatosAun = false,
   abiertoPorDefecto = false,
+  anchoFijo = false,
+  compactoEnMovil = false,
 }: KpisPlegablesProps): { boton: ReactNode; panel: ReactNode; abierto: boolean } {
   /* Clave `v2`: la v1 guardaba «¿está abierta la SEGUNDA fila?», otra pregunta. */
   const [abierto, setAbierto] = useState(abiertoPorDefecto);
@@ -134,14 +147,18 @@ export function useKpisPlegables({
       }`}
     >
       <BarChart3 className="h-4 w-4 shrink-0" aria-hidden />
-      <span className="shrink-0">Indicadores</span>
+      <span className={`shrink-0 ${compactoEnMovil ? "max-sm:sr-only" : ""}`}>Indicadores</span>
       <span className="shrink-0 rounded-full bg-[var(--surface-sunken)] px-1.5 text-xs tabular-nums text-[var(--text-tertiary)]">
         {tarjetas.length}
       </span>
       {/* Con el panel cerrado, las cifras viajan en el botón: el titular sigue
           a la vista sin gastar una fila propia. */}
       {!abierto && resumen && (
-        <span className="min-w-0 truncate font-mono text-sm font-normal tabular-nums text-[var(--text-secondary)]">
+        <span
+          className={`min-w-0 truncate font-mono text-sm font-normal tabular-nums text-[var(--text-secondary)] ${
+            compactoEnMovil ? "max-sm:hidden" : ""
+          }`}
+        >
           {resumen}
         </span>
       )}
@@ -165,7 +182,11 @@ export function useKpisPlegables({
       {encabezado}
       {/* `auto-fit`: plegado son dos y desplegado cinco; un número fijo de
           columnas dejaba huecos del alto de una tarjeta. */}
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(230px,1fr))] gap-3">
+      <div
+        className={`grid gap-3 ${
+          anchoFijo ? "grid-cols-[repeat(auto-fill,minmax(230px,1fr))]" : "grid-cols-[repeat(auto-fit,minmax(230px,1fr))]"
+        }`}
+      >
         {sinDatosAun
           ? tarjetas.map((_, i) => <SkeletonKPICard key={i} />)
           : tarjetas.map((k, i) => <Fragment key={i}>{k}</Fragment>)}
