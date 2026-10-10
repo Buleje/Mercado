@@ -64,9 +64,34 @@ export interface LogroDTO {
   sinDato?: boolean;
 }
 
+/** Un récord de ventas: cuánto y el día de Lima en que empieza (el día, el lunes de la semana o el 1.º del mes). */
+export interface RecordDeVentas {
+  total: number;
+  dia: string;
+}
+
+/**
+ * Los récords del negocio dentro de lo leído (hasta `TOPE_DIAS_SERIE` días):
+ * lo que sólo dice «Logros». El mejor día de un mes está en Calendario y el de
+ * 14 días en Inicio › Ventas; acá va el de todo lo leído, con la semana y el mes.
+ */
+export interface RecordsDelNegocio {
+  /** El primer día de Lima que se miró. */
+  desde: string;
+  dia: RecordDeVentas | null;
+  /** De lunes a domingo (`dia` = el lunes). Una semana cortada al inicio de lo leído no cuenta. */
+  semana: RecordDeVentas | null;
+  /** `dia` = el 1.º del mes. Un mes cortado al inicio de lo leído no cuenta. */
+  mes: RecordDeVentas | null;
+  /** La racha más larga de días con venta y su último día; `sigue` si es la de ahora. */
+  racha: { dias: number; hasta: string; sigue: boolean } | null;
+}
+
 export interface RespuestaLogros {
   hoy: string;
   logros: LogroDTO[];
+  /** `null` si la serie de ventas no se pudo leer. */
+  records: RecordsDelNegocio | null;
 }
 
 /** La hora de Lima (0-23) de un instante: (hora UTC − 5 + 24) % 24. */
@@ -93,6 +118,8 @@ export interface Racha {
   actual: number;
   /** La racha más larga dentro de la ventana leída. */
   mejor: number;
+  /** El último día de la racha más larga (la primera, si hay empate); `null` sin racha. */
+  mejorHasta: string | null;
   /** El primer día en que la racha llegó a cada largo de `LARGOS_DE_RACHA`. */
   alcanzada: Partial<Record<number, string>>;
 }
@@ -109,11 +136,15 @@ export function calcularRacha(
 ): Racha {
   let corrida = 0;
   let mejor = 0;
+  let mejorHasta: string | null = null;
   const alcanzada: Partial<Record<number, string>> = {};
   for (let f = desde; f <= hoy; f = sumarDiasAFecha(f, 1)) {
     if (diaCumple(dias[f], metaDiaria)) {
       corrida += 1;
-      mejor = Math.max(mejor, corrida);
+      if (corrida > mejor) {
+        mejor = corrida;
+        mejorHasta = f;
+      }
       for (const largo of LARGOS_DE_RACHA) {
         if (corrida === largo && !alcanzada[largo]) alcanzada[largo] = f;
       }
@@ -121,7 +152,7 @@ export function calcularRacha(
       corrida = 0;
     }
   }
-  return { actual: corrida, mejor, alcanzada };
+  return { actual: corrida, mejor, mejorHasta, alcanzada };
 }
 
 export interface MejorDia {
@@ -154,6 +185,56 @@ export function calcularMejorDia(dias: VentasPorDia, hoy: string): MejorDia {
     }
   }
   return { record, recordDia, previoAHoy, superadoEn, hoyTotal: dias[hoy]?.total ?? 0 };
+}
+
+/** El lunes de la semana de un día de Lima ("YYYY-MM-DD"). */
+export function lunesDe(dia: string): string {
+  const dow = new Date(`${dia}T12:00:00.000Z`).getUTCDay();
+  return sumarDiasAFecha(dia, -((dow + 6) % 7));
+}
+
+/** El mayor total de un agrupado; en empate gana el primero (el que lo logró antes). */
+function mayor(grupos: ReadonlyMap<string, number>): RecordDeVentas | null {
+  let r: RecordDeVentas | null = null;
+  for (const [dia, total] of [...grupos].sort(([a], [b]) => a.localeCompare(b))) {
+    if (total > 0 && (!r || total > r.total)) r = { total, dia };
+  }
+  return r;
+}
+
+/**
+ * Mejor día, mejor semana (lunes a domingo), mejor mes y racha más larga de
+ * días con venta, de `desde` a `hoy`. La semana y el mes que corren cuentan
+ * (pueden ser ya el récord); los que quedan cortados por `desde`, no: su total
+ * sería menor que el real.
+ */
+export function calcularRecords(dias: VentasPorDia, desde: string, hoy: string): RecordsDelNegocio {
+  const semanas = new Map<string, number>();
+  const meses = new Map<string, number>();
+  const sumar = (m: Map<string, number>, k: string, v: number) =>
+    m.set(k, Math.round(((m.get(k) ?? 0) + v) * 100) / 100);
+  for (const [f, t] of Object.entries(dias)) {
+    if (f < desde || f > hoy || !(t.total > 0)) continue;
+    const lunes = lunesDe(f);
+    if (lunes >= desde) sumar(semanas, lunes, t.total);
+    const primero = `${f.slice(0, 7)}-01`;
+    if (primero >= desde) sumar(meses, primero, t.total);
+  }
+  const m = calcularMejorDia(
+    Object.fromEntries(Object.entries(dias).filter(([f]) => f >= desde)),
+    hoy,
+  );
+  const r = calcularRacha(dias, desde, hoy, null);
+  /* La de ahora iguala o es la más larga: se dice la de ahora (termina hoy o, si hoy todavía no vende, ayer). */
+  const sigue = r.mejor > 0 && r.actual === r.mejor;
+  const hasta = sigue ? (diaCumple(dias[hoy], null) ? hoy : sumarDiasAFecha(hoy, -1)) : r.mejorHasta;
+  return {
+    desde,
+    dia: m.recordDia ? { total: m.record, dia: m.recordDia } : null,
+    semana: mayor(semanas),
+    mes: mayor(meses),
+    racha: r.mejor > 0 && hasta ? { dias: r.mejor, hasta, sigue } : null,
+  };
 }
 
 /** Suma un tramo en céntimos (sin arrastrar decimales del float). */

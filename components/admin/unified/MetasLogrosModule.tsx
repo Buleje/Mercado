@@ -6,7 +6,7 @@
  * Un solo sistema de metas (`AdminGoal`, en la base) que leen las cuatro
  * vistas: Metas (por área, con su avance derivado de los datos), Hoy (cuánto
  * falta para la meta del día y con cuánto cierra), Calendario (cada día del mes contra la meta diaria) y
- * Logros (lo ganado, derivado en el servidor).
+ * Logros (lo ganado, lo próximo y los récords, derivados en el servidor).
  *
  * Antes eran cuatro sistemas sueltos: metas en la base con el avance tipeado,
  * una meta diaria y otra mensual en localStorage (distintas en cada navegador),
@@ -68,7 +68,7 @@ export default function MetasLogrosModule() {
             <span>
               Cada meta pertenece a un área del negocio (Ventas, Compras, Marketplace, Aserradero, Bosque…) y su avance sale
               solo de tus datos del período. Hoy: cuánto te falta para la meta del día, a qué ritmo llegas y con cuánto
-              cierras. Calendario: cada día del mes contra tu meta diaria. Logros: lo que ya ganaste.
+              cierras. Calendario: cada día del mes contra tu meta diaria. Logros: lo que ganaste, lo próximo y tus récords.
             </span>
           ),
         }}

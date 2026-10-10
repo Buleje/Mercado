@@ -8,7 +8,9 @@
  * clases `lib/db` de siempre, en el día de Lima. Se conservan los ids y los
  * nombres de los 20 de antes; se suman el del marketplace y tres del
  * aserradero (medidos con las mismas calculadoras que las metas, y sólo si el
- * negocio tiene el módulo forestal).
+ * negocio tiene el módulo forestal). «Meta cumplida» se fue el 10-10: repetía
+ * el «Cumplidas x de y» de la vista Metas. Con la lista viajan los récords del
+ * negocio (mejor día, semana y mes, racha más larga), que ninguna otra vista dice.
  *
  * Una fuente que falla deja SUS logros «sin dato» (nunca «por ganar» con 0) y
  * no tumba a los demás.
@@ -20,7 +22,7 @@ import { AdminGoalsDB } from "@/lib/db/admin-goals.db";
 import { CustomersDB } from "@/lib/db/customers.db";
 import { AnalyticsFiadoDB } from "@/lib/db/analytics-fiado.db";
 import { MetasSerieDB, TOPE_DIAS_SERIE, type CierreDeCaja } from "@/lib/db/metas-serie.db";
-import { avanceDeMetas, avanceDePrueba } from "@/lib/metas/avance";
+import { avanceDePrueba } from "@/lib/metas/avance";
 import { veredictoArqueo } from "@/lib/caja/arqueo-veredicto";
 import { listEnabledSpecializations } from "@/lib/specializations";
 import {
@@ -33,16 +35,23 @@ import { prefijoCacheAvance } from "@/lib/metas/avance/tipos";
 import {
   calcularMejorDia,
   calcularRacha,
+  calcularRecords,
   horaLima,
   metaDeVentas,
   type LogroDTO,
   type Racha,
+  type RecordsDelNegocio,
   type RespuestaLogros,
 } from "@/lib/metas/logros-reglas";
 import { formatCurrency } from "@/lib/format";
 import { limaDateKey } from "@/lib/utils";
 
-export type { AreaLogro, LogroDTO, RespuestaLogros } from "@/lib/metas/logros-reglas";
+export type {
+  AreaLogro,
+  LogroDTO,
+  RecordsDelNegocio,
+  RespuestaLogros,
+} from "@/lib/metas/logros-reglas";
 
 const TTL_LOGROS = 300;
 const CANTIDADES_VENTAS = [1, 100, 1000] as const;
@@ -218,7 +227,10 @@ async function leerForestal(
   return { cubicado, ingresado, despachado };
 }
 
-async function calcular(tenantId: string, hoy: string): Promise<LogroDTO[]> {
+async function calcular(
+  tenantId: string,
+  hoy: string,
+): Promise<{ logros: LogroDTO[]; records: RecordsDelNegocio | null }> {
   const desdeSerie = sumarDiasAFecha(hoy, -(TOPE_DIAS_SERIE - 1));
   const [
     metas,
@@ -252,9 +264,6 @@ async function calcular(tenantId: string, hoy: string): Promise<LogroDTO[]> {
     leerForestal(tenantId, hoy),
   ]);
   const { cubicado, ingresado, despachado } = forestal;
-  const avances = metas.ok
-    ? await leer("avance", tenantId, () => avanceDeMetas(tenantId, metas.v, hoy))
-    : ({ ok: false } as const);
 
   const out: LogroDTO[] = [];
 
@@ -439,25 +448,6 @@ async function calcular(tenantId: string, hoy: string): Promise<LogroDTO[]> {
       out.push(sinDato({ id, area: "constancia", nombre, queMide: "Días seguidos vendiendo." }));
     }
   }
-  const cumplidaBase = {
-    id: "meta-cumplida",
-    area: "constancia" as const,
-    nombre: "Meta cumplida",
-    queMide: "Que alguna de tus metas esté cumplida en su período (las de Metas y logros).",
-  };
-  if (avances.ok) {
-    const cumplidas = avances.v.filter((a) => a.estado === "cumplida").length;
-    out.push({
-      ...cumplidaBase,
-      ganado: cumplidas > 0,
-      progreso: { valor: Math.min(cumplidas, 1), meta: 1, unidad: "metas" },
-      detalle:
-        avances.v.length === 0
-          ? "Todavía no tienes metas."
-          : `${cumplidas} de ${avances.v.length} metas cumplidas.`,
-    });
-  } else out.push(sinDato(cumplidaBase));
-
   // ── Marketplace ──
   const mktBase = {
     id: "primer-pedido-marketplace",
@@ -497,7 +487,7 @@ async function calcular(tenantId: string, hoy: string): Promise<LogroDTO[]> {
   if (despachado)
     out.push(despachado.ok ? { ...despBase, ganado: despachado.v > 0 } : sinDato(despBase));
 
-  return out;
+  return { logros: out, records: dias.ok ? calcularRecords(dias.v, desdeSerie, hoy) : null };
 }
 
 /** Los logros del negocio al día de Lima `hoy`. Caché de 5 min; se borra con las metas (mismo prefijo). */
@@ -507,8 +497,9 @@ export async function evaluarLogros(
   fresco = false,
 ): Promise<RespuestaLogros> {
   if (!tenantId) throw new Error("tenantId is required");
-  const clave = `${prefijoCacheAvance(tenantId)}logros:${hoy}`;
+  /* `logros-v2` (10-10): antes se guardaba sólo la lista; la forma nueva trae los récords. */
+  const clave = `${prefijoCacheAvance(tenantId)}logros-v2:${hoy}`;
   if (fresco) invalidate(clave);
-  const logros = await getOrSet(clave, TTL_LOGROS, () => calcular(tenantId, hoy));
-  return { hoy, logros };
+  const { logros, records } = await getOrSet(clave, TTL_LOGROS, () => calcular(tenantId, hoy));
+  return { hoy, logros, records };
 }

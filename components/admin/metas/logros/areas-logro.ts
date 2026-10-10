@@ -10,7 +10,6 @@ import {
   Flame,
   HandCoins,
   Landmark,
-  Medal,
   Rocket,
   Ruler,
   Smile,
@@ -33,17 +32,20 @@ import type { AreaLogro } from "@/lib/metas/logros-reglas";
 export interface AreaLogroDef {
   id: AreaLogro;
   nombre: string;
+  /** El nombre en el chip del filtro («Caja», no «Caja y cobranza»): los 7 chips entran en una fila. */
+  corto: string;
   icono: LucideIcon;
   color: string;
   /** La categoría de meta cuyo módulo abre «Ver en … ›» (`hrefDeMeta`); sin ella, el grupo no enlaza. */
   categoria?: CategoriaMeta;
 }
 
-const deMetas = (id: AreaMeta & AreaLogro, categoria: CategoriaMeta): AreaLogroDef => {
+const deMetas = (id: AreaMeta & AreaLogro, categoria: CategoriaMeta, corto: string): AreaLogroDef => {
   const a = AREAS_META.find((x) => x.id === id);
   return {
     id,
     nombre: a?.nombre ?? id,
+    corto,
     icono: a?.icono ?? Award,
     color: a?.color ?? "var(--accent)",
     categoria,
@@ -52,12 +54,12 @@ const deMetas = (id: AreaMeta & AreaLogro, categoria: CategoriaMeta): AreaLogroD
 
 /** En este orden se muestran los grupos. La constancia sale de las ventas, pero no tiene módulo propio. */
 export const AREAS_LOGRO: readonly AreaLogroDef[] = [
-  deMetas("ventas", "ventas"),
-  { id: "constancia", nombre: "Constancia", icono: Flame, color: "var(--data-7)" },
-  deMetas("caja", "caja"),
-  deMetas("clientes", "clientes"),
-  deMetas("marketplace", "marketplace_ventas"),
-  deMetas("forestal", "madera_ingresada"),
+  deMetas("ventas", "ventas", "Ventas"),
+  { id: "constancia", nombre: "Constancia", corto: "Constancia", icono: Flame, color: "var(--data-7)" },
+  deMetas("caja", "caja", "Caja"),
+  deMetas("clientes", "clientes", "Clientes"),
+  deMetas("marketplace", "marketplace_ventas", "Marketplace"),
+  deMetas("forestal", "madera_ingresada", "Aserradero"),
 ];
 
 export const ICONO_LOGRO: Readonly<Record<string, LucideIcon>> = {
@@ -71,7 +73,6 @@ export const ICONO_LOGRO: Readonly<Record<string, LucideIcon>> = {
   "racha-30": Zap,
   "racha-100": Trophy,
   "vendedor-estrella": Star,
-  "meta-cumplida": Medal,
   "todo-cobrado": CheckCheck,
   cobrador: HandCoins,
   "caja-perfecta": Landmark,

@@ -18,7 +18,13 @@ const H = vi.hoisted(() => ({
 vi.mock("@/lib/prisma", () => ({ prisma: H.prisma }));
 
 import { MetasSerieDB } from "@/lib/db/metas-serie.db";
-import { calcularMejorDia, calcularRacha, horaLima } from "@/lib/metas/logros-reglas";
+import {
+  calcularMejorDia,
+  calcularRacha,
+  calcularRecords,
+  horaLima,
+  lunesDe,
+} from "@/lib/metas/logros-reglas";
 
 // 20:00 de Lima del 08/10 = 01:00 UTC del 09/10.
 const VEINTE_HORAS_DEL_8 = new Date("2026-10-09T01:00:00.000Z");
@@ -130,6 +136,59 @@ describe("calcularMejorDia — el récord real", () => {
   });
 });
 
+describe("calcularRecords — mejor día, semana, mes y racha de todo lo leído", () => {
+  const v = (total: number) => ({ total, n: 1 });
+
+  it("el lunes de la semana sale del día de Lima", () => {
+    expect(lunesDe("2026-10-08")).toBe("2026-10-05"); // jueves → lunes 05
+    expect(lunesDe("2026-10-05")).toBe("2026-10-05");
+    expect(lunesDe("2026-10-11")).toBe("2026-10-05"); // domingo → lunes de esa semana
+  });
+
+  it("suma de lunes a domingo y por mes; lo cortado por el inicio de lo leído no cuenta", () => {
+    const r = calcularRecords(
+      {
+        // Semana del lunes 28/09, cortada: lo leído arranca el miércoles 30/09.
+        "2026-09-29": v(900),
+        "2026-09-30": v(500),
+        // Semana del 05/10: 100 + 150 + 200.
+        "2026-10-05": v(100),
+        "2026-10-06": v(150),
+        "2026-10-07": v(200.1),
+        // Semana del 12/10 (la que corre): 300.
+        "2026-10-12": v(300),
+      },
+      "2026-09-30",
+      "2026-10-12",
+    );
+    expect(r.semana).toEqual({ total: 450.1, dia: "2026-10-05" });
+    // Septiembre arranca antes de lo leído: no compite. Octubre = 750,10.
+    expect(r.mes).toEqual({ total: 750.1, dia: "2026-10-01" });
+    // El 29/09 queda fuera de lo leído: el mejor día es el 30/09.
+    expect(r.dia).toEqual({ total: 500, dia: "2026-09-30" });
+    expect(r.racha).toEqual({ dias: 3, hasta: "2026-10-07", sigue: false });
+  });
+
+  it("la racha de ahora que iguala a la mejor «sigue»; hoy sin vender no la corta", () => {
+    const r = calcularRecords(
+      { "2026-10-01": v(10), "2026-10-02": v(10), "2026-10-05": v(10), "2026-10-06": v(10) },
+      "2026-10-01",
+      "2026-10-07",
+    );
+    expect(r.racha).toEqual({ dias: 2, hasta: "2026-10-06", sigue: true });
+  });
+
+  it("sin ventas no hay récords", () => {
+    expect(calcularRecords({}, "2026-10-01", "2026-10-07")).toEqual({
+      desde: "2026-10-01",
+      dia: null,
+      semana: null,
+      mes: null,
+      racha: null,
+    });
+  });
+});
+
 describe("evaluarLogros", () => {
   beforeEach(() => vi.resetModules());
 
@@ -187,15 +246,22 @@ describe("evaluarLogros", () => {
       listEnabledSpecializations: async () => specs,
     }));
     const { evaluarLogros } = await import("@/lib/metas/logros");
-    const { logros } = await evaluarLogros("t1", "2026-10-08");
-    return logros;
+    const { logros, records } = await evaluarLogros("t1", "2026-10-08");
+    return Object.assign(logros, { records });
   }
 
   it("rachas por días con venta, «Vendedor estrella» por la meta y «Mejor día» por el récord", async () => {
     const logros = await montar(["spec:forestal:ctp-libro", "spec:forestal:herramientas"]);
     const de = (id: string) => logros.find((l) => l.id === id)!;
 
-    expect(logros).toHaveLength(24);
+    // 23: «Meta cumplida» se fue (repetía el «Cumplidas x de y» de la vista Metas).
+    expect(logros).toHaveLength(23);
+    expect(logros.records).toMatchObject({
+      dia: { total: 300, dia: "2026-10-07" },
+      semana: { total: 540, dia: "2026-10-05" },
+      mes: { total: 540, dia: "2026-10-01" },
+      racha: { dias: 4, hasta: "2026-10-08", sigue: true },
+    });
     expect(de("mejor-dia")).toMatchObject({
       ganado: true,
       desde: "2026-10-07",
@@ -209,7 +275,7 @@ describe("evaluarLogros", () => {
     expect(de("vendedor-estrella").queMide).toContain("meta de hoy");
     expect(de("primera-venta")).toMatchObject({ ganado: true, desde: "2026-10-05" });
     expect(de("todo-cobrado").ganado).toBe(true);
-    expect(de("meta-cumplida").ganado).toBe(false);
+    expect(logros.find((l) => l.id === "meta-cumplida")).toBeUndefined();
     expect(de("100-m3-ingresados")).toMatchObject({ area: "forestal", ganado: true });
     expect(de("primer-despacho").ganado).toBe(false);
   });
@@ -217,7 +283,7 @@ describe("evaluarLogros", () => {
   it("sin módulo forestal no hay logros del aserradero", async () => {
     const logros = await montar([]);
     expect(logros.filter((l) => l.area === "forestal")).toEqual([]);
-    expect(logros).toHaveLength(21);
+    expect(logros).toHaveLength(20);
   });
 });
 

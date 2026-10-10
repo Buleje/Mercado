@@ -265,7 +265,7 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
     { key: "metas", label: "Metas", hint: "Cuánto quieres vender y cuánto llevas" },
     { key: "hoy", label: "Hoy", hint: "Cuánto te falta hoy para la meta, a qué ritmo llegas y con cuánto cierras" },
     { key: "calendario", label: "Calendario", hint: "Cada día de la semana y del mes contra su meta" },
-    { key: "logros", label: "Logros", hint: "Las rachas y metas que ya cumpliste" },
+    { key: "logros", label: "Logros", hint: "Lo que ganaste, lo próximo por ganar y tus récords" },
   ],
   "analytics-pro": [
     { key: "analytics", label: "Analytics Pro", hint: "Ventas, productos y clientes en gráficos" },
