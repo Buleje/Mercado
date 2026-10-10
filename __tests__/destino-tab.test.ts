@@ -47,8 +47,10 @@ const resolverDePrueba = crearResolverDestino({
 describe("resolverDestino — los mapas del panel", () => {
   it("los alias de los avisos rotos llevan a su pestaña", () => {
     expect(resolverDestino("demand-prediction")).toEqual({ tab: "forecasting" });
-    expect(resolverDestino("subscription")).toEqual({ tab: "plan" });
-    expect(resolverDestino("cobranza")).toEqual({ tab: "adelantos" });
+    // `subscription` → `plan`, que desde la ola 2 es Configuración › Plan.
+    expect(resolverDestino("subscription")).toEqual({ tab: "config", vista: "plan" });
+    // Desde la ola 3 va directo a la cobranza de Mi Plata › Adelantos.
+    expect(resolverDestino("cobranza")).toEqual({ tab: "plata", vista: "adelantos", sub: "cobranza" });
     expect(resolverDestino("inicio")).toEqual({ tab: "vendor-dashboard" });
     // Formato viejo `?module=x&tab=y`: el `tab` era la sección del módulo.
     expect(resolverDestino("ordenes")).toEqual({ tab: "marketplace" });
@@ -61,7 +63,8 @@ describe("resolverDestino — los mapas del panel", () => {
 
   it("un id de hoy pasa con su vista; uno sólo alcanzable por alias también", () => {
     expect(resolverDestino("ctp-libro-operaciones", "despacho")).toEqual({ tab: "ctp-libro-operaciones", vista: "despacho" });
-    expect(resolverDestino("auditoria")).toEqual({ tab: "auditoria" });
+    // Ola 2: Auditoría es Configuración › Sistema › Actividad.
+    expect(resolverDestino("auditoria")).toEqual({ tab: "config", vista: "sistema", sub: "actividad" });
     expect(resolverDestino("  Inventario ")).toEqual({ tab: "inventario" });
   });
 

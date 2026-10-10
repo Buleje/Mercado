@@ -39,7 +39,7 @@ describe("hrefDe — a dónde lleva cada cosa", () => {
     ["arbol", "A-012", urlDelArbolEnElMapa("A-012")],
     ["colaborador", "k1", "/admin?tab=rrhh&vista=personal&persona=k1"],
     ["cuenta-adelantos", "benef:9", "/admin?tab=plata&vista=adelantos&accion=liquidar&persona=benef%3A9"],
-    ["turno", "u1", "/admin?tab=ventas-caja&vista=arqueo&turno=u1"],
+    ["turno", "u1", "/admin?tab=ventas-caja&vista=caja-registradora&sub=cuadrar&turno=u1"],
     ["carpeta", "f1", enlaceAlDrive("f1")],
   ];
 
@@ -66,7 +66,7 @@ describe("hrefDe — a dónde lleva cada cosa", () => {
     const casos = [
       ["ingreso", "ctp-libro-operaciones", "ingreso"],
       ["parte", "ctp-libro-operaciones", "parte"],
-      ["lote", "forestal-lotes", "lote"],
+      ["lote", "ctp-libro-operaciones", "lote"],
       ["pedido", "pedidos", "pedido"],
       ["cliente", "clientes", "cliente"],
       ["producto", "inventario", "producto"],

@@ -10,8 +10,7 @@
  *  - `MODULE_INFO`        → Metadata visible (emoji, prioridad, descripción, tip)
  *  - `TabCategory`        → Tipo de la categoría del sidebar
  *  - `BASIC_MODULES`      → 17 módulos básicos del sidebar
- *  - `TIENDA_MODULE`      → Categoría especial Mi Tienda (personalización)
- *  - `CONFIG_MODULE`      → Categoría especial Configuración (siempre visible)
+ *  - `CONFIG_MODULE`      → Configuración (último renglón de la barra + menú del usuario)
  *  - `TAB_CATEGORIES`     → Composición final usada por el sidebar
  *
  * Las constantes son `as const` cuando aplica para preservar inferencia
@@ -27,7 +26,6 @@ import {
   HandCoins,
   Banknote,
   Store,
-  Palette,
   SlidersHorizontal,
   Zap,
   BarChart3,
@@ -54,6 +52,9 @@ import {
   ClipboardList,
   Truck,
   Users,
+  Briefcase,
+  FileCheck,
+  FolderArchive,
 } from "@buleje/design-system/icons";
 import type { Tab } from "./tabs.types";
 
@@ -108,36 +109,36 @@ export const MODULE_INFO: Partial<
     icon: Receipt,
     iconColor: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
     priority: "core",
-    desc: "Punto de venta, caja, arqueos, ventas rápidas, offline y comisiones.",
-    tip: "Úsalo para cobrar, revisar caja y operar ventas sin salir del panel.",
+    desc: "Vender, los turnos, la caja del día con su cuadre, lo que te deben (fiados) y las comisiones.",
+    tip: "Úsalo para cobrar, cuadrar la caja y cobrar los fiados sin salir del panel.",
   },
   inventario: {
     icon: Warehouse,
     iconColor: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
     priority: "core",
-    desc: "Stock, movimientos de stock, vencimientos, mermas y alertas de inventario.",
-    tip: "Control completo del inventario desde una sola vista.",
+    desc: "Tus productos y su stock, entradas y salidas, vencimientos, pérdidas, el conteo físico, categorías, precios y ofertas.",
+    tip: "El catálogo y lo que hay en el almacén, en una sola pestaña.",
   },
   productos: {
     icon: BadgePercent,
     iconColor: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
     priority: "high",
-    desc: "Catálogo, categorías, ofertas, cupones e historial de precios.",
+    desc: "Categorías, precios, ofertas y cupones: hoy viven en Productos e inventario.",
     tip: "Gestiona tu catálogo y optimiza precios.",
   },
   compras: {
     icon: PackagePlus,
     iconColor: "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",
     priority: "high",
-    desc: "Pedidos a proveedor, directorio de proveedores y recepción.",
-    tip: "Flujo completo de compras desde la cotización hasta la recepción.",
+    desc: "Comprar, órdenes y recepción, qué reponer, proveedores, lo que les debes, devoluciones y dropship.",
+    tip: "Flujo completo de compras desde la orden hasta la recepción y el pago.",
   },
   plata: {
     icon: Wallet,
     iconColor: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
     priority: "high",
-    desc: "Ingresos, egresos, gastos, ganancias, reportes y exportación.",
-    tip: "Visión financiera completa del negocio en un solo módulo.",
+    desc: "Resumen, resultado, gastos, lo que te deben y lo que debes, préstamos, adelantos, activos, impuestos y reportes.",
+    tip: "Visión financiera completa del negocio; los fiados se cobran en Ventas y caja › Me deben.",
   },
   clientes: {
     icon: Heart,
@@ -150,15 +151,15 @@ export const MODULE_INFO: Partial<
     icon: SlidersHorizontal,
     iconColor: "text-[var(--text-secondary)]",
     priority: "core",
-    desc: "Usuarios, permisos, plan y configuración de la página web.",
+    desc: "Datos del negocio, cobros, delivery, tienda web, tu plan, usuarios y acceso, tu panel y el sistema.",
     tip: "Configura esto primero para que todo funcione correctamente.",
   },
   pedidos: {
     icon: ClipboardCheck,
     iconColor: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
     priority: "core",
-    desc: "Gestiona pedidos recibidos, su estado, asignación y entrega.",
-    tip: "Centraliza pedidos de WhatsApp, tienda online y mostrador.",
+    desc: "Los pedidos en marcha por estado, el reparto con tus repartidores y los archivados.",
+    tip: "Centraliza pedidos de WhatsApp, tienda online y mostrador, y quién los lleva.",
   },
   plan: {
     icon: Zap,
@@ -171,7 +172,7 @@ export const MODULE_INFO: Partial<
     icon: HandCoins,
     iconColor: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
     priority: "high",
-    desc: "Control de créditos informales: registro, pagos y saldos pendientes.",
+    desc: "Control de créditos informales: registro, pagos y saldos pendientes (Ventas y caja › Me deben).",
     tip: "Lleva la cuenta de lo que te deben tus clientes de confianza.",
   },
   turnos: {
@@ -248,8 +249,8 @@ export const MODULE_INFO: Partial<
     icon: Store,
     iconColor: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
     priority: "medium",
-    desc: "El contenido público de tu storefront: hero, branding marketplace y promociones del home.",
-    tip: "Para colores, logo y tema general, usá 'Identidad y tema'. Para productos/combos/descuentos, usá los módulos dedicados.",
+    desc: "Cómo se ve tu tienda, qué muestra, sus páginas y de dónde llegan tus visitas.",
+    tip: "Apariencia para logo y colores; Contenido para el inicio; Redes y medición para tus pixeles y visitas.",
   },
   // ── ENRICH-5: bridges admin para marketplace features ──
   subscriptions: {
@@ -322,7 +323,7 @@ export const MODULE_INFO: Partial<
     icon: Users,
     iconColor: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
     priority: "high",
-    desc: "Personal, asistencia del día y del mes, lo ganado de referencia y contratos vinculados.",
+    desc: "Personal, asistencia del día y del mes, lo ganado de referencia, contratos, y las tareas y notas del equipo.",
     tip: "Marca la asistencia de hoy en un par de clics; el sueldo es sólo referencia, no reemplaza la boleta.",
   },
   // ── Dropshipping (ADR-298) ──
@@ -332,6 +333,21 @@ export const MODULE_INFO: Partial<
     priority: "high",
     desc: "Envíos al proveedor automáticos cuando se paga un pedido (el proveedor despacha al cliente).",
     tip: "Para tiendas dropshipping: vincula productos a proveedores y trackea los envíos.",
+  },
+  // ── Comprobantes y Documentos (ola 3 del panel unificado, 2026-10-10) ──
+  facturacion: {
+    icon: FileCheck,
+    iconColor: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+    priority: "high",
+    desc: "Boletas y facturas con su estado en SUNAT, notas de crédito, guías de remisión y cotizaciones.",
+    tip: "Los papeles de tus ventas en un solo lugar; la conexión con SUNAT está en Configuración.",
+  },
+  documentos: {
+    icon: FolderArchive,
+    iconColor: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
+    priority: "medium",
+    desc: "Tu archivo: documentos en carpetas con su vencimiento, y los contratos con sus plantillas y firmas.",
+    tip: "Sube lo importante y el panel te avisa antes de que venza.",
   },
   // ── Recetas (vertical comida — restaurante) ──
   recetas: {
@@ -396,9 +412,10 @@ export const BASIC_MODULES: TabCategory[] = [
   },
 
   // ── 02 · VENTAS ──────────────────────────────────
-  // POS + pedidos + el hub de Documentos. "documentos" abre DocumentosHubModule,
-  // que ya contiene Facturación SUNAT / Cotizaciones / Guías / Notas / Contratos
-  // / Drive como sub-tabs (compresión 2026-06-16: 1 entrada en vez de 6).
+  // Ola 3 del panel unificado (2026-10-10): Ventas y caja · Pedidos y reparto ·
+  // Comprobantes. `facturacion` es el hub Comprobantes (Facturas y boletas,
+  // Notas de crédito, Guías de remisión, Cotizaciones); el Archivo y los
+  // Contratos (`documentos`) pasaron al grupo Gestión.
   {
     id: "ventas",
     label: "Ventas",
@@ -406,38 +423,30 @@ export const BASIC_MODULES: TabCategory[] = [
     tabs: [
       "ventas-caja",
       "pedidos",
-      "documentos",
+      "facturacion",
     ],
   },
 
-  // ── 03 · COMPRAS ─────────────────────────────────
-  // Pedidos a proveedor. (contratos → hub de Documentos en Ventas.)
+  // ── 03 · ABASTECIMIENTO (ola 3 del panel unificado, 2026-10-10) ──
+  // Lo que entra al negocio: Productos e inventario (absorbe Productos y el
+  // Conteo físico), Compras (absorbe Dropship y Devoluciones) y Recetas. Eran
+  // dos renglones («Compras» y «Productos e inventario»).
+  //
+  // El id se queda en "compras": lo guardan el orden de la barra de cada
+  // navegador y el color por categoría, y va justo después de Ventas, que es
+  // donde iba Compras. "productos" y "dropship" abren por su id viejo
+  // (TAB_MIGRATION) y ya no ocupan renglón.
+  //
+  // "recetas" se auto-oculta por el filtro vertical: solo aparece en negocios
+  // de comida (vertical "restaurante", que lo tiene en modules.enabled). Para
+  // bodega/otros NO está en su enabled → oculto. Brandon 2026-06-21.
   {
     id: "compras",
-    label: "Compras",
-    icon: PackagePlus,
-    // "dropship" se auto-oculta por el filtro vertical: solo aparece en tiendas
-    // dropshipping (vertical "otro", que lo tiene en enabled). El gate semántico
-    // real es Settings.dropshipEnabled (el módulo lo respeta). ADR-298.
-    tabs: [
-      "compras",
-      "dropship",
-    ],
-  },
-
-  // ── 04 · PRODUCTOS E INVENTARIO ──────────────────
-  // El catálogo + el stock. Lo físico del negocio.
-  {
-    id: "productos-inventario",
-    label: "Productos e inventario",
+    label: "Abastecimiento",
     icon: Warehouse,
-    // "recetas" se auto-oculta por el filtro vertical: solo aparece en negocios
-    // de comida (vertical "restaurante", que lo tiene en modules.enabled). Para
-    // bodega/otros NO está en su enabled → oculto. Era un módulo huérfano (1446
-    // LOC, /api/recetas) que ruteaba pero no estaba en ningún menú. Brandon 2026-06-21.
     tabs: [
-      "productos",
       "inventario",
+      "compras",
       "recetas",
     ],
   },
@@ -479,33 +488,27 @@ export const BASIC_MODULES: TabCategory[] = [
     ],
   },
 
-  // ── 06 · FINANZAS ────────────────────────────────
-  // "plata" abre FinanzasModule (P&L, gastos, flujo, tesorería + Fiados,
-  // Préstamos, Adelantos, Activos, Por cobrar, Scoring como sub-tabs).
-  // Antes el sidebar listaba 7 accesos directos (plata/por-cobrar/fiados/
-  // prestamos/adelantos/activos/scoring) que abrían el MISMO hub con un
-  // initialTab distinto — atajo redundante (auditoría 2026-08-02, 7→2). El
-  // hub tiene su propia pestaña "Por cobrar" con Fiados/Préstamos/Adelantos/
-  // Scoring como segundo nivel (`DONDE_VIVE` en FinanzasModule ya resuelve
-  // esos ids viejos), así que la sub-vista sigue a 1-2 clicks, sin perder
-  // acceso ni romper los deep-links `?tab=fiados` etc.
+  // ── 06 · GESTIÓN (ola 3 del panel unificado, 2026-10-10) ──
+  // Brandon eligió el GRUPO (2026-10-09): Mi Plata, Equipo y Documentos en un
+  // solo renglón desplegable — dos renglones menos a cambio de un clic más.
   //
-  // Se dejan DOS ids, no uno: "activos" es el único de los 7 desbloqueado en
-  // el plan Free (`lib/billing/plan-tiers.ts` PLAN_BASICO) y nunca lo oculta
-  // la plantilla del superadmin (no está en `ADMIN_MODULE_CATALOG`); "plata"
-  // recién se desbloquea en Starter y SÍ puede ocultarlo la plantilla
-  // (`lib/admin-template.ts`, `defaultVisible`/override por tenant). Colapsar
-  // a solo "plata" hace que la categoría entera desaparezca del sidebar para
-  // cualquier tenant Free — verificado en vivo con Playwright contra el
-  // tenant "main" (su plantilla oculta "plata" mientras deja "activos"
-  // visible: con un solo id colapsado, "Finanzas" se esfumaba del sidebar).
+  // Mi Plata va con UN solo id. Antes iban `plata` y `activos` porque el plan
+  // Básico desbloquea `activos` y no `plata`: hoy la barra mira el `origen` de
+  // cada vista (R2), y las hojas de Mi Plata nombran `activos` (la puerta por la
+  // que Básico entraba al hub entero), así que un Básico sigue viendo Mi Plata
+  // como hoy. `activos`, `adelantos`, `prestamos`, `scoring` y `por-cobrar`
+  // abren por su id viejo (TAB_MIGRATION).
+  //
+  // El id se queda en "finanzas" (orden guardado y color); «Equipo» (`rrhh`)
+  // sale de su categoría propia y «Documentos» de Ventas.
   {
     id: "finanzas",
-    label: "Finanzas",
-    icon: Wallet,
+    label: "Gestión",
+    icon: Briefcase,
     tabs: [
       "plata",
-      "activos",
+      "rrhh",
+      "documentos",
     ],
   },
 
@@ -522,74 +525,26 @@ export const BASIC_MODULES: TabCategory[] = [
     ],
   },
 
-  // ── 07 · MARKETPLACE ─────────────────────────────
-  // "marketplace" abre MarketplaceModule (tienda + comisiones + cupones +
-  // Suscripciones/Gift Cards/Socio/Lives como sub-tabs). Delivery aparte.
+  // ── 07 · CANALES (ola 2 del panel unificado, 2026-10-10) ──
+  // Por dónde vende el negocio: su Tienda online y el Marketplace. Es el grupo
+  // que antes eran dos renglones (Marketplace + Mi Tienda). «canales» (Redes y
+  // medición) vive dentro de Tienda online y Delivery dentro de Pedidos y
+  // reparto: siguen abriendo por su id viejo (TAB_MIGRATION).
+  //
+  // El id se queda en "marketplace-ops" a propósito: lo guardan el orden de la
+  // barra de cada navegador, los colores por categoría y SECTION_BEFORE.
+  // "pagina-inicio" va primero y no "store-customizer": en la plantilla del
+  // superadmin `store-customizer` nace oculto (`defaultVisible: false`).
   {
     id: "marketplace-ops",
-    label: "Marketplace",
+    label: "Canales",
     icon: Store,
     tabs: [
+      "pagina-inicio",
       "marketplace",
-      // Canales de venta social (TikTok Shop + Meta pixel + GA4). Vive bajo el
-      // super-grupo "Canales" del sidebar (la categoría "crecimiento" no se
-      // renderiza en el sidebar curado; acá SÍ aparece). Brandon 2026-07-03.
-      "canales",
-      // "delivery-live" abría el MISMO DeliveryPartnersModule que
-      // "delivery-partners" (initialTab="pedidos-vivo") — atajo redundante
-      // (auditoría 2026-08-02, 2→1). "Pedidos en vivo" sigue a 1 click desde
-      // la barra de sub-tabs del hub.
-      "delivery-partners",
-    ],
-  },
-
-  // ── 08b · RECURSOS HUMANOS (ADR-414) ─────────────
-  // Personal, asistencia, lo ganado de referencia y contratos vinculados.
-  // Categoría propia con UNA sola pestaña (§7 del ADR: "sin atajos a
-  // sub-tabs — un renglón por hub", auditoría 2026-08-02): las sub-vistas
-  // (Asistencia/Personal/Lo ganado/Contratos/Puestos) viven adentro del hub,
-  // filtradas por el `nivel` que devuelve el servidor. Va ANTES de "Equipo"
-  // (pedido explícito de Brandon en el ADR).
-  {
-    id: "recursos-humanos",
-    label: "Recursos Humanos",
-    icon: Users,
-    tabs: [
-      "rrhh",
-    ],
-  },
-
-  // ── 09 · EQUIPO ──────────────────────────────────
-  // Herramientas operativas internas (tareas + notas de turno). Abren el
-  // MISMO EquipoHubModule con initialTab distinto — atajo redundante
-  // (auditoría 2026-08-02, 2→1). "Notas" sigue a 1 click desde la barra de
-  // sub-tabs del hub.
-  {
-    id: "equipo",
-    label: "Equipo",
-    icon: ClipboardList,
-    tabs: [
-      "tareas",
     ],
   },
 ];
-
-// ── Módulo Mi Tienda (personalización visual) ─────────────────────────────────
-// "store-customizer" abría el MISMO MiTiendaHubModule que "pagina-inicio"
-// (initialTab="identidad") — atajo redundante (auditoría 2026-08-02, 2→1).
-// Se deja "pagina-inicio", no "store-customizer": en `ADMIN_MODULE_CATALOG`
-// (`lib/admin-template.ts`) "store-customizer" tiene `defaultVisible: false`
-// mientras "pagina-inicio" tiene `defaultVisible: true` — con la plantilla
-// por default (sin overrides), colapsar al revés habría hecho desaparecer
-// "Mi Tienda" del sidebar para cualquier tenant sin personalizar su
-// plantilla. "Identidad y tema" sigue a 1 click desde la barra de sub-tabs
-// del hub.
-export const TIENDA_MODULE: TabCategory = {
-  id: "mi-tienda",
-  label: "Mi Tienda",
-  icon: Palette,
-  tabs: ["pagina-inicio"],
-};
 
 // ── Módulos de Especialización por vertical (ADR-124) ──────────────────────────
 // Tabs verticales habilitables por superadmin, agrupados por VERTICAL de negocio
@@ -613,7 +568,11 @@ export const FORESTAL_MODULE: TabCategory = {
   // (`/admin?tab=forestal-lotes`) y desde la búsqueda global. Para devolverlo al
   // sidebar alcanza con sumarlo de nuevo a esta lista — un módulo vacío ocupa
   // un renglón del menú todos los días; borrarlo costaría una migración.
-  tabs: ["ctp-libro-operaciones", "loth-libro-operaciones", "forestal-herramientas", "forestal-tramites"],
+  //
+  // Ola 2 del panel unificado (2026-10-10): «Trámites y Oficios» es la 2.ª fase
+  // de Herramientas y trámites. La pestaña aparece si pasa
+  // forestal-herramientas O forestal-tramites (el `origen` de sus vistas).
+  tabs: ["ctp-libro-operaciones", "loth-libro-operaciones", "forestal-herramientas"],
 };
 
 export const AGRICULTURA_MODULE: TabCategory = {
@@ -653,32 +612,19 @@ export const A_MEDIDA_MODULE: TabCategory = {
   tabs: ["a-medida"],
 };
 
-// ── Módulo Config (siempre visible desde dropdown de usuario) ────────────────
+// ── Configuración: último renglón de la barra + menú del usuario ─────────────
+// Ola 2 del panel unificado (2026-10-10): Plan (`plan`) y Sistema
+// (`rendimiento`, `auditoria`, `colas`) son vistas de Configuración y abren por
+// su id viejo (TAB_MIGRATION). La categoría «Sistema» salió de la barra: su
+// lugar es este renglón, en la sección «Configuración».
 export const CONFIG_MODULE: TabCategory = {
   id: "config",
   label: "Configuración",
   icon: SlidersHorizontal,
-  // auditoria queda también acá (dropdown de Config, vía de acceso en Modo Fácil)
-  // además de en SISTEMA_MODULE (categoría sidebar, Modo Avanzado).
-  tabs: ["config", "plan", "auditoria"],
-};
-
-// ── Módulo Sistema (técnico) — rendimiento + auditoría + colas ───────────────
-// Las 3 abren el MISMO SistemaHubModule (cada una en su sub-tab) — atajo
-// redundante en el sidebar (auditoría 2026-08-02, 3→1). Se deja sólo
-// "rendimiento"; Auditoría y Colas siguen a 1 click desde la barra de
-// sub-tabs del hub. ("auditoria" además queda accesible aparte desde el
-// dropdown de Configuración — ver CONFIG_MODULE — eso no cambia.)
-export const SISTEMA_MODULE: TabCategory = {
-  id: "sistema",
-  label: "Sistema",
-  icon: Gauge,
-  alwaysGroup: true,
-  tabs: ["rendimiento"],
+  tabs: ["config"],
 };
 
 // ── TAB_CATEGORIES: composición final del sidebar ────────────────────────────
-// (Config y Plan se acceden desde el dropdown de usuario, no desde el sidebar)
 //
 // Orden 2026-05-28:
 // 1. BASIC_MODULES (inicio → ventas → compras → productos → clientes → finanzas → marketplace)
@@ -695,12 +641,16 @@ export const SISTEMA_MODULE: TabCategory = {
 // después de "Marketplace"— así que ningún encabezado agrupaba algo contiguo.
 //
 //   Inicio            (sin encabezado: es el punto de entrada)
-//   Operaciones       ventas · compras · productos-inventario
+//   Operaciones       ventas · compras («Abastecimiento») · camaras
 //   Clientes          clientes · crecimiento
-//   Gestión           finanzas · graficos · equipo
-//   Canales           marketplace-ops · mi-tienda
+//   Gestión           finanzas («Gestión»: Mi Plata, Equipo, Documentos) · graficos · a-medida
+//   Canales           marketplace-ops (Tienda online + Marketplace)
 //   Especializaciones forestal · agricultura
-//   Sistema           sistema
+//   Configuración     config
+// (ola 2 del panel unificado, 2026-10-10: Cámaras a Operaciones, A medida a
+// Gestión, Mi Tienda dentro de Canales, Sistema dentro de Configuración.
+// Ola 3: Compras + Productos e inventario = Abastecimiento; Comprobantes en
+// Ventas; Mi Plata, Equipo y Documentos en el grupo Gestión.)
 const byId = (id: string) => BASIC_MODULES.find((c) => c.id === id)!;
 
 /**
@@ -719,34 +669,30 @@ export const SECTION_BEFORE: Record<string, string> = {
   finanzas: "Gestión",
   "marketplace-ops": "Canales",
   forestal: "Especializaciones",
-  sistema: "Sistema",
+  config: "Configuración",
 };
 
 export const TAB_CATEGORIES: TabCategory[] = [
   byId("inicio"),
   // Operaciones — lo que pasa cada día en el mostrador y el almacén
   byId("ventas"),
-  byId("compras"),
-  byId("productos-inventario"),
+  byId("compras"), // «Abastecimiento»: Productos e inventario · Compras · Recetas
+  // Lo que pasa en el local o el patio (ADR-411): de todos los días.
+  CAMARAS_MODULE,
   // Clientes — quién compra y qué lo hace volver
   byId("clientes"),
   byId("crecimiento"),
-  // Gestión — la plata, los números y el equipo
-  byId("finanzas"),
+  // Gestión — la plata, el equipo, los documentos y los números
+  byId("finanzas"), // «Gestión»: Mi Plata · Equipo · Documentos
   byId("graficos"),
-  byId("recursos-humanos"),
-  byId("equipo"),
-  // Canales — por dónde vende
-  byId("marketplace-ops"),
-  TIENDA_MODULE,
-  // Lo que pasa en el local o el patio
-  CAMARAS_MODULE,
   A_MEDIDA_MODULE,
+  // Canales — por dónde vende (Tienda online + Marketplace)
+  byId("marketplace-ops"),
   // Especializaciones por vertical
   FORESTAL_MODULE,
   AGRICULTURA_MODULE,
-  // Sistema
-  SISTEMA_MODULE,
+  // Configuración — el negocio, el plan, el acceso y el sistema
+  CONFIG_MODULE,
 ];
 
 // ── Modo Fácil vs Avanzado ──────────────────────────────────────────────────
@@ -782,7 +728,9 @@ export const EASY_MODE_TABS: ReadonlySet<Tab> = new Set<Tab>([
 ]);
 
 // Tabs que solo se muestran en Modo Avanzado (no incluidos en EASY_MODE_TABS):
-// - analytics-pro                    → Analytics Pro
-// - plata, facturacion, forecasting  → Finanzas
-// - cotizaciones, guias-remision, notas-credito, contratos → Documentos
-// - support-inbox, rendimiento, colas, auditoria           → Sistema
+// - analytics-pro, forecasting       → Análisis
+// - plata                            → Mi Plata (en Modo Fácil se ve con lo que
+//   llega de `prestamos`: el permiso es por el `origen` de cada vista)
+// - facturacion, cotizaciones, guias-remision, notas-credito → Comprobantes
+// - documentos, contratos            → Documentos
+// - support-inbox, rendimiento, colas, auditoria           → Configuración › Sistema

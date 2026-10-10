@@ -133,8 +133,10 @@ const corto = (rel: string) => rel.replace(/^components\/admin\//, "");
 describe("Pestañas del panel — como máximo 2 niveles de AdminTabBar", () => {
   const modulos = modulosDeTabRouter();
 
-  it("TabRouter monta al menos 30 pestañas (hoy 34)", () => {
-    expect(modulos.length).toBeGreaterThanOrEqual(30);
+  // 34 hasta la ola 2 del panel unificado; 28 desde que Plan, Sistema, Canales,
+  // el Equipo viejo, Delivery y Trámites son vistas de otra pestaña.
+  it("TabRouter monta al menos 25 módulos (hoy 28)", () => {
+    expect(modulos.length).toBeGreaterThanOrEqual(25);
   });
 
   for (const rel of modulos) {

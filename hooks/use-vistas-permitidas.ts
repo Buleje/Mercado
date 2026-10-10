@@ -35,12 +35,13 @@ import {
   origenesDeVista,
   rubroDelPanel,
   vistaPermitida,
+  vistasConLaPedida,
   vistasPropias,
   vistasVisibles,
   type ContextoPermiso,
 } from "@/lib/admin/permiso-vista";
 import { vistasDelModulo } from "@/lib/admin/subvistas-modulos";
-import { cachedJson } from "@/lib/client-cache-fetch";
+import { cachedJson, cachedJsonVigente } from "@/lib/client-cache-fetch";
 import { logger } from "@/lib/logger";
 
 interface RespuestaAuthMe {
@@ -56,18 +57,35 @@ interface SesionDelPanel {
   guardados: Record<string, string[]> | null;
 }
 
+const TTL_AUTH_ME = 60_000;
+const TTL_AJUSTES = 30_000;
+
+/** La sesión que ya leyó otra parte del panel y sigue vigente, o `null`. */
+function sesionEnCache(): SesionDelPanel | null {
+  if (typeof window === "undefined") return null;
+  const yo = cachedJsonVigente<RespuestaAuthMe | null>("/api/auth/me", TTL_AUTH_ME);
+  const ajustes = cachedJsonVigente<RespuestaAjustes | null>("/api/settings", TTL_AJUSTES);
+  if (!yo?.role || ajustes === undefined) return null;
+  return { rol: yo.role, guardados: ajustes?.rolePermissions ?? null };
+}
+
 /**
  * Rol y permisos guardados, de las mismas URLs y TTL que useAdminAuth (comparten
  * la respuesta). `null` hasta tener los dos, y si `/api/auth/me` no trae rol.
  */
 function useSesionDelPanel(): SesionDelPanel | null {
-  const [sesion, setSesion] = useState<SesionDelPanel | null>(null);
+  /* Del cache si ya está: un hub que espera al rol (Equipo, Tienda online)
+     monta a su hijo recién con el rol confirmado, y el hijo tiene su propia
+     instancia de este hook. Si arrancaba en `null`, su `useVistaModulo`
+     validaba la URL sin las vistas que llegaron de otra pestaña y
+     `?tab=tareas` caía en Asistencia (ola 2, medido 10-10). */
+  const [sesion, setSesion] = useState<SesionDelPanel | null>(sesionEnCache);
 
   useEffect(() => {
     let vivo = true;
     Promise.all([
-      cachedJson<RespuestaAuthMe>("/api/auth/me", 60_000),
-      cachedJson<RespuestaAjustes>("/api/settings", 30_000),
+      cachedJson<RespuestaAuthMe>("/api/auth/me", TTL_AUTH_ME),
+      cachedJson<RespuestaAjustes>("/api/settings", TTL_AJUSTES),
     ])
       .then(([yo, ajustes]) => {
         if (!vivo) return;
@@ -139,6 +157,10 @@ export function useVistasPermitidas<T extends { id: string; label: string }>(
   items: readonly T[],
 ): T[] {
   const { ctx, overrides } = useCapasDelPanel();
+  /* La `?vista=` que pidió el enlace: una vista que la plantilla esconde se
+     abre igual si el plan y el rol la dejan (`vistasConLaPedida`). Se relee
+     en cada navegación del panel con el hub montado (ver `useParamPedido`). */
+  const pedida = useParamPedido("vista");
 
   return useMemo(() => {
     const registro = new Map(vistasDelModulo(modulo).map((v) => [v.key, v] as const));
@@ -147,12 +169,40 @@ export function useVistasPermitidas<T extends { id: string; label: string }>(
       origen: origenesDeVista(modulo, registro.get(item.id) ?? {}),
       item,
     }));
-    const pasan = ctx ? vistasVisibles(ctx, modulo, conOrigen) : vistasPropias(modulo, conOrigen);
+    const pasan = ctx
+      ? vistasConLaPedida(ctx, modulo, conOrigen, vistasVisibles(ctx, modulo, conOrigen), pedida)
+      : vistasPropias(modulo, conOrigen);
     return pasan.map(({ item }) => {
       const label = etiquetaDeVista(modulo, item.id, item.label, overrides);
       return label === item.label ? item : { ...item, label };
     });
-  }, [ctx, modulo, items, overrides]);
+  }, [ctx, modulo, items, overrides, pedida]);
+}
+
+function paramDeUrl(param: string): string | null {
+  if (typeof window === "undefined") return null;
+  return new URLSearchParams(window.location.search).get(param);
+}
+
+/**
+ * `?<param>=` tal como lo pidió la navegación: al montar y en cada `popstate`
+ * (atrás/adelante, y `irAEnlace`, que lo dispara al final para que el módulo
+ * montado siga a la URL). Antes se leía sólo al montar: estando en Sistema ›
+ * Actividad, un enlace a `?tab=rendimiento` cambiaba la URL a `sub=velocidad`
+ * y la pantalla seguía en Preferencias (ola 2, medido 10-10).
+ *
+ * Lo que se elige adentro (`irA` = `pushState`, sin `popstate`) no cuenta: la
+ * vista escondida que abrió el enlace no se va de la barra al pasar a otra.
+ * Sólo amplía lo que la plantilla esconde: el plan y el rol se siguen mirando.
+ */
+export function useParamPedido(param: string): string | null {
+  const [pedido, setPedido] = useState<string | null>(() => paramDeUrl(param));
+  useEffect(() => {
+    const releer = () => setPedido(paramDeUrl(param));
+    window.addEventListener("popstate", releer);
+    return () => window.removeEventListener("popstate", releer);
+  }, [param]);
+  return pedido;
 }
 
 /** ¿Se ve un bloque que vino de `origen`? Para `<PermisoDe>`; `false` mientras el rol no se confirma. */

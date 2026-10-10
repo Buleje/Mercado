@@ -1,4 +1,269 @@
 {
  "nota": "Pares nuevos que Brandon aprobó (formato: {par, superficie?, contexto?, porque, aprobo}). Nace vacío.",
- "altas": []
+ "altas": [
+  {
+   "par": "config:negocio",
+   "contexto": {
+    "rol": "admin"
+   },
+   "porque": "Ola 2: Configuración es el último renglón de la barra (plan §2.1) y absorbe Sistema (rendimiento/auditoria/colas). Las mismas vistas ya se abrían para todos desde el menú del usuario (superficie «menu» de la línea base): no se gana ninguna pantalla, cambia la puerta. Sólo para los roles que ya la ganan (admin y tienda_owner, medido sin esta lista): si mañana otro rol gana una vista de Configuración, la prueba avisa.",
+   "aprobo": "Brandon, mapa del plan «panel unificado» aprobado el 2026-10-09 (§2.1) — integrador O2-K6"
+  },
+  {
+   "par": "config:negocio",
+   "contexto": {
+    "rol": "tienda_owner"
+   },
+   "porque": "Ola 2: Configuración es el último renglón de la barra (plan §2.1) y absorbe Sistema (rendimiento/auditoria/colas). Las mismas vistas ya se abrían para todos desde el menú del usuario (superficie «menu» de la línea base): no se gana ninguna pantalla, cambia la puerta. Sólo para los roles que ya la ganan (admin y tienda_owner, medido sin esta lista): si mañana otro rol gana una vista de Configuración, la prueba avisa.",
+   "aprobo": "Brandon, mapa del plan «panel unificado» aprobado el 2026-10-09 (§2.1) — integrador O2-K6"
+  },
+  {
+   "par": "config:cobros",
+   "contexto": {
+    "rol": "admin"
+   },
+   "porque": "Ola 2: Configuración es el último renglón de la barra (plan §2.1) y absorbe Sistema (rendimiento/auditoria/colas). Las mismas vistas ya se abrían para todos desde el menú del usuario (superficie «menu» de la línea base): no se gana ninguna pantalla, cambia la puerta. Sólo para los roles que ya la ganan (admin y tienda_owner, medido sin esta lista): si mañana otro rol gana una vista de Configuración, la prueba avisa.",
+   "aprobo": "Brandon, mapa del plan «panel unificado» aprobado el 2026-10-09 (§2.1) — integrador O2-K6"
+  },
+  {
+   "par": "config:cobros",
+   "contexto": {
+    "rol": "tienda_owner"
+   },
+   "porque": "Ola 2: Configuración es el último renglón de la barra (plan §2.1) y absorbe Sistema (rendimiento/auditoria/colas). Las mismas vistas ya se abrían para todos desde el menú del usuario (superficie «menu» de la línea base): no se gana ninguna pantalla, cambia la puerta. Sólo para los roles que ya la ganan (admin y tienda_owner, medido sin esta lista): si mañana otro rol gana una vista de Configuración, la prueba avisa.",
+   "aprobo": "Brandon, mapa del plan «panel unificado» aprobado el 2026-10-09 (§2.1) — integrador O2-K6"
+  },
+  {
+   "par": "config:delivery",
+   "contexto": {
+    "rol": "admin"
+   },
+   "porque": "Ola 2: Configuración es el último renglón de la barra (plan §2.1) y absorbe Sistema (rendimiento/auditoria/colas). Las mismas vistas ya se abrían para todos desde el menú del usuario (superficie «menu» de la línea base): no se gana ninguna pantalla, cambia la puerta. Sólo para los roles que ya la ganan (admin y tienda_owner, medido sin esta lista): si mañana otro rol gana una vista de Configuración, la prueba avisa.",
+   "aprobo": "Brandon, mapa del plan «panel unificado» aprobado el 2026-10-09 (§2.1) — integrador O2-K6"
+  },
+  {
+   "par": "config:delivery",
+   "contexto": {
+    "rol": "tienda_owner"
+   },
+   "porque": "Ola 2: Configuración es el último renglón de la barra (plan §2.1) y absorbe Sistema (rendimiento/auditoria/colas). Las mismas vistas ya se abrían para todos desde el menú del usuario (superficie «menu» de la línea base): no se gana ninguna pantalla, cambia la puerta. Sólo para los roles que ya la ganan (admin y tienda_owner, medido sin esta lista): si mañana otro rol gana una vista de Configuración, la prueba avisa.",
+   "aprobo": "Brandon, mapa del plan «panel unificado» aprobado el 2026-10-09 (§2.1) — integrador O2-K6"
+  },
+  {
+   "par": "config:tienda",
+   "contexto": {
+    "rol": "admin"
+   },
+   "porque": "Ola 2: Configuración es el último renglón de la barra (plan §2.1) y absorbe Sistema (rendimiento/auditoria/colas). Las mismas vistas ya se abrían para todos desde el menú del usuario (superficie «menu» de la línea base): no se gana ninguna pantalla, cambia la puerta. Sólo para los roles que ya la ganan (admin y tienda_owner, medido sin esta lista): si mañana otro rol gana una vista de Configuración, la prueba avisa.",
+   "aprobo": "Brandon, mapa del plan «panel unificado» aprobado el 2026-10-09 (§2.1) — integrador O2-K6"
+  },
+  {
+   "par": "config:tienda",
+   "contexto": {
+    "rol": "tienda_owner"
+   },
+   "porque": "Ola 2: Configuración es el último renglón de la barra (plan §2.1) y absorbe Sistema (rendimiento/auditoria/colas). Las mismas vistas ya se abrían para todos desde el menú del usuario (superficie «menu» de la línea base): no se gana ninguna pantalla, cambia la puerta. Sólo para los roles que ya la ganan (admin y tienda_owner, medido sin esta lista): si mañana otro rol gana una vista de Configuración, la prueba avisa.",
+   "aprobo": "Brandon, mapa del plan «panel unificado» aprobado el 2026-10-09 (§2.1) — integrador O2-K6"
+  },
+  {
+   "par": "config:plan",
+   "contexto": {
+    "rol": "admin"
+   },
+   "porque": "Ola 2: Configuración es el último renglón de la barra (plan §2.1) y absorbe Sistema (rendimiento/auditoria/colas). Las mismas vistas ya se abrían para todos desde el menú del usuario (superficie «menu» de la línea base): no se gana ninguna pantalla, cambia la puerta. Sólo para los roles que ya la ganan (admin y tienda_owner, medido sin esta lista): si mañana otro rol gana una vista de Configuración, la prueba avisa.",
+   "aprobo": "Brandon, mapa del plan «panel unificado» aprobado el 2026-10-09 (§2.1) — integrador O2-K6"
+  },
+  {
+   "par": "config:plan",
+   "contexto": {
+    "rol": "tienda_owner"
+   },
+   "porque": "Ola 2: Configuración es el último renglón de la barra (plan §2.1) y absorbe Sistema (rendimiento/auditoria/colas). Las mismas vistas ya se abrían para todos desde el menú del usuario (superficie «menu» de la línea base): no se gana ninguna pantalla, cambia la puerta. Sólo para los roles que ya la ganan (admin y tienda_owner, medido sin esta lista): si mañana otro rol gana una vista de Configuración, la prueba avisa.",
+   "aprobo": "Brandon, mapa del plan «panel unificado» aprobado el 2026-10-09 (§2.1) — integrador O2-K6"
+  },
+  {
+   "par": "config:equipo",
+   "contexto": {
+    "rol": "admin"
+   },
+   "porque": "Ola 2: Configuración es el último renglón de la barra (plan §2.1) y absorbe Sistema (rendimiento/auditoria/colas). Las mismas vistas ya se abrían para todos desde el menú del usuario (superficie «menu» de la línea base): no se gana ninguna pantalla, cambia la puerta. Sólo para los roles que ya la ganan (admin y tienda_owner, medido sin esta lista): si mañana otro rol gana una vista de Configuración, la prueba avisa.",
+   "aprobo": "Brandon, mapa del plan «panel unificado» aprobado el 2026-10-09 (§2.1) — integrador O2-K6"
+  },
+  {
+   "par": "config:equipo",
+   "contexto": {
+    "rol": "tienda_owner"
+   },
+   "porque": "Ola 2: Configuración es el último renglón de la barra (plan §2.1) y absorbe Sistema (rendimiento/auditoria/colas). Las mismas vistas ya se abrían para todos desde el menú del usuario (superficie «menu» de la línea base): no se gana ninguna pantalla, cambia la puerta. Sólo para los roles que ya la ganan (admin y tienda_owner, medido sin esta lista): si mañana otro rol gana una vista de Configuración, la prueba avisa.",
+   "aprobo": "Brandon, mapa del plan «panel unificado» aprobado el 2026-10-09 (§2.1) — integrador O2-K6"
+  },
+  {
+   "par": "config:panel",
+   "contexto": {
+    "rol": "admin"
+   },
+   "porque": "Ola 2: Configuración es el último renglón de la barra (plan §2.1) y absorbe Sistema (rendimiento/auditoria/colas). Las mismas vistas ya se abrían para todos desde el menú del usuario (superficie «menu» de la línea base): no se gana ninguna pantalla, cambia la puerta. Sólo para los roles que ya la ganan (admin y tienda_owner, medido sin esta lista): si mañana otro rol gana una vista de Configuración, la prueba avisa.",
+   "aprobo": "Brandon, mapa del plan «panel unificado» aprobado el 2026-10-09 (§2.1) — integrador O2-K6"
+  },
+  {
+   "par": "config:panel",
+   "contexto": {
+    "rol": "tienda_owner"
+   },
+   "porque": "Ola 2: Configuración es el último renglón de la barra (plan §2.1) y absorbe Sistema (rendimiento/auditoria/colas). Las mismas vistas ya se abrían para todos desde el menú del usuario (superficie «menu» de la línea base): no se gana ninguna pantalla, cambia la puerta. Sólo para los roles que ya la ganan (admin y tienda_owner, medido sin esta lista): si mañana otro rol gana una vista de Configuración, la prueba avisa.",
+   "aprobo": "Brandon, mapa del plan «panel unificado» aprobado el 2026-10-09 (§2.1) — integrador O2-K6"
+  },
+  {
+   "par": "config:sistema",
+   "contexto": {
+    "rol": "admin"
+   },
+   "porque": "Ola 2: Configuración es el último renglón de la barra (plan §2.1) y absorbe Sistema (rendimiento/auditoria/colas). Las mismas vistas ya se abrían para todos desde el menú del usuario (superficie «menu» de la línea base): no se gana ninguna pantalla, cambia la puerta. Sólo para los roles que ya la ganan (admin y tienda_owner, medido sin esta lista): si mañana otro rol gana una vista de Configuración, la prueba avisa.",
+   "aprobo": "Brandon, mapa del plan «panel unificado» aprobado el 2026-10-09 (§2.1) — integrador O2-K6"
+  },
+  {
+   "par": "config:sistema",
+   "contexto": {
+    "rol": "tienda_owner"
+   },
+   "porque": "Ola 2: Configuración es el último renglón de la barra (plan §2.1) y absorbe Sistema (rendimiento/auditoria/colas). Las mismas vistas ya se abrían para todos desde el menú del usuario (superficie «menu» de la línea base): no se gana ninguna pantalla, cambia la puerta. Sólo para los roles que ya la ganan (admin y tienda_owner, medido sin esta lista): si mañana otro rol gana una vista de Configuración, la prueba avisa.",
+   "aprobo": "Brandon, mapa del plan «panel unificado» aprobado el 2026-10-09 (§2.1) — integrador O2-K6"
+  },
+  {
+   "par": "pagina-inicio:redes",
+   "porque": "Ola 2, regla R2: «Redes y medición» junta Canales (Pro) con el ID de GA4 y el Meta Pixel que Mi Tienda ya mostraba y editaba en Identidad y tema › Avanzado (verificado en HEAD: StoreCustomizer.tsx «Google Analytics (GA4)» y pixelId). Es par nuevo sólo donde Mi Tienda se veía y Canales no (Básico, o un rubro que oculta Canales): ahí la vista trae sólo eso; lo de Canales va con <PermisoDe origen=\"canales\">.",
+   "aprobo": "Brandon, mapa del plan «panel unificado» aprobado el 2026-10-09 (§2.2 Tienda online: GA4 y Meta una sola vez) — integrador O2-K6; confirmar"
+  },
+  {
+   "par": "inventario:conteo",
+   "porque": "Ola 3: el Conteo físico era un MODAL dentro de Productos e inventario (botón de la vista Stock); ahora es su vista. Mismo componente, mismo permiso (origen inventario): el par es nuevo sólo porque antes no tenía clave propia.",
+   "aprobo": "Brandon, mapa del plan «panel unificado» aprobado el 2026-10-09 (§2.2) — integrador O3-K6 (Conteo físico: modal → vista)"
+  },
+  {
+   "par": "facturacion:facturas",
+   "superficie": "barra",
+   "contexto": {
+    "plantilla": "pizza-pucallpa"
+   },
+   "porque": "Ola 3: Comprobantes entra a la barra (grupo Ventas, plan §2.1). Trae la vista Facturación del hub de Documentos. El plan Enterprise/Max lo paga y la plantilla propia de este negocio lo muestra (visible: true); antes no salía en la barra sólo porque el hub `documentos` no está en `modules.enabled` de ningún rubro (lib/verticals/registry.ts), aunque `facturacion`, `cotizaciones` y `contratos` sí. Negocio real afectado: sólo Blas (enterprise, bodega).",
+   "aprobo": "Brandon, mapa del plan «panel unificado» aprobado el 2026-10-09 (§2.2) — integrador O3-K6; confirmar"
+  },
+  {
+   "par": "facturacion:notas",
+   "superficie": "barra",
+   "contexto": {
+    "plantilla": "pizza-pucallpa"
+   },
+   "porque": "Ola 3: Comprobantes entra a la barra (grupo Ventas, plan §2.1). Trae Notas de crédito del hub de Documentos (`notas-credito`). El plan Enterprise/Max lo paga y la plantilla propia de este negocio lo muestra (visible: true); antes no salía en la barra sólo porque el hub `documentos` no está en `modules.enabled` de ningún rubro (lib/verticals/registry.ts), aunque `facturacion`, `cotizaciones` y `contratos` sí. Negocio real afectado: sólo Blas (enterprise, bodega).",
+   "aprobo": "Brandon, mapa del plan «panel unificado» aprobado el 2026-10-09 (§2.2) — integrador O3-K6; confirmar"
+  },
+  {
+   "par": "facturacion:guias",
+   "superficie": "barra",
+   "contexto": {
+    "plantilla": "pizza-pucallpa"
+   },
+   "porque": "Ola 3: Comprobantes entra a la barra (grupo Ventas, plan §2.1). Trae Guías de remisión del hub de Documentos (`guias-remision`). El plan Enterprise/Max lo paga y la plantilla propia de este negocio lo muestra (visible: true); antes no salía en la barra sólo porque el hub `documentos` no está en `modules.enabled` de ningún rubro (lib/verticals/registry.ts), aunque `facturacion`, `cotizaciones` y `contratos` sí. Negocio real afectado: sólo Blas (enterprise, bodega).",
+   "aprobo": "Brandon, mapa del plan «panel unificado» aprobado el 2026-10-09 (§2.2) — integrador O3-K6; confirmar"
+  },
+  {
+   "par": "facturacion:cotizaciones",
+   "superficie": "barra",
+   "contexto": {
+    "plantilla": "pizza-pucallpa"
+   },
+   "porque": "Ola 3: Comprobantes entra a la barra (grupo Ventas, plan §2.1). Trae Cotizaciones del hub de Documentos (`cotizaciones`). El plan Enterprise/Max lo paga y la plantilla propia de este negocio lo muestra (visible: true); antes no salía en la barra sólo porque el hub `documentos` no está en `modules.enabled` de ningún rubro (lib/verticals/registry.ts), aunque `facturacion`, `cotizaciones` y `contratos` sí. Negocio real afectado: sólo Blas (enterprise, bodega).",
+   "aprobo": "Brandon, mapa del plan «panel unificado» aprobado el 2026-10-09 (§2.2) — integrador O3-K6; confirmar"
+  },
+  {
+   "par": "documentos:contratos",
+   "superficie": "barra",
+   "contexto": {
+    "plantilla": "pizza-pucallpa"
+   },
+   "porque": "Ola 3: Comprobantes entra a la barra (grupo Ventas, plan §2.1). Trae Contratos del hub de Documentos (`contratos`). El plan Enterprise/Max lo paga y la plantilla propia de este negocio lo muestra (visible: true); antes no salía en la barra sólo porque el hub `documentos` no está en `modules.enabled` de ningún rubro (lib/verticals/registry.ts), aunque `facturacion`, `cotizaciones` y `contratos` sí. Negocio real afectado: sólo Blas (enterprise, bodega).",
+   "aprobo": "Brandon, mapa del plan «panel unificado» aprobado el 2026-10-09 (§2.2) — integrador O3-K6; confirmar"
+  },
+  {
+   "par": "plata:impuestos",
+   "superficie": "barra",
+   "contexto": {
+    "plantilla": "pizza-pucallpa"
+   },
+   "porque": "Ola 3: Comprobantes entra a la barra (grupo Ventas, plan §2.1). Trae Impuestos y Obligaciones de Documentos › Facturación (`facturacion`). El plan Enterprise/Max lo paga y la plantilla propia de este negocio lo muestra (visible: true); antes no salía en la barra sólo porque el hub `documentos` no está en `modules.enabled` de ningún rubro (lib/verticals/registry.ts), aunque `facturacion`, `cotizaciones` y `contratos` sí. Negocio real afectado: sólo Blas (enterprise, bodega).",
+   "aprobo": "Brandon, mapa del plan «panel unificado» aprobado el 2026-10-09 (§2.2) — integrador O3-K6; confirmar"
+  },
+  {
+   "par": "facturacion:facturas",
+   "superficie": "barra",
+   "contexto": {
+    "plantilla": "inversiones-agroforestales-blas-sociedad-anonima"
+   },
+   "porque": "Ola 3: Comprobantes entra a la barra (grupo Ventas, plan §2.1). Trae la vista Facturación del hub de Documentos. El plan Enterprise/Max lo paga y la plantilla propia de este negocio lo muestra (visible: true); antes no salía en la barra sólo porque el hub `documentos` no está en `modules.enabled` de ningún rubro (lib/verticals/registry.ts), aunque `facturacion`, `cotizaciones` y `contratos` sí. Negocio real afectado: sólo Blas (enterprise, bodega).",
+   "aprobo": "Brandon, mapa del plan «panel unificado» aprobado el 2026-10-09 (§2.2) — integrador O3-K6; confirmar"
+  },
+  {
+   "par": "facturacion:notas",
+   "superficie": "barra",
+   "contexto": {
+    "plantilla": "inversiones-agroforestales-blas-sociedad-anonima"
+   },
+   "porque": "Ola 3: Comprobantes entra a la barra (grupo Ventas, plan §2.1). Trae Notas de crédito del hub de Documentos (`notas-credito`). El plan Enterprise/Max lo paga y la plantilla propia de este negocio lo muestra (visible: true); antes no salía en la barra sólo porque el hub `documentos` no está en `modules.enabled` de ningún rubro (lib/verticals/registry.ts), aunque `facturacion`, `cotizaciones` y `contratos` sí. Negocio real afectado: sólo Blas (enterprise, bodega).",
+   "aprobo": "Brandon, mapa del plan «panel unificado» aprobado el 2026-10-09 (§2.2) — integrador O3-K6; confirmar"
+  },
+  {
+   "par": "facturacion:guias",
+   "superficie": "barra",
+   "contexto": {
+    "plantilla": "inversiones-agroforestales-blas-sociedad-anonima"
+   },
+   "porque": "Ola 3: Comprobantes entra a la barra (grupo Ventas, plan §2.1). Trae Guías de remisión del hub de Documentos (`guias-remision`). El plan Enterprise/Max lo paga y la plantilla propia de este negocio lo muestra (visible: true); antes no salía en la barra sólo porque el hub `documentos` no está en `modules.enabled` de ningún rubro (lib/verticals/registry.ts), aunque `facturacion`, `cotizaciones` y `contratos` sí. Negocio real afectado: sólo Blas (enterprise, bodega).",
+   "aprobo": "Brandon, mapa del plan «panel unificado» aprobado el 2026-10-09 (§2.2) — integrador O3-K6; confirmar"
+  },
+  {
+   "par": "facturacion:cotizaciones",
+   "superficie": "barra",
+   "contexto": {
+    "plantilla": "inversiones-agroforestales-blas-sociedad-anonima"
+   },
+   "porque": "Ola 3: Comprobantes entra a la barra (grupo Ventas, plan §2.1). Trae Cotizaciones del hub de Documentos (`cotizaciones`). El plan Enterprise/Max lo paga y la plantilla propia de este negocio lo muestra (visible: true); antes no salía en la barra sólo porque el hub `documentos` no está en `modules.enabled` de ningún rubro (lib/verticals/registry.ts), aunque `facturacion`, `cotizaciones` y `contratos` sí. Negocio real afectado: sólo Blas (enterprise, bodega).",
+   "aprobo": "Brandon, mapa del plan «panel unificado» aprobado el 2026-10-09 (§2.2) — integrador O3-K6; confirmar"
+  },
+  {
+   "par": "documentos:contratos",
+   "superficie": "barra",
+   "contexto": {
+    "plantilla": "inversiones-agroforestales-blas-sociedad-anonima"
+   },
+   "porque": "Ola 3: Comprobantes entra a la barra (grupo Ventas, plan §2.1). Trae Contratos del hub de Documentos (`contratos`). El plan Enterprise/Max lo paga y la plantilla propia de este negocio lo muestra (visible: true); antes no salía en la barra sólo porque el hub `documentos` no está en `modules.enabled` de ningún rubro (lib/verticals/registry.ts), aunque `facturacion`, `cotizaciones` y `contratos` sí. Negocio real afectado: sólo Blas (enterprise, bodega).",
+   "aprobo": "Brandon, mapa del plan «panel unificado» aprobado el 2026-10-09 (§2.2) — integrador O3-K6; confirmar"
+  },
+  {
+   "par": "plata:impuestos",
+   "superficie": "barra",
+   "contexto": {
+    "plantilla": "inversiones-agroforestales-blas-sociedad-anonima"
+   },
+   "porque": "Ola 3: Comprobantes entra a la barra (grupo Ventas, plan §2.1). Trae Impuestos y Obligaciones de Documentos › Facturación (`facturacion`). El plan Enterprise/Max lo paga y la plantilla propia de este negocio lo muestra (visible: true); antes no salía en la barra sólo porque el hub `documentos` no está en `modules.enabled` de ningún rubro (lib/verticals/registry.ts), aunque `facturacion`, `cotizaciones` y `contratos` sí. Negocio real afectado: sólo Blas (enterprise, bodega).",
+   "aprobo": "Brandon, mapa del plan «panel unificado» aprobado el 2026-10-09 (§2.2) — integrador O3-K6; confirmar"
+  },
+  {
+   "par": "documentos:drive",
+   "superficie": "barra",
+   "contexto": {
+    "plantilla": "pizza-pucallpa"
+   },
+   "porque": "Ola 3: Documentos (el Archivo y Contratos) entra a la barra en el grupo Gestión. Sale donde sale Documentos › Contratos (ver arriba): `?tab=contratos` abría el hub de Documentos ENTERO, con el drive, así que el Archivo nombra `contratos` en su origen. Sin eso, en Blas (rubro bodega, que no tiene `documentos` en modules.enabled) el hub filtrado mostraba sólo Contratos y el drive desaparecía.",
+   "aprobo": "Brandon, mapa del plan «panel unificado» aprobado el 2026-10-09 (§2.1 grupo Gestión: Documentos) — integrador O3-K6; confirmar"
+  },
+  {
+   "par": "documentos:drive",
+   "superficie": "barra",
+   "contexto": {
+    "plantilla": "inversiones-agroforestales-blas-sociedad-anonima"
+   },
+   "porque": "Ola 3: Documentos (el Archivo y Contratos) entra a la barra en el grupo Gestión. Sale donde sale Documentos › Contratos (ver arriba): `?tab=contratos` abría el hub de Documentos ENTERO, con el drive, así que el Archivo nombra `contratos` en su origen. Sin eso, en Blas (rubro bodega, que no tiene `documentos` en modules.enabled) el hub filtrado mostraba sólo Contratos y el drive desaparecía.",
+   "aprobo": "Brandon, mapa del plan «panel unificado» aprobado el 2026-10-09 (§2.1 grupo Gestión: Documentos) — integrador O3-K6; confirmar"
+  }
+ ]
 }

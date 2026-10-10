@@ -108,8 +108,11 @@ export const COSAS_DEL_PANEL: Readonly<Record<CosaDelPanel, FilaDeCosa>> = {
   },
   lote: {
     abre: true,
-    destino: (id) => d("forestal-lotes", { lote: id }),
-    lector: "components/admin/forestal/ForestLotesModule.tsx (useFichaEnUrl de `lote`)",
+    /* Ola 2 del panel unificado: los lotes con QR son Libro CTP › Despacho ›
+       Lotes comerciales y QR (Brandon, 2026-10-09). `?tab=forestal-lotes` sigue
+       llegando por el alias; acá se va directo, sin el salto. */
+    destino: (id) => d(CTP, { vista: "despacho", sub: "lotes-qr", lote: id }),
+    lector: "components/admin/forestal/CtpDespachoPestanas.tsx → ForestLotesModule embebido (useFichaEnUrl de `lote`)",
   },
   colaborador: {
     abre: true,
@@ -124,8 +127,10 @@ export const COSAS_DEL_PANEL: Readonly<Record<CosaDelPanel, FilaDeCosa>> = {
   },
   turno: {
     abre: true,
-    destino: (id) => d("ventas-caja", { vista: "arqueo", turno: id }),
-    lector: "components/admin/unified/POSCajaModule.tsx → Cuadrar caja",
+    /* Ola 3: «Cuadrar caja» es una sección de Caja (`?sub=cuadrar`). El link
+       viejo (`vista=arqueo`) sigue llegando por VISTA_MIGRATION; acá, directo. */
+    destino: (id) => d("ventas-caja", { vista: "caja-registradora", sub: "cuadrar", turno: id }),
+    lector: "components/admin/CashRegisterTab.tsx → Caja › Cuadrar caja (CashAuditTab)",
   },
   pedido: {
     abre: true,

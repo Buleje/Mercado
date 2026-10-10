@@ -150,6 +150,30 @@ export function origenesDeVista(tab: string, vista: { origen?: readonly string[]
   return vista.origen && vista.origen.length > 0 ? vista.origen : [tab];
 }
 
+/**
+ * Hubs de una especialización que reparten sus vistas por especialización: con
+ * OTRA bandera encendida muestran sólo lo de ésa (Herramientas y trámites:
+ * `usePermisoDe` por fase). Un hub que no está acá muestra todas sus vistas a
+ * quien entra, así que sólo lo abre su propia bandera. El Libro CTP recibió el
+ * Rendimiento de Herramientas y los lotes con QR de `forestal-lotes`, y con
+ * sólo Herramientas encendida se abría el libro entero (revisión de la ola 2,
+ * 10-10; en la base, 0 negocios con Herramientas o Lotes sin CTP). Cuando
+ * `CTPLibroOperaciones` filtre sus vistas con `useVistasPermitidas`, sumarlo.
+ */
+const HUBS_QUE_REPARTEN_ESPECIALIDADES: ReadonlySet<string> = new Set(["forestal-herramientas"]);
+
+/**
+ * Los orígenes que ABREN una pestaña (barra, celular y el guardián de
+ * especialización de TabRouter): los de sus vistas, menos las especializaciones
+ * ajenas si la pestaña es de otra especialización y no las reparte.
+ */
+export function origenesQueAbren(tab: string): readonly string[] {
+  const vistas = vistasDelModulo(tab);
+  const todos = vistas.length === 0 ? [tab] : [...new Set(vistas.flatMap((v) => origenesDeVista(tab, v)))];
+  if (!SPEC_GATED_MODULE_IDS.has(tab) || HUBS_QUE_REPARTEN_ESPECIALIDADES.has(tab)) return todos;
+  return todos.filter((o) => o === tab || !SPEC_GATED_MODULE_IDS.has(o));
+}
+
 /** Una vista se ve si ALGUNO de sus orígenes pasa. */
 export function vistaPermitida(ctx: ContextoPermiso, origen: readonly string[]): boolean {
   return origen.some((o) => estadoDelOrigen(ctx, o) === "visible");
@@ -157,10 +181,8 @@ export function vistaPermitida(ctx: ContextoPermiso, origen: readonly string[]):
 
 /** Estado de una pestaña: el mejor de sus vistas (visible > «Pronto» > oculto). */
 export function estadoDePestana(ctx: ContextoPermiso, tab: string): EstadoEnLaBarra {
-  const vistas = vistasDelModulo(tab);
-  const origenes = vistas.length === 0 ? [tab] : new Set(vistas.flatMap((v) => origenesDeVista(tab, v)));
   let pronto = false;
-  for (const o of origenes) {
+  for (const o of origenesQueAbren(tab)) {
     const estado = estadoDelOrigen(ctx, o);
     if (estado === "visible") return "visible";
     if (estado === "pronto") pronto = true;
@@ -186,6 +208,12 @@ export function idsPermitidos(ctx: ContextoPermiso, ids: readonly string[]): str
  * que la barra no ofrece), van todas: es lo que se veía antes, y el candado de
  * verdad está en la API, no en la pestaña. Cuando el panel controle la entrada
  * por URL, esto tiene que pasar a no mostrar ninguna.
+ *
+ * Antes de soltar todas se mira sin el RUBRO: el menú del celular no aplica el
+ * filtro vertical, así que puede ofrecer un hub que con el rubro no tiene
+ * ninguna vista. Ahí van las que el celular prometió, no todas (ola 2: un
+ * restaurante en Pro con la plantilla que oculta Mi Tienda veía «Canales» en el
+ * celular; fundido en Tienda online, sin esto se le abría la tienda entera).
  */
 export function vistasVisibles<T extends { key: string; origen?: readonly string[] }>(
   ctx: ContextoPermiso,
@@ -193,7 +221,38 @@ export function vistasVisibles<T extends { key: string; origen?: readonly string
   vistas: readonly T[],
 ): readonly T[] {
   const pasan = vistas.filter((v) => vistaPermitida(ctx, origenesDeVista(tab, v)));
-  return pasan.length > 0 ? pasan : vistas;
+  if (pasan.length > 0) return pasan;
+  if (ctx.rubro) {
+    const sinRubro: ContextoPermiso = { ...ctx, rubro: null };
+    const delCelular = vistas.filter((v) => vistaPermitida(sinRubro, origenesDeVista(tab, v)));
+    if (delCelular.length > 0) return delCelular;
+  }
+  return vistas;
+}
+
+/**
+ * Las vistas que se ven más la que pidió un ENLACE (`?vista=` al abrir: un
+ * aviso, el buscador, la tarjeta de Inicio), si la dejan los candados.
+ *
+ * Plan, rol y especialidad son candados; la plantilla del superadmin y el
+ * rubro ordenan qué se OFRECE en la barra y en las pestañas. Antes de fundir
+ * pestañas, un enlace a una que la plantilla escondía la abría igual (el hub
+ * caía en «todas»): «Revisar» de una solicitud de repartidor o «Personaliza tu
+ * tienda» en `main`, que oculta Delivery y Mi Tienda. Fundida en otra pestaña
+ * que sí se ve, sin esto el enlace caía en otra vista (ola 2, medido 10-10).
+ */
+export function vistasConLaPedida<T extends { key: string; origen?: readonly string[] }>(
+  ctx: ContextoPermiso,
+  tab: string,
+  vistas: readonly T[],
+  visibles: readonly T[],
+  pedida: string | null,
+): readonly T[] {
+  if (!pedida || visibles.some((v) => v.key === pedida)) return visibles;
+  const llave = vistas.find((v) => v.key === pedida);
+  const candados: ContextoPermiso = { ...ctx, plantilla: null, rubro: null, modoFacil: null };
+  if (!llave || !vistaPermitida(candados, origenesDeVista(tab, llave))) return visibles;
+  return vistas.filter((v) => v === llave || visibles.includes(v));
 }
 
 /**

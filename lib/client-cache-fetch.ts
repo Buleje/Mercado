@@ -41,6 +41,16 @@ export async function cachedJson<T = unknown>(url: string, ttlMs = 60_000, init?
   return p as Promise<T | null>;
 }
 
+/**
+ * Lo que ya está en el cache y sigue vigente, sin pedir nada (`undefined` si no
+ * hay). Para el estado INICIAL de un hook: un componente que monta cuando su
+ * padre ya leyó el dato lo tiene en el primer render, sin esperar una vuelta.
+ */
+export function cachedJsonVigente<T = unknown>(url: string, ttlMs = 60_000): T | undefined {
+  const hit = cache.get(url);
+  return hit && Date.now() - hit.at < ttlMs ? (hit.data as T) : undefined;
+}
+
 /** Invalida una URL exacta (o todo el cache si no se pasa url). */
 export function invalidateCachedJson(url?: string): void {
   if (url) {

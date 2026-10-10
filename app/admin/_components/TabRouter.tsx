@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { TabSpinner } from "@/app/admin/_lib/tab-spinner";
 import { preloadTab } from "@/app/admin/_lib/tab-preload";
 import { useEnabledSpecs, SPEC_GATED_MODULE_IDS } from "@/hooks/use-enabled-specs";
+import { origenesQueAbren } from "@/lib/admin/permiso-vista";
 import type { Tab } from "@/app/admin/_lib/tabs.types";
 import type { TabCategory } from "@/app/admin/_lib/tab-categories";
 import type { StoreMode } from "@/lib/jsondb";
@@ -20,8 +21,9 @@ import type { AdminMode } from "@/app/admin/_hooks/useAdminMode";
 const AnalisisHubModule = dynamic(() => import("@/components/admin/unified/AnalisisHubModule"), { loading: TabSpinner });
 const InventoryTab = dynamic(() => import("@/components/admin/tabs/InventoryTab"), { loading: TabSpinner });
 const SettingsTab  = dynamic(() => import("@/components/admin/tabs/SettingsTab"),  { loading: TabSpinner });
-// rendimiento + auditoria + colas consolidados en SistemaHubModule (3→1)
-const SistemaHubModule = dynamic(() => import("@/components/admin/unified/SistemaHubModule"), { loading: TabSpinner });
+// rendimiento + auditoria + colas + plan → vistas de Configuración (ola 2 del
+// panel unificado): sus ids son alias de `config&vista=sistema|plan` y nunca
+// llegan acá. SistemaHubModule y PlanTab quedan sin montar desde TabRouter.
 // marketplace-chat + support-inbox consolidados en MensajesHubModule (2→1)
 const MensajesHubModule = dynamic(() => import("@/components/admin/unified/MensajesHubModule"), { loading: TabSpinner });
 
@@ -37,30 +39,28 @@ const CRMClientesModule       = dynamic(() => import("@/components/admin/unified
 const MetasLogrosModule       = dynamic(() => import("@/components/admin/unified/MetasLogrosModule"),       { loading: TabSpinner });
 // Crecimiento (Marketing & Fidelización) — Ola 1: Campañas + Puntos consolidados
 const CrecimientoHubModule    = dynamic(() => import("@/components/admin/unified/CrecimientoHubModule"),    { loading: TabSpinner });
-const SalesChannelsTab        = dynamic(() => import("@/components/admin/tabs/SalesChannelsTab"),           { loading: TabSpinner });
-// Equipo (tareas + notas) — huérfanos montados
-const EquipoHubModule         = dynamic(() => import("@/components/admin/unified/EquipoHubModule"),         { loading: TabSpinner });
-// Recursos Humanos (ADR-414): personal, asistencia, lo ganado, contratos vinculados
+// Canales (SalesChannelsTab) es Tienda online › Redes y medición, y Tareas y
+// Notas son vistas de Equipo (ola 2): EquipoHubModule queda sin montar.
+// Equipo (ADR-414): personal, asistencia, lo ganado, contratos, tareas y notas
 const RecursosHumanosHubModule = dynamic(() => import("@/components/admin/unified/RecursosHumanosHubModule"), { loading: TabSpinner });
 const MarketplaceModule       = dynamic(() => import("@/components/admin/unified/MarketplaceModule"),       { loading: TabSpinner });
 const DocumentosHubModule     = dynamic(() => import("@/components/admin/unified/DocumentosHubModule"),    { loading: TabSpinner });
-const DeliveryPartnersModule  = dynamic(() => import("@/components/admin/unified/DeliveryPartnersModule"),  { loading: TabSpinner });
-// delivery-live consolidado como sub-tab "Pedidos en vivo" de DeliveryPartnersModule (2→1)
+// Comprobantes (ola 3): Facturas y boletas · Notas de crédito · Guías de remisión · Cotizaciones
+const ComprobantesHubModule   = dynamic(() => import("@/components/admin/unified/ComprobantesHubModule"),  { loading: TabSpinner });
+// delivery-partners + delivery-live → Pedidos y reparto › Reparto (ola 2): OrdersTab monta DeliveryPartnersModule
 // marketplace-chat → sub-tab "chat" de MensajesHubModule (ver dispatch)
-// rendimiento → sub-tab de SistemaHubModule (ver dispatch)
-const CatalogoTiendaModule    = dynamic(() => import("@/components/admin/unified/CatalogoTiendaModule"),    { loading: TabSpinner });
+// rendimiento → Configuración › Sistema › Velocidad (alias, ola 2)
+// productos → Productos e inventario › Categorías (ola 3): CatalogoTiendaModule queda sin montar.
 
 // ── ENRICH-5 bridges — programas de crecimiento consolidados en MarketplaceModule (4→1) ──
 // subscriptions · gift-cards-admin · socio-members · lives-admin son ahora
 // sub-tabs del marketplace. Ver dispatch más abajo (<MarketplaceModule initialTab=…>).
 
 // ── Módulos adicionales ────────────────────────────────────────────────────────
-// por-cobrar → sub-tab "Por cobrar" de FinanzasModule (ver dispatch)
-// turnos → sub-tab "Turnos" de POSCajaModule (era duplicado top-level)
-// Fiados/Préstamos/Adelantos/Activos consolidados como sub-tabs de FinanzasModule
-// (ver TabRouter dispatch más abajo — todos renderean <FinanzasModule initialTab=...>).
+// por-cobrar, préstamos, adelantos, activos y scoring → hojas de Mi Plata (alias, ola 3)
+// turnos → vista "Turnos" de POSCajaModule; fiados → Ventas y caja › Me deben (ola 3)
 const RecetasModule             = dynamic(() => import("@/components/admin/RecetasModule"),             { loading: TabSpinner });
-const DropshipModule            = dynamic(() => import("@/components/admin/unified/DropshipModule"),     { loading: TabSpinner });
+// dropship → Compras › Dropship (ola 3): ComprasModule monta DropshipModule adentro.
 // ADR-124 — Especialización forestal CTP
 const CTPLibroOperaciones       = dynamic(() => import("@/components/admin/forestal/CTPLibroOperaciones"), { loading: TabSpinner });
 // ADR-136 — Lotes de producción / comercialización forestal
@@ -69,7 +69,7 @@ const ForestLotesModule         = dynamic(() => import("@/components/admin/fores
 const LothLibroOperaciones      = dynamic(() => import("@/components/admin/forestal/LothLibroOperaciones"), { loading: TabSpinner });
 const ForestalHerramientas      = dynamic(() => import("@/components/admin/forestal/ForestalHerramientas"), { loading: TabSpinner });
 const CamarasModule             = dynamic(() => import("@/components/admin/CamarasModule"), { loading: TabSpinner });
-const ForestalTramites          = dynamic(() => import("@/components/admin/forestal/ForestalTramites"), { loading: TabSpinner });
+// forestal-tramites → 2.ª fase de ForestalHerramientas (ola 2)
 // ADR-128 — Especialización agrícola: Acopio & Beneficio de Cacao
 const CacaoAcopio               = dynamic(() => import("@/components/admin/cacao/CacaoAcopio"), { loading: TabSpinner });
 // ADR-457 — piezas a medida del negocio (enchufe `panel.pestana`)
@@ -79,17 +79,15 @@ const ALaMedidaModule           = dynamic(() => import("@/components/admin/a-med
 // store-customizer + pagina-inicio consolidados en MiTiendaHubModule (2→1)
 const MiTiendaHubModule         = dynamic(() => import("@/components/admin/unified/MiTiendaHubModule"),  { loading: TabSpinner });
 const MiPerfilTab               = dynamic(() => import("@/components/admin/MiPerfilTab"),               { loading: TabSpinner });
-// colas → sub-tab de SistemaHubModule (ver dispatch)
+// colas → Configuración › Sistema › Colas (alias, ola 2)
 // forecasting → sub-tab "forecast" de AnalisisHubModule (ver dispatch)
 
-// ── Documentos comerciales & SUNAT consolidados en DocumentosHubModule (6→1) ──
-// facturacion · cotizaciones · guias-remision · notas-credito · contratos · documentos
-// son ahora sub-tabs del hub (cada uno conserva su módulo y header propios).
-// Ver dispatch más abajo — todos renderean <DocumentosHubModule initialTab=…>.
+// ── Comprobantes y Documentos (ola 3 del panel unificado) ──
+// facturacion · cotizaciones · guias-remision · notas-credito → ComprobantesHubModule;
+// documentos · contratos → DocumentosHubModule (Archivo y Contratos).
 
 // ── Módulos especiales ─────────────────────────────────────────────────────────
 const OrdersTab      = dynamic(() => import("@/components/admin/OrdersTab"),      { loading: TabSpinner });
-const PlanTab        = dynamic(() => import("@/components/admin/PlanTab"),        { loading: TabSpinner });
 
 // TeamTab, NavDefaultTabsConfig y SidebarReorderPanel viven ahora dentro
 // del SettingsModule (forman parte de la grilla principal del config).
@@ -102,15 +100,15 @@ const PlanTab        = dynamic(() => import("@/components/admin/PlanTab"),      
 const PREFETCH_MAP: Record<string, string[]> = {
   "vendor-dashboard": ["ventas-caja", "inventario", "pedidos"],
   "ventas-caja": ["inventario", "pedidos", "clientes"],
-  "inventario": ["compras", "productos", "plata"],
-  "productos": ["inventario", "promociones", "marketplace"],
-  "clientes": ["fiados", "pedidos", "ventas-caja"],
-  "compras": ["inventario", "productos", "plata"],
+  // Ola 3: Productos vive en Productos e inventario y los fiados en Ventas y
+  // caja › Me deben; `productos`, `promociones` y `fiados` ya no son pestaña activa.
+  "inventario": ["compras", "plata"],
+  "clientes": ["ventas-caja", "pedidos"],
+  "compras": ["inventario", "plata"],
   "pedidos": ["ventas-caja", "clientes", "inventario"],
-  "plata": ["ventas-caja", "compras", "fiados"],
-  "fiados": ["clientes", "plata", "ventas-caja"],
-  "marketplace": ["productos", "vendor-dashboard"],
-  "promociones": ["productos", "ventas-caja"],
+  "plata": ["ventas-caja", "compras"],
+  "facturacion": ["ventas-caja", "pedidos"],
+  "marketplace": ["inventario", "vendor-dashboard"],
 };
 
 // Los loaders de precarga viven en app/admin/_lib/tab-preload (compartidos con
@@ -130,6 +128,16 @@ function usePrefetchRelated(activeTab: Tab) {
     }, 2000);
     return () => clearTimeout(timer);
   }, [activeTab]);
+}
+
+/**
+ * Las especializaciones que abren una pestaña: la suya y las del `origen` de
+ * sus vistas que el hub reparte (regla R2 del plan «panel unificado»; la misma
+ * de la barra, `origenesQueAbren`). Sólo cuentan las que son especialización:
+ * el plan, el rol y la plantilla los mira la barra.
+ */
+function especialidadesDe(tab: string): string[] {
+  return [tab, ...origenesQueAbren(tab)].filter((id) => SPEC_GATED_MODULE_IDS.has(id));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -188,7 +196,12 @@ export function TabRouter({
   // inicio. Solo cuando specs YA cargaron (sino redirigiría un tab válido en
   // el flash de loading).
   const { enabledModuleIds, isLoading: specsLoading } = useEnabledSpecs();
-  const specBlocked = SPEC_GATED_MODULE_IDS.has(tab) && !specsLoading && !enabledModuleIds.has(tab);
+  // Una pestaña que juntó dos especializaciones (Herramientas y trámites) se
+  // abre si alguna está encendida: es la misma regla con la que la barra la
+  // muestra (el `origen` de sus vistas). Sin esto, un negocio con sólo
+  // Trámites veía la pestaña y al tocarla volvía a Inicio.
+  const specBlocked =
+    SPEC_GATED_MODULE_IDS.has(tab) && !specsLoading && !especialidadesDe(tab).some((id) => enabledModuleIds.has(id));
   useEffect(() => {
     if (specBlocked) onNavigateTab("vendor-dashboard" as Tab);
   }, [specBlocked, onNavigateTab]);
@@ -202,11 +215,9 @@ export function TabRouter({
 
   if (tab === "ventas-caja") return <POSCajaModule key="ventas-caja" />;
 
-  // ── 3. Inventario ──
-  if (tab === "inventario") return <InventoryTab />;
-
-  // ── 4. Promociones & Ofertas ──
-  if (tab === "productos") return <CatalogoTiendaModule />;
+  // ── 3. Productos e inventario (ola 3: absorbe Productos y el Conteo físico) ──
+  if (tab === "inventario") return <InventoryTab key="inventario" />;
+  if (tab === "productos") return <InventoryTab key="productos" initialTab="categorias" />;
 
   // ── 5. Compras ──
   if (tab === "compras") return <ComprasModule key="compras" />;
@@ -220,7 +231,8 @@ export function TabRouter({
   if (tab === "leads-funnel") return <CRMClientesModule key="leads-funnel" initialTab="leads" />;
 
   // ── Módulos adicionales ──
-  if (tab === "fiados")    return <FinanzasModule key="fiados" initialTab="fiados" />;
+  // Fiados: casa única en Ventas y caja › Me deben (Brandon, 2026-10-09).
+  if (tab === "fiados")    return <POSCajaModule key="fiados" initialTab="cuentas-cobrar" />;
   if (tab === "por-cobrar") return <FinanzasModule key="por-cobrar" initialTab="por-cobrar" />;
   if (tab === "turnos")    return <POSCajaModule key="turnos" initialTab="turnos" />;
   if (tab === "prestamos") return <FinanzasModule key="prestamos" initialTab="prestamos" />;
@@ -234,24 +246,22 @@ export function TabRouter({
   if (tab === "ctp-libro-operaciones") return <CTPLibroOperaciones />;
   if (tab === "forestal-lotes") return <ForestLotesModule />;
   if (tab === "loth-libro-operaciones") return <LothLibroOperaciones />;
-  if (tab === "forestal-herramientas") return <ForestalHerramientas />;
-  if (tab === "forestal-tramites") return <ForestalTramites />;
+  if (tab === "forestal-herramientas") return <ForestalHerramientas key="forestal-herramientas" />;
+  if (tab === "forestal-tramites") return <ForestalHerramientas key="forestal-herramientas" initialTab="catalogo" />;
   if (tab === "camaras") return <CamarasModule />;
   if (tab === "cacao-acopio") return <CacaoAcopio />;
   if (tab === "a-medida") return <ALaMedidaModule />;
   if (tab === "scoring")   return <FinanzasModule key="scoring" initialTab="scoring" />;
   if (tab === "devoluciones-proveedor") return <ComprasModule key="devoluciones-proveedor" initialTab="devoluciones" />;
-  if (tab === "dropship") return <DropshipModule />;
+  if (tab === "dropship") return <ComprasModule key="dropship" initialTab="dropship" />;
 
-  // ── Documentos comerciales & SUNAT (hub consolidado — 6 sub-tabs) ──
-  if (tab === "cotizaciones")   return <DocumentosHubModule key="cotizaciones" initialTab="cotizaciones" />;
-  if (tab === "guias-remision") return <DocumentosHubModule key="guias" initialTab="guias" />;
-  if (tab === "notas-credito")  return <DocumentosHubModule key="notas" initialTab="notas" />;
+  // ── Comprobantes (ola 3): sin vista forzada desde la barra, retoma donde quedaste ──
+  if (tab === "facturacion")    return <ComprobantesHubModule key="facturacion" />;
+  if (tab === "cotizaciones")   return <ComprobantesHubModule key="cotizaciones" initialTab="cotizaciones" />;
+  if (tab === "guias-remision") return <ComprobantesHubModule key="guias" initialTab="guias" />;
+  if (tab === "notas-credito")  return <ComprobantesHubModule key="notas" initialTab="notas" />;
   if (tab === "contratos")      return <DocumentosHubModule key="contratos" initialTab="contratos" />;
-  if (tab === "facturacion")    return <DocumentosHubModule key="facturacion" initialTab="facturacion" />;
 
-  // ── Módulos nuevos ──
-  if (tab === "auditoria")              return <SistemaHubModule key="auditoria" initialTab="auditoria" />;
   // (Declaración Inventario movido dentro del módulo Inventario — tab "Declaración")
 
   // ── 8. Configuración ──
@@ -273,8 +283,7 @@ export function TabRouter({
   }
 
   // ── Especiales ──
-  if (tab === "pedidos") return <OrdersTab />;
-  if (tab === "plan")    return <PlanTab />;
+  if (tab === "pedidos") return <OrdersTab key="pedidos" />;
 
   // ── Módulos avanzados ──
   if (tab === "analytics-pro")  return <AnalisisHubModule key="analytics-pro" initialTab="analytics" />;
@@ -288,19 +297,17 @@ export function TabRouter({
   // suscripciones, lives) que antes vivían enterrados como sub-tabs del Marketplace.
   if (tab === "campanas") return <CrecimientoHubModule key="campanas" initialTab="campanas" />;
   if (tab === "puntos")   return <CrecimientoHubModule key="puntos" initialTab="puntos" />;
-  if (tab === "canales")  return <SalesChannelsTab key="canales" />;
+  if (tab === "canales")  return <MiTiendaHubModule key="pagina-inicio" initialTab="redes" />;
 
-  // ── Equipo (tareas + notas) ──
-  if (tab === "tareas") return <EquipoHubModule key="tareas" initialTab="tareas" />;
-  if (tab === "notas")  return <EquipoHubModule key="notas" initialTab="notas" />;
-
-  // ── Recursos Humanos (ADR-414) ──
+  // ── Equipo (ADR-414; ola 2: suma Tareas y Notas) ──
   if (tab === "rrhh") return <RecursosHumanosHubModule key="rrhh" />;
+  if (tab === "tareas") return <RecursosHumanosHubModule key="rrhh" initialTab="tareas" />;
+  if (tab === "notas")  return <RecursosHumanosHubModule key="rrhh" initialTab="notas" />;
 
-  // ── Marketplace & Delivery ──
+  // ── Marketplace; Delivery es Pedidos y reparto › Reparto (ola 2) ──
   if (tab === "marketplace")       return <MarketplaceModule key="marketplace" />;
-  if (tab === "delivery-partners") return <DeliveryPartnersModule key="delivery-partners" />;
-  if (tab === "delivery-live")     return <DeliveryPartnersModule key="delivery-live" initialTab="pedidos-vivo" />;
+  if (tab === "delivery-partners") return <OrdersTab key="pedidos" initialTab="reparto" />;
+  if (tab === "delivery-live")     return <OrdersTab key="pedidos" initialTab="reparto" />;
   if (tab === "marketplace-chat")  return <MensajesHubModule key="marketplace-chat" initialTab="chat" />;
   // Inbox WhatsApp del negocio — entrada directa del sidebar (Brandon 2026-07-16)
   if (tab === "whatsapp-inbox")    return <MensajesHubModule key="whatsapp-inbox" initialTab="whatsapp" />;
@@ -312,19 +319,17 @@ export function TabRouter({
   if (tab === "socio-members")     return <CrecimientoHubModule key="socio" initialTab="socio" />;
   if (tab === "lives-admin")       return <CrecimientoHubModule key="lives" initialTab="lives" />;
 
-  // ── Rendimiento técnico ──
-  if (tab === "rendimiento") return <SistemaHubModule key="rendimiento" initialTab="rendimiento" />;
-
-  // ── Personalización de tienda, colas y perfil ──
-  if (tab === "store-customizer") return <MiTiendaHubModule key="store-customizer" initialTab="identidad" />;
-  if (tab === "colas")            return <SistemaHubModule key="colas" initialTab="colas" />;
+  // ── Personalización de tienda y perfil ──
+  if (tab === "store-customizer") return <MiTiendaHubModule key="pagina-inicio" initialTab="apariencia" />;
   if (tab === "mi-perfil")        return <MiPerfilTab />;
   if (tab === "support-inbox")    return <MensajesHubModule key="support-inbox" initialTab="soporte" />;
 
-  // ── Página individual de la tienda ──
-  if (tab === "pagina-inicio") return <MiTiendaHubModule key="pagina-inicio" initialTab="pagina" />;
+  // ── Tienda online: Apariencia · Contenido · Páginas · Redes y medición ──
+  // Sin vista forzada: desde la barra retoma donde quedaste (como Equipo o
+  // Pedidos). Antes forzaba «Mi tienda pública» porque ése era el renglón.
+  if (tab === "pagina-inicio") return <MiTiendaHubModule key="pagina-inicio" />;
 
-  // ── Documentación (drive interno) — sub-tab "drive" del hub de Documentos ──
+  // ── Documentos: el Archivo (drive interno) y Contratos ──
   if (tab === "documentos") return <DocumentosHubModule key="documentos" initialTab="drive" />;
 
   return null;

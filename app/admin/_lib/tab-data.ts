@@ -76,7 +76,8 @@ export const ALL_TABS = [
   { id: "sugerencias-ia" as Tab,      label: "Sugerencias IA",      icon: Lightbulb },
   { id: "metas-logros" as Tab,        label: "Metas & Logros",      icon: Trophy },
   { id: "ventas-caja" as Tab,         label: "Ventas & Caja",       icon: Receipt },
-  { id: "inventario" as Tab,          label: "Inventario",          icon: Warehouse },
+  // Ola 3 del panel unificado: absorbe Productos (Categorías, Precios, Ofertas) y el Conteo físico.
+  { id: "inventario" as Tab,          label: "Productos e inventario", icon: Warehouse },
   { id: "recetas" as Tab,             label: "Recetas",             icon: ChefHat },
   { id: "productos" as Tab,           label: "Promociones & Ofertas", icon: BadgePercent },
   { id: "compras" as Tab,             label: "Compras",             icon: PackagePlus },
@@ -95,11 +96,11 @@ export const ALL_TABS = [
   // — EQUIPO (huérfanos montados) —
   { id: "tareas" as Tab,              label: "Tareas",              icon: CheckSquare },
   { id: "notas" as Tab,               label: "Notas",               icon: StickyNote },
-  // — RECURSOS HUMANOS (ADR-414) —
-  { id: "rrhh" as Tab,                label: "Recursos Humanos",    icon: Users },
+  // — EQUIPO (ADR-414; ola 2 del panel unificado: suma Tareas y Notas) —
+  { id: "rrhh" as Tab,                label: "Equipo",              icon: Users },
   // — OPERACIONES —
   { id: "config" as Tab,              label: "Configuración",       icon: SlidersHorizontal },
-  { id: "pedidos" as Tab,             label: "Pedidos",             icon: ClipboardCheck },
+  { id: "pedidos" as Tab,             label: "Pedidos y reparto",   icon: ClipboardCheck },
   { id: "turnos" as Tab,              label: "Turnos de Caja",      icon: TimerReset },
   { id: "fiados" as Tab,              label: "Fiados",              icon: HandCoins },
   // — INTELIGENCIA —
@@ -113,10 +114,10 @@ export const ALL_TABS = [
   { id: "scoring" as Tab,             label: "Scoring crediticio",  icon: Gauge },
   { id: "plan" as Tab,                label: "Plan & Límites",      icon: Zap },
 
-  // — FACTURACIÓN SUNAT —
-  { id: "facturacion" as Tab,          label: "Facturación SUNAT",   icon: FileCheck },
-  // — DOCUMENTOS COMERCIALES —
-  { id: "documentos" as Tab,          label: "Documentación",       icon: FolderArchive },
+  // — COMPROBANTES (ola 3: hub propio — Facturas y boletas, Notas, Guías, Cotizaciones) —
+  { id: "facturacion" as Tab,          label: "Comprobantes",        icon: FileCheck },
+  // — DOCUMENTOS (ola 3: el Archivo y los Contratos, en el grupo Gestión) —
+  { id: "documentos" as Tab,          label: "Documentos",          icon: FolderArchive },
   { id: "cotizaciones" as Tab,        label: "Cotizaciones",        icon: ClipboardList },
   { id: "guias-remision" as Tab,      label: "Guías de Remisión",   icon: Truck },
   { id: "notas-credito" as Tab,       label: "Notas de Crédito",    icon: FileMinus },
@@ -129,7 +130,7 @@ export const ALL_TABS = [
   { id: "whatsapp-inbox" as Tab,      label: "WhatsApp",            icon: MessageCircle },
   // — MI TIENDA —
   { id: "store-customizer" as Tab,    label: "Identidad y tema",    icon: Palette },
-  { id: "pagina-inicio" as Tab,       label: "Mi tienda pública",   icon: Globe },
+  { id: "pagina-inicio" as Tab,       label: "Tienda online",       icon: Globe },
   // — SISTEMA —
   { id: "rendimiento" as Tab,         label: "Rendimiento",         icon: Gauge },
   { id: "auditoria" as Tab,           label: "Auditoría",           icon: Shield },
@@ -141,7 +142,7 @@ export const ALL_TABS = [
   { id: "ctp-libro-operaciones" as Tab, label: "Libro CTP (Forestal)", icon: TreePine },
   { id: "forestal-lotes" as Tab, label: "Lotes de Producción (Forestal)", icon: Layers },
   { id: "loth-libro-operaciones" as Tab, label: "Libro Títulos Hab. (Forestal)", icon: TreePine },
-  { id: "forestal-herramientas" as Tab, label: "Herramientas Forestales", icon: Wrench },
+  { id: "forestal-herramientas" as Tab, label: "Herramientas y trámites", icon: Wrench },
   { id: "forestal-tramites" as Tab, label: "Trámites y Oficios (Forestal)", icon: Stamp },
   { id: "camaras" as Tab, label: "Cámaras", icon: Camera },
   { id: "cacao-acopio" as Tab, label: "Acopio de Cacao (Agrícola)", icon: Leaf },

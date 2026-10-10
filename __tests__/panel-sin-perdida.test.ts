@@ -38,9 +38,11 @@ import {
   normalizarGuardadas,
   normalizarOcultas,
   ocultaPorPlantilla,
+  origenesDeVista,
   pestanaPermitida,
   rubroDelPanel,
   vistaPermitida,
+  vistasConLaPedida,
   vistasPropias,
   vistasVisibles,
   type ContextoPermiso,
@@ -60,6 +62,7 @@ import {
   componentesDeTabRouter,
   crearHubDe,
   idsDelMenuDeUsuario,
+  llevarPar,
   paresDe,
 } from "../scripts/matriz-pestanas.mjs";
 
@@ -142,6 +145,24 @@ function despuesDe(c: Combinacion): Record<"barra" | "celular" | "menu", string[
   };
 }
 
+/**
+ * Un par que antes sólo alcanzaba el CELULAR y hoy tampoco está en la barra de
+ * escritorio del mismo contexto no es una pérdida: es el celular alineándose.
+ *
+ * La única capa que la barra aplica y el menú del celular no es el RUBRO
+ * (`despuesDe`: `movil` va sin `rubro`). El drawer listaba Delivery a una
+ * maderera (su vertical lo oculta a propósito, `lib/verticals/registry.ts`
+ * `hidden`) y el hub viejo, sin `origen`, mostraba todo. Fundido en Pedidos
+ * (ola 2), el hub aplica el rubro sobre el origen de Reparto (regla R2), como
+ * la barra de escritorio desde siempre. Medido 2026-10-10: 0 negocios reales
+ * en ese caso (rubro maderera/farmacia/ferretería/otro + plantilla que muestra
+ * Delivery + Enterprise/Max). Lo que el escritorio sí muestra hoy sigue
+ * contando como pérdida si el celular lo pierde.
+ */
+function seAlineaConLaBarra(par: string, barraAntes: readonly string[], barraHoy: readonly string[]): boolean {
+  return !barraAntes.includes(par) && !barraHoy.includes(llevarPar(par, resolverDestino));
+}
+
 describe("panel sin pérdida: después ⊇ antes", () => {
   it("la línea base cubre plan × rol × rubro × plantilla", () => {
     const { planes, roles, rubros, plantillas } = antes.dimensiones;
@@ -164,7 +185,10 @@ describe("panel sin pérdida: después ⊇ antes", () => {
       for (const superficie of ["barra", "celular"] as const) {
         const r = compararPares(antes.conjuntos[c[superficie]], hoy[superficie], resolverDestino, POR_ORIGEN);
         const donde = `${c.plan}·${c.rol}·${c.rubro}·${c.plantilla}·${superficie}`;
-        for (const p of r.perdidas) perdidas.push(`${donde}: ${p}`);
+        for (const p of r.perdidas) {
+          if (superficie === "celular" && seAlineaConLaBarra(p, antes.conjuntos[c.barra], hoy.barra)) continue;
+          perdidas.push(`${donde}: ${p}`);
+        }
         for (const p of r.nuevas) {
           if (!altaAprobada(altas, { contexto: c, superficie, par: p })) sinAprobar.push(`${donde}: ${p}`);
         }
@@ -277,6 +301,24 @@ describe("permiso por origen (regla R2)", () => {
     );
   });
 
+  it("una especialización ajena no abre un hub que no la reparte (CTP con sólo Herramientas)", () => {
+    const con = (...ids: string[]): ContextoPermiso => ({ ...SIN_FILTRO, especialidades: new Set(ids) });
+    const ctp = "ctp-libro-operaciones";
+    expect(estadoDePestana(con("forestal-herramientas"), ctp)).toBe("oculto");
+    expect(estadoDePestana(con("forestal-lotes"), ctp)).toBe("oculto");
+    expect(estadoDePestana(con(ctp), ctp)).toBe("visible");
+    // Herramientas reparte por fase (`usePermisoDe`): con sólo Trámites se abre y muestra lo suyo.
+    expect(estadoDePestana(con("forestal-tramites"), "forestal-herramientas")).toBe("visible");
+    // Barrido: con UNA bandera encendida, qué pestaña de OTRA especialización se abre.
+    // La matriz enciende todas; esto obliga a decidir cada cruce nuevo.
+    const cruces = [...SPEC_GATED_MODULE_IDS].flatMap((spec) =>
+      [...SPEC_GATED_MODULE_IDS]
+        .filter((tab) => tab !== spec && estadoDePestana(con(spec), tab) === "visible")
+        .map((tab) => `${spec}→${tab}`),
+    );
+    expect(cruces).toEqual(["forestal-tramites→forestal-herramientas"]);
+  });
+
   it("el rol: admin y los roles sin lista propia ven todo, como siempre", () => {
     expect(idsDelRol("admin", { admin: [] })).toBeNull();
     expect(idsDelRol("tienda_owner", null)).toBeNull();
@@ -290,8 +332,45 @@ describe("permiso por origen (regla R2)", () => {
   });
 
   it("dentro de un hub ajeno (se llegó por URL) se ven todas, como antes", () => {
-    const vistas = vistasDelModulo("plata");
-    expect(vistasVisibles(basico, "plata", vistas)).toHaveLength(vistas.length);
+    // Compras es Enterprise y ninguna de sus vistas nombra algo de Básico. (Hasta
+    // la ola 3 el ejemplo era Mi Plata; hoy sus hojas nombran `activos`, que
+    // Básico paga, así que ya no es un hub ajeno para Básico.)
+    const vistas = vistasDelModulo("compras");
+    expect(vistas.some((v) => vistaPermitida(basico, origenesDeVista("compras", v)))).toBe(false);
+    expect(vistasVisibles(basico, "compras", vistas)).toHaveLength(vistas.length);
+  });
+
+  it("si el rubro deja al hub sin vistas, van las que pasan sin rubro (lo que ofreció el celular), no todas", () => {
+    const rubro = { habilitados: new Set(["pagina-inicio"]), ocultos: new Set<string>(), pronto: new Set<string>() };
+    const sinMiTienda: ContextoPermiso = { ...SIN_FILTRO, rubro, plantilla: (id) => id === "pagina-inicio" };
+    const vistas = [
+      { key: "apariencia", origen: ["pagina-inicio"] },
+      { key: "redes", origen: ["canales", "pagina-inicio"] },
+    ];
+    expect(vistasVisibles(sinMiTienda, "pagina-inicio", vistas).map((v) => v.key)).toEqual(["redes"]);
+    // Sin nada que pase ni sin rubro (se llegó por URL), todas, como antes.
+    const nada: ContextoPermiso = { ...sinMiTienda, plantilla: () => true };
+    expect(vistasVisibles(nada, "pagina-inicio", vistas)).toHaveLength(2);
+  });
+
+  it("un enlace a una vista que sólo la plantilla esconde la abre; uno que el plan o el rol vedan, no", () => {
+    const vistas = [
+      { key: "tablero", origen: ["pedidos"] },
+      { key: "reparto", origen: ["delivery-partners"] },
+    ];
+    const sinDelivery: ContextoPermiso = { ...SIN_FILTRO, plantilla: (id) => id === "delivery-partners" };
+    const visibles = vistasVisibles(sinDelivery, "pedidos", vistas);
+    expect(visibles.map((v) => v.key)).toEqual(["tablero"]);
+    expect(vistasConLaPedida(sinDelivery, "pedidos", vistas, visibles, "reparto").map((v) => v.key)).toEqual([
+      "tablero",
+      "reparto",
+    ]);
+    expect(vistasConLaPedida(sinDelivery, "pedidos", vistas, visibles, null)).toBe(visibles);
+    // El cajero no tiene Delivery en su rol; Básico no lo paga: el enlace no lo abre.
+    const cajero: ContextoPermiso = { ...sinDelivery, rol: new Set(["pedidos"]) };
+    expect(vistasConLaPedida(cajero, "pedidos", vistas, visibles, "reparto").map((v) => v.key)).toEqual(["tablero"]);
+    const basico: ContextoPermiso = { ...sinDelivery, plan: idsDelPlan("basico") };
+    expect(vistasConLaPedida(basico, "pedidos", vistas, visibles, "reparto").map((v) => v.key)).toEqual(["tablero"]);
   });
 
   it("sin rol confirmado el hub ofrece sólo lo propio, no lo que llegó de otra pestaña", () => {
@@ -313,8 +392,12 @@ describe("permiso por origen (regla R2)", () => {
     expect(etiquetaDeVista("ventas-caja", "cuentas-cobrar", "Me deben", overrides, resolver)).toBe(
       "Cuentas pendientes",
     );
-    // Hoy `fiados` sigue siendo pestaña: ninguna vista cambia de nombre.
-    expect(etiquetaDeVista("ventas-caja", "cuentas-cobrar", "Me deben", overrides)).toBe("Me deben");
+    // Desde la ola 3 `fiados` ES alias de Me deben: con los mapas reales también.
+    expect(etiquetaDeVista("ventas-caja", "cuentas-cobrar", "Me deben", overrides)).toBe("Cuentas pendientes");
+    // Una vista que no recibió ningún id viejo no cambia de nombre.
+    expect(etiquetaDeVista("ventas-caja", "comisiones", "Comisiones de vendedores", overrides)).toBe(
+      "Comisiones de vendedores",
+    );
   });
 });
 
@@ -366,13 +449,14 @@ describe("use-vistas-permitidas en un hub (sin red)", () => {
       }),
     );
 
-  it("Mi Plata abierto por URL en Básico muestra todas sus pestañas, como antes", async () => {
+  it("Mi Plata en Básico muestra lo que mostraba antes (todo menos Impuestos, que llegó de Comprobantes)", async () => {
     localStorage.setItem("buleje:vendor-plan-tier", "basico");
     conSesion("admin");
     const items = vistasDelModulo("plata").map((v) => ({ id: v.key, label: v.label }));
     const { result } = renderHook(() => ({ ctx: useContextoPermiso(), tabs: useVistasPermitidas("plata", items) }));
     await waitFor(() => expect(result.current.ctx).not.toBeNull());
-    expect(result.current.tabs.map((i) => i.id)).toEqual(items.map((i) => i.id));
+    // Básico entraba por «Activos», que abría el hub entero (ver el registro de `plata`).
+    expect(result.current.tabs.map((i) => i.id)).toEqual(items.map((i) => i.id).filter((id) => id !== "impuestos"));
   });
 
   it("<PermisoDe> deja pasar un bloque de Activos en Básico y no uno de Mi Plata", async () => {

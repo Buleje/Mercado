@@ -48,7 +48,6 @@ const MODULOS: Record<string, { archivo: string; extraer: (src: string) => strin
   // Hubs registrados en la ola 1 del plan «panel unificado» (2026-10-09).
   "whatsapp-inbox": { archivo: "components/admin/unified/MensajesHubModule.tsx", extraer: idsDeTABS, lista: "TABS" },
   campanas: { archivo: "components/admin/unified/CrecimientoHubModule.tsx", extraer: idsDeTABS, lista: "TABS" },
-  "delivery-partners": { archivo: "components/admin/unified/DeliveryPartnersModule.tsx", extraer: idsDeTABS, lista: "TABS" },
   camaras: { archivo: "components/admin/forestal/CamarasView.tsx", extraer: idsDeArray("VISTAS") },
   "asistente-ia": { archivo: "components/admin/unified/AsistenteIAHubModule.tsx", extraer: idsDeTABS, lista: "TABS" },
   "metas-logros": { archivo: "components/admin/unified/MetasLogrosModule.tsx", extraer: idsDeTABS, lista: "TABS" },
@@ -58,7 +57,17 @@ const MODULOS: Record<string, { archivo: string; extraer: (src: string) => strin
     extraer: idsDeLista("TODAS_LAS_VISTAS"),
     lista: "TODAS_LAS_VISTAS",
   },
-  tareas: { archivo: "components/admin/unified/EquipoHubModule.tsx", extraer: idsDeTABS, lista: "TABS" },
+  // Ola 2 (2026-10-10). `tareas` y `delivery-partners` ya no registran vistas:
+  // son vistas de Equipo y de Pedidos y reparto (el buscador las ofrecía dos veces).
+  pedidos: { archivo: "components/admin/OrdersTab/index.tsx", extraer: idsDeLista("VISTAS"), lista: "VISTAS" },
+  "forestal-herramientas": {
+    archivo: "components/admin/forestal/herramientas-grupos.ts",
+    extraer: idsDeArray("VISTAS_HERRAMIENTAS"),
+  },
+  // Ola 3 (2026-10-10): Comprobantes es su propio hub y Documentos queda con el
+  // Archivo y Contratos.
+  facturacion: { archivo: "components/admin/unified/ComprobantesHubModule.tsx", extraer: idsDeTABS, lista: "TABS" },
+  documentos: { archivo: "components/admin/unified/DocumentosHubModule.tsx", extraer: idsDeTABS, lista: "TABS" },
   // Estado local (useState), por eso va en VISTAS_LOCALES_POR_MODULO.
   marketplace: { archivo: "components/admin/unified/MarketplaceModule.tsx", extraer: idsDeTABS, lista: "TABS" },
 };
@@ -276,7 +285,8 @@ describe("VISTAS_POR_MODULO refleja las pestañas reales de cada módulo", () =>
       archivo: "components/admin/ContratosModule.tsx",
       constante: /const CONTRATOS_VISTAS = \[([^\]]+)\]/,
     },
-    "documentos/cotizaciones": {
+    // Ola 3: Cotizaciones se mudó de Documentos a Comprobantes (`facturacion`).
+    "facturacion/cotizaciones": {
       archivo: "components/admin/CotizacionesModule.tsx",
       constante: /const COTIZACIONES_VISTAS = \[([^\]]+)\]/,
     },
@@ -286,9 +296,63 @@ describe("VISTAS_POR_MODULO refleja las pestañas reales de cada módulo", () =>
     },
     // Acá los ids no están en un array literal sino en `const TABS = [...]`
     // (VALID_TABS se deriva de él): se lee el TABS, que es la fuente.
-    "pagina-inicio/pagina": {
+    "pagina-inicio/contenido": {
       archivo: "app/admin/store-page/page.tsx",
       constante: /const TABS(?::\s*[^=]+)?\s*=\s*\[([\s\S]*?)\n\];/,
+    },
+    // Ola 2 del panel unificado (2026-10-10).
+    "pagina-inicio/apariencia": {
+      archivo: "components/admin/StoreCustomizer.tsx",
+      constante: /const TAB_IDS_CUSTOMIZER[^=]*=\s*\[([^\]]+)\]/,
+    },
+    "config/sistema": {
+      archivo: "components/admin/sistema/subvistas-sistema.ts",
+      constante: /export const SUBVISTAS_SISTEMA[^=]*=\s*\[([\s\S]*?)\n\];/,
+    },
+    "pedidos/reparto": {
+      archivo: "components/admin/unified/DeliveryPartnersModule.tsx",
+      constante: /const SECCIONES_REPARTO = \[([^\]]+)\]/,
+    },
+    "ctp-libro-operaciones/ingresos": {
+      archivo: "components/admin/forestal/ctp-vistas-fusionadas.ts",
+      constante: /export const SUBS_INGRESOS = \[([^\]]+)\]/,
+    },
+    "ctp-libro-operaciones/tablero": {
+      archivo: "components/admin/forestal/ctp-vistas-fusionadas.ts",
+      constante: /export const SUBS_TABLERO = \[([^\]]+)\]/,
+    },
+    "ctp-libro-operaciones/despacho": {
+      archivo: "components/admin/forestal/ctp-vistas-fusionadas.ts",
+      constante: /export const SUBS_DESPACHO = \[([^\]]+)\]/,
+    },
+    // Ola 3 del panel unificado (2026-10-10).
+    "ventas-caja/caja-registradora": {
+      archivo: "components/admin/caja/tipos.ts",
+      constante: /export const SUBS_CAJA = \[([^\]]+)\]/,
+    },
+    "ventas-caja/cuentas-cobrar": {
+      archivo: "components/admin/fiados/tipos.ts",
+      constante: /export const FIADO_VISTAS = \[([^\]]+)\]/,
+    },
+    "inventario/conteo": {
+      archivo: "components/admin/inventario/ConteoFisicoVista.tsx",
+      constante: /export const SUBS_CONTEO = \[([^\]]+)\]/,
+    },
+    "inventario/ofertas": {
+      archivo: "components/admin/inventario/OfertasYCuponesVista.tsx",
+      constante: /export const SUBS_OFERTAS = \[([^\]]+)\]/,
+    },
+    "compras/ordenes-compra": {
+      archivo: "components/admin/compras/OrdenesYRecepcion.tsx",
+      constante: /export const SECCIONES_ORDENES = \[([^\]]+)\]/,
+    },
+    "compras/proveedores": {
+      archivo: "components/admin/compras/ProveedoresVista.tsx",
+      constante: /export const SECCIONES_PROVEEDORES = \[([^\]]+)\]/,
+    },
+    "loth-libro-operaciones/tablero": {
+      archivo: "components/admin/forestal/LothControlPestanas.tsx",
+      constante: /export const SUBS_CONTROL = \[([^\]]+)\]/,
     },
   };
 
