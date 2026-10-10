@@ -4,6 +4,7 @@ import { useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { CardTitle, DataTable } from "@buleje/design-system";
 import { AlertTriangle, Banknote, ChevronDown, Coins, ExternalLink } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
 import {
   BILLETES, MONEDAS, claveDenominacion, notaDelConteo, pideObservacion, totalesDelConteo,
@@ -27,7 +28,7 @@ const ORDEN = [...BILLETES, ...MONEDAS];
 /**
  * Conteo del cajón por denominación contra el efectivo esperado de la caja
  * abierta (backend). Se guarda como «conteo express»: no cierra la caja —eso
- * se hace en Caja registradora, con su arqueo guiado— pero queda en la caja
+ * se hace en Caja › Hoy, con su arqueo guiado— pero queda en la caja
  * con su desglose y la observación de quien contó.
  */
 export default function ContadorEfectivo({ expectedAmount, registerId, abiertaDesde, ultimoConteo, abierto, onAlternar, onSaved, onIrACaja }: Props) {
@@ -134,7 +135,7 @@ export default function ContadorEfectivo({ expectedAmount, registerId, abiertaDe
             <InfoTip
               title="Contar el efectivo"
               what="Cuentas billetes y monedas y lo comparas con lo que debería haber en la caja abierta: apertura + ventas en efectivo + ingresos − egresos."
-              affects="Queda guardado en la caja con su desglose. No la cierra: eso se hace en Caja registradora."
+              affects="Queda guardado en la caja con su desglose. No la cierra: eso se hace en Caja › Hoy."
               example="Abres con S/ 200 y vendes S/ 350 en efectivo: deberías tener S/ 550. Si cuentas S/ 540 hay un faltante de S/ 10 y tienes que explicar por qué. Enter pasa a la siguiente denominación."
             />
           </div>
@@ -156,7 +157,7 @@ export default function ContadorEfectivo({ expectedAmount, registerId, abiertaDe
                 )}
               </>
             ) : (
-              "No hay una caja abierta: ábrela en Caja registradora para contar."
+              "No hay una caja abierta: ábrela en Caja › Hoy para contar."
             )}
           </p>
         </div>
@@ -165,10 +166,8 @@ export default function ContadorEfectivo({ expectedAmount, registerId, abiertaDe
           onClick={onAlternar}
           aria-expanded={abierto}
           aria-controls={cuerpoId}
-          className={cn(
-            "inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-4 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40",
-            abierto ? "border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]" : "bg-primary text-white hover:bg-primary-dark",
-          )}
+          /* Botón del DS a 48 px; «primary» y no turquesa: blanco sobre turquesa da 3,2:1. */
+          className={button({ variant: abierto ? "secondary" : "primary", className: "shrink-0 rounded-xl" })}
         >
           {abierto ? "Ocultar" : "Contar"}
           <ChevronDown className={cn("h-4 w-4 transition-transform", abierto && "rotate-180")} aria-hidden />
@@ -239,16 +238,17 @@ export default function ContadorEfectivo({ expectedAmount, registerId, abiertaDe
               onClick={guardar}
               disabled={saving || !t.hayConteo || !registerId || faltaObs}
               title={!registerId ? "No hay caja abierta" : !t.hayConteo ? "Cuenta al menos una denominación" : faltaObs ? "Escribe por qué no cuadra" : undefined}
-              className="min-h-10 rounded-xl bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
+              /* Deshabilitado sigue recibiendo el puntero: el `title` explica por qué. */
+              className={button({ variant: "primary", className: "rounded-xl disabled:pointer-events-auto disabled:cursor-not-allowed" })}
             >
               {saving ? "Guardando…" : "Guardar conteo"}
             </button>
-            <button type="button" onClick={() => { setConteo({}); setObservacion(""); setFeedback(null); }} className="min-h-10 px-3 text-sm text-[var(--text-secondary)] transition-colors hover:text-[var(--data-error-700)]">
+            <button type="button" onClick={() => { setConteo({}); setObservacion(""); setFeedback(null); }} className={button({ variant: "ghost", className: "rounded-xl px-4" })}>
               Limpiar
             </button>
             {onIrACaja && registerId && (
-              <button type="button" onClick={onIrACaja} className="ml-auto inline-flex min-h-10 items-center gap-1.5 px-2 text-sm font-semibold text-[var(--accent-ink)] hover:underline dark:text-[var(--accent)]">
-                Cerrar la caja en Caja registradora <ExternalLink className="h-4 w-4" aria-hidden />
+              <button type="button" onClick={onIrACaja} className="ml-auto inline-flex min-h-12 items-center gap-1.5 rounded-xl px-2 text-sm font-semibold text-[var(--accent-ink)] hover:underline dark:text-[var(--accent)]">
+                Cerrar la caja en Caja › Hoy <ExternalLink className="h-4 w-4" aria-hidden />
               </button>
             )}
           </div>

@@ -21,8 +21,8 @@ function Linea({ tono, children, accion }: { tono: "error" | "warning"; children
     <div
       role={tono === "error" ? "alert" : "status"}
       className={tono === "error"
-        ? "flex items-center gap-2 rounded-xl border border-[var(--data-error-500)]/30 bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10 px-3 py-2 text-sm text-[var(--text-primary)]"
-        : "flex items-center gap-2 rounded-xl border border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/10 px-3 py-2 text-sm text-[var(--text-primary)]"}
+        ? "flex items-center gap-2 rounded-xl border border-[var(--data-error-500)]/30 bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/10 py-1 pl-3 pr-1 text-sm text-[var(--text-primary)]"
+        : "flex items-center gap-2 rounded-xl border border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/10 py-1 pl-3 pr-1 text-sm text-[var(--text-primary)]"}
     >
       <Icono className={tono === "error" ? "h-4 w-4 shrink-0 text-[var(--data-error-500)]" : "h-4 w-4 shrink-0 text-[var(--data-warning-500)]"} aria-hidden />
       <span className="min-w-0 flex-1 flex items-center gap-1 flex-wrap">{children}</span>
@@ -31,7 +31,8 @@ function Linea({ tono, children, accion }: { tono: "error" | "warning"; children
   );
 }
 
-const BOTON = "shrink-0 rounded-lg px-3 min-h-9 text-sm font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-[var(--surface-raised)]";
+/* 48 px como todo botón del panel; la línea va con py-1 y el botón pegado al borde para no engordar el aviso. */
+const BOTON = "shrink-0 rounded-xl px-4 min-h-12 text-sm font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-[var(--surface-raised)]";
 
 export function AvisosTurnos({ avisos, onCerrarTurno, onVerAlertas }: Props) {
   if (avisos.length === 0) return null;
@@ -57,7 +58,7 @@ export function AvisosTurnos({ avisos, onCerrarTurno, onVerAlertas }: Props) {
               <InfoTip
                 title="Cerrados por el sistema"
                 what={`Turnos que quedaron abiertos más de ${HORAS_CIERRE_SISTEMA} h (últimos 30 días). Nadie contó la caja.`}
-                affects="Revisa el arqueo de esos días en Cuadrar caja."
+                affects="Revisa el arqueo de esos días en Caja › Cuadrar."
               />
             </Linea>
           );

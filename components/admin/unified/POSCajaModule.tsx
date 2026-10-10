@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import { ShoppingCart, Wallet, Scale, HandCoins, Clock, Users } from "@buleje/design-system/icons";
+import { ShoppingCart, Wallet, HandCoins, Clock, Users } from "@buleje/design-system/icons";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
@@ -10,27 +10,28 @@ import { cn } from "@/lib/utils";
 const MODULE_ID = "ventas-caja";
 
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
+import { button } from "@/components/ui-system/button-variants";
 
 const POSView                = dynamic(() => import("@/components/admin/POSView"),                { loading: S });
 const CashRegisterTab        = dynamic(() => import("@/components/admin/CashRegisterTab"),        { loading: S });
-const CashAuditTab           = dynamic(() => import("@/components/admin/CashAuditTab"),           { loading: S });
 const FiadosModule           = dynamic(() => import("@/components/admin/FiadosModule"),           { loading: S });
 const TurnosModule           = dynamic(() => import("@/components/admin/TurnosModule"),           { loading: S });
 const OfflineIndicator       = dynamic(() => import("@/components/admin/OfflineIndicator"),       { ssr: false });
 const CommissionCalculator   = dynamic(() => import("@/components/admin/CommissionCalculator"),   { loading: S });
 
 /**
- * Las seis pestañas se bajan en segundo plano cuando el navegador queda libre:
- * cada una es un chunk aparte (`next/dynamic`) y, sin esto, la primera vez que
- * se abre cada pestaña se ve el cargador mientras baja (medido en dev: 330-470 ms
- * por pestaña). Con «ahorro de datos» activo no se precarga nada.
+ * Las pestañas se bajan en segundo plano cuando el navegador queda libre: cada
+ * una es un chunk aparte (`next/dynamic`) y, sin esto, la primera vez que se
+ * abre cada pestaña se ve el cargador mientras baja (medido en dev: 330-470 ms
+ * por pestaña). «Cuadrar» (CashAuditTab) vive dentro de Caja desde la ola 3 del
+ * panel unificado y va en el mismo chunk que Caja (import estático: su cabecera
+ * es la de Caja). Con «ahorro de datos» activo no se precarga nada.
  */
 const PRECARGAS = [
   () => import("@/components/admin/POSView"),
   () => import("@/components/admin/TurnosModule"),
   () => import("@/components/admin/CashRegisterTab"),
   () => import("@/components/admin/FiadosModule"),
-  () => import("@/components/admin/CashAuditTab"),
   () => import("@/components/admin/CommissionCalculator"),
 ];
 
@@ -38,13 +39,17 @@ import { usePOSOffline } from "@/components/admin/pos/usePOSOffline";
 
 
 // ── Tabs reordenados en flujo lógico del día ──────────────────────────────────
+// Panel unificado, ola 3 (2026-10-10): de 6 a 5. «Cuadrar caja» dejó de ser
+// pestaña: es la sección «Cuadrar» de Caja (`?vista=caja-registradora&sub=cuadrar`),
+// y el nombre viejo `arqueo` sigue llegando por el alias de abajo. Sin
+// `shortLabel`: AdminTabBar lo dibuja SIEMPRE en vez del rótulo (decía «POS»,
+// «Fiados», «Cuadre»), y el rótulo es el nombre que se busca y se enlaza.
 const TABS = [
-  { id: "pos"               as const, label: "Vender",            shortLabel: "POS",     hint: "Punto de venta",      icon: ShoppingCart,  desc: "Busca productos, cobra y genera comprobantes" },
-  { id: "turnos"            as const, label: "Turnos",            shortLabel: "Turnos",  hint: "Control de personal", icon: Clock,         desc: "Abre y cierra turnos de trabajo del equipo" },
-  { id: "caja-registradora" as const, label: "Caja Registradora", shortLabel: "Caja",    hint: "Gestión de efectivo", icon: Wallet,        desc: "Movimientos de efectivo, retiros e ingresos" },
-  { id: "cuentas-cobrar"    as const, label: "Me deben",          shortLabel: "Fiados",  hint: "Créditos a clientes", icon: HandCoins,     desc: "Créditos otorgados, cobros y seguimiento" },
-  { id: "arqueo"            as const, label: "Cuadrar Caja",      shortLabel: "Cuadre",      hint: "Cierre del día",      icon: Scale,         desc: "Conteo de billetes y cierre del día" },
-  { id: "comisiones"        as const, label: "Comisiones",        shortLabel: "Comisiones",  hint: "Cálculo comisiones",  icon: Users,         desc: "Calcula comisiones de vendedores" },
+  { id: "pos"               as const, label: "Vender",                    hint: "Busca productos, cobra y genera comprobantes",            icon: ShoppingCart },
+  { id: "turnos"            as const, label: "Turnos",                    hint: "Abre y cierra el turno de caja de cada cajero",           icon: Clock },
+  { id: "caja-registradora" as const, label: "Caja",                      hint: "El efectivo del día: abrir, ingresos, retiros y cuadrar", icon: Wallet },
+  { id: "cuentas-cobrar"    as const, label: "Me deben",                  hint: "Lo que quedó fiado: quién debe, cobrar y recordar",       icon: HandCoins },
+  { id: "comisiones"        as const, label: "Comisiones de vendedores",  hint: "Lo que ganó cada vendedor por lo que vendió",            icon: Users },
 ];
 
 type TabId = typeof TABS[number]["id"];
@@ -52,21 +57,45 @@ type TabId = typeof TABS[number]["id"];
 /** Los ids, estables: el hook los usa como dependencia. */
 const TAB_IDS = TABS.map((t) => t.id);
 
+/** Nombres viejos de vista → la que hoy los cubre (link guardado, memoria del navegador). */
+const ALIAS_DE_VISTA = { arqueo: "caja-registradora" } as const satisfies Record<string, TabId>;
+
+/** `?vista=arqueo` al abrir → Caja entra directo a su sección «Cuadrar». */
+function subDeCajaPorVistaVieja(): "cuadrar" | undefined {
+  if (typeof window === "undefined") return undefined;
+  return new URLSearchParams(window.location.search).get("vista") === "arqueo" ? "cuadrar" : undefined;
+}
+
 // ── Main Module ─────────────────────────────────────────────────────────────
 
 export default function POSCajaModule({ initialTab }: { initialTab?: string } = {}) {
   // La sub-vista vive en `?vista=`: link compartible, atrás del navegador y
   // destino del buscador global. `initialTab` gana cuando el módulo se abre
   // desde un tab alias (ej. `?tab=turnos`).
-  // `turno` (Cuadrar caja) y `cerrar` (Turnos) son de UNA vista: se borran al salir de ella.
+  // `turno` (Caja › Cuadrar) y `cerrar` (Turnos) son de UNA vista: se borran al salir
+  // de ella. `sub` también: Caja y Me deben guardan ahí su 2.º nivel, y un `?sub=`
+  // de una no tiene que llegarle a la otra.
+  //
+  // Se lee ANTES que el hook: un `?vista=arqueo` (link viejo que todavía no pasó
+  // por VISTA_MIGRATION) cae en Caja por el alias, y Caja tiene que abrir en
+  // Cuadrar, no en «Caja de hoy».
+  const [subDeCaja, setSubDeCaja] = useState(subDeCajaPorVistaVieja);
   const { vista: sub, irA: setSub } = useVistaModulo<TabId>(MODULE_ID, TAB_IDS, TAB_IDS[0], initialTab, {
-    paramsDeVista: { arqueo: ["turno"], turnos: ["cerrar"] },
+    paramsDeVista: { "caja-registradora": ["sub", "turno"], "cuentas-cobrar": ["sub"], turnos: ["cerrar"] },
+    alias: ALIAS_DE_VISTA,
   });
   const { notice } = useConfirm();
   const { pendingCount, isOnline: _isOnline } = usePOSOffline();
 
+  // Caja abre en Cuadrar sólo la primera vez (el link viejo); al salir de Caja, se olvida.
+  useEffect(() => {
+    if (sub !== "caja-registradora") setSubDeCaja(undefined);
+  }, [sub]);
+
   // ── Estado de turno abierto ──────────────────────────────────────────────
-  const [turnoAbierto, setTurnoAbierto] = useState(false);
+  // `null` = todavía no se sabe (la consulta no volvió o falló): se dibuja como
+  // «Sin turno», igual que antes, pero no decide a dónde lleva «Abrir».
+  const [turnoAbierto, setTurnoAbierto] = useState<boolean | null>(null);
 
   // Fetch turno activo al montar y al cambiar de tab (por si se abrió/cerró)
   useEffect(() => {
@@ -103,20 +132,29 @@ export default function POSCajaModule({ initialTab }: { initialTab?: string } = 
     return () => window.removeEventListener("buleje:turno-changed", handler);
   }, []);
 
-  // QA Brandon 2026-06-10 #2: el modal "Caja sin abrir" del POS ofrece
-  // "Abrir caja primero" → salta al sub-tab de Caja Registradora.
+  /**
+   * «Abrir» desde el POS tiene UN solo camino (plan «panel unificado», ola 3).
+   *
+   * Abrir el turno abre la caja, o adopta la que ya está abierta (POST
+   * /api/turnos). Así que sin turno, todo «Abrir» lleva a Turnos; sólo con el
+   * turno abierto y la caja cerrada lleva a Caja. Antes «Sin caja · Abrir», de
+   * la barra del POS, mandaba a Caja aunque no hubiera turno: abrías la caja,
+   * volvías a cobrar y el aviso «Sin turno abierto» te mandaba a Turnos — dos
+   * viajes para lo mismo, y una caja abierta sin cajero responsable.
+   *
+   * El aviso del POS ya elige bien (manda `navigate-turnos` cuando sabe que no
+   * hay turno); la barra no sabe del turno y por eso decide acá.
+   */
   useEffect(() => {
-    const goCaja = () => setSub("caja-registradora");
-    // Y su gemelo para el turno: el mismo modal ahora también aparece cuando
-    // falta el turno, y ahí lo que hay que abrir está en otra pestaña.
-    const goTurnos = () => setSub("turnos");
-    window.addEventListener("buleje:navigate-caja", goCaja);
-    window.addEventListener("buleje:navigate-turnos", goTurnos);
+    const irAAbrir = () => setSub(turnoAbierto === false ? "turnos" : "caja-registradora");
+    const irATurnos = () => setSub("turnos");
+    window.addEventListener("buleje:navigate-caja", irAAbrir);
+    window.addEventListener("buleje:navigate-turnos", irATurnos);
     return () => {
-      window.removeEventListener("buleje:navigate-caja", goCaja);
-      window.removeEventListener("buleje:navigate-turnos", goTurnos);
+      window.removeEventListener("buleje:navigate-caja", irAAbrir);
+      window.removeEventListener("buleje:navigate-turnos", irATurnos);
     };
-  }, []);
+  }, [turnoAbierto, setSub]);
 
   /**
    * Cerrar el turno tiene UNA sola ventana: la de Turnos (conteo, diferencia y nota).
@@ -154,7 +192,7 @@ export default function POSCajaModule({ initialTab }: { initialTab?: string } = 
         tabs={TABS.map(t => ({
           id: t.id,
           label: t.label,
-          shortLabel: t.shortLabel,
+          title: t.hint,
           icon: t.icon,
         }))}
         activeTab={sub}
@@ -194,20 +232,23 @@ export default function POSCajaModule({ initialTab }: { initialTab?: string } = 
           elevación. Sombra lg para separarlo del contenido que scrollea debajo. */}
       {sub !== "turnos" && (
       <div className="sm:hidden fixed bottom-[calc(72px+env(safe-area-inset-bottom)+12px)] right-4 z-40">
+        {/* 48 px y colores del DS: el blanco sobre turquesa (3,2:1) y sobre rojo -500 no llegaban a AA. */}
         {turnoAbierto ? (
           <button
+            type="button"
             onClick={handleOpenCloseModal}
-            className="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] shadow-[var(--shadow-lg)] transition-colors flex items-center gap-1.5"
+            className={button({ variant: "danger", className: "rounded-xl shadow-[var(--shadow-lg)]" })}
           >
-            <span className="h-2 w-2 rounded-full bg-white/70 animate-pulse" />
-            Cerrar Turno
+            <span className="h-2 w-2 rounded-full bg-white/70 animate-pulse" aria-hidden />
+            Cerrar turno
           </button>
         ) : (
           <button
+            type="button"
             onClick={() => setSub("turnos")}
-            className="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-primary hover:bg-primary-dark shadow-[var(--shadow-lg)] transition-colors flex items-center gap-1.5"
+            className={button({ variant: "primary", className: "rounded-xl shadow-[var(--shadow-lg)]" })}
           >
-            Abrir Turno
+            Abrir turno
           </button>
         )}
       </div>
@@ -216,9 +257,8 @@ export default function POSCajaModule({ initialTab }: { initialTab?: string } = 
       {/* ── CAMBIO 7: Renderizado de contenido por tab ───────────────── */}
       {sub === "pos"               && <POSView />}
       {sub === "turnos"            && <TurnosModule />}
-      {sub === "caja-registradora" && <CashRegisterTab />}
+      {sub === "caja-registradora" && <CashRegisterTab subInicial={subDeCaja} />}
       {sub === "cuentas-cobrar"    && <FiadosModule />}
-      {sub === "arqueo"            && <CashAuditTab onIrACaja={() => setSub("caja-registradora")} />}
       {sub === "comisiones"        && <CommissionCalculator />}
 
       </AdminTabBar>

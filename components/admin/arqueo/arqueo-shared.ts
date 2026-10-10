@@ -1,5 +1,6 @@
 /**
- * Tipos, formatos y mapeo de «Cuadrar caja» (`?tab=ventas-caja&vista=arqueo`).
+ * Tipos, formatos y mapeo de Caja › Cuadrar (`?tab=ventas-caja&vista=caja-registradora&sub=cuadrar`;
+ * hasta la ola 3 del panel unificado era la pestaña `?vista=arqueo`).
  *
  * Sacado de `CashAuditTab.tsx` (695 líneas) al partirlo: la lógica pura vive
  * acá, los componentes sólo dibujan.

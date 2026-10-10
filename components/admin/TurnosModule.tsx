@@ -8,7 +8,7 @@
  *      sistema, diferencias altas).
  *   3. ¿Cómo va el mes? → indicadores plegables y recordados.
  *   4. ¿Qué pasó antes? → historial con sus pestañas y filtros pegados.
- * Lo demás (Excel, meta, nueva cajera, Cuadrar caja) vive en el menú «Más».
+ * Lo demás (Excel, meta, nueva cajera, ir a Caja › Cuadrar) vive en el menú «Más».
  *
  * Partido el 08-10 de 2.244 líneas en `components/admin/turnos/` (datos en
  * use-turnos, cierre en use-cierre-turno, cuentas puras en tipos.ts).
@@ -44,12 +44,18 @@ import {
 } from "./turnos/tipos";
 
 type SubVista = "turnos" | "cajeros";
-const SEGMENTO = "px-3 min-h-9 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5";
+/* Mismo segmento que las secciones de Caja (CajaCabecera): las dos sub-barras de Ventas y caja se ven iguales. */
+const SEGMENTO = "px-3 min-h-9 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap flex items-center gap-1.5";
 
-/** Ir a «Cuadrar caja» del mismo módulo: el hub sigue la URL por popstate (useVistaModulo). */
+/**
+ * Ir a Caja › Cuadrar del mismo módulo: el hub sigue la URL por popstate
+ * (useVistaModulo) y Caja lee su sección de `?sub=`. Hasta la ola 3 del panel
+ * unificado Cuadrar era su propia pestaña (`?vista=arqueo`).
+ */
 function irACuadrarCaja(turnoId?: string) {
   const url = new URL(window.location.href);
-  url.searchParams.set("vista", "arqueo");
+  url.searchParams.set("vista", "caja-registradora");
+  url.searchParams.set("sub", "cuadrar");
   if (turnoId) url.searchParams.set("turno", turnoId);
   window.history.pushState(null, "", url.toString());
   window.dispatchEvent(new PopStateEvent("popstate"));
@@ -147,14 +153,14 @@ export default function TurnosModule() {
       <div className="flex flex-col items-center justify-center py-16 gap-3" role="alert">
         <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)]" aria-hidden />
         <p className="text-sm text-[var(--data-error-500)]">No se pudieron cargar los turnos: {error}</p>
-        <button type="button" onClick={fetchData} className="min-h-10 px-4 rounded-xl text-sm font-semibold text-primary hover:bg-primary/10">Reintentar</button>
+        <button type="button" onClick={fetchData} className="min-h-12 px-4 rounded-xl text-sm font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10">Reintentar</button>
       </div>
     );
   }
 
   const acciones: MenuAccion[] = [
     { id: "excel", label: "Exportar historial", hint: `${filtrados.length} turnos, con los filtros de la tabla`, icon: Download, onSelect: exportar, disabled: filtrados.length === 0 },
-    { id: "cuadrar", label: "Ir a Cuadrar caja", hint: "Conteo y cierre del día", icon: Scale, onSelect: () => irACuadrarCaja() },
+    { id: "cuadrar", label: "Ir a Caja › Cuadrar", hint: "Conteo y cierre del día", icon: Scale, onSelect: () => irACuadrarCaja() },
     { id: "cajera", label: "Nueva cajera", icon: UserPlus, onSelect: () => setShowNuevaCajera(true) },
     { id: "meta", label: "Meta del turno", meta: formatCurrency(metaVentas), icon: Trophy, onSelect: () => setShowMeta(true) },
     { id: "refrescar", label: "Actualizar", icon: RefreshCw, onSelect: fetchData },
@@ -168,7 +174,7 @@ export default function TurnosModule() {
           <InfoTip
             title="Turnos"
             what="Cada turno guarda quién atendió, con cuánto abrió la caja, lo vendido y lo contado al cerrar."
-            affects="Al cerrar el turno se cierra su caja y queda la diferencia. El cierre del día se hace en Cuadrar caja."
+            affects="Al cerrar el turno se cierra su caja y queda la diferencia. El cierre del día se hace en Caja › Cuadrar."
             example="Abre con S/ 200, vende S/ 850 (S/ 500 en efectivo), cuenta S/ 700: caja cuadrada."
           />
         </div>
@@ -180,13 +186,13 @@ export default function TurnosModule() {
               role="tab"
               aria-selected={subVista === id}
               onClick={() => setSubVista(id)}
-              className={cn(SEGMENTO, subVista === id ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]")}
+              className={cn(SEGMENTO, subVista === id ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-[var(--shadow-sm)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]")}
             >
-              <Icono className="h-3.5 w-3.5" aria-hidden /> {label}
+              <Icono className="h-4 w-4" aria-hidden /> {label}
             </button>
           ))}
         </div>
-        <div className="ml-auto"><ActionMenu label="Más" actions={acciones} size="sm" compactoEnMovil /></div>
+        <div className="ml-auto"><ActionMenu label="Más" actions={acciones} size="md" compactoEnMovil /></div>
       </div>
 
       {subVista === "cajeros" ? (

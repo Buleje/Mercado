@@ -1,10 +1,11 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { SectionTitle } from "@buleje/design-system";
 import { AlertTriangle, Download, ExternalLink, MoreHorizontal, RefreshCw } from "@buleje/design-system/icons";
-import ActionMenu from "@/components/admin/shared/action-menu";
+import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { LoadingSpinner } from "@/components/ui-system/LoadingSpinner";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { exportToCSV } from "@/lib/utils";
 import { STATUS_MAP, type CashAudit } from "@/components/admin/arqueo/arqueo-shared";
@@ -17,20 +18,33 @@ import DesdeTurno from "@/components/admin/arqueo/DesdeTurno";
 
 type Props = {
   /**
-   * Lleva a Caja registradora: ahí se abre y se cierra la caja (con el arqueo
-   * guiado), que es de donde salen los cuadres. Antes se llamaba
-   * `onNavigateToTurnos` y el botón decía «Ir a Turnos», pero siempre llevó a
-   * Caja registradora.
+   * Lleva a «Caja de hoy»: ahí se abre y se cierra la caja (con el arqueo
+   * guiado), que es de donde salen los cuadres. Desde la ola 3 del panel
+   * unificado este módulo es la sección «Cuadrar» de Caja, así que es un salto
+   * de sección, no de pestaña.
    */
   onIrACaja?: () => void;
+  /**
+   * Quién dibuja la cabecera. Dentro de Caja (sección «Cuadrar») la arma Caja
+   * en UNA fila con sus secciones: recibe el título con su ⓘ, el botón
+   * «Indicadores» y las acciones, que se suman a su menú «Más». Sin esto, la
+   * fila propia de siempre.
+   */
+  cabecera?: (partes: PartesCabeceraCuadres) => ReactNode;
 };
+
+export interface PartesCabeceraCuadres {
+  titulo: ReactNode;
+  indicadores: ReactNode;
+  acciones: MenuAccion[];
+}
 
 /**
  * «Cuadrar caja»: arriba lo que se mira primero —cuánto debería haber en la
  * caja abierta y el contador—, después los indicadores (plegados y
  * recordados) y abajo el historial con sus filtros.
  */
-export default function CashAuditTab({ onIrACaja }: Props) {
+export default function CashAuditTab({ onIrACaja, cabecera }: Props) {
   const { audits, resumen, loading, error, reload, openRegister, openAudit, openExpectedAmount } = useArqueos();
   const [detail, setDetail] = useState<CashAudit | null>(null);
   const [contadorAbierto, setContadorAbierto] = useState(false);
@@ -47,30 +61,38 @@ export default function CashAuditTab({ onIrACaja }: Props) {
       "cuadres-de-caja",
     );
 
+  const titulo = (
+    <>
+      <SectionTitle>Cuadres de caja</SectionTitle>
+      <InfoTip
+        title="Cuadrar la caja"
+        what="Compara el dinero que debería haber (apertura + ventas en efectivo + ingresos − egresos) con el que cuentas. Cada fila es una caja: abierta o ya cerrada."
+        affects="Los faltantes y sobrantes sólo suman los cuadres donde alguien contó. Una caja cerrada desde «Cerrar turno» sin contar queda como «Cerrada sin conteo»."
+        example="Valentina abre con S/ 200 y vende S/ 350 en efectivo: se esperan S/ 550. Si cuenta S/ 540 → faltante de S/ 10."
+      />
+    </>
+  );
+  const indicadores = <BotonIndicadores abierto={kpisAbiertos} onAlternar={() => setKpisAbiertos((v) => !v)} controla={kpisId} />;
+  /* Dentro de Caja, «Ir a Caja › Hoy» sobra en el menú: la sección «Hoy» está en la misma fila. */
+  const acciones: MenuAccion[] = [
+    { id: "cuadres-refrescar", seccion: "Cuadres", label: "Actualizar los cuadres", icon: RefreshCw, onSelect: reload, disabled: loading },
+    { id: "cuadres-csv", seccion: "Cuadres", label: "Descargar CSV", hint: "Todos los cuadres", icon: Download, onSelect: descargar, disabled: audits.length === 0 },
+    ...(onIrACaja && !cabecera ? [{ id: "cuadres-ir-a-caja", seccion: "Cuadres", label: "Ir a Caja › Hoy", hint: "Abrir o cerrar la caja", icon: ExternalLink, onSelect: onIrACaja }] : []),
+  ];
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <SectionTitle>Cuadres de caja</SectionTitle>
-        <InfoTip
-          title="Cuadrar la caja"
-          what="Compara el dinero que debería haber (apertura + ventas en efectivo + ingresos − egresos) con el que cuentas. Cada fila es una caja: abierta o ya cerrada."
-          affects="Los faltantes y sobrantes sólo suman los cuadres donde alguien contó. Una caja cerrada desde «Cerrar turno» sin contar queda como «Cerrada sin conteo»."
-          example="Valentina abre con S/ 200 y vende S/ 350 en efectivo: se esperan S/ 550. Si cuenta S/ 540 → faltante de S/ 10."
-        />
-        <div className="ml-auto flex items-center gap-2">
-          <BotonIndicadores abierto={kpisAbiertos} onAlternar={() => setKpisAbiertos((v) => !v)} controla={kpisId} />
-          <ActionMenu
-            label="Más acciones"
-            soloIcono
-            icon={MoreHorizontal}
-            actions={[
-              { id: "refrescar", label: "Actualizar", icon: RefreshCw, onSelect: reload, busy: loading },
-              { id: "descargar", label: "Descargar CSV", hint: "Todos los cuadres", icon: Download, onSelect: descargar, disabled: audits.length === 0 },
-              ...(onIrACaja ? [{ id: "caja", label: "Ir a Caja registradora", hint: "Abrir o cerrar la caja", icon: ExternalLink, onSelect: onIrACaja }] : []),
-            ]}
-          />
+      {cabecera ? (
+        cabecera({ titulo, indicadores, acciones })
+      ) : (
+        <div className="flex items-center gap-2">
+          {titulo}
+          <div className="ml-auto flex items-center gap-2">
+            {indicadores}
+            <ActionMenu label="Más acciones" soloIcono size="md" className="w-12" icon={MoreHorizontal} actions={acciones} />
+          </div>
         </div>
-      </div>
+      )}
 
       <DesdeTurno />
 
@@ -86,13 +108,13 @@ export default function CashAuditTab({ onIrACaja }: Props) {
       />
 
       {error ? (
-        <div role="alert" className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--data-error-500)]/30 bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]">
+        <div role="alert" className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--data-error-500)]/30 bg-[var(--data-error-50)] py-1 pl-4 pr-1 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]">
           <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden /> {error}
-          <button type="button" onClick={reload} className="ml-auto min-h-10 px-2 font-bold underline">Reintentar</button>
+          <button type="button" onClick={reload} className="ml-auto min-h-12 rounded-xl px-3 font-bold underline">Reintentar</button>
         </div>
       ) : loading && audits.length === 0 ? (
         <div className="flex justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-8" role="status" aria-label="Cargando cuadres">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <LoadingSpinner size={32} />
         </div>
       ) : (
         <>

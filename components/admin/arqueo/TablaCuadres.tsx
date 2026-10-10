@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { DataTable } from "@buleje/design-system";
 import { Calculator, Eye } from "@buleje/design-system/icons";
+import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
 import { FILTROS, STATUS_MAP, fmt, fmtSigno, horaLima, type CashAudit, type FiltroCuadre } from "./arqueo-shared";
 
@@ -26,8 +27,8 @@ export default function TablaCuadres({ audits, onVer, onIrACaja }: { audits: Cas
         <Calculator className="mx-auto mb-2 h-6 w-6 text-[var(--text-tertiary)]" strokeWidth={1.5} aria-hidden />
         <p className="text-sm font-semibold text-[var(--text-primary)]">Todavía no hay cuadres: aparecen al cerrar una caja.</p>
         {onIrACaja && (
-          <button type="button" onClick={onIrACaja} className="mt-3 inline-flex min-h-10 items-center text-sm font-bold text-[var(--accent-ink)] hover:underline dark:text-[var(--accent)]">
-            Ir a Caja registradora →
+          <button type="button" onClick={onIrACaja} className="mt-3 inline-flex min-h-12 items-center rounded-xl px-2 text-sm font-bold text-[var(--accent-ink)] hover:underline dark:text-[var(--accent)]">
+            Ir a Caja › Hoy →
           </button>
         )}
       </div>
@@ -36,17 +37,18 @@ export default function TablaCuadres({ audits, onVer, onIrACaja }: { audits: Cas
 
   return (
     <section className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-      <div role="group" aria-label="Filtrar cuadres" className="flex flex-wrap gap-1.5 border-b border-[var(--rule-soft)] px-3 py-2">
+      <div role="group" aria-label="Filtrar cuadres" className="flex flex-wrap gap-2 border-b border-[var(--rule-soft)] p-3">
         {FILTROS.map((f) => (
           <button
             key={f.id}
             type="button"
             aria-pressed={filtro === f.id}
             onClick={() => { setFiltro(f.id); setVisibles(PAGINA); }}
-            className={cn(
-              "inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-xs font-bold transition-colors",
-              filtro === f.id ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
-            )}
+            /* Filtro a 48 px (decisión de Brandon 09-10), con el patrón de chips de Pedidos. */
+            className={button({
+              variant: "secondary",
+              className: cn("rounded-xl px-4", filtro === f.id && "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"),
+            })}
           >
             {f.label} <span className="tabular-nums opacity-80">{cuenta[f.id]}</span>
           </button>
@@ -97,7 +99,7 @@ export default function TablaCuadres({ audits, onVer, onIrACaja }: { audits: Cas
 
       {filas.length > visibles && (
         <div className="border-t border-[var(--rule-soft)] p-2 text-center">
-          <button type="button" onClick={() => setVisibles((v) => v + PAGINA)} className="min-h-10 px-4 text-sm font-bold text-[var(--accent-ink)] hover:underline dark:text-[var(--accent)]">
+          <button type="button" onClick={() => setVisibles((v) => v + PAGINA)} className="min-h-12 rounded-xl px-4 text-sm font-bold text-[var(--accent-ink)] hover:underline dark:text-[var(--accent)]">
             Ver {Math.min(PAGINA, filas.length - visibles)} más de {filas.length - visibles}
           </button>
         </div>

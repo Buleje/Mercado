@@ -2,18 +2,31 @@
 
 /**
  * «Me deben» (Fiados): quién te debe, cuánto y desde cuándo; cobrar y
- * recordar en un toque. Vive en Ventas y caja › Me deben y en Mi Plata › Fiados.
+ * recordar en un toque. Casa única: Ventas y caja › Me deben (plan «panel
+ * unificado», ola 3), donde el cajero cobra el fiado a la caja abierta. Mi
+ * Plata muestra el total y enlaza acá; el riesgo de cada cliente («A quién
+ * fiarle») vive en Mi Plata y este módulo enlaza allá.
+ *
+ * Embebido en el hub, su barra (Resumen, Deudores, Cobranza, Análisis) es el
+ * 2.º nivel en `?sub=`. AdminTabBar no dibuja el título de una barra anidada
+ * (module-depth > 0), y la vista quedaba sin ninguno (medido: 0 h2): el título
+ * va en su propia fila con las acciones, como la banda de un módulo con
+ * cuatro pestañas (título … acciones / pestañas).
  *
  * 2026-10-08: partido de 1.449 líneas a este orquestador + `fiados/*`
  * (datos en hooks `use-*`, tabla, ficha, ventana de cobro). Ley de la vista:
- * título y acciones en la MISMA banda que las pestañas (AdminTabBar
- * `heading`), filtros pegados a la tabla, el resto en el menú.
+ * un título, filtros pegados a la tabla, el resto en el menú.
  */
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { Download, HandCoins, MapPin, Plus, Printer, RefreshCw, Rows3 } from "@buleje/design-system/icons";
+import { SectionTitle } from "@buleje/design-system";
+import { Download, Gauge, MapPin, Plus, Printer, RefreshCw, Rows3 } from "@buleje/design-system/icons";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
+import { CLASE_ENLACE_PANEL, EnlacePanel } from "@/components/admin/shared/EnlacePanel";
+import { PermisoDe } from "@/components/admin/shared/PermisoDe";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { button } from "@/components/ui-system/button-variants";
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { escapeDeLaPaginaConFijado } from "@/hooks/use-ventana-de-modal";
 import { tenantCacheKey } from "@/lib/tenant-cache";
@@ -49,7 +62,10 @@ const DENSIDADES: { id: Densidad; label: string }[] = [
   { id: "wide", label: "Amplia" },
 ];
 
-const BOTON_ICONO = "flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]";
+/** Dónde vivía «A quién fiarle» antes de mudarse a Mi Plata › Por cobrar y pagar (plan, §2.2). */
+const ORIGEN_A_QUIEN_FIARLE = ["plata", "scoring", "analytics-pro"] as const;
+
+const BOTON_ICONO = "flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]";
 
 export default function FiadosModule() {
   const estado = useFiados();
@@ -115,14 +131,24 @@ export default function FiadosModule() {
 
   const cabecera = (
     <>
+      {/* El riesgo de cada cliente se mira en Mi Plata (ScoringCrediticio + riesgo IA).
+          Sólo si quien mira puede entrar ahí: el origen de esa vista (regla R2). */}
+      <PermisoDe origen={ORIGEN_A_QUIEN_FIARLE}>
+        <EnlacePanel href="/admin?tab=plata&vista=scoring" title="En Mi Plata: qué tan seguro es fiarle a cada cliente"
+          className={`${CLASE_ENLACE_PANEL} inline-flex min-h-12 items-center gap-1.5 px-1 text-sm`}>
+          <Gauge className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+          A quién fiarle
+        </EnlacePanel>
+      </PermisoDe>
       <button type="button" onClick={fetchFiados} aria-label="Actualizar" title="Actualizar la lista" className={BOTON_ICONO}>
         <RefreshCw className="h-4 w-4" strokeWidth={1.75} aria-hidden />
       </button>
-      <ActionMenu label="Opciones" actions={acciones} soloIcono />
-      <button type="button" onClick={() => { acc.setCreateError(null); acc.setShowNew(true); }}
-        className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-primary px-3 text-sm font-semibold text-white transition-colors hover:bg-primary-dark">
+      <ActionMenu label="Opciones" actions={acciones} soloIcono size="md" className="w-12" />
+      {/* «primary» del DS: blanco sobre turquesa da 3,2:1. En el celular, sólo el ícono. */}
+      <button type="button" onClick={() => { acc.setCreateError(null); acc.setShowNew(true); }} title="Nuevo fiado"
+        className={button({ variant: "primary", className: "rounded-xl max-sm:w-12 max-sm:px-0" })}>
         <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
-        Nuevo fiado
+        <span className="max-sm:sr-only">Nuevo fiado</span>
       </button>
     </>
   );
@@ -132,22 +158,22 @@ export default function FiadosModule() {
 
   return (
     <div className="space-y-5">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex min-w-0 items-center gap-1.5">
+          <SectionTitle>Lo que te deben</SectionTitle>
+          <InfoTip
+            title="Me deben"
+            what="Los fiados de tus clientes: quién te debe, cuánto y desde cuándo; cobranza por tramos, riesgo de morosidad y proyección de cobros."
+            affects="Cobrar un fiado con la caja abierta entra a esa caja como ingreso."
+          />
+        </div>
+        <div className="ml-auto flex flex-wrap items-center gap-2">{cabecera}</div>
+      </div>
+
       {/* Solicitudes de línea de fiado del vecino: sólo aparece si hay pendientes. */}
       <CreditRequestsPanel />
 
-      <AdminTabBar
-        moduleId={FIADOS_MODULE_ID}
-        tabs={tabs}
-        activeTab={activeTab}
-        onTabChange={(id) => setTab(id as FiadoTab)}
-        heading={{
-          title: "Fiados",
-          as: "h2",
-          icon: HandCoins,
-          description: "Créditos a clientes: quién te debe, cobranza por tramos, riesgo de morosidad y proyección de cobros.",
-          actions: cabecera,
-        }}
-      />
+      <AdminTabBar moduleId={FIADOS_MODULE_ID} tabs={tabs} activeTab={activeTab} onTabChange={(id) => setTab(id as FiadoTab)} />
 
       <div role="tabpanel" id={`fiados-panel-${activeTab}`} aria-labelledby={`fiados-tab-${activeTab}`} className="space-y-5">
         {activeTab === "resumen" && !loading && (

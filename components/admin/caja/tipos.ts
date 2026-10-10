@@ -30,7 +30,15 @@ export interface CashRegister {
   movements: CashMovement[];
 }
 
-export type VistaCaja = "current" | "history" | "reconcile" | "auditoria";
+/**
+ * Las secciones de Ventas y caja › Caja, en `?sub=` (2.º nivel; el 1.º es
+ * `?vista=caja-registradora`). «Cuadrar» era la pestaña «Cuadrar caja»
+ * (`?vista=arqueo`) hasta la ola 3 del panel unificado: el link viejo llega
+ * por VISTA_MIGRATION. Antes las otras cuatro eran estado local en inglés
+ * (`current`, `history`…) y no se podían enlazar.
+ */
+export const SUBS_CAJA = ["hoy", "historial", "auditoria", "reconciliacion", "cuadrar"] as const;
+export type VistaCaja = (typeof SUBS_CAJA)[number];
 export type MethodFilter = "all" | "efectivo" | "yape" | "plin" | "tarjeta" | "transferencia";
 export type ModalCaja = "abrir" | "cerrar" | "ingreso" | "egreso" | "arqueo" | "guiado" | "tolerancia" | null;
 
