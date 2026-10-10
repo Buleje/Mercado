@@ -28,8 +28,9 @@ function archivos(dir: string): string[] {
 /** Las formas de leer entregas, y cuánto texto después tiene que aparecer `anuladaAt`. */
 const LECTURAS: { re: RegExp; ventana: number; que: string }[] = [
   { re: /adelantoEntrega\.(findMany|findFirst|findUnique|aggregate|count|groupBy)\(/g, ventana: 300, que: "consulta a la tabla" },
-  /* La relación desde el adelanto: `include`/`select: { entregas: { … } }`. */
-  { re: /\bentregas\s*:\s*\{/g, ventana: 200, que: "relación entregas" },
+  /* La relación desde el adelanto: `include`/`select: { entregas: { … } }`. El mapa de pestañas
+   * viejas (`entregas: { tab: "pedidos" }`, tab-migration.ts) no es una lectura. */
+  { re: /\bentregas\s*:\s*\{(?!\s*tab\s*:)/g, ventana: 200, que: "relación entregas" },
   /* SQL crudo contra la tabla. */
   { re: /"AdelantoEntrega"/g, ventana: 400, que: "SQL crudo" },
 ];
@@ -67,6 +68,7 @@ describe("entregas anuladas", () => {
     expect(lecturasSinFiltro("tx.adelantoEntrega.aggregate({ where: { adelantoId }, _sum: { valor: true } })")).toHaveLength(1);
 
     expect(lecturasSinFiltro("include: { entregas: { where: { anuladaAt: null } } }")).toEqual([]);
+    expect(lecturasSinFiltro('entregas: { tab: "pedidos", vista: "reparto" },')).toEqual([]);
     expect(lecturasSinFiltro('SELECT 1 FROM "AdelantoEntrega" WHERE "anuladaAt" IS NULL')).toEqual([]);
     expect(lecturasSinFiltro("select: { entregasPactadas: true }")).toEqual([]);
   });
