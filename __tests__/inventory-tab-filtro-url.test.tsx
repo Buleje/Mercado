@@ -10,6 +10,10 @@ vi.mock("@/lib/csrf-client", () => ({ csrfHeaders: (h: Record<string, string> = 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() } }));
 vi.mock("@/components/admin/shared/ConfirmDialog", () => ({ useConfirm: () => ({ confirm: async () => true }) }));
 vi.mock("@/components/admin/shared/UndoToast", () => ({ useUndoToast: () => ({ showUndo: vi.fn() }) }));
+// El aviso de stock bajo enlaza a Compras › Sugerencias detrás de un PermisoDe: acá se mide el
+// filtro, no el rol. Sin esto, el fetch de prueba devuelve `[]` a /api/admin/me/specializations
+// y `[].keys` (una función) rompe useEnabledSpecs.
+vi.mock("@/hooks/use-vistas-permitidas", () => ({ usePermisoDe: () => true }));
 
 import InventoryTab from "@/components/admin/InventoryTab";
 

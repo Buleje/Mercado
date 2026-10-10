@@ -28,6 +28,17 @@ export const realCategories = categories.filter(c => c.id !== "todos");
  */
 export const claveCategoria = (c: string | null | undefined) => (c || "otros").toLowerCase().trim();
 
+/**
+ * La búsqueda del Inventario: nombre o código, sin distinguir mayúsculas en
+ * NINGUNO de los dos lados. Antes sólo bajaba lo buscado y el escáner, que
+ * pasa el código tal cual, no encontraba `MU003` (27 de 130 códigos tienen letras).
+ */
+export function coincideBusqueda(p: { name: string; barcode?: string | null }, busqueda: string): boolean {
+  const q = busqueda.trim().toLowerCase();
+  if (!q) return true;
+  return p.name.toLowerCase().includes(q) || (p.barcode?.toLowerCase().includes(q) ?? false);
+}
+
 // ── Estilos compartidos de los modales de producto (minimalista 2026-06-06) ──
 // Borde 1px, fondo blanco, foco con ring sutil — limpio y profesional, sin la
 // densidad de border-2 + ring-4 anterior.

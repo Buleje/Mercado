@@ -4,7 +4,7 @@ import type { DbProduct } from "@/lib/jsondb";
 import { usePagination } from "@/hooks/use-pagination";
 import { formatDateShort } from "@/lib/format";
 import { enRango, rangoActivo, textoDeRango, type ChipFiltro } from "@/lib/admin/filtros-columna";
-import { realCategories, claveCategoria } from "@/components/admin/inventario/inventario-compartido";
+import { realCategories, claveCategoria, coincideBusqueda } from "@/components/admin/inventario/inventario-compartido";
 import { useInventarioEstado } from "@/components/admin/inventario/hooks/use-inventario-estado";
 import { useInventarioCarga } from "@/components/admin/inventario/hooks/use-inventario-carga";
 import { useInventarioImagenes } from "@/components/admin/inventario/hooks/use-inventario-imagenes";
@@ -136,11 +136,7 @@ export function useInventarioFiltros(previo: ReturnType<typeof useInventarioEsta
     // Mejora 8R2: Filtro sin imagen
     if (noImageOnly && p.image && p.image !== "") return false;
     if (faltaDato && !leFalta(p, faltaDato)) return false;
-    if (search) {
-      const q = search.toLowerCase();
-      return p.name.toLowerCase().includes(q) || (p.barcode && p.barcode.includes(q));
-    }
-    return true;
+    return coincideBusqueda(p, search);
   });
 
   const filteredMovements = movements.filter(m => {

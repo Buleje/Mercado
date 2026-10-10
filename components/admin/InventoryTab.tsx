@@ -20,6 +20,7 @@ import InventarioEdicionMasiva from "@/components/admin/inventario/InventarioEdi
 import InventarioVentanas from "@/components/admin/inventario/InventarioVentanas";
 import InventarioCargando from "@/components/admin/inventario/InventarioCargando";
 import dynamic from "next/dynamic";
+import { useState } from "react";
 
 const BarcodeScanner = dynamic(() => import("@/components/admin/BarcodeScanner"), { ssr: false });
 
@@ -29,8 +30,11 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
   const inv = useInventario(headerActions);
   const {
     loading, view, setEditModalProduct, showScanner, setShowScanner, handleBarcodeScan, catLabelOf,
-    filteredProducts,
+    filteredProducts, setSearch,
   } = inv;
+  // El escáner del buscador: el código leído pasa a la búsqueda (que ya mira el código de
+  // barras). El otro escáner, el de «Más acciones», sigue creando un producto nuevo.
+  const [escanerBusca, setEscanerBusca] = useState(false);
 
   if (loading) return <InventarioCargando />;
 
@@ -39,7 +43,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
   // productos, no el cromo.
   return (
     <div className="space-y-4">
-      <InventarioBarra inv={inv} />
+      <InventarioBarra inv={inv} onBuscarConEscaner={() => setEscanerBusca(true)} />
 
       <InventarioResumen inv={inv} />
 
@@ -60,21 +64,25 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
       ) : view === "kanban" ? (
         /* ── Kanban Stock View ────────────────────────────────────── */
         (() => {
+          /* Cada columna con su tono (fondo /10, borde /40: se lee en los dos temas) y la
+             cifra en tinta del mismo tono (Exceso en azul `--data-6`: en /admin el «info» es
+             turquesa como Normal). Antes «Normal» y «Exceso» ponían blanco
+             sobre un turquesa al 10 % y el número no se veía. */
           const columns = [
-            { key: "agotado", label: "Agotado", color: "border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-red-950/20", badgeColor: "bg-[var(--data-error-500)]", filter: (p: DbProduct) => (p.stock ?? 0) === 0 },
-            { key: "bajo", label: "Pocas Existencias", color: "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-amber-950/20", badgeColor: "bg-[var(--data-warning-500)]", filter: (p: DbProduct) => (p.stock ?? 0) > 0 && (p.stock ?? 0) <= (p.stockMin ?? 5) },
-            { key: "normal", label: "Normal", color: "border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15", badgeColor: "bg-primary/10", filter: (p: DbProduct) => (p.stock ?? 0) > (p.stockMin ?? 5) && (p.stock ?? 0) <= (p.stockMax ?? 999) },
-            { key: "exceso", label: "Exceso", color: "border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15", badgeColor: "bg-primary/10", filter: (p: DbProduct) => (p.stock ?? 0) > (p.stockMax ?? 999) },
+            { key: "agotado", label: "Agotado", color: "border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/10", badgeColor: "bg-[var(--data-error-100)] text-[var(--data-error-ink)]", filter: (p: DbProduct) => (p.stock ?? 0) === 0 },
+            { key: "bajo", label: "Pocas existencias", color: "border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10", badgeColor: "bg-[var(--data-warning-100)] text-[var(--data-warning-ink)]", filter: (p: DbProduct) => (p.stock ?? 0) > 0 && (p.stock ?? 0) <= (p.stockMin ?? 5) },
+            { key: "normal", label: "Normal", color: "border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/10", badgeColor: "bg-[var(--data-success-100)] text-[var(--data-success-ink)]", filter: (p: DbProduct) => (p.stock ?? 0) > (p.stockMin ?? 5) && (p.stock ?? 0) <= (p.stockMax ?? 999) },
+            { key: "exceso", label: "Exceso", color: "border-[var(--data-6)]/40 bg-[var(--data-6)]/10", badgeColor: "bg-[var(--surface-raised)] text-[var(--text-primary)] ring-1 ring-inset ring-[var(--data-6)]/40", filter: (p: DbProduct) => (p.stock ?? 0) > (p.stockMax ?? 999) },
           ];
           return (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2 sm:gap-4">
               {columns.map(col => {
                 const items = filteredProducts.filter(col.filter);
                 return (
-                  <div key={col.key} className={cn("rounded-xl border-2 p-3 min-h-50", col.color)}>
+                  <div key={col.key} className={cn("rounded-xl border p-3 min-h-50", col.color)}>
                     <div className="flex items-center justify-between mb-3">
                       <BlockTitle>{col.label}</BlockTitle>
-                      <span className={cn("text-white text-xs font-bold px-2 py-0.5 rounded-full", col.badgeColor)}>{items.length}</span>
+                      <span className={cn("text-xs font-bold tabular-nums px-2 py-0.5 rounded-full", col.badgeColor)}>{items.length}</span>
                     </div>
                     <div className="space-y-2 max-h-[60vh] overflow-y-auto">
                       {items.length === 0 ? (
@@ -86,7 +94,7 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                           onClick={() => { setEditModalProduct(p); }}
                           onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setEditModalProduct(p); } }}>
                           <p className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">
-                            {p.type === "service" && <span className="mr-1 rounded bg-primary/10 px-1 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--accent)]">Serv</span>}
+                            {p.type === "service" && <span className="mr-1 rounded bg-primary/10 px-1 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent-ink)]">Serv.</span>}
                             {p.name}
                           </p>
                           <div className="flex items-center justify-between mt-1">
@@ -107,6 +115,12 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
       {/* Barcode Scanner */}
       {showScanner && (
         <BarcodeScanner onDetected={handleBarcodeScan} onClose={() => setShowScanner(false)} />
+      )}
+      {escanerBusca && (
+        <BarcodeScanner
+          onDetected={(code) => { setEscanerBusca(false); setSearch(code.trim()); }}
+          onClose={() => setEscanerBusca(false)}
+        />
       )}
 
       <InventarioSelectorProductos inv={inv} />
