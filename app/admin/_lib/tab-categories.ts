@@ -95,8 +95,9 @@ export const MODULE_INFO: Partial<
     icon: BotMessageSquare,
     iconColor: "text-[var(--text-secondary)] dark:text-[var(--text-primary)]",
     priority: "medium",
-    desc: "Recomendaciones automáticas de IA sobre el negocio.",
-    tip: "Revísalo antes de tomar decisiones importantes.",
+    // Se fundió en Comandos IA (10-10): el tab abre Asistente IA › Comandos.
+    desc: "Lo que no se vende para rebajarlo y a quién ofrecerle algo, en Comandos IA.",
+    tip: "Qué reponer está en Compras › Sugerencias.",
   },
   "metas-logros": {
     icon: BotMessageSquare,
@@ -400,7 +401,7 @@ export const BASIC_MODULES: TabCategory[] = [
     label: "Inicio",
     icon: Gauge,
     // "asistente-ia" abre AsistenteIAHubModule, que YA contiene Chat / Comandos /
-    // Sugerencias como sub-tabs internas (consolidacion 3->1). Antes el sidebar
+    // Automatizaciones como sub-tabs internas (Sugerencias se fundió en Comandos, 10-10). Antes el sidebar
     // listaba los 3 ids (asistente-ia/ai-command/sugerencias-ia) → 3 enlaces que
     // abrian el MISMO hub. Ahora una sola entrada "Asistente IA"; las otras 2
     // siguen accesibles desde la barra de sub-tabs del hub.

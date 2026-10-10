@@ -255,11 +255,13 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
     { key: "personas", label: "Personas", hint: "Las personas que vio la cámara" },
     { key: "camaras", label: "Cámaras", hint: "Las cámaras conectadas y su señal en vivo" },
   ],
+  // «Sugerencias IA» se fundió el 10-10: lo que no se vende → Comandos ›
+  // Precios en bloque; a quién ofrecerle → Comandos › A quién escribir; qué
+  // reponer → Compras › Sugerencias. `?vista=sugerencias` cae en Comandos.
   "asistente-ia": [
-    { key: "chat", label: "Chat IA", hint: "Pregunta por tu negocio y anota hablando" },
-    { key: "comandos", label: "Comandos IA", hint: "Leer un papel, cambiar precios en bloque y redactar mensajes" },
-    { key: "sugerencias", label: "Sugerencias IA", hint: "Ideas para vender más, qué comprar y a quién ofrecerle" },
-    { key: "automatizaciones", label: "Automatizaciones", hint: "Telegram, WhatsApp y tareas que corren solas" },
+    { key: "chat", label: "Chat IA", hint: "Pregunta por tu negocio, pide ideas y anota hablando" },
+    { key: "comandos", label: "Comandos IA", hint: "Leer un papel, precios en bloque (también lo que no se vende), a quién escribir y qué ofrecerle, y lo que hizo la IA" },
+    { key: "automatizaciones", label: "Automatizaciones", hint: "WhatsApp, Telegram y n8n para anotar desde afuera, y el estado de la IA" },
   ],
   "metas-logros": [
     { key: "metas", label: "Metas", hint: "Tus metas de cada área, cuánto llevas y el período anterior como vara" },
@@ -442,6 +444,15 @@ export const ANIDADAS_POR_MODULO: Readonly<Record<string, readonly SubvistaAnida
     { vista: "tablero", key: "margen", label: "Rentabilidad del CTP", hint: "Margen: venta − costo de lo vendido" },
     { vista: "tablero", key: "rendimiento", label: "Rendimiento del aserradero", hint: "Por especie y por corrida, tu rango, la plata por PT y el simulador", origen: ["forestal-herramientas"] },
     { vista: "despacho", key: "lotes-qr", label: "Lotes comerciales y QR", hint: "Corridas agrupadas en un lote con código, grado, certificado y QR", origen: ["forestal-lotes"] },
+  ],
+  // Asistente IA › Comandos IA (10-10): con la fusión de «Sugerencias IA»,
+  // «lo que no se vende» y «qué ofrecerle» viven acá; se declaran para que el
+  // buscador los encuentre por su nombre.
+  "asistente-ia": [
+    { vista: "comandos", key: "papel", label: "Lee un papel", hint: "Foto de una factura, boleta o lista: la IA la lee y te dice dónde va" },
+    { vista: "comandos", key: "precios", label: "Precios en bloque", hint: "Muchos precios con una frase y lo que no se vende para rebajarlo" },
+    { vista: "comandos", key: "mensajes", label: "A quién escribir", hint: "Fiados por cobrar y clientes a quienes ofrecerles algo, con el mensaje redactado" },
+    { vista: "comandos", key: "historial", label: "Lo que hizo la IA", hint: "Recibos de cada acción de la IA, lo que espera tu OK y deshacer precios" },
   ],
   "loth-libro-operaciones": [
     { vista: "tablero", key: "kardex", label: "Kárdex del permiso", hint: "Cada movimiento de trozas con su saldo" },

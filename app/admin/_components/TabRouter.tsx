@@ -289,7 +289,8 @@ export function TabRouter({
   if (tab === "analytics-pro")  return <AnalisisHubModule key="analytics-pro" initialTab="analytics" />;
   if (tab === "forecasting")    return <AnalisisHubModule key="forecasting" initialTab="forecast" />;
   if (tab === "ai-command")     return <AsistenteIAHubModule key="ai-command" initialTab="comandos" />;
-  if (tab === "sugerencias-ia") return <AsistenteIAHubModule key="sugerencias-ia" initialTab="sugerencias" />;
+  // Sugerencias IA se fundió en Comandos (10-10); el alias de vista no aplica a initialTab.
+  if (tab === "sugerencias-ia") return <AsistenteIAHubModule key="sugerencias-ia" initialTab="comandos" />;
   if (tab === "metas-logros")   return <MetasLogrosModule />;
 
   // ── Crecimiento (Marketing & Fidelización) — hub único ──

@@ -281,6 +281,10 @@ describe("VISTAS_POR_MODULO refleja las pestañas reales de cada módulo", () =>
    * el default sin entender por qué.
    */
   const ANIDADOS: Record<string, { archivo: string; constante: RegExp }> = {
+    "asistente-ia/comandos": {
+      archivo: "components/admin/comandos-ia/ComandosIA.tsx",
+      constante: /const SUBS = \[([^\]]+)\]/,
+    },
     "documentos/contratos": {
       archivo: "components/admin/ContratosModule.tsx",
       constante: /const CONTRATOS_VISTAS = \[([^\]]+)\]/,

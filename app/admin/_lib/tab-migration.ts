@@ -238,4 +238,7 @@ export const VISTA_MIGRATION: Record<string, DestinoTab> = {
   "documentos:cotizaciones": { tab: "facturacion", vista: "cotizaciones" },
   "documentos:guias": { tab: "facturacion", vista: "guias" },
   "documentos:notas": { tab: "facturacion", vista: "notas" },
+  // Asistente IA (10-10): «Sugerencias IA» se fundió en Comandos IA (lo que no
+  // se vende → Precios en bloque; a quién ofrecerle → A quién escribir).
+  "asistente-ia:sugerencias": { tab: "asistente-ia", vista: "comandos" },
 };

@@ -227,6 +227,11 @@ export function useAdminTabs(addRecent: (id: Tab) => void): UseAdminTabsResult {
          */
         if (tabActual === id) {
           window.history.replaceState(null, "", url.toString());
+          // El módulo ya está montado y no se remonta: sus `useVistaModulo`
+          // siguen a la URL sólo por `popstate` (como en `irAEnlace`). Sin
+          // esto, buscar «Comparar proveedores» estando en Compras cambiaba la
+          // URL y no la pantalla (10-10). `state` null: Next lo ignora.
+          if (vista || sub) window.dispatchEvent(new PopStateEvent("popstate"));
         } else {
           window.history.pushState(null, "", url.toString());
         }

@@ -218,7 +218,8 @@ describe("panel — encabezado del módulo en la misma banda que las pestañas",
     "ComprobantesHubModule", "MensajesHubModule", "MetasLogrosModule", "MiTiendaHubModule",
     // RendimientoModule salió en la ola 2 del panel unificado (2026-10-10): ya
     // no tiene barra ni título propios, es contenido de Configuración › Sistema.
-    "POSCajaModule", "SistemaHubModule", "SugerenciasIAModule",
+    // SugerenciasIAModule se borró el 10-10: se fundió en Comandos IA.
+    "POSCajaModule", "SistemaHubModule",
     // Segunda tanda (misma fecha, «todo lo demás»): los que traían acciones en
     // el header (actualizar, reporte bancario, etiquetas, rango de fechas) y
     // las pasan por `heading.actions`.
