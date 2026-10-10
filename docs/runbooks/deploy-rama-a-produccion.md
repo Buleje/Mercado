@@ -86,6 +86,10 @@ Producción tiene 78; la rama, 91 (13 nuevos). Todos diarios. Lima = UTC − 5.
 
 **Cambia de comportamiento**: `auto-close-register` (23:00 UTC = 18:00 Lima) antes miraba sólo `main`; ahora recorre todos los tenants. Cajas abiertas hoy: **Blas desde el 11-06 (108 días)**, QA desde el 04-09 y `demo` desde el 06-09. La primera noche las cierra tomando lo esperado como contado.
 
+### Build sin tsc en Vercel (09-10)
+
+`vercel.json` → `buildCommand` corre `npm run build:notypecheck` (solo `next build`). El `npm run build` completo arranca con `scripts/tsc7.mjs -p tsconfig.build.json`, que ocupó 9,28 GB en 30 s medido local, y la máquina de build de Vercel tiene 8 GB: los previews morían con `exited with 137`. El chequeo de tipos no se pierde: lo corre el pre-commit en cada commit, y `next.config.ts` ya tenía `ignoreBuildErrors: true`.
+
 ### En pausa desde el 09-10 (decisión de Brandon: «proteger a Blas»)
 
 Dos crons salieron de `vercel.json` → `crons`. El código de sus rutas sigue igual, solo dejan de correr solos. Para volver a prenderlos, se repone su entrada:
