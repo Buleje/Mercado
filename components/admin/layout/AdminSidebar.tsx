@@ -21,7 +21,7 @@ import type { Tab } from "@/app/admin/_lib/tabs.types";
 import { preloadTab } from "@/app/admin/_lib/tab-preload";
 import { SECTION_BEFORE, type TabCategory } from "@/app/admin/_lib/tab-categories";
 import { MODULE_INFO, TAB_CATEGORIES } from "@/app/admin/_lib/tab-categories";
-import { SPEC_GATED_MODULE_IDS, useEnabledSpecs } from "@/hooks/use-enabled-specs";
+import { useEnabledSpecs } from "@/hooks/use-enabled-specs";
 import { PillPronto, SidebarFlyout } from "@/components/admin/shared/SidebarFlyout";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import SidebarConfigurator from "@/components/admin/shared/SidebarConfigurator";
@@ -34,6 +34,12 @@ import {
   getVerticalConfig,
   type Industry,
 } from "@/lib/verticals/registry";
+import {
+  estadoDePestana,
+  normalizarOcultas,
+  rubroDelPanel,
+  type ContextoPermiso,
+} from "@/lib/admin/permiso-vista";
 
 // "Ver mi tienda" (storefront público) oculto por defecto — pedido Brandon
 // 2026-05-29: en la barra solo queda "Ver tiendas" (lista del marketplace).
@@ -169,60 +175,19 @@ export const AdminSidebar = React.memo(function AdminSidebar({
     () => getVerticalConfig(industry as Industry | undefined),
     [industry],
   );
-  const verticalEnabledSet = React.useMemo(
-    () => new Set(verticalConfig.modules.enabled.map(String)),
-    [verticalConfig],
-  );
-  const verticalHiddenSet = React.useMemo(
-    () => new Set(verticalConfig.modules.hidden.map(String)),
-    [verticalConfig],
-  );
   const verticalFeaturedSet = React.useMemo(
     () => new Set(verticalConfig.modules.featured.map(String)),
     [verticalConfig],
   );
-  const verticalComingSoonSet = React.useMemo(
-    () => new Set(verticalConfig.modules.comingSoon.map(String)),
-    [verticalConfig],
-  );
+  // Habilitados, ocultos y «Pronto» del tipo de negocio, como capa del permiso.
+  const rubro = React.useMemo(() => rubroDelPanel(industry), [industry]);
 
   // Especializaciones habilitadas para el tenant (ADR-124). El gating real de
-  // los tabs spec-gated (cacao, forestal, salud…) lo hace este feature flag.
+  // los tabs spec-gated (cacao, forestal, salud…) lo hace este feature flag:
+  // son ORTOGONALES al tipo de negocio (se saltan rubro, plan y plantilla) y sólo
+  // aparecen si su spec está prendida (2026-05-29: antes seguían visibles aunque
+  // el superadmin la apagara).
   const { enabledModuleIds: enabledSpecModuleIds } = useEnabledSpecs();
-
-  /** Aplica el filtro vertical sobre una lista de tab ids.
-   *  Si el registry no tiene el tab en enabled → lo omite (oculto silencioso).
-   *  Si está en hidden → omitido.
-   *  Si está en comingSoon → pasa como "comingSoon" (UI disabled).
-   */
-  const applyVerticalFilter = React.useCallback(
-    (tabIds: string[]): { visible: string[]; comingSoon: string[] } => {
-      const visible: string[] = [];
-      const comingSoon: string[] = [];
-      for (const id of tabIds) {
-        // 2026-05-28 ADR-124: SPEC-GATED tabs (forestal CTP, salud, textil…) son
-        // ORTOGONALES a la industry (bypassean el filtro vertical), PERO el gate
-        // real es el feature flag de la spec. 2026-05-29 FIX: antes se hacía
-        // `visible.push(id)` incondicional → el tab seguía visible aunque el
-        // superadmin desactivara la spec. Ahora solo si está habilitada.
-        if (SPEC_GATED_MODULE_IDS.has(id)) {
-          if (enabledSpecModuleIds.has(id)) visible.push(id);
-          continue;
-        }
-        if (verticalHiddenSet.has(id)) continue;
-        if (verticalComingSoonSet.has(id)) {
-          comingSoon.push(id);
-          continue;
-        }
-        // Si enabled set tiene contenido, filtrar por él; si está vacío → mostrar todo (fallback seguro)
-        if (verticalEnabledSet.size === 0 || verticalEnabledSet.has(id)) {
-          visible.push(id);
-        }
-      }
-      return { visible, comingSoon };
-    },
-    [verticalEnabledSet, verticalHiddenSet, verticalComingSoonSet, enabledSpecModuleIds],
-  );
 
   // Modal "Cambiar tipo de negocio" — solo visible para owner/admin
   const [showIndustryModal, setShowIndustryModal] = React.useState(false);
@@ -377,10 +342,31 @@ export const AdminSidebar = React.memo(function AdminSidebar({
     if (typeof window === "undefined") return new Set();
     try {
       const stored = localStorage.getItem("admin-sidebar-hidden-tabs");
-      if (stored) return new Set(JSON.parse(stored) as Tab[]);
+      // Sólo los que siguen siendo pestaña: un id viejo no sigue su alias (ver
+      // `normalizarOcultas`, plan «panel unificado»).
+      if (stored) return normalizarOcultas(JSON.parse(stored) as Tab[], new Set<string>(allTabs.map((t) => t.id)));
     } catch { /* ignore */ }
     return new Set();
   });
+
+  /**
+   * Las capas del permiso de la barra de escritorio (`lib/admin/permiso-vista.ts`).
+   * `allowedTabs` ya trae rol + plan POR ID (useAdminTabsDerived), así que va
+   * como capa de rol y el plan no se vuelve a mirar. Encima: plantilla, tipo de
+   * negocio y especialización. Una pestaña sale si ALGUNA de sus vistas pasa,
+   * cada una evaluada sobre la pestaña de donde vino (regla R2 del plan).
+   */
+  const capaBarra = React.useMemo<ContextoPermiso>(
+    () => ({
+      rol: new Set<string>(allowedTabs),
+      plan: null,
+      plantilla: isHiddenByTemplate,
+      rubro,
+      especialidades: enabledSpecModuleIds,
+      modoFacil: null,
+    }),
+    [allowedTabs, isHiddenByTemplate, rubro, enabledSpecModuleIds],
+  );
 
   /**
    * Qué tabs de una categoría se ven y cuáles salen como «Pronto». UNA fuente
@@ -394,17 +380,18 @@ export const AdminSidebar = React.memo(function AdminSidebar({
    * negocio.
    */
   const tabsDeCategoria = React.useCallback(
-    (category: { tabs: readonly string[] }) =>
-      applyVerticalFilter(
-        category.tabs.filter(
-          (t) =>
-            allowedTabs.includes(t as Tab) &&
-            !hiddenTabs.has(t as Tab) &&
-            !hiddenSubTabs.has(t as Tab) &&
-            !isHiddenByTemplate(t),
-        ),
-      ),
-    [applyVerticalFilter, allowedTabs, hiddenTabs, hiddenSubTabs, isHiddenByTemplate],
+    (category: { tabs: readonly string[] }) => {
+      const visible: string[] = [];
+      const comingSoon: string[] = [];
+      for (const t of category.tabs) {
+        if (hiddenTabs.has(t as Tab) || hiddenSubTabs.has(t as Tab)) continue;
+        const estado = estadoDePestana(capaBarra, t);
+        if (estado === "visible") visible.push(t);
+        else if (estado === "pronto") comingSoon.push(t);
+      }
+      return { visible, comingSoon };
+    },
+    [capaBarra, hiddenTabs, hiddenSubTabs],
   );
 
   // ── Category order (persisted in localStorage) ──

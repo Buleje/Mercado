@@ -10,14 +10,30 @@
  * en la cabina de cada libro, que compone sobre esto.
  *
  * Aplica a los módulos cuya vista es direccionable por `?vista=` (los que usan
- * `useVistaModulo`): el resto no tendría a dónde navegar.
+ * `useVistaModulo`): el resto no tendría a dónde navegar. Los que todavía
+ * cambian de vista con estado local van en `VISTAS_LOCALES_POR_MODULO`.
+ *
+ * Desde el plan «panel unificado» (2026-10-09) también es el registro del
+ * PERMISO por vista: cada una puede declarar su `origen` y
+ * `lib/admin/permiso-vista.ts` decide con eso quién la ve.
  */
+import type { Tab } from "@/app/admin/_lib/tabs.types";
 
 export interface SubvistaModulo {
   key: string;
   label: string;
   /** Qué se hace ahí, en una línea. Alimenta las keywords del buscador. */
   hint: string;
+  /**
+   * Las pestañas donde este contenido se veía ANTES de mudarse acá (regla R2
+   * del plan: el origen, nunca el destino). Plan, plantilla, rubro, rol y Modo
+   * Fácil se evalúan sobre ellas y basta con que pase una. Sin declarar = el
+   * propio módulo, que es lo de siempre.
+   *
+   * Sin esto, juntar pestañas le quita o le regala pantallas a un plan: Básico
+   * desbloquea `activos` y `adelantos` pero `plata` es Pro.
+   */
+  origen?: readonly Tab[];
 }
 
 /** Libro de Operaciones CTP (forestal) — 19 vistas. */
@@ -146,6 +162,99 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
     { key: "produccion", label: "Producción", hint: "Producir según receta y descontar insumos" },
     { key: "recetario", label: "Recetario", hint: "El recetario impreso" },
   ],
+  // ── Hubs que ya leían `?vista=` pero nadie había registrado (ola 1 del plan
+  //    «panel unificado»): sin esto no los conocían ni el buscador, ni la
+  //    medición por vista, ni el permiso por origen. La clave es el tab que
+  //    los abre desde la barra; los tabs alias (`puntos`, `ai-command`,
+  //    `forecasting`, `notas`…) abren el mismo hub parado en otra vista.
+  "whatsapp-inbox": [
+    { key: "whatsapp", label: "WhatsApp", hint: "Conversaciones del número del negocio y respuesta desde el panel" },
+    { key: "chat", label: "Chat con clientes", hint: "Mensajes de los compradores del marketplace" },
+    { key: "soporte", label: "Soporte", hint: "Bandeja de pedidos de ayuda de tus clientes" },
+    { key: "avisos", label: "Avisos por pedido", hint: "Qué mensaje sale solo cuando un pedido cambia de estado" },
+    { key: "plantillas", label: "Plantillas WhatsApp", hint: "Mensajes guardados para mandar con un toque" },
+    { key: "bot", label: "Bot WhatsApp", hint: "Qué contesta solo el número del negocio" },
+  ],
+  campanas: [
+    { key: "campanas", label: "Campañas", hint: "Mensajes y ofertas a un grupo de clientes" },
+    { key: "segmentos", label: "Segmentos", hint: "Clientes agrupados por cómo compran" },
+    { key: "puntos", label: "Puntos & Fidelización", hint: "Puntos por compra y premios para que el cliente vuelva" },
+    { key: "rfm", label: "Análisis RFM", hint: "Quién compra seguido, hace poco y gasta más" },
+    { key: "gift-cards", label: "Gift Cards", hint: "Vender y canjear tarjetas de regalo" },
+    { key: "socio", label: "Socio Buleje", hint: "Programa de socios con beneficios" },
+    { key: "subscriptions", label: "Bodega al Mes", hint: "Pedidos que se repiten cada mes" },
+    { key: "lives", label: "En Vivo", hint: "Ventas en vivo por transmisión" },
+  ],
+  "delivery-partners": [
+    { key: "live", label: "En vivo", hint: "Mapa con los repartidores en la calle" },
+    { key: "pedidos-vivo", label: "Pedidos en vivo", hint: "Los pedidos que están saliendo y quién los lleva" },
+    { key: "repartidores", label: "Repartidores", hint: "Tu equipo de reparto y sus datos" },
+    { key: "solicitudes", label: "Solicitudes", hint: "Quienes postularon para repartir" },
+    { key: "asignaciones", label: "Asignaciones", hint: "Qué pedido va con qué repartidor" },
+    { key: "retiros", label: "Retiros", hint: "Lo que cobran los repartidores por sus entregas" },
+    { key: "ranking", label: "Ranking", hint: "Quién entrega más y mejor" },
+    { key: "permisos", label: "Permisos", hint: "Qué puede hacer cada repartidor" },
+  ],
+  // Las etiquetas de Cámaras salen de un SegmentedControl con conteo
+  // («Fotos (12)») y cambian con el ancho; acá va el nombre largo.
+  camaras: [
+    { key: "fotos", label: "Fotos", hint: "Lo que mandó la cámara del patio, con su hora" },
+    { key: "patio", label: "Hoy en el patio", hint: "Lo que pasó hoy en el patio, hora por hora" },
+    { key: "personas", label: "Personas", hint: "Las personas que vio la cámara" },
+    { key: "camaras", label: "Cámaras", hint: "Las cámaras conectadas y su señal en vivo" },
+  ],
+  "asistente-ia": [
+    { key: "chat", label: "Chat IA", hint: "Pregunta por tu negocio y anota hablando" },
+    { key: "comandos", label: "Comandos IA", hint: "Leer un papel, cambiar precios en bloque y redactar mensajes" },
+    { key: "sugerencias", label: "Sugerencias IA", hint: "Ideas para vender más, qué comprar y a quién ofrecerle" },
+    { key: "automatizaciones", label: "Automatizaciones", hint: "Telegram, WhatsApp y tareas que corren solas" },
+  ],
+  "metas-logros": [
+    { key: "metas", label: "Metas", hint: "Cuánto quieres vender y cuánto llevas" },
+    { key: "hoy", label: "Hoy", hint: "La venta de hoy, hora por hora, contra la meta" },
+    { key: "calendario", label: "Calendario", hint: "Cada día de la semana y del mes contra su meta" },
+    { key: "logros", label: "Logros", hint: "Las rachas y metas que ya cumpliste" },
+  ],
+  "analytics-pro": [
+    { key: "analytics", label: "Analytics Pro", hint: "Ventas, productos y clientes en gráficos" },
+    { key: "forecast", label: "Predicción Demanda", hint: "Cuánto se va a vender y qué reponer" },
+    { key: "inteligencia", label: "Inteligencia", hint: "Indicadores propios, precios del mercado y comparativos" },
+  ],
+  // RRHH muestra según el nivel del negocio (marcar → gestión → completo):
+  // con nivel «marcar» sólo existe Asistencia y una vista más alta cae ahí.
+  rrhh: [
+    { key: "asistencia", label: "Asistencia", hint: "Quién vino hoy y a qué hora marcó" },
+    { key: "personal", label: "Personal", hint: "Los datos de cada persona del equipo" },
+    { key: "ganado", label: "Lo ganado", hint: "Cuánto ganó cada uno según su asistencia" },
+    { key: "contratos", label: "Contratos", hint: "Los contratos del personal y su vencimiento" },
+    { key: "puestos", label: "Puestos", hint: "Los puestos del negocio y su sueldo" },
+  ],
+  tareas: [
+    { key: "tareas", label: "Tareas", hint: "Lo que tiene que hacer el equipo y quién lo hace" },
+    { key: "notas", label: "Notas", hint: "Apuntes rápidos del negocio" },
+  ],
+};
+
+/**
+ * Vistas que existen en pantalla pero el módulo todavía elige con estado local
+ * (`useState`), no con `?vista=`. Van aparte A PROPÓSITO: el buscador global
+ * lee `VISTAS_POR_MODULO`, y ofrecer `?tab=marketplace&vista=ordenes` llevaría
+ * a «Resumen» sin decir nada. El permiso por vista y la matriz de visibilidad
+ * sí las cuentan (`vistasDelModulo`). Cuando el módulo gane `?vista=` (Marketplace,
+ * ola 4) se muda a `VISTAS_POR_MODULO`; lo cuida admin-subvistas-sincronizadas.
+ */
+export const VISTAS_LOCALES_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[]>> = {
+  marketplace: [
+    { key: "resumen", label: "Resumen", hint: "Cómo te va en el marketplace" },
+    { key: "tienda", label: "Mi Tienda Personal", hint: "Cómo se ve tu tienda dentro del marketplace" },
+    { key: "productos", label: "Productos", hint: "Qué productos tuyos están publicados" },
+    { key: "ordenes", label: "Órdenes", hint: "Los pedidos que entraron por el marketplace" },
+    { key: "comisiones", label: "Comisiones", hint: "Lo que cobra la plataforma por cada venta" },
+    { key: "precios", label: "Precios", hint: "Tus precios al lado de los de otras tiendas" },
+    { key: "cupones", label: "Cupones", hint: "Descuentos que valen en el marketplace" },
+    { key: "resenas", label: "Reseñas", hint: "Lo que opinan los compradores del marketplace" },
+    { key: "fidelidad", label: "Fidelidad", hint: "Premios para los compradores que vuelven" },
+  ],
 };
 
 /**
@@ -200,3 +309,18 @@ export const LOTH_VISTAS: readonly SubvistaModulo[] = [
   { key: "extraccion", label: "Extracción", hint: "Censo − tala, trozado y despacho por permiso" },
   { key: "rentabilidad", label: "Rentabilidad y rendimiento", hint: "Margen por especie y por árbol, flujo bosque→producto, anomalías y valor" },
 ];
+
+/**
+ * Las vistas de una pestaña, vengan del registro que vengan: el de los hubs, el
+ * de los que cambian con estado local o la cabina de un libro forestal.
+ *
+ * `Object.hasOwn`, no `mapa[tab]` a secas: con `?tab=constructor` devolvía la
+ * función `Object` (lo cazó el carril de redirecciones en `destino-tab.ts`).
+ */
+export function vistasDelModulo(tab: string): readonly SubvistaModulo[] {
+  if (tab === "ctp-libro-operaciones") return CTP_VISTAS;
+  if (tab === "loth-libro-operaciones") return LOTH_VISTAS;
+  if (Object.hasOwn(VISTAS_POR_MODULO, tab)) return VISTAS_POR_MODULO[tab];
+  if (Object.hasOwn(VISTAS_LOCALES_POR_MODULO, tab)) return VISTAS_LOCALES_POR_MODULO[tab];
+  return [];
+}

@@ -190,6 +190,10 @@ check-tenants.sql
 reports/**
 !reports/visual-baselines/
 !reports/visual-baselines/**
+# Líneas base del plan «panel unificado» (2026-10-09): las leen panel-sin-perdida y
+# censo-ds-trinquete en CI; ignoradas, el test cae con ENOENT fuera de esta PC.
+!reports/panel/
+!reports/panel/**
 
 # Claude Code session metrics — JSON regenerado en cada agente run.
 .claude/agent-metrics.json
