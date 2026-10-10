@@ -38,7 +38,15 @@ Antes de captura + OCR + coordenadas, buscar el control por su **nombre** en el 
 | 3 | `ui_wait {window, name, gone?}` | En vez de `wait` fijo: espera en una sola llamada a que aparezca o se vaya |
 | — | `batch` con pasos `ui_*` | Flujo conocido en UNA llamada; en batch la acción de `ui_act` va en `act` |
 
-- **OCR solo cuando UIA no ve**: contenido de páginas web, apps Java, juegos, barra de tareas auto-oculta. Ahí: `zoom`/`screenshot` → `ocr_screen` → `mouse_click`.
+- **Medido en vivo (09-10)**, «abrir Google y entrar al 2.º resultado»: a la vieja (captura → mirar →
+  desplazar → clic) **31,5 s, 9 llamadas, 5 capturas y 2 tropiezos** (la página se reacomodó al
+  cargar la visión de IA y la rueda cayó en otra ventana); por nombre **~5 s, 1 llamada, 0 capturas**.
+- **Chrome SÍ expone el contenido de la página a UIA** (los resultados de Google son `Hyperlink`; los
+  orgánicos llevan «›» en el nombre: `{role:"Hyperlink", name:"›", index:1}` = 2.º orgánico).
+  `invoke` funciona aunque el enlace esté fuera de la pantalla: no hace falta desplazar.
+- Para confirmar que cambió de página: `ui_wait {role:"Document", name:"<título viejo>", gone:true}`
+  (un `ui_wait` de `Document` a secas encuentra la página vieja al instante).
+- **OCR solo cuando UIA no ve**: apps Java (IBKR probablemente), juegos, barra de tareas auto-oculta. Ahí: `zoom`/`screenshot` → `ocr_screen` → `mouse_click`. La rueda (`scroll`) puede caer en otra ventana: para bajar en Chrome, `press pagedown` con Chrome al frente.
 - `ui_find` sin resultado trae `near` (nombres visibles parecidos): usarlo antes de pedir otra captura.
 - Candados: `keyboard_type`/`ui_act set_value` con `window` abortan si esa ventana no está activa; mouse en la esquina superior izquierda = parada de emergencia; bancos de `config.json` bloquean acciones (no lecturas). Detalle en `C:\Users\Usuario\mcp-desktop-control\README.md`.
 
