@@ -68,13 +68,15 @@ function resumenDelTurno(input) {
 }
 
 // ── Voz (Brandon 09-10: «dictar y escuchar en español») ─────────────────────
-// En vez de la melodía, una voz peruana lee el comienzo de la respuesta. WSLg está
+// En vez de la melodía, una voz cálida (Ava) lee el comienzo de la respuesta. WSLg está
 // apagado a propósito (.wslconfig), así que el audio no puede salir de Ubuntu: el mp3
 // se genera acá (edge-tts, ~1,8 s en caliente) y lo reproduce PowerShell en Windows.
 // Apagar: crear ~/.claude/voz-apagada (vuelve la melodía). Sin internet → melodía.
 const VOZ_APAGADA = join(homedir(), ".claude", "voz-apagada");
 const UVX = join(homedir(), ".local", "bin", "uvx");
-const VOZ = "es-PE-CamilaNeural";
+// Ava (multilingüe, la de Copilot): Brandon la eligió el 09-10 entre 4 muestras por ser la más
+// natural y cálida; lee el español con acento neutro. Antes: es-PE-CamilaNeural.
+const VOZ = "en-US-AvaMultilingualNeural";
 const CARPETA_VOZ_WSL = "/mnt/c/Users/Public/claude-voz";
 const CARPETA_VOZ_WIN = "C:\\Users\\Public\\claude-voz";
 // Dos sesiones que terminan juntas no deben hablar encima: la reproducción hace fila.
@@ -82,7 +84,7 @@ const CANDADO_VOZ = "/tmp/claude-voz.lock";
 
 /** Lo que se lee en voz alta: el primer párrafo de prosa (sin tablas, código ni rutas), ≤ 280 letras. */
 function textoParaLeer(input) {
-  if (input?.hook_event_name === "StopFailure") return "Me detuve por un error. Revisa la terminal.";
+  if (input?.hook_event_name === "StopFailure") return "Brandon, me detuve por un error. Revisa la terminal, por favor.";
   const texto = (input?.last_assistant_message ?? "").trim();
   if (!texto) return "Terminé.";
   const parrafos = [];
@@ -113,7 +115,10 @@ function textoParaLeer(input) {
       .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
       .replace(/`[^`]*`/g, "")
       .replace(/https?:\/\/\S+/g, "")
-      .replace(/S\/\s?/g, "soles ")
+      // Como se dice en voz alta: «S/ 95,00» → «95,00 soles», «8 ms» → «8 milisegundos».
+      .replace(/S\/\.?\s?([\d.,]+)(?:\s*PEN)?/g, "$1 soles")
+      .replace(/S\/\.?\s?/g, "soles ")
+      .replace(/(\d)\s?ms\b/g, "$1 milisegundos")
       .replace(/[→·]/g, ", ")
       .replace(/[*_~]+/g, "")
       .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, "")
@@ -144,7 +149,7 @@ function generarVoz(texto) {
   return new Promise((ok) => {
     execFile(
       UVX,
-      ["edge-tts", "--voice", VOZ, "--rate=+10%", "--text", texto, "--write-media", `${CARPETA_VOZ_WSL}/${nombre}`],
+      ["edge-tts", "--voice", VOZ, "--text", texto, "--write-media", `${CARPETA_VOZ_WSL}/${nombre}`],
       { timeout: 20_000 },
       (err) => ok(err ? null : `${CARPETA_VOZ_WIN}\\${nombre}`),
     );
