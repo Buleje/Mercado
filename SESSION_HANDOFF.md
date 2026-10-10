@@ -10,6 +10,8 @@
 
 **Al retomar:** ola 2 → `Workflow({scriptPath: ".claude/autonomo/panel/panel-ola.js"})` con `args-olas.json["2"]` más `"sp": "<scratchpad de la sesión nueva>"`; después `extraer.mjs` + `commit-tanda.sh` (memoria `panel-unificado-olas-2026-10-09`). Antes de lanzar: `bash .claude/autonomo/panel/vigia-dev.sh <log> <devlog>` en background (el dev se colgó 18:47-20:10 y con 5 carriles a la vez se cayó a las 20:39). Ola 6: no correr O6-B1, O6-B2 ni O6-C1.
 
+**Herramientas (09-10 noche, después del traspaso de arriba):** voz Ava al terminar, al preguntar y al pedir permiso · comandos `/captura` `/foto` `/hoy` `/correo` `/agenda` `/manana` `/video` `/investigar` (en `~/.claude/`) · desktop-control v2.2 por nombre (6× más rápido, medido) · Chrome de Claude (puerto 9222, MCP `chrome-sesion`) · Exa · LocalSend + PowerToys · Win+V, Windows Terminal con Win+° · modo libre por defecto en el usuario, guardia que mira solo lo ejecutable, admin de Windows sin UAC (`~/.claude/bin/admin.sh`) · autosanación del dev, copia nocturna 01:30, revisión de la nube 02:00, limpieza semanal. Detalle: memorias `usar-claude-code-al-maximo-2026-10-09` y `autonomia-maxima-2026-10-09`. **Pasos de Brandon:** sesión nueva, iniciar sesión en «Chrome de Claude», LocalSend en el Galaxy, probar Win+H/Alt+V, «Compactar Ubuntu».
+
 ---
 
 # SESSION HANDOFF — 2026-10-09: noche autónoma MASIVA (admin, superadmin, marketplace) — 30 commits
