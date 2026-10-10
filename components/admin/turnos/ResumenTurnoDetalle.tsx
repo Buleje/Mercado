@@ -10,7 +10,7 @@ import { Clock, CreditCard, DollarSign, ShoppingCart, TrendingDown, TrendingUp }
 import { m } from "@/components/admin/providers";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { comparativoDelTurno, diaConFecha, type Turno, type TurnoSummary } from "./tipos";
+import { comparativoDelTurno, diaConFecha, lineaCajaSigueAbierta, type Turno, type TurnoSummary } from "./tipos";
 
 function Rotulo({ icono: Icono, children }: { icono?: typeof Clock; children: React.ReactNode }) {
   return (
@@ -63,6 +63,7 @@ export function ResumenTurnoDetalle({ resumen: r, historial, metaVentas }: { res
   const pctMeta = metaVentas > 0 ? Math.round((r.totalVentas / metaVentas) * 100) : 0;
   const huecos = r.ventasPorHora && r.ventasPorHora.length >= 2 ? huecosSinVentas(r.ventasPorHora) : null;
   const comp = comparativoDelTurno(historial, r);
+  const cajaSigueAbierta = lineaCajaSigueAbierta(r.cajaLaUsan);
   const esDeHoy = new Date(r.abrioEn).toDateString() === new Date().toDateString();
 
   return (
@@ -103,6 +104,7 @@ export function ResumenTurnoDetalle({ resumen: r, historial, metaVentas }: { res
               </span>
             )}
           </div>
+          {cajaSigueAbierta && <p className="text-sm font-semibold text-[var(--data-info-ink)]">{cajaSigueAbierta}</p>}
           <Fila
             izq="Descuentos"
             der={r.totalDescuentos > 0 ? `${formatCurrency(r.totalDescuentos)} (${pctDescuento.toFixed(1)}%)` : "Sin descuentos"}

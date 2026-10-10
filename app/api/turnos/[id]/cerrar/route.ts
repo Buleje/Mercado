@@ -9,6 +9,8 @@ import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { saldoEsperadoDeCaja } from "@/lib/caja/saldo-esperado";
+import { HORAS_TURNO_OLVIDADO } from "@/lib/caja/cierre-sin-conteo";
 
 const CerrarTurnoSchema = z.object({
   cierreEfectivo: z.number().min(0),
@@ -114,17 +116,38 @@ export async function POST(
     // cierra su caja con arqueo físico (cierreEfectivo) → el register queda
     // cerrado con expectedAmount/difference calculados desde los movimientos
     // REALES (ventas efectivo + ingresos − egresos), no desde inicio+ventas.
+    //
+    // FIX 2026-10-10 (revisor, ALTA): una caja por negocio y varios turnos a la
+    // vez es a propósito (POST /api/turnos adopta la caja abierta). Si otro turno
+    // ABIERTO la usa, cerrar este turno NO cierra la caja: antes se la cerraba
+    // en la cara a la otra cajera y su cierre caía a «inicio + todo lo vendido»
+    // (Yape incluido). La caja se cierra con el último turno o desde Caja. Mismo
+    // criterio que el cron de turnos olvidados: uno abierto hace más de
+    // HORAS_TURNO_OLVIDADO no la retiene. Se pregunta DESPUÉS de cerrar el turno
+    // propio: si dos cierran a la vez, al menos uno ve al otro cerrado y cierra.
     let cashRegister: Awaited<ReturnType<typeof CashRegistersDB.close>> = null;
+    /** La caja sigue abierta porque la usan estos turnos (nombres de quien atiende). */
+    let cajaLaUsan: string[] = [];
+    /** Esperado de la caja que queda abierta: lo que debía haber en el cajón al contar. */
+    let esperadoCajaAbierta: number | null = null;
     if (existing.cashRegisterId) {
       try {
         const reg = await CashRegistersDB.getById(auth.tenantId, existing.cashRegisterId);
         if (reg && reg.status === "abierta") {
-          cashRegister = await CashRegistersDB.close(
-            auth.tenantId,
-            existing.cashRegisterId,
-            parsed.data.cierreEfectivo,
-            `Cierre de turno ${id.slice(-6)}`,
-          );
+          const otros = await TurnosDB.otrosAbiertosEnCaja(auth.tenantId, reg.id, id, {
+            abiertosDesde: new Date(Date.now() - HORAS_TURNO_OLVIDADO * 60 * 60 * 1000),
+          });
+          if (otros.length > 0) {
+            cajaLaUsan = otros.map((o) => o.cajeroNombre);
+            esperadoCajaAbierta = saldoEsperadoDeCaja(reg.openingAmount, reg.movements).esperado;
+          } else {
+            cashRegister = await CashRegistersDB.close(
+              auth.tenantId,
+              existing.cashRegisterId,
+              parsed.data.cierreEfectivo,
+              `Cierre de turno ${id.slice(-6)}`,
+            );
+          }
         }
       } catch (regErr) {
         logger.warn("[turnos/id/cerrar] cierre de caja vinculada falló (no bloqueante)", {
@@ -137,16 +160,20 @@ export async function POST(
     // deben salir de los movimientos reales de caja (incluye ingresos/egresos
     // manuales + solo ventas en EFECTIVO), no de `inicio + ventasTotal` (que
     // ignora egresos y cuenta ventas Yape/tarjeta que no están en el cajón).
-    // Si la caja se cerró, usamos sus números; si no hay caja vinculada,
-    // caemos al cálculo legacy.
+    // Si la caja se cerró, usamos sus números; si sigue abierta porque otro
+    // turno la usa, su esperado de ahora (el conteo es del cajón compartido);
+    // si no hay caja vinculada, caemos al cálculo legacy.
     const expectedAmount = cashRegister?.expectedAmount
+      ?? esperadoCajaAbierta
       ?? (toNumOrZero(existing.inicioEfectivo) + totalVentas);
     const diferencia = cashRegister?.difference
-      ?? (parsed.data.cierreEfectivo - expectedAmount);
+      ?? Math.round((parsed.data.cierreEfectivo - expectedAmount) * 100) / 100;
+    const cajaSigueAbierta = cajaLaUsan.length > 0;
 
     logActivity(
       "Cerrar", "turno",
-      `Turno ${id.slice(-6)} cerrado — ventas: S/${totalVentas.toFixed(2)}, diferencia: S/${diferencia.toFixed(2)}`,
+      `Turno ${id.slice(-6)} cerrado — ventas: S/${totalVentas.toFixed(2)}, diferencia: S/${diferencia.toFixed(2)}`
+        + (cajaSigueAbierta ? ` · la caja sigue abierta: la usa el turno de ${cajaLaUsan.join(", ")}` : ""),
       id, auth.username, undefined, auth.tenantId,
     ).catch((err) => logger.warn("[turnos/id/cerrar] activity log failed", { id, err: String(err) }));
     // La caja que se cerró con el turno también deja su «Cerrar»: es lo que lee
@@ -165,6 +192,9 @@ export async function POST(
       expectedAmount,
       ventasTotal: totalVentas,
       cashRegisterClosed: !!cashRegister,
+      /** La caja no se cerró: la usan estos turnos abiertos. El esperado es el de la caja. */
+      cajaSigueAbierta,
+      cajaLaUsan,
     });
   } catch (e) {
     logger.error("[turnos/id/cerrar] POST error", { err: e instanceof Error ? e.message : String(e) });

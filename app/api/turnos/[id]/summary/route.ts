@@ -20,7 +20,11 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const _rl = await applyRateLimit(req, "MODERATE", "turnos-X-summary"); if (_rl) return _rl;
+  // Lectura que la pestaña Turnos sondea cada 60 s («ventas en vivo») y que el
+  // cierre de un turno SIN caja necesita para su esperado. Con MODERATE (20 cada
+  // 5 min por IP, y en una bodega todas las PC comparten IP) un 429 dejaba ese
+  // turno sin poder cerrarse: SHELL_POLL, el nivel de las lecturas del panel.
+  const _rl = await applyRateLimit(req, "SHELL_POLL", "turnos-X-summary"); if (_rl) return _rl;
   // T9: roles explicitos.
   const auth = await requireAdmin(req, ["admin", "owner", "manager", "cajero"]);
   if (auth instanceof NextResponse) return auth;

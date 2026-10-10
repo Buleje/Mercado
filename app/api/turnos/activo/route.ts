@@ -3,6 +3,8 @@ import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { AdminUsersDB } from "@/lib/db/admin-users.db";
+import { TurnosDB } from "@/lib/db/turnos.db";
+import { HORAS_TURNO_OLVIDADO } from "@/lib/caja/cierre-sin-conteo";
 
 // GET /api/turnos/activo — get currently open turno for authenticated admin
 export async function GET(req: NextRequest) {
@@ -39,6 +41,19 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ turnoActivo: false, turno: null });
     }
 
+    /* Otros turnos abiertos en la MISMA caja (una por negocio, compartida a
+       propósito): al cerrar este turno la caja sigue abierta y la ventana de
+       cierre lo dice antes de contar. Mismo criterio que el cierre. */
+    const cajaCompartidaCon = turno.cashRegisterId
+      ? (await TurnosDB.otrosAbiertosEnCaja(auth.tenantId, turno.cashRegisterId, turno.id, {
+          abiertosDesde: new Date(Date.now() - HORAS_TURNO_OLVIDADO * 60 * 60 * 1000),
+        }).catch((err) => {
+          // El aviso es informativo: si falla, el turno se sigue mostrando.
+          logger.warn("[turnos/activo] otros turnos en la caja", { err: err instanceof Error ? err.message : String(err) });
+          return [];
+        })).map((o) => o.cajeroNombre)
+      : [];
+
     return NextResponse.json({
       turnoActivo: true,
       turno: {
@@ -54,6 +69,7 @@ export async function GET(req: NextRequest) {
         status: turno.status,
         abrioEn: turno.abrioEn.toISOString(),
         minutosActivo: Math.floor((Date.now() - turno.abrioEn.getTime()) / 60000),
+        cajaCompartidaCon,
       },
     });
   } catch (e) {

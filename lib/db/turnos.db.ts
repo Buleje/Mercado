@@ -121,6 +121,34 @@ export const TurnosDB = {
     return row ? mapTurno(row) : null;
   },
 
+  /**
+   * Los OTROS turnos abiertos que usan esa caja, con el nombre de quien atiende.
+   * Una caja por negocio y varios turnos a la vez es a propósito (POST
+   * /api/turnos adopta la caja abierta): cerrar un turno no puede cerrar la caja
+   * en la cara de quien sigue vendiendo. `abiertosDesde` = el criterio del cron
+   * de turnos olvidados (uno olvidado no la retiene).
+   */
+  async otrosAbiertosEnCaja(
+    tenantId: string,
+    cashRegisterId: string,
+    excluirTurnoId: string,
+    opts?: { abiertosDesde?: Date },
+  ): Promise<Array<{ id: string; cajeroNombre: string }>> {
+    if (!tenantId) throw new Error("[TurnosDB.otrosAbiertosEnCaja] tenantId required");
+    const rows = await prisma.turno.findMany({
+      where: {
+        tenantId,
+        cashRegisterId,
+        status: "ABIERTO",
+        id: { not: excluirTurnoId },
+        ...(opts?.abiertosDesde && { abrioEn: { gte: opts.abiertosDesde } }),
+      },
+      orderBy: { abrioEn: "asc" },
+      select: { id: true, adminUser: { select: { name: true, username: true } } },
+    });
+    return rows.map((r) => ({ id: r.id, cajeroNombre: r.adminUser?.name?.trim() || r.adminUser?.username || "otra cajera" }));
+  },
+
   async abrir(data: {
     tenantId: string;
     adminUserId: string;

@@ -502,7 +502,10 @@ export const CashRegistersDB = {
     return { id: caja.id, openedAt: toISO(caja.openedAt), ventas, cuenta };
   },
   async getOpen(tenantId: string): Promise<DbCashRegister | null> {
-    const row = await prisma.cashRegister.findFirst({ where: { tenantId, status: "abierta" }, include: { movements: { orderBy: { createdAt: "desc" } } } });
+    // La MÁS NUEVA, como la muestra la pantalla (`GET /api/cash-registers?limit=1`
+    // ordena por openedAt desc): sin orden, con dos abiertas el fondo que se
+    // mostraba no era el de la caja donde se guardaba.
+    const row = await prisma.cashRegister.findFirst({ where: { tenantId, status: "abierta" }, orderBy: { openedAt: "desc" }, include: { movements: { orderBy: { createdAt: "desc" } } } });
     return row ? mapCashRegister(row) : null;
   },
   async getById(tenantId: string, id: string): Promise<DbCashRegister | null> {

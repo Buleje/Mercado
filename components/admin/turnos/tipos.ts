@@ -28,6 +28,8 @@ export type Turno = {
   esperado?: number | null;
   /** Lo cerró el cron de turnos olvidados, sin conteo. */
   cerradoPorSistema?: boolean;
+  /** Turno abierto: quién más tiene turno abierto en la MISMA caja (al cerrar éste, la caja sigue abierta). */
+  cajaCompartidaCon?: string[];
 };
 
 export type Cajero = { id: string; username: string; name: string; role: string; active: boolean };
@@ -60,7 +62,20 @@ export type TurnoSummary = {
   topProductos: { nombre: string; cantidad: number }[];
   ventasPorHora?: { hora: string; total: number }[];
   totalDescuentos: number;
+  /** El cierre NO cerró la caja: la usan estos turnos abiertos (la diferencia es contra el esperado de la caja). */
+  cajaLaUsan?: string[];
 };
+
+/**
+ * La línea que explica por qué la caja no se cierra con el turno: una caja por
+ * negocio y varios turnos a la vez. `null` si nadie más la usa.
+ */
+export function lineaCajaSigueAbierta(nombres: readonly string[] | undefined): string | null {
+  const n = (nombres ?? []).filter((x) => x.trim() !== "");
+  if (n.length === 0) return null;
+  if (n.length === 1) return `La caja sigue abierta: la usa el turno de ${n[0]}`;
+  return `La caja sigue abierta: la usan los turnos de ${n.slice(0, -1).join(", ")} y ${n[n.length - 1]}`;
+}
 
 // ── Reglas del negocio ───────────────────────────────────────────────────────
 
