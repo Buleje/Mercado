@@ -1,0 +1,271 @@
+{
+  "medido": "2026-10-09T23:45:43.084Z",
+  "nota": "Línea base del trinquete (ADR-489). baja = lo hecho a mano, no puede subir; sube = Button, Kicker, DataTable y AdminModal, no pueden bajar; info = no se exige. Se aprieta con: node scripts/censo-ds-admin.mjs --escribir",
+  "archivos": 2750,
+  "familias": {
+    "titulos": {
+      "SectionTitle": {
+        "n": 150,
+        "sentido": "info"
+      },
+      "CardTitle": {
+        "n": 565,
+        "sentido": "info"
+      },
+      "BlockTitle": {
+        "n": 68,
+        "sentido": "info"
+      },
+      "Kicker": {
+        "n": 84,
+        "sentido": "sube"
+      },
+      "InfoTip": {
+        "n": 742,
+        "sentido": "info"
+      },
+      "rotuloAMano": {
+        "n": 1121,
+        "sentido": "baja"
+      },
+      "h4AMano": {
+        "n": 24,
+        "sentido": "baja"
+      },
+      "titulosLocales": {
+        "n": 23,
+        "sentido": "baja"
+      },
+      "subtituloProps": {
+        "n": 442,
+        "sentido": "info"
+      }
+    },
+    "botones": {
+      "Button": {
+        "n": 0,
+        "sentido": "sube"
+      },
+      "buttonAMano": {
+        "n": 5236,
+        "sentido": "baja"
+      },
+      "constantesBtn": {
+        "n": 170,
+        "sentido": "baja"
+      },
+      "botonesLocales": {
+        "n": 18,
+        "sentido": "baja"
+      },
+      "alturasBoton": {
+        "n": 28,
+        "sentido": "info"
+      }
+    },
+    "filtros": {
+      "filtrosLocales": {
+        "n": 28,
+        "sentido": "baja"
+      },
+      "alturasInput": {
+        "n": 14,
+        "sentido": "baja"
+      },
+      "inputs": {
+        "n": 1846,
+        "sentido": "info"
+      },
+      "selects": {
+        "n": 495,
+        "sentido": "info"
+      },
+      "filtrosColumna": {
+        "n": 91,
+        "sentido": "info"
+      },
+      "SegmentedControl": {
+        "n": 37,
+        "sentido": "info"
+      }
+    },
+    "tablas": {
+      "DataTable": {
+        "n": 212,
+        "sentido": "sube"
+      },
+      "tableAMano": {
+        "n": 54,
+        "sentido": "baja"
+      },
+      "thEstilos": {
+        "n": 29,
+        "sentido": "baja"
+      },
+      "tablasLocales": {
+        "n": 34,
+        "sentido": "baja"
+      },
+      "AdminTable": {
+        "n": 0,
+        "sentido": "info"
+      }
+    },
+    "checks": {
+      "checkboxNativo": {
+        "n": 250,
+        "sentido": "baja"
+      },
+      "switchAMano": {
+        "n": 20,
+        "sentido": "baja"
+      },
+      "checksLocales": {
+        "n": 15,
+        "sentido": "baja"
+      },
+      "Interruptor": {
+        "n": 35,
+        "sentido": "info"
+      },
+      "Casilla": {
+        "n": 18,
+        "sentido": "info"
+      }
+    },
+    "modales": {
+      "AdminModal": {
+        "n": 251,
+        "sentido": "sube"
+      },
+      "overlayAMano": {
+        "n": 123,
+        "sentido": "baja"
+      },
+      "ModalViejo": {
+        "n": 2,
+        "sentido": "baja"
+      },
+      "ModalFooterDuplicado": {
+        "n": 0,
+        "sentido": "baja"
+      },
+      "ModalFooter": {
+        "n": 103,
+        "sentido": "info"
+      },
+      "useModalAccesible": {
+        "n": 141,
+        "sentido": "info"
+      }
+    },
+    "kpis": {
+      "StatCard": {
+        "n": 258,
+        "sentido": "info"
+      },
+      "KpiTile": {
+        "n": 8,
+        "sentido": "baja"
+      },
+      "kpisLocales": {
+        "n": 46,
+        "sentido": "baja"
+      }
+    },
+    "graficos": {
+      "hexEnGraficos": {
+        "n": 114,
+        "sentido": "baja"
+      },
+      "paletasLocales": {
+        "n": 99,
+        "sentido": "baja"
+      },
+      "tooltipsPropios": {
+        "n": 32,
+        "sentido": "baja"
+      },
+      "ejesDistintos": {
+        "n": 7,
+        "sentido": "baja"
+      },
+      "recharts": {
+        "n": 47,
+        "sentido": "info"
+      },
+      "COLOR_CONCEPTO": {
+        "n": 130,
+        "sentido": "info"
+      },
+      "chartPalette": {
+        "n": 12,
+        "sentido": "info"
+      }
+    },
+    "estructura": {
+      "AdminTabBar": {
+        "n": 37,
+        "sentido": "info"
+      },
+      "AdminModuleHeader": {
+        "n": 45,
+        "sentido": "info"
+      },
+      "VistaHeader": {
+        "n": 10,
+        "sentido": "baja"
+      },
+      "tabsLocales": {
+        "n": 4,
+        "sentido": "baja"
+      },
+      "detailsNativo": {
+        "n": 54,
+        "sentido": "baja"
+      },
+      "Plegable": {
+        "n": 6,
+        "sentido": "info"
+      },
+      "useVistaModulo": {
+        "n": 16,
+        "sentido": "info"
+      },
+      "spinnerBloqueAMano": {
+        "n": 51,
+        "sentido": "baja"
+      }
+    },
+    "movimiento": {
+      "duracionesLiterales": {
+        "n": 72,
+        "sentido": "baja"
+      },
+      "easingsLiterales": {
+        "n": 1,
+        "sentido": "baja"
+      },
+      "durationSinToken": {
+        "n": 20,
+        "sentido": "baja"
+      },
+      "transitionAll": {
+        "n": 478,
+        "sentido": "baja"
+      },
+      "durationToken": {
+        "n": 118,
+        "sentido": "info"
+      },
+      "mTags": {
+        "n": 147,
+        "sentido": "info"
+      },
+      "motionTags": {
+        "n": 8,
+        "sentido": "info"
+      }
+    }
+  }
+}

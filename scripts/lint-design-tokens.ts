@@ -39,6 +39,8 @@ type Rule = {
   strictUpgrade?: boolean;
   /** Si se provee, el match solo cuenta cuando devuelve true (reglas que no caben en una regex). */
   filter?: (match: string) => boolean;
+  /** Si se provee, la regla sólo corre en los archivos cuyo contenido entero cumple (p. ej. «importa recharts»). */
+  soloSiArchivo?: (contenido: string) => boolean;
 };
 
 // ─── Escala única de títulos del panel (Brandon 2026-10-08) ────────────────
@@ -497,6 +499,25 @@ const RULES: Rule[] = [
     adminOnly: true,
     strictUpgrade: true,
   },
+  // ── Hex en gráficos (contrato de diseño del panel, ADR-489, 2026-10-09) ────
+  // 114 hex en 20 archivos con recharts: no cambian con el tema oscuro y cada
+  // gráfico elegía su color para el mismo concepto. El tema único vive en
+  // components/admin/shared/chart-palette.ts (COLOR_CONCEPTO, SERIES, EJE, TICK:
+  // tokens --data-*). Sólo en archivos que importan recharts; mira `fill`,
+  // `stroke`, `stopColor`, `color` y los elementos de un array de colores
+  // (`["#00A0A0", …]`, también uno por línea). Warning hasta que la ola 5 corra
+  // `scripts/codemods/hex-graficos.mjs`; después pasa a error.
+  {
+    id: "ds-no-hex-chart",
+    pattern:
+      /\b(?:fill|stroke|stopColor|color)\s*[=:]\s*\{?\s*["'`]#[0-9a-fA-F]{3,8}\b|(?:^|[\[,(])\s*["'`]#[0-9a-fA-F]{3,8}["'`]\s*(?=[,\]]|$)/g,
+    message:
+      "Hex en un gráfico: usá el tema único de components/admin/shared/chart-palette.ts " +
+      "(COLOR_CONCEPTO.ventas, SERIES[i], EJE.texto, TICK) — tokens --data-* que cambian solos en " +
+      "oscuro. Codemod: node scripts/codemods/hex-graficos.mjs --seco --carpeta <carpeta> (ADR-489).",
+    severity: "warning",
+    soloSiArchivo: (contenido) => /from\s+["']recharts["']/.test(contenido),
+  },
 ];
 
 const WHITELIST_PATTERNS: Array<{ file: RegExp; allowedRules: string[] }> = [
@@ -651,6 +672,7 @@ function scan(file: string): Finding[] {
   for (const rawRule of RULES) {
     if (isWhitelisted(file, rawRule.id)) continue;
     if (rawRule.adminOnly && !fileIsAdmin) continue;
+    if (rawRule.soloSiArchivo && !rawRule.soloSiArchivo(content)) continue;
     // Strict mode upgrade: cuando corremos --design-strict, las reglas con
     // strictUpgrade=true se elevan a error (CI gate duro).
     const rule: Rule =

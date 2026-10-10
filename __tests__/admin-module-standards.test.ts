@@ -201,3 +201,101 @@ describe("Admin Modules — Estándares de estructura", () => {
     }
   });
 });
+
+// ── Las pestañas de la barra: la lista sale de TabRouter (contrato de diseño, ADR-489) ──
+//
+// Lo de arriba mira una carpeta (`unified/*Module.tsx`): una pestaña que vive en
+// otra (forestal, cacao, a-medida, OrdersTab, PlanTab…) quedaba fuera del
+// control. Acá la lista son los `import()` de app/admin/_components/TabRouter.tsx
+// —hoy 34—: una pestaña nueva entra sola. Las reglas son las del contrato:
+//   identidad  título de la pestaña: `AdminTabBar heading={{…}}`, `AdminModuleHeader`
+//              (vista única) o `LibroChrome` (libros). Un envoltorio sin barra propia
+//              (SettingsTab → SettingsModule) vale por el módulo que monta.
+//   sinApilar  nunca las dos cosas: header viejo ENCIMA de la barra con título.
+//   moduleId   quien dibuja `AdminTabBar` declara (o importa) su MODULE_ID.
+// DEUDA_TABROUTER = lo que hoy no cumple (medido 2026-10-09). Sólo puede
+// achicarse: si un módulo ya cumple, el test pide sacarlo de la lista.
+
+const RAIZ_REPO = path.resolve(__dirname, "..");
+const TAB_ROUTER = "app/admin/_components/TabRouter.tsx";
+
+type ReglaPestana = "identidad" | "sinApilar" | "moduleId";
+
+const DEUDA_TABROUTER: Record<string, ReglaPestana[]> = {
+  // Dibuja AdminTabBar (con título) pero no tiene MODULE_ID: su pestaña no se recuerda.
+  "components/admin/RecetasModule.tsx": ["moduleId"],
+};
+
+const leerRepo = (rel: string) => fs.readFileSync(path.join(RAIZ_REPO, rel), "utf-8");
+
+function resolverModulo(espec: string): string | null {
+  if (!espec.startsWith("@/")) return null;
+  const base = espec.slice(2);
+  for (const c of [`${base}.tsx`, `${base}/index.tsx`, `${base}.ts`]) {
+    if (fs.existsSync(path.join(RAIZ_REPO, c))) return c;
+  }
+  return null;
+}
+
+/** Los módulos que TabRouter monta con next/dynamic, en su orden. */
+function modulosDeTabRouter(): string[] {
+  const out: string[] = [];
+  for (const m of leerRepo(TAB_ROUTER).matchAll(/dynamic\(\s*\(\)\s*=>\s*import\(\s*["']([^"']+)["']\s*\)/g)) {
+    const r = resolverModulo(m[1]);
+    if (r && !out.includes(r)) out.push(r);
+  }
+  return out;
+}
+
+const conHeaderViejo = (c: string) => /<AdminModuleHeader[\s\n]/.test(c);
+const conTituloEnBanda = (c: string) => /<AdminTabBar\b[\s\S]*?\bheading=\{\{/.test(c);
+const esLibro = (c: string) => /<LibroChrome\b|from ["'][^"']*libro-chrome["']/.test(c);
+const dibujaIdentidad = (c: string) => conTituloEnBanda(c) || conHeaderViejo(c) || esLibro(c);
+
+const REGLAS_PESTANA: Record<ReglaPestana, (rel: string) => boolean> = {
+  identidad: (rel) => {
+    const c = leerRepo(rel);
+    if (dibujaIdentidad(c)) return true;
+    if (/<AdminTabBar\b/.test(c)) return false; // barra propia sin título
+    // Envoltorio: vale la identidad del módulo que monta (import estático o dinámico).
+    const hijos = [...c.matchAll(/(?:from\s+|import\(\s*)["'](@\/components\/admin\/[^"']+)["']/g)]
+      .map((m) => resolverModulo(m[1]))
+      .filter((r): r is string => !!r && /Module(\/index)?\.tsx$/.test(r));
+    return hijos.some((h) => dibujaIdentidad(leerRepo(h)));
+  },
+  sinApilar: (rel) => {
+    const c = leerRepo(rel);
+    return !(conTituloEnBanda(c) && conHeaderViejo(c));
+  },
+  moduleId: (rel) => {
+    const c = leerRepo(rel);
+    if (!/<AdminTabBar\b/.test(c)) return true;
+    return /const _?MODULE_ID\s*=\s*"/.test(c) || /import\s*\{[^}]*\bMODULE_ID\b[^}]*\}/.test(c);
+  },
+};
+
+describe("Pestañas de la barra — las 34 de TabRouter (contrato de diseño)", () => {
+  const modulos = modulosDeTabRouter();
+
+  it("TabRouter monta al menos 30 pestañas (hoy 34)", () => {
+    expect(modulos.length).toBeGreaterThanOrEqual(30);
+  });
+
+  for (const rel of modulos) {
+    for (const regla of Object.keys(REGLAS_PESTANA) as ReglaPestana[]) {
+      const enDeuda = DEUDA_TABROUTER[rel]?.includes(regla) ?? false;
+      it(`${rel.replace(/^components\/admin\//, "")} · ${regla}${enDeuda ? " (deuda conocida)" : ""}`, () => {
+        const cumple = REGLAS_PESTANA[regla](rel);
+        if (enDeuda) {
+          expect(cumple, `${rel} ya cumple «${regla}»: sacalo de DEUDA_TABROUTER`).toBe(false);
+        } else {
+          expect(cumple, `${rel} no cumple «${regla}» (ver la cabecera de este bloque)`).toBe(true);
+        }
+      });
+    }
+  }
+
+  it("DEUDA_TABROUTER sólo nombra módulos que TabRouter monta", () => {
+    for (const rel of Object.keys(DEUDA_TABROUTER)) expect(modulos).toContain(rel);
+  });
+});

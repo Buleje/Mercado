@@ -13,10 +13,25 @@
  * versión clara y oscura. Nada de hex acá.
  *
  * Uso:
- *   import { SERIE, PAGO_COLOR, EJE } from "@/components/admin/shared/chart-palette";
- *   <Line stroke={SERIE.utilidad} />
- *   <XAxis tick={{ fill: EJE.texto }} />
+ *   import { COLOR_CONCEPTO, SERIE, PAGO_COLOR, EJE, TICK } from "@/components/admin/shared/chart-palette";
+ *   import { ChartTooltip } from "@/components/admin/shared/ChartTooltip";
+ *   <Bar dataKey="ventas" fill={COLOR_CONCEPTO.ventas} />
+ *   <XAxis tick={TICK} stroke={EJE.grilla} />
+ *   <Tooltip content={<ChartTooltip formato={soles} />} />
+ *
+ * Tema ÚNICO de los gráficos del panel (contrato de diseño, ADR-489): colores
+ * por concepto (`COLOR_CONCEPTO`), series sin semántica (`SERIES`), neutros
+ * (`EJE`), tamaño de eje (`TICK`) y tooltip (`ChartTooltip.tsx`). Un hex en
+ * `fill`/`stroke` de un archivo con recharts lo marca `ds-no-hex-chart`
+ * (scripts/lint-design-tokens.ts).
  */
+
+/**
+ * Un color por concepto, el mismo en todas las pestañas. Vive en
+ * lib/admin/inicio/formato-tablero.ts (lo importan ~40 archivos desde ahí y
+ * así siguen); acá se reexporta para que el tema esté en un solo import.
+ */
+export { COLOR_CONCEPTO, type ConceptoTablero } from "@/lib/admin/inicio/formato-tablero";
 
 /** Rampa de series genéricas — para gráficos con N series sin semántica fija. */
 export const SERIES = [
@@ -75,3 +90,10 @@ export const EJE = {
   grilla: "var(--rule-base)",
   linea:  "var(--rule-strong)",
 } as const;
+
+/**
+ * Tamaño de eje ÚNICO (hoy conviven 7: 8 a 14 px). 12 px = `--ts-xs`, el del
+ * Inicio. Uso: `<XAxis tick={TICK} />`. Para cambiar el color de un eje
+ * puntual: `tick={{ ...TICK, fill: EJE.linea }}`.
+ */
+export const TICK = { fontSize: 12, fill: EJE.texto } as const;

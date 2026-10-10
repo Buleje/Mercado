@@ -7,12 +7,30 @@
 import { cn } from "@/lib/utils";
 import { CardTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { Check, ChevronDown, Loader2, Save } from "@buleje/design-system/icons";
-import { useLocalStorage } from "@/hooks/use-local-storage";
+import { Check, Save } from "@buleje/design-system/icons";
+import { LoadingSpinner } from "@/components/ui-system/LoadingSpinner";
+import { ALTURA_CONTROL, button } from "@/components/ui-system/button-variants";
+import PlegableDelPanel from "@/components/admin/shared/Plegable";
 
+/**
+ * Lo común a los campos de Ajustes (contrato de diseño, ADR-489): el alto de
+ * control del panel (`ALTURA_CONTROL`, 48 px, decisión de Brandon 09-10), borde
+ * y foco con tokens. Antes eran 44 px y cada campo repetía sus clases.
+ */
+const CLASE_CAMPO = cn(
+  ALTURA_CONTROL.clase,
+  "px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)]",
+  "outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors duration-[var(--dur-fast)]",
+);
+
+/*
+ * La etiqueta va en `--text-secondary` en los dos temas. El `dark:text-muted` de
+ * antes compilaba al gris del tema CLARO (#6b7280, `@theme inline` no lo cambia
+ * en oscuro): 3,29:1 sobre la tarjeta oscura, bajo el 4,5:1 del texto chico.
+ */
 export function FieldLabel({ icon, children, htmlFor }: { icon?: React.ReactNode; children: React.ReactNode; htmlFor?: string }) {
   return (
-    <label htmlFor={htmlFor} className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-muted mb-1.5">
+    <label htmlFor={htmlFor} className="flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] mb-1.5">
       {icon}{children}
     </label>
   );
@@ -29,13 +47,7 @@ export function TextInput({ value, onChange, placeholder, mono, type = "text", d
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
       disabled={disabled}
-      className={cn(
-        "w-full px-3 h-11 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)]",
-        "bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm",
-        "outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors",
-        "disabled:opacity-50 disabled:cursor-not-allowed",
-        mono && "font-mono"
-      )}
+      className={cn("w-full", CLASE_CAMPO, "disabled:opacity-50 disabled:cursor-not-allowed", mono && "font-mono")}
     />
   );
 }
@@ -51,9 +63,9 @@ export function NumberInput({ value, onChange, min, max, step, suffix, id }: {
         value={value}
         onChange={e => onChange(Number(e.target.value))}
         min={min} max={max} step={step}
-        className="flex-1 px-3 h-11 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors font-mono"
+        className={cn("flex-1 font-mono", CLASE_CAMPO)}
       />
-      {suffix && <span className="text-xs text-[var(--text-secondary)] dark:text-muted font-medium shrink-0">{suffix}</span>}
+      {suffix && <span className="text-xs text-[var(--text-secondary)] font-medium shrink-0">{suffix}</span>}
     </div>
   );
 }
@@ -67,37 +79,19 @@ export function SelectInput({ value, onChange, options, id, ariaLabel }: {
       aria-label={ariaLabel}
       value={value}
       onChange={e => onChange(e.target.value)}
-      className="w-full px-3 h-11 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer transition-colors"
+      className={cn("w-full cursor-pointer", CLASE_CAMPO)}
     >
       {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
     </select>
   );
 }
 
-export function Toggle({ enabled, onChange, label, desc, danger }: {
-  enabled: boolean; onChange: (v: boolean) => void; label: string; desc?: string; danger?: boolean;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{label}</p>
-        {desc && <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5">{desc}</p>}
-      </div>
-      <button
-        type="button"
-        aria-label={label}
-        aria-pressed={enabled}
-        onClick={() => onChange(!enabled)}
-        className={cn(
-          "relative w-11 h-6 rounded-full transition-colors shrink-0",
-          enabled ? (danger ? "bg-[var(--data-error-500)]" : "bg-primary") : "bg-gray-300 dark:bg-gray-600"
-        )}
-      >
-        <span aria-hidden="true" className={cn("absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-[var(--surface-raised)] shadow transition-transform", enabled && "translate-x-5")} />
-      </button>
-    </div>
-  );
-}
+/**
+ * El interruptor de Ajustes es el `Interruptor` del DS (contrato de diseño,
+ * ADR-489): salió de acá y vuelve con los mismos props (`enabled`, `onChange`,
+ * `label`, `desc`, `danger`), así que Cobros, Equipo y Tienda no cambian.
+ */
+export { Interruptor as Toggle } from "@/components/ui-system/Interruptor";
 
 /**
  * Tarjeta de un bloque de Ajustes. Ley de la vista (2026-10-08): el título es
@@ -119,6 +113,12 @@ export function SectionCard({ title, desc, accion, children }: {
   );
 }
 
+/**
+ * El botón de guardar de Ajustes = `button()` del DS (ADR-489): 48 px, primario
+ * y, guardado, secundario con el tilde en turquesa. Antes el texto no se leía:
+ * «Guardar cambios» en oscuro era casi blanco sobre blanco (1,11:1) y
+ * «¡Guardado!» en claro, blanco sobre turquesa al 10 % (1,12:1).
+ */
 export function SaveButton({ saving, saved, onClick, label = "Guardar cambios" }: {
   saving: boolean; saved: boolean; onClick: () => void; label?: string;
 }) {
@@ -127,43 +127,26 @@ export function SaveButton({ saving, saved, onClick, label = "Guardar cambios" }
       type="button"
       onClick={onClick}
       disabled={saving}
-      className={cn(
-        "flex items-center gap-2 px-5 min-h-11 rounded-xl font-semibold text-sm transition-all w-full justify-center",
-        saved ? "bg-primary/10 text-white" : "bg-gray-900 dark:bg-white dark:text-[var(--text-primary)] text-white hover:bg-gray-800 dark:hover:bg-gray-100"
-      )}
+      className={button({ variant: saved ? "secondary" : "primary", fullWidth: true })}
     >
-      {saving && !saved ? <><Loader2 className="h-4 w-4 animate-spin" /> Guardando...</> :
-       saved ? <><Check className="h-4 w-4" /> ¡Guardado!</> :
-       <><Save className="h-4 w-4" /> {label}</>}
+      {saving && !saved ? <><LoadingSpinner size={16} /> Guardando...</> :
+       saved ? <><Check className="h-4 w-4 text-[var(--accent-ink)]" aria-hidden /> ¡Guardado!</> :
+       <><Save className="h-4 w-4" aria-hidden /> {label}</>}
     </button>
   );
 }
 
 /**
- * Bloque plegable y recordado (ley del admin, regla 3): plegado sigue mostrando
- * su resumen en una línea. Lo de adentro se monta recién al abrir.
+ * Bloque plegable y recordado de Ajustes: el `Plegable` del panel
+ * (components/admin/shared/Plegable.tsx) con la clave de siempre
+ * («ajustes-plegable-<clave>»), así nadie pierde lo que dejó abierto.
  */
 export function Plegable({ clave, titulo, resumen, children }: {
   clave: string; titulo: string; resumen: string; children: React.ReactNode;
 }) {
-  const [abierto, setAbierto] = useLocalStorage<boolean>(`ajustes-plegable-${clave}`, false);
   return (
-    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden">
-      <CardTitle className="text-sm font-bold">
-        <button
-          type="button"
-          aria-expanded={abierto}
-          onClick={() => setAbierto((v) => !v)}
-          className="w-full flex items-center gap-3 px-5 min-h-14 py-2 text-left hover:bg-[var(--surface-sunken)] transition-colors"
-        >
-          <span className="flex-1 min-w-0">
-            <span className="block">{titulo}</span>
-            <span className="block text-xs font-normal text-[var(--text-secondary)]">{resumen}</span>
-          </span>
-          <ChevronDown className={cn("h-4 w-4 shrink-0 text-[var(--text-tertiary)] transition-transform", abierto && "rotate-180")} aria-hidden />
-        </button>
-      </CardTitle>
-      {abierto && <div className="px-5 pb-5 pt-4 border-t border-[var(--rule-soft)]">{children}</div>}
-    </div>
+    <PlegableDelPanel clave={`ajustes-plegable-${clave}`} titulo={titulo} resumen={resumen}>
+      {children}
+    </PlegableDelPanel>
   );
 }
