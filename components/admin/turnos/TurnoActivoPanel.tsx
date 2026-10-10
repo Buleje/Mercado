@@ -3,9 +3,13 @@
 /**
  * El turno abierto: quién atiende, desde cuándo, con cuánto abrió y lo vendido
  * EN VIVO por medio de pago (antes decía «Ventas S/ 0.00» hasta el cierre).
+ *
+ * 10-10: los datos van sueltos en una fila, no en tarjetas dentro de la
+ * tarjeta, y sin «Atiende» (lo dice la línea de arriba).
  */
-import { Clock, DollarSign, ShoppingCart, Square, User } from "@buleje/design-system/icons";
+import { Clock, DollarSign, Receipt, ShoppingCart, Square } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { button } from "@/components/ui-system/button-variants";
 import { formatCurrency, formatTime } from "@/lib/format";
 import { elapsedTime, type ResumenServidor, type Turno } from "./tipos";
 
@@ -18,11 +22,11 @@ type Props = {
 
 function Dato({ icono: Icono, rotulo, valor, tono }: { icono: typeof Clock; rotulo: string; valor: React.ReactNode; tono?: "exito" }) {
   return (
-    <div className="bg-[var(--surface-raised)] rounded-xl p-3 min-w-0">
-      <p className="flex items-center gap-1.5 text-xs uppercase font-semibold tracking-wide text-[var(--text-tertiary)]">
-        <Icono className="h-3.5 w-3.5" aria-hidden />{rotulo}
-      </p>
-      <p className={`mt-1 text-base font-bold tabular-nums truncate ${tono === "exito" ? "text-[var(--data-success-500)]" : "text-[var(--text-primary)]"}`}>{valor}</p>
+    <div className="min-w-0">
+      <dt className="flex items-center gap-1.5 text-sm font-semibold text-[var(--text-secondary)]">
+        <Icono className="h-4 w-4" aria-hidden />{rotulo}
+      </dt>
+      <dd className={`text-lg font-extrabold tabular-nums truncate ${tono === "exito" ? "text-[var(--data-success-ink)]" : "text-[var(--text-primary)]"}`}>{valor}</dd>
     </div>
   );
 }
@@ -30,7 +34,7 @@ function Dato({ icono: Icono, rotulo, valor, tono }: { icono: typeof Clock; rotu
 export function TurnoActivoPanel({ turno, operador, enVivo, onCerrar }: Props) {
   const vendido = enVivo?.totalVendido ?? turno.ventasTotal;
   return (
-    <section aria-label="Turno abierto" className="rounded-2xl border-2 border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15 p-4 sm:p-5 space-y-4">
+    <section aria-label="Turno abierto" className="rounded-xl border-2 border-[var(--data-success-500)]/30 bg-primary/10 dark:bg-primary/15 p-4 space-y-3">
       <div className="flex items-center gap-3 flex-wrap">
         <span className="h-10 w-10 rounded-xl bg-[var(--data-success-500)] flex items-center justify-center shrink-0" aria-hidden>
           <span className="h-2.5 w-2.5 rounded-full bg-[var(--surface-raised)] animate-pulse" />
@@ -46,23 +50,22 @@ export function TurnoActivoPanel({ turno, operador, enVivo, onCerrar }: Props) {
         <button
           type="button"
           onClick={onCerrar}
-          className="inline-flex items-center gap-2 px-5 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/90 transition-colors shrink-0"
+          className={button({ variant: "danger", className: "rounded-xl shrink-0" })}
         >
           <Square className="h-4 w-4" aria-hidden />
           Cerrar turno
         </button>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        <Dato icono={User} rotulo="Atiende" valor={operador} />
+      <dl className="grid grid-cols-3 gap-3 border-t border-[var(--data-success-500)]/20 pt-3">
         <Dato icono={DollarSign} rotulo="Efectivo inicial" valor={formatCurrency(turno.inicioEfectivo)} />
         <Dato icono={ShoppingCart} rotulo="Vendido" valor={formatCurrency(vendido)} tono="exito" />
-        <Dato icono={Clock} rotulo="Ventas" valor={enVivo ? enVivo.cantidadVentas : "—"} />
-      </div>
+        <Dato icono={Receipt} rotulo="Ventas" valor={enVivo ? enVivo.cantidadVentas : "—"} />
+      </dl>
 
       {enVivo && enVivo.metodosPago.length > 0 && (
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
+          <span className="inline-flex items-center gap-1 text-sm font-semibold text-[var(--text-secondary)]">
             Por medio de pago
             <InfoTip
               title="Ventas del turno por medio de pago"

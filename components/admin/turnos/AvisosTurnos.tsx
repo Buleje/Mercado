@@ -58,7 +58,7 @@ export function AvisosTurnos({ avisos, onCerrarTurno, onVerAlertas }: Props) {
               <InfoTip
                 title="Cerrados por el sistema"
                 what={`Turnos que quedaron abiertos más de ${HORAS_CIERRE_SISTEMA} h (últimos 30 días). Nadie contó la caja.`}
-                affects="Revisa el arqueo de esos días en Caja › Cuadrar."
+                affects="El cuadre de esos días está en Caja › Historial › Por caja."
               />
             </Linea>
           );

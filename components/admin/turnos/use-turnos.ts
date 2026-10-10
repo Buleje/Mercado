@@ -15,6 +15,16 @@ import type { Cajero, ResumenServidor, Turno } from "./tipos";
 
 const REFRESCO_EN_VIVO_MS = 60_000;
 
+export type CajaSinTurno = { abiertaEn: string; fondo: number };
+
+/** La primera fila de `GET /api/cash-registers?limit=1` si es una caja abierta. */
+function cajaSinTurno(datos: unknown): CajaSinTurno | null {
+  const items = (datos as { items?: unknown } | null)?.items;
+  const r = Array.isArray(items) ? (items[0] as { status?: string; openedAt?: string; openingAmount?: number } | undefined) : undefined;
+  if (!r || r.status !== "abierta" || !r.openedAt) return null;
+  return { abiertaEn: r.openedAt, fondo: Number(r.openingAmount ?? 0) };
+}
+
 export function useTurnos() {
   const [turnoActivo, setTurnoActivo] = useState<Turno | null>(null);
   const [historial, setHistorial] = useState<Turno[]>([]);
@@ -26,6 +36,13 @@ export function useTurnos() {
   /** Error al abrir (p. ej. 409 «ya tiene un turno abierto»): va en línea, no reemplaza la pantalla. */
   const [errorAbrir, setErrorAbrir] = useState<string | null>(null);
   const [enVivo, setEnVivo] = useState<ResumenServidor | null>(null);
+  /**
+   * La caja que ya está abierta sin turno (alguien la abrió desde Caja): abrir el
+   * turno la ADOPTA (POST /api/turnos) y su fondo no cambia. El formulario lo dice
+   * y propone ese fondo: sin eso, el turno guardaba otro «efectivo inicial» que el
+   * de la caja con la que se cuadra.
+   */
+  const [cajaAbierta, setCajaAbierta] = useState<CajaSinTurno | null>(null);
   /** Reloj por minuto: el aviso de las 10 h y el «abierto hace» avanzan con la pestaña abierta toda la jornada. */
   const [ahora, setAhora] = useState(() => Date.now());
 
@@ -33,10 +50,13 @@ export function useTurnos() {
     setLoading(true);
     setError(null);
     try {
-      const [activoRes, histRes] = await Promise.all([
+      const [activoRes, histRes, cajaRes] = await Promise.all([
         fetch("/api/turnos/activo"),
         fetch("/api/turnos?status=CERRADO"),
+        // La última caja (una sola fila): ¿está abierta? 403 para los roles sin caja → sin dato.
+        fetch("/api/cash-registers?limit=1").catch((err) => { console.warn("[Turnos] caja abierta", err); return null; }),
       ]);
+      setCajaAbierta(cajaRes?.ok ? cajaSinTurno(await cajaRes.json().catch((err) => { console.warn("[Turnos] caja abierta", err); return null; })) : null);
       if (activoRes.ok) {
         const { turno } = await activoRes.json();
         setTurnoActivo(turno ?? null);
@@ -133,7 +153,7 @@ export function useTurnos() {
   }, []);
 
   return {
-    turnoActivo, historial, cajeros, cajerosLoading, loading, error, errorAbrir, opening, enVivo, ahora,
+    turnoActivo, historial, cajeros, cajerosLoading, loading, error, errorAbrir, opening, enVivo, ahora, cajaAbierta,
     fetchData, abrirTurno, crearCajera,
   };
 }

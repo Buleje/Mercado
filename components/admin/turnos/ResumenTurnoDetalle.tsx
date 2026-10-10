@@ -72,7 +72,7 @@ export function ResumenTurnoDetalle({ resumen: r, historial, metaVentas }: { res
         <div className="grid grid-cols-3 gap-3">
           {[["Total vendido", formatCurrency(r.totalVentas)], ["Ventas", String(r.cantidadVentas)], ["Ticket prom.", formatCurrency(r.ticketPromedio)]].map(([k, v]) => (
             <div key={k}>
-              <p className="text-xs text-[var(--text-secondary)] font-semibold">{k}</p>
+              <p className="text-sm text-[var(--text-secondary)] font-semibold">{k}</p>
               <p className="text-lg font-extrabold text-[var(--text-primary)] tabular-nums">{v}</p>
             </div>
           ))}
@@ -117,7 +117,7 @@ export function ResumenTurnoDetalle({ resumen: r, historial, metaVentas }: { res
           <ol className="space-y-1.5">
             {r.topProductos.map((p, i) => (
               <li key={p.nombre} className="flex items-center gap-2 text-sm">
-                <span className="text-xs font-extrabold text-[var(--text-tertiary)] w-4 text-right">{i + 1}</span>
+                <span className="text-sm font-extrabold text-[var(--text-secondary)] w-4 text-right">{i + 1}</span>
                 <span className="flex-1 text-[var(--text-secondary)] truncate">{p.nombre}</span>
                 <span className="font-bold text-[var(--text-primary)] tabular-nums">x{p.cantidad}</span>
               </li>
@@ -144,12 +144,12 @@ export function ResumenTurnoDetalle({ resumen: r, historial, metaVentas }: { res
           <div className="w-full bg-[var(--rule-soft)] rounded-full h-2.5" role="progressbar" aria-valuenow={Math.min(100, pctMeta)} aria-valuemin={0} aria-valuemax={100} aria-label="Avance de la meta">
             <div className="h-2.5 rounded-full bg-primary transition-all" style={{ width: `${Math.min(100, pctMeta)}%` }} />
           </div>
-          <p className="text-xs text-[var(--text-tertiary)]">Faltaron {formatCurrency(Math.abs(r.totalVentas - metaVentas))}</p>
+          <p className="text-sm text-[var(--text-secondary)]">Faltaron {formatCurrency(Math.abs(r.totalVentas - metaVentas))}</p>
         </div>
       )}
 
       {huecos && (huecos.length === 0 ? (
-        <p className="bg-primary/10 rounded-xl p-3 text-center text-xs font-bold text-[var(--data-success-500)]">Ventas constantes durante todo el turno</p>
+        <p className="bg-primary/10 rounded-xl p-3 text-center text-sm font-bold text-[var(--data-success-ink)]">Ventas constantes durante todo el turno</p>
       ) : (
         <section className="bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/15 border border-[var(--data-warning-500)]/40 rounded-xl p-4 space-y-1">
           <Rotulo icono={Clock}>Tiempo muerto</Rotulo>

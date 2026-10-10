@@ -2,7 +2,10 @@
 
 /**
  * «Resumen del turno»: se abre al cerrar o al tocar un turno del historial.
- * Salidas: ticket de 80 mm, WhatsApp y el paso siguiente del día, Cuadrar caja.
+ * Salidas: ticket de 80 mm, WhatsApp y «Ver en Caja» (Caja › Historial, donde
+ * queda el cuadre de su caja). Hasta el 10-10 el botón decía «Cuadrar caja»,
+ * pero cerrar el turno ya cuenta el efectivo y cierra la caja: llevaba a contar
+ * de nuevo algo que ya estaba contado.
  */
 import { useState } from "react";
 import { MessageCircle, Printer, Scale, Trophy } from "@buleje/design-system/icons";
@@ -18,12 +21,12 @@ type Props = {
   historial: Turno[];
   metaVentas: number;
   onCerrar: () => void;
-  onCuadrarCaja: (r: TurnoSummary) => void;
+  onVerEnCaja: () => void;
 };
 
 const BOTON_SALIDA = "inline-flex items-center justify-center gap-2 min-h-11 px-3 rounded-xl text-sm font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] transition-colors";
 
-export function ResumenTurnoModal({ abierto, resumen, historial, metaVentas, onCerrar, onCuadrarCaja }: Props) {
+export function ResumenTurnoModal({ abierto, resumen, historial, metaVentas, onCerrar, onVerEnCaja }: Props) {
   const [aviso, setAviso] = useState<string | null>(null);
   const r = resumen;
 
@@ -50,10 +53,10 @@ export function ResumenTurnoModal({ abierto, resumen, historial, metaVentas, onC
           <MessageCircle className="h-4 w-4" aria-hidden /> WhatsApp
         </button>
         <span className="hidden sm:block flex-1" aria-hidden />
-        <button type="button" className={`${BOTON_SECUNDARIO} sm:flex-none`} onClick={onCerrar}>Cerrar</button>
-        <button type="button" className={`${BOTON_PRIMARIO} sm:flex-none`} onClick={() => onCuadrarCaja(r)}>
-          <Scale className="h-4 w-4" aria-hidden /> Cuadrar caja
+        <button type="button" className={`${BOTON_SECUNDARIO} sm:flex-none`} title="El cuadre de su caja, en Caja › Historial" onClick={onVerEnCaja}>
+          <Scale className="h-4 w-4" aria-hidden /> Ver en Caja
         </button>
+        <button type="button" className={`${BOTON_PRIMARIO} sm:flex-none`} onClick={onCerrar}>Listo</button>
       </>}
     >
       {aviso && <p role="alert" className="text-sm text-[var(--data-error-500)]">{aviso}</p>}

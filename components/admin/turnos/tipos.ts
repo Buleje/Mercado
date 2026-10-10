@@ -186,7 +186,7 @@ export function turnoConAlerta(t: Turno): boolean {
   return esDiferenciaAnormal(t.diferencia, t.esperado ?? 0);
 }
 
-// ── Estadística por cajero (una sola fuente para «Cajeros» y «Por cajero») ───
+// ── Estadística por cajero (una sola fuente para el ranking de Cajeros y los indicadores) ───
 
 export type StatCajero = {
   id: string;

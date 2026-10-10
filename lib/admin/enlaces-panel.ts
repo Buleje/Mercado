@@ -127,10 +127,12 @@ export const COSAS_DEL_PANEL: Readonly<Record<CosaDelPanel, FilaDeCosa>> = {
   },
   turno: {
     abre: true,
-    /* Ola 3: «Cuadrar caja» es una sección de Caja (`?sub=cuadrar`). El link
-       viejo (`vista=arqueo`) sigue llegando por VISTA_MIGRATION; acá, directo. */
-    destino: (id) => d("ventas-caja", { vista: "caja-registradora", sub: "cuadrar", turno: id }),
-    lector: "components/admin/CashRegisterTab.tsx → Caja › Cuadrar caja (CashAuditTab)",
+    /* El resumen del turno en Turnos › Historial (quién, lo vendido, medios de
+       pago, el corte). Hasta el 10-10 iba a Caja › Cuadrar, que desde ese día es
+       sólo el contador de la caja abierta; el cuadre de su caja está en Caja ›
+       Historial y el resumen lleva ahí con «Ver en Caja». */
+    destino: (id) => d("ventas-caja", { vista: "turnos", sub: "historial", turno: id }),
+    lector: "components/admin/turnos/use-turno-en-url.ts → Turnos › Historial (ResumenTurnoModal)",
   },
   pedido: {
     abre: true,

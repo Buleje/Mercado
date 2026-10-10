@@ -16,6 +16,7 @@ import { m, AnimatePresence } from "@/components/admin/providers";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
 import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
+import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
 
 /** La clase del título de AdminModal (nivel «ventana» de la escala del panel). */
@@ -121,12 +122,13 @@ export function ErrorVentana({ mensaje }: { mensaje: string | null }) {
   if (!mensaje) return null;
   return (
     <div role="alert" className="rounded-xl bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 border border-[var(--data-error-500)]/30 px-4 py-3">
-      <p className="text-sm text-[var(--data-error-500)] font-semibold">{mensaje}</p>
+      <p className="text-sm text-[var(--data-error-ink)] font-semibold">{mensaje}</p>
     </div>
   );
 }
 
-export const BOTON_SECUNDARIO = "flex-1 min-h-11 px-4 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] disabled:opacity-50 transition-colors";
-export const BOTON_PRIMARIO = "flex-1 flex items-center justify-center gap-2 min-h-11 px-4 rounded-xl text-base font-semibold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors";
-export const BOTON_PELIGRO = "flex-1 flex items-center justify-center gap-2 min-h-11 px-4 rounded-xl text-base font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)]/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors";
+export const BOTON_SECUNDARIO = "flex-1 inline-flex items-center justify-center gap-2 min-h-12 px-4 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] disabled:opacity-50 transition-colors";
+/* El primario del DS (oscuro en claro, claro en oscuro): el blanco sobre turquesa daba 3,2:1 (10-10). */
+export const BOTON_PRIMARIO = button({ variant: "primary", className: "flex-1 min-h-12 px-4 rounded-xl text-base" });
+export const BOTON_PELIGRO = button({ variant: "danger", className: "flex-1 min-h-12 px-4 rounded-xl text-base disabled:cursor-not-allowed" });
 export const INPUT_VENTANA = "w-full h-12 px-4 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all";

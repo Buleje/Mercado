@@ -1,6 +1,6 @@
 "use client";
 
-/** Calendario de la semana en curso (lunes a domingo), con el turno abierto incluido. */
+/** Sección «Semana»: la semana en curso (lunes a domingo), con el turno abierto incluido. */
 import { formatCurrency, formatTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { cajeroColor, cajeroColorText, DIAS_SEMANA, type Turno } from "./tipos";
@@ -24,7 +24,7 @@ export function turnosDeLaSemana(turnos: Turno[], ahora = new Date()): Map<numbe
 export function TurnosSemana({ turnos, nombreDe }: { turnos: Turno[]; nombreDe: (t: Turno) => string }) {
   const semana = turnosDeLaSemana(turnos);
   if (semana.size === 0) {
-    return <p className="p-6 text-center text-sm text-[var(--text-tertiary)]">Esta semana todavía no hay turnos.</p>;
+    return <p className="p-6 text-center text-sm text-[var(--text-secondary)]">Esta semana todavía no hay turnos.</p>;
   }
   return (
     <div className="overflow-x-auto">
@@ -38,7 +38,7 @@ export function TurnosSemana({ turnos, nombreDe }: { turnos: Turno[]; nombreDe: 
                 {delDia.length === 0 ? (
                   <p className="text-sm text-[var(--text-tertiary)] text-center py-3">—</p>
                 ) : delDia.map((t) => (
-                  <div key={t.id} className="rounded-lg p-2 text-xs leading-tight" style={{ backgroundColor: cajeroColor(t.adminUserId), color: cajeroColorText(t.adminUserId) }}>
+                  <div key={t.id} className="rounded-lg p-2 text-sm leading-tight" style={{ backgroundColor: cajeroColor(t.adminUserId), color: cajeroColorText(t.adminUserId) }}>
                     <p className="font-semibold truncate">{nombreDe(t)}</p>
                     <p className="opacity-80">{formatTime(t.abrioEn)}{t.cerroEn ? ` - ${formatTime(t.cerroEn)}` : " - abierto"}</p>
                     <p className="font-bold tabular-nums">{formatCurrency(t.ventasTotal)}</p>
