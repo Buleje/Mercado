@@ -15,9 +15,10 @@ import type { Filtros } from "./filtros";
 
 export type Cambiar = (cambio: Partial<Filtros>) => void;
 
+/** Píldora de categoría (contrato 10-10): la elegida en cacao (en oscuro, nude); el color cambia en 200 ms. */
 const PILDORA =
-  "inline-flex h-12 items-center gap-2 whitespace-nowrap rounded-full border-2 px-5 text-base font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]";
-const ACTIVA = "border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--surface-canvas)]";
+  "inline-flex h-11 items-center gap-2 whitespace-nowrap rounded-full border px-4 text-[15px] font-semibold transition-[background-color,border-color,color,transform] duration-[var(--mu-dur-corto)] ease-[var(--mu-ease)] active:scale-[.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--mu-foco)] sm:px-5";
+const ACTIVA = "border-[var(--mu-boton-fondo)] bg-[var(--mu-boton-fondo)] text-[var(--mu-boton-texto)]";
 const INACTIVA = "border-[var(--rule-base)] bg-[var(--surface-raised)] hover:-translate-y-0.5 hover:border-[var(--text-primary)]";
 
 /** Clic normal → filtra sin recargar; con Ctrl/⌘/Shift o clic central, el navegador hace lo suyo. */
@@ -34,7 +35,7 @@ function Pildora({ activa, href, alElegir, texto, n, vino = false }: { activa: b
     <a href={href} onClick={alClic(alElegir)} aria-current={activa || undefined} className={`${PILDORA} ${activa ? ACTIVA : `${INACTIVA} ${vino ? "text-[var(--mu-acento-tinta)]" : "text-[var(--text-primary)]"}`}`}>
       {texto}
       <span
-        className={`inline-flex h-7 items-center rounded-full px-2.5 text-sm font-bold tabular-nums ${activa ? "bg-[var(--surface-canvas)]/15" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"}`}
+        className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full px-2 text-[13px] font-semibold tabular-nums ${activa ? "bg-[var(--mu-boton-texto)]/15" : "bg-[var(--mu-nude-claro)] text-[var(--text-secondary)]"}`}
       >
         <span className="sr-only">(</span>
         {n}
@@ -60,7 +61,8 @@ export function Pildoras({
   const visibles = categorias.filter((c) => (cuentas.porCategoria.get(c) ?? 0) > 0 || f.categoria === c);
   return (
     <nav aria-label="Categorías del catálogo">
-      <ul className="mu-sin-barra -mx-4 flex gap-2 overflow-x-auto px-4 py-1.5 sm:mx-0 sm:flex-wrap sm:px-0">
+      {/* `relative`: los `.sr-only` de las píldoras (absolutos) se medían contra la página y no contra el carril: a 400 px la estiraban a 658. */}
+      <ul className="mu-sin-barra relative -mx-4 flex gap-2 overflow-x-auto px-4 py-1.5 sm:mx-0 sm:flex-wrap sm:px-0">
         <li className="shrink-0">
           <Pildora activa={f.categoria === null} href={href({ categoria: null })} alElegir={() => cambiar({ categoria: null })} texto="Todo" n={cuentas.todos} />
         </li>
@@ -92,14 +94,14 @@ export function FiltrosPuestos({ f, cambiar }: { f: Filtros; cambiar: Cambiar })
   if (chips.length === 0 || (chips.length === 1 && f.categoria)) return null;
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="text-base text-[var(--text-secondary)]">Filtrando por</span>
+      <span className="text-[15px] text-[var(--text-secondary)]">Filtrando por</span>
       {chips.map((c) => (
         <button
           key={c.texto}
           type="button"
           onClick={() => cambiar(c.quitar)}
           aria-label={`Quitar el filtro ${c.texto}`}
-          className="inline-flex h-11 items-center gap-2 rounded-full bg-[var(--mu-nude-claro)] pl-4 pr-3 text-base font-semibold text-[var(--text-primary)] transition hover:bg-[var(--mu-nude)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+          className="inline-flex h-11 items-center gap-2 rounded-full bg-[var(--mu-nude-claro)] pl-4 pr-3 text-[15px] font-semibold text-[var(--text-primary)] transition-colors duration-[var(--mu-dur-corto)] hover:bg-[var(--mu-rosa-claro)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--mu-foco)]"
         >
           {c.texto}
           <X className="h-4 w-4" aria-hidden="true" />
@@ -109,7 +111,7 @@ export function FiltrosPuestos({ f, cambiar }: { f: Filtros; cambiar: Cambiar })
         <button
           type="button"
           onClick={() => cambiar({ q: "", categoria: null, oferta: false, marca: null, disponibles: false })}
-          className="inline-flex h-11 items-center px-2 text-base font-semibold text-[var(--text-primary)] underline underline-offset-4 hover:text-[var(--mu-acento-tinta)]"
+          className="inline-flex h-11 items-center px-2 text-[15px] font-semibold text-[var(--text-primary)] underline decoration-[var(--mu-rosa)] decoration-2 underline-offset-4 hover:text-[var(--mu-acento-tinta)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--mu-foco)]"
         >
           Limpiar todo
         </button>

@@ -15,8 +15,8 @@ import { ChevronLeft, ChevronRight } from "@buleje/design-system/icons";
  * 3 en tablet, 4-5 en escritorio (3 si la fila va al lado de una foto).
  */
 const ANCHO_ITEM = {
-  completo: "w-[58%] sm:w-[31%] lg:w-[calc((100%_-_3*1.25rem)/4)] xl:w-[calc((100%_-_4*1.25rem)/5)]",
-  angosto: "w-[58%] sm:w-[31%] lg:w-[calc((100%_-_2*1.25rem)/3)]",
+  completo: "w-[58%] sm:w-[31%] lg:w-[calc((100%_-_3*1.5rem)/4)] xl:w-[calc((100%_-_4*1.5rem)/5)]",
+  angosto: "w-[58%] sm:w-[31%] lg:w-[calc((100%_-_2*1.5rem)/3)]",
 } as const;
 
 /**
@@ -62,8 +62,9 @@ export function Carril({
     el.scrollBy({ left: dir * el.clientWidth * 0.85, behavior: "smooth" });
   };
 
+  // Flechas de la marca: papel con filete y la sombra flotante; al pasar el mouse se rellenan en cacao.
   const flecha =
-    "absolute top-[38%] z-10 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-md transition hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] md:flex aria-disabled:pointer-events-none aria-disabled:opacity-0";
+    "mu-sombra-flotante absolute top-[38%] z-10 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] transition duration-[var(--mu-dur-corto)] ease-[var(--mu-ease)] hover:border-[var(--mu-boton-fondo)] hover:bg-[var(--mu-boton-fondo)] hover:text-[var(--mu-boton-texto)] active:scale-[.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--mu-foco)] md:flex aria-disabled:pointer-events-none aria-disabled:opacity-0";
 
   return (
     <div className="relative">
@@ -72,7 +73,7 @@ export function Carril({
         role="region"
         aria-label={etiqueta}
         tabIndex={0}
-        className="mu-sin-barra -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-3 pt-1 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--accent)] sm:-mx-6 sm:scroll-px-6 sm:gap-5 sm:px-6 lg:mx-0 lg:scroll-px-0 lg:px-0"
+        className="mu-sin-barra -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-3 pt-1 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--mu-foco)] sm:-mx-6 sm:scroll-px-6 sm:gap-6 sm:px-6 lg:mx-0 lg:scroll-px-0 lg:px-0"
       >
         {inicio && <div className={`shrink-0 snap-start lg:hidden ${ANCHO_ITEM[ancho]}`}>{inicio}</div>}
         {Children.map(children, (hijo) => (

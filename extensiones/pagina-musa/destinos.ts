@@ -62,6 +62,20 @@ export function rellenar(texto: string, valores: Record<string, string | null>):
 /** «S/ 43.90» — el mismo formato de moneda del resto de la tienda. */
 export const soles = (n: number): string => formatCurrency(n);
 
+/** «S/ 159» sin céntimos cuando el precio es entero (vitrina editorial); «S/ 43.90» si no. */
+export const solesCortos = (n: number): string => (Number.isInteger(n) ? `S/ ${n}` : soles(n));
+
+/** El WhatsApp para leerlo: 51921585006 → «921 585 006». Sin número, null. */
+export function numeroVisible(whatsapp: string | null): string | null {
+  if (!whatsapp) return null;
+  const local = whatsapp.startsWith("51") && whatsapp.length === 11 ? whatsapp.slice(2) : whatsapp;
+  return local.length === 9 ? `${local.slice(0, 3)} ${local.slice(3, 6)} ${local.slice(6)}` : local;
+}
+
+/** La fecha de hoy en Perú («2026-11-09»): las campañas empiezan y terminan a la hora de Lima, no del servidor. */
+export const hoyEnLima = (ahora: Date = new Date()): string =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: "America/Lima", year: "numeric", month: "2-digit", day: "2-digit" }).format(ahora);
+
 /** El mensaje de WhatsApp para reservar un servicio: qué, cuánto dura y cuánto cuesta. */
 export const mensajeReserva = (s: Pick<ProductoSalon, "nombre" | "duracion" | "precio">) =>
   `Hola, quiero reservar: ${s.nombre}${s.duracion ? ` (${s.duracion})` : ""} — ${soles(s.precio)}. ¿Qué horarios tienen disponibles?`;

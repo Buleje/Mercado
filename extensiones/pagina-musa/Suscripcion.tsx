@@ -39,14 +39,17 @@ export function Suscripcion() {
   if (estado === "hecho") {
     return (
       <p className="inline-flex items-center gap-2 text-base font-semibold text-[var(--mu-sobre-cacao)]" role="status">
-        <Check className="h-5 w-5 text-[var(--mu-acento)]" aria-hidden="true" /> ¡Listo! Te avisaremos de las novedades y ofertas.
+        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--mu-oro)] text-[var(--mu-cacao)]">
+          <Check className="h-4 w-4" strokeWidth={2.6} aria-hidden="true" />
+        </span>
+        ¡Listo, linda! Te avisaremos de las novedades y ofertas.
       </p>
     );
   }
 
   return (
     <form onSubmit={enviar} className="flex w-full flex-col gap-2">
-      <label htmlFor="mu-correo" className="text-base text-[var(--mu-sobre-cacao-2)]">
+      <label htmlFor="mu-correo" className="text-[15px] text-[var(--mu-sobre-cacao-2)]">
         Ofertas, lanzamientos y tips de cuidado, una vez por semana.
       </label>
       <div className="flex gap-2">
@@ -61,13 +64,13 @@ export function Suscripcion() {
             if (estado === "error") setEstado("listo");
           }}
           placeholder="tu@correo.com"
-          className="h-12 w-full rounded-full border-2 border-[var(--mu-sobre-cacao)]/25 bg-transparent px-5 text-base text-[var(--mu-sobre-cacao)] placeholder:text-[var(--mu-sobre-cacao-2)] focus:border-[var(--mu-sobre-cacao)] focus:outline-none"
+          className="h-12 w-full rounded-full border border-[var(--mu-sobre-cacao)]/30 bg-[var(--mu-sobre-cacao)]/[.06] px-5 text-[15px] text-[var(--mu-sobre-cacao)] transition-colors duration-[var(--mu-dur-corto)] placeholder:text-[var(--mu-sobre-cacao-2)] focus:border-[var(--mu-oro)] focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--mu-oro)]"
         />
         <button
           type="submit"
           disabled={estado === "enviando"}
           aria-label="Suscribirme"
-          className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--mu-sobre-cacao)] text-[var(--mu-cacao)] transition hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--mu-sobre-cacao)] disabled:opacity-60"
+          className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--mu-sello-nude)] text-[var(--mu-sello-m)] transition duration-[var(--mu-dur-corto)] ease-[var(--mu-ease)] hover:scale-105 active:scale-[.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--mu-oro)] disabled:opacity-60"
         >
           <ArrowRight className="h-5 w-5" aria-hidden="true" />
         </button>
