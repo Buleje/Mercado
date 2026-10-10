@@ -277,6 +277,17 @@ export interface AvanceMetaDTO {
   parcial?: string;
   /** Una línea extra para el ⓘ («12 ventas y 3 pedidos»). */
   detalle?: string;
+  /** El período anterior completo, cuando se pidió (`conAnterior`): la vara del objetivo. */
+  anterior?: AnteriorMetaDTO;
+}
+
+/** Lo que dio el período anterior entero de una meta («setiembre 2026: S/ 24 100»). */
+export interface AnteriorMetaDTO {
+  /** `null` = no se pudo medir. */
+  avance: number | null;
+  desde: string;
+  hasta: string;
+  etiqueta: string;
 }
 
 export interface RespuestaAvance {

@@ -262,7 +262,7 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
     { key: "automatizaciones", label: "Automatizaciones", hint: "Telegram, WhatsApp y tareas que corren solas" },
   ],
   "metas-logros": [
-    { key: "metas", label: "Metas", hint: "Cuánto quieres vender y cuánto llevas" },
+    { key: "metas", label: "Metas", hint: "Tus metas de cada área, cuánto llevas y el período anterior como vara" },
     { key: "hoy", label: "Hoy", hint: "Cuánto te falta hoy para la meta, a qué ritmo llegas y con cuánto cierras" },
     { key: "calendario", label: "Calendario", hint: "Cada día de la semana y del mes contra su meta" },
     { key: "logros", label: "Logros", hint: "Lo que ganaste, lo próximo por ganar y tus récords" },

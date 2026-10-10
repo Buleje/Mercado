@@ -2,15 +2,16 @@
  * components/admin/metas/clases-meta.ts — las clases que comparten la vista de
  * metas, la tarjeta, el modal y las plantillas (ADR-488).
  *
- * Botones de 40 px (h-10) como mínimo: los de 28 px de la pantalla vieja no se
- * acertaban con el dedo. Color sólo por tokens; el verde/ámbar/rojo del estado
+ * Botones y chips de 48 px (h-12, 10-10): los de 28 px de la pantalla vieja no
+ * se acertaban con el dedo y los de 40 seguían cortos; Hoy, Calendario y
+ * Logros ya los subían a mano con `h-12`. Color sólo por tokens; el verde/ámbar/rojo del estado
  * es el de los datos (`--data-*`), con su par -700/-500 para leerse en claro y
  * en oscuro.
  */
 import type { EstadoMeta } from "@/lib/admin/metas-periodo";
 
 const BOTON =
-  "inline-flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-4 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40";
+  "inline-flex h-12 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-4 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40";
 
 /** `--accent-dark` es el mismo teal oscuro en los dos temas: el blanco encima da AA. */
 export const BOTON_PRIMARIO = `${BOTON} bg-[var(--accent-dark)] text-white shadow-sm hover:brightness-110`;
@@ -18,14 +19,14 @@ export const BOTON_SECUNDARIO = `${BOTON} border border-[var(--rule-base)] bg-[v
 
 /** Chip de filtro o de elección (período, plantilla). */
 export function claseChip(activo: boolean): string {
-  return `inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 ${
+  return `inline-flex h-12 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 ${
     activo
       ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-ink)] dark:text-[var(--accent)]"
       : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
   }`;
 }
 
-/** El select de área de la cabecera y los campos del modal (el alto lo pone cada uso: h-10 o h-11). */
+/** El select de la cabecera y los campos del modal (el alto lo pone cada uso: h-12). */
 export const CAMPO =
   "w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none transition-[border-color,box-shadow] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-muted)] placeholder:text-[var(--text-tertiary)]";
 

@@ -66,9 +66,9 @@ export default function MetasLogrosModule() {
           icon: Target,
           description: (
             <span>
-              Cada meta pertenece a un área del negocio (Ventas, Compras, Marketplace, Aserradero, Bosque…) y su avance sale
-              solo de tus datos del período. Hoy: cuánto te falta para la meta del día, a qué ritmo llegas y con cuánto
-              cierras. Calendario: cada día del mes contra tu meta diaria. Logros: lo que ganaste, lo próximo y tus récords.
+              Metas: créalas y síguelas en todas las áreas del negocio (Ventas, Compras, Marketplace, Aserradero, Bosque…),
+              con su avance sacado de tus datos y el período anterior como vara. Hoy: cuánto te falta para la meta del día y
+              con cuánto cierras. Calendario: cada día del mes contra tu meta. Logros: lo que ganaste, lo próximo y tus récords.
             </span>
           ),
         }}

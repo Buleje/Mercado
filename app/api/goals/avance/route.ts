@@ -19,6 +19,9 @@ import { ROLES_AVANCE } from "@/lib/metas/roles";
  * - `?category=&period=&unit=[&target=]` → la vista previa del modal: una sola
  *   medición, con id `vista-previa`, sin guardar nada.
  * - `?fresco=1` salta la caché (botón «Actualizar»).
+ * - `?anterior=1` suma a cada una el período anterior entero (`anterior`): la
+ *   vista Metas y el modal lo usan como vara del objetivo. Hoy y Calendario no
+ *   lo piden (no leen de más).
  *
  * Roles: el avance es plata del negocio (ventas, compras, gastos, caja): los
  * que leen ventas Y gastos en la matriz — admin, dueño, encargado y analista.
@@ -40,6 +43,7 @@ export async function GET(req: NextRequest) {
 
   const sp = req.nextUrl.searchParams;
   const fresco = sp.get("fresco") === "1";
+  const conAnterior = sp.get("anterior") === "1";
   const hoy = limaDateKey();
   const pideVistaPrevia = ["category", "period", "unit", "target"].some((k) => sp.has(k));
 
@@ -57,7 +61,7 @@ export async function GET(req: NextRequest) {
       );
     }
     try {
-      const avance = await avanceDePrueba(auth.tenantId, parsed.data, hoy, { fresco });
+      const avance = await avanceDePrueba(auth.tenantId, parsed.data, hoy, { fresco, conAnterior });
       const cuerpo: RespuestaAvance = { hoy, avances: [avance] };
       return NextResponse.json(cuerpo, { headers: SIN_CACHE });
     } catch (e) {
@@ -68,7 +72,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const metas = await AdminGoalsDB.listar(auth.tenantId);
-    const cuerpo: RespuestaAvance = { hoy, avances: await avanceDeMetas(auth.tenantId, metas, hoy, { fresco }) };
+    const cuerpo: RespuestaAvance = { hoy, avances: await avanceDeMetas(auth.tenantId, metas, hoy, { fresco, conAnterior }) };
     return NextResponse.json(cuerpo, { headers: SIN_CACHE });
   } catch (e) {
     logger.error("[goals/avance] GET", { tenantId: auth.tenantId, err: e instanceof Error ? e.message : String(e) });

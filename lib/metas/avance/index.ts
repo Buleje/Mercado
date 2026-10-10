@@ -15,7 +15,7 @@
 import "server-only";
 import { getOrSet, invalidate } from "@/lib/cache";
 import { logger } from "@/lib/logger";
-import { categoriaDe, normalizarUnidad, type AvanceMetaDTO } from "@/lib/admin/metas-catalogo";
+import { categoriaDe, normalizarUnidad, type AnteriorMetaDTO, type AvanceMetaDTO } from "@/lib/admin/metas-catalogo";
 import {
   estadoDeMeta,
   porcentajeDeMeta,
@@ -24,7 +24,7 @@ import {
   type EstadoMeta,
   type VentanaMeta,
 } from "@/lib/admin/metas-periodo";
-import type { CategoriaMeta, MetaDTO, PeriodoMeta } from "@/lib/admin/metas-tareas";
+import { sumarDiasAFecha, type CategoriaMeta, type MetaDTO, type PeriodoMeta } from "@/lib/admin/metas-tareas";
 import { CALCULADORAS_COMERCIALES } from "./comercial";
 import { CALCULADORAS_FORESTALES } from "./forestal";
 import {
@@ -51,6 +51,12 @@ const SIN_RITMO: ReadonlySet<CategoriaMeta> = new Set<CategoriaMeta>(["ticket_pr
 export interface OpcionesAvance {
   /** Salta la caché y vuelve a leer (botón «Actualizar»). */
   fresco?: boolean;
+  /**
+   * También mide el período ANTERIOR entero («setiembre cerró en S/ 24 100»):
+   * la vara para saber si el objetivo es realista. Lo piden la vista Metas y
+   * el modal; la ventana ya cerró, así que va con la caché larga (600 s).
+   */
+  conAnterior?: boolean;
 }
 
 /** Lo que identifica qué medir; la meta guardada y la vista previa del modal lo comparten. */
@@ -111,6 +117,37 @@ function ventanaSegura(q: QueMedir, hoy: string): VentanaMeta {
   }
 }
 
+/**
+ * Lo que dio el período anterior completo (el mismo largo, justo antes de la
+ * ventana). En la meta de un día, el MISMO día de la semana pasada: un sábado
+ * contra el viernes de ayer no dice si el objetivo es realista. La meta a mano
+ * no tiene historia: lo anotado es de este período. Si la lectura falla, no
+ * hay comparación (nunca un 0 inventado).
+ */
+async function anteriorDe(
+  tenantId: string,
+  q: QueMedir,
+  v: VentanaMeta,
+  hoy: string,
+  memo: MemoLectura,
+  fresco: boolean,
+): Promise<AnteriorMetaDTO | undefined> {
+  if (q.category === "manual") return undefined;
+  const va = ventanaDeMeta(q.period, hoy, sumarDiasAFecha(v.desde, q.period === "diario" ? -7 : -1));
+  try {
+    const m = await medir(tenantId, { category: q.category, period: q.period, unit: q.unit }, va, memo, fresco);
+    return { avance: m.valor, desde: va.desde, hasta: va.hasta, etiqueta: va.etiqueta };
+  } catch (e) {
+    logger.warn("[metas-avance] no se pudo medir el período anterior", {
+      tenantId,
+      category: q.category,
+      period: q.period,
+      err: e instanceof Error ? e.message : String(e),
+    });
+    return undefined;
+  }
+}
+
 function sinDato(id: string, v: VentanaMeta): AvanceMetaDTO {
   return {
     id,
@@ -135,8 +172,16 @@ export async function avanceDeMetas(
   if (!tenantId) throw new Error("tenantId is required");
   const memo = crearMemoLectura();
   const ventanas = metas.map((m) => ventanaSegura(m, hoy));
+  const fresco = !!opciones.fresco;
   const resultados = await Promise.allSettled(
-    metas.map(async (meta, i) => armar(meta.id, meta, meta.target, ventanas[i]!, await medir(tenantId, meta, ventanas[i]!, memo, !!opciones.fresco))),
+    metas.map(async (meta, i) => {
+      const v = ventanas[i]!;
+      const [m, anterior] = await Promise.all([
+        medir(tenantId, meta, v, memo, fresco),
+        opciones.conAnterior ? anteriorDe(tenantId, meta, v, hoy, memo, fresco) : undefined,
+      ]);
+      return { ...armar(meta.id, meta, meta.target, v, m), ...(anterior ? { anterior } : {}) };
+    }),
   );
   return resultados.map((r, i) => {
     if (r.status === "fulfilled") return r.value;
@@ -171,8 +216,13 @@ export async function avanceDePrueba(
     return armar(ID_VISTA_PREVIA, consulta, q.target ?? null, v, { valor: null, detalle: "En una meta a mano el avance lo escribes tú." });
   }
   try {
-    const m = await medir(tenantId, consulta, v, crearMemoLectura(), !!opciones.fresco);
-    return armar(ID_VISTA_PREVIA, consulta, q.target ?? null, v, m);
+    const memo = crearMemoLectura();
+    const fresco = !!opciones.fresco;
+    const [m, anterior] = await Promise.all([
+      medir(tenantId, consulta, v, memo, fresco),
+      opciones.conAnterior ? anteriorDe(tenantId, consulta, v, hoy, memo, fresco) : undefined,
+    ]);
+    return { ...armar(ID_VISTA_PREVIA, consulta, q.target ?? null, v, m), ...(anterior ? { anterior } : {}) };
   } catch (e) {
     logger.error("[metas-avance] vista previa falló", {
       tenantId,

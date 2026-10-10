@@ -44,8 +44,8 @@ export const AL_PERIODO: Readonly<Record<PeriodoMeta, string>> = {
 };
 
 // Escritos a mano: `toLocaleDateString("es-PE")` depende del ICU del runtime y dice «septiembre».
-const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "setiembre", "octubre", "noviembre", "diciembre"] as const;
-const DIAS_SEMANA = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"] as const;
+export const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "setiembre", "octubre", "noviembre", "diciembre"] as const;
+export const DIAS_SEMANA = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"] as const;
 
 export interface VentanaMeta {
   /** Primer día medido, "YYYY-MM-DD" (Lima), inclusive. */

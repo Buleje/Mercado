@@ -11,7 +11,7 @@
  * Lo abren la vista de metas, sus plantillas y la vista Hoy («Ponle una meta
  * al día», con `preset`).
  */
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Target } from "@buleje/design-system/icons";
 import { toast } from "sonner";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
@@ -37,6 +37,8 @@ export interface ModalMetaProps {
   meta?: MetaDTO;
   /** Arranca en esta categoría y período (y, si vienen, con este objetivo y nombre). */
   preset?: PresetMeta;
+  /** «objetivo»: se abre con el objetivo enfocado y seleccionado (el «de S/ 30,000» de la tarjeta). */
+  enfocar?: "objetivo";
   onGuardada?: (meta: MetaDTO) => void;
 }
 
@@ -80,8 +82,18 @@ function cuerpo(f: FormMeta, editando: boolean) {
   };
 }
 
-export function ModalMeta({ abierto, onCerrar, meta, preset, onGuardada }: ModalMetaProps) {
+export function ModalMeta({ abierto, onCerrar, meta, preset, enfocar, onGuardada }: ModalMetaProps) {
   const formId = useId();
+  const objetivoRef = useRef<HTMLInputElement>(null);
+  /* Después del foco que pone `AdminModal` al abrir (el primer control): si no, lo pisaría. */
+  useEffect(() => {
+    if (!abierto || enfocar !== "objetivo") return;
+    const t = window.setTimeout(() => {
+      objetivoRef.current?.focus();
+      objetivoRef.current?.select();
+    }, 80);
+    return () => window.clearTimeout(t);
+  }, [abierto, enfocar]);
   const editando = Boolean(meta);
   const [form, setForm] = useState<FormMeta>(() => formInicial(meta, preset));
   const [intento, setIntento] = useState(false);
@@ -205,6 +217,7 @@ export function ModalMeta({ abierto, onCerrar, meta, preset, onGuardada }: Modal
           onCategoria={elegirCategoria}
           onPeriodo={(period) => aplicar({ period })}
           onCampo={cambiarCampo}
+          objetivoRef={objetivoRef}
         />
       </form>
     </AdminModal>

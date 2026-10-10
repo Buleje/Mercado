@@ -1,18 +1,23 @@
 "use client";
 
 /**
- * PlantillasMeta — una meta lista para cada cosa que se puede medir, agrupada
- * por área («Vender S/ 30 000 al mes», «Cubicar 50 m³ al mes», «20 pedidos del
- * marketplace al mes»). Salen de `CATALOGO_METAS[*].plantilla`: no hay otra
- * lista que mantener. El clic abre el modal ya lleno; nada se guarda sin que
- * lo confirmes.
+ * PlantillasMeta — una meta lista para cada cosa que se puede medir («Vender
+ * S/ 30 000 al mes», «Cubicar 50 m³ al mes»…). Salen de
+ * `CATALOGO_METAS[*].plantilla`: no hay otra lista que mantener. El clic abre
+ * el modal ya lleno; nada se guarda sin que lo confirmes.
  *
- * Arranca con UNA por área (8 chips): las 21 juntas eran 32 botones en la
- * vista y pasaban el tope de la ley (25, `medir-orden-admin`). «Ver las 21 por área»
- * las abre agrupadas; con un área elegida en el filtro salen todas las suyas.
+ * Dos formas, nunca juntas en la misma pantalla:
+ *  · `MenuPlantillas`: las 21 en un menú agrupado por área (la cabecera, con
+ *    metas ya puestas). Antes eran 8 chips + «Ver las 21 por área» + una
+ *    opción de «Más acciones» que abría el mismo panel: tres caminos a la
+ *    misma lista y una fila entera de chips.
+ *  · `PlantillasDestacadas`: con la vista vacía, una por área en chips de
+ *    48 px (lo más rápido para empezar) y el menú con todas al final.
  */
-import { useState, type CSSProperties } from "react";
-import { AREAS_META, CATALOGO_METAS, areaDe, categoriasDelArea, type AreaMeta } from "@/lib/admin/metas-catalogo";
+import type { CSSProperties } from "react";
+import { Sparkles } from "@buleje/design-system/icons";
+import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
+import { AREAS_META, CATALOGO_METAS, areaDe, categoriasDelArea } from "@/lib/admin/metas-catalogo";
 import type { CategoriaMeta, PeriodoMeta } from "@/lib/admin/metas-tareas";
 import { claseChip } from "./clases-meta";
 
@@ -27,92 +32,66 @@ export interface PresetMeta {
   name?: string;
 }
 
-export function PlantillasMeta({
+function presetDe(id: CategoriaMeta): PresetMeta {
+  const c = CATALOGO_METAS[id];
+  return { category: c.id, period: c.plantilla.period, target: c.plantilla.target, name: c.plantilla.name };
+}
+
+/** Las 21 plantillas, agrupadas por área con su título de sección. */
+export function MenuPlantillas({
   onElegir,
-  area = "todas",
+  etiqueta = "Plantillas",
+  className,
 }: {
   onElegir: (preset: PresetMeta) => void;
-  /** Sólo las de un área (el filtro de la cabecera). */
-  area?: AreaMeta | "todas";
+  etiqueta?: string;
+  className?: string;
 }) {
-  const [todas, setTodas] = useState(false);
-  const elegir = (id: CategoriaMeta) => {
-    const c = CATALOGO_METAS[id];
-    onElegir({ category: c.id, period: c.plantilla.period, target: c.plantilla.target, name: c.plantilla.name });
-  };
-
-  if (area === "todas" && !todas) {
-    return (
-      <div className="flex flex-wrap gap-2">
-        {DESTACADAS.map((id) => {
-          const a = areaDe(id);
-          const Icono = a.icono;
-          return (
-            <button
-              key={id}
-              type="button"
-              className={claseChip(false)}
-              title={`${a.nombre}: ${CATALOGO_METAS[id].queMide}`}
-              onClick={() => elegir(id)}
-              style={{ "--area": a.color } as CSSProperties}
-            >
-              <Icono className="h-4 w-4 text-[var(--area)]" aria-hidden="true" />
-              {CATALOGO_METAS[id].plantilla.name}
-            </button>
-          );
-        })}
-        <button
-          type="button"
-          aria-expanded="false"
-          onClick={() => setTodas(true)}
-          className="inline-flex min-h-10 items-center px-2 text-sm font-semibold text-[var(--accent-ink)] underline underline-offset-2 dark:text-[var(--accent)]"
-        >
-          Ver las {TOTAL} por área
-        </button>
-      </div>
-    );
-  }
-
-  const areas = AREAS_META.filter((a) => a.id !== "manual" && (area === "todas" || a.id === area));
-  if (areas.length === 0) {
-    return <p className="text-sm text-[var(--text-secondary)]">Esta área no tiene plantillas: la meta a mano la creas con «Nueva meta».</p>;
-  }
+  const acciones: MenuAccion[] = AREAS_META.filter((a) => a.id !== "manual").flatMap((a) =>
+    categoriasDelArea(a.id).map((c) => ({
+      id: c.id,
+      label: c.plantilla.name,
+      icon: a.icono,
+      seccion: a.nombre,
+      onSelect: () => onElegir(presetDe(c.id)),
+    })),
+  );
   return (
-    <div className="space-y-3">
-      {areas.map((a) => {
+    <ActionMenu
+      label={etiqueta}
+      title={`Una meta lista para cada cosa que se puede medir (${TOTAL})`}
+      icon={Sparkles}
+      size="md"
+      compactoEnMovil
+      className={className}
+      actions={acciones}
+    />
+  );
+}
+
+/** La vista vacía: una por área en chips de 48 px y, al final, el menú con todas. */
+export function PlantillasDestacadas({ onElegir }: { onElegir: (preset: PresetMeta) => void }) {
+  return (
+    <div role="group" aria-label="Metas listas para empezar" className="flex flex-wrap items-center gap-2">
+      <span className="text-sm font-semibold text-[var(--text-secondary)]">Empieza con una:</span>
+      {DESTACADAS.map((id) => {
+        const a = areaDe(id);
         const Icono = a.icono;
         return (
-          <div key={a.id} className="flex flex-col gap-1.5 sm:flex-row sm:items-start sm:gap-3" style={{ "--area": a.color } as CSSProperties}>
-            <span className="inline-flex shrink-0 items-center gap-1.5 pt-2.5 text-xs font-bold text-[var(--text-secondary)] sm:w-40">
-              <Icono className="h-4 w-4 text-[var(--area)]" aria-hidden="true" />
-              {a.nombre}
-            </span>
-            <div className="flex flex-wrap gap-2">
-              {categoriasDelArea(a.id).map((c) => (
-                <button
-                  key={c.id}
-                  type="button"
-                  className={claseChip(false)}
-                  title={c.queMide}
-                  onClick={() => elegir(c.id)}
-                >
-                  {c.plantilla.name}
-                </button>
-              ))}
-            </div>
-          </div>
+          <button
+            key={id}
+            type="button"
+            className={claseChip(false)}
+            title={`${a.nombre}: ${CATALOGO_METAS[id].queMide}`}
+            onClick={() => onElegir(presetDe(id))}
+            style={{ "--area": a.color } as CSSProperties}
+          >
+            <Icono className="h-4 w-4 text-[var(--area)]" aria-hidden="true" />
+            {CATALOGO_METAS[id].plantilla.name}
+          </button>
         );
       })}
-      {area === "todas" && (
-        <button
-          type="button"
-          aria-expanded="true"
-          onClick={() => setTodas(false)}
-          className="inline-flex min-h-10 items-center px-2 text-sm font-semibold text-[var(--accent-ink)] underline underline-offset-2 dark:text-[var(--accent)]"
-        >
-          Ver menos
-        </button>
-      )}
+      <MenuPlantillas onElegir={onElegir} etiqueta={`Ver las ${TOTAL}`} />
     </div>
   );
 }

@@ -17,9 +17,18 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { limaDateKey } from "@/lib/utils";
 import type { MetaCrear, MetaDTO, MetaEditar } from "@/lib/admin/metas-tareas";
-import type { AvanceMetaDTO, RespuestaAvance } from "@/lib/admin/metas-catalogo";
+import type { AnteriorMetaDTO, AvanceMetaDTO, RespuestaAvance } from "@/lib/admin/metas-catalogo";
 
 const CADA_MS = 60_000;
+
+/** `?fresco=1` salta la caché; `?anterior=1` suma el período anterior entero (sólo la vista Metas y el modal lo usan). */
+function consulta(fresco: boolean, anterior: boolean): string {
+  const qs = new URLSearchParams();
+  if (fresco) qs.set("fresco", "1");
+  if (anterior) qs.set("anterior", "1");
+  const t = qs.toString();
+  return t ? `?${t}` : "";
+}
 const JSON_HEADERS = { "Content-Type": "application/json" };
 
 export type ResultadoMeta = { ok: true; meta: MetaDTO } | { ok: false; error: string };
@@ -88,7 +97,7 @@ export interface UseMetas {
   borrar: (id: string) => Promise<{ ok: boolean; error?: string }>;
 }
 
-export function useMetas(): UseMetas {
+export function useMetas({ conAnterior = false }: { conAnterior?: boolean } = {}): UseMetas {
   const [metas, setMetas] = useState<MetaDTO[]>([]);
   const [avances, setAvances] = useState<Map<string, AvanceMetaDTO>>(() => new Map());
   const [hoy, setHoy] = useState(() => limaDateKey());
@@ -107,7 +116,7 @@ export function useMetas(): UseMetas {
     try {
       const [rMetas, rAvance] = await Promise.all([
         fetch("/api/goals", { cache: "no-store" }),
-        fetch(`/api/goals/avance${fresco ? "?fresco=1" : ""}`, { cache: "no-store" }).catch(() => null),
+        fetch(`/api/goals/avance${consulta(fresco, conAnterior)}`, { cache: "no-store" }).catch(() => null),
       ]);
       if (!rMetas.ok) throw new Error(`HTTP ${rMetas.status}`);
       const lista = (await rMetas.json()) as MetaDTO[];
@@ -130,7 +139,7 @@ export function useMetas(): UseMetas {
     } finally {
       if (n === pedido.current) setCargando(false);
     }
-  }, []);
+  }, [conAnterior]);
 
   useEffect(() => {
     void recargar();
@@ -191,6 +200,12 @@ export interface VistaPrevia {
   avance?: number | null;
   etiqueta?: string;
   parcial?: string;
+  /** La ventana medida y el día del servidor: para la proyección «a tu ritmo cerrarías con…». */
+  desde?: string;
+  hasta?: string;
+  hoy?: string;
+  /** El período anterior entero: la vara para sugerir el objetivo. */
+  anterior?: AnteriorMetaDTO;
 }
 
 /** Acepta `{avance}`, `{avance: {avance}}` o `{avances: [{avance}]}`: lo que mida, sin casarse con una forma. */
@@ -205,11 +220,23 @@ function leerPrevia(j: unknown): Omit<VistaPrevia, "cargando"> | null {
         : o;
   const valor = fuente.avance ?? fuente.valor;
   if (valor !== null && typeof valor !== "number") return null;
+  const texto = (v: unknown) => (typeof v === "string" ? v : undefined);
   return {
     avance: valor,
-    etiqueta: typeof fuente.etiqueta === "string" ? fuente.etiqueta : undefined,
-    parcial: typeof fuente.parcial === "string" ? fuente.parcial : undefined,
+    etiqueta: texto(fuente.etiqueta),
+    parcial: texto(fuente.parcial),
+    desde: texto(fuente.desde),
+    hasta: texto(fuente.hasta),
+    hoy: texto(o.hoy),
+    anterior: leerAnterior(fuente.anterior),
   };
+}
+
+function leerAnterior(v: unknown): AnteriorMetaDTO | undefined {
+  if (!v || typeof v !== "object") return undefined;
+  const a = v as Record<string, unknown>;
+  if ((a.avance !== null && typeof a.avance !== "number") || typeof a.desde !== "string" || typeof a.hasta !== "string") return undefined;
+  return { avance: a.avance as number | null, desde: a.desde, hasta: a.hasta, etiqueta: typeof a.etiqueta === "string" ? a.etiqueta : "" };
 }
 
 /** GET /api/goals/avance?category&period&unit, con 400 ms de espera entre teclas. `null` la apaga. */
@@ -226,7 +253,7 @@ export function useVistaPreviaMeta(consulta: { category: string; period: string;
     const ctrl = new AbortController();
     setPrevia((p) => ({ ...p, cargando: true }));
     const espera = window.setTimeout(() => {
-      const qs = new URLSearchParams({ category: category ?? "", period: period ?? "", unit: unit ?? "" });
+      const qs = new URLSearchParams({ category: category ?? "", period: period ?? "", unit: unit ?? "", anterior: "1" });
       fetch(`/api/goals/avance?${qs.toString()}`, { cache: "no-store", signal: ctrl.signal })
         .then(async (res) => (res.ok ? leerPrevia(await res.json()) : null))
         .then((leida) => {

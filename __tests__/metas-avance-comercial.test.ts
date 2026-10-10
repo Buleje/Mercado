@@ -209,6 +209,40 @@ describe("avanceDeMetas — errores y manual", () => {
   });
 });
 
+describe("avanceDeMetas — período anterior (conAnterior, vista Metas)", () => {
+  it("mide setiembre entero con la caché larga de una ventana cerrada", async () => {
+    const [m] = await avanceDeMetas("t1", [meta({ id: "m", category: "marketplace_ventas", target: 1000 })], HOY, { conAnterior: true });
+    // Setiembre: sólo el pedido entregado del 30/09 a las 23:59 de Lima (400); octubre sigue en 100.
+    expect(m).toMatchObject({
+      avance: 100,
+      anterior: { avance: 400, desde: "2026-09-01", hasta: "2026-09-30", etiqueta: "setiembre 2026" },
+    });
+    expect(getOrSet).toHaveBeenCalledWith("metas-avance:t1:marketplace_ventas:S/:2026-09-01:2026-09-30", 600, expect.any(Function));
+  });
+
+  it("la meta del día va contra el mismo día de la semana pasada; la meta a mano no tiene anterior", async () => {
+    const [dia, mano] = await avanceDeMetas(
+      "t1",
+      [meta({ id: "d", category: "ventas", period: "diario" }), meta({ id: "x", category: "manual", unit: "visitas", current: 3 })],
+      HOY,
+      { conAnterior: true },
+    );
+    expect(dia!.anterior).toMatchObject({ desde: "2026-10-02", hasta: "2026-10-02" });
+    expect(mano).not.toHaveProperty("anterior");
+  });
+
+  it("sin pedirlo no lee el período anterior (Hoy y Calendario no leen de más)", async () => {
+    const [m] = await avanceDeMetas("t1", [meta({ id: "m", category: "marketplace_ventas" })], HOY);
+    expect(m).not.toHaveProperty("anterior");
+    expect(prismaMock.order.aggregate).toHaveBeenCalledTimes(1);
+  });
+
+  it("la vista previa del modal también lo trae (las sugerencias de objetivo)", async () => {
+    const r = await avanceDePrueba("t1", { category: "marketplace_ventas", period: "mensual" }, HOY, { conAnterior: true });
+    expect(r.anterior).toMatchObject({ avance: 400, desde: "2026-09-01" });
+  });
+});
+
 describe("avanceDePrueba", () => {
   it("vista previa del marketplace (pedidos): sin objetivo no hay estado que juzgar", async () => {
     const r = await avanceDePrueba("t1", { category: "marketplace_pedidos", period: "mensual", unit: "pedidos" }, HOY);
