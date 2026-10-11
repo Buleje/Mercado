@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { SupplierReturnsDB } from "@/lib/db/supplier-returns.db";
+import { SupplierReturnsDB, ProductoAjenoError } from "@/lib/db/supplier-returns.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 import { logger } from "@/lib/logger";
@@ -67,6 +67,7 @@ export async function POST(req: NextRequest) {
     const record = await SupplierReturnsDB.createWithItems(auth.tenantId, parsed.data);
     return NextResponse.json(record, { status: 201 });
   } catch (e) {
+    if (e instanceof ProductoAjenoError) return NextResponse.json({ error: "Uno de los productos no es de tu negocio." }, { status: 400 });
     logger.error("[supplier-returns] POST error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Error al registrar devolución" }, { status: 500 });
   }

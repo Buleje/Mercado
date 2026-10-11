@@ -58,7 +58,17 @@ export async function updateSupplierReturnEstado(
     // El stock sale UNA sola vez. No alcanza con mirar la transición: la API
     // acepta cualquier estado válido, así que ENVIADA → RESUELTA → ENVIADA
     // descontaría de nuevo. La marca en la fila lo vuelve imposible.
-    const debeDescontar = estado === "ENVIADA" && actual.stockAplicadoAt === null;
+    // Y se RECLAMA con un compara-y-cambia antes de tocar el stock (10-10, security): dos
+    // «Enviada» a la vez leían los dos `stockAplicadoAt = null` y descontaban dos veces. Con el
+    // `updateMany` condicionado, la segunda transacción espera la fila, la vuelve a evaluar ya
+    // marcada y su `count` es 0.
+    const debeDescontar =
+      estado === "ENVIADA" &&
+      actual.stockAplicadoAt === null &&
+      (await tx.supplierReturn.updateMany({
+        where: { id, tenantId, stockAplicadoAt: null },
+        data: { stockAplicadoAt: new Date() },
+      })).count === 1;
 
     if (debeDescontar) {
       for (const item of actual.items) {
@@ -87,11 +97,14 @@ export async function updateSupplierReturnEstado(
         }
         if (cantidad <= 0) continue;
 
-        const nuevoStock = producto.stock - cantidad;
-        await tx.product.update({
+        // `decrement` en la base, no «lo que leí − cantidad»: otra venta o ajuste del mismo
+        // producto entre la lectura y la escritura no se pierde.
+        const { stock: nuevoStockDb } = await tx.product.update({
           where: { id: producto.id },
-          data: { stock: nuevoStock },
+          data: { stock: { decrement: cantidad } },
+          select: { stock: true },
         });
+        const nuevoStock = nuevoStockDb ?? 0;
         await tx.inventoryMovement.create({
           data: {
             productId: producto.id,
@@ -101,7 +114,7 @@ export async function updateSupplierReturnEstado(
             // mercadería que salió.
             type: "devolucion_proveedor",
             quantity: cantidad,
-            previousStock: producto.stock,
+            previousStock: nuevoStock + cantidad,
             newStock: nuevoStock,
             reference: id,
             notes: `Devolución a ${actual.proveedorNombre} — ${actual.motivo}`,
@@ -117,10 +130,7 @@ export async function updateSupplierReturnEstado(
       }
     }
 
-    await tx.supplierReturn.update({
-      where: { id },
-      data: { estado, ...(debeDescontar ? { stockAplicadoAt: new Date() } : {}) },
-    });
+    await tx.supplierReturn.updateMany({ where: { id, tenantId }, data: { estado } });
 
     return tx.supplierReturn.findFirst({
       where: { id, tenantId },

@@ -1,73 +1,31 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { ReorderAlertsDB } from "@/lib/db/reorder-alerts.db";
 import { broadcastPush } from "@/lib/push-sender";
 import nodemailer from "nodemailer";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { withCronRetry } from "@/lib/cron-retry";
 import { logger } from "@/lib/logger";
-import { enStockBajo, stockMinimoDe, STOCK_MINIMO_GLOBAL_POR_DEFECTO } from "@/lib/inventario/stock-minimo";
-import { minimosGlobalesPorNegocio } from "@/lib/inventario/stock-minimo.server";
+import { productosBajoMinimo, reponerPorNegocio, type ProductoParaReponer, type ReposicionDeNegocio } from "@/lib/compras/reposicion-automatica";
 
 /**
  * GET /api/reorder-alerts — Check low-stock products and send reorder suggestions.
  * Runs daily via Vercel Cron alongside stock-alerts.
+ *
+ * Aislamiento (10-10): cada negocio se resuelve aparte (`reponerPorNegocio`):
+ * su historial, su proveedor, sus productos y su push. Antes el proveedor se
+ * buscaba por nombre en toda la base y el push salía a todos los negocios.
  */
 
-type LowStockItem = {
-  id: number;
-  name: string;
-  stock: number;
-  stockMin: number;
-  stockMax: number;
-  category: string;
-  unit: string;
-  supplier?: string;
-  suggestedQty: number;
-};
+type LowStockItem = ProductoParaReponer;
 
-async function checkAndAlert() {
-  // Audit project-wide 2026-05-19: migrado a ReorderAlertsDB.
-  const products = await ReorderAlertsDB.listProductsWithMinStock();
-
-  // Un solo stock mínimo (09-10): el propio o el global de cada negocio
-  // (una lectura por tenant). `stockMin` sigue como el mínimo efectivo.
-  const minimos = await minimosGlobalesPorNegocio(products.map((p) => p.tenantId));
-  const lowStock = products
-    .map((p) => ({ p, minimoGlobal: minimos.get(p.tenantId) ?? STOCK_MINIMO_GLOBAL_POR_DEFECTO }))
-    .filter(({ p, minimoGlobal }) => enStockBajo(p, minimoGlobal))
-    .map(({ p, minimoGlobal }) => ({ ...p, stockMin: stockMinimoDe(p, minimoGlobal) }));
+async function checkAndAlert(crearBorradores: boolean) {
+  const lowStock = await productosBajoMinimo();
 
   if (lowStock.length === 0) {
     return { alerts: 0, sent: false };
   }
 
-  // Try to find last supplier for each product from purchase order history
-  const productIds = lowStock.map(p => p.id);
-  const recentPurchaseItems = await ReorderAlertsDB.getRecentSuppliersForProducts(productIds);
-
-  const supplierMap = new Map<number, string>();
-  for (const item of recentPurchaseItems) {
-    if (item.productId && !supplierMap.has(item.productId)) {
-      supplierMap.set(item.productId, item.purchaseOrder.supplierName);
-    }
-  }
-
-  const items: LowStockItem[] = lowStock.map((p) => {
-    const max = p.stockMax ?? p.stockMin * 3;
-    const current = p.stock ?? 0;
-    return {
-      id: p.id,
-      name: p.name,
-      stock: current,
-      stockMin: p.stockMin,
-      stockMax: max,
-      category: p.category,
-      unit: p.unit,
-      supplier: supplierMap.get(p.id),
-      // Al menos 1: un mínimo 0 («avisar sólo al agotarse») igual pide algo.
-      suggestedQty: Math.max(max - current, p.stockMin, 1),
-    };
-  });
+  const porNegocio: ReposicionDeNegocio[] = await reponerPorNegocio(lowStock, { crearBorradores, origen: "reorder-alerts" });
+  const items: LowStockItem[] = porNegocio.flatMap((n) => n.productos);
 
   // Group by supplier for the email
   const bySupplier = new Map<string, LowStockItem[]>();
@@ -139,14 +97,22 @@ async function checkAndAlert() {
     });
   }
 
-  // Push notification to admin
-  broadcastPush({
-    title: `🔄 ${items.length} productos para reabastecer`,
-    body: items.slice(0, 3).map(p => p.name).join(", ") + (items.length > 3 ? ` y ${items.length - 3} más` : ""),
-    url: "/admin?tab=inventario",
-  }).catch((err) => logger.warn("[reorder-alerts] broadcastPush failed", { err: String(err) }));
+  // Push a los admins de CADA negocio con SUS productos: sin `tenantId`,
+  // `broadcastPush` le mandaba a todos los negocios los nombres de todos.
+  for (const n of porNegocio) {
+    if (n.productos.length === 0) continue;
+    broadcastPush({
+      title: `🔄 ${n.productos.length} productos para reabastecer`,
+      body: n.productos.slice(0, 3).map((p) => p.name).join(", ") + (n.productos.length > 3 ? ` y ${n.productos.length - 3} más` : ""),
+      url: "/admin?tab=inventario",
+    }, n.tenantId).catch((err) => logger.warn("[reorder-alerts] broadcastPush failed", { err: String(err), tenantId: n.tenantId }));
+  }
 
-  return { alerts: items.length, sent: true, bySupplier: Object.fromEntries(bySupplier) };
+  return {
+    alerts: items.length,
+    sent: true,
+    porNegocio: porNegocio.map((n) => ({ tenantId: n.tenantId, alertas: n.productos.length, borradores: n.borradores })),
+  };
 }
 
 export async function GET(req: NextRequest) {
@@ -156,44 +122,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   try {
-    const result = await withCronRetry("reorder-alerts", async () => {
-      const alertResult = await checkAndAlert();
-
-      // Auto-create draft purchase orders grouped by supplier
-      if (alertResult.sent && alertResult.bySupplier) {
-        for (const [supplierName, items] of Object.entries(alertResult.bySupplier) as [string, LowStockItem[]][]) {
-          if (supplierName === "Sin proveedor asignado") continue;
-
-          // Audit project-wide 2026-05-19: migrado a ReorderAlertsDB.
-          const supplier = await ReorderAlertsDB.findSupplierByName(supplierName);
-          if (!supplier) continue;
-
-          const poId = `auto-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-          // Σ cantidad × costo de las líneas: el borrador va con unitCost 0
-          // (lo pone quien la confirma). Antes multiplicaba por el stock
-          // mínimo y la OC nacía con un total que ninguna línea sumaba.
-          const total = 0;
-
-          await ReorderAlertsDB.createDraftPurchaseOrder({
-            poId,
-            tenantId: supplier.tenantId,
-            supplierId: supplier.id,
-            supplierName,
-            total,
-            notes: `Auto-generado por sistema de reabastecimiento. ${items.length} productos bajo stock mínimo.`,
-            items: items.map((i) => ({
-              productId: i.id,
-              name: i.name,
-              quantity: i.suggestedQty,
-              unitCost: 0,
-              unit: i.unit,
-            })),
-          });
-        }
-      }
-
-      return alertResult;
-    });
+    // Reintentar es seguro: `reponerBorrador` no duplica la orden de un proveedor.
+    const result = await withCronRetry("reorder-alerts", () => checkAndAlert(true));
     return NextResponse.json(result);
   } catch (e) {
     logger.error("[reorder-alerts] error", { err: e instanceof Error ? e.message : String(e) });

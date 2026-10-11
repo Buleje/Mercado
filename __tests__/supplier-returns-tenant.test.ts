@@ -39,6 +39,7 @@ const { mockList, mockCreate } = vi.hoisted(() => ({
 }));
 vi.mock("@/lib/db/supplier-returns.db", () => ({
   SupplierReturnsDB: { listWithItems: mockList, createWithItems: mockCreate },
+  ProductoAjenoError: class ProductoAjenoError extends Error {},
 }));
 
 import { GET, POST } from "@/app/api/supplier-returns/route";

@@ -7,6 +7,7 @@ import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
 import { leerJson } from "@/lib/errores/sin-dato";
+import { DatosAjenosEnOrdenError } from "@/lib/compras/datos-ajenos";
 
 const bodySchema = z.object({
   supplierId: z.string().optional(),
@@ -60,7 +61,8 @@ export async function POST(req: NextRequest) {
       const p = productMap.get(String(it.productId));
       const unitCost = p?.costPrice ?? (p ? p.price * 0.7 : 0);
       return {
-        productId: String(it.productId),
+        // Número: la columna es Int (con String la alta fallaba entera).
+        productId: Number(it.productId),
         name: p?.name ?? `SKU ${it.productId}`,
         quantity: it.quantity,
         unitCost,
@@ -97,6 +99,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true, purchaseOrder: po });
   } catch (err) {
+    // Proveedor o producto de otro negocio: 404, como si no existieran (10-10).
+    if (err instanceof DatosAjenosEnOrdenError) {
+      return NextResponse.json({ ok: false, error: err.message, productosAjenos: err.productosAjenos }, { status: 404 });
+    }
     logger.error("[inventory/reorder] failed", { error: String(err) });
     return NextResponse.json(
       { ok: false, error: String(err) },

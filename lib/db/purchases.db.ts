@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { invalidateAdminCache } from "@/lib/admin-cache";
+import { DatosAjenosEnOrdenError } from "@/lib/compras/datos-ajenos";
 import type {
   Supplier as PSupplier,
   PurchaseOrder as PPurchaseOrder,
@@ -162,6 +163,42 @@ export const SuppliersDB = {
   },
 };
 
+// ── Pertenencia al negocio (10-10) ────────────────────────────────────────────
+//
+// `PurchaseOrder.supplierId` y `PurchaseItem.productId` son FKs simples: la base
+// acepta un proveedor o un producto de OTRO negocio. Así quedaron 34 órdenes de
+// `main` con proveedor y productos de `demo`. Toda alta pasa por `PurchasesDB.add`
+// y ahí se exige que proveedor y productos sean del mismo `tenantId`.
+
+export { DatosAjenosEnOrdenError };
+
+export type PertenenciaDeOrden = {
+  /** La orden existe con ese `tenantId`. */
+  existe: boolean;
+  proveedorAjeno: boolean;
+  productosAjenos: number[];
+};
+
+/** Qué del proveedor y de los productos NO es del negocio (vacío = todo propio). */
+async function ajenosDelNegocio(
+  tenantId: string,
+  supplierId: string,
+  productIds: ReadonlyArray<number | string>,
+): Promise<{ proveedorAjeno: boolean; productosAjenos: number[] }> {
+  const ids = [...new Set(productIds.map((id) => Number(id)))];
+  const validos = ids.filter((id) => Number.isInteger(id) && id > 0);
+  const [proveedor, propios] = await Promise.all([
+    supplierId
+      ? prisma.supplier.findFirst({ where: { id: supplierId, tenantId }, select: { id: true } })
+      : Promise.resolve(null),
+    validos.length > 0
+      ? prisma.product.findMany({ where: { tenantId, id: { in: validos } }, select: { id: true } })
+      : Promise.resolve([] as Array<{ id: number }>),
+  ]);
+  const deEste = new Set(propios.map((p) => p.id));
+  return { proveedorAjeno: !proveedor, productosAjenos: ids.filter((id) => !deEste.has(id)) };
+}
+
 // ── Purchase Orders DB ────────────────────────────────────────────────────────
 
 export const PurchasesDB = {
@@ -187,7 +224,25 @@ export const PurchasesDB = {
     const row = await prisma.purchaseOrder.findFirst({ where: { id, tenantId }, include: { items: true } });
     return row ? mapPurchaseOrder(row) : null;
   },
+  /**
+   * ¿La orden es de este negocio, y también su proveedor y sus productos?
+   * Para la recepción: una orden cruzada (vieja) no mueve nada.
+   */
+  async pertenencia(tenantId: string, id: string): Promise<PertenenciaDeOrden> {
+    const oc = await prisma.purchaseOrder.findFirst({
+      where: { id, tenantId },
+      select: { supplierId: true, items: { select: { productId: true } } },
+    });
+    if (!oc) return { existe: false, proveedorAjeno: false, productosAjenos: [] };
+    const ajenos = await ajenosDelNegocio(tenantId, oc.supplierId, oc.items.map((i) => i.productId));
+    return { existe: true, ...ajenos };
+  },
+  /** @throws DatosAjenosEnOrdenError si el proveedor o algún producto es de otro negocio. */
   async add(po: DbPurchaseOrder, tenantId: string): Promise<DbPurchaseOrder> {
+    const ajenos = await ajenosDelNegocio(tenantId, po.supplierId, po.items.map((i) => i.productId));
+    if (ajenos.proveedorAjeno || ajenos.productosAjenos.length > 0) {
+      throw new DatosAjenosEnOrdenError(ajenos.proveedorAjeno, ajenos.productosAjenos);
+    }
     const row = await prisma.purchaseOrder.create({
       data: {
         id: po.id, supplierId: po.supplierId, supplierName: po.supplierName,

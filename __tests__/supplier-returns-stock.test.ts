@@ -16,10 +16,11 @@ vi.mock("@/lib/logger", () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
 }));
 
-const { mockFindFirst, mockUpdate, mockProductFindFirst, mockProductUpdate, mockMovementCreate, mockTransaction } =
+const { mockFindFirst, mockUpdate, mockUpdateMany, mockProductFindFirst, mockProductUpdate, mockMovementCreate, mockTransaction } =
   vi.hoisted(() => ({
     mockFindFirst: vi.fn(),
     mockUpdate: vi.fn(),
+    mockUpdateMany: vi.fn(),
     mockProductFindFirst: vi.fn(),
     mockProductUpdate: vi.fn(),
     mockMovementCreate: vi.fn(),
@@ -29,7 +30,7 @@ const { mockFindFirst, mockUpdate, mockProductFindFirst, mockProductUpdate, mock
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     $transaction: mockTransaction,
-    supplierReturn: { findFirst: mockFindFirst, update: mockUpdate },
+    supplierReturn: { findFirst: mockFindFirst, update: mockUpdate, updateMany: mockUpdateMany },
     product: { findFirst: mockProductFindFirst, update: mockProductUpdate },
     inventoryMovement: { create: mockMovementCreate },
   },
@@ -58,13 +59,19 @@ beforeEach(() => {
   // El transaction client expone los mismos mocks que el prisma de arriba.
   mockTransaction.mockImplementation(async (cb: (tx: unknown) => Promise<unknown>) =>
     cb({
-      supplierReturn: { findFirst: mockFindFirst, update: mockUpdate },
+      supplierReturn: { findFirst: mockFindFirst, update: mockUpdate, updateMany: mockUpdateMany },
       product: { findFirst: mockProductFindFirst, update: mockProductUpdate },
       inventoryMovement: { create: mockMovementCreate },
     }),
   );
   mockProductFindFirst.mockResolvedValue({ id: 77, name: "Arroz 5kg", stock: 10 });
   mockUpdate.mockResolvedValue({});
+  mockUpdateMany.mockResolvedValue({ count: 1 });
+  /* `decrement` en la base: devuelve el stock que quedó (lo que leyó findFirst − cantidad). */
+  mockProductUpdate.mockImplementation(async (args: { data: { stock: { decrement: number } } }) => {
+    const leido = (await mockProductFindFirst.mock.results.at(-1)?.value) as { stock: number };
+    return { stock: leido.stock - args.data.stock.decrement };
+  });
 });
 
 describe("marcar ENVIADA saca la mercadería del stock", () => {
@@ -76,7 +83,7 @@ describe("marcar ENVIADA saca la mercadería del stock", () => {
     const res = await updateSupplierReturnEstado(TENANT, "ret-1", "ENVIADA");
 
     expect(mockProductUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 77 }, data: { stock: 6 } }),
+      expect.objectContaining({ where: { id: 77 }, data: { stock: { decrement: 4 } } }),
     );
     expect(res?.avisos).toEqual([]);
   });
@@ -110,11 +117,25 @@ describe("marcar ENVIADA saca la mercadería del stock", () => {
 
     await updateSupplierReturnEstado(TENANT, "ret-1", "ENVIADA");
 
-    expect(mockUpdate).toHaveBeenCalledWith(
+    expect(mockUpdateMany).toHaveBeenCalledWith(
       expect.objectContaining({
+        where: { id: "ret-1", tenantId: TENANT, stockAplicadoAt: null },
         data: expect.objectContaining({ stockAplicadoAt: expect.any(Date) }),
       }),
     );
+  });
+
+  it("dos «Enviada» a la vez: la que pierde el reclamo no descuenta (10-10)", async () => {
+    // Las dos leyeron `stockAplicadoAt = null`; la segunda encuentra la fila ya marcada.
+    mockUpdateMany.mockResolvedValueOnce({ count: 0 });
+    mockFindFirst
+      .mockResolvedValueOnce(devolucion())
+      .mockResolvedValueOnce(devolucion({ estado: "ENVIADA", stockAplicadoAt: new Date() }));
+
+    await updateSupplierReturnEstado(TENANT, "ret-1", "ENVIADA");
+
+    expect(mockProductUpdate).not.toHaveBeenCalled();
+    expect(mockMovementCreate).not.toHaveBeenCalled();
   });
 });
 
@@ -171,7 +192,7 @@ describe("lo que no se puede descontar se avisa, no se silencia", () => {
 
     // Se registra igual: el kardex tiene que decir la verdad.
     expect(mockProductUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({ data: { stock: -3 } }),
+      expect.objectContaining({ data: { stock: { decrement: 4 } } }),
     );
     expect(res?.avisos.join(" ")).toContain("-3");
   });

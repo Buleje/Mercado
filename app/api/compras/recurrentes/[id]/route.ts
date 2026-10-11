@@ -5,6 +5,7 @@ import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { RecurringPurchasesDB } from "@/lib/db/recurring-purchases.db";
 import { PurchasesDB, SuppliersDB } from "@/lib/jsondb";
+import { DatosAjenosEnOrdenError } from "@/lib/compras/datos-ajenos";
 
 /** Editar, desactivar, borrar o disparar un pedido recurrente (ADR-377). */
 
@@ -71,6 +72,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!actualizado) return NextResponse.json({ error: "Pedido recurrente no encontrado" }, { status: 404 });
     return NextResponse.json(actualizado);
   } catch (e) {
+    // Proveedor o producto de otro negocio: 404, como si no existieran (10-10).
+    if (e instanceof DatosAjenosEnOrdenError) {
+      return NextResponse.json({ error: e.message, productosAjenos: e.productosAjenos }, { status: 404 });
+    }
     logger.error("[compras/recurrentes/id] PATCH error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }

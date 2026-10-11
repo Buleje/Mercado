@@ -26,6 +26,10 @@ vi.mock("@/lib/rate-limit", () => ({ applyRateLimit: vi.fn().mockResolvedValue(n
 vi.mock("@/lib/audit-logger", () => ({ logAudit: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidateTag: vi.fn() }));
 vi.mock("@/lib/db/goods-receipts.db", () => ({ GoodsReceiptsDB: { create: h.receiptCreate, list: vi.fn() } }));
+// 10-10: la recepción primero mira que la orden, su proveedor y sus productos sean del negocio.
+vi.mock("@/lib/db/purchases.db", () => ({
+  PurchasesDB: { pertenencia: vi.fn().mockResolvedValue({ existe: true, proveedorAjeno: false, productosAjenos: [] }) },
+}));
 vi.mock("@/lib/compras/recibido-acumulado", () => ({
   getRecibidoAcumulado: vi.fn().mockResolvedValue(new Map()),
   estaCompleta: vi.fn().mockReturnValue(true),
@@ -72,7 +76,7 @@ function nuevoTx() {
       updateMany: vi.fn().mockResolvedValue({ count: 1 }),
     },
     $executeRaw: vi.fn().mockResolvedValue(1),
-    purchaseOrder: { update: vi.fn().mockResolvedValue({}) },
+    purchaseOrder: { update: vi.fn().mockResolvedValue({}), updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
     goodsReceipt: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
   };
 }
@@ -185,7 +189,7 @@ describe("POST /api/compras/recepciones con «vence»", () => {
     expect(data).toHaveLength(1);
     expect(data[0]).toMatchObject({ tenantId: "t-a", productId: 7, lote: "L-2210", quantity: 24, supplierId: "sup-1" });
     // El stock se sumó una sola vez (por el producto), no también por el lote.
-    expect(h.tx!.product.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ stock: 28 }) }));
+    expect(h.tx!.product.updateMany).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 7, tenantId: "t-a" }, data: expect.objectContaining({ stock: 28 }) }));
     expect(h.tx!.$executeRaw).toHaveBeenCalledTimes(1);
     // Con margen sobre el corte de 5 s de Prisma.
     const opts = vi.mocked(prisma.$transaction).mock.calls[0][1] as { timeout?: number } | undefined;

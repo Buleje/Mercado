@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { requireActiveSubscription } from "@/lib/billing/require-active-subscription";
 import { prisma } from "@/lib/prisma";
 import { GoodsReceiptsDB } from "@/lib/db/goods-receipts.db";
+import { PurchasesDB } from "@/lib/db/purchases.db";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { getRecibidoAcumulado, estaCompleta } from "@/lib/compras/recibido-acumulado";
@@ -113,6 +114,28 @@ export async function POST(req: NextRequest) {
     }
     const data = parsed.data;
 
+    // 0. (10-10) Una orden vinculada tiene que ser de este negocio, y también
+    //    su proveedor y sus productos. Antes la recepción se guardaba igual
+    //    contra una orden cruzada (REC-FB7F6C, 09-10: orden de `main` con
+    //    proveedor y producto de `demo`) o contra un id que no existía; el
+    //    stock no se movía sólo porque el producto se relee con `tenantId`.
+    if (data.orderRef) {
+      const pertenencia = await PurchasesDB.pertenencia(tenantId, data.orderRef);
+      if (!pertenencia.existe) {
+        return NextResponse.json({ error: "Orden de compra no encontrada" }, { status: 404 });
+      }
+      if (pertenencia.proveedorAjeno || pertenencia.productosAjenos.length > 0) {
+        return NextResponse.json(
+          {
+            error: "Esta orden tiene un proveedor o productos de otro negocio: no se puede recibir. Cancélala y crea una nueva.",
+            proveedorAjeno: pertenencia.proveedorAjeno,
+            productosAjenos: pertenencia.productosAjenos,
+          },
+          { status: 403 },
+        );
+      }
+    }
+
     // 1. Persistir la recepción SIEMPRE (es el registro de auditoría). El
     //    ref legible se deriva de un id aleatorio para no depender de Date.now
     //    (Cache Components) ni de contadores.
@@ -216,8 +239,9 @@ export async function POST(req: NextRequest) {
                 totalQty > 0 ? (previousStock * currentCost + item.receivedQty * authorizedUnitCost) / totalQty : authorizedUnitCost;
               const newStock = previousStock + item.receivedQty;
 
-              await tx.product.update({
-                where: { id: ocItem.productId },
+              // Dueño en el WHERE (regla 8), no sólo en el `findFirst` de arriba.
+              await tx.product.updateMany({
+                where: { id: ocItem.productId, tenantId },
                 data: { stock: newStock, costPrice: authorizedUnitCost > 0 ? weightedAvgCost : undefined },
               });
               await tx.inventoryMovement.create({
@@ -276,8 +300,8 @@ export async function POST(req: NextRequest) {
             for (const [pid, n] of faltantesPrevios) cerrado.set(pid, (cerrado.get(pid) ?? 0) + n);
             for (const l of calculo.lineas) if (l.motivo === "faltante") cerrado.set(l.productId, (cerrado.get(l.productId) ?? 0) + l.unidades);
             const allComplete = estaCompleta(oc.items, cerrado);
-            await tx.purchaseOrder.update({
-              where: { id: oc.id },
+            await tx.purchaseOrder.updateMany({
+              where: { id: oc.id, tenantId },
               data: {
                 status: (allComplete ? "recibido" : "parcial") as never,
                 // ADR-377: quién recibió y cuándo llegó de verdad. Este camino

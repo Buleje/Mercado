@@ -205,6 +205,17 @@ describe("POST /api/purchases", () => {
     expect(mockProductUpdate.mock.calls[1][0]).toMatchObject({ where: { id: 20 }, data: { costPrice: 12 } });
   });
 
+  it("proveedor o producto de otro negocio → 404 sin cuenta por pagar (10-10)", async () => {
+    const { DatosAjenosEnOrdenError } = await import("@/lib/compras/datos-ajenos");
+    mockPurchasesAdd.mockRejectedValueOnce(new DatosAjenosEnOrdenError(false, [1252621]));
+    const { POST } = await import("@/app/api/purchases/route");
+
+    const res = await POST(makeRequest({ supplierId: "sup-demo-4", items: [{ ...BASE_ITEMS[0], productId: 1252621 }], paymentMethod: "credito_30" }));
+    expect(res.status).toBe(404);
+    expect((await res.json()).productosAjenos).toEqual([1252621]);
+    expect(mockPayablesAdd).not.toHaveBeenCalled();
+  });
+
   it("rechaza body vacío con 400", async () => {
     const { POST } = await import("@/app/api/purchases/route");
 

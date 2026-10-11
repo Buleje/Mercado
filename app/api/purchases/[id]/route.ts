@@ -96,7 +96,7 @@ async function revaluarPorSobrecosto(
       const costoAnterior = toNumOrZero(product.costPrice);
       const costoNuevo = Math.max(0, costoAnterior + ajustePorUnidad);
 
-      await tx.product.update({ where: { id: product.id }, data: { costPrice: costoNuevo } });
+      await tx.product.updateMany({ where: { id: product.id, tenantId }, data: { costPrice: costoNuevo } });
       await tx.inventoryMovement.create({
         data: {
           tenantId,
@@ -141,6 +141,22 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         return NextResponse.json(
           { error: `Transición inválida: ${existing.status} → ${parsed.data.status}. Permitidas: [${allowed.join(", ")}]` },
           { status: 422 }
+        );
+      }
+    }
+
+    // 10-10: recibir mueve stock y costo. Una orden cruzada (proveedor o
+    // productos de otro negocio) no se recibe; cancelarla sí se puede.
+    if (statusChanged && (parsed.data.status === "recibido" || parsed.data.status === "parcial")) {
+      const pertenencia = await PurchasesDB.pertenencia(auth.tenantId, id);
+      if (pertenencia.proveedorAjeno || pertenencia.productosAjenos.length > 0) {
+        return NextResponse.json(
+          {
+            error: "Esta orden tiene un proveedor o productos de otro negocio: no se puede recibir. Cancélala y crea una nueva.",
+            proveedorAjeno: pertenencia.proveedorAjeno,
+            productosAjenos: pertenencia.productosAjenos,
+          },
+          { status: 403 },
         );
       }
     }
@@ -288,8 +304,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
             }
 
             // Update Product
-            await tx.product.update({
-               where: { id: product.id },
+            // Dueño en el WHERE (regla 8), no sólo en el `findFirst` de arriba.
+            await tx.product.updateMany({
+               where: { id: product.id, tenantId: auth.tenantId },
                data: { stock: newStock, costPrice: avgCost }
             });
 

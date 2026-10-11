@@ -10,6 +10,7 @@ import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { getOrSet, revalidateTenantTag } from "@/lib/cache";
 import { totalDeOrden } from "@/lib/compras/totales-oc";
+import { DatosAjenosEnOrdenError } from "@/lib/compras/datos-ajenos";
 
 const PurchaseItemSchema = z.object({
   productId: z.number().int().positive(),
@@ -168,6 +169,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(po, { status: 201 });
   } catch (e) {
+    // Proveedor o producto de otro negocio: 404, como si no existieran (10-10).
+    if (e instanceof DatosAjenosEnOrdenError) {
+      return NextResponse.json({ error: e.message, productosAjenos: e.productosAjenos }, { status: 404 });
+    }
     logger.error("[purchases] POST error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Error al crear orden de compra" }, { status: 500 });
   }
