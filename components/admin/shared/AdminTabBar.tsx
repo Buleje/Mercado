@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useId, useCallback, useMemo, useSyncExternalStore, type ReactNode } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, useId, useCallback, useMemo, useSyncExternalStore, type ReactNode } from "react";
 import { isEditableTarget, isModalOpen } from "@/lib/keyboard-guards";
 import { ChevronLeft, ChevronRight, GripVertical } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -13,11 +13,11 @@ import { BANDA_MODULO, FILA_TITULO_MODULO, TituloModulo } from "./titulo-modulo"
 import { rotuloDelMenu } from "./rotulo-del-menu";
 
 /**
- * Pestañas en tres estilos: `linea` (barra sin título, la de siempre), y las
- * dos de la banda del Libro TH — `fase` (caja hundida en la fila del título) y
- * `vista` (riel debajo). Las clases son las de libro-chrome.tsx.
+ * Pestañas en dos estilos: `linea` (barra sin título, la de siempre) y `fase`,
+ * la caja hundida de la banda del Libro TH (clases de libro-chrome.tsx), que va
+ * al lado del título si entra y en su propia fila debajo si no.
  */
-type EstiloPestana = "linea" | "fase" | "vista";
+type EstiloPestana = "linea" | "fase";
 const PESTANA: Record<EstiloPestana, { base: string; activa: string; inactiva: string }> = {
   linea: {
     // Mobile: tap target accesible (min ~44px alto via py-2.5 + texto sm).
@@ -30,12 +30,47 @@ const PESTANA: Record<EstiloPestana, { base: string; activa: string; inactiva: s
     activa: "bg-[var(--surface-raised)] text-[var(--accent-dark)] shadow-[var(--shadow-sm)] dark:text-[var(--accent)]",
     inactiva: "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]",
   },
-  vista: {
-    base: "inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 text-sm transition-colors duration-[var(--dur-base)] sm:px-3",
-    activa: "bg-primary/10 font-bold text-[var(--accent-ink)] dark:bg-primary/20 dark:text-[var(--accent)]",
-    inactiva: "font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]",
-  },
 };
+
+/**
+ * Bloque de texto del título cuando lleva rótulo Y ⓘ: grilla en vez del flex
+ * que envuelve de TituloModulo. Un flex-wrap mide de ancho natural rótulo +
+ * título + ⓘ EN UNA FILA aunque se dibujen en dos: la banda le reservaba
+ * ~130 px vacíos (10-10: «Dropship» de Compras empezaba 145 px después del
+ * título) y esos px eran los que les faltaban a las pestañas para ir al lado.
+ * En la grilla el rótulo cruza las dos columnas y el ⓘ va pegado al título.
+ */
+const TEXTO_TITULO_EN_GRILLA = "grid grid-cols-[auto_1fr] justify-items-start [&>:first-child]:col-span-2";
+
+/**
+ * ¿Entran título · pestañas · acciones en UNA fila de la banda?
+ *
+ * Suma anchos NATURALES —el bloque del título, cada pestaña (`shrink-0`,
+ * `whitespace-nowrap`), el chip del `rightSlot` y las acciones (`shrink-0`)—
+ * y los compara con el ancho útil de la fila. Ninguno de esos anchos cambia
+ * con la respuesta: bajar las pestañas sólo les cambia el `order` y el
+ * `flex-basis` a ellas, no a sus botones. Por eso no oscila, a diferencia de
+ * medir el ALTO de la banda o si el riel desborda (eso sí depende de dónde
+ * quedaron). Margen del riel: los 4 px de `sm:ml-1`, fijo, para que tampoco
+ * dependa de la respuesta.
+ */
+function entranAlLado(fila: HTMLElement, riel: HTMLElement, titulo: HTMLElement | null, acciones: HTMLElement | null) {
+  const px = (valor: string) => Number.parseFloat(valor) || 0;
+  const f = getComputedStyle(fila);
+  const r = getComputedStyle(riel);
+  const libre = fila.clientWidth - px(f.paddingLeft) - px(f.paddingRight);
+  const separacion = px(f.columnGap);
+  const hijos = Array.from(riel.children);
+  const anchoRiel =
+    hijos.reduce((suma, hijo) => suma + hijo.getBoundingClientRect().width, 0) +
+    px(r.columnGap) * Math.max(0, hijos.length - 1) +
+    px(r.paddingLeft) +
+    px(r.paddingRight) +
+    4;
+  const anchoTitulo = titulo ? titulo.getBoundingClientRect().width : 0;
+  const anchoAcciones = acciones ? separacion + acciones.getBoundingClientRect().width : 0;
+  return anchoTitulo + separacion + anchoRiel + anchoAcciones <= libre + 0.5;
+}
 
 /** La pestaña del panel (`?tab=`), para el rótulo. Cambia de pestaña = otro módulo montado. */
 const suscribirUrl = (avisar: () => void) => {
@@ -106,9 +141,9 @@ interface AdminTabBarProps {
     /**
      * Acciones del módulo (actualizar, exportar, «Nueva receta»…): lo que
      * antes iba como `children` del <AdminModuleHeader>. Comparten la banda:
-     * con el título en línea van al final (título · pestañas · acciones); si
-     * el título ocupa una fila propia (seis pestañas o más) van a la derecha
-     * del título, no de las pestañas. Distinto de `rightSlot`, que vive
+     * si todo entra en una fila van al final (título · pestañas · acciones);
+     * si no, se quedan a la derecha del título y las pestañas bajan a su
+     * fila. Su ancho cuenta para decidirlo. Distinto de `rightSlot`, que vive
      * DENTRO del tablist (un chip de estado pegado a las pestañas).
      */
     actions?: ReactNode;
@@ -138,45 +173,39 @@ export default function AdminTabBar({
    */
   const barraId = useId();
 
-  /**
-   * ¿El título comparte línea con las pestañas, o se lleva una fila propia?
-   *
-   * No alcanza con `flex-wrap`: el tablist envuelve por dentro (`wrap`), así
-   * que con muchas pestañas es UN ítem flex de dos filas de alto y el título
-   * —alineado al fondo de su línea— aparecía debajo de la primera fila, como
-   * si fuera un pie. Pasó en Compras, que tiene 8 pestañas.
-   *
-   * El criterio es la cantidad, no una medición: medir el alto para decidir
-   * el layout que cambia ese alto es un lazo que oscila. Hasta cinco pestañas
-   * entran al lado del título en el ancho que deja el sidebar; de seis para
-   * arriba, no entran en ninguna resolución razonable.
-   *
-   * Con acciones en la banda el tope baja a tres: Inventario (4 pestañas +
-   * «Actualiza en…» + «Imprimir etiquetas») e Inicio (5 + «Gráficos» + rango
-   * de fechas) medidos a 1366px salían con las pestañas en dos filas y el
-   * título al lado de la segunda, como un pie de página.
-   */
   // Sólo el módulo dueño de la página dibuja su identidad en la banda.
   const profundidad = useModuleDepth();
   const bandaConTitulo = Boolean(heading) && profundidad === 0;
-  const tituloEnLinea = bandaConTitulo && tabs.length <= (heading?.actions ? 3 : 5);
-  const estilo: EstiloPestana = !bandaConTitulo ? "linea" : tituloEnLinea ? "fase" : "vista";
+  const estilo: EstiloPestana = bandaConTitulo ? "fase" : "linea";
+  /**
+   * ¿Las pestañas van al lado del título o en su propia fila debajo?
+   *
+   * Brandon 10-10: «en Ventas las secciones están debajo y quiero que estén al
+   * lado del título como en todas mis demás páginas». Antes decidían la
+   * CANTIDAD (≤5 pestañas, ≤3 con acciones) y una container query fija de
+   * 60rem: a 1280 px con el sidebar la banda mide 964 px y Ventas & Caja
+   * (título ~210 px + pestañas 690 px) bajaba aunque entraba.
+   *
+   * Ahora se suman los anchos naturales (`entranAlLado`) y se compara con la
+   * fila: al lado si entra, abajo si no. Nunca dos filas de pestañas al lado
+   * del título (el riel al lado no envuelve), que es lo que dejaba al título
+   * como un pie de la segunda fila (Compras, 8 pestañas). `null` = sin medir
+   * todavía (servidor, primer render, jsdom): rige la container query de antes.
+   */
+  const [pestanasAlLado, setPestanasAlLado] = useState<boolean | null>(null);
+  const pestanasAbajo = estilo === "fase" && pestanasAlLado === false;
+  const filaRef = useRef<HTMLDivElement>(null);
+  const accionesRef = useRef<HTMLDivElement>(null);
   const tabDeLaUrl = useSyncExternalStore(suscribirUrl, leerTabDeUrl, sinTabEnServidor);
   const rotulo = heading ? (heading.eyebrow ?? rotuloDelMenu(tabDeLaUrl, heading.title)) : undefined;
 
   /**
-   * Cuando el contenedor se angosta y las pestañas bajan a su propia fila
-   * (`@max-[60rem]:basis-full`), las acciones suben junto al título vía
-   * `order`: la fila de arriba queda «título … acciones» y la de abajo, las
-   * pestañas — igual que con el título en fila propia.
+   * Cuando las pestañas bajan a su propia fila (`order-3 basis-full`), las
+   * acciones se quedan junto al título vía `order`: la fila de arriba queda
+   * «título … acciones» y la de abajo, las pestañas.
    */
   const acciones = bandaConTitulo && heading?.actions ? (
-    <div
-      className={cn(
-        "ml-auto flex shrink-0 flex-wrap items-center gap-2 @max-[60rem]/banda:max-w-full",
-        tituloEnLinea && "order-2",
-      )}
-    >
+    <div ref={accionesRef} className="order-2 ml-auto flex max-w-full shrink-0 flex-wrap items-center gap-2">
       {heading.actions}
     </div>
   ) : null;
@@ -377,6 +406,29 @@ export default function AdminTabBar({
 
   const isReordered = JSON.stringify(ordenIds) !== JSON.stringify(tabs.map((tab) => tab.id));
 
+  /**
+   * Mide si las pestañas entran al lado del título (ver `pestanasAlLado`).
+   * `useLayoutEffect`: corre antes de pintar, así el primer cuadro ya sale
+   * con las pestañas en su lugar. Observa la fila (cambia el ancho de la
+   * ventana o se pliega el sidebar), el título (carga la fuente), cada
+   * pestaña (aparece un contador) y las acciones (llegan datos).
+   */
+  const clavePestanas = `${ordenIds.join("|")}|${isReordered}|${Boolean(rightSlot)}|${Boolean(heading?.actions)}`;
+  useLayoutEffect(() => {
+    const fila = filaRef.current;
+    const rielActual = tabsRef.current;
+    if (estilo !== "fase" || !fila || !rielActual || typeof ResizeObserver === "undefined") return;
+    const titulo = fila.firstElementChild instanceof HTMLElement ? fila.firstElementChild : null;
+    const accionesActuales = accionesRef.current;
+    const medir = () => setPestanasAlLado(entranAlLado(fila, rielActual, titulo, accionesActuales));
+    medir();
+    const ro = new ResizeObserver(medir);
+    for (const el of [fila, titulo, accionesActuales, ...Array.from(rielActual.children)]) {
+      if (el) ro.observe(el);
+    }
+    return () => ro.disconnect();
+  }, [estilo, clavePestanas]);
+
   if (vertical) {
     return (
       <div data-admin-tabbar="" className={cn("flex flex-col gap-3 lg:flex-row lg:items-stretch lg:gap-0", className)}>
@@ -482,22 +534,27 @@ export default function AdminTabBar({
         className={cn(
           "flex",
           // Con `heading` las pestañas van DENTRO de la banda, como en el
-          // Libro TH (referencia de Brandon 08-10): en línea con el título, en
-          // la caja hundida de las fases; con seis o más, en el riel de abajo
-          // como las vistas. Sin `heading`, la línea de siempre.
+          // Libro TH (referencia de Brandon 08-10): en la caja hundida de las
+          // fases, al lado del título si entran (`pestanasAlLado`) y en su
+          // fila de abajo si no. Sin `heading`, la línea de siempre.
           estilo === "fase"
-            ? "order-1 min-w-0 max-w-full flex-none items-center gap-0.5 rounded-xl bg-[var(--surface-sunken)] p-1 sm:ml-1 @max-[60rem]/banda:order-3 @max-[60rem]/banda:basis-full"
-            : estilo === "vista"
-              ? "min-w-0 items-center gap-1"
-              : "-mx-1 gap-0.5 border-b border-[var(--rule-base)] px-1 sm:gap-1",
+            ? cn(
+                "order-1 min-w-0 max-w-full flex-none items-center gap-0.5 rounded-xl bg-[var(--surface-sunken)] p-1",
+                pestanasAlLado === null
+                  ? "sm:ml-1 @max-[60rem]/banda:order-3 @max-[60rem]/banda:basis-full"
+                  : pestanasAbajo
+                    ? "order-3 basis-full"
+                    : "sm:ml-1",
+              )
+            : "-mx-1 gap-0.5 border-b border-[var(--rule-base)] px-1 sm:gap-1",
           // Angosto: una sola fila que se desliza (recupera ~90px verticales
           // que las 3 filas del wrap le robaban al contenido). Desde 48rem de
           // CONTENEDOR —no de viewport, que ignora el ancho del sidebar—
           // vuelve el wrap de siempre.
-          // En línea con el título el riel NUNCA envuelve por dentro: si
+          // Al lado del título el riel NUNCA envuelve por dentro: si
           // envolviera, el título (alineado al fondo de la banda) quedaría
-          // junto a la segunda fila de pestañas. Si no entra, se desliza.
-          wrap && !tituloEnLinea
+          // junto a la segunda fila de pestañas. Envuelve sólo en su fila.
+          wrap && (estilo === "linea" || pestanasAbajo)
             ? "overflow-x-auto scroll-smooth scrollbar-none @min-[48rem]:flex-wrap @min-[48rem]:gap-y-1 @min-[48rem]:overflow-x-visible"
             : "overflow-x-auto scroll-smooth scrollbar-none",
         )}
@@ -599,16 +656,17 @@ export default function AdminTabBar({
     >
       {bandaConTitulo && heading && (
         // Fila de identidad, igual a la del libro: título · pestañas · acciones.
-        // Angosto (<60rem de banda): las acciones suben junto al título y las
+        // Si no entra todo: las acciones se quedan junto al título y las
         // pestañas bajan a su fila. La descripción va al ⓘ, no debajo
         // (regla «explicar con ⓘ», Brandon 09-24 y 01-10).
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2.5 sm:px-4">
+        <div ref={filaRef} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2.5 sm:px-4">
           <div className={FILA_TITULO_MODULO}>
             <TituloModulo
               icon={heading.icon}
               eyebrow={rotulo}
               title={heading.title}
               as={heading.as ?? "h1"}
+              className={rotulo && heading.description ? TEXTO_TITULO_EN_GRILLA : undefined}
               ayuda={
                 heading.description ? (
                   <InfoTip side="bottom" title={heading.title} what={heading.description} />
@@ -631,12 +689,6 @@ export default function AdminTabBar({
       )}
 
       {estilo === "linea" && rielDePestanas}
-      {estilo === "vista" && (
-        // Riel de vistas del libro: debajo de la identidad, fondo del lienzo.
-        <div className="rounded-b-2xl border-t border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-2 py-2 sm:px-3">
-          {rielDePestanas}
-        </div>
-      )}
 
       {canScrollRight && (
         <button

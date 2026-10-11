@@ -246,16 +246,20 @@ describe("panel — encabezado del módulo en la misma banda que las pestañas",
     // de dos filas de alto y el título —alineado al fondo— aparecía DEBAJO de
     // la primera fila, como un pie. Pasó en Compras (8 pestañas).
     const bar = readFileSync(join(process.cwd(), "components/admin/shared/AdminTabBar.tsx"), "utf8");
-    // El tope depende de si hay acciones en la banda: con ellas baja (medido
-    // en Inventario, 4 pestañas + 2 acciones: las pestañas envolvían y el
-    // título quedaba junto a la segunda fila).
-    expect(bar, "se perdió el criterio de cuándo el título entra en línea").toMatch(
-      /const tituloEnLinea = bandaConTitulo && tabs\.length <= \(heading\?\.actions \? \d+ : \d+\);/,
+    // 10-10: el criterio pasó de la CANTIDAD (≤5, ≤3 con acciones) a si
+    // entran de ancho: Ventas & Caja (5 pestañas) bajaba a 1280 px aunque
+    // entraba. Se suman anchos naturales —que no dependen de la respuesta—,
+    // nunca el alto de la banda (ese lazo oscila).
+    expect(bar, "se perdió la medición de si las pestañas entran al lado").toContain(
+      "setPestanasAlLado(entranAlLado(",
     );
-    // Y en línea el riel no envuelve por dentro: la clase de wrap sólo se
-    // aplica cuando el título tiene su fila.
-    expect(bar, "el riel volvió a envolver con el título en línea").toContain("wrap && !tituloEnLinea");
-    expect(bar, "sin `basis-full` el título no se lleva su fila").toContain("basis-full");
+    expect(bar, "volvió a decidir por cantidad de pestañas").not.toMatch(/tabs\.length <= /);
+    // Al lado del título el riel no envuelve por dentro: la clase de wrap
+    // sólo se aplica cuando las pestañas tienen su fila.
+    expect(bar, "el riel volvió a envolver con el título al lado").toContain(
+      'wrap && (estilo === "linea" || pestanasAbajo)',
+    );
+    expect(bar, "sin `basis-full` las pestañas no se llevan su fila").toContain("order-3 basis-full");
   });
 
   it("el segundo nivel no repite en prosa lo que dicen sus pestañas", () => {
