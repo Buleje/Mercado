@@ -45,8 +45,12 @@ export async function GET(req: NextRequest) {
   }
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `http://${req.headers.get("host") ?? "localhost:3000"}`;
-  const qs = new URLSearchParams({ year: String(year), month: String(month) });
+  // El tenant SIEMPRE de la sesión: sin él, el cron respondía 400 «tenantId
+  // requerido» y «Generar reporte» no funcionaba nunca (medido 11-10).
+  const qs = new URLSearchParams({ tenantId: auth.tenantId, year: String(year), month: String(month) });
   if (download) qs.set("download", "1");
+  // Desde el panel no se manda correo salvo que se pida (`enviar=1`).
+  qs.set("enviar", searchParams.get("enviar") === "1" ? "1" : "0");
 
   try {
     const upstream = await fetch(`${baseUrl}/api/cron/monthly-report?${qs.toString()}`, {

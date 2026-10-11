@@ -6,10 +6,11 @@
  * Todo sale de `GET /api/admin/contabilidad/libros`; esta vista no calcula nada.
  */
 import { useState } from "react";
-import { AlertTriangle, FileSpreadsheet, FileText, Loader2 } from "@buleje/design-system/icons";
+import { AlertTriangle, FileSpreadsheet, FileText, Loader2, MoreHorizontal } from "@buleje/design-system/icons";
 import { SectionTitle } from "@buleje/design-system";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { limaDateKey } from "@/lib/utils";
 import type { LibroId } from "@/lib/contabilidad/libros/comun";
 import { useLibrosContador } from "./use-libros-contador";
@@ -17,9 +18,13 @@ import { LIBROS, mesAnterior } from "./libros-contador-config";
 import { NotasLibro, TablaLibro, TotalesLibro } from "./VistaPreviaLibro";
 
 const BOTON =
-  "inline-flex h-10 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold transition disabled:opacity-60";
+  "inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold transition disabled:opacity-60";
 
-export default function LibrosContador() {
+/**
+ * `titulo` y `masAcciones`: montado como «Mi Plata › Para el contador» (11-10),
+ * la vista lleva su nombre y los reportes sueltos van al «⋯», junto al TXT.
+ */
+export default function LibrosContador({ titulo = "Libros para el contador", masAcciones = [] }: { titulo?: string; masAcciones?: MenuAccion[] } = {}) {
   const hoy = limaDateKey().slice(0, 7);
   const [periodo, setPeriodo] = useState(() => mesAnterior(limaDateKey()));
   const [libro, setLibro] = useState<LibroId>("ventas");
@@ -30,22 +35,22 @@ export default function LibrosContador() {
     <section className="space-y-4" data-vista="libros-contador">
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
-          <SectionTitle>Libros para el contador</SectionTitle>
+          <SectionTitle className="whitespace-nowrap">{titulo}</SectionTitle>
           <InfoTip
-            title="Libros para el contador"
+            title={titulo}
             what="El registro de ventas (formato 14.1), el de compras (8.1) y el kardex valorizado (13.1) del mes, con las columnas que pide SUNAT."
             affects="Solo lee. Es un documento de trabajo: tu contador lo cruza con la propuesta del SIRE o lo pasa a su sistema; no es el TXT oficial del PLE ni del SIRE."
             example="Eliges setiembre, miras el total de ventas y tocas «Excel» para mandárselo a tu contador."
           />
         </div>
         <label className="flex items-center gap-2 text-sm font-medium text-[var(--text-secondary)]">
-          Mes
+          <span className="sr-only">Mes</span>
           <input
             type="month"
             value={periodo}
             max={hoy}
             onChange={(e) => e.target.value && setPeriodo(e.target.value)}
-            className="h-10 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+            className="h-12 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
           />
         </label>
         <SegmentedControl<LibroId>
@@ -53,8 +58,9 @@ export default function LibrosContador() {
           onChange={setLibro}
           options={LIBROS.map((l) => ({ value: l.value, label: `${l.label} ${l.formato}` }))}
           label="Libro"
+          size="lg"
         />
-        <div className="ml-auto flex gap-2">
+        <div className="ml-auto flex items-center gap-2">
           <button
             type="button"
             disabled={bajando !== null || estado.fase !== "lista"}
@@ -65,16 +71,26 @@ export default function LibrosContador() {
             {bajando === "xlsx" ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <FileSpreadsheet className="h-4 w-4" aria-hidden />}
             Excel
           </button>
-          <button
-            type="button"
-            disabled={bajando !== null || estado.fase !== "lista"}
-            onClick={() => void descargar("txt")}
-            className={`${BOTON} border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-[var(--accent)]`}
-            title="TXT de trabajo separado por «|» (no es el archivo oficial del PLE ni del SIRE)"
-          >
-            {bajando === "txt" ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <FileText className="h-4 w-4" aria-hidden />}
-            TXT de trabajo
-          </button>
+          <ActionMenu
+            label="Más"
+            icon={MoreHorizontal}
+            soloIcono
+            size="md"
+            className="w-12 shrink-0"
+            title="TXT de trabajo y otros reportes"
+            actions={[
+              {
+                id: "txt",
+                label: "TXT de trabajo",
+                hint: "Separado por «|». No es el archivo oficial del PLE ni del SIRE",
+                icon: FileText,
+                busy: bajando === "txt",
+                disabled: bajando !== null || estado.fase !== "lista",
+                onSelect: () => void descargar("txt"),
+              },
+              ...masAcciones,
+            ]}
+          />
         </div>
       </div>
 

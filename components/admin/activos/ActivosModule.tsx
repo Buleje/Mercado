@@ -20,7 +20,7 @@ import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/
 import { toast } from "sonner";
 import {
   Construction, Plus, X, Loader2, TrendingUp, Fuel,
-  Wrench, Truck, Pencil, Receipt, Download, FileText,
+  Wrench, Receipt, Download, FileText,
   ClipboardCheck, CheckCircle, Calendar, CreditCard, Clock,
   Upload, BarChart3, Trophy, Store,
 } from "@buleje/design-system/icons";
@@ -29,49 +29,28 @@ import { exportToCSV } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import ActionMenu from "@/components/admin/shared/action-menu";
-import BotonIconoTip from "@/components/admin/shared/boton-icono-tip";
-import { CardTitle, DataTable, StatCard } from "@buleje/design-system";
+import { CardTitle, DataTable } from "@buleje/design-system";
 import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
 import { SegundoNivelEnElHub, useRanuraDelSegundoNivel } from "@/components/admin/unified/finanzas/segundo-nivel";
 import { Field } from "@/components/admin/shared/Field";
 import { generateContractPDF } from "@/lib/assets-contract";
 import { formatDate, formatDateLong, formatMonth } from "@/lib/format";
+import { fmt, STATUS_META, TYPES, typeIcon, typeLabel, type AssetStats } from "./tipos";
+import AssetCard from "./AssetCard";
+import { useIndicadoresActivos } from "./use-indicadores-activos";
 
-interface AssetStats {
-  id: string; name: string; type: string; plate: string | null; imageUrl: string | null;
-  purchaseValue: number | null; status: string; hourlyRate: number | null; rateUnit: string;
-  capacityPerDay: number | null; currentHours: number | null; fuelTargetPerUnit: number | null;
-  notes: string | null; active: boolean;
-  totalIncome: number; totalExpense: number; profit: number; incomeCount: number; expenseCount: number;
-  unitsWorked: number; units30d: number;
-  costPerUnit: number | null; incomePerUnit: number | null; marginPerUnit: number | null;
-  utilizationPct: number | null;
-  pendingAmount: number; fuelPerUnit: number | null; fuelAlert: boolean;
-  maintenanceDue: number; maintenanceSoon: number;
-  publishedProductId: number | null;
-}
 interface IncomeMov { id: string; assetId: string; date: string; client: string | null; quantity: number | null; unit: string; rate: number; amount: number; hourStart: number | null; hourEnd: number | null; paid: boolean; dueDate: string | null; startDate: string | null; endDate: string | null; notes: string | null }
 interface ExpenseMov { id: string; date: string; amount: number; notes: string | null; category: string; gallons: number | null; unitPrice: number | null }
 interface Maintenance { id: string; assetId: string; title: string; intervalHours: number | null; intervalDays: number | null; lastDoneHours: number | null; lastDoneAt: string | null; notes: string | null; active: boolean; state: "ok" | "soon" | "due"; detail: string }
 interface Receivable extends IncomeMov { assetName: string }
 
-const fmt = (n: number) => new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
 const dStr = (s: string) => formatDate(s);
 
-const TYPES = [
-  { v: "cargador", label: "Cargador" }, { v: "oruga", label: "Oruga" }, { v: "camion", label: "Camión" },
-  { v: "excavadora", label: "Excavadora" }, { v: "tractor", label: "Tractor" }, { v: "otro", label: "Otro" },
-];
 const RATE_UNITS = [
   { v: "hora", label: "Por hora", noun: "horas" }, { v: "dia", label: "Por día", noun: "días" },
   { v: "m3", label: "Por m³", noun: "m³" }, { v: "viaje", label: "Por viaje", noun: "viajes" },
 ];
 const unitNoun = (u: string) => RATE_UNITS.find(r => r.v === u)?.noun ?? u;
-const STATUS_META: Record<string, { label: string; chip: string }> = {
-  operativo:     { label: "Operativo",     chip: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" },
-  mantenimiento: { label: "Mantenimiento", chip: "bg-[var(--data-warning-100)] text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]" },
-  parado:        { label: "Parado",        chip: "bg-[var(--data-error-100)] text-[var(--data-error-600)] dark:text-[var(--data-error-500)]" },
-};
 const EXPENSE_CATS = [
   { v: "combustible", label: "Combustible" }, { v: "mantenimiento", label: "Mantenimiento" }, { v: "repuesto", label: "Repuesto" },
   { v: "operador", label: "Operador" }, { v: "peaje", label: "Peaje" }, { v: "otro", label: "Otro" },
@@ -113,10 +92,8 @@ export default function ActivosModule() {
   }, []);
   useEffect(() => { void load(); }, [load]);
 
-  const totals = assets.reduce(
-    (acc, a) => ({ income: acc.income + a.totalIncome, expense: acc.expense + a.totalExpense, profit: acc.profit + a.profit, pending: acc.pending + a.pendingAmount }),
-    { income: 0, expense: 0, profit: 0, pending: 0 },
-  );
+  const kpis = useIndicadoresActivos(assets, () => setView("cobrar"));
+  const totals = kpis.totales;
   const alerts = assets.reduce((n, a) => n + a.maintenanceDue + (a.fuelAlert ? 1 : 0), 0);
   // Categorías = defaults + las que ya usan las máquinas del tenant (custom persisten).
   const knownTypes = Array.from(new Set([...TYPES.map(t => t.v), ...assets.map(a => a.type)]));
@@ -160,9 +137,12 @@ export default function ActivosModule() {
   const acciones = (
     <>
       {/* Importar y exportar se usan de vez en cuando: al menú (ley de Brandon 2026-10-01). */}
+      {kpis.boton}
       <ActionMenu
         label="Más acciones"
         soloIcono
+        size="md"
+        className="w-12 shrink-0"
         actions={[
           { id: "importar", label: "Importar flota", hint: "Sube un Excel/CSV y crea varias máquinas de una", icon: Upload, onSelect: () => setShowImport(true) },
           { id: "exportar", label: "Exportar reporte", hint: "Descarga la rentabilidad de cada máquina", icon: Download, onSelect: exportReport },
@@ -199,21 +179,7 @@ export default function ActivosModule() {
         </AdminModuleHeader>
       )}
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-        <StatCard label="Máquinas" value={String(assets.length)} subValue={`${assets.filter(a => a.status === "operativo").length} operativas`} accentBar />
-        <StatCard label="Ingresos" value={fmt(totals.income)} subValue="por alquileres" emphasis="success" accentBar />
-        <StatCard label="Gastos" value={fmt(totals.expense)} subValue="combustible + mantto." accentBar />
-        <StatCard label="Ganancia neta" value={fmt(totals.profit)} subValue="ingresos − gastos" emphasis={totals.profit >= 0 ? "success" : "error"} accentBar highlight />
-        <StatCard
-          label="Por cobrar"
-          value={fmt(totals.pending)}
-          subValue={totals.pending > 0 ? "ver pendientes →" : "todo cobrado"}
-          emphasis={totals.pending > 0 ? "warning" : "neutral"}
-          accentBar
-          onClick={() => setView("cobrar")}
-        />
-      </div>
+      {kpis.panel}
 
       {/* Sub-tabs top-level: AdminTabBar da coherencia con el resto del admin
           (reorden por drag, registro en sidebar). Vistas quedan como hermanas. */}
@@ -281,8 +247,6 @@ function EmptyFleet({ onAdd }: { onAdd: () => void }) {
 // (memoria `font-mono-era-un-noop-en-el-panel`: nadie carga Geist Mono, esa
 // declaración ya no rendía monoespaciado real en ningún lado del admin).
 
-function typeIcon(type: string) { return type === "camion" ? Truck : Construction; }
-function typeLabel(type: string) { return TYPES.find(t => t.v === type)?.label ?? (type ? type.charAt(0).toUpperCase() + type.slice(1) : type); }
 
 function FormSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -291,91 +255,6 @@ function FormSection({ title, children }: { title: string; children: React.React
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{children}</div>
     </div>
   );
-}
-
-function AssetCard({ asset, onRent, onExpense, onEdit, onDetail, onContract, onChecklist, onPublish }: {
-  asset: AssetStats; onRent: () => void; onExpense: () => void; onEdit: () => void; onDetail: () => void; onContract: () => void; onChecklist: () => void; onPublish: () => void;
-}) {
-  const Icon = typeIcon(asset.type);
-  const st = STATUS_META[asset.status] ?? STATUS_META.operativo;
-  const total = asset.totalIncome + asset.totalExpense;
-  const incPct = total > 0 ? (asset.totalIncome / total) * 100 : 0;
-  return (
-    <div className="flex flex-col rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 transition-all hover:border-[var(--accent)]/40 hover:shadow-[var(--shadow-md)]">
-      <div className="flex items-start gap-3">
-        <button type="button" onClick={onDetail} aria-label={`Ver detalle de ${asset.name}`} className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Icon className="h-6 w-6" strokeWidth={2} /></button>
-        <div className="min-w-0 flex-1">
-          <button type="button" onClick={onDetail} className="block truncate text-base font-extrabold text-[var(--text-primary)] hover:text-[var(--accent)]">{asset.name}</button>
-          <p className="text-xs font-medium text-[var(--text-tertiary)]">{typeLabel(asset.type)}{asset.plate ? ` · ${asset.plate}` : ""}</p>
-        </div>
-        <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase", st.chip)}>{st.label}</span>
-      </div>
-
-      {/* Tienda + alertas (mantenimiento / combustible / cobranza) */}
-      <div className="mt-2.5 flex flex-wrap gap-1.5">
-        <BotonIconoTip
-          icon={Store}
-          tamano="sm"
-          tono={asset.publishedProductId ? "acento" : "neutro"}
-          onClick={onPublish}
-          aria-pressed={Boolean(asset.publishedProductId)}
-          label={asset.publishedProductId ? "En tienda: toca para quitarlo de la tienda" : "Publicar como servicio de alquiler en tu tienda"}
-          tip={asset.publishedProductId ? "En tienda — toca para quitarlo" : "Publicar en tienda como servicio de alquiler"}
-          className={asset.publishedProductId ? "bg-primary/10" : "border border-[var(--rule-base)]"}
-        />
-        {asset.maintenanceDue > 0 && <Chip icon={Wrench} tone="error">{asset.maintenanceDue} mantto. vencido</Chip>}
-        {asset.maintenanceDue === 0 && asset.maintenanceSoon > 0 && <Chip icon={Wrench} tone="warning">{asset.maintenanceSoon} mantto. pronto</Chip>}
-        {asset.fuelAlert && <Chip icon={Fuel} tone="warning">consume de más</Chip>}
-        {asset.pendingAmount > 0 && <Chip icon={CreditCard} tone="warning">por cobrar {fmt(asset.pendingAmount)}</Chip>}
-      </div>
-
-      {/* Rentabilidad */}
-      <div className="mt-3 rounded-xl bg-[var(--surface-sunken)] p-3">
-        <div className="flex items-baseline justify-between">
-          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Ganancia</span>
-          <span className={cn("font-mono text-lg font-bold tabular-nums", asset.profit >= 0 ? "text-primary" : "text-[var(--data-error-600)]")}>{fmt(asset.profit)}</span>
-        </div>
-        <div className="mt-2 flex h-2 overflow-hidden rounded-full bg-[var(--surface-raised)]">
-          <span className="bg-primary" style={{ width: `${incPct}%` }} />
-          <span className="bg-[var(--rule-base)]" style={{ width: `${100 - incPct}%` }} />
-        </div>
-        <div className="mt-1.5 flex justify-between text-[length:var(--ts-2xs)] font-bold tabular-nums">
-          <span className="text-primary">↑ {fmt(asset.totalIncome)}</span>
-          <span className="text-[var(--text-tertiary)]">↓ {fmt(asset.totalExpense)}</span>
-        </div>
-      </div>
-
-      {/* Costo/unidad + utilización */}
-      <div className="mt-2.5 grid grid-cols-2 gap-2">
-        <div className="rounded-xl border border-[var(--rule-base)] p-2.5">
-          <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Costo / {asset.rateUnit}</p>
-          <p className="mt-0.5 font-mono text-sm font-bold tabular-nums text-[var(--text-primary)]">{asset.costPerUnit != null ? fmt(asset.costPerUnit) : "—"}</p>
-          {asset.marginPerUnit != null && <p className="text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--text-tertiary)]">margen {fmt(asset.marginPerUnit)}</p>}
-        </div>
-        <div className="rounded-xl border border-[var(--rule-base)] p-2.5">
-          <p className="flex items-center justify-between text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]"><span>Uso 30d</span><span className="tabular-nums text-[var(--text-secondary)]">{asset.utilizationPct != null ? `${Math.round(asset.utilizationPct)}%` : "—"}</span></p>
-          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
-            <span className={cn("block h-full rounded-full", (asset.utilizationPct ?? 0) >= 60 ? "bg-primary" : (asset.utilizationPct ?? 0) >= 30 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]/60")} style={{ width: `${asset.utilizationPct ?? 0}%` }} />
-          </div>
-          <p className="mt-1 text-[length:var(--ts-2xs)] font-bold tabular-nums text-[var(--text-tertiary)]">{asset.units30d} / {(asset.capacityPerDay ?? 8) * 30} {asset.rateUnit}</p>
-        </div>
-      </div>
-
-      {/* Acciones */}
-      <div className="mt-3 flex items-center gap-1.5">
-        <button type="button" onClick={onRent} className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-primary/90"><TrendingUp className="h-3.5 w-3.5" /> Alquiler</button>
-        <button type="button" onClick={onExpense} className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 py-2 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--data-warning-500)] hover:text-[var(--data-warning-600)]"><Fuel className="h-3.5 w-3.5" /> Gasto</button>
-        <button type="button" onClick={onChecklist} aria-label="Checklist" title="Checklist pre-alquiler" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"><ClipboardCheck className="h-3.5 w-3.5" /></button>
-        <button type="button" onClick={onContract} aria-label="Contrato" title="Contrato / cotización PDF" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"><FileText className="h-3.5 w-3.5" /></button>
-        <button type="button" onClick={onEdit} aria-label="Editar" title="Editar" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"><Pencil className="h-3.5 w-3.5" /></button>
-      </div>
-    </div>
-  );
-}
-
-function Chip({ icon: Icon, tone, children }: { icon: React.ComponentType<{ className?: string }>; tone: "warning" | "error"; children: React.ReactNode }) {
-  const cls = tone === "error" ? "bg-[var(--data-error-100)] text-[var(--data-error-600)] dark:text-[var(--data-error-500)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]";
-  return <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold", cls)}><Icon className="h-3 w-3" /> {children}</span>;
 }
 
 // ── Modal crear / editar activo ─────────────────────────────────────────────

@@ -1,340 +1,122 @@
 "use client";
 
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import { DataTable, LoadingState } from "@buleje/design-system";
-import { useState, useEffect, useMemo } from "react";
-import {
-  Receipt, RefreshCw, AlertTriangle,
-  CheckCircle, BookOpen,
-} from "@buleje/design-system/icons";
-import { cn, exportToCSV } from "@/lib/utils";
-import AdminCard from "./shared/AdminCard";
-import StatusBadge from "./shared/StatusBadge";
-import { formatCurrency, formatDate } from "@/lib/format";
-import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
-import type { FacetaOpcion } from "@/lib/admin/filtros-columna";
-import { BotonRestablecerColumnas, EnOrden, useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
+/**
+ * Mi Plata › Impuestos y reportes › Impuestos del mes: CUÁNTO pagar a SUNAT y
+ * CUÁNDO. El cálculo vive en `impuestos/impuestos-del-mes.ts` (misma regla de
+ * IGV que el Resumen) y los totales salen de endpoints del servidor.
+ *
+ * Antes (medido 11-10): un «Libro tributario» armado en el navegador con
+ * boletas inventadas (B001-00000001…) sólo de pedidos web, IGV = ×18/118 y un
+ * botón «Declarar» por fila que no guardaba nada. El registro real de ventas y
+ * compras está en «Para el contador» (formatos 14.1 y 8.1).
+ */
+import { useState } from "react";
+import { toast } from "sonner";
+import { SectionTitle } from "@buleje/design-system";
+import { BookOpen, CheckCircle, FileText, MoreHorizontal, RefreshCw, Settings2 } from "@buleje/design-system/icons";
+import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
+import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { limaDateKey } from "@/lib/utils";
+import { REGIMEN_LABELS } from "@/lib/tax/obligaciones-peru";
+import { nombreDelMes } from "./impuestos/impuestos-del-mes";
+import { useConfigTributaria, useDeclaraciones, type EstadoDeclaracion } from "./impuestos/use-impuestos";
+import { useImpuestosDelMes } from "./impuestos/use-impuestos-del-mes";
+import ApagarDelMes from "./impuestos/APagarDelMes";
+import RegimenModal from "./impuestos/RegimenModal";
 
-/** Las columnas de datos en su orden de fábrica (Acc. es fija, al final). */
-const COLS_TAX = ["fecha", "tipo", "doc", "entidad", "base", "igv", "total", "estado"] as const;
-
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-type TaxLine = {
-  id: string;
-  date: string;
-  type: "venta" | "compra";
-  docType: string;     // Factura / Boleta
-  serie: string;
-  number: string;
-  entity: string;      // Cliente o Proveedor
-  entityDoc: string;   // RUC/DNI
-  base: number;        // Base imponible
-  igv: number;         // IGV = base * 0.18
-  total: number;
-  status: "pendiente" | "declarado";
+const SIGUIENTE: Record<EstadoDeclaracion, { estado: EstadoDeclaracion; rotulo: string } | null> = {
+  pendiente: { estado: "presentada", rotulo: "Marcar presentada" },
+  presentada: { estado: "pagada", rotulo: "Marcar pagada" },
+  pagada: null,
 };
-
-type PeriodSummary = {
-  salesBase: number;
-  salesIGV: number;
-  purchasesBase: number;
-  purchasesIGV: number;
-  igvBalance: number;   // IGV ventas - IGV compras = saldo a pagar/favor
-};
-
-const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-
-function fmt(n: number) {
-  return `${formatCurrency(Math.abs(n))}`;
-}
-function fmtDate(iso: string) {
-  try { return formatDate(iso); }
-  catch { return iso; }
-}
-
-// IGV de Perú = 18%. Asumimos que `total`/`amount` lo incluyen (lo estándar en
-// boletas/facturas peruanas) → la base se obtiene revirtiendo el IGV.
-const IGV_RATE = 0.18;
-const round2 = (n: number) => parseFloat(n.toFixed(2));
-
-// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function TaxTab() {
-  const now = new Date();
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth());
-  const [loading, setLoading] = useState(true);
-  const [lines, setLines] = useState<TaxLine[]>([]);
-  const [view, setView] = useState<"ventas" | "compras" | "resumen">("resumen");
+  const hoy = limaDateKey().slice(0, 7);
+  const [mes, setMes] = useState(hoy);
   const [tick, setTick] = useState(0);
-  /** Filtro de la columna "Estado" (Pendiente/Declarado) — antes no existía
-   *  ningún filtro sobre esa columna. */
-  const [estadoFilter, setEstadoFilter] = useState<string[]>([]);
-  const orden = useOrdenColumnas("tax-libro-tributario", COLS_TAX);
+  const [regimenAbierto, setRegimenAbierto] = useState(false);
+  const config = useConfigTributaria();
+  const declaraciones = useDeclaraciones(Number(mes.slice(0, 4)));
+  const { calculo, cargando, error, kpis } = useImpuestosDelMes(mes, config.regimen, tick);
+  const estado = declaraciones.estadoDe(mes);
+  const siguiente = SIGUIENTE[estado];
 
-  useEffect(() => {
-    let active = true;
-    setLoading(true);
-    const from = `${year}-${String(month + 1).padStart(2, "0")}-01`;
-    const lastDay = new Date(year, month + 1, 0).getDate();
-    const to = `${year}-${String(month + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+  const marcar = (nuevo: EstadoDeclaracion) =>
+    declaraciones.marcar(mes, nuevo, calculo?.total).catch(() => toast.error("No se pudo guardar. Intenta de nuevo."));
 
-    // Datos REALES del período (sin relleno: si no hay nada, el período va vacío).
-    //   - Ventas  ← órdenes entregadas/confirmadas (/api/orders)
-    //   - Compras ← cuentas por pagar registradas en el período (/api/payables),
-    //               proxy de las facturas de proveedor para el crédito fiscal.
-    const inPeriod = (iso: string) => {
-      const day = iso.slice(0, 10);
-      return day >= from && day <= to;
-    };
-
-    Promise.all([
-      fetch(`/api/orders?from=${from}&to=${to}`).then(r => r.ok ? r.json() : []).catch(() => []),
-      fetch(`/api/payables`).then(r => r.ok ? r.json() : []).catch(() => []),
-    ]).then(([orders, payables]) => {
-      if (!active) return;
-
-      const ventas: TaxLine[] = (Array.isArray(orders) ? orders : [])
-        .filter((o: { status: string }) => o.status === "entregado" || o.status === "confirmado")
-        .map((o: { id: string; createdAt: string; total: number; customer?: { name?: string; phone?: string } }, i: number) => {
-          const base = round2(o.total / (1 + IGV_RATE));
-          return {
-            id: `ord-${o.id}`,
-            date: o.createdAt.slice(0, 10),
-            type: "venta" as const,
-            docType: "Boleta",
-            serie: "B001",
-            number: String(i + 1).padStart(8, "0"),
-            entity: o.customer?.name ?? "Cliente",
-            entityDoc: o.customer?.phone ?? "—",
-            base, igv: round2(o.total - base), total: o.total,
-            status: "pendiente" as const,
-          };
-        });
-
-      const compras: TaxLine[] = (Array.isArray(payables) ? payables : [])
-        .filter((p: { createdAt?: string }) => !!p.createdAt && inPeriod(p.createdAt))
-        .map((p: { id: string; createdAt: string; amount: number; supplierName?: string }, i: number) => {
-          const total = Number(p.amount) || 0;
-          const base = round2(total / (1 + IGV_RATE));
-          return {
-            id: `pay-${p.id}`,
-            date: p.createdAt.slice(0, 10),
-            type: "compra" as const,
-            docType: "Factura",
-            serie: "FC",
-            number: String(i + 1).padStart(8, "0"),
-            entity: p.supplierName ?? "Proveedor",
-            entityDoc: "—",
-            base, igv: round2(total - base), total,
-            status: "pendiente" as const,
-          };
-        });
-
-      setLines([...ventas, ...compras].sort((a, b) => a.date.localeCompare(b.date)));
-      setLoading(false);
-    });
-
-    return () => { active = false; };
-  }, [year, month, tick]);
-
-  const summary = useMemo<PeriodSummary>(() => {
-    const ventas = lines.filter(l => l.type === "venta");
-    const compras = lines.filter(l => l.type === "compra");
-    const salesBase = ventas.reduce((s, l) => s + l.base, 0);
-    const salesIGV = ventas.reduce((s, l) => s + l.igv, 0);
-    const purchasesBase = compras.reduce((s, l) => s + l.base, 0);
-    const purchasesIGV = compras.reduce((s, l) => s + l.igv, 0);
-    return { salesBase, salesIGV, purchasesBase, purchasesIGV, igvBalance: salesIGV - purchasesIGV };
-  }, [lines]);
-
-  const visibleLines = view === "resumen" ? lines : lines.filter(l => l.type === (view === "ventas" ? "venta" : "compra"));
-
-  // Peso de "Estado" sobre lo que ya recortó la pestaña (ventas/compras/todos),
-  // no sobre lo que además recortó el propio filtro — si no, marcar "Declarado"
-  // hace desaparecer "Pendiente" de su propia lista de opciones.
-  const estadoOptions = useMemo<FacetaOpcion[]>(() => {
-    const counts: Record<string, number> = {};
-    for (const l of visibleLines) counts[l.status] = (counts[l.status] ?? 0) + 1;
-    return (["pendiente", "declarado"] as const)
-      .filter((s) => counts[s] > 0)
-      .map((s) => ({ value: s, count: counts[s] }));
-  }, [visibleLines]);
-  const filteredLines = estadoFilter.length > 0 ? visibleLines.filter((l) => estadoFilter.includes(l.status)) : visibleLines;
-
-  const handleDeclare = (id: string) => {
-    setLines(prev => prev.map(l => l.id === id ? { ...l, status: "declarado" } : l));
-  };
-
-  const handleExportBook = (type: "ventas" | "compras") => {
-    const filtered = lines.filter(l => l.type === (type === "ventas" ? "venta" : "compra"));
-    exportToCSV(filtered.map(l => ({ fecha: l.date, tipo_doc: l.docType, serie: l.serie, número: l.number, entidad: l.entity, ruc_dni: l.entityDoc, base_imponible: l.base, igv: l.igv, total: l.total, estado: l.status })), `libro-${type}-${MONTHS[month]}-${year}`);
-  };
+  const acciones: MenuAccion[] = [
+    {
+      id: "regimen",
+      label: "Régimen y RUC",
+      hint: "Cambian la tasa de la Renta y la semana en que vence",
+      meta: config.regimen.toUpperCase(),
+      icon: Settings2,
+      onSelect: () => setRegimenAbierto(true),
+    },
+    { id: "libros", label: "Libros para el contador", hint: "Registro de ventas y de compras del mes, en Excel", icon: BookOpen, onSelect: () => irAEnlace("/admin?tab=plata&vista=contador"), seccion: "Ver" },
+    { id: "hoja", label: "El mes en una hoja", hint: "Ingresos, gastos y utilidad en PDF", icon: FileText, onSelect: () => irAEnlace("/admin?tab=plata&vista=reportes"), seccion: "Ver" },
+    ...(estado !== "pendiente"
+      ? [{ id: "pendiente", label: "Volver a pendiente", hint: "Si la marcaste por error", icon: RefreshCw, onSelect: () => void marcar("pendiente") }]
+      : []),
+    { id: "actualizar", label: "Actualizar", icon: RefreshCw, onSelect: () => setTick((t) => t + 1) },
+  ];
 
   return (
     <div className="space-y-4">
-      {/* Header estándar: el kicker + título + subtítulo estaban armados a
-          mano, replicando lo que AdminModuleHeader ya hace (y sin su
-          font-display). */}
-      <AdminModuleHeader
-        as="h2"
-        eyebrow="SUNAT · Tributario"
-        title="Impuestos e IGV"
-        description="Registro de ventas y compras, libro tributario, IGV a pagar"
-        icon={Receipt}
-      >
-          <select aria-label="Mes" value={month} onChange={e => setMonth(Number(e.target.value))} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-            {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
-          </select>
-          <select aria-label="Año" value={year} onChange={e => setYear(Number(e.target.value))} className="text-sm border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl px-3 h-10 bg-[var(--surface-raised)] text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-            {[now.getFullYear() - 1, now.getFullYear()].map(y => <option key={y} value={y}>{y}</option>)}
-          </select>
-          <button aria-label="Actualizar" onClick={() => setTick(t => t + 1)} className="p-2 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] transition-colors">
-            <RefreshCw className="h-4 w-4 text-[var(--text-secondary)] dark:text-muted" />
-          </button>
-          <button onClick={() => handleExportBook("ventas")} className="flex items-center gap-1.5 px-3 min-h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors">
-            <BookOpen className="h-4 w-4" /> Libro ventas
-          </button>
-          <button onClick={() => handleExportBook("compras")} className="flex items-center gap-1.5 px-3 min-h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors">
-            <BookOpen className="h-4 w-4" /> Libro compras
-          </button>
-      </AdminModuleHeader>
+      {/* Una fila: título · mes · Indicadores · acción del mes · Más */}
+      <div className="flex flex-wrap items-center gap-2 xl:flex-nowrap">
+        <div className="flex shrink-0 items-center gap-2">
+          <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">Impuestos</SectionTitle>
+          <InfoTip
+            title="Impuestos del mes"
+            what="Cuánto le pagas a SUNAT por el mes y hasta cuándo: el IGV de lo que registraste (comprobantes electrónicos menos el IGV de tus gastos) y el pago a cuenta de la Renta según tu régimen."
+            affects="Es una estimación con lo registrado: no reemplaza a tu contador. No incluye planilla (ESSALUD, ONP/AFP), detracciones, percepciones ni ITAN."
+            example={`Régimen MYPE: 1 % de tus ingresos netos del mes. Vendiste S/ 10,000 sin comprobantes electrónicos → Renta S/ 100 e IGV sin registro.`}
+          />
+        </div>
+        <label className="sr-only" htmlFor="impuestos-mes">Mes</label>
+        <input
+          id="impuestos-mes"
+          type="month"
+          value={mes}
+          max={hoy}
+          onChange={(e) => e.target.value && setMes(e.target.value)}
+          className="h-12 shrink-0 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+        />
+        <div className="ml-auto flex min-w-0 items-center gap-2">
+          {kpis.boton}
+          {siguiente ? (
+            <button
+              type="button"
+              onClick={() => void marcar(siguiente.estado)}
+              className="inline-flex h-12 shrink-0 items-center gap-2 rounded-xl bg-[var(--accent-dark)] px-4 text-sm font-bold text-white hover:brightness-110"
+              title={`Formulario 621 de ${nombreDelMes(mes)}`}
+            >
+              <CheckCircle className="h-4 w-4" aria-hidden />
+              {siguiente.rotulo}
+            </button>
+          ) : null}
+          <ActionMenu label="Más" icon={MoreHorizontal} actions={acciones} soloIcono size="md" className="w-12 shrink-0" title="Régimen y RUC, libros para el contador, el mes en una hoja" />
+        </div>
+      </div>
 
-      {loading ? (
-        <LoadingState />
-      ) : (
-        <>
-          {/* IGV Balance card — AdminCard + intent via StatusBadge */}
-          <AdminCard padding="lg">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <p className="text-xs uppercase tracking-[var(--ls-wider)] font-semibold text-[var(--text-tertiary)] mb-2">IGV del período — {MONTHS[month]} {year}</p>
-                <p className={cn("text-4xl font-semibold tabular-nums", summary.igvBalance > 0 ? "text-[var(--data-warning-500)]" : "text-[var(--data-success-500)]")}>
-                  {fmt(summary.igvBalance)}
-                </p>
-                <div className="mt-2">
-                  <StatusBadge
-                    variant={summary.igvBalance > 0 ? "warning" : "success"}
-                    label={summary.igvBalance > 0 ? "IGV a pagar a SUNAT" : "Crédito fiscal a favor"}
-                    dot
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-3 text-center">
-                  <p className="text-xs uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">IGV Ventas</p>
-                  <p className="font-semibold text-[var(--data-success-500)] tabular-nums">{fmt(summary.salesIGV)}</p>
-                  <p className="text-xs text-[var(--text-tertiary)] tabular-nums">Base: {fmt(summary.salesBase)}</p>
-                </div>
-                <div className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-sunken)] p-3 text-center">
-                  <p className="text-xs uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)] mb-1">IGV Compras</p>
-                  <p className="font-semibold text-[var(--data-success-500)] tabular-nums">{fmt(summary.purchasesIGV)}</p>
-                  <p className="text-xs text-[var(--text-tertiary)] tabular-nums">Base: {fmt(summary.purchasesBase)}</p>
-                </div>
-              </div>
-            </div>
-          </AdminCard>
+      {kpis.panel}
 
-          {/* Tabs */}
-          <div className="flex flex-wrap items-center gap-2">
-            {(["resumen", "ventas", "compras"] as const).map(v => (
-              <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-xl transition-colors capitalize", view === v ? "bg-primary text-white" : "bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] ")}>
-                {v === "resumen" ? "Todos" : v === "ventas" ? "Libro de ventas" : "Libro de compras"}
-              </button>
-            ))}
-            <BotonRestablecerColumnas cambiado={orden.cambiado} onRestablecer={orden.restablecer} />
-          </div>
+      <ApagarDelMes
+        mes={mes}
+        calculo={calculo}
+        cargando={cargando || !config.lista}
+        error={error}
+        estado={estado}
+        regimen={REGIMEN_LABELS[config.regimen]}
+        ruc={config.ruc}
+        onRuc={() => setRegimenAbierto(true)}
+        onReintentar={() => setTick((t) => t + 1)}
+      />
 
-          {/* Table */}
-          <div className="bg-[var(--surface-raised)]">
-            <DataTable filtrable className="min-w-[600px]">
-              <thead ref={orden.refCabecera}>
-                <tr>
-                  <EnOrden
-                    orden={orden.orden}
-                    celdas={{
-                      fecha: <th data-col="fecha">Fecha</th>,
-                      tipo: <th data-col="tipo">Tipo</th>,
-                      doc: <th data-col="doc" className="hidden sm:table-cell">Doc</th>,
-                      entidad: <th data-col="entidad">Entidad</th>,
-                      base: <th data-col="base" className="text-right hidden sm:table-cell">Base</th>,
-                      igv: <th data-col="igv" className="text-right">IGV</th>,
-                      total: <th data-col="total" className="text-right">Total</th>,
-                      estado: (
-                        <th data-col="estado" className="text-center hidden sm:table-cell">
-                          <span className="block">Estado</span>
-                          <FiltroColumnaMulti
-                            label="Estado"
-                            value={estadoFilter}
-                            options={estadoOptions}
-                            etiqueta={(v) => (v === "declarado" ? "Declarado" : "Pendiente")}
-                            onChange={setEstadoFilter}
-                            placeholder="Todos"
-                            className="mx-auto"
-                          />
-                        </th>
-                      ),
-                    }}
-                  />
-                  <th className="text-center hidden sm:table-cell">Acc.</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredLines.map(line => (
-                  <tr key={line.id}>
-                    <EnOrden
-                      orden={orden.orden}
-                      celdas={{
-                        fecha: <td className="text-xs text-[var(--text-secondary)] dark:text-muted">{fmtDate(line.date)}</td>,
-                        tipo: (
-                          <td>
-                            <StatusBadge variant={line.type === "venta" ? "success" : "neutral"} label={line.type === "venta" ? "V" : "C"} size="sm" />
-                          </td>
-                        ),
-                        doc: <td className="text-xs text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell font-mono">{line.serie}-{line.number}</td>,
-                        entidad: (
-                          <td>
-                            <p className="text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate max-w-[140px]">{line.entity}</p>
-                            <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{line.entityDoc}</p>
-                          </td>
-                        ),
-                        base: <td className="text-right text-sm text-[var(--text-secondary)] dark:text-muted hidden sm:table-cell">{fmt(line.base)}</td>,
-                        igv: <td className="text-right font-semibold text-[var(--data-warning-500)]">{fmt(line.igv)}</td>,
-                        total: <td className="text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(line.total)}</td>,
-                        estado: (
-                          <td className="text-center hidden sm:table-cell">
-                            <StatusBadge variant={line.status === "declarado" ? "success" : "pending"} label={line.status === "declarado" ? "Declarado" : "Pendiente"} size="sm" />
-                          </td>
-                        ),
-                      }}
-                    />
-                    <td className="text-center hidden sm:table-cell">
-                      {line.status === "pendiente" && (
-                        <button onClick={() => handleDeclare(line.id)} className="text-xs px-2.5 py-1 rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/20 font-semibold transition-colors">Declarar</button>
-                      )}
-                      {line.status === "declarado" && <CheckCircle className="h-4 w-4 text-[var(--data-success-500)] mx-auto" />}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </DataTable>
-            {filteredLines.length === 0 && <p className="text-center py-10 text-[var(--text-tertiary)] dark:text-muted text-sm">Sin registros para el período.</p>}
-          </div>
-
-          {/* Pending alert — AdminCard con intent warning */}
-          {lines.filter(l => l.status === "pendiente").length > 0 && (
-            <AdminCard padding="md" className="flex items-start gap-3 border-l-2 border-l-[var(--data-warning)]">
-              <AlertTriangle className="h-5 w-5 text-[var(--data-warning-500)] shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-semibold text-[var(--text-primary)]">Registros pendientes de declaración</p>
-                <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                  Tienes {lines.filter(l => l.status === "pendiente").length} registro(s) aún no marcados como declarados ante SUNAT.
-                </p>
-              </div>
-            </AdminCard>
-          )}
-        </>
+      {regimenAbierto && (
+        <RegimenModal open onClose={() => setRegimenAbierto(false)} regimen={config.regimen} ruc={config.ruc} guardar={config.guardar} />
       )}
     </div>
   );

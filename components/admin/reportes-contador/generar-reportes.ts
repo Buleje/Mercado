@@ -1,0 +1,511 @@
+"use client";
+
+/**
+ * Los reportes sueltos de «Para el contador» (CSV y PDF armados en el
+ * navegador), movidos tal cual desde `ReportsTab.tsx` para que la vista quede
+ * en su tarea: los libros del mes. El «Informe Mensual de Gestión» se fue:
+ * repetía «Reporte mensual» (el PDF del mes que arma el servidor).
+ */
+import { BarChart3, Clock, Database, DollarSign, Package, TrendingUp, Users } from "@buleje/design-system/icons";
+import { formatCurrency, formatDate, formatDateNumeric, formatDateTime } from "@/lib/format";
+import { enStockBajo, stockMinimoDe } from "@/lib/inventario/stock-minimo";
+
+export type ReportType = "ventas" | "inventario" | "clientes" | "financiero" | "horas-pico" | "margen" | "metricas-completas";
+
+export const REPORTS: { type: ReportType; label: string; desc: string; icon: typeof BarChart3; pdfOnly?: boolean }[] = [
+  { type: "ventas", label: "Reporte de Ventas", desc: "Resumen de ventas por período con totales y productos más vendidos", icon: BarChart3 },
+  { type: "inventario", label: "Reporte de Inventario", desc: "Estado actual del inventario, stock bajo y valor total", icon: Package },
+  { type: "clientes", label: "Reporte de Clientes", desc: "Base de clientes, frecuencia de compra y lealtad", icon: Users },
+  { type: "financiero", label: "Reporte Financiero", desc: "Ingresos, costos, cuentas por pagar y rentabilidad", icon: DollarSign },
+  { type: "horas-pico", label: "Horas Pico de Ventas", desc: "Análisis de horarios con mayor afluencia de ventas", icon: Clock },
+  { type: "margen", label: "Top Productos por Margen", desc: "Los 10 productos con mayor margen de ganancia", icon: TrendingUp },
+  { type: "metricas-completas", label: "Métricas Completas", desc: "Export completo de todas las métricas del negocio (CSV/JSON)", icon: Database },
+];
+
+async function fetchData(type: ReportType) {
+    const endpoints: Record<ReportType, string[]> = {
+      ventas: ["/api/sales?limit=200", "/api/products"],
+      inventario: ["/api/products"],
+      clientes: ["/api/customers"],
+      financiero: ["/api/sales?limit=200", "/api/payables", "/api/products"],
+      "horas-pico": ["/api/sales?limit=500"],
+      margen: ["/api/products", "/api/sales?limit=500"],
+      "metricas-completas": ["/api/sales?limit=1000", "/api/products", "/api/customers", "/api/payables", "/api/suppliers", "/api/orders?limit=1000"],
+    };
+    const results = await Promise.all(endpoints[type].map(url => fetch(url).then(r => r.ok ? r.json() : []).catch(() => [])));
+    return results;
+  }
+
+/** Baja el CSV del reporte. Lanza si no se pudo armar. */
+export async function generarCSV(type: ReportType, minimoGlobal: number): Promise<void> {
+      const data = await fetchData(type);
+      let csv = "";
+      const now = formatDateNumeric(new Date());
+
+      if (type === "ventas") {
+        const [sales, products] = data;
+        const productMap = Object.fromEntries((products || []).map((p: { id: number; name: string }) => [p.id, p.name]));
+        const total = (sales || []).reduce((s: number, sale: { total: number }) => s + sale.total, 0);
+        csv = `Reporte de Ventas - ${now}\n\n`;
+        csv += `Total Ventas,${(sales || []).length}\nMonto Total,"${formatCurrency(total)}"\n\n`;
+        csv += `ID,Fecha,Total,Método Pago,Productos\n`;
+        (sales || []).forEach((s: { id: string; createdAt: string; total: number; paymentMethod?: string; items?: { productId: number; quantity: number }[] }) => {
+          const items = (s.items || []).map((i: { productId: number; quantity: number }) => `${productMap[i.productId] || i.productId} x${i.quantity}`).join("; ");
+          csv += `${s.id.slice(-8)},${formatDate(s.createdAt)},${formatCurrency(Number(s.total))},${s.paymentMethod || "efectivo"},"${items}"\n`;
+        });
+      } else if (type === "inventario") {
+        const [products] = data;
+        const totalValue = (products || []).reduce((s: number, p: { price: number; stock: number }) => s + p.price * p.stock, 0);
+        const lowStock = (products || []).filter((p: { stock: number | null; stockMin?: number | null; active?: boolean }) => p.active !== false && enStockBajo(p, minimoGlobal));
+        csv = `Reporte de Inventario - ${now}\n\n`;
+        csv += `Total Productos,${(products || []).length}\nValor Total Inventario,"${formatCurrency(totalValue)}"\nProductos Stock Bajo,${lowStock.length}\n\n`;
+        csv += `ID,Nombre,Categoría,Precio,Stock,Min Stock,Valor\n`;
+        (products || []).forEach((p: { id: number; name: string; category?: string; price: number; stock: number; stockMin?: number | null }) => {
+          csv += `${p.id},"${p.name}",${p.category || ""},${formatCurrency(Number(p.price))},${p.stock},${stockMinimoDe(p, minimoGlobal)},${formatCurrency(p.price * p.stock)}\n`;
+        });
+      } else if (type === "clientes") {
+        const [customers] = data;
+        csv = `Reporte de Clientes - ${now}\n\n`;
+        csv += `Total Clientes,${(customers || []).length}\n\n`;
+        csv += `Teléfono,Nombre,Dirección,Total Gastado,Puntos,Nivel\n`;
+        (customers || []).forEach((c: { phone: string; name: string; address?: string; totalSpent?: number; loyaltyPoints?: number; loyaltyTier?: string }) => {
+          csv += `${c.phone},"${c.name}","${c.address || ""}",${formatCurrency(c.totalSpent || 0)},${c.loyaltyPoints || 0},${c.loyaltyTier || "Nuevo"}\n`;
+        });
+      } else if (type === "horas-pico") {
+        const [sales] = data;
+        const hourCounts: Record<number, { count: number; total: number }> = {};
+        const dayCounts: Record<number, { count: number; total: number }> = {};
+        const dayNames = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+        
+        (sales || []).forEach((s: { createdAt: string; total: number }) => {
+          const date = new Date(s.createdAt);
+          const hour = date.getHours();
+          const day = date.getDay();
+          hourCounts[hour] = hourCounts[hour] || { count: 0, total: 0 };
+          hourCounts[hour].count++;
+          hourCounts[hour].total += s.total;
+          dayCounts[day] = dayCounts[day] || { count: 0, total: 0 };
+          dayCounts[day].count++;
+          dayCounts[day].total += s.total;
+        });
+        
+        const hourData = Object.entries(hourCounts).map(([h, d]) => ({ hour: parseInt(h), ...d })).sort((a, b) => b.count - a.count);
+        const dayData = Object.entries(dayCounts).map(([d, data]) => ({ day: parseInt(d), ...data })).sort((a, b) => b.count - a.count);
+        
+        csv = `Reporte de Horas Pico - ${now}\n\n`;
+        csv += `Análisis por Hora\nHora,Cantidad Ventas,Monto Total\n`;
+        hourData.forEach(h => {
+          csv += `${h.hour}:00,${h.count},${formatCurrency(Number(h.total))}\n`;
+        });
+        csv += `\nAnálisis por Día de la Semana\nDía,Cantidad Ventas,Monto Total\n`;
+        dayData.forEach(d => {
+          csv += `${dayNames[d.day]},${d.count},${formatCurrency(Number(d.total))}\n`;
+        });
+      } else if (type === "margen") {
+        const [products, sales] = data;
+        const productStats: Record<number, { name: string; units: number; revenue: number; cost: number }> = {};
+        
+        (sales || []).forEach((s: { items?: { productId: number; quantity: number; price: number }[] }) => {
+          (s.items || []).forEach((item: { productId: number; quantity: number; price: number }) => {
+            const product = (products || []).find((p: { id: number }) => p.id === item.productId);
+            if (!product) return;
+            if (!productStats[item.productId]) {
+              productStats[item.productId] = { name: product.name, units: 0, revenue: 0, cost: 0 };
+            }
+            const costPrice = product.costPrice || product.price * 0.7;
+            productStats[item.productId].units += item.quantity;
+            productStats[item.productId].revenue += item.price * item.quantity;
+            productStats[item.productId].cost += costPrice * item.quantity;
+          });
+        });
+        
+        const topMargin = Object.entries(productStats)
+          .map(([id, stats]) => ({ id: parseInt(id), ...stats, margin: stats.revenue - stats.cost }))
+          .sort((a, b) => b.margin - a.margin)
+          .slice(0, 10);
+        
+        csv = `Reporte de Top 10 por Margen - ${now}\n\n`;
+        csv += `Producto,Unidades Vendidas,Ingresos,Costo,Margen,% Margen\n`;
+        topMargin.forEach(p => {
+          const marginPct = p.revenue > 0 ? ((p.margin / p.revenue) * 100).toFixed(1) : "0.0";
+          csv += `"${p.name}",${p.units},${formatCurrency(Number(p.revenue))},${formatCurrency(Number(p.cost))},${formatCurrency(Number(p.margin))},${marginPct}%\n`;
+        });
+      } else if (type === "metricas-completas") {
+        // FASE 6.4: Full Business Metrics Export
+        const [sales, products, customers, payables, suppliers, orders] = data;
+        
+        csv = `BULEJE ERP - METRICAS COMPLETAS DEL NEGOCIO\n`;
+        csv += `Generado: ${formatDateTime(new Date())}\n\n`;
+        
+        // === EXECUTIVE SUMMARY ===
+        csv += `=== RESUMEN EJECUTIVO ===\n\n`;
+        const totalRevenue = (sales || []).reduce((s: number, sale: { total: number }) => s + sale.total, 0);
+        const totalOrders = (orders || []).filter((o: { status: string }) => o.status !== "cancelado").length;
+        const totalCustomers = (customers || []).length;
+        const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+        csv += `Ingresos Totales,${formatCurrency(totalRevenue)}\n`;
+        csv += `Pedidos/Ventas Totales,${totalOrders + (sales || []).length}\n`;
+        csv += `Total Clientes,${totalCustomers}\n`;
+        csv += `Valor Promedio Pedido,${formatCurrency(avgOrderValue)}\n\n`;
+        
+        // === REVENUE BREAKDOWN ===
+        csv += `=== INGRESOS POR CATEGORIA ===\n`;
+        csv += `Categoría,Ventas,% del Total\n`;
+        const categoryRevenue = new Map<string, number>();
+        (sales || []).forEach((s: { items?: { productId: number; price: number; quantity: number }[] }) => {
+          (s.items || []).forEach((item: { productId: number; price: number; quantity: number }) => {
+            const product = (products || []).find((p: { id: number }) => p.id === item.productId);
+            const category = product?.category || "Sin categoría";
+            categoryRevenue.set(category, (categoryRevenue.get(category) || 0) + (item.price * item.quantity));
+          });
+        });
+        [...categoryRevenue.entries()].sort((a, b) => b[1] - a[1]).forEach(([cat, rev]) => {
+          const pct = totalRevenue > 0 ? ((rev / totalRevenue) * 100).toFixed(1) : "0.0";
+          csv += `${cat},${formatCurrency(rev)},${pct}%\n`;
+        });
+        csv += `\n`;
+        
+        // === REVENUE BY PAYMENT METHOD ===
+        csv += `=== INGRESOS POR METODO DE PAGO ===\n`;
+        csv += `Método,Ventas,% del Total\n`;
+        const paymentRevenue = new Map<string, number>();
+        (sales || []).forEach((s: { payment?: string; total: number }) => {
+          const method = s.payment || "efectivo";
+          paymentRevenue.set(method, (paymentRevenue.get(method) || 0) + s.total);
+        });
+        (orders || []).filter((o: { status: string }) => o.status !== "cancelado").forEach((o: { paymentMethod?: string; total: number }) => {
+          const method = o.paymentMethod || "efectivo";
+          paymentRevenue.set(method, (paymentRevenue.get(method) || 0) + o.total);
+        });
+        [...paymentRevenue.entries()].sort((a, b) => b[1] - a[1]).forEach(([method, rev]) => {
+          const pct = totalRevenue > 0 ? ((rev / totalRevenue) * 100).toFixed(1) : "0.0";
+          csv += `${method},${formatCurrency(rev)},${pct}%\n`;
+        });
+        csv += `\n`;
+        
+        // === PRODUCTS ===
+        csv += `=== PRODUCTOS ===\n`;
+        csv += `Total Productos,${(products || []).length}\n`;
+        csv += `Productos Activos,${(products || []).filter((p: { active: boolean }) => p.active).length}\n`;
+        const totalStockValue = (products || []).reduce((s: number, p: { price: number; stock: number }) => s + (p.price * (p.stock || 0)), 0);
+        csv += `Valor Total Inventario,${formatCurrency(totalStockValue)}\n`;
+        const lowStock = (products || []).filter((p: { stock: number | null; stockMin?: number | null; active?: boolean }) => p.active !== false && enStockBajo(p, minimoGlobal));
+        csv += `Productos con Stock Bajo,${lowStock.length}\n`;
+        const outOfStock = (products || []).filter((p: { stock: number }) => (p.stock || 0) === 0);
+        csv += `Productos Agotados,${outOfStock.length}\n\n`;
+        
+        csv += `Top 10 Productos Más Vendidos\n`;
+        csv += `Producto,Unidades,Ingresos\n`;
+        const productSales = new Map<number, { name: string; units: number; revenue: number }>();
+        (sales || []).forEach((s: { items?: { productId: number; quantity: number; price: number }[] }) => {
+          (s.items || []).forEach((item: { productId: number; quantity: number; price: number }) => {
+            const product = (products || []).find((p: { id: number }) => p.id === item.productId);
+            if (!product) return;
+            const existing = productSales.get(item.productId) || { name: product.name, units: 0, revenue: 0 };
+            existing.units += item.quantity;
+            existing.revenue += item.price * item.quantity;
+            productSales.set(item.productId, existing);
+          });
+        });
+        [...productSales.values()].sort((a, b) => b.revenue - a.revenue).slice(0, 10).forEach(p => {
+          csv += `"${p.name}",${p.units},${formatCurrency(Number(p.revenue))}\n`;
+        });
+        csv += `\n`;
+        
+        // === CUSTOMERS ===
+        csv += `=== CLIENTES ===\n`;
+        csv += `Total Clientes,${totalCustomers}\n`;
+        const newCustomersLast30 = (customers || []).filter((c: { createdAt: string }) => {
+          const created = new Date(c.createdAt);
+          const days = (Date.now() - created.getTime()) / (1000 * 60 * 60 * 24);
+          return days <= 30;
+        }).length;
+        csv += `Clientes Nuevos (últimos 30 días),${newCustomersLast30}\n\n`;
+        
+        // === ORDERS ===
+        csv += `=== PEDIDOS ===\n`;
+        csv += `Total Pedidos,${(orders || []).length}\n`;
+        const ordersByStatus = new Map<string, number>();
+        (orders || []).forEach((o: { status: string }) => {
+          ordersByStatus.set(o.status, (ordersByStatus.get(o.status) || 0) + 1);
+        });
+        [...ordersByStatus.entries()].forEach(([status, count]) => {
+          csv += `${status},${count}\n`;
+        });
+        csv += `\n`;
+        
+        // === INVENTORY ===
+        csv += `=== GESTION DE INVENTARIO ===\n`;
+        csv += `Valor Total Inventario,${formatCurrency(totalStockValue)}\n`;
+        const totalCostValue = (products || []).reduce((s: number, p: { costPrice?: number; price: number; stock: number }) => s + ((p.costPrice || p.price * 0.7) * (p.stock || 0)), 0);
+        csv += `Costo Total Inventario,${formatCurrency(totalCostValue)}\n`;
+        const inventoryMargin = totalStockValue > 0 ? ((totalStockValue - totalCostValue) / totalStockValue * 100).toFixed(1) : "0.0";
+        csv += `Margen Promedio Inventario,${inventoryMargin}%\n\n`;
+        
+        // === CASH FLOW ===
+        csv += `=== FLUJO DE CAJA ===\n`;
+        csv += `Ingresos,${formatCurrency(totalRevenue)}\n`;
+        const totalPurchases = (payables || []).reduce((s: number, p: { amount: number }) => s + p.amount, 0);
+        csv += `Compras/Gastos,${formatCurrency(totalPurchases)}\n`;
+        csv += `Balance,${formatCurrency(totalRevenue - totalPurchases)}\n`;
+        const totalPayablesPending = (payables || []).reduce((s: number, p: { amount: number; paidAmount?: number }) => s + (p.amount - (p.paidAmount || 0)), 0);
+        csv += `Cuentas por Pagar Pendientes,${formatCurrency(totalPayablesPending)}\n\n`;
+        
+        // === SUPPLIERS ===
+        csv += `=== PROVEEDORES ===\n`;
+        csv += `Total Proveedores,${(suppliers || []).length}\n`;
+        const overduePayables = (payables || []).filter((p: { dueDate: string; amount: number; paidAmount?: number }) => {
+          return new Date(p.dueDate) < new Date() && p.amount > (p.paidAmount || 0);
+        }).length;
+        csv += `Pagos Vencidos,${overduePayables}\n\n`;
+        
+        // === PERFORMANCE ===
+        csv += `=== METRICAS DE DESEMPEÑO ===\n`;
+        const completedOrders = (orders || []).filter((o: { status: string }) => o.status === "entregado").length;
+        const conversionRate = totalOrders > 0 ? ((completedOrders / totalOrders) * 100).toFixed(1) : "0.0";
+        csv += `Tasa de Conversión (Pedidos Entregados),${conversionRate}%\n`;
+        const cancelledOrders = (orders || []).filter((o: { status: string }) => o.status === "cancelado").length;
+        const cancellationRate = totalOrders > 0 ? ((cancelledOrders / totalOrders) * 100).toFixed(1) : "0.0";
+        csv += `Tasa de Cancelación,${cancellationRate}%\n`;
+        csv += `Valor Promedio de Orden,${formatCurrency(avgOrderValue)}\n\n`;
+        
+        csv += `=== FIN DEL REPORTE ===\n`;
+      } else {
+        const [sales, payables, products] = data;
+        const totalIncome = (sales || []).reduce((s: number, sale: { total: number }) => s + sale.total, 0);
+        const totalPayables = (payables || []).reduce((s: number, p: { amount: number; paidAmount: number }) => s + (p.amount - (p.paidAmount || 0)), 0);
+        const inventoryValue = (products || []).reduce((s: number, p: { price: number; stock: number }) => s + p.price * p.stock, 0);
+        csv = `Reporte Financiero - ${now}\n\n`;
+        csv += `Ingresos por Ventas,"${formatCurrency(totalIncome)}"\nCuentas por Pagar,"${formatCurrency(totalPayables)}"\nValor Inventario,"${formatCurrency(inventoryValue)}"\n`;
+      }
+
+      const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `reporte-${type}-${now.replace(/\//g, "-")}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+}
+
+/** Abre el reporte listo para imprimir o guardar en PDF. */
+export async function generarPDF(type: ReportType, minimoGlobal: number): Promise<void> {
+      const data = await fetchData(type);
+      const now = formatDateNumeric(new Date());
+      let html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Reporte ${type}</title>
+          <style>
+            @media print {
+              @page { margin: 1cm; }
+              body { margin: 0; }
+            }
+            body {
+              font-family: system-ui, -apple-system, sans-serif;
+              padding: 20px;
+              max-width: 800px;
+              margin: 0 auto;
+            }
+            .header {
+              text-align: center;
+              margin-bottom: 30px;
+              border-bottom: 3px solid #2563eb;
+              padding-bottom: 15px;
+            }
+            .header h1 {
+              margin: 0;
+              color: #121f17;
+              font-size: 28px;
+            }
+            .header .date {
+              color: #64748b;
+              margin-top: 5px;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-top: 20px;
+            }
+            th {
+              background: #2563eb;
+              color: white;
+              padding: 12px;
+              text-align: left;
+              font-weight: 600;
+            }
+            td {
+              padding: 10px 12px;
+              border-bottom: 1px solid #e2e8f0;
+            }
+            tr:nth-child(even) {
+              background: #f8fafc;
+            }
+            .summary {
+              background: #f1f5f9;
+              padding: 15px;
+              border-radius: 8px;
+              margin-bottom: 20px;
+            }
+            .summary-item {
+              display: flex;
+              justify-content: space-between;
+              margin: 8px 0;
+            }
+            .summary-label {
+              font-weight: 600;
+              color: #475569;
+            }
+            .summary-value {
+              color: #121f17;
+              font-weight: 700;
+            }
+            h2 {
+              color: #121f17;
+              margin-top: 30px;
+              margin-bottom: 15px;
+              font-size: 18px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>Buleje</h1>
+            <div class="date">${now}</div>
+          </div>
+      `;
+
+      if (type === "ventas") {
+        const [sales, products] = data;
+        const productMap = Object.fromEntries((products || []).map((p: { id: number; name: string }) => [p.id, p.name]));
+        const total = (sales || []).reduce((s: number, sale: { total: number }) => s + sale.total, 0);
+        html += `<h2>Reporte de Ventas</h2>`;
+        html += `<div class="summary">
+          <div class="summary-item"><span class="summary-label">Total Ventas:</span><span class="summary-value">${(sales || []).length}</span></div>
+          <div class="summary-item"><span class="summary-label">Monto Total:</span><span class="summary-value">${formatCurrency(total)}</span></div>
+        </div>`;
+        html += `<table><thead><tr><th>ID</th><th>Fecha</th><th>Total</th><th>Método Pago</th><th>Productos</th></tr></thead><tbody>`;
+        (sales || []).forEach((s: { id: string; createdAt: string; total: number; paymentMethod?: string; items?: { productId: number; quantity: number }[] }) => {
+          const items = (s.items || []).map((i: { productId: number; quantity: number }) => `${productMap[i.productId] || i.productId} x${i.quantity}`).join(", ");
+          html += `<tr><td>${s.id.slice(-8)}</td><td>${formatDate(s.createdAt)}</td><td>${formatCurrency(Number(s.total))}</td><td>${s.paymentMethod || "efectivo"}</td><td>${items}</td></tr>`;
+        });
+        html += `</tbody></table>`;
+      } else if (type === "inventario") {
+        const [products] = data;
+        const totalValue = (products || []).reduce((s: number, p: { price: number; stock: number }) => s + p.price * p.stock, 0);
+        const lowStock = (products || []).filter((p: { stock: number | null; stockMin?: number | null; active?: boolean }) => p.active !== false && enStockBajo(p, minimoGlobal));
+        html += `<h2>Reporte de Inventario</h2>`;
+        html += `<div class="summary">
+          <div class="summary-item"><span class="summary-label">Total Productos:</span><span class="summary-value">${(products || []).length}</span></div>
+          <div class="summary-item"><span class="summary-label">Valor Total:</span><span class="summary-value">${formatCurrency(totalValue)}</span></div>
+          <div class="summary-item"><span class="summary-label">Stock Bajo:</span><span class="summary-value">${lowStock.length}</span></div>
+        </div>`;
+        html += `<table><thead><tr><th>ID</th><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>Min Stock</th><th>Valor</th></tr></thead><tbody>`;
+        (products || []).forEach((p: { id: number; name: string; category?: string; price: number; stock: number; stockMin?: number | null }) => {
+          html += `<tr><td>${p.id}</td><td>${p.name}</td><td>${p.category || ""}</td><td>${formatCurrency(Number(p.price))}</td><td>${p.stock}</td><td>${stockMinimoDe(p, minimoGlobal)}</td><td>${formatCurrency(p.price * p.stock)}</td></tr>`;
+        });
+        html += `</tbody></table>`;
+      } else if (type === "clientes") {
+        const [customers] = data;
+        html += `<h2>Reporte de Clientes</h2>`;
+        html += `<div class="summary"><div class="summary-item"><span class="summary-label">Total Clientes:</span><span class="summary-value">${(customers || []).length}</span></div></div>`;
+        html += `<table><thead><tr><th>Teléfono</th><th>Nombre</th><th>Dirección</th><th>Total Gastado</th><th>Puntos</th><th>Nivel</th></tr></thead><tbody>`;
+        (customers || []).forEach((c: { phone: string; name: string; address?: string; totalSpent?: number; loyaltyPoints?: number; loyaltyTier?: string }) => {
+          html += `<tr><td>${c.phone}</td><td>${c.name}</td><td>${c.address || ""}</td><td>${formatCurrency(c.totalSpent || 0)}</td><td>${c.loyaltyPoints || 0}</td><td>${c.loyaltyTier || "Nuevo"}</td></tr>`;
+        });
+        html += `</tbody></table>`;
+      } else if (type === "financiero") {
+        const [sales, payables, products] = data;
+        const totalIncome = (sales || []).reduce((s: number, sale: { total: number }) => s + sale.total, 0);
+        const totalPayables = (payables || []).reduce((s: number, p: { amount: number; paidAmount: number }) => s + (p.amount - (p.paidAmount || 0)), 0);
+        const inventoryValue = (products || []).reduce((s: number, p: { price: number; stock: number }) => s + p.price * p.stock, 0);
+        html += `<h2>Reporte Financiero</h2>`;
+        html += `<div class="summary">
+          <div class="summary-item"><span class="summary-label">Ingresos por Ventas:</span><span class="summary-value">${formatCurrency(totalIncome)}</span></div>
+          <div class="summary-item"><span class="summary-label">Cuentas por Pagar:</span><span class="summary-value">${formatCurrency(totalPayables)}</span></div>
+          <div class="summary-item"><span class="summary-label">Valor Inventario:</span><span class="summary-value">${formatCurrency(inventoryValue)}</span></div>
+        </div>`;
+      } else if (type === "horas-pico") {
+        const [sales] = data;
+        const hourCounts: Record<number, { count: number; total: number }> = {};
+        const dayCounts: Record<number, { count: number; total: number }> = {};
+        const dayNames = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+        
+        (sales || []).forEach((s: { createdAt: string; total: number }) => {
+          const date = new Date(s.createdAt);
+          const hour = date.getHours();
+          const day = date.getDay();
+          hourCounts[hour] = hourCounts[hour] || { count: 0, total: 0 };
+          hourCounts[hour].count++;
+          hourCounts[hour].total += s.total;
+          dayCounts[day] = dayCounts[day] || { count: 0, total: 0 };
+          dayCounts[day].count++;
+          dayCounts[day].total += s.total;
+        });
+        
+        const hourData = Object.entries(hourCounts).map(([h, d]) => ({ hour: parseInt(h), ...d })).sort((a, b) => b.count - a.count);
+        const dayData = Object.entries(dayCounts).map(([d, data]) => ({ day: parseInt(d), ...data })).sort((a, b) => b.count - a.count);
+        
+        html += `<h2>Horas Pico de Ventas</h2>`;
+        html += `<h3 style="font-size: 16px; color: #475569; margin-top: 20px;">Análisis por Hora</h3>`;
+        html += `<table><thead><tr><th>Hora</th><th>Cantidad Ventas</th><th>Monto Total</th></tr></thead><tbody>`;
+        hourData.forEach(h => {
+          html += `<tr><td>${h.hour}:00</td><td>${h.count}</td><td>${formatCurrency(Number(h.total))}</td></tr>`;
+        });
+        html += `</tbody></table>`;
+        html += `<h3 style="font-size: 16px; color: #475569; margin-top: 30px;">Análisis por Día de la Semana</h3>`;
+        html += `<table><thead><tr><th>Día</th><th>Cantidad Ventas</th><th>Monto Total</th></tr></thead><tbody>`;
+        dayData.forEach(d => {
+          html += `<tr><td>${dayNames[d.day]}</td><td>${d.count}</td><td>${formatCurrency(Number(d.total))}</td></tr>`;
+        });
+        html += `</tbody></table>`;
+      } else if (type === "margen") {
+        const [products, sales] = data;
+        const productStats: Record<number, { name: string; units: number; revenue: number; cost: number }> = {};
+        
+        (sales || []).forEach((s: { items?: { productId: number; quantity: number; price: number }[] }) => {
+          (s.items || []).forEach((item: { productId: number; quantity: number; price: number }) => {
+            const product = (products || []).find((p: { id: number }) => p.id === item.productId);
+            if (!product) return;
+            if (!productStats[item.productId]) {
+              productStats[item.productId] = { name: product.name, units: 0, revenue: 0, cost: 0 };
+            }
+            const costPrice = product.costPrice || product.price * 0.7;
+            productStats[item.productId].units += item.quantity;
+            productStats[item.productId].revenue += item.price * item.quantity;
+            productStats[item.productId].cost += costPrice * item.quantity;
+          });
+        });
+        
+        const topMargin = Object.entries(productStats)
+          .map(([id, stats]) => ({ id: parseInt(id), ...stats, margin: stats.revenue - stats.cost }))
+          .sort((a, b) => b.margin - a.margin)
+          .slice(0, 10);
+        
+        html += `<h2>Top 10 Productos por Margen</h2>`;
+        html += `<table><thead><tr><th>Producto</th><th>Unidades Vendidas</th><th>Ingresos</th><th>Costo</th><th>Margen</th><th>% Margen</th></tr></thead><tbody>`;
+        topMargin.forEach(p => {
+          const marginPct = p.revenue > 0 ? ((p.margin / p.revenue) * 100).toFixed(1) : "0.0";
+          html += `<tr><td>${p.name}</td><td>${p.units}</td><td>${formatCurrency(Number(p.revenue))}</td><td>${formatCurrency(Number(p.cost))}</td><td>${formatCurrency(Number(p.margin))}</td><td>${marginPct}%</td></tr>`;
+        });
+        html += `</tbody></table>`;
+      }
+
+      html += `
+          <script>
+            window.onload = function() {
+              window.print();
+            };
+          </script>
+        </body>
+        </html>
+      `;
+
+      const printWindow = window.open("", "_blank");
+      if (printWindow) {
+        printWindow.document.write(html);
+        printWindow.document.close();
+      }
+}
