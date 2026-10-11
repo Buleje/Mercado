@@ -68,7 +68,7 @@ export function RutinaTresPasos({ pasos, categoria }: { pasos: PasoRutina[]; cat
                   {s.esEste ? (
                     <p className="mu-kicker text-[var(--mu-oro-tinta)]">Este producto</p>
                   ) : (
-                    <p className="text-[12px] font-medium tabular-nums text-[var(--text-tertiary)]">{s.producto.codigo}</p>
+                    <p className="text-sm font-medium tabular-nums text-[var(--text-tertiary)]">{s.producto.codigo}</p>
                   )}
                   <p className="mt-0.5 line-clamp-2 text-[length:var(--mu-t-nombre)] font-medium leading-snug text-[var(--text-primary)]">
                     {s.esEste ? (
@@ -116,7 +116,7 @@ function TarjetaKit({ k, grande = false }: { k: ProductoSalon & { kit: KitSalon 
             {k.nombre}
           </EnlaceFicha>
         </p>
-        <p className="mt-1 text-[12px] font-medium text-[var(--mu-acento-tinta)]">
+        <p className="mt-1 text-sm font-medium text-[var(--mu-acento-tinta)]">
           Cód. {k.codigo} · {k.kit.componentes.map((c) => (c.cantidad > 1 ? `${c.cantidad} × ${c.codigo}` : c.codigo)).join(" + ")}
         </p>
         {grande && (
@@ -179,7 +179,7 @@ export function QueTrae({ kit }: { kit: KitSalon }) {
                 {c.cantidad > 1 ? `${c.cantidad} × ` : ""}
                 {c.nombre}
               </a>
-              <span className="block text-[12px] tabular-nums text-[var(--text-tertiary)]">{c.codigo}</span>
+              <span className="block text-sm tabular-nums text-[var(--text-tertiary)]">{c.codigo}</span>
             </span>
             <span className="mu-precio-chico shrink-0 text-[length:var(--mu-t-chico)] text-[var(--text-primary)]">{solesCortos(c.precio * c.cantidad)}</span>
           </li>

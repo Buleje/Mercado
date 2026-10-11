@@ -32,9 +32,9 @@ export const FOCO = "focus-visible:outline-2 focus-visible:outline-offset-2 focu
 export const FOCO_CLARO = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--mu-oro)]!";
 export const KICKER = "text-xs font-semibold uppercase tracking-[var(--mu-tracking-kicker)]";
 /** Botón sobre cacao: nude + negro (9,39:1), igual en claro y oscuro. */
-export const BOTON_NUDE = `inline-flex h-12 items-center justify-center gap-2 rounded-full focus-visible:rounded-full! bg-[var(--mu-sello-nude)] px-7 text-[15px] font-semibold text-[var(--mu-sello-m)] transition duration-[var(--mu-dur-corto)] ease-[var(--mu-ease)] hover:-translate-y-0.5 active:scale-[.97] ${FOCO_CLARO}`;
+export const BOTON_NUDE = `inline-flex h-12 items-center justify-center gap-2 rounded-full focus-visible:rounded-full! bg-[var(--mu-sello-nude)] px-7 text-base font-semibold text-[var(--mu-sello-m)] transition duration-[var(--mu-dur-corto)] ease-[var(--mu-ease)] hover:-translate-y-0.5 active:scale-[.97] ${FOCO_CLARO}`;
 /** WhatsApp sobre fondo claro: selva-tinta + blanco (7,43:1). */
-export const BOTON_WHATSAPP = `inline-flex h-12 items-center justify-center gap-2 rounded-full focus-visible:rounded-full! bg-[var(--mu-whatsapp-fondo)] px-6 text-[15px] font-semibold text-[var(--mu-whatsapp-texto)] transition duration-[var(--mu-dur-corto)] ease-[var(--mu-ease)] hover:-translate-y-0.5 active:scale-[.97] ${FOCO}`;
+export const BOTON_WHATSAPP = `inline-flex h-12 items-center justify-center gap-2 rounded-full focus-visible:rounded-full! bg-[var(--mu-whatsapp-fondo)] px-6 text-base font-semibold text-[var(--mu-whatsapp-texto)] transition duration-[var(--mu-dur-corto)] ease-[var(--mu-ease)] hover:-translate-y-0.5 active:scale-[.97] ${FOCO}`;
 
 /**
  * Título de sección: kicker + versalitas. `cursiva`: 1-2 palabras en Cormorant
@@ -132,13 +132,13 @@ function TarjetaNecesidad({ m, slug, productos, whatsapp }: { m: Necesidad; slug
       {...(aDrucila ? externo : {})}
       className={`group mu-sombra-tarjeta flex h-full items-center gap-3 rounded-2xl focus-visible:rounded-2xl! border border-transparent bg-[var(--surface-raised)] p-3 transition duration-[var(--mu-dur-corto)] ease-[var(--mu-ease)] hover:-translate-y-0.5 hover:border-[var(--rule-base)] sm:items-start sm:gap-4 sm:p-5 ${FOCO}`}
     >
-      <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[var(--mu-nude)] bg-[var(--mu-nude-claro)] text-[var(--mu-acento-tinta)] transition-colors duration-[var(--mu-dur-corto)] group-hover:bg-[var(--mu-rosa-claro)] sm:h-12 sm:w-12">
+      <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[var(--mu-nude)] bg-[var(--mu-nude-claro)] text-[var(--mu-acento-tinta)] transition-colors duration-[var(--mu-dur-corto)] group-hover:bg-[var(--mu-rosa-claro)] sm:h-12 sm:w-12">
         <Icono className="h-5 w-5 transition-transform duration-[var(--mu-dur-corto)] ease-[var(--mu-ease)] group-hover:scale-[1.08] sm:h-6 sm:w-6" strokeWidth={1.5} aria-hidden="true" />
       </span>
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className="text-sm font-semibold leading-snug text-[var(--text-primary)] sm:text-[15px]">{m.titulo}</span>
-        <span className="hidden text-[13px] text-[var(--text-tertiary)] sm:block">{m.texto}</span>
-        <span className="mt-2 hidden items-center gap-1.5 text-[13px] font-semibold text-[var(--mu-acento-tinta)] sm:inline-flex">
+        <span className="text-sm font-semibold leading-snug text-[var(--text-primary)] sm:text-base">{m.titulo}</span>
+        <span className="hidden text-sm text-[var(--text-tertiary)] sm:block">{m.texto}</span>
+        <span className="mt-2 hidden items-center gap-1.5 text-sm font-semibold text-[var(--mu-acento-tinta)] sm:inline-flex">
           {pie}
           <ArrowRight className="h-3.5 w-3.5 transition-transform duration-[var(--mu-dur-corto)] ease-[var(--mu-ease)] group-hover:translate-x-1" aria-hidden="true" />
         </span>
@@ -170,7 +170,7 @@ export function Mejorar({ slug, productos = [], whatsapp = null }: { slug: strin
           <a href={enlaceWhatsapp(numero, CARTA.mensaje)} {...externo} className={`${BOTON_WHATSAPP} mt-6 self-start`}>
             <MessageCircle className="h-5 w-5" aria-hidden="true" /> {CARTA.boton}
           </a>
-          <a href="#diagnostico" className={`mt-4 inline-flex min-h-11 items-center gap-2 self-start text-sm font-semibold text-[var(--text-primary)] underline decoration-[var(--mu-rosa)] decoration-2 underline-offset-4 ${FOCO}`}>
+          <a href="#diagnostico" className={`mt-4 inline-flex min-h-12 items-center gap-2 self-start text-sm font-semibold text-[var(--text-primary)] underline decoration-[var(--mu-rosa)] decoration-2 underline-offset-4 ${FOCO}`}>
             <CalendarDays className="h-4 w-4 text-[var(--mu-rosa-tinta)]" aria-hidden="true" /> Y los sábados, diagnóstico gratis
           </a>
         </aside>
@@ -220,7 +220,7 @@ export function BannerOscuro({ whatsapp }: { whatsapp: string | null }) {
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <span>
-                  <span className="block text-[15px] font-semibold">{p.titulo}</span>
+                  <span className="block text-base font-semibold">{p.titulo}</span>
                   <span className="block text-sm text-[var(--mu-sobre-cacao-2)]">{p.texto}</span>
                 </span>
               </li>
@@ -230,7 +230,7 @@ export function BannerOscuro({ whatsapp }: { whatsapp: string | null }) {
             <a href={enlaceWhatsapp(whatsapp ?? WHATSAPP_MUSA, b.mensaje)} {...externo} className={BOTON_NUDE}>
               <MessageCircle className="h-5 w-5" aria-hidden="true" /> Separar mi diagnóstico
             </a>
-            <a href="#mejorar" className={`inline-flex h-12 items-center border-b border-[var(--mu-oro)] text-[15px] font-semibold transition-opacity hover:opacity-80 ${FOCO_CLARO}`}>
+            <a href="#mejorar" className={`inline-flex h-12 items-center border-b border-[var(--mu-oro)] text-base font-semibold transition-opacity hover:opacity-80 ${FOCO_CLARO}`}>
               ¿Qué quieres mejorar?
             </a>
           </div>
@@ -276,8 +276,8 @@ export function Protegida({ whatsapp }: { whatsapp: string | null }) {
                     <Icono className="h-5 w-5" strokeWidth={1.6} aria-hidden="true" />
                   </span>
                   <span>
-                    <span className="block text-[15px] font-semibold text-[var(--text-primary)]">{p.titulo}</span>
-                    <span className="mt-0.5 block text-[13px] leading-snug text-[var(--text-secondary)] sm:mt-1 sm:text-sm sm:leading-relaxed">{p.texto}</span>
+                    <span className="block text-base font-semibold text-[var(--text-primary)]">{p.titulo}</span>
+                    <span className="mt-0.5 block text-sm leading-snug text-[var(--text-secondary)] sm:mt-1 sm:text-sm sm:leading-relaxed">{p.texto}</span>
                   </span>
                 </li>
               );

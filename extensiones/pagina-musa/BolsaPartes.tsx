@@ -67,13 +67,13 @@ export function Contador({
   const conTacho = tacho && valor <= 1;
   const sinMenos = !tacho && valor <= 1;
   const sinMas = valor >= max;
-  const boton = grande ? "h-12 w-12" : "h-10 w-10";
+  const boton = grande ? "h-12 w-12" : "h-12 w-12";
   const icono = grande ? "h-5 w-5" : "h-4 w-4";
   return (
     <div
       role="group"
       aria-label={etiqueta}
-      className={`inline-flex ${grande ? "h-12" : "h-10"} shrink-0 items-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)]`}
+      className={`inline-flex ${grande ? "h-12" : "h-12"} shrink-0 items-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)]`}
     >
       <button
         type="button"
@@ -90,7 +90,7 @@ export function Contador({
       </button>
       <output
         aria-live="polite"
-        className={`${grande ? "w-9 text-lg" : "w-7 text-[15px]"} overflow-hidden text-center font-semibold tabular-nums text-[var(--text-primary)]`}
+        className={`${grande ? "w-9 text-lg" : "w-7 text-base"} overflow-hidden text-center font-semibold tabular-nums text-[var(--text-primary)]`}
       >
         <span
           key={valor}
@@ -194,7 +194,7 @@ export function LineaBolsa({
             <p className="line-clamp-2 text-sm font-medium leading-snug text-[var(--text-primary)]">
               {item.name}
             </p>
-            <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-[var(--mu-acento-tinta)]">
+            <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-sm text-[var(--mu-acento-tinta)]">
               {info?.codigo && <span>Cód. {info.codigo}</span>}
               {info?.encargo && (
                 <span className="rounded-full bg-[var(--mu-encargo-fondo)] px-1.5 font-medium text-[var(--mu-encargo)]">
@@ -208,7 +208,7 @@ export function LineaBolsa({
           </span>
         </div>
         <div className="flex items-center justify-between gap-2">
-          <span className="text-xs tabular-nums text-[var(--text-tertiary)]">
+          <span className="text-sm tabular-nums text-[var(--text-tertiary)]">
             {item.quantity > 1 ? `${soles(item.price)} c/u` : ""}
           </span>
           <Contador
@@ -230,7 +230,7 @@ export function LineaBolsa({
 }
 
 const BOTON_CACAO =
-  "mu-foco inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--mu-boton-fondo)] px-6 text-[15px] font-semibold text-[var(--mu-boton-texto)] transition duration-[var(--mu-dur-corto)] ease-[var(--mu-ease)] hover:-translate-y-0.5 hover:bg-[var(--mu-boton-fondo-hover)] active:scale-[.97]";
+  "mu-foco inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--mu-boton-fondo)] px-6 text-base font-semibold text-[var(--mu-boton-texto)] transition duration-[var(--mu-dur-corto)] ease-[var(--mu-ease)] hover:-translate-y-0.5 hover:bg-[var(--mu-boton-fondo-hover)] active:scale-[.97]";
 
 export function BolsaVacia() {
   // Sólo se dibuja en el navegador (el cajón abre con un clic): el negocio sale de la ruta.
@@ -247,7 +247,7 @@ export function BolsaVacia() {
         <p className="mu-script mt-2 text-[2.75rem] leading-none text-[var(--mu-rosa-tinta)]">
           aún vacía
         </p>
-        <p className="mt-3 max-w-[19rem] text-[15px] leading-relaxed text-[var(--text-secondary)]">
+        <p className="mt-3 max-w-[19rem] text-base leading-relaxed text-[var(--text-secondary)]">
           Agrega lo que te guste y pídelo por WhatsApp en un solo mensaje. Drucila te ayuda a
           elegir.
         </p>
@@ -267,7 +267,7 @@ export function BolsaVacia() {
                   <a
                     href={hrefDestino(m.destino, negocio, null).href}
                     onClick={cerrarBolsa}
-                    className="mu-foco inline-flex h-10 items-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-[13px] font-medium text-[var(--text-primary)] transition-colors duration-[var(--mu-dur-corto)] hover:border-[var(--mu-rosa-tinta)] hover:bg-[var(--mu-rosa-claro)]"
+                    className="mu-foco inline-flex h-12 items-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-medium text-[var(--text-primary)] transition-colors duration-[var(--mu-dur-corto)] hover:border-[var(--mu-rosa-tinta)] hover:bg-[var(--mu-rosa-claro)]"
                   >
                     {m.titulo}
                   </a>
@@ -279,7 +279,7 @@ export function BolsaVacia() {
         <button
           type="button"
           onClick={cerrarBolsa}
-          className="mu-foco mt-7 h-11 rounded-full px-5 text-[15px] font-semibold text-[var(--text-primary)] underline-offset-4 hover:underline"
+          className="mu-foco mt-7 h-12 rounded-full px-5 text-base font-semibold text-[var(--text-primary)] underline-offset-4 hover:underline"
         >
           Seguir mirando
         </button>

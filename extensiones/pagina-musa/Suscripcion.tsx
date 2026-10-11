@@ -49,7 +49,7 @@ export function Suscripcion() {
 
   return (
     <form onSubmit={enviar} className="flex w-full flex-col gap-2">
-      <label htmlFor="mu-correo" className="text-[15px] text-[var(--mu-sobre-cacao-2)]">
+      <label htmlFor="mu-correo" className="text-base text-[var(--mu-sobre-cacao-2)]">
         Ofertas, lanzamientos y tips de cuidado, una vez por semana.
       </label>
       <div className="flex gap-2">
@@ -64,7 +64,7 @@ export function Suscripcion() {
             if (estado === "error") setEstado("listo");
           }}
           placeholder="tu@correo.com"
-          className="h-12 w-full rounded-full border border-[var(--mu-sobre-cacao)]/30 bg-[var(--mu-sobre-cacao)]/[.06] px-5 text-[15px] text-[var(--mu-sobre-cacao)] transition-colors duration-[var(--mu-dur-corto)] placeholder:text-[var(--mu-sobre-cacao-2)] focus:border-[var(--mu-oro)] focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--mu-oro)]"
+          className="h-12 w-full rounded-full border border-[var(--mu-sobre-cacao)]/30 bg-[var(--mu-sobre-cacao)]/[.06] px-5 text-base text-[var(--mu-sobre-cacao)] transition-colors duration-[var(--mu-dur-corto)] placeholder:text-[var(--mu-sobre-cacao-2)] focus:border-[var(--mu-oro)] focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--mu-oro)]"
         />
         <button
           type="submit"

@@ -37,8 +37,15 @@ async function metadatosPropios(m: MetadatosFicha | null): Promise<Metadata> {
   const { resolveStoreContext } = await import("@/lib/store-metadata");
   const ctx = await resolveStoreContext();
   if (!m) return { title: { absolute: `Producto no encontrado — ${ctx.name}` }, robots: { index: false, follow: true } };
-  const url = `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.buleje.pe"}${m.ruta}`;
+  // El dominio de la petición, no `NEXT_PUBLIC_BASE_URL` (buleje.pe no existe: la
+  // tarjeta del enlace compartido salía sin imagen). Una imagen relativa
+  // (`/musa/og/MU001.jpg`) se completa con el mismo dominio.
+  const { origenDeLaPeticion } = await import("@/lib/seo/origen-de-la-peticion");
+  const origen = await origenDeLaPeticion();
+  const url = `${origen}${m.ruta}`;
+  const imagen = m.imagen?.startsWith("/") ? `${origen}${m.imagen}` : m.imagen;
   return {
+    metadataBase: new URL(origen),
     title: { absolute: m.titulo },
     description: m.descripcion,
     alternates: { canonical: url, languages: { "es-PE": url, "x-default": url } },
@@ -46,12 +53,12 @@ async function metadatosPropios(m: MetadatosFicha | null): Promise<Metadata> {
       title: m.titulo,
       description: m.descripcion,
       url,
-      ...(m.imagen ? { images: [{ url: m.imagen, alt: m.titulo }] } : {}),
+      ...(imagen ? { images: [{ url: imagen, alt: m.titulo }] } : {}),
       type: "website",
       locale: "es_PE",
       siteName: ctx.name,
     },
-    twitter: { card: "summary_large_image", title: m.titulo, description: m.descripcion, ...(m.imagen ? { images: [m.imagen] } : {}) },
+    twitter: { card: "summary_large_image", title: m.titulo, description: m.descripcion, ...(imagen ? { images: [imagen] } : {}) },
   };
 }
 

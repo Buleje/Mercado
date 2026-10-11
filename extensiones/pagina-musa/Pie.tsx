@@ -37,11 +37,11 @@ export function Beneficios({ pagos, nombre, sin = [] }: { pagos: string | null; 
           const Icono = ICONOS[b.icono];
           return (
             <li key={b.titulo} className={`flex w-[78%] shrink-0 snap-start items-start gap-4 sm:w-auto ${i === items.length - 1 ? "pr-8 sm:pr-0" : ""}`}>
-              <span className="mu-arco inline-flex h-12 w-11 shrink-0 items-center justify-center bg-[var(--mu-nude-claro)] text-[var(--mu-acento-tinta)]">
+              <span className="mu-arco inline-flex h-12 w-12 shrink-0 items-center justify-center bg-[var(--mu-nude-claro)] text-[var(--mu-acento-tinta)]">
                 <Icono className="h-5 w-5" strokeWidth={1.6} aria-hidden="true" />
               </span>
               <span>
-                <span className="block text-[0.9375rem] font-semibold leading-snug text-[var(--text-primary)]">{b.titulo}</span>
+                <span className="block text-base font-semibold leading-snug text-[var(--text-primary)]">{b.titulo}</span>
                 <span className="mt-1 block text-[length:var(--mu-t-chico)] leading-relaxed text-[var(--text-secondary)]">{b.texto}</span>
               </span>
             </li>
@@ -110,12 +110,12 @@ export function Pie({
 }) {
   const r = rutas(slug);
   const enlace =
-    "mu-subrayado mu-foco inline-flex min-h-11 items-center text-[0.9375rem] leading-snug text-[var(--mu-sobre-cacao-2)] transition-colors duration-[var(--mu-dur-corto)] hover:text-[var(--mu-sobre-cacao)] [--mu-subrayado-abajo:.55rem] [--mu-subrayado:var(--mu-oro)]";
+    "mu-subrayado mu-foco inline-flex min-h-12 items-center text-base leading-snug text-[var(--mu-sobre-cacao-2)] transition-colors duration-[var(--mu-dur-corto)] hover:text-[var(--mu-sobre-cacao)] [--mu-subrayado-abajo:.55rem] [--mu-subrayado:var(--mu-oro)]";
   const titulo = "mu-kicker text-[var(--mu-oro)]";
   const seguro = (u?: string) => (u && /^https:\/\//.test(u) ? u : null);
   const fb = seguro(redes.facebook);
   const ig = seguro(redes.instagram);
-  const red = "mu-foco inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--mu-sobre-cacao)]/25 transition-colors hover:bg-[var(--mu-sobre-cacao)]/10";
+  const red = "mu-foco inline-flex h-12 w-12 items-center justify-center rounded-full border border-[var(--mu-sobre-cacao)]/25 transition-colors hover:bg-[var(--mu-sobre-cacao)]/10";
 
   return (
     <footer className="mu-grano bg-[linear-gradient(180deg,var(--mu-cacao)_0%,var(--mu-cacao-hondo)_100%)] text-[var(--mu-sobre-cacao)]">

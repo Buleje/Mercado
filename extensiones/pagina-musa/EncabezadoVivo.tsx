@@ -163,7 +163,7 @@ export function BolsaEncabezado() {
         onClick={abrirBolsa}
         data-mu-bolsa
         aria-label={`Abrir tu bolsa: ${unidades(count)}`}
-        className="mu-foco relative inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--text-primary)] transition-colors duration-[var(--mu-dur-corto)] hover:bg-[var(--mu-nude-claro)]"
+        className="mu-foco relative inline-flex h-12 w-12 items-center justify-center rounded-full text-[var(--text-primary)] transition-colors duration-[var(--mu-dur-corto)] hover:bg-[var(--mu-nude-claro)]"
       >
         <ShoppingBag className="h-6 w-6" strokeWidth={1.6} aria-hidden="true" />
         {count > 0 && (
@@ -215,7 +215,7 @@ export function BolsaEncabezado() {
                   setAviso(null);
                   abrirBolsa();
                 }}
-                className="mu-foco inline-flex h-11 items-center rounded-full bg-[var(--mu-boton-fondo)] px-5 text-sm font-semibold text-[var(--mu-boton-texto)] transition-colors hover:bg-[var(--mu-boton-fondo-hover)]"
+                className="mu-foco inline-flex h-12 items-center rounded-full bg-[var(--mu-boton-fondo)] px-5 text-sm font-semibold text-[var(--mu-boton-texto)] transition-colors hover:bg-[var(--mu-boton-fondo-hover)]"
               >
                 Ver bolsa
               </button>

@@ -48,9 +48,9 @@ type Variante = "tarjeta" | "grande" | "barra";
 const ESTILO: Record<Variante, { agregar: string; contador: string; paso: string; numero: string }> = {
   tarjeta: {
     agregar:
-      "h-11 w-full border-[1.5px] border-[var(--mu-boton-fondo)] text-[var(--text-primary)] hover:bg-[var(--mu-boton-fondo)] hover:text-[var(--mu-boton-texto)] @min-[15.5rem]:h-10 @min-[15.5rem]:w-auto @min-[15.5rem]:px-4",
-    contador: "h-11 w-full @min-[15.5rem]:h-10 @min-[15.5rem]:w-[7rem] bg-[var(--mu-contador-fondo)] text-[var(--mu-contador-texto)]",
-    paso: "h-11 w-11 @min-[15.5rem]:h-10",
+      "h-12 w-full border-[1.5px] border-[var(--mu-boton-fondo)] text-[var(--text-primary)] hover:bg-[var(--mu-boton-fondo)] hover:text-[var(--mu-boton-texto)] @min-[15.5rem]:w-auto @min-[15.5rem]:px-4",
+    contador: "h-12 w-full @min-[15.5rem]:w-[7rem] bg-[var(--mu-contador-fondo)] text-[var(--mu-contador-texto)]",
+    paso: "h-12 w-12",
     numero: "28px",
   },
   grande: {
@@ -61,9 +61,9 @@ const ESTILO: Record<Variante, { agregar: string; contador: string; paso: string
   },
   barra: {
     // Sobre la barra cacao: el nude del sello con la tinta negra (igual en los dos temas, 9,39:1).
-    agregar: "h-11 px-5 bg-[var(--mu-sello-nude)] text-[var(--mu-sello-m)] hover:opacity-90",
-    contador: "h-11 w-[8.5rem] bg-[var(--mu-sello-nude)] text-[var(--mu-sello-m)]",
-    paso: "h-11 w-11",
+    agregar: "h-12 px-5 bg-[var(--mu-sello-nude)] text-[var(--mu-sello-m)] hover:opacity-90",
+    contador: "h-12 w-[8.5rem] bg-[var(--mu-sello-nude)] text-[var(--mu-sello-m)]",
+    paso: "h-12 w-12",
     numero: "30px",
   },
 };

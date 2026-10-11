@@ -36,10 +36,10 @@ function Buscador({ id, catalogo, corto = false }: { id: string; catalogo: strin
       <CampoBuscar
         id={id}
         corto={corto}
-        className="h-11 w-full rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-11 pr-12 text-[0.9375rem] text-[var(--text-primary)] transition-colors duration-[var(--mu-dur-corto)] placeholder:text-[var(--text-tertiary)] hover:border-[var(--mu-nude-fuerte)] focus:border-[var(--mu-acento-tinta)] focus:outline-2 focus:outline-offset-2 focus:outline-[var(--mu-foco)]"
+        className="h-12 w-full rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-11 pr-12 text-base text-[var(--text-primary)] transition-colors duration-[var(--mu-dur-corto)] placeholder:text-[var(--text-tertiary)] hover:border-[var(--mu-nude-fuerte)] focus:border-[var(--mu-acento-tinta)] focus:outline-2 focus:outline-offset-2 focus:outline-[var(--mu-foco)]"
       />
       {/* 44 px tocables; el círculo visible es de 32. El nombre va en `aria-label` (`.sr-only` de globals.css le gana a las variantes). */}
-      <button type="submit" aria-label="Buscar" className="group absolute right-0 top-0 inline-flex h-11 w-11 items-center justify-center rounded-full mu-foco">
+      <button type="submit" aria-label="Buscar" className="group absolute right-0 top-0 inline-flex h-12 w-12 items-center justify-center rounded-full mu-foco">
         <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--mu-boton-fondo)] text-[var(--mu-boton-texto)] transition-colors duration-[var(--mu-dur-corto)] group-hover:bg-[var(--mu-boton-fondo-hover)]">
           <ArrowRight className="h-4 w-4" aria-hidden="true" />
         </span>
@@ -50,7 +50,7 @@ function Buscador({ id, catalogo, corto = false }: { id: string; catalogo: strin
 
 /** Sin `display`: cada uso dice el suyo (`inline-flex` y `hidden` juntos los decide el orden del CSS, no el del string). */
 const ICONO =
-  "mu-foco h-11 w-11 items-center justify-center gap-2 rounded-full text-[var(--text-primary)] transition-colors duration-[var(--mu-dur-corto)] hover:bg-[var(--mu-nude-claro)]";
+  "mu-foco h-12 w-12 items-center justify-center gap-2 rounded-full text-[var(--text-primary)] transition-colors duration-[var(--mu-dur-corto)] hover:bg-[var(--mu-nude-claro)]";
 
 /**
  * Lo que va en el menú del celular: la tienda, tu cuenta y la asesoría (la
@@ -99,7 +99,7 @@ export function BarraSuperior({
           <span className="flex flex-col">
             <span className="mu-serif text-[1.625rem] leading-none md:text-[1.75rem]">{nombre}</span>
             {/* El espacio no se ve (contenedor flex) pero separa las palabras para el lector de pantalla. */}{" "}
-            <span className="mu-cursiva mt-0.5 hidden text-[0.9375rem] leading-tight text-[var(--mu-acento-tinta)] lg:block">Belleza profesional, cerca de ti</span>
+            <span className="mu-cursiva mt-0.5 hidden text-base leading-tight text-[var(--mu-acento-tinta)] lg:block">Belleza profesional, cerca de ti</span>
             <span className="sr-only lg:hidden"> — belleza profesional, cerca de ti</span>
           </span>
         </a>
@@ -116,7 +116,7 @@ export function BarraSuperior({
           className={`${ICONO} hidden md:inline-flex lg:w-auto lg:px-3.5`}
         >
           <MessageCircle className="h-5 w-5 text-[var(--mu-selva-tinta)]" strokeWidth={1.8} aria-hidden="true" />
-          <span className="hidden text-[0.9375rem] font-semibold lg:inline">Asesoría</span>
+          <span className="hidden text-base font-semibold lg:inline">Asesoría</span>
         </a>
         <a href={`${r.base}/cuenta`} className={`${ICONO} hidden md:inline-flex`} aria-label="Mi cuenta">
           <User className="h-6 w-6" strokeWidth={1.6} aria-hidden="true" />
@@ -141,7 +141,7 @@ export function MenuCategorias({ slug, categorias, hayOfertas }: { slug: string;
   const r = rutas(slug);
   // (`min-w-*` está muerto en este repo por `* { min-width: 0 }`: anchos con `w-*`.)
   const enlace =
-    "mu-subrayado mu-foco inline-flex h-11 items-center whitespace-nowrap px-3 text-[length:var(--mu-t-kicker)] font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)] transition-colors duration-[var(--mu-dur-corto)] hover:text-[var(--text-primary)] [--mu-subrayado-abajo:.6rem] xl:px-4 xl:tracking-[var(--mu-tracking-kicker)]";
+    "mu-subrayado mu-foco inline-flex h-12 items-center whitespace-nowrap px-3 text-[length:var(--mu-t-kicker)] font-semibold uppercase tracking-[0.18em] text-[var(--text-secondary)] transition-colors duration-[var(--mu-dur-corto)] hover:text-[var(--text-primary)] [--mu-subrayado-abajo:.6rem] xl:px-4 xl:tracking-[var(--mu-tracking-kicker)]";
   return (
     <div className="hidden border-b border-[var(--rule-soft)] bg-[var(--surface-canvas)] md:block">
       <nav aria-label="Categorías" className="mx-auto max-w-[1280px] px-6 lg:px-8">

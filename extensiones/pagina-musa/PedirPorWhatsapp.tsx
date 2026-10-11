@@ -63,7 +63,7 @@ const CORTO: Partial<Record<Pueblo, string>> = {
 /* ── El formulario y el botón ─────────────────────────────────────────────── */
 
 const CAMPO =
-  "h-11 w-full appearance-none rounded-[var(--mu-radio-control)] border border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-9 text-[15px] text-[var(--text-primary)] transition-colors duration-[var(--mu-dur-corto)] placeholder:text-[var(--text-tertiary)] hover:border-[var(--mu-nude-fuerte)] focus:border-[var(--mu-foco)] aria-invalid:border-[var(--mu-encargo)] mu-foco";
+  "h-12 w-full appearance-none rounded-[var(--mu-radio-control)] border border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-9 text-base text-[var(--text-primary)] transition-colors duration-[var(--mu-dur-corto)] placeholder:text-[var(--text-tertiary)] hover:border-[var(--mu-nude-fuerte)] focus:border-[var(--mu-foco)] aria-invalid:border-[var(--mu-encargo)] mu-foco";
 
 function Campo({
   id,
@@ -82,7 +82,7 @@ function Campo({
 }) {
   return (
     <div className={className}>
-      <label htmlFor={id} className="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">
+      <label htmlFor={id} className="mb-1 block text-sm font-semibold text-[var(--text-secondary)]">
         {etiqueta}
       </label>
       <div className="relative">
@@ -103,7 +103,7 @@ function Campo({
 }
 
 const BOTON =
-  "mu-foco mt-3 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--mu-whatsapp-fondo)] text-[15px] font-semibold text-[var(--mu-whatsapp-texto)] transition duration-[var(--mu-dur-corto)] ease-[var(--mu-ease)] hover:-translate-y-0.5 hover:brightness-110 active:scale-[.97]";
+  "mu-foco mt-3 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--mu-whatsapp-fondo)] text-base font-semibold text-[var(--mu-whatsapp-texto)] transition duration-[var(--mu-dur-corto)] ease-[var(--mu-ease)] hover:-translate-y-0.5 hover:brightness-110 active:scale-[.97]";
 
 function notaEnvio(pueblo: Pueblo, subtotal: number): string {
   if (pueblo === PUEBLO_SIN_COSTO)
@@ -218,11 +218,11 @@ export function PedirPorWhatsapp({
       <p
         id={`${id}-aviso`}
         role="status"
-        className="mt-2 text-[13px] font-semibold text-[var(--mu-encargo)] empty:hidden"
+        className="mt-2 text-sm font-semibold text-[var(--mu-encargo)] empty:hidden"
       >
         {aviso}
       </p>
-      <p className="mt-2 text-center text-xs leading-snug text-[var(--text-tertiary)]">
+      <p className="mt-2 text-center text-sm leading-snug text-[var(--text-tertiary)]">
         {notaEnvio(pueblo, subtotal)}
       </p>
     </div>

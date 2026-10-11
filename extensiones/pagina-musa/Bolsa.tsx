@@ -117,7 +117,7 @@ function AvisoFlotante() {
       inert={ocupada}
       data-mu-corrida={ocupada ? "si" : "no"}
       aria-label={`Ver tu bolsa: ${count} ${count === 1 ? "unidad" : "unidades"}, ${solesPedido(total)}`}
-      className={`mu-foco mu-sombra-flotante fixed bottom-4 right-4 z-40 inline-flex h-14 items-center gap-3 rounded-full bg-[var(--mu-boton-fondo)] pl-5 pr-4 text-[15px] font-semibold text-[var(--mu-boton-texto)] transition-[transform,opacity] duration-[var(--mu-dur-corto)] ease-[var(--mu-ease)] active:scale-[.97] sm:hidden [[data-mu-barra-compra]_&]:hidden ${
+      className={`mu-foco mu-sombra-flotante fixed bottom-4 right-4 z-40 inline-flex h-14 items-center gap-3 rounded-full bg-[var(--mu-boton-fondo)] pl-5 pr-4 text-base font-semibold text-[var(--mu-boton-texto)] transition-[transform,opacity] duration-[var(--mu-dur-corto)] ease-[var(--mu-ease)] active:scale-[.97] sm:hidden [[data-mu-barra-compra]_&]:hidden ${
         ocupada ? "pointer-events-none translate-y-[calc(100%+1.5rem)] opacity-0" : ""
       }`}
     >

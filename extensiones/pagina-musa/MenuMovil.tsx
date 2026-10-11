@@ -60,7 +60,7 @@ export function MenuMovil({
         type="button"
         popoverTarget="mu-menu-movil"
         aria-label="Abrir el menú"
-        className="mu-foco inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--text-primary)] transition-colors duration-[var(--mu-dur-corto)] hover:bg-[var(--mu-nude-claro)] md:hidden"
+        className="mu-foco inline-flex h-12 w-12 items-center justify-center rounded-full text-[var(--text-primary)] transition-colors duration-[var(--mu-dur-corto)] hover:bg-[var(--mu-nude-claro)] md:hidden"
       >
         <Menu className="h-6 w-6" strokeWidth={1.6} aria-hidden="true" />
       </button>
@@ -84,7 +84,7 @@ export function MenuMovil({
               popoverTarget="mu-menu-movil"
               popoverTargetAction="hide"
               aria-label="Cerrar el menú"
-              className="mu-foco inline-flex h-11 w-11 items-center justify-center rounded-full transition-colors duration-[var(--mu-dur-corto)] hover:bg-[var(--mu-nude-claro)]"
+              className="mu-foco inline-flex h-12 w-12 items-center justify-center rounded-full transition-colors duration-[var(--mu-dur-corto)] hover:bg-[var(--mu-nude-claro)]"
             >
               <X className="h-6 w-6" strokeWidth={1.6} aria-hidden="true" />
             </button>

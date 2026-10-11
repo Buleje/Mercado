@@ -21,7 +21,7 @@ const ORDEN_CATEGORIA: readonly string[] = CATEGORIAS.map((c) => c.nombre);
 
 function VerTodo({ href, texto }: { href: string; texto: string }) {
   return (
-    <a href={href} className={`group inline-flex h-11 items-center gap-2 self-start border-b border-[var(--text-primary)] text-[15px] font-semibold text-[var(--text-primary)] ${FOCO}`}>
+    <a href={href} className={`group inline-flex h-12 items-center gap-2 self-start border-b border-[var(--text-primary)] text-base font-semibold text-[var(--text-primary)] ${FOCO}`}>
       {texto}
       <ArrowRight className="h-4 w-4 transition-transform duration-[var(--mu-dur-corto)] group-hover:translate-x-1" aria-hidden="true" />
     </a>
@@ -98,7 +98,7 @@ function FotoLinea({ l, href }: { l: Linea; href: string }) {
       <span className="relative mt-auto flex flex-col gap-2 p-7 text-[var(--mu-sobre-cacao)]">
         <span className={`${KICKER} text-[var(--mu-oro)]`}>{l.kicker}</span>
         <span className="mu-display text-5xl leading-[0.95]">{l.titulo}</span>
-        <span className="text-[15px] leading-relaxed text-[var(--mu-sobre-cacao-2)]">{l.texto}</span>
+        <span className="text-base leading-relaxed text-[var(--mu-sobre-cacao-2)]">{l.texto}</span>
       </span>
     </a>
   );

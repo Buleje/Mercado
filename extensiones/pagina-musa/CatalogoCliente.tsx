@@ -238,7 +238,7 @@ function Vacio({ f, cambiar, catalogo, whatsapp, hayServicio }: { f: Filtros; ca
               <button
                 type="button"
                 onClick={() => cambiar({ ...SIN_FILTROS, q: s })}
-                className="mu-foco inline-flex h-11 items-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-[length:var(--mu-t-boton)] font-semibold text-[var(--text-primary)] transition-colors duration-200 hover:border-[var(--text-primary)]"
+                className="mu-foco inline-flex h-12 items-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-[length:var(--mu-t-boton)] font-semibold text-[var(--text-primary)] transition-colors duration-200 hover:border-[var(--text-primary)]"
               >
                 {s}
               </button>

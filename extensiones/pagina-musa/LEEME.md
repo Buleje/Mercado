@@ -53,3 +53,21 @@ está en el LEEME de `pagina-bodega-buleje-test`.
 Ambiente: Unsplash (licencia Unsplash, sin marcas a la vista), las mismas ya revisadas en «Buleje Beauty»:
 `1519699047748-de8e457a634e` (portada 1), `1617897903246-719242758050` (portada 2),
 `1522337360788-8b13dee7a37e` (portada 3), `1500917293891-ef795e70e1f6` (diagnóstico).
+
+Envases ilustrados (`public/musa/productos/<CÓDIGO>.webp`, 1200 px) en 3 anchos: `480/`, `800/` y el original;
+`Ilustracion` los pide con `srcSet` + `sizes` (`anchosIlustracion`, `imagenes.ts`). Medido 11-10: la portada a
+390 px bajaba 386 KB de envases de 1200 para huecos de 170 px; los 27 en 480 suman 184 KB. Si sumas un envase,
+recorta sus dos copias (sharp: `resize(480)` y `resize(800)`, webp calidad 82) con el mismo nombre.
+
+## Compartir (WhatsApp, Facebook, Instagram) — `compartir.ts`
+Musa se vende pasando el enlace. La portada y el catálogo dan «Musa — Belleza profesional, cerca de ti», la
+descripción del manual y la tarjeta `public/musa/og.jpg` (1200 × 630); `?categoria=Rostro` comparte esa
+categoría. Cada ficha da la tarjeta de su producto (`public/musa/og/<CÓDIGO>.jpg`, sin precio: cambia). Las
+genera `node scripts/musa-tarjetas-compartir.mjs [CÓDIGO]` (lee la base sólo para leer; si sumas un producto,
+agrégalo a `CON_TARJETA`). La canónica y `og:url` usan el dominio con el que entró la petición
+(`lib/seo/origen-de-la-peticion.ts`), nunca buleje.pe (no existe). En la ficha, «Compártelo con una amiga»
+(`CompartirProducto.tsx`) abre el menú de compartir del celular o WhatsApp en la compu.
+
+## Buscar por lo que quieres mejorar — `filtros.ts` (`NECESIDADES`)
+«granitos», «acné», «ojeras», «cabello dañado», «sol»… traen los productos que su tarjeta de «¿Qué quieres
+mejorar?» ya nombra (antes daban 0). Lo que Musa no vende («caspa», «canas») sigue sin resultados.

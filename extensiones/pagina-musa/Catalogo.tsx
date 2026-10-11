@@ -76,7 +76,7 @@ function EsqueletoCatalogo() {
       <div className={`${ANCHO} py-6 sm:py-8`}>
         <div className="flex gap-2 overflow-hidden">
           {Array.from({ length: 5 }, (_, i) => (
-            <div key={i} className={`${bloque} h-11 w-32 shrink-0 rounded-full`} />
+            <div key={i} className={`${bloque} h-12 w-32 shrink-0 rounded-full`} />
           ))}
         </div>
         <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 lg:gap-6 xl:grid-cols-4">

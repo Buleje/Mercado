@@ -68,10 +68,10 @@ const FIJOS = `
 --mu-t-script:clamp(1.875rem,1.477rem + 1.591vw,2.75rem);
 --mu-t-precio:clamp(2rem,1.659rem + 1.364vw,2.75rem);
 --mu-t-precio-tarjeta:1.5rem;
---mu-t-cuerpo:clamp(.9375rem,.909rem + .114vw,1rem);
---mu-t-nombre:clamp(.875rem,.847rem + .114vw,.9375rem);
---mu-t-boton:clamp(.875rem,.847rem + .114vw,.9375rem);
---mu-t-chico:.8125rem;--mu-t-kicker:.75rem;--mu-tracking-kicker:.28em;
+--mu-t-cuerpo:1rem;
+--mu-t-nombre:1rem;
+--mu-t-boton:1rem;
+--mu-t-chico:.875rem;--mu-t-kicker:.75rem;--mu-tracking-kicker:.28em;
 --mu-radio-tarjeta:16px;--mu-radio-control:12px;--mu-radio-pill:999px;--mu-radio-arco:999px 999px 16px 16px;
 --mu-dur-micro:120ms;--mu-dur-corto:200ms;--mu-dur-medio:320ms;--mu-dur-largo:600ms;
 --mu-ease:cubic-bezier(.22,1,.36,1);--mu-ease-rebote:cubic-bezier(.34,1.56,.64,1);

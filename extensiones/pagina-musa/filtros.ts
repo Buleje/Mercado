@@ -108,10 +108,38 @@ export const CLAVES_DE_FILTRO = ["q", "categoria", "oferta", "orden", "marca", "
 /** Plural simple para buscar: «planchas» encuentra «plancha»; «rizos», «rizo». */
 const raiz = (t: string) => (t.length > 3 ? t.replace(/(es|s)$/, "") : t);
 
-/** ¿El producto tiene TODAS las palabras buscadas (en nombre, marca, categoría, descripción o código)? */
+/**
+ * Buscar por lo que se quiere MEJORAR: una clienta escribe «granitos», «acné» u
+ * «ojeras», no el nombre del producto (medido 11-10 con los 27 productos: esas
+ * búsquedas daban 0). Cada necesidad apunta a los códigos que su tarjeta de
+ * «¿Qué quieres mejorar?» ya nombra en la portada (`MEJORAR`, anuncios.ts): no
+ * es una promesa nueva. Las palabras van normalizadas y en singular.
+ */
+export const NECESIDADES: readonly { palabras: readonly string[]; codigos: readonly string[] }[] = [
+  { palabras: ["mancha", "melasma", "pano en la cara"], codigos: ["MU010", "MU013"] }, // Vitamina C + protector
+  { palabras: ["granito", "acne", "espinilla", "barrito", "grasa", "poro"], codigos: ["MU011", "MU009"] }, // Niacinamida y limpiador
+  { palabras: ["piel seca", "reseca", "deshidratad"], codigos: ["MU012"] }, // Ácido hialurónico
+  { palabras: ["ojera", "bolsa de los ojo", "ojos hinchado"], codigos: ["MU015"] }, // Contorno de ojos
+  { palabras: ["frizz", "esponjad", "orzuela", "horkilla"], codigos: ["MU005", "MU002"] }, // Aceite de argán
+  { palabras: ["caida", "se me cae", "calvicie", "entrada"], codigos: ["MU007"] }, // Tónico anticaída
+  { palabras: ["danad", "maltratad", "kebradiz", "decolorad", "kemad"], codigos: ["MU003", "MU004"] }, // Mascarilla y plex
+  { palabras: ["sol", "bloqueador", "solar"], codigos: ["MU013", "MU020"] }, // Protectores FPS 50
+];
+
+/** Los códigos de la necesidad que nombra la búsqueda («tengo granitos» → MU011, MU009); vacío si no nombra ninguna. */
+export function codigosPorNecesidad(q: string): ReadonlySet<string> {
+  const n = ` ${normalizar(q)} `;
+  const codigos = new Set<string>();
+  for (const x of NECESIDADES)
+    if (x.palabras.some((w) => (w.length <= 3 ? n.includes(` ${w} `) : n.includes(w)))) for (const c of x.codigos) codigos.add(c);
+  return codigos;
+}
+
+/** ¿El producto tiene TODAS las palabras buscadas (en nombre, marca, categoría, descripción o código), o es de la necesidad que nombra? */
 export function coincide(p: Pick<Filtrable, "nombre" | "marca" | "categoria" | "descripcion" | "codigo">, q: string): boolean {
   const palabras = normalizar(q).split(" ").filter(Boolean).map(raiz);
   if (palabras.length === 0) return true;
+  if (p.codigo && codigosPorNecesidad(q).has(p.codigo)) return true;
   const donde = normalizar([p.nombre, p.marca ?? "", p.categoria, p.descripcion ?? "", p.codigo ?? ""].join(" "));
   return palabras.every((w) => donde.includes(w));
 }

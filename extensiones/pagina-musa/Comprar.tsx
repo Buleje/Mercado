@@ -31,10 +31,10 @@ import { abrirBolsa } from "./estado-bolsa";
 import { solesPedido } from "./pedido-whatsapp";
 
 const AGREGAR =
-  "mu-foco inline-flex h-12 min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-[var(--mu-boton-fondo)] px-5 text-[15px] font-semibold text-[var(--mu-boton-texto)] transition duration-[var(--mu-dur-corto)] ease-[var(--mu-ease)] hover:-translate-y-0.5 hover:bg-[var(--mu-boton-fondo-hover)] active:scale-[.97] aria-disabled:cursor-not-allowed aria-disabled:opacity-60 aria-disabled:hover:translate-y-0";
+  "mu-foco inline-flex h-12 min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-[var(--mu-boton-fondo)] px-5 text-base font-semibold text-[var(--mu-boton-texto)] transition duration-[var(--mu-dur-corto)] ease-[var(--mu-ease)] hover:-translate-y-0.5 hover:bg-[var(--mu-boton-fondo-hover)] active:scale-[.97] aria-disabled:cursor-not-allowed aria-disabled:opacity-60 aria-disabled:hover:translate-y-0";
 
 const CONSULTA =
-  "mu-foco inline-flex h-12 w-full items-center justify-center gap-2 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 text-[15px] font-semibold text-[var(--text-primary)] transition-colors duration-[var(--mu-dur-corto)] hover:border-[var(--mu-whatsapp-fondo)]";
+  "mu-foco inline-flex h-12 w-full items-center justify-center gap-2 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 text-base font-semibold text-[var(--text-primary)] transition-colors duration-[var(--mu-dur-corto)] hover:border-[var(--mu-whatsapp-fondo)]";
 
 export function Comprar({
   producto,
@@ -112,7 +112,7 @@ export function Comprar({
           <button
             type="button"
             onClick={abrirBolsa}
-            className="mu-foco inline-flex h-11 items-center rounded font-semibold underline underline-offset-4 hover:no-underline"
+            className="mu-foco inline-flex h-12 items-center rounded font-semibold underline underline-offset-4 hover:no-underline"
           >
             Ver bolsa
           </button>

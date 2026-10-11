@@ -83,7 +83,7 @@ function Fila({
 }) {
   return (
     <div className="relative">
-      <p className="flex items-center gap-2 text-[13px] leading-snug text-[var(--text-secondary)]">
+      <p className="flex items-center gap-2 text-sm leading-snug text-[var(--text-secondary)]">
         <span
           className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${logrado ? "bg-[var(--mu-exito-fondo)] text-[var(--mu-exito)]" : "bg-[var(--mu-nude-claro)] text-[var(--mu-acento-tinta)]"}`}
         >
@@ -169,7 +169,7 @@ export function AvanceBolsa({ subtotal, pueblo }: { subtotal: number; pueblo: Pu
         >
           {regalo.estado === "antes" ? (
             <>
-              Del 9 de noviembre al 31 de diciembre: desde {solesPedido(CAMPANA_REGALO.monto)}, una{" "}
+              Del 9 de noviembre al 31 de diciembre: desde <span className="whitespace-nowrap">{solesPedido(CAMPANA_REGALO.monto)}</span>, una{" "}
               {CAMPANA_REGALO.regalo} de regalo
             </>
           ) : regalo.logrado ? (

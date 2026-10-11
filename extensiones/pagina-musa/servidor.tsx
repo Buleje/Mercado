@@ -21,6 +21,7 @@ import "server-only";
 import { Suspense } from "react";
 import type { PiezaPagina } from "../_contrato";
 import { Catalogo } from "./Catalogo";
+import { metadatosPagina } from "./compartir";
 import { Ficha, metadatosFicha } from "./Ficha";
 import type { Opciones } from "./manifest";
 import { marco } from "./Marco";
@@ -42,4 +43,6 @@ export const pagina: PiezaPagina<Opciones> = {
   // …y la ficha de cada producto o servicio, con su título para la pestaña (`Ficha.tsx`).
   Ficha,
   metadatosFicha,
+  // …y lo que se ve al compartir la portada y el catálogo (`compartir.ts`).
+  metadatosPagina,
 };

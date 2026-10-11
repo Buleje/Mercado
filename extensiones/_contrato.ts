@@ -182,6 +182,26 @@ export interface MetadatosFicha {
   readonly imagen?: string | null;
 }
 
+/** Las dos vistas propias que se comparten como enlace: la portada (`/t/<negocio>`) y el catálogo (`…/tienda`). */
+export type VistaCompartible = "portada" | "catalogo";
+
+/**
+ * Lo que se ve al compartir la portada o el catálogo propios (WhatsApp,
+ * Facebook, Instagram) y en la pestaña. Las rutas son RELATIVAS
+ * (`/musa/og.jpg`): el sistema les pone el dominio de la petición, nunca uno
+ * escrito a mano. La canónica también la arma el sistema.
+ */
+export interface MetadatosPagina {
+  /** El nombre del negocio (`og:site_name`). */
+  readonly sitio: string;
+  readonly titulo: string;
+  /** La búsqueda que forma parte de la canónica (`?categoria=Rostro`): una vista distinta que se comparte sola. */
+  readonly consulta?: string;
+  readonly descripcion: string;
+  /** La tarjeta para compartir: ruta de `public/` y su tamaño real (1200 × 630 recomendado). */
+  readonly imagen?: { readonly ruta: string; readonly ancho: number; readonly alto: number; readonly alt: string } | null;
+}
+
 export interface PiezaPagina<O = unknown> {
   /**
    * La página entera. Función de SERVIDOR (puede ser `async`; sin hooks).
@@ -220,6 +240,12 @@ export interface PiezaPagina<O = unknown> {
    * Si falta, tira o se pasa del tope, el sistema usa los de la ficha general.
    */
   readonly metadatosFicha?: (props: PropsFicha<O>) => Promise<MetadatosFicha | null>;
+  /**
+   * Título, descripción e imagen para compartir la portada y el catálogo
+   * propios (mismo tope de 2 s). Si falta, tira o se pasa del tope, el sistema
+   * usa los generales de la tienda.
+   */
+  readonly metadatosPagina?: (props: PropsPagina<O> & { vista: VistaCompartible }) => Promise<MetadatosPagina>;
 }
 
 /**

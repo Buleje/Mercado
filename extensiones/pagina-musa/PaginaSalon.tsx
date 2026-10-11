@@ -168,7 +168,7 @@ export function EsqueletoSalon() {
       <div className="h-9 bg-[var(--mu-cacao)]" />
       <div className={`${ANCHO} flex h-14 items-center justify-center gap-6 md:h-[4.5rem] md:justify-start`}>
         <div className={`${bloque} h-10 w-28`} />
-        <div className={`${bloque} mx-auto hidden h-11 w-full max-w-[36rem] md:block`} />
+        <div className={`${bloque} mx-auto hidden h-12 w-full max-w-[36rem] md:block`} />
       </div>
       <div className="h-[3.625rem] md:hidden" />
       <div className="hidden h-[2.8125rem] border-b border-[var(--rule-soft)] md:block" />

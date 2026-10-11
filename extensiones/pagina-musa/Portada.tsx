@@ -183,7 +183,7 @@ function Pieza({ pieza, p, i }: { pieza: (typeof PIEZAS)[number]; p: ProductoSal
         <EnlaceFicha p={p} aria-label={`${p.nombre}, ${solesCortos(p.precio)}: ver la ficha`} className={`group relative block rounded-lg ${FOCO_CLARO}`}>
           {dibujo}
           <span
-            className={`pointer-events-none absolute bottom-full z-30 mb-2 ${pieza.globo} translate-y-1 whitespace-nowrap rounded-full bg-[var(--mu-cacao)] px-3 py-1.5 text-[13px] font-medium text-[var(--mu-sobre-cacao)] opacity-0 transition duration-[var(--mu-dur-corto)] ease-[var(--mu-ease)] group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100`}
+            className={`pointer-events-none absolute bottom-full z-30 mb-2 ${pieza.globo} translate-y-1 whitespace-nowrap rounded-full bg-[var(--mu-cacao)] px-3 py-1.5 text-sm font-medium text-[var(--mu-sobre-cacao)] opacity-0 transition duration-[var(--mu-dur-corto)] ease-[var(--mu-ease)] group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100`}
           >
             {pieza.corto} · <span className="tabular-nums">{solesCortos(p.precio)}</span>
           </span>
@@ -250,7 +250,7 @@ function Heroe({ productos, conPiezas, slug }: { productos: readonly ProductoSal
               {d.cta.texto} <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </a>
             {cta2 && (
-              <a href={cta2.href} {...(cta2.externo ? externo : {})} className={`inline-flex h-12 items-center border-b border-[var(--mu-oro)] text-[15px] font-semibold transition-opacity hover:opacity-80 ${FOCO_CLARO}`}>
+              <a href={cta2.href} {...(cta2.externo ? externo : {})} className={`inline-flex h-12 items-center border-b border-[var(--mu-oro)] text-base font-semibold transition-opacity hover:opacity-80 ${FOCO_CLARO}`}>
                 {cta2.texto}
               </a>
             )}

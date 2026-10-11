@@ -3,7 +3,8 @@
  * · La grilla sigue el orden del catálogo impreso: MU001…MU020, kits KT01…KT05,
  *   dúos (MU013-2) y al final lo que no tiene código.
  * · Un favorito o una rebaja suben antes que el orden del catálogo.
- * · Se busca también por el código que Drucila manda por WhatsApp («mu013»).
+ * · Se busca también por el código que Drucila manda por WhatsApp («mu013»)
+ * · y por lo que se quiere mejorar («granitos» → niacinamida y limpiador).
  */
 import { describe, expect, it } from "vitest";
 import { aplicar, coincide, ordenCatalogo, SIN_FILTROS, type Filtrable } from "@/extensiones/pagina-musa/filtros";
@@ -53,5 +54,16 @@ describe("coincide", () => {
     expect(coincide(p(1, "MU013"), "mu013")).toBe(true);
     expect(coincide(p(2, "KT04"), "kt04")).toBe(true);
     expect(coincide(p(3, "MU001"), "mu013")).toBe(false);
+  });
+
+  it("encuentra por lo que se quiere mejorar (la necesidad que nombra la tarjeta de la portada)", () => {
+    expect(coincide(p(1, "MU011"), "tengo granitos")).toBe(true);
+    expect(coincide(p(2, "MU009"), "acné")).toBe(true);
+    expect(coincide(p(3, "MU015"), "ojeras")).toBe(true);
+    expect(coincide(p(4, "MU013"), "sol de la selva")).toBe(true);
+    // «sol» es palabra entera: «solución» no trae los protectores.
+    expect(coincide(p(5, "MU013"), "solución")).toBe(false);
+    // Sin producto para esa necesidad, no se inventa uno.
+    expect(coincide(p(6, "MU001"), "caspa")).toBe(false);
   });
 });

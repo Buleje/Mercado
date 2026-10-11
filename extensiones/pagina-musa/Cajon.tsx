@@ -192,7 +192,7 @@ export function Cajon({ codigos }: { codigos: CodigosProductos }) {
                 </span>
               )}
             </h2>
-            <p className="mt-1.5 text-[13px] text-[var(--text-tertiary)]">
+            <p className="mt-1.5 text-sm text-[var(--text-tertiary)]">
               {items.length === 0
                 ? "Todavía no agregaste nada"
                 : `${plural(items.length, "producto", "productos")} · ${plural(count, "unidad", "unidades")}`}
@@ -203,7 +203,7 @@ export function Cajon({ codigos }: { codigos: CodigosProductos }) {
             type="button"
             onClick={cerrarBolsa}
             aria-label="Cerrar la bolsa"
-            className="mu-foco inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[var(--text-primary)] transition-colors duration-[var(--mu-dur-corto)] hover:bg-[var(--mu-nude-claro)]"
+            className="mu-foco inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-[var(--text-primary)] transition-colors duration-[var(--mu-dur-corto)] hover:bg-[var(--mu-nude-claro)]"
           >
             <X className="h-6 w-6" aria-hidden="true" />
           </button>
@@ -213,7 +213,7 @@ export function Cajon({ codigos }: { codigos: CodigosProductos }) {
           <div
             ref={aviso}
             role="status"
-            className="relative flex items-center justify-between gap-3 bg-[var(--mu-cacao)] py-1 pl-5 pr-3 text-[13px] text-[var(--mu-sobre-cacao)]"
+            className="relative flex items-center justify-between gap-3 bg-[var(--mu-cacao)] py-1 pl-5 pr-3 text-sm text-[var(--mu-sobre-cacao)]"
           >
             <span className="min-w-0 truncate">
               Quitaste <strong className="font-semibold">{quitado.name}</strong>
@@ -222,7 +222,7 @@ export function Cajon({ codigos }: { codigos: CodigosProductos }) {
               ref={deshacerBtn}
               type="button"
               onClick={deshacer}
-              className="mu-foco inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full px-3 font-semibold text-[var(--mu-oro)] underline-offset-4 [--mu-foco-halo:var(--mu-cacao)] [--mu-foco:var(--mu-oro)] hover:underline"
+              className="mu-foco inline-flex h-12 shrink-0 items-center gap-1.5 rounded-full px-3 font-semibold text-[var(--mu-oro)] underline-offset-4 [--mu-foco-halo:var(--mu-cacao)] [--mu-foco:var(--mu-oro)] hover:underline"
             >
               <Undo2 className="h-4 w-4" aria-hidden="true" /> Deshacer
             </button>

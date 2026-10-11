@@ -45,7 +45,7 @@ export function FranjaAnuncio({ mensajes }: { mensajes: string[] }) {
         <span className="hidden w-9 shrink-0 sm:block" aria-hidden="true" />
         <div className="flex min-w-0 flex-1 items-center justify-center gap-3">
           <Destello className="hidden h-2.5 w-2.5 shrink-0 text-[var(--mu-oro)] sm:block" />
-          <p className="grid min-w-0 overflow-hidden text-center text-xs font-medium leading-snug tracking-[0.04em] sm:tracking-[0.12em]">
+          <p className="grid min-w-0 overflow-hidden text-center text-sm font-medium leading-snug tracking-[0.04em] sm:tracking-[0.12em]">
             {mensajes.map((m, i) => {
               const lugar = i === actual ? "translate-y-0 opacity-100" : i === (actual - 1 + mensajes.length) % mensajes.length ? "-translate-y-full opacity-0" : "translate-y-full opacity-0";
               return (

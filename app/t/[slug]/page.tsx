@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { notFound } from "next/navigation";
 import { Enchufe } from "@/lib/extensiones/Enchufe";
 import { resolverPiezas } from "@/lib/extensiones/resolver";
+import { metadatosDePaginaPropia } from "@/lib/extensiones/metadatos-pagina-propia";
 import { ENCHUFE_PAGINA, pideSinPiezas, type ParametrosDeBusqueda } from "@/extensiones/_contrato";
 import { PaginaGeneral, loadPageData } from "@/components/store/pagina-publica/PaginaGeneral";
 import { accesoPaginaPublica, previewDe } from "@/components/store/pagina-publica/datos-pagina-general";
@@ -15,8 +16,13 @@ interface TenantLandingProps {
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: TenantLandingProps): Promise<Metadata> {
   const { slug } = await params;
+  // Un negocio con página propia que trae sus metadatos (título, imagen para
+  // compartir, canónica con el dominio de la petición); sin ella, los de siempre.
+  const propios = await metadatosDePaginaPropia("portada", searchParams);
+  if (propios) return propios;
   const data = await loadPageData(slug);
   if (!data) return { title: "Tienda no encontrada" };
 

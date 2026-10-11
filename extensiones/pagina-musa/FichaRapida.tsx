@@ -78,7 +78,7 @@ function Modal({ p }: { p: ProductoSalon }) {
           type="button"
           onClick={cerrarFicha}
           aria-label="Cerrar"
-          className="mu-foco mu-sombra-tarjeta absolute right-3 top-3 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full bg-[var(--surface-raised)] text-[var(--text-primary)] transition-colors duration-200 hover:bg-[var(--mu-nude-claro)] sm:right-4 sm:top-4"
+          className="mu-foco mu-sombra-tarjeta absolute right-3 top-3 z-10 inline-flex h-12 w-12 items-center justify-center rounded-full bg-[var(--surface-raised)] text-[var(--text-primary)] transition-colors duration-200 hover:bg-[var(--mu-nude-claro)] sm:right-4 sm:top-4"
         >
           <X className="h-5 w-5" aria-hidden="true" />
         </button>
@@ -87,16 +87,16 @@ function Modal({ p }: { p: ProductoSalon }) {
           <div>
             <div data-mu-foto className="relative">
               <Escenario categoria={p.categoria} className="mu-arco mx-auto aspect-[5/4] w-full max-w-[22rem] sm:aspect-[4/5] sm:max-w-none">
-                <Ilustracion p={p} alt={ilustracion ? `${p.nombre} (ilustración referencial)` : p.nombre} sello="h-[44%] w-[44%]" />
+                <Ilustracion p={p} tamanos="(min-width: 640px) 24rem, 80vw" alt={ilustracion ? `${p.nombre} (ilustración referencial)` : p.nombre} sello="h-[44%] w-[44%]" />
               </Escenario>
             </div>
-            {ilustracion && src && <p className="mt-2 text-center text-[12px] text-[var(--text-tertiary)]">Ilustración referencial</p>}
+            {ilustracion && src && <p className="mt-2 text-center text-sm text-[var(--text-tertiary)]">Ilustración referencial</p>}
           </div>
 
           <div className="flex min-w-0 flex-col sm:py-2">
             <p className="flex flex-wrap items-center gap-x-3 gap-y-2 sm:pr-12">
               <span className={KICKER}>{servicio ? "Servicio del salón" : p.kit ? (p.kit.componentes.length === 1 ? "Dúo" : "Kit") : p.categoria}</span>
-              {p.codigo && <span className="text-[12px] font-semibold tabular-nums tracking-[0.1em] text-[var(--text-tertiary)]">{p.codigo}</span>}
+              {p.codigo && <span className="text-sm font-semibold tabular-nums tracking-[0.1em] text-[var(--text-tertiary)]">{p.codigo}</span>}
             </p>
             <h2 id={titulo} className="mu-serif mt-2 text-[1.625rem] leading-[1.1] text-[var(--text-primary)] sm:pr-12 sm:text-[2rem]">
               {p.nombre}

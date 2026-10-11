@@ -41,6 +41,24 @@ export function imagenDe(p: { imagen: string; codigo: string | null }): { src: s
   return { src: null, ilustracion: false };
 }
 
+/**
+ * Los envases vienen en 3 anchos: `/musa/productos/480/X.webp`, `/800/` y el
+ * original de 1200. Medido 11-10 en la portada a 390 px: 14 envases pesaban
+ * 386 KB con el de 1200 para un hueco de 170 px; los 27 en 480 suman 184 KB
+ * (648 KB en 1200). Si se suma un envase, correr el recorte (LEEME.md, «Fotos»).
+ * Una foto que no es un envase de la carpeta, sin `srcSet` (pasa igual).
+ */
+export function anchosIlustracion(src: string): string | undefined {
+  const m = /^\/musa\/productos\/([A-Za-z0-9-]+\.webp)$/.exec(src);
+  if (!m) return undefined;
+  return `${CARPETA_ILUSTRACIONES}480/${m[1]} 480w, ${CARPETA_ILUSTRACIONES}800/${m[1]} 800w, ${src} 1200w`;
+}
+
+/** Lo que ocupa un envase en una tarjeta de la grilla (2 columnas en el celular, 3-4 en la compu). */
+export const TAMANOS_TARJETA = "(min-width: 1024px) 18rem, (min-width: 640px) 33vw, 50vw";
+/** El envase grande de la ficha. */
+export const TAMANOS_FICHA = "(min-width: 1024px) 36rem, 92vw";
+
 /** El fondo de la ilustración según la categoría (tokens de `tema.ts`); clases enteras para que Tailwind las vea. */
 const TINTES: Readonly<Record<string, string>> = {
   Cabello: "bg-[var(--mu-tinte-cabello)]",

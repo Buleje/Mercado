@@ -27,7 +27,9 @@ import { cargarMarco, cargarVitrina, type DatosMarco, type ProductoSalon } from 
 import { enlaceWhatsapp, mensajeReserva, rutas, soles, solesCortos } from "./destinos";
 import { KitsQueLoTraen, NoEncontrado, OtrosServicios, Pasos, QueTrae, Rutina, RutinaTresPasos } from "./FichaExtras";
 import { EsqueletoFicha, EstadoPedido, Existencias, Galeria, Migas, Precio, type Miga } from "./FichaPartes";
-import { imagenDe } from "./imagenes";
+import { tarjetaDe } from "./compartir";
+import { CompartirProducto } from "./CompartirProducto";
+import { CARPETA_ILUSTRACIONES, imagenDe } from "./imagenes";
 import type { Opciones } from "./manifest";
 import { ENVIO_GRATIS_DESDE } from "./pedido-whatsapp";
 import { esServicio, productoDeLaUrl, rutinaDe, rutinaEnTresPasos, sugeridos } from "./rutina";
@@ -142,7 +144,7 @@ function Confianza() {
           </span>
           <span className="leading-snug">
             <span className="block text-[length:var(--mu-t-chico)] font-semibold text-[var(--text-primary)]">{titulo}</span>
-            <span className="block text-[12px] text-[var(--text-tertiary)]">{texto}</span>
+            <span className="block text-sm text-[var(--text-tertiary)]">{texto}</span>
           </span>
         </li>
       ))}
@@ -164,7 +166,7 @@ function Resumen({ p, whatsapp }: { p: ProductoSalon; whatsapp: string | null })
       <h1 className="mu-serif mt-3 text-[length:var(--mu-t-titulo)] leading-[1.1] text-[var(--text-primary)]">{p.nombre}</h1>
       {p.codigo && (
         <p className="mt-3">
-          <span className="inline-flex items-center rounded-full bg-[var(--mu-negro)] px-3 py-1 text-[12px] font-semibold tracking-[0.14em] text-[var(--surface-canvas)]">Cód. {p.codigo}</span>
+          <span className="inline-flex items-center rounded-full bg-[var(--mu-negro)] px-3 py-1 text-sm font-semibold tracking-[0.14em] text-[var(--surface-canvas)]">Cód. {p.codigo}</span>
         </p>
       )}
       <Precio p={p} />
@@ -191,6 +193,7 @@ function Resumen({ p, whatsapp }: { p: ProductoSalon; whatsapp: string | null })
             producto={{ id: p.id, name: p.nombre, category: p.categoria, price: p.precio, image: src ?? "", unit: p.unidad, ...(p.stock !== null ? { stock: p.stock } : {}) }}
             consulta={enlaceWhatsapp(whatsapp, `Hola Drucila, tengo una consulta sobre ${p.nombre}${p.codigo ? ` (${p.codigo})` : ""}, de ${solesCortos(p.precio)}.`)}
           />
+          <CompartirProducto nombre={p.nombre} texto={`Mira esto de Musa: ${p.nombre}${p.codigo ? ` (${p.codigo})` : ""}, ${solesCortos(p.precio)}.`} />
         </div>
       )}
       {!servicio && <Confianza />}
@@ -260,6 +263,8 @@ export async function metadatosFicha({ ctx, producto }: PropsFicha<Opciones>): P
     titulo: `${p.nombre} — ${solesCortos(p.precio)} · ${m.nombre}`,
     descripcion: `${p.descripcion ?? p.nombre}${rebaja}${ahorro} ${cierre}`,
     ruta: p.href,
-    imagen: p.imagen || null,
+    // La tarjeta de 1200 × 630 del producto (`compartir.ts`): el envase solo es un webp
+    // con fondo transparente, que WhatsApp pinta sobre negro. Una foto real subida gana.
+    imagen: p.imagen && !p.imagen.startsWith(CARPETA_ILUSTRACIONES) ? p.imagen : tarjetaDe(p.codigo),
   };
 }

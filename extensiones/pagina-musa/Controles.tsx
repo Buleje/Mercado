@@ -25,7 +25,7 @@ export interface OpcionesControles {
 }
 
 const CAMPO =
-  "mu-foco h-11 appearance-none rounded-[var(--mu-radio-control)] border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-4 pr-10 text-[length:var(--mu-t-boton)] font-semibold text-[var(--text-primary)] transition-colors duration-200 hover:border-[var(--text-primary)]";
+  "mu-foco h-12 appearance-none rounded-[var(--mu-radio-control)] border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-4 pr-10 text-[length:var(--mu-t-boton)] font-semibold text-[var(--text-primary)] transition-colors duration-200 hover:border-[var(--text-primary)]";
 
 /** Rótulo con `htmlFor` (no envolviendo al select: así el nombre accesible no arrastra el texto de las opciones). */
 function Selector({ etiqueta, valor, alCambiar, children }: { etiqueta: string; valor: string; alCambiar: (v: string) => void; children: ReactNode }) {
@@ -51,7 +51,7 @@ function Interruptor({ activo, alCambiar, children }: { activo: boolean; alCambi
       type="button"
       aria-pressed={activo}
       onClick={alCambiar}
-      className={`mu-foco inline-flex h-11 items-center gap-2 rounded-[var(--mu-radio-control)] border px-4 text-[length:var(--mu-t-boton)] font-semibold transition-colors duration-200 ${
+      className={`mu-foco inline-flex h-12 items-center gap-2 rounded-[var(--mu-radio-control)] border px-4 text-[length:var(--mu-t-boton)] font-semibold transition-colors duration-200 ${
         activo ? "border-[var(--mu-boton-fondo)] bg-[var(--mu-boton-fondo)] text-[var(--mu-boton-texto)]" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-[var(--text-primary)]"
       }`}
     >
@@ -121,12 +121,12 @@ export function Controles({
       <button
         type="button"
         onClick={() => setHoja(true)}
-        className="mu-foco inline-flex h-11 items-center gap-2 rounded-[var(--mu-radio-control)] border border-[var(--text-primary)] px-4 text-[length:var(--mu-t-boton)] font-semibold text-[var(--text-primary)] md:hidden"
+        className="mu-foco inline-flex h-12 items-center gap-2 rounded-[var(--mu-radio-control)] border border-[var(--text-primary)] px-4 text-[length:var(--mu-t-boton)] font-semibold text-[var(--text-primary)] md:hidden"
       >
         <SlidersHorizontal className="h-[18px] w-[18px]" aria-hidden="true" />
         Filtrar y ordenar
         {ajustes > 0 && (
-          <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-[var(--mu-contador-fondo)] px-1.5 text-[13px] font-semibold tabular-nums text-[var(--mu-contador-texto)]">
+          <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-[var(--mu-contador-fondo)] px-1.5 text-sm font-semibold tabular-nums text-[var(--mu-contador-texto)]">
             {ajustes}
             <span className="sr-only"> puestos</span>
           </span>

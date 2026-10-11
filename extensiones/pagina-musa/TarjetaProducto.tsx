@@ -22,7 +22,7 @@ import { BotonAgregar, useEnBolsa } from "./BotonAgregar";
 import type { ProductoSalon } from "./datos";
 import { EnlaceFicha } from "./EnlaceFicha";
 import { solesCortos as precio } from "./destinos";
-import { imagenDe, resumenDe, tinteDe } from "./imagenes";
+import { anchosIlustracion, imagenDe, resumenDe, TAMANOS_TARJETA, tinteDe } from "./imagenes";
 import { Sello } from "./Sello";
 
 const POCAS = 5;
@@ -42,12 +42,15 @@ export function Ilustracion({
   className = "",
   sello = "h-[46%] w-[46%]",
   cerca = false,
+  tamanos = TAMANOS_TARJETA,
 }: {
   p: ConImagen;
   prioridad?: boolean;
   alt?: string;
   className?: string;
   sello?: string;
+  /** El `sizes` del `<img>`: cuánto ocupa en la pantalla (elige el envase de 480, 800 o 1200). */
+  tamanos?: string;
   /** Miniaturas: el envase más grande (sin el aire de la escena), apoyado abajo. */
   cerca?: boolean;
 }) {
@@ -63,7 +66,7 @@ export function Ilustracion({
     return (
       <span className="absolute inset-0 flex flex-col items-center justify-center gap-2" {...(alt ? { role: "img", "aria-label": alt } : {})}>
         <Sello id={`ilus-${p.id}`} className={`relative ${sello} opacity-90`} />
-        {p.codigo && <span className="relative text-[13px] font-semibold tracking-[0.14em] text-[var(--mu-acento-tinta)]">{p.codigo}</span>}
+        {p.codigo && <span className="relative text-sm font-semibold tracking-[0.14em] text-[var(--mu-acento-tinta)]">{p.codigo}</span>}
       </span>
     );
   }
@@ -72,6 +75,7 @@ export function Ilustracion({
     <img
       ref={img}
       src={src}
+      {...(anchosIlustracion(src) ? { srcSet: anchosIlustracion(src), sizes: tamanos } : {})}
       alt={alt}
       loading={prioridad ? "eager" : "lazy"}
       decoding="async"
@@ -143,7 +147,7 @@ export function TarjetaProducto({ p, prioridad = false }: { p: ProductoSalon; pr
           <Ilustracion p={p} prioridad={prioridad} className="origin-bottom transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:-translate-y-1.5 group-hover:rotate-2" />
         </Escenario>
         <span className="absolute left-2.5 top-2.5 flex flex-col items-start gap-1.5 @min-[15.5rem]:left-3 @min-[15.5rem]:top-3">
-          {p.descuento && <span className="rounded-full bg-[var(--mu-ahorro)] px-2.5 py-1 text-[12px] font-bold text-[var(--surface-raised)]">-{p.descuento} %</span>}
+          {p.descuento && <span className="rounded-full bg-[var(--mu-ahorro)] px-2.5 py-1 text-sm font-bold text-[var(--surface-raised)]">-{p.descuento} %</span>}
           {p.etiqueta && <Insignia texto={p.etiqueta} />}
           {/* Tarjeta angosta (2 columnas del celular): la píldora va debajo de la insignia, no encima. */}
           {kit && (
@@ -162,7 +166,7 @@ export function TarjetaProducto({ p, prioridad = false }: { p: ProductoSalon; pr
           <span className="mu-entrar absolute bottom-2.5 left-2.5 [--mu-i:0] [animation-duration:var(--mu-dur-medio)] @min-[15.5rem]:bottom-3 @min-[15.5rem]:left-3">
             <span
               key={n}
-              className="mu-sombra-tarjeta inline-flex origin-left animate-[mu-latido_var(--mu-dur-medio)_var(--mu-ease-rebote)] items-center gap-1 rounded-full bg-[var(--mu-exito-fondo)] px-2.5 py-1 text-[12px] font-semibold text-[var(--mu-exito)]"
+              className="mu-sombra-tarjeta inline-flex origin-left animate-[mu-latido_var(--mu-dur-medio)_var(--mu-ease-rebote)] items-center gap-1 rounded-full bg-[var(--mu-exito-fondo)] px-2.5 py-1 text-sm font-semibold text-[var(--mu-exito)]"
             >
               <Check className="h-3.5 w-3.5" strokeWidth={2.6} aria-hidden="true" /> En tu bolsa
             </span>
@@ -173,7 +177,7 @@ export function TarjetaProducto({ p, prioridad = false }: { p: ProductoSalon; pr
       <div className="flex flex-1 flex-col p-3 @min-[15.5rem]:p-4">
         <p className="flex items-baseline justify-between gap-2">
           <span className="mu-kicker truncate text-[var(--mu-acento-tinta)]">{p.kit ? (p.kit.componentes.length === 1 ? "Dúo" : "Kit") : p.categoria}</span>
-          {p.codigo && <span className="shrink-0 text-[12px] font-medium tabular-nums text-[var(--text-tertiary)]">{p.codigo}</span>}
+          {p.codigo && <span className="shrink-0 text-sm font-medium tabular-nums text-[var(--text-tertiary)]">{p.codigo}</span>}
         </p>
         <h3 className="mt-1.5 line-clamp-2 min-h-[2.7em] text-[length:var(--mu-t-nombre)] font-medium leading-[1.35] text-[var(--text-primary)]">
           <EnlaceFicha p={p} className="mu-foco rounded-sm hover:underline hover:underline-offset-4">
@@ -181,21 +185,21 @@ export function TarjetaProducto({ p, prioridad = false }: { p: ProductoSalon; pr
           </EnlaceFicha>
         </h3>
         {linea && <p className="mt-1 line-clamp-2 text-[length:var(--mu-t-chico)] leading-snug text-[var(--text-tertiary)]">{linea}</p>}
-        {p.kit && <p className="mt-1 text-[12px] font-medium text-[var(--mu-acento-tinta)]">Cód. {p.kit.componentes.map((c) => c.codigo).join(", ")}</p>}
-        {pocas && <p className="mt-1 text-[13px] font-semibold text-[var(--mu-achiote-tinta)]">¡Quedan {p.stock}!</p>}
+        {p.kit && <p className="mt-1 text-sm font-medium text-[var(--mu-acento-tinta)]">Cód. {p.kit.componentes.map((c) => c.codigo).join(", ")}</p>}
+        {pocas && <p className="mt-1 text-sm font-semibold text-[var(--mu-achiote-tinta)]">¡Quedan {p.stock}!</p>}
 
         <div className="mt-auto flex flex-col gap-2.5 pt-3 @min-[15.5rem]:flex-row @min-[15.5rem]:items-end @min-[15.5rem]:justify-between">
           <div className="min-w-0">
             <p className="flex flex-wrap items-baseline gap-x-2">
               <span className="mu-precio text-[length:var(--mu-t-precio-tarjeta)] text-[var(--text-primary)]">{precio(p.precio)}</span>
               {p.antes && (
-                <span className="text-[13px] tabular-nums text-[var(--text-tertiary)] line-through">
+                <span className="text-sm tabular-nums text-[var(--text-tertiary)] line-through">
                   <span className="sr-only">Antes </span>
                   {precio(p.antes)}
                 </span>
               )}
             </p>
-            {kit && <p className="mt-0.5 whitespace-nowrap text-[12px] text-[var(--text-tertiary)]">Por separado {precio(kit.porSeparado)}</p>}
+            {kit && <p className="mt-0.5 whitespace-nowrap text-sm text-[var(--text-tertiary)]">Por separado {precio(kit.porSeparado)}</p>}
           </div>
           <BotonAgregar
             producto={{

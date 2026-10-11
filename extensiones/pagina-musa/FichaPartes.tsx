@@ -10,7 +10,7 @@ import type { ReactNode } from "react";
 import { Check } from "@buleje/design-system/icons";
 import type { ProductoSalon } from "./datos";
 import { solesCortos } from "./destinos";
-import { imagenDe, NOMBRE_TEXTURA, texturaDe, type Textura } from "./imagenes";
+import { imagenDe, NOMBRE_TEXTURA, TAMANOS_FICHA, texturaDe, type Textura } from "./imagenes";
 import type { PasoRutina } from "./rutina";
 import { Escenario, Ilustracion } from "./TarjetaProducto";
 import { ANCHO } from "./ui";
@@ -141,7 +141,7 @@ export function Galeria({ p, paso }: { p: ProductoSalon; paso: PasoRutina | null
     <div className="lg:sticky lg:top-28 lg:self-start">
       <div data-mu-foto className="group relative">
         <Escenario categoria={p.categoria} className="mu-arco aspect-[6/5] w-full lg:aspect-auto lg:h-[560px]">
-          <Ilustracion p={p} prioridad alt={ilustracion ? `${p.nombre} (ilustración referencial)` : p.nombre} sello="h-[40%] w-[40%]" />
+          <Ilustracion p={p} prioridad tamanos={TAMANOS_FICHA} alt={ilustracion ? `${p.nombre} (ilustración referencial)` : p.nombre} sello="h-[40%] w-[40%]" />
         </Escenario>
         {kit && (
           // El círculo negro del catálogo («AHORRA S/ 18»), montado sobre el borde del arco.
@@ -180,7 +180,7 @@ export function Galeria({ p, paso }: { p: ProductoSalon; paso: PasoRutina | null
           )}
         </ul>
       )}
-      {ilustracion && <p className="mt-3 text-[12px] text-[var(--text-tertiary)]">Ilustración referencial: el envase que te llega puede variar.</p>}
+      {ilustracion && <p className="mt-3 text-sm text-[var(--text-tertiary)]">Ilustración referencial: el envase que te llega puede variar.</p>}
     </div>
   );
 }
@@ -206,7 +206,7 @@ export function Precio({ p }: { p: ProductoSalon }) {
         </p>
       )}
       {p.antes && !kit && <p className="mt-2 text-[length:var(--mu-t-chico)] font-semibold text-[var(--mu-ahorro)]">Ahorras {solesCortos(p.antes - p.precio)}</p>}
-      <p className="mt-1 text-[12px] text-[var(--text-tertiary)]">Precio final en soles.</p>
+      <p className="mt-1 text-sm text-[var(--text-tertiary)]">Precio final en soles.</p>
     </div>
   );
 }
@@ -233,7 +233,7 @@ export function Existencias({ stock }: { stock: number | null }) {
       ? ["Agotado por ahora", "text-[var(--text-secondary)]"]
       : stock <= POCAS
         ? [`¡Quedan ${stock}!`, "font-semibold text-[var(--mu-achiote-tinta)]"]
-        : ["Disponible para delivery", "text-[var(--mu-exito)]"];
+        : ["Disponible para envío", "text-[var(--mu-exito)]"];
   return (
     <p className={`mt-4 inline-flex items-center gap-2 text-[length:var(--mu-t-chico)] ${tono}`}>
       <span aria-hidden="true" className={`h-2 w-2 rounded-full ${stock > 0 ? "bg-current" : "bg-[var(--rule-strong)]"}`} />

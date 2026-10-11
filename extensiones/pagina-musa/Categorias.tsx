@@ -38,7 +38,7 @@ export function Categorias({ productos, servicios = [], slug }: { productos: rea
                       <Ilustracion p={c.cara} sello="h-[40%] w-[40%]" />
                     </span>
                   )}
-                  <span className="absolute bottom-3 right-3 inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-[var(--surface-raised)] px-2.5 text-[13px] font-semibold tabular-nums text-[var(--mu-acento-tinta)]">
+                  <span className="absolute bottom-3 right-3 inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-[var(--surface-raised)] px-2.5 text-sm font-semibold tabular-nums text-[var(--mu-acento-tinta)]">
                     {c.cuantos}
                     <span className="sr-only"> {c.cuantos === 1 ? "producto" : "productos"}</span>
                   </span>
@@ -53,7 +53,7 @@ export function Categorias({ productos, servicios = [], slug }: { productos: rea
           ))}
         </ul>
         {servicios.length > 0 && (
-          <p className="mt-6 text-center text-[15px]">
+          <p className="mt-6 text-center text-base">
             <a href="#servicios" className={`font-semibold text-[var(--mu-acento-tinta)] underline underline-offset-4 ${FOCO}`}>
               Ver los {servicios.length} servicios del salón
             </a>

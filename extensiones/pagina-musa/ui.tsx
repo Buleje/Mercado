@@ -97,7 +97,7 @@ export function TituloSeccion({
     <a
       href={verTodo.href}
       {...(id ? { "aria-describedby": id } : {})}
-      className={`mu-subrayado mu-foco group inline-flex h-11 shrink-0 items-center gap-2 text-[length:var(--mu-t-boton)] font-semibold text-[var(--text-primary)] [--mu-subrayado-abajo:.45rem] ${
+      className={`mu-subrayado mu-foco group inline-flex h-12 shrink-0 items-center gap-2 text-[length:var(--mu-t-boton)] font-semibold text-[var(--text-primary)] [--mu-subrayado-abajo:.45rem] ${
         centrado ? "mt-1" : "col-start-2 row-start-1 self-center justify-self-end sm:row-start-2 sm:self-end"
       }`}
     >

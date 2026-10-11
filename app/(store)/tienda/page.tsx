@@ -13,6 +13,7 @@ import {
 import { zones } from "@/data/zones";
 import { getCachedSettings, resolveStoreContext } from "@/lib/store-metadata";
 import { catalogoPropio } from "@/lib/extensiones/CatalogoPropio";
+import { metadatosDePaginaPropia } from "@/lib/extensiones/metadatos-pagina-propia";
 import type { ParametrosDeBusqueda } from "@/extensiones/_contrato";
 
 /**
@@ -22,7 +23,11 @@ import type { ParametrosDeBusqueda } from "@/extensiones/_contrato";
  * individual. Se aplica `title.absolute` para anular el template
  * `%s | Buleje` del root layout.
  */
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({ searchParams }: { searchParams: Promise<ParametrosDeBusqueda> }): Promise<Metadata> {
+  // Un negocio con página propia que trae sus metadatos (título, imagen para
+  // compartir, canónica con el dominio de la petición); sin ella, los de siempre.
+  const propios = await metadatosDePaginaPropia("catalogo", searchParams);
+  if (propios) return propios;
   try {
     const ctx = await resolveStoreContext();
     const settings = await getCachedSettings(ctx.tenantId);

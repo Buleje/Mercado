@@ -91,7 +91,7 @@ export function SugerenciaKit({
       />
       <div className="min-w-0 flex-1">
         <p className="mu-kicker pr-24 text-[var(--mu-acento-tinta)]">Drucila te sugiere</p>
-        <p className="mt-1 text-[13px] leading-snug text-[var(--text-primary)]">
+        <p className="mt-1 text-sm leading-snug text-[var(--text-primary)]">
           {faltan.length > 0 ? (
             <>
               Te falta {lista(faltan)}: en el <strong className="font-semibold">{nombre}</strong>{" "}
@@ -104,13 +104,13 @@ export function SugerenciaKit({
             </>
           )}
         </p>
-        <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
+        <p className="mt-0.5 text-sm text-[var(--text-secondary)]">
           Por separado {soles(s.porSeparado)} · en kit {soles(precio)}
         </p>
         <button
           type="button"
           onClick={cambiar}
-          className="mu-foco mt-2 inline-flex h-10 items-center rounded-full bg-[var(--mu-boton-fondo)] px-4 text-[13px] font-semibold text-[var(--mu-boton-texto)] transition-colors duration-[var(--mu-dur-corto)] hover:bg-[var(--mu-boton-fondo-hover)]"
+          className="mu-foco mt-2 inline-flex h-10 items-center rounded-full bg-[var(--mu-boton-fondo)] px-4 text-sm font-semibold text-[var(--mu-boton-texto)] transition-colors duration-[var(--mu-dur-corto)] hover:bg-[var(--mu-boton-fondo-hover)]"
         >
           Cambiar por el kit · {soles(precio)}
         </button>

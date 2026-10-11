@@ -92,7 +92,7 @@ function KitDestacado({ p }: { p: ProductoSalon }) {
           </EnlaceFicha>
         </p>
         {nombres && <p className="mt-1 text-[length:var(--mu-t-chico)] leading-relaxed text-[var(--text-secondary)]">{nombres.join(" + ")}. En caja de regalo.</p>}
-        <p className="mt-1 text-[12px] font-medium text-[var(--mu-acento-tinta)]">
+        <p className="mt-1 text-sm font-medium text-[var(--mu-acento-tinta)]">
           Cód. {p.codigo}
           {p.kit && ` · incluye ${p.kit.componentes.map((c) => c.codigo).join(", ")}`}
         </p>
@@ -153,13 +153,13 @@ function Navidad({ productos, whatsapp }: { productos: readonly ProductoSalon[];
                 <span className="mu-precio mt-2 text-[32px] leading-none text-[var(--mu-oro)] sm:text-[36px]">{solesCortos(p.precio)}</span>
                 {p.kit && p.kit.ahorro > 0 && (
                   <>
-                    <span className="mt-1.5 text-[13px] text-[var(--mu-sobre-cacao-2)]">
+                    <span className="mt-1.5 text-sm text-[var(--mu-sobre-cacao-2)]">
                       Por separado <span className="whitespace-nowrap">{solesCortos(p.kit.porSeparado)}</span>
                     </span>
                     <span className="mt-2 self-start rounded-full bg-[var(--mu-oro)] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--mu-cacao)]">Ahorras {solesCortos(p.kit.ahorro)}</span>
                   </>
                 )}
-                <span className="mt-auto inline-flex items-center gap-1.5 pt-3 text-[13px] font-semibold">
+                <span className="mt-auto inline-flex items-center gap-1.5 pt-3 text-sm font-semibold">
                   Ver oferta <ArrowRight className="h-3.5 w-3.5 transition-transform duration-[var(--mu-dur-corto)] group-hover:translate-x-1" aria-hidden="true" />
                 </span>
               </EnlaceFicha>
@@ -168,7 +168,7 @@ function Navidad({ productos, whatsapp }: { productos: readonly ProductoSalon[];
           <li className={`${celda} col-span-2 sm:col-span-1`}>
             <Gift className="h-6 w-6 text-[var(--mu-oro)]" strokeWidth={1.6} aria-hidden="true" />
             <span className="mt-2 text-sm font-semibold">De regalo, 1 mascarilla en lámina</span>
-            <span className="mt-1 text-[13px] text-[var(--mu-sobre-cacao-2)]">
+            <span className="mt-1 text-sm text-[var(--mu-sobre-cacao-2)]">
               con tu compra desde <span className="whitespace-nowrap">{solesCortos(CAMPANA.regaloDesde)}</span>.
             </span>
           </li>
@@ -184,7 +184,7 @@ export function Promos({ productos, slug, whatsapp = null }: { productos: readon
   const destacado = kits.find((p) => p.codigo === DESTACADO);
   const resto = kits.filter((p) => p !== destacado).sort((a, b) => posicion(a) - posicion(b) || a.precio - b.precio);
   const verTodo = (
-    <a href={rutas(slug).categoria("Kits y ofertas")} className={`group inline-flex h-11 items-center gap-2 self-start border-b border-[var(--text-primary)] text-[15px] font-semibold text-[var(--text-primary)] ${FOCO}`}>
+    <a href={rutas(slug).categoria("Kits y ofertas")} className={`group inline-flex h-12 items-center gap-2 self-start border-b border-[var(--text-primary)] text-base font-semibold text-[var(--text-primary)] ${FOCO}`}>
       Ver todos los kits
       <ArrowRight className="h-4 w-4 transition-transform duration-[var(--mu-dur-corto)] group-hover:translate-x-1" aria-hidden="true" />
     </a>

@@ -32,7 +32,7 @@ export function FranjaServicios({ servicios, q, whatsapp, slug }: { servicios: P
           </div>
           <a
             href={rutas(slug).servicios}
-            className="mu-subrayado inline-flex h-11 shrink-0 items-center self-start text-base font-semibold [--mu-subrayado:var(--mu-oro)] sm:self-auto"
+            className="mu-subrayado inline-flex h-12 shrink-0 items-center self-start text-base font-semibold [--mu-subrayado:var(--mu-oro)] sm:self-auto"
           >
             Ver todos los servicios
           </a>
@@ -58,7 +58,7 @@ export function FranjaServicios({ servicios, q, whatsapp, slug }: { servicios: P
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={`Reservar ${s.nombre} por WhatsApp`}
-                  className="mt-auto inline-flex h-11 items-center justify-center gap-2 rounded-full bg-[var(--mu-sobre-cacao)] px-4 text-base font-semibold text-[var(--mu-cacao)] transition hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--mu-oro)]"
+                  className="mt-auto inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--mu-sobre-cacao)] px-4 text-base font-semibold text-[var(--mu-cacao)] transition hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--mu-oro)]"
                 >
                   <MessageCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
                   {/* En una tarjeta angosta no entra la frase entera; el nombre completo lo lleva `aria-label`. */}
