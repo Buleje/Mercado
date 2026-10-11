@@ -8,7 +8,8 @@
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { m, AnimatePresence } from "framer-motion";
-import { AlertTriangle, Package, RefreshCw, CheckCircle2 } from "@buleje/design-system/icons";
+import { AlertTriangle, ChevronDown, Package, RefreshCw, CheckCircle2 } from "@buleje/design-system/icons";
+import { useLocalStorage } from "@/hooks/use-local-storage";
 import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 
@@ -30,6 +31,8 @@ interface PredictionItem {
 
 interface Props {
   storeSlug: string;
+  /** Clave para plegar el bloque y recordarlo (arranca plegado); sin ella va siempre abierto. */
+  plegable?: string;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -56,7 +59,9 @@ const SEVERITY_CONFIG: Record<"critical" | "high", {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function StockoutPredictionWidget({ storeSlug }: Props) {
+export default function StockoutPredictionWidget({ storeSlug, plegable }: Props) {
+  const [guardado, setGuardado] = useLocalStorage<boolean>(plegable ?? "inicio:sin-plegar", false);
+  const abierto = !plegable || guardado;
   const [items, setItems] = useState<PredictionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [recalculating, setRecalculating] = useState(false);
@@ -110,36 +115,53 @@ export default function StockoutPredictionWidget({ storeSlug }: Props) {
   };
 
   return (
-    <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden">
+    <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
-        <div className="flex items-center gap-2">
-          <AlertTriangle className="h-4 w-4 text-orange-500 shrink-0" />
-          <h2 className="text-sm font-bold text-gray-900 dark:text-white">
-            Riesgo de quiebre de stock
-          </h2>
-          {lastUpdated && (
-            <span className="text-[length:var(--ts-2xs)] text-gray-400 dark:text-gray-500 hidden sm:inline">
+      <div className={cn("flex min-h-12 items-center justify-between gap-2 px-4 py-2", abierto && "border-b border-[var(--rule-soft)]")}>
+        <div className="flex min-w-0 items-center gap-2">
+          <AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)] shrink-0" />
+          {plegable ? (
+            <button
+              type="button"
+              onClick={() => setGuardado(!abierto)}
+              aria-expanded={abierto}
+              className="flex min-h-12 items-center gap-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+            >
+              <h2 className="text-sm font-bold text-[var(--text-primary)]">Riesgo de quiebre de stock</h2>
+              {!loading && !error && (
+                <span className="text-sm text-[var(--text-secondary)]">
+                  · {items.length === 0 ? "sin riesgo" : `${items.length} en riesgo`}
+                </span>
+              )}
+              <ChevronDown className={cn("h-4 w-4 shrink-0 text-[var(--text-tertiary)] transition-transform", abierto && "rotate-180")} aria-hidden />
+            </button>
+          ) : (
+            <h2 className="text-sm font-bold text-[var(--text-primary)]">Riesgo de quiebre de stock</h2>
+          )}
+          {abierto && lastUpdated && (
+            <span className="hidden text-sm text-[var(--text-tertiary)] sm:inline">
               · actualizado {lastUpdated}
             </span>
           )}
         </div>
-        <button
-          onClick={handleRecalculate}
-          disabled={recalculating || loading}
-          aria-label="Recalcular predicciones"
-          className={cn(
-            "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
-            "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
-          )}
-        >
-          <RefreshCw className={cn("h-3.5 w-3.5", recalculating && "animate-spin")} />
-          {recalculating ? "Calculando..." : "Recalcular"}
-        </button>
+        {abierto && (
+          <button
+            onClick={handleRecalculate}
+            disabled={recalculating || loading}
+            aria-label="Recalcular predicciones"
+            className={cn(
+              "flex h-12 items-center gap-1.5 rounded-lg px-4 text-sm font-bold transition-all",
+              "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
+            )}
+          >
+            <RefreshCw className={cn("h-4 w-4", recalculating && "animate-spin")} />
+            {recalculating ? "Calculando..." : "Recalcular"}
+          </button>
+        )}
       </div>
 
       {/* Body */}
-      <div className="p-4">
+      {abierto && <div className="p-4">
         {/* Loading */}
         {loading && (
           <div className="space-y-3">
@@ -176,10 +198,10 @@ export default function StockoutPredictionWidget({ storeSlug }: Props) {
             <div className="w-12 h-12 rounded-full bg-green-50 dark:bg-green-950/30 flex items-center justify-center mb-3">
               <CheckCircle2 className="h-6 w-6 text-green-500" />
             </div>
-            <p className="text-sm font-bold text-gray-900 dark:text-white">
+            <p className="text-sm font-bold text-[var(--text-primary)]">
               Todo bien, no hay productos en riesgo
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-sm text-[var(--text-secondary)] mt-1">
               Tus stocks estan en niveles seguros
             </p>
           </m.div>
@@ -207,7 +229,7 @@ export default function StockoutPredictionWidget({ storeSlug }: Props) {
                     )}
                   >
                     {/* Imagen del producto */}
-                    <div className="relative h-10 w-10 rounded-lg overflow-hidden bg-white dark:bg-gray-800 shrink-0">
+                    <div className="relative h-10 w-10 rounded-lg overflow-hidden bg-[var(--surface-sunken)] shrink-0">
                       {item.productImage ? (
                         <Image
                           src={item.productImage}
@@ -218,17 +240,17 @@ export default function StockoutPredictionWidget({ storeSlug }: Props) {
                         />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center">
-                          <Package className="h-5 w-5 text-gray-300 dark:text-gray-600" />
+                          <Package className="h-5 w-5 text-[var(--text-tertiary)]" />
                         </div>
                       )}
                     </div>
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <p className={cn("text-xs font-bold truncate", config.textClass)}>
+                      <p className={cn("text-sm font-bold truncate", config.textClass)}>
                         {item.productName}
                       </p>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                      <p className="text-sm text-[var(--text-secondary)] mt-0.5">
                         Se acaba en{" "}
                         <strong>{item.predictedDaysToStockout}</strong>{" "}
                         {item.predictedDaysToStockout === 1 ? "dia" : "dias"}
@@ -240,7 +262,7 @@ export default function StockoutPredictionWidget({ storeSlug }: Props) {
                     {/* Badge severidad */}
                     <span
                       className={cn(
-                        "shrink-0 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold uppercase",
+                        "shrink-0 px-2 py-0.5 rounded-full text-sm font-bold uppercase",
                         config.bgClass,
                         config.textClass
                       )}
@@ -253,7 +275,7 @@ export default function StockoutPredictionWidget({ storeSlug }: Props) {
             </ul>
           </AnimatePresence>
         )}
-      </div>
+      </div>}
     </div>
   );
 }

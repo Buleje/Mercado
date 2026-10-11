@@ -70,9 +70,9 @@ export function VendorMarketplaceTab({ data, storeSlug }: { data: VendorDashboar
       )}
       <VendorWeeklyChart data={data.weeklyRevenue} />
       <VendorRecentSales sales={data.recentSales} />
-      <StockoutPredictionWidget storeSlug={storeSlug} />
+      <StockoutPredictionWidget storeSlug={storeSlug} plegable="inicio:marketplace.quiebre-stock" />
       <MarketplaceAdvancedCharts />
-      <SponsoredAdminPanel storeSlug={storeSlug} />
+      <SponsoredAdminPanel storeSlug={storeSlug} plegable="inicio:marketplace.patrocinados" />
     </div>
   );
 }

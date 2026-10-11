@@ -43,7 +43,7 @@ interface Props {
   ariaLabel: string;
 }
 
-const TICK = { fontSize: 12, fill: "var(--text-secondary)", fontWeight: 600 } as const;
+const TICK = { fontSize: 14, fill: "var(--text-secondary)", fontWeight: 600 } as const;
 const LARGO_NOMBRE = 22;
 
 function corto(nombre: unknown): string {
@@ -54,7 +54,7 @@ function corto(nombre: unknown): string {
 /** Nombre en UNA línea (el tick por defecto de Recharts lo partía en dos). */
 function TickNombre({ x, y, payload }: { x?: number | string; y?: number | string; payload?: { value?: unknown } }) {
   return (
-    <text x={Number(x ?? 0)} y={Number(y ?? 0)} dy={4} textAnchor="end" fontSize={12} fontWeight={600} fill="var(--text-secondary)">
+    <text x={Number(x ?? 0)} y={Number(y ?? 0)} dy={4} textAnchor="end" fontSize={14} fontWeight={600} fill="var(--text-secondary)">
       <title>{String(payload?.value ?? "")}</title>
       {corto(payload?.value)}
     </text>
@@ -82,7 +82,7 @@ function etiquetaValor(
       y={horizontal ? y + h / 2 : y - 6}
       dy={horizontal ? 4 : 0}
       textAnchor={horizontal ? "start" : "middle"}
-      fontSize={12}
+      fontSize={14}
       fontWeight={700}
       fill="var(--text-primary)"
     >

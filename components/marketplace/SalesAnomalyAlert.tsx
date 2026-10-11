@@ -136,7 +136,7 @@ export default function SalesAnomalyAlert({ storeSlug }: Props) {
         <span className="text-sm font-bold text-orange-700 dark:text-orange-400">
           Anomalias de ventas detectadas
         </span>
-        <span className="ml-auto text-xs text-orange-600 dark:text-orange-500 font-semibold">
+        <span className="ml-auto text-sm text-orange-600 dark:text-orange-500 font-semibold">
           {items.length} alerta{items.length !== 1 ? "s" : ""}
         </span>
       </div>
@@ -186,7 +186,7 @@ export default function SalesAnomalyAlert({ storeSlug }: Props) {
                     </span>{" "}
                     en {formatMetric(item.metric)}
                   </p>
-                  <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
+                  <p className="text-sm text-[var(--text-tertiary)] mt-0.5">
                     {formatDate(item.date)} ·{" "}
                     Esperado: {Number(item.expected).toFixed(0)} · Real: {Number(item.actual).toFixed(0)}
                   </p>
@@ -198,7 +198,7 @@ export default function SalesAnomalyAlert({ storeSlug }: Props) {
                   disabled={acknowledging === item.id}
                   aria-label="Marcar como entendido"
                   className={cn(
-                    "flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0",
+                    "flex items-center gap-1 h-12 px-3 rounded-lg text-sm font-bold transition-all shrink-0",
                     "bg-[var(--surface-raised)] border border-[var(--rule-soft)]",
                     "text-[var(--text-secondary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)]",
                     "disabled:opacity-50 disabled:cursor-not-allowed"

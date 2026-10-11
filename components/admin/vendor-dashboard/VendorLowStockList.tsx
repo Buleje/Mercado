@@ -46,16 +46,16 @@ export function VendorLowStockList({ products }: Props) {
   const resto = products.length - visibles.length;
 
   return (
-    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6">
-      <div className="mb-4 flex items-center justify-between gap-3">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+      <div className="mb-2 flex items-center justify-between gap-3">
         <CardTitle className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
           <AlertTriangle className="h-5 w-5 text-[var(--data-warning-500)]" aria-hidden />
           Stock bajo
-          <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-1.5 text-xs font-bold tabular-nums text-[var(--text-primary)]">
+          <span className="ml-1 inline-flex h-6 min-w-6 items-center justify-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-1.5 text-sm font-bold tabular-nums text-[var(--text-primary)]">
             {products.length}
           </span>
         </CardTitle>
-        <EnlacePanel apariencia="heredada" href="/admin?tab=inventario" className="text-xs font-semibold text-[var(--accent-ink)] hover:underline">
+        <EnlacePanel apariencia="heredada" href="/admin?tab=inventario" className="inline-flex h-12 items-center text-sm font-semibold text-[var(--accent-ink)] hover:underline">
           {resto > 0 ? `Ver ${resto} más` : "Ver inventario"}
         </EnlacePanel>
       </div>
@@ -76,14 +76,14 @@ export function VendorLowStockList({ products }: Props) {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{p.name}</p>
-                {p.category && <p className="truncate text-xs text-[var(--text-secondary)]">{p.category}</p>}
+                {p.category && <p className="truncate text-sm text-[var(--text-secondary)]">{p.category}</p>}
               </div>
               <div className="shrink-0 text-right">
-                <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-bold tabular-nums ${u.clase}`}>
+                <span className={`inline-flex items-center rounded-full px-2 py-1 text-sm font-bold tabular-nums ${u.clase}`}>
                   {u.texto ?? `Quedan ${cantidad(p.stock ?? 0)} ${p.unit}`}
                 </span>
                 {p.stockMin !== undefined && p.stockMin !== null && (
-                  <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">mínimo {cantidad(p.stockMin)}</p>
+                  <p className="mt-0.5 text-sm text-[var(--text-tertiary)]">mínimo {cantidad(p.stockMin)}</p>
                 )}
               </div>
             </li>

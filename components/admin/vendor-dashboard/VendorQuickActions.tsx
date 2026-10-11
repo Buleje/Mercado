@@ -28,7 +28,7 @@ function buildActions(slug: string): QuickAction[] {
   ];
 }
 
-const BASE = "inline-flex min-h-11 w-full items-center justify-center gap-2 px-4 sm:w-auto sm:justify-start text-sm font-bold transition-colors hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]";
+const BASE = "inline-flex h-12 w-full items-center justify-center gap-2 px-4 sm:w-auto sm:justify-start text-sm font-bold rounded-xl transition-colors hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]";
 const PRINCIPAL = "bg-[var(--accent-dark)] text-white hover:bg-[var(--accent-600)]";
 const SECUNDARIA = "border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]";
 
@@ -62,11 +62,11 @@ export function VendorQuickActions({ pendientes = 0 }: { pendientes?: number }) 
             <Icon className="h-4 w-4 shrink-0" aria-hidden />
             {action.label}
             {action.principal && pendientes > 0 && (
-              <span className="ml-0.5 inline-flex min-w-6 items-center justify-center rounded-full bg-[color-mix(in_srgb,currentColor_22%,transparent)] px-1.5 text-xs font-extrabold tabular-nums">
+              <span className="ml-0.5 inline-flex min-w-6 items-center justify-center rounded-full bg-[color-mix(in_srgb,currentColor_22%,transparent)] px-1.5 text-sm font-extrabold tabular-nums">
                 {pendientes}
               </span>
             )}
-            {action.external && <ExternalLink className="h-3.5 w-3.5 shrink-0 opacity-70" aria-label="Se abre en otra pestaña" />}
+            {action.external && <ExternalLink className="h-4 w-4 shrink-0 opacity-70" aria-label="Se abre en otra pestaña" />}
           </EnlacePanel>
         );
       })}

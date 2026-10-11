@@ -48,13 +48,13 @@ export function VendorRecentSales({ sales }: Props) {
   if (sales.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6">
-      <div className="mb-4 flex items-center justify-between gap-3">
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+      <div className="mb-2 flex items-center justify-between gap-3">
         <CardTitle className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
           <Receipt className="h-5 w-5 text-[var(--text-tertiary)]" aria-hidden />
           Pedidos de hoy
         </CardTitle>
-        <EnlacePanel apariencia="heredada" href="/admin?tab=pedidos" className="text-xs font-semibold text-[var(--accent-ink)] hover:underline">
+        <EnlacePanel apariencia="heredada" href="/admin?tab=pedidos" className="inline-flex h-12 items-center text-sm font-semibold text-[var(--accent-ink)] hover:underline">
           Ver pedidos
         </EnlacePanel>
       </div>
@@ -67,12 +67,12 @@ export function VendorRecentSales({ sales }: Props) {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="truncate text-sm font-semibold text-[var(--text-primary)]">{sale.customer.name}</span>
-                  <span className="shrink-0 text-xs tabular-nums text-[var(--text-tertiary)]">{formatTime(sale.createdAt)}</span>
+                  <span className="shrink-0 text-sm tabular-nums text-[var(--text-tertiary)]">{formatTime(sale.createdAt)}</span>
                 </div>
-                <p className="mt-0.5 truncate text-xs text-[var(--text-secondary)]">
+                <p className="mt-0.5 truncate text-sm text-[var(--text-secondary)]">
                   {sale.items.map((i) => `${cantidad(i.quantity)}× ${i.name}`).join(", ")}
                 </p>
-                {detalle && <span className="text-xs text-[var(--text-tertiary)]">{detalle}</span>}
+                {detalle && <span className="text-sm text-[var(--text-tertiary)]">{detalle}</span>}
               </div>
               <p
                 className={`shrink-0 text-sm font-extrabold tabular-nums ${sale.status === "cancelado" ? "text-[var(--text-tertiary)] line-through" : "text-[var(--text-primary)]"}`}

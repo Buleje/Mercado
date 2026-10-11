@@ -160,12 +160,12 @@ export default function MiPerfilTab() {
             <div className="min-w-0 self-start pt-11">
               <CardTitle className="capitalize">{profile.username || "Usuario"}</CardTitle>
               <span className={cn(
-                "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold",
+                "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-sm font-semibold",
                 profile.role === "admin" ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" :
                 profile.role === "cajero" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]" :
                 "bg-[var(--rule-soft)] text-[var(--text-secondary)] dark:text-[var(--text-tertiary)]"
               )}>
-                <Shield className="h-3 w-3" />
+                <Shield className="h-4 w-4" />
                 {profile.role === "admin" ? "Administrador" :
                  profile.role === "cajero" ? "Cajero" :
                  profile.role === "almacenero" ? "Almacenero" : profile.role}
@@ -179,7 +179,7 @@ export default function MiPerfilTab() {
               {/* Username */}
               <div>
                 {editMode ? (
-                  <Field label="Nombre" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">
+                  <Field label="Nombre" labelClassName="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">
                     <input
                       type="text"
                       value={profile.username}
@@ -189,7 +189,7 @@ export default function MiPerfilTab() {
                   </Field>
                 ) : (
                   <>
-                    <span className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">Nombre</span>
+                    <span className="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">Nombre</span>
                     <p className="text-sm font-medium text-[var(--text-primary)] capitalize px-3 py-2.5">{profile.username || "—"}</p>
                   </>
                 )}
@@ -197,8 +197,8 @@ export default function MiPerfilTab() {
 
               {/* Email (read-only) */}
               <div>
-                <span className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 flex items-center gap-1.5">
-                  <Mail className="h-3 w-3" /> Correo electrónico
+                <span className="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 flex items-center gap-1.5">
+                  <Mail className="h-4 w-4" /> Correo electrónico
                 </span>
                 <p className="text-sm font-medium text-[var(--text-primary)] px-3 py-2.5">{profile.email || "—"}</p>
               </div>
@@ -206,7 +206,7 @@ export default function MiPerfilTab() {
               {/* Phone */}
               <div>
                 {editMode ? (
-                  <Field label={<><Phone className="h-3 w-3 inline mr-1.5" />Teléfono</>} labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 flex items-center gap-1.5">
+                  <Field label={<><Phone className="h-4 w-4 inline mr-1.5" />Teléfono</>} labelClassName="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 flex items-center gap-1.5">
                     <input
                       type="tel"
                       value={profile.phone}
@@ -217,20 +217,12 @@ export default function MiPerfilTab() {
                   </Field>
                 ) : (
                   <>
-                    <span className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 flex items-center gap-1.5">
-                      <Phone className="h-3 w-3" /> Teléfono
+                    <span className="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 flex items-center gap-1.5">
+                      <Phone className="h-4 w-4" /> Teléfono
                     </span>
                     <p className="text-sm font-medium text-[var(--text-primary)] px-3 py-2.5">{profile.phone || "No registrado"}</p>
                   </>
                 )}
-              </div>
-
-              {/* Role (read-only) */}
-              <div>
-                <span className="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 flex items-center gap-1.5">
-                  <Shield className="h-3 w-3" /> Rol
-                </span>
-                <p className="text-sm font-medium text-[var(--text-primary)] px-3 py-2.5 capitalize">{profile.role}</p>
               </div>
             </div>
 
@@ -241,14 +233,14 @@ export default function MiPerfilTab() {
                   <button
                     onClick={handleSave}
                     disabled={saving}
-                    className={button({ variant: "accent", className: "rounded-xl" })}
+                    className={button({ variant: "accent", className: "h-12 rounded-xl" })}
                   >
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                     Guardar
                   </button>
                   <button
                     onClick={() => setEditMode(false)}
-                    className={button({ variant: "ghost", className: "rounded-xl" })}
+                    className={button({ variant: "ghost", className: "h-12 rounded-xl" })}
                   >
                     Cancelar
                   </button>
@@ -256,7 +248,7 @@ export default function MiPerfilTab() {
               ) : (
                 <button
                   onClick={() => setEditMode(true)}
-                  className={button({ variant: "secondary", className: "rounded-xl" })}
+                  className={button({ variant: "secondary", className: "h-12 rounded-xl" })}
                 >
                   Editar perfil
                 </button>
@@ -281,14 +273,14 @@ export default function MiPerfilTab() {
         {!showPasswordForm ? (
           <button
             onClick={() => setShowPasswordForm(true)}
-            className={button({ variant: "secondary", className: "rounded-xl" })}
+            className={button({ variant: "secondary", className: "h-12 rounded-xl" })}
           >
             <Key className="h-4 w-4" />
             Cambiar contraseña
           </button>
         ) : (
           <div className="space-y-3 max-w-sm">
-            <Field label="Contraseña actual" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">
+            <Field label="Contraseña actual" labelClassName="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">
               <input
                 type="password"
                 value={currentPassword}
@@ -296,7 +288,7 @@ export default function MiPerfilTab() {
                 className="w-full px-3 h-12 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               />
             </Field>
-            <Field label="Nueva contraseña" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">
+            <Field label="Nueva contraseña" labelClassName="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">
               <input
                 type="password"
                 value={newPassword}
@@ -304,7 +296,7 @@ export default function MiPerfilTab() {
                 className="w-full px-3 h-12 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               />
             </Field>
-            <Field label="Confirmar contraseña" labelClassName="text-xs font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">
+            <Field label="Confirmar contraseña" labelClassName="text-sm font-semibold text-[var(--text-secondary)] dark:text-muted mb-1.5 block">
               <input
                 type="password"
                 value={confirmPassword}
@@ -313,20 +305,20 @@ export default function MiPerfilTab() {
               />
             </Field>
             {passwordError && (
-              <p className="text-xs text-[var(--data-error-500)] font-medium">{passwordError}</p>
+              <p className="text-sm text-[var(--data-error-500)] font-medium">{passwordError}</p>
             )}
             <div className="flex items-center gap-3 pt-1">
               <button
                 onClick={handlePasswordChange}
                 disabled={passwordSaving}
-                className={button({ variant: "accent", className: "rounded-xl" })}
+                className={button({ variant: "accent", className: "h-12 rounded-xl" })}
               >
                 {passwordSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Key className="h-4 w-4" />}
                 Cambiar
               </button>
               <button
                 onClick={() => { setShowPasswordForm(false); setPasswordError(""); }}
-                className={button({ variant: "ghost", className: "rounded-xl" })}
+                className={button({ variant: "ghost", className: "h-12 rounded-xl" })}
               >
                 Cancelar
               </button>

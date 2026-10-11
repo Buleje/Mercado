@@ -39,6 +39,7 @@ export function VendorWeeklyChart({ data }: Props) {
   return (
     <DashboardSection
       chartId="marketplace.ventas-7-dias"
+      plegable="inicio:marketplace.ventas-7-dias"
       hasData={hayTendencia(dias, ["total"])}
       kicker="Ventas entregadas · últimos 7 días"
       title="Tus últimos 7 días"

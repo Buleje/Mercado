@@ -67,6 +67,7 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
       render: () => (
         <DashboardSection
           chartId="marketplace.advanced.funnel-pedidos"
+          plegable="inicio:marketplace.funnel-pedidos"
           hasData={muestra.embudo}
           kicker="Pedidos · últimos 30 días"
           title="De pedido recibido a entregado"
@@ -94,6 +95,7 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
       render: () => (
         <DashboardSection
           chartId="marketplace.advanced.comparativa-semanal-mkt"
+          plegable="inicio:marketplace.comparativa-semanal-mkt"
           hasData={muestra.semana}
           kicker="Ventas entregadas · por día"
           title="Esta semana vs la pasada"
@@ -135,6 +137,7 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
       render: () => (
         <DashboardSection
           chartId="marketplace.advanced.ingresos-6m"
+          plegable="inicio:marketplace.ingresos-6m"
           hasData={muestra.mensual}
           kicker="Ventas entregadas · últimos 6 meses"
           title="Cómo viene tu facturación mensual"
@@ -164,6 +167,7 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
       render: () => (
         <DashboardSection
           chartId="marketplace.advanced.top-productos-marketplace"
+          plegable="inicio:marketplace.top-productos-marketplace"
           hasData={muestra.top !== "oculto"}
           kicker="Más vendidos · últimos 30 días"
           title="Los productos que más te compran"
@@ -203,6 +207,7 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
       render: () => (
         <DashboardSection
           chartId="marketplace.advanced.ratings-marketplace"
+          plegable="inicio:marketplace.ratings-marketplace"
           hasData={muestra.resenas}
           kicker="Reseñas · todas las fechas"
           title="Qué nota te dan tus clientes"
@@ -230,6 +235,7 @@ export const MarketplaceAdvancedCharts = memo(function MarketplaceAdvancedCharts
       render: () => (
         <DashboardSection
           chartId="marketplace.advanced.heatmap-marketplace"
+          plegable="inicio:marketplace.heatmap-marketplace"
           hasData={muestra.mapa}
           kicker="Pedidos entregados · últimos 30 días"
           title="Cuándo te compran más"

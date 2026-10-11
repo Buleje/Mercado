@@ -80,13 +80,13 @@ export function MapaFranjaDia({ matrix, max }: { matrix: number[][]; max: number
     >
       <div role="columnheader" />
       {DIAS_MAPA.map((d) => (
-        <div key={d} role="columnheader" className="pb-1 text-center text-xs font-bold uppercase text-[var(--text-tertiary)]">
+        <div key={d} role="columnheader" className="pb-1 text-center text-sm font-bold uppercase text-[var(--text-tertiary)]">
           {d}
         </div>
       ))}
       {FRANJAS.map((franja, fi) => (
         <Fragment key={franja.label}>
-          <div role="rowheader" className="flex items-center pr-2 text-xs font-semibold text-[var(--text-secondary)]">
+          <div role="rowheader" className="flex items-center pr-2 text-sm font-semibold text-[var(--text-secondary)]">
             {franja.label}
           </div>
           {matrix[fi].map((v, di) => {
