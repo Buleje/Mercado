@@ -100,6 +100,8 @@ export default function CajaCharts({ data, periodo }: { data: CajaData; periodo:
       render: () => (
         <DashboardSection
           chartId="caja.flujo-diario"
+          plegable="inicio:caja.flujo-diario"
+          abiertoAlInicio
           hasData={hayTendencia(dias, ["ingresos", "egresos"])}
           kicker={`Caja · ${periodo}`}
           title="Día por día"
@@ -144,6 +146,7 @@ export default function CajaCharts({ data, periodo }: { data: CajaData; periodo:
       render: () => (
         <DashboardSection
           chartId="caja.metodo-pago"
+          plegable="inicio:caja.metodo-pago"
           hasData={modoMetodos !== "oculto"}
           kicker={`Cobros · ${periodo}`}
           title="Cómo te pagan"
@@ -194,6 +197,7 @@ export default function CajaCharts({ data, periodo }: { data: CajaData; periodo:
       render: () => (
         <DashboardSection
           chartId="caja.waterfall-flujo"
+          plegable="inicio:caja.waterfall-flujo"
           hasData={waterfallSteps.some((s) => valorConDato(s.value))}
           kicker={`Utilidad · ${periodo}`}
           title="De lo que vendiste a lo que te queda"
@@ -216,6 +220,7 @@ export default function CajaCharts({ data, periodo }: { data: CajaData; periodo:
       render: () => (
         <DashboardSection
           chartId="caja.tendencia-mensual"
+          plegable="inicio:caja.tendencia-mensual"
           hasData={hayTendencia(data.flujoMensual, ["ingresos", "egresos"])}
           kicker="Caja · últimos 6 meses"
           title="Mes a mes"
@@ -244,6 +249,7 @@ export default function CajaCharts({ data, periodo }: { data: CajaData; periodo:
       render: () => (
         <DashboardSection
           chartId="caja.ingresos-por-hora"
+          plegable="inicio:caja.ingresos-por-hora"
           hasData={hayDatosEnSerie(data.ingresosPorHora, ["monto"])}
           kicker="Hoy · por hora"
           title="Cobros de hoy por hora"
@@ -273,6 +279,7 @@ export default function CajaCharts({ data, periodo }: { data: CajaData; periodo:
       render: () => (
         <DashboardSection
           chartId="caja.ratio-liquido"
+          plegable="inicio:caja.ratio-liquido"
           hasData={valorConDato(data.ingresos)}
           defaultVisible={false}
           kicker={`Caja · ${periodo}`}

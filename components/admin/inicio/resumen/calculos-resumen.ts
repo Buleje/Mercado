@@ -14,6 +14,7 @@
  */
 import { enStockBajo } from "@/lib/inventario/stock-minimo";
 import { MESES_CORTOS } from "@/lib/admin/inicio/formato-tablero";
+import { estaAgotado } from "@/lib/pos/stock-vendible";
 
 export type Product = {
   id: number | string;
@@ -215,7 +216,9 @@ export function kpisInventario(products: Product[], minimoGlobal: number) {
   );
   const sinCosto = activos.filter((p) => p.costPrice == null).length;
   const criticos = activos.filter((p) => (p.stock ?? 0) > 0 && enStockBajo(p, minimoGlobal)).length;
-  const sinStock = activos.filter((p) => (p.stock ?? 0) <= 0).length;
+  /* La regla del POS: un servicio o un producto sin stock cargado no está agotado
+     (antes `stock ?? 0` contaba 23 de main: 16 servicios + 7 sin stock; 11-10). */
+  const sinStock = activos.filter((p) => estaAgotado(p)).length;
   return { valor, skus: activos.length, sinCosto, criticos, sinStock };
 }
 

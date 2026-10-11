@@ -72,7 +72,7 @@ export default function ForestalDashboard({ dateRange, conAdelantos, onChangeRan
         <button
           type="button"
           onClick={reintentar}
-          className="inline-flex min-h-11 items-center gap-2 rounded-[var(--radius-lg)] border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+          className="inline-flex min-h-12 items-center gap-2 rounded-[var(--radius-lg)] border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
         >
           <RefreshCw className="h-4 w-4" aria-hidden /> Reintentar
         </button>

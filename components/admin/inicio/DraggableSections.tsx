@@ -300,7 +300,7 @@ export function DraggableSections({ items, storageKey, gap = 1, layout = "column
           <button
             type="button"
             onClick={() => setShowAllMobile((v) => !v)}
-            className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-2 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] active:scale-95 transition-all"
+            className="inline-flex min-h-12 items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)] active:scale-95 transition-all"
             aria-expanded={showAllMobile}
           >
             {showAllMobile ? (
@@ -323,9 +323,9 @@ export function DraggableSections({ items, storageKey, gap = 1, layout = "column
           <button
             type="button"
             onClick={handleReset}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors px-3 py-1.5 rounded-lg hover:bg-[var(--surface-sunken)] border border-transparent hover:border-[var(--rule-soft)]"
+            className="inline-flex min-h-12 items-center gap-1.5 text-sm font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors px-4 rounded-xl hover:bg-[var(--surface-sunken)] border border-transparent hover:border-[var(--rule-soft)]"
           >
-            <RotateCcw className="h-3 w-3" />
+            <RotateCcw className="h-4 w-4" />
             Restaurar orden
           </button>
         </div>
@@ -441,7 +441,7 @@ function DraggableSection({
             onClick={onPresent}
             aria-label="Presentar en pantalla completa"
             title="Presentar (abre en modal para navegación)"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-soft)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:border-[var(--rule-base)] transition-colors"
+            className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-soft)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:border-[var(--rule-base)] transition-colors"
           >
             <Maximize2 className="h-4 w-4" />
           </button>
@@ -450,7 +450,7 @@ function DraggableSection({
             onClick={onToggle}
             aria-label={hidden ? "Mostrar sección" : "Ocultar sección"}
             title={hidden ? "Mostrar" : "Ocultar"}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-soft)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:border-[var(--rule-base)] transition-colors"
+            className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-soft)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:border-[var(--rule-base)] transition-colors"
           >
             {hidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
@@ -461,7 +461,7 @@ function DraggableSection({
             title="Arrastrar para reordenar"
             {...attributes}
             {...listeners}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--surface-sunken)] border border-[var(--rule-soft)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:border-[var(--rule-base)] transition-colors touch-none select-none cursor-grab active:cursor-grabbing"
+            className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-soft)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:border-[var(--rule-base)] transition-colors touch-none select-none cursor-grab active:cursor-grabbing"
           >
             <GripVertical className="h-4 w-4" />
           </button>

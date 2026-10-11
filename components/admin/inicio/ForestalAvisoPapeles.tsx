@@ -34,7 +34,7 @@ export function ForestalAvisoPapeles({ activo, onIr }: { activo: boolean; onIr: 
       <button
         type="button"
         onClick={onIr}
-        className="inline-flex min-h-11 shrink-0 items-center gap-1 px-2 text-sm font-bold text-[var(--accent-ink)] hover:underline dark:text-[var(--accent)]"
+        className="inline-flex min-h-12 shrink-0 items-center gap-1 px-2 text-sm font-bold text-[var(--accent-ink)] hover:underline dark:text-[var(--accent)]"
       >
         Ver guías <ArrowRight className="h-4 w-4" aria-hidden />
       </button>

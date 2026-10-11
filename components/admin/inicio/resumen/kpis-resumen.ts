@@ -20,21 +20,10 @@ export function detalleCompra(f: { ordenes: number; pendiente: number }): string
 
 export function kpisDelResumen(r: ResumenMulti) {
   const { cajaKpis, invKpis, compKpis, cliKpis, prodKpis } = r;
+  // «Entró» y «Salió» se fueron (11-10): eran la venta del período del hero
+  // (S/ 0.10 = S/ 0.10, medido en main) y «Compraste» del bloque de Compras
+  // (S/ 6,618.50 = S/ 6,618.50). El gráfico del bloque sigue con las dos series.
   const kpisCaja: SectionKPI[] = [
-    {
-      label: "Entró",
-      value: soles(cajaKpis.ingresos),
-      sinDato: kpiSinDato(cajaKpis.ingresos),
-      sinDatoHint: "No entró plata por ventas ni pedidos en este período.",
-      hint: "Pedidos y ventas del período (sin los cancelados).",
-    },
-    {
-      label: "Salió",
-      value: soles(cajaKpis.egresos),
-      sinDato: kpiSinDato(cajaKpis.egresos),
-      sinDatoHint: "No registraste compras en este período.",
-      hint: "Compras a proveedores del período.",
-    },
     {
       label: "Entró − salió",
       value: soles(cajaKpis.neto),
@@ -116,20 +105,15 @@ export function kpisDelResumen(r: ResumenMulti) {
     },
   ];
 
+  // «Clientes nuevos» y «Compraron» ya están en el hero del Resumen («Nuevos»,
+  // «Compraron»): el bloque queda con el total y el gráfico por día (11-10).
   const kpisClientes: SectionKPI[] = [
     {
-      label: "Clientes nuevos",
-      value: cantidad(cliKpis.nuevos),
-      sinDato: kpiSinDato(cliKpis.nuevos),
-      sinDatoHint: "Nadie se registró como cliente en este período.",
-      sub: `de ${cantidad(cliKpis.total)} en total`,
-    },
-    {
-      label: "Compraron",
-      value: cantidad(cliKpis.activos),
-      sinDato: kpiSinDato(cliKpis.activos),
-      sinDatoHint: "Ningún pedido entregado con teléfono del cliente en este período.",
-      hint: "Clientes distintos (por teléfono) con un pedido entregado.",
+      label: "Clientes en total",
+      value: cantidad(cliKpis.total),
+      sinDato: kpiSinDato(cliKpis.total),
+      sinDatoHint: "Todavía no tienes clientes registrados.",
+      hint: "Todos tus clientes registrados. Los nuevos y los que compraron en el período están arriba, junto a la venta.",
     },
   ];
 

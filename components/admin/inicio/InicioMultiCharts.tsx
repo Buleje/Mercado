@@ -20,6 +20,10 @@ import { useChartsVisibilityManager } from "@/lib/admin/charts-visibility";
  *    pestañas (`COLOR_CONCEPTO`); nada de compuestos de 3 series y 2 ejes;
  *  - KPIs sin dato salen «—» con ⓘ, no «S/ 0» de relleno;
  *  - caja (la serie por día) a todo el ancho; el resto, de a dos por fila.
+ *
+ * 2026-10-11 (Resumen a ≤2 pantallas): cada bloque se pliega y se recuerda
+ * (`DashboardSection plegable`), plegado de entrada; plegado dice sus cifras en
+ * una línea. Sin el «Ver más gráficos» del celular: plegados ya entran.
  */
 
 const RANGO: Record<string, string> = {
@@ -87,8 +91,6 @@ export const InicioMultiCharts = memo(function InicioMultiCharts({
         storageKey="inicio-resumen-orden"
         layout="column"
         gap={1}
-        // En celular, los 2 primeros a la vista y el resto tras «Ver más gráficos».
-        mobileCollapseAfter={2}
       />
       {/* Ocultos por falta de datos (o a la vista si el dueño eligió «mostrar igual»). */}
       {sinDatos.length > 0 && (

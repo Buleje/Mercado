@@ -4,7 +4,8 @@
  * KpiTile — la cifra de una sección del Inicio (`DashboardSection.kpis`).
  *
  * Jerarquía (Brandon 2026-10-09: «revisa los KPIs… con buen diseño y formato»):
- *   rótulo chico + ⓘ  →  CIFRA grande  →  variación con flecha / línea chica.
+ *   rótulo + ⓘ  →  CIFRA grande  →  variación con flecha / línea de apoyo.
+ * Todo el texto ≥14 px (2026-10-11: el rótulo en mayúsculas de 12 px no se leía a 1 m).
  *
  * Sin dato (regla R3 del tablero): nada de «S/ 0.00» de relleno. La cifra sale
  * como «—» atenuado y el ⓘ dice por qué. Se activa con `value` null/«—»/vacío
@@ -84,7 +85,7 @@ function Variacion({ delta, label, polarity = "normal" }: { delta: number; label
         : "text-[var(--data-error)]";
   const signo = sube ? "+" : "";
   return (
-    <p className={`mt-1.5 flex min-w-0 items-center gap-1 text-xs font-bold tabular-nums ${color}`}>
+    <p className={`mt-1.5 flex min-w-0 items-center gap-1 text-sm font-bold tabular-nums ${color}`}>
       <Flecha className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} aria-hidden />
       <span>
         {signo}
@@ -112,7 +113,7 @@ export function KpiTile({ kpi }: { kpi: SectionKPI }) {
     >
       <div className="mb-1.5 flex min-w-0 items-center gap-1">
         {Icono && <Icono className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" aria-hidden />}
-        <p className="min-w-0 truncate text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]" title={kpi.label}>
+        <p className="min-w-0 truncate text-sm font-bold text-[var(--text-secondary)]" title={kpi.label}>
           {kpi.label}
         </p>
         {ayuda && (
@@ -139,7 +140,7 @@ export function KpiTile({ kpi }: { kpi: SectionKPI }) {
         <Variacion delta={kpi.delta} label={kpi.deltaLabel} polarity={kpi.deltaPolarity} />
       )}
       {!sinDato && kpi.sub && (
-        <p className="mt-1.5 truncate text-xs font-medium text-[var(--text-secondary)]" title={kpi.sub}>
+        <p className="mt-1.5 truncate text-sm font-medium text-[var(--text-secondary)]" title={kpi.sub}>
           {kpi.sub}
         </p>
       )}

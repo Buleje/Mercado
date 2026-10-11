@@ -120,6 +120,8 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
       render: () => (
         <DashboardSection
           chartId="clientes.top-10-clientes"
+          plegable="inicio:clientes.top-10-clientes"
+          abiertoAlInicio
           hasData={muestra.top !== "oculto"}
           kicker="Ranking del período"
           title="Quién más te compra"
@@ -142,6 +144,8 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
       render: () => (
         <DashboardSection
           chartId="clientes.clientes-por-dia"
+          plegable="inicio:clientes.clientes-por-dia"
+          abiertoAlInicio
           hasData={muestra.porDia}
           kicker="Días con compras"
           title="Clientes que te compraron por día"
@@ -174,6 +178,8 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
       render: () => (
         <DashboardSection
           chartId="clientes.distribucion-gasto"
+          plegable="inicio:clientes.distribucion-gasto"
+          abiertoAlInicio
           hasData={muestra.gasto}
           kicker="Desde que te compran"
           title="Cuánto te ha comprado cada cliente"
@@ -200,6 +206,8 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
       render: () => (
         <DashboardSection
           chartId="clientes.frecuencia-compra"
+          plegable="inicio:clientes.frecuencia-compra"
+          abiertoAlInicio
           hasData={muestra.frecuencia}
           kicker="En el período"
           title="Cuántas veces te compraron"
@@ -221,6 +229,8 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
       render: () => (
         <DashboardSection
           chartId="clientes.retencion-6m"
+          plegable="inicio:clientes.retencion-6m"
+          abiertoAlInicio
           hasData={muestra.retencion}
           defaultVisible={false}
           kicker="Últimos 6 meses"
@@ -255,6 +265,8 @@ export default function ClientesCharts({ data }: { data: ClientesData }) {
       render: () => (
         <DashboardSection
           chartId="clientes.ticket-por-cliente"
+          plegable="inicio:clientes.ticket-por-cliente"
+          abiertoAlInicio
           hasData={muestra.ticket !== "oculto"}
           defaultVisible={false}
           kicker="Tus mejores clientes"

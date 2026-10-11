@@ -86,6 +86,8 @@ export default function ProductosCharts({ data }: { data: ProductosData }) {
       render: () => (
         <DashboardSection
           chartId="productos.top-10-productos"
+          plegable="inicio:productos.top-10-productos"
+          abiertoAlInicio
           hasData={true}
           kicker="Rankings · top 10 del periodo"
           title="Los productos que más venden"
@@ -148,6 +150,8 @@ export default function ProductosCharts({ data }: { data: ProductosData }) {
       render: () => (
         <DashboardSection
           chartId="productos.ventas-categoria"
+          plegable="inicio:productos.ventas-categoria"
+          abiertoAlInicio
           hasData={true}
           kicker="Categorías · periodo"
           title="Ingresos por categoría"
@@ -227,6 +231,8 @@ export default function ProductosCharts({ data }: { data: ProductosData }) {
       render: () => (
         <DashboardSection
           chartId="productos.sin-movimiento"
+          plegable="inicio:productos.sin-movimiento"
+          abiertoAlInicio
           hasData={true}
           kicker="Dead stock · top 10 zombies"
           title="Productos sin movimiento · capital inmovilizado"
@@ -261,6 +267,8 @@ export default function ProductosCharts({ data }: { data: ProductosData }) {
       render: () => (
         <DashboardSection
           chartId="productos.afinidades"
+          plegable="inicio:productos.afinidades"
+          abiertoAlInicio
           hasData={true}
           defaultVisible={false}
           kicker="Análisis de cesta · co-compra"

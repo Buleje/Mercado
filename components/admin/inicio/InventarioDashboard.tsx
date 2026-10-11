@@ -22,6 +22,7 @@ import { BulejeDashboardSkeleton } from "./_shared";
 import EmptyDateRangeState from "./EmptyDateRangeState";
 import { formatNumber } from "@/lib/format";
 import { COLOR_CONCEPTO, fechaCorta } from "@/lib/admin/inicio/formato-tablero";
+import { estaAgotado } from "@/lib/pos/stock-vendible";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -107,7 +108,8 @@ export default function InventarioDashboard({ dateRange }: InventarioDashboardPr
     const { valor: valorInventario, sinCosto: productosSinCosto } = inventoryValueAtCost(active);
     const totalProductos = active.length;
     const stockCritico = active.filter(p => p.stock != null && p.stockMin != null && p.stock <= p.stockMin && p.stock > 0).length;
-    const agotados = active.filter(p => (p.stock ?? 0) === 0).length;
+    // La regla del POS (`estaAgotado`): servicio o sin stock cargado ≠ agotado (11-10).
+    const agotados = active.filter(p => estaAgotado(p)).length;
 
     // Without movement in period
     const soldIds = new Set<number>();

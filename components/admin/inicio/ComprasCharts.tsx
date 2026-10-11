@@ -120,6 +120,8 @@ export default function ComprasCharts({ data, periodo }: { data: ComprasData; pe
       render: () => (
         <DashboardSection
           chartId="compras.por-dia"
+          plegable="inicio:compras.por-dia"
+          abiertoAlInicio
           hasData={hayTendencia(filas, ["total"])}
           kicker={`Compras · ${periodo}`}
           title={porSemana ? "Compras por semana" : "Compras por día"}
@@ -167,6 +169,7 @@ export default function ComprasCharts({ data, periodo }: { data: ComprasData; pe
       render: () => (
         <DashboardSection
           chartId="compras.estado-cuentas"
+          plegable="inicio:compras.estado-cuentas"
           hasData={deuda > 0 && data.cuentasPorVencer.length > 0}
           kicker="Cuentas por pagar · hoy"
           title="Lo que debes a proveedores"
@@ -209,6 +212,7 @@ export default function ComprasCharts({ data, periodo }: { data: ComprasData; pe
       render: () => (
         <DashboardSection
           chartId="compras.top-proveedores-periodo"
+          plegable="inicio:compras.top-proveedores-periodo"
           hasData={modoProv !== "oculto"}
           kicker={`Proveedores · ${periodo}`}
           title="A quién le compras"
@@ -245,6 +249,7 @@ export default function ComprasCharts({ data, periodo }: { data: ComprasData; pe
       render: () => (
         <DashboardSection
           chartId="compras.por-mes"
+          plegable="inicio:compras.por-mes"
           hasData={hayTendencia(meses, ["total"])}
           kicker="Últimos 12 meses"
           title="Compras por mes"

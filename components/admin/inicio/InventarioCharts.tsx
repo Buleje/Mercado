@@ -113,7 +113,7 @@ function Resto({ n, que }: { n: number; que: string }) {
 }
 
 const BOTON_BASE =
-  "inline-flex min-h-11 items-center gap-1.5 rounded-lg px-3.5 text-sm font-bold transition-colors disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]";
+  "inline-flex min-h-12 items-center gap-1.5 rounded-lg px-3.5 text-sm font-bold transition-colors disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]";
 
 export default function InventarioCharts({ data }: { data: InventarioData }) {
   const [reorderOpen, setReorderOpen] = useState(false);
@@ -208,6 +208,8 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
       render: () => (
         <DashboardSection
           chartId="inventario.valor-categoria"
+          plegable="inicio:inventario.valor-categoria"
+          abiertoAlInicio
           hasData={hayDatosEnSerie(data.stockPorCategoria, ["valor"])}
           kicker="Inventario · a costo"
           title="Dónde está tu plata"
@@ -238,6 +240,8 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
       render: () => (
         <DashboardSection
           chartId="inventario.stockout-proyeccion"
+          plegable="inicio:inventario.stockout-proyeccion"
+          abiertoAlInicio
           hasData={porAgotarse.length > 0}
           kicker="Reposición · ritmo de 30 días"
           title="Qué se acaba primero"
@@ -280,6 +284,8 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
       render: () => (
         <DashboardSection
           chartId="inventario.movimiento-diario"
+          plegable="inicio:inventario.movimiento-diario"
+          abiertoAlInicio
           hasData={hayTendencia(data.movimientoDiario, ["salidas"])}
           kicker="Salidas · últimos 14 días"
           title="Unidades vendidas por día"
@@ -312,6 +318,8 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
       render: () => (
         <DashboardSection
           chartId="inventario.top-salidas"
+          plegable="inicio:inventario.top-salidas"
+          abiertoAlInicio
           hasData={modoTop !== "oculto"}
           kicker="Productos · período"
           title="Lo que más se vende"
@@ -330,6 +338,8 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
       render: () => (
         <DashboardSection
           chartId="inventario.distribucion-stock"
+          plegable="inicio:inventario.distribucion-stock"
+          abiertoAlInicio
           hasData={hayDatosEnSerie(data.distribucionStock, ["cantidad"])}
           defaultVisible={false}
           kicker="Stock · cuántas unidades tiene cada producto"
@@ -359,6 +369,8 @@ export default function InventarioCharts({ data }: { data: InventarioData }) {
       render: () => (
         <DashboardSection
           chartId="inventario.dias-cobertura"
+          plegable="inicio:inventario.dias-cobertura"
+          abiertoAlInicio
           hasData={modoCobertura !== "oculto"}
           defaultVisible={false}
           kicker="Cobertura · ritmo de 30 días"

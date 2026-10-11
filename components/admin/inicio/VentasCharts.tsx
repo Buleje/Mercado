@@ -104,6 +104,8 @@ export default function VentasCharts({ data }: { data: VentasData }) {
         <ConTonoVentas>
           <DashboardSection
             chartId="ventas.utilidad-promedio"
+            plegable="inicio:ventas.utilidad-promedio"
+            abiertoAlInicio
             hasData={muestra.porDia}
             kicker="Últimos 14 días"
             title="Ventas por día"
@@ -154,6 +156,8 @@ export default function VentasCharts({ data }: { data: VentasData }) {
         <ConTonoVentas>
           <DashboardSection
             chartId="ventas.por-dia-semana"
+            plegable="inicio:ventas.por-dia-semana"
+            abiertoAlInicio
             hasData={muestra.porDiaSemana}
             kicker={`Día de la semana · ${data.dateRangeLabel}`}
             title="¿Qué día vendes más?"
@@ -230,6 +234,8 @@ export default function VentasCharts({ data }: { data: VentasData }) {
         <ConTonoVentas>
           <DashboardSection
             chartId="ventas.por-hora"
+            plegable="inicio:ventas.por-hora"
+            abiertoAlInicio
             hasData={muestra.porHora}
             kicker="Hoy"
             title="¿A qué hora vendes más?"
@@ -289,6 +295,8 @@ export default function VentasCharts({ data }: { data: VentasData }) {
         <ConTonoVentas>
           <DashboardSection
             chartId="ventas.metodo-pago"
+            plegable="inicio:ventas.metodo-pago"
+            abiertoAlInicio
             hasData={muestra.medioDePago !== "oculto"}
             kicker={`Medios de pago · ${data.dateRangeLabel}`}
             title="¿Cómo te pagan?"
@@ -323,6 +331,8 @@ export default function VentasCharts({ data }: { data: VentasData }) {
         <ConTonoVentas>
           <DashboardSection
             chartId="ventas.meta-periodo"
+            plegable="inicio:ventas.meta-periodo"
+            abiertoAlInicio
             hasData={muestra.meta}
             defaultVisible={false}
             kicker={`Objetivo · ${data.dateRangeLabel}`}
@@ -358,6 +368,8 @@ export default function VentasCharts({ data }: { data: VentasData }) {
         <ConTonoVentas>
           <DashboardSection
             chartId="ventas.forecast-7d"
+            plegable="inicio:ventas.forecast-7d"
+            abiertoAlInicio
             hasData={muestra.pronostico}
             defaultVisible={false}
             kicker="Próximos 7 días"

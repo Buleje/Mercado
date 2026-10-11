@@ -84,6 +84,8 @@ export function ForestalCharts({ ctp }: { ctp: InicioForestalCtp }) {
   return (
     <DashboardSection
       chartId="forestal.movimiento-semanal"
+      plegable="inicio:forestal.movimiento-semanal"
+      abiertoAlInicio
       hasData={hayTendencia(datos, ["ingreso", "producido", "despachado"])}
       className="charts-forestal"
       kicker={`Libro CTP · ${PASO_TXT[serie.paso]}`}

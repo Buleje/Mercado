@@ -75,7 +75,7 @@ export function ListaDeAlertas({
                     key={e.href}
                     href={e.href}
                     onClick={irEnElPanel}
-                    className="inline-flex min-h-9 items-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+                    className="inline-flex min-h-12 items-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
                   >
                     {e.label}
                   </a>

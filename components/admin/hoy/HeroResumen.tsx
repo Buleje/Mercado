@@ -93,8 +93,8 @@ export function HeroResumen({
       value: cantidad(pedidos),
       sinDato: kpiSinDato(pedidos),
       sinDatoHint: "No hubo pedidos en este período.",
-      sub: c.activeOrders > 0 ? `${cantidad(c.activeOrders)} por atender` : undefined,
-      hint: "Pedidos del período. «Por atender» son los pendientes de cualquier día.",
+      // «N por atender» se repetía con los avisos de pedidos de «Para hoy» (11-10).
+      hint: "Pedidos del período. Los que esperan atención, de cualquier día, están en «Para hoy».",
     },
     {
       label: "Ticket prom.",
@@ -131,15 +131,18 @@ export function HeroResumen({
       className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]"
       aria-labelledby="hero-resumen-venta"
     >
-      <div className="grid gap-5 p-5 sm:p-6 lg:grid-cols-12 lg:gap-6">
+      <div className="grid gap-5 p-5 lg:grid-cols-12 lg:gap-6">
         <div className="min-w-0 lg:col-span-5">
-          <p className="mb-3 text-lg font-extrabold tracking-tight text-[var(--text-primary)]">
-            {saludo}
-          </p>
+          {/* El saludo vive en «Para hoy» del Resumen (11-10); acá sólo si lo pasan. */}
+          {saludo && (
+            <p className="mb-3 text-lg font-extrabold tracking-tight text-[var(--text-primary)]">
+              {saludo}
+            </p>
+          )}
           <div className="mb-1.5 flex items-center gap-1">
             <p
               id="hero-resumen-venta"
-              className="text-xs font-extrabold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]"
+              className="text-sm font-bold text-[var(--text-secondary)]"
             >
               {et.venta}
             </p>
@@ -188,14 +191,14 @@ export function HeroResumen({
               <a
                 href={consejo.cta.href}
                 onClick={(e: MouseEvent<HTMLAnchorElement>) => irEnElPanel(e)}
-                className="inline-flex min-h-11 items-center rounded-full bg-[var(--text-primary)] px-4 text-sm font-bold text-[var(--surface-raised)] transition-opacity hover:opacity-90"
+                className="inline-flex min-h-12 items-center rounded-full bg-[var(--text-primary)] px-5 text-sm font-bold text-[var(--surface-raised)] transition-opacity hover:opacity-90"
               >
                 {consejo.cta.label}
               </a>
             )}
           </>
         )}
-        <p className="ml-auto text-xs font-semibold text-[var(--text-tertiary)]">
+        <p className="ml-auto text-sm font-semibold text-[var(--text-tertiary)]">
           Actualizado {formatTime(data.generatedAt)}
         </p>
       </div>

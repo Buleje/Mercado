@@ -66,10 +66,10 @@ const InicioDashboardV2 = dynamic(
   { ssr: false, loading: DashboardLoading },
 );
 
-// 2026-05-26 — briefing accionable embebido (reemplaza el modal "¡Buenos días!"
-// bloqueante). Solo aparece si hay fiados/stock/pedidos por resolver.
-const MorningBriefingCard = dynamic(
-  () => import("@/components/admin/inicio/MorningBriefingCard"),
+// 2026-10-11 — «Para hoy»: la tarjeta del día (MorningBriefingCard) y las
+// alertas accionables fundidas en un bloque, arriba del Resumen.
+const ParaHoy = dynamic(
+  () => import("@/components/admin/inicio/resumen/ParaHoy").then((m) => ({ default: m.ParaHoy })),
   { ssr: false },
 );
 
@@ -270,7 +270,11 @@ export default function VendorDashboardModule() {
         scope porque cambiamos moduleId con la tab activa. localStorage
         persiste prefs por tab. */}
     <ChartsVisibilityProvider moduleId={`vendor-dashboard:${tab}`} key={tab}>
-    <div className="space-y-4">
+    {/* En el Inicio el texto más chico es de 14 px (2026-10-11: medidos 71
+        textos de 12 px en el Resumen, «se lee a 1 m»). Los rótulos de las
+        tarjetas del DS (`StatCard`: Kicker/Caption en --ts-xs) y los `text-xs`
+        de cada pestaña toman el escalón de 14 px sólo dentro de este módulo. */}
+    <div className="space-y-4 [--ts-2xs:0.875rem] [--ts-xs:0.875rem] [--text-xs:0.875rem]">
       {/* El título va DENTRO de la barra de pestañas (patrón acordado con
           Brandon 2026-09-07, piloto en Análisis): identidad a la izquierda,
           pestañas a la derecha, una sola regla; las acciones del módulo, en
@@ -294,7 +298,7 @@ export default function VendorDashboardModule() {
                   <button
                     onClick={() => void fetchDashboard(false)}
                     disabled={loading}
-                    className="flex min-h-11 min-w-11 items-center justify-center rounded-xl p-2 text-[var(--text-tertiary)] transition-colors hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] disabled:opacity-50"
+                    className="flex min-h-12 min-w-11 items-center justify-center rounded-xl p-2 text-[var(--text-tertiary)] transition-colors hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] disabled:opacity-50"
                     title="Actualizar marketplace"
                     aria-label="Actualizar datos del marketplace"
                   >
@@ -312,25 +316,18 @@ export default function VendorDashboardModule() {
         moduleId={MODULE_ID}
       >
         {tab === "general" && (
+          // Resumen en ≤2 pantallas (2026-10-11, medido 3,01 → ver reporte de la
+          // tanda 5): arriba «Para hoy» (el saludo, el día y lo que hay por
+          // resolver: funde la tarjeta del día con las alertas, que repetían
+          // fiados, pedidos y stock), después la venta del período, el ritmo y
+          // el detalle plegado; la tienda pública, al pie.
           <div className="space-y-4">
-            {/* Brandon 2026-06-07 (idea #2): puente admin ↔ tienda pública —
-                ver / compartir / editar la portada del storefront. */}
-            <StorePublicCard storeSlug={storeSlug} />
-            {/* Brandon 2026-06-01 (dedup Resumen): se quitó VendorCommandCenter
-                de acá — duplicaba el saludo ("Buenas noches") y las cifras de
-                ventas (INGRESOS/GANANCIA) que ya muestran TodayHub e
-                InicioDashboardV2. Flujo limpio: hero (un solo saludo + KPIs) →
-                accionable → analítica profunda, sin repetir "ventas". */}
-            {/* 1) Hero "Hoy" — saludo dinámico + hero KPI multi-señal del rango.
-                   hideAlerts=true porque InicioDashboardV2 las renderea junto a
-                   la Meta del mes. Es el ÚNICO saludo del Resumen. */}
-            <TodayHub dateRange={dateRange} hideAlerts />
-            {/* 2) Briefing accionable del día — se auto-oculta si no hay nada
-                   que resolver (pedidos pendientes, fiados, stock). */}
-            <MorningBriefingCard />
-            {/* 3) Dashboard denso: meta del mes + compound charts. Su hero se
-                   removió para complementar a TodayHub (no duplica KPIs). */}
+            <ParaHoy dateRange={dateRange} />
+            {/* La venta del período y sus cuatro cifras. Sin saludo propio: vive en «Para hoy». */}
+            <TodayHub dateRange={dateRange} hideAlerts greeting="" />
             <InicioDashboardV2 dateRange={dateRange} onChangeRange={setDateRange} onSinVentas={(sin) => setVentas(sin ? "sin" : "con")} />
+            {/* Brandon 2026-06-07 (idea #2): puente admin ↔ tienda pública. */}
+            <StorePublicCard storeSlug={storeSlug} />
           </div>
         )}
         {tab === "forestal" && tieneForestal && (
@@ -350,7 +347,7 @@ export default function VendorDashboardModule() {
                 <p className="text-sm font-medium text-[var(--text-primary)] text-center">{error}</p>
                 <button
                   onClick={() => void fetchDashboard(false)}
-                  className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl bg-[var(--accent-dark)] text-white text-sm font-semibold hover:bg-[var(--accent-600)] transition-colors"
+                  className="inline-flex items-center gap-2 px-4 min-h-12 rounded-xl bg-[var(--accent-dark)] text-white text-sm font-semibold hover:bg-[var(--accent-600)] transition-colors"
                 >
                   <RefreshCw className="h-4 w-4" /> Reintentar
                 </button>

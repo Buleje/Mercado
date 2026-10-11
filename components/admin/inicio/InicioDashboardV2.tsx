@@ -2,7 +2,6 @@
 
 import { useEffect, useRef } from "react";
 import type { DateRange } from "./DashboardDateRange";
-import { DashboardAlertsList } from "@/components/admin/hoy/TodayHub";
 import { useOverview } from "@/components/admin/hoy/use-overview";
 import { SkeletonEditorial } from "@/components/ui-system";
 import { InicioMultiCharts } from "./InicioMultiCharts";
@@ -14,9 +13,9 @@ import { algunDato, hayDatosEnSerie } from "@/lib/admin/inicio/hay-datos";
 import { fechaCorta } from "@/lib/admin/inicio/formato-tablero";
 
 /**
- * Debajo del hero de Inicio › Resumen (`TodayHub`): el ritmo del período junto
- * a las alertas, y los bloques de caja, productos, compras, inventario y
- * clientes (`InicioMultiCharts`).
+ * Debajo del hero de Inicio › Resumen (`TodayHub`): el ritmo del período y los
+ * bloques de caja, productos, compras, inventario y clientes, plegados
+ * (`InicioMultiCharts`). Las alertas viven en «Para hoy» (`resumen/ParaHoy`).
  *
  * Regla de Brandon (2026-10-09): si en el rango no se movió NADA (ventas,
  * pedidos, clientes, plata que entró o salió, compras) la pestaña muestra sólo
@@ -77,7 +76,7 @@ export default function InicioDashboardV2({ dateRange, onChangeRange, onSinVenta
         <button
           type="button"
           onClick={() => window.location.reload()}
-          className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-error-500)] px-4 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+          className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--data-error-500)] px-4 text-sm font-semibold text-white transition-opacity hover:opacity-90"
         >
           Reintentar
         </button>
@@ -118,10 +117,8 @@ export default function InicioDashboardV2({ dateRange, onChangeRange, onSinVenta
 
   return (
     <div className="space-y-4">
-      <div className={hayRitmo ? "grid grid-cols-1 gap-4 lg:grid-cols-2" : undefined}>
-        {hayRitmo && <RitmoDelPeriodo dias={dias} rango={RANGO[preset] ?? "el período"} porHoras={porHoras} horaPico={resumen.horaPico} />}
-        <DashboardAlertsList dateRange={dateRange} dosColumnas={!hayRitmo} />
-      </div>
+      {/* Las alertas que iban al lado pasaron a «Para hoy», arriba del Resumen (11-10). */}
+      {hayRitmo && <RitmoDelPeriodo dias={dias} rango={RANGO[preset] ?? "el período"} porHoras={porHoras} horaPico={resumen.horaPico} />}
       {resumen.fallo ? (
         <div role="alert" className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-4">
           <p className="min-w-0 flex-1 text-sm font-semibold text-[var(--text-primary)]">
@@ -130,7 +127,7 @@ export default function InicioDashboardV2({ dateRange, onChangeRange, onSinVenta
           <button
             type="button"
             onClick={() => void resumen.reintentar()}
-            className="inline-flex min-h-11 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+            className="inline-flex min-h-12 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
           >
             Reintentar
           </button>

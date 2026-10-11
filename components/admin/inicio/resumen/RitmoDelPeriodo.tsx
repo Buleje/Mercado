@@ -116,7 +116,7 @@ export function RitmoDelPeriodo({ dias, rango, porHoras, horaPico }: Props) {
   ];
 
   return (
-    <DashboardSection kicker={`Ritmo · ${rango}`} title="Cómo van tus días" kpis={kpis}>
+    <DashboardSection kicker={`Ritmo · ${rango}`} title="Cómo van tus días" kpis={kpis} plegable="inicio:resumen:ritmo" abiertoAlInicio>
       <GraficoDias dias={dias} promedio={promedio} porHoras={porHoras} />
     </DashboardSection>
   );

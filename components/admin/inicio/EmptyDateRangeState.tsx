@@ -177,7 +177,7 @@ export default function EmptyDateRangeState({
                 key={p}
                 type="button"
                 onClick={() => handleQuick(p)}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-4 py-2 text-[length:var(--ts-sm)] font-bold text-[var(--text-primary)] transition-all hover:border-[var(--accent)] hover:text-[var(--accent)] hover:shadow-md"
+                className="inline-flex min-h-12 items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-5 text-[length:var(--ts-sm)] font-bold text-[var(--text-primary)] transition-all hover:border-[var(--accent)] hover:text-[var(--accent)] hover:shadow-md"
               >
                 {p === "diario"
                   ? "Hoy"
@@ -197,7 +197,7 @@ export default function EmptyDateRangeState({
             {action.href ? (
               <EnlacePanel apariencia="heredada"
                 href={action.href}
-                className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent)] px-5 py-2.5 text-[length:var(--ts-sm)] font-extrabold text-white shadow-md hover:gap-2 transition-all hover:no-underline"
+                className="inline-flex min-h-12 items-center gap-1.5 rounded-full bg-[var(--text-primary)] px-5 text-[length:var(--ts-sm)] font-extrabold text-[var(--surface-raised)] hover:gap-2 hover:opacity-90 transition-all hover:no-underline"
               >
                 {action.label}
                 <ArrowRight className="h-4 w-4" />
@@ -206,7 +206,7 @@ export default function EmptyDateRangeState({
               <button
                 type="button"
                 onClick={action.onClick}
-                className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent)] px-5 py-2.5 text-[length:var(--ts-sm)] font-extrabold text-white shadow-md hover:gap-2 transition-all"
+                className="inline-flex min-h-12 items-center gap-1.5 rounded-full bg-[var(--text-primary)] px-5 text-[length:var(--ts-sm)] font-extrabold text-[var(--surface-raised)] hover:gap-2 hover:opacity-90 transition-all"
               >
                 {action.label}
                 <ArrowRight className="h-4 w-4" />

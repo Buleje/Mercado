@@ -36,6 +36,8 @@ export function ForestalPermisos({ permisos, onIr }: { permisos: PermisoInicio[]
   return (
     <DashboardSection
       chartId="forestal.permisos"
+      plegable="inicio:forestal.permisos"
+      abiertoAlInicio
       hasData={conDato.length > 0}
       className="charts-forestal"
       kicker="Libro TH · acumulado"
@@ -46,7 +48,7 @@ export function ForestalPermisos({ permisos, onIr }: { permisos: PermisoInicio[]
           type="button"
           onClick={onIr}
           aria-label="Ver control del permiso"
-          className="inline-flex min-h-11 w-11 shrink-0 items-center justify-center gap-1.5 px-2 text-sm font-bold text-[var(--accent-ink)] hover:underline dark:text-[var(--accent)] sm:w-auto sm:px-3"
+          className="inline-flex min-h-12 w-11 shrink-0 items-center justify-center gap-1.5 px-2 text-sm font-bold text-[var(--accent-ink)] hover:underline dark:text-[var(--accent)] sm:w-auto sm:px-3"
         >
           {/* A 400 px el texto partía «Permisos vigentes» en dos renglones: queda la flecha. */}
           <span className="hidden sm:inline">Ver control</span> <ArrowRight className="h-4 w-4" aria-hidden />

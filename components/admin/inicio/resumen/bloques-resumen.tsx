@@ -18,7 +18,8 @@ import type { ResumenMulti } from "./use-resumen-multi";
  * regla única de `lib/admin/inicio/hay-datos`:
  *  - serie por día: hace falta tendencia (2+ días con valor);
  *  - ranking: 0 filas → oculto · 1-2 → lista corta · 3+ → barras.
- * `InicioMultiCharts` decide dónde va cada uno (fila o «sin datos»).
+ * `InicioMultiCharts` decide dónde va cada uno (fila o «sin datos»). Cada uno
+ * se pliega y se recuerda (`plegable`), plegado de entrada (11-10).
  */
 
 const SERIES_CAJA: Serie[] = [
@@ -53,6 +54,8 @@ export function bloquesDelResumen(resumen: ResumenMulti, rango: string) {
       nodo: (
         <DashboardSection
           chartId="resumen.caja"
+          plegable="inicio:resumen:caja"
+          cifrasPlegado={kpisCaja}
           hasData={cajaConDatos}
           kicker={`Caja · ${rango}`}
           title="Plata que entró y salió"
@@ -69,6 +72,8 @@ export function bloquesDelResumen(resumen: ResumenMulti, rango: string) {
       nodo: (
         <DashboardSection
           chartId="resumen.productos"
+          plegable="inicio:resumen:productos"
+          cifrasPlegado={kpisProductos}
           hasData={modoProductos !== "oculto"}
           kicker={`Productos · ${rango}`}
           title="Lo que más vendiste"
@@ -103,6 +108,8 @@ export function bloquesDelResumen(resumen: ResumenMulti, rango: string) {
       nodo: (
         <DashboardSection
           chartId="resumen.compras"
+          plegable="inicio:resumen:compras"
+          cifrasPlegado={kpisCompras}
           hasData={modoCompras !== "oculto"}
           kicker={`Compras · ${rango}`}
           title="Compras por proveedor"
@@ -137,6 +144,8 @@ export function bloquesDelResumen(resumen: ResumenMulti, rango: string) {
       nodo: (
         <DashboardSection
           chartId="resumen.inventario"
+          plegable="inicio:resumen:inventario"
+          cifrasPlegado={kpisInventario}
           hasData={modoInventario !== "oculto"}
           kicker="Inventario · hoy"
           title={invPorValor ? "Valor del stock por categoría" : "Productos por categoría"}
@@ -173,6 +182,8 @@ export function bloquesDelResumen(resumen: ResumenMulti, rango: string) {
       nodo: (
         <DashboardSection
           chartId="resumen.clientes"
+          plegable="inicio:resumen:clientes"
+          cifrasPlegado={kpisClientes}
           hasData={clientesConDatos}
           kicker={`Clientes · ${rango}`}
           title="Clientes por día"

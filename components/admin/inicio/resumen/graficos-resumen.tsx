@@ -39,7 +39,7 @@ export type Formato = "soles" | "cantidad";
 const fmtValor = (f: Formato, v: unknown) => (f === "soles" ? soles(v) : cantidad(v));
 const fmtEje = (f: Formato, v: unknown) => (f === "soles" ? solesEje(v) : numeroEje(v));
 
-const TICK = { fontSize: 12, fill: "var(--text-tertiary)" } as const;
+const TICK = { fontSize: 14, fill: "var(--text-tertiary)" } as const;
 
 export interface Serie {
   key: string;
@@ -191,7 +191,7 @@ export function BarrasPorDia<T extends { day: string; iso: string }>({
                 value: `promedio ${fmtEje(formato, promedio)}`,
                 position: "insideTopRight",
                 fill: "var(--text-tertiary)",
-                fontSize: 11,
+                fontSize: 14,
               }}
             />
           )}
@@ -288,7 +288,7 @@ export function BarrasRanking<T extends object>({
             <LabelList
               position="right"
               formatter={(v: unknown) => fmtEje(formato, v)}
-              style={{ fontSize: 12, fontWeight: 700, fill: "var(--text-primary)" }}
+              style={{ fontSize: 14, fontWeight: 700, fill: "var(--text-primary)" }}
             />
           </Bar>
         </BarChart>

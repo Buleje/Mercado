@@ -272,7 +272,7 @@ export function ChartsVisibilityButton({ label = "Gráficos" }: { label?: string
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-2 h-10 px-4 @max-[30rem]:px-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-extrabold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] hover:border-[color:var(--accent,var(--rule-base))] transition-colors whitespace-nowrap"
+        className="inline-flex items-center justify-center gap-2 h-12 min-w-12 px-4 @max-[30rem]:px-3 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-extrabold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] hover:border-[color:var(--accent,var(--rule-base))] transition-colors whitespace-nowrap"
         aria-label="Abrir gestor de gráficos"
         title={resumen}
       >
@@ -282,7 +282,7 @@ export function ChartsVisibilityButton({ label = "Gráficos" }: { label?: string
             con la cuenta faltaban 13 px y eran dos filas). */}
         <span className="@max-[30rem]:sr-only">{label}</span>
         {totalCount > 0 && (
-          <span className="inline-flex @max-[30rem]:hidden items-center justify-center min-w-6 h-5 px-1.5 rounded-full bg-[var(--surface-sunken)] text-xs font-extrabold tabular-nums text-[var(--text-secondary)]">
+          <span className="inline-flex @max-[30rem]:hidden items-center justify-center min-w-7 h-6 px-1.5 rounded-full bg-[var(--surface-sunken)] text-sm font-extrabold tabular-nums text-[var(--text-secondary)]">
             {visibleCount}/{totalCount}
           </span>
         )}

@@ -6,6 +6,7 @@ import {
   comprasPorProveedor,
   horaPico,
   kpisCaja,
+  kpisInventario,
   kpisProductos,
   productosTop,
 } from "@/components/admin/inicio/resumen/calculos-resumen";
@@ -111,5 +112,20 @@ describe("hora pico", () => {
     const ventas = (h: number, n: number) => Array.from({ length: n }, () => ({ createdAt: dia(1, h) }));
     expect(horaPico([], ventas(22, 4))).toBeNull();
     expect(horaPico([], [...ventas(22, 3), ...ventas(9, 2)])).toBe("22:00");
+  });
+});
+
+describe("kpisInventario — agotados con la regla del POS", () => {
+  const prod = (stock: number | null, type = "product", active = true) =>
+    ({ id: 1, name: "x", price: 1, costPrice: 1, stock, type, active }) as unknown as Parameters<typeof kpisInventario>[0][number];
+
+  it("un servicio o un producto sin stock cargado no cuenta como agotado (11-10: 23 falsos en main)", () => {
+    const k = kpisInventario([prod(0), prod(-2), prod(null), prod(0, "service"), prod(null, "service"), prod(5)], 0);
+    expect(k.sinStock).toBe(2);
+    expect(k.skus).toBe(6);
+  });
+
+  it("los inactivos no cuentan", () => {
+    expect(kpisInventario([prod(0, "product", false)], 0).sinStock).toBe(0);
   });
 });
