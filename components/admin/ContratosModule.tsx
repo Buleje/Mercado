@@ -2,6 +2,7 @@
 
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { CardTitle, DataTable, LoadingState, SectionTitle, BlockTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { csrfHeaders } from "@/lib/csrf-client";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import CabeceraContratos from "@/components/admin/contratos/CabeceraContratos";
@@ -763,13 +764,17 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                           <TemplateIcon icon={tpl.icon} className="h-5 w-5" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <BlockTitle>{tpl.name}</BlockTitle>
-                          <p className="text-sm text-[var(--text-secondary)] mt-1 line-clamp-2">{tpl.description}</p>
+                          <div className="flex items-center gap-1.5">
+                            <BlockTitle>{tpl.name}</BlockTitle>
+                            {/* El texto largo de la plantilla va en el ⓘ; el clic no abre el asistente. */}
+                            <span onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()} className="inline-flex">
+                              <InfoTip title={tpl.name} what={tpl.description} affects={<span>Base legal: {tpl.legalBasis}</span>} ariaLabel={`Qué es ${tpl.name}`} />
+                            </span>
+                          </div>
                           <div className="mt-2 flex items-center gap-2 flex-wrap">
                             <span className="text-sm px-2 py-0.5 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] font-bold">{tpl.category}</span>
                             <span className="text-sm text-[var(--text-tertiary)]">{tpl.fields.length} campos · {tpl.clausulas.length} cláusulas</span>
                           </div>
-                          <p className="text-sm text-[var(--text-tertiary)] mt-1 italic">{tpl.legalBasis}</p>
                         </div>
                       </div>
                     </m.div>

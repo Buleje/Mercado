@@ -16,9 +16,14 @@ interface EntradaRastro {
   createdAt: string;
 }
 
+/** Las primeras que se dibujan; el resto sale con «Ver más» (nada se pierde). */
+const PRIMERAS = 20;
+
 export function CajaAuditoria() {
   const [rastro, setRastro] = useState<EntradaRastro[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [visibles, setVisibles] = useState(PRIMERAS);
+  const [abierta, setAbierta] = useState<string | null>(null);
 
   useEffect(() => {
     let vivo = true;
@@ -53,11 +58,11 @@ export function CajaAuditoria() {
         !error && <p className="p-8 text-center text-sm text-[var(--text-secondary)]">Todavía no hay movimientos registrados.</p>
       ) : (
         <ul className="divide-y divide-[var(--rule-base)]">
-          {rastro.map((t) => {
+          {rastro.slice(0, visibles).map((t) => {
             const esApertura = t.action === "Abrir";
             const esCierre = t.action === "Cerrar";
             return (
-              <li key={t.id} className="flex flex-wrap items-start gap-3 px-5 py-3">
+              <li key={t.id} className="flex items-center gap-3 px-5 py-2">
                 <span
                   className={cn(
                     "mt-0.5 inline-flex h-7 shrink-0 items-center rounded-full px-2.5 text-sm font-semibold",
@@ -70,16 +75,36 @@ export function CajaAuditoria() {
                 >
                   {esApertura ? "Apertura" : esCierre ? "Cierre" : t.action === "Editar" ? "Corrección" : "Movimiento"}
                 </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm text-[var(--text-primary)]">{t.detail}</p>
-                  <p className="text-sm text-[var(--text-secondary)]">
+                {/* Una línea por registro: el detalle completo sale al tocar la fila. */}
+                <button
+                  type="button"
+                  aria-expanded={abierta === t.id}
+                  onClick={() => setAbierta(abierta === t.id ? null : t.id)}
+                  title={t.detail}
+                  className="min-w-0 flex-1 text-left"
+                >
+                  <span className={cn("block text-sm text-[var(--text-primary)]", abierta !== t.id && "truncate")}>{t.detail}</span>
+                  {/* En el celular quién y cuándo van debajo: es lo que esta lista responde. */}
+                  <span className="block truncate text-sm text-[var(--text-secondary)] sm:hidden">
                     <span className="font-semibold">{t.user}</span> · {formatDateTime(t.createdAt)}
-                  </p>
-                </div>
+                  </span>
+                </button>
+                <span className="shrink-0 text-sm text-[var(--text-secondary)] max-sm:hidden">
+                  <span className="font-semibold">{t.user}</span> · {formatDateTime(t.createdAt)}
+                </span>
               </li>
             );
           })}
         </ul>
+      )}
+      {rastro.length > visibles && (
+        <button
+          type="button"
+          onClick={() => setVisibles((v) => v + 40)}
+          className="h-12 w-full border-t border-[var(--rule-base)] text-sm font-semibold text-[var(--accent-ink)] hover:bg-[var(--surface-sunken)]"
+        >
+          Ver más ({rastro.length - visibles})
+        </button>
       )}
     </section>
   );
