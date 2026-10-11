@@ -15,7 +15,7 @@
  *     [--nombre base] [--anchos 1280,400] [--temas claro,oscuro] [--completa] \
  *     [--preset cubicador-lote,resumenes-rolliza]   (recorridos de scripts/qa-pasos/, van antes) \
  *     [--evals-todos]   (cada {"eval"} corre en todos los anchos y temas; el reporte trae {tema, ancho, valor})
- *     [--resumen]   (stdout sólo con lo esencial; el JSON completo igual queda en <salida>/reporte.json) \
+ *     [--resumen]   (stdout sólo con lo esencial —los evals recortados a 400 caracteres—; el JSON completo igual queda en <salida>/reporte.json) \
  *     [--ls '{"clave":"valor"}']   (siembra localStorage antes de cargar: estados recordados sin recargar) \
  *     (sin QA_BASE prueba :3000 y :3001 y usa el que contesta: el dev reiniciado vuelve a veces en :3001) \
  *     [--candado]   (toma /tmp/bsm-pesado.lock por su cuenta y avisa por stderr cuánto lleva esperándolo;
@@ -703,7 +703,11 @@ const archivoReporte = path.join(salida, "reporte.json");
 try { writeFileSync(archivoReporte, JSON.stringify({ ...reporte, generado: new Date().toISOString() }, null, 1)); }
 catch (e) { console.error(`no pude escribir ${archivoReporte}: ${e.message}`); }
 if (bandera("resumen")) {
-  console.log(JSON.stringify({ ok, falla, tenant, ruta, capturas: capturas.map((c) => c.archivo), respuestasMalas: reporte.respuestas.length, consola: reporte.consola, pageerrors, evals: evals.length, ms: reporte.ms, reporte: archivoReporte }, null, 1));
+  /* Los evals van en el resumen, recortados (10-10: en una tarde se parseó reporte.json a mano ~8 veces
+     y un carril lo pidió como «Para acelerar»). El valor entero sigue en reporte.json. */
+  const corto = (v) => { const j = JSON.stringify(v) ?? "undefined"; return j.length > 400 ? `${j.slice(0, 400)}…` : v; };
+  const evalsCortos = evals.map(({ valor, ...resto }) => ({ ...resto, valor: corto(valor) }));
+  console.log(JSON.stringify({ ok, falla, tenant, ruta, capturas: capturas.map((c) => c.archivo), respuestasMalas: reporte.respuestas.slice(0, 5), consola: reporte.consola, pageerrors, evals: evalsCortos, ms: reporte.ms, reporte: archivoReporte }, null, 1));
 } else {
   console.log(JSON.stringify({ ...reporte, reporte: archivoReporte }, null, 1));
 }
