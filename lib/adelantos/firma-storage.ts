@@ -51,8 +51,64 @@ export async function subirImagenRegistro(
   return { ok: true, sha256: sha256Hex(webp), bytes: webp.length };
 }
 
+/**
+ * (10-10) Los PDF de Adelantos (voucher del alta o comprobante de una entrega).
+ * Bucket aparte porque `forestal-privado` sólo admite `image/webp` (y lo
+ * reafirma al arrancar): éste nace y se mantiene PRIVADO y sólo admite PDF.
+ */
+export const BUCKET_PDF_ADELANTOS = "adelantos-privado";
+let bucketPdfListo: Promise<void> | null = null;
+
+function asegurarBucketPdf(): Promise<void> {
+  if (bucketPdfListo) return bucketPdfListo;
+  bucketPdfListo = (async () => {
+    const sb = getSupabaseAdmin();
+    const { data, error } = await sb.storage.getBucket(BUCKET_PDF_ADELANTOS);
+    if (data) {
+      if (data.public) {
+        const { error: e2 } = await sb.storage.updateBucket(BUCKET_PDF_ADELANTOS, { public: false });
+        if (e2) throw new Error(`No se pudo volver privado el bucket: ${e2.message}`);
+        logger.warn("[adelantos-firma] el bucket de PDF estaba PÚBLICO — se volvió privado", { bucket: BUCKET_PDF_ADELANTOS });
+      }
+      return;
+    }
+    logger.info("[adelantos-firma] creando bucket privado de PDF", { bucket: BUCKET_PDF_ADELANTOS, motivo: error?.message });
+    const { error: e3 } = await sb.storage.createBucket(BUCKET_PDF_ADELANTOS, {
+      public: false,
+      fileSizeLimit: 5 * 1024 * 1024,
+      allowedMimeTypes: ["application/pdf"],
+    });
+    if (e3 && !/already exists/i.test(e3.message)) throw new Error(`No se pudo crear el bucket: ${e3.message}`);
+  })().catch((e: unknown) => {
+    bucketPdfListo = null;
+    throw e;
+  });
+  return bucketPdfListo;
+}
+
+const esRutaPdf = (ruta: string) => ruta.toLowerCase().endsWith(".pdf");
+
+/**
+ * Sube el voucher o el comprobante de una entrega: la foto (ya WebP) al bucket
+ * de las hojas; el PDF (ya verificado por contenido) al bucket de PDF.
+ * `upsert: false`: una ruta nunca se pisa.
+ */
+export async function subirArchivoPrivado(ruta: string, cuerpo: Buffer): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!esRutaPdf(ruta)) return subirFirmaPrivada(ruta, cuerpo);
+  await asegurarBucketPdf();
+  const { error } = await getSupabaseAdmin()
+    .storage.from(BUCKET_PDF_ADELANTOS)
+    .upload(ruta, cuerpo, { contentType: "application/pdf", cacheControl: "0", upsert: false });
+  if (error) {
+    logger.error("[adelantos-firma] upload de PDF falló", { ruta, error: error.message });
+    return { ok: false, error: error.message };
+  }
+  return { ok: true };
+}
+
+/** Baja de la carpeta privada lo que la puerta ya validó; el bucket sale de la extensión. */
 export async function bajarFirmaPrivada(ruta: string): Promise<Buffer | null> {
-  const { data, error } = await getSupabaseAdmin().storage.from(BUCKET).download(ruta);
+  const { data, error } = await getSupabaseAdmin().storage.from(esRutaPdf(ruta) ? BUCKET_PDF_ADELANTOS : BUCKET).download(ruta);
   if (error || !data) {
     logger.warn("[adelantos-firma] no se pudo bajar", { ruta, error: error?.message });
     return null;
@@ -63,7 +119,7 @@ export async function bajarFirmaPrivada(ruta: string): Promise<Buffer | null> {
 /** Para no dejar huérfana una hoja que el compara-y-cambia rechazó, o suprimir una huella. Nunca tira; `false` = no se borró. */
 export async function borrarFirmaPrivada(ruta: string): Promise<boolean> {
   try {
-    const { error } = await getSupabaseAdmin().storage.from(BUCKET).remove([ruta]);
+    const { error } = await getSupabaseAdmin().storage.from(esRutaPdf(ruta) ? BUCKET_PDF_ADELANTOS : BUCKET).remove([ruta]);
     if (error) logger.error("[adelantos-firma] no se pudo borrar la hoja huérfana", { ruta, error: error.message });
     return !error;
   } catch (e) {

@@ -63,22 +63,76 @@ export async function normalizarImagen(
 }
 
 export type MultipartLeido = { ok: true; textos: Record<string, string>; archivos: Record<string, File> };
-export type MultipartRechazado = { ok: false; status: 400; error: string; issues?: string[] };
+export type MultipartRechazado = { ok: false; status: 400 | 413; error: string; issues?: string[] };
 
 /**
  * El lector estricto de `adjuntarComprobante`: cada campo una vez, sólo los
  * esperados (archivo donde va archivo, texto donde va texto). Un campo repetido
  * o inesperado → 400: así un segundo `firma` no se cuela detrás del primero.
  */
+/**
+ * El cuerpo entero, cortando apenas pasa `max` bytes (no se confía en
+ * `content-length`: puede faltar o mentir). `"grande"` = pasó el tope.
+ */
+async function cuerpoConTope(req: Request, max: number): Promise<Uint8Array<ArrayBuffer> | "grande"> {
+  if (!req.body) return new Uint8Array(0);
+  const lector = req.body.getReader();
+  const trozos: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await lector.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > max) {
+      await lector.cancel().catch(() => undefined);
+      return "grande";
+    }
+    trozos.push(value);
+  }
+  const todo = new Uint8Array(total);
+  let i = 0;
+  for (const t of trozos) {
+    todo.set(t, i);
+    i += t.byteLength;
+  }
+  return todo;
+}
+
+/**
+ * `maxBytes` (10-10, revisión de `security`): el pedido entero no puede pasar
+ * de eso. Un `content-length` mayor → 413 ANTES de leer nada; sin ese header
+ * (o si miente) se cuentan los bytes al leer y se corta en el tope. Sin
+ * `maxBytes`, como siempre (`req.formData()`).
+ */
 export async function leerMultipartFirma(
   req: Request,
-  campos: { archivos: readonly string[]; textos: readonly string[] },
+  campos: { archivos: readonly string[]; textos: readonly string[]; maxBytes?: number },
 ): Promise<MultipartLeido | MultipartRechazado> {
   let form: FormData;
-  try {
-    form = await req.formData();
-  } catch {
-    return { ok: false, status: 400, error: "Manda los datos como multipart/form-data." };
+  const noEsMultipart: MultipartRechazado = { ok: false, status: 400, error: "Manda los datos como multipart/form-data." };
+  if (campos.maxBytes != null) {
+    const mb = Math.round((campos.maxBytes / 1024 / 1024) * 10) / 10;
+    const grande: MultipartRechazado = { ok: false, status: 413, error: `Lo que mandaste pesa más de ${String(mb).replace(".", ",")} MB.` };
+    const declarado = Number(req.headers.get("content-length") ?? "");
+    if (Number.isFinite(declarado) && declarado > campos.maxBytes) return grande;
+    let cuerpo: Uint8Array<ArrayBuffer> | "grande";
+    try {
+      cuerpo = await cuerpoConTope(req, campos.maxBytes);
+    } catch {
+      return noEsMultipart;
+    }
+    if (cuerpo === "grande") return grande;
+    try {
+      form = await new Response(cuerpo, { headers: { "content-type": req.headers.get("content-type") ?? "" } }).formData();
+    } catch {
+      return noEsMultipart;
+    }
+  } else {
+    try {
+      form = await req.formData();
+    } catch {
+      return noEsMultipart;
+    }
   }
   const textos: Record<string, string> = {};
   const archivos: Record<string, File> = {};

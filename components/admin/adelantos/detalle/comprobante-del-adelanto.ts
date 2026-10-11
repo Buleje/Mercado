@@ -12,7 +12,7 @@ import { leerMembrete } from "@/lib/admin/membrete-cliente";
 import { descargarComprobante, type DatosComprobante, type FirmaEnPapel } from "@/lib/adelantos/comprobante";
 import type { FirmaRegistrada, RegistroFirmasRespuesta } from "@/lib/adelantos/entregar-tipos";
 import { leerDireccion } from "@/lib/adelantos/modos-alta";
-import { esReciboFirmado, fechaHoraLima, limpiarDocumento, srcDelComprobante } from "@/lib/adelantos/recibo-firmado";
+import { esComprobantePdf, esReciboFirmado, fechaHoraLima, limpiarDocumento, srcDelComprobante } from "@/lib/adelantos/recibo-firmado";
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
 import { leerJson } from "@/lib/errores/sin-dato";
 import { logger } from "@/lib/logger";
@@ -89,7 +89,8 @@ export async function imprimirComprobante(a: DbAdelanto): Promise<void> {
     huella ? comoJpeg(huella.src, "la huella") : undefined,
     /* La hoja es privada: pasa por `GET /api/adelantos/<id>/comprobante`. */
     !firma && recibo && foto ? comoJpeg(foto, "la hoja firmada") : undefined,
-    !recibo && foto ? comoJpeg(foto, "el voucher") : undefined,
+    /* Un voucher en PDF (10-10) no se pinta en el papel: se abre aparte. */
+    !recibo && foto && !esComprobantePdf(a.comprobanteUrl) ? comoJpeg(foto, "el voucher") : undefined,
   ]);
   await descargarComprobante({
     ...datosDelComprobante(a, membrete.nombre),

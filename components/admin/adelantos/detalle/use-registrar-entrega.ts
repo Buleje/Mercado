@@ -115,6 +115,7 @@ export function useRegistrarEntrega(adelantoId: string, onRegistrada: () => Prom
   };
 
   return {
+    adelantoId,
     tipo, setTipo, descripcion, setDescripcion, valor, setValor, productId, setProductId,
     cantidad, setCantidad, sumarAStock, setSumarAStock, comprobante, setComprobante,
     metodoCaja, setMetodoCaja, pactada, saving, err, productos, cumplirCuota, limpiar, registrar,

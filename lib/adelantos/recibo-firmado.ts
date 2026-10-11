@@ -11,7 +11,8 @@
  * público. La sube el servidor (PATCH `adjuntarComprobante`, multipart) a la
  * carpeta privada del adelanto y la columna guarda `priv:<ruta>`; se ve sólo
  * por `GET /api/adelantos/<id>/comprobante` (sesión + permiso de lectura de
- * adelantos + mismo negocio). Las vouchers del alta siguen siendo URL pública.
+ * adelantos + mismo negocio). Desde el 10-10 el voucher del alta y el comprobante
+ * de cada entrega también van privados (foto o PDF).
  *
  * La firma suelta no prueba nada (se puede pegar en cualquier papel); por eso
  * la hoja la pinta junto al monto, en número y en letras, el código y la hora.
@@ -144,17 +145,54 @@ export function esRutaFirmaDelAdelanto(ruta: string, tenantId: string, adelantoI
 
 /** Marca del voucher del alta guardado en privado (V, ADR-491). */
 const MARCA_VOUCHER = "voucher";
-const ARCHIVO_VOUCHER = new RegExp(`^\\d{10,16}-${MARCA_VOUCHER}-[a-f0-9]{8,32}\\.webp$`);
+/* `.pdf` desde el 10-10: «Adjuntar archivo» del alta también acepta el PDF del banco. */
+const ARCHIVO_VOUCHER = new RegExp(`^\\d{10,16}-${MARCA_VOUCHER}-[a-f0-9]{8,32}\\.(webp|pdf)$`);
+/** Lo que se guarda en la carpeta privada: la foto ya pasada a WebP o el PDF tal cual (verificado por contenido). */
+export type ExtensionPrivada = "webp" | "pdf";
 
 /**
  * (V, ADR-491) El voucher del alta, PRIVADO: `<tenantId>/adelantos/<adelantoId>/<ms>-voucher-<azar>.webp`.
  * Misma carpeta que la hoja firmada; `esReciboFirmado` NO lo reconoce como recibo.
  */
-export function rutaVoucherPrivada(tenantId: string, adelantoId: string, ms: number, azar: string): string {
+export function rutaVoucherPrivada(tenantId: string, adelantoId: string, ms: number, azar: string, ext: ExtensionPrivada = "webp"): string {
   if (!ID_SEGURO.test(tenantId) || !ID_SEGURO.test(adelantoId)) throw new Error("id inválido para la ruta del voucher");
   const az = azar.toLowerCase().replace(/[^a-f0-9]/g, "").slice(0, 32);
   if (az.length < 8) throw new Error("azar corto para la ruta del voucher");
-  return `${tenantId}/${CARPETA}/${adelantoId}/${Math.trunc(ms)}-${MARCA_VOUCHER}-${az}.webp`;
+  return `${tenantId}/${CARPETA}/${adelantoId}/${Math.trunc(ms)}-${MARCA_VOUCHER}-${az}.${ext === "pdf" ? "pdf" : "webp"}`;
+}
+
+/** Marca del comprobante de una ENTREGA o abono, guardado en privado (10-10, Ley 29733). */
+const MARCA_ADJUNTO = "adjunto";
+const ARCHIVO_ADJUNTO = new RegExp(`^\\d{10,16}-${MARCA_ADJUNTO}-[a-f0-9]{8,32}\\.(webp|pdf)$`);
+
+/**
+ * El comprobante de una entrega o abono, PRIVADO: `<tenantId>/adelantos/<adelantoId>/<ms>-adjunto-<azar>.<webp|pdf>`.
+ * Se sube ANTES de registrar la entrega (`POST …/adjunto`) y la entrega guarda
+ * `priv:<ruta>`; el POST de entregas sólo acepta una ruta con esta forma de la
+ * carpeta de ESE adelanto.
+ */
+export function rutaAdjuntoPrivada(tenantId: string, adelantoId: string, ms: number, azar: string, ext: ExtensionPrivada): string {
+  if (!ID_SEGURO.test(tenantId) || !ID_SEGURO.test(adelantoId)) throw new Error("id inválido para la ruta del adjunto");
+  const az = azar.toLowerCase().replace(/[^a-f0-9]/g, "").slice(0, 32);
+  if (az.length < 8) throw new Error("azar corto para la ruta del adjunto");
+  return `${tenantId}/${CARPETA}/${adelantoId}/${Math.trunc(ms)}-${MARCA_ADJUNTO}-${az}.${ext === "pdf" ? "pdf" : "webp"}`;
+}
+
+/** Sólo un adjunto de entrega de la carpeta de ESTE adelanto de ESTE negocio. */
+export function esRutaAdjuntoDelAdelanto(ruta: string, tenantId: string, adelantoId: string): boolean {
+  if (!ID_SEGURO.test(tenantId) || !ID_SEGURO.test(adelantoId)) return false;
+  const base = `${tenantId}/${CARPETA}/${adelantoId}/`;
+  return ruta.startsWith(base) && ARCHIVO_ADJUNTO.test(ruta.slice(base.length));
+}
+
+/** `true` si lo guardado es un PDF privado: la pantalla pinta un ícono, no un `<img>`. */
+export function esComprobantePdf(url?: string | null): boolean {
+  return !!url && url.startsWith(PREFIJO_PRIVADO) && url.toLowerCase().endsWith(".pdf");
+}
+
+/** Lo que `Content-Type` dice de una ruta privada ya validada. */
+export function tipoDeRutaPrivada(ruta: string): "application/pdf" | "image/webp" {
+  return ruta.toLowerCase().endsWith(".pdf") ? "application/pdf" : "image/webp";
 }
 
 /** Lo que la puerta `GET …/comprobante` sirve de la carpeta privada: la hoja firmada o el voucher privado. */
@@ -180,6 +218,17 @@ export function srcDelComprobante(a: { id: string; comprobanteUrl?: string | nul
   if (!esComprobantePrivado(a.comprobanteUrl)) return a.comprobanteUrl;
   const archivo = a.comprobanteUrl.slice(a.comprobanteUrl.lastIndexOf("/") + 1);
   return `/api/adelantos/${encodeURIComponent(a.id)}/comprobante?v=${encodeURIComponent(archivo)}`;
+}
+
+/**
+ * El comprobante de una entrega: la privada pasa por la misma puerta con
+ * `?entrega=` (sesión + permiso + negocio + la ruta dentro de la carpeta del
+ * adelanto); la pública vieja se pinta como siempre.
+ */
+export function srcDelComprobanteEntrega(e: { id: string; adelantoId: string; comprobanteUrl?: string | null }): string | null {
+  if (!e.comprobanteUrl) return null;
+  if (!esComprobantePrivado(e.comprobanteUrl)) return e.comprobanteUrl;
+  return `/api/adelantos/${encodeURIComponent(e.adelantoId)}/comprobante?entrega=${encodeURIComponent(e.id)}`;
 }
 
 export function esReciboFirmado(url?: string | null): boolean {

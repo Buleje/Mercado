@@ -7,9 +7,8 @@
  */
 
 import { useState } from "react";
-import { leerJson } from "@/lib/errores/sin-dato";
 import { Camera, Plus, FileText, Ruler, X } from "@buleje/design-system/icons";
-import { csrfHeaders } from "@/lib/csrf-client";
+import { ACEPTA_ADJUNTO, esPdfLocal, leerAdjuntoLocal } from "@/lib/adelantos/adjunto-local";
 import { logger } from "@/lib/logger";
 import { inputCls } from "../shared";
 import { chipCls } from "./campos-monto";
@@ -104,7 +103,12 @@ export function NotasRapidas({
 }
 
 // ── Comprobante ──────────────────────────────────────────────────────────────
-/** Comprobante: se toma con la cámara o se elige un archivo ya guardado. */
+/**
+ * Comprobante: se toma con la cámara o se elige una foto o un PDF ya guardado.
+ * (10-10, Ley 29733) No sube nada: queda en el navegador y al guardar va
+ * PRIVADO a la carpeta del adelanto (`use-guardar-alta`). Antes «Adjuntar
+ * archivo» lo subía a `/api/upload`, el bucket público.
+ */
 export function Comprobante({
   url,
   onChange,
@@ -114,38 +118,40 @@ export function Comprobante({
   onChange: (u: string | null) => void;
   onAbrirCamara: () => void;
 }) {
-  const [subiendo, setSubiendo] = useState(false);
+  const [leyendo, setLeyendo] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
   const adjuntar = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
     setErr(null);
-    setSubiendo(true);
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("folder", "media");
+    setLeyendo(true);
     try {
-      const res = await fetch("/api/upload", { method: "POST", headers: csrfHeaders(), credentials: "include", body: fd });
-      const j = await leerJson<{ url?: string; error?: string }>(res);
-      if (res.ok && j?.url) onChange(j.url);
-      else setErr(j?.error ?? "No se pudo subir la imagen.");
+      const r = await leerAdjuntoLocal(file);
+      if (r.ok) onChange(r.dataUrl);
+      else setErr(r.error);
     } catch (e2) {
-      logger.error("[adelantos] fallo la subida del comprobante", { error: String(e2) });
-      setErr("No se pudo subir la imagen.");
+      logger.error("[adelantos] no se pudo leer el comprobante", { error: String(e2) });
+      setErr("No se pudo leer el archivo.");
     } finally {
-      setSubiendo(false);
+      setLeyendo(false);
     }
   };
 
   if (url) {
+    const pdf = esPdfLocal(url);
     return (
       <div className="flex items-center gap-2">
-        {/* eslint-disable-next-line @next/next/no-img-element -- thumbnail desde Supabase Storage */}
-        <img src={url} alt="Comprobante del adelanto" className="h-12 w-12 rounded-lg border border-[var(--rule-base)] object-cover" />
-        <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-primary hover:underline">
-          Ver
-        </a>
+        {pdf ? (
+          <span className="inline-flex h-12 w-12 items-center justify-center rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
+            <FileText className="h-5 w-5" />
+          </span>
+        ) : (
+          /* eslint-disable-next-line @next/next/no-img-element -- miniatura de la foto local (data URL) */
+          <img src={url} alt="Comprobante del adelanto" className="h-12 w-12 rounded-lg border border-[var(--rule-base)] object-cover" />
+        )}
+        <span className="text-sm font-semibold text-[var(--text-secondary)]">{pdf ? "PDF listo" : "Foto lista"} · se guarda privado</span>
         <button type="button" onClick={() => onChange(null)} className="text-sm font-bold text-[var(--data-error)] hover:underline">
           Quitar
         </button>
@@ -166,8 +172,8 @@ export function Comprobante({
           <Camera className="h-4 w-4" /> Tomar foto
         </button>
         <label className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-xl bg-[var(--surface-sunken)] px-3.5 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]">
-          <FileText className="h-4 w-4" /> {subiendo ? "Subiendo…" : "Adjuntar archivo"}
-          <input type="file" accept="image/*" className="hidden" onChange={adjuntar} />
+          <FileText className="h-4 w-4" /> {leyendo ? "Leyendo…" : "Adjuntar archivo"}
+          <input type="file" accept={ACEPTA_ADJUNTO} className="hidden" onChange={adjuntar} disabled={leyendo} />
         </label>
       </div>
       {err && <p className="mt-1.5 text-sm font-semibold text-[var(--data-error)]">{err}</p>}

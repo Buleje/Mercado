@@ -10,7 +10,8 @@
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { CardTitle } from "@buleje/design-system";
-import { CheckCircle, Package, Ruler } from "@buleje/design-system/icons";
+import { CheckCircle, FileText, Package, Ruler } from "@buleje/design-system/icons";
+import { esComprobantePdf, srcDelComprobanteEntrega } from "@/lib/adelantos/recibo-firmado";
 import type { DbAdelantoEntrega } from "@/lib/db/adelantos.db";
 import { formatDate } from "@/lib/format";
 import { fmtVolumen } from "@/lib/forestal/cubicacion-cuenta";
@@ -83,10 +84,17 @@ export default function HistorialEntregas({
                     )}
                   </p>
                 </div>
-                {e.comprobanteUrl && (
-                  <a href={e.comprobanteUrl} target="_blank" rel="noopener noreferrer" title="Ver comprobante" className="shrink-0">
-                    {/* eslint-disable-next-line @next/next/no-img-element -- thumbnail comprobante */}
-                    <img src={e.comprobanteUrl} alt="comprobante" className="h-9 w-9 rounded-lg border border-[var(--rule-base)] object-cover" />
+                {/* Lo privado (10-10) pasa por la puerta `…/comprobante?entrega=`; un PDF, con ícono. */}
+                {srcDelComprobanteEntrega(e) && (
+                  <a href={srcDelComprobanteEntrega(e) ?? undefined} target="_blank" rel="noopener noreferrer" title="Ver comprobante" className="shrink-0">
+                    {esComprobantePdf(e.comprobanteUrl) ? (
+                      <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
+                        <FileText className="h-4 w-4" />
+                      </span>
+                    ) : (
+                      /* eslint-disable-next-line @next/next/no-img-element -- thumbnail comprobante */
+                      <img src={srcDelComprobanteEntrega(e) ?? undefined} alt="comprobante" className="h-9 w-9 rounded-lg border border-[var(--rule-base)] object-cover" />
+                    )}
                   </a>
                 )}
                 <span className="shrink-0 text-base font-extrabold tabular-nums text-[var(--data-success)]">{fmtMon(e.valor, moneda)}</span>

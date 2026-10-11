@@ -10,33 +10,26 @@
  *
  * CÓMO. `getUserMedia` con la cámara trasera si hay (`environment`), preview
  * para poder repetirla antes de subir, y recién ahí:
- *  - `modo="subir"` (abonos): el POST a `/api/upload`, como el adjuntar de siempre.
- *  - `modo="devolver"` (alta de un adelanto, ADR-491 V): NO sube nada; devuelve
- *    la foto como data URL (la CSP deja leer `data:` y no `blob:` con fetch) y
- *    el alta la guarda PRIVADA (`POST /api/adelantos/<id>/voucher`)
- *    cuando el adelanto ya existe. Un voucher con nombres y montos no va al
- *    bucket público.
+ *  NO sube nada; devuelve la foto como data URL (la CSP deja leer `data:` y no
+ *  `blob:` con fetch). El alta la guarda PRIVADA (`POST /api/adelantos/<id>/voucher`)
+ *  cuando el adelanto ya existe, y el abono también (`POST …/adjunto`, 10-10):
+ *  un voucher con nombres y montos no va al bucket público.
  *
  * Si el navegador no da permiso o no hay cámara, lo dice y no rompe: el botón de
  * adjuntar archivo sigue estando al lado.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { leerJson } from "@/lib/errores/sin-dato";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
 import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { Camera, RefreshCw, X } from "@buleje/design-system/icons";
-import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
 
 /** Calidad de JPEG: un recibo se lee perfecto y pesa un tercio que el PNG. */
 const CALIDAD = 0.85;
 
-type PropsCaptura = { onCerrar: () => void } & (
-  | { modo?: "subir"; onSubida: (url: string) => void }
-  | { modo: "devolver"; onFoto: (jpeg: string) => void }
-);
+type PropsCaptura = { onCerrar: () => void; onFoto: (jpeg: string) => void };
 
 export default function CapturaFoto(props: PropsCaptura) {
   const { onCerrar } = props;
@@ -45,8 +38,7 @@ export default function CapturaFoto(props: PropsCaptura) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [tomada, setTomada] = useState<string | null>(null);
-  const [subiendo, setSubiendo] = useState(false);
-  useModalAccesible(cajaRef, { onCerrar: subiendo ? undefined : onCerrar });
+  useModalAccesible(cajaRef, { onCerrar });
   const ventana = useVentanaDeModal(true, { ref: cajaRef, aplicarTranslate: true, claveMemoria: "adelantos-foto-comprobante" });
   const [error, setError] = useState<string | null>(null);
 
@@ -100,37 +92,13 @@ export default function CapturaFoto(props: PropsCaptura) {
     void encender();
   };
 
-  const usar = async () => {
+  /* No sube nada (10-10, Ley 29733): devuelve la foto como data URL y quien la
+     pidió la guarda PRIVADA — el alta por `POST …/voucher`, el abono por
+     `POST …/adjunto`. Antes el abono la subía a `/api/upload` (bucket público). */
+  const usar = () => {
     if (!tomada) return;
-    setSubiendo(true);
-    setError(null);
-    if (props.modo === "devolver") {
-      props.onFoto(tomada);
-      setSubiendo(false);
-      onCerrar();
-      return;
-    }
-    try {
-      const blob = await (await fetch(tomada)).blob();
-      const fd = new FormData();
-      fd.append("file", new File([blob], `comprobante-${Date.now()}.jpg`, { type: "image/jpeg" }));
-      fd.append("folder", "media");
-      const r = await fetch("/api/upload", {
-        method: "POST",
-        headers: csrfHeaders(),
-        credentials: "include",
-        body: fd,
-      });
-      const j = await leerJson<{ url?: string; error?: string }>(r);
-      if (!r.ok || !j?.url) throw new Error(j?.error ?? `HTTP ${r.status}`);
-      props.onSubida(j.url);
-      onCerrar();
-    } catch (err) {
-      logger.error("[adelantos] no se pudo subir la foto", { error: String(err) });
-      setError("No se pudo subir la foto. Prueba de nuevo o adjúntala desde el archivo.");
-    } finally {
-      setSubiendo(false);
-    }
+    props.onFoto(tomada);
+    onCerrar();
   };
 
   return (
@@ -174,17 +142,15 @@ export default function CapturaFoto(props: PropsCaptura) {
             <>
               <button
                 onClick={repetir}
-                disabled={subiendo}
                 className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl border border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
               >
                 <RefreshCw className="h-4 w-4" /> Repetir
               </button>
               <button
                 onClick={() => void usar()}
-                disabled={subiendo}
                 className="h-12 flex-1 rounded-2xl bg-primary text-base font-semibold text-white hover:bg-primary-dark disabled:opacity-50"
               >
-                {subiendo ? "Subiendo…" : "Usar esta foto"}
+                Usar esta foto
               </button>
             </>
           ) : (

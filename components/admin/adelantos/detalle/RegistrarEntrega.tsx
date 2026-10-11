@@ -9,9 +9,8 @@
 import { useEffect, useState } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { AlertTriangle, CheckCircle, FileText } from "@buleje/design-system/icons";
-import { leerJson } from "@/lib/errores/sin-dato";
 import { formatCurrency } from "@/lib/currency";
-import { csrfHeaders } from "@/lib/csrf-client";
+import { ACEPTA_ADJUNTO, archivoDeLocal, leerAdjuntoLocal, subirAdjuntoPrivado } from "@/lib/adelantos/adjunto-local";
 import { logger } from "@/lib/logger";
 import { Field, inputCls } from "../shared";
 import { OrigenCaja } from "../crear-adelanto/campos-monto";
@@ -126,7 +125,7 @@ export default function RegistrarEntrega({
           <OrigenCaja metodo={f.metodoCaja} onCambiar={f.setMetodoCaja} />
         </Field>
       )}
-      <ComprobanteUpload url={f.comprobante} onChange={f.setComprobante} />
+      <ComprobanteUpload adelantoId={f.adelantoId} url={f.comprobante} onChange={f.setComprobante} />
       {f.err && <p className="text-base font-semibold text-[var(--data-error-ink)]">{f.err}</p>}
       <button
         onClick={f.registrar}
@@ -139,43 +138,63 @@ export default function RegistrarEntrega({
   );
 }
 
-/** Comprobante de una entrega: se adjunta desde el disco. */
-function ComprobanteUpload({ url, onChange }: { url: string | null; onChange: (u: string | null) => void }) {
+/**
+ * Comprobante de una entrega: se adjunta desde el disco, foto o PDF.
+ * (10-10, Ley 29733) Va PRIVADO a la carpeta del adelanto (`POST …/adjunto`) y
+ * la entrega guarda `priv:<ruta>`; antes subía a `/api/upload` (bucket
+ * público). La miniatura sale del archivo local: lo privado no tiene URL.
+ */
+function ComprobanteUpload({ adelantoId, url, onChange }: { adelantoId: string; url: string | null; onChange: (u: string | null) => void }) {
   const [up, setUp] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [vista, setVista] = useState<{ src: string; pdf: boolean } | null>(null);
   const handle = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
     setErr(null);
     setUp(true);
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("folder", "media");
     try {
-      const res = await fetch("/api/upload", { method: "POST", headers: csrfHeaders(), credentials: "include", body: fd });
-      const j = await leerJson<{ url?: string; error?: string }>(res);
-      if (res.ok && j?.url) onChange(j.url);
-      else setErr(j?.error ?? "No se pudo subir la imagen.");
+      const local = await leerAdjuntoLocal(file);
+      if (!local.ok) {
+        setErr(local.error);
+        return;
+      }
+      const r = await subirAdjuntoPrivado(adelantoId, await archivoDeLocal(local.dataUrl, "comprobante"));
+      if (r.ok) {
+        setVista({ src: local.dataUrl, pdf: local.pdf });
+        onChange(r.comprobanteUrl);
+      } else setErr(r.error);
     } catch (e2) {
       logger.error("[adelantos] fallo la subida del comprobante", { error: String(e2) });
-      setErr("No se pudo subir la imagen.");
+      setErr("No se pudo guardar el comprobante.");
     } finally {
       setUp(false);
     }
+  };
+  const quitar = () => {
+    setVista(null);
+    onChange(null);
   };
   return (
     <div>
       {url ? (
         <div className="flex items-center gap-2">
-          {/* eslint-disable-next-line @next/next/no-img-element -- thumbnail desde Supabase Storage */}
-          <img src={url} alt="comprobante" className="h-12 w-12 rounded-lg border border-[var(--rule-base)] object-cover" />
-          <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-primary hover:underline">Ver</a>
-          <button type="button" onClick={() => onChange(null)} className="text-sm font-bold text-[var(--data-error)] hover:underline">Quitar</button>
+          {vista && !vista.pdf ? (
+            /* eslint-disable-next-line @next/next/no-img-element -- miniatura del archivo local (data URL) */
+            <img src={vista.src} alt="comprobante" className="h-12 w-12 rounded-lg border border-[var(--rule-base)] object-cover" />
+          ) : (
+            <span className="inline-flex h-12 w-12 items-center justify-center rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
+              <FileText className="h-5 w-5" />
+            </span>
+          )}
+          <span className="text-sm font-semibold text-[var(--text-secondary)]">Guardado privado</span>
+          <button type="button" onClick={quitar} className="text-sm font-bold text-[var(--data-error)] hover:underline">Quitar</button>
         </div>
       ) : (
         <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary">
-          <FileText className="h-4 w-4" /> {up ? "Subiendo…" : "Adjuntar comprobante"}
-          <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handle} className="hidden" disabled={up} />
+          <FileText className="h-4 w-4" /> {up ? "Guardando…" : "Adjuntar comprobante"}
+          <input type="file" accept={ACEPTA_ADJUNTO} onChange={handle} className="hidden" disabled={up} />
         </label>
       )}
       {err && <p className="mt-1 text-sm text-[var(--data-error)]">{err}</p>}

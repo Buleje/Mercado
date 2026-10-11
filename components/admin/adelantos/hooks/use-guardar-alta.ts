@@ -18,11 +18,13 @@
  *    recargar la lista; si no, se vuelve a cargar y queda duplicado.
  *  - (ADR-491 V) La foto tomada con la cámara en el alta llega como data URL (no
  *    se subió): no viaja en el alta; con el adelanto ya creado va PRIVADA por
- *    `POST /api/adelantos/<id>/voucher`. En un abono se sube como siempre.
+ *    `POST /api/adelantos/<id>/voucher`. En un abono va privada por
+ *    `POST …/adjunto` (10-10). «Adjuntar archivo» igual, foto o PDF.
  */
 
 import { useRef, useState } from "react";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { archivoDeLocal, esAdjuntoLocal, subirAdjuntoPrivado } from "@/lib/adelantos/adjunto-local";
 import { leerJson } from "@/lib/errores/sin-dato";
 import { idAleatorio } from "@/lib/id-aleatorio";
 import { logger } from "@/lib/logger";
@@ -43,8 +45,8 @@ export type EnvioAlta =
 const SIN_CAJA = "No había caja abierta: la plata no se anotó en la caja. Anótala a mano.";
 const FOTO_NO_GUARDADA = "La foto del comprobante no se guardó (el adelanto sí): guarda el papel y vuelve a tomarle la foto más tarde.";
 
-/** La foto que todavía está sólo en el navegador (la cámara del alta no la sube). */
-const esFotoLocal = (u: unknown): u is string => typeof u === "string" && u.startsWith("data:image/");
+/** La foto o el PDF que todavía está sólo en el navegador (la cámara y «Adjuntar archivo» no suben). */
+const esFotoLocal = esAdjuntoLocal;
 
 /** El alta sin la foto local: el data URL no va en el JSON del alta (y el servidor pide una URL). */
 function sinFotoLocal(body: Record<string, unknown>): Record<string, unknown> {
@@ -58,9 +60,8 @@ function sinFotoLocal(body: Record<string, unknown>): Record<string, unknown> {
 async function guardarVoucher(adelantoId: string, local: string): Promise<string | null> {
   for (let intento = 1; intento <= 2; intento++) {
     try {
-      const foto = await (await fetch(local)).blob();
       const fd = new FormData();
-      fd.append("file", new File([foto], "voucher.jpg", { type: foto.type || "image/jpeg" }));
+      fd.append("file", await archivoDeLocal(local, "voucher"));
       const res = await fetch(`/api/adelantos/${encodeURIComponent(adelantoId)}/voucher`, { method: "POST", headers: csrfHeaders(), credentials: "include", body: fd });
       /* 409 `cambio`: el adelanto ya tenía foto (un alta repetida): no se pisa. */
       if (res.ok || res.status === 409) return null;
@@ -74,17 +75,17 @@ async function guardarVoucher(adelantoId: string, local: string): Promise<string
   return FOTO_NO_GUARDADA;
 }
 
-/** Un abono sigue con la foto pública de siempre (`/api/upload`): la local se sube antes. */
-async function subirFotoLocal(body: Record<string, unknown>): Promise<Record<string, unknown>> {
+/**
+ * El comprobante de un abono (una entrega del adelanto), PRIVADO (10-10, Ley
+ * 29733): antes iba a `/api/upload` (bucket público). Se sube a la carpeta del
+ * adelanto antes de registrar el abono y el abono guarda `priv:<ruta>`.
+ */
+async function subirFotoLocal(adelantoId: string, body: Record<string, unknown>): Promise<Record<string, unknown>> {
   if (!esFotoLocal(body.comprobanteUrl)) return body;
   try {
-    const foto = await (await fetch(body.comprobanteUrl)).blob();
-    const fd = new FormData();
-    fd.append("file", new File([foto], `comprobante-${Date.now()}.jpg`, { type: foto.type || "image/jpeg" }));
-    fd.append("folder", "media");
-    const res = await fetch("/api/upload", { method: "POST", headers: csrfHeaders(), credentials: "include", body: fd });
-    const j = await leerJson<{ url?: string }>(res);
-    if (res.ok && j?.url) return { ...body, comprobanteUrl: j.url };
+    const r = await subirAdjuntoPrivado(adelantoId, await archivoDeLocal(body.comprobanteUrl, `comprobante-${Date.now()}`));
+    if (r.ok) return { ...body, comprobanteUrl: r.comprobanteUrl };
+    logger.warn("[adelantos] la foto del abono no se guardó", { error: r.error });
   } catch (e) {
     logger.error("[adelantos] no se pudo subir la foto del abono", { error: String(e) });
   }
@@ -179,7 +180,7 @@ export function useGuardarAlta({
       }
       const r =
         e.tipo === "abono-uno"
-          ? await abonarAUno(e.adelantoId, { ...(await subirFotoLocal(e.body)), idempotencyKey: clave.current })
+          ? await abonarAUno(e.adelantoId, { ...(await subirFotoLocal(e.adelantoId, e.body)), idempotencyKey: clave.current })
           : await abonarRepartido(e.beneficiarioId, e.intencion, clave.current);
       if (!r.ok) return fallo(r);
       setRegistrado(true);

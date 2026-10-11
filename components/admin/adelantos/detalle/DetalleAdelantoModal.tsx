@@ -14,7 +14,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ArrowDownToLine, Ban, FileSignature, FileText, Pencil } from "@buleje/design-system/icons";
 import { ETIQUETA_CONCEPTO, quienDebe } from "@/lib/adelantos/direccion";
 import { leerDireccion } from "@/lib/adelantos/modos-alta";
-import { esReciboFirmado, srcDelComprobante } from "@/lib/adelantos/recibo-firmado";
+import { esComprobantePdf, esReciboFirmado, srcDelComprobante } from "@/lib/adelantos/recibo-firmado";
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
 import { MODALIDAD_LABEL, MiniStat, ModalShell, STATUS_BADGE, SkeletonGrid, fmtMon } from "../shared";
 import { imprimirComprobante } from "./comprobante-del-adelanto";
@@ -161,8 +161,13 @@ export default function DetalleAdelantoModal({
                 )}
                 {srcComprobante && (
                   <a href={srcComprobante} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm font-bold text-primary hover:underline">
-                    {/* eslint-disable-next-line @next/next/no-img-element -- thumbnail comprobante */}
-                    <img src={srcComprobante} alt="comprobante" className="h-7 w-7 rounded-md border border-[var(--rule-base)] object-cover" /> {hojaVieja ? "Recibo firmado" : "Comprobante"}
+                    {esComprobantePdf(a.comprobanteUrl) ? (
+                      <FileText className="h-5 w-5" />
+                    ) : (
+                      /* eslint-disable-next-line @next/next/no-img-element -- thumbnail comprobante */
+                      <img src={srcComprobante} alt="comprobante" className="h-7 w-7 rounded-md border border-[var(--rule-base)] object-cover" />
+                    )}{" "}
+                    {hojaVieja ? "Recibo firmado" : esComprobantePdf(a.comprobanteUrl) ? "Comprobante (PDF)" : "Comprobante"}
                   </a>
                 )}
                 <div className="ml-auto flex items-center gap-3">

@@ -8,7 +8,7 @@ import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { assertCsrf } from "@/lib/auth/csrf";
-import { esFotoDelNegocio } from "@/lib/adelantos/recibo-firmado";
+import { esComprobantePrivado, esFotoDelNegocio, esRutaAdjuntoDelAdelanto, PREFIJO_PRIVADO } from "@/lib/adelantos/recibo-firmado";
 
 const EntregaSchema = z
   .object({
@@ -20,7 +20,8 @@ const EntregaSchema = z
     sumarAStock: z.boolean().optional(),
     pactadaId: z.string().max(40).optional(),
     notas: z.string().max(500).optional(),
-    comprobanteUrl: z.string().url().max(500).optional(),
+    /* `priv:<ruta>` de `POST …/adjunto` (10-10) o la URL pública vieja de `media`: lo decide el chequeo de abajo. */
+    comprobanteUrl: z.string().max(500).optional(),
     fecha: z.string().optional(),
     /**
      * Si la persona liquidó con PLATA y esa plata entró al cajón. Sólo aplica a
@@ -57,7 +58,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
        la que `/api/upload` subió a la carpeta de ESTE negocio, como en el alta.
        `z.string().url()` dejaba pasar `javascript:`, `priv:` o un sitio ajeno. */
     const foto = parsed.data.comprobanteUrl?.trim();
-    if (foto && !esFotoDelNegocio(foto, { tenantId: auth.tenantId, origenStorage: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "" })) {
+    /* (10-10, Ley 29733) Lo nuevo llega privado: sólo un adjunto de la carpeta
+       de ESTE adelanto de ESTE negocio (el de otro adelanto → 422). */
+    const fotoPrivada = !!foto && esComprobantePrivado(foto) && esRutaAdjuntoDelAdelanto(foto.slice(PREFIJO_PRIVADO.length), auth.tenantId, id);
+    if (foto && !fotoPrivada && !esFotoDelNegocio(foto, { tenantId: auth.tenantId, origenStorage: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "" })) {
       return NextResponse.json({ error: "La foto del comprobante tiene que subirse desde el panel de este negocio.", code: "foto_ajena" }, { status: 422 });
     }
     let adelanto;

@@ -3,8 +3,8 @@
 /**
  * «Leer voucher» del alta de adelanto: la captura de Yape, Plin o de una
  * transferencia → OCR en el navegador → PRELLENA monto, fecha, caja y nota, y
- * adjunta la foto como comprobante (el mismo `/api/upload` → `comprobanteUrl`
- * de «Adjuntar archivo»: no hay schema nuevo).
+ * adjunta la foto como comprobante (la misma foto local de «Adjuntar archivo»,
+ * que al guardar va privada: no hay schema nuevo).
  *
  * NUNCA guarda: deja todo marcado «leído del voucher — revisa» y la persona
  * confirma con el botón de siempre. Si no encuentra el monto no toca nada y lo
@@ -17,8 +17,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { leerTextoDeImagen, liberarOcr, type ProgresoOcr } from "@/lib/ocr/ocr-navegador";
 import { diaLegibleVoucher, etiquetaApp, leerVoucher, metodoDeVoucher, nombresSeParecen, notaDeVoucher, type VoucherLeido } from "@/lib/adelantos/voucher";
-import { csrfHeaders } from "@/lib/csrf-client";
-import { leerJson } from "@/lib/errores/sin-dato";
+import { leerAdjuntoLocal } from "@/lib/adelantos/adjunto-local";
 import { logger } from "@/lib/logger";
 import { fmtMon } from "../shared";
 import { HOY } from "../crear-adelanto/campos-monto";
@@ -44,14 +43,15 @@ export type EstadoVoucher =
 
 type Antes = Pick<AltaAdelanto, "monto" | "moneda" | "fecha" | "metodoCaja" | "notas" | "comprobante">;
 
+/**
+ * (10-10, Ley 29733) La foto del voucher NO se sube acá: queda en el navegador
+ * (data URL) como la de la cámara, y al guardar va PRIVADA a la carpeta del
+ * adelanto (`use-guardar-alta`). Antes iba a `/api/upload`, el bucket público.
+ */
 async function subirFoto(archivo: File): Promise<string> {
-  const fd = new FormData();
-  fd.append("file", archivo);
-  fd.append("folder", "media");
-  const r = await fetch("/api/upload", { method: "POST", headers: csrfHeaders(), credentials: "include", body: fd });
-  const j = await leerJson<{ url?: string; error?: string }>(r);
-  if (!r.ok || !j?.url) throw new Error(j?.error ?? `HTTP ${r.status}`);
-  return j.url;
+  const r = await leerAdjuntoLocal(archivo);
+  if (!r.ok) throw new Error(r.error);
+  return r.dataUrl;
 }
 
 export function useLeerVoucher(alta: AltaAdelanto) {
