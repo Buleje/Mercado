@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import dynamic from "next/dynamic";
 import { leerJson } from "@/lib/errores/sin-dato";
 import { CardTitle } from "@buleje/design-system";
 import {
@@ -19,6 +20,7 @@ import {
   Repeat,
   Download,
   ChevronLeft,
+  HandCoins,
 } from "@buleje/design-system/icons";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { SegundoNivelEnElHub, useRanuraDelSegundoNivel } from "@/components/admin/unified/finanzas/segundo-nivel";
@@ -37,7 +39,10 @@ import ResumenView from "./resumen/ResumenView";
 import type { Resumen } from "./resumen/tipos";
 import CrearPersonaModal from "./personas/CrearPersonaModal";
 import { leerPedidoLiquidar } from "./cuentas/liquidar-por-url";
-import { useAdelantoEnUrl } from "./hooks/use-adelanto-en-url";
+import { borrarPedidoEntregar, leerPedidoEntregar, useAdelantoEnUrl } from "./hooks/use-adelanto-en-url";
+import { button } from "@/components/ui-system/button-variants";
+import { adelantosDe } from "@/lib/adelantos/sugerencias";
+import type { PersonaEntregar } from "@/lib/adelantos/entregar-tipos";
 import { useFichaEnUrl } from "@/hooks/use-ficha-en-url";
 import { PARAM_ADELANTO } from "@/lib/adelantos/enlace-adelanto";
 import { sinTildes, fmtMon, sumByMoneda, fmtMonedas, EmptyState, SkeletonGrid, inputCls, Field, ModalShell, ModalActions, STATUS_BADGE } from "./shared";
@@ -66,6 +71,21 @@ import { formatDateShort } from "@/lib/format";
 type BeneficiarioConSaldo = BeneficiarioConSaldoBase;
 
 const MODULE_ID = "adelantos";
+
+/** «Entregar adelanto» (ADR-491) baja sólo al abrirse: lienzo, cámara y PDF no pesan en la lista. */
+const EntregarAdelantoModal = dynamic(() => import("./entregar/EntregarAdelantoModal"), { ssr: false });
+
+/** La persona de Adelantos como la pide «Entregar»: con su último monto dado y lo que debe en soles. */
+function personaParaEntregar(b: BeneficiarioConSaldo, adelantos: readonly DbAdelanto[]): PersonaEntregar {
+  return {
+    id: b.id,
+    nombre: b.nombre,
+    documentoFinal: b.documento?.trim() || null,
+    tieneTelefono: !!b.telefono?.trim(),
+    ultimoMonto: adelantosDe(adelantos, b.id)[0]?.montoAdelantado ?? null,
+    saldo: b.saldoPendiente?.PEN ?? 0,
+  };
+}
 
 /**
  * Filas por página del listado.
@@ -143,6 +163,8 @@ export default function AdelantosModule() {
    * buscar y apretar OTRO botón igual, ya adentro.
    */
   const [creando, setCreando] = useState(false);
+  /** «Entregar adelanto» abierto, con la persona ya elegida si vino en la URL. */
+  const [entregando, setEntregando] = useState<{ persona: PersonaEntregar | null } | null>(null);
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -173,6 +195,22 @@ export default function AdelantosModule() {
 
   const sinPersonas = beneficiarios.length === 0;
 
+  /* `?accion=nuevo[&persona=<id>]` (ADR-491): abre «Entregar» una vez cargadas
+     las personas, y el pedido se borra de la URL. Sin personas, primero hay
+     que crear una. */
+  useEffect(() => {
+    if (loading) return;
+    const pedido = leerPedidoEntregar();
+    if (!pedido) return;
+    borrarPedidoEntregar();
+    if (sinPersonas) {
+      setTab("personas");
+      return;
+    }
+    const b = pedido.persona ? beneficiarios.find((x) => x.id === pedido.persona) : undefined;
+    setEntregando({ persona: b ? personaParaEntregar(b, adelantos) : null });
+  }, [loading, sinPersonas, beneficiarios, adelantos, setTab]);
+
   /**
    * Lo dado y lo recibido, separados UNA vez acá (ADR-448). Resumen, Cobranza,
    * Actividad y Análisis cuentan «lo que te deben»: con un recibido adentro,
@@ -184,19 +222,31 @@ export default function AdelantosModule() {
   /* El servidor ya guarda la dirección: sin eso, lo recibido se guardaría como dado. */
   const admiteRecibido = resumen?.recibido != null || adelantos.some((a) => "direccion" in a);
 
-  const botonNuevo = (
-    <button
-      type="button"
-      onClick={() => {
-        if (sinPersonas) { setTab("personas"); return; }
-        setTab("lista");
-        setCreando(true);
-      }}
-      className="inline-flex h-12 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
-    >
-      <Plus className="h-4 w-4" aria-hidden />
-      {sinPersonas ? "Agregar persona" : "Nuevo adelanto"}
+  /* «Entregar» (ADR-491) es lo de todos los días: persona, monto y firma en un
+     paso. «Nuevo adelanto» queda para lo que pide el formulario completo
+     (plan de cuotas, permiso, lo que te adelantan a ti). */
+  const botonNuevo = sinPersonas ? (
+    <button type="button" onClick={() => setTab("personas")} className={button({ variant: "primary", className: "h-12 rounded-xl" })}>
+      <Plus className="h-4 w-4" aria-hidden /> Agregar persona
     </button>
+  ) : (
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={() => {
+          setTab("lista");
+          setCreando(true);
+        }}
+        aria-label="Nuevo adelanto"
+        className={button({ variant: "secondary", className: "h-12 rounded-xl px-4" })}
+      >
+        {/* A 400 px «Nuevo adelanto» empujaba el menú «⋯» a una fila sola. */}
+        <Plus className="h-4 w-4" aria-hidden /> Nuevo<span className="max-sm:hidden"> adelanto</span>
+      </button>
+      <button type="button" onClick={() => setEntregando({ persona: null })} className={button({ variant: "primary", className: "h-12 rounded-xl px-4" })} data-abrir-entregar>
+        <HandCoins className="h-4 w-4" aria-hidden /> Entregar
+      </button>
+    </div>
   );
 
   const vistas = (
@@ -231,6 +281,9 @@ export default function AdelantosModule() {
         <AdminTabBar tabs={TABS} activeTab={tab} onTabChange={setTab} moduleId={MODULE_ID} rightSlot={botonNuevo}>
           <div className="pt-5 lg:pt-6">{vistas}</div>
         </AdminTabBar>
+      )}
+      {entregando && (
+        <EntregarAdelantoModal personaInicial={entregando.persona} onClose={() => setEntregando(null)} onEntregado={() => void reload()} />
       )}
     </div>
   );

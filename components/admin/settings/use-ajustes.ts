@@ -81,6 +81,9 @@ export function useAjustes(storeMode: StoreMode, activeSection: SeccionAjustes) 
   // Tope de descuento del cajero (Settings.maxDiscountPercent). Se carga con la misma
   // regla que aplica POST /api/sales: el 100 de fábrica de la columna se ve como 15.
   const [maxDiscountPercent, setMaxDiscountPercent] = useState(TOPE_DESCUENTO_CAJERO_PCT);
+  // Tope del cajero para entregar adelantos (ADR-491, Settings.adelantoTopeCajero). Texto:
+  // vacío = sin guardar (el servidor usa S/ 500); 0 = el cajero no entrega adelantos.
+  const [adelantoTopeCajero, setAdelantoTopeCajero] = useState("");
 
   // Delivery
   const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>([]);
@@ -139,6 +142,7 @@ export function useAjustes(storeMode: StoreMode, activeSection: SeccionAjustes) 
         if (d.cashAlertMax !== undefined) setCashAlertMax(d.cashAlertMax);
         if (d.autoCloseTime) setAutoCloseTime(d.autoCloseTime);
         setMaxDiscountPercent(topeCajeroPct(d.maxDiscountPercent));
+        setAdelantoTopeCajero(typeof d.adelantoTopeCajero === "number" ? String(d.adelantoTopeCajero) : "");
         if (d.deliveryZones) setDeliveryZones(d.deliveryZones);
         if (d.freeDeliveryMin !== undefined) setFreeDeliveryMin(d.freeDeliveryMin);
         if (d.lastBackupAt) setLastBackupAt(d.lastBackupAt);
@@ -298,7 +302,7 @@ export function useAjustes(storeMode: StoreMode, activeSection: SeccionAjustes) 
     };
 
   return {
-    mode, setMode, businessName, setBusinessName, businessPhone, setBusinessPhone, businessAddress, setBusinessAddress, logoUrl, setLogoUrl, coverUrl, setCoverUrl, bannerUrl, setBannerUrl, description, setDescription, hours, setHours, deliveryZone, setDeliveryZone, businessLat, setBusinessLat, businessLon, setBusinessLon, showMapPicker, setShowMapPicker, pickerLat, setPickerLat, pickerLon, setPickerLon, razonSocial, setRazonSocial, ruc, setRuc, businessEmail, setBusinessEmail, currency, setCurrency, businessType, setBusinessType, socialLinks, setSocialLinks, yapeEnabled, setYapeEnabled, yapeImage, setYapeImage, yapeName, setYapeName, yapePhone, setYapePhone, cashEnabled, setCashEnabled, plinEnabled, setPlinEnabled, plinImage, setPlinImage, plinName, setPlinName, plinPhone, setPlinPhone, transferEnabled, setTransferEnabled, transferBankName, setTransferBankName, transferAccountNum, setTransferAccountNum, transferAccountHolder, setTransferAccountHolder, maintenanceMode, setMaintenanceMode, maintenanceMsg, setMaintenanceMsg, bypassLogin, setBypassLogin, primaryColor, setPrimaryColor, secondaryColor, setSecondaryColor, slogan, setSlogan, taxRate, setTaxRate, sunatRuc, setSunatRuc, sunatDenominacion, setSunatDenominacion, cashAlertMax, setCashAlertMax, autoCloseTime, setAutoCloseTime, maxDiscountPercent, setMaxDiscountPercent, deliveryZones, setDeliveryZones, freeDeliveryMin, setFreeDeliveryMin, lastBackupAt, setLastBackupAt, uploadingField, setUploadingField, cargar, faltan, faltanCobros, faltanDelivery, faltanTienda, pendientes, irAFalta, faltanPorSeccion, patch, handleFileUpload, loading, cargaFallida, saving, savedSection,
+    mode, setMode, businessName, setBusinessName, businessPhone, setBusinessPhone, businessAddress, setBusinessAddress, logoUrl, setLogoUrl, coverUrl, setCoverUrl, bannerUrl, setBannerUrl, description, setDescription, hours, setHours, deliveryZone, setDeliveryZone, businessLat, setBusinessLat, businessLon, setBusinessLon, showMapPicker, setShowMapPicker, pickerLat, setPickerLat, pickerLon, setPickerLon, razonSocial, setRazonSocial, ruc, setRuc, businessEmail, setBusinessEmail, currency, setCurrency, businessType, setBusinessType, socialLinks, setSocialLinks, yapeEnabled, setYapeEnabled, yapeImage, setYapeImage, yapeName, setYapeName, yapePhone, setYapePhone, cashEnabled, setCashEnabled, plinEnabled, setPlinEnabled, plinImage, setPlinImage, plinName, setPlinName, plinPhone, setPlinPhone, transferEnabled, setTransferEnabled, transferBankName, setTransferBankName, transferAccountNum, setTransferAccountNum, transferAccountHolder, setTransferAccountHolder, maintenanceMode, setMaintenanceMode, maintenanceMsg, setMaintenanceMsg, bypassLogin, setBypassLogin, primaryColor, setPrimaryColor, secondaryColor, setSecondaryColor, slogan, setSlogan, taxRate, setTaxRate, sunatRuc, setSunatRuc, sunatDenominacion, setSunatDenominacion, cashAlertMax, setCashAlertMax, autoCloseTime, setAutoCloseTime, maxDiscountPercent, setMaxDiscountPercent, adelantoTopeCajero, setAdelantoTopeCajero, deliveryZones, setDeliveryZones, freeDeliveryMin, setFreeDeliveryMin, lastBackupAt, setLastBackupAt, uploadingField, setUploadingField, cargar, faltan, faltanCobros, faltanDelivery, faltanTienda, pendientes, irAFalta, faltanPorSeccion, patch, handleFileUpload, loading, cargaFallida, saving, savedSection,
   };
 }
 

@@ -13,11 +13,14 @@
  * Sin caja abierta no hay secciones que mirar: va `CajaCerrada` (último
  * cierre y los anteriores), y «Abrir caja» en la cabecera.
  */
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import dynamic from "next/dynamic";
 import { WarningAlert } from "@buleje/design-system";
-import { ArrowDown, ArrowUp, Lock } from "@buleje/design-system/icons";
+import { ArrowDown, ArrowUp, HandCoins, Lock } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { button } from "@/components/ui-system/button-variants";
+import { useMiRol } from "@/hooks/use-mi-rol";
+import { checkPermission } from "@/lib/auth/role-permissions";
 import type { ParteDelDia } from "@/lib/caja/parte-del-dia";
 import { CajaCerrada } from "./CajaCerrada";
 import { CajaContar } from "./CajaContar";
@@ -45,6 +48,13 @@ interface Props {
 
 const BOTON_ACCION = "inline-flex min-h-12 items-center gap-1.5 rounded-xl px-4 text-sm font-bold transition-colors";
 
+/**
+ * «Entregar adelanto» (ADR-491) desde la caja: el cajero entrega la plata del
+ * cajón con la firma de quien la recibe, sin pasar por Mi Plata (ahí no entra).
+ * Baja sólo al abrirse.
+ */
+const EntregarAdelantoModal = dynamic(() => import("@/components/admin/adelantos/entregar/EntregarAdelantoModal"), { ssr: false });
+
 export function CajaActual(props: Props) {
   const { datos, onVerCaja, onIrA } = props;
   const caja = datos.currentRegister;
@@ -58,6 +68,10 @@ function CajaAbierta({ vista, datos, parte, puedeCambiarMedio, onMovimiento, onC
   const { stats, timeline, paymentBreakdown, cashAlertMax, fetchData } = datos;
   const indicadores = useIndicadoresCaja(caja.openingAmount, stats);
   const efectivo = stats?.expectedCash ?? 0;
+  /* Lo decide la matriz (`adelantos-entregar:write`: cajero, admin, dueño, encargado); el servidor lo vuelve a mirar. */
+  const rol = useMiRol();
+  const puedeEntregar = rol != null && checkPermission(rol, "adelantos-entregar", "write");
+  const [entregando, setEntregando] = useState(false);
 
   return (
     <div className="space-y-4">
@@ -71,6 +85,19 @@ function CajaAbierta({ vista, datos, parte, puedeCambiarMedio, onMovimiento, onC
         <button type="button" title="Retiro (tecla R)" onClick={() => onMovimiento("egreso")} className={`${BOTON_ACCION} bg-[var(--data-error-500)]/10 text-[var(--data-error-700)] hover:bg-[var(--data-error-500)]/20 dark:text-[var(--data-error-500)]`}>
           <ArrowDown className="h-4 w-4" aria-hidden /> Retiro
         </button>
+        {puedeEntregar && (
+          <button
+            type="button"
+            onClick={() => setEntregando(true)}
+            className={`${BOTON_ACCION} bg-primary/10 text-[var(--accent-ink)] hover:bg-primary/20 dark:text-[var(--accent)]`}
+            aria-label="Entregar adelanto"
+            data-caja-entregar-adelanto
+          >
+            {/* A 400 px el texto entero empujaba «Más» a una fila sola. */}
+            <HandCoins className="h-4 w-4" aria-hidden /> <span className="sm:hidden">Adelanto</span>
+            <span className="max-sm:hidden">Entregar adelanto</span>
+          </button>
+        )}
         <button type="button" onClick={onCerrarCaja} className={button({ variant: "primary", className: "rounded-xl" })}>
           <Lock className="h-4 w-4" aria-hidden /> Cerrar caja
         </button>
@@ -104,6 +131,8 @@ function CajaAbierta({ vista, datos, parte, puedeCambiarMedio, onMovimiento, onC
       )}
       {vista === "medios" && <CajaPorMedio breakdown={paymentBreakdown} stats={stats} />}
       {vista === "cuadrar" && <CajaContar key={versionConteo} onIrACaja={() => onIrA("hoy")} />}
+      {/* Al entregar, la caja se relee: el adelanto ya es un movimiento del cajón. */}
+      {entregando && <EntregarAdelantoModal onClose={() => setEntregando(false)} onEntregado={() => void fetchData()} />}
     </div>
   );
 }

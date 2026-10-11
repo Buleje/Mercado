@@ -191,7 +191,15 @@ export default function BloqueRespaldo({
           )}
         </div>
       )}
-      {conCamara && <CapturaFoto onSubida={alta.setComprobante} onCerrar={() => setConCamara(false)} />}
+      {/* ADR-491 V: en el alta la foto no se sube acá. Queda en el navegador (data URL) y,
+          con el adelanto ya guardado, va PRIVADA a su carpeta (`use-guardar-alta`). El abono
+          sigue subiéndola como siempre: es de una entrega, no del adelanto. */}
+      {conCamara &&
+        (creaAdelanto ? (
+          <CapturaFoto modo="devolver" onFoto={alta.setComprobante} onCerrar={() => setConCamara(false)} />
+        ) : (
+          <CapturaFoto onSubida={alta.setComprobante} onCerrar={() => setConCamara(false)} />
+        ))}
     </SeccionForm>
   );
 }

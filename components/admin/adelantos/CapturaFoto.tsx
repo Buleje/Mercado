@@ -9,9 +9,13 @@
  * pasos que en el mostrador terminan en «después la subo», que es nunca.
  *
  * CÓMO. `getUserMedia` con la cámara trasera si hay (`environment`), preview
- * para poder repetirla antes de subir, y recién ahí el POST. Se sube lo mismo
- * que el adjuntar de siempre (`/api/upload`), así que del otro lado no cambia
- * nada.
+ * para poder repetirla antes de subir, y recién ahí:
+ *  - `modo="subir"` (abonos): el POST a `/api/upload`, como el adjuntar de siempre.
+ *  - `modo="devolver"` (alta de un adelanto, ADR-491 V): NO sube nada; devuelve
+ *    la foto como data URL (la CSP deja leer `data:` y no `blob:` con fetch) y
+ *    el alta la guarda PRIVADA (`POST /api/adelantos/<id>/voucher`)
+ *    cuando el adelanto ya existe. Un voucher con nombres y montos no va al
+ *    bucket público.
  *
  * Si el navegador no da permiso o no hay cámara, lo dice y no rompe: el botón de
  * adjuntar archivo sigue estando al lado.
@@ -29,13 +33,13 @@ import { logger } from "@/lib/logger";
 /** Calidad de JPEG: un recibo se lee perfecto y pesa un tercio que el PNG. */
 const CALIDAD = 0.85;
 
-export default function CapturaFoto({
-  onSubida,
-  onCerrar,
-}: {
-  onSubida: (url: string) => void;
-  onCerrar: () => void;
-}) {
+type PropsCaptura = { onCerrar: () => void } & (
+  | { modo?: "subir"; onSubida: (url: string) => void }
+  | { modo: "devolver"; onFoto: (jpeg: string) => void }
+);
+
+export default function CapturaFoto(props: PropsCaptura) {
+  const { onCerrar } = props;
   /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
   const cajaRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -100,6 +104,12 @@ export default function CapturaFoto({
     if (!tomada) return;
     setSubiendo(true);
     setError(null);
+    if (props.modo === "devolver") {
+      props.onFoto(tomada);
+      setSubiendo(false);
+      onCerrar();
+      return;
+    }
     try {
       const blob = await (await fetch(tomada)).blob();
       const fd = new FormData();
@@ -113,7 +123,7 @@ export default function CapturaFoto({
       });
       const j = await leerJson<{ url?: string; error?: string }>(r);
       if (!r.ok || !j?.url) throw new Error(j?.error ?? `HTTP ${r.status}`);
-      onSubida(j.url);
+      props.onSubida(j.url);
       onCerrar();
     } catch (err) {
       logger.error("[adelantos] no se pudo subir la foto", { error: String(err) });

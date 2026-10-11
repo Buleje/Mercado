@@ -23,7 +23,8 @@ import { MARCA_FICHA_DESDE } from "@/components/admin/shared/ir-a-enlace";
 import { PARAM_ADELANTO, PARAM_LIQUIDACION, esElAdelanto } from "@/lib/adelantos/enlace-adelanto";
 import { ordenarAdelantos, type ColumnaOrden, type Direccion } from "@/lib/adelantos/ordenar-lista";
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
-import { ACCION_LIQUIDAR, PARAM_ACCION } from "../cuentas/liquidar-por-url";
+import { ACCION_ENTREGAR } from "@/lib/adelantos/entregar-tipos";
+import { ACCION_LIQUIDAR, PARAM_ACCION, PARAM_PERSONA } from "../cuentas/liquidar-por-url";
 
 /** Los parámetros que sólo lee Adelantos: se van de la URL al salir del módulo. */
 export const PARAMS_DE_ADELANTOS = [PARAM_ADELANTO, PARAM_LIQUIDACION] as const;
@@ -81,6 +82,35 @@ export function useLimpiarAlSalirDeAdelantos(): void {
       }, 0);
     };
   }, []);
+}
+
+/**
+ * `?accion=nuevo[&persona=<id>]` (ADR-491): abrir «Entregar adelanto», con la
+ * persona ya elegida si viene. `null` si la URL no lo pide. Se atiende UNA vez
+ * y se borra (`borrarPedidoEntregar`): si quedara, volver a la pestaña
+ * reabriría la pantalla. No se borra «al salir» (`urlAlSalirDeAdelantos`):
+ * `accion` es genérico y otro módulo podría llegar con su `nuevo`.
+ */
+export function leerPedidoEntregar(): { persona: string | null } | null {
+  if (typeof window === "undefined") return null;
+  const q = new URLSearchParams(window.location.search);
+  if (q.get(PARAM_ACCION) !== ACCION_ENTREGAR) return null;
+  return { persona: q.get(PARAM_PERSONA)?.trim() || null };
+}
+
+/** Atendido: `accion` y `persona` fuera de la URL, sin agregar una entrada al historial (conserva la marca de la ficha). */
+export function borrarPedidoEntregar(): void {
+  try {
+    const u = new URL(window.location.href);
+    if (u.searchParams.get(PARAM_ACCION) !== ACCION_ENTREGAR) return;
+    u.searchParams.delete(PARAM_ACCION);
+    u.searchParams.delete(PARAM_PERSONA);
+    const estado: unknown = window.history.state;
+    const marca = estado && typeof estado === "object" ? (estado as Record<string, unknown>)[MARCA_FICHA_DESDE] : undefined;
+    window.history.replaceState(typeof marca === "string" ? { [MARCA_FICHA_DESDE]: marca } : null, "", u.toString());
+  } catch {
+    // Sin history: la pantalla ya se abrió; sólo queda el parámetro en la barra.
+  }
 }
 
 interface OpcionesAdelantoEnUrl {

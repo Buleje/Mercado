@@ -1,33 +1,55 @@
 "use client";
 
 /**
- * El estado y el guardado de «Firmar recibo» (08-10).
+ * El estado y el guardado de «Firmar recibo» (08-10 → ADR-491).
  *
- * Guardar = armar la hoja (foto que ya había + firma + monto + quién y cuándo)
- * → mandarla como ARCHIVO en el PATCH `adjuntarComprobante` (el servidor
- * valida, la sube a la carpeta PRIVADA del adelanto y hace compara-y-cambia
- * contra la foto que se vio; Ley 29733: DNI + firma no van al bucket público)
- * → bajar el recibo en PDF con la firma en su línea. Nada de esto toca plata,
- * saldo ni caja.
+ * Guardar = `POST /api/adelantos/<id>/firmas` (multipart: `datos` + la firma en
+ * PNG + la foto de la huella si la hay). El servidor la AGREGA al registro de
+ * firmas: firmar de nuevo no borra la anterior, queda abajo como reemplazada.
+ * Ya no se arma la hoja para guardarla ni se toca la foto del comprobante
+ * (antes la firma pisaba al voucher en la misma columna y no quedaba rastro).
+ * Después baja el recibo en PDF leído del registro, con la hora que quedó.
+ *
+ * Una clave por intento (`idempotencyKey`): ante un corte se reintenta con la
+ * misma y el servidor devuelve la que ya guardó (200 `repetido`); cambia sólo
+ * cuando el servidor dijo que NO guardó (4xx) o tras guardar. Nada de esto toca
+ * plata, saldo ni caja.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { leerMembrete } from "@/lib/admin/membrete-cliente";
 import { descargarComprobante } from "@/lib/adelantos/comprobante";
+import { VERSION_CONSENTIMIENTO_HUELLA, type ImagenGuardada } from "@/lib/adelantos/entregar-tipos";
+import { FirmarDatosSchema } from "@/lib/adelantos/entregar-schema";
 import { leerDireccion } from "@/lib/adelantos/modos-alta";
-import { esReciboFirmado, fechaHoraLima, limpiarDocumento, lineasHojaFirmada, srcDelComprobante, validarFirmante, type LineasHoja } from "@/lib/adelantos/recibo-firmado";
+import { fechaHoraLima, limpiarDocumento, lineasHojaFirmada, validarFirmante, type LineasHoja } from "@/lib/adelantos/recibo-firmado";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { DbAdelanto } from "@/lib/db/adelantos.db";
 import { leerJson, sinDato } from "@/lib/errores/sin-dato";
 import { esFirmaSuficiente, type Trazo } from "@/lib/firma/trazos";
+import { idAleatorio } from "@/lib/id-aleatorio";
 import { logger } from "@/lib/logger";
-import { datosDelComprobante } from "../detalle/comprobante-del-adelanto";
-import { cargarImagen, componerHoja, firmaEnCanvas } from "./hoja-firma";
+import { datosDelComprobante, imprimirComprobante } from "../detalle/comprobante-del-adelanto";
+import { firmaEnCanvas } from "./hoja-firma";
 
 /** Un error que se muestra tal cual: los demás dicen «revisa la conexión». */
 class AvisoFirma extends Error {}
 
 export type FaseFirma = "firmando" | "guardando" | "guardado";
+
+type RespuestaFirmas = { firma?: ImagenGuardada; huella?: ImagenGuardada | null; repetido?: boolean; error?: string; message?: string; code?: string };
+
+function firmaPng(trazos: readonly Trazo[]): Promise<Blob | null> {
+  return new Promise((resolve) => firmaEnCanvas(trazos, 900, 300).toBlob((b) => resolve(b), "image/png"));
+}
+
+/** Lo que dijo el servidor, en una frase; los códigos sueltos («forbidden») no se muestran. */
+function mensajeDe(status: number, j: RespuestaFirmas | null): string {
+  const frase = [j?.message, j?.error].find((t) => !!t && /\s/.test(t));
+  if (frase) return frase;
+  if (status === 403) return "Tu rol no puede firmar adelantos: pídeselo al dueño o a un administrador.";
+  return "No se pudo guardar la firma. Prueba de nuevo.";
+}
 
 export function useFirmarRecibo({
   adelantoId,
@@ -37,7 +59,7 @@ export function useFirmarRecibo({
   adelantoId: string;
   /** La ficha ya lo tiene; el alta recién creada, no (se lee acá). */
   adelanto?: DbAdelanto | null;
-  onGuardado?: (url: string) => void;
+  onGuardado?: () => void;
 }) {
   const [a, setA] = useState<DbAdelanto | null>(adelanto ?? null);
   const [noCargo, setNoCargo] = useState(false);
@@ -45,12 +67,16 @@ export function useFirmarRecibo({
   const [nombre, setNombre] = useState(adelanto?.beneficiario?.nombre ?? "");
   const [documento, setDocumento] = useState(limpiarDocumento(adelanto?.beneficiario?.documento));
   const [trazos, setTrazos] = useState<Trazo[]>([]);
+  /** La foto de la huella (opcional) y el «acepto» de la persona (Ley 29733). */
+  const [huella, setHuella] = useState<Blob | null>(null);
+  const [consentido, setConsentido] = useState(false);
   const [fase, setFase] = useState<FaseFirma>("firmando");
   const [paso, setPaso] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [intentado, setIntentado] = useState(false);
-  /** La hora con la que quedó guardada: el PDF de «Bajar otra vez» dice la misma. */
-  const [firmadoEl, setFirmadoEl] = useState<string | null>(null);
+  const [huellaGuardada, setHuellaGuardada] = useState(false);
+  const clave = useRef("");
+  if (!clave.current) clave.current = idAleatorio();
 
   useEffect(() => {
     let vivo = true;
@@ -91,25 +117,11 @@ export function useFirmarRecibo({
   );
 
   const falta = useMemo(
-    () => validarFirmante({ nombre, documento }) ?? (esFirmaSuficiente(trazos) ? null : "Falta la firma: que la persona firme en el recuadro."),
-    [nombre, documento, trazos],
-  );
-
-  const bajarRecibo = useCallback(
-    async (fechaHora: string, negocioDado?: string | null) => {
-      if (!a) return;
-      await descargarComprobante({
-        ...datosDelComprobante(a, negocioDado ?? negocio),
-        firma: {
-          imagen: firmaEnCanvas(trazos, 900, 300).toDataURL("image/png"),
-          relacion: 3,
-          nombre: nombre.trim(),
-          documento: limpiarDocumento(documento),
-          fechaHora,
-        },
-      });
-    },
-    [a, negocio, trazos, nombre, documento],
+    () =>
+      validarFirmante({ nombre, documento }) ??
+      (esFirmaSuficiente(trazos) ? null : "Falta la firma: que la persona firme en el recuadro.") ??
+      (huella && !consentido ? "Para guardar la huella, marca que la persona acepta el aviso (o quita la foto)." : null),
+    [nombre, documento, trazos, huella, consentido],
   );
 
   const guardar = async () => {
@@ -117,42 +129,37 @@ export function useFirmarRecibo({
     if (falta || !a) return;
     setError(null);
     setFase("guardando");
-    const ahora = fechaHoraLima(new Date());
-    const anterior = a.comprobanteUrl ?? null;
+    const conHuella = !!huella && consentido;
     try {
-      setPaso("Armando la hoja firmada…");
-      /* La primera vez la ruta del membrete puede tardar: sin esperarla, la hoja
-         guardada decía «Dio: —» (QA 08-10). Si no responde, va «—» igual. */
-      const elNegocio = negocio ?? ((await leerMembrete()).nombre?.trim() || null);
-      let foto: HTMLImageElement | null = null;
-      const srcAnterior = srcDelComprobante(a);
-      if (srcAnterior) {
-        foto = await cargarImagen(srcAnterior).catch((e: unknown) => {
-          logger.error("[adelantos] no se pudo leer la foto anterior para la firma", { error: String(e) });
-          throw new AvisoFirma("No pude abrir la foto que ya tiene el adelanto para juntarla con la firma. Intenta de nuevo o baja el recibo sin guardar.");
-        });
-      }
-      const textos = lineas(ahora, elNegocio);
-      if (!textos) throw new AvisoFirma("Todavía no cargó el adelanto: espera un segundo.");
-      const hoja = await componerHoja({ trazos, lineas: textos, fotoAnterior: foto, anteriorEsFirma: esReciboFirmado(anterior) });
-
-      setPaso("Guardándola en el adelanto…");
+      const v = FirmarDatosSchema.safeParse({
+        firmante: { nombre: nombre.trim(), documento: limpiarDocumento(documento) },
+        trazos,
+        idempotencyKey: clave.current,
+        ...(conHuella ? { consentimientoHuella: VERSION_CONSENTIMIENTO_HUELLA } : {}),
+      });
+      if (!v.success) throw new AvisoFirma(v.error.issues[0]?.message ?? "Revisa el nombre y el DNI de quien firma.");
+      setPaso("Guardando la firma…");
+      const png = await firmaPng(trazos);
+      if (!png) throw new AvisoFirma("No se pudo leer la firma del recuadro. Intenta de nuevo.");
       /* Sin `Content-Type`: el navegador pone el `boundary` del multipart. */
       const fd = new FormData();
-      fd.append("action", "adjuntarComprobante");
-      fd.append("anterior", anterior ?? "");
-      fd.append("file", new File([hoja], "recibo-firmado.jpg", { type: hoja.type || "image/jpeg" }));
-      const res = await fetch(`/api/adelantos/${a.id}`, { method: "PATCH", headers: csrfHeaders(), credentials: "include", body: fd });
-      const j = await leerJson<{ comprobanteUrl?: string; error?: string; message?: string }>(res);
-      if (!res.ok || !j?.comprobanteUrl) {
-        throw new AvisoFirma(res.status === 403 ? "Tu rol no puede cambiar adelantos: pídeselo al dueño o a un administrador." : (j?.message ?? j?.error ?? "No se pudo guardar la firma en el adelanto."));
+      fd.append("datos", JSON.stringify(v.data));
+      fd.append("firma", new File([png], "firma.png", { type: "image/png" }));
+      if (conHuella && huella) fd.append("huella", new File([huella], "huella.jpg", { type: huella.type || "image/jpeg" }));
+      const res = await fetch(`/api/adelantos/${encodeURIComponent(a.id)}/firmas`, { method: "POST", headers: csrfHeaders(), credentials: "include", body: fd });
+      const j = await leerJson<RespuestaFirmas>(res);
+      if (!res.ok || !j?.firma?.guardada) {
+        /* 4xx = no guardó nada: el próximo intento es otro. 5xx o corte: la misma clave. */
+        if (res.status >= 400 && res.status < 500) clave.current = idAleatorio();
+        throw new AvisoFirma(mensajeDe(res.status, j));
       }
-      setFirmadoEl(ahora);
+      clave.current = idAleatorio();
+      setHuellaGuardada(!!j.huella?.guardada);
       setFase("guardado");
-      onGuardado?.(j.comprobanteUrl);
+      onGuardado?.();
 
       setPaso("Bajando el recibo…");
-      await bajarRecibo(ahora, elNegocio).catch((e: unknown) => {
+      await imprimirComprobante(a).catch((e: unknown) => {
         logger.error("[adelantos] el recibo firmado no bajó", { error: String(e) });
         setError("La firma quedó guardada, pero el PDF no bajó: aprieta «Bajar el recibo».");
       });
@@ -165,12 +172,31 @@ export function useFirmarRecibo({
     }
   };
 
-  /** Sin guardar: el papel con la firma, para imprimir o mandar. */
+  /** Ya guardada: el recibo leído del registro (la firma y la hora que quedaron). */
+  const bajarGuardado = async () => {
+    if (!a) return;
+    setError(null);
+    await imprimirComprobante(a).catch((e: unknown) => {
+      logger.error("[adelantos] el recibo firmado no bajó", { error: String(e) });
+      setError("No se pudo armar el PDF. Intenta de nuevo.");
+    });
+  };
+
+  /** Sin guardar: el papel con la firma, para imprimir o mandar (la huella no viaja: no hay aviso aceptado guardado). */
   const bajarSinGuardar = async () => {
     setIntentado(true);
-    if (falta) return;
+    if (falta || !a) return;
     setError(null);
-    await bajarRecibo(firmadoEl ?? fechaHoraLima(new Date())).catch((e: unknown) => {
+    await descargarComprobante({
+      ...datosDelComprobante(a, negocio),
+      firma: {
+        imagen: firmaEnCanvas(trazos, 900, 300).toDataURL("image/png"),
+        relacion: 3,
+        nombre: nombre.trim(),
+        documento: limpiarDocumento(documento),
+        fechaHora: fechaHoraLima(new Date()),
+      },
+    }).catch((e: unknown) => {
       logger.error("[adelantos] el recibo firmado no bajó", { error: String(e) });
       setError("No se pudo armar el PDF. Intenta de nuevo.");
     });
@@ -178,7 +204,8 @@ export function useFirmarRecibo({
 
   return {
     a, noCargo, negocio, lineas, nombre, setNombre, documento, setDocumento, trazos, setTrazos,
-    fase, paso, error, falta: intentado ? falta : null, listo: !falta, guardar, bajarSinGuardar,
+    huella, setHuella, consentido, setConsentido, huellaGuardada,
+    fase, paso, error, falta: intentado ? falta : null, listo: !falta, guardar, bajarGuardado, bajarSinGuardar,
   };
 }
 

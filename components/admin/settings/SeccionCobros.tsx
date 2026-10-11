@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import { Upload, AlertTriangle, FileText, Landmark, Hash, Percent, Timer, ChevronRight } from "@buleje/design-system/icons";
+import { Upload, AlertTriangle, FileText, Landmark, Hash, Percent, Timer, ChevronRight, HandCoins } from "@buleje/design-system/icons";
 import { FieldLabel, TextInput, NumberInput, Toggle, SectionCard, SaveButton, Plegable } from "@/components/admin/settings/campos";
 import { LINK_A_OTRA_PANTALLA } from "@/components/admin/settings/enlaces";
 import type { AjustesEstado } from "@/components/admin/settings/use-ajustes";
@@ -15,8 +15,16 @@ import { PermisoDe } from "@/components/admin/shared/PermisoDe";
    vez. Facturación la sigue mostrando hasta la ola 3. */
 const SunatConexionTab = dynamic(() => import("@/components/admin/sunat/SunatConexionTab"), { ssr: false });
 
+/** ADR-491: el tope del cajero para adelantos, como se guarda. Vacío = `null` (el servidor usa S/ 500). */
+function topeAdelantoParaGuardar(texto: string): number | null {
+  const t = texto.trim().replace(",", ".");
+  if (!t) return null;
+  const n = Number(t);
+  return Number.isFinite(n) ? Math.min(1_000_000, Math.max(0, Math.round(n * 100) / 100)) : null;
+}
+
 export function SeccionCobros({ aj, onNavigateTab }: { aj: AjustesEstado; onNavigateTab?: (tab: string) => void }) {
-  const { yapeEnabled, setYapeEnabled, yapeImage, setYapeImage, yapeName, setYapeName, yapePhone, setYapePhone, cashEnabled, setCashEnabled, plinEnabled, setPlinEnabled, plinImage, setPlinImage, plinName, setPlinName, plinPhone, setPlinPhone, transferEnabled, setTransferEnabled, transferBankName, setTransferBankName, transferAccountNum, setTransferAccountNum, transferAccountHolder, setTransferAccountHolder, taxRate, setTaxRate, sunatRuc, setSunatRuc, sunatDenominacion, setSunatDenominacion, cashAlertMax, setCashAlertMax, autoCloseTime, setAutoCloseTime, maxDiscountPercent, setMaxDiscountPercent, patch, handleFileUpload, saving, savedSection } = aj;
+  const { yapeEnabled, setYapeEnabled, yapeImage, setYapeImage, yapeName, setYapeName, yapePhone, setYapePhone, cashEnabled, setCashEnabled, plinEnabled, setPlinEnabled, plinImage, setPlinImage, plinName, setPlinName, plinPhone, setPlinPhone, transferEnabled, setTransferEnabled, transferBankName, setTransferBankName, transferAccountNum, setTransferAccountNum, transferAccountHolder, setTransferAccountHolder, taxRate, setTaxRate, sunatRuc, setSunatRuc, sunatDenominacion, setSunatDenominacion, cashAlertMax, setCashAlertMax, autoCloseTime, setAutoCloseTime, maxDiscountPercent, setMaxDiscountPercent, adelantoTopeCajero, setAdelantoTopeCajero, patch, handleFileUpload, saving, savedSection } = aj;
   const yapeImgRef = useRef<HTMLInputElement>(null);
   const plinImgRef = useRef<HTMLInputElement>(null);
   return (
@@ -66,8 +74,9 @@ export function SeccionCobros({ aj, onNavigateTab }: { aj: AjustesEstado; onNavi
         </div>
       </SectionCard>
 
-      <SectionCard title="Caja" desc="Aviso de efectivo acumulado, hora de cierre y descuento del cajero">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <SectionCard title="Caja" desc="Aviso de efectivo acumulado, hora de cierre, descuento y adelantos del cajero">
+        {/* `items-end`: con 4 columnas unos rótulos parten en 2 líneas y los campos quedaban a distinta altura. */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 items-end gap-4">
           <div><FieldLabel htmlFor="settings-cashAlertMax" icon={<AlertTriangle className="h-3.5 w-3.5" />}>Alerta de exceso en caja</FieldLabel><NumberInput id="settings-cashAlertMax" value={cashAlertMax} onChange={setCashAlertMax} min={0} suffix="soles" /></div>
           <div><FieldLabel icon={<Timer className="h-3.5 w-3.5" />}>Hora de cierre</FieldLabel><TextInput value={autoCloseTime} onChange={setAutoCloseTime} placeholder="22:00" /></div>
           <div>
@@ -81,6 +90,21 @@ export function SeccionCobros({ aj, onNavigateTab }: { aj: AjustesEstado; onNavi
               />
             </FieldLabel>
             <NumberInput id="settings-maxDiscountPercent" value={maxDiscountPercent} onChange={(v) => setMaxDiscountPercent(topeCajeroParaGuardar(v))} min={0} max={99} step={1} suffix="%" />
+          </div>
+          <div>
+            <FieldLabel htmlFor="settings-adelantoTopeCajero" icon={<HandCoins className="h-3.5 w-3.5" />}>
+              Tope del cajero para adelantos
+              <InfoTip
+                title="Tope del cajero para entregar adelantos"
+                what="Lo más que un cajero puede entregar en un adelanto desde la caja (Adelantos › Entregar). El dueño y los admin no tienen tope."
+                affects="Vacío = S/ 500. Con 0 el cajero no entrega adelantos: lo hace el dueño o un admin."
+                example="Con 300, el cajero entrega hasta S/ 300,00; un adelanto de S/ 450,00 lo entrega el dueño."
+              />
+            </FieldLabel>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-[var(--text-secondary)] font-medium shrink-0">S/</span>
+              <TextInput id="settings-adelantoTopeCajero" type="number" value={adelantoTopeCajero} onChange={setAdelantoTopeCajero} placeholder="500" mono />
+            </div>
           </div>
         </div>
       </SectionCard>
@@ -105,6 +129,7 @@ export function SeccionCobros({ aj, onNavigateTab }: { aj: AjustesEstado; onNavi
         transferEnabled, transferBankName, transferAccountNum, transferAccountHolder,
         cashAlertMax, autoCloseTime, sunatRuc, sunatDenominacion, taxRate,
         maxDiscountPercent: topeCajeroParaGuardar(maxDiscountPercent),
+        adelantoTopeCajero: topeAdelantoParaGuardar(adelantoTopeCajero),
       })} />
 
       {/* Va después de «Guardar cambios»: tiene su propio botón y guarda en

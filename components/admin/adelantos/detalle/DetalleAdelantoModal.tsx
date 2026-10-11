@@ -24,10 +24,12 @@ import RegistrarEntrega from "./RegistrarEntrega";
 import { useRegistrarEntrega } from "./use-registrar-entrega";
 import AnularAdelantoModal from "../lista/AnularAdelantoModal";
 import EditarNotasModal from "../lista/EditarNotasModal";
+import EnviarEnlaceFirma from "../firma/EnviarEnlaceFirma";
 import FirmarReciboModal from "../firma/FirmarReciboModal";
 import FichaAdelanto from "./FichaAdelanto";
 import HistorialEntregas from "./HistorialEntregas";
 import PlanPactado from "./PlanPactado";
+import RegistroFirmas from "./RegistroFirmas";
 import CamposPersonalizados from "@/components/admin/shared/CamposPersonalizados";
 
 /** Id estable de este formulario para los campos personalizados (ADR-427):
@@ -64,11 +66,16 @@ export default function DetalleAdelantoModal({
   const [anulando, setAnulando] = useState(false);
   const [editandoNotas, setEditandoNotas] = useState(false);
   const [firmando, setFirmando] = useState(false);
+  /* ADR-491: el registro de firmas se vuelve a leer al firmar acá o cuando firma con el enlace. */
+  const [versionFirmas, setVersionFirmas] = useState(0);
+  const [firmaVigente, setFirmaVigente] = useState(false);
   /** Lo que dejó la corrección de dirección para leer (la caja no se movió, el tope). */
   const [avisoCorreccion, setAvisoCorreccion] = useState<string | null>(null);
 
   const badge = a ? STATUS_BADGE[a.status] : null;
-  const firmado = esReciboFirmado(a?.comprobanteUrl);
+  /* La hoja firmada de antes del registro (legado) vive en la foto del comprobante. */
+  const hojaVieja = esReciboFirmado(a?.comprobanteUrl);
+  const firmado = firmaVigente || hojaVieja;
   /* El recibo firmado es privado: se ve por la puerta del servidor, no por el bucket. */
   const srcComprobante = a ? srcDelComprobante(a) : null;
   const bloqueado = !a || a.status === "CANCELADO";
@@ -103,7 +110,7 @@ export default function DetalleAdelantoModal({
               )}
             </div>
             <div className="flex flex-wrap gap-2">
-              {/* Firmar en la pantalla (08-10): la hoja firmada queda como foto del adelanto. */}
+              {/* Firmar en la pantalla (08-10 → ADR-491): queda en el registro de firmas, la foto no se toca. */}
               {a.status !== "CANCELADO" && (
                 <button
                   type="button"
@@ -155,7 +162,7 @@ export default function DetalleAdelantoModal({
                 {srcComprobante && (
                   <a href={srcComprobante} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm font-bold text-primary hover:underline">
                     {/* eslint-disable-next-line @next/next/no-img-element -- thumbnail comprobante */}
-                    <img src={srcComprobante} alt="comprobante" className="h-7 w-7 rounded-md border border-[var(--rule-base)] object-cover" /> {firmado ? "Recibo firmado" : "Comprobante"}
+                    <img src={srcComprobante} alt="comprobante" className="h-7 w-7 rounded-md border border-[var(--rule-base)] object-cover" /> {hojaVieja ? "Recibo firmado" : "Comprobante"}
                   </a>
                 )}
                 <div className="ml-auto flex items-center gap-3">
@@ -204,6 +211,23 @@ export default function DetalleAdelantoModal({
               {a.status !== "CANCELADO" && <RegistrarEntrega entrega={entrega} recibido={recibido} aserrioSeCobraSolo={aserrioSeCobraSolo} />}
 
               <HistorialEntregas entregas={a.entregas} moneda={a.moneda} recibido={recibido} />
+
+              <RegistroFirmas
+                adelantoId={a.id}
+                monto={a.montoAdelantado}
+                moneda={a.moneda}
+                version={versionFirmas}
+                onCargado={(fs) => setFirmaVigente(fs.some((f) => f.tipo === "FIRMA" && f.vigente))}
+              />
+              {a.status !== "CANCELADO" && (
+                <EnviarEnlaceFirma
+                  adelantoId={a.id}
+                  persona={a.beneficiario?.nombre ?? ""}
+                  codigo={a.codigoOperacion ?? null}
+                  montoTexto={fmtMon(a.montoAdelantado, a.moneda)}
+                  onFirmado={() => setVersionFirmas((v) => v + 1)}
+                />
+              )}
             </div>
           </div>
 
@@ -234,7 +258,7 @@ export default function DetalleAdelantoModal({
           adelantoId={a.id}
           adelanto={a}
           onClose={() => setFirmando(false)}
-          onGuardado={() => { void load(); onChange(); }}
+          onGuardado={() => { setVersionFirmas((v) => v + 1); void load(); onChange(); }}
         />
       )}
       {a && editandoNotas && (

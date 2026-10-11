@@ -45,18 +45,33 @@ export interface DatosComprobante {
    */
   firma?: FirmaEnPapel;
   /**
-   * La hoja firmada que ya quedó guardada en el adelanto (data URL JPEG): al
-   * volver a bajar el comprobante va en una segunda página, porque la firma
-   * suelta no se guarda aparte (vive dentro de esa hoja, sin columna nueva).
+   * LEGADO (antes del registro de firmas, ADR-491): la hoja firmada que quedó
+   * guardada como foto del adelanto (data URL JPEG). Va en una segunda página;
+   * sólo se usa si el registro no tiene firma.
    */
   hojaFirmada?: string;
+  /**
+   * (ADR-491) La foto de la huella vigente del registro, para su casilla. Sin
+   * ella la casilla sale vacía igual: es para entintar el dedo en el papel.
+   */
+  huella?: ImagenEnPapel;
+  /**
+   * (ADR-491) El monto que decía el recibo cuando se firmó. Si después se
+   * corrigió el adelanto, el papel lo dice: la firma vale por lo que se vio.
+   */
+  montoFirmado?: number | null;
+  /** (ADR-491) La foto del voucher (data URL JPEG), en una página aparte «Comprobante de pago». */
+  voucher?: string;
 }
 
-export interface FirmaEnPapel {
-  /** PNG de la firma, tinta negra sobre blanco (data URL). */
+/** Una imagen para el papel: data URL PNG o JPEG (jsPDF no lee webp). */
+export interface ImagenEnPapel {
   imagen: string;
-  /** Ancho ÷ alto de esa imagen, para no deformarla. */
-  relacion: number;
+  /** Ancho ÷ alto; si falta, se lee de la imagen. */
+  relacion?: number;
+}
+
+export interface FirmaEnPapel extends ImagenEnPapel {
   nombre: string;
   documento: string;
   /** Ya escrita: «jueves 08/10/2026 · 21:14». */
@@ -89,6 +104,25 @@ export function ladoDeFirma(direccion?: string | null): "izquierda" | "derecha" 
 export function rotuloDocumento(documento: string): string {
   const d = documento.trim();
   return /^\d{8}$/.test(d) ? `DNI ${d}` : `Doc. ${d}`;
+}
+
+/** La casilla de la huella (ADR-491): 22 × 28 mm, el tamaño de un dedo entintado. */
+export const CASILLA_HUELLA = { ancho: 22, alto: 28 } as const;
+
+/**
+ * Dónde va la casilla: al lado de la línea de la PERSONA, del lado de adentro
+ * (afuera no entra: el margen es de 16 mm). En mm de la hoja A5 apaisada.
+ */
+export function casillaDeHuella(direccion: string | null | undefined, anchoHoja: number, yFirma: number): { x: number; y: number; ancho: number; alto: number } {
+  const { ancho, alto } = CASILLA_HUELLA;
+  const x = ladoDeFirma(direccion) === "izquierda" ? 76 + 6 : anchoHoja - 76 - 6 - ancho;
+  return { x, y: yFirma - 18, ancho, alto };
+}
+
+/** «Firmó por S/ 120.00; el monto hoy es S/ 150.00.» — `null` si son iguales (al céntimo) o no se sabe. */
+export function avisoMontoFirmado(d: Pick<DatosComprobante, "monto" | "moneda" | "montoFirmado">): string | null {
+  if (d.montoFirmado == null || Math.abs(d.montoFirmado - d.monto) < 0.005) return null;
+  return `Firmó por ${montoConMoneda(d.montoFirmado, d.moneda)}; el monto hoy es ${montoConMoneda(d.monto, d.moneda)}.`;
 }
 
 /** Los textos del papel, sin jsPDF: lo que cambia según quién pone la plata. */
@@ -242,6 +276,11 @@ export async function armarComprobante(d: DatosComprobante): Promise<Pdf> {
   doc.text(montoConMoneda(d.monto, d.moneda), 12, y);
   doc.setFontSize(9);
   doc.text(`(${montoEnLetras(d.monto)} ${monedaEnLetras(d.moneda)})`, 12, (y += 5));
+  const aviso = avisoMontoFirmado(d);
+  if (aviso) {
+    doc.setFontSize(8);
+    doc.text(aviso, 12, (y += 5));
+  }
 
   if (d.notas) {
     doc.setFontSize(9);
@@ -265,30 +304,64 @@ export async function armarComprobante(d: DatosComprobante): Promise<Pdf> {
   doc.text(t.firmaIzquierda, 46, yFirma + 5, { align: "center" });
   doc.text(t.firmaDerecha, W - 46, yFirma + 5, { align: "center" });
   if (d.firma) pintarFirma(doc, d.firma, ladoDeFirma(d.direccion) === "izquierda" ? 46 : W - 46, yFirma);
-  if (d.hojaFirmada) agregarHoja(doc, d.hojaFirmada);
+  pintarCasillaHuella(doc, casillaDeHuella(d.direccion, W, yFirma), d.huella);
+  if (d.hojaFirmada) agregarHoja(doc, d.hojaFirmada, "Recibo firmado guardado en el adelanto");
+  if (d.voucher) agregarHoja(doc, d.voucher, "Comprobante de pago");
   return doc;
+}
+
+/** El formato que jsPDF necesita, leído del data URL. */
+function formatoDe(dataUrl: string): "PNG" | "JPEG" {
+  return /^data:image\/jpe?g/i.test(dataUrl) ? "JPEG" : "PNG";
+}
+
+function relacionDe(doc: Pdf, img: ImagenEnPapel): number {
+  if (img.relacion && img.relacion > 0) return img.relacion;
+  const p = doc.getImageProperties(img.imagen);
+  return p.height > 0 ? p.width / p.height : 1;
 }
 
 type Pdf = InstanceType<(typeof import("jspdf"))["default"]>;
 
 /** La firma sobre su línea (60 mm de ancho, hasta 16 mm de alto) y quién firmó debajo. */
 function pintarFirma(doc: Pdf, f: FirmaEnPapel, centro: number, yLinea: number): void {
-  const alto = Math.min(16, 56 / Math.max(f.relacion, 0.1));
-  const ancho = alto * f.relacion;
-  doc.addImage(f.imagen, "PNG", centro - ancho / 2, yLinea - alto - 1, ancho, alto);
+  const relacion = relacionDe(doc, f);
+  const alto = Math.min(16, 56 / Math.max(relacion, 0.1));
+  const ancho = alto * relacion;
+  doc.addImage(f.imagen, formatoDe(f.imagen), centro - ancho / 2, yLinea - alto - 1, ancho, alto);
   doc.setFontSize(7);
   doc.text(`${f.nombre} · ${rotuloDocumento(f.documento)}`.slice(0, 60), centro, yLinea + 9, { align: "center" });
   doc.text(`Firmó el ${f.fechaHora} (hora de Lima)`, centro, yLinea + 13, { align: "center" });
 }
 
-/** Segunda página: la hoja firmada que quedó guardada, entera y sin deformar. */
-function agregarHoja(doc: Pdf, jpeg: string): void {
+/**
+ * La casilla «Huella», SIEMPRE: vacía es para entintar el dedo en el mostrador
+ * (quien no sabe firmar); con la foto del registro, la foto adentro sin deformar.
+ */
+function pintarCasillaHuella(doc: Pdf, c: ReturnType<typeof casillaDeHuella>, huella?: ImagenEnPapel): void {
+  doc.setLineWidth(0.3);
+  doc.rect(c.x, c.y, c.ancho, c.alto);
+  if (huella) {
+    const r = relacionDe(doc, huella);
+    const margen = 1;
+    const anchoUtil = c.ancho - margen * 2;
+    const altoUtil = c.alto - margen * 2;
+    const ancho = Math.min(anchoUtil, altoUtil * r);
+    const alto = ancho / r;
+    doc.addImage(huella.imagen, formatoDe(huella.imagen), c.x + (c.ancho - ancho) / 2, c.y + (c.alto - alto) / 2, ancho, alto);
+  }
+  doc.setFontSize(7);
+  doc.text("Huella", c.x + c.ancho / 2, c.y + c.alto + 3.5, { align: "center" });
+}
+
+/** Una página aparte con una foto entera y sin deformar (la hoja firmada vieja o el voucher). */
+function agregarHoja(doc: Pdf, imagen: string, titulo: string): void {
   doc.addPage("a5", "portrait");
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
-  const props = doc.getImageProperties(jpeg);
+  const props = doc.getImageProperties(imagen);
   const escala = Math.min((W - 20) / props.width, (H - 24) / props.height);
   doc.setFontSize(9);
-  doc.text("Recibo firmado guardado en el adelanto", 10, 10);
-  doc.addImage(jpeg, "JPEG", (W - props.width * escala) / 2, 14, props.width * escala, props.height * escala);
+  doc.text(titulo, 10, 10);
+  doc.addImage(imagen, formatoDe(imagen), (W - props.width * escala) / 2, 14, props.width * escala, props.height * escala);
 }
