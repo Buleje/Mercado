@@ -14,6 +14,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { toNum, toNumOrZero } from "@/lib/decimal-utils";
+import { mapEnParalelo } from "./en-paralelo";
 import { predictDemand } from "./demand-predictor";
 
 // ── Tipos públicos ─────────────────────────────────────────────────────────────
@@ -89,7 +90,13 @@ export async function suggestPriceAdjustments(
 
   const suggestions: PriceSuggestion[] = [];
 
-  for (const product of products) {
+  // Las dos predicciones de cada producto, adelantadas en paralelo (de a 6): en
+  // serie eran ~320 consultas y 50 s en main (11-10). Las reglas de abajo no cambian.
+  const predicciones = await mapEnParalelo(products, 6, (p) =>
+    Promise.all([predictDemand(tenantId, p.id, 30), predictDemand(tenantId, p.id, 7)]),
+  );
+
+  for (const [indice, product] of products.entries()) {
     const currentStock = product.stock ?? 0;
     // TD-018: price y costPrice ahora son Decimal → convertir a number al inicio
     const currentPrice = toNumOrZero(product.price);
@@ -128,8 +135,7 @@ export async function suggestPriceAdjustments(
     }
 
     // ── Predicción de demanda para evaluar slow/hot ──────────────────────────
-    const pred30 = await predictDemand(tenantId, product.id, 30);
-    const pred7 = await predictDemand(tenantId, product.id, 7);
+    const [pred30, pred7] = predicciones[indice];
 
     if (!pred30 || !pred7) continue;
 
