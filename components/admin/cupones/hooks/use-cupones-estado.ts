@@ -8,7 +8,7 @@ import { csrfHeaders } from "@/lib/csrf-client";
 import { formatDateNumeric } from "@/lib/format";
 import { useSettingsSafe } from "@/contexts/settings-context";
 import { useTenant } from "@/contexts/tenant-context";
-import { type Coupon, type AutoRule, type GeneratedCouponLog, getActiveStoreId } from "@/components/admin/cupones/cupones-compartido";
+import { type Coupon, type AutoRule, type GeneratedCouponLog } from "@/components/admin/cupones/cupones-compartido";
 
 /** Estado y acciones de Cupones: lista, reglas automáticas, plantilla y WhatsApp. Parte de `useCupones`. */
 export function useCuponesEstado() {
@@ -24,7 +24,7 @@ export function useCuponesEstado() {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [couponScope, setCouponScope] = useState<"tienda" | "plataforma">("plataforma");
+  const [errorCarga, setErrorCarga] = useState<string | null>(null);
   const [form, setForm] = useState({ code: "", description: "", discountType: "percent" as "percent" | "fixed" | "giftcard", discountValue: 10, balance: 0, minPurchase: 0, maxUses: 0, expiresAt: "" });
 
   // Auto-rules state
@@ -65,7 +65,16 @@ export function useCuponesEstado() {
   const ventanaPlantilla = useVentanaDeModal(showTemplateBuilder, { ref: cajaPlantilla, asaAutomatica: true, aplicarTranslate: true, claveMemoria: "cupones-plantilla" });
 
   const load = useCallback(() => {
-    fetch("/api/coupons").then(r => r.ok ? r.json() : []).then(d => setCoupons(Array.isArray(d) ? d : d?.coupons ?? [])).catch((err) => console.warn("[CouponsTab] /api/coupons failed:", err)).finally(() => setLoading(false));
+    // Un 403/500 ya no se disfraza de «Aún no tienes cupones»: la lista dice por qué no cargó.
+    fetch("/api/coupons")
+      .then(r => {
+        if (r.ok) { setErrorCarga(null); return r.json(); }
+        setErrorCarga(r.status === 403 ? "Tu rol no puede ver los cupones: pídele acceso al dueño." : `No se pudieron cargar los cupones (error ${r.status}).`);
+        return [];
+      })
+      .then(d => setCoupons(Array.isArray(d) ? d : d?.coupons ?? []))
+      .catch((err) => { console.warn("[CouponsTab] /api/coupons failed:", err); setErrorCarga("No se pudieron cargar los cupones: revisa tu conexión."); })
+      .finally(() => setLoading(false));
   }, []);
   useEffect(() => { load(); }, [load]);
 
@@ -85,7 +94,6 @@ export function useCuponesEstado() {
 
   const handleCreate = async () => {
     if (!form.code.trim() || !form.discountValue) return;
-    const storeId = couponScope === "tienda" ? getActiveStoreId() : null;
     try {
       const res = await fetch("/api/coupons", {
         method: "POST",
@@ -94,14 +102,14 @@ export function useCuponesEstado() {
           ...form,
           minPurchase: form.minPurchase || undefined,
           maxUses: form.maxUses || undefined,
-          expiresAt: form.expiresAt || undefined,
-          storeId: storeId || undefined,
+          // El día elegido vale entero en hora de Lima: antes viajaba como medianoche UTC
+          // y el cupón vencía a las 19:00 del día ANTERIOR (VERANO10 «hasta 30/09» salía «Exp: 29 set.»).
+          expiresAt: form.expiresAt ? new Date(`${form.expiresAt}T23:59:59.999-05:00`).toISOString() : undefined,
         }),
       });
       if (res.ok) {
         load();
         setShowForm(false);
-        setCouponScope("plataforma");
         setForm({ code: "", description: "", discountType: "percent", discountValue: 10, balance: 0, minPurchase: 0, maxUses: 0, expiresAt: "" });
       } else {
         const errData = await res.json().catch(() => ({}));
@@ -197,8 +205,8 @@ export function useCuponesEstado() {
       .catch((err) => console.warn("[CouponsTab] copiar mensaje falló", err));
   };
   return {
-    confirm, showUndo, coupons, setCoupons, loading, setLoading, showForm, setShowForm, couponScope,
-    setCouponScope, form, setForm, autoRules, setAutoRules, editingRule, setEditingRule,
+    confirm, showUndo, coupons, setCoupons, loading, setLoading, errorCarga, showForm, setShowForm,
+    form, setForm, autoRules, setAutoRules, editingRule, setEditingRule,
     showRuleConfig, setShowRuleConfig, generatedLogs, _setGeneratedLogs, showTemplateBuilder,
     setShowTemplateBuilder, templatePattern, setTemplatePattern, whatsappCoupon, setWhatsappCoupon,
     whatsappPhone, setWhatsappPhone, cajaRegla, ventanaRegla, cajaWhatsapp, ventanaWhatsapp,

@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Ticket, Sparkles } from "@buleje/design-system/icons";
+import { Check, Ticket } from "@buleje/design-system/icons";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { Field } from "@/components/admin/shared/Field";
 import { cn } from "@/lib/utils";
@@ -8,7 +8,7 @@ import type { Cupones } from "@/components/admin/cupones/hooks/use-cupones";
 
 /** Ventana «Nuevo cupón»: el formulario salió de la lista para no empujarla. Pieza de CouponsTab: recibe `useCupones` entero. */
 export default function CuponFormModal({ cup }: { cup: Cupones }) {
-  const { showForm, setShowForm, couponScope, setCouponScope, form, setForm, handleCreate } = cup;
+  const { showForm, setShowForm, form, setForm, handleCreate } = cup;
   return (
     <AdminModal
       open={showForm}
@@ -23,43 +23,7 @@ export default function CuponFormModal({ cup }: { cup: Cupones }) {
       }
     >
       <div className={cn(MODAL_BODY, "space-y-4")}>
-          {/* Scope toggle: Tienda vs Plataforma */}
-        <div>
-          <span className="text-sm font-bold text-[var(--text-secondary)] dark:text-muted mb-2 block">Alcance del cupón</span>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setCouponScope("tienda")}
-              className={cn(
-                "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors min-h-12",
-                couponScope === "tienda"
-                  ? "bg-[var(--accent-600,var(--accent))] text-white "
-                  : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] "
-              )}
-            >
-              <Ticket className="h-4 w-4" />
-              Cupón de mi tienda
-            </button>
-            <button
-              type="button"
-              onClick={() => setCouponScope("plataforma")}
-              className={cn(
-                "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors min-h-12",
-                couponScope === "plataforma"
-                  ? "bg-[var(--accent-600,var(--accent))] text-white "
-                  : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-soft)] "
-              )}
-            >
-              <Sparkles className="h-4 w-4" />
-              Cupón de plataforma
-            </button>
-          </div>
-          <p className="text-sm text-[var(--text-tertiary)] dark:text-muted mt-1">
-            {couponScope === "tienda"
-              ? "Este cupón será válido sólo para tu tienda"
-              : "Este cupón será válido en toda la plataforma"}
-          </p>
-        </div>
+        <p className="text-sm text-[var(--text-secondary)]">Vale en tu tienda y en tu vitrina del marketplace con el mismo código.</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
           <Field label="Código *" labelClassName="text-sm font-bold text-[var(--text-secondary)] dark:text-muted">
             <input value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value.toUpperCase() }))} placeholder="DESCUENTO10" className="w-full mt-1 px-3 h-12 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm" />
@@ -88,8 +52,8 @@ export default function CuponFormModal({ cup }: { cup: Cupones }) {
           <Field label="Usos máximos (0 = ilimitado)" labelClassName="text-sm font-bold text-[var(--text-secondary)] dark:text-muted">
             <input type="number" value={form.maxUses} onChange={e => setForm(f => ({ ...f, maxUses: Number(e.target.value) }))} className="w-full mt-1 px-3 h-12 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm" />
           </Field>
-          <Field label="Fecha expiración" labelClassName="text-sm font-bold text-[var(--text-secondary)] dark:text-muted">
-            <input type="date" value={form.expiresAt ? form.expiresAt.slice(0, 10) : ""} onChange={e => setForm(f => ({ ...f, expiresAt: e.target.value ? new Date(e.target.value).toISOString() : "" }))} className="w-full mt-1 px-3 h-12 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm" />
+          <Field label="Vale hasta (incluido)" labelClassName="text-sm font-bold text-[var(--text-secondary)] dark:text-muted">
+            <input type="date" value={form.expiresAt} onChange={e => setForm(f => ({ ...f, expiresAt: e.target.value }))} className="w-full mt-1 px-3 h-12 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm" />
           </Field>
         </div>
       </div>

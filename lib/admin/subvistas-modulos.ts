@@ -160,7 +160,7 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
     { key: "conteo", label: "Conteo físico", hint: "Contar lo que hay en el anaquel y conciliarlo con el sistema; asistente, manual o con escáner, y la declaración jurada", origen: ["inventario"] },
     { key: "categorias", label: "Categorías", hint: "Las categorías de tus productos y su orden en la tienda", origen: ["productos"] },
     { key: "precios", label: "Precios", hint: "Historial de los cambios de precio de cada producto", origen: ["productos"] },
-    { key: "ofertas", label: "Ofertas y cupones", hint: "Descuentos de tu tienda y cupones que valen en tu tienda o en el marketplace", origen: ["productos", "marketplace"] },
+    { key: "ofertas", label: "Ofertas y cupones", hint: "Descuentos de tu tienda y cupones (un código vale en tu tienda y en el marketplace)", origen: ["productos", "marketplace"] },
   ],
   // Comprobantes (ola 3): `facturacion` deja de ser alias del hub de Documentos
   // y es su propio hub. Cada vista nombra la pestaña suelta que la abría y
@@ -315,7 +315,7 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
     { key: "ordenes", label: "Órdenes", hint: "Los pedidos que entraron por el marketplace" },
     { key: "comisiones", label: "Comisiones", hint: "Lo que cobra la plataforma por cada venta" },
     { key: "precios", label: "Precios", hint: "Tus precios al lado de los de otras tiendas" },
-    { key: "resenas", label: "Reseñas", hint: "Lo que opinan los compradores del marketplace" },
+    { key: "resenas", label: "Reseñas", hint: "Aprobar y responder las reseñas de tu tienda y del marketplace" },
     { key: "fidelidad", label: "Fidelidad", hint: "Historial de puntos de un cliente y sumar puntos a mano; el programa entero está en Campañas › Puntos" },
   ],
 };

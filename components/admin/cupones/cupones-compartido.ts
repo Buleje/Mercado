@@ -33,17 +33,6 @@ export type GeneratedCouponLog = {
   status: "sent" | "pending" | "used";
 };
 
-/** Reads the active store ID from sessionStorage or cookie for vendor context. */
-export function getActiveStoreId(): string | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const ss = sessionStorage.getItem("active-tenant-id");
-    if (ss) return ss;
-  } catch { /* ignore */ }
-  const match = document.cookie.match(/(?:^|;\s*)active-tenant-id=([^;]+)/);
-  return match ? decodeURIComponent(match[1]) : null;
-}
-
 export const ruleConfigs = {
   birthday: { label: "Cumpleaños", icon: PartyPopper, desc: "Cupón automático en cumpleaños del cliente" },
   "first-purchase": { label: "Primera compra", icon: UserPlus, desc: "Bienvenida para nuevos clientes" },
