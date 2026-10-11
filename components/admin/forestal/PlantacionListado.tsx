@@ -16,25 +16,17 @@
 
 import { useMemo, useState } from "react";
 import { m as motion } from "framer-motion";
-import {
-  AlertCircle,
-  Copy,
-  Eye,
-  FileText,
-  Pencil,
-  Plus,
-  RefreshCw,
-  Trash2,
-  TreePine,
-} from "@buleje/design-system/icons";
+import { AlertCircle, Plus, RefreshCw, TreePine } from "@buleje/design-system/icons";
 import { DataTable } from "@buleje/design-system";
 import { staggerContainer, staggerChild } from "@/components/ui-system/motion";
 import { useForestPlantaciones } from "@/hooks/use-forest-plantaciones";
 import { ESTADOS_PLANTACION, type EstadoPlantacion } from "@/lib/forestal/plantacion-catalogo";
 import type { PlantacionListItem } from "@/lib/forestal/plantacion-tramite";
-import { Btn, IconAction, TablaSkeleton } from "./ctp-shared";
+import { Btn, TablaSkeleton } from "./ctp-shared";
+import { ChipEstado as Chip } from "./chip-estado";
+import PlantacionAccionesFila from "./PlantacionAccionesFila";
 import AdminModal from "@/components/admin/shared/AdminModal";
-import { formatNumber } from "@/lib/format";
+import { formatDateTime, formatNumber } from "@/lib/format";
 import {
   BarraFiltrosTabla,
   FiltroEnCabecera,
@@ -56,7 +48,7 @@ function EstadoBadge({ estado }: { estado: string }) {
   const meta = ESTADOS_PLANTACION.find((e) => e.key === estado);
   const tono = TONO_BADGE[meta?.tono ?? "muted"];
   return (
-    <span className={`inline-flex items-center rounded-full border-2 px-2.5 py-1 text-xs font-bold whitespace-nowrap ${tono}`}>
+    <span className={`inline-flex items-center rounded-full border-2 px-2.5 py-1 text-sm font-bold whitespace-nowrap ${tono}`}>
       {meta?.label ?? estado}
     </span>
   );
@@ -64,12 +56,7 @@ function EstadoBadge({ estado }: { estado: string }) {
 
 const fmtArea = (ha: number | null): string => (ha != null ? `${formatNumber(ha, 2)} ha` : "—");
 
-const fmtFecha = (iso: string): string => {
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime())
-    ? "—"
-    : d.toLocaleString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "America/Lima" });
-};
+const fmtFecha = (iso: string): string => formatDateTime(iso);
 
 /** El Estado NO lleva autofiltro de columna: ya se filtra con los chips de arriba (un solo control por estado). */
 const COLUMNAS_PLANTACION: ColumnaFiltro<PlantacionListItem>[] = [
@@ -100,16 +87,15 @@ export default function PlantacionListado({
     for (const p of listado) acc[p.estado] = (acc[p.estado] ?? 0) + 1;
     return acc;
   }, [listado]);
-  const areaTotalHa = useMemo(
-    () => listado.reduce((sum, p) => sum + (p.predioAreaTotalHa ?? 0), 0),
-    [listado],
-  );
   const porEstadoElegido = useMemo(
     () => (filtro ? listado.filter((p) => p.estado === filtro) : listado),
     [listado, filtro],
   );
   const f = useFiltrosTabla(porEstadoElegido, COLUMNAS_PLANTACION);
   const visibles = f.filtradas;
+  /* Las hectáreas de lo que se ve (con los filtros puestos): antes iban en una tira
+     aparte, junto a tres cuentas que repetían los chips. */
+  const areaVisibleHa = useMemo(() => visibles.reduce((sum, p) => sum + (p.predioAreaTotalHa ?? 0), 0), [visibles]);
 
   async function confirmarBorrar() {
     if (!aBorrar) return;
@@ -127,40 +113,39 @@ export default function PlantacionListado({
 
   return (
     <div className="space-y-4">
-      <ResumenTira
-        total={listado.length}
-        listas={porEstado.listo_presentar}
-        pendientesDocs={porEstado.pendiente_documentos}
-        areaTotalHa={areaTotalHa}
-      />
-
-      {/* Estados = filtro, mismo patrón que la vista Expediente: un chip con un
-          número que no se puede tocar es un cartel. */}
+      {/* Estados, hectáreas, recargar y «Nueva plantación» en UNA fila. La tira
+          «N registros · N listos · N pendientes» se fue (11-10): repetía las
+          cuentas de los chips; las hectáreas, que no estaban en otro lado, quedan acá. */}
       <div className="flex flex-wrap items-center gap-2">
-        <Chip label="Todos" count={listado.length} activo={filtro === ""} onClick={() => setFiltro("")} />
-        {ESTADOS_PLANTACION.map((e) => (
-          <Chip
-            key={e.key}
-            label={e.label}
-            count={porEstado[e.key]}
-            activo={filtro === e.key}
-            tono={e.tono}
-            onClick={() => setFiltro(filtro === e.key ? "" : e.key)}
-          />
-        ))}
+        {listado.length > 0 && (
+          <div role="group" aria-label="Filtrar por estado" className="order-last flex w-full flex-wrap items-center gap-2 sm:order-none sm:w-auto">
+            <Chip label="Todos" count={listado.length} activo={filtro === ""} onClick={() => setFiltro("")} />
+            {ESTADOS_PLANTACION.filter((e) => porEstado[e.key] > 0 || filtro === e.key).map((e) => (
+              <Chip
+                key={e.key}
+                label={e.label}
+                count={porEstado[e.key]}
+                activo={filtro === e.key}
+                tono={e.tono}
+                onClick={() => setFiltro(filtro === e.key ? "" : e.key)}
+              />
+            ))}
+          </div>
+        )}
         <div className="ml-auto flex items-center gap-2">
           <button
             type="button"
             onClick={() => void recargar()}
             disabled={cargando}
-            className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] transition hover:bg-[var(--surface-canvas)] disabled:opacity-60"
+            aria-label="Recargar las plantaciones"
+            title="Recargar las plantaciones"
+            className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] transition hover:bg-[var(--surface-canvas)] hover:text-[var(--text-primary)] disabled:opacity-60"
           >
-            <RefreshCw className={`h-4 w-4 ${cargando ? "animate-spin" : ""}`} />
-            Recargar
+            <RefreshCw className={`h-4 w-4 ${cargando ? "animate-spin" : ""}`} aria-hidden />
           </button>
-          <Btn variant="dark" size="sm" onClick={onNueva}>
-            <Plus className="h-4 w-4" />
-            Nueva Plantación
+          <Btn variant="dark" onClick={onNueva} className="h-12">
+            <Plus className="h-4 w-4" aria-hidden />
+            Nueva plantación
           </Btn>
         </div>
       </div>
@@ -175,20 +160,16 @@ export default function PlantacionListado({
       {cargando ? (
         <TablaSkeleton columnas={8} />
       ) : porEstadoElegido.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] py-14 text-center">
-          <TreePine className="h-10 w-10 text-[var(--text-tertiary)] opacity-40" aria-hidden="true" />
-          <p className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)]">
+        <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-6 py-10 text-center">
+          <TreePine className="h-8 w-8 text-[var(--text-tertiary)] opacity-60" aria-hidden="true" />
+          <p className="text-base font-bold text-[var(--text-primary)]">
             {filtro ? "Ningún registro en ese estado" : "Todavía no registraste ninguna plantación"}
           </p>
-          <p className="mx-auto max-w-sm text-sm text-[var(--text-tertiary)]">
+          <p className="mx-auto max-w-sm text-sm text-[var(--text-secondary)]">
             {filtro
               ? "Prueba con otro estado o mira todos."
-              : "Empieza con el Formato Único de Inscripción — el sistema guía cada sección."}
+              : "Con «Nueva plantación» llenas el Formato Único de Inscripción, sección por sección."}
           </p>
-          <Btn variant="dark" onClick={onNueva}>
-            <Plus className="h-4 w-4" />
-            Nueva Plantación
-          </Btn>
         </div>
       ) : (
         <>
@@ -198,37 +179,33 @@ export default function PlantacionListado({
             <DataTable className="w-full min-w-[960px] text-sm">
               <thead className="sticky top-0 z-10 bg-[var(--surface-sunken)]">
                 <tr className="text-left align-top">
-                  <th scope="col" className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Código interno<FiltroEnCabecera id="codigo" f={f} /></th>
-                  <th scope="col" className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Titular<FiltroEnCabecera id="titular" f={f} /></th>
-                  <th scope="col" className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Predio<FiltroEnCabecera id="predio" f={f} /></th>
-                  <th scope="col" className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Distrito<FiltroEnCabecera id="distrito" f={f} /></th>
-                  <th scope="col" className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Área<FiltroEnCabecera id="area" f={f} /></th>
-                  <th scope="col" className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Bloques<FiltroEnCabecera id="bloques" f={f} /></th>
-                  <th scope="col" className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Estado</th>
-                  <th scope="col" className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Última modificación<FiltroEnCabecera id="modificada" f={f} /></th>
-                  <th scope="col" className="px-4 py-2.5 text-right text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Acciones</th>
+                  <th scope="col" className="px-3 py-2.5 text-sm font-bold text-[var(--text-secondary)]">Código interno<FiltroEnCabecera id="codigo" f={f} /></th>
+                  {/* Estado al lado del código (11-10): con 9 columnas la tabla pasa de 1.200 px y lo
+                      que quedaba fuera de la vista era justo el estado. */}
+                  <th scope="col" className="px-3 py-2.5 text-sm font-bold text-[var(--text-secondary)]">Estado</th>
+                  <th scope="col" className="px-3 py-2.5 text-sm font-bold text-[var(--text-secondary)]">Titular<FiltroEnCabecera id="titular" f={f} /></th>
+                  <th scope="col" className="px-3 py-2.5 text-sm font-bold text-[var(--text-secondary)]">Predio<FiltroEnCabecera id="predio" f={f} /></th>
+                  <th scope="col" className="px-3 py-2.5 text-sm font-bold text-[var(--text-secondary)]">Distrito<FiltroEnCabecera id="distrito" f={f} /></th>
+                  <th scope="col" className="px-3 py-2.5 text-sm font-bold text-[var(--text-secondary)]">Área<FiltroEnCabecera id="area" f={f} /></th>
+                  <th scope="col" className="px-3 py-2.5 text-sm font-bold text-[var(--text-secondary)]">Bloques<FiltroEnCabecera id="bloques" f={f} /></th>
+                  <th scope="col" className="px-3 py-2.5 text-sm font-bold text-[var(--text-secondary)]">Última modificación<FiltroEnCabecera id="modificada" f={f} /></th>
+                  <th scope="col" className="px-3 py-2.5 text-right text-sm font-bold text-[var(--text-secondary)] sm:sticky sm:right-0 sm:z-[1] sm:bg-[var(--surface-sunken)]"><span className="sr-only">Acciones</span></th>
                 </tr>
               </thead>
               <motion.tbody variants={staggerContainer} initial="hidden" animate="show">
                 {visibles.length === 0 && <SinCoincidenciasFila colSpan={9} />}
                 {visibles.map((p) => (
                   <motion.tr key={p.id} variants={staggerChild} className="border-t border-[var(--rule-soft)] hover:bg-[var(--surface-canvas)]">
-                    <td data-label="Código interno" className="px-4 py-3 font-mono text-xs font-bold text-[var(--text-primary)]">{p.codigoInterno}</td>
-                    <td data-label="Titular" className="px-4 py-3 text-[var(--text-primary)]">{p.titular ?? "—"}</td>
-                    <td data-label="Predio" className="px-4 py-3 text-[var(--text-secondary)]">{p.predioNombre ?? "—"}</td>
-                    <td data-label="Distrito" className="px-4 py-3 text-[var(--text-secondary)]">{p.predioDistrito ?? "—"}</td>
-                    <td data-label="Área" className="px-4 py-3 tabular-nums text-[var(--text-secondary)]">{fmtArea(p.predioAreaTotalHa)}</td>
-                    <td data-label="Bloques" className="px-4 py-3 tabular-nums text-[var(--text-secondary)]">{p.numBloques}</td>
-                    <td data-label="Estado" className="px-4 py-3"><EstadoBadge estado={p.estado} /></td>
-                    <td data-label="Última modificación" className="px-4 py-3 whitespace-nowrap text-xs text-[var(--text-tertiary)]">{fmtFecha(p.updatedAt)}</td>
-                    <td data-label="Acciones" className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <IconAction icon={Pencil} label="Continuar / Editar" tone="accent" onClick={() => onAbrir(p.id)} />
-                        <IconAction icon={Eye} label="Ver" tone="muted" onClick={() => onAbrir(p.id, { soloLectura: true })} />
-                        <IconAction icon={Copy} label="Duplicar" tone="info" busy={duplicando === p.id} disabled={duplicando === p.id} onClick={() => void onDuplicar(p.id)} />
-                        <IconAction icon={FileText} label="Generar documento" tone="success" onClick={() => onAbrir(p.id, { irARevision: true })} />
-                        <IconAction icon={Trash2} label="Eliminar" tone="danger" onClick={() => setABorrar(p)} />
-                      </div>
+                    <td data-label="Código interno" className="px-3 py-3 font-mono text-sm font-bold text-[var(--text-primary)]">{p.codigoInterno}</td>
+                    <td data-label="Estado" className="px-3 py-3"><EstadoBadge estado={p.estado} /></td>
+                    <td data-label="Titular" className="px-3 py-3 text-[var(--text-primary)]">{p.titular ?? "—"}</td>
+                    <td data-label="Predio" className="px-3 py-3 text-[var(--text-secondary)]">{p.predioNombre ?? "—"}</td>
+                    <td data-label="Distrito" className="px-3 py-3 text-[var(--text-secondary)]">{p.predioDistrito ?? "—"}</td>
+                    <td data-label="Área" className="px-3 py-3 tabular-nums text-[var(--text-secondary)]">{fmtArea(p.predioAreaTotalHa)}</td>
+                    <td data-label="Bloques" className="px-3 py-3 tabular-nums text-[var(--text-secondary)]">{p.numBloques}</td>
+                    <td data-label="Última modificación" className="px-3 py-3 whitespace-nowrap text-sm text-[var(--text-secondary)]">{fmtFecha(p.updatedAt)}</td>
+                    <td data-label="Acciones" className="px-2 py-1.5 sm:sticky sm:right-0 sm:border-l sm:border-[var(--rule-soft)] sm:bg-[var(--surface-raised)]">
+                      <PlantacionAccionesFila p={p} duplicando={duplicando === p.id} onAbrir={onAbrir} onDuplicar={(id) => void onDuplicar(id)} onBorrar={setABorrar} />
                     </td>
                   </motion.tr>
                 ))}
@@ -236,6 +213,11 @@ export default function PlantacionListado({
             </DataTable>
           </div>
         </div>
+        {areaVisibleHa > 0 && (
+          <p className="text-right text-sm text-[var(--text-secondary)]">
+            Área de lo listado: <strong className="font-mono tabular-nums text-[var(--text-primary)]">{formatNumber(areaVisibleHa, 2)}</strong> ha
+          </p>
+        )}
         </>
       )}
 
@@ -267,101 +249,5 @@ export default function PlantacionListado({
         </div>
       </AdminModal>
     </div>
-  );
-}
-
-/**
- * Tira de resumen — mismo look que `TirasResumen` en `TramitesCatalogo`: un
- * número por dato, no una tabla. Dice de un vistazo cuánto queda por
- * completar antes de generar el Formato N°01, sin abrir cada registro.
- */
-function ResumenTira({
-  total,
-  listas,
-  pendientesDocs,
-  areaTotalHa,
-}: {
-  total: number;
-  listas: number;
-  pendientesDocs: number;
-  areaTotalHa: number;
-}) {
-  const items: { label: string; value: string; tono: "neutral" | "warning" | "success" }[] = [
-    { label: "registros", value: String(total), tono: "neutral" },
-    { label: "listos para presentar", value: String(listas), tono: "success" },
-    { label: "pendientes de documentos", value: String(pendientesDocs), tono: "warning" },
-    {
-      label: "hectáreas registradas",
-      value: formatNumber(areaTotalHa, 2),
-      tono: "neutral",
-    },
-  ];
-  const TONO: Record<string, string> = {
-    neutral: "text-[var(--text-primary)]",
-    warning: "text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]",
-    success: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
-  };
-  return (
-    <div className="flex flex-wrap gap-x-6 gap-y-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3">
-      {items.map((it) => (
-        <div key={it.label} className="flex items-baseline gap-1.5">
-          <span className={`font-display text-xl leading-none tabular-nums ${TONO[it.tono]}`}>{it.value}</span>
-          <span className="text-xs text-[var(--text-tertiary)]">{it.label}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-const TONO_CHIP: Record<string, { chip: string; activo: string }> = {
-  muted: {
-    chip: "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)]",
-    activo: "border-[var(--rule-strong)] bg-[var(--surface-sunken)] text-[var(--text-primary)]",
-  },
-  info: {
-    chip: "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)]",
-    activo:
-      "border-[var(--data-info-500)] bg-[var(--data-info-50)] text-[var(--data-info-700)] dark:bg-[var(--data-info-500)]/12 dark:text-[var(--data-info-500)]",
-  },
-  warning: {
-    chip: "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)]",
-    activo:
-      "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]",
-  },
-  success: {
-    chip: "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)]",
-    activo:
-      "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/12 dark:text-[var(--data-success-500)]",
-  },
-};
-
-/** Chip de filtro por estado — mismo componente que la vista Expediente. */
-function Chip({
-  label,
-  count,
-  activo,
-  tono = "muted",
-  onClick,
-}: {
-  label: string;
-  count: number;
-  activo: boolean;
-  tono?: string;
-  onClick: () => void;
-}) {
-  const t = TONO_CHIP[tono] ?? TONO_CHIP.muted;
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={activo}
-      disabled={count === 0 && !activo}
-      className={`inline-flex h-9 items-center gap-2 rounded-full border-2 px-3.5 text-sm font-bold transition disabled:opacity-40 ${
-        activo ? t.activo : `${t.chip} hover:border-[var(--rule-strong)] hover:text-[var(--text-primary)]`
-      }`}
-    >
-      {label}
-      <span className="font-mono tabular-nums">{count}</span>
-    </button>
   );
 }

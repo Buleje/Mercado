@@ -21,13 +21,18 @@
  */
 
 import { useCallback, useMemo, useRef, useState } from "react";
-import { CardTitle } from "@buleje/design-system";
-import { AlertTriangle, Loader2, Trash2, Trees, Upload } from "@buleje/design-system/icons";
+import { AlertTriangle, ChevronDown, Loader2, Upload } from "@buleje/design-system/icons";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { especiesSinFoto } from "@/lib/forestal/especies-fotos";
+import { especiesSinFoto, type FotoEspecie } from "@/lib/forestal/especies-fotos";
 import { useEspeciesFotos } from "./hooks/use-especies-fotos";
+import { Btn } from "./ctp-shared";
 import { CtpEspeciesBoton, useEspeciesConCatalogo } from "./ctp-especie-campo";
+import EspecieFotoTarjeta from "./EspecieFotoTarjeta";
+
+/** Chips «sin foto» a la vista antes de «Ver las N restantes»: tres filas a 1280 px. */
+const SIN_FOTO_VISIBLES = 12;
 
 export default function EspeciesFotosBiblioteca() {
   const { fotos, indice, cargando, recargar } = useEspeciesFotos();
@@ -37,13 +42,14 @@ export default function EspeciesFotosBiblioteca() {
   const [subiendo, setSubiendo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [nueva, setNueva] = useState("");
+  const [todasSinFoto, setTodasSinFoto] = useState(false);
+  /* Quitar pide confirmación (11-10): antes el tacho la borraba de un clic. */
+  const [aQuitar, setAQuitar] = useState<FotoEspecie | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const objetivo = useRef<{ nombre: string; cientifico: string } | null>(null);
 
-  /* Qué falta: las del catálogo Y las que el libro nombra. Una especie que la
-     planta dio de alta pero todavía no cargó merece su foto igual —es la que
-     va a llegar mañana— y una que está en el libro y no en el catálogo también:
-     la foto sirve en el patio aunque la lista esté incompleta. */
+  /* Qué falta: las del catálogo (la que llega mañana) Y las que el libro nombra
+     aunque no estén en el catálogo (la foto sirve en el patio igual). */
   /**
    * Qué falta, **ordenado por cuánto entra de cada una**.
    *
@@ -142,41 +148,46 @@ export default function EspeciesFotosBiblioteca() {
         }}
       />
 
-      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 ">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-          <Trees className="h-5 w-5" aria-hidden />
-        </span>
-        <div className="min-w-0 flex-1">
-          <span className="flex items-center gap-1.5">
-            <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
-              Fotos de referencia por especie
-            </CardTitle>
-            <InfoTip
-              title="Fotos de referencia por especie"
-              what="La foto aparece al lado del nombre en Ingresos y Trozas."
-              affects="Sirve para que quien recibe la madera no confunda dos especies parecidas — no reemplaza la identificación del documento."
-              example="Tornillo y Shihuahuaco se confunden en trozas recién taladas: la foto de referencia ayuda a distinguirlas."
-            />
+      {/* Una fila: cuántas hay y faltan (ⓘ) · otra especie + Subir + catálogo. Sin título: la cabina ya lo dice. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="flex min-w-0 flex-1 items-center gap-1.5 text-sm text-[var(--text-secondary)]">
+          {/* Mientras carga no se dice «0 con foto»: se leería como el dato real. */}
+          <span className={cargando ? "invisible" : undefined}>
+            <strong className="font-mono tabular-nums text-[var(--text-primary)]">{fotos.length}</strong>{" "}
+            {fotos.length === 1 ? "especie con foto" : "especies con foto"}
+            {faltan.length > 0 && (
+              <>
+                {" · "}
+                <strong className="font-mono tabular-nums text-[var(--text-primary)]">{faltan.length}</strong> sin foto
+              </>
+            )}
           </span>
-        </div>
-        <div className="flex items-center gap-2">
+          <InfoTip
+            title="Fotos de referencia por especie"
+            what="La foto aparece al lado del nombre en Ingresos y Trozas."
+            affects="Sirve para que quien recibe la madera no confunda dos especies parecidas — no reemplaza la identificación del documento."
+            example="Tornillo y Shihuahuaco se confunden en trozas recién taladas: la foto de referencia ayuda a distinguirlas."
+          />
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
           <input
             value={nueva}
             onChange={(e) => setNueva(e.target.value)}
             placeholder="Otra especie…"
-            className="h-12 w-48 rounded-2xl border border-[var(--rule-base)] bg-transparent px-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
+            aria-label="Nombre de otra especie para subirle foto"
+            className="h-12 w-48 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
           />
           <button
             type="button"
             disabled={!nueva.trim() || subiendo !== null}
             onClick={() => pedirArchivo(nueva.trim(), cientificoDe(nueva.trim()))}
-            className="flex h-12 items-center gap-2 rounded-2xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] disabled:opacity-40"
+            className="flex h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] disabled:opacity-40"
           >
             <Upload className="h-4 w-4" aria-hidden /> Subir
           </button>
           {/* El catálogo, desde acá: la foto y el nombre son la misma especie,
               y corregir uno no puede costar cambiar de pantalla. */}
-          <CtpEspeciesBoton onClick={catalogo.abrir} className="h-12 rounded-2xl px-4 text-sm" />
+          <CtpEspeciesBoton onClick={catalogo.abrir} className="h-12! rounded-xl! px-4! text-sm! text-[var(--text-primary)]!" />
         </div>
       </div>
 
@@ -191,13 +202,13 @@ export default function EspeciesFotosBiblioteca() {
 
       {faltan.length > 0 && (
         <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3">
-          <p className="mb-2 text-sm font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-            {/* Dice «y del catálogo» porque la lista dejó de ser sólo lo cargado:
-                una especie dada de alta y todavía sin madera también va acá. */}
-            Especies sin foto ({faltan.length}) · primero las que más recibes
+          <p className="mb-2 text-sm font-bold text-[var(--text-secondary)]">
+            {/* La lista no es sólo lo cargado: una especie dada de alta y todavía
+                sin madera también va acá. La cuenta ya está en la fila de arriba. */}
+            Sin foto · primero las que más recibes
           </p>
           <div className="flex flex-wrap gap-2">
-            {faltan.map((e) => (
+            {(todasSinFoto ? faltan : faltan.slice(0, SIN_FOTO_VISIBLES)).map((e) => (
               <button
                 key={e.nombre}
                 type="button"
@@ -208,7 +219,7 @@ export default function EspeciesFotosBiblioteca() {
                     ? `${e.nombre} aparece en ${e.usos} fila${e.usos === 1 ? "" : "s"} del libro`
                     : `${e.nombre} está en el catálogo y todavía no entró al libro`
                 }
-                className="flex items-center gap-1.5 rounded-xl border border-dashed border-[var(--rule-base)] px-3 min-h-10 text-sm text-[var(--text-secondary)] hover:border-primary hover:text-[var(--text-primary)] disabled:opacity-40"
+                className="flex min-h-12 items-center gap-1.5 rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-secondary)] hover:border-primary hover:text-[var(--text-primary)] disabled:opacity-40"
               >
                 {subiendo === e.nombre ? (
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
@@ -219,12 +230,23 @@ export default function EspeciesFotosBiblioteca() {
                 {/* El número dice por dónde empezar: es cuántas filas del libro
                     la nombran, no un adorno. */}
                 {e.usos > 0 && (
-                  <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">
+                  <span className="font-mono text-sm font-bold tabular-nums text-[var(--text-tertiary)]">
                     {e.usos}
                   </span>
                 )}
               </button>
             ))}
+            {faltan.length > SIN_FOTO_VISIBLES && (
+              <button
+                type="button"
+                onClick={() => setTodasSinFoto((v) => !v)}
+                aria-expanded={todasSinFoto}
+                className="inline-flex min-h-12 items-center gap-1.5 rounded-xl px-3 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-raised)] hover:text-[var(--text-primary)]"
+              >
+                {todasSinFoto ? "Ver menos" : `Ver las ${faltan.length - SIN_FOTO_VISIBLES} restantes`}
+                <ChevronDown className={`h-4 w-4 transition-transform ${todasSinFoto ? "rotate-180" : ""}`} aria-hidden />
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -234,51 +256,48 @@ export default function EspeciesFotosBiblioteca() {
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Cargando la biblioteca…
         </div>
       ) : fotos.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-[var(--rule-base)] px-4 py-8 text-center text-sm text-[var(--text-secondary)]">
+        <p className="rounded-2xl border border-dashed border-[var(--rule-base)] px-4 py-6 text-center text-sm text-[var(--text-secondary)]">
           Todavía no hay fotos cargadas. Empieza por las especies que más recibes.
         </p>
       ) : (
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {fotos.map((f) => (
-            <li
+            <EspecieFotoTarjeta
               key={f.clave}
-              className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] "
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={f.url} alt={`Foto de ${f.nombre}`} className="h-32 w-full object-cover" loading="lazy" />
-              <div className="p-3">
-                <p className="truncate text-sm font-bold text-[var(--text-primary)]">{f.nombre}</p>
-                {f.cientifico && (
-                  <p className="truncate text-sm italic text-[var(--text-secondary)]">{f.cientifico}</p>
-                )}
-                <div className="mt-2 flex items-center justify-between gap-2">
-                  <span className="truncate text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)]">
-                    {f.actualizadoPor}
-                  </span>
-                  <div className="flex gap-1">
-                    <button
-                      type="button"
-                      onClick={() => pedirArchivo(f.nombre, f.cientifico)}
-                      className="rounded-xl p-1.5 text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
-                      title="Reemplazar la foto"
-                    >
-                      <Upload className="h-4 w-4" aria-hidden />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void quitar(f.nombre)}
-                      className="rounded-xl p-1.5 text-[var(--text-secondary)] hover:bg-[var(--data-error-50)] hover:text-[var(--data-error-700)] dark:hover:bg-transparent dark:hover:text-[var(--data-error-500)]"
-                      title="Quitar la foto"
-                    >
-                      <Trash2 className="h-4 w-4" aria-hidden />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </li>
+              f={f}
+              ocupado={subiendo !== null}
+              onReemplazar={(x) => pedirArchivo(x.nombre, x.cientifico)}
+              onQuitar={setAQuitar}
+            />
           ))}
         </ul>
       )}
+
+      <AdminModal
+        open={Boolean(aQuitar)}
+        onClose={() => setAQuitar(null)}
+        title="Quitar la foto"
+        description={aQuitar?.nombre}
+        variant="centered-sm"
+        footer={
+          <div className="flex justify-end gap-2">
+            <Btn variant="secondary" onClick={() => setAQuitar(null)}>Cancelar</Btn>
+            <Btn
+              variant="danger"
+              onClick={() => {
+                if (aQuitar) void quitar(aQuitar.nombre);
+                setAQuitar(null);
+              }}
+            >
+              Quitar
+            </Btn>
+          </div>
+        }
+      >
+        <p className={`${MODAL_BODY} text-sm text-[var(--text-secondary)]`}>
+          Ingresos y Trozas dejan de mostrarla al lado del nombre. Puedes subir otra cuando quieras.
+        </p>
+      </AdminModal>
     </div>
   );
 }

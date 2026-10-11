@@ -25,7 +25,7 @@ import {
   type FormatoTramite,
 } from "@/lib/forestal/tramites-catalogo";
 import { Card, Hero, RegistroPlantacionCard } from "./tramites-catalogo-tarjetas";
-import { contarPorEstado, type TramiteRegistro } from "@/lib/forestal/tramites-registro";
+import type { TramiteRegistro } from "@/lib/forestal/tramites-registro";
 
 /** El que se pide una y otra vez: se lleva la pieza héroe. */
 const DESTACADO = "visado-talonario-gtf";
@@ -75,8 +75,6 @@ export default function TramitesCatalogo({
   const usados = (id: string) => tramites.filter((t) => t.formatoId === id).length;
   const destacado = FORMATOS_TRAMITE.find((f) => f.id === DESTACADO);
   const resto = FORMATOS_TRAMITE.filter((f) => f.id !== DESTACADO);
-  const porEstado = contarPorEstado(tramites);
-  const enCurso = porEstado.presentado + porEstado.observado;
 
   /**
    * Buscador + filtro por autoridad (Brandon 2026-08-26, "consultá ideas y
@@ -92,12 +90,14 @@ export default function TramitesCatalogo({
   const resultados = activo ? FORMATOS_TRAMITE.filter(matches) : [];
 
   return (
-    <div className="space-y-6">
-      <TirasResumen total={FORMATOS_TRAMITE.length} guardados={tramites.length} enCurso={enCurso} resueltos={porEstado.resuelto} />
-
-      <div className="space-y-3">
-        <div className="flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5">
-          <Search className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden="true" />
+    <div className="space-y-5">
+      {/* Buscador y autoridades en UNA fila pegada a las tarjetas. La tira
+          «23 formatos · 0 guardados · 0 en curso · 0 resueltos» se fue (11-10):
+          los formatos ya los cuenta cada chip y los guardados, los chips de
+          estado del Expediente —la misma cifra dos veces en dos pestañas—. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-[16rem] flex-1">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden="true" />
           <input
             type="text"
             value={busqueda}
@@ -105,15 +105,20 @@ export default function TramitesCatalogo({
             onKeyDown={(e) => e.key === "Escape" && setBusqueda("")}
             placeholder="Buscar formato por nombre o para qué sirve…"
             aria-label="Buscar formato por nombre o para qué sirve"
-            className="w-full bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)]"
+            className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-10 pr-12 text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)]"
           />
           {busqueda && (
-            <button type="button" onClick={() => setBusqueda("")} aria-label="Limpiar búsqueda" className="shrink-0 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]">
+            <button
+              type="button"
+              onClick={() => setBusqueda("")}
+              aria-label="Limpiar búsqueda"
+              className="absolute right-1 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+            >
               <X className="h-4 w-4" />
             </button>
           )}
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div role="group" aria-label="Autoridades a la vista" className="flex flex-wrap items-center gap-2">
           {ORDEN_AUTORIDAD.map((aut) => (
             <FiltroChip
               key={aut}
@@ -188,7 +193,7 @@ export default function TramitesCatalogo({
                     type="button"
                     onClick={() => alternarCompleta(aut)}
                     aria-expanded={verTodas}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5 text-sm font-bold text-[var(--text-secondary)] transition hover:border-[var(--rule-strong)] hover:text-[var(--text-primary)]"
+                    className="inline-flex h-12 items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-secondary)] transition hover:border-[var(--rule-strong)] hover:text-[var(--text-primary)]"
                   >
                     {verTodas ? "Ver menos" : `Ver los ${grupo.length - VISIBLES_POR_GRUPO} restantes`}
                     <ChevronDown className={`h-4 w-4 transition-transform ${verTodas ? "rotate-180" : ""}`} aria-hidden="true" />
@@ -199,46 +204,6 @@ export default function TramitesCatalogo({
           })}
         </>
       )}
-    </div>
-  );
-}
-
-/**
- * Tira de resumen: cuántos formatos hay y qué tan viva está la carpeta. Sin
- * esto el módulo abría directo en la pieza héroe — vistosa, pero sin decir
- * nada de lo que ya se hizo. Un número por dato, no una tabla: es la entrada
- * al catálogo, no el expediente (eso ya lo tiene su propia pestaña).
- */
-function TirasResumen({
-  total,
-  guardados,
-  enCurso,
-  resueltos,
-}: {
-  total: number;
-  guardados: number;
-  enCurso: number;
-  resueltos: number;
-}) {
-  const items: { label: string; value: number; tono: "neutral" | "info" | "success" }[] = [
-    { label: "formatos disponibles", value: total, tono: "neutral" },
-    { label: "guardados en el expediente", value: guardados, tono: "neutral" },
-    { label: "en curso ante la autoridad", value: enCurso, tono: "info" },
-    { label: "resueltos", value: resueltos, tono: "success" },
-  ];
-  const TONO: Record<string, string> = {
-    neutral: "text-[var(--text-primary)]",
-    info: "text-[var(--data-info-700)] dark:text-[var(--data-info-500)]",
-    success: "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
-  };
-  return (
-    <div className="flex flex-wrap gap-x-6 gap-y-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3">
-      {items.map((it) => (
-        <div key={it.label} className="flex items-baseline gap-1.5">
-          <span className={`font-display text-xl leading-none tabular-nums ${TONO[it.tono]}`}>{it.value}</span>
-          <span className="text-xs text-[var(--text-tertiary)]">{it.label}</span>
-        </div>
-      ))}
     </div>
   );
 }
@@ -260,7 +225,7 @@ function FiltroChip({
       type="button"
       onClick={onClick}
       aria-pressed={activo}
-      className={`inline-flex h-9 items-center rounded-full border px-3.5 text-sm font-bold transition ${
+      className={`inline-flex h-12 items-center rounded-full border px-4 text-sm font-bold transition ${
         activo
           ? TONO_CHIP[tono]
           : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)] hover:text-[var(--text-primary)]"

@@ -124,7 +124,7 @@ export function Hero({
           className="pointer-events-none absolute -inset-y-10 -left-1/4 w-1/3 rotate-12 bg-linear-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-[320%]"
         />
         <span className="relative min-w-0">
-          <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide">
+          <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-sm font-bold">
             El más pedido · {AUTORIDADES[formato.autoridad].corto}
           </span>
           {/* Hero de acción (Brandon 08-10, escala única): es el ÚNICO título que sube un
@@ -135,7 +135,7 @@ export function Hero({
             Llenar y presentar
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             {usados > 0 && (
-              <span className="text-xs font-normal text-white/75">
+              <span className="text-sm font-normal text-white/80">
                 · {usados} {usados === 1 ? "presentado" : "presentados"}
               </span>
             )}
@@ -169,7 +169,7 @@ export function RegistroPlantacionCard({ onClick }: { onClick: () => void }) {
           <TreePine className="h-6 w-6" aria-hidden="true" />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="inline-flex items-center gap-2 rounded-full bg-[var(--data-success-500)]/15 px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+          <span className="inline-flex items-center gap-2 rounded-full bg-[var(--data-success-500)]/15 px-2.5 py-0.5 text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
             Registro Nacional · SERFOR
           </span>
           <span className="mt-1.5 block text-[length:var(--ts-xl)] font-bold leading-snug tracking-tight text-[var(--text-primary)]">
@@ -215,7 +215,7 @@ export function Card({
           <span className="text-sm font-bold leading-snug text-[var(--text-primary)]">{formato.nombre}</span>
         </span>
         {usados > 0 && (
-          <span className="pl-12 text-xs text-[var(--text-tertiary)]">
+          <span className="pl-12 text-sm text-[var(--text-tertiary)]">
             {usados} presentado{usados === 1 ? "" : "s"}
           </span>
         )}

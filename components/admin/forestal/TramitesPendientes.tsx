@@ -21,6 +21,10 @@ import type { FormatoTramite } from "@/lib/forestal/tramites-catalogo";
 import type { tramitesPorVencer, TramiteRegistro } from "@/lib/forestal/tramites-registro";
 import type { avisoPlazoRelacion } from "@/lib/forestal/tramites-relacion-guias";
 import TramiteAvisoWhatsApp from "./TramiteAvisoWhatsApp";
+import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
+
+/** Donde se completa el membrete (razón social, RUC, registro CTP). */
+const HREF_FICHA_CTP = "/admin?tab=ctp-libro-operaciones&vista=ficha";
 
 type PorVencer = ReturnType<typeof tramitesPorVencer>[number];
 export interface AvisoPlazo {
@@ -44,11 +48,11 @@ function cuandoVence(dias: number): string {
 function Linea({ icon: Icon, tono, onClick, children }: { icon: LucideIcon; tono: Tono; onClick?: () => void; children: ReactNode }) {
   const cuerpo = (
     <>
-      <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${TINTA[tono]}`} aria-hidden />
+      <Icon className={`h-4 w-4 shrink-0 ${TINTA[tono]}`} aria-hidden />
       <span className="min-w-0 flex-1">{children}</span>
     </>
   );
-  const base = "flex w-full items-start gap-3 px-1 py-2.5 text-left text-sm text-[var(--text-primary)]";
+  const base = "flex min-h-12 w-full items-center gap-3 px-1 py-2 text-left text-sm text-[var(--text-primary)]";
   return (
     <li>
       {onClick ? (
@@ -88,18 +92,25 @@ export default function TramitesPendientes({
 }) {
   const total = porVencer.length + (plantacionesListas.length > 0 ? 1 : 0) + (fichaFloja ? 1 : 0) + avisosPlazo.length;
   if (total === 0) return null;
+  const unico = total === 1;
 
   return (
     <section
       aria-label="Pendientes de trámites"
-      className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3"
+      className={`rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 ${
+        unico ? "flex flex-wrap items-center gap-x-2 py-1" : "py-3"
+      }`}
       data-tramites-pendientes
     >
-      <div className="flex flex-wrap items-center gap-2">
-        <CardTitle as="h3">Pendientes</CardTitle>
-        <span className="rounded-full bg-[var(--data-warning-500)]/10 px-2 py-0.5 text-xs font-bold tabular-nums text-[var(--text-primary)]">
-          {total}
-        </span>
+      {/* Con un solo pendiente no hace falta el encabezado: la línea misma es el aviso
+          (11-10, «avisos en una línea»). El ⓘ y el WhatsApp van a su derecha. */}
+      <div className={unico ? "contents" : "flex flex-wrap items-center gap-2"}>
+        {!unico && <CardTitle as="h3">Pendientes</CardTitle>}
+        {!unico && (
+          <span className="rounded-full bg-[var(--data-warning-500)]/10 px-2 py-0.5 text-sm font-bold tabular-nums text-[var(--text-primary)]">
+            {total}
+          </span>
+        )}
         <InfoTip
           title="Pendientes de trámites"
           what="Lo que pide acción antes de llenar otro formato: plazos que vencen (avisa 3 días antes, según la fecha límite que cargaste en cada trámite), tramos de un formato con correlativo sin declarar hace 15 días o más, plantaciones listas para presentar ante SERFOR y la Ficha CTP sin membrete."
@@ -107,12 +118,12 @@ export default function TramitesPendientes({
           example="«Visado de talonario de GTF: vence en 2 días» abre ese trámite."
         />
         {porVencer.length > 0 && (
-          <div className="ml-auto">
+          <div className={unico ? "" : "ml-auto"}>
             <TramiteAvisoWhatsApp mensaje={mensajeWhatsApp} />
           </div>
         )}
       </div>
-      <ul className="mt-1 divide-y divide-[var(--rule-soft)]">
+      <ul className={unico ? "order-first min-w-0 flex-1" : "mt-1 divide-y divide-[var(--rule-soft)]"}>
         {porVencer.map((t) => (
           <Linea key={t.id} icon={CalendarClock} tono={t.diasRestantes < 0 ? "error" : "warning"} onClick={() => onAbrirTramite(t)}>
             <strong>{t.formatoNombre}</strong>
@@ -133,8 +144,8 @@ export default function TramitesPendientes({
           </Linea>
         )}
         {fichaFloja && (
-          <Linea icon={Building2} tono="warning">
-            <strong>Ficha CTP incompleta</strong>: los documentos saldrán sin membrete. Complétala en Libro CTP › Ficha CTP.
+          <Linea icon={Building2} tono="warning" onClick={() => void irAEnlace(HREF_FICHA_CTP)}>
+            <strong>Ficha CTP incompleta</strong>: los documentos saldrán sin membrete. Complétala en Libro CTP › Ficha CTP →
           </Linea>
         )}
         {avisosPlazo.map(({ formato: f, aviso }) => (

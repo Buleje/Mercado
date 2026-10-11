@@ -80,9 +80,9 @@ export default function TramiteAvisoWhatsApp({
       <button
         type="button"
         onClick={() => setAbierto(true)}
-        className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] transition hover:border-[var(--data-success-500)] hover:text-[var(--data-success-700)] dark:hover:text-[var(--data-success-500)]"
+        className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] transition hover:border-[var(--data-success-500)] hover:text-[var(--data-success-700)] dark:hover:text-[var(--data-success-500)]"
       >
-        <MessageCircle className="h-3.5 w-3.5" /> {label}
+        <MessageCircle className="h-4 w-4" aria-hidden /> {label}
       </button>
     );
   }
@@ -95,25 +95,25 @@ export default function TramiteAvisoWhatsApp({
         onChange={(e) => { setTelefono(e.target.value); setAviso(null); }}
         onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void enviar(); } }}
         placeholder="Número de WhatsApp — 9XX XXX XXX"
-        className="h-9 min-w-[180px] flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-success-500)]"
+        className="h-12 min-w-[180px] flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--data-success-500)]"
       />
       <button
         type="button"
         onClick={() => void enviar()}
         disabled={enviando}
-        className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-[var(--accent-dark)] px-3 text-xs font-bold text-white transition hover:opacity-90 disabled:opacity-50 dark:bg-[var(--accent)]"
+        className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl bg-[var(--accent-dark)] px-4 text-sm font-bold text-white transition hover:opacity-90 disabled:opacity-50"
       >
-        {enviando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+        {enviando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Send className="h-4 w-4" aria-hidden />}
         {enviando ? "Mandando…" : "Mandar"}
       </button>
       <button
         type="button"
         onClick={() => { setAbierto(false); setAviso(null); }}
-        className="inline-flex h-9 shrink-0 items-center px-2 text-xs font-bold text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+        className="inline-flex h-12 shrink-0 items-center px-3 text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
       >
         Cancelar
       </button>
-      {aviso && <p className="w-full text-xs font-semibold text-[var(--text-secondary)]">{aviso}</p>}
+      {aviso && <p className="w-full text-sm font-semibold text-[var(--text-secondary)]">{aviso}</p>}
     </div>
   );
 }
