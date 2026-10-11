@@ -721,9 +721,13 @@ export default function DocumentosModule() {
     [documents]
   );
   // Documentos por vencer (≤30d, vencidos primero) — alimenta el aviso proactivo.
+  // Sin los de la papelera: en esa vista `documents` son los borrados y el
+  // aviso decía «3 por vencer» de archivos tirados, mientras «Ver» llevaba a
+  // los 5 vivos (11-10).
   const expiringDocs = useMemo(
     () =>
       documents
+        .filter((d) => !d.deletedAt)
         .map((d) => ({ d, n: daysUntil(d.expiresAt) }))
         .filter((x): x is { d: typeof x.d; n: number } => x.n !== null && x.n <= 30)
         .sort((a, b) => a.n - b.n),
@@ -1588,9 +1592,12 @@ export default function DocumentosModule() {
             const visibles = BUILTIN_CATEGORIES.filter((cat) => vistaConDatos[cat.id] || filterMode === cat.id);
             const todos = visibles.find((c) => c.id === "all");
             const resto = visibles.filter((c) => c.id !== "all");
-            // Auto-abierto si la vista activa vive adentro del grupo — si no,
-            // "Papelera" (por ej.) parecería que nada está seleccionado.
-            const grupoAbierto = otrosAbierto || resto.some((c) => c.id === filterMode);
+            // Cerrado, el grupo igual muestra la vista activa si vive adentro
+            // (si no, "Papelera" parecería que nada está seleccionado). Antes
+            // se abría entero: 10 botones más en Papelera y Actividad, y a
+            // 400 px la lista empujaba el contenido una pantalla abajo (11-10).
+            const grupoAbierto = otrosAbierto;
+            const activoAdentro = resto.find((c) => c.id === filterMode);
             const item = (cat: BuiltinCategory) => {
               const Icon = cat.icon;
               const active = filterMode === cat.id;
@@ -1626,9 +1633,9 @@ export default function DocumentosModule() {
                       <span className="flex-1 text-left">Más vistas</span>
                       <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)] transition-transform", grupoAbierto && "rotate-180")} />
                     </button>
-                    {grupoAbierto && (
+                    {(grupoAbierto || activoAdentro) && (
                       <ul className="mt-1 ml-3 space-y-1 border-l-2 border-[var(--rule-soft)] pl-2">
-                        {resto.map(item)}
+                        {grupoAbierto ? resto.map(item) : activoAdentro && item(activoAdentro)}
                       </ul>
                     )}
                   </li>
@@ -2016,6 +2023,9 @@ export default function DocumentosModule() {
               <option value="size">Tamaño</option>
               <option value="expiry">Vence primero</option>
             </select>
+            {/* La papelera es siempre una lista con sus propias acciones:
+                grilla/lista y columnas no le cambian nada (11-10). */}
+            {filterMode !== "trash" && (
             <div className="inline-flex rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
               <button
                 onClick={() => setView("grid")}
@@ -2034,9 +2044,10 @@ export default function DocumentosModule() {
                 <List className="h-4 w-4" />
               </button>
             </div>
+            )}
             {/* Columnas opcionales — sólo tiene sentido en la tabla, la grilla
                 no tiene columnas que ocultar. */}
-            {view === "list" && (
+            {view === "list" && filterMode !== "trash" && (
               <div className="relative">
                 <button
                   onClick={(e) => { e.stopPropagation(); setColsMenuOpen((v) => !v); }}

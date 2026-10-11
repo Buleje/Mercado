@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import {
-  Upload, Eye, Download, Pencil, Trash2, RotateCcw, Share2, Ban, PenTool, FileText, FolderInput, Tag, History, Loader2, User, Sparkles, ScanLine, Stamp, Link2, Combine, MessageCircle,
+  Upload, Eye, Download, Pencil, Trash2, RotateCcw, Share2, Ban, PenTool, FileText, FolderInput, Tag, History, Loader2, User, Sparkles, ScanLine, Stamp, Link2, Combine, MessageCircle, RefreshCw, ChevronDown,
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { DbDocumentActivity, DocAction } from "@/lib/types/documents";
@@ -44,9 +44,14 @@ function relativeTime(iso: string): string {
   return formatDateShort(iso);
 }
 
+/** Eventos que se ven de entrada (y los que suma «Ver más»). */
+const PAGINA = 20;
+
 /** Feed de actividad reciente del drive (cross-documento). */
 export function ActivityView() {
   const [activity, setActivity] = useState<DbDocumentActivity[]>([]);
+  /* Lista partida: los 60 eventos de una eran 4,3 pantallas (11-10). */
+  const [visibles, setVisibles] = useState(PAGINA);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -80,37 +85,55 @@ export function ActivityView() {
       <div className="rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] p-10 text-center">
         <div className="mx-auto mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"><History className="h-7 w-7" /></div>
         <p className="text-lg font-extrabold text-[var(--text-primary)]">Sin actividad todavía</p>
-        <p className="mt-1.5 text-sm text-[var(--text-secondary)]">Cuando subas, muevas, firmes o compartas documentos, vas a ver acá el registro de quién hizo qué y cuándo.</p>
+        <p className="mt-1.5 text-sm text-[var(--text-secondary)]">Acá verás quién subió, movió o firmó cada archivo.</p>
       </div>
     );
   }
 
   return (
     <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-      <div className="flex items-center justify-between border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-2.5">
+      <div className="flex items-center justify-between border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] py-1 pl-4 pr-2">
         <p className="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)]"><History className="h-3.5 w-3.5" /> Actividad reciente del drive</p>
-        <button onClick={load} className="text-xs font-bold text-[var(--text-tertiary)] hover:text-primary">Actualizar</button>
+        <button
+          onClick={() => { setVisibles(PAGINA); load(); }}
+          aria-label="Actualizar la actividad"
+          title="Actualizar"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-raised)] hover:text-[var(--text-primary)] transition-colors"
+        >
+          <RefreshCw className="h-4 w-4" />
+        </button>
       </div>
       <ul className="divide-y divide-[var(--rule-soft)]">
-        {activity.map((a) => {
+        {activity.slice(0, visibles).map((a) => {
           const meta = ACTION_META[a.action] ?? ACTION_META.view;
           return (
-            <li key={a.id} className="flex items-center gap-3 px-4 py-3">
+            <li key={a.id} className="flex items-center gap-3 px-4 py-2.5">
               <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg", meta.cls)}>
                 <meta.Icon className="h-4 w-4" />
               </span>
+              {/* Una línea de datos (quién · qué · cuál), no un párrafo. */}
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm text-[var(--text-primary)]">
+                <div className="truncate text-sm text-[var(--text-primary)]">
                   <span className="inline-flex items-center gap-1 font-bold"><User className="h-3 w-3 text-[var(--text-tertiary)]" />{a.actorId}</span>
                   <span className="text-[var(--text-secondary)]"> {meta.verb} </span>
                   <span className={cn("font-bold", a.documentDeleted && "text-[var(--text-tertiary)] line-through")}>{a.documentName}</span>
-                </p>
+                </div>
               </div>
               <span className="shrink-0 whitespace-nowrap text-xs tabular-nums text-[var(--text-tertiary)]">{relativeTime(a.createdAt)}</span>
             </li>
           );
         })}
       </ul>
+      {activity.length > visibles && (
+        <button
+          onClick={() => setVisibles((v) => v + PAGINA)}
+          className="flex h-12 w-full items-center justify-center gap-1.5 border-t border-[var(--rule-base)] text-sm font-bold text-[var(--accent-ink)] transition-colors hover:bg-[var(--surface-sunken)] dark:text-[var(--accent)]"
+        >
+          <ChevronDown className="h-4 w-4" />
+          Ver {Math.min(activity.length - visibles, PAGINA)} más
+          <span className="font-normal tabular-nums text-[var(--text-tertiary)]">· quedan {activity.length - visibles}</span>
+        </button>
+      )}
     </div>
   );
 }

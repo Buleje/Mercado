@@ -92,7 +92,9 @@ export default function AvisosDelArchivo({
         {verSugerencias && (
           <div className="inline-flex items-stretch overflow-hidden rounded-xl border border-[var(--accent)]/40 bg-[var(--accent)]/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
             <span className="inline-flex items-center gap-2 pl-3 pr-2 text-sm font-bold">
-              <Sparkles className="h-4 w-4 shrink-0" aria-hidden />
+              {/* A 400 px el ícono empujaba «2 por ordenar» debajo del ⓘ
+                  (la pastilla con overflow-hidden se encoge y no avisa). */}
+              <Sparkles className="h-4 w-4 shrink-0 max-sm:hidden" aria-hidden />
               {/* A 400 px la pastilla entera tiene que entrar en una línea con sus dos botones. */}
               <span className="whitespace-nowrap max-sm:hidden">
                 La IA sugiere ordenar {sugerencias.length === 1 ? "1 archivo" : `${sugerencias.length} archivos`}
