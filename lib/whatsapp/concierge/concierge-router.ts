@@ -13,7 +13,27 @@ import {
 } from "./conversation-store";
 import { dispatch } from "./state-machine";
 import { buildConciergeResponse } from "./response-formatter";
-import type { ConversationContext, ConciergeResponse } from "./types";
+import { asesoraHandler } from "./handlers/asesora.handler";
+import { SettingsDB } from "@/lib/db/settings.db";
+import { setBotPaused } from "@/lib/db/whatsapp-messages.db";
+import { leerAjusteAsistente, type LecturaAsistente } from "../asistente-negocio";
+import type { Classification, ConversationContext, ConciergeResponse } from "./types";
+
+/**
+ * La asistente del negocio (Settings › whatsappAsistente). Si la lectura falla,
+ * lo de siempre: menú genérico y SIN cruzar tiendas (lo seguro).
+ */
+async function leerAsistente(tenantId: string): Promise<LecturaAsistente> {
+  try {
+    return leerAjusteAsistente(await SettingsDB.getFeatureFlags(tenantId));
+  } catch (err) {
+    logger.warn("[concierge-router] no se pudo leer la asistente del negocio — menú genérico", {
+      tenantId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return { activo: false, cruzarTiendas: false };
+  }
+}
 
 // ─── Main entry point ─────────────────────────────────────────────────────────
 
@@ -51,12 +71,17 @@ export async function handleIncomingMessage(
   const conversation = await getConversation(tenantId, phone);
   const currentState = extractState(conversation);
 
-  // ── Classify with AI ─────────────────────────────────────────────────────
-  let classification = await classifyWhatsappIntent(message);
+  // ── La asistente del negocio: con ella activa no hay clasificador ni menú ──
+  const asistente = await leerAsistente(tenantId);
 
-  // If AI returns low confidence → fallback to welcome menu (test case #13)
-  if (!shouldTrustAi(classification)) {
-    classification = { intent: "desconocido", confidence: 0 };
+  // ── Classify with AI ─────────────────────────────────────────────────────
+  let classification: Classification = { intent: "desconocido", confidence: 0 };
+  if (!asistente.activo) {
+    classification = await classifyWhatsappIntent(message);
+    // If AI returns low confidence → fallback to welcome menu (test case #13)
+    if (!shouldTrustAi(classification)) {
+      classification = { intent: "desconocido", confidence: 0 };
+    }
   }
 
   // ── Build context ────────────────────────────────────────────────────────
@@ -65,12 +90,15 @@ export async function handleIncomingMessage(
     phone,
     message,
     conversation,
+    asistente,
   };
 
-  // ── Dispatch to state machine ────────────────────────────────────────────
+  // ── Dispatch: la asesora del negocio, o la máquina de estados ────────────
   let result;
   try {
-    result = await dispatch(ctx, classification);
+    result = asistente.activo
+      ? await asesoraHandler(ctx, classification)
+      : await dispatch(ctx, classification);
   } catch (err) {
     logger.error("[concierge-router] dispatch crashed", {
       tenantId,
@@ -91,18 +119,39 @@ export async function handleIncomingMessage(
 
   await upsertConversation(tenantId, phone, newState, newCart);
 
+  // ── Traspaso de la asesora: el bot se calla en este hilo ─────────────────
+  // Hasta que alguien lo reanude en Mensajes › WhatsApp (botón «Reanudar bot»).
+  if (asistente.activo && result.shouldEscalate && asistente.pausarAlTraspasar) {
+    try {
+      await setBotPaused(tenantId, phone, true);
+    } catch (err) {
+      logger.error("[concierge-router] no se pudo pausar el bot tras el traspaso", {
+        tenantId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
   // ── Fire-and-forget audit log (CLAUDE.md rule #7) ────────────────────────
   logActivity(
     "whatsapp.message",
     "WhatsAppConversation",
-    JSON.stringify({ intent: classification.intent, state: newState, reply: result.reply.slice(0, 80) }),
+    JSON.stringify({
+      intent: asistente.activo ? "asesora" : classification.intent,
+      escalated: result.shouldEscalate ?? false,
+      state: newState,
+      reply: result.reply.slice(0, 80),
+    }),
     phone,
     phone,
     undefined,
     tenantId,
-  ).catch(() => {
-      /* fire-and-forget per CLAUDE.md rule #7 */
+  ).catch((err) => {
+    logger.warn("[concierge-router] logActivity falló", {
+      tenantId,
+      error: err instanceof Error ? err.message : String(err),
     });
+  });
 
   // ── Build and return response ────────────────────────────────────────────
   return buildConciergeResponse(result, currentState);

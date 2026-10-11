@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse, after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
-import { applyRateLimit } from "@/lib/rate-limit";
+import { applyRateLimit, createDistributedRateLimiter } from "@/lib/rate-limit";
 import { redactPhone, truncate } from "@/lib/logger-pii";
 import { processMessage } from "@/lib/whatsapp/conversation-engine";
 import { handleIncomingMessage as handleConciergeMessage } from "@/lib/whatsapp/concierge/concierge-router";
@@ -21,6 +21,39 @@ function isAiFirstEnabled(): boolean {
   const v = process.env.WHATSAPP_AI_FIRST;
   if (v === undefined || v === null || v === "") return true;
   return v.toLowerCase() !== "false" && v !== "0";
+}
+
+// ─── Tope por clienta ─────────────────────────────────────────────────────────
+// 20 mensajes cada 10 min por negocio + teléfono antes de llamar al bot (cada
+// respuesta gasta IA del negocio). Al pasarse: un aviso amable UNA vez por
+// ventana y después silencio; los mensajes igual quedan en la bandeja.
+const MENSAJES_POR_CLIENTA = 20;
+const VENTANA_CLIENTA_MS = 10 * 60_000;
+const limiteClienta = createDistributedRateLimiter({
+  key: "wa-clienta",
+  maxRequests: MENSAJES_POR_CLIENTA,
+  windowMs: VENTANA_CLIENTA_MS,
+});
+const avisoLimiteClienta = createDistributedRateLimiter({
+  key: "wa-clienta-aviso",
+  maxRequests: 1,
+  windowMs: VENTANA_CLIENTA_MS,
+});
+const AVISO_LIMITE_CLIENTA =
+  "Recibimos varios mensajes seguidos 🙏 En unos minutos te seguimos respondiendo por aquí. Si es urgente, escríbelo en un solo mensaje.";
+
+/** «ok» = contesta el bot; «avisar» = se pasó y toca el aviso (una vez por ventana); «callar» = ya se avisó. Ante un fallo, «ok». */
+async function dentroDelTopeDeClienta(tenantId: string, phone: string): Promise<"ok" | "avisar" | "callar"> {
+  try {
+    if (await limiteClienta.check(`${tenantId}:${phone}`)) return "ok";
+    return (await avisoLimiteClienta.check(`${tenantId}:${phone}`)) ? "avisar" : "callar";
+  } catch (err) {
+    logger.warn("[whatsapp/webhook] tope por clienta no disponible — sigue el bot", {
+      tenantId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return "ok";
+  }
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -191,12 +224,6 @@ export async function GET(req: NextRequest) {
  *  - Verificar firma X-Hub-Signature-256 si WHATSAPP_APP_SECRET está configurado.
  */
 export async function POST(req: NextRequest) {
-  // PENTEST 2026-05-18 Sprint B: rate limit STRICT. Meta nunca envía más
-  // de 1 webhook/sec por número. Sin rate limit, atacante con firmas
-  // inválidas puede agotar CPU en HMAC verify por cada request.
-  const rl = applyRateLimit(req, "STRICT", "whatsapp-webhook");
-  if (rl) return rl as NextResponse;
-
   // Leer el body crudo antes de cualquier operación (firma requiere raw bytes)
   const rawBody = await req.text();
 
@@ -215,6 +242,13 @@ export async function POST(req: NextRequest) {
     const signature = req.headers.get("x-hub-signature-256");
     const valid = await verifySignature(rawBody, signature, appSecret);
     if (!valid) {
+      // PENTEST 2026-05-18 Sprint B: el límite STRICT (10 cada 15 min por IP)
+      // frena a quien manda firmas inválidas. Antes se aplicaba a TODO POST:
+      // Meta manda desde pocas IPs y cada respuesta del bot trae 3 avisos de
+      // estado (enviado/entregado/leído) → con 2-3 clientas escribiendo, los
+      // mensajes reales caían en 429 (11-10, bot de Musa).
+      const rl = applyRateLimit(req, "STRICT", "whatsapp-webhook-firma-invalida");
+      if (rl) return rl as NextResponse;
       logger.warn("[whatsapp/webhook] Firma inválida — rechazado");
       return NextResponse.json({ error: "Invalid signature" }, { status: 403 });
     }
@@ -492,6 +526,7 @@ async function handleSingleMessage(
   // La respuesta a Meta ya salió (after()), así que esto no bloquea nada.
   const inboundBody =
     text || (media ? `${mediaPlaceholder(message.type, media)}${media.caption ? ` — ${media.caption}` : ""}` : "");
+  let reentregado = false;
   try {
     const persisted = await WhatsAppMessagesDB.append(effectiveTenantId, {
       phoneNumberId,
@@ -505,6 +540,7 @@ async function handleSingleMessage(
       mediaMime: media?.mime_type ?? null,
     });
     // null = webhook re-entregado (dedupe) — no notificar dos veces
+    reentregado = persisted === null;
     if (persisted) {
       // 1) SSE: refresco instantáneo del inbox y del badge del sidebar
       emitAdminSSE(effectiveTenantId, "wa_message_new", {
@@ -519,6 +555,17 @@ async function handleSingleMessage(
       error: err instanceof Error ? err.message : String(err),
       tenantId: effectiveTenantId,
     });
+  }
+
+  // Re-entregado por Meta (o el mismo cuerpo firmado reenviado: la firma no
+  // tiene fecha): ya se contestó la primera vez. Sin esto el bot respondía de
+  // nuevo y gastaba IA del negocio por cada repetición.
+  if (reentregado) {
+    logger.info("[whatsapp/webhook] Mensaje re-entregado — sin segunda respuesta", {
+      tenantId: effectiveTenantId,
+      from: redactPhone(senderPhone),
+    });
+    return;
   }
 
   // Media pura (sin texto): el bot NO responde — la atiende el operador.
@@ -549,6 +596,42 @@ async function handleSingleMessage(
     logger.warn("[whatsapp/webhook] No se pudo leer pausa del bot", {
       error: err instanceof Error ? err.message : String(err),
     });
+  }
+
+  // ── Tope por clienta: 20 mensajes cada 10 min ─────────────────────────────
+  const tope = await dentroDelTopeDeClienta(effectiveTenantId, senderPhone);
+  if (tope !== "ok") {
+    logger.warn("[whatsapp/webhook] Clienta pasó el tope de mensajes — sin respuesta del bot", {
+      tenantId: effectiveTenantId,
+      from: redactPhone(senderPhone),
+      aviso: tope === "avisar",
+    });
+    if (tope === "avisar") {
+      const avisoOk = await sendReply(phoneNumberId, effectiveToken, senderPhone, AVISO_LIMITE_CLIENTA).catch((err) => {
+        logger.warn("[whatsapp/webhook] aviso de tope no salió", {
+          error: err instanceof Error ? err.message : String(err),
+          tenantId: effectiveTenantId,
+        });
+        return false;
+      });
+      try {
+        await WhatsAppMessagesDB.append(effectiveTenantId, {
+          phoneNumberId,
+          customerPhone: senderPhone,
+          customerName: contactNames.get(senderPhone),
+          direction: "out",
+          sentBy: "ai",
+          body: AVISO_LIMITE_CLIENTA,
+          status: avisoOk ? "sent" : "failed",
+        });
+      } catch (err) {
+        logger.error("[whatsapp/webhook] persistencia del aviso de tope falló", {
+          error: err instanceof Error ? err.message : String(err),
+          tenantId: effectiveTenantId,
+        });
+      }
+    }
+    return;
   }
 
   // ── Aviso de «estamos cerrados» (Mensajes › Números y bot) ────────────────

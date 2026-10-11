@@ -278,11 +278,17 @@ async function processPayload(rawBody: string): Promise<void> {
 
       // Resolve tenant from phone_number_id
       const tenantConfig = await resolveTenant(phoneNumberId);
-      const effectiveTenantId = tenantConfig?.tenantId ?? "main";
-      const effectiveToken =
-        tenantConfig?.whatsappToken ??
-        process.env.WHATSAPP_ACCESS_TOKEN ??
-        "";
+      // Un número sin negocio configurado se descarta (igual que
+      // /api/whatsapp/webhook): antes caía a "main" y le contestaba con el
+      // catálogo de otro negocio a quien escribiera a un número ajeno.
+      if (!tenantConfig) {
+        logger.warn("[whatsapp/concierge] phone_number_id sin negocio — descartado", {
+          phoneNumberId,
+        });
+        continue;
+      }
+      const effectiveTenantId = tenantConfig.tenantId;
+      const effectiveToken = tenantConfig.whatsappToken;
 
       if (!effectiveToken) {
         logger.warn("[whatsapp/concierge] No WhatsApp token configured", {

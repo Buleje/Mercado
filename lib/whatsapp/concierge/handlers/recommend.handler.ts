@@ -17,6 +17,7 @@ import type {
   ActionResult,
   Classification,
 } from "../types";
+import { productQueryHandler } from "./product-query.handler";
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
 
@@ -46,6 +47,13 @@ export async function recommendHandler(
   ctx: ConversationContext,
   classification: Classification,
 ): Promise<ActionResult> {
+  // El número de un negocio recomienda lo de ese negocio: cruzar tiendas es
+  // opt-in (Settings › whatsappAsistente.cruzarTiendas). Sin cruce, la búsqueda
+  // en el catálogo propio (sin IA: no hay nada que comparar entre tiendas).
+  if (ctx.asistente?.cruzarTiendas !== true) {
+    return productQueryHandler(ctx, classification);
+  }
+
   // F2 AI-COST: smartModel recomendación → guard antes de llamar
   if (!await aiCostGuard.canSpend(ctx.tenantId, RECOMMEND_COST_USD)) {
     logger.warn("[recommend-handler] presupuesto agotado", {

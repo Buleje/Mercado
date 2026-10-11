@@ -1,6 +1,7 @@
 import "server-only";
 import type { WhatsAppConversation } from "@/lib/generated/prisma/client";
 import type { Classification } from "../ai-intent";
+import type { LecturaAsistente } from "../asistente-negocio";
 
 // Re-export for convenience within the concierge package
 export type { Classification };
@@ -68,6 +69,11 @@ export interface ConversationContext {
   message: string;
   /** Existing DB row — null if first message or session expired */
   conversation: WhatsAppConversation | null;
+  /**
+   * La asistente del negocio (Settings › whatsappAsistente). Sin ella: no cruza
+   * tiendas y sigue el menú genérico. La carga el router; los tests la omiten.
+   */
+  asistente?: LecturaAsistente;
 }
 
 // ─── Action Result ────────────────────────────────────────────────────────────

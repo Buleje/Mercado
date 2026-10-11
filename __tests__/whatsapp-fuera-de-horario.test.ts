@@ -42,7 +42,8 @@ vi.mock("@/lib/prisma", () => ({
   },
 }));
 vi.mock("@/lib/db/whatsapp-messages.db", () => ({
-  WhatsAppMessagesDB: { append: vi.fn(async () => null) },
+  // Devuelve la fila (no null): null significa «re-entregado» y el webhook ya no contesta.
+  WhatsAppMessagesDB: { append: vi.fn(async (_t: string, d: Record<string, unknown>) => ({ id: "m", customerName: null, ...d })) },
   getBotPausedPhones: async () => H.pausados,
 }));
 vi.mock("@/lib/whatsapp/anotar", () => ({ pareceVinculacion: () => null }));
