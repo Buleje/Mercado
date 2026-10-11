@@ -31,6 +31,8 @@ import { useSettings } from "@/contexts/settings-context";
 import PrestamoTimeline from "@/components/admin/prestamos/PrestamoTimeline";
 import ClienteFormModal from "./clientes/ClienteFormModal";
 import { formatCurrency, formatDate, formatDateShort, formatDateNumeric, formatDateLong } from "@/lib/format";
+import { capitalPendiente, tablaDeAmortizacion } from "@/lib/prestamos/amortizacion";
+import { cuerpoRefinanciar } from "@/lib/prestamos/refinanciar";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -73,52 +75,10 @@ const ENTIDAD_LABELS: Record<PrestamoEntidadTipo, string> = {
 
 const PER_PAGE = 10;
 
-// ── Amortization calculators (client-side) ───────────────────────────────────
-
-function calcAmortizacion(monto: number, tasa: number, cuotas: number, sistema: SistemaAmortizacion, periodoGracia = 0) {
-  const tasaMensual = tasa > 0 ? tasa / 100 / 12 : 0;
-  const tabla: { num: number; cuota: number; interes: number; capital: number; saldo: number }[] = [];
-  let saldo = monto;
-
-  // Período de gracia: solo interés
-  for (let i = 1; i <= periodoGracia; i++) {
-    const interes = saldo * tasaMensual;
-    tabla.push({ num: i, cuota: interes, interes, capital: 0, saldo });
-  }
-
-  const n = cuotas - periodoGracia;
-  if (n <= 0) return tabla;
-
-  if (sistema === "FRANCES") {
-    const cuotaFija = tasaMensual > 0
-      ? (saldo * tasaMensual * Math.pow(1 + tasaMensual, n)) / (Math.pow(1 + tasaMensual, n) - 1)
-      : saldo / n;
-    for (let i = 1; i <= n; i++) {
-      const interes = saldo * tasaMensual;
-      const capital = cuotaFija - interes;
-      saldo = Math.max(0, saldo - capital);
-      tabla.push({ num: periodoGracia + i, cuota: cuotaFija, interes, capital, saldo });
-    }
-  } else if (sistema === "ALEMAN") {
-    const capitalFijo = saldo / n;
-    for (let i = 1; i <= n; i++) {
-      const interes = saldo * tasaMensual;
-      const cuotaTotal = capitalFijo + interes;
-      saldo = Math.max(0, saldo - capitalFijo);
-      tabla.push({ num: periodoGracia + i, cuota: cuotaTotal, interes, capital: capitalFijo, saldo });
-    }
-  } else {
-    // AMERICANO: solo interés + capital al final
-    for (let i = 1; i <= n; i++) {
-      const interes = saldo * tasaMensual;
-      const capital = i === n ? saldo : 0;
-      const cuotaTotal = interes + capital;
-      if (i === n) saldo = 0;
-      tabla.push({ num: periodoGracia + i, cuota: cuotaTotal, interes, capital, saldo });
-    }
-  }
-  return tabla;
-}
+// ── Tabla de amortización: la MISMA cuenta que guarda el servidor ────────────
+// (lib/prestamos/amortizacion.ts: tasa MENSUAL, en céntimos). Antes era un
+// cálculo propio en float que difería 1 céntimo del cronograma guardado.
+const calcAmortizacion = tablaDeAmortizacion;
 
 
 // Sub-tabs coherentes con el resto del admin: AdminTabBar da reorden por drag,
@@ -231,7 +191,6 @@ export default function PrestamosModule() {
 
   // Refinanciar modal (mejora 15)
   const [showRefinanciar, setShowRefinanciar] = useState(false);
-  const [refMonto, setRefMonto] = useState("");
   const [refTasa, setRefTasa] = useState("");
   const [refCuotas, setRefCuotas] = useState("");
   const [refSistema, setRefSistema] = useState<SistemaAmortizacion>("FRANCES");
@@ -383,24 +342,21 @@ export default function PrestamosModule() {
   const handleRefinanciar = async () => {
     if (!selected) return;
     setRefinanciarError(null);
-    const monto = parseFloat(refMonto);
-    const tasa = parseFloat(refTasa);
-    const cuotas = parseInt(refCuotas);
-    if (isNaN(monto) || monto <= 0) { setRefinanciarError("Monto inválido"); return; }
-    if (isNaN(tasa) || tasa < 0) { setRefinanciarError("Tasa inválida"); return; }
-    if (isNaN(cuotas) || cuotas <= 0) { setRefinanciarError("N° cuotas inválido"); return; }
+    // Mismo contrato que la ruta (lib/prestamos/refinanciar.ts); el capital lo pone el servidor.
+    const armado = cuerpoRefinanciar({ tasa: refTasa, cuotas: refCuotas, sistema: refSistema });
+    if (!armado.ok) { setRefinanciarError(armado.error); return; }
     setRefinancing(true);
     try {
       const res = await fetch(`/api/prestamos/${selected.id}/refinanciar`, {
         method: "POST",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ monto, tasaInteres: tasa, numeroCuotas: cuotas, sistemaAmortizacion: refSistema }),
+        body: JSON.stringify(armado.cuerpo),
       });
       if (!res.ok) { const err = await res.json().catch(() => ({ error: "Error" })); throw new Error(err.error || "Error al refinanciar"); }
       const updated: Prestamo = await res.json();
       setSelected(updated);
       setShowRefinanciar(false);
-      setRefMonto(""); setRefTasa(""); setRefCuotas("");
+      setRefTasa(""); setRefCuotas("");
       fetchPrestamos();
     } catch (e) {
       setRefinanciarError(e instanceof Error ? e.message : "Error");
@@ -447,7 +403,7 @@ export default function PrestamosModule() {
   const bajarMarcadosCsv = () => {
     const sel = prestamos.filter(p => selectedIds.has(p.id));
     const rows = sel.map(p => [p.id, p.entidadNombre || p.customerId || "", p.monto, p.tasaInteres, p.numeroCuotas, p.status].join(","));
-    const csv = ["ID,Cliente,Monto,Tasa,Cuotas,Status", ...rows].join("\n");
+    const csv = ["ID,Cliente,Monto,Tasa mensual %,Cuotas,Status", ...rows].join("\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     const a = document.createElement("a"); a.href = url; a.download = "prestamos.csv"; a.click(); URL.revokeObjectURL(url);
   };
@@ -860,7 +816,7 @@ export default function PrestamosModule() {
                           ),
                           tasa: (
                             <th data-col="tasa" className="text-right hidden sm:table-cell cursor-pointer select-none" onClick={() => handleSort("tasaInteres")}>
-                              <span className="flex items-center justify-end gap-1">Tasa {sortKey === "tasaInteres" ? (sortDir === "asc" ? "↑" : "↓") : <ArrowUpDown className="h-3 w-3 opacity-40" />}</span>
+                              <span className="flex items-center justify-end gap-1">Tasa mensual {sortKey === "tasaInteres" ? (sortDir === "asc" ? "↑" : "↓") : <ArrowUpDown className="h-3 w-3 opacity-40" />}</span>
                             </th>
                           ),
                           cuotas: (
@@ -1149,15 +1105,15 @@ export default function PrestamosModule() {
                   className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                 />
               </Field>
-              <Field label="Tasa de interés (%)">
+              <Field label="Tasa mensual %">
                 <input
                   type="number"
-                  step="0.1"
+                  step="0.01"
                   min="0"
                   max="100"
                   value={calcTasa}
                   onChange={e => setCalcTasa(e.target.value)}
-                  placeholder="12"
+                  placeholder="1.5"
                   className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                 />
               </Field>
@@ -1318,7 +1274,7 @@ export default function PrestamosModule() {
                       <p className="text-sm font-bold text-[var(--text-primary)]">{formatCurrency(selected.monto)}</p>
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-[var(--text-tertiary)]">Tasa</p>
+                      <p className="text-sm font-bold text-[var(--text-tertiary)]">Tasa mensual</p>
                       <p className="text-sm font-bold text-[var(--text-primary)]">{selected.tasaInteres}%</p>
                     </div>
                     <div>
@@ -1375,7 +1331,7 @@ export default function PrestamosModule() {
                     )}
                     {selected.moraInteres > 0 && (
                       <div className="flex justify-between">
-                        <span className="text-[var(--text-secondary)]">Mora:</span>
+                        <span className="text-[var(--text-secondary)]">Mora anual:</span>
                         <span className="font-bold text-[var(--data-error-500)]">{selected.moraInteres}%</span>
                       </div>
                     )}
@@ -1778,7 +1734,7 @@ ${cuotas.map(c => { const row = `<tr>
                             </button>
                           </div>
                           <div className="flex gap-2">
-                            <button onClick={() => { setRefMonto(String(selected.monto)); setRefTasa(String(selected.tasaInteres)); setRefCuotas(String(selected.numeroCuotas)); setRefSistema(selected.sistemaAmortizacion); setRefinanciarError(null); setShowRefinanciar(true); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-[var(--accent-soft)] hover:bg-[var(--accent-muted)] border border-[var(--accent)]/30">
+                            <button onClick={() => { setRefTasa(String(selected.tasaInteres)); setRefCuotas(String(selected.numeroCuotas)); setRefSistema(selected.sistemaAmortizacion); setRefinanciarError(null); setShowRefinanciar(true); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-[var(--accent-soft)] hover:bg-[var(--accent-muted)] border border-[var(--accent)]/30">
                               <RotateCcw className="h-3.5 w-3.5" /> Refinanciar
                             </button>
                             <button onClick={() => setShowCancelConfirm(true)} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold text-[var(--data-error-500)] bg-[var(--data-error-50)] hover:bg-[var(--data-error-100)] border border-[var(--data-error-500)]">
@@ -1869,8 +1825,8 @@ ${cuotas.map(c => { const row = `<tr>
         >
           <div className={MODAL_BODY}>
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Nuevo monto (S/)"><input type="number" step="0.01" min="0.01" value={refMonto} onChange={e => setRefMonto(e.target.value)} className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40" /></Field>
-                  <Field label="Nueva tasa (%)"><input type="number" step="0.1" min="0" value={refTasa} onChange={e => setRefTasa(e.target.value)} className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40" /></Field>
+                  <Field label="Capital pendiente"><input type="text" readOnly aria-readonly="true" value={formatCurrency(capitalPendiente(selected.cuotas))} className="w-full px-3 h-12 rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] text-sm font-bold text-[var(--text-primary)] cursor-default focus:outline-none" /></Field>
+                  <Field label="Nueva tasa mensual %"><input type="number" step="0.01" min="0" value={refTasa} onChange={e => setRefTasa(e.target.value)} className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40" /></Field>
                   <Field label="N° cuotas"><input type="number" min="1" value={refCuotas} onChange={e => setRefCuotas(e.target.value)} className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40" /></Field>
                   <Field label="Sistema"><select value={refSistema} onChange={e => setRefSistema(e.target.value as SistemaAmortizacion)} className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none">{Object.entries(SISTEMA_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
                 </div>
@@ -2179,7 +2135,7 @@ ${cuotas.map(c => { const row = `<tr>
                           className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         />
                       </Field>
-                      <Field label={<>Mora % <span className="font-normal opacity-60">(penalidad)</span></>}>
+                      <Field label={<>Mora % <span className="font-normal opacity-60">(anual)</span></>}>
                         <input
                           type="number"
                           step="0.1"
