@@ -17,8 +17,14 @@ import type { CajaPersona } from "./detector-personas";
 
 const dec4 = (n: number) => Math.round(Math.min(Math.max(n, 0), 1) * 10_000) / 10_000;
 
-/** Cajas en px de un lienzo de `ancho`×`alto` → fracciones 0-1 (lo que pide la ruta). */
-export function cajasEnFraccion(cajas: readonly CajaPersona[], ancho: number, alto: number): CajaPersonaFraccion[] {
+/** Una caja del cuadro con el id del seguimiento del detector (`seguimiento.ts`), si lo tiene. */
+export type CajaPersonaSeguida = CajaPersona & { seg?: string };
+
+/**
+ * Cajas en px de un lienzo de `ancho`×`alto` → fracciones 0-1 (lo que pide la
+ * ruta). El `seg` viaja tal cual (10-10): `visitantes.ts` junta por él.
+ */
+export function cajasEnFraccion(cajas: readonly CajaPersonaSeguida[], ancho: number, alto: number): CajaPersonaFraccion[] {
   if (ancho <= 0 || alto <= 0) return [];
   // Con más gente que el tope (10), van las más seguras.
   return [...cajas]
@@ -30,6 +36,7 @@ export function cajasEnFraccion(cajas: readonly CajaPersona[], ancho: number, al
       ancho: dec4(c.ancho / ancho),
       alto: dec4(c.alto / alto),
       confianza: dec4(c.confianza),
+      ...(c.seg ? { seg: c.seg } : {}),
     }))
     .filter((c) => c.ancho > 0 && c.alto > 0);
 }

@@ -26,7 +26,8 @@ import {
  * pasa a `firmaDelCuerpo` y no se guarda.
  *
  * El `marcador` que manda el cliente se conserva sólo si es un chaleco
- * registrado (`chalecosRegistrados`; hoy ninguno): si no, manda la ropa.
+ * registrado (`chalecosRegistrados`; hoy ninguno): si no, manda la ropa. El
+ * `seg` (id del seguimiento del detector, ya validado por el schema) pasa tal cual.
  *
  * Nunca tira: una caja que no se puede leer queda con `firma: null` (la foto
  * se guarda igual; esa aparición cuenta como «sin agrupar»).
@@ -43,6 +44,7 @@ function sinFirma(c: CajaPersonaFraccion, chalecosRegistrados: ReadonlySet<numbe
     alto: dec4(c.alto),
     confianza: Math.round(c.confianza * 100) / 100,
     ...(marcador != null ? { marcador } : {}),
+    ...(c.seg ? { seg: c.seg } : {}),
     firma: null,
     chaleco: null,
   };

@@ -29,7 +29,7 @@ import { filtrarCajasIgnoradas, type ZonaIgnorada } from "@/lib/camaras/zonas-ig
 import { emitirSenalCamara } from "@/lib/camaras/avisos-segundo-plano";
 import type { AparicionPersona, CajaFraccion, MotorDetector, PersonaEnVivo } from "@/lib/camaras/vigia";
 import { logger } from "@/lib/logger";
-import { OLVIDAR_PERSONA_MS, crearSeguimiento, seguir } from "@/lib/camaras/seguimiento";
+import { OLVIDAR_PERSONA_MS, crearSeguimiento, segDeDetecciones, seguir } from "@/lib/camaras/seguimiento";
 import {
   componerFoto,
   crearLienzosCuadro,
@@ -37,9 +37,8 @@ import {
   leerCuadro,
   selloLima,
   soltarLienzosCuadro,
-  type CajaPersona,
 } from "./detector-personas";
-import { cajasEnFraccion, subirFotoPersona } from "./subir-foto-persona";
+import { cajasEnFraccion, subirFotoPersona, type CajaPersonaSeguida } from "./subir-foto-persona";
 import { crearVigia } from "./vigia-camara";
 
 export type EstadoDetectorPersonas = "apagado" | "cargando" | "mirando" | "error";
@@ -127,6 +126,8 @@ export function useDetectorPersonas(opciones: OpcionesDetectorPersonas): Detecto
     let decision: EstadoDetector = ESTADO_DETECTOR_INICIAL;
     let subiendo = false;
     const vigia = crearVigia();
+    /* Nace con el detector: recargar, cambiar de cámara o apagar el video abren
+       otra sesión de `seg` (las fotos de antes quedan juntas por lugar y ropa). */
     const seguimiento = crearSeguimiento();
     let seguidas: PersonaEnVivo[] = [];
     /** Lo que tardó la última vuelta (ms): estira la ventana de «apareció». */
@@ -137,7 +138,7 @@ export function useDetectorPersonas(opciones: OpcionesDetectorPersonas): Detecto
 
     const guardar = async (
       meta: MetaFotoPersona,
-      cajas: CajaPersona[],
+      cajas: CajaPersonaSeguida[],
       at: number,
       alFallar: () => void,
     ) => {
@@ -203,11 +204,21 @@ export function useDetectorPersonas(opciones: OpcionesDetectorPersonas): Detecto
       /* Para decidir la foto cuentan sólo las que el detector VIO en esta
          mirada: las «estimadas» confirmarían solas un «apareció» falso. */
       const { width: cw, height: ch } = lienzos.chico;
+      /* Cada caja de la foto lleva el `seg` de su persona: `visitantes.ts` junta
+         por él las fotos de quien siguió en cuadro, aunque la ropa no alcance. */
+      const segs = segDeDetecciones(enVivo, quedan);
       const r = {
         personas: quedan.length,
         confianza: quedan.reduce((m, k) => Math.max(m, k.confianza), 0),
         cajas: quedan.map(
-          (k): CajaPersona => ({ x: k.x * cw, y: k.y * ch, ancho: k.ancho * cw, alto: k.alto * ch, confianza: k.confianza }),
+          (k, i): CajaPersonaSeguida => ({
+            x: k.x * cw,
+            y: k.y * ch,
+            ancho: k.ancho * cw,
+            alto: k.alto * ch,
+            confianza: k.confianza,
+            ...(segs[i] ? { seg: segs[i] } : {}),
+          }),
         ),
       };
       const d = decidirFotoPersona(decision, r.personas, at, {

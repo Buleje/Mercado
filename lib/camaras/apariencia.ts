@@ -287,6 +287,9 @@ export function distanciaFirmas(a: string, b: string): number {
 
 /* ── Cajas que manda el detector junto a la foto ─────────────────────────── */
 
+/** «<sesión>-<n>» del seguimiento del detector (`nuevaSesionSeguimiento` de `seguimiento.ts`). */
+export const SEG_VALIDO = /^[0-9a-z]{4,16}-[0-9]{1,6}$/;
+
 /** Una persona en el cuadro, en fracciones 0-1 de la foto. */
 export const cajaPersonaSchema = z.object({
   x: z.number().min(0).max(1),
@@ -301,6 +304,14 @@ export const cajaPersonaSchema = z.object({
    * si está registrado (`marcadorDeChaleco`).
    */
   marcador: z.number().int().min(200).max(244).nullable().optional(),
+  /**
+   * Id del seguimiento del detector (`seguimiento.ts`, 10-10): la misma
+   * persona seguida entre cuadros lleva el mismo en todas sus fotos de esa
+   * cámara mientras el detector siga abierto. Opcional: las fotos de antes y
+   * los clientes viejos no lo mandan. `visitantes.ts` junta por él antes que
+   * por la ropa.
+   */
+  seg: z.string().regex(SEG_VALIDO).optional(),
 });
 export type CajaPersonaFraccion = z.infer<typeof cajaPersonaSchema>;
 

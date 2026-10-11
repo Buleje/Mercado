@@ -12,6 +12,11 @@
  *   - Una caja metida dentro de otra MÁS GRANDE de la misma foto (≥ 60 % de
  *     su área) es la misma persona detectada dos veces: cuenta una sola vez.
  *     Fuera de eso, dos cajas de la misma foto nunca son la misma persona.
+ *   - El mismo `seg` (id de seguimiento del detector, 10-10) en la misma cámara
+ *     y en OTRA foto = la misma persona, SIEMPRE: va antes que el lugar y la
+ *     ropa, que a 40-80 px no distingue a nadie. Las fotos de antes no lo traen
+ *     y siguen por las reglas de abajo; un `seg` distinto no separa (el
+ *     detector pudo perderla unos segundos y darle otro).
  *   - Seguimiento: la misma cámara, ≤ 5 min después, la caja casi en el mismo
  *     lugar y de tamaño parecido = la misma persona, aunque la ropa se lea algo
  *     distinta (umbral 0,5). Así se juntan también las cajas sin firma que
@@ -245,6 +250,8 @@ interface Aparicion {
   caja: number;
   /** La propia y las de las cajas repetidas de la misma foto (la etiqueta de una cae sobre la ropa de la otra). */
   firmas: string[];
+  /** Ids de seguimiento del detector: el propio y los de sus cajas repetidas (vacío en fotos de antes del 10-10). */
+  segs: string[];
   chaleco: boolean;
   marcador: number | null;
   recuadro: RecuadroPortada;
@@ -252,6 +259,8 @@ interface Aparicion {
 }
 
 interface GrupoEnArmado {
+  /** `GrupoPersonas.clave`: se fija al nacer (una tira de antes que se le sume después no la corre). */
+  clave: string;
   tipo: "visitante" | "personal";
   marcador: number | null;
   miembros: Aparicion[];
@@ -293,6 +302,20 @@ function seguimiento(miembros: readonly Aparicion[], a: Aparicion): { m: Aparici
   return mejor;
 }
 
+/**
+ * La última vez (ms) que alguien de `miembros` llevó uno de los `seg` de `a`,
+ * en la misma cámara y en OTRA foto; `null` si nadie.
+ */
+function ultimoMismoSeg(miembros: readonly Aparicion[], a: Aparicion): number | null {
+  if (a.segs.length === 0) return null;
+  let ultimo: number | null = null;
+  for (const m of miembros) {
+    if (m.docId === a.docId || !mismaCamara(m, a) || !m.segs.some((s) => a.segs.includes(s))) continue;
+    if (ultimo === null || m.ms > ultimo) ultimo = m.ms;
+  }
+  return ultimo;
+}
+
 /** Las cajas de una foto, sin las repetidas (una caja metida en otra más grande es la misma persona). */
 function aparicionesDeFoto(f: FotoConCajas, ms: number, cajas: readonly CajaGuardada[], chalecos: ReadonlySet<number>) {
   const orden = cajas.map((c, i) => ({ c, i })).sort((p, q) => area(q.c) - area(p.c) || p.i - q.i);
@@ -305,6 +328,7 @@ function aparicionesDeFoto(f: FotoConCajas, ms: number, cajas: readonly CajaGuar
     if (madre) {
       repetidas++;
       if (c.firma) madre.firmas.push(c.firma);
+      if (c.seg) madre.segs.push(c.seg);
       madre.chaleco ||= c.chaleco === true;
       madre.marcador ??= marcador;
       continue;
@@ -317,6 +341,7 @@ function aparicionesDeFoto(f: FotoConCajas, ms: number, cajas: readonly CajaGuar
       camaraNombre: f.camaraNombre,
       caja: i,
       firmas: c.firma ? [c.firma] : [],
+      segs: c.seg ? [c.seg] : [],
       chaleco: c.chaleco === true,
       marcador,
       recuadro,
@@ -361,6 +386,22 @@ export function agruparPersonasDelDia(
       continue;
     }
     const tipo = a.chaleco ? "personal" : "visitante";
+    // 0) El mismo `seg` del detector en la misma cámara: la misma persona, siempre.
+    //    Si va a parar a un grupo, se lleva su tira de figuras sin firma con el mismo `seg`.
+    const tiraSeg = a.segs.length > 0 ? sueltas.findIndex((s) => ultimoMismoSeg(s, a) !== null) : -1;
+    let porSeg: { g: GrupoEnArmado; ms: number } | null = null;
+    for (const g of grupos) {
+      if (g.docs.has(a.docId)) continue;
+      const ms = ultimoMismoSeg(g.miembros, a);
+      if (ms !== null && (!porSeg || ms > porSeg.ms)) porSeg = { g, ms };
+    }
+    if (porSeg) {
+      // El chaleco a 40-80 px se lee en unas fotos sí y en otras no: si alguna lo vio, es personal.
+      if (a.chaleco) porSeg.g.tipo = "personal";
+      sumar(porSeg.g, a);
+      sumarTira(porSeg.g, sueltas, tiraSeg);
+      continue;
+    }
     // 1) Seguimiento en la misma cámara. Sin firma no hay tipo: sigue a cualquiera.
     let seguido: { g: GrupoEnArmado; m: Aparicion; separacion: number } | null = null;
     for (const g of grupos) {
@@ -373,10 +414,11 @@ export function agruparPersonasDelDia(
     }
     if (seguido) {
       sumar(seguido.g, a);
+      sumarTira(seguido.g, sueltas, tiraSeg);
       continue;
     }
     if (a.firmas.length === 0) {
-      const tira = sueltas.find((s) => seguimiento(s, a) !== null);
+      const tira = tiraSeg >= 0 ? sueltas[tiraSeg] : sueltas.find((s) => seguimiento(s, a) !== null);
       if (tira) tira.push(a);
       else sueltas.push([a]);
       continue;
@@ -394,10 +436,11 @@ export function agruparPersonasDelDia(
     }
     if (mejor && mejorD <= umbral) {
       sumar(mejor, a);
+      sumarTira(mejor, sueltas, tiraSeg);
       continue;
     }
-    // 3) Alguien nuevo: si venía de lejos (figura sin firma en el mismo lugar), su llegada es esa.
-    const i = sueltas.findIndex((s) => seguimiento(s, a) !== null);
+    // 3) Alguien nuevo: si venía de lejos (figura sin firma con su `seg` o en el mismo lugar), su llegada es esa.
+    const i = tiraSeg >= 0 ? tiraSeg : sueltas.findIndex((s) => seguimiento(s, a) !== null);
     const previas = i >= 0 ? sueltas.splice(i, 1)[0] : [];
     grupos.push(nuevo(tipo, null, [...previas, a]));
   }
@@ -407,7 +450,7 @@ export function agruparPersonasDelDia(
 }
 
 function nuevo(tipo: GrupoEnArmado["tipo"], marcador: number | null, miembros: Aparicion[]): GrupoEnArmado {
-  return { tipo, marcador, miembros, docs: new Set(miembros.map((m) => m.docId)), unidos: [] };
+  return { clave: claveDeAparicion(miembros[0]), tipo, marcador, miembros, docs: new Set(miembros.map((m) => m.docId)), unidos: [] };
 }
 
 function sumar(g: GrupoEnArmado, a: Aparicion): void {
@@ -415,7 +458,19 @@ function sumar(g: GrupoEnArmado, a: Aparicion): void {
   g.docs.add(a.docId);
 }
 
-const claveDe = (g: GrupoEnArmado) => `${g.miembros[0].docId}#${g.miembros[0].caja}`;
+/**
+ * La tira `i` de figuras sin firma pasa al grupo (el detector dijo que es la
+ * misma persona). Si alguna de sus fotos ya está en el grupo, no se toca:
+ * serían dos cajas de la misma foto en una persona.
+ */
+function sumarTira(g: GrupoEnArmado, sueltas: Aparicion[][], i: number): void {
+  if (i < 0 || sueltas[i].some((m) => g.docs.has(m.docId))) return;
+  for (const m of sueltas.splice(i, 1)[0]) sumar(g, m);
+  g.miembros.sort(ordenAparicion);
+}
+
+const claveDeAparicion = (a: Aparicion) => `${a.docId}#${a.caja}`;
+const claveDe = (g: GrupoEnArmado) => g.clave;
 const ordenAparicion = (a: Aparicion, b: Aparicion) => a.ms - b.ms || a.docId.localeCompare(b.docId) || a.caja - b.caja;
 
 /**
@@ -460,6 +515,8 @@ function aplicarUniones(grupos: GrupoEnArmado[], uniones: readonly UnionVisitant
   // La clave queda la de la primera aparición (siempre la de uno de los grupos unidos); `unidos`, las demás.
   for (const { g, claves } of dePadre.values()) {
     g.miembros.sort(ordenAparicion);
+    const primera = claveDeAparicion(g.miembros[0]);
+    if (claves.includes(primera)) g.clave = primera;
     g.unidos = claves.filter((c) => c !== claveDe(g));
   }
   return salida;
