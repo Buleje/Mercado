@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
 import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
-import { formatDate, formatDateLong, formatTime } from "@/lib/format";
+import { formatDate, formatDateLong, formatNumber, formatTime } from "@/lib/format";
 
 export type MovementDetail = {
   id: string;
@@ -86,10 +86,16 @@ function Dato({ label, children }: { label: string; children: React.ReactNode })
   );
 }
 
+/** Lo propio de una pérdida (`type = "merma"`): su causa y lo que cuesta a costo de hoy. */
+export type DatosDePerdida = { causa: string; costo: number; soles: number };
+
+const soles = (n: number) => `S/ ${formatNumber(n, { min: 2 })}`;
+
 export default function MovementDetailModal({
-  movimiento, onRevertido, onClose,
+  movimiento, perdida, onRevertido, onClose,
 }: {
   movimiento: MovementDetail;
+  perdida?: DatosDePerdida;
   onRevertido: () => void;
   onClose: () => void;
 }) {
@@ -153,7 +159,7 @@ export default function MovementDetailModal({
           </div>
           <span className="ml-auto flex items-center gap-1 shrink-0">
             <ControlesDeVentana ventana={ventana} />
-            <button onClick={onClose} aria-label="Cerrar" className="h-9 w-9 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">
+            <button type="button" onClick={onClose} aria-label="Cerrar" className="h-12 w-12 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">
               <X className="h-5 w-5" />
             </button>
           </span>
@@ -176,6 +182,12 @@ export default function MovementDetailModal({
           </div>
 
           <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {perdida && <Dato label="Causa">{perdida.causa}</Dato>}
+            {perdida && (
+              <Dato label="Cuesta">
+                {perdida.costo > 0 ? `${soles(perdida.soles)} (${m.quantity} × ${soles(perdida.costo)}, costo de hoy)` : "El producto no tiene costo cargado"}
+              </Dato>
+            )}
             {m.createdBy && <Dato label="Lo registró">{m.createdBy}</Dato>}
             {m.reference && <Dato label="Referencia">{m.reference}</Dato>}
             {m.notes && (
@@ -203,7 +215,7 @@ export default function MovementDetailModal({
                   type="button"
                   onClick={revertir}
                   disabled={revirtiendo}
-                  className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-[var(--data-warning-500)] px-4 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                  className="inline-flex h-12 items-center gap-1.5 rounded-xl bg-[var(--data-warning-500)] px-4 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
                 >
                   {revirtiendo ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Undo2 className="h-4 w-4" aria-hidden />}
                   Sí, revertir
@@ -212,7 +224,7 @@ export default function MovementDetailModal({
                   type="button"
                   onClick={() => setConfirma(false)}
                   disabled={revirtiendo}
-                  className="inline-flex h-11 items-center rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-raised)] disabled:opacity-50"
+                  className="inline-flex h-12 items-center rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-raised)] disabled:opacity-50"
                 >
                   No
                 </button>
@@ -223,7 +235,7 @@ export default function MovementDetailModal({
               type="button"
               onClick={() => setConfirma(true)}
               className={cn(
-                "inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--data-warning-500)]/50 hover:text-[var(--data-warning-600)] dark:hover:text-[var(--data-warning-500)]",
+                "inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--data-warning-500)]/50 hover:text-[var(--data-warning-600)] dark:hover:text-[var(--data-warning-500)]",
               )}
             >
               <Undo2 className="h-4 w-4" aria-hidden />

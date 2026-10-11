@@ -46,7 +46,7 @@ export const TAB_MIGRATION: Record<string, Tab | DestinoTab> = {
   "metricas-conversion": "analytics-pro", referidos: "analytics-pro",
   // → Inventario
   inventario: "inventario", kardex: "inventario", lotes: "inventario",
-  mermas: "inventario", almacenes: "inventario",
+  mermas: { tab: "inventario", vista: "kardex", sub: "perdidas" }, almacenes: "inventario",
   "inventario-almacenes": "inventario", ubicaciones: "inventario", transferencias: "inventario",
   "auto-reorden": "inventario", "reorden-dinamico": "inventario",
   prediccion: "inventario", reposicion: "inventario",
@@ -203,6 +203,8 @@ export const TAB_MIGRATION: Record<string, Tab | DestinoTab> = {
  * integradores de cada ola (pedido `vistaMigracion` en `SP/panel/registro`).
  */
 export const VISTA_MIGRATION: Record<string, DestinoTab> = {
+  // Pérdidas → sección de Entradas y salidas (10-10).
+  "inventario:mermas": { tab: "inventario", vista: "kardex", sub: "perdidas" },
   // ── Ola 2 (2026-10-10) ──
   "tareas:tareas": { tab: "rrhh", vista: "tareas" },
   "tareas:notas": { tab: "rrhh", vista: "notas" },

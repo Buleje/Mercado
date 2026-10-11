@@ -157,7 +157,6 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
     { key: "stock", label: "Productos y stock", hint: "Tus productos con lo que hay y cuánto queda; crear, editar, importar e imprimir etiquetas", origen: ["inventario"] },
     { key: "kardex", label: "Entradas y salidas", hint: "Cada movimiento de stock de cada producto", origen: ["inventario"] },
     { key: "lotes", label: "Vencimientos", hint: "Lotes y fechas de vencimiento", origen: ["inventario"] },
-    { key: "mermas", label: "Pérdidas", hint: "Lo que se perdió, rompió o venció", origen: ["inventario"] },
     { key: "conteo", label: "Conteo físico", hint: "Contar lo que hay en el anaquel y conciliarlo con el sistema; asistente, manual o con escáner, y la declaración jurada", origen: ["inventario"] },
     { key: "categorias", label: "Categorías", hint: "Las categorías de tus productos y su orden en la tienda", origen: ["productos"] },
     { key: "precios", label: "Precios", hint: "Historial de los cambios de precio de cada producto", origen: ["productos"] },
@@ -393,6 +392,10 @@ export const ANIDADAS_POR_MODULO: Readonly<Record<string, readonly SubvistaAnida
   ],
   // Productos e inventario › Conteo físico (era un modal) y › Ofertas y cupones.
   inventario: [
+    // Pérdidas se fundió en Entradas y salidas (10-10): cada pérdida ES un movimiento de salida
+    // de tipo `merma`; la vista `mermas` vieja va a `kardex` + `?sub=perdidas` (VISTA_MIGRATION).
+    { vista: "kardex", key: "movimientos", label: "Movimientos", hint: "Cada entrada y salida de stock, con quién la registró", origen: ["inventario"] },
+    { vista: "kardex", key: "perdidas", label: "Pérdidas", hint: "Lo que se perdió, rompió o venció, con su causa y lo que cuesta", origen: ["inventario"] },
     { vista: "conteo", key: "asistente", label: "Asistente de conteo", hint: "Paso a paso: eliges qué contar, cuentas y concilias", origen: ["inventario"] },
     { vista: "conteo", key: "manual", label: "Conteo manual", hint: "Escribes lo que contaste producto por producto", origen: ["inventario"] },
     { vista: "conteo", key: "escaner", label: "Conteo con escáner", hint: "Cuentas pasando el código de barras", origen: ["inventario"] },

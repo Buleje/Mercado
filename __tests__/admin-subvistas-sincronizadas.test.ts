@@ -338,6 +338,10 @@ describe("VISTAS_POR_MODULO refleja las pestañas reales de cada módulo", () =>
       archivo: "components/admin/fiados/tipos.ts",
       constante: /export const FIADO_VISTAS = \[([^\]]+)\]/,
     },
+    "inventario/kardex": {
+      archivo: "components/admin/inventario/movimientos/secciones.ts",
+      constante: /export const SUBS_MOVIMIENTOS = \[([^\]]+)\]/,
+    },
     "inventario/conteo": {
       archivo: "components/admin/inventario/ConteoFisicoVista.tsx",
       constante: /export const SUBS_CONTEO = \[([^\]]+)\]/,
