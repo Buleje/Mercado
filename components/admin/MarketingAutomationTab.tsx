@@ -1,406 +1,134 @@
 "use client";
 
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+/**
+ * Crecimiento › Campañas: mensajes que salen SOLOS por el WhatsApp del negocio
+ * (o la app) a un grupo de clientes, ahora o a una hora. Patrón del panel
+ * (11-10): título · Indicadores · Nueva campaña · Más en una fila; «Para quién»
+ * (lo que era la pestaña Segmentos) en una fila de 48 px; la lista en una
+ * tabla con el «⋯» por fila.
+ *
+ * No es Clientes › Mensajes masivos: ahí los abres tú uno por uno en tu
+ * WhatsApp (wa.me); acá los manda el servidor a la hora y cuenta cómo le fue.
+ * Por eso conviven, y el «Más» lleva de una a la otra.
+ */
+import { useState } from "react";
+import { SectionTitle } from "@buleje/design-system";
+import { AlertTriangle, Megaphone, MessageCircle, MoreHorizontal, Plus, RefreshCw } from "@buleje/design-system/icons";
+import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
+import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
+import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { button } from "@/components/ui-system/button-variants";
+import { hrefDeDestino } from "@/lib/admin/enlaces-panel";
+import { formatNumber } from "@/lib/format";
+import { AudienciasCampana } from "@/components/admin/crecimiento/campanas/AudienciasCampana";
+import { ModalNuevaCampana } from "@/components/admin/crecimiento/campanas/ModalNuevaCampana";
+import { TablaCampanas } from "@/components/admin/crecimiento/campanas/TablaCampanas";
+import { useCampanas } from "@/components/admin/crecimiento/campanas/use-campanas";
+import type { Segment } from "@/components/admin/crecimiento/campanas/tipos";
 
-import { useState, useEffect, useId, useMemo, useCallback, useRef } from "react";
-import {
-  Megaphone, Plus, Trash2, Users, Clock, CheckCircle2,
-  Loader2, MessageCircle, Bell, Send, Ban, Eye, TrendingUp,
-} from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
-import { csrfHeaders } from "@/lib/csrf-client";
-import { formatDateTimeShort, formatNumber } from "@/lib/format";
+function Cifra({ rotulo, valor }: { rotulo: string; valor: string }) {
+  return (
+    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
+      <p className="text-sm font-semibold text-[var(--text-secondary)]">{rotulo}</p>
+      <p className="mt-1 text-lg font-extrabold tabular-nums text-[var(--text-primary)]">{valor}</p>
+    </div>
+  );
+}
 
-// ── Types (alineados con /api/campaigns + CampaignsDB) ──────────────────────────
+export default function MarketingAutomationTab() {
+  const c = useCampanas();
+  // Tocar un grupo de «Para quién» abre el alta ya apuntada a ese grupo.
+  const [modal, setModal] = useState<{ abierto: boolean; segmento: Segment }>({ abierto: false, segmento: "todos" });
+  const abrir = (segmento: Segment = "todos") => setModal({ abierto: true, segmento });
 
-type Segment = "todos" | "vip" | "inactivos" | "cumpleanos" | "deudores";
-type Channel = "whatsapp" | "inapp" | "ambos";
-type Status = "borrador" | "programada" | "activa" | "completada" | "cancelada";
+  const programadas = c.campaigns.filter((x) => x.status === "programada").length;
+  const enviadas = c.campaigns.filter((x) => x.status === "completada").length;
+  const alcance = c.campaigns.reduce((s, x) => s + (x.delivered || 0), 0);
 
-type Campaign = {
-  id: string;
-  name: string;
-  message: string;
-  segment: Segment;
-  channel: Channel;
-  status: Status;
-  scheduledAt: string | null;
-  sentAt: string | null;
-  totalAudience: number;
-  delivered: number;
-  opened: number;
-  conversions: number;
-  revenue: number;
-  createdAt: string;
-};
+  const kpis = useKpisPlegables({
+    claveMemoria: "crecimiento-campanas",
+    alto: "md",
+    compactoEnMovil: true,
+    anchoFijo: true,
+    sinDatosAun: c.loading && c.campaigns.length === 0,
+    resumen: `${programadas} programada${programadas === 1 ? "" : "s"}`,
+    tarjetas: [
+      <Cifra key="t" rotulo="Campañas" valor={String(c.campaigns.length)} />,
+      <Cifra key="p" rotulo="Programadas" valor={String(programadas)} />,
+      <Cifra key="e" rotulo="Enviadas" valor={String(enviadas)} />,
+      <Cifra key="a" rotulo="Clientes alcanzados" valor={formatNumber(alcance)} />,
+    ],
+  });
 
-// ── Meta ────────────────────────────────────────────────────────────────────────
-
-const SEGMENT_LABELS: Record<Segment, string> = {
-  todos: "Todos los clientes",
-  vip: "VIP (oro + diamante)",
-  inactivos: "Inactivos (30 días)",
-  cumpleanos: "Cumpleañeros del mes",
-  deudores: "Con deuda (fiado)",
-};
-
-const CHANNEL_META: Record<Channel, { label: string; icon: typeof MessageCircle }> = {
-  whatsapp: { label: "WhatsApp", icon: MessageCircle },
-  inapp: { label: "App", icon: Bell },
-  ambos: { label: "WhatsApp + App", icon: Send },
-};
-
-const STATUS_META: Record<Status, { label: string; color: string; bg: string }> = {
-  borrador:   { label: "Borrador",   color: "text-[var(--text-secondary)]",   bg: "bg-[var(--surface-sunken)]" },
-  programada: { label: "Programada", color: "text-[var(--data-info-500)]",    bg: "bg-[var(--data-info-50)] dark:bg-[var(--data-info-500)]/15" },
-  activa:     { label: "Activa",     color: "text-[var(--data-warning-500)]", bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/15" },
-  completada: { label: "Completada", color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
-  cancelada:  { label: "Cancelada",  color: "text-[var(--data-error-500)]",   bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15" },
-};
-
-const fmtDate = (s: string | null) =>
-  s ? formatDateTimeShort(s) : "—";
-
-// datetime-local con la hora local actual (sin segundos)
-const nowLocalInput = () => {
-  const d = new Date();
-  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-  return d.toISOString().slice(0, 16);
-};
-
-type FormState = {
-  name: string;
-  message: string;
-  segment: Segment;
-  channel: Channel;
-  mode: "ahora" | "programar" | "borrador";
-  scheduledAt: string;
-};
-
-const emptyForm: FormState = {
-  name: "", message: "", segment: "todos", channel: "whatsapp", mode: "ahora", scheduledAt: "",
-};
-
-// ── Component ─────────────────────────────────────────────────────────────────
-
-export default function MarketingAutomationTab({
-  initialSegment,
-  onConsumeSegment,
-}: { initialSegment?: string | null; onConsumeSegment?: () => void } = {}) {
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState<FormState>(emptyForm);
-  const [audience, setAudience] = useState<number | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [busyId, setBusyId] = useState<string | null>(null);
-  const nameId = useId();
-  const messageId = useId();
-  const segmentId = useId();
-  const channelId = useId();
-  const scheduledAtId = useId();
-
-  // Con el doble montaje salen dos GET; si el primero vuelve después de Eliminar,
-  // la campaña borrada reaparece (el mismo bug medido en Tareas el 2026-09-14).
-  // Sólo aplica su lista la carga más nueva. Eliminar NO recarga después a
-  // propósito: el GET sale de "use cache" con revalidateTag(tag, "max"), que
-  // sirve la lista vieja una vez más y traería la fila de vuelta.
-  const cargasRef = useRef({ ultima: 0 });
-  const load = useCallback(async () => {
-    const esta = ++cargasRef.current.ultima;
-    setLoading(true);
-    try {
-      const res = await fetch("/api/campaigns");
-      if (res.ok) {
-        const lista = (await res.json()) as Campaign[];
-        if (esta === cargasRef.current.ultima) setCampaigns(lista);
-      }
-    } catch {
-      /* silencioso: lista vacía si falla */
-    } finally {
-      if (esta === cargasRef.current.ultima) setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { void load(); }, [load]);
-
-  // Apertura cross-tab desde "Segmentos": pre-carga el form con el segmento elegido.
-  useEffect(() => {
-    if (!initialSegment) return;
-    const seg = (Object.keys(SEGMENT_LABELS) as Segment[]).includes(initialSegment as Segment)
-      ? (initialSegment as Segment)
-      : "todos";
-    setForm({ ...emptyForm, segment: seg });
-    setError(null);
-    setShowForm(true);
-    onConsumeSegment?.();
-  }, [initialSegment, onConsumeSegment]);
-
-  // Preview de audiencia en vivo cuando cambia el segmento del form
-  useEffect(() => {
-    if (!showForm) return;
-    let active = true;
-    setAudience(null);
-    fetch(`/api/campaigns/audience-count?segment=${form.segment}`)
-      .then(r => (r.ok ? r.json() : { count: 0 }))
-      .then(d => { if (active) setAudience(d.count ?? 0); })
-      .catch(() => { if (active) setAudience(0); });
-    return () => { active = false; };
-  }, [form.segment, showForm]);
-
-  const stats = useMemo(() => {
-    const programadas = campaigns.filter(c => c.status === "programada").length;
-    const completadas = campaigns.filter(c => c.status === "completada").length;
-    const alcance = campaigns.reduce((s, c) => s + (c.delivered || 0), 0);
-    return { total: campaigns.length, programadas, completadas, alcance };
-  }, [campaigns]);
-
-  const submit = async () => {
-    setError(null);
-    if (!form.name.trim() || !form.message.trim()) {
-      setError("Ponle nombre y mensaje a la campaña.");
-      return;
-    }
-    const isScheduled = form.mode !== "borrador";
-    const scheduledAt = form.mode === "programar" ? form.scheduledAt : form.mode === "ahora" ? nowLocalInput() : null;
-    if (form.mode === "programar" && !scheduledAt) {
-      setError("Elige fecha y hora para programar.");
-      return;
-    }
-    setSaving(true);
-    try {
-      const res = await fetch("/api/campaigns", {
-        method: "POST",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({
-          name: form.name.trim(),
-          message: form.message.trim(),
-          segment: form.segment,
-          channel: form.channel,
-          status: isScheduled ? "programada" : "borrador",
-          scheduledAt: scheduledAt ? new Date(scheduledAt).toISOString() : null,
-        }),
-      });
-      if (!res.ok) {
-        setError("No se pudo crear la campaña.");
-        return;
-      }
-      // Optimistic: el POST devuelve la campaña creada — la mostramos al instante
-      // (el GET con "use cache" puede tardar ~1s en revalidar el tag).
-      const created = (await res.json()) as Campaign;
-      setCampaigns(prev => [created, ...prev]);
-      setShowForm(false);
-      setForm(emptyForm);
-      void load();
-    } catch {
-      setError("Error de red al crear la campaña.");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const patchStatus = async (id: string, status: Status) => {
-    setBusyId(id);
-    try {
-      const res = await fetch(`/api/campaigns?id=${encodeURIComponent(id)}`, {
-        method: "PATCH",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ status }),
-      });
-      if (res.ok) await load();
-    } finally {
-      setBusyId(null);
-    }
-  };
-
-  const remove = async (id: string) => {
-    setBusyId(id);
-    try {
-      const res = await fetch(`/api/campaigns?id=${encodeURIComponent(id)}`, {
-        method: "DELETE",
-        headers: csrfHeaders({}),
-      });
-      if (res.ok) setCampaigns(prev => prev.filter(c => c.id !== id));
-    } finally {
-      setBusyId(null);
-    }
-  };
+  const acciones: MenuAccion[] = [
+    {
+      id: "masivos",
+      label: "Escribir uno por uno",
+      hint: "Clientes › Mensajes masivos: los abres tú en tu WhatsApp, con los grupos de Mis clientes",
+      icon: MessageCircle,
+      onSelect: () => { irAEnlace(hrefDeDestino({ tab: "clientes", params: { vista: "mensajes" } })); },
+    },
+    { id: "actualizar", label: "Actualizar", icon: RefreshCw, onSelect: c.recargar },
+  ];
 
   return (
     <div className="space-y-4">
-      {/* Header estándar (antes: div a mano con PageTitle suelto). */}
-      <AdminModuleHeader
-        as="h2"
-        title="Campañas"
-        description="Manda promos y avisos a tus clientes por WhatsApp o por la app, segmentado."
-        icon={Megaphone}
-      >
-        <button
-          onClick={() => { setForm(emptyForm); setError(null); setShowForm(true); }}
-          className="flex items-center gap-1.5 px-4 min-h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
-        >
-          <Plus className="h-4 w-4" /> Nueva campaña
-        </button>
-      </AdminModuleHeader>
-
-      {/* Mismo molde de tarjeta que el resto del panel: superficie ÚNICA y el
-          color en la cifra, no en el fondo. Antes cada KPI traía su propio
-          `bg` (gris, celeste, verde, gris) y la fila parecía cuatro
-          componentes distintos puestos uno al lado del otro. */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { label: "Campañas", value: String(stats.total), color: "text-[var(--text-primary)]" },
-          { label: "Programadas", value: String(stats.programadas), color: "text-[var(--data-info-500)]" },
-          { label: "Completadas", value: String(stats.completadas), color: "text-[var(--data-success-500)]" },
-          { label: "Clientes alcanzados", value: formatNumber(stats.alcance), color: "text-[var(--text-primary)]" },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-            <p className="text-xs font-bold text-[var(--text-tertiary)]">{label}</p>
-            <p className={cn("mt-1 text-2xl font-extrabold tabular-nums", color)}>{value}</p>
-          </div>
-        ))}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
+          <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">Campañas</SectionTitle>
+          <InfoTip
+            title="Campañas"
+            what="Un mensaje que sale solo por el WhatsApp del negocio (o la app) a un grupo de clientes, ahora o a la hora que elijas."
+            affects="Sólo llega a quienes aceptaron promociones (Ley 29733). Para escribir tú, uno por uno, desde tu WhatsApp: Más › Escribir uno por uno."
+            example="«Hola {{nombre}}, hoy 20% en arroz» a los Inactivos, programada para el sábado 9:00."
+          />
+        </div>
+        <div className="ml-auto flex min-w-0 items-center gap-2">
+          {kpis.boton}
+          <button type="button" onClick={() => abrir()} aria-haspopup="dialog" className={button({ variant: "primary", className: "shrink-0 gap-1.5 rounded-xl px-4 max-sm:w-12 max-sm:px-0" })}>
+            <Plus className="h-4 w-4" aria-hidden />
+            <span className="max-sm:sr-only">Nueva campaña</span>
+          </button>
+          <ActionMenu label="Más" icon={MoreHorizontal} actions={acciones} soloIcono size="md" className="w-12 shrink-0" title="Escribir uno por uno y actualizar" />
+        </div>
       </div>
 
-      {/* Lista */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden">
-        {loading ? (
-          <div className="p-8 flex items-center justify-center text-[var(--text-tertiary)] text-sm gap-2">
-            <Loader2 className="h-4 w-4 animate-spin" /> Cargando campañas…
+      {kpis.panel}
+
+      <AudienciasCampana conteos={c.conteos} onElegir={abrir} />
+
+      <div className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
+        {c.loading && c.campaigns.length === 0 ? (
+          <p className="p-6 text-center text-sm text-[var(--text-tertiary)]">Cargando campañas…</p>
+        ) : c.error && c.campaigns.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 p-6 text-center">
+            <AlertTriangle className="h-6 w-6 text-[var(--data-error-500)]" aria-hidden />
+            <p className="text-sm text-[var(--data-error-ink)]">No se pudieron cargar las campañas.</p>
+            <button type="button" onClick={c.recargar} className={button({ variant: "ghost", className: "rounded-xl text-sm" })}>Reintentar</button>
           </div>
-        ) : campaigns.length === 0 ? (
-          <div className="p-10 text-center">
-            <Megaphone className="h-10 w-10 text-[var(--text-tertiary)] mx-auto mb-3" />
-            <p className="text-sm font-semibold text-[var(--text-primary)]">Aún no tienes campañas</p>
-            <p className="text-xs text-[var(--text-tertiary)] mt-1">Crea tu primera promo segmentada para que tus clientes vuelvan.</p>
+        ) : c.campaigns.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 p-6 text-center">
+            <Megaphone className="h-6 w-6 text-[var(--text-tertiary)]" aria-hidden />
+            <p className="text-sm text-[var(--text-secondary)]">Aún no tienes campañas</p>
           </div>
         ) : (
-          <div className="divide-y divide-[var(--rule-soft)]">
-            {campaigns.map(c => {
-              const st = STATUS_META[c.status] ?? STATUS_META.borrador;
-              const ch = CHANNEL_META[c.channel] ?? CHANNEL_META.whatsapp;
-              const ChIcon = ch.icon;
-              const segLabel = SEGMENT_LABELS[c.segment] ?? c.segment;
-              const busy = busyId === c.id;
-              return (
-                <div key={c.id} className="p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className={cn("text-[length:var(--ts-2xs)] font-bold px-2 py-0.5 rounded-full", st.bg, st.color)}>{st.label}</span>
-                      <p className="font-bold text-sm text-[var(--text-primary)] truncate">{c.name}</p>
-                    </div>
-                    <p className="text-xs text-[var(--text-secondary)] truncate mt-0.5">{c.message}</p>
-                    <div className="flex items-center gap-3 flex-wrap mt-1.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                      <span className="inline-flex items-center gap-1"><Users className="h-3 w-3" />{segLabel} · {c.totalAudience}</span>
-                      <span className="inline-flex items-center gap-1"><ChIcon className="h-3 w-3" />{ch.label}</span>
-                      {c.scheduledAt && <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />{fmtDate(c.scheduledAt)}</span>}
-                      {c.sentAt && (
-                        <>
-                          <span className="inline-flex items-center gap-1 text-[var(--data-success-500)]"><CheckCircle2 className="h-3 w-3" />Enviada {fmtDate(c.sentAt)}</span>
-                          <span className="inline-flex items-center gap-1"><Send className="h-3 w-3" />{c.delivered || 0} entregados</span>
-                          <span className="inline-flex items-center gap-1"><Eye className="h-3 w-3" />{c.opened || 0} abiertos{(c.delivered || 0) > 0 ? ` (${Math.round(((c.opened || 0) / c.delivered) * 100)}%)` : ""}</span>
-                          {(c.conversions || 0) > 0 && <span className="inline-flex items-center gap-1 text-[var(--data-success-500)]"><TrendingUp className="h-3 w-3" />{c.conversions} conversiones</span>}
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {(c.status === "programada" || c.status === "borrador" || c.status === "activa") && (
-                      <button
-                        onClick={() => patchStatus(c.id, "cancelada")}
-                        disabled={busy}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--data-warning-500)] hover:bg-[var(--data-warning-50)] dark:hover:bg-[var(--data-warning-500)]/15 disabled:opacity-50 transition-colors"
-                      >
-                        <Ban className="h-3.5 w-3.5" /> Cancelar
-                      </button>
-                    )}
-                    <button
-                      onClick={() => remove(c.id)}
-                      disabled={busy}
-                      aria-label="Eliminar campaña"
-                      className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/15 disabled:opacity-50 transition-colors"
-                    >
-                      {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <TablaCampanas
+            campaigns={c.campaigns}
+            busyId={c.busyId}
+            onCancelar={(id) => { void c.cambiarEstado(id, "cancelada"); }}
+            onEliminar={(id) => { void c.eliminar(id); }}
+          />
         )}
       </div>
 
-      <p className="text-xs text-[var(--text-tertiary)]">
-        Las campañas <span className="font-semibold">programadas por WhatsApp</span> se envían automáticamente a la hora indicada, solo a clientes que aceptaron promociones.
-      </p>
-
-      {/* Modal crear */}
-      <AdminModal
-        open={showForm}
-        onClose={() => setShowForm(false)}
-        title="Nueva campaña"
-        icon={Megaphone}
-        variant="default"
-        footer={
-          <div className="flex items-center justify-end gap-2">
-            <button onClick={() => setShowForm(false)} className="px-4 py-2 rounded-xl text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors">Cancelar</button>
-            <button onClick={submit} disabled={saving} className="inline-flex items-center gap-1.5 px-4 min-h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 disabled:opacity-50 transition-colors">
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              {form.mode === "borrador" ? "Guardar borrador" : form.mode === "programar" ? "Programar" : "Crear y enviar"}
-            </button>
-          </div>
-        }
-      >
-        <div className={cn(MODAL_BODY, "space-y-4")}>
-          <div className="space-y-1.5">
-            <label htmlFor={nameId} className="text-xs font-bold text-[var(--text-secondary)]">Nombre</label>
-            <input id={nameId} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Ej: Oferta de fin de semana" className="w-full h-12 px-3 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none focus:border-primary" />
-          </div>
-
-          <div className="space-y-1.5">
-            <label htmlFor={messageId} className="text-xs font-bold text-[var(--text-secondary)]">Mensaje</label>
-            <textarea id={messageId} value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))} rows={3} placeholder="Hola {{nombre}}, hoy tenemos 20% en arroz. ¡Pásate por la bodega!" className="w-full px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none focus:border-primary resize-none" />
-            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Usa <span className="font-mono font-semibold">{"{{nombre}}"}</span> para personalizar con el nombre del cliente.</p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <label htmlFor={segmentId} className="text-xs font-bold text-[var(--text-secondary)]">A quién</label>
-              <select id={segmentId} value={form.segment} onChange={e => setForm(f => ({ ...f, segment: e.target.value as Segment }))} className="w-full h-12 px-3 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none focus:border-primary">
-                {(Object.keys(SEGMENT_LABELS) as Segment[]).map(s => <option key={s} value={s}>{SEGMENT_LABELS[s]}</option>)}
-              </select>
-              <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] inline-flex items-center gap-1">
-                <Users className="h-3 w-3" />
-                {audience === null ? "Calculando…" : `${audience} cliente${audience === 1 ? "" : "s"} alcanzables`}
-              </p>
-            </div>
-            <div className="space-y-1.5">
-              <label htmlFor={channelId} className="text-xs font-bold text-[var(--text-secondary)]">Canal</label>
-              <select id={channelId} value={form.channel} onChange={e => setForm(f => ({ ...f, channel: e.target.value as Channel }))} className="w-full h-12 px-3 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none focus:border-primary">
-                {(Object.keys(CHANNEL_META) as Channel[]).map(c => <option key={c} value={c}>{CHANNEL_META[c].label}</option>)}
-              </select>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <p className="text-xs font-bold text-[var(--text-secondary)]">Cuándo</p>
-            <div className="grid grid-cols-3 gap-2">
-              {([["ahora", "Ahora"], ["programar", "Programar"], ["borrador", "Borrador"]] as const).map(([m, lbl]) => (
-                <button key={m} type="button" onClick={() => setForm(f => ({ ...f, mode: m }))} className={cn("h-11 rounded-xl text-sm font-semibold border-2 transition-colors", form.mode === m ? "border-primary bg-primary/5 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]")}>{lbl}</button>
-              ))}
-            </div>
-            {form.mode === "programar" && (
-              <>
-                <label htmlFor={scheduledAtId} className="sr-only">Fecha y hora de envío</label>
-                <input id={scheduledAtId} type="datetime-local" value={form.scheduledAt} min={nowLocalInput()} onChange={e => setForm(f => ({ ...f, scheduledAt: e.target.value }))} className="w-full h-12 px-3 text-sm rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none focus:border-primary" />
-              </>
-            )}
-          </div>
-
-          {error && <p className="text-xs font-semibold text-[var(--data-error-500)]">{error}</p>}
-        </div>
-      </AdminModal>
+      <ModalNuevaCampana
+        abierto={modal.abierto}
+        segmentoInicial={modal.segmento}
+        conteos={c.conteos}
+        onCerrar={() => setModal((m) => ({ ...m, abierto: false }))}
+        onCrear={c.crear}
+      />
     </div>
   );
 }

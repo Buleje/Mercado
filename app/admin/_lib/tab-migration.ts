@@ -203,6 +203,10 @@ export const TAB_MIGRATION: Record<string, Tab | DestinoTab> = {
  * integradores de cada ola (pedido `vistaMigracion` en `SP/panel/registro`).
  */
 export const VISTA_MIGRATION: Record<string, DestinoTab> = {
+  // Campañas › Segmentos se fundió en Campañas (fila «Para quién», 11-10).
+  "campanas:segmentos": { tab: "campanas", vista: "campanas" },
+  // Recetas › Resumen repetía Producción (lotes del mes y gráfico semanal) → se fundió ahí (11-10).
+  "recetas:dashboard": { tab: "recetas", vista: "produccion" },
   // Segmentos → los Indicadores de Mis clientes (10-10): repetía su faceta «Segmento».
   "clientes:segmentos": { tab: "clientes", vista: "crm" },
   // Pérdidas → sección de Entradas y salidas (10-10).

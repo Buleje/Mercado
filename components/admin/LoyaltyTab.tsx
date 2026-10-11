@@ -1,571 +1,156 @@
 "use client";
 
-import { SectionTitle, BlockTitle } from "@buleje/design-system";
-import { useState, useEffect } from "react";
-import { Heart, Loader2, Search, Gift, Award, ArrowUpRight, NotebookPen, Save, DollarSign, Clock, Bell, Users2, Link, Copy, MessageSquare, AlertTriangle } from "@buleje/design-system/icons";
+/**
+ * Crecimiento › Puntos. Patrón del panel (11-10): título · Indicadores · Más
+ * en una fila; buscador y «Con puntos» pegados a la tabla; la ficha del
+ * elegido al lado. 571 → ~130 líneas; la lógica en crecimiento/puntos/.
+ *
+ * Lo que se fue y por qué (nada con dato real):
+ *  · «Vencimiento de puntos» + el select de 3/6/12 meses: inventaba la fecha
+ *    («última actividad = hace 30 días») y el select no se guardaba en ningún
+ *    lado. El programa no vence puntos.
+ *  · «Saldo a favor»: sumaba a `creditBalance`, la columna del FIADO usado
+ *    (`updateCreditBalance`: delta > 0 = «gasta más fiado», con tope en el
+ *    límite de crédito). «+20 a favor» registraba S/ 20 más de deuda.
+ *  · «Notificaciones de puntos» (5 clientes de toda la lista dentro de la
+ *    ficha de UNO): queda «Avisarle por WhatsApp» en la ficha y «Copiar
+ *    avisos para todos» en Más.
+ *  · Contadores de referidos: leían `referralCode` de /api/customers, que no
+ *    lo trae (salían 0 siempre).
+ */
+import { useState } from "react";
+import { SectionTitle } from "@buleje/design-system";
+import { AlertTriangle, Copy, MoreHorizontal, RefreshCw, Search } from "@buleje/design-system/icons";
+import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { button } from "@/components/ui-system/button-variants";
+import { useTenant } from "@/contexts/tenant-context";
+import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { Customer } from "@/types/erp";
-import { csrfHeaders } from "@/lib/csrf-client";
-import { formatCurrency, formatDateNumeric, formatNumber } from "@/lib/format";
+import { FichaPuntos } from "@/components/admin/crecimiento/puntos/FichaPuntos";
+import { ListaPuntos } from "@/components/admin/crecimiento/puntos/ListaPuntos";
+import { mensajeDePuntos, VALOR_PUNTO } from "@/components/admin/crecimiento/puntos/mensajes";
+import { useIndicadoresPuntos } from "@/components/admin/crecimiento/puntos/use-indicadores-puntos";
+import { usePuntos } from "@/components/admin/crecimiento/puntos/use-puntos";
 
-type Tier = { name: string; minSpent: number; pointsMultiplier: number; color: string };
-
-const TIER_COLORS: Record<string, string> = {
-  bronce: "bg-[var(--data-warning-500)] text-white",
-  plata: "bg-[var(--rule-mid)] text-white",
-  oro: "bg-[var(--data-warning-500)] text-[var(--data-warning-500)]",
-  diamante: "bg-[var(--data-info-500)] text-[var(--data-info-500)]",
-};
+const ID_FICHA = "ficha-puntos";
 
 export default function LoyaltyTab() {
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
-  const [selected, setSelected] = useState<Customer | null>(null);
-  const [redeemPts, setRedeemPts] = useState("");
-  const [tiers, setTiers] = useState<Tier[]>([]);
-  const [privateNotes, setPrivateNotes] = useState("");
-  const [notesSaving, setNotesSaving] = useState(false);
-  const [creditInput, setCreditInput] = useState("");
-  const [creditSaving, setCreditSaving] = useState(false);
-  const [expirationPolicy, setExpirationPolicy] = useState<3 | 6 | 12 | 'never'>(6);
-  const [referralCode, setReferralCode] = useState("");
-  const [referredBy, setReferredBy] = useState("");
-  const [referralCount, setReferralCount] = useState(0);
-  const [copiedMessage, setCopiedMessage] = useState<string | null>(null);
+  const p = usePuntos();
+  const negocio = useTenant().branding.name?.trim() || "nuestra tienda";
+  const [busqueda, setBusqueda] = useState("");
+  const [soloConPuntos, setSoloConPuntos] = useState(false);
+  const [aviso, setAviso] = useState<string | null>(null);
+  const kpis = useIndicadoresPuntos(p.metricas, p.loading);
 
-  useEffect(() => {
-    let active = true;
-    setLoading(true);
-    fetch("/api/customers?limit=100")
-      .then(r => {
-        if (!r.ok) return { data: [], cursor: null };
-        const cursor = r.headers.get("X-Next-Cursor") ?? null;
-        return r.json().then((data: Customer[]) => ({ data, cursor }));
-      })
-      .then(({ data, cursor }) => {
-        if (active) {
-          setCustomers(data.sort((a, b) => (b.totalSpent ?? 0) - (a.totalSpent ?? 0)));
-          setNextCursor(cursor);
-          setLoading(false);
-        }
-      })
-      .catch(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  }, []);
-
-  const loadMore = async () => {
-    if (!nextCursor || loadingMore) return;
-    setLoadingMore(true);
-    try {
-      const res = await fetch(`/api/customers?limit=100&cursor=${encodeURIComponent(nextCursor)}`);
-      if (res.ok) {
-        const cursor = res.headers.get("X-Next-Cursor") ?? null;
-        const data: Customer[] = await res.json();
-        setCustomers(prev => [...prev, ...data.sort((a, b) => (b.totalSpent ?? 0) - (a.totalSpent ?? 0))]);
-        setNextCursor(cursor);
-      }
-    } finally {
-      setLoadingMore(false);
-    }
-  };
-
-  const loadLoyalty = async (phone: string) => {
-    const res = await fetch(`/api/loyalty/${encodeURIComponent(phone)}`);
-    if (res.ok) {
-      const data = await res.json();
-      setSelected({ phone: data.phone, name: data.name, loyaltyPoints: data.loyaltyPoints ?? 0, loyaltyTier: data.loyaltyTier ?? 'bronce', totalSpent: data.totalSpent ?? 0, privateNotes: data.privateNotes, creditBalance: data.creditBalance });
-      setPrivateNotes(data.privateNotes ?? "");
-      if (data.tiers) setTiers(data.tiers);
-      // Load referral data
-      setReferralCode(data.referralCode ?? "");
-      setReferredBy(data.referredBy ?? "");
-      // Calculate how many customers this customer referred
-      const referralData = customers.filter(c => c.referralCode && c.referralCode === data.referralCode);
-      setReferralCount(referralData.length);
-    }
-  };
-
-  const updateCredit = async () => {
-    if (!selected || !selected.phone || !creditInput) return;
-    const delta = Number(creditInput);
-    if (isNaN(delta) || delta === 0) return;
-    setCreditSaving(true);
-    const res = await fetch(`/api/customers/${encodeURIComponent(selected.phone)}`, {
-      method: "PATCH",
-      headers: csrfHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ creditDelta: delta }),
-    });
-    if (res.ok) {
-      const newBalance = (selected.creditBalance ?? 0) + delta;
-      setSelected(prev => prev ? { ...prev, creditBalance: newBalance } : prev);
-      setCreditInput("");
-    }
-    setCreditSaving(false);
-  };
-
-  const savePrivateNotes = async () => {
-    if (!selected || !selected.phone) return;
-    setNotesSaving(true);
-    await fetch(`/api/customers/${encodeURIComponent(selected.phone)}`, {
-      method: "PATCH",
-      headers: csrfHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ privateNotes }),
-    });
-    setSelected(prev => prev ? { ...prev, privateNotes } : prev);
-    setNotesSaving(false);
-  };
-
-  const redeem = async () => {
-    if (!selected || !selected.phone || !redeemPts) return;
-    const phone = selected.phone;
-    const pts = Number(redeemPts);
-    if (pts <= 0 || pts > selected.loyaltyPoints) return;
-    const res = await fetch(`/api/loyalty/${encodeURIComponent(phone)}`, {
-      method: "POST",
-      headers: csrfHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ action: "redeem", points: pts }),
-    });
-    if (res.ok) {
-      setRedeemPts("");
-      loadLoyalty(phone);
-      setCustomers(prev => prev.map(c => c.phone === phone ? { ...c, loyaltyPoints: c.loyaltyPoints - pts } : c));
-    }
-  };
-
-  const filtered = search
-    ? customers.filter(c => c.name.toLowerCase().includes(search.toLowerCase()) || (c.phone ?? "").includes(search))
-    : customers;
-
-  const totalPoints = customers.reduce((s, c) => s + (c.loyaltyPoints ?? 0), 0);
-  const avgSpent = customers.length > 0 ? customers.reduce((s, c) => s + (c.totalSpent ?? 0), 0) / customers.length : 0;
-
-  const calculateExpiration = () => {
-    if (!selected || expirationPolicy === 'never') return null;
-    // Simulated last activity: assume it was 30 days ago for customers with points
-    const lastActivity = new Date();
-    lastActivity.setDate(lastActivity.getDate() - 30);
-    const expirationDate = new Date(lastActivity);
-    expirationDate.setMonth(expirationDate.getMonth() + expirationPolicy);
-    const now = new Date();
-    const daysRemaining = Math.ceil((expirationDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    const totalDays = expirationPolicy * 30;
-    const percentRemaining = (daysRemaining / totalDays) * 100;
-    return { expirationDate, daysRemaining, percentRemaining };
-  };
-
-  const getExpirationColor = (daysRemaining: number) => {
-    if (daysRemaining > 60) return 'bg-primary/10';
-    if (daysRemaining > 30) return 'bg-[var(--data-warning-500)]';
-    return 'bg-[var(--data-error-500)]';
-  };
-
-  const generateReferralCode = async () => {
-    if (!selected || !selected.phone) return;
-    const namePart = selected.name.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, 'X');
-    const numberPart = Math.floor(1000 + Math.random() * 9000);
-    const code = `${namePart}${numberPart}`;
-
-    const res = await fetch(`/api/customers/${encodeURIComponent(selected.phone)}`, {
-      method: "PATCH",
-      headers: csrfHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ referralCode: code }),
-    });
-    if (res.ok) {
-      setReferralCode(code);
-      setSelected(prev => prev ? { ...prev, referralCode: code } as Customer : prev);
-    }
-  };
-
-  const copyToClipboard = (text: string, id: string) => {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopiedMessage(id);
-      setTimeout(() => setCopiedMessage(null), 2000);
+  const copiar = (texto: string, que = "Copiado") => {
+    void navigator.clipboard.writeText(texto).then(() => {
+      setAviso(que);
+      setTimeout(() => setAviso(null), 2500);
     });
   };
 
-  const generateWhatsAppMessage = (customer: Customer) => {
-    const points = customer.loyaltyPoints;
-    const value = (points * 0.1).toFixed(2);
-    return `${customer.name}, tienes ${points} puntos en Buleje. ¡Canjéalos en tu próxima compra! Valor: S/${value}`;
+  const elegir = (phone: string) => {
+    void p.elegir(phone);
+    if (window.matchMedia("(max-width: 1023px)").matches) {
+      requestAnimationFrame(() => document.getElementById(ID_FICHA)?.scrollIntoView({ block: "start" }));
+    }
   };
 
-  const openWhatsApp = (phone: string, message: string) => {
-    const cleanPhone = phone.replace(/[^0-9]/g, '');
-    const url = `https://wa.me/51${cleanPhone}?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank');
-  };
-
-  const notifyAll = () => {
-    const messages = customers
-      .filter(c => c.loyaltyPoints > 0)
-      .map(c => `${c.name} (${c.phone}): ${generateWhatsAppMessage(c)}`)
-      .join('\n\n');
-    copyToClipboard(messages, 'bulk-notify');
-  };
-
-  if (loading) return (
-    <div className="space-y-4 animate-pulse">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="h-7 w-56 bg-[var(--rule-soft)] rounded-lg" />
-        <div className="h-8 w-32 bg-[var(--rule-soft)] rounded-lg" />
-      </div>
-      {/* Tier badges */}
-      <div className="flex flex-wrap gap-2">
-        {[1, 2, 3, 4].map(i => <div key={i} className="h-6 w-20 bg-[var(--rule-soft)] rounded-full" />)}
-      </div>
-      {/* Search */}
-      <div className="h-10 w-full max-w-sm bg-[var(--rule-soft)] rounded-xl" />
-      {/* Customer rows */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-3">
-        {[1, 2, 3, 4, 5, 6].map(i => (
-          <div key={i} className="flex flex-wrap items-center gap-3">
-            <div className="h-10 w-10 bg-[var(--rule-soft)] rounded-xl shrink-0" />
-            <div className="flex-1 space-y-1.5">
-              <div className="h-3.5 bg-[var(--rule-soft)] rounded w-1/3" />
-              <div className="h-3 bg-[var(--rule-soft)] rounded w-1/4" />
-            </div>
-            <div className="h-5 w-16 bg-[var(--rule-soft)] rounded-full" />
-            <div className="h-5 w-14 bg-[var(--rule-soft)] rounded" />
-          </div>
-        ))}
-      </div>
-    </div>
+  const q = busqueda.trim().toLowerCase();
+  const conPuntos = p.clientes.filter((c) => c.loyaltyPoints > 0);
+  const filtrados = (soloConPuntos ? conPuntos : p.clientes).filter(
+    (c) => !q || c.name.toLowerCase().includes(q) || c.phone.includes(q),
   );
 
+  const acciones: MenuAccion[] = [
+    {
+      id: "avisos",
+      label: "Copiar avisos para todos",
+      hint: `Un mensaje por cliente con puntos (${conPuntos.length}), para pegar en WhatsApp`,
+      icon: Copy,
+      disabled: conPuntos.length === 0,
+      onSelect: () => copiar(conPuntos.map((c) => `${c.name} (${c.phone}): ${mensajeDePuntos(c.name, c.loyaltyPoints, negocio)}`).join("\n\n"), `${conPuntos.length} avisos copiados`),
+    },
+    { id: "actualizar", label: "Actualizar", icon: RefreshCw, onSelect: p.recargar },
+  ];
+
   return (
-    <div className="space-y-3 sm:space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <SectionTitle className="text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><Heart className="h-6 w-6 text-primary" />Programa de Fidelización</SectionTitle>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <Clock className="h-4 w-4 text-[var(--text-tertiary)]" />
-            <select
-              value={expirationPolicy}
-              onChange={e => setExpirationPolicy(e.target.value === 'never' ? 'never' : Number(e.target.value) as 3 | 6 | 12)}
-              aria-label="Vencimiento de puntos"
-              className="px-3 py-1.5 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-xs font-medium"
-            >
-              <option value="3">3 meses</option>
-              <option value="6">6 meses</option>
-              <option value="12">12 meses</option>
-              <option value="never">Sin vencimiento</option>
-            </select>
-          </div>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar cliente..." className="pl-9 pr-4 h-10 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm w-56" />
-          </div>
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
+          <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">Puntos</SectionTitle>
+          <InfoTip
+            title="Puntos"
+            what={`Cada compra con celular suma puntos; 1 punto vale ${formatCurrency(VALOR_PUNTO)} de descuento al canjear. El nivel (bronce, plata, oro, diamante) sube con lo que el cliente gastó.`}
+            affects="Los VIP de Campañas son los de nivel oro y diamante."
+            example={`Rosa tiene 120 puntos: puede descontar ${formatCurrency(120 * VALOR_PUNTO)} en su próxima compra.`}
+          />
+        </div>
+        <div className="ml-auto flex min-w-0 items-center gap-2">
+          {kpis.boton}
+          <ActionMenu label="Más" icon={MoreHorizontal} actions={acciones} soloIcono size="md" className="w-12 shrink-0" title="Copiar avisos y actualizar" />
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
-        {[
-          { label: "Clientes", value: customers.length },
-          { label: "Puntos Totales", value: formatNumber(totalPoints) },
-          { label: "Gasto Promedio", value: `S/${avgSpent.toFixed(0)}` },
-          { label: "Diamante", value: customers.filter(c => c.loyaltyTier === "diamante").length },
-        ].map(s => (
-          <div key={s.label} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 text-center">
-            <p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{s.value}</p>
-            <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{s.label}</p>
+      {kpis.panel}
+
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative h-12 min-w-0 grow basis-full sm:basis-64">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
+          <input
+            type="search"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            placeholder="Buscar por nombre o celular"
+            aria-label="Buscar cliente por nombre o celular"
+            className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-10 pr-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary"
+          />
+        </div>
+        <button
+          type="button"
+          aria-pressed={soloConPuntos}
+          onClick={() => setSoloConPuntos((v) => !v)}
+          className={button({
+            variant: "secondary",
+            className: cn("shrink-0 rounded-xl px-3 text-sm", soloConPuntos ? "border-primary bg-primary/5 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-secondary)]"),
+          })}
+        >
+          Con puntos ({conPuntos.length})
+        </button>
+        {aviso && <span role="status" className="text-sm font-semibold text-[var(--data-success-ink)]">{aviso}</span>}
+      </div>
+
+      {p.error && p.clientes.length === 0 ? (
+        <div className="flex flex-col items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 text-center">
+          <AlertTriangle className="h-6 w-6 text-[var(--data-error-500)]" aria-hidden />
+          <p className="text-sm text-[var(--data-error-ink)]">No se pudieron cargar los clientes.</p>
+          <button type="button" onClick={p.recargar} className={button({ variant: "ghost", className: "rounded-xl text-sm" })}>Reintentar</button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
+          <div className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] lg:col-span-2">
+            {p.loading && p.clientes.length === 0 ? (
+              <p className="p-6 text-center text-sm text-[var(--text-tertiary)]">Cargando clientes…</p>
+            ) : filtrados.length === 0 ? (
+              <p className="p-6 text-center text-sm text-[var(--text-secondary)]">{q || soloConPuntos ? "Nadie con ese filtro." : "Aún no tienes clientes."}</p>
+            ) : (
+              <div className="max-h-[36rem] overflow-y-auto">
+                <ListaPuntos clientes={filtrados} elegido={p.elegido?.phone ?? null} onElegir={elegir} />
+              </div>
+            )}
+            {p.hayMas && !q && (
+              <button type="button" onClick={() => { void p.cargarMas(); }} disabled={p.cargandoMas} className="h-12 w-full border-t border-[var(--rule-soft)] text-sm font-semibold text-[var(--accent-ink)] hover:bg-primary/5 disabled:opacity-60 dark:text-[var(--accent)]">
+                {p.cargandoMas ? "Cargando…" : "Cargar más clientes"}
+              </button>
+            )}
           </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Customer List */}
-        <div className="lg:col-span-2 space-y-2 max-h-125 overflow-y-auto">
-          {filtered.length === 0 && <p className="text-center text-[var(--text-tertiary)] py-8">No se encontraron clientes</p>}
-          {filtered.map(c => (
-            <button key={c.phone ?? c.id} onClick={() => c.phone && loadLoyalty(c.phone)} disabled={!c.phone} className={cn("w-full text-left flex items-center gap-3 p-3 rounded-xl border transition", selected?.phone === c.phone ? "border-primary bg-primary/5" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-alt)] ")}>
-              <div className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-extrabold uppercase shrink-0", TIER_COLORS[c.loyaltyTier] ?? "bg-[var(--rule-soft)] text-[var(--text-secondary)]")}>{c.loyaltyTier}</div>
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{c.name}</p>
-                <p className="text-xs text-[var(--text-tertiary)]">{c.phone}</p>
-              </div>
-              <div className="text-right shrink-0">
-                <p className="font-extrabold text-sm text-primary">{c.loyaltyPoints} pts</p>
-                <p className="text-xs text-[var(--text-tertiary)]">S/{(c.totalSpent ?? 0).toFixed(0)}</p>
-              </div>
-            </button>
-          ))}
-          {nextCursor && !search && (
-            <button
-              onClick={loadMore}
-              disabled={loadingMore}
-              className="w-full py-2 text-xs font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] border border-primary/30 rounded-xl hover:bg-primary/5 transition disabled:opacity-50"
-            >
-              {loadingMore ? "Cargando…" : "Cargar más clientes"}
-            </button>
-          )}
+          {/* En el celular la ficha va ARRIBA de la lista: abajo quedaba a 15 tarjetas de distancia. */}
+          <div id={ID_FICHA} className="scroll-mt-20 max-lg:order-first">
+            <FichaPuntos key={p.elegido?.phone ?? "ninguno"} p={p} negocio={negocio} onCopiar={(t) => copiar(t)} />
+          </div>
         </div>
-
-        {/* Detail Panel */}
-        <div className="space-y-6">
-          {!selected ? (
-            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-6 text-center">
-              <Award className="h-12 w-12 text-[var(--text-tertiary)] mx-auto mb-3" />
-              <p className="text-sm text-[var(--text-tertiary)]">Selecciona un cliente para ver detalles</p>
-            </div>
-          ) : (
-            <>
-              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3 sm:p-6 text-center">
-                <div className={cn("inline-block px-4 py-1 rounded-full text-sm font-extrabold uppercase mb-3", TIER_COLORS[selected.loyaltyTier] ?? "bg-[var(--rule-soft)] text-[var(--text-secondary)]")}>{selected.loyaltyTier}</div>
-                <p className="font-extrabold text-lg text-[var(--text-primary)] dark:text-[var(--text-primary)]">{selected.name}</p>
-                <p className="text-sm text-[var(--text-tertiary)]">{selected.phone}</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 mt-4">
-                  <div>
-                    <p className="text-xl sm:text-2xl font-extrabold text-primary">{selected.loyaltyPoints}</p>
-                    <p className="text-xs text-[var(--text-tertiary)]">Puntos</p>
-                  </div>
-                  <div>
-                    <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/{(selected.totalSpent ?? 0).toFixed(0)}</p>
-                    <p className="text-xs text-[var(--text-tertiary)]">Gastado total</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Redeem */}
-              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-3">
-                <BlockTitle className="flex flex-wrap items-center gap-2"><Gift className="h-4 w-4 text-primary" />Canjear Puntos</BlockTitle>
-                <p className="text-xs text-[var(--text-tertiary)]">1 punto = S/0.10 de descuento</p>
-                <div className="flex flex-wrap gap-2">
-                  <input type="number" value={redeemPts} onChange={e => setRedeemPts(e.target.value)} placeholder="Puntos a canjear" className="flex-1 px-3 h-10 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm" />
-                  <button onClick={redeem} disabled={!redeemPts || Number(redeemPts) <= 0 || Number(redeemPts) > selected.loyaltyPoints} className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50">
-                    Canjear
-                  </button>
-                </div>
-                {redeemPts && Number(redeemPts) > 0 && (
-                  <p className="text-xs text-[var(--data-success-500)] flex items-center gap-1"><ArrowUpRight className="h-3 w-3" />Descuento: {formatCurrency(Number(redeemPts) * 0.1)}</p>
-                )}
-              </div>
-
-              {/* Private Notes */}
-              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-3">
-                <BlockTitle className="flex flex-wrap items-center gap-2"><NotebookPen className="h-4 w-4 text-primary" />Notas Privadas</BlockTitle>
-                <textarea
-                  value={privateNotes}
-                  onChange={e => setPrivateNotes(e.target.value)}
-                  rows={3}
-                  placeholder="Notas internas sobre este cliente (no visibles para el cliente)…"
-                  className="w-full px-3 py-2 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm resize-none"
-                />
-                <button
-                  onClick={savePrivateNotes}
-                  disabled={notesSaving || privateNotes === (selected.privateNotes ?? "")}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-primary text-white text-xs font-bold rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors"
-                >
-                  {notesSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
-                  Guardar notas
-                </button>
-              </div>
-
-              {/* Credit Balance */}
-              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-3">
-                <BlockTitle className="flex flex-wrap items-center gap-2"><DollarSign className="h-4 w-4 text-primary" />Saldo a Favor</BlockTitle>
-                <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-success-500)]">{formatCurrency(selected.creditBalance ?? 0)}</p>
-                <div className="flex flex-wrap gap-2">
-                  <input
-                    type="number"
-                    step="0.01"
-                    placeholder="+ agregar  /  - deducir"
-                    value={creditInput}
-                    onChange={e => setCreditInput(e.target.value)}
-                    className="flex-1 px-3 h-10 border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-sm"
-                  />
-                  <button
-                    onClick={updateCredit}
-                    disabled={!creditInput || creditSaving}
-                    className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50"
-                  >
-                    {creditSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Aplicar"}
-                  </button>
-                </div>
-                <p className="text-xs text-[var(--text-tertiary)]">Ingresa monto positivo para agregar saldo, negativo para deducir.</p>
-              </div>
-
-              {/* Point Expiration */}
-              {selected.loyaltyPoints > 0 && expirationPolicy !== 'never' && (() => {
-                const expiration = calculateExpiration();
-                if (!expiration) return null;
-                const { expirationDate, daysRemaining, percentRemaining } = expiration;
-                return (
-                  <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-3">
-                    <BlockTitle className="flex flex-wrap items-center gap-2">
-                      <Clock className="h-4 w-4 text-primary" />
-                      Vencimiento de Puntos
-                    </BlockTitle>
-                    {daysRemaining < 30 && (
-                      <div className="flex flex-wrap items-start gap-2 p-2 bg-[var(--data-error-50)] dark:bg-red-950/20 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] rounded-lg">
-                        <AlertTriangle className="h-4 w-4 text-[var(--data-error-500)] shrink-0 mt-0.5" />
-                        <p className="text-xs text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">Los puntos vencen pronto</p>
-                      </div>
-                    )}
-                    <div>
-                      <p className="text-sm text-[var(--text-secondary)] dark:text-muted mb-2">
-                        Tus puntos vencen el <span className="font-bold">{formatDateNumeric(expirationDate)}</span>
-                      </p>
-                      <div className="space-y-1">
-                        <div className="flex justify-between text-xs text-[var(--text-secondary)]">
-                          <span>{daysRemaining} días restantes</span>
-                          <span>{Math.round(percentRemaining)}%</span>
-                        </div>
-                        <div className="w-full h-2 bg-[var(--rule-soft)] rounded-full overflow-hidden">
-                          <div
-                            className={cn("h-full transition-all", getExpirationColor(daysRemaining))}
-                            style={{ width: `${Math.min(100, Math.max(0, percentRemaining))}%` }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* Notification Panel */}
-              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <BlockTitle className="flex flex-wrap items-center gap-2">
-                    <Bell className="h-4 w-4 text-primary" />
-                    Notificaciones de Puntos
-                  </BlockTitle>
-                  <button
-                    onClick={notifyAll}
-                    className="flex items-center gap-1 px-2 py-1 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 rounded-lg transition"
-                  >
-                    {copiedMessage === 'bulk-notify' ? (
-                      <>Copiado</>
-                    ) : (
-                      <>
-                        <MessageSquare className="h-3 w-3" />
-                        Notificar a todos
-                      </>
-                    )}
-                  </button>
-                </div>
-                <div className="space-y-2 max-h-48 overflow-y-auto">
-                  {customers.filter(c => c.loyaltyPoints > 0 && c.phone).slice(0, 5).map(c => (
-                    <div key={c.phone} className="flex items-center justify-between p-2 bg-[var(--surface-alt)] rounded-lg">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">{c.name}</p>
-                        <p className="text-xs text-[var(--text-tertiary)]">{c.loyaltyPoints} pts · {formatCurrency(c.loyaltyPoints * 0.1)}</p>
-                      </div>
-                      <button
-                        onClick={() => c.phone && openWhatsApp(c.phone, generateWhatsAppMessage(c))}
-                        className="flex items-center gap-1 px-2 py-1 text-xs font-bold text-white bg-primary/10 hover:bg-primary/10 rounded-lg transition shrink-0"
-                      >
-                        <MessageSquare className="h-3 w-3" />
-                        Enviar
-                      </button>
-                    </div>
-                  ))}
-                  {customers.filter(c => c.loyaltyPoints > 0).length === 0 && (
-                    <p className="text-xs text-[var(--text-tertiary)] text-center py-4">No hay clientes con puntos activos</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Referral Program */}
-              <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-3">
-                <BlockTitle className="flex flex-wrap items-center gap-2">
-                  <Users2 className="h-4 w-4 text-primary" />
-                  Programa de Referidos
-                </BlockTitle>
-                
-                {referralCode ? (
-                  <div className="space-y-3">
-                    <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg">
-                      <p className="text-xs text-[var(--text-secondary)] dark:text-muted mb-1">Tu código de referido</p>
-                      <div className="flex items-center justify-between">
-                        <p className="text-lg font-extrabold text-primary">{referralCode}</p>
-                        <button
-                          onClick={() => copyToClipboard(referralCode, 'referral-code')}
-                          className="p-1.5 hover:bg-primary/10 rounded transition"
-                        >
-                          {copiedMessage === 'referral-code' ? (
-                            <span className="text-xs text-[var(--data-success-500)] font-bold">OK</span>
-                          ) : (
-                            <Copy className="h-4 w-4 text-primary" />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="text-center p-2 bg-[var(--surface-alt)] rounded-lg">
-                        <p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{referralCount}</p>
-                        <p className="text-xs text-[var(--text-tertiary)]">Referidos</p>
-                      </div>
-                      <div className="text-center p-2 bg-[var(--surface-alt)] rounded-lg">
-                        <p className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{customers.filter(c => c.referralCode).length}</p>
-                        <p className="text-xs text-[var(--text-tertiary)]">Total sistema</p>
-                      </div>
-                    </div>
-
-                    {referredBy && (
-                      <div className="p-2 bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)] rounded-lg">
-                        <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
-                          <span className="font-bold">Referido por:</span> {referredBy}
-                        </p>
-                      </div>
-                    )}
-
-                    <div className="space-y-2">
-                      <p className="text-xs text-[var(--text-secondary)]">Mensaje para compartir:</p>
-                      <div className="p-2 bg-[var(--surface-alt)] rounded-lg relative">
-                        <p className="text-xs text-[var(--text-secondary)]">
-                          ¡Únete a Buleje con mi código <span className="font-bold text-primary">{referralCode}</span>!
-                        </p>
-                        <button
-                          onClick={() => copyToClipboard(`¡Únete a Buleje con mi código ${referralCode}!`, 'referral-message')}
-                          className="absolute top-2 right-2 p-1 hover:bg-[var(--rule-soft)] dark:hover:bg-[var(--surface-raised)] rounded transition"
-                        >
-                          {copiedMessage === 'referral-message' ? (
-                            <span className="text-xs text-[var(--data-success-500)] font-bold">OK</span>
-                          ) : (
-                            <Copy className="h-3 w-3 text-[var(--text-tertiary)]" />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-4">
-                    <Link className="h-8 w-8 text-[var(--text-tertiary)] mx-auto mb-2" />
-                    <p className="text-xs text-[var(--text-tertiary)] mb-3">Este cliente aún no tiene código de referido</p>
-                    <button
-                      onClick={generateReferralCode}
-                      className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-xl text-xs font-bold hover:bg-primary/90 transition"
-                    >
-                      Generar código
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Tiers */}
-              {tiers.length > 0 && (
-                <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 space-y-2">
-                  <BlockTitle>Niveles</BlockTitle>
-                  {tiers.map(t => (
-                    <div key={t.name} className={cn("flex items-center justify-between text-xs px-3 py-2 rounded-lg", selected.loyaltyTier === t.name ? "bg-primary/10 border border-primary" : "bg-[var(--surface-alt)] ")}>
-                      <span className="font-bold capitalize">{t.name}</span>
-                      <span>S/{t.minSpent}+ gastado</span>
-                      <span className="font-bold">{t.pointsMultiplier}x puntos</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </div>
+      )}
     </div>
   );
 }
-

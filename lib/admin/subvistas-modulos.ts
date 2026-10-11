@@ -214,7 +214,6 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
     { key: "redes", label: "Redes y medición", hint: "Meta, TikTok y Google Analytics, y de dónde llegan las visitas de tu tienda", origen: ["canales", "pagina-inicio"] },
   ],
   recetas: [
-    { key: "dashboard", label: "Resumen", hint: "Cómo viene la producción" },
     { key: "recetas", label: "Recetas", hint: "Insumos de cada producto elaborado" },
     { key: "produccion", label: "Producción", hint: "Producir según receta y descontar insumos" },
     { key: "recetario", label: "Recetario", hint: "El recetario impreso" },
@@ -234,10 +233,9 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
   ],
   campanas: [
     { key: "campanas", label: "Campañas", hint: "Mensajes y ofertas a un grupo de clientes" },
-    { key: "segmentos", label: "Segmentos", hint: "Clientes agrupados por cómo compran" },
-    { key: "puntos", label: "Puntos & Fidelización", hint: "Puntos por compra y premios para que el cliente vuelva" },
-    { key: "rfm", label: "Análisis RFM", hint: "Quién compra seguido, hace poco y gasta más" },
-    { key: "gift-cards", label: "Gift Cards", hint: "Vender y canjear tarjetas de regalo" },
+    { key: "puntos", label: "Puntos", hint: "Puntos por compra y premios para que el cliente vuelva" },
+    { key: "rfm", label: "Mejores clientes", hint: "Quién compra seguido, hace poco y gasta más" },
+    { key: "gift-cards", label: "Tarjetas de regalo", hint: "Vender y canjear tarjetas de regalo" },
     { key: "socio", label: "Socio Buleje", hint: "Programa de socios con beneficios" },
     { key: "subscriptions", label: "Bodega al Mes", hint: "Pedidos que se repiten cada mes" },
     { key: "lives", label: "En Vivo", hint: "Ventas en vivo por transmisión" },
@@ -410,7 +408,7 @@ export const ANIDADAS_POR_MODULO: Readonly<Record<string, readonly SubvistaAnida
   ],
   "pagina-inicio": [
     { vista: "apariencia", key: "identidad", label: "Identidad", hint: "Nombre, logo, lema y cómo sale en Google" },
-    { vista: "apariencia", key: "colores", label: "Colores y tipografía", hint: "Colores de tu marca y su contraste" },
+    { vista: "apariencia", key: "colores", label: "Colores", hint: "Colores de tu marca y su contraste" },
     { vista: "apariencia", key: "estilos", label: "Estilos", hint: "Botones, tarjetas, bordes y densidad" },
     { vista: "apariencia", key: "portada", label: "Portada", hint: "El banner grande de arriba: título, foto y botón" },
     { vista: "apariencia", key: "contacto", label: "Contacto", hint: "WhatsApp, horarios, secciones del inicio y productos visibles" },

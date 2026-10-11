@@ -20,6 +20,6 @@ export const REGLA_SEGMENTO: Record<Segment, string> = {
 /** Para el ⓘ: qué cuenta como compra y de dónde sale. */
 export const AYUDA_SEGMENTOS = {
   what: "Cada cliente cae en un grupo según cuántas veces compró y hace cuánto. Cuentan los pedidos y las ventas de mostrador con su celular.",
-  affects: "Son los mismos grupos que filtran la lista de Mis clientes. Para escribirles, Mensajes masivos; para una campaña con cupón, Crecimiento › Segmentos.",
+  affects: "Son los mismos grupos que filtran la lista de Mis clientes. Para escribirles, Mensajes masivos; para una campaña con cupón, Campañas › «Para quién».",
   example: "Rosa compró 6 veces y la última fue el lunes: Frecuente. Juan compró 3 veces en junio y no volvió: Perdido.",
 } as const;

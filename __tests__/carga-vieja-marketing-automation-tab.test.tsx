@@ -87,7 +87,9 @@ describe("MarketingAutomationTab — una carga vieja no pisa lo que ya cambió",
     await resolver(gets()[1], [ARROZ]);
     expect(await screen.findByText("Oferta de arroz")).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: "Eliminar campaña" }));
+    // Eliminar vive en el «⋯» de la fila (11-10).
+    fireEvent.click(screen.getByRole("button", { name: /Acciones de Oferta de arroz/ }));
+    fireEvent.click(screen.getByRole("menuitem", { name: /Eliminar/ }));
     await waitFor(() => expect(pedido("DELETE", "/api/campaigns?id=c1")).toBeTruthy());
     await resolver(pedido("DELETE", "/api/campaigns?id=c1"), { ok: true });
     expect(screen.queryByText("Oferta de arroz")).toBeNull();
