@@ -1,9 +1,9 @@
 "use client";
 
-import { CardTitle } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { RefreshCw } from "@buleje/design-system/icons";
+import { Clock, RefreshCw } from "@buleje/design-system/icons";
+import { VacioMetricas } from "@/components/admin/analisis/metricas-tarjetas";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -25,10 +25,13 @@ interface HeatCellV1 {
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 // Backend uses JS getDay(): 0=Dom, 1=Lun, ..., 6=Sab
-const DOW_LABELS = ["Dom", "Lun", "Mar", "Mie", "Jue", "Vie", "Sab"] as const;
+const DOW_LABELS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"] as const;
 // Display order: Lun-Dom
 const DOW_ORDER = [1, 2, 3, 4, 5, 6, 0] as const;
-const HOURS = [6, 8, 10, 12, 14, 16, 18, 20, 22] as const;
+// Las 24 horas (11-10): antes eran sólo las pares de 6 a 22 y una venta a las
+// 3 p. m. o a las 11 p. m. no salía en ninguna celda — la grilla quedaba gris
+// con ventas en el período (medido en main: domingo 15 h, 2 ventas).
+const HOURS = Array.from({ length: 24 }, (_, h) => h);
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -58,7 +61,8 @@ const HEATMAP_PILLS: { key: HeatmapPeriod; label: string; days: number }[] = [
   { key: "90d", label: "90D", days: 90 },
 ];
 
-export default function VentasHeatmap() {
+/** `period` lo manda Análisis › Métricas (un período para todos sus gráficos); sin él, trae sus pastillas de 30/60/90 días. */
+export default function VentasHeatmap({ period }: { period?: "7d" | "30d" | "90d" } = {}) {
   const [v2Data, setV2Data] = useState<HeatmapV2Response | null>(null);
   const [v1Cells, setV1Cells] = useState<HeatCellV1[]>([]);
   const [isV2, setIsV2] = useState(false);
@@ -96,10 +100,10 @@ export default function VentasHeatmap() {
     }
   }, []);
 
+  const dias = period ? Number.parseInt(period, 10) : (HEATMAP_PILLS.find(p => p.key === heatPeriod)?.days ?? 60);
   useEffect(() => {
-    const days = HEATMAP_PILLS.find(p => p.key === heatPeriod)?.days ?? 60;
-    fetchData(days);
-  }, [heatPeriod, fetchData]);
+    fetchData(dias);
+  }, [dias, fetchData]);
 
   // Build unified grid from either response shape
   const { grid, maxValue, peakDow, peakHour } = useMemo(() => {
@@ -171,8 +175,8 @@ export default function VentasHeatmap() {
       <div className="rounded-xl border border-[var(--data-error-500)] dark:border-[var(--data-error-500)] bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20 p-6 flex flex-col items-center justify-center h-64">
         <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mb-3">No se pudo cargar el mapa de calor</p>
         <button
-          onClick={() => { const days = HEATMAP_PILLS.find(p => p.key === heatPeriod)?.days ?? 60; fetchData(days); }}
-          className="text-xs px-3 py-1.5 rounded-lg bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors"
+          onClick={() => fetchData(dias)}
+          className="min-h-12 text-sm px-4 rounded-xl bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors"
         >
           <RefreshCw className="h-3 w-3 inline mr-1" />
           Reintentar
@@ -181,24 +185,26 @@ export default function VentasHeatmap() {
     );
   }
 
-  // ── Empty ──
-  if (grid.size === 0) {
+  // ── Empty ── (también con la grilla entera en 0: antes se dibujaba gris)
+  if (grid.size === 0 || maxValue === 0) {
     return (
-      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 flex items-center justify-center h-64">
-        <p className="text-sm text-[var(--text-tertiary)]">No hay datos para el mapa de calor</p>
-      </div>
+      <VacioMetricas
+        conPeriodo
+        icono={Clock}
+        titulo="Sin ventas para el mapa de calor"
+        descripcion="Prueba con un período más largo; cada venta de caja suma a su día y su hora."
+      />
     );
   }
 
   const _insightText = insight || `Tu hora pico es los ${DOW_LABELS[peakDow]} a las ${formatHour(peakHour)}. Asegúrate de tener personal suficiente en ese horario.`;
 
   return (
-    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-      {/* Header + period pills */}
-      <div className="flex items-center justify-between mb-4">
-        <CardTitle className="text-sm font-bold text-[var(--text-primary)]">
-          Mapa de Calor de Ventas
-        </CardTitle>
+    <div>
+      {/* Sin título ni caja propios dentro de Métricas (el panel ya dice
+          «Mapa de calor» y trae el período); suelto, sus pastillas. */}
+      {!period && (
+      <div className="flex items-center justify-end mb-4">
         <div className="flex items-center gap-1">
           {HEATMAP_PILLS.map((p) => (
             <button
@@ -216,6 +222,7 @@ export default function VentasHeatmap() {
           ))}
         </div>
       </div>
+      )}
 
       {/* Grid */}
       <div className="overflow-x-auto relative">
@@ -225,9 +232,9 @@ export default function VentasHeatmap() {
             {HOURS.map((h) => (
               <div
                 key={h}
-                className="w-9 text-center text-[length:var(--ts-2xs)] font-mono text-[var(--text-tertiary)]"
+                className="w-8 overflow-visible whitespace-nowrap text-sm text-[var(--text-secondary)]"
               >
-                {formatHour(h)}
+                {h % 3 === 0 ? formatHour(h) : ""}
               </div>
             ))}
           </div>
@@ -235,7 +242,7 @@ export default function VentasHeatmap() {
           {/* Rows: Lun → Dom */}
           {DOW_ORDER.map((dow) => (
             <div key={dow} className="flex items-center gap-1 mb-1">
-              <span className="w-10 text-right text-xs text-[var(--text-tertiary)] font-medium pr-1">
+              <span className="w-10 text-right text-sm text-[var(--text-secondary)] font-medium pr-1">
                 {DOW_LABELS[dow]}
               </span>
               {HOURS.map((hour) => {
@@ -246,7 +253,7 @@ export default function VentasHeatmap() {
                   <div
                     key={hour}
                     className={cn(
-                      "w-9 h-9 rounded-md transition-all cursor-default hover:ring-2 hover:ring-primary hover:shadow-sm",
+                      "w-8 h-8 rounded-md transition-all cursor-default hover:ring-2 hover:ring-primary hover:shadow-sm",
                       getColor(avgTotal, maxValue)
                     )}
                     onMouseEnter={(e) => {
@@ -270,14 +277,14 @@ export default function VentasHeatmap() {
               style={{ left: hoveredCell.x, top: hoveredCell.y - 8, transform: "translate(-50%, -100%)" }}
             >
               <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] px-4 py-3 min-w-[160px]">
-                <p className="text-xs font-semibold text-[var(--text-primary)] mb-1.5">
+                <p className="text-sm font-semibold text-[var(--text-primary)] mb-1.5">
                   {DOW_LABELS[hoveredCell.dow]} {formatHour(hoveredCell.hour)}
                 </p>
-                <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
+                <p className="text-sm text-[var(--text-secondary)] flex justify-between gap-4">
                   <span>Promedio</span>
                   <span className="font-mono font-medium text-primary">S/ {(cell?.avgTotal ?? 0).toFixed(0)}</span>
                 </p>
-                <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
+                <p className="text-sm text-[var(--text-secondary)] flex justify-between gap-4">
                   <span>Ventas</span>
                   <span className="font-mono font-medium text-[var(--text-secondary)]">{cell?.count ?? 0}</span>
                 </p>
@@ -289,7 +296,7 @@ export default function VentasHeatmap() {
 
       {/* Legend */}
       <div className="flex items-center justify-center gap-2 mt-5">
-        <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-medium">Menor</span>
+        <span className="text-sm text-[var(--text-secondary)] font-medium">Menor</span>
         <div className="flex w-48 h-4 rounded-full overflow-hidden">
           <div className="flex-1 bg-[var(--surface-sunken)]" />
           <div className="flex-1 bg-primary/10 dark:bg-primary/15" />
@@ -298,7 +305,7 @@ export default function VentasHeatmap() {
           <div className="flex-1 bg-primary/10 dark:bg-primary/10" />
           <div className="flex-1 bg-primary/15 dark:bg-primary/10" />
         </div>
-        <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-medium">Mayor</span>
+        <span className="text-sm text-[var(--text-secondary)] font-medium">Mayor</span>
       </div>
 
       {/* Mejora 20: Análisis de horario optimo */}
@@ -325,12 +332,13 @@ export default function VentasHeatmap() {
         const isBusinessHour = (h: number) => h >= 8 && h <= 20;
         const bestIsQuincena = bestSlot.dow === 1 || bestSlot.dow === 3; // Lun o Mie (quincenas tipicas)
 
+        if (bestSlot.avg <= 0) return null;
         return (
           <div className="mt-4 bg-primary/10 dark:bg-primary/15 border-l-4 border-[var(--data-success-500)]/30 p-4 rounded-r-lg space-y-3">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Análisis de Horario</span>
+              <span className="text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">Análisis de horario</span>
             </div>
-            <div className="space-y-2 text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
+            <div className="space-y-2 text-sm text-[var(--accent-ink)] dark:text-[var(--accent)]">
               {bestSlot.avg > 0 && (
                 <p>
                   <span className="font-bold">Tu mejor horario:</span> {DOW_LABELS[bestSlot.dow]} a las {formatHour(bestSlot.hour)} — promedio S/ {Number(bestSlot.avg).toFixed(0)} ({bestSlot.count} ventas)
@@ -338,17 +346,17 @@ export default function VentasHeatmap() {
               )}
               {worstSlot.avg > 0 && (
                 <p>
-                  <span className="font-bold">Horario mas bajo:</span> {DOW_LABELS[worstSlot.dow]} a las {formatHour(worstSlot.hour)} — promedio S/ {Number(worstSlot.avg).toFixed(0)}
+                  <span className="font-bold">Horario más bajo:</span> {DOW_LABELS[worstSlot.dow]} a las {formatHour(worstSlot.hour)} — promedio S/ {Number(worstSlot.avg).toFixed(0)}
                 </p>
               )}
               {worstSlot.avg > 0 && isBusinessHour(worstSlot.hour) && (
                 <p className="bg-primary/10 dark:bg-primary/15 rounded-lg p-2">
-                  <span className="font-bold">Sugerencia:</span> Considera una promocion especial los {DOW_LABELS[worstSlot.dow]} a las {formatHour(worstSlot.hour)} para impulsar ventas
+                  <span className="font-bold">Sugerencia:</span> Considera una promoción especial los {DOW_LABELS[worstSlot.dow]} a las {formatHour(worstSlot.hour)} para impulsar ventas
                 </p>
               )}
               {bestIsQuincena && bestSlot.avg > 0 && (
                 <p className="bg-primary/10 dark:bg-primary/15 rounded-lg p-2">
-                  <span className="font-bold">Tus picos coinciden con inicio de semana — prepara stock extra esos dias</span>
+                  <span className="font-bold">Tus picos coinciden con inicio de semana — prepara stock extra esos días</span>
                 </p>
               )}
             </div>

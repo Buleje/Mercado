@@ -2,24 +2,25 @@
 
 /**
  * Bloques de Análisis › Métricas con su propia carga: Top 10 clientes,
- * producto estrella, alertas de ventas y enlace a los mejores clientes de Campañas. Salieron tal cual de
+ * producto estrella y alertas de ventas. Salieron tal cual de
  * `AnalyticsBIModule.tsx` (886 líneas) al pasarlo al patrón del panel.
+ * Sin datos, cada uno muestra el estado vacío del panel (`VacioMetricas`); el
+ * enlace a los segmentos de Campañas pasó al «Más» de la cabecera (11-10).
  */
 
 import { DataTable } from "@buleje/design-system";
 import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import Image from "next/image";
-import { Flame } from "@buleje/design-system/icons";
+import { Flame, Trophy, TrendingUp } from "@buleje/design-system/icons";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import type { Sale } from "@/types/erp";
-import { useReportChartEmpty } from "@/components/admin/shared/ChartManager";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
-import EnlacePanel from "@/components/admin/shared/EnlacePanel";
+import { VacioMetricas } from "@/components/admin/analisis/metricas-tarjetas";
 
 const AnomalyDetector = lazy(() => import("@/components/admin/analytics/AnomalyDetector"));
 
 // ── Top 10 Clientes ─────────────────────────────────────────────────────────
-export function Top10Clientes({ refreshKey, reportEmpty = true }: { refreshKey: number; reportEmpty?: boolean }) {
+export function Top10Clientes({ refreshKey }: { refreshKey: number }) {
   const [customers, setCustomers] = useState<Array<{
     id: string; nombre: string; gastoTotal: number; compras: number; ticketPromedio: number; tendencia: number;
   }>>([]);
@@ -47,11 +48,8 @@ export function Top10Clientes({ refreshKey, reportEmpty = true }: { refreshKey: 
     })();
   }, [refreshKey]);
 
-  // Vacío si no hay clientes o ninguno tiene gasto real → se oculta el gráfico.
-  // Solo reporta cuando es slot standalone (en TabbedCard se pasa reportEmpty=false
-  // para no ocultar toda la card al cambiar de pestaña).
+  // Vacío si no hay clientes o ninguno tiene gasto real.
   const noRealData = customers.every(c => (c.gastoTotal ?? 0) === 0);
-  useReportChartEmpty(reportEmpty && noRealData, !loading);
 
   if (loading) {
     return (
@@ -63,51 +61,49 @@ export function Top10Clientes({ refreshKey, reportEmpty = true }: { refreshKey: 
     );
   }
 
-  const medals = ["\u{1F947}", "\u{1F948}", "\u{1F949}"];
+  if (noRealData) {
+    return (
+      <VacioMetricas
+        icono={Trophy}
+        titulo="Todavía no hay clientes con compras"
+        descripcion="Cuando registres ventas a nombre de un cliente, aquí aparecen los que más te compran."
+      />
+    );
+  }
 
   return (
-    <div className="overflow-x-auto">
-      {customers.length === 0 ? (
-        <p className="text-sm text-[var(--text-tertiary)] text-center py-8">No hay datos de clientes disponibles</p>
-      ) : (
-        <DataTable className="w-full">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Cliente</th>
-              <th className="text-right">Gasto total</th>
-              <th className="text-right hidden sm:table-cell">Compras</th>
-              <th className="text-right hidden md:table-cell">Ticket prom</th>
-              <th className="text-center">Tendencia</th>
-            </tr>
-          </thead>
-          <tbody>
-            {customers.map((c, i) => (
-              <tr key={c.id || `cust-${i}`} className="cursor-pointer">
-                <td className="text-center">
-                  {i < 3 ? <span className="text-lg">{medals[i]}</span> : <span className="text-xs font-bold text-[var(--text-tertiary)]">{i + 1}</span>}
-                </td>
-                <td>
-                  <p className="font-medium text-[var(--text-primary)] truncate max-w-50">{c.nombre}</p>
-                </td>
-                <td className="text-right font-bold text-primary">{formatCurrency(c.gastoTotal)}</td>
-                <td className="text-right text-[var(--text-secondary)] hidden sm:table-cell">{c.compras} compras</td>
-                <td className="text-right text-[var(--text-secondary)] hidden md:table-cell">{formatCurrency(c.ticketPromedio)}</td>
-                <td className="text-center">
-                  {c.tendencia > 5 ? (
-                    <span className="text-[var(--data-success-500)] text-xs font-bold">&#8593; +{Number(c.tendencia).toFixed(0)}%</span>
-                  ) : c.tendencia < -5 ? (
-                    <span className="text-[var(--data-error-500)] text-xs font-bold">&#8595; {Number(c.tendencia).toFixed(0)}%</span>
-                  ) : (
-                    <span className="text-[var(--text-tertiary)] text-xs font-bold">&#8594; Estable</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </DataTable>
-      )}
-    </div>
+    <DataTable>
+      <thead>
+        <tr>
+          <th className="w-12 text-center">#</th>
+          <th>Cliente</th>
+          <th className="text-right">Gasto total</th>
+          <th className="hidden text-right sm:table-cell">Compras</th>
+          <th className="hidden text-right md:table-cell">Ticket promedio</th>
+          <th className="text-center">Tendencia</th>
+        </tr>
+      </thead>
+      <tbody>
+        {customers.map((c, i) => (
+          <tr key={c.id || `cust-${i}`}>
+            <td className="text-center font-bold text-[var(--text-secondary)]">{i + 1}</td>
+            <td className="max-w-50 truncate font-medium">{c.nombre}</td>
+            <td className="text-right font-bold">{formatCurrency(c.gastoTotal)}</td>
+            <td className="hidden text-right text-[var(--text-secondary)] sm:table-cell">{c.compras}</td>
+            <td className="hidden text-right text-[var(--text-secondary)] md:table-cell">{formatCurrency(c.ticketPromedio)}</td>
+            <td className="whitespace-nowrap text-center font-semibold">
+              {c.tendencia > 5 ? (
+                <span className="text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">↑ +{Number(c.tendencia).toFixed(0)} %</span>
+              ) : c.tendencia < -5 ? (
+                <span className="text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">↓ {Number(c.tendencia).toFixed(0)} %</span>
+              ) : (
+                <span className="text-[var(--text-secondary)]">→ Estable</span>
+              )}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </DataTable>
   );
 }
 
@@ -161,10 +157,6 @@ export function StarProductCard({ refreshKey }: { refreshKey: number }) {
     })();
   }, [refreshKey]);
 
-  // StarProductCard SIEMPRE va anidado dentro de un TabbedCard, así que NO
-  // reporta vacío (ocultaría toda la card incluyendo la otra pestaña). Conserva
-  // su propio mensaje "Aun no hay ventas esta semana".
-
   if (loading) {
     return (
       <div className="animate-pulse">
@@ -176,12 +168,11 @@ export function StarProductCard({ refreshKey }: { refreshKey: number }) {
 
   if (!star) {
     return (
-      <div>
-        <p className="text-sm font-semibold text-[var(--text-secondary)] flex items-center gap-2">
-          <Flame className="h-4 w-4 text-secondary" /> Producto Estrella
-        </p>
-        <p className="text-xs text-[var(--text-tertiary)] mt-2">Aun no hay ventas esta semana</p>
-      </div>
+      <VacioMetricas
+        icono={Flame}
+        titulo="Sin ventas en caja estos 7 días"
+        descripcion="El producto estrella es el que más unidades vendes en la semana; aparece con tu primera venta."
+      />
     );
   }
 
@@ -195,8 +186,8 @@ export function StarProductCard({ refreshKey }: { refreshKey: number }) {
         )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-bold text-secondary bg-secondary/15 px-2.5 py-0.5 rounded-full">
-              Mas vendido
+            <span className="rounded-full bg-[var(--accent-soft)] px-2.5 py-0.5 text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">
+              Más vendido
             </span>
           </div>
           <p className="text-lg font-extrabold text-[var(--text-primary)] truncate">{star.name}</p>
@@ -204,7 +195,7 @@ export function StarProductCard({ refreshKey }: { refreshKey: number }) {
             <span className="text-sm text-[var(--text-secondary)]">{star.qty} unidades esta semana</span>
             <span className="text-sm font-bold text-primary">S/{formatNumber(Number(star.revenue), { max: 0 })}</span>
             {star.trend !== 0 && (
-              <span className={`text-xs font-bold ${star.trend > 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"}`}>
+              <span className={`text-sm font-bold ${star.trend > 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]"}`}>
                 {star.trend > 0 ? "\u2191" : "\u2193"} {star.trend > 0 ? "+" : ""}{Number(star.trend).toFixed(0)}% vs sem. pasada
               </span>
             )}
@@ -241,14 +232,11 @@ export function AnomalyDetectorWrapper({ refreshKey }: { refreshKey: number }) {
 
   if (sales.length === 0 && orders.length === 0) {
     return (
-      <div className="text-center py-8">
-        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
-          <svg className="w-5 h-5 text-[var(--data-success-500)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
-        <p className="text-sm text-[var(--text-secondary)]">Sin anomalias — Todo marcha bien</p>
-      </div>
+      <VacioMetricas
+        icono={TrendingUp}
+        titulo="Todavía no hay ventas que comparar"
+        descripcion="Con 10 días de ventas te avisamos cuando un día se sale de lo normal."
+      />
     );
   }
 
@@ -256,17 +244,5 @@ export function AnomalyDetectorWrapper({ refreshKey }: { refreshKey: number }) {
     <Suspense fallback={<S />}>
       <AnomalyDetector sales={sales} orders={orders} />
     </Suspense>
-  );
-}
-
-// ── Segmentos RFM: una sola regla, la de Campañas › Mejores clientes ────────
-// Antes se recalculaba acá con otros cortes y nombres en inglés (Champions,
-// At Risk…). Ahora se manda a donde ya vive, con los nombres en español.
-export function MejoresClientesEnlace() {
-  return (
-    <div className="flex flex-col items-start gap-1 py-6 text-sm text-[var(--text-secondary)]">
-      <p>Los segmentos por cómo compra cada cliente (los mejores, fieles, en riesgo, dormidos) viven en Campañas, con qué hacer con cada grupo.</p>
-      <EnlacePanel href="/admin?tab=campanas&vista=rfm">Ver Mejores clientes en Campañas</EnlacePanel>
-    </div>
   );
 }

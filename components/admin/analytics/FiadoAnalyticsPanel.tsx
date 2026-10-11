@@ -1,6 +1,6 @@
 "use client";
 
-import { CardTitle, DataTable } from "@buleje/design-system";
+import { DataTable } from "@buleje/design-system";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   PieChart,
@@ -15,8 +15,8 @@ import {
   CartesianGrid,
 } from "recharts";
 import { cn } from "@/lib/utils";
-import { RefreshCw, AlertTriangle, TrendingDown, TrendingUp, DollarSign } from "@buleje/design-system/icons";
-import ChartsEmptyState from "@/components/admin/shared/ChartsEmptyState";
+import { RefreshCw, AlertTriangle, TrendingDown, TrendingUp, CreditCard } from "@buleje/design-system/icons";
+import { VacioMetricas } from "@/components/admin/analisis/metricas-tarjetas";
 import { formatCurrencyCompact } from "@/lib/format";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -73,8 +73,8 @@ function DonutTooltip({ active, payload }: { active?: boolean; payload?: Array<{
   if (!active || !payload?.[0]) return null;
   return (
     <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] px-4 py-3 min-w-[160px]">
-      <p className="text-xs font-semibold text-[var(--text-primary)] mb-1.5">{payload[0].name}</p>
-      <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
+      <p className="text-sm font-semibold text-[var(--text-primary)] mb-1.5">{payload[0].name}</p>
+      <p className="text-sm text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Monto</span>
         <span className="font-mono font-medium text-primary">{formatCurrencyCompact(payload[0].value)}</span>
       </p>
@@ -90,17 +90,17 @@ function TrendTooltip({ active, payload }: { active?: boolean; payload?: Array<{
   const neto = d.cobrados - d.nuevos;
   return (
     <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] px-4 py-3 min-w-[180px]">
-      <p className="text-xs font-semibold text-[var(--text-primary)] mb-1.5">{d.mes}</p>
-      <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
+      <p className="text-sm font-semibold text-[var(--text-primary)] mb-1.5">{d.mes}</p>
+      <p className="text-sm text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Cobrados</span>
         <span className="font-mono font-medium text-primary">{formatCurrencyCompact(d.cobrados)}</span>
       </p>
-      <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
+      <p className="text-sm text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Nuevos</span>
         <span className="font-mono font-medium text-[var(--data-error-500)]">{formatCurrencyCompact(d.nuevos)}</span>
       </p>
       <div className="border-t border-[var(--rule-base)] mt-1.5 pt-1.5">
-        <p className="text-xs flex justify-between gap-4">
+        <p className="text-sm flex justify-between gap-4">
           <span className="font-semibold text-[var(--text-secondary)]">Neto</span>
           <span className={cn("font-mono font-bold", neto >= 0 ? "text-primary" : "text-[var(--data-error-500)]")}>{formatCurrencyCompact(neto)}</span>
         </p>
@@ -238,7 +238,7 @@ export default function FiadoAnalyticsPanel() {
         <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)] mb-3">No se pudieron cargar los datos de fiados</p>
         <button
           onClick={() => { setLoading(true); fetchData(); }}
-          className="text-xs px-3 py-1.5 rounded-lg bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors"
+          className="min-h-12 text-sm px-4 rounded-xl bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors"
         >
           <RefreshCw className="h-3 w-3 inline mr-1" />
           Reintentar
@@ -250,31 +250,29 @@ export default function FiadoAnalyticsPanel() {
   // ── Empty ──
   if (!totales) {
     return (
-      <ChartsEmptyState
-        title="Todavía no hay fiados registrados"
-        description="Cuando empieces a registrar fiados, acá vas a ver el análisis de deuda, antigüedad y tendencia de cobro."
-        className="rounded-xl"
+      <VacioMetricas
+        icono={CreditCard}
+        titulo="Todavía no hay fiados registrados"
+        descripcion="Cuando fíes desde la caja, aquí verás lo vencido, lo cobrado y cómo recuperas."
+        accion={{ label: "Ir a Me deben", href: "/admin?tab=ventas-caja&vista=cuentas-cobrar" }}
       />
     );
   }
 
+  // «Total pendiente» salió de acá: es «Fiado por cobrar» de los Indicadores de
+  // Métricas (una cifra, una vez).
   const kpiCards = [
-    { label: "Total pendiente", value: formatCurrencyCompact(totales.pendiente), icon: DollarSign, accent: "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" },
     { label: "Vencido hoy", value: formatCurrencyCompact(totales.vencidoHoy), icon: AlertTriangle, accent: totales.vencidoHoy > 0 ? "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]" : "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
     { label: "Cobrado este mes", value: formatCurrencyCompact(totales.cobradoEsteMes), icon: TrendingUp, accent: "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" },
-    { label: "Tasa recuperacion", value: `${Number(totales.tasaRecuperacion).toFixed(1)}%`, icon: TrendingDown, accent: totales.tasaRecuperacion >= 50 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" },
+    { label: "Tasa de recuperación", value: `${Number(totales.tasaRecuperacion).toFixed(1)}%`, icon: TrendingDown, accent: totales.tasaRecuperacion >= 50 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" },
   ];
 
   const donutData = (distribucion ?? []).filter((d) => d.monto > 0);
 
   return (
-    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 space-y-4">
-      <CardTitle className="text-sm font-bold text-[var(--text-primary)]">
-        Análisis de Fiados
-      </CardTitle>
-
-      {/* KPI cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div className="space-y-4">
+      {/* Sin título ni caja propios: el panel de Métricas dice «Fiados». */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {kpiCards.map((kpi) => {
           const Icon = kpi.icon;
           return (
@@ -283,8 +281,8 @@ export default function FiadoAnalyticsPanel() {
               className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)]/50 p-3 "
             >
               <div className="flex items-center gap-1.5 mb-1">
-                <Icon className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
-                <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-medium">
+                <Icon className="h-4 w-4 text-[var(--text-secondary)]" />
+                <span className="text-sm text-[var(--text-secondary)] font-medium">
                   {kpi.label}
                 </span>
               </div>
@@ -301,7 +299,7 @@ export default function FiadoAnalyticsPanel() {
         {/* Donut — se oculta el bloque completo si no hay datos */}
         {donutData.length > 0 && (
         <div className="flex-1">
-          <h4 className="text-xs font-medium text-[var(--text-tertiary)] mb-2">
+          <h4 className="text-sm font-medium text-[var(--text-secondary)] mb-2">
             Distribucion por antiguedad
           </h4>
           {donutData.length > 0 ? (
@@ -333,7 +331,7 @@ export default function FiadoAnalyticsPanel() {
                   <p className="text-xl font-mono font-bold text-[var(--text-primary)]" style={{ fontVariantNumeric: "tabular-nums" }}>
                     {formatCurrencyCompact(totales.pendiente)}
                   </p>
-                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Pendiente</p>
+                  <p className="text-sm text-[var(--text-secondary)]">Pendiente</p>
                 </div>
               </div>
             </div>
@@ -343,7 +341,7 @@ export default function FiadoAnalyticsPanel() {
             {donutData.map((seg) => (
               <div key={seg.rango} className="flex items-center gap-1">
                 <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: seg.color }} />
-                <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{seg.rango}</span>
+                <span className="text-sm text-[var(--text-secondary)]">{seg.rango}</span>
               </div>
             ))}
           </div>
@@ -353,8 +351,8 @@ export default function FiadoAnalyticsPanel() {
         {/* Tendencia — se oculta el bloque completo si no hay datos */}
         {(tendencia && tendencia.length > 0) && (
         <div className="flex-1">
-          <h4 className="text-xs font-medium text-[var(--text-tertiary)] mb-2">
-            Tendencia de recuperacion
+          <h4 className="text-sm font-medium text-[var(--text-secondary)] mb-2">
+            Tendencia de recuperación
           </h4>
           {tendencia && tendencia.length > 0 ? (
             <ResponsiveContainer minWidth={0} width="100%" height={250}>
@@ -412,7 +410,7 @@ export default function FiadoAnalyticsPanel() {
 
       {/* Top deudores */}
       <div>
-        <h4 className="text-xs font-medium text-[var(--text-tertiary)] mb-2">
+        <h4 className="text-sm font-medium text-[var(--text-secondary)] mb-2">
           Top deudores
         </h4>
         <div className="overflow-x-auto">
@@ -421,13 +419,13 @@ export default function FiadoAnalyticsPanel() {
               <tr>
                 <th>Cliente</th>
                 <th className="text-right">Saldo</th>
-                <th className="text-right">Dias</th>
+                <th className="text-right">Días</th>
                 <th className="text-right">Estado</th>
               </tr>
             </thead>
             <tbody>
-              {(topDeudores ?? []).map((d, idx) => (
-                <tr key={d.nombre} className={cn("", idx % 2 === 1 && "bg-gray-50/50 dark:bg-gray-800/20")}>
+              {(topDeudores ?? []).map((d) => (
+                <tr key={d.nombre}>
                   <td className="text-[var(--text-secondary)] truncate max-w-[150px]">
                     {d.nombre}
                   </td>
@@ -442,7 +440,7 @@ export default function FiadoAnalyticsPanel() {
                   </td>
                   <td className="text-right">
                     <span className={cn(
-                      "text-[length:var(--ts-2xs)] px-1.5 py-0.5 rounded-full font-medium",
+                      "text-sm px-1.5 py-0.5 rounded-full font-medium",
                       d.status === "vencido" ? "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]"
                         : d.status === "riesgo" ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]"
                         : "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]"

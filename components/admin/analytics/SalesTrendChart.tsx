@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useReportChartEmpty } from "@/components/admin/shared/ChartManager";
+import { VacioMetricas } from "@/components/admin/analisis/metricas-tarjetas";
 import {
   ComposedChart,
   Bar,
@@ -16,7 +16,7 @@ import {
   ReferenceLine,
 } from "recharts";
 import { cn } from "@/lib/utils";
-import { RefreshCw } from "@buleje/design-system/icons";
+import { RefreshCw, TrendingUp } from "@buleje/design-system/icons";
 import { formatCurrency } from "@/lib/format";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -77,28 +77,30 @@ function CustomTooltip({ active, payload }: { active?: boolean; payload?: Array<
   const d = payload[0].payload;
   return (
     <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] px-4 py-3 min-w-[160px]">
-      <p className="text-xs font-semibold text-[var(--text-primary)] mb-1.5">{formatDate(d.fecha, "full")}</p>
-      <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
+      <p className="text-sm font-semibold text-[var(--text-primary)] mb-1.5">{formatDate(d.fecha, "full")}</p>
+      <p className="text-sm text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Ventas</span>
         <span className="font-mono font-medium text-primary">{formatCurrency(Number(d.total))}</span>
       </p>
-      <p className="text-xs text-[var(--text-secondary)] flex justify-between gap-4">
+      <p className="text-sm text-[var(--text-secondary)] flex justify-between gap-4">
         <span>Media 7d</span>
         <span className="font-mono font-medium text-[var(--text-tertiary)]">{formatCurrency(Number(d.movingAvg7d))}</span>
       </p>
-      {d.isQuincena && <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-1.5">Quincena</p>}
-      {d.isFeriado && <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-1">{d.feriadoNombre ?? "Feriado"}</p>}
+      {d.isQuincena && <p className="text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-1.5">Quincena</p>}
+      {d.isFeriado && <p className="text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mt-1">{d.feriadoNombre ?? "Feriado"}</p>}
     </div>
   );
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export default function SalesTrendChart() {
+/** `period` lo manda Análisis › Métricas (un período para todos sus gráficos); sin él, el gráfico trae su propio selector. */
+export default function SalesTrendChart({ period: periodoExterno }: { period?: Period } = {}) {
   const [chartData, setChartData] = useState<VentaDia[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [period, setPeriod] = useState<Period>("30d");
+  const [periodoPropio, setPeriod] = useState<Period>("30d");
+  const period = periodoExterno ?? periodoPropio;
 
   const fetchData = useCallback(async () => {
     try {
@@ -221,10 +223,8 @@ export default function SalesTrendChart() {
     { key: "90d", label: "90D" },
   ];
 
-  // Reporta vacío si no hay días o todos están en cero (sin ventas reales) → el
-  // ChartManager oculta el gráfico. En error NO reporta (deja ver el mensaje).
+  // Sin días o todos en cero (sin ventas reales): el estado vacío del panel.
   const isEmpty = chartData.every(d => (d.total ?? 0) === 0);
-  useReportChartEmpty(!error && isEmpty, !loading);
 
   // ── Loading ──
   if (loading) {
@@ -245,7 +245,7 @@ export default function SalesTrendChart() {
         </p>
         <button
           onClick={() => { setLoading(true); fetchData(); }}
-          className="text-xs px-3 py-1.5 rounded-lg bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors"
+          className="min-h-12 text-sm px-4 rounded-xl bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/40 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] hover:bg-[var(--data-error-500)] transition-colors"
         >
           <RefreshCw className="h-3 w-3 inline mr-1" />
           Reintentar
@@ -255,23 +255,23 @@ export default function SalesTrendChart() {
   }
 
   // ── Empty ──
-  if (!chartData.length) {
+  if (!chartData.length || isEmpty) {
     return (
-      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 flex items-center justify-center h-64">
-        <p className="text-sm text-[var(--text-tertiary)]">No hay datos de ventas para este periodo</p>
-      </div>
+      <VacioMetricas
+        conPeriodo
+        icono={TrendingUp}
+        titulo="Sin ventas en este período"
+        descripcion="Prueba con un período más largo; cuando registres ventas, la tendencia aparece aquí."
+      />
     );
   }
 
   return (
-    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-      {/* Header + pills */}
-      <div className="flex items-center justify-between mb-4">
-        {/* Sin título propio: esta gráfica va dentro de una AnalyticsCard que
-            ya dice "Tendencia de Ventas" con su subtítulo. Se repetía dos veces
-            a 20px de distancia. Queda el selector de período solo, alineado
-            a la derecha. */}
-        <span />
+    <div>
+      {/* Sin título ni caja propios: va dentro del panel de Métricas, que ya
+          dice «Tendencia» y trae el período. Suelto, conserva sus pastillas. */}
+      {!periodoExterno && (
+      <div className="flex items-center justify-end mb-4">
         <div className="flex items-center gap-1">
           {pills.map((p) => (
             <button
@@ -289,6 +289,7 @@ export default function SalesTrendChart() {
           ))}
         </div>
       </div>
+      )}
 
       {/* Chart — Mejora 18: con prediccion 7 dias */}
       <ResponsiveContainer minWidth={0} width="100%" height={420}>

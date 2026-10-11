@@ -1,100 +1,136 @@
 "use client";
 
-/** Las dos tarjetas de Análisis › Métricas: una con un gráfico, otra con dos a elegir. */
+/**
+ * Análisis › Métricas: el panel de cada sección y su estado vacío.
+ *
+ * UN gráfico a la vista a la vez (Brandon 11-10: «muchos datos → secciones, no
+ * bloques apilados»). Antes cada sección apilaba dos o tres tarjetas, algunas
+ * con pestañas propias, y Productos medía 2,4 pantallas. Ahora la sección es
+ * una tarjeta con sus gráficos en `BarraDeSecciones` (el mismo control que la
+ * fila de arriba), el ⓘ del gráfico elegido y, si el gráfico depende del
+ * tiempo, el período a la derecha. El elegido se recuerda por sección.
+ *
+ * El período es uno para todos (`ProveedorPeriodo` en el hub): si miras 7 días
+ * en la tendencia, el mapa de calor y la cesta también salen de 7 días.
+ */
 
-import React, { useState } from "react";
-import { CardTitle } from "@buleje/design-system";
-import type { BarChart3 } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
+import { createContext, useContext, type ReactNode } from "react";
+import type { LucideIcon } from "@buleje/design-system/icons";
+import { BarraDeSecciones, idPestanaDeSeccion } from "@/components/admin/shared/BarraDeSecciones";
+import EmptyDateRangeState from "@/components/admin/inicio/EmptyDateRangeState";
+import type { DateRange } from "@/components/admin/inicio/DashboardDateRange";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 
-// ── AnalyticsCard — wrapper profesional para cada grafico ────────────────────
-export function AnalyticsCard({ title, subtitle, icon: Icon, children, className }: {
-  title: string;
-  subtitle?: string;
-  icon?: typeof BarChart3;
-  children: React.ReactNode;
-  className?: string;
-}) {
+export type PeriodoMetricas = "7d" | "30d" | "90d";
+
+export const PERIODOS: readonly { clave: PeriodoMetricas; rotulo: string }[] = [
+  { clave: "7d", rotulo: "Últimos 7 días" },
+  { clave: "30d", rotulo: "Últimos 30 días" },
+  { clave: "90d", rotulo: "Últimos 90 días" },
+];
+
+interface CtxPeriodo {
+  periodo: PeriodoMetricas;
+  cambiar: (p: PeriodoMetricas) => void;
+}
+const Periodo = createContext<CtxPeriodo | null>(null);
+export const ProveedorPeriodo = Periodo.Provider;
+/** `null` fuera de Métricas: el gráfico usa su propio período. */
+export function usePeriodoMetricas() {
+  return useContext(Periodo);
+}
+
+export interface GraficoMetricas<T extends string = string> {
+  clave: T;
+  rotulo: string;
+  /** Qué muestra, en una frase: va en el ⓘ al lado de las pestañas. */
+  ayuda: string;
+  /** El gráfico lee el período: se muestra el selector. */
+  conPeriodo?: boolean;
+  contenido: ReactNode;
+}
+
+interface PanelProps<T extends string> {
+  id: string;
+  etiqueta: string;
+  graficos: readonly GraficoMetricas<T>[];
+  activo: T;
+  onCambiar: (clave: T) => void;
+}
+
+export function PanelDeGraficos<T extends string>({ id, etiqueta, graficos, activo, onCambiar }: PanelProps<T>) {
+  const ctx = usePeriodoMetricas();
+  const actual = graficos.find((g) => g.clave === activo) ?? graficos[0];
+  const idPanel = `${id}-grafico`;
   return (
-    <div className={cn(
-      "@container bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] p-4 sm:p-5 transition-shadow hover:shadow-sm",
-      className,
-    )}>
-      {/* Encabezado en UNA línea. Antes era un bloque de ~62px: un icono
-          dentro de una caja de 36px, el título debajo y el subtítulo debajo
-          de ese. Multiplicado por las tarjetas de una sección, el módulo
-          gastaba más alto en presentarse que en mostrar datos.
-          El subtítulo pasa a la misma línea tras un punto medio, y se va
-          cuando la tarjeta es angosta: ahí el título ya alcanza. */}
-      <div className="mb-3 flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
-        <div className="flex min-w-0 items-center gap-2">
-          {Icon && (
-            <Icon className="h-4 w-4 shrink-0 text-[var(--accent)]" strokeWidth={2} aria-hidden />
-          )}
-          <CardTitle className="text-[length:var(--ts-xl)] font-bold leading-tight text-[var(--text-primary)]">
-            {title}
-          </CardTitle>
+    <section className="@container rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-4">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        {/* Pestañas y ⓘ juntos: a 400 px el carril se desplaza y el ⓘ no cae solo a otra fila. */}
+        <div className="flex min-w-0 max-w-full items-center gap-2">
+          <div className="min-w-0">
+            <BarraDeSecciones
+              secciones={graficos.map((g) => ({ clave: g.clave, rotulo: g.rotulo }))}
+              activa={actual.clave}
+              onCambiar={onCambiar}
+              etiqueta={etiqueta}
+              idPanel={idPanel}
+            />
+          </div>
+          <span className="shrink-0">
+            <InfoTip title={actual.rotulo} what={actual.ayuda} side="bottom" />
+          </span>
         </div>
-        {subtitle && (
-          <p className="hidden min-w-0 truncate text-[length:var(--ts-sm)] text-[var(--text-secondary)] @min-[30rem]:block">
-            <span aria-hidden className="mr-2 text-[var(--text-tertiary)]">·</span>
-            {subtitle}
-          </p>
+        {actual.conPeriodo && ctx && (
+          <label className="ml-auto">
+            <span className="sr-only">Período</span>
+            <select
+              value={ctx.periodo}
+              onChange={(e) => ctx.cambiar(e.target.value as PeriodoMetricas)}
+              className="h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
+            >
+              {PERIODOS.map((p) => (
+                <option key={p.clave} value={p.clave}>{p.rotulo}</option>
+              ))}
+            </select>
+          </label>
         )}
       </div>
-      <div className="w-full">{children}</div>
-    </div>
+      <div role="tabpanel" id={idPanel} aria-labelledby={idPestanaDeSeccion(idPanel, actual.clave)}>
+        {actual.contenido}
+      </div>
+    </section>
   );
 }
 
+/** Sólo para cumplir el tipo de `EmptyDateRangeState`: el título va siempre propio. */
+const RANGO_SIN_USO: DateRange = { preset: "mensual", from: new Date(0), to: new Date(0) };
 
-// ── TabbedCard — card con tabs internas para unificar componentes ─────────────
-export function TabbedCard({ title, subtitle, icon, tabs, className }: {
-  title: string;
-  subtitle?: string;
-  icon?: typeof BarChart3;
-  tabs: { id: string; label: string; content: React.ReactNode }[];
-  className?: string;
+/**
+ * El estado vacío del panel (el del paiche, `EmptyDateRangeState`, Brandon
+ * 11-10: «para páginas que no tengan datos»). Con `conPeriodo` y menos de 90
+ * días elegidos, el botón amplía el período; si no, lleva a registrar una venta.
+ */
+export function VacioMetricas({ titulo, descripcion, conPeriodo, icono, accion }: {
+  titulo: string;
+  descripcion: string;
+  conPeriodo?: boolean;
+  icono?: LucideIcon;
+  accion?: { label: string; href?: string; onClick?: () => void };
 }) {
-  const [activeTab, setActiveTab] = useState(tabs[0]?.id ?? "");
+  const ctx = usePeriodoMetricas();
+  const ampliar = conPeriodo && ctx && ctx.periodo !== "90d" ? ctx : null;
   return (
-    <div className={cn(
-      "bg-[var(--surface-raised)] rounded-2xl border border-[var(--rule-base)] p-6 transition-shadow hover:shadow-sm",
-      className,
-    )}>
-      <div className="mb-4">
-        <div className="flex items-center gap-2.5 mb-3">
-          {icon && (
-            <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-              {React.createElement(icon, { className: "h-4.5 w-4.5 text-primary" })}
-            </div>
-          )}
-          <div className="flex-1">
-            <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] leading-tight">{title}</CardTitle>
-            {subtitle && <p className="text-sm text-[var(--text-secondary)] mt-0.5">{subtitle}</p>}
-          </div>
-        </div>
-        <div className="flex gap-1 border-b border-[var(--rule-base)]">
-          {tabs.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setActiveTab(t.id)}
-              className={cn(
-                "min-h-11 px-3 text-sm font-semibold rounded-t-lg transition-colors",
-                activeTab === t.id
-                  ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border-b-2 border-primary"
-                  : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
-              )}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="w-full">
-        {tabs.find(t => t.id === activeTab)?.content}
-      </div>
-    </div>
+    <EmptyDateRangeState
+      dateRange={RANGO_SIN_USO}
+      title={titulo}
+      description={descripcion}
+      icon={icono}
+      action={
+        accion ??
+        (ampliar
+          ? { label: "Ver los últimos 90 días", onClick: () => ampliar.cambiar("90d") }
+          : { label: "Registrar venta manual", href: "/admin?tab=ventas-caja" })
+      }
+    />
   );
 }
-

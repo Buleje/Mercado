@@ -1,5 +1,5 @@
 "use client";
-import { CardTitle, DataTable, LoadingState, SectionTitle } from "@buleje/design-system";
+import { CardTitle, DataTable, LoadingState } from "@buleje/design-system";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
@@ -10,6 +10,7 @@ import {
   type LucideIcon,
 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
+import { VacioMetricas } from "@/components/admin/analisis/metricas-tarjetas";
 import type { BCGProduct } from "@/app/api/analytics/bcg/route";
 import { formatNumber } from "@/lib/format";
 
@@ -82,51 +83,39 @@ export default function BCGMatrixTab() {
 
   if (PRODUCTS.length === 0) {
     return (
-      <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-6 text-center">
-        <Star className="mx-auto h-8 w-8 text-[var(--text-tertiary)]" />
-        <p className="mt-3 text-sm font-semibold text-[var(--text-secondary)]">Todavía no hay ventas suficientes para armar la matriz</p>
-        <p className="mt-1 text-xs text-[var(--text-tertiary)]">Compara los últimos 30 días contra los 30 anteriores — vuelve cuando tengas ventas registradas en ambos períodos.</p>
-      </div>
+      <VacioMetricas
+        icono={Star}
+        titulo="Todavía no hay ventas suficientes para la matriz"
+        descripcion="Compara los últimos 30 días contra los 30 anteriores: hacen falta ventas en los dos."
+      />
     );
   }
 
   return (
     <div className="space-y-3 sm:space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
-        <div>
-          <SectionTitle className="text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
-            <Star className="h-6 w-6 text-[var(--data-warning-500)]" /> Matriz BCG
-          </SectionTitle>
-          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-1">Clasifica productos por crecimiento y participación de mercado</p>
-        </div>
-        <button onClick={() => exportToCSV(PRODUCTS.map(p => ({ Producto: p.name, Categoría: p.category, Ingreso: p.revenue, Crecimiento: `${p.growth}%`, Participación: `${p.marketShare}%`, Cuadrante: Q_CONFIG[p.quadrant].label })), "bcg-matrix")} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
-          <Download className="h-4 w-4" /> Exportar
-        </button>
-      </div>
-
-      {/* Quadrant summary */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+      {/* Sin título propio: el panel de Métricas dice «Matriz BCG» y su ⓘ
+          explica los cuadrantes. Los cuatro cuadrantes filtran la tabla. */}
+      <div className="flex flex-wrap items-stretch gap-2">
         {(["estrella", "vaca", "interrogante", "perro"] as Quadrant[]).map(q => {
           const c = Q_CONFIG[q];
           const items = grouped[q];
           const rev = items.reduce((s, p) => s + p.revenue, 0);
           return (
-            <button key={q} onClick={() => setSelectedQ(selectedQ === q ? "todas" : q)} className={cn("rounded-xl border-2 p-3 sm:p-5 text-left transition-all hover:shadow-[var(--shadow-sm)]", c.bg, selectedQ === q && "ring-2 ring-primary ring-offset-2 dark:ring-offset-card")}>
-              <div className="flex flex-wrap items-center gap-2 mb-2">
-                <span className={cn("font-extrabold text-sm", c.color)}>{c.label}</span>
-              </div>
-              <p className="text-2xl sm:text-3xl font-mono font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{items.length}</p>
-              <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-1">{fmt(rev)} ({totalRevenue > 0 ? ((rev / totalRevenue) * 100).toFixed(0) : 0}%)</p>
+            <button key={q} type="button" aria-pressed={selectedQ === q} title={c.desc} onClick={() => setSelectedQ(selectedQ === q ? "todas" : q)} className={cn("min-h-12 min-w-0 flex-1 basis-40 rounded-xl border px-3 py-2 text-left transition-colors", c.bg, selectedQ === q && "ring-2 ring-[var(--accent)]")}>
+              <span className={cn("block text-sm font-extrabold", c.color)}>{c.label} · {items.length}</span>
+              <span className="block text-sm text-[var(--text-secondary)]">{fmt(rev)} ({totalRevenue > 0 ? ((rev / totalRevenue) * 100).toFixed(0) : 0} %)</span>
             </button>
           );
         })}
+        <button type="button" onClick={() => exportToCSV(PRODUCTS.map(p => ({ Producto: p.name, Categoría: p.category, Ingreso: p.revenue, Crecimiento: `${p.growth}%`, Participación: `${p.marketShare}%`, Cuadrante: Q_CONFIG[p.quadrant].label })), "bcg-matrix")} className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--accent-ink)] hover:bg-[var(--surface-sunken)] dark:text-[var(--accent)]">
+          <Download className="h-4 w-4" /> Exportar
+        </button>
       </div>
 
+      <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
       {/* Visual Matrix */}
       <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 sm:p-6">
-        <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-4">Mapa Visual BCG</CardTitle>
-        <div className="relative w-full aspect-square max-w-[500px] mx-auto" style={{ minHeight: 400 }}>
+        <div className="relative w-full aspect-square max-w-[420px] mx-auto" style={{ minHeight: 320 }}>
           {/* Axes */}
           <div className="absolute inset-0 grid grid-cols-1 sm:grid-cols-2 grid-rows-2 rounded-xl overflow-hidden">
             <div className="border-b-2 border-r-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-primary/10 dark:bg-primary/15 flex items-center justify-center p-2">
@@ -143,8 +132,8 @@ export default function BCGMatrixTab() {
             </div>
           </div>
           {/* Axis labels */}
-          <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-xs font-semibold text-[var(--text-tertiary)]">Participacion (%)</div>
-          <div className="absolute -left-10 top-1/2 -translate-y-1/2 -rotate-90 text-xs font-semibold text-[var(--text-tertiary)] whitespace-nowrap">Crecimiento (%)</div>
+          <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-sm font-semibold text-[var(--text-secondary)]">Participación (%)</div>
+          <div className="absolute -left-10 top-1/2 -translate-y-1/2 -rotate-90 text-sm font-semibold text-[var(--text-secondary)] whitespace-nowrap">Crecimiento (%)</div>
           {/* Product dots */}
           {PRODUCTS.map(p => {
             const pos = DOT_POSITIONS.get(p.id) ?? { x: 50, y: 50 };
@@ -162,10 +151,10 @@ export default function BCGMatrixTab() {
 
       {/* Product Table */}
       <div className="bg-[var(--surface-raised)]">
-        <div className="px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
-          <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Detalle de Productos ({filtered.length})</CardTitle>
+        <div className="pb-2 border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
+          <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Productos ({filtered.length})</CardTitle>
         </div>
-        <DataTable className="min-w-[600px]">
+        <DataTable stickyHeader wrapperClassName="max-h-[26rem] overflow-y-auto" className="min-w-[600px]">
             <thead><tr>
               <th>Producto</th>
               <th>Categoría</th>
@@ -185,7 +174,7 @@ export default function BCGMatrixTab() {
                     <td className="text-right font-bold">{fmt(p.revenue)}</td>
                     <td className={cn("text-right font-bold", p.growth >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{p.growth > 0 && "+"}{p.growth}%</td>
                     <td className="text-right font-bold">{p.marketShare}%</td>
-                    <td><span className={cn("text-xs font-bold px-2 py-1 rounded-full", c.bg)}>{c.label}</span></td>
+                    <td><span className={cn("font-bold px-2 py-1 rounded-full", c.bg)}>{c.label}</span></td>
                     <td className="text-center">
                       <button aria-label="Ver" onClick={() => setDetail(p)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] "><Eye className="h-4 w-4" /></button>
                     </td>
@@ -196,22 +185,6 @@ export default function BCGMatrixTab() {
         </DataTable>
       </div>
 
-      {/* Recommendations */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4">
-        {(["estrella", "vaca", "interrogante", "perro"] as Quadrant[]).map(q => {
-          const c = Q_CONFIG[q];
-          const QIcon = c.Icon;
-          return (
-            <div key={q} className={cn("rounded-xl border-2 p-3 sm:p-5", c.bg)}>
-              <h4 className={cn("font-extrabold flex items-center gap-2", c.color)}>
-                <QIcon className="h-4 w-4" strokeWidth={1.75} />
-                {c.label}
-              </h4>
-              <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-1">{c.desc}</p>
-              <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-2 tabular-nums">{grouped[q].length} productos • {fmt(grouped[q].reduce((s, p) => s + p.revenue, 0))}</p>
-            </div>
-          );
-        })}
       </div>
 
       {/* Detail modal */}
@@ -226,12 +199,12 @@ export default function BCGMatrixTab() {
               <button onClick={cerrarDetail} aria-label="Cerrar" className="text-base sm:text-xl font-bold text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]">×</button>
             </div>
             <div className="px-3 sm:px-6 py-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="bg-[var(--surface-alt)] rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Ingreso</span><p className="font-bold">{fmt(detail.revenue)}</p></div>
-              <div className="bg-[var(--surface-alt)] rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Crecimiento</span><p className={cn("font-bold", detail.growth >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{detail.growth > 0 && "+"}{detail.growth}%</p></div>
-              <div className="bg-[var(--surface-alt)] rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Participación</span><p className="font-bold">{detail.marketShare}%</p></div>
-              <div className="bg-[var(--surface-alt)] rounded-xl p-3"><span className="text-xs text-[var(--text-tertiary)]">Unidades/mes</span><p className="font-bold">{detail.units}</p></div>
+              <div className="bg-[var(--surface-alt)] rounded-xl p-3"><span className="text-sm text-[var(--text-secondary)]">Ingreso</span><p className="font-bold">{fmt(detail.revenue)}</p></div>
+              <div className="bg-[var(--surface-alt)] rounded-xl p-3"><span className="text-sm text-[var(--text-secondary)]">Crecimiento</span><p className={cn("font-bold", detail.growth >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{detail.growth > 0 && "+"}{detail.growth}%</p></div>
+              <div className="bg-[var(--surface-alt)] rounded-xl p-3"><span className="text-sm text-[var(--text-secondary)]">Participación</span><p className="font-bold">{detail.marketShare}%</p></div>
+              <div className="bg-[var(--surface-alt)] rounded-xl p-3"><span className="text-sm text-[var(--text-secondary)]">Unidades/mes</span><p className="font-bold">{detail.units}</p></div>
               <div className="col-span-2 bg-[var(--surface-alt)] rounded-xl p-3">
-                <span className="text-xs text-[var(--text-tertiary)]">Cuadrante</span>
+                <span className="text-sm text-[var(--text-secondary)]">Cuadrante</span>
                 {(() => {
                   const DIcon = Q_CONFIG[detail.quadrant].Icon;
                   return (
@@ -242,7 +215,7 @@ export default function BCGMatrixTab() {
                   );
                 })()}
               </div>
-              <div className="col-span-2 bg-primary/10 dark:bg-primary/15 rounded-xl p-3"><span className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">Recomendación</span><p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mt-1">{Q_CONFIG[detail.quadrant].desc}</p></div>
+              <div className="col-span-2 bg-primary/10 dark:bg-primary/15 rounded-xl p-3"><span className="text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">Recomendación</span><p className="text-sm text-[var(--data-success-500)] dark:text-[var(--data-success-500)] mt-1">{Q_CONFIG[detail.quadrant].desc}</p></div>
             </div>
             <TiradorDeVentana ventana={ventanaDetalle} />
           </div>

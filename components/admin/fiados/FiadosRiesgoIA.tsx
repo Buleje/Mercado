@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CreditCard, MessageCircle, RefreshCw, ShieldAlert, Users } from "@buleje/design-system/icons";
 import { StatCard, type StatCardEmphasis } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
+import { VacioMetricas } from "@/components/admin/analisis/metricas-tarjetas";
 import { formatCurrency, formatDateShort } from "@/lib/format";
 import { waLink } from "@/lib/whatsapp-link";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
@@ -111,9 +112,9 @@ function FilaFiado({ f }: { f: Fiado }) {
         {formatCurrency(f.balance ?? 0)}
       </span>
       {/* Angosto: estado, plazo y aviso en una segunda línea; ancho: son columnas. */}
-      <div className="col-span-2 flex items-center gap-2 text-xs @2xl:contents">
-        <span className={cn("w-fit rounded-full border px-2 py-0.5 text-xs font-medium", estado.clase)}>{estado.label}</span>
-        <span className="text-xs">
+      <div className="col-span-2 flex items-center gap-2 text-sm @2xl:contents">
+        <span className={cn("w-fit rounded-full border px-2 py-0.5 text-sm font-medium", estado.clase)}>{estado.label}</span>
+        <span className="text-sm">
           <Plazo f={f} />
         </span>
         {enlaceWa ? (
@@ -122,7 +123,7 @@ function FilaFiado({ f }: { f: Fiado }) {
             target="_blank"
             rel="noopener noreferrer"
             aria-label={`Recordarle por WhatsApp a ${nombre}`}
-            className="ml-auto inline-flex min-h-9 items-center justify-center gap-1.5 justify-self-end rounded-md border border-[var(--color-whatsapp)]/40 bg-[var(--color-whatsapp)]/10 px-2.5 text-xs font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--color-whatsapp)]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] @2xl:ml-0 @2xl:min-h-8"
+            className="ml-auto inline-flex min-h-12 items-center justify-center gap-1.5 justify-self-end rounded-xl border border-[var(--color-whatsapp)]/40 bg-[var(--color-whatsapp)]/10 px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--color-whatsapp)]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] @2xl:ml-0"
           >
             <MessageCircle className="h-3.5 w-3.5 text-[var(--color-whatsapp)]" aria-hidden />
             Recordar
@@ -187,7 +188,7 @@ export default function FiadosRiesgoIA() {
     return (
       <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/5 px-4 py-3 text-sm text-[var(--text-primary)]">
         No pudimos traer los fiados.
-        <button type="button" onClick={() => void cargar()} className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]">
+        <button type="button" onClick={() => void cargar()} className="inline-flex min-h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]">
           <RefreshCw className="h-4 w-4" aria-hidden /> Reintentar
         </button>
       </div>
@@ -197,16 +198,27 @@ export default function FiadosRiesgoIA() {
   const cargando = estado === "cargando";
   const riesgo = RIESGO[kpis.riesgo];
 
+  if (!cargando && kpis.registros === 0) {
+    return (
+      <VacioMetricas
+        icono={CreditCard}
+        titulo="Nadie te debe"
+        descripcion="Cuando fíes desde la caja, aquí ves a cada cliente con su saldo y qué tan probable es que te pague."
+        accion={{ label: "Ir a Me deben", href: "/admin?tab=ventas-caja&vista=cuentas-cobrar" }}
+      />
+    );
+  }
+
   return (
     <div className="@container space-y-4" aria-busy={cargando}>
-      <div className="grid grid-cols-2 gap-3 @2xl:grid-cols-4">
+      {/* «Te deben» salió de acá: es «Fiado por cobrar» de los Indicadores. */}
+      <div className="grid grid-cols-1 gap-3 @lg:grid-cols-3">
         {cargando ? (
-          Array.from({ length: 4 }, (_, i) => <div key={i} className="h-20 animate-pulse rounded-lg bg-[var(--surface-sunken)]" />)
+          Array.from({ length: 3 }, (_, i) => <div key={i} className="h-20 animate-pulse rounded-lg bg-[var(--surface-sunken)]" />)
         ) : (
           <>
-            <StatCard density="compact" icon={CreditCard} label="Te deben" value={formatCurrency(kpis.saldo)} subValue={plural(kpis.registros, "fiado abierto", "fiados abiertos")} emphasis="neutral" iconEmphasis />
             <StatCard density="compact" icon={AlertTriangle} label="Vencidos" value={String(kpis.vencidos)} subValue={kpis.vencidos === 1 ? "cuenta" : "cuentas"} emphasis={kpis.vencidos > 0 ? "error" : "neutral"} iconEmphasis />
-            <StatCard density="compact" icon={Users} label="Clientes" value={String(kpis.clientes)} subValue="con saldo abierto" emphasis="neutral" iconEmphasis />
+            <StatCard density="compact" icon={Users} label="Clientes" value={String(kpis.clientes)} subValue={`con saldo · ${plural(kpis.registros, "fiado abierto", "fiados abiertos")}`} emphasis="neutral" iconEmphasis />
             <StatCard density="compact" icon={ShieldAlert} label="Riesgo" value={kpis.riesgo} subValue={riesgo.detalle} emphasis={riesgo.emphasis} iconEmphasis />
           </>
         )}
@@ -222,7 +234,7 @@ export default function FiadosRiesgoIA() {
               aria-pressed={filtro === x.id}
               onClick={() => setFiltro(x.id)}
               className={cn(
-                "inline-flex min-h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]",
+                "inline-flex min-h-12 items-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]",
                 filtro === x.id
                   ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-ink)]"
                   : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)] hover:text-[var(--text-primary)]",
@@ -232,7 +244,7 @@ export default function FiadosRiesgoIA() {
               {!cargando && <span className="tabular-nums opacity-80">{cuentas[x.id]}</span>}
             </button>
           ))}
-          <EnlacePanel href="/admin?tab=fiados#fiados" className="ml-auto text-xs">
+          <EnlacePanel href="/admin?tab=fiados#fiados" className="ml-auto text-sm">
             Ir a Fiados
           </EnlacePanel>
         </div>
@@ -245,7 +257,7 @@ export default function FiadosRiesgoIA() {
           <p className="px-4 py-8 text-center text-sm text-[var(--text-secondary)]">{VACIO[filtro]}</p>
         ) : (
           <>
-            <div className={cn("hidden gap-x-3 bg-[var(--surface-sunken)] px-4 py-2 text-xs font-medium text-[var(--text-secondary)] @2xl:grid", COLUMNAS)} aria-hidden>
+            <div className={cn("hidden gap-x-3 bg-[var(--surface-sunken)] px-4 py-2.5 text-sm font-semibold text-[var(--text-secondary)] @2xl:grid", COLUMNAS)} aria-hidden>
               <span>Cliente</span>
               <span className="text-right">Saldo</span>
               <span>Estado</span>

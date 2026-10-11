@@ -4,27 +4,34 @@
  * Análisis › Métricas: ventas, productos y clientes en gráficos.
  *
  * Patrón del panel (11-10): UNA fila con título + ⓘ · secciones (`?sub=`) ·
- * Indicadores · «Más». Antes era un tercer nivel de pestañas (`AdminTabBar`
- * dentro de la del hub) con una tira de cifras distinta en cada sección, tres
- * de ellas en 0 por leer claves que el endpoint no manda. Las cifras van ahora
- * en un solo panel de Indicadores (`use-indicadores-metricas`).
- * «Predicciones» se mudó a la vista Predicción: el mismo pronóstico de la
- * semana estaba ahí, aquí y en Inteligencia.
- * Las tarjetas y los bloques con carga propia viven en `components/admin/analisis/`.
+ * Indicadores · «Más». Las cifras van en un solo panel de Indicadores
+ * (`use-indicadores-metricas`).
+ *
+ * Cada sección es UNA tarjeta con un gráfico a la vista a la vez
+ * (`PanelDeGraficos`), no tarjetas apiladas (Brandon 11-10: «muchos datos →
+ * secciones»). Medido antes: Resumen 1,51 pantallas, Ventas 1,82, Productos
+ * 2,4, Clientes 1,55. La sección Resumen se repartió: la tendencia y las
+ * alertas eran de Ventas (la tendencia estaba DOS veces), el producto estrella
+ * de Productos y el Top 10 de Clientes (también dos veces). `?sub=resumen`
+ * viejo cae en Ventas. El enlace a los segmentos (vivían en Campañas) pasó a
+ * «Más». El período es uno para todos los gráficos que lo usan y se recuerda.
  */
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { m, AnimatePresence } from "@/components/admin/providers";
-import { TrendingUp, CreditCard, Users, Trophy, Package, DollarSign, Clock, AlertTriangle, RefreshCw } from "@buleje/design-system/icons";
-import ChartManager, { type ChartDefinition } from "@/components/admin/shared/ChartManager";
-import ChartsEmptyState from "@/components/admin/shared/ChartsEmptyState";
+import { RefreshCw, Users } from "@buleje/design-system/icons";
 import { BarraDeSecciones, idPestanaDeSeccion } from "@/components/admin/shared/BarraDeSecciones";
+import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
 import { CabeceraAnalisis } from "@/components/admin/analisis/CabeceraAnalisis";
-import { AnalyticsCard, TabbedCard } from "@/components/admin/analisis/metricas-tarjetas";
-import { AnomalyDetectorWrapper, MejoresClientesEnlace, StarProductCard, Top10Clientes } from "@/components/admin/analisis/metricas-bloques";
+import {
+  PanelDeGraficos, ProveedorPeriodo, PERIODOS, VacioMetricas,
+  type GraficoMetricas, type PeriodoMetricas,
+} from "@/components/admin/analisis/metricas-tarjetas";
+import { AnomalyDetectorWrapper, StarProductCard, Top10Clientes } from "@/components/admin/analisis/metricas-bloques";
 import { useIndicadoresMetricas } from "@/components/admin/analisis/use-indicadores-metricas";
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
+import { useLocalStorage } from "@/hooks/use-local-storage";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
 const ABCAnalysisTab = dynamic(() => import("@/components/admin/ABCAnalysisTab"), { loading: S });
@@ -40,90 +47,55 @@ const FiadosRiesgoIA = dynamic(() => import("@/components/admin/fiados/FiadosRie
 /** Lo usa `PeakHoursTab` para su rango. */
 export type AnalyticsPeriod = "1d" | "7d" | "30d" | "90d" | "1y";
 
-const SECCIONES = ["resumen", "ventas", "productos", "clientes"] as const;
+const SECCIONES = ["ventas", "productos", "clientes"] as const;
 type Seccion = (typeof SECCIONES)[number];
-const ROTULO: Record<Seccion, string> = { resumen: "Resumen", ventas: "Ventas", productos: "Productos", clientes: "Clientes" };
+const ROTULO: Record<Seccion, string> = { ventas: "Ventas", productos: "Productos", clientes: "Clientes" };
 const ID_PANEL = "analisis-metricas-panel";
-const PERIODO: AnalyticsPeriod = "30d";
 
 const AYUDA = {
-  what: "Tus ventas, productos y clientes en gráficos, con las seis cifras del negocio arriba en Indicadores.",
-  affects: "Resumen: tendencia, alertas y los mejores clientes · Ventas: cuándo te compran · Productos: ABC, BCG, márgenes y qué se compra junto · Clientes: segmentos y fiados.",
+  what: "Tus ventas, productos y clientes en gráficos, uno a la vez, con las seis cifras del negocio en Indicadores.",
+  affects: "Ventas: tendencia, cuándo te compran y días fuera de lo normal · Productos: estrella, ABC, BCG, márgenes y qué se compra junto · Clientes: los mejores y los fiados.",
   example: "En Ventas › Mapa de calor ves que el sábado de 6 a 8 p. m. es tu hora fuerte.",
 };
 
-function graficosDe(seccion: Seccion, vuelta: number): ChartDefinition[] {
+function graficosDe(seccion: Seccion, vuelta: number, periodo: PeriodoMetricas): GraficoMetricas[] {
   switch (seccion) {
-    case "resumen":
-      return [
-        { id: "sales-trend", label: "Tendencia de ventas", description: "Ventas diarias con media móvil y proyección", component: (
-          <AnalyticsCard title="Tendencia de ventas" subtitle="Ventas diarias con media móvil y proyección" icon={TrendingUp}>
-            <div className="min-h-80"><SalesTrendChart /></div>
-          </AnalyticsCard>
-        ) },
-        { id: "alerts-highlights", label: "Alertas y destacados", description: "Ventas fuera de lo normal y producto estrella", component: (
-          <TabbedCard title="Alertas y destacados" subtitle="Lo más importante de un vistazo" icon={AlertTriangle} tabs={[
-            { id: "alertas", label: "Alertas de ventas", content: <AnomalyDetectorWrapper refreshKey={vuelta} /> },
-            { id: "estrella", label: "Producto estrella", content: <StarProductCard refreshKey={vuelta} /> },
-          ]} />
-        ) },
-        { id: "top-clients", label: "Top 10 clientes", description: "Ranking por gasto total acumulado", component: (
-          <AnalyticsCard title="Top 10 clientes" subtitle="Ranking por gasto total acumulado" icon={Trophy}>
-            <Top10Clientes refreshKey={vuelta} />
-          </AnalyticsCard>
-        ) },
-      ];
     case "ventas":
       return [
-        { id: "ventas-trend", label: "Tendencia de ventas", description: "Ventas diarias con media móvil y predicción", component: (
-          <AnalyticsCard title="Tendencia de ventas" subtitle="Ventas diarias con media móvil y predicción" icon={TrendingUp}>
-            <div className="min-h-80"><SalesTrendChart /></div>
-          </AnalyticsCard>
-        ) },
-        { id: "ventas-patterns", label: "Patrones de venta", description: "Mapa de calor y distribución por hora", component: (
-          <TabbedCard title="Patrones de venta" subtitle="¿Cuándo te compran? Mapa de calor y distribución por hora" icon={Clock} tabs={[
-            { id: "heatmap", label: "Mapa de calor", content: <div className="min-h-70"><VentasHeatmap /></div> },
-            { id: "horario", label: "Por hora", content: <div className="min-h-70"><PeakHoursTab period={PERIODO} /></div> },
-          ]} />
-        ) },
+        { clave: "tendencia", rotulo: "Tendencia", conPeriodo: true, ayuda: "Lo vendido cada día, con la media de 7 días y hacia dónde va si sigues igual.", contenido: <div className="min-h-80"><SalesTrendChart period={periodo} /></div> },
+        { clave: "calor", rotulo: "Mapa de calor", conPeriodo: true, ayuda: "Qué día y a qué hora te compran más: el cuadro más oscuro es tu hora fuerte.", contenido: <div className="min-h-70"><VentasHeatmap period={periodo} /></div> },
+        { clave: "hora", rotulo: "Por hora", conPeriodo: true, ayuda: "Cuántas ventas haces en cada hora del día, para saber cuándo reforzar la atención.", contenido: <div className="min-h-70"><PeakHoursTab period={periodo} vista="horas" /></div> },
+        { clave: "dia", rotulo: "Por día", conPeriodo: true, ayuda: "Cuántas ventas haces cada día de la semana.", contenido: <div className="min-h-70"><PeakHoursTab period={periodo} vista="dias" /></div> },
+        { clave: "alertas", rotulo: "Alertas", ayuda: "Días con ventas muy por encima o por debajo de lo normal. Necesita al menos 10 días con ventas.", contenido: <AnomalyDetectorWrapper refreshKey={vuelta} /> },
       ];
     case "productos":
       return [
-        { id: "product-classification", label: "Clasificación de productos", description: "ABC y matriz BCG", component: (
-          <TabbedCard title="Clasificación de productos" subtitle="ABC: cuáles generan más ingresos · BCG: en qué etapa de vida están" icon={Package} tabs={[
-            { id: "abc", label: "ABC (80/20)", content: <div className="min-h-87.5"><ABCAnalysisTab /></div> },
-            { id: "bcg", label: "Matriz BCG", content: <div className="min-h-87.5"><BCGMatrixTab /></div> },
-          ]} />
-        ) },
-        { id: "profitability", label: "Rentabilidad y comportamiento", description: "Márgenes por producto y cesta de compra", component: (
-          <TabbedCard title="Rentabilidad y comportamiento" subtitle="Márgenes por producto · Qué se compra junto" icon={DollarSign} tabs={[
-            { id: "margenes", label: "Márgenes", content: <div className="min-h-75"><MarginWaterfallChart /></div> },
-            { id: "cesta", label: "Cesta de compra", content: <BasketAnalysisTab /> },
-          ]} />
-        ) },
+        { clave: "estrella", rotulo: "Estrella", ayuda: "El producto que más te deja este mes.", contenido: <StarProductCard refreshKey={vuelta} /> },
+        { clave: "abc", rotulo: "ABC (80/20)", ayuda: "Clase A: los pocos productos que hacen el 80 % de tus ingresos; C: los que casi no pesan. Toca una clase para filtrar.", contenido: <ABCAnalysisTab /> },
+        { clave: "bcg", rotulo: "Matriz BCG", ayuda: "En qué etapa está cada producto: crece y vende mucho (estrella), vende mucho sin crecer (vaca), crece poco (perro) o es una apuesta (interrogante).", contenido: <BCGMatrixTab /> },
+        { clave: "margenes", rotulo: "Márgenes", ayuda: "De lo que vendes, cuánto se va en mercadería y gastos y cuánto te queda; y qué productos dejan más margen.", contenido: <div className="min-h-75"><MarginWaterfallChart /></div> },
+        { clave: "cesta", rotulo: "Cesta", conPeriodo: true, ayuda: "Qué productos se compran juntos: sirve para ponerlos cerca o armar combos.", contenido: <BasketAnalysisTab period={periodo} /> },
       ];
     case "clientes":
       return [
-        { id: "client-intelligence", label: "Segmentos y ranking", description: "Segmentación RFM y ranking de mejores clientes", component: (
-          <TabbedCard title="Segmentos y ranking" subtitle="Por cómo compran (recencia, frecuencia y monto) · los mejores" icon={Users} tabs={[
-            { id: "rfm", label: "Segmentos", content: <MejoresClientesEnlace /> },
-            { id: "top10", label: "Top 10", content: <Top10Clientes refreshKey={vuelta} reportEmpty={false} /> },
-          ]} />
-        ) },
-        { id: "fiados-analytics", label: "Fiados: deuda y cobranza", description: "Resumen de deudas y quién te debe", component: (
-          <TabbedCard title="Fiados: deuda y cobranza" subtitle="Cuánto te deben, quién paga y quién no" icon={CreditCard} tabs={[
-            { id: "resumen-fiados", label: "Resumen", content: <div className="min-h-75"><FiadoAnalyticsPanel /></div> },
-            { id: "ia-fiados", label: "Quién te debe", content: <div className="min-h-75"><FiadosRiesgoIA /></div> },
-          ]} />
-        ) },
+        { clave: "top10", rotulo: "Mejores clientes", ayuda: "Los 10 que más te han comprado en total.", contenido: <Top10Clientes refreshKey={vuelta} /> },
+        { clave: "fiados", rotulo: "Fiados", ayuda: "Cuánto se venció, cuánto cobraste este mes y cómo vienes recuperando lo fiado.", contenido: <div className="min-h-75"><FiadoAnalyticsPanel /></div> },
+        { clave: "riesgo", rotulo: "Quién te debe", ayuda: "Cada cliente con deuda y qué tan probable es que te pague.", contenido: <div className="min-h-75"><FiadosRiesgoIA /></div> },
       ];
   }
 }
 
 export default function AnalyticsBIModule() {
-  const { vista: seccion, irA } = useSubvistaModulo<Seccion>("analisis-metricas", SECCIONES, "resumen");
+  const { vista: seccion, irA } = useSubvistaModulo<Seccion>("analisis-metricas", SECCIONES, "ventas", undefined, {
+    alias: { resumen: "ventas" },
+  });
   const [vuelta, setVuelta] = useState(0);
   const kpis = useIndicadoresMetricas(vuelta);
+  // El gráfico elegido en cada sección y el período: se recuerdan (claves
+  // `admin-*`, las que borra medir-orden-admin antes de medir).
+  const [elegidos, setElegidos] = useLocalStorage<Partial<Record<Seccion, string>>>("admin-analisis-graficos", {});
+  const [periodoGuardado, setPeriodo] = useLocalStorage<PeriodoMetricas>("admin-analisis-periodo", "30d");
+  const periodo = PERIODOS.some((p) => p.clave === periodoGuardado) ? periodoGuardado : "30d";
 
   // Sin NINGUNA venta ni pedido, el estado vacío en vez del muro de gráficos en
   // cero (mismo criterio que Inicio, Brandon 2026-06-21).
@@ -141,6 +113,9 @@ export default function AnalyticsBIModule() {
     return () => { cancelado = true; };
   }, [vuelta]);
 
+  const graficos = graficosDe(seccion, vuelta, periodo);
+  const activo = graficos.find((g) => g.clave === elegidos[seccion])?.clave ?? graficos[0].clave;
+
   return (
     <div className="space-y-4">
       <CabeceraAnalisis
@@ -155,8 +130,11 @@ export default function AnalyticsBIModule() {
             idPanel={ID_PANEL}
           />
         }
-        acciones={[{ id: "recargar", label: "Actualizar", hint: "Vuelve a pedir las cifras y los gráficos", icon: RefreshCw, onSelect: () => setVuelta((v) => v + 1) }]}
-        tituloMas="Actualizar"
+        acciones={[
+          { id: "recargar", label: "Actualizar", hint: "Vuelve a pedir las cifras y los gráficos", icon: RefreshCw, onSelect: () => setVuelta((v) => v + 1) },
+          { id: "segmentos", label: "Segmentos de clientes", hint: "Los mejores, fieles, en riesgo y dormidos, en Campañas", icon: Users, onSelect: () => { irAEnlace("/admin?tab=campanas&vista=rfm"); } },
+        ]}
+        tituloMas="Actualizar y segmentos de clientes"
       >
         {kpis.boton}
       </CabeceraAnalisis>
@@ -164,27 +142,30 @@ export default function AnalyticsBIModule() {
       {kpis.panel}
 
       <div role="tabpanel" id={ID_PANEL} aria-labelledby={idPestanaDeSeccion(ID_PANEL, seccion)}>
-        {datos === "vacio" ? (
-          <ChartsEmptyState
-            title="Todavía no hay datos para analizar"
-            description="Cuando registres tus primeras ventas, aquí verás tendencias, productos top y clientes. No te mostramos gráficos vacíos."
-          />
-        ) : (
-          <AnimatePresence mode="wait">
-            <m.div
-              key={`${seccion}-${vuelta}`}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-              className="mx-auto max-w-[1600px]"
-            >
-              <Suspense fallback={<S />}>
-                <ChartManager moduleId={`analytics-${seccion}`} charts={graficosDe(seccion, vuelta)} />
-              </Suspense>
-            </m.div>
-          </AnimatePresence>
-        )}
+        <ProveedorPeriodo value={{ periodo, cambiar: setPeriodo }}>
+          {datos === "vacio" ? (
+            <VacioMetricas titulo="Todavía no hay ventas para analizar" descripcion="Con tus primeras ventas aquí verás tendencias, productos y clientes." />
+          ) : (
+            <AnimatePresence mode="wait">
+              <m.div
+                key={`${seccion}-${vuelta}`}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
+                className="mx-auto max-w-[1600px]"
+              >
+                <PanelDeGraficos
+                  id={`metricas-${seccion}`}
+                  etiqueta={`Gráficos de ${ROTULO[seccion]}`}
+                  graficos={graficos}
+                  activo={activo}
+                  onCambiar={(clave) => setElegidos((e) => ({ ...e, [seccion]: clave }))}
+                />
+              </m.div>
+            </AnimatePresence>
+          )}
+        </ProveedorPeriodo>
       </div>
     </div>
   );
