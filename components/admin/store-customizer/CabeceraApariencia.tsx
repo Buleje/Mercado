@@ -18,13 +18,14 @@ import { button } from "@/components/ui-system/button-variants";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { SaludTienda } from "./salud";
 
-export type SeccionApariencia = "identidad" | "colores" | "estilos" | "portada" | "contacto" | "avanzado";
+export type SeccionApariencia = "identidad" | "pedidos" | "colores" | "estilos" | "portada" | "contacto" | "avanzado";
 
 export const ID_PANEL_APARIENCIA = "tienda-apariencia-panel";
 
 /** Rótulo y ⓘ de cada sección. La ayuda es la que antes iba en un encabezado con ícono dentro de cada una. */
 export const SECCIONES_APARIENCIA: { clave: SeccionApariencia; rotulo: string; ayuda: string }[] = [
   { clave: "identidad", rotulo: "Identidad", ayuda: "Logo, nombre, eslogan y descripción: lo que sale en la cabecera de tu tienda y en Google. Debajo, cómo apareces en Google y el «sobre nosotros»." },
+  { clave: "pedidos", rotulo: "Pedidos", ayuda: "Cómo te piden tus clientes: entrar con Google, dejar el celular, compartir su ubicación y recibir el pedido por WhatsApp como imagen." },
   { clave: "colores", rotulo: "Colores", ayuda: "Empieza con una plantilla o ajusta cada color. Se aplica a botones, enlaces, etiquetas y llamados a la acción de toda tu tienda; la vista previa cambia mientras eliges." },
   { clave: "estilos", rotulo: "Estilos", ayuda: "Cómo se ven las tarjetas de productos, los botones y la barra de arriba. Se aplica al guardar." },
   { clave: "portada", rotulo: "Portada", ayuda: "El banner grande de arriba de tu tienda: qué problema resuelves, en cuánto tiempo, con qué garantía. Mira la vista previa mientras escribes." },

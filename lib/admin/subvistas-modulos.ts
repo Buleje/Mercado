@@ -432,6 +432,7 @@ export const ANIDADAS_POR_MODULO: Readonly<Record<string, readonly SubvistaAnida
   ],
   "pagina-inicio": [
     { vista: "apariencia", key: "identidad", label: "Identidad", hint: "Nombre, logo, lema y cómo sale en Google" },
+    { vista: "apariencia", key: "pedidos", label: "Pedidos", hint: "Google, celular, ubicación y pedido en imagen" },
     { vista: "apariencia", key: "colores", label: "Colores", hint: "Colores de tu marca y su contraste" },
     { vista: "apariencia", key: "estilos", label: "Estilos", hint: "Botones, tarjetas, bordes y densidad" },
     { vista: "apariencia", key: "portada", label: "Portada", hint: "El banner grande de arriba: título, foto y botón" },

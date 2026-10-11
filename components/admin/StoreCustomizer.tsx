@@ -20,6 +20,9 @@ import { BarraSinGuardar } from "@/components/admin/store-customizer/BarraSinGua
 import { CabeceraApariencia, ID_PANEL_APARIENCIA, SECCIONES_APARIENCIA, type SeccionApariencia } from "@/components/admin/store-customizer/CabeceraApariencia";
 import { cambiosDe, cuantos } from "@/components/admin/store-customizer/cambios";
 import { saludDeLaTienda } from "@/components/admin/store-customizer/salud";
+import { SeccionPedidosCliente } from "@/components/admin/store-customizer/SeccionPedidosCliente";
+import { leerConfigPedidos, conConfigPedidos } from "@/lib/tienda-cliente/config";
+import type { ConfigPedidosCliente } from "@/lib/tienda-cliente/contrato";
 import { button } from "@/components/ui-system/button-variants";
 import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -39,6 +42,8 @@ import { Field } from "@/components/admin/shared/Field";
 
 
 export interface StoreTheme {
+  /** Cómo te piden (Google, celular, ubicación, imagen): sección Pedidos. */
+  pedidosCliente?: ConfigPedidosCliente;
   logo: string;
   storeName: string;
   slogan: string;
@@ -1312,7 +1317,7 @@ const MODULE_ID = "store-customizer";
  * Las 6 secciones de hoy (fusión ADR-299 fase 2: 11 → 6). Lista literal: la lee
  * `__tests__/admin-subvistas-sincronizadas` contra `lib/admin/subvistas-modulos`.
  */
-const TAB_IDS_CUSTOMIZER: readonly SeccionApariencia[] = ["identidad", "colores", "estilos", "portada", "contacto", "avanzado"];
+const TAB_IDS_CUSTOMIZER: readonly SeccionApariencia[] = ["identidad", "pedidos", "colores", "estilos", "portada", "contacto", "avanzado"];
 
 /**
  * Ids viejos de `?sub=` (links, favoritos, memoria del navegador) → la sección
@@ -2021,7 +2026,19 @@ export default function StoreCustomizer() {
                   </Field>
                 </div>
               </StyleSection>
+              <p className="text-sm text-[var(--text-secondary)]">
+                Google, celular, ubicación y pedido en imagen se configuran en{" "}
+                <EnlacePanel href="/admin?tab=pagina-inicio&vista=apariencia&sub=pedidos">Pedidos →</EnlacePanel>
+              </p>
               </div>
+            )}
+
+            {activeTab === "pedidos" && (
+              <SeccionPedidosCliente
+                config={leerConfigPedidos(theme)}
+                whatsapp={theme.whatsapp}
+                onChange={(c) => setTheme((prev) => conConfigPedidos(prev as unknown as Record<string, unknown>, c) as unknown as StoreTheme)}
+              />
             )}
 
             {/* ── TAB: COLORES ───────────────────────────────────────── */}
