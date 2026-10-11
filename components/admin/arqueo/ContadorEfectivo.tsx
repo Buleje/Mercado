@@ -21,6 +21,12 @@ type Props = {
   onAlternar: () => void;
   onSaved: () => void;
   onIrACaja?: () => void;
+  /**
+   * Cierre a ciegas (Configuración › Cobros): `true` = cuenta sin ver lo
+   * esperado hasta guardar; `null` = todavía no se sabe (tampoco se muestra).
+   * Sin la prop, como siempre.
+   */
+  ciego?: boolean | null;
 };
 
 const ORDEN = [...BILLETES, ...MONEDAS];
@@ -31,7 +37,7 @@ const ORDEN = [...BILLETES, ...MONEDAS];
  * se hace en Caja › Hoy, con su arqueo guiado— pero queda en la caja
  * con su desglose y la observación de quien contó.
  */
-export default function ContadorEfectivo({ expectedAmount, registerId, abiertaDesde, ultimoConteo, abierto, onAlternar, onSaved, onIrACaja }: Props) {
+export default function ContadorEfectivo({ expectedAmount, registerId, abiertaDesde, ultimoConteo, abierto, onAlternar, onSaved, onIrACaja, ciego }: Props) {
   const [conteo, setConteo] = useState<Conteo>({});
   const [observacion, setObservacion] = useState("");
   const [saving, setSaving] = useState(false);
@@ -39,9 +45,13 @@ export default function ContadorEfectivo({ expectedAmount, registerId, abiertaDe
   const cuerpoId = useId();
   const obsId = useId();
   const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
+  /* A ciegas, lo esperado y la diferencia salen recién al guardar el conteo. */
+  const [revelado, setRevelado] = useState(false);
+  const oculto = (ciego === true || ciego === null) && !revelado;
 
   const t = useMemo(() => totalesDelConteo(conteo, expectedAmount), [conteo, expectedAmount]);
-  const faltaObs = pideObservacion(t) && !observacion.trim();
+  /* A ciegas no se sabe si cuadra antes de guardar: la observación es opcional. */
+  const faltaObs = !oculto && pideObservacion(t) && !observacion.trim();
 
   function setCount(key: string, raw: string) {
     const v = Math.max(0, parseInt(raw.replace(/\D/g, ""), 10) || 0);
@@ -76,6 +86,7 @@ export default function ContadorEfectivo({ expectedAmount, registerId, abiertaDe
         throw new Error(typeof body?.error === "string" ? body.error : `No se pudo guardar (error ${res.status}).`);
       }
       setFeedback({ kind: "ok", msg: `Conteo guardado · diferencia ${fmtSigno(t.diferencia)}` });
+      setRevelado(true);
       onSaved();
     } catch (err) {
       setFeedback({ kind: "err", msg: err instanceof Error ? err.message : String(err) });
@@ -140,7 +151,12 @@ export default function ContadorEfectivo({ expectedAmount, registerId, abiertaDe
             />
           </div>
           <p className="mt-0.5 text-sm text-[var(--text-secondary)]">
-            {registerId && expectedAmount < 0 ? (
+            {registerId && oculto ? (
+              <>
+                Cuenta sin mirar el sistema: lo esperado sale al guardar
+                {abiertaDesde && <> · abierta desde {diaYFecha(abiertaDesde)} {horaLima(abiertaDesde)}</>}
+              </>
+            ) : registerId && expectedAmount < 0 ? (
               <span className="text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
                 El esperado da <strong className="tabular-nums">{fmt(expectedAmount)}</strong>: revisa los egresos antes de contar.
               </span>
@@ -190,27 +206,27 @@ export default function ContadorEfectivo({ expectedAmount, registerId, abiertaDe
           <div className="grid grid-cols-3 gap-3 border-t border-[var(--rule-soft)] pt-3 text-center">
             <div className="rounded-xl bg-[var(--surface-sunken)] p-3">
               <p className="libro-kicker text-[var(--text-secondary)]">Esperado</p>
-              <p className="text-sm font-extrabold tabular-nums text-[var(--text-primary)]">{registerId ? fmt(expectedAmount) : "—"}</p>
+              <p className={cn("text-sm font-extrabold tabular-nums", oculto ? "text-[var(--text-tertiary)]" : "text-[var(--text-primary)]")}>{oculto ? "Al guardar" : registerId ? fmt(expectedAmount) : "—"}</p>
             </div>
             <div className="rounded-xl bg-[var(--surface-sunken)] p-3">
               <p className="libro-kicker text-[var(--text-secondary)]">Contado</p>
               <p className={cn("text-sm font-extrabold tabular-nums", t.hayConteo ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]")}>{t.hayConteo ? fmt(t.contado) : "—"}</p>
               {t.hayConteo && <p className="text-xs tabular-nums text-[var(--text-secondary)]">billetes {fmt(t.billetes)} · monedas {fmt(t.monedas)}</p>}
             </div>
-            <div className={cn("rounded-xl p-3", !t.hayConteo || t.diferencia >= 0 ? "bg-[var(--surface-sunken)]" : "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20")}>
+            <div className={cn("rounded-xl p-3", oculto || !t.hayConteo || t.diferencia >= 0 ? "bg-[var(--surface-sunken)]" : "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20")}>
               <p className="libro-kicker text-[var(--text-secondary)]">Diferencia</p>
               <p className={cn(
                 "text-sm font-extrabold tabular-nums",
-                !t.hayConteo ? "text-[var(--text-tertiary)]" : t.diferencia < 0 ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" : "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
+                oculto || !t.hayConteo ? "text-[var(--text-tertiary)]" : t.diferencia < 0 ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" : "text-[var(--data-success-700)] dark:text-[var(--data-success-500)]",
               )}>
-                {!t.hayConteo || !registerId ? "—" : t.diferencia === 0 ? "Cuadra" : `${fmtSigno(t.diferencia)} ${t.diferencia > 0 ? "sobrante" : "faltante"}`}
+                {oculto ? "Al guardar" : !t.hayConteo || !registerId ? "—" : t.diferencia === 0 ? "Cuadra" : `${fmtSigno(t.diferencia)} ${t.diferencia > 0 ? "sobrante" : "faltante"}`}
               </p>
             </div>
           </div>
 
           <div>
             <label htmlFor={obsId} className="mb-1 block text-sm font-semibold text-[var(--text-primary)]">
-              Observación{pideObservacion(t) ? <span className="font-normal text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"> · obligatoria: la caja no cuadra</span> : <span className="font-normal text-[var(--text-secondary)]"> (opcional)</span>}
+              Observación{!oculto && pideObservacion(t) ? <span className="font-normal text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"> · obligatoria: la caja no cuadra</span> : <span className="font-normal text-[var(--text-secondary)]"> (opcional)</span>}
             </label>
             <textarea
               id={obsId}
@@ -243,7 +259,7 @@ export default function ContadorEfectivo({ expectedAmount, registerId, abiertaDe
             >
               {saving ? "Guardando…" : "Guardar conteo"}
             </button>
-            <button type="button" onClick={() => { setConteo({}); setObservacion(""); setFeedback(null); }} className={button({ variant: "ghost", className: "rounded-xl px-4" })}>
+            <button type="button" onClick={() => { setConteo({}); setObservacion(""); setFeedback(null); setRevelado(false); }} className={button({ variant: "ghost", className: "rounded-xl px-4" })}>
               Limpiar
             </button>
             {onIrACaja && registerId && (

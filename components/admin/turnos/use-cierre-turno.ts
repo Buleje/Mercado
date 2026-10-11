@@ -11,6 +11,8 @@ import { cuentasDeCajaParaPantalla } from "@/lib/caja/cuentas-de-pantalla";
 import { formatCurrency } from "@/lib/format";
 import { pedirResumenServidor } from "./use-resumen-turno";
 import { calcularDesdeDenominaciones, esDiferenciaAnormal, lineaCajaSigueAbierta, type Turno, type TurnoSummary } from "./tipos";
+import { notaConteoCorregido } from "@/lib/pos/cierre-a-ciegas";
+import { useCierreACiegas } from "./cierre-a-ciegas";
 
 export const SIN_ESPERADO = "No se pudo calcular lo esperado en caja. Reintenta antes de cerrar.";
 
@@ -79,6 +81,10 @@ export function useCierreTurno({ turnoActivo, cajeroNombre, onCerrado, refrescar
   const [showDiffConfirm, setShowDiffConfirm] = useState(false);
   // Audit M5 (2026-05-17): la causa de la diferencia alta tiene su PROPIO campo.
   const [notaDiffAnormal, setNotaDiffAnormal] = useState("");
+  /* Cierre a ciegas (Configuración › Cobros): la ventana no muestra lo esperado.
+     Si la diferencia alta lo revela y el cajero corrige, su primer conteo queda en la nota. */
+  const { ciego } = useCierreACiegas();
+  const [primerConteo, setPrimerConteo] = useState<number | null>(null);
 
   // Audit H1+H2: reset completo al cancelar o tras cerrar (no reabrir con el conteo viejo).
   const resetCierreState = useCallback(() => {
@@ -90,6 +96,7 @@ export function useCierreTurno({ turnoActivo, cajeroNombre, onCerrado, refrescar
     setDenomCounts({});
     setConteoMode("denominacion");
     setCloseError(null);
+    setPrimerConteo(null);
   }, []);
 
   const abrirCierre = useCallback(() => { setShowCierre(true); setCloseError(null); }, []);
@@ -139,7 +146,11 @@ export function useCierreTurno({ turnoActivo, cajeroNombre, onCerrado, refrescar
 
     // Guarda de diferencia alta en la UI: el backend recibe cualquier monto.
     const anormal = esDiferenciaAnormal(monto - esperado, esperado);
-    if (anormal && !opts?.confirmedAnormal) { setShowDiffConfirm(true); return; }
+    if (anormal && !opts?.confirmedAnormal) {
+      if (ciego !== false) setPrimerConteo((p) => p ?? monto);
+      setShowDiffConfirm(true);
+      return;
+    }
     if (anormal && opts?.confirmedAnormal && notaDiffAnormal.trim().length < 8) {
       setCloseError("Diferencia alta — describe brevemente la causa (mín. 8 caracteres)");
       setShowDiffConfirm(true);
@@ -149,9 +160,10 @@ export function useCierreTurno({ turnoActivo, cajeroNombre, onCerrado, refrescar
     setClosing(true);
     try {
       const body: Record<string, unknown> = { cierreEfectivo: monto };
-      const notasFinal = anormal && opts?.confirmedAnormal
+      const notasBase = anormal && opts?.confirmedAnormal
         ? `[Diferencia anormal] ${notaDiffAnormal.trim()}${cierreNotas.trim() ? ` · Notas: ${cierreNotas.trim()}` : ""}`
         : cierreNotas.trim();
+      const notasFinal = [notasBase, notaConteoCorregido(primerConteo, monto)].filter(Boolean).join(" · ");
       if (notasFinal) body.notas = notasFinal;
 
       const res = await fetch(`/api/turnos/${turnoActivo.id}/cerrar`, {
@@ -204,7 +216,7 @@ export function useCierreTurno({ turnoActivo, cajeroNombre, onCerrado, refrescar
     showCierre, abrirCierre, resetCierreState,
     cierreEfectivo, setCierreEfectivo, cierreNotas, setCierreNotas,
     closing, closeError, setCloseError,
-    esperado, esperadoFallo, reintentarEsperado, cajaFueraDelCajon, cajaSigueAbierta,
+    esperado, esperadoFallo, reintentarEsperado, cajaFueraDelCajon, cajaSigueAbierta, ciego,
     conteoMode, setConteoMode, denomCounts, cambiarDenominacion,
     showDiffConfirm, setShowDiffConfirm, notaDiffAnormal, setNotaDiffAnormal,
     handleCerrar,

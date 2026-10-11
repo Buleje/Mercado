@@ -5,9 +5,12 @@ import { AlertTriangle, Banknote, Check, Loader2, Scan } from "@buleje/design-sy
 import { Field } from "@/components/admin/shared/Field";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { button } from "@/components/ui-system/button-variants";
+import { useCierreACiegas } from "@/components/admin/turnos/cierre-a-ciegas";
 import { formatCurrency, formatDateTimeShort } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { BotonCancelar, MarcoModalCaja } from "./MarcoModalCaja";
+import { ResultadoACiegas } from "./ArqueoGuiadoPartes";
 import { fmt, type CashRegister, type StatsCaja } from "./tipos";
 
 const ARQUEO_DENOMS = [100, 50, 20, 10, 5, 1];
@@ -31,6 +34,11 @@ export function ModalArqueoExpress({ caja, stats, onCerrar, onHecho }: Props) {
   const contado = Number(monto) || 0;
   const diferencia = contado - esperado;
   const cuadra = Math.abs(diferencia) < 0.5;
+  /* Cierre a ciegas: sin esperado ni diferencia hasta registrar; después, el resultado y «Listo». */
+  const { ciego } = useCierreACiegas();
+  const oculto = ciego !== false;
+  const [resultado, setResultado] = useState<{ esperado: number; contado: number } | null>(null);
+  const listo = () => { onHecho(); onCerrar(); };
 
   const registrar = async () => {
     if (guardando || !monto) return;
@@ -51,6 +59,7 @@ export function ModalArqueoExpress({ caja, stats, onCerrar, onHecho }: Props) {
         const body = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
         throw new Error(body?.error ?? `HTTP ${res.status}`);
       }
+      if (oculto) { setResultado({ esperado, contado }); return; }
       onHecho();
       onCerrar();
     } catch (err) {
@@ -59,6 +68,22 @@ export function ModalArqueoExpress({ caja, stats, onCerrar, onHecho }: Props) {
       setGuardando(false);
     }
   };
+
+  if (resultado) {
+    return (
+      <MarcoModalCaja
+        claveMemoria="caja-arqueo"
+        titulo="Arqueo express"
+        subtitulo="Arqueo registrado"
+        icono={Scan}
+        iconoClase="bg-primary/10 text-[var(--data-success-500)]"
+        onCerrar={listo}
+        pie={<button type="button" onClick={listo} className={button({ variant: "primary", className: "flex-1 rounded-xl" })}>Listo</button>}
+      >
+        <ResultadoACiegas titulo="Tu conteo quedó registrado" esperado={resultado.esperado} contado={resultado.contado} />
+      </MarcoModalCaja>
+    );
+  }
 
   return (
     <MarcoModalCaja
@@ -90,6 +115,9 @@ export function ModalArqueoExpress({ caja, stats, onCerrar, onHecho }: Props) {
       }
     >
       <div className="bg-[var(--surface-alt)] rounded-xl p-4 space-y-2">
+        {oculto ? (
+          <p className="text-sm text-[var(--text-secondary)]">Cuenta sin mirar el sistema: lo esperado y la diferencia salen al registrar.</p>
+        ) : (
         <div className="flex justify-between items-center text-base">
           <span className="inline-flex items-center gap-1.5 text-[var(--text-secondary)]">
             Esperado en caja
@@ -100,6 +128,7 @@ export function ModalArqueoExpress({ caja, stats, onCerrar, onHecho }: Props) {
           </span>
           <span className="font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] tabular-nums">{fmt(esperado)}</span>
         </div>
+        )}
         <div className="flex justify-between items-center text-base">
           <span className="text-[var(--text-secondary)]">Contado</span>
           <span className="font-bold text-[var(--text-primary)] tabular-nums">{fmt(contado)}</span>
@@ -159,7 +188,7 @@ export function ModalArqueoExpress({ caja, stats, onCerrar, onHecho }: Props) {
         )}
       </Field>
 
-      {monto && <VeredictoDiferencia diferencia={diferencia} cuadra={cuadra} />}
+      {monto && !oculto && <VeredictoDiferencia diferencia={diferencia} cuadra={cuadra} />}
     </MarcoModalCaja>
   );
 }

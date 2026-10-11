@@ -24,6 +24,8 @@ export function CerrarTurnoModal({ turno, cierre, ventasDelTurno }: { turno: Tur
   const diff = montoValido && c.esperado !== null ? parseFloat(c.cierreEfectivo) - c.esperado : 0;
   const cuadrado = Math.abs(diff) < 0.01;
   const sobrante = diff > 0;
+  /* Cierre a ciegas: sin esperado ni diferencia (ni las ventas, que con la apertura lo dan) hasta confirmar. */
+  const oculto = c.ciego !== false;
   const tonoDiff = cuadrado ? "text-[var(--data-success-500)]" : sobrante ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]";
 
   return (
@@ -52,10 +54,12 @@ export function CerrarTurnoModal({ turno, cierre, ventasDelTurno }: { turno: Tur
               <span className="text-[var(--text-secondary)]">Efectivo inicial</span>
               <span className="font-bold text-[var(--text-primary)] tabular-nums">{formatCurrency(turno.inicioEfectivo)}</span>
             </div>
-            <div className="flex justify-between items-center text-base">
-              <span className="text-[var(--text-secondary)]">Ventas del turno</span>
-              <span className="font-bold text-[var(--data-success-500)] tabular-nums">{formatCurrency(ventasDelTurno)}</span>
-            </div>
+            {!oculto && (
+              <div className="flex justify-between items-center text-base">
+                <span className="text-[var(--text-secondary)]">Ventas del turno</span>
+                <span className="font-bold text-[var(--data-success-500)] tabular-nums">{formatCurrency(ventasDelTurno)}</span>
+              </div>
+            )}
             <div className="flex justify-between items-center border-t border-[var(--rule-base)] pt-2">
               <span className="inline-flex items-center gap-1 text-sm font-semibold text-[var(--text-tertiary)] uppercase tracking-wide">
                 Esperado en caja
@@ -65,7 +69,9 @@ export function CerrarTurnoModal({ turno, cierre, ventasDelTurno }: { turno: Tur
                   example="S/ 100 de apertura + S/ 24.90 en efectivo + S/ 5 de ingreso = S/ 129.90"
                 />
               </span>
-              {c.esperado !== null ? (
+              {c.esperado !== null && oculto ? (
+                <span className="text-sm font-semibold text-[var(--text-secondary)]">Lo ves al confirmar</span>
+              ) : c.esperado !== null ? (
                 <span className="text-2xl font-extrabold text-[var(--text-primary)] tabular-nums">{formatCurrency(c.esperado)}</span>
               ) : !c.esperadoFallo ? (
                 <Loader2 className="h-5 w-5 animate-spin text-[var(--text-tertiary)]" aria-label="Calculando lo esperado" />
@@ -117,7 +123,7 @@ export function CerrarTurnoModal({ turno, cierre, ventasDelTurno }: { turno: Tur
             )}
           </div>
 
-          {montoValido && c.esperado !== null && (
+          {montoValido && c.esperado !== null && !oculto && (
             <div
               aria-live="polite"
               className={cn(

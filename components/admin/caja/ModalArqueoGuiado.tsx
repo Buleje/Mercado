@@ -5,10 +5,12 @@ import { Banknote, Calculator, Check, DollarSign, Loader2 } from "@buleje/design
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { button } from "@/components/ui-system/button-variants";
+import { useCierreACiegas } from "@/components/admin/turnos/cierre-a-ciegas";
 import { formatCurrency, formatDateTimeShort } from "@/lib/format";
 import { BotonCancelar, MarcoModalCaja } from "./MarcoModalCaja";
 import { VeredictoDiferencia } from "./ModalArqueoExpress";
-import { FilasDeConteo, FotoDelCajon, VouchersPorMedio, type MedioArqueo } from "./ArqueoGuiadoPartes";
+import { FilasDeConteo, FotoDelCajon, ResultadoACiegas, VouchersPorMedio, type MedioArqueo } from "./ArqueoGuiadoPartes";
 import { fmt, type CashRegister, type StatsCaja } from "./tipos";
 
 const BILLETES = [200, 100, 50, 20, 10];
@@ -32,6 +34,11 @@ export function ModalArqueoGuiado({ caja, stats, ventasPorMedio, onCerrar, onHec
   const [foto, setFoto] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /* Cierre a ciegas: sin esperado ni diferencia hasta cerrar; después, el resultado y «Listo». */
+  const { ciego } = useCierreACiegas();
+  const oculto = ciego !== false;
+  const [resultado, setResultado] = useState<{ esperado: number; contado: number } | null>(null);
+  const listo = () => { onHecho(); onCerrar(); };
 
   const totalBilletes = BILLETES.reduce((s, b) => s + b * (billetes[String(b)] ?? 0), 0);
   const totalMonedas = MONEDAS.reduce((s, m) => s + m * (monedas[String(m)] ?? 0), 0);
@@ -47,7 +54,9 @@ export function ModalArqueoGuiado({ caja, stats, ventasPorMedio, onCerrar, onHec
       title: "¿Cerrar la caja del día?",
       description:
         `Esto CIERRA la caja del día con ${formatCurrency(total)} contados en efectivo. ` +
-        `Esperado: ${formatCurrency(esperado)} · Diferencia: ${diferencia >= 0 ? "+" : "−"}${formatCurrency(Math.abs(diferencia))}. ` +
+        (oculto
+          ? "Lo esperado y la diferencia salen después de cerrar. "
+          : `Esperado: ${formatCurrency(esperado)} · Diferencia: ${diferencia >= 0 ? "+" : "−"}${formatCurrency(Math.abs(diferencia))}. `) +
         "Después de cerrar hay que abrir una caja nueva para seguir vendiendo.",
       intent: "warning",
       confirmLabel: "Sí, cerrar",
@@ -90,6 +99,8 @@ export function ModalArqueoGuiado({ caja, stats, ventasPorMedio, onCerrar, onHec
         setError(typeof body?.error === "string" ? body.error : `No se pudo cerrar la caja (error ${res.status}). El conteo sigue acá.`);
         return;
       }
+      /* A ciegas: primero el resultado; la caja se relee al tocar «Listo» (si no, el modal se desmonta). */
+      if (oculto) { setResultado({ esperado, contado: total }); return; }
       onHecho();
       onCerrar();
     } catch (err) {
@@ -99,6 +110,22 @@ export function ModalArqueoGuiado({ caja, stats, ventasPorMedio, onCerrar, onHec
       setGuardando(false);
     }
   };
+
+  if (resultado) {
+    return (
+      <MarcoModalCaja
+        claveMemoria="caja-arqueo-guiado"
+        titulo="Arqueo guiado"
+        subtitulo="La caja quedó cerrada"
+        icono={Calculator}
+        iconoClase="bg-[var(--surface-sunken)] text-primary"
+        onCerrar={listo}
+        pie={<button type="button" onClick={listo} className={button({ variant: "primary", className: "flex-1 rounded-xl" })}>Listo</button>}
+      >
+        <ResultadoACiegas titulo="Caja cerrada con tu conteo" esperado={resultado.esperado} contado={resultado.contado} />
+      </MarcoModalCaja>
+    );
+  }
 
   return (
     <MarcoModalCaja
@@ -127,6 +154,9 @@ export function ModalArqueoGuiado({ caja, stats, ventasPorMedio, onCerrar, onHec
       }
     >
       <div className="bg-[var(--surface-alt)] rounded-xl p-4 space-y-2">
+        {oculto ? (
+          <p className="text-sm text-[var(--text-secondary)]">Cuenta sin mirar el sistema: lo esperado y la diferencia salen al cerrar.</p>
+        ) : (
         <div className="flex justify-between items-center text-base">
           <span className="inline-flex items-center gap-1.5 text-[var(--text-secondary)]">
             Saldo esperado
@@ -134,6 +164,7 @@ export function ModalArqueoGuiado({ caja, stats, ventasPorMedio, onCerrar, onHec
           </span>
           <span className="font-bold text-[var(--text-primary)] tabular-nums">{fmt(esperado)}</span>
         </div>
+        )}
         <div className="flex justify-between items-center text-base border-t border-[var(--rule-soft)] pt-2">
           <span className="text-[var(--text-secondary)]">Total contado</span>
           <span className="font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] tabular-nums">{fmt(total)}</span>
@@ -163,6 +194,7 @@ export function ModalArqueoGuiado({ caja, stats, ventasPorMedio, onCerrar, onHec
         onDigital={(m, v) => setDigitales((p) => ({ ...p, [m]: v }))}
         efectivoContado={total}
         ventasPorMedio={ventasPorMedio}
+        ciego={oculto}
       />
       <FotoDelCajon foto={foto} onFoto={setFoto} />
 
@@ -171,7 +203,7 @@ export function ModalArqueoGuiado({ caja, stats, ventasPorMedio, onCerrar, onHec
         <p className="text-2xl font-extrabold text-primary tabular-nums">{fmt(total + digital)}</p>
         {digital > 0 && <p className="text-xs text-[var(--text-tertiary)] mt-1">Efectivo: {fmt(total)} + Digital: {fmt(digital)}</p>}
       </div>
-      {total > 0 && <VeredictoDiferencia diferencia={diferencia} cuadra={Math.abs(diferencia) < 0.5} />}
+      {total > 0 && !oculto && <VeredictoDiferencia diferencia={diferencia} cuadra={Math.abs(diferencia) < 0.5} />}
     </MarcoModalCaja>
   );
 }

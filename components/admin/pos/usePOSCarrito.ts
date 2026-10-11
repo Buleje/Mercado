@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { logger } from "@/lib/logger";
+import { registrarQuitado } from "@/components/admin/pos/registrar-quitado";
 import { estaAgotado } from "@/lib/pos/stock-vendible";
 import type { Product, CartItem, StockAlert } from "@/components/admin/pos/pos-shared";
 import { useTopeDescuentoCajero } from "@/components/admin/pos/useTopeDescuentoCajero";
@@ -161,11 +162,24 @@ export function usePOSCarrito({ products, addToRecents, playDing, playError }: U
     });
   }, []);
 
+  /* Lo quitado se lee del carrito ACTUAL (ref), no dentro del updater de
+     setCart: StrictMode lo corre dos veces y registraría la quitada doble. */
+  const cartRef = useRef(cart);
+  useEffect(() => {
+    cartRef.current = cart;
+  }, [cart]);
+
   const removeFromCart = useCallback((productId: number) => {
+    const linea = cartRef.current.find(i => i.product.id === productId);
     setCart(prev => prev.filter(i => i.product.id !== productId));
+    if (linea) registrarQuitado("linea", [linea]);
   }, []);
 
-  const clearCart = useCallback(() => { setCart([]); }, []);
+  /* «Vaciar carrito» con productos adentro es la anulación de un ticket entero. */
+  const clearCart = useCallback(() => {
+    registrarQuitado("vaciar", cartRef.current);
+    setCart([]);
+  }, []);
 
   // Vista previa: el total que vale es el que devuelve /api/sales.
   const cartSubtotal = cart.reduce((s, i) => {

@@ -24,6 +24,8 @@ export function DiferenciaAltaModal({ cierre, hayTurno }: { cierre: Cierre; hayT
   const sobrante = diff > 0;
   const pct = esperado > 0 ? (Math.abs(diff) / esperado) * 100 : 0;
   const volver = () => { if (!c.closing) c.setShowDiffConfirm(false); };
+  /* A ciegas, aquí ve lo esperado por primera vez: puede corregir, pero el primer conteo queda en la nota. */
+  const aCiegas = c.ciego !== false;
 
   return (
     <MarcoModalTurno
@@ -36,7 +38,7 @@ export function DiferenciaAltaModal({ cierre, hayTurno }: { cierre: Cierre; hayT
       encima
       onFondo={volver}
       pie={<>
-        <button type="button" onClick={volver} disabled={c.closing} className={BOTON_SECUNDARIO}>Volver a contar</button>
+        <button type="button" onClick={volver} disabled={c.closing} className={BOTON_SECUNDARIO}>{aCiegas ? "Corregir el conteo" : "Volver a contar"}</button>
         <button
           type="button"
           onClick={() => c.handleCerrar({ confirmedAnormal: true })}
@@ -64,6 +66,7 @@ export function DiferenciaAltaModal({ cierre, hayTurno }: { cierre: Cierre; hayT
             <span className="text-sm font-semibold ml-2 opacity-80">({pct.toFixed(1)}%)</span>
           </span>
         </div>
+        {aCiegas && <p className="text-sm text-[var(--text-secondary)]">Contaste a ciegas: si corriges, tu primer conteo queda en la nota del cierre.</p>}
       </div>
 
       <Field

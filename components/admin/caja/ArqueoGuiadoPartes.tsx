@@ -4,6 +4,9 @@
  * Las partes del arqueo guiado: conteo por denominación (billetes y monedas),
  * vouchers por medio (Yape, Plin, tarjeta) con su comparación, y la foto del
  * cajón. Salieron de CashRegisterTab al partirlo; el estado vive en el modal.
+ *
+ * Desde el 11-10, también el resultado del cierre a ciegas (`ResultadoACiegas`):
+ * lo esperado y la diferencia que el cajero ve recién al confirmar su conteo.
  */
 import { useRef, type ReactNode } from "react";
 import Image from "next/image";
@@ -70,6 +73,7 @@ export function VouchersPorMedio({
   onDigital,
   efectivoContado,
   ventasPorMedio,
+  ciego = false,
 }: {
   tab: MedioArqueo;
   onTab: (t: MedioArqueo) => void;
@@ -77,6 +81,8 @@ export function VouchersPorMedio({
   onDigital: (m: "yape" | "plin" | "tarjeta", v: string) => void;
   efectivoContado: number;
   ventasPorMedio: Record<string, number>;
+  /** Cierre a ciegas: sin la comparación por medio (diría lo esperado de cada uno). */
+  ciego?: boolean;
 }) {
   const hayDigital = (["yape", "plin", "tarjeta"] as const).some((m) => Number(digitales[m]) > 0);
   const filas = [
@@ -125,7 +131,7 @@ export function VouchersPorMedio({
           )}
         </Field>
       )}
-      {hayDigital && (
+      {hayDigital && !ciego && (
         <div className="mt-3 pt-2 border-t border-[var(--rule-base)] space-y-1">
           <p className="text-xs font-bold text-[var(--text-secondary)] uppercase">Comparación por medio</p>
           {filas.map((r) => {
@@ -197,6 +203,41 @@ export function FotoDelCajon({ foto, onFoto }: { foto: string | null; onFoto: (f
           e.target.value = "";
         }}
       />
+    </div>
+  );
+}
+
+/**
+ * Cierre a ciegas: lo que el cajero ve DESPUÉS de confirmar su conteo (Caja ›
+ * arqueos y cierre). `esperado` es el del servidor que la pantalla ya tenía.
+ */
+export function ResultadoACiegas({ esperado, contado, titulo }: { esperado: number; contado: number; titulo: string }) {
+  const diferencia = Math.round((contado - esperado) * 100) / 100;
+  const cuadra = Math.abs(diferencia) < 0.5;
+  const tono = cuadra
+    ? "text-[var(--data-success-ink)]"
+    : diferencia > 0
+      ? "text-[var(--data-warning-ink)]"
+      : "text-[var(--data-error-ink)]";
+  return (
+    <div className="space-y-3" role="status" aria-live="polite">
+      <p className="text-base font-semibold text-[var(--text-primary)]">{titulo}</p>
+      <div className="space-y-2 rounded-xl bg-[var(--surface-sunken)] p-4">
+        <div className="flex items-center justify-between text-base">
+          <span className="text-[var(--text-secondary)]">Contaste</span>
+          <span className="font-bold tabular-nums text-[var(--text-primary)]">{fmt(contado)}</span>
+        </div>
+        <div className="flex items-center justify-between text-base">
+          <span className="text-[var(--text-secondary)]">Esperado</span>
+          <span className="font-bold tabular-nums text-[var(--text-primary)]">{fmt(esperado)}</span>
+        </div>
+        <div className="flex items-center justify-between border-t border-[var(--rule-base)] pt-2">
+          <span className="text-sm font-semibold text-[var(--text-secondary)]">{cuadra ? "Cuadra" : diferencia > 0 ? "Sobrante" : "Faltante"}</span>
+          <span className={cn("text-2xl font-extrabold tabular-nums", tono)}>
+            {cuadra ? fmt(0) : `${diferencia > 0 ? "+" : "−"}${formatCurrency(Math.abs(diferencia))}`}
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

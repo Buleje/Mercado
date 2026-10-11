@@ -7,11 +7,15 @@
  * Hasta el 10-10 arriba iban tarjetas «Equipo» con turnos, ventas, por hora y
  * diferencia de cada cajero: las mismas cifras del ranking, que además trae el
  * ticket promedio. Quedó la tabla.
+ *
+ * Desde el 11-10, abajo: descuentos y productos quitados del ticket del mes
+ * por cajero (`ControlCajerosMes`), con el detalle en el «⋯» de cada fila.
  */
 import dynamic from "next/dynamic";
 import { CardTitle } from "@buleje/design-system";
 import { BarChart3, Trophy, User } from "@buleje/design-system/icons";
 import { TurnosPorCajero } from "./TurnosPorCajero";
+import { ControlCajerosMes } from "./ControlCajerosMes";
 import { esMesActual, nombreCajero, type Cajero, type StatCajero, type Turno } from "./tipos";
 
 const TurnosChart = dynamic(() => import("../TurnosChart"), {
@@ -25,9 +29,12 @@ const BLOQUE = "bg-[var(--surface-raised)] border border-[var(--rule-base)] roun
 export function CajerosVista({ stats, historial, cajeros }: { stats: StatCajero[]; historial: Turno[]; cajeros: Cajero[] }) {
   if (stats.length === 0) {
     return (
-      <div className={`${BLOQUE} py-10 px-4 text-center`}>
-        <User className="h-6 w-6 mx-auto mb-2 text-[var(--text-tertiary)]" strokeWidth={1.5} aria-hidden />
-        <p className="text-sm text-[var(--text-secondary)]">Cierra al menos un turno para ver el ranking de tu equipo.</p>
+      <div className="grid gap-3">
+        <div className={`${BLOQUE} py-10 px-4 text-center`}>
+          <User className="h-6 w-6 mx-auto mb-2 text-[var(--text-tertiary)]" strokeWidth={1.5} aria-hidden />
+          <p className="text-sm text-[var(--text-secondary)]">Cierra al menos un turno para ver el ranking de tu equipo.</p>
+        </div>
+        <ControlCajerosMes cajeros={cajeros} />
       </div>
     );
   }
@@ -53,6 +60,8 @@ export function CajerosVista({ stats, historial, cajeros }: { stats: StatCajero[
           <p className="p-6 text-center text-sm text-[var(--text-secondary)]">Este mes todavía no hay turnos cerrados.</p>
         )}
       </section>
+
+      <ControlCajerosMes cajeros={cajeros} />
     </div>
   );
 }

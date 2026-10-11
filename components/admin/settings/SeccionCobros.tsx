@@ -8,6 +8,7 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { topeCajeroParaGuardar } from "@/lib/pos/descuento-cajero";
 import { button } from "@/components/ui-system/button-variants";
 import { PermisoDe } from "@/components/admin/shared/PermisoDe";
+import { InterruptorCierreACiegas } from "@/components/admin/turnos/cierre-a-ciegas";
 
 /* La conexión con SUNAT (plan «panel unificado», ola 2): la configuración
    SUNAT estaba partida entre esta sección y Facturación › Conexión SUNAT.
@@ -82,7 +83,7 @@ export function SeccionCobros({ aj, onNavigateTab }: { aj: AjustesEstado; onNavi
       </SectionCard>
 
       <div className="grid grid-cols-1 2xl:grid-cols-2 gap-4 2xl:items-start">
-        <SectionCard title="Caja" desc="Aviso de efectivo acumulado, hora de cierre, descuento y adelantos del cajero">
+        <SectionCard title="Caja" desc="Aviso de efectivo acumulado, hora de cierre, descuento, adelantos y cierre a ciegas del cajero">
           {/* `items-end`: unos rótulos parten en 2 líneas y los campos quedaban a distinta altura. */}
           <div className="grid grid-cols-1 sm:grid-cols-2 items-end gap-x-4 gap-y-3">
             <div><FieldLabel htmlFor="settings-cashAlertMax" icon={<AlertTriangle className="h-3.5 w-3.5" />}>Alerta de exceso</FieldLabel><NumberInput id="settings-cashAlertMax" value={cashAlertMax} onChange={setCashAlertMax} min={0} suffix="soles" /></div>
@@ -114,6 +115,8 @@ export function SeccionCobros({ aj, onNavigateTab }: { aj: AjustesEstado; onNavi
                 <TextInput id="settings-adelantoTopeCajero" type="number" value={adelantoTopeCajero} onChange={setAdelantoTopeCajero} placeholder="500" mono />
               </div>
             </div>
+            {/* Se guarda solo (no pasa por la barra de cambios): vive en los flags del negocio. */}
+            <div className="sm:col-span-2"><InterruptorCierreACiegas /></div>
           </div>
         </SectionCard>
 

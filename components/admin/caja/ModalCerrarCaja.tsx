@@ -6,9 +6,12 @@ import { Kicker } from "@buleje/design-system";
 import { Field } from "@/components/admin/shared/Field";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { csrfHeaders } from "@/lib/csrf-client";
+import { button } from "@/components/ui-system/button-variants";
+import { useCierreACiegas } from "@/components/admin/turnos/cierre-a-ciegas";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { BotonCancelar, MarcoModalCaja, mensajeDeError } from "./MarcoModalCaja";
+import { ResultadoACiegas } from "./ArqueoGuiadoPartes";
 import { fmt, type CashRegister, type StatsCaja } from "./tipos";
 
 const DENOMS = [200, 100, 50, 20, 10, 5, 2, 1, 0.5, 0.2, 0.1];
@@ -37,6 +40,11 @@ export function ModalCerrarCaja({ caja, stats, onCerrar, onHecho }: Props) {
   const esperado = stats?.expectedCash ?? 0;
   const denomTotal = DENOMS.reduce((s, d) => s + d * (denominaciones[String(d)] ?? 0), 0);
   const diferencia = Number(monto) - esperado;
+  /* Cierre a ciegas: sin esperado, ni efectivo vendido, ni diferencia hasta cerrar. */
+  const { ciego } = useCierreACiegas();
+  const oculto = ciego !== false;
+  const [resultado, setResultado] = useState<{ esperado: number; contado: number } | null>(null);
+  const listo = () => { onHecho(); onCerrar(); };
 
   const sumarBillete = (d: number) => {
     setDenominaciones((prev) => ({ ...prev, [String(d)]: (prev[String(d)] ?? 0) + 1 }));
@@ -58,6 +66,8 @@ export function ModalCerrarCaja({ caja, stats, onCerrar, onHecho }: Props) {
         setError(await mensajeDeError(res, "No se pudo cerrar la caja"));
         return;
       }
+      /* A ciegas: primero el resultado; la caja se relee al tocar «Listo» (si no, el modal se desmonta). */
+      if (oculto) { setResultado({ esperado, contado: Number(monto) || 0 }); return; }
       onHecho();
       onCerrar();
     } catch (err) {
@@ -71,11 +81,27 @@ export function ModalCerrarCaja({ caja, stats, onCerrar, onHecho }: Props) {
   const resumen: Array<[string, string, string]> = [
     ["Duración", durationStr, "text-[var(--text-primary)]"],
     ["Total ventas", String(ventas.length), "text-[var(--text-primary)]"],
-    ["Efectivo", fmt(ventasEfectivo), "text-[var(--data-success-500)]"],
+    ...(oculto ? [] : [["Efectivo", fmt(ventasEfectivo), "text-[var(--data-success-500)]"] as [string, string, string]]),
     ["Digital", fmt(ventasDigital), "text-[var(--text-secondary)]"],
     ["Ingresos manuales", fmt(stats?.totalIn ?? 0), "text-[var(--data-success-500)]"],
     ["Egresos manuales", fmt(stats?.totalOut ?? 0), "text-[var(--data-error-500)]"],
   ];
+
+  if (resultado) {
+    return (
+      <MarcoModalCaja
+        claveMemoria="caja-cerrar"
+        titulo="Cerrar caja"
+        subtitulo="La caja quedó cerrada"
+        icono={Lock}
+        iconoClase="bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 text-[var(--data-error-500)]"
+        onCerrar={listo}
+        pie={<button type="button" onClick={listo} className={button({ variant: "primary", className: "flex-1 rounded-xl" })}>Listo</button>}
+      >
+        <ResultadoACiegas titulo="Caja cerrada con tu conteo" esperado={resultado.esperado} contado={resultado.contado} />
+      </MarcoModalCaja>
+    );
+  }
 
   return (
     <MarcoModalCaja
@@ -120,6 +146,7 @@ export function ModalCerrarCaja({ caja, stats, onCerrar, onHecho }: Props) {
         </div>
       </div>
 
+      {!oculto && (
       <div className="bg-primary/10 dark:bg-primary/15 rounded-xl p-4 border border-[var(--data-success-500)]/30">
         <p className="flex items-center gap-1.5 text-xs uppercase tracking-wide font-semibold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] mb-1">
           Esperado en caja
@@ -130,6 +157,7 @@ export function ModalCerrarCaja({ caja, stats, onCerrar, onHecho }: Props) {
         </p>
         <p className="text-2xl font-extrabold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] tabular-nums">{fmt(esperado)}</p>
       </div>
+      )}
 
       <div className="bg-[var(--surface-alt)] rounded-xl p-3 border border-[var(--rule-base)]">
         <div className="flex items-center justify-between mb-2">
@@ -179,7 +207,7 @@ export function ModalCerrarCaja({ caja, stats, onCerrar, onHecho }: Props) {
                 autoFocus
               />
             </div>
-            {monto && (
+            {monto && !oculto && (
               <div
                 className={cn(
                   "mt-2 rounded-xl p-2 text-center text-xs font-bold",

@@ -15,11 +15,14 @@ import ContadorEfectivo from "@/components/admin/arqueo/ContadorEfectivo";
 import DesdeTurno from "@/components/admin/arqueo/DesdeTurno";
 import { useArqueos } from "@/components/admin/arqueo/use-arqueos";
 import { LoadingSpinner } from "@/components/ui-system/LoadingSpinner";
+import { useCierreACiegas } from "@/components/admin/turnos/cierre-a-ciegas";
 
 export function CajaContar({ onIrACaja }: { onIrACaja: () => void }) {
   const { loading, error, reload, openRegister, openAudit, openExpectedAmount } = useArqueos();
   /* En su propia sección el contador arranca abierto: es lo único que hay. */
   const [abierto, setAbierto] = useState(true);
+  /* Cierre a ciegas (Configuración › Cobros): el cajero cuenta sin ver lo esperado hasta guardar. */
+  const { ciego } = useCierreACiegas();
 
   return (
     <div className="space-y-3">
@@ -45,6 +48,7 @@ export function CajaContar({ onIrACaja }: { onIrACaja: () => void }) {
           onAlternar={() => setAbierto((v) => !v)}
           onSaved={reload}
           onIrACaja={onIrACaja}
+          ciego={ciego}
         />
       )}
     </div>

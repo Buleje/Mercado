@@ -15,6 +15,7 @@ import { Banknote, Calculator, DollarSign, Smartphone } from "@buleje/design-sys
 import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { cn } from "@/lib/utils";
+import { useCierreACiegas } from "@/components/admin/turnos/cierre-a-ciegas";
 import { fmt, type StatsCaja } from "./tipos";
 
 interface Tarjeta {
@@ -23,9 +24,15 @@ interface Tarjeta {
   icono: typeof Banknote;
   destacado?: boolean;
   ayuda?: ReactNode;
+  /** Cierre a ciegas: en vez de la cifra, este texto. */
+  oculto?: string;
 }
 
 export function useIndicadoresCaja(apertura: number, stats: StatsCaja | null) {
+  /* Cierre a ciegas (Configuración › Cobros): el cajero no ve lo esperado ni aquí,
+     encima del contador de Cuadrar (11-10: el indicador plegado lo decía igual). */
+  const { ciego } = useCierreACiegas();
+  const sinEsperado = ciego !== false;
   const tarjetas: Tarjeta[] = [
     { rotulo: "Apertura", valor: apertura, icono: DollarSign },
     { rotulo: "Ventas en efectivo", valor: stats?.salesEfectivo ?? 0, icono: Banknote },
@@ -35,6 +42,7 @@ export function useIndicadoresCaja(apertura: number, stats: StatsCaja | null) {
       valor: stats?.expectedCash ?? 0,
       icono: Calculator,
       destacado: true,
+      ...(sinEsperado && { oculto: "Al contar" }),
       ayuda: (
         <>
           Apertura + ventas en efectivo + ingresos ({fmt(stats?.totalIn ?? 0)}) − retiros ({fmt(stats?.totalOut ?? 0)}).
@@ -49,8 +57,8 @@ export function useIndicadoresCaja(apertura: number, stats: StatsCaja | null) {
     alto: "md",
     compactoEnMovil: true,
     anchoFijo: true,
-    resumen: `Esperado ${fmt(stats?.expectedCash ?? 0)}`,
-    tarjetas: tarjetas.map(({ rotulo, valor, icono: Icono, destacado, ayuda }) => (
+    resumen: sinEsperado ? "Esperado al contar" : `Esperado ${fmt(stats?.expectedCash ?? 0)}`,
+    tarjetas: tarjetas.map(({ rotulo, valor, icono: Icono, destacado, ayuda, oculto }) => (
       <div
         key={rotulo}
         className={cn(
@@ -66,7 +74,7 @@ export function useIndicadoresCaja(apertura: number, stats: StatsCaja | null) {
           {ayuda && <InfoTip what={ayuda} />}
         </div>
         <p className={cn("text-lg font-extrabold tabular-nums", destacado ? "text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-primary)]")}>
-          {fmt(valor)}
+          {oculto ?? fmt(valor)}
         </p>
       </div>
     )),
