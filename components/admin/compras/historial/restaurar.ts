@@ -95,6 +95,9 @@ export async function restaurarGasto(g: GastoBorrado): Promise<Restaurado> {
     afectoIgv: g.afectoIgv,
     attachmentUrl: g.attachmentUrl,
     costCenter: g.costCenter,
+    // Restaurar no es anotar una factura nueva: sin esto, si otro gasto tiene el mismo papel
+    // (guardado con «Sí, es otra»), el 409 de factura repetida lo dejaba sin poder volver.
+    confirmarDuplicado: true,
     notes: g.notes,
     templateId: g.templateId,
     paidAt: g.paidAt,

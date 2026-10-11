@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/lib/generated/prisma/client";
 import { logger } from "@/lib/logger";
+import { limaDateKey } from "@/lib/utils";
 import { moverCajaEnTx, type MetodoPago, type ResultadoMovimiento } from "@/lib/adelantos/movimiento-caja";
 import { etiquetaCobroFiado } from "@/lib/fiados/cobro-metodo";
 import {
@@ -221,7 +222,12 @@ export const FiadosDB = {
     requestedAmount: number,
     creditLimit: number,
   ): Promise<{ error: string; status: number } | null> {
-    const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
+    /* Corte por DÍA, igual que «A quién fiarle» (reviewer 11-10): `fechaVence` es un día de
+       calendario guardado a medianoche UTC; bloquea desde el día 60 después de vencer, contado
+       en días de Pucallpa. Con «ahora − 60 días» al milisegundo, la caja y Fiarle decían cosas
+       distintas durante unas horas cada noche. */
+    const [anio, mes, dia] = limaDateKey(new Date()).split("-").map(Number);
+    const sixtyDaysAgo = new Date(Date.UTC(anio, mes - 1, dia - 59));
 
     const [vencidos, muyVencidos, activoAgg] = await Promise.all([
       prisma.fiado.count({

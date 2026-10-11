@@ -244,10 +244,12 @@ describe("FiadosDB.validateForNewFiado — multi-tenant isolation", () => {
     expect(secondCall.where.status).toEqual({ in: ["ACTIVO", "VENCIDO"] });
     expect(secondCall.where.fechaVence.lt).toBeInstanceOf(Date);
 
-    // El cutoff debe estar ~60 días atrás (con tolerancia del tiempo de ejecución)
+    // Corte por DÍA (11-10, igual que «A quién fiarle»): medianoche UTC del día de Lima de hoy
+    // menos 59, o sea entre 59 y 61 días atrás según la hora; siempre una medianoche UTC.
     const cutoffMs = secondCall.where.fechaVence.lt.getTime();
-    const sixtyDaysMs = 60 * 24 * 60 * 60 * 1000;
-    expect(cutoffMs).toBeGreaterThanOrEqual(beforeCall - sixtyDaysMs);
-    expect(cutoffMs).toBeLessThanOrEqual(afterCall - sixtyDaysMs);
+    const dayMs = 24 * 60 * 60 * 1000;
+    expect(cutoffMs % dayMs).toBe(0);
+    expect(cutoffMs).toBeGreaterThanOrEqual(beforeCall - 61 * dayMs);
+    expect(cutoffMs).toBeLessThanOrEqual(afterCall - 58 * dayMs);
   });
 });

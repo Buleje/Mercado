@@ -132,7 +132,7 @@ export async function POST(req: NextRequest) {
     // El mismo papel dos veces duplica el gasto y el IGV: se pregunta (409), no se bloquea.
     const { supplierRuc, documentNumber } = comprobante.datos;
     if (supplierRuc && documentNumber && body.confirmarDuplicado !== true) {
-      const repetido = await GastosDB.comprobanteRepetido(auth.tenantId, supplierRuc, documentNumber);
+      const repetido = await GastosDB.comprobanteRepetido(auth.tenantId, supplierRuc, documentNumber, body.documentType);
       if (repetido) {
         return NextResponse.json(
           { error: avisoDeComprobanteRepetido(repetido), campo: "documentNumber", codigo: "COMPROBANTE_REPETIDO", repetido },

@@ -66,7 +66,7 @@ describe("POST /api/expenses con un comprobante ya anotado", () => {
     expect(res.status).toBe(409);
     expect(await res.json()).toMatchObject({ codigo: "COMPROBANTE_REPETIDO", campo: "documentNumber", repetido: { id: "g-viejo" }, error: expect.stringMatching(/^Ya anotaste esta factura/) });
     // Busca en ESTE negocio con el número ya normalizado.
-    expect(h.repetido).toHaveBeenCalledWith("tenant-a", "20100070970", "F001-0000123");
+    expect(h.repetido).toHaveBeenCalledWith("tenant-a", "20100070970", "F001-0000123", expect.anything());
     expect(h.registrarGasto).not.toHaveBeenCalled();
   });
 

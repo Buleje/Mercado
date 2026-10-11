@@ -48,7 +48,7 @@ export const ExpensesDB = {
    * (comparado sin ceros a la izquierda en el correlativo), o `null`. Sin
    * caché a propósito: el que se anotó hace un segundo tiene que aparecer.
    */
-  async comprobanteRepetido(tenantId: string, ruc: string, numero: string): Promise<GastoConMismoComprobante | null> {
+  async comprobanteRepetido(tenantId: string, ruc: string, numero: string, tipo?: string | null): Promise<GastoConMismoComprobante | null> {
     if (!tenantId) throw new Error("tenantId is required");
     const clave = claveDeComprobante(numero);
     if (!ruc.trim() || !clave) return null;
@@ -58,7 +58,11 @@ export const ExpensesDB = {
       orderBy: { date: "desc" },
       take: 500,
     });
-    const igual = filas.find((f) => claveDeComprobante(f.documentNumber) === clave);
+    // El mismo número en OTRO tipo de papel (recibo por honorarios E001-5 vs factura E001-5) no
+    // es la misma factura (reviewer 11-10); sin tipo en alguno de los dos, se compara igual.
+    const igual = filas.find(
+      (f) => claveDeComprobante(f.documentNumber) === clave && (!tipo || !f.documentType || f.documentType === tipo),
+    );
     return igual ? gastoConMismoComprobante(igual) : null;
   },
 };
