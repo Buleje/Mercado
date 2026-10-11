@@ -3,8 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { hayModalEncima } from "@/lib/keyboard-guards";
 import dynamic from "next/dynamic";
-import { Receipt, ScanLine, ShoppingBasket } from "@buleje/design-system/icons";
-import EnlacePanel from "@/components/admin/shared/EnlacePanel";
+import { ScanLine, ShoppingBasket } from "@buleje/design-system/icons";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { formatCurrency } from "@/lib/format";
 import type { PurchaseProduct as Product, PurchaseSupplier as Supplier } from "@/lib/types/purchases";
@@ -16,6 +15,7 @@ import { useConfirmarCompra } from "@/components/admin/compra/use-confirmar-comp
 import { usePlantillasCompra } from "@/components/admin/compra/use-plantillas-compra";
 import { useNuevoProveedor } from "@/components/admin/compra/use-nuevo-proveedor";
 import { useFacturaEscaneada } from "@/components/admin/compra/use-factura-escaneada";
+import CompraCabecera from "@/components/admin/compra/CompraCabecera";
 import CompraBarraControles from "@/components/admin/compra/CompraBarraControles";
 import CompraInventarioFiltros from "@/components/admin/compra/CompraInventarioFiltros";
 import CompraPromosBanner from "@/components/admin/compra/CompraPromosBanner";
@@ -76,29 +76,39 @@ export default function PuntoCompraView() {
     return () => window.removeEventListener("keydown", handleKey);
   }, []);
 
+  /* `?reponer=1` (Compras › Sugerencias › «Armar la compra»): abre con el
+     inventario a la vista y el filtro «A reponer» puesto. Se lee al montar:
+     el enlace siempre monta esta vista de nuevo. */
+  const { setSoloReponer, setShowInventario } = catalogo;
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("reponer") !== "1") return;
+    setShowInventario(true);
+    setSoloReponer(true);
+  }, [setShowInventario, setSoloReponer]);
+
   const { cart, total, cartTotalQty } = carrito;
+  const alternarEscaner = useCallback(() => setShowScanner((s) => !s), []);
 
   return (
     <div ref={raizRef} className="print-area">
-      {/* El header del módulo (Compras) lo da el padre ComprasModule. */}
+      {/* El título del módulo (Compras) lo da la banda de ComprasModule; ésta es la de la vista. */}
+      <div className="mb-3">
+        <CompraCabecera
+          catalogo={catalogo}
+          processing={orden.processing}
+          onEscanearFactura={() => setShowInvoiceScanner(true)}
+          onNuevoProveedor={() => np.abrir()}
+        />
+      </div>
+
       <CompraBarraControles
         catalogo={catalogo}
         carrito={carrito}
         processing={orden.processing}
         showScanner={showScanner}
-        setShowScanner={setShowScanner}
-        onEscanearFactura={() => setShowInvoiceScanner(true)}
+        onAlternarEscaner={alternarEscaner}
         onNuevoProveedor={() => np.abrir()}
       />
-
-      {/* Los gastos fijos (alquiler, luz, combustible) y el historial de gastos se
-          mudaron a Mi Plata › Gastos y presupuesto (plan «panel unificado», ola 3):
-          el mismo catálogo con los mismos botones. Acá queda el camino. */}
-      <p className="mb-4 flex flex-wrap items-center gap-x-1.5 text-sm text-[var(--text-secondary)]">
-        <Receipt className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
-        Gastos fijos e historial:
-        <EnlacePanel href="/admin?tab=plata&vista=gastos">Mi Plata › Gastos y presupuesto</EnlacePanel>
-      </p>
 
       <CompraInventarioFiltros
         catalogo={catalogo}

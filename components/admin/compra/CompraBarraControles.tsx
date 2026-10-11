@@ -1,10 +1,8 @@
 "use client";
 
-import type { Dispatch, SetStateAction } from "react";
-import { Camera, LayoutGrid, List, Plus, ScanLine } from "@buleje/design-system/icons";
+import { Package, ScanBarcode, Search } from "@buleje/design-system/icons";
+import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
-import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import type { PurchaseSortBy as SortBy } from "@/lib/types/purchases";
 import type { CompraCatalogo } from "./use-compra-catalogo";
 import type { CompraCarrito } from "./use-compra-carrito";
 
@@ -13,163 +11,150 @@ interface Props {
   carrito: CompraCarrito;
   processing: boolean;
   showScanner: boolean;
-  setShowScanner: Dispatch<SetStateAction<boolean>>;
-  onEscanearFactura: () => void;
+  onAlternarEscaner: () => void;
   onNuevoProveedor: () => void;
 }
 
-/** Contadores, aviso de reposición y barra de controles del Punto de compra. */
-export default function CompraBarraControles({ catalogo, carrito, processing, showScanner, setShowScanner, onEscanearFactura, onNuevoProveedor }: Props) {
-  const { products, needsReorderCount, setSoloReponer, setPage, soloReponer, suppliers, search, setSearch, viewMode, setViewMode, sortBy, setSortBy } = catalogo;
+/** Valor del desplegable de proveedores que abre «Nuevo proveedor» en vez de elegir uno. */
+const NUEVO_PROVEEDOR = "__nuevo__";
+
+/** Control de la fila a 48 px y 14 px (el de Productos y stock). */
+const CONTROL = "h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none transition-colors focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50";
+
+/** Chip de filtro: botón secundario del DS (48 px) a 14 px; encendido toma el tono de acento. */
+const chip = (activo: boolean) =>
+  button({
+    variant: "secondary",
+    className: cn(
+      "shrink-0 gap-1.5 rounded-xl px-3 text-sm",
+      activo ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-secondary)]",
+    ),
+  });
+
+/**
+ * La fila de filtros de Comprar, pegada a los productos (10-10): proveedor,
+ * buscar (con el lector de códigos adentro), categoría, «A reponer» (con su
+ * cuenta) y «Mi inventario»; el orden va al «⋯» de la cabecera. Antes eran 9
+ * controles de 28-36 px y 12 px, la
+ * categoría era otra fila de pastillas y el interruptor del inventario, una
+ * tarjeta propia. «Nuevo proveedor» sigue a un clic: es la última opción del
+ * desplegable de proveedores (y está en el «⋯» de la cabecera).
+ */
+export default function CompraBarraControles({ catalogo, carrito, processing, showScanner, onAlternarEscaner, onNuevoProveedor }: Props) {
+  const {
+    needsReorderCount, setSoloReponer, setPage, soloReponer, suppliers, search, setSearch,
+    showInventario, setShowInventario, categories, categoryCounts, category, setCategory,
+  } = catalogo;
   const { selectedSupplier, setSelectedSupplier } = carrito;
   return (
-    <>
-      {/* Toolbar — el header del módulo (Compras) lo da el padre ComprasModule.
-          Aquí solo contadores + acción rápida. */}
-      <div className="flex items-center justify-end gap-2 mb-4 flex-wrap">
-        <span className="text-xs text-[var(--text-tertiary)] tabular-nums">
-          {products.length} productos
-        </span>
-        {needsReorderCount > 0 && (
-          <button
-            type="button"
-            onClick={() => { setSoloReponer(true); setPage(1); }}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--data-error-500)] border border-[var(--data-error-500)]/30 bg-[var(--surface-raised)] hover:bg-[var(--data-error-500)]/5 px-2.5 py-1 rounded-full transition-colors"
-            title="Productos con stock en o por debajo del mínimo que fijaste. La pestaña Sugerencias cuenta distinto: mira cuánto se vendió, no el mínimo."
-          >
-            <span className="h-1.5 w-1.5 rounded-full bg-[var(--data-error-500)]" />
-            {needsReorderCount} a reponer
-          </button>
-        )}
-        {/* Reporte QA Compras 2026-08-12: acá decía "2 a reponer" y Sugerencias
-            "Nada que reponer" con los mismos datos. No es una contradicción: son
-            dos preguntas distintas; la aclaración va en el ⓘ, no en una línea. */}
-        {needsReorderCount > 0 && (
-          <InfoTip
-            title="A reponer"
-            what={<span>Cuenta los productos en o bajo el stock mínimo que fijaste.</span>}
-            example={<span>Sugerencias mira lo que se vendió estos días, así que puede darte otro número.</span>}
-          />
-        )}
-      </div>
+    <div className="mb-3 flex flex-wrap items-center gap-2">
+      <select
+        value={selectedSupplier?.id ?? ""}
+        onChange={(e) => {
+          if (e.target.value === NUEVO_PROVEEDOR) {
+            onNuevoProveedor();
+            return;
+          }
+          setSelectedSupplier(suppliers.find((s) => s.id === e.target.value) ?? null);
+        }}
+        disabled={processing}
+        aria-label="Proveedor de la compra"
+        className={cn(CONTROL, "min-w-0 basis-full sm:max-w-48 sm:basis-auto sm:shrink-0")}
+      >
+        <option value="">Todos los proveedores</option>
+        {suppliers.map((s) => (
+          <option key={s.id} value={s.id}>
+            {s.name}
+          </option>
+        ))}
+        <option value={NUEVO_PROVEEDOR}>+ Nuevo proveedor…</option>
+      </select>
 
-      {/* Aviso reposición destacado */}
-      {needsReorderCount > 5 && !soloReponer && (
-        <div className="mb-3 flex items-start gap-2 rounded-lg border border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)] px-3 py-2 text-xs text-[var(--data-warning-500)]">
-          <span className="shrink-0">●</span>
-          <p>
-            Tienes <strong>{needsReorderCount}</strong> productos por debajo del stock mínimo.{" "}
-            <button type="button" onClick={() => { setSoloReponer(true); setPage(1); }} className="underline font-semibold">
-              Ver todos
-            </button>
-          </p>
-        </div>
-      )}
-
-      {/* Barra de controles */}
-      <div className="flex flex-wrap gap-2 mb-3">
-        {/* Selector proveedor + botón crear nuevo inline */}
-        <div className="flex items-center gap-1">
-          <select
-            value={selectedSupplier?.id ?? ""}
-            onChange={(e) => {
-              const found = suppliers.find((s) => s.id === e.target.value);
-              setSelectedSupplier(found ?? null);
-            }}
-            disabled={processing}
-            aria-label="Seleccionar proveedor"
-            className="flex-1 sm:flex-none min-h-11 sm:min-h-0 px-3 py-1.5 border border-[var(--rule-base)] rounded-xl text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:cursor-not-allowed min-w-[160px]"
-          >
-            <option value="">Todos los proveedores</option>
-            {suppliers.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            onClick={() => onNuevoProveedor()}
-            disabled={processing}
-            title="Crear nuevo proveedor"
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs font-semibold text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Nuevo
-          </button>
-        </div>
-
-        {/* Toggle solo reponer */}
-        <button
-          type="button"
-          onClick={() => setSoloReponer((v) => !v)}
-          aria-pressed={soloReponer}
-          className={cn(
-            "px-3 py-1.5 min-h-11 sm:min-h-0 rounded-xl text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
-            soloReponer
-              ? "bg-[var(--data-error-500)] text-white"
-              : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
-          )}
-        >
-          Solo reponer
-        </button>
-
-        {/* Búsqueda */}
+      {/* En celular el buscador va en su propia fila; desde sm pide 14 rem y crece. */}
+      <div className="relative h-12 min-w-0 grow basis-full sm:basis-48">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
         <input
           type="search"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar producto..."
+          onChange={(e) => {
+            setSearch(e.target.value);
+            // Buscar algo con el inventario apagado no mostraba nada: se enciende.
+            if (e.target.value && !showInventario) setShowInventario(true);
+          }}
+          placeholder="Buscar producto…"
           aria-label="Buscar producto por nombre o código"
-          className="flex-1 min-w-full sm:min-w-36 min-h-11 sm:min-h-0 px-3 py-1.5 border border-[var(--rule-base)] rounded-xl text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className={cn(CONTROL, "w-full pl-10 pr-12 placeholder:text-[var(--text-tertiary)]")}
         />
-
-        {/* Botón escáner de código de barras */}
         <button
           type="button"
-          onClick={() => setShowScanner(!showScanner)}
-          className={cn("flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors", showScanner ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]")}
+          onClick={onAlternarEscaner}
+          aria-pressed={showScanner}
+          aria-label="Buscar por código de barras (F2)"
           title="Buscar por código de barras (F2)"
-        >
-          <ScanLine className="h-3.5 w-3.5 shrink-0" /> Código
-        </button>
-
-        {/* Botón escáner de factura OCR */}
-        <button
-          type="button"
-          onClick={() => onEscanearFactura()}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-primary/10 hover:text-primary transition-colors"
-          title="Escanear factura con cámara"
-        >
-          <Camera className="h-3.5 w-3.5 shrink-0" /> Factura
-        </button>
-
-        {/* Toggle vista */}
-        <button
-          type="button"
-          onClick={() => setViewMode((v) => (v === "grid" ? "list" : "grid"))}
-          aria-label={viewMode === "grid" ? "Cambiar a vista lista" : "Cambiar a vista cuadrícula"}
-          className="p-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-        >
-          {viewMode === "grid" ? (
-            <List className="h-4 w-4" />
-          ) : (
-            <LayoutGrid className="h-4 w-4" />
+          className={cn(
+            "absolute right-0.5 top-1/2 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]",
+            showScanner ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] hover:text-[var(--text-primary)]",
           )}
-        </button>
-
-        {/* Ordenar por */}
-        <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value as SortBy)}
-          aria-label="Ordenar por"
-          className="px-3 py-1.5 border border-[var(--rule-base)] rounded-xl text-sm bg-[var(--surface-raised)] text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
-          <option value="stock">Stock ↑</option>
-          <option value="price">Precio</option>
-          <option value="name">Nombre</option>
-        </select>
+          <ScanBarcode className="h-5 w-5" aria-hidden />
+        </button>
       </div>
-    </>
+
+      {showInventario && categories.length > 2 && (
+        <select
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          aria-label="Categoría"
+          className={cn(CONTROL, "min-w-0 grow sm:max-w-48 sm:grow-0 sm:shrink-0")}
+        >
+          {categories.map((cat) => (
+            <option key={cat} value={cat}>
+              {cat === "Todos" ? "Todas las categorías" : cat} ({categoryCounts[cat] ?? 0})
+            </option>
+          ))}
+        </select>
+      )}
+
+      <button
+        type="button"
+        onClick={() => {
+          const encender = !soloReponer;
+          setSoloReponer(encender);
+          if (encender) setShowInventario(true);
+          setPage(1);
+        }}
+        aria-pressed={soloReponer}
+        title="Productos en o bajo el stock mínimo que fijaste"
+        className={chip(soloReponer)}
+      >
+        {needsReorderCount > 0 && <span className="h-2 w-2 shrink-0 rounded-full bg-[var(--data-error-500)]" aria-hidden />}
+        A reponer <span className="tabular-nums font-bold">{needsReorderCount}</span>
+      </button>
+
+      {/* El interruptor del inventario era una tarjeta propia de 50 px encima de los productos. */}
+      <button
+        type="button"
+        role="switch"
+        aria-checked={showInventario}
+        onClick={() => setShowInventario(!showInventario)}
+        title={showInventario ? "Apágalo para dejar sólo la canasta y la factura" : "Muestra los productos de tu inventario para armar la compra"}
+        className={chip(showInventario)}
+      >
+        <Package className="h-4 w-4" aria-hidden />
+        Mi inventario
+        <span
+          aria-hidden
+          className={cn("relative ml-1 inline-block h-5 w-9 rounded-full transition-colors", showInventario ? "bg-primary" : "bg-[var(--rule-base)]")}
+        >
+          <span
+            className={cn(
+              "absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-[var(--surface-raised)] transition-transform",
+              showInventario ? "translate-x-4" : "translate-x-0",
+            )}
+          />
+        </span>
+      </button>
+
+    </div>
   );
 }

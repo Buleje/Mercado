@@ -11,6 +11,7 @@ import {
 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { button } from "@/components/ui-system/button-variants";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import ProductImage from "./ProductImage";
 import {
   normalizeProducts,
@@ -202,27 +203,28 @@ export default function TabCompras() {
       {/* Header con KPIs */}
       <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
         <div className="flex items-center justify-between gap-3 mb-4">
-          <div>
+          {/* El subtítulo pasó al ⓘ (patrón del panel, 10-10). */}
+          <div className="flex items-center gap-2">
             <p className="text-base font-extrabold text-[var(--text-primary)]">
               Lista de compra del día
             </p>
-            <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-              Lo que se va a acabar pronto, ordenado por urgencia
-            </p>
+            <InfoTip what="Lo que se va a acabar pronto según la venta de los últimos 7 días, ordenado por urgencia." />
           </div>
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={exportCSV}
               disabled={fallo || loading}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+              className="inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
             >
               <Download className="h-3.5 w-3.5" />
               CSV
             </button>
             <button
+              type="button"
               onClick={fetchAll}
               disabled={loading}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+              className="inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
             >
               <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
               Refrescar
@@ -247,7 +249,7 @@ export default function TabCompras() {
                 )}
               >
                 <span className={cn(
-                  "text-xs font-bold uppercase tracking-wider",
+                  "text-sm font-bold",
                   u ? u.text : "text-[var(--text-tertiary)]"
                 )}>
                   {k.label}
@@ -258,7 +260,7 @@ export default function TabCompras() {
                 )}>
                   {k.value}
                 </span>
-                <span className="text-xs font-medium text-[var(--text-secondary)]">
+                <span className="text-sm text-[var(--text-secondary)]">
                   {k.sub}
                 </span>
               </div>
@@ -315,13 +317,13 @@ export default function TabCompras() {
                         {item.product.name}
                       </p>
                       <span className={cn(
-                        "shrink-0 rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wider",
+                        "shrink-0 rounded-full px-2.5 py-1 text-sm font-bold",
                         u.bg, u.text,
                       )}>
                         {u.label}
                       </span>
                     </div>
-                    <p className="text-xs font-medium text-[var(--text-secondary)]">
+                    <p className="text-sm text-[var(--text-secondary)]">
                       Stock <span className="font-bold tabular-nums text-[var(--text-primary)]">{item.product.stock}</span> {item.product.unit ?? "u"}
                       {" · "}
                       Vende <span className="font-bold tabular-nums text-[var(--text-primary)]">{item.weeklySales}</span> a la semana
@@ -345,7 +347,7 @@ export default function TabCompras() {
                   </div>
 
                   {item.bestSupplier && (
-                    <p className="text-xs font-medium text-[var(--text-secondary)]">
+                    <p className="text-sm text-[var(--text-secondary)]">
                       Mejor proveedor:{" "}
                       <span className="font-bold text-[var(--text-primary)]">{item.bestSupplier}</span>
                       {" · "}
@@ -356,18 +358,18 @@ export default function TabCompras() {
 
                 <div className="hidden sm:flex flex-col items-end justify-between text-right shrink-0 gap-2 min-w-[120px]">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                    <p className="text-sm font-bold text-[var(--text-tertiary)]">
                       Comprar
                     </p>
                     <p className="text-2xl font-extrabold tabular-nums leading-none text-[var(--text-primary)]">
                       {item.suggestedQty}
                     </p>
-                    <p className="text-xs font-medium text-[var(--text-secondary)]">
+                    <p className="text-sm text-[var(--text-secondary)]">
                       {item.product.unit ?? "u"}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                    <p className="text-sm font-bold text-[var(--text-tertiary)]">
                       Total
                     </p>
                     <p className="text-base font-extrabold tabular-nums text-[var(--text-primary)]">

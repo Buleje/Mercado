@@ -19,7 +19,7 @@ export default function CompraPlantillas({ plantillas: pl, hayItems, processing 
     <div className="border-t border-[var(--rule-soft)] pt-2 space-y-1.5">
       <div className="flex items-center justify-between">
         <span className="flex items-center gap-1">
-          <p className="text-xs font-semibold text-[var(--text-tertiary)]">Plantillas</p>
+          <p className="text-sm font-semibold text-[var(--text-secondary)]">Plantillas</p>
           <InfoTip
             title="Plantillas de pedido"
             what={<span>Se guardan en el negocio con su proveedor: las ves desde cualquier equipo.</span>}
@@ -62,7 +62,7 @@ export default function CompraPlantillas({ plantillas: pl, hayItems, processing 
           })}
         </div>
       ) : locales.length === 0 ? (
-        <p className="text-xs text-[var(--text-tertiary)]">Ninguna guardada</p>
+        <p className="text-sm text-[var(--text-secondary)]">Ninguna guardada</p>
       ) : null}
 
       {locales.length > 0 && (

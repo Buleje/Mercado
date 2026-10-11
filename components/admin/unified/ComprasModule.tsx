@@ -42,9 +42,13 @@ const DropshipModule = dynamic(() => import("@/components/admin/unified/Dropship
 
 const MODULE_ID = "compras";
 
+/* `shortLabel` (10-10): «Órdenes y recepción» medía 181 px, casi dos pestañas;
+   con «Órdenes» las 7 entran en una fila a 1280 (con la de Dropship) y el
+   título y las pestañas comparten la banda desde 1440. El nombre entero sigue
+   en el `title` de la pestaña y en el buscador del panel. */
 const TABS: AdminTab[] = [
   { id: "punto-compra", label: "Comprar", icon: ShoppingBasket },
-  { id: "ordenes-compra", label: "Órdenes y recepción", icon: ClipboardList },
+  { id: "ordenes-compra", label: "Órdenes y recepción", shortLabel: "Órdenes", icon: ClipboardList },
   { id: "sugerencias", label: "Sugerencias", icon: Lightbulb },
   { id: "proveedores", label: "Proveedores", icon: Users },
   { id: "cuentas-por-pagar", label: "Por pagar", icon: CreditCard },
@@ -104,10 +108,11 @@ function ComprasConVistas({ initialTab }: { initialTab?: string }) {
   // La sub-vista vive en `?vista=`: link compartible, atrás del navegador y
   // destino del buscador global. `initialTab` gana cuando el módulo se abre
   // desde un tab alias (ver useVistaModulo). La orden y el proveedor abiertos
-  // (`?oc=`, `?proveedor=`) y la sección (`?sub=`) son de UNA vista: se borran al salir.
+  // (`?oc=`, `?proveedor=`), la sección (`?sub=`) y el filtro de Comprar
+  // (`?reponer=1`) son de UNA vista: se borran al salir.
   const [entrada, setEntrada] = useState(() => seccionPorNombreViejo(initialTab));
   const { vista: sub, irA: setSub } = useVistaModulo(MODULE_ID, ids, ids[0] ?? "punto-compra", initialTab, {
-    paramsDeVista: { "ordenes-compra": ["oc", "sub"], proveedores: ["proveedor", "sub"] },
+    paramsDeVista: { "punto-compra": ["reponer"], "ordenes-compra": ["oc", "sub"], proveedores: ["proveedor", "sub"] },
     alias: ALIAS,
   });
   // La sección del nombre viejo vale sólo para la primera vista: al salir, se olvida.

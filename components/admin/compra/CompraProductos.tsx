@@ -2,6 +2,7 @@
 
 import { DataTable } from "@buleje/design-system";
 import { Package } from "@buleje/design-system/icons";
+import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
 import { calculateSuggestedQty, needsReorder } from "@/lib/types/purchases";
@@ -33,7 +34,7 @@ export default function CompraProductos({ catalogo, carrito }: { catalogo: Compr
               <button
                 type="button"
                 onClick={() => { setShowInventario(true); setSoloReponer(true); }}
-                className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-dark transition-colors"
+                className={button({ variant: "primary", className: "gap-2 rounded-xl px-4" })}
               >
                 Ver los {needsReorderCount} que faltan
               </button>
@@ -41,7 +42,7 @@ export default function CompraProductos({ catalogo, carrito }: { catalogo: Compr
             <button
               type="button"
               onClick={() => setShowInventario(true)}
-              className="inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-raised)] transition-colors"
+              className="inline-flex h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-raised)] transition-colors"
             >
               Ver todo el inventario
             </button>
@@ -137,7 +138,7 @@ export default function CompraProductos({ catalogo, carrito }: { catalogo: Compr
                         type="button"
                         onClick={() => addToCart(p, sug)}
                         aria-label={`Agregar ${p.name}`}
-                        className="px-3 py-1 bg-primary text-white rounded-lg text-xs hover:bg-primary-dark transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                        className="h-11 whitespace-nowrap px-3 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary-dark transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                       >
                         + Agregar
                       </button>
@@ -168,19 +169,21 @@ export default function CompraProductos({ catalogo, carrito }: { catalogo: Compr
       {showInventario && totalPages > 1 && (
         <div className="flex items-center justify-center gap-2 mt-4">
           <button
+            type="button"
             onClick={() => setPage(p => Math.max(1, p - 1))}
             disabled={page === 1}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--surface-sunken)] text-[var(--text-secondary)] disabled:opacity-40 hover:bg-[var(--surface-sunken)] transition-colors"
+            className="h-12 px-4 rounded-xl text-sm font-semibold border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] disabled:opacity-40 hover:bg-[var(--surface-sunken)] transition-colors"
           >
             ← Anterior
           </button>
-          <span className="text-xs text-[var(--text-secondary)]">
+          <span className="text-sm tabular-nums text-[var(--text-secondary)]">
             Página {page} de {totalPages} · {filtered.length} productos
           </span>
           <button
+            type="button"
             onClick={() => setPage(p => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--surface-sunken)] text-[var(--text-secondary)] disabled:opacity-40 hover:bg-[var(--surface-sunken)] transition-colors"
+            className="h-12 px-4 rounded-xl text-sm font-semibold border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] disabled:opacity-40 hover:bg-[var(--surface-sunken)] transition-colors"
           >
             Siguiente →
           </button>

@@ -14,12 +14,13 @@ import { origenesDeVista } from "@/lib/admin/permiso-vista";
 import { vistasDelModulo } from "@/lib/admin/subvistas-modulos";
 import type { Tab } from "@/app/admin/_lib/tabs.types";
 
-/** Compras › Sugerencias: la casa única de «qué reponer» (plan «panel unificado» F5). */
-const HREF_SUGERENCIAS = "/admin?tab=compras&vista=sugerencias";
+/** Compras › Comprar con «A reponer» ya puesto (10-10): Sugerencias sólo propone lo que se
+    vendió, y un producto bajo su mínimo sin ventas llegaba a «Nada que reponer». */
+const HREF_SUGERENCIAS = "/admin?tab=compras&vista=punto-compra&reponer=1";
 /** El enlace se ve sólo para quien ve esa vista: su origen REGISTRADO, no el de esta pestaña. */
 const ORIGEN_SUGERENCIAS = origenesDeVista(
   "compras",
-  vistasDelModulo("compras").find((v) => v.key === "sugerencias") ?? {},
+  vistasDelModulo("compras").find((v) => v.key === "punto-compra") ?? {},
 ) as readonly Tab[];
 
 /** Aviso de stock bajo con órdenes de compra. Pieza de InventoryTab: recibe `useInventario` entero. */
@@ -40,8 +41,8 @@ export default function InventarioAlertaOC({ inv }: { inv: Inventario }) {
           <span className="font-bold tabular-nums">{n}</span> producto{n > 1 ? "s necesitan" : " necesita"} reposición
         </p>
         <InfoTip
-          what="Activos con stock en su mínimo o debajo. En Compras › Sugerencias armas la orden por proveedor con lo sugerido para llegar al máximo."
-          example="Stock 3, mínimo 5, máximo 20 → se piden 17."
+          what="Activos con stock en su mínimo o debajo. «Ver cuáles» abre Compras › Comprar con esos productos ya filtrados para armar la compra."
+          example="Stock 3, mínimo 5: aparece en la lista de «A reponer»."
         />
         <div className="ml-auto flex items-center gap-1">
           <button

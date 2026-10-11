@@ -106,20 +106,21 @@ export default memo(function PuntoCompraProductCard({
       </div>
 
       {/* Nombre */}
-      <p className="text-xs font-semibold text-[var(--text-primary)] line-clamp-2 leading-tight mb-1.5 min-h-[2.5em]">
+      <p className="text-sm font-semibold text-[var(--text-primary)] line-clamp-2 leading-tight mb-1.5 min-h-[2.5em]">
         {displayName}
       </p>
 
       {/* Precio y stock */}
-      <div className="flex items-baseline justify-between gap-1 mb-0.5">
+      {/* Precio y stock en su renglón cada uno si no entran (a 130 px el precio se partía en «S/» y «18.00»). */}
+      <div className="flex flex-wrap items-baseline justify-between gap-x-1 mb-0.5">
         <span
-          className="text-sm font-bold text-[var(--text-primary)]"
+          className="whitespace-nowrap text-sm font-bold text-[var(--text-primary)]"
           title={`Costo: ${formatCurrency(displayPrice)} | Venta: ${formatCurrency(Number(product.price))} | Margen: ${product.costPrice ? ((1 - product.costPrice / product.price) * 100).toFixed(0) : "—"}%`}
         >
           {formatCurrency(displayPrice)}
         </span>
         <span
-          className="text-xs text-[var(--text-tertiary)]"
+          className="whitespace-nowrap text-sm text-[var(--text-secondary)]"
           title={product.stock == null ? "Este producto no lleva control de inventario" : `${product.stock} ${product.unit ?? ""} en stock`}
         >
           Stock: {product.stock ?? "—"}
@@ -127,7 +128,7 @@ export default memo(function PuntoCompraProductCard({
       </div>
 
       {/* Cantidad sugerida */}
-      <p className="text-xs text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-medium">
+      <p className="text-sm text-[var(--data-success-ink)] font-medium">
         <span title={`Stock: ${product.stock ?? 0} | Meta: ${targetStock} → Pedir ${suggestedQty}`}>
           Sugerido: {suggestedQty} {product.unit}
         </span>

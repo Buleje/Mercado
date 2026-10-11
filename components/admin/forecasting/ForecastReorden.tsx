@@ -43,11 +43,11 @@ export function ForecastReordenPanel({ f }: { f: Forecasting }) {
                   onClick={ejecutarAutoReorder}
                   disabled={autoReordering}
                   className={cn(
-                    "flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold",
+                    "flex items-center gap-1.5 px-3 rounded-xl text-sm font-bold",
                     "bg-[var(--text-primary)] hover:opacity-90 dark:bg-zinc-700 dark:hover:bg-zinc-600",
                     "text-white transition-colors",
                     "disabled:opacity-60 disabled:cursor-not-allowed",
-                    "min-h-[44px]", // touch target
+                    "h-12", // touch target del panel (48 px)
                   )}
                   aria-label="Ejecutar reorden automática"
                 >
@@ -63,10 +63,10 @@ export function ForecastReordenPanel({ f }: { f: Forecasting }) {
             {/* Mensaje resultado de auto-reorder */}
             {autoReorderMsg && (
               <div className={cn(
-                "flex items-start gap-2 rounded-xl p-3 mb-3 text-xs font-medium",
+                "flex items-start gap-2 rounded-xl p-3 mb-3 text-sm font-medium",
                 autoReorderMsg.startsWith("Error")
-                  ? "bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/50 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]"
-                  : "bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
+                  ? "bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error-500)] dark:border-[var(--data-error-500)]/50 text-[var(--data-error-ink)]"
+                  : "bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 text-[var(--data-success-ink)]",
               )}>
                 <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 {autoReorderMsg}
@@ -76,7 +76,7 @@ export function ForecastReordenPanel({ f }: { f: Forecasting }) {
             {state.reorder.length > 0 && (
               /* Tabla responsive — scroll horizontal en mobile */
               <div className="overflow-x-auto -mx-1">
-                <DataTable className="w-full min-w-[540px] text-xs">
+                <DataTable className="w-full min-w-[540px] text-sm">
                   <thead>
                     <tr className="border-b border-[var(--rule-soft)]">
                       <th className="text-left py-2 px-2 font-semibold text-[var(--text-secondary)] ">Producto</th>
