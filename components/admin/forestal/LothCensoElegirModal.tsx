@@ -23,7 +23,14 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, Loader2, MapPin, RefreshCw, Search, Trees } from "@buleje/design-system/icons";
+import {
+  AlertTriangle,
+  Loader2,
+  MapPin,
+  RefreshCw,
+  Search,
+  Trees,
+} from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
@@ -70,7 +77,19 @@ const INPUT =
 const BTN =
   "inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-60";
 
-export default function LothCensoElegirModal({ open, onClose, censo, planLabel, elegido, posicion, onElegir, para = "tala", onElegirVarios, enPlanilla, plantacion = false }: Props) {
+export default function LothCensoElegirModal({
+  open,
+  onClose,
+  censo,
+  planLabel,
+  elegido,
+  posicion,
+  onElegir,
+  para = "tala",
+  onElegirVarios,
+  enPlanilla,
+  plantacion = false,
+}: Props) {
   const [filtro, setFiltro] = useState<FiltroCenso>(para === "trozado" ? "talados" : "disponibles");
   const [texto, setTexto] = useState("");
   const [orden, setOrden] = useState<OrdenCenso>({ columna: "codigo", dir: "asc" });
@@ -108,14 +127,27 @@ export default function LothCensoElegirModal({ open, onClose, censo, planLabel, 
     return m;
   }, [censo.arboles, pos]);
   const filas = useMemo(
-    () => ordenarCenso(filtrarCenso(censo.arboles, filtro, texto), orden.columna, orden.dir, distancias ?? undefined),
+    () =>
+      ordenarCenso(
+        filtrarCenso(censo.arboles, filtro, texto),
+        orden.columna,
+        orden.dir,
+        distancias ?? undefined,
+      ),
     [censo.arboles, filtro, texto, orden, distancias],
   );
   const tot = useMemo(() => totalesCenso(filas), [filas]);
-  const taladoLibroM3 = useMemo(() => filas.reduce((s, a) => s + (a.uso?.tala?.volumeM3 ?? 0), 0), [filas]);
+  const taladoLibroM3 = useMemo(
+    () => filas.reduce((s, a) => s + (a.uso?.tala?.volumeM3 ?? 0), 0),
+    [filas],
+  );
 
   function ordenar(col: ColumnaCenso) {
-    setOrden((o) => (o.columna === col ? { columna: col, dir: o.dir === "asc" ? "desc" : "asc" } : { columna: col, dir: "asc" }));
+    setOrden((o) =>
+      o.columna === col
+        ? { columna: col, dir: o.dir === "asc" ? "desc" : "asc" }
+        : { columna: col, dir: "asc" },
+    );
   }
 
   function ubicarme() {
@@ -148,36 +180,51 @@ export default function LothCensoElegirModal({ open, onClose, censo, planLabel, 
     onElegir(a);
   }
 
-  const vacio = censo.arboles.length === 0
-    ? "Este plan no tiene árboles en el censo. Cárgalos en Plan de manejo · Censo."
-    : texto.trim()
-      ? "Ningún árbol coincide con la búsqueda."
-      : "Ningún árbol en este filtro.";
+  const vacio =
+    censo.arboles.length === 0
+      ? "Este plan no tiene árboles en el censo. Cárgalos en Plan de manejo · Censo."
+      : texto.trim()
+        ? "Ningún árbol coincide con la búsqueda."
+        : "Ningún árbol en este filtro.";
 
   return (
     <AdminModal
       open={open}
       onClose={onClose}
       aboveModals
-      variant="info"
+      size="planilla"
       icon={Trees}
       title={plantacion ? "Árboles marcados" : "Censo del plan"}
       description={planLabel ?? undefined}
       claveVentana="loth-censo-elegir"
-      // 10 columnas con la distancia: a 64 rem «En el libro» quedaba fuera,
-      // detrás de «Elegir» (medido 28-09 a 1280). 74 rem entran a 1280.
-      className="sm:max-w-[74rem]"
       footer={
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm text-[var(--text-secondary)]" aria-live="polite">
-            <span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">{formatNumber(tot.arboles)}</span> {tot.arboles === 1 ? "árbol" : "árboles"} ·{" "}
-            <span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtM3(tot.m3)}</span> m³ estimados
+            <span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">
+              {formatNumber(tot.arboles)}
+            </span>{" "}
+            {tot.arboles === 1 ? "árbol" : "árboles"} ·{" "}
+            <span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">
+              {fmtM3(tot.m3)}
+            </span>{" "}
+            m³ estimados
             {taladoLibroM3 > 0 && (
-              <> · <span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">{fmtM3(taladoLibroM3)}</span> m³ talados en el libro</>
+              <>
+                {" "}
+                ·{" "}
+                <span className="font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                  {fmtM3(taladoLibroM3)}
+                </span>{" "}
+                m³ talados en el libro
+              </>
             )}
             {multi && marcas.lista.length > 0 && (
               <>
-                {" "}· <span className="font-mono font-bold tabular-nums text-[var(--accent-ink)] dark:text-[var(--accent)]">{marcas.lista.length}</span>{" "}
+                {" "}
+                ·{" "}
+                <span className="font-mono font-bold tabular-nums text-[var(--accent-ink)] dark:text-[var(--accent)]">
+                  {marcas.lista.length}
+                </span>{" "}
                 {marcas.lista.length === 1 ? "marcado" : "marcados"}
               </>
             )}
@@ -229,11 +276,30 @@ export default function LothCensoElegirModal({ open, onClose, censo, planLabel, 
             </span>
           </div>
           <div className="relative min-w-0 grow basis-[12rem]">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden="true" />
-            <input value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Código, especie, nombre nativo…" aria-label="Buscar en el censo" className={INPUT} />
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]"
+              aria-hidden="true"
+            />
+            <input
+              value={texto}
+              onChange={(e) => setTexto(e.target.value)}
+              placeholder="Código, especie, nombre nativo…"
+              aria-label="Buscar en el censo"
+              className={INPUT}
+            />
           </div>
-          <button type="button" onClick={ubicarme} disabled={ubicando} className={BTN} title="Ordenar por distancia desde donde estás">
-            {ubicando ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4 text-[var(--data-success-600)]" />}
+          <button
+            type="button"
+            onClick={ubicarme}
+            disabled={ubicando}
+            className={BTN}
+            title="Ordenar por distancia desde donde estás"
+          >
+            {ubicando ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <MapPin className="h-4 w-4 text-[var(--data-success-600)]" />
+            )}
             {pos ? "Más cerca" : "Por cercanía"}
           </button>
         </div>
@@ -252,7 +318,13 @@ export default function LothCensoElegirModal({ open, onClose, censo, planLabel, 
         )}
 
         {pendiente?.reparo && (
-          <AvisoPendiente arbol={pendiente} reparo={pendiente.reparo} confirmarRef={confirmarRef} onVolver={() => setPendiente(null)} onElegir={() => elegir(pendiente)} />
+          <AvisoPendiente
+            arbol={pendiente}
+            reparo={pendiente.reparo}
+            confirmarRef={confirmarRef}
+            onVolver={() => setPendiente(null)}
+            onElegir={() => elegir(pendiente)}
+          />
         )}
 
         {marcas.confirmando && marcas.conReparo.length > 0 && (
@@ -265,9 +337,18 @@ export default function LothCensoElegirModal({ open, onClose, censo, planLabel, 
         )}
 
         {censo.error ? (
-          <div role="alert" className="flex items-center justify-between gap-3 rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-50)] px-3 py-2.5 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
-            <span className="flex items-center gap-2"><AlertTriangle className="h-4 w-4 shrink-0" />{censo.error}</span>
-            <button type="button" onClick={censo.recargar} className={BTN}><RefreshCw className="h-4 w-4" />Reintentar</button>
+          <div
+            role="alert"
+            className="flex items-center justify-between gap-3 rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-50)] px-3 py-2.5 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]"
+          >
+            <span className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              {censo.error}
+            </span>
+            <button type="button" onClick={censo.recargar} className={BTN}>
+              <RefreshCw className="h-4 w-4" />
+              Reintentar
+            </button>
           </div>
         ) : censo.cargando && censo.arboles.length === 0 ? (
           <div className="flex items-center justify-center gap-2 py-12 text-sm text-[var(--text-tertiary)]">

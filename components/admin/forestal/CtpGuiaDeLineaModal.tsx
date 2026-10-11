@@ -32,11 +32,20 @@ import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
 import { useFichaCtp } from "@/hooks/use-ficha-ctp";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { gtfDatosVacio, type GtfDatos } from "@/lib/forestal/ctp-gtf-datos";
-import { ESTADO_GUIA_LABEL, estadoDeGuia, guiaEditable, motivoNoEditable } from "@/lib/forestal/gtf-estado";
+import {
+  ESTADO_GUIA_LABEL,
+  estadoDeGuia,
+  guiaEditable,
+  motivoNoEditable,
+} from "@/lib/forestal/gtf-estado";
 import type { Parte, RolParte } from "@/lib/forestal/directorio";
 import CtpGuiaDatosTab from "./CtpGuiaDatosTab";
 import CtpGtfConfirmarNumero from "./CtpGtfConfirmarNumero";
-import { pedirEmisionGtf, type ConfirmacionEmision, type RespuestaEmision } from "@/hooks/use-proxima-gtf";
+import {
+  pedirEmisionGtf,
+  type ConfirmacionEmision,
+  type RespuestaEmision,
+} from "@/hooks/use-proxima-gtf";
 import type { ValorParte } from "./CtpParteBarra";
 import { Btn, ModalBody, ModalFooter } from "./ctp-shared";
 
@@ -71,7 +80,9 @@ export default function CtpGuiaDeLineaModal({
      está en la base, así que se toma tal cual. */
   const [datos, setDatos] = useState<GtfDatos>(() => {
     const g = linea.gtfDatos;
-    return g && typeof g === "object" ? ({ ...gtfDatosVacio(), ...(g as Partial<GtfDatos>) } as GtfDatos) : gtfDatosVacio();
+    return g && typeof g === "object"
+      ? ({ ...gtfDatosVacio(), ...(g as Partial<GtfDatos>) } as GtfDatos)
+      : gtfDatosVacio();
   });
   const [emision, setEmision] = useState(linea.entryDate.slice(0, 10));
   const [docType, setDocType] = useState(linea.docType ?? "GTF");
@@ -89,9 +100,14 @@ export default function CtpGuiaDeLineaModal({
 
   /** Lo tipeado se pierde si el modal se cierra sin guardar: hay que decirlo. */
   const [sucio, setSucio] = useState(false);
-  const setDatosSucio = useCallback<typeof setDatos>((v) => { setSucio(true); setDatos(v); }, []);
+  const setDatosSucio = useCallback<typeof setDatos>((v) => {
+    setSucio(true);
+    setDatos(v);
+  }, []);
 
-  useEffect(() => { setAviso(null); }, [datos]);
+  useEffect(() => {
+    setAviso(null);
+  }, [datos]);
 
   async function guardarBorrador() {
     setGuardando(true);
@@ -104,7 +120,10 @@ export default function CtpGuiaDeLineaModal({
         body: JSON.stringify({ id: linea.id, action: "gtf_datos", datos }),
       });
       const j = await r.json().catch(() => ({}));
-      if (!r.ok) { setError(j.message ?? "No se pudo guardar el borrador."); return; }
+      if (!r.ok) {
+        setError(j.message ?? "No se pudo guardar el borrador.");
+        return;
+      }
       setSucio(false);
       contarUsos();
       setAviso("Borrador guardado. Se puede seguir corrigiendo las veces que haga falta.");
@@ -124,7 +143,10 @@ export default function CtpGuiaDeLineaModal({
    * datos que nadie revisó. Guardar primero deja el peor caso en «se guardó
    * pero no se emitió», que se reintenta sin consecuencias.
    */
-  async function emitir(numero: string, confirmacion?: ConfirmacionEmision): Promise<RespuestaEmision> {
+  async function emitir(
+    numero: string,
+    confirmacion?: ConfirmacionEmision,
+  ): Promise<RespuestaEmision> {
     setEmitiendo(true);
     setError(null);
     try {
@@ -164,14 +186,25 @@ export default function CtpGuiaDeLineaModal({
   }
 
   /** Uso de la libreta en ESTA guía: se cuenta recién al guardar o emitir. */
-  const usados = useRef<{ partes: Set<string>; vehiculos: Set<string> }>({ partes: new Set(), vehiculos: new Set() });
-  const anotarParte = useCallback((p: Parte) => { usados.current.partes.add(p.id); }, []);
-  const anotarVehiculo = useCallback((id: string) => { usados.current.vehiculos.add(id); }, []);
+  const usados = useRef<{ partes: Set<string>; vehiculos: Set<string> }>({
+    partes: new Set(),
+    vehiculos: new Set(),
+  });
+  const anotarParte = useCallback((p: Parte) => {
+    usados.current.partes.add(p.id);
+  }, []);
+  const anotarVehiculo = useCallback((id: string) => {
+    usados.current.vehiculos.add(id);
+  }, []);
   const guardarEnLibreta = useCallback(
     async (v: ValorParte, rol: RolParte) => {
       const parte = await directorio.guardarParte({
-        roles: [rol], nombre: v.nombre, docTipo: v.docTipo, docNumero: v.docNumero,
-        direccion: v.direccion, registroMtc: v.registroMtc,
+        roles: [rol],
+        nombre: v.nombre,
+        docTipo: v.docTipo,
+        docNumero: v.docNumero,
+        direccion: v.direccion,
+        registroMtc: v.registroMtc,
       });
       anotarParte(parte);
     },
@@ -179,7 +212,10 @@ export default function CtpGuiaDeLineaModal({
   );
   /** Lo elegido de la libreta sube en el ranking sólo si el acto se concretó. */
   const contarUsos = useCallback(() => {
-    directorio.marcarUso({ partes: [...usados.current.partes], vehiculos: [...usados.current.vehiculos] });
+    directorio.marcarUso({
+      partes: [...usados.current.partes],
+      vehiculos: [...usados.current.vehiculos],
+    });
   }, [directorio]);
 
   const trabajando = guardando || emitiendo;
@@ -188,7 +224,7 @@ export default function CtpGuiaDeLineaModal({
     <AdminModal
       open
       onClose={onClose}
-      variant="wide"
+      size="planilla"
       title={`Guía de transporte · línea #${linea.lineNo ?? "—"}`}
       description={
         estado === "emitida"
@@ -196,7 +232,6 @@ export default function CtpGuiaDeLineaModal({
           : "Borrador · se guarda y se corrige hasta emitirla"
       }
       icon={Truck}
-      className="sm:w-[min(96vw,100rem)] sm:max-w-none sm:max-h-[95vh]"
       footer={
         <ModalFooter
           error={error}
@@ -224,22 +259,35 @@ export default function CtpGuiaDeLineaModal({
               ocupado={trabajando}
             />
           ) : (
-          <>
-          <Btn variant="ghost" onClick={onClose} disabled={trabajando}>Cerrar</Btn>
-          {editable && (
             <>
-              <Btn variant="secondary" onClick={guardarBorrador} disabled={trabajando}>
-                {guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                Guardar borrador
+              <Btn variant="ghost" onClick={onClose} disabled={trabajando}>
+                Cerrar
               </Btn>
-              {/* Emitir es el acto irreversible: va al final y se anuncia. */}
-              <Btn variant="primary" onClick={() => { setError(null); setConfirmando(true); }} disabled={trabajando}>
-                <Truck className="h-4 w-4" />
-                Emitir GTF
-              </Btn>
+              {editable && (
+                <>
+                  <Btn variant="secondary" onClick={guardarBorrador} disabled={trabajando}>
+                    {guardando ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4" />
+                    )}
+                    Guardar borrador
+                  </Btn>
+                  {/* Emitir es el acto irreversible: va al final y se anuncia. */}
+                  <Btn
+                    variant="primary"
+                    onClick={() => {
+                      setError(null);
+                      setConfirmando(true);
+                    }}
+                    disabled={trabajando}
+                  >
+                    <Truck className="h-4 w-4" />
+                    Emitir GTF
+                  </Btn>
+                </>
+              )}
             </>
-          )}
-          </>
           )}
         </ModalFooter>
       }

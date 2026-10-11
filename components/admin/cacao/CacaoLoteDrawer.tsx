@@ -176,10 +176,14 @@ export default function CacaoLoteDrawer({
   const hasCut = lote && cut.some((c) => c.v != null && c.v !== "");
 
   return (
-    <AdminModal open onClose={onClose} variant="side" hideCloseButton className="!max-w-[480px]"
+    <AdminModal
+      open
+      onClose={onClose}
+      variant="side"
+      hideCloseButton
       footer={
         lote && !loading ? (
-        <div className="flex items-center justify-end gap-2">
+          <div className="flex items-center justify-end gap-2">
             <button
               type="button"
               onClick={onClose}
@@ -212,7 +216,7 @@ export default function CacaoLoteDrawer({
             >
               <Printer className="h-4 w-4" /> Recibo
             </button>
-        </div>
+          </div>
         ) : undefined
       }
     >
@@ -226,7 +230,10 @@ export default function CacaoLoteDrawer({
               <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
                 Ficha de lote
               </p>
-              <SectionTitle as="h2" className="font-mono text-sm font-bold text-[var(--text-primary)]">
+              <SectionTitle
+                as="h2"
+                className="font-mono text-sm font-bold text-[var(--text-primary)]"
+              >
                 {lote?.loteCode ?? "…"}
               </SectionTitle>
             </div>
@@ -502,7 +509,10 @@ function Section({
 }) {
   return (
     <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)]/40 p-4">
-      <CardTitle as="h3" className="mb-3 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+      <CardTitle
+        as="h3"
+        className="mb-3 flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"
+      >
         <Icon className="h-4 w-4 text-[var(--accent)]" /> {title}
       </CardTitle>
       <div className="space-y-1.5">{children}</div>

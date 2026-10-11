@@ -15,12 +15,14 @@
  * un ingreso de caja que no pasó.
  */
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { leerJson } from "@/lib/errores/sin-dato";
-import { AlertTriangle, Ban } from "@buleje/design-system/icons";
+import { Ban } from "@buleje/design-system/icons";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
+import { button } from "@/components/ui-system/button-variants";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { fmtMon } from "../shared";
 
 const jsonHeaders = () => csrfHeaders({ "Content-Type": "application/json" });
@@ -58,8 +60,6 @@ export default function AnularAdelantoModal({
   const [via, setVia] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const modalRef = useRef<HTMLDivElement>(null);
-  useModalAccesible(modalRef, { onCerrar: onClose });
 
   const anular = async () => {
     setSaving(true);
@@ -90,41 +90,53 @@ export default function AnularAdelantoModal({
   };
 
   return (
-    <div className="fixed inset-0 z-modal-2 flex items-center justify-center bg-black/50 p-4" role="presentation" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div
-        ref={modalRef}
-        role="alertdialog"
-        aria-modal="true"
-        aria-label="Anular adelanto"
-        tabIndex={-1}
-        className="w-full max-w-[34rem] rounded-2xl bg-[var(--surface-raised)] p-5 shadow-[var(--shadow-xl)]"
-      >
-        <div className="mb-3 flex items-start gap-3">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--data-error)]/10 text-[var(--data-error)]">
-            <Ban className="h-5 w-5" />
-          </span>
-          <div className="min-w-0">
-            <p className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">¿Anular este adelanto?</p>
-            <p className="text-sm text-[var(--text-secondary)]">
-              <strong className="text-[var(--text-primary)]">{persona}</strong> — {fmtMon(monto, moneda)}. No se borra el
-              historial, queda marcado como cancelado.
-            </p>
-          </div>
-        </div>
+    /* Se abre desde la lista y desde el detalle del adelanto (otro modal): va encima. */
+    <AdminModal
+      open
+      onClose={onClose}
+      title="¿Anular este adelanto?"
+      icon={Ban}
+      aboveModals
+      claveVentana="adelanto-anular"
+      footer={
+        <ModalFooter error={err}>
+          <button type="button" onClick={onClose} className={button({ variant: "secondary" })}>
+            Volver
+          </button>
+          <button
+            type="button"
+            onClick={() => void anular()}
+            disabled={saving}
+            className={button({ variant: "danger" })}
+          >
+            {saving ? "Anulando…" : "Anular adelanto"}
+          </button>
+        </ModalFooter>
+      }
+    >
+      <div className={MODAL_BODY}>
+        <p className="mb-3 text-sm text-[var(--text-secondary)]">
+          <strong className="text-[var(--text-primary)]">{persona}</strong> —{" "}
+          {fmtMon(monto, moneda)}. No se borra el historial, queda marcado como cancelado.
+        </p>
 
         <div
           className="space-y-1.5 rounded-xl bg-[var(--surface-sunken)] p-3.5"
           role="group"
           aria-label={recibido ? "¿Le devolviste la plata?" : "¿Volvió la plata a caja?"}
         >
-          <p className="text-sm font-bold text-[var(--text-secondary)]">{recibido ? "¿Le devolviste la plata?" : "¿La plata volvió a caja?"}</p>
+          <p className="text-sm font-bold text-[var(--text-secondary)]">
+            {recibido ? "¿Le devolviste la plata?" : "¿La plata volvió a caja?"}
+          </p>
           <div className="flex flex-wrap gap-1.5">
             <button
               type="button"
               onClick={() => setVia(null)}
               aria-pressed={via === null}
               className={`h-9 rounded-lg px-3 text-sm font-bold transition-colors ${
-                via === null ? "bg-primary/12 text-[var(--accent-ink)] ring-2 ring-primary" : "bg-[var(--surface-raised)] text-[var(--text-secondary)]"
+                via === null
+                  ? "bg-primary/12 text-[var(--accent-ink)] ring-2 ring-primary"
+                  : "bg-[var(--surface-raised)] text-[var(--text-secondary)]"
               }`}
             >
               {recibido ? "No le devolví nada" : "No volvió nada"}
@@ -136,14 +148,18 @@ export default function AnularAdelantoModal({
                 onClick={() => setVia(v.id)}
                 aria-pressed={via === v.id}
                 className={`h-9 rounded-lg px-3 text-sm font-bold transition-colors ${
-                  via === v.id ? "bg-primary/12 text-[var(--accent-ink)] ring-2 ring-primary" : "bg-[var(--surface-raised)] text-[var(--text-secondary)]"
+                  via === v.id
+                    ? "bg-primary/12 text-[var(--accent-ink)] ring-2 ring-primary"
+                    : "bg-[var(--surface-raised)] text-[var(--text-secondary)]"
                 }`}
               >
                 {v.label}
               </button>
             ))}
           </div>
-          <p className={`text-sm font-semibold ${via ? (recibido ? "text-[var(--data-warning-ink)]" : "text-[var(--data-success-ink)]") : "text-[var(--text-tertiary)]"}`}>
+          <p
+            className={`text-sm font-semibold ${via ? (recibido ? "text-[var(--data-warning-ink)]" : "text-[var(--data-success-ink)]") : "text-[var(--text-tertiary)]"}`}
+          >
             {via
               ? recibido
                 ? "Sale de tu caja por esa vía: se anota un egreso por lo que le devolviste."
@@ -151,31 +167,7 @@ export default function AnularAdelantoModal({
               : "Se anula sin tocar la caja — es un error de carga o una pérdida que se da por perdida."}
           </p>
         </div>
-
-        {err && (
-          <p className="mt-3 flex items-start gap-2 text-sm font-semibold text-[var(--data-error)]">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /> {err}
-          </p>
-        )}
-
-        <div className="mt-4 flex gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="h-11 flex-1 rounded-xl text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
-          >
-            Volver
-          </button>
-          <button
-            type="button"
-            onClick={() => void anular()}
-            disabled={saving}
-            className="h-11 flex-1 rounded-xl bg-[var(--data-error)] text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-50"
-          >
-            {saving ? "Anulando…" : "Anular adelanto"}
-          </button>
-        </div>
       </div>
-    </div>
+    </AdminModal>
   );
 }

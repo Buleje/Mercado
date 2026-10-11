@@ -15,9 +15,22 @@
  *     por permiso → «Pasar al libro» (despacho), que ya vive en la pantalla.
  */
 
-import { AlertTriangle, BookOpen, CheckCircle2, FileText, Loader2, RotateCcw, Square } from "@buleje/design-system/icons";
+import {
+  AlertTriangle,
+  BookOpen,
+  CheckCircle2,
+  FileText,
+  Loader2,
+  RotateCcw,
+  Square,
+} from "@buleje/design-system/icons";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
-import type { AvanceDeTanda, PasoDeProduccion, PlanDeProduccion, RecorridoDeTanda } from "@/lib/forestal/toda-la-produccion";
+import type {
+  AvanceDeTanda,
+  PasoDeProduccion,
+  PlanDeProduccion,
+  RecorridoDeTanda,
+} from "@/lib/forestal/toda-la-produccion";
 import { ListaDeAvance, ResumenDeTanda } from "./reparto-registrar-todo-partes";
 
 /** El `id` de la sección «Anexo 04 por permiso» de la Distribución: el siguiente paso salta ahí. */
@@ -37,11 +50,20 @@ const MAX_NROS = 12;
 function nros(lista: readonly (number | null | undefined)[]): string {
   const n = lista.filter((x): x is number => x != null);
   if (n.length === 0) return "";
-  const vistos = n.slice(0, MAX_NROS).map((x) => `N° ${x}`).join(", ");
+  const vistos = n
+    .slice(0, MAX_NROS)
+    .map((x) => `N° ${x}`)
+    .join(", ");
   return n.length > MAX_NROS ? `${vistos} y ${n.length - MAX_NROS} más` : vistos;
 }
 
-function Resultado({ recorrido, total }: { recorrido: RecorridoDeTanda<PasoDeProduccion>; total: number }) {
+function Resultado({
+  recorrido,
+  total,
+}: {
+  recorrido: RecorridoDeTanda<PasoDeProduccion>;
+  total: number;
+}) {
   const escritos = recorrido.escritos.length;
   const corridas = nros(recorrido.escritos.map((e) => e.resultado.lineNo));
   const f = recorrido.fallo;
@@ -52,7 +74,8 @@ function Resultado({ recorrido, total }: { recorrido: RecorridoDeTanda<PasoDePro
         <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
         <span>
           <b>{plural(escritos, "día en el Libro", "días en el Libro")}</b>
-          {corridas ? ` · corridas ${corridas}` : ""}. Siguiente: pasa el Anexo 04 de cada permiso al libro (despacho); eso descuenta del patio.
+          {corridas ? ` · corridas ${corridas}` : ""}. Siguiente: pasa el Anexo 04 de cada permiso
+          al libro (despacho); eso descuenta del patio.
         </span>
       </p>
     );
@@ -63,7 +86,10 @@ function Resultado({ recorrido, total }: { recorrido: RecorridoDeTanda<PasoDePro
         <p className={`${CAJA_ERROR} flex items-start gap-2`}>
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
           <span>
-            <b>Se detuvo en {f.paso.etiqueta} · día {f.paso.jornada.dia}</b>:{" "}
+            <b>
+              Se detuvo en {f.paso.etiqueta} · día {f.paso.jornada.dia}
+            </b>
+            :{" "}
             {f.resultado.estado === "corrida-abierta"
               ? `la corrida N° ${f.resultado.lineNo ?? "?"} consumió sus trozas pero la producción no se declaró (${f.resultado.detalle ?? "sin detalle"}). Declárala desde la tabla del Libro.`
               : (f.resultado.detalle ?? "no se registró.")}
@@ -80,13 +106,15 @@ function Resultado({ recorrido, total }: { recorrido: RecorridoDeTanda<PasoDePro
           "No quedó nada escrito en el Libro."
         ) : (
           <>
-            Quedaron en el Libro <b className="text-[var(--text-primary)]">{plural(escritos, "día", "días")}</b>
+            Quedaron en el Libro{" "}
+            <b className="text-[var(--text-primary)]">{plural(escritos, "día", "días")}</b>
             {corridas ? ` (corridas ${corridas})` : ""}: no se deshacen.
           </>
         )}{" "}
         Sin registrar:{" "}
         <b className="text-[var(--text-primary)]">{plural(total - escritos, "día", "días")}</b>
-        {sinIntentar > 0 ? ` (${sinIntentar} sin intentar)` : ""}. «Reintentar lo pendiente» vuelve a armar el plan desde lo que falta.
+        {sinIntentar > 0 ? ` (${sinIntentar} sin intentar)` : ""}. «Reintentar lo pendiente» vuelve
+        a armar el plan desde lo que falta.
       </p>
     </div>
   );
@@ -125,46 +153,77 @@ export default function RepartoRegistrarTodo({
   const actual = avance?.paso;
   const pct = avance && total > 0 ? Math.round((avance.hechos / total) * 100) : 0;
   const quedaAlgo = Boolean(recorrido && (recorrido.fallo || recorrido.detenido));
-  const hayAnexo = typeof document !== "undefined" && Boolean(document.getElementById(ID_SECCION_ANEXO));
-  const motivo = fase !== "resumen" ? null : motivoApagado ?? (total === 0 ? "No hay días listos para registrar: mira abajo por qué." : null);
+  const hayAnexo =
+    typeof document !== "undefined" && Boolean(document.getElementById(ID_SECCION_ANEXO));
+  const motivo =
+    fase !== "resumen"
+      ? null
+      : (motivoApagado ??
+        (total === 0 ? "No hay días listos para registrar: mira abajo por qué." : null));
 
   return (
     <AdminModal
+      size="lg"
       open
       onClose={onCerrar}
       hideCloseButton={fase === "avance"}
-      className="sm:max-w-[48rem]"
       icon={BookOpen}
       title={bloque ? `Registrar los días del bloque ${bloque}` : "Registrar toda la producción"}
       description="De la Distribución de rolliza al Libro CTP, un día por vez"
       footer={
         <div className="flex w-full flex-wrap items-center justify-end gap-2">
-          {motivo && <span className="mr-auto text-sm text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">{motivo}</span>}
+          {motivo && (
+            <span className="mr-auto text-sm text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+              {motivo}
+            </span>
+          )}
           {fase === "resumen" && (
             <>
-              <button type="button" onClick={onCerrar} className={BTN}>Cancelar</button>
-              <button type="button" onClick={onConfirmar} disabled={Boolean(motivo)} className={BTN_PRIMARIO}>
-                <BookOpen className="h-4 w-4" aria-hidden /> Registrar {plural(total, "día", "días")} en el Libro
+              <button type="button" onClick={onCerrar} className={BTN}>
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={onConfirmar}
+                disabled={Boolean(motivo)}
+                className={BTN_PRIMARIO}
+              >
+                <BookOpen className="h-4 w-4" aria-hidden /> Registrar{" "}
+                {plural(total, "día", "días")} en el Libro
               </button>
             </>
           )}
           {fase === "avance" && (
             <button type="button" onClick={onDetener} disabled={deteniendo} className={BTN}>
-              {deteniendo ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Square className="h-4 w-4" aria-hidden />}
+              {deteniendo ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              ) : (
+                <Square className="h-4 w-4" aria-hidden />
+              )}
               {deteniendo ? "Se detiene al terminar este día…" : "Detener después de este día"}
             </button>
           )}
           {fase === "fin" && (
             <>
-              <button type="button" onClick={onCerrar} className={BTN}>Cerrar</button>
+              <button type="button" onClick={onCerrar} className={BTN}>
+                Cerrar
+              </button>
               {quedaAlgo && (
                 <button type="button" onClick={onReintentar} disabled={leyendo} className={BTN}>
-                  {leyendo ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <RotateCcw className="h-4 w-4" aria-hidden />}
+                  {leyendo ? (
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                  ) : (
+                    <RotateCcw className="h-4 w-4" aria-hidden />
+                  )}
                   {leyendo ? "Leyendo el Libro…" : "Reintentar lo pendiente"}
                 </button>
               )}
               {hayAnexo && (recorrido?.escritos.length ?? 0) > 0 && (
-                <button type="button" onClick={onIrAlAnexo} className={quedaAlgo ? BTN : BTN_PRIMARIO}>
+                <button
+                  type="button"
+                  onClick={onIrAlAnexo}
+                  className={quedaAlgo ? BTN : BTN_PRIMARIO}
+                >
                   <FileText className="h-4 w-4" aria-hidden /> Ir al Anexo 04 por permiso
                 </button>
               )}
@@ -189,13 +248,21 @@ export default function RepartoRegistrarTodo({
               aria-valuenow={avance.hechos}
               className="h-2 overflow-hidden rounded-full bg-[var(--surface-sunken)]"
             >
-              <div className="h-full rounded-full bg-[var(--accent)] transition-[width] duration-[var(--dur-base)]" style={{ width: `${pct}%` }} />
+              <div
+                className="h-full rounded-full bg-[var(--accent)] transition-[width] duration-[var(--dur-base)]"
+                style={{ width: `${pct}%` }}
+              />
             </div>
-            <p className="text-xs text-[var(--text-tertiary)]">No cierres la pestaña: cada día consume sus trozas y declara su producción antes del siguiente.</p>
+            <p className="text-xs text-[var(--text-tertiary)]">
+              No cierres la pestaña: cada día consume sus trozas y declara su producción antes del
+              siguiente.
+            </p>
           </div>
         )}
         {fase === "fin" && recorrido && <Resultado recorrido={recorrido} total={total} />}
-        {fase !== "resumen" && <ListaDeAvance pasos={plan.pasos} avance={avance} recorrido={recorrido} />}
+        {fase !== "resumen" && (
+          <ListaDeAvance pasos={plan.pasos} avance={avance} recorrido={recorrido} />
+        )}
       </div>
     </AdminModal>
   );

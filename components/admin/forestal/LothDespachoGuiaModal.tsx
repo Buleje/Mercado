@@ -20,7 +20,12 @@ import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 import { useDirectorioForestal } from "@/hooks/use-directorio-forestal";
 import type { Parte, RolParte } from "@/lib/forestal/directorio";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
-import { detallePorEspecie, guiaEsDePlantacion, rotuloDelTitulo, totalM3 } from "@/lib/forestal/loth-guia-despacho";
+import {
+  detallePorEspecie,
+  guiaEsDePlantacion,
+  rotuloDelTitulo,
+  totalM3,
+} from "@/lib/forestal/loth-guia-despacho";
 import { papelesGuiaLoth } from "@/lib/forestal/loth-guia-print";
 import { useDespachoGuiaLoth } from "./hooks/use-despacho-guia-loth";
 import { useEspeciesConCatalogo } from "./ctp-especie-campo";
@@ -29,7 +34,10 @@ import CtpDocumentoVisor, { type DocumentoImprimible } from "./CtpDocumentoVisor
 import LothGuiaDatos from "./LothGuiaDatos";
 import LothGuiaTrozas from "./LothGuiaTrozas";
 import LothGuiaRegistrada, { useCapaEncimaDelModal } from "./LothGuiaRegistrada";
-import AvisoTrozasDeAntes, { useTrozasDeAntes, type TrozasIniciales } from "./LothGuiaTrozasDeAntes";
+import AvisoTrozasDeAntes, {
+  useTrozasDeAntes,
+  type TrozasIniciales,
+} from "./LothGuiaTrozasDeAntes";
 import { Btn } from "./ctp-shared";
 
 type Pestana = "guia" | "trozas";
@@ -52,13 +60,24 @@ const aGuardada = (p: Parte | undefined) =>
     : null;
 
 /** `trozasIniciales`: códigos que llegan elegidos y sus permisos (Control del permiso, ADR-459; escaneo al camión). */
-export default function LothDespachoGuiaModal({ onClose, onRegistrada, trozasIniciales }: { onClose: () => void; onRegistrada: () => void; trozasIniciales?: TrozasIniciales }) {
+export default function LothDespachoGuiaModal({
+  onClose,
+  onRegistrada,
+  trozasIniciales,
+}: {
+  onClose: () => void;
+  onRegistrada: () => void;
+  trozasIniciales?: TrozasIniciales;
+}) {
   const directorio = useDirectorioForestal();
   /* La libreta cuenta los usos recién al registrar: lo que se eligió y se
      cambió antes no sube en el orden. */
   const usados = useRef({ partes: new Set<string>(), vehiculos: new Set<string>() });
   const alRegistrar = useCallback(() => {
-    directorio.marcarUso({ partes: [...usados.current.partes], vehiculos: [...usados.current.vehiculos] });
+    directorio.marcarUso({
+      partes: [...usados.current.partes],
+      vehiculos: [...usados.current.vehiculos],
+    });
     onRegistrada();
   }, [directorio, onRegistrada]);
   const g = useDespachoGuiaLoth({ onRegistrada: alRegistrar });
@@ -66,7 +85,9 @@ export default function LothDespachoGuiaModal({ onClose, onRegistrada, trozasIni
   const catalogo = useEspeciesConCatalogo();
   const cientificoDe = useCallback((comun: string) => catalogo.cientificoDe(comun), [catalogo]);
   const [tab, setTab] = useState<Pestana>("trozas");
-  const [borrador, setBorrador] = useState<{ docs: DocumentoImprimible[]; activo: number } | null>(null);
+  const [borrador, setBorrador] = useState<{ docs: DocumentoImprimible[]; activo: number } | null>(
+    null,
+  );
   const cuerpo = useRef<HTMLDivElement>(null);
   useCapaEncimaDelModal(cuerpo, borrador != null);
 
@@ -124,84 +145,121 @@ export default function LothDespachoGuiaModal({ onClose, onRegistrada, trozasIni
 
   /* Cargando o sin datos: sólo se puede cerrar. Un «Faltan 10» o un «Rellenar»
      activos sobre un modal vacío dicen algo que todavía no se sabe. */
-  const footer = g.cargando || g.errorCarga ? (
-    <ModalFooter nota={g.cargando ? "Preparando la guía…" : null}>
-      <Btn variant="ghost" onClick={onClose}>Cerrar</Btn>
-    </ModalFooter>
-  ) : g.registrada ? (
-    <ModalFooter
-      nota={
-        <span>
-          <b className="text-[var(--text-primary)]">{g.registrada.lineas}</b> {g.registrada.lineas === 1 ? "línea" : "líneas"} de despacho en el libro
-        </span>
-      }
-    >
-      <Btn variant="primary" onClick={onClose}>Cerrar y volver al libro</Btn>
-    </ModalFooter>
-  ) : (
-    <ModalFooter
-      error={g.error}
-      aviso={
-        g.pregunta ? (
-          <span className="flex flex-wrap items-center gap-2 text-[var(--text-primary)]">
-            {g.pregunta.mensaje}
-            <Btn size="sm" variant="secondary" onClick={() => void g.registrar(g.pregunta?.tipo)} disabled={g.enviando}>Sí, usar ese número</Btn>
-            <Btn size="sm" variant="ghost" onClick={g.cancelarPregunta}>Corregirlo</Btn>
-          </span>
-        ) : null
-      }
-      nota={
-        <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+  const footer =
+    g.cargando || g.errorCarga ? (
+      <ModalFooter nota={g.cargando ? "Preparando la guía…" : null}>
+        <Btn variant="ghost" onClick={onClose}>
+          Cerrar
+        </Btn>
+      </ModalFooter>
+    ) : g.registrada ? (
+      <ModalFooter
+        nota={
           <span>
-            <b className="text-[var(--text-primary)]">{g.piezas.length}</b> {g.piezas.length === 1 ? "troza" : "trozas"}
-            {especies > 0 && ` · ${especies} ${especies === 1 ? "especie" : "especies"}`} ·{" "}
-            <span className="font-mono tabular-nums">{fmtM3(volumen)} m³</span>
+            <b className="text-[var(--text-primary)]">{g.registrada.lineas}</b>{" "}
+            {g.registrada.lineas === 1 ? "línea" : "líneas"} de despacho en el libro
           </span>
-          {g.faltan.length > 0 && (
-            <span className="text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-              Falta{g.faltan.length === 1 ? "" : "n"} {g.faltan.length} para registrar: {g.faltan[0]?.campo}
-            </span>
-          )}
-        </span>
-      }
-    >
-      <Btn variant="ghost" onClick={onClose} disabled={g.enviando}>Cerrar</Btn>
-      <Btn
-        variant="secondary"
-        onClick={rellenarConLibreta}
-        disabled={g.enviando || directorio.cargando}
-        title="Completa destinatario, transportista, chofer y camión con los más usados del Directorio, sólo donde está vacío"
+        }
       >
-        <Wand2 className="h-4 w-4" aria-hidden="true" /> Rellenar con la libreta
-      </Btn>
-      <Btn variant="secondary" onClick={verComoSale} disabled={!g.identidad} title="Mira la guía y la lista antes de registrar: salen marcadas como borrador">
-        <FileText className="h-4 w-4" aria-hidden="true" /> Ver cómo sale
-      </Btn>
-      <Btn variant="primary" onClick={() => void g.registrar()} disabled={g.enviando || g.faltan.length > 0 || !g.identidad}>
-        {g.enviando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Truck className="h-4 w-4" aria-hidden="true" />}
-        {g.enviando ? "Registrando…" : `Registrar despacho y guía${g.piezas.length > 1 ? ` (${g.piezas.length} trozas)` : ""}`}
-      </Btn>
-    </ModalFooter>
-  );
+        <Btn variant="primary" onClick={onClose}>
+          Cerrar y volver al libro
+        </Btn>
+      </ModalFooter>
+    ) : (
+      <ModalFooter
+        error={g.error}
+        aviso={
+          g.pregunta ? (
+            <span className="flex flex-wrap items-center gap-2 text-[var(--text-primary)]">
+              {g.pregunta.mensaje}
+              <Btn
+                size="sm"
+                variant="secondary"
+                onClick={() => void g.registrar(g.pregunta?.tipo)}
+                disabled={g.enviando}
+              >
+                Sí, usar ese número
+              </Btn>
+              <Btn size="sm" variant="ghost" onClick={g.cancelarPregunta}>
+                Corregirlo
+              </Btn>
+            </span>
+          ) : null
+        }
+        nota={
+          <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span>
+              <b className="text-[var(--text-primary)]">{g.piezas.length}</b>{" "}
+              {g.piezas.length === 1 ? "troza" : "trozas"}
+              {especies > 0 && ` · ${especies} ${especies === 1 ? "especie" : "especies"}`} ·{" "}
+              <span className="font-mono tabular-nums">{fmtM3(volumen)} m³</span>
+            </span>
+            {g.faltan.length > 0 && (
+              <span className="text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+                Falta{g.faltan.length === 1 ? "" : "n"} {g.faltan.length} para registrar:{" "}
+                {g.faltan[0]?.campo}
+              </span>
+            )}
+          </span>
+        }
+      >
+        <Btn variant="ghost" onClick={onClose} disabled={g.enviando}>
+          Cerrar
+        </Btn>
+        <Btn
+          variant="secondary"
+          onClick={rellenarConLibreta}
+          disabled={g.enviando || directorio.cargando}
+          title="Completa destinatario, transportista, chofer y camión con los más usados del Directorio, sólo donde está vacío"
+        >
+          <Wand2 className="h-4 w-4" aria-hidden="true" /> Rellenar con la libreta
+        </Btn>
+        <Btn
+          variant="secondary"
+          onClick={verComoSale}
+          disabled={!g.identidad}
+          title="Mira la guía y la lista antes de registrar: salen marcadas como borrador"
+        >
+          <FileText className="h-4 w-4" aria-hidden="true" /> Ver cómo sale
+        </Btn>
+        <Btn
+          variant="primary"
+          onClick={() => void g.registrar()}
+          disabled={g.enviando || g.faltan.length > 0 || !g.identidad}
+        >
+          {g.enviando ? (
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+          ) : (
+            <Truck className="h-4 w-4" aria-hidden="true" />
+          )}
+          {g.enviando
+            ? "Registrando…"
+            : `Registrar despacho y guía${g.piezas.length > 1 ? ` (${g.piezas.length} trozas)` : ""}`}
+        </Btn>
+      </ModalFooter>
+    );
 
   return (
     <AdminModal
       open
       onClose={onClose}
-      variant="wide"
+      size="planilla"
       title="Despachar trozas con guía"
       description="Libro TH · la guía de transporte forestal y su lista de trozas, en un solo registro"
       icon={Truck}
-      className="sm:w-[min(96vw,100rem)] sm:max-w-none sm:max-h-[95vh]"
       footer={footer}
     >
       <div ref={cuerpo} className="space-y-3 px-5 py-4 sm:px-6">
         {g.cargando ? (
           <div className="flex items-center justify-center gap-2 p-10 text-sm text-[var(--text-secondary)]">
-            <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" /> Trayendo el plan, la carátula y las trozas del libro…
+            <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" /> Trayendo el plan, la
+            carátula y las trozas del libro…
           </div>
         ) : g.errorCarga ? (
-          <div role="alert" className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm font-semibold text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
+          <div
+            role="alert"
+            className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-4 text-sm font-semibold text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]"
+          >
             {g.errorCarga}
             <Btn size="sm" variant="secondary" onClick={() => void g.recargar()}>
               <RefreshCw className="h-4 w-4" aria-hidden="true" /> Reintentar
@@ -211,10 +269,20 @@ export default function LothDespachoGuiaModal({ onClose, onRegistrada, trozasIni
           <>
             {/* La franja del formato: con qué título sale la madera y cuánto se mueve. */}
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 rounded-2xl border-2 border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)] px-4 py-3 lg:grid-cols-5 dark:bg-[var(--data-warning-500)]/10">
-              <DatoFranja label={esPlantacion ? "Titular de la plantación" : "Titular del título"} valor={g.identidad?.titular || "—"} />
-              <DatoFranja label="Documento" valor={d.propietario.esElCtp ? d.propietario.docNumero || "—" : "—"} mono />
+              <DatoFranja
+                label={esPlantacion ? "Titular de la plantación" : "Titular del título"}
+                valor={g.identidad?.titular || "—"}
+              />
+              <DatoFranja
+                label="Documento"
+                valor={d.propietario.esElCtp ? d.propietario.docNumero || "—" : "—"}
+                mono
+              />
               <DatoFranja label={rotuloDelTitulo(esPlantacion)} valor={d.titulos[0] || "—"} mono />
-              <DatoFranja label={esPlantacion ? "Constancia" : "Resolución"} valor={d.guia.resolucion || "—"} />
+              <DatoFranja
+                label={esPlantacion ? "Constancia" : "Resolución"}
+                valor={d.guia.resolucion || "—"}
+              />
               <DatoFranja label="Volumen a movilizar" valor={`${fmtM3(volumen)} m³`} mono />
             </div>
 
@@ -223,9 +291,23 @@ export default function LothDespachoGuiaModal({ onClose, onRegistrada, trozasIni
             ) : (
               <>
                 <AvisoTrozasDeAntes aviso={avisoDeAntes} />
-                <div className="flex flex-wrap gap-1 border-b-2 border-[var(--rule-base)]" role="group" aria-label="Partes de la guía">
-                  <PestanaGuia activa={tab === "guia"} onClick={() => setTab("guia")} label="Datos de la guía" pendiente={faltanGuia.length} />
-                  <PestanaGuia activa={tab === "trozas"} onClick={() => setTab("trozas")} label="Lista de trozas" contador={g.piezas.length} />
+                <div
+                  className="flex flex-wrap gap-1 border-b-2 border-[var(--rule-base)]"
+                  role="group"
+                  aria-label="Partes de la guía"
+                >
+                  <PestanaGuia
+                    activa={tab === "guia"}
+                    onClick={() => setTab("guia")}
+                    label="Datos de la guía"
+                    pendiente={faltanGuia.length}
+                  />
+                  <PestanaGuia
+                    activa={tab === "trozas"}
+                    onClick={() => setTab("trozas")}
+                    label="Lista de trozas"
+                    contador={g.piezas.length}
+                  />
                 </div>
                 {tab === "guia" ? (
                   <LothGuiaDatos
@@ -258,9 +340,14 @@ export default function LothDespachoGuiaModal({ onClose, onRegistrada, trozasIni
 function DatoFranja({ label, valor, mono }: { label: string; valor: string; mono?: boolean }) {
   return (
     <div className="min-w-0">
-      <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">{label}</div>
+      <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+        {label}
+      </div>
       {/* Un código (registro, título) se lee ENTERO: se parte en vez de cortarse con «…». */}
-      <div className={`text-sm font-medium text-[var(--text-primary)] ${mono ? "font-mono tabular-nums [overflow-wrap:anywhere]" : "truncate"}`} title={valor}>
+      <div
+        className={`text-sm font-medium text-[var(--text-primary)] ${mono ? "font-mono tabular-nums [overflow-wrap:anywhere]" : "truncate"}`}
+        title={valor}
+      >
         {valor}
       </div>
     </div>
@@ -294,10 +381,18 @@ function PestanaGuia({
     >
       {label}
       {contador != null && contador > 0 && (
-        <span className={`rounded-full px-1.5 py-0.5 text-[length:var(--ts-2xs)] tabular-nums ${activa ? "bg-white/25" : "bg-[var(--surface-raised)]"}`}>{contador}</span>
+        <span
+          className={`rounded-full px-1.5 py-0.5 text-[length:var(--ts-2xs)] tabular-nums ${activa ? "bg-white/25" : "bg-[var(--surface-raised)]"}`}
+        >
+          {contador}
+        </span>
       )}
       {!activa && pendiente != null && pendiente > 0 && (
-        <span role="img" className="h-2 w-2 rounded-full bg-[var(--data-warning-500)]" aria-label="tiene datos pendientes" />
+        <span
+          role="img"
+          className="h-2 w-2 rounded-full bg-[var(--data-warning-500)]"
+          aria-label="tiene datos pendientes"
+        />
       )}
     </button>
   );

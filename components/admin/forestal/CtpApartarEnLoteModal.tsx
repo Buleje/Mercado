@@ -37,12 +37,18 @@ export interface CtpApartarEnLoteModalProps {
   onListo: () => void;
 }
 
-export default function CtpApartarEnLoteModal({ piezas, onClose, onListo }: CtpApartarEnLoteModalProps) {
+export default function CtpApartarEnLoteModal({
+  piezas,
+  onClose,
+  onListo,
+}: CtpApartarEnLoteModalProps) {
   const [lotes, setLotes] = useState<LoteAbierto[] | null>(null);
   const [elegido, setElegido] = useState<string>("");
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [rechazadas, setRechazadas] = useState<{ codigo: string | null; motivo: string }[] | null>(null);
+  const [rechazadas, setRechazadas] = useState<{ codigo: string | null; motivo: string }[] | null>(
+    null,
+  );
 
   /** Las especies de lo elegido: si hay más de una, ningún lote las acepta juntas. */
   const especies = useMemo(
@@ -54,9 +60,15 @@ export default function CtpApartarEnLoteModal({ piezas, onClose, onListo }: CtpA
   useEffect(() => {
     let vivo = true;
     ctpGet<{ lotes?: LoteAbierto[] }>("/api/admin/forestal/lotes-aserrio?status=abierto&limite=200")
-      .then((r) => { if (vivo) setLotes(r.lotes ?? []); })
-      .catch((e) => { if (vivo) setError(e instanceof Error ? e.message : String(e)); });
-    return () => { vivo = false; };
+      .then((r) => {
+        if (vivo) setLotes(r.lotes ?? []);
+      })
+      .catch((e) => {
+        if (vivo) setError(e instanceof Error ? e.message : String(e));
+      });
+    return () => {
+      vivo = false;
+    };
   }, []);
 
   /* Sólo los de la especie elegida: ofrecer los demás es ofrecer un rechazo. */
@@ -68,15 +80,26 @@ export default function CtpApartarEnLoteModal({ piezas, onClose, onListo }: CtpA
 
   const apartar = async () => {
     if (!elegido) return;
-    setEnviando(true); setError(null); setRechazadas(null);
+    setEnviando(true);
+    setError(null);
+    setRechazadas(null);
     try {
       const res = await fetch("/api/admin/forestal/lotes-aserrio", {
         method: "PATCH",
         credentials: "include",
         headers: { "content-type": "application/json", ...csrfHeaders() },
-        body: JSON.stringify({ accion: "agregar", loteId: elegido, trozaIds: piezas.map((p) => p.id) }),
+        body: JSON.stringify({
+          accion: "agregar",
+          loteId: elegido,
+          trozaIds: piezas.map((p) => p.id),
+        }),
       });
-      const r = (await res.json().catch(() => ({}))) as { agregadas?: number; rechazadas?: { codigo: string | null; motivo: string }[]; message?: string; error?: string };
+      const r = (await res.json().catch(() => ({}))) as {
+        agregadas?: number;
+        rechazadas?: { codigo: string | null; motivo: string }[];
+        message?: string;
+        error?: string;
+      };
       if (!res.ok) throw new Error(r.message ?? r.error ?? `HTTP ${res.status}`);
       /* El lote cambió: sin esto, la lista de lotes abierta en otra pestaña del
          libro sigue mostrando el conteo viejo. */
@@ -103,12 +126,19 @@ export default function CtpApartarEnLoteModal({ piezas, onClose, onListo }: CtpA
       title="Apartar en un lote"
       description={`${piezas.length} ${piezas.length === 1 ? "pieza elegida" : "piezas elegidas"}`}
       icon={Layers}
-      className="max-w-xl"
       footer={
         <ModalFooter>
           <Btn onClick={onClose}>Cerrar</Btn>
-          <Btn variant="primary" disabled={!elegido || enviando || mezcla} onClick={() => void apartar()}>
-            {enviando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Layers className="h-4 w-4" />}
+          <Btn
+            variant="primary"
+            disabled={!elegido || enviando || mezcla}
+            onClick={() => void apartar()}
+          >
+            {enviando ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Layers className="h-4 w-4" />
+            )}
             Apartar acá
           </Btn>
         </ModalFooter>
@@ -117,7 +147,8 @@ export default function CtpApartarEnLoteModal({ piezas, onClose, onListo }: CtpA
       <div className={`space-y-3 ${MODAL_BODY}`}>
         {mezcla && (
           <p className="rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/12 p-3 text-sm font-bold text-[var(--text-primary)]">
-            Elegiste {especies.join(", ")}. Un lote lleva una sola especie: separa la selección y hazlo en dos tandas.
+            Elegiste {especies.join(", ")}. Un lote lleva una sola especie: separa la selección y
+            hazlo en dos tandas.
           </p>
         )}
         {error && (
@@ -134,7 +165,8 @@ export default function CtpApartarEnLoteModal({ piezas, onClose, onListo }: CtpA
 
         {lotes && !mezcla && compatibles.length === 0 && (
           <p className="rounded-xl border border-dashed border-[var(--rule-base)] p-5 text-center text-sm text-[var(--text-secondary)]">
-            No hay ningún lote abierto de {especies[0] ?? "esa especie"}. Crea uno desde la pestaña Lotes y vuelve.
+            No hay ningún lote abierto de {especies[0] ?? "esa especie"}. Crea uno desde la pestaña
+            Lotes y vuelve.
           </p>
         )}
 
@@ -142,7 +174,9 @@ export default function CtpApartarEnLoteModal({ piezas, onClose, onListo }: CtpA
           <ul className="space-y-1">
             {compatibles.map((l) => (
               <li key={l.id}>
-                <label className={`flex cursor-pointer items-center gap-2.5 rounded-xl border-2 px-3 py-2 transition-colors ${elegido === l.id ? "border-[var(--accent)] bg-primary/10 dark:bg-[var(--accent)]/12" : "border-[var(--rule-base)] hover:bg-[var(--surface-sunken)]"}`}>
+                <label
+                  className={`flex cursor-pointer items-center gap-2.5 rounded-xl border-2 px-3 py-2 transition-colors ${elegido === l.id ? "border-[var(--accent)] bg-primary/10 dark:bg-[var(--accent)]/12" : "border-[var(--rule-base)] hover:bg-[var(--surface-sunken)]"}`}
+                >
                   <input
                     type="radio"
                     name="lote"
@@ -151,8 +185,12 @@ export default function CtpApartarEnLoteModal({ piezas, onClose, onListo }: CtpA
                     className="h-4 w-4 accent-[var(--accent)]"
                   />
                   <span className="min-w-0 flex-1">
-                    <span className="block font-mono text-sm font-bold text-[var(--text-primary)]">{l.code}</span>
-                    <span className="block text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">{l.speciesCommon}</span>
+                    <span className="block font-mono text-sm font-bold text-[var(--text-primary)]">
+                      {l.code}
+                    </span>
+                    <span className="block text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">
+                      {l.speciesCommon}
+                    </span>
                   </span>
                 </label>
               </li>
@@ -163,12 +201,16 @@ export default function CtpApartarEnLoteModal({ piezas, onClose, onListo }: CtpA
         {rechazadas && rechazadas.length > 0 && (
           <div className="rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/12 p-3">
             <p className="text-sm font-bold text-[var(--text-primary)]">
-              {rechazadas.length} {rechazadas.length === 1 ? "pieza quedó" : "piezas quedaron"} afuera; el resto entró al lote.
+              {rechazadas.length} {rechazadas.length === 1 ? "pieza quedó" : "piezas quedaron"}{" "}
+              afuera; el resto entró al lote.
             </p>
             <ul className="mt-1 space-y-0.5 text-xs text-[var(--text-secondary)]">
               {rechazadas.map((r, i) => (
                 <li key={`${r.codigo ?? "sin"}-${i}`}>
-                  <span className="font-mono font-bold text-[var(--text-primary)]">{r.codigo ?? "sin código"}</span>: {r.motivo}
+                  <span className="font-mono font-bold text-[var(--text-primary)]">
+                    {r.codigo ?? "sin código"}
+                  </span>
+                  : {r.motivo}
                 </li>
               ))}
             </ul>

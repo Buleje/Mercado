@@ -19,24 +19,50 @@
  *   open, onClose, title, variant, children, className, hideCloseButton
  *   footer (con el gutter del modal ya puesto; `footerBare` lo saca)
  *
- * Nuevos variants:
- *   · default — centrado, max-w-lg (diálogos normales)
- *   · fullscreen — toma toda la pantalla
- *   · side — slide-in derecho (sheet/drawer)
- *   · wide — max-w-2xl (forms largos)
- *   · centered-sm — max-w-sm (confirmaciones)
+ * Tamaño (2026-10-11, Brandon: «un solo estilo de modal… tamaños, proporciones»):
+ * el ancho de una ventana centrada se elige con `size`, NUNCA con `className`
+ * (`scripts/codemods/modal-tamano.mjs` pasa los `max-w-…` sueltos a su tamaño):
+ *   · sm — 24 rem: confirmación («¿Anular este adelanto?»)
+ *   · md — 32 rem: formulario corto (por defecto)
+ *   · lg — 42 rem: formulario largo, dos columnas
+ *   · xl — 64 rem: detalle con tabla, ficha
+ *   · planilla — hasta 100 rem (96 vw): hoja que se edita fila por fila
+ *
+ * `variant` queda para la FORMA: `fullscreen`, `side` (cajón derecho) y `pos`.
+ * Sus nombres viejos de ancho siguen valiendo (centered-sm = sm, default = md,
+ * wide = lg, info = xl).
  */
 
-import { createContext, useContext, useEffect, useId, useRef, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { X, type LucideIcon } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import { useVentanaDeModal, type OpcionesVentana, type VentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import { ControlesDeVentana, PausaDeFocoRadix, TiradorDeVentana, useFondoLibreAlFijar } from "./modal-controles-ventana";
+import {
+  useVentanaDeModal,
+  type OpcionesVentana,
+  type VentanaDeModal,
+} from "@/hooks/use-ventana-de-modal";
+import {
+  ControlesDeVentana,
+  PausaDeFocoRadix,
+  TiradorDeVentana,
+  useFondoLibreAlFijar,
+} from "./modal-controles-ventana";
 import { usePanelTokens } from "./use-panel-tokens";
 
 type Variant = "default" | "fullscreen" | "side" | "wide" | "centered-sm" | "pos" | "info";
+
+/** Los anchos con nombre de una ventana centrada (ver el encabezado). */
+export type TamanoModal = "sm" | "md" | "lg" | "xl" | "planilla";
 
 interface AdminModalProps {
   open: boolean;
@@ -47,6 +73,12 @@ interface AdminModalProps {
   /** Icono opcional: chip en accent-soft antes del título (menos genérico). */
   icon?: LucideIcon;
   variant?: Variant;
+  /**
+   * Ancho con nombre de la ventana centrada: sm (confirmación) · md (formulario
+   * corto) · lg (formulario largo) · xl (detalle con tabla) · planilla. Gana
+   * sobre el ancho de `variant`; no aplica a `fullscreen`/`side`/`pos`.
+   */
+  size?: TamanoModal;
   children: React.ReactNode;
   /** Acciones fijas al pie (fuera del área scrolleable). */
   footer?: React.ReactNode;
@@ -107,6 +139,16 @@ export const MODAL_GUTTER = "px-5 sm:px-6";
  */
 export const MODAL_BODY = `py-5 ${MODAL_GUTTER}`;
 
+/**
+ * Los botones del pie a 48 px (h-12, ADR-489), los ponga quien los ponga:
+ * hijos directos del pie o de la fila que el pie envuelve (`ModalFooter` hace
+ * lo mismo con los suyos). Medido 2026-10-11: `Btn` de ctp-shared salía a
+ * 40 px y `button()` a 48 en la misma fila de pies. `min-h` gana a cualquier
+ * `h-10` de la clase del botón sin pelear especificidad.
+ */
+export const PIE_BOTONES_48 =
+  "[&>button]:min-h-12 [&>a]:min-h-12 [&>div>button]:min-h-12 [&>div>a]:min-h-12";
+
 // Brandon 2026-05-27: en CELULAR (<640px) las variantes centradas pasan a
 // "bottom-sheet" (full-width, pegado abajo, esquinas superiores redondeadas) —
 // el patrón móvil estándar, más cómodo que una tarjeta flotante centrada.
@@ -116,15 +158,35 @@ export const MODAL_BODY = `py-5 ${MODAL_GUTTER}`;
 // (md=960px, lg=1200px…) y los modales salían 2× de ancho (el drawer `side` a 960px se
 // veía "chueco"). Ya volvieron a la escala de Tailwind (sm=24rem, md=28rem, lg=32rem);
 // los rem fijos se quedan porque dicen lo mismo y no dependen de ese token.
+/**
+ * Una sola tarjeta centrada, cinco anchos. Medido 2026-10-11: 46 de 274
+ * `AdminModal` pisaban el ancho con su `className` (30 anchos distintos, de
+ * 30 a 110 rem); cada uno cae ahora en el tamaño con nombre más cercano.
+ * `xl` (64 rem + 92vh) nació como la variante `info` de Brandon 2026-07-18:
+ * fichas densas que se leen en 2 columnas sin scrollear de más.
+ */
+const TAMANO_CLASES: Record<TamanoModal, string> = {
+  sm: "w-full rounded-t-2xl max-h-[90vh] sm:w-[calc(100vw-2rem)] sm:max-w-[24rem] sm:rounded-2xl sm:max-h-[85vh]",
+  md: "w-full rounded-t-2xl max-h-[90vh] sm:w-[calc(100vw-2rem)] sm:max-w-[32rem] sm:rounded-2xl sm:max-h-[85vh]",
+  lg: "w-full rounded-t-2xl max-h-[90vh] sm:w-[calc(100vw-2rem)] sm:max-w-[42rem] sm:rounded-2xl sm:max-h-[85vh]",
+  xl: "w-full rounded-t-2xl max-h-[92vh] sm:w-[calc(100vw-2rem)] sm:max-w-[64rem] sm:rounded-2xl sm:max-h-[92vh]",
+  planilla:
+    "w-full rounded-t-2xl max-h-[92vh] sm:w-[min(96vw,100rem)] sm:max-w-[calc(100vw-2rem)] sm:rounded-2xl sm:max-h-[95vh]",
+};
+
+/** El ancho que traían los nombres viejos de `variant`. */
+const TAMANO_DE_VARIANTE: Partial<Record<Variant, TamanoModal>> = {
+  "centered-sm": "sm",
+  default: "md",
+  wide: "lg",
+  info: "xl",
+};
+
 const VARIANT_CLASSES: Record<Variant, string> = {
-  default: "w-full rounded-t-2xl max-h-[90vh] sm:w-[calc(100vw-2rem)] sm:max-w-[32rem] sm:rounded-2xl sm:max-h-[85vh]",
-  "centered-sm": "w-full rounded-t-2xl max-h-[90vh] sm:w-[calc(100vw-2rem)] sm:max-w-[24rem] sm:rounded-2xl sm:max-h-[85vh]",
-  wide: "w-full rounded-t-2xl max-h-[90vh] sm:w-[calc(100vw-2rem)] sm:max-w-2xl sm:rounded-2xl sm:max-h-[85vh]",
-  // Brandon 2026-07-18: variant `info` para fichas de datos densas (detalle,
-  // cadena, kardex…). Ancho grande (64rem en rem EXPLÍCITO, inmune al override
-  // de --container) + 92vh para que las secciones se lean en 2 columnas SIN
-  // scrollear de más. Bottom-sheet en mobile como el resto de las centradas.
-  info: "w-full rounded-t-2xl max-h-[92vh] sm:w-[calc(100vw-2rem)] sm:max-w-[64rem] sm:rounded-2xl sm:max-h-[92vh]",
+  default: TAMANO_CLASES.md,
+  "centered-sm": TAMANO_CLASES.sm,
+  wide: TAMANO_CLASES.lg,
+  info: TAMANO_CLASES.xl,
   // Brandon 2026-05-16: variant `pos` para checkouts con 2-columnas desktop.
   // max-w-6xl + 92vh para que en PC quepa TODO el flujo de cobro sin scroll.
   pos: "w-full rounded-t-2xl max-h-[92vh] sm:w-[calc(100vw-2rem)] sm:max-w-6xl sm:rounded-2xl",
@@ -133,8 +195,10 @@ const VARIANT_CLASSES: Record<Variant, string> = {
 };
 
 const VARIANT_POSITION: Record<Variant, string> = {
-  default: "bottom-0 left-0 right-0 sm:bottom-auto sm:right-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2",
-  "centered-sm": "bottom-0 left-0 right-0 sm:bottom-auto sm:right-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2",
+  default:
+    "bottom-0 left-0 right-0 sm:bottom-auto sm:right-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2",
+  "centered-sm":
+    "bottom-0 left-0 right-0 sm:bottom-auto sm:right-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2",
   wide: "bottom-0 left-0 right-0 sm:bottom-auto sm:right-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2",
   info: "bottom-0 left-0 right-0 sm:bottom-auto sm:right-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2",
   pos: "bottom-0 left-0 right-0 sm:bottom-auto sm:right-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2",
@@ -156,6 +220,8 @@ const VARIANT_POSITION: Record<Variant, string> = {
  * panel. `fullscreen` y `side` tampoco: no son ventanas, son pantallas.
  */
 const VARIANTES_CON_VENTANA: Variant[] = ["default", "wide", "info", "pos"];
+/** Lo mismo con `size`: la confirmación (`sm`) no es ventana. */
+const TAMANOS_CON_VENTANA: TamanoModal[] = ["md", "lg", "xl", "planilla"];
 
 /**
  * La misma posición centrada, pero sumándole el desplazamiento de la ventana.
@@ -221,6 +287,7 @@ export default function AdminModal({
   description,
   icon: Icon,
   variant = "default",
+  size,
   children,
   footer,
   className,
@@ -232,6 +299,10 @@ export default function AdminModal({
 }: AdminModalProps) {
   /* Portal a <body>: sin esto el modal hereda los tokens de la tienda. */
   const panelTokens = usePanelTokens(open);
+  /* El tamaño con nombre manda en las centradas; fullscreen/side/pos son formas. */
+  const tamano: TamanoModal | undefined = TAMANO_DE_VARIANTE[variant]
+    ? (size ?? TAMANO_DE_VARIANTE[variant])
+    : undefined;
   /* AdminModal se abre por estado (`open` controlado), nunca con
      `Dialog.Trigger` — el `triggerRef` interno de Radix queda null, así que su
      `onCloseAutoFocus` (`triggerRef.current?.focus()`) no hace nada y el foco
@@ -250,7 +321,8 @@ export default function AdminModal({
   useEffect(() => {
     if (!open) return;
     const activo = document.activeElement;
-    disparadorRef.current = activo instanceof HTMLElement && activo !== document.body ? activo : null;
+    disparadorRef.current =
+      activo instanceof HTMLElement && activo !== document.body ? activo : null;
   }, [open]);
   /* Para `onEscapeKeyDown`: Radix invoca ese callback con el KeyboardEvent
      NATIVO tal como llegó a su propio listener en `document` — su
@@ -268,7 +340,9 @@ export default function AdminModal({
     if (!open || title) return;
     // Un cuadro después del montaje: el contenido va en un portal.
     const cuadro = requestAnimationFrame(() => {
-      const titulo = contentRef.current?.querySelector<HTMLElement>("[data-cabecera-propia] :is(h1, h2, h3)");
+      const titulo = contentRef.current?.querySelector<HTMLElement>(
+        "[data-cabecera-propia] :is(h1, h2, h3)",
+      );
       if (!titulo) return;
       if (!titulo.id) titulo.id = `${idBase}-titulo-propio`;
       setIdTituloPropio(titulo.id);
@@ -281,8 +355,11 @@ export default function AdminModal({
     ...opcionesVentana,
     /* Nunca en `fullscreen`/`side`; en las centradas, salvo que la apaguen. */
     habilitado:
-      VARIANTES_CON_VENTANA.includes(variant) && configVentana !== false && (opcionesVentana.habilitado ?? true),
-    claveMemoria: claveVentana ?? opcionesVentana.claveMemoria ?? (title ? `titulo:${title}` : undefined),
+      (tamano ? TAMANOS_CON_VENTANA.includes(tamano) : VARIANTES_CON_VENTANA.includes(variant)) &&
+      configVentana !== false &&
+      (opcionesVentana.habilitado ?? true),
+    claveMemoria:
+      claveVentana ?? opcionesVentana.claveMemoria ?? (title ? `titulo:${title}` : undefined),
     /* Con el ref el hook puede MEDIR: es lo que evita que el modal termine
        arrastrado fuera de la pantalla, donde ya no se puede ni cerrar. */
     ref: contentRef,
@@ -324,7 +401,7 @@ export default function AdminModal({
              trozas con guía»: scrollTop 82 = alto del header). */
             "fixed z-modal bg-[var(--surface-raised)] overflow-clip flex flex-col shadow-[var(--shadow-xl)] outline-none",
             ventana.activa ? POSICION_VENTANA : VARIANT_POSITION[variant],
-            VARIANT_CLASSES[variant],
+            tamano ? TAMANO_CLASES[tamano] : VARIANT_CLASSES[variant],
             aboveModals && "z-modal-3",
             className,
           )}
@@ -378,7 +455,10 @@ export default function AdminModal({
             if (!caja) return;
             const asa = caja.firstElementChild;
             const primero = [...caja.querySelectorAll<HTMLElement>(ENFOCABLES)].find(
-              (el) => el !== asa && !el.hasAttribute("data-ventana-asa") && !el.hasAttribute("data-ventana-control"),
+              (el) =>
+                el !== asa &&
+                !el.hasAttribute("data-ventana-asa") &&
+                !el.hasAttribute("data-ventana-control"),
             );
             if (!primero) return;
             e.preventDefault();
@@ -387,6 +467,7 @@ export default function AdminModal({
           data-ventana={ventana.activa ? "true" : undefined}
           /* globals.css § «Cámaras al lado»: con el mosaico acoplado, cada variante se centra en lo que queda libre. */
           data-modal-variante={variant}
+          data-modal-tamano={tamano}
         >
           {/* a11y fix 2026-05-09: Radix exige Dialog.Title presente. Cuando no
               hay title visible, lo renderizamos dentro de VisuallyHidden para
@@ -401,7 +482,10 @@ export default function AdminModal({
           {(title || Icon || !hideCloseButton) && (
             <div
               {...ventana.asaProps}
-              className={cn("flex items-center justify-between py-4 border-b border-[var(--rule-base)] shrink-0 gap-3", MODAL_GUTTER)}
+              className={cn(
+                "flex items-center justify-between py-4 border-b border-[var(--rule-base)] shrink-0 gap-3",
+                MODAL_GUTTER,
+              )}
             >
               <div className="flex min-w-0 items-center gap-3">
                 {Icon && (
@@ -476,6 +560,10 @@ export default function AdminModal({
                    resumen por especie salía cortado contra el filo (Brandon,
                    2026-09-12: «se ven feos, apegados»)—. */
                 !footerBare && `py-3.5 ${MODAL_GUTTER}`,
+                /* Un solo pie (ADR-489, 48 px): los botones del pie miden lo
+                   mismo en todas las ventanas, vengan de `Btn` (40), de
+                   `button()` (48) o de un `<button>` con su propia clase. */
+                PIE_BOTONES_48,
               )}
             >
               {footer}

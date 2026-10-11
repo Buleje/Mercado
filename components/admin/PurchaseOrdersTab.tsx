@@ -1,9 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { CardTitle } from "@buleje/design-system";
-import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
-import { Plus, X, Check, Truck, AlertTriangle, Copy } from "@buleje/design-system/icons";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+import { Plus, Check, Truck, AlertTriangle, Copy } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { button } from "@/components/ui-system/button-variants";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -21,14 +20,18 @@ import OcModalAgregarProducto from "@/components/admin/ordenes-compra/OcModalAgr
 import dynamic from "next/dynamic";
 
 const BarcodeScanner = dynamic(() => import("@/components/admin/BarcodeScanner"), { ssr: false });
-const OCRecepcionModal = dynamic(() => import("@/components/admin/compras/OCRecepcionModal"), { ssr: false });
+const OCRecepcionModal = dynamic(() => import("@/components/admin/compras/OCRecepcionModal"), {
+  ssr: false,
+});
 
 /** La ayuda de la sección (ⓘ al lado del título). */
 const AYUDA = {
   title: "Órdenes de compra",
   what: "Lo que le pides a cada proveedor: qué, cuánto, a qué precio y en qué estado está.",
-  affects: "«Recibir» cuenta lo que llegó y lo suma al stock con su costo; la orden pasa sola a parcial o recibida. El ⋯ de cada fila trae el PDF, WhatsApp, duplicar y los cambios de estado.",
-  example: "Pediste 40 atunes a Frigorífico Amazonia: cuando lleguen, toca «Recibir» en su fila y anota cuántos llegaron.",
+  affects:
+    "«Recibir» cuenta lo que llegó y lo suma al stock con su costo; la orden pasa sola a parcial o recibida. El ⋯ de cada fila trae el PDF, WhatsApp, duplicar y los cambios de estado.",
+  example:
+    "Pediste 40 atunes a Frigorífico Amazonia: cuando lleguen, toca «Recibir» en su fila y anota cuántos llegaron.",
 };
 
 export default function PurchaseOrdersTab({ barra }: { barra?: ReactNode }) {
@@ -36,12 +39,23 @@ export default function PurchaseOrdersTab({ barra }: { barra?: ReactNode }) {
   // vista, en su pieza de `ordenes-compra/`. Partido el 09-10 sin cambiar el DOM.
   const oc = useOrdenesCompra();
   const {
-    orders, setShowCreate, showScanner, setShowScanner, recepcionOC, setRecepcionOC, toast,
-    scannerModalRef, ventanaScanner, load, handleScan, repetidas, f,
+    orders,
+    setShowCreate,
+    showScanner,
+    setShowScanner,
+    recepcionOC,
+    setRecepcionOC,
+    toast,
+    load,
+    handleScan,
+    repetidas,
+    f,
   } = oc;
   const indicadores = useIndicadoresOc(oc);
   const menu = useMenuOrdenes(oc);
-  const sinFlete = orders.filter((o) => o.status === "recibido" && (o.flete ?? 0) + (o.otrosCostos ?? 0) === 0).length;
+  const sinFlete = orders.filter(
+    (o) => o.status === "recibido" && (o.flete ?? 0) + (o.otrosCostos ?? 0) === 0,
+  ).length;
 
   return (
     <div className="space-y-4">
@@ -51,7 +65,11 @@ export default function PurchaseOrdersTab({ barra }: { barra?: ReactNode }) {
         ayuda={AYUDA}
         indicadores={indicadores.boton}
         principal={
-          <button type="button" onClick={() => setShowCreate(v => !v)} className={button({ variant: "primary", className: "shrink-0 rounded-xl px-4" })}>
+          <button
+            type="button"
+            onClick={() => setShowCreate((v) => !v)}
+            className={button({ variant: "primary", className: "shrink-0 rounded-xl px-4" })}
+          >
             <Plus className="h-4 w-4" strokeWidth={2} aria-hidden /> Nueva orden
           </button>
         }
@@ -65,7 +83,8 @@ export default function PurchaseOrdersTab({ barra }: { barra?: ReactNode }) {
       {sinFlete > 0 && (
         <p className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] px-3 py-2 text-sm font-semibold text-[var(--text-primary)] dark:bg-[var(--data-warning-500)]/10">
           <Truck className="h-4 w-4 shrink-0 text-[var(--data-warning-ink)]" aria-hidden />
-          {sinFlete} {sinFlete === 1 ? "compra recibida no tiene" : "compras recibidas no tienen"} cargado lo que costó traerla
+          {sinFlete} {sinFlete === 1 ? "compra recibida no tiene" : "compras recibidas no tienen"}{" "}
+          cargado lo que costó traerla
           <InfoTip
             title="Flete sin cargar"
             what="El costo de esos productos —y el margen que ves— está por debajo del real."
@@ -79,7 +98,8 @@ export default function PurchaseOrdersTab({ barra }: { barra?: ReactNode }) {
           <span className="flex min-w-0 flex-1 basis-[16rem] items-center gap-2 py-2">
             <Copy className="h-4 w-4 shrink-0 text-[var(--text-secondary)]" aria-hidden />
             <span className="min-w-0">
-              <strong className="font-semibold">{repetidas.n} órdenes automáticas iguales</strong> a {repetidas.proveedor}: {repetidas.detalle}{" "}
+              <strong className="font-semibold">{repetidas.n} órdenes automáticas iguales</strong> a{" "}
+              {repetidas.proveedor}: {repetidas.detalle}{" "}
               <InfoTip
                 title="Pedido automático repetido"
                 what="El reabastecimiento automático arma una orden cada día que el producto sigue bajo su stock mínimo, aunque ya haya una abierta igual."
@@ -90,7 +110,12 @@ export default function PurchaseOrdersTab({ barra }: { barra?: ReactNode }) {
           </span>
           <button
             type="button"
-            onClick={() => { f.limpiar(); f.setProveedorId(repetidas.supplierId); f.setEstado("pendiente"); f.setBusqueda(repetidas.detalle.split(" ×")[0]); }}
+            onClick={() => {
+              f.limpiar();
+              f.setProveedorId(repetidas.supplierId);
+              f.setEstado("pendiente");
+              f.setBusqueda(repetidas.detalle.split(" ×")[0]);
+            }}
             className="ml-auto inline-flex h-12 items-center rounded-xl px-3 text-sm font-semibold text-[var(--accent-ink)] hover:bg-[var(--surface-raised)] dark:text-[var(--accent)]"
           >
             Ver solo esas
@@ -142,15 +167,19 @@ export default function PurchaseOrdersTab({ barra }: { barra?: ReactNode }) {
           )}
         >
           <div className="flex items-start gap-3">
-            <div className={cn(
-              "h-9 w-9 rounded-xl flex items-center justify-center shrink-0",
-              toast.tone === "error"
-                ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/15"
-                : "bg-primary/10 dark:bg-[var(--data-success-500)]/15",
-            )}>
-              {toast.tone === "error"
-                ? <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)]" />
-                : <Check className="h-5 w-5 text-[var(--data-success-500)]" />}
+            <div
+              className={cn(
+                "h-9 w-9 rounded-xl flex items-center justify-center shrink-0",
+                toast.tone === "error"
+                  ? "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/15"
+                  : "bg-primary/10 dark:bg-[var(--data-success-500)]/15",
+              )}
+            >
+              {toast.tone === "error" ? (
+                <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)]" />
+              ) : (
+                <Check className="h-5 w-5 text-[var(--data-success-500)]" />
+              )}
             </div>
             <p className="text-sm font-semibold text-[var(--text-primary)] pt-1.5">{toast.msg}</p>
           </div>
@@ -158,23 +187,18 @@ export default function PurchaseOrdersTab({ barra }: { barra?: ReactNode }) {
       )}
 
       {/* Barcode scanner modal */}
-      {showScanner && (
-        <div className="fixed inset-0 z-modal flex items-end sm:items-center justify-center bg-black/50" role="presentation" onClick={(e) => e.target === e.currentTarget && !ventanaScanner.fijado && setShowScanner(false)}>
-          <div ref={scannerModalRef} role="dialog" aria-modal="true" aria-label="Escanear código de barras" tabIndex={-1} className="relative bg-[var(--surface-raised)] w-full sm:max-w-md sm:rounded-xl rounded-t-2xl overflow-hidden">
-            <div {...ventanaScanner.asaProps} className="flex items-center justify-between px-5 py-4 border-b">
-              <CardTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Escanear código de barras</CardTitle>
-              <span className="ml-auto flex items-center gap-1">
-                <ControlesDeVentana ventana={ventanaScanner} />
-                <button aria-label="Cerrar" onClick={() => setShowScanner(false)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors"><X className="h-5 w-5 text-[var(--text-secondary)] dark:text-muted" /></button>
-              </span>
-            </div>
-            <div className="p-4">
-              <BarcodeScanner onDetected={handleScan} onClose={() => setShowScanner(false)} />
-            </div>
-            <TiradorDeVentana ventana={ventanaScanner} />
-          </div>
+      {/* Se abre desde «Nueva orden de compra» (otra ventana): va encima. */}
+      <AdminModal
+        open={showScanner}
+        onClose={() => setShowScanner(false)}
+        title="Escanear código de barras"
+        aboveModals
+        claveVentana="oc-escanear-codigo"
+      >
+        <div className={MODAL_BODY}>
+          <BarcodeScanner onDetected={handleScan} onClose={() => setShowScanner(false)} />
         </div>
-      )}
+      </AdminModal>
     </div>
   );
 }

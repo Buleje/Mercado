@@ -29,7 +29,12 @@ import { m } from "@/components/admin/providers";
 import { DURATION, EASE } from "@/components/ui-system/motion";
 import { consumibleDeFicha } from "@/lib/forestal/leer-escaneo-troza";
 import { motivoFueraDeLaPila } from "@/lib/forestal/lote-por-escaneo";
-import { diasDeLaPieza, estadoDeFicha, hoyDelLibro, trozaPatioDeFicha } from "@/lib/forestal/troza-ficha-recorrido";
+import {
+  diasDeLaPieza,
+  estadoDeFicha,
+  hoyDelLibro,
+  trozaPatioDeFicha,
+} from "@/lib/forestal/troza-ficha-recorrido";
 import { estaEnPatio } from "@/lib/forestal/trozas-patio";
 import { limaDateKey } from "@/lib/utils";
 import CtpEtiquetasTrozasModal from "./CtpEtiquetasTrozasModal";
@@ -65,7 +70,13 @@ export interface CtpTrozaFichaModalProps {
 const PUEDE_IR_A_LOTE = new Set(["libre", "apartada", "por_recepcionar"]);
 
 export default function CtpTrozaFichaModal({
-  trozaId, onClose, onVerOtra, onArmarLote, onAnotar, vecinos, onNavegar,
+  trozaId,
+  onClose,
+  onVerOtra,
+  onArmarLote,
+  onAnotar,
+  vecinos,
+  onNavegar,
 }: CtpTrozaFichaModalProps) {
   const { ficha: f, error, cargando, eventos } = useFichaDeTroza(trozaId);
   const canchas = usePlantaUbicacion();
@@ -90,16 +101,21 @@ export default function CtpTrozaFichaModal({
   const codigo = t?.codificacion ?? t?.codigoPlanta ?? "Troza";
   /* La MISMA regla que la pila del escáner (`motivoFueraDeLaPila`): ofrecer
      armar un lote con una pieza que la pila rechaza sería un botón que miente. */
-  const motivo = f ? motivoFueraDeLaPila({ ...consumibleDeFicha(f), guiaRecepcionada: trozaPatioDeFicha(f).guiaRecepcionada }) : null;
+  const motivo = f
+    ? motivoFueraDeLaPila({
+        ...consumibleDeFicha(f),
+        guiaRecepcionada: trozaPatioDeFicha(f).guiaRecepcionada,
+      })
+    : null;
   const armable = Boolean(onArmarLote) && f != null && motivo === null;
 
   return (
     <AdminModal
+      size="xl"
       open
       onClose={onClose}
       hideCloseButton
       claveVentana="ctp-troza-ficha"
-      className="sm:max-w-[58rem]"
       footer={
         f && t && estado ? (
           <AccionesDeFicha
@@ -107,7 +123,14 @@ export default function CtpTrozaFichaModal({
             onArmarLote={armable && onArmarLote ? () => onArmarLote(t.id) : undefined}
             motivoSinLote={onArmarLote && PUEDE_IR_A_LOTE.has(estado) ? motivo : null}
             onEtiqueta={estaEnPatio(estado) ? () => setEtiquetando(true) : undefined}
-            onCroquis={cancha ? () => { onClose(); irAlCroquis(cancha.zonaId); } : undefined}
+            onCroquis={
+              cancha
+                ? () => {
+                    onClose();
+                    irAlCroquis(cancha.zonaId);
+                  }
+                : undefined
+            }
             canchaNombre={cancha?.nombre}
           />
         ) : undefined
@@ -128,13 +151,19 @@ export default function CtpTrozaFichaModal({
       />
 
       {!f && !error && (
-        <p className="flex items-center justify-center gap-2 px-5 py-12 text-sm text-[var(--text-secondary)] sm:px-6" role="status">
+        <p
+          className="flex items-center justify-center gap-2 px-5 py-12 text-sm text-[var(--text-secondary)] sm:px-6"
+          role="status"
+        >
           <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> Buscando su historia…
         </p>
       )}
       {error && (
         <ModalBody>
-          <p role="alert" className="rounded-xl border border-[var(--data-error-500)]/50 bg-[var(--data-error-500)]/10 p-3 text-sm font-bold text-[var(--data-error-ink)]">
+          <p
+            role="alert"
+            className="rounded-xl border border-[var(--data-error-500)]/50 bg-[var(--data-error-500)]/10 p-3 text-sm font-bold text-[var(--data-error-ink)]"
+          >
             {error}
           </p>
         </ModalBody>
@@ -152,7 +181,13 @@ export default function CtpTrozaFichaModal({
           <ModalBody className="space-y-4">
             <MedidasDeLaTroza ficha={f} onAnotar={onAnotar ? () => onAnotar(t.id) : undefined} />
             <div className="grid gap-4 @min-[44rem]:grid-cols-[minmax(0,1fr)_18rem]">
-              <RecorridoDeLaTroza ficha={f} eventos={eventos} estado={estado} hoyKey={hoyKey} onVerOtra={onVerOtra} />
+              <RecorridoDeLaTroza
+                ficha={f}
+                eventos={eventos}
+                estado={estado}
+                hoyKey={hoyKey}
+                onVerOtra={onVerOtra}
+              />
               <DocumentoDeOrigen ficha={f} hoyKey={hoyKey} />
             </div>
             <CtpHistorial entityId={t.id} />
@@ -161,7 +196,12 @@ export default function CtpTrozaFichaModal({
       )}
 
       {etiquetando && t && (
-        <CtpEtiquetasTrozasModal ids={[t.id]} contexto={codigo} aboveModals onClose={() => setEtiquetando(false)} />
+        <CtpEtiquetasTrozasModal
+          ids={[t.id]}
+          contexto={codigo}
+          aboveModals
+          onClose={() => setEtiquetando(false)}
+        />
       )}
     </AdminModal>
   );

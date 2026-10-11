@@ -44,7 +44,12 @@ interface Props {
   onGuardado: (arbol: CensusTreeDTO) => void;
 }
 
-export default function LothArbolCoordenadasModal({ arbol, zonaInicial, onClose, onGuardado }: Props) {
+export default function LothArbolCoordenadasModal({
+  arbol,
+  zonaInicial,
+  onClose,
+  onGuardado,
+}: Props) {
   const [b, setB] = useState<BorradorCoordenadas>({ utmX: "", utmY: "", utmZona: zonaInicial });
   const [busy, setBusy] = useState(false);
   /* Un rechazo del servidor se dice dentro del modal, que sigue abierto. */
@@ -85,12 +90,27 @@ export default function LothArbolCoordenadasModal({ arbol, zonaInicial, onClose,
       });
       if (!res.ok) {
         const j = await leerJson<{ message?: string; error?: string }>(res);
-        setFalla(j?.message ?? (res.status === 403 ? "Tu rol no puede corregir el censo: pídeselo al dueño o al administrador." : `No se pudo guardar (error ${res.status}).`));
+        setFalla(
+          j?.message ??
+            (res.status === 403
+              ? "Tu rol no puede corregir el censo: pídeselo al dueño o al administrador."
+              : `No se pudo guardar (error ${res.status}).`),
+        );
         return;
       }
       const j = await leerJson<{ tree?: CensusTreeDTO }>(res);
       toast.success(`Árbol ${arbol.code}: coordenadas guardadas`);
-      onGuardado(j?.tree ?? { id: arbol.id, treeCode: arbol.code, speciesCommon: arbol.species, estado: arbol.estado, utmX: r.este, utmY: r.norte, utmZona: r.zona });
+      onGuardado(
+        j?.tree ?? {
+          id: arbol.id,
+          treeCode: arbol.code,
+          speciesCommon: arbol.species,
+          estado: arbol.estado,
+          utmX: r.este,
+          utmY: r.norte,
+          utmZona: r.zona,
+        },
+      );
       onClose();
     } catch (err) {
       console.warn("[LothArbolCoordenadasModal] guardar falló", err);
@@ -100,8 +120,16 @@ export default function LothArbolCoordenadasModal({ arbol, zonaInicial, onClose,
     }
   }
 
-  const decimal: InputHTMLAttributes<HTMLInputElement> = { inputMode: "decimal", autoComplete: "off" };
-  const campo = (k: keyof BorradorCoordenadas, rotulo: string, extra: InputHTMLAttributes<HTMLInputElement>, autoFocus = false) => {
+  const decimal: InputHTMLAttributes<HTMLInputElement> = {
+    inputMode: "decimal",
+    autoComplete: "off",
+  };
+  const campo = (
+    k: keyof BorradorCoordenadas,
+    rotulo: string,
+    extra: InputHTMLAttributes<HTMLInputElement>,
+    autoFocus = false,
+  ) => {
     const mal = tocado && r.invalidos.has(k);
     return (
       <label className="block">
@@ -125,11 +153,13 @@ export default function LothArbolCoordenadasModal({ arbol, zonaInicial, onClose,
       title="Cargar coordenadas"
       description={arbol ? `Árbol ${arbol.code} · ${arbol.species}` : undefined}
       icon={MapPin}
-      variant="wide"
-      className="sm:max-w-[30rem]"
       footer={
         <div className="flex items-center justify-end gap-2">
-          <button type="button" onClick={onClose} className="inline-flex h-11 items-center whitespace-nowrap rounded-xl px-3 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] sm:h-10">
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-11 items-center whitespace-nowrap rounded-xl px-3 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] sm:h-10"
+          >
             Cancelar
           </button>
           <button
@@ -139,7 +169,8 @@ export default function LothArbolCoordenadasModal({ arbol, zonaInicial, onClose,
             aria-busy={busy}
             className="inline-flex h-11 items-center gap-2 whitespace-nowrap rounded-xl bg-[var(--accent-dark)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 sm:h-10"
           >
-            {busy && <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" />} Guardar coordenadas
+            {busy && <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" />}{" "}
+            Guardar coordenadas
           </button>
         </div>
       }
@@ -168,17 +199,25 @@ export default function LothArbolCoordenadasModal({ arbol, zonaInicial, onClose,
         <div className="grid grid-cols-2 gap-3">
           {campo("utmX", "Este (m)", { ...decimal, placeholder: "521922" }, true)}
           {campo("utmY", "Norte (m)", { ...decimal, placeholder: "8918151" })}
-          <div className="col-span-2 sm:col-span-1">{campo("utmZona", "Zona UTM", { placeholder: "18L", autoComplete: "off" })}</div>
+          <div className="col-span-2 sm:col-span-1">
+            {campo("utmZona", "Zona UTM", { placeholder: "18L", autoComplete: "off" })}
+          </div>
         </div>
         {verErrores && (
-          <ul aria-live="polite" className="space-y-0.5 rounded-lg border border-[var(--data-error-500)]/40 bg-[var(--data-error-50)] px-3 py-2 text-sm font-semibold text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
+          <ul
+            aria-live="polite"
+            className="space-y-0.5 rounded-lg border border-[var(--data-error-500)]/40 bg-[var(--data-error-50)] px-3 py-2 text-sm font-semibold text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]"
+          >
             {r.errores.map((e) => (
               <li key={e}>{e}</li>
             ))}
           </ul>
         )}
         {falla && (
-          <p role="alert" className="rounded-lg border border-[var(--data-error-500)]/40 bg-[var(--data-error-50)] px-3 py-2 text-sm font-semibold text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
+          <p
+            role="alert"
+            className="rounded-lg border border-[var(--data-error-500)]/40 bg-[var(--data-error-50)] px-3 py-2 text-sm font-semibold text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]"
+          >
             {falla}
           </p>
         )}

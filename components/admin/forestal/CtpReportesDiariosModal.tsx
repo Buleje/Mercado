@@ -15,7 +15,11 @@ import { CalendarClock, Loader2, Save, Send, Trash2 } from "@buleje/design-syste
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import type { ReporteDiarioInput } from "@/lib/forestal/reporte-diario";
-import { useReportesDiarios, type ResultadoEnvio, type VistaPrevia } from "./hooks/use-reportes-diarios";
+import {
+  useReportesDiarios,
+  type ResultadoEnvio,
+  type VistaPrevia,
+} from "./hooks/use-reportes-diarios";
 import ReporteDiarioEditor, { BORRADOR_NUEVO } from "./ctp-reporte-diario-editor";
 import ReporteDiarioLista from "./ctp-reporte-diario-lista";
 import ReporteDiarioEnvios, { ResultadoDeEnvio } from "./ctp-reporte-diario-envios";
@@ -24,8 +28,30 @@ import { Btn, ModalBody, ModalFooter } from "./ctp-shared";
 
 /** Lo editable de un reporte guardado (sin id ni fechas), para comparar y mandar. */
 function aBorrador(r: ReporteDiarioInput): ReporteDiarioInput {
-  const { nombre, activo, hora, dias, porCorreo, porWhatsapp, correos, telefonos, secciones, rango } = r;
-  return { nombre, activo, hora, dias, porCorreo, porWhatsapp, correos, telefonos, secciones, rango };
+  const {
+    nombre,
+    activo,
+    hora,
+    dias,
+    porCorreo,
+    porWhatsapp,
+    correos,
+    telefonos,
+    secciones,
+    rango,
+  } = r;
+  return {
+    nombre,
+    activo,
+    hora,
+    dias,
+    porCorreo,
+    porWhatsapp,
+    correos,
+    telefonos,
+    secciones,
+    rango,
+  };
 }
 
 export default function CtpReportesDiariosModal({ onClose }: { onClose: () => void }) {
@@ -43,7 +69,9 @@ export default function CtpReportesDiariosModal({ onClose }: { onClose: () => vo
 
   const guardado = rd.reportes.find((r) => r.id === elegido) ?? null;
   const hayCambios = useMemo(
-    () => JSON.stringify(borrador) !== JSON.stringify(guardado ? aBorrador(guardado) : BORRADOR_NUEVO) || elegido === "nuevo",
+    () =>
+      JSON.stringify(borrador) !==
+        JSON.stringify(guardado ? aBorrador(guardado) : BORRADOR_NUEVO) || elegido === "nuevo",
     [borrador, guardado, elegido],
   );
 
@@ -78,7 +106,9 @@ export default function CtpReportesDiariosModal({ onClose }: { onClose: () => vo
 
   async function enviarAhora() {
     if (!guardado) return;
-    const n = (guardado.porCorreo ? guardado.correos.length : 0) + (guardado.porWhatsapp ? guardado.telefonos.length : 0);
+    const n =
+      (guardado.porCorreo ? guardado.correos.length : 0) +
+      (guardado.porWhatsapp ? guardado.telefonos.length : 0);
     const ok = await confirm({
       title: `¿Mandar «${guardado.nombre}» ahora?`,
       description: `Sale ya a ${n} destinatario${n === 1 ? "" : "s"} con los datos de este momento. El envío programado de hoy sale igual a su hora.`,
@@ -113,13 +143,19 @@ export default function CtpReportesDiariosModal({ onClose }: { onClose: () => vo
   async function pedirPrevia() {
     setPreviaCargando(true);
     setPreviaError(null);
-    const r = await rd.vistaPrevia({ nombre: borrador.nombre, secciones: borrador.secciones, rango: borrador.rango });
+    const r = await rd.vistaPrevia({
+      nombre: borrador.nombre,
+      secciones: borrador.secciones,
+      rango: borrador.rango,
+    });
     setPreviaCargando(false);
     if ("motivo" in r) setPreviaError(r.motivo);
     else setPrevia(r);
   }
 
-  const sinCanal = [!rd.canales.correo && "correo", !rd.canales.whatsapp && "WhatsApp"].filter(Boolean);
+  const sinCanal = [!rd.canales.correo && "correo", !rd.canales.whatsapp && "WhatsApp"].filter(
+    Boolean,
+  );
 
   return (
     <AdminModal
@@ -128,37 +164,66 @@ export default function CtpReportesDiariosModal({ onClose }: { onClose: () => vo
       title="Reportes diarios"
       description="El libro te llega solo, por correo o WhatsApp, a la hora que elijas"
       icon={CalendarClock}
-      variant="wide"
-      className="sm:max-w-[80rem]"
+      size="planilla"
       aboveModals
       footer={
         <ModalFooter error={error} aviso={aviso}>
           {guardado && (
-            <Btn variant="danger" onClick={() => void borrar()} disabled={ocupado !== null} className="mr-auto">
-              {ocupado === "borrar" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+            <Btn
+              variant="danger"
+              onClick={() => void borrar()}
+              disabled={ocupado !== null}
+              className="mr-auto"
+            >
+              {ocupado === "borrar" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4" />
+              )}
               <span className="max-sm:sr-only">Borrar</span>
             </Btn>
           )}
           <Btn
             onClick={() => void enviarAhora()}
             disabled={!guardado || hayCambios || ocupado !== null}
-            title={hayCambios ? "Guarda los cambios antes de mandarlo" : "Mandarlo ya a sus destinatarios"}
+            title={
+              hayCambios
+                ? "Guarda los cambios antes de mandarlo"
+                : "Mandarlo ya a sus destinatarios"
+            }
           >
-            {ocupado === "enviar" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            {ocupado === "enviar" ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
             Enviar ahora
           </Btn>
-          <Btn variant="primary" onClick={() => void guardar()} disabled={!hayCambios || ocupado !== null}>
-            {ocupado === "guardar" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          <Btn
+            variant="primary"
+            onClick={() => void guardar()}
+            disabled={!hayCambios || ocupado !== null}
+          >
+            {ocupado === "guardar" ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
             Guardar
           </Btn>
         </ModalFooter>
       }
     >
       <ModalBody className="space-y-4">
-        {rd.error && <p className="text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{rd.error}</p>}
+        {rd.error && (
+          <p className="text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+            {rd.error}
+          </p>
+        )}
         {sinCanal.length > 0 && (
           <p className="rounded-xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] px-3 py-2 text-sm text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/10">
-            Este servidor todavía no tiene {sinCanal.join(" ni ")} conectado: los envíos por ahí van a fallar hasta que se configure.
+            Este servidor todavía no tiene {sinCanal.join(" ni ")} conectado: los envíos por ahí van
+            a fallar hasta que se configure.
           </p>
         )}
         {rd.cargando && !elegido ? (
@@ -167,18 +232,42 @@ export default function CtpReportesDiariosModal({ onClose }: { onClose: () => vo
           </p>
         ) : (
           <div className="grid gap-4 lg:grid-cols-[16rem_minmax(0,1fr)]">
-            <ReporteDiarioLista reportes={rd.reportes} envios={rd.envios} elegido={elegido} onElegir={elegir} onNuevo={() => elegir("nuevo")} />
+            <ReporteDiarioLista
+              reportes={rd.reportes}
+              envios={rd.envios}
+              elegido={elegido}
+              onElegir={elegir}
+              onNuevo={() => elegir("nuevo")}
+            />
             <div className="min-w-0 space-y-5">
-              <ReporteDiarioEditor borrador={borrador} onCambio={setBorrador} canales={rd.canales} horaExacta={rd.horaExacta} />
+              <ReporteDiarioEditor
+                borrador={borrador}
+                onCambio={setBorrador}
+                canales={rd.canales}
+                horaExacta={rd.horaExacta}
+              />
               {guardado && (
                 <section aria-labelledby="reporte-envios-titulo" className="space-y-2">
-                  <CardTitle as="h3" id="reporte-envios-titulo" className="text-sm font-bold text-[var(--text-primary)]">
+                  <CardTitle
+                    as="h3"
+                    id="reporte-envios-titulo"
+                    className="text-sm font-bold text-[var(--text-primary)]"
+                  >
                     {resultado ? "Así salió recién" : "Cómo salió"}
                   </CardTitle>
-                  {resultado ? <ResultadoDeEnvio resultados={resultado} /> : <ReporteDiarioEnvios envios={rd.envios[guardado.id] ?? []} />}
+                  {resultado ? (
+                    <ResultadoDeEnvio resultados={resultado} />
+                  ) : (
+                    <ReporteDiarioEnvios envios={rd.envios[guardado.id] ?? []} />
+                  )}
                 </section>
               )}
-              <ReporteDiarioVistaPrevia previa={previa} cargando={previaCargando} error={previaError} onPedir={() => void pedirPrevia()} />
+              <ReporteDiarioVistaPrevia
+                previa={previa}
+                cargando={previaCargando}
+                error={previaError}
+                onPedir={() => void pedirPrevia()}
+              />
             </div>
           </div>
         )}

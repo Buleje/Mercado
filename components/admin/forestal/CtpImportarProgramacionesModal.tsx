@@ -98,10 +98,7 @@ export default function CtpImportarProgramacionesModal({
   const [avance, setAvance] = useState<{ hechas: number; total: number } | null>(null);
   const [fallados, setFallados] = useState<{ code: string; motivo: string }[]>([]);
 
-  const yaExisten = useMemo(
-    () => new Set(lotes.map((l) => l.code.trim().toLowerCase())),
-    [lotes],
-  );
+  const yaExisten = useMemo(() => new Set(lotes.map((l) => l.code.trim().toLowerCase())), [lotes]);
 
   const lectura = useLecturaPegada<{ filas: ProgramacionSniffs[]; avisos: string[] }>({
     interpretar: interpretarListaProgramacionesSniffs,
@@ -128,7 +125,8 @@ export default function CtpImportarProgramacionesModal({
   const motivoNoVa = (f: FilaImportar): string | null => {
     if (!f.especie.trim()) return "sin especie";
     if (!(Number(f.volumen) > 0)) return "sin volumen consumido";
-    if (f.code.trim() && yaExisten.has(f.code.trim().toLowerCase())) return "ya existe un lote con ese código";
+    if (f.code.trim() && yaExisten.has(f.code.trim().toLowerCase()))
+      return "ya existe un lote con ese código";
     if (f.inicio && f.fin && f.fin < f.inicio) return "el fin es anterior al inicio";
     return null;
   };
@@ -136,8 +134,11 @@ export default function CtpImportarProgramacionesModal({
   const incluidas = filas.filter((f) => f.incluir);
   const conProblema = incluidas.filter((f) => motivoNoVa(f) != null);
   const listas = incluidas.filter((f) => motivoNoVa(f) == null);
-  const totalM3 = Math.round(listas.reduce((a, f) => a + (Number(f.volumen) || 0), 0) * 10_000) / 10_000;
-  const repetidas = filas.filter((f) => f.code.trim() && yaExisten.has(f.code.trim().toLowerCase())).length;
+  const totalM3 =
+    Math.round(listas.reduce((a, f) => a + (Number(f.volumen) || 0), 0) * 10_000) / 10_000;
+  const repetidas = filas.filter(
+    (f) => f.code.trim() && yaExisten.has(f.code.trim().toLowerCase()),
+  ).length;
 
   async function importar() {
     if (listas.length === 0 || importando) return;
@@ -163,7 +164,10 @@ export default function CtpImportarProgramacionesModal({
       } catch (e) {
         /* Una fila que falla NO aborta las otras: de treinta programaciones,
            que una tenga el código repetido no puede obligar a rehacer las 29. */
-        errores.push({ code: f.code || f.especie, motivo: e instanceof Error ? e.message : String(e) });
+        errores.push({
+          code: f.code || f.especie,
+          motivo: e instanceof Error ? e.message : String(e),
+        });
       }
     }
     setAvance(null);
@@ -178,14 +182,17 @@ export default function CtpImportarProgramacionesModal({
     <AdminModal
       open
       onClose={importando ? () => {} : onClose}
-      variant="info"
-      className="sm:max-w-[80rem]"
+      size="planilla"
       icon={Upload}
       title="Importar programaciones del SNIFFS"
       description="Una fila por lote programado: se crean con el consumo declarado y la producción pendiente"
       footer={
         <ModalFooter
-          error={fallados.length > 0 ? `${fallados.length} fila(s) no se pudieron importar: ${fallados[0]?.motivo}` : null}
+          error={
+            fallados.length > 0
+              ? `${fallados.length} fila(s) no se pudieron importar: ${fallados[0]?.motivo}`
+              : null
+          }
           nota={
             hayFilas ? (
               <span className="font-mono tabular-nums">
@@ -201,8 +208,16 @@ export default function CtpImportarProgramacionesModal({
           <Btn variant="secondary" onClick={onClose} disabled={importando}>
             Cerrar
           </Btn>
-          <Btn variant="primary" onClick={() => void importar()} disabled={listas.length === 0 || importando}>
-            {importando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+          <Btn
+            variant="primary"
+            onClick={() => void importar()}
+            disabled={listas.length === 0 || importando}
+          >
+            {importando ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Check className="h-4 w-4" />
+            )}
             {importando
               ? `Importando ${(avance?.hechas ?? 0) + 1} de ${avance?.total ?? listas.length}…`
               : `Importar ${listas.length} lote${listas.length === 1 ? "" : "s"}`}
@@ -237,9 +252,10 @@ export default function CtpImportarProgramacionesModal({
           <p className="flex items-start gap-2 rounded-xl bg-[var(--surface-sunken)] px-3 py-2 text-sm text-[var(--text-secondary)]">
             <ScanText className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
             <span>
-              <b>{repetidas}</b> fila{repetidas === 1 ? "" : "s"} ya {repetidas === 1 ? "tiene" : "tienen"} un lote con
-              ese código en el libro: {repetidas === 1 ? "viene" : "vienen"} desmarcada{repetidas === 1 ? "" : "s"} para
-              no duplicarlo.
+              <b>{repetidas}</b> fila{repetidas === 1 ? "" : "s"} ya{" "}
+              {repetidas === 1 ? "tiene" : "tienen"} un lote con ese código en el libro:{" "}
+              {repetidas === 1 ? "viene" : "vienen"} desmarcada{repetidas === 1 ? "" : "s"} para no
+              duplicarlo.
             </span>
           </p>
         )}
@@ -260,21 +276,22 @@ export default function CtpImportarProgramacionesModal({
         <TablaCtp altoMax="max-h-[50vh]">
           <TheadCtp>
             <tr>
-              <th className="w-10 px-2 py-2">
+              <th className="w-10">
                 <span className="sr-only">Importar</span>
               </th>
-              <th className="px-3 py-2 font-bold">N° de lote</th>
-              <th className="px-3 py-2 font-bold">Especie</th>
-              <th className="w-36 px-3 py-2 font-bold">Inicio</th>
-              <th className="w-36 px-3 py-2 font-bold">Fin</th>
-              <th className="w-32 px-3 py-2 text-right font-bold">Consumido (m³)</th>
-              <th className="px-3 py-2 font-bold">Leído</th>
+              <th className="font-bold">N° de lote</th>
+              <th className="font-bold">Especie</th>
+              <th className="w-36 font-bold">Inicio</th>
+              <th className="w-36 font-bold">Fin</th>
+              <th className="w-32 text-right font-bold">Consumido (m³)</th>
+              <th className="font-bold">Leído</th>
             </tr>
           </TheadCtp>
           <TbodyCtp>
             {!hayFilas && (
               <FilaVacia cols={7}>
-                Todavía no pegaste nada. La lista del SNIFFS entra tal cual: una fila por lote programado.
+                Todavía no pegaste nada. La lista del SNIFFS entra tal cual: una fila por lote
+                programado.
               </FilaVacia>
             )}
             {filas.map((f) => {
@@ -282,9 +299,15 @@ export default function CtpImportarProgramacionesModal({
               return (
                 <tr
                   key={f.id}
-                  className={!f.incluir ? "opacity-50" : problema ? "bg-[var(--data-warning-500)]/10" : "hover:bg-[var(--surface-sunken)]"}
+                  className={
+                    !f.incluir
+                      ? "opacity-50"
+                      : problema
+                        ? "bg-[var(--data-warning-500)]/10"
+                        : "hover:bg-[var(--surface-sunken)]"
+                  }
                 >
-                  <td className="px-2 py-1.5 text-center">
+                  <td className="text-center">
                     <input
                       type="checkbox"
                       checked={f.incluir}
@@ -293,7 +316,7 @@ export default function CtpImportarProgramacionesModal({
                       className="h-4 w-4 accent-[var(--accent)]"
                     />
                   </td>
-                  <td className="px-3 py-1.5">
+                  <td>
                     <input
                       value={f.code}
                       onChange={(e) => editar(f.id, { code: e.target.value })}
@@ -303,7 +326,7 @@ export default function CtpImportarProgramacionesModal({
                       className={`${CAMPO} font-mono`}
                     />
                   </td>
-                  <td className="px-3 py-1.5">
+                  <td>
                     <input
                       value={f.especie}
                       onChange={(e) => editar(f.id, { especie: e.target.value })}
@@ -312,7 +335,7 @@ export default function CtpImportarProgramacionesModal({
                       className={CAMPO}
                     />
                   </td>
-                  <td className="px-3 py-1.5">
+                  <td>
                     <input
                       type="date"
                       value={f.inicio}
@@ -321,7 +344,7 @@ export default function CtpImportarProgramacionesModal({
                       className={CAMPO}
                     />
                   </td>
-                  <td className="px-3 py-1.5">
+                  <td>
                     <input
                       type="date"
                       value={f.fin}
@@ -331,7 +354,7 @@ export default function CtpImportarProgramacionesModal({
                       className={CAMPO}
                     />
                   </td>
-                  <td className="px-3 py-1.5">
+                  <td>
                     <input
                       type="number"
                       min={0}
@@ -342,9 +365,11 @@ export default function CtpImportarProgramacionesModal({
                       className={`${CAMPO} text-right font-mono tabular-nums`}
                     />
                   </td>
-                  <td className="max-w-[20rem] px-3 py-1.5 text-xs text-[var(--text-tertiary)]">
+                  <td className="max-w-[20rem] text-[var(--text-tertiary)]">
                     {problema ? (
-                      <b className="text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">{problema}</b>
+                      <b className="text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+                        {problema}
+                      </b>
                     ) : (
                       <span className="block truncate font-mono" title={f.leida.crudo}>
                         {f.leida.estado ? `${f.leida.estado} · ` : ""}
@@ -361,7 +386,12 @@ export default function CtpImportarProgramacionesModal({
         {hayFilas && (
           <p className="flex items-center gap-1.5 text-sm text-[var(--text-tertiary)]">
             Se crean como <b>programación</b>.
-            <InfoTip icono="ayuda" title="Qué es una programación" what="El consumo queda declarado y la producción, pendiente." example="Después se declara desde la tabla de Producción o pegando el detalle de cada lote." />
+            <InfoTip
+              icono="ayuda"
+              title="Qué es una programación"
+              what="El consumo queda declarado y la producción, pendiente."
+              example="Después se declara desde la tabla de Producción o pegando el detalle de cada lote."
+            />
           </p>
         )}
       </ModalBody>

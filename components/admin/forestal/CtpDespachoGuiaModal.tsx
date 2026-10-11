@@ -98,7 +98,8 @@ export default function CtpDespachoGuiaModal({
     // El nombre de la cancha de reserva («Lote 1 · Juan») arranca como
     // destinatario: es a quien se le apartó la madera. Se puede corregir —es un
     // punto de partida, no un dato del libro.
-    if (presetDestino?.trim()) base.destinatario = { ...base.destinatario, nombre: presetDestino.trim() };
+    if (presetDestino?.trim())
+      base.destinatario = { ...base.destinatario, nombre: presetDestino.trim() };
     return base;
   });
   const [filas, setFilas] = useState<FilaDespacho[]>([]);
@@ -176,24 +177,43 @@ export default function CtpDespachoGuiaModal({
         const elegidas = todas.filter((f) => quiero.has(f.uid));
         setFilas(elegidas);
         if (elegidas.length < quiero.size) {
-          setAviso(`${quiero.size - elegidas.length} de los paquetes apartados ya no están disponibles: se despacharon o cambiaron de saldo.`);
+          setAviso(
+            `${quiero.size - elegidas.length} de los paquetes apartados ya no están disponibles: se despacharon o cambiaron de saldo.`,
+          );
         }
         setTab("productos");
       })
-      .catch((e) => { if (vivo) setError(e instanceof Error ? e.message : String(e)); })
-      .finally(() => { if (vivo) setPrecargando(false); });
-    return () => { vivo = false; };
+      .catch((e) => {
+        if (vivo) setError(e instanceof Error ? e.message : String(e));
+      })
+      .finally(() => {
+        if (vivo) setPrecargando(false);
+      });
+    return () => {
+      vivo = false;
+    };
   }, [claveSeleccion]);
 
   /** Uso de la libreta en ESTA guía: se cuenta recién al registrar. */
-  const usados = useRef<{ partes: Set<string>; vehiculos: Set<string> }>({ partes: new Set(), vehiculos: new Set() });
-  const anotarParte = useCallback((p: Parte) => { usados.current.partes.add(p.id); }, []);
-  const anotarVehiculo = useCallback((id: string) => { usados.current.vehiculos.add(id); }, []);
+  const usados = useRef<{ partes: Set<string>; vehiculos: Set<string> }>({
+    partes: new Set(),
+    vehiculos: new Set(),
+  });
+  const anotarParte = useCallback((p: Parte) => {
+    usados.current.partes.add(p.id);
+  }, []);
+  const anotarVehiculo = useCallback((id: string) => {
+    usados.current.vehiculos.add(id);
+  }, []);
   const guardarEnLibreta = useCallback(
     async (v: ValorParte, rol: RolParte) => {
       const parte = await directorio.guardarParte({
-        roles: [rol], nombre: v.nombre, docTipo: v.docTipo, docNumero: v.docNumero,
-        direccion: v.direccion, registroMtc: v.registroMtc,
+        roles: [rol],
+        nombre: v.nombre,
+        docTipo: v.docTipo,
+        docNumero: v.docNumero,
+        direccion: v.direccion,
+        registroMtc: v.registroMtc,
       });
       anotarParte(parte);
     },
@@ -208,7 +228,9 @@ export default function CtpDespachoGuiaModal({
   useEffect(() => {
     if (autollenado.current || !ficha) return;
     autollenado.current = true;
-    const planta = [ficha.direccion, ficha.distrito, ficha.provincia, ficha.region].filter(Boolean).join(", ");
+    const planta = [ficha.direccion, ficha.distrito, ficha.provincia, ficha.region]
+      .filter(Boolean)
+      .join(", ");
     setDatos((p) => ({
       ...p,
       propietario: {
@@ -223,9 +245,18 @@ export default function CtpDespachoGuiaModal({
         distrito: p.propietario.distrito || ficha.distrito || "",
       },
       /* La partida, por partes, de la Ficha (sin ruta: esa la propone «Rellenar» con la de la guía anterior). */
-      traslado: { ...p.traslado, ...partidaSembrada(p.traslado, ficha), fechaInicio: p.traslado.fechaInicio || emision },
+      traslado: {
+        ...p.traslado,
+        ...partidaSembrada(p.traslado, ficha),
+        fechaInicio: p.traslado.fechaInicio || emision,
+      },
       guia: { ...p.guia, autoridad: p.guia.autoridad || ficha.arffs || "" },
-      titulos: p.titulos.length ? p.titulos : (ficha.titulos ?? []).slice(0, 1).map((t) => t.codigo).filter(Boolean),
+      titulos: p.titulos.length
+        ? p.titulos
+        : (ficha.titulos ?? [])
+            .slice(0, 1)
+            .map((t) => t.codigo)
+            .filter(Boolean),
     }));
   }, [ficha, emision]);
 
@@ -257,14 +288,20 @@ export default function CtpDespachoGuiaModal({
       .then((r) => (r.ok ? r.json() : { ultima: null }))
       .then((j: { ultima?: unknown; gtfNumber?: string | null; siguienteGtf?: string | null }) => {
         if (!vivo) return;
-        setUltimaGuia(j.ultima && typeof j.ultima === "object" ? (j.ultima as Partial<GtfDatos>) : null);
+        setUltimaGuia(
+          j.ultima && typeof j.ultima === "object" ? (j.ultima as Partial<GtfDatos>) : null,
+        );
         setUltimaGtfNumber(j.gtfNumber ?? null);
         setSiguienteGtf(j.siguienteGtf ?? null);
       })
       /* Sin guía anterior el relleno usa la Ficha y la libreta, que es como
          venía funcionando: es una fuente más, no un requisito. */
-      .catch(() => { if (vivo) setUltimaGuia(null); });
-    return () => { vivo = false; };
+      .catch(() => {
+        if (vivo) setUltimaGuia(null);
+      });
+    return () => {
+      vivo = false;
+    };
   }, []);
 
   /**
@@ -281,18 +318,27 @@ export default function CtpDespachoGuiaModal({
   );
   const [citesPermiso, setCitesPermiso] = useState<string | null>(null);
   useEffect(() => {
-    if (especiesCites.length === 0) { setCitesPermiso(null); return; }
+    if (especiesCites.length === 0) {
+      setCitesPermiso(null);
+      return;
+    }
     let vivo = true;
     /* La más reciente de esa especie que tenga permiso: es la que declara con
        qué papel entró la madera que ahora sale. */
     Promise.all(
       especiesCites.map((esp) =>
-        fetch(`/api/admin/forestal/wood-entries?species=${encodeURIComponent(esp)}&cites=1&limit=5`, {
-          credentials: "include",
-        })
+        fetch(
+          `/api/admin/forestal/wood-entries?species=${encodeURIComponent(esp)}&cites=1&limit=5`,
+          {
+            credentials: "include",
+          },
+        )
           .then((r) => (r.ok ? r.json() : null))
           .catch((err) => {
-            logger.warn("[ctp-guia] no se pudo leer el permiso CITES del origen", { error: String(err), especie: esp });
+            logger.warn("[ctp-guia] no se pudo leer el permiso CITES del origen", {
+              error: String(err),
+              especie: esp,
+            });
             return null;
           }),
       ),
@@ -303,13 +349,20 @@ export default function CtpDespachoGuiaModal({
           const lista = (j as { data?: Array<{ notes?: string | null }> } | null)?.data ?? [];
           for (const e of lista) {
             const p = parseCitesPermiso(e.notes ?? null);
-            if (p) { setCitesPermiso(p); return; }
+            if (p) {
+              setCitesPermiso(p);
+              return;
+            }
           }
         }
         setCitesPermiso(null);
       })
-      .catch(() => { if (vivo) setCitesPermiso(null); });
-    return () => { vivo = false; };
+      .catch(() => {
+        if (vivo) setCitesPermiso(null);
+      });
+    return () => {
+      vivo = false;
+    };
   }, [especiesCites]);
 
   function rellenarTodo() {
@@ -329,12 +382,15 @@ export default function CtpDespachoGuiaModal({
     /* El N° de guía también: sigue la serie de la última emitida. Es el mismo
        correlativo que asigna «Emitir GTF», propuesto antes de guardar. */
     if (!gtfNumber.trim() && (siguienteGtf || ultimaGtfNumber)) {
-      const siguiente = siguienteGtf ?? (ultimaGtfNumber ? siguienteNumeroGtf(ultimaGtfNumber) : null);
+      const siguiente =
+        siguienteGtf ?? (ultimaGtfNumber ? siguienteNumeroGtf(ultimaGtfNumber) : null);
       if (siguiente) setGtfNumber(siguiente);
     }
     setAviso(
       `Se completó ${r.completados.join(", ") || "nada"}.` +
-        (r.faltantes.length > 0 ? ` Falta cargar: ${r.faltantes.join("; ")}.` : " La guía quedó completa."),
+        (r.faltantes.length > 0
+          ? ` Falta cargar: ${r.faltantes.join("; ")}.`
+          : " La guía quedó completa."),
     );
     /* Lo que queda en blanco a propósito se nombra: si no, alguien lo llena con
        cualquier cosa para que «no quede nada vacío», y eso es lo que un control
@@ -382,7 +438,11 @@ export default function CtpDespachoGuiaModal({
      empieza el día de emisión. Contarla como faltante pedía un dato que ninguna
      pestaña muestra (el pie decía 9 y los bloques 8). */
   const faltanGuia = useMemo(
-    () => faltantesGtf({ ...datos, traslado: { ...datos.traslado, fechaInicio: datos.traslado.fechaInicio || emision } }),
+    () =>
+      faltantesGtf({
+        ...datos,
+        traslado: { ...datos.traslado, fechaInicio: datos.traslado.fechaInicio || emision },
+      }),
     [datos, emision],
   );
   /* Registrar ya NO exige el N° de guía (ADR-374): la línea entra al libro
@@ -414,7 +474,11 @@ export default function CtpDespachoGuiaModal({
     setTab("productos");
   }
 
-  function cambiarFila(uid: string, campo: "cantidad" | "volumen" | "valorVenta", valor: number | null) {
+  function cambiarFila(
+    uid: string,
+    campo: "cantidad" | "volumen" | "valorVenta",
+    valor: number | null,
+  ) {
     setFilas((prev) =>
       prev.map((f) => {
         if (f.uid !== uid) return f;
@@ -435,7 +499,10 @@ export default function CtpDespachoGuiaModal({
             ventaTocada: true,
           };
         }
-        const nueva = { ...f, [campo]: valor != null && Number.isFinite(valor) ? Math.max(0, valor) : 0 };
+        const nueva = {
+          ...f,
+          [campo]: valor != null && Number.isFinite(valor) ? Math.max(0, valor) : 0,
+        };
         /* Mientras la venta sea la PROPUESTA (ADR-429), sigue al volumen: sacar
            medio paquete propone media venta, no la del paquete entero. */
         return f.valorPropuesto ? { ...nueva, valorVenta: valorPropuesto(nueva) } : nueva;
@@ -465,7 +532,10 @@ export default function CtpDespachoGuiaModal({
       serforNumeroRegistro: sello?.numeroRegistro ?? null,
       serforVerificadoEn: sello?.verificadoEn ?? null,
     };
-    const conGuia = { ...datos, traslado: { ...datos.traslado, fechaInicio: datos.traslado.fechaInicio || emision } };
+    const conGuia = {
+      ...datos,
+      traslado: { ...datos.traslado, fechaInicio: datos.traslado.fechaInicio || emision },
+    };
     /* Producto transformado: una línea por renglón. Trozas sin aserrar: una
        línea por especie con sus piezas (ADR-363). */
     const envios = enviosDeLista(filas, comun, conGuia);
@@ -495,15 +565,22 @@ export default function CtpDespachoGuiaModal({
           credentials: "include",
           body: JSON.stringify(envios[i]!.payload),
         });
-        const creada: { entry?: { id?: string; lineNo?: number }; message?: string; error?: string } = await r
-          .json()
-          .catch(() => ({}));
+        const creada: {
+          entry?: { id?: string; lineNo?: number };
+          message?: string;
+          error?: string;
+        } = await r.json().catch(() => ({}));
         if (!r.ok) {
-          fallo = { rotulo: envios[i]!.rotulo, motivo: creada.message ?? `HTTP ${r.status}`, codigo: creada.error };
+          fallo = {
+            rotulo: envios[i]!.rotulo,
+            motivo: creada.message ?? `HTTP ${r.status}`,
+            codigo: creada.error,
+          };
           break;
         }
         hechas.push(...envios[i]!.uids);
-        if (!primera && creada.entry?.id) primera = { id: creada.entry.id, lineNo: creada.entry.lineNo ?? 0 };
+        if (!primera && creada.entry?.id)
+          primera = { id: creada.entry.id, lineNo: creada.entry.lineNo ?? 0 };
       } catch (e) {
         fallo = { rotulo: envios[i]!.rotulo, motivo: e instanceof Error ? e.message : String(e) };
         break;
@@ -513,7 +590,10 @@ export default function CtpDespachoGuiaModal({
     setEnviando(false);
 
     if (hechas.length > 0 && directorio) {
-      directorio.marcarUso({ partes: [...usados.current.partes], vehiculos: [...usados.current.vehiculos] });
+      directorio.marcarUso({
+        partes: [...usados.current.partes],
+        vehiculos: [...usados.current.vehiculos],
+      });
     }
     if (!fallo) {
       /* No se cierra de una: la guía recién registrada es la que hay que
@@ -558,101 +638,120 @@ export default function CtpDespachoGuiaModal({
       <AdminModal
         open
         onClose={cerrar}
-        variant="wide"
+        size="planilla"
         title="Registro de guía de transporte forestal"
         description="Salida de producto del CTP · una guía, los productos que van en el camión"
         icon={Truck}
-        className="sm:w-[min(96vw,100rem)] sm:max-w-none sm:max-h-[95vh]"
         footer={
           registrado ? (
             <ModalFooter
               nota={
                 <span>
-                  <b className="text-[var(--text-primary)]">{registrado.lineas}</b> {registrado.lineas === 1 ? "línea" : "líneas"} en el libro ·{" "}
-                  <span className="font-mono tabular-nums">{totalFmt} {unidadLista}</span>
+                  <b className="text-[var(--text-primary)]">{registrado.lineas}</b>{" "}
+                  {registrado.lineas === 1 ? "línea" : "líneas"} en el libro ·{" "}
+                  <span className="font-mono tabular-nums">
+                    {totalFmt} {unidadLista}
+                  </span>
                 </span>
               }
             >
-              <Btn variant="primary" onClick={cerrar}>Cerrar y volver al libro</Btn>
+              <Btn variant="primary" onClick={cerrar}>
+                Cerrar y volver al libro
+              </Btn>
             </ModalFooter>
           ) : (
-          <ModalFooter
-            error={error}
-            aviso={
-              aviso ? (
-                <span className="min-w-0 flex-1">
-                  {aviso}
-                  {porQueVacios.length > 0 && (
-                    <details className="mt-0.5 inline-block align-top">
-                      <summary className="cursor-pointer text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
-                        ¿por qué quedaron casilleros vacíos?
-                      </summary>
-                      <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs font-normal text-[var(--text-secondary)]">
-                        {porQueVacios.map((m) => (
-                          <li key={m}>{m}</li>
-                        ))}
-                      </ul>
-                    </details>
+            <ModalFooter
+              error={error}
+              aviso={
+                aviso ? (
+                  <span className="min-w-0 flex-1">
+                    {aviso}
+                    {porQueVacios.length > 0 && (
+                      <details className="mt-0.5 inline-block align-top">
+                        <summary className="cursor-pointer text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+                          ¿por qué quedaron casilleros vacíos?
+                        </summary>
+                        <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs font-normal text-[var(--text-secondary)]">
+                          {porQueVacios.map((m) => (
+                            <li key={m}>{m}</li>
+                          ))}
+                        </ul>
+                      </details>
+                    )}
+                  </span>
+                ) : null
+              }
+              nota={
+                <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <span>
+                    <b className="text-[var(--text-primary)]">{filas.length}</b> producto
+                    {filas.length === 1 ? "" : "s"} ·{" "}
+                    <span className="font-mono tabular-nums">
+                      {totalFmt} {unidadLista}
+                    </span>
+                  </span>
+                  {/* Por qué NO se puede registrar todavía. Un botón apagado sin
+                    motivo manda a buscar a ojo entre dos pestañas. */}
+                  {bloqueoRegistro && (
+                    <span className="font-bold text-[var(--text-secondary)]">
+                      {bloqueoRegistro}
+                    </span>
+                  )}
+                  {faltanGuia.length > 0 && (
+                    <span className="text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+                      Falta{faltanGuia.length === 1 ? "" : "n"} {faltanGuia.length} dato
+                      {faltanGuia.length === 1 ? "" : "s"} para poder imprimirla (
+                      {faltanGuia[0]!.campo})
+                    </span>
                   )}
                 </span>
-              ) : null
-            }
-            nota={
-              <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                <span>
-                  <b className="text-[var(--text-primary)]">{filas.length}</b> producto{filas.length === 1 ? "" : "s"} ·{" "}
-                  <span className="font-mono tabular-nums">{totalFmt} {unidadLista}</span>
-                </span>
-                {/* Por qué NO se puede registrar todavía. Un botón apagado sin
-                    motivo manda a buscar a ojo entre dos pestañas. */}
-                {bloqueoRegistro && (
-                  <span className="font-bold text-[var(--text-secondary)]">{bloqueoRegistro}</span>
-                )}
-                {faltanGuia.length > 0 && (
-                  <span className="text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
-                    Falta{faltanGuia.length === 1 ? "" : "n"} {faltanGuia.length} dato{faltanGuia.length === 1 ? "" : "s"} para poder imprimirla ({faltanGuia[0]!.campo})
-                  </span>
-                )}
-              </span>
-            }
-          >
-            <Btn variant="ghost" onClick={cerrar} disabled={enviando}>Cerrar</Btn>
-            {/* Rellenar la guía con lo guardado: la Ficha del CTP y la libreta
-                ya tienen el 90 % de estos casilleros (ADR-371). No toca la lista
-                de productos — esa es la otra pestaña y otro acto. */}
-            {/* Apretarlo antes de que llegue la Ficha del CTP contestaba «se
-                completó nada» y hacía creer que no hay datos guardados. Mientras
-                carga lo dice y no deja: la fuente todavía no está. */}
-            <Btn
-              variant="secondary"
-              onClick={rellenarTodo}
-              disabled={enviando || !ficha}
-              title={
-                ficha
-                  ? "Completa propietario, destinatario, transportista, vehículo, traslado y títulos con lo que ya está guardado"
-                  : "Todavía estoy trayendo la Ficha del CTP, de donde salen el propietario y el punto de partida"
               }
             >
-              <Wand2 className="h-4 w-4" />
-              {ficha ? "Rellenar datos de la guía" : "Trayendo la Ficha del CTP…"}
-            </Btn>
-            {/* Con precarga desde una cancha, registrar antes de que lleguen los
+              <Btn variant="ghost" onClick={cerrar} disabled={enviando}>
+                Cerrar
+              </Btn>
+              {/* Rellenar la guía con lo guardado: la Ficha del CTP y la libreta
+                ya tienen el 90 % de estos casilleros (ADR-371). No toca la lista
+                de productos — esa es la otra pestaña y otro acto. */}
+              {/* Apretarlo antes de que llegue la Ficha del CTP contestaba «se
+                completó nada» y hacía creer que no hay datos guardados. Mientras
+                carga lo dice y no deja: la fuente todavía no está. */}
+              <Btn
+                variant="secondary"
+                onClick={rellenarTodo}
+                disabled={enviando || !ficha}
+                title={
+                  ficha
+                    ? "Completa propietario, destinatario, transportista, vehículo, traslado y títulos con lo que ya está guardado"
+                    : "Todavía estoy trayendo la Ficha del CTP, de donde salen el propietario y el punto de partida"
+                }
+              >
+                <Wand2 className="h-4 w-4" />
+                {ficha ? "Rellenar datos de la guía" : "Trayendo la Ficha del CTP…"}
+              </Btn>
+              {/* Con precarga desde una cancha, registrar antes de que lleguen los
                 paquetes emitiría una guía sin productos. */}
-            <Btn variant="primary" onClick={() => void registrar()} disabled={!puedeRegistrar || precargando}>
-              {precargando ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" /> Trayendo lo apartado…
-                </>
-              ) : enviando ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {avance ? `Registrando ${avance.hechas + 1} de ${avance.total}…` : "Registrando…"}
-                </>
-              ) : (
-                `Registrar despacho${filas.length > 1 ? ` (${filas.length} líneas)` : ""}`
-              )}
-            </Btn>
-          </ModalFooter>
+              <Btn
+                variant="primary"
+                onClick={() => void registrar()}
+                disabled={!puedeRegistrar || precargando}
+              >
+                {precargando ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Trayendo lo apartado…
+                  </>
+                ) : enviando ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {avance
+                      ? `Registrando ${avance.hechas + 1} de ${avance.total}…`
+                      : "Registrando…"}
+                  </>
+                ) : (
+                  `Registrar despacho${filas.length > 1 ? ` (${filas.length} líneas)` : ""}`
+                )}
+              </Btn>
+            </ModalFooter>
           )
         }
       >
@@ -665,7 +764,10 @@ export default function CtpDespachoGuiaModal({
           {/* La franja del formato: con qué título sale la madera y cuánto se
               mueve. El volumen es el de la lista, en vivo. */}
           <div className="grid grid-cols-2 gap-x-4 gap-y-2 rounded-2xl border-2 border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)] px-4 py-3 lg:grid-cols-5 dark:bg-[var(--data-warning-500)]/10">
-            <DatoFranja label="Titular de TH" valor={ficha?.razonSocial || ficha?.nombreCtp || "—"} />
+            <DatoFranja
+              label="Titular de TH"
+              valor={ficha?.razonSocial || ficha?.nombreCtp || "—"}
+            />
             <DatoFranja label="Documento" valor={ficha?.ruc || "—"} mono />
             <DatoFranja label="Número de recurso" valor={datos.titulos[0] || "—"} mono />
             <DatoFranja label="Número de resolución" valor={titulo?.resolucion || "—"} />
@@ -688,113 +790,137 @@ export default function CtpDespachoGuiaModal({
               ficha={ficha}
             />
           ) : (
-          <>
-          {/* El día del despacho, con lo que cada día YA salió (2026-09-12):
+            <>
+              {/* El día del despacho, con lo que cada día YA salió (2026-09-12):
               es la fecha de emisión de la guía, y un día con dos guías del
               mismo camión es una guía duplicada ante SERFOR. */}
-          <CtpSemanaDeRegistro
-            seccion="despacho"
-            valor={emision}
-            onElegir={cambiarEmision}
-            semana={semana}
-            onSemana={setSemana}
-            porDia={jornadas.porDia}
-            cargando={jornadas.cargando}
-            error={jornadas.error}
-          />
-          <div className="flex gap-1.5">
-            <Pestana activa={tab === "guia"} onClick={() => setTab("guia")} label="Datos de la guía de transporte forestal" pendiente={faltanGuia.length} />
-            <Pestana activa={tab === "productos"} onClick={() => setTab("productos")} label="Creación de lista de productos" contador={filas.length} />
-          </div>
-
-          {tab === "guia" ? (
-            <CtpGuiaDatosTab
-              datos={datos}
-              setDatos={setDatos}
-              ficha={ficha}
-              directorio={directorio}
-              emision={emision}
-              onEmision={cambiarEmision}
-              gtfNumber={gtfNumber}
-              onGtfNumber={setGtfNumber}
-              docType={docType}
-              onDocType={setDocType}
-              onAnotarParte={anotarParte}
-              onAnotarVehiculo={anotarVehiculo}
-              onGuardarEnLibreta={guardarEnLibreta}
-              llevaCites={especiesCites.length > 0}
-              slotVerificacion={
-                <VerificarGtfSerfor
-                  gtfNumber={gtfNumber}
-                  onSello={setSello}
-                  onGuiaVerificada={(g) => {
-                    /* Lo que la guía trae y el formulario todavía no tiene se
-                       copia; lo tipeado no se pisa. */
-                    if (g.gtfNumber && !gtfNumber.trim()) setGtfNumber(g.gtfNumber);
-                    setDatos((p) => ({
-                      ...p,
-                      destinatario: {
-                        ...p.destinatario,
-                        nombre: p.destinatario.nombre || g.destinatario || "",
-                        direccion: p.destinatario.direccion || g.destinatarioDireccion || "",
-                      },
-                      vehiculo: {
-                        ...p.vehiculo,
-                        placa: p.vehiculo.placa || g.placa || "",
-                        tipo: p.vehiculo.tipo || g.tipoVehiculo || "",
-                      },
-                      traslado: { ...p.traslado, fechaFin: p.traslado.fechaFin || g.fechaVencimiento || "" },
-                    }));
-                    setAviso("Datos traídos de la guía verificada en SERFOR.");
-                  }}
+              <CtpSemanaDeRegistro
+                seccion="despacho"
+                valor={emision}
+                onElegir={cambiarEmision}
+                semana={semana}
+                onSemana={setSemana}
+                porDia={jornadas.porDia}
+                cargando={jornadas.cargando}
+                error={jornadas.error}
+              />
+              <div className="flex gap-1.5">
+                <Pestana
+                  activa={tab === "guia"}
+                  onClick={() => setTab("guia")}
+                  label="Datos de la guía de transporte forestal"
+                  pendiente={faltanGuia.length}
                 />
-              }
-            />
-          ) : (
-            <>
-            {/* De dónde sale la venta propuesta (ADR-430): si el trato falla,
+                <Pestana
+                  activa={tab === "productos"}
+                  onClick={() => setTab("productos")}
+                  label="Creación de lista de productos"
+                  contador={filas.length}
+                />
+              </div>
+
+              {tab === "guia" ? (
+                <CtpGuiaDatosTab
+                  datos={datos}
+                  setDatos={setDatos}
+                  ficha={ficha}
+                  directorio={directorio}
+                  emision={emision}
+                  onEmision={cambiarEmision}
+                  gtfNumber={gtfNumber}
+                  onGtfNumber={setGtfNumber}
+                  docType={docType}
+                  onDocType={setDocType}
+                  onAnotarParte={anotarParte}
+                  onAnotarVehiculo={anotarVehiculo}
+                  onGuardarEnLibreta={guardarEnLibreta}
+                  llevaCites={especiesCites.length > 0}
+                  slotVerificacion={
+                    <VerificarGtfSerfor
+                      gtfNumber={gtfNumber}
+                      onSello={setSello}
+                      onGuiaVerificada={(g) => {
+                        /* Lo que la guía trae y el formulario todavía no tiene se
+                       copia; lo tipeado no se pisa. */
+                        if (g.gtfNumber && !gtfNumber.trim()) setGtfNumber(g.gtfNumber);
+                        setDatos((p) => ({
+                          ...p,
+                          destinatario: {
+                            ...p.destinatario,
+                            nombre: p.destinatario.nombre || g.destinatario || "",
+                            direccion: p.destinatario.direccion || g.destinatarioDireccion || "",
+                          },
+                          vehiculo: {
+                            ...p.vehiculo,
+                            placa: p.vehiculo.placa || g.placa || "",
+                            tipo: p.vehiculo.tipo || g.tipoVehiculo || "",
+                          },
+                          traslado: {
+                            ...p.traslado,
+                            fechaFin: p.traslado.fechaFin || g.fechaVencimiento || "",
+                          },
+                        }));
+                        setAviso("Datos traídos de la guía verificada en SERFOR.");
+                      }}
+                    />
+                  }
+                />
+              ) : (
+                <>
+                  {/* De dónde sale la venta propuesta (ADR-430): si el trato falla,
                 se dice en vez de registrar la guía con el precio del paquete
                 sin avisar (defecto confirmado, mismo aviso que Productos
                 disponibles). */}
-            {(venta.cargando || venta.error || venta.trato) && (
-              <p
-                aria-live="polite"
-                className={`flex items-start gap-1.5 rounded-xl px-3 py-2 text-sm ${
-                  venta.error
-                    ? "bg-[var(--data-warning-500)]/10 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
-                    : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
-                }`}
-              >
-                <HandCoins className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-                <span>
-                  {venta.cargando ? (
-                    <>Leyendo el precio de venta pactado con {venta.cliente?.nombre ?? "el destinatario de la guía"}…</>
-                  ) : venta.error ? (
-                    <>No se pudo leer el precio pactado con {venta.cliente?.nombre ?? "el cliente"}: la venta se propone con el precio de cada paquete.</>
-                  ) : (
-                    <>
-                      La venta se propone con el precio pactado con <b className="text-[var(--text-primary)]">{venta.trato?.parteNombre}</b>; lo que su trato no cubre, con el del paquete.
-                    </>
+                  {(venta.cargando || venta.error || venta.trato) && (
+                    <p
+                      aria-live="polite"
+                      className={`flex items-start gap-1.5 rounded-xl px-3 py-2 text-sm ${
+                        venta.error
+                          ? "bg-[var(--data-warning-500)]/10 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+                          : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
+                      }`}
+                    >
+                      <HandCoins className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                      <span>
+                        {venta.cargando ? (
+                          <>
+                            Leyendo el precio de venta pactado con{" "}
+                            {venta.cliente?.nombre ?? "el destinatario de la guía"}…
+                          </>
+                        ) : venta.error ? (
+                          <>
+                            No se pudo leer el precio pactado con{" "}
+                            {venta.cliente?.nombre ?? "el cliente"}: la venta se propone con el
+                            precio de cada paquete.
+                          </>
+                        ) : (
+                          <>
+                            La venta se propone con el precio pactado con{" "}
+                            <b className="text-[var(--text-primary)]">{venta.trato?.parteNombre}</b>
+                            ; lo que su trato no cubre, con el del paquete.
+                          </>
+                        )}
+                      </span>
+                    </p>
                   )}
-                </span>
-              </p>
-            )}
-            <CtpListaProductosTab
-              filas={filas}
-              onCambiarFila={cambiarFila}
-              onQuitar={(uid) => setFilas((prev) => prev.filter((f) => f.uid !== uid))}
-              listaNro={datos.guia.listaTrozasNro}
-              onListaNro={(v) => setDatos((p) => ({ ...p, guia: { ...p.guia, listaTrozasNro: v } }))}
-              observaciones={datos.observaciones}
-              onObservaciones={(v) => setDatos((p) => ({ ...p, observaciones: v }))}
-              onAbrirStock={() => setStockAbierto(true)}
-              onAbrirTrozas={() => setTrozasAbierto(true)}
-              onCubicar={() => setCubicarAbierto(true)}
-              problemas={problemas}
-            />
+                  <CtpListaProductosTab
+                    filas={filas}
+                    onCambiarFila={cambiarFila}
+                    onQuitar={(uid) => setFilas((prev) => prev.filter((f) => f.uid !== uid))}
+                    listaNro={datos.guia.listaTrozasNro}
+                    onListaNro={(v) =>
+                      setDatos((p) => ({ ...p, guia: { ...p.guia, listaTrozasNro: v } }))
+                    }
+                    observaciones={datos.observaciones}
+                    onObservaciones={(v) => setDatos((p) => ({ ...p, observaciones: v }))}
+                    onAbrirStock={() => setStockAbierto(true)}
+                    onAbrirTrozas={() => setTrozasAbierto(true)}
+                    onCubicar={() => setCubicarAbierto(true)}
+                    problemas={problemas}
+                  />
+                </>
+              )}
             </>
-          )}
-          </>
           )}
         </div>
       </AdminModal>
@@ -848,8 +974,15 @@ export default function CtpDespachoGuiaModal({
 function DatoFranja({ label, valor, mono }: { label: string; valor: string; mono?: boolean }) {
   return (
     <div className="min-w-0">
-      <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">{label}</div>
-      <div className={`truncate text-sm font-medium text-[var(--text-primary)] ${mono ? "font-mono tabular-nums" : ""}`} title={valor}>{valor}</div>
+      <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+        {label}
+      </div>
+      <div
+        className={`truncate text-sm font-medium text-[var(--text-primary)] ${mono ? "font-mono tabular-nums" : ""}`}
+        title={valor}
+      >
+        {valor}
+      </div>
     </div>
   );
 }
@@ -882,10 +1015,18 @@ function Pestana({
     >
       {label}
       {contador != null && contador > 0 && (
-        <span className={`rounded-full px-1.5 py-0.5 text-[length:var(--ts-2xs)] tabular-nums ${activa ? "bg-white/25" : "bg-[var(--surface-raised)]"}`}>{contador}</span>
+        <span
+          className={`rounded-full px-1.5 py-0.5 text-[length:var(--ts-2xs)] tabular-nums ${activa ? "bg-white/25" : "bg-[var(--surface-raised)]"}`}
+        >
+          {contador}
+        </span>
       )}
       {!activa && pendiente != null && pendiente > 0 && (
-        <span role="img" className="h-2 w-2 rounded-full bg-[var(--data-warning-500)]" aria-label="tiene datos pendientes" />
+        <span
+          role="img"
+          className="h-2 w-2 rounded-full bg-[var(--data-warning-500)]"
+          aria-label="tiene datos pendientes"
+        />
       )}
     </button>
   );

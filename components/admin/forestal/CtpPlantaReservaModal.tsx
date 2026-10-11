@@ -39,7 +39,12 @@ export interface CtpPlantaReservaModalProps {
   onDespachar: (uids: string[]) => void;
 }
 
-export default function CtpPlantaReservaModal({ titulo, corridas, onClose, onDespachar }: CtpPlantaReservaModalProps) {
+export default function CtpPlantaReservaModal({
+  titulo,
+  corridas,
+  onClose,
+  onDespachar,
+}: CtpPlantaReservaModalProps) {
   const [filas, setFilas] = useState<FilaDespacho[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -58,9 +63,15 @@ export default function CtpPlantaReservaModal({ titulo, corridas, onClose, onDes
         setElegidos(new Set(propias.map((f) => f.uid)));
         setError(null);
       })
-      .catch((e) => { if (vivo) setError(e instanceof Error ? e.message : String(e)); })
-      .finally(() => { if (vivo) setCargando(false); });
-    return () => { vivo = false; };
+      .catch((e) => {
+        if (vivo) setError(e instanceof Error ? e.message : String(e));
+      })
+      .finally(() => {
+        if (vivo) setCargando(false);
+      });
+    return () => {
+      vivo = false;
+    };
   }, [corridas]);
 
   const seleccion = useMemo(() => filas.filter((f) => elegidos.has(f.uid)), [filas, elegidos]);
@@ -71,27 +82,37 @@ export default function CtpPlantaReservaModal({ titulo, corridas, onClose, onDes
   const alternar = (uid: string) =>
     setElegidos((prev) => {
       const s = new Set(prev);
-      if (s.has(uid)) s.delete(uid); else s.add(uid);
+      if (s.has(uid)) s.delete(uid);
+      else s.add(uid);
       return s;
     });
 
   return (
     <AdminModal
+      size="xl"
       open
       onClose={onClose}
       title={titulo}
       description="Elige qué paquetes salen en este viaje; el resto se queda apartado"
       icon={Truck}
-      className="max-w-4xl"
       footer={
         <ModalFooter>
           <span className="mr-auto text-sm text-[var(--text-secondary)]">
-            <b className="text-[var(--text-primary)]">{seleccion.length}</b> de {filas.length} elegidos
+            <b className="text-[var(--text-primary)]">{seleccion.length}</b> de {filas.length}{" "}
+            elegidos
             {seleccion.length > 0 && (
               <>
                 {" · "}
-                <b className="font-mono tabular-nums text-[var(--text-primary)]">{n4(total)}</b>{" "}
-                {unidades.length === 1 ? unidades[0] : <span className="text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">en unidades distintas</span>}
+                <b className="font-mono tabular-nums text-[var(--text-primary)]">
+                  {n4(total)}
+                </b>{" "}
+                {unidades.length === 1 ? (
+                  unidades[0]
+                ) : (
+                  <span className="text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+                    en unidades distintas
+                  </span>
+                )}
               </>
             )}
           </span>
@@ -119,29 +140,32 @@ export default function CtpPlantaReservaModal({ titulo, corridas, onClose, onDes
         )}
         {!cargando && !error && filas.length === 0 && (
           <p className="rounded-xl border border-dashed border-[var(--rule-base)] p-6 text-center text-sm text-[var(--text-tertiary)]">
-            Lo que estaba apartado acá ya no figura como disponible: puede haberse despachado desde otra pantalla.
+            Lo que estaba apartado acá ya no figura como disponible: puede haberse despachado desde
+            otra pantalla.
           </p>
         )}
 
         {filas.length > 0 && (
-          <DataTable className="w-full border-collapse text-sm">
-            <thead className="sticky top-0 z-10 bg-[var(--surface-raised)]">
-              <tr className="border-b-2 border-[var(--rule-base)] text-left text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                <th className="w-10 py-2">
+          <DataTable className="w-full">
+            <thead className="sticky top-0 z-10">
+              <tr>
+                <th className="w-10">
                   <input
                     type="checkbox"
                     checked={todos}
                     aria-label="Elegir todos los paquetes"
-                    onChange={() => setElegidos(todos ? new Set() : new Set(filas.map((f) => f.uid)))}
+                    onChange={() =>
+                      setElegidos(todos ? new Set() : new Set(filas.map((f) => f.uid)))
+                    }
                     className="h-4 w-4 accent-[var(--accent)]"
                   />
                 </th>
-                <th className="py-2">Paquete</th>
-                <th className="py-2">Especie</th>
-                <th className="py-2">Producto</th>
-                <th className="py-2 text-right">Piezas</th>
-                <th className="py-2 text-right">Volumen</th>
-                <th className="py-2 text-right">Saldo corrida</th>
+                <th>Paquete</th>
+                <th>Especie</th>
+                <th>Producto</th>
+                <th className="text-right">Piezas</th>
+                <th className="text-right">Volumen</th>
+                <th className="text-right">Saldo corrida</th>
               </tr>
             </thead>
             <tbody>
@@ -153,10 +177,16 @@ export default function CtpPlantaReservaModal({ titulo, corridas, onClose, onDes
                     onClick={() => alternar(f.uid)}
                     tabIndex={0}
                     aria-label={`Elegir ${f.codigo ?? `corrida #${f.lineNo}`}`}
-                    onKeyDown={(e) => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); alternar(f.uid); } }}
-                    className={`cursor-pointer border-b border-[var(--rule-soft)] transition ${on ? "bg-primary/10 dark:bg-[var(--accent)]/12" : "hover:bg-[var(--surface-sunken)]"}`}
+                    onKeyDown={(e) => {
+                      if (e.target !== e.currentTarget) return;
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        alternar(f.uid);
+                      }
+                    }}
+                    className={`cursor-pointer transition ${on ? "bg-primary/10 dark:bg-[var(--accent)]/12" : "hover:bg-[var(--surface-sunken)]"}`}
                   >
-                    <td className="py-2">
+                    <td>
                       <input
                         type="checkbox"
                         checked={on}
@@ -166,18 +196,34 @@ export default function CtpPlantaReservaModal({ titulo, corridas, onClose, onDes
                         className="h-4 w-4 accent-[var(--accent)]"
                       />
                     </td>
-                    <td className="py-2">
-                      <b className="text-[var(--text-primary)]">{f.codigo ?? `Corrida #${f.lineNo}`}</b>
-                      {f.lote && <span className="ml-1.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{f.lote}</span>}
+                    <td>
+                      <b className="text-[var(--text-primary)]">
+                        {f.codigo ?? `Corrida #${f.lineNo}`}
+                      </b>
+                      {f.lote && (
+                        <span className="ml-1.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                          {f.lote}
+                        </span>
+                      )}
                     </td>
-                    <td className="py-2 text-[var(--text-secondary)]">
+                    <td className="text-[var(--text-secondary)]">
                       {f.especie ?? "—"}
-                      {f.cites && <span className="ml-1 rounded bg-[var(--data-error-500)]/15 px-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">CITES</span>}
+                      {f.cites && (
+                        <span className="ml-1 rounded bg-[var(--data-error-500)]/15 px-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+                          CITES
+                        </span>
+                      )}
                     </td>
-                    <td className="py-2 text-[var(--text-secondary)]">{f.producto ?? "—"}</td>
-                    <td className="py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">{f.cantidad || "—"}</td>
-                    <td className="py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">{n4(f.volumen)} {f.unidad}</td>
-                    <td className="py-2 text-right font-mono text-[length:var(--ts-2xs)] tabular-nums text-[var(--text-tertiary)]">{n4(f.disponibleCorrida)}</td>
+                    <td className="text-[var(--text-secondary)]">{f.producto ?? "—"}</td>
+                    <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                      {f.cantidad || "—"}
+                    </td>
+                    <td className="text-right font-mono font-bold tabular-nums">
+                      {n4(f.volumen)} {f.unidad}
+                    </td>
+                    <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">
+                      {n4(f.disponibleCorrida)}
+                    </td>
                   </tr>
                 );
               })}
@@ -185,7 +231,6 @@ export default function CtpPlantaReservaModal({ titulo, corridas, onClose, onDes
           </DataTable>
         )}
       </div>
-
     </AdminModal>
   );
 }

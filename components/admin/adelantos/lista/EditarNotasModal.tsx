@@ -9,12 +9,12 @@
  * quedaba así para siempre.
  */
 
-import { useEffect, useState, useRef } from "react";
+import { useState } from "react";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
+import { button } from "@/components/ui-system/button-variants";
 import { leerJson } from "@/lib/errores/sin-dato";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
-import { AlertTriangle, Pencil } from "@buleje/design-system/icons";
+import { Pencil } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
 import { inputCls } from "../shared";
@@ -32,21 +32,9 @@ export default function EditarNotasModal({
   onClose: () => void;
   onGuardado: () => void;
 }) {
-  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
-  const cajaRef = useRef<HTMLDivElement>(null);
   const [notas, setNotas] = useState(notasActuales ?? "");
   const [saving, setSaving] = useState(false);
-  /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
-       el foco, la trampa de Tab y el scroll, no una segunda salida. */
-  useModalAccesible(cajaRef, { onCerrar: saving ? undefined : onClose, cerrarConEscape: false });
-  const ventana = useVentanaDeModal(true, { ref: cajaRef, asaAutomatica: true, aplicarTranslate: true, claveMemoria: "adelanto-editar-notas" });
   const [err, setErr] = useState<string | null>(null);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
 
   const guardar = async () => {
     setSaving(true);
@@ -73,21 +61,31 @@ export default function EditarNotasModal({
   };
 
   return (
-    <div className="fixed inset-0 z-modal-2 flex items-center justify-center bg-black/50 p-4" role="presentation" onClick={(e) => e.target === e.currentTarget && !ventana.fijado && onClose()}>
-      <div ref={cajaRef} tabIndex={-1}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Editar motivo / notas"
-        className="relative w-full max-w-md rounded-2xl bg-[var(--surface-raised)] p-5 shadow-[var(--shadow-xl)]"
-      >
-        <div className="mb-3 flex items-center gap-2.5">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
-            <Pencil className="h-4.5 w-4.5" />
-          </span>
-          <p className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Editar motivo / notas</p>
-          <div className="ml-auto flex items-center gap-1"><ControlesDeVentana ventana={ventana} /></div>
-        </div>
-
+    /* Se abre también desde el detalle del adelanto (otro modal): va encima. */
+    <AdminModal
+      open
+      onClose={saving ? () => undefined : onClose}
+      title="Editar motivo / notas"
+      icon={Pencil}
+      aboveModals
+      claveVentana="adelanto-editar-notas"
+      footer={
+        <ModalFooter error={err}>
+          <button type="button" onClick={onClose} className={button({ variant: "secondary" })}>
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={() => void guardar()}
+            disabled={saving}
+            className={button({ variant: "primary" })}
+          >
+            {saving ? "Guardando…" : "Guardar"}
+          </button>
+        </ModalFooter>
+      }
+    >
+      <div className={MODAL_BODY}>
         <textarea
           value={notas}
           onChange={(e) => setNotas(e.target.value)}
@@ -96,32 +94,7 @@ export default function EditarNotasModal({
           aria-label="Motivo / notas del adelanto"
           className={`${inputCls} h-auto py-3`}
         />
-
-        {err && (
-          <p className="mt-3 flex items-start gap-2 text-sm font-semibold text-[var(--data-error)]">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /> {err}
-          </p>
-        )}
-
-        <div className="mt-4 flex gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="h-11 flex-1 rounded-xl text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={() => void guardar()}
-            disabled={saving}
-            className="h-11 flex-1 rounded-xl bg-primary text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
-          >
-            {saving ? "Guardando…" : "Guardar"}
-          </button>
-        </div>
-        <TiradorDeVentana ventana={ventana} />
       </div>
-    </div>
+    </AdminModal>
   );
 }

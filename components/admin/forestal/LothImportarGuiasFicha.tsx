@@ -32,12 +32,11 @@ import LothImportarGuiasBloques from "./LothImportarGuiasBloques";
 import CtpApartados, { CtpApartadoPanel, type Apartado } from "./ctp-apartados";
 
 const m = (v: number | null) => (v == null ? "—" : formatNumber(v, 2));
-const TH =
-  "whitespace-nowrap px-3 py-2 text-left text-xs font-semibold text-[var(--text-tertiary)]";
-const TD = "whitespace-nowrap px-3 py-1.5";
+const TH = "whitespace-nowrap";
+const TD = "whitespace-nowrap";
 
-/** El modal ancho: casi todo el ancho en escritorio y 90 % del alto (sólo este modal). */
-const MODAL_AMPLIO = "sm:max-w-[min(96vw,1400px)] sm:h-[90vh] sm:max-h-[90vh]";
+/** El ancho es el de `planilla`; lo propio de este modal es el alto fijo al 90 %. */
+const MODAL_AMPLIO = "sm:h-[90vh] sm:max-h-[90vh]";
 
 /**
  * El modal «Datos» de una guía importada, en dos pestañas: «GTF» (los casilleros
@@ -68,14 +67,23 @@ export default function ModalFichaImportada({
   if (!leida) return null;
   const volumen = piezas.reduce((a, p) => a + (p.volumeM3 ?? 0), 0);
   const apartados: Apartado[] = [
-    { id: "gtf", label: "GTF", hint: "Los casilleros de la guía: titular, propietario, destinatario, transporte y traslado" },
-    { id: "trozas", label: "Lista de trozas", contador: piezas.length, unidad: piezas.length === 1 ? "troza" : "trozas" },
+    {
+      id: "gtf",
+      label: "GTF",
+      hint: "Los casilleros de la guía: titular, propietario, destinatario, transporte y traslado",
+    },
+    {
+      id: "trozas",
+      label: "Lista de trozas",
+      contador: piezas.length,
+      unidad: piezas.length === 1 ? "troza" : "trozas",
+    },
   ];
   return (
     <AdminModal
       open
       onClose={onClose}
-      variant="info"
+      size="planilla"
       icon={FileText}
       className={MODAL_AMPLIO}
       title={`Datos de la GTF ${gtfNumber}`}
@@ -106,7 +114,7 @@ export default function ModalFichaImportada({
               </p>
             ) : (
               <div className="overflow-x-auto rounded-lg border border-[var(--rule-base)]">
-                <DataTable className="w-full text-sm">
+                <DataTable className="w-full">
                   <caption className="px-3 py-2 text-left text-sm font-bold text-[var(--text-primary)]">
                     Trozas de la guía ({piezas.length}) ·{" "}
                     <span className="font-mono tabular-nums">{fmtM3(volumen)} m³</span>
@@ -116,10 +124,12 @@ export default function ModalFichaImportada({
                         Lista de trozas N° <span className="font-mono">{nroLista}</span>
                       </span>
                     ) : (
-                      <span className="font-normal text-[var(--text-tertiary)]">sin N° de lista de trozas</span>
+                      <span className="font-normal text-[var(--text-tertiary)]">
+                        sin N° de lista de trozas
+                      </span>
                     )}
                   </caption>
-                  <thead className="bg-[var(--surface-sunken)]">
+                  <thead>
                     <tr>
                       <th className={TH}>Código en la guía</th>
                       <th className={TH}>Código único</th>
@@ -133,12 +143,20 @@ export default function ModalFichaImportada({
                   <tbody className="divide-y divide-[var(--rule-soft)]">
                     {piezas.map((p, i) => (
                       <tr key={`${p.codigo}-${i}`}>
-                        <td className={`${TD} font-mono text-[var(--text-secondary)]`}>{p.codigoGuia || p.codigo || "—"}</td>
-                        <td className={`${TD} font-mono font-semibold text-[var(--text-primary)]`}>{p.codigo || "—"}</td>
+                        <td className={`${TD} font-mono text-[var(--text-secondary)]`}>
+                          {p.codigoGuia || p.codigo || "—"}
+                        </td>
+                        <td className={`${TD} font-mono font-semibold`}>{p.codigo || "—"}</td>
                         <td className={`${TD} text-[var(--text-secondary)]`}>{p.comun ?? "—"}</td>
-                        <td className={`${TD} text-right font-mono tabular-nums`}>{m(p.diamMayorM)}</td>
-                        <td className={`${TD} text-right font-mono tabular-nums`}>{m(p.diamMenorM)}</td>
-                        <td className={`${TD} text-right font-mono tabular-nums`}>{m(p.lengthM)}</td>
+                        <td className={`${TD} text-right font-mono tabular-nums`}>
+                          {m(p.diamMayorM)}
+                        </td>
+                        <td className={`${TD} text-right font-mono tabular-nums`}>
+                          {m(p.diamMenorM)}
+                        </td>
+                        <td className={`${TD} text-right font-mono tabular-nums`}>
+                          {m(p.lengthM)}
+                        </td>
                         <td className={`${TD} text-right font-mono tabular-nums`}>
                           {p.volumeM3 == null ? "—" : fmtM3(p.volumeM3)}
                         </td>

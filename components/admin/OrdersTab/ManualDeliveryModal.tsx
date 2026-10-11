@@ -25,7 +25,7 @@ const METHODS = [
   { id: "otro", label: "Otro", icon: MoreHorizontal },
 ] as const;
 
-type MethodId = typeof METHODS[number]["id"];
+type MethodId = (typeof METHODS)[number]["id"];
 
 interface ManualDeliveryModalProps {
   open: boolean;
@@ -73,6 +73,7 @@ export default function ManualDeliveryModal({
     <AdminModal
       open={open}
       onClose={onCancel}
+      aboveModals
       title="Marcar como entregado"
       description={`Pedido de ${customerName}`}
       variant="default"
@@ -80,12 +81,9 @@ export default function ManualDeliveryModal({
       <div className="space-y-4 px-5 py-5 sm:px-6">
         {/* Método */}
         <div className="space-y-2">
-          <p className="text-sm font-bold text-[var(--text-primary)]">
-            ¿Cómo se entregó?
-          </p>
+          <p className="text-sm font-bold text-[var(--text-primary)]">¿Cómo se entregó?</p>
           <p className="text-xs text-[var(--text-secondary)]">
-            Esto queda guardado para tus reportes — sabrás cuántas entregas
-            haces sin delivery.
+            Esto queda guardado para tus reportes — sabrás cuántas entregas haces sin delivery.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
             {METHODS.map((m) => {

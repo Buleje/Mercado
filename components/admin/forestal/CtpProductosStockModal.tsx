@@ -23,7 +23,14 @@ import { useEffect, useMemo, useState } from "react";
 import { Boxes, HandCoins, Loader2, PackageOpen, Search } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
-import { filasDeCorridas, r4, TOLERANCIA_M3, valorPropuesto, type CorridaDisponible, type FilaDespacho } from "@/lib/forestal/despacho-lista";
+import {
+  filasDeCorridas,
+  r4,
+  TOLERANCIA_M3,
+  valorPropuesto,
+  type CorridaDisponible,
+  type FilaDespacho,
+} from "@/lib/forestal/despacho-lista";
 import type { DestinatarioDeGuia } from "@/lib/forestal/cliente-de-la-guia";
 import { hoyEnLima } from "@/lib/forestal/semana-de-registro";
 import { useTratoDeVenta } from "./hooks/use-trato-de-venta";
@@ -32,14 +39,30 @@ import { CtpPaginacion, FilaVacia, TablaCtp, TbodyCtp, usePaginacion } from "./c
 import { formatDateNumeric } from "@/lib/format";
 import { FiltroColumnaMulti, type FacetaOpcion } from "@/components/admin/shared/filtros-columna";
 import { CampoDeFiltro } from "./ctp-filtros-panel";
-import { BotonRestablecerColumnas, EnOrden, useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
+import {
+  BotonRestablecerColumnas,
+  EnOrden,
+  useOrdenColumnas,
+} from "@/components/admin/shared/columnas-ordenables";
 
 /** Las columnas movibles, en su orden de fábrica (Brandon, 2026-09-26: arrastrar
  *  el título para personalizar el orden). */
 const ORDEN_STOCK_DEFECTO = [
-  "gtfOrigen", "titular", "produccion", "lote", "paquete", "linea",
-  "especie", "producto", "espesor", "ancho", "largo", "cantidad",
-  "presentacion", "volumen", "medida",
+  "gtfOrigen",
+  "titular",
+  "produccion",
+  "lote",
+  "paquete",
+  "linea",
+  "especie",
+  "producto",
+  "espesor",
+  "ancho",
+  "largo",
+  "cantidad",
+  "presentacion",
+  "volumen",
+  "medida",
 ] as const;
 
 const CAMPO =
@@ -49,9 +72,13 @@ const CELDA_NUM =
 
 const norm = (v: string | null | undefined) => (v ?? "").toLowerCase().trim();
 const dia = (iso: string | null) => (iso ? iso.slice(0, 10) : "");
-const fmtDia = (iso: string | null) =>
-  iso ? formatDateNumeric(iso, { soloFecha: true }) : "—";
-const MEDIDA: Record<string, string> = { m3: "Metros cúbicos", pt: "Pies tablares", kg: "Kilogramos", unidad: "Unidades" };
+const fmtDia = (iso: string | null) => (iso ? formatDateNumeric(iso, { soloFecha: true }) : "—");
+const MEDIDA: Record<string, string> = {
+  m3: "Metros cúbicos",
+  pt: "Pies tablares",
+  kg: "Kilogramos",
+  unidad: "Unidades",
+};
 
 export default function CtpProductosStockModal({
   yaElegidos,
@@ -87,7 +114,10 @@ export default function CtpProductosStockModal({
      cliente, que puede llegar después (y cambiar si se elige otro cliente). */
   const [corridas, setCorridas] = useState<CorridaDisponible[]>([]);
   const venta = useTratoDeVenta(destinatario, fechaGuia || hoyEnLima());
-  const filas = useMemo(() => filasDeCorridas(corridas, { trato: venta.trato }), [corridas, venta.trato]);
+  const filas = useMemo(
+    () => filasDeCorridas(corridas, { trato: venta.trato }),
+    [corridas, venta.trato],
+  );
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -98,8 +128,12 @@ export default function CtpProductosStockModal({
   const [loteFiltro, setLoteFiltro] = useState<string[]>([]);
   const [texto, setTexto] = useState("");
   const [fecha, setFecha] = useState("");
-  const [especieFiltro, setEspecieFiltro] = useState<string[]>(presetEspecie ? [presetEspecie] : []);
-  const [productoFiltro, setProductoFiltro] = useState<string[]>(presetProducto ? [presetProducto] : []);
+  const [especieFiltro, setEspecieFiltro] = useState<string[]>(
+    presetEspecie ? [presetEspecie] : [],
+  );
+  const [productoFiltro, setProductoFiltro] = useState<string[]>(
+    presetProducto ? [presetProducto] : [],
+  );
 
   /** Lo tildado + lo editado a mano, por uid (sobrevive al cambio de filtro). */
   const [elegidas, setElegidas] = useState<Set<string>>(new Set());
@@ -122,11 +156,15 @@ export default function CtpProductosStockModal({
            por qué. Si no existe entre lo disponible, se ignora — mejor la lista
            completa que una pantalla en blanco. */
         if (presetProducto) {
-          const real = nuevas.map((f) => f.producto ?? "").find((p) => norm(p) === norm(presetProducto));
+          const real = nuevas
+            .map((f) => f.producto ?? "")
+            .find((p) => norm(p) === norm(presetProducto));
           setProductoFiltro(real ? [real] : []);
         }
         if (presetEspecie) {
-          const real = nuevas.map((f) => f.especie ?? "").find((e) => norm(e) === norm(presetEspecie));
+          const real = nuevas
+            .map((f) => f.especie ?? "")
+            .find((e) => norm(e) === norm(presetEspecie));
           setEspecieFiltro(real ? [real] : []);
         }
         /* Reserva: se tildan las filas de esas corridas. Una corrida puede tener
@@ -137,9 +175,15 @@ export default function CtpProductosStockModal({
           setElegidas(new Set(nuevas.filter((f) => set.has(f.corridaId)).map((f) => f.uid)));
         }
       })
-      .catch((e) => { if (vivo) setError(e instanceof Error ? e.message : String(e)); })
-      .finally(() => { if (vivo) setCargando(false); });
-    return () => { vivo = false; };
+      .catch((e) => {
+        if (vivo) setError(e instanceof Error ? e.message : String(e));
+      })
+      .finally(() => {
+        if (vivo) setCargando(false);
+      });
+    return () => {
+      vivo = false;
+    };
   }, [presetProducto, presetEspecie, presetCorridas]);
 
   /** Con reserva, la lista se acota a lo que hay en esa cancha. */
@@ -152,7 +196,9 @@ export default function CtpProductosStockModal({
    *  — de TODA la pila, no de lo ya acotado por las demás columnas (el mismo
    *  embudo de Excel que ya usan Inventario y Pedidos). */
   const opciones = useMemo(() => {
-    const contar = (get: (f: FilaDespacho) => string | readonly string[] | null | undefined): FacetaOpcion[] => {
+    const contar = (
+      get: (f: FilaDespacho) => string | readonly string[] | null | undefined,
+    ): FacetaOpcion[] => {
       const map = new Map<string, number>();
       for (const f of filas) {
         const crudo = get(f);
@@ -184,17 +230,40 @@ export default function CtpProductosStockModal({
       // `.trim()` (arriba, en `opciones`), así que un valor elegido en el
       // popover debe seguir encontrando la fila aunque su grafía difiera en
       // mayúsculas/espacios.
-      if (titularFiltro.length > 0 && !f.titularOrigen.some((t) => titularFiltro.some((v) => norm(v) === norm(t)))) return false;
+      if (
+        titularFiltro.length > 0 &&
+        !f.titularOrigen.some((t) => titularFiltro.some((v) => norm(v) === norm(t)))
+      )
+        return false;
       if (loteFiltro.length > 0 && !loteFiltro.some((v) => norm(v) === norm(f.lote))) return false;
-      if (especieFiltro.length > 0 && !especieFiltro.some((v) => norm(v) === norm(f.especie))) return false;
-      if (productoFiltro.length > 0 && !productoFiltro.some((v) => norm(v) === norm(f.producto))) return false;
+      if (especieFiltro.length > 0 && !especieFiltro.some((v) => norm(v) === norm(f.especie)))
+        return false;
+      if (productoFiltro.length > 0 && !productoFiltro.some((v) => norm(v) === norm(f.producto)))
+        return false;
       if (fecha && dia(f.fechaProduccion) !== fecha) return false;
-      if (q && ![f.codigo, ...f.gtfOrigen, f.lote, f.especie].some((v) => norm(v).includes(q))) return false;
+      if (q && ![f.codigo, ...f.gtfOrigen, f.lote, f.especie].some((v) => norm(v).includes(q)))
+        return false;
       return true;
     });
-  }, [filas, yaElegidos, soloCorridas, titularFiltro, loteFiltro, especieFiltro, productoFiltro, fecha, texto]);
+  }, [
+    filas,
+    yaElegidos,
+    soloCorridas,
+    titularFiltro,
+    loteFiltro,
+    especieFiltro,
+    productoFiltro,
+    fecha,
+    texto,
+  ]);
 
-  const { visibles: enPagina, rango, porPagina, setPorPagina, ir } = usePaginacion(visibles, { porPaginaInicial: 25 });
+  const {
+    visibles: enPagina,
+    rango,
+    porPagina,
+    setPorPagina,
+    ir,
+  } = usePaginacion(visibles, { porPaginaInicial: 25 });
 
   /** La fila con lo que el operador editó encima. */
   const conEdits = (f: FilaDespacho): FilaDespacho => {
@@ -215,20 +284,27 @@ export default function CtpProductosStockModal({
      es el error que el backend rechaza (I5) después de media guía cargada. */
   const excedidas = useMemo(() => {
     const porCorrida = new Map<string, number>();
-    for (const f of seleccionadas) porCorrida.set(f.corridaId, r4((porCorrida.get(f.corridaId) ?? 0) + (f.volumen || 0)));
+    for (const f of seleccionadas)
+      porCorrida.set(f.corridaId, r4((porCorrida.get(f.corridaId) ?? 0) + (f.volumen || 0)));
     return new Set(
-      seleccionadas.filter((f) => (porCorrida.get(f.corridaId) ?? 0) - f.disponibleCorrida > TOLERANCIA_M3).map((f) => f.uid),
+      seleccionadas
+        .filter((f) => (porCorrida.get(f.corridaId) ?? 0) - f.disponibleCorrida > TOLERANCIA_M3)
+        .map((f) => f.uid),
     );
   }, [seleccionadas]);
 
   const totalElegido = r4(seleccionadas.reduce((a, f) => a + (f.volumen || 0), 0));
   const puedeAgregar =
-    seleccionadas.length > 0 && excedidas.size === 0 && seleccionadas.every((f) => f.volumen > 0) && !venta.cargando;
+    seleccionadas.length > 0 &&
+    excedidas.size === 0 &&
+    seleccionadas.every((f) => f.volumen > 0) &&
+    !venta.cargando;
 
   function alternar(uid: string) {
     setElegidas((prev) => {
       const s = new Set(prev);
-      if (s.has(uid)) s.delete(uid); else s.add(uid);
+      if (s.has(uid)) s.delete(uid);
+      else s.add(uid);
       return s;
     });
   }
@@ -246,28 +322,43 @@ export default function CtpProductosStockModal({
     <AdminModal
       open
       onClose={onCerrar}
-      variant="wide"
+      size="planilla"
       title="Productos en stock"
       description="Lo aserrado que sigue en la planta: elige qué sube al camión y con qué cantidad"
       icon={Boxes}
-      className="sm:w-[min(96vw,100rem)] sm:max-w-none"
       footer={
         <ModalFooter
           error={error}
           nota={
             seleccionadas.length > 0 ? (
               <span>
-                <b className="text-[var(--text-primary)]">{seleccionadas.length}</b> elegido{seleccionadas.length === 1 ? "" : "s"} ·{" "}
+                <b className="text-[var(--text-primary)]">{seleccionadas.length}</b> elegido
+                {seleccionadas.length === 1 ? "" : "s"} ·{" "}
                 <span className="font-mono tabular-nums">{totalElegido.toFixed(4)} m³</span>
-                {excedidas.size > 0 && <span className="ml-2 font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">Hay filas que superan el saldo de su corrida</span>}
+                {excedidas.size > 0 && (
+                  <span className="ml-2 font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+                    Hay filas que superan el saldo de su corrida
+                  </span>
+                )}
               </span>
             ) : (
-              <span>{visibles.length} producto{visibles.length === 1 ? "" : "s"} en la pila</span>
+              <span>
+                {visibles.length} producto{visibles.length === 1 ? "" : "s"} en la pila
+              </span>
             )
           }
         >
-          <Btn variant="ghost" onClick={onCerrar}>Cerrar</Btn>
-          <Btn variant="primary" disabled={!puedeAgregar} onClick={() => { onAgregar(seleccionadas); onCerrar(); }}>
+          <Btn variant="ghost" onClick={onCerrar}>
+            Cerrar
+          </Btn>
+          <Btn
+            variant="primary"
+            disabled={!puedeAgregar}
+            onClick={() => {
+              onAgregar(seleccionadas);
+              onCerrar();
+            }}
+          >
             Agregar productos{seleccionadas.length > 0 ? ` (${seleccionadas.length})` : ""}
           </Btn>
         </ModalFooter>
@@ -287,12 +378,20 @@ export default function CtpProductosStockModal({
             <HandCoins className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
             <span>
               {venta.cargando ? (
-                <>Leyendo el precio de venta pactado con {venta.cliente?.nombre ?? "el cliente de la guía"}…</>
+                <>
+                  Leyendo el precio de venta pactado con{" "}
+                  {venta.cliente?.nombre ?? "el cliente de la guía"}…
+                </>
               ) : venta.error ? (
-                <>No se pudo leer el precio pactado con {venta.cliente?.nombre ?? "el cliente"}: la venta se propone con el precio de cada paquete.</>
+                <>
+                  No se pudo leer el precio pactado con {venta.cliente?.nombre ?? "el cliente"}: la
+                  venta se propone con el precio de cada paquete.
+                </>
               ) : (
                 <>
-                  La venta se propone con el precio pactado con <b className="text-[var(--text-primary)]">{venta.trato?.parteNombre}</b>; lo que su trato no cubre, con el del paquete.
+                  La venta se propone con el precio pactado con{" "}
+                  <b className="text-[var(--text-primary)]">{venta.trato?.parteNombre}</b>; lo que
+                  su trato no cubre, con el del paquete.
                 </>
               )}
             </span>
@@ -304,12 +403,25 @@ export default function CtpProductosStockModal({
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <Filtro label="Paquete / GTF de origen">
             <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
-              <input value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Buscar…" className={`${CAMPO} pl-9`} />
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]"
+                aria-hidden
+              />
+              <input
+                value={texto}
+                onChange={(e) => setTexto(e.target.value)}
+                placeholder="Buscar…"
+                className={`${CAMPO} pl-9`}
+              />
             </div>
           </Filtro>
           <Filtro label="Fecha de producción">
-            <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className={CAMPO} />
+            <input
+              type="date"
+              value={fecha}
+              onChange={(e) => setFecha(e.target.value)}
+              className={CAMPO}
+            />
           </Filtro>
         </div>
 
@@ -317,20 +429,47 @@ export default function CtpProductosStockModal({
             cuatro filtros de columna se repiten acá, sólo visibles ahí. */}
         <div className="grid grid-cols-2 gap-2 sm:hidden">
           <div className="flex flex-col gap-1">
-            <span className="text-sm font-bold text-[var(--text-secondary)]">Titular de origen</span>
-            <CampoDeFiltro label="Titular de origen" value={titularFiltro} options={opciones.titulares} onChange={setTitularFiltro} placeholder="Todos" />
+            <span className="text-sm font-bold text-[var(--text-secondary)]">
+              Titular de origen
+            </span>
+            <CampoDeFiltro
+              label="Titular de origen"
+              value={titularFiltro}
+              options={opciones.titulares}
+              onChange={setTitularFiltro}
+              placeholder="Todos"
+            />
           </div>
           <div className="flex flex-col gap-1">
             <span className="text-sm font-bold text-[var(--text-secondary)]">Lote</span>
-            <CampoDeFiltro label="Lote" value={loteFiltro} options={opciones.lotes} onChange={setLoteFiltro} placeholder="Todos" />
+            <CampoDeFiltro
+              label="Lote"
+              value={loteFiltro}
+              options={opciones.lotes}
+              onChange={setLoteFiltro}
+              placeholder="Todos"
+            />
           </div>
           <div className="flex flex-col gap-1">
             <span className="text-sm font-bold text-[var(--text-secondary)]">Especie</span>
-            <CampoDeFiltro label="Especie" value={especieFiltro} options={opciones.especies} onChange={setEspecieFiltro} placeholder="Todas" />
+            <CampoDeFiltro
+              label="Especie"
+              value={especieFiltro}
+              options={opciones.especies}
+              onChange={setEspecieFiltro}
+              placeholder="Todas"
+            />
           </div>
           <div className="flex flex-col gap-1">
             <span className="text-sm font-bold text-[var(--text-secondary)]">Producto</span>
-            <CampoDeFiltro label="Producto" value={productoFiltro} options={opciones.productos} etiqueta={productLabel} onChange={setProductoFiltro} placeholder="Todos" />
+            <CampoDeFiltro
+              label="Producto"
+              value={productoFiltro}
+              options={opciones.productos}
+              etiqueta={productLabel}
+              onChange={setProductoFiltro}
+              placeholder="Todos"
+            />
           </div>
         </div>
 
@@ -338,19 +477,19 @@ export default function CtpProductosStockModal({
           <BotonRestablecerColumnas cambiado={orden.cambiado} onRestablecer={orden.restablecer} />
         </div>
         <TablaCtp altoMax="max-h-[52vh]">
-          <thead
-            ref={orden.refCabecera}
-            className="sticky top-0 z-10 bg-[var(--surface-sunken)] text-left align-top text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]"
-          >
+          <thead ref={orden.refCabecera} className="sticky top-0 z-10 align-top">
             <tr>
-              <th className="px-2 py-2">
+              <th>
                 <input
                   type="checkbox"
                   checked={todasEnPagina}
                   onChange={() =>
                     setElegidas((prev) => {
                       const s = new Set(prev);
-                      for (const f of enPagina) { if (todasEnPagina) s.delete(f.uid); else s.add(f.uid); }
+                      for (const f of enPagina) {
+                        if (todasEnPagina) s.delete(f.uid);
+                        else s.add(f.uid);
+                      }
                       return s;
                     })
                   }
@@ -362,41 +501,86 @@ export default function CtpProductosStockModal({
               <EnOrden
                 orden={orden.orden}
                 celdas={{
-                  gtfOrigen: <th data-col="gtfOrigen" className="px-3 py-2 font-bold">GTF origen</th>,
+                  gtfOrigen: <th data-col="gtfOrigen">GTF origen</th>,
                   titular: (
-                    <th data-col="titular" className="px-3 py-2 font-bold">
+                    <th data-col="titular">
                       <span className="block">Titular de origen</span>
-                      <FiltroColumnaMulti label="Titular de origen" value={titularFiltro} options={opciones.titulares} onChange={setTitularFiltro} placeholder="Todos" />
+                      <FiltroColumnaMulti
+                        label="Titular de origen"
+                        value={titularFiltro}
+                        options={opciones.titulares}
+                        onChange={setTitularFiltro}
+                        placeholder="Todos"
+                      />
                     </th>
                   ),
-                  produccion: <th data-col="produccion" className="px-3 py-2 font-bold">Producción</th>,
+                  produccion: <th data-col="produccion">Producción</th>,
                   lote: (
-                    <th data-col="lote" className="px-3 py-2 font-bold">
+                    <th data-col="lote">
                       <span className="block">Lote</span>
-                      <FiltroColumnaMulti label="Lote" value={loteFiltro} options={opciones.lotes} onChange={setLoteFiltro} placeholder="Todos" />
+                      <FiltroColumnaMulti
+                        label="Lote"
+                        value={loteFiltro}
+                        options={opciones.lotes}
+                        onChange={setLoteFiltro}
+                        placeholder="Todos"
+                      />
                     </th>
                   ),
-                  paquete: <th data-col="paquete" className="px-3 py-2 font-bold">Paquete</th>,
-                  linea: <th data-col="linea" className="px-3 py-2 font-bold">Línea</th>,
+                  paquete: <th data-col="paquete">Paquete</th>,
+                  linea: <th data-col="linea">Línea</th>,
                   especie: (
-                    <th data-col="especie" className="px-3 py-2 font-bold">
+                    <th data-col="especie">
                       <span className="block">Especie</span>
-                      <FiltroColumnaMulti label="Especie" value={especieFiltro} options={opciones.especies} onChange={setEspecieFiltro} placeholder="Todas" />
+                      <FiltroColumnaMulti
+                        label="Especie"
+                        value={especieFiltro}
+                        options={opciones.especies}
+                        onChange={setEspecieFiltro}
+                        placeholder="Todas"
+                      />
                     </th>
                   ),
                   producto: (
-                    <th data-col="producto" className="px-3 py-2 font-bold">
+                    <th data-col="producto">
                       <span className="block">Producto</span>
-                      <FiltroColumnaMulti label="Producto" value={productoFiltro} options={opciones.productos} etiqueta={productLabel} onChange={setProductoFiltro} placeholder="Todos" />
+                      <FiltroColumnaMulti
+                        label="Producto"
+                        value={productoFiltro}
+                        options={opciones.productos}
+                        etiqueta={productLabel}
+                        onChange={setProductoFiltro}
+                        placeholder="Todos"
+                      />
                     </th>
                   ),
-                  espesor: <th data-col="espesor" className="px-3 py-2 text-right font-bold">Esp. (cm)</th>,
-                  ancho: <th data-col="ancho" className="px-3 py-2 text-right font-bold">Ancho (cm)</th>,
-                  largo: <th data-col="largo" className="px-3 py-2 text-right font-bold">Largo (m)</th>,
-                  cantidad: <th data-col="cantidad" className="px-3 py-2 text-right font-bold">Cantidad</th>,
-                  presentacion: <th data-col="presentacion" className="px-3 py-2 font-bold">Presentación</th>,
-                  volumen: <th data-col="volumen" className="px-3 py-2 text-right font-bold">Volumen</th>,
-                  medida: <th data-col="medida" className="px-3 py-2 font-bold">Medida</th>,
+                  espesor: (
+                    <th data-col="espesor" className="text-right">
+                      Esp. (cm)
+                    </th>
+                  ),
+                  ancho: (
+                    <th data-col="ancho" className="text-right">
+                      Ancho (cm)
+                    </th>
+                  ),
+                  largo: (
+                    <th data-col="largo" className="text-right">
+                      Largo (m)
+                    </th>
+                  ),
+                  cantidad: (
+                    <th data-col="cantidad" className="text-right">
+                      Cantidad
+                    </th>
+                  ),
+                  presentacion: <th data-col="presentacion">Presentación</th>,
+                  volumen: (
+                    <th data-col="volumen" className="text-right">
+                      Volumen
+                    </th>
+                  ),
+                  medida: <th data-col="medida">Medida</th>,
                 }}
               />
             </tr>
@@ -405,7 +589,9 @@ export default function CtpProductosStockModal({
             {enPagina.length === 0 && (
               <FilaVacia cols={16}>
                 {cargando ? (
-                  <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Leyendo la planta…</span>
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Leyendo la planta…
+                  </span>
                 ) : filas.length === 0 ? (
                   "No hay producto disponible: todo lo aserrado ya salió o todavía no se declaró ninguna producción."
                 ) : (
@@ -428,7 +614,7 @@ export default function CtpProductosStockModal({
                         : "hover:bg-[var(--surface-sunken)]"
                   }
                 >
-                  <td className="px-2 py-2">
+                  <td>
                     <input
                       type="checkbox"
                       checked={elegida}
@@ -440,41 +626,83 @@ export default function CtpProductosStockModal({
                   <EnOrden
                     orden={orden.orden}
                     celdas={{
-                      gtfOrigen: <td className="px-3 py-2 font-mono text-xs text-[var(--text-secondary)]">{f.gtfOrigen.join(" · ") || "—"}</td>,
-                      titular: <td className="max-w-[16rem] px-3 py-2 text-xs text-[var(--text-secondary)]">{f.titularOrigen.join(" · ") || "—"}</td>,
+                      gtfOrigen: (
+                        <td className="font-mono text-[var(--text-secondary)]">
+                          {f.gtfOrigen.join(" · ") || "—"}
+                        </td>
+                      ),
+                      titular: (
+                        <td className="max-w-[16rem] text-[var(--text-secondary)]">
+                          {f.titularOrigen.join(" · ") || "—"}
+                        </td>
+                      ),
                       produccion: (
-                        <td className="px-3 py-2 text-xs tabular-nums text-[var(--text-secondary)]">
+                        <td className="tabular-nums text-[var(--text-secondary)]">
                           {fmtDia(f.fechaProduccion)}
-                          <div className="font-mono text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">#{f.lineNo ?? "—"}</div>
+                          <div className="font-mono text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
+                            #{f.lineNo ?? "—"}
+                          </div>
                         </td>
                       ),
-                      lote: <td className="px-3 py-2 font-mono text-xs text-[var(--text-secondary)]">{f.lote ?? "—"}</td>,
+                      lote: (
+                        <td className="font-mono text-[var(--text-secondary)]">{f.lote ?? "—"}</td>
+                      ),
                       paquete: (
-                        <td className="px-3 py-2 font-mono text-sm font-bold text-[var(--text-primary)]">
-                          {f.codigo ?? <span className="font-sans font-normal text-[var(--text-tertiary)]">sin paquete</span>}
+                        <td className="font-mono font-bold">
+                          {f.codigo ?? (
+                            <span className="font-sans font-normal text-[var(--text-tertiary)]">
+                              sin paquete
+                            </span>
+                          )}
                         </td>
                       ),
-                      linea: <td className="px-3 py-2 font-mono text-xs text-[var(--text-tertiary)]">{f.linea ?? "—"}</td>,
-                      especie: <td className="px-3 py-2 text-[var(--text-secondary)]">{f.especie ?? "—"}</td>,
-                      producto: <td className="px-3 py-2 text-xs text-[var(--text-secondary)]">{productLabel(f.producto ?? "")}</td>,
-                      espesor: <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{f.espesorCm ?? "—"}</td>,
-                      ancho: <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{f.anchoCm ?? "—"}</td>,
-                      largo: <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{f.largoM ?? "—"}</td>,
+                      linea: (
+                        <td className="font-mono text-[var(--text-tertiary)]">{f.linea ?? "—"}</td>
+                      ),
+                      especie: <td className="text-[var(--text-secondary)]">{f.especie ?? "—"}</td>,
+                      producto: (
+                        <td className="text-[var(--text-secondary)]">
+                          {productLabel(f.producto ?? "")}
+                        </td>
+                      ),
+                      espesor: (
+                        <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">
+                          {f.espesorCm ?? "—"}
+                        </td>
+                      ),
+                      ancho: (
+                        <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">
+                          {f.anchoCm ?? "—"}
+                        </td>
+                      ),
+                      largo: (
+                        <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">
+                          {f.largoM ?? "—"}
+                        </td>
+                      ),
                       cantidad: (
-                        <td className="px-3 py-2 text-right">
+                        <td className="text-right">
                           <input
-                            type="number" min="0" step="1" value={f.cantidad}
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={f.cantidad}
                             onChange={(e) => editar(f.uid, "cantidad", e.target.value)}
                             aria-label={`Cantidad de ${f.codigo ?? "la corrida"}`}
                             className={CELDA_NUM}
                           />
                         </td>
                       ),
-                      presentacion: <td className="px-3 py-2 text-xs text-[var(--text-tertiary)]">{f.presentacion ?? "—"}</td>,
+                      presentacion: (
+                        <td className="text-[var(--text-tertiary)]">{f.presentacion ?? "—"}</td>
+                      ),
                       volumen: (
-                        <td className="px-3 py-2 text-right">
+                        <td className="text-right">
                           <input
-                            type="number" min="0" step="0.0001" value={f.volumen}
+                            type="number"
+                            min="0"
+                            step="0.0001"
+                            value={f.volumen}
                             onChange={(e) => editar(f.uid, "volumen", e.target.value)}
                             aria-label={`Volumen de ${f.codigo ?? "la corrida"}`}
                             className={`${CELDA_NUM} ${excede ? "border-[var(--data-error-500)]" : ""}`}
@@ -484,7 +712,11 @@ export default function CtpProductosStockModal({
                           </div>
                         </td>
                       ),
-                      medida: <td className="px-3 py-2 text-xs text-[var(--text-tertiary)]">{MEDIDA[f.unidad] ?? f.unidad}</td>,
+                      medida: (
+                        <td className="text-[var(--text-tertiary)]">
+                          {MEDIDA[f.unidad] ?? f.unidad}
+                        </td>
+                      ),
                     }}
                   />
                 </tr>
@@ -500,7 +732,11 @@ export default function CtpProductosStockModal({
             onPorPagina={setPorPagina}
             onIr={ir}
             sustantivo="producto"
-            extra={<span className="inline-flex items-center gap-1.5"><PackageOpen className="h-3.5 w-3.5" /> el saldo es de la corrida, no del paquete</span>}
+            extra={
+              <span className="inline-flex items-center gap-1.5">
+                <PackageOpen className="h-3.5 w-3.5" /> el saldo es de la corrida, no del paquete
+              </span>
+            }
           />
         )}
       </div>
@@ -511,7 +747,9 @@ export default function CtpProductosStockModal({
 function Filtro({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">{label}</span>
+      <span className="mb-1 block text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+        {label}
+      </span>
       {children}
     </label>
   );

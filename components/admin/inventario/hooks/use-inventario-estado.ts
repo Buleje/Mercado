@@ -15,7 +15,11 @@ import { useScrollLock } from "@/hooks/use-scroll-lock";
 import type { DbProduct, DbInventoryMovement } from "@/lib/jsondb";
 import type { Rango } from "@/lib/admin/filtros-columna";
 import { useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
-import { COLS_INVENTARIO, type CategoriaCatalogo, type View } from "@/components/admin/inventario/inventario-compartido";
+import {
+  COLS_INVENTARIO,
+  type CategoriaCatalogo,
+  type View,
+} from "@/components/admin/inventario/inventario-compartido";
 
 /** Estado de Inventario: filtros, modales, formularios y selección. Parte de `useInventario`. */
 export function useInventarioEstado() {
@@ -27,14 +31,18 @@ export function useInventarioEstado() {
   const [view, setView] = useState<View>("productos");
   const [search, setSearch] = useState("");
   // Mejora visual: Placeholder rotativo en búsqueda
-  const searchPlaceholders = ["Buscar por nombre...", "Buscar por código...", "Buscar por categoría..."];
+  const searchPlaceholders = [
+    "Buscar por nombre...",
+    "Buscar por código...",
+    "Buscar por categoría...",
+  ];
   const [phIndex, setPhIndex] = useState(0);
   useEffect(() => {
     // BUG-FIX (audit 2026-05-05): guard contra modulus-by-zero si el array
     // se vacía dinámicamente — `% 0` retorna NaN y causa "phIndex must be a number".
     const len = searchPlaceholders.length;
     if (len === 0) return;
-    const t = setInterval(() => setPhIndex(i => (i + 1) % len), 3000);
+    const t = setInterval(() => setPhIndex((i) => (i + 1) % len), 3000);
     return () => clearInterval(t);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   // Filtros en la cabecera, estilo Excel (Brandon, 2026-09-03/22): un solo
@@ -57,20 +65,40 @@ export function useInventarioEstado() {
         .then((r) => (r.ok ? r.json() : null))
         .then((s) => {
           if (cancelled || !s) return;
-          const order = (s.categoryOrder ?? []) as Array<{ id: string; label: string; visible?: boolean }>;
-          setCatalogoCategorias(order.map((c) => ({ id: c.id, label: c.label, visible: c.visible !== false, valores: [] })));
+          const order = (s.categoryOrder ?? []) as Array<{
+            id: string;
+            label: string;
+            visible?: boolean;
+          }>;
+          setCatalogoCategorias(
+            order.map((c) => ({
+              id: c.id,
+              label: c.label,
+              visible: c.visible !== false,
+              valores: [],
+            })),
+          );
         });
     fetch("/api/admin/categorias", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then((d: { categorias?: CategoriaCatalogo[] }) => {
         if (cancelled) return;
-        setCatalogoCategorias((d.categorias ?? []).map((c) => ({ id: c.id, label: c.label, visible: c.visible !== false, valores: c.valores ?? [] })));
+        setCatalogoCategorias(
+          (d.categorias ?? []).map((c) => ({
+            id: c.id,
+            label: c.label,
+            visible: c.visible !== false,
+            valores: c.valores ?? [],
+          })),
+        );
       })
       .catch(() => desdeAjustes())
       .catch((err: unknown) => {
         console.warn("[inventario] categorías: sin catálogo ni Ajustes", err);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
   const [lowOnly, setLowOnly] = useState(false);
   // Estado, en su columna (autofiltro de Excel): reemplaza al botón
@@ -122,36 +150,79 @@ export function useInventarioEstado() {
      cerrarla la saca; el lector (llegar por enlace, «atrás») está en use-inventario-carga. */
   const fichaProducto = useFichaEnUrl("producto");
   const { abrir: abrirProductoEnUrl, cerrar: cerrarProductoEnUrl } = fichaProducto;
-  const setEditModalProduct = useCallback((p: DbProduct | null) => {
-    setEditModalProductSinUrl(p);
-    if (p) abrirProductoEnUrl(String(p.id));
-    else cerrarProductoEnUrl();
-  }, [abrirProductoEnUrl, cerrarProductoEnUrl]);
-  const [editForm, setEditForm] = useState<Partial<DbProduct & { expiryDate?: string; isVariant?: boolean; variantOf?: string; variantAttr?: string; trackStock?: boolean }>>({});
+  const setEditModalProduct = useCallback(
+    (p: DbProduct | null) => {
+      setEditModalProductSinUrl(p);
+      if (p) abrirProductoEnUrl(String(p.id));
+      else cerrarProductoEnUrl();
+    },
+    [abrirProductoEnUrl, cerrarProductoEnUrl],
+  );
+  const [editForm, setEditForm] = useState<
+    Partial<
+      DbProduct & {
+        expiryDate?: string;
+        isVariant?: boolean;
+        variantOf?: string;
+        variantAttr?: string;
+        trackStock?: boolean;
+      }
+    >
+  >({});
   const [saving, setSaving] = useState(false);
-  const editModalRef = useRef<HTMLDivElement>(null);
-  const ventanaEdit = useVentanaDeModal(!!editModalProduct, { ref: editModalRef, aplicarTranslate: true, claveMemoria: "inventario-editar-producto" });
   const [showAdd, setShowAdd] = useState(false);
-  const addModalRef = useRef<HTMLDivElement>(null);
-  const ventanaAdd = useVentanaDeModal(showAdd, { ref: addModalRef, aplicarTranslate: true, claveMemoria: "inventario-nuevo-producto" });
   const [showPicker, setShowPicker] = useState(false);
-  const pickerModalRef = useRef<HTMLDivElement>(null);
-  const ventanaPicker = useVentanaDeModal(showPicker, { ref: pickerModalRef, aplicarTranslate: true, claveMemoria: "inventario-agregar-catalogo" });
   const [pickerSearch, setPickerSearch] = useState("");
   const [pickerCat, setPickerCat] = useState("todos");
   // trackStock: Brandon 2026-06-06 — cuando false, el producto es de stock
   // ILIMITADO (comidas que se preparan al pedido, servicios, etc.) → no se
   // controla inventario. Al guardar, stock/min/max van como null.
-  const EMPTY_ADD = { name: "", category: "", price: "", unit: "und", badge: "", image: "", barcode: "", costPrice: "", trackStock: true, stock: "", stockMin: "", stockMax: "", expiryDate: "", isVariant: false, variantOf: "", variantAttr: "", type: "product", description: "", brand: "", sku: "", taxType: "gravado", weightKg: "", dimensions: "", durationLabel: "", pricingUnit: "fijo", notes: "" };
+  const EMPTY_ADD = {
+    name: "",
+    category: "",
+    price: "",
+    unit: "und",
+    badge: "",
+    image: "",
+    barcode: "",
+    costPrice: "",
+    trackStock: true,
+    stock: "",
+    stockMin: "",
+    stockMax: "",
+    expiryDate: "",
+    isVariant: false,
+    variantOf: "",
+    variantAttr: "",
+    type: "product",
+    description: "",
+    brand: "",
+    sku: "",
+    taxType: "gravado",
+    weightKg: "",
+    dimensions: "",
+    durationLabel: "",
+    pricingUnit: "fijo",
+    notes: "",
+  };
   const [addForm, setAddForm] = useState(EMPTY_ADD);
   // Fase 2: presentaciones / variantes (ProductVariant[]) del producto a crear.
   // Cada fila tiene precio ABSOLUTO; al guardar se convierte a priceModifier
   // (delta vs precio base) que es lo que persiste el modelo.
-  const [addVariants, setAddVariants] = useState<{ name: string; price: string; stock: string }[]>([]);
+  const [addVariants, setAddVariants] = useState<{ name: string; price: string; stock: string }[]>(
+    [],
+  );
   // Fase 2: grupos de modificadores (ProductModifierGroup[]) — ej "Cremas" → ají,
   // mayonesa (+precio). priceDelta SIEMPRE ≥ 0 (es un extra). Se guardan vía PUT
   // /api/products/[id]/modifiers tras crear el producto.
-  const [addModifierGroups, setAddModifierGroups] = useState<{ name: string; required: boolean; multi: boolean; options: { name: string; priceDelta: string }[] }[]>([]);
+  const [addModifierGroups, setAddModifierGroups] = useState<
+    {
+      name: string;
+      required: boolean;
+      multi: boolean;
+      options: { name: string; priceDelta: string }[];
+    }[]
+  >([]);
   // Fase 2: SEO del producto (metaTitle/metaDescription/ogImage) — se guarda vía
   // PUT /api/marketplace/products/[id]/seo tras crear (la página de producto lo lee).
   const [addSeo, setAddSeo] = useState({ metaTitle: "", metaDescription: "", ogImage: "" });
@@ -166,64 +237,105 @@ export function useInventarioEstado() {
   const [editSpecs, setEditSpecs] = useState<SpecRow[]>([]);
   const [editRich, setEditRich] = useState<RichBlock[]>([]);
   // Reset de extras cada vez que se abre el modal (alta o duplicar).
-  useEffect(() => { if (showAdd) { setAddVariants([]); setAddModifierGroups([]); setAddSeo({ metaTitle: "", metaDescription: "", ogImage: "" }); setAddGallery([]); setAddSpecs([]); setAddRich([]); } }, [showAdd]);
+  useEffect(() => {
+    if (showAdd) {
+      setAddVariants([]);
+      setAddModifierGroups([]);
+      setAddSeo({ metaTitle: "", metaDescription: "", ogImage: "" });
+      setAddGallery([]);
+      setAddSpecs([]);
+      setAddRich([]);
+    }
+  }, [showAdd]);
   const [showScanner, setShowScanner] = useState(false);
   const [scanLoading, setScanLoading] = useState(false);
   const [imgUploading, setImgUploading] = useState(false);
-  const [imgInfo, setImgInfo] = useState<{ originalKB: number; finalKB: number; width: number; height: number; quality: number } | null>(null);
+  const [imgInfo, setImgInfo] = useState<{
+    originalKB: number;
+    finalKB: number;
+    width: number;
+    height: number;
+    quality: number;
+  } | null>(null);
   const [imgError, setImgError] = useState<string | null>(null);
   const [aiDescGenerating, setAiDescGenerating] = useState(false);
   const [aiDescError, setAiDescError] = useState<string | null>(null);
   const [showImageBank, setShowImageBank] = useState(false);
   const [showBulkImageAssign, setShowBulkImageAssign] = useState(false);
 
-  const generateDescriptionAI = useCallback(async (form: typeof editForm, setter: typeof setEditForm) => {
-    const name = form.name?.trim();
-    if (!name || name.length < 2) {
-      setAiDescError("Ponele un nombre al producto antes de generar");
-      return;
-    }
-    setAiDescGenerating(true);
-    setAiDescError(null);
-    try {
-      const res = await fetch("/api/products/generate-description", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json", ...csrfHeaders() },
-        body: JSON.stringify({
-          name,
-          category: form.category ?? null,
-          attributes: [form.unit, form.badge].filter(Boolean).join(", ") || null,
-          tone: "friendly",
-        }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error((err as { error?: string }).error ?? "Error al generar");
+  const generateDescriptionAI = useCallback(
+    async (form: typeof editForm, setter: typeof setEditForm) => {
+      const name = form.name?.trim();
+      if (!name || name.length < 2) {
+        setAiDescError("Ponele un nombre al producto antes de generar");
+        return;
       }
-      const data = await res.json() as { description: string };
-      setter(f => ({ ...f, description: data.description }));
-    } catch (e) {
-      setAiDescError(e instanceof Error ? e.message : "Error al generar");
-    } finally {
-      setAiDescGenerating(false);
-    }
-  }, []);
+      setAiDescGenerating(true);
+      setAiDescError(null);
+      try {
+        const res = await fetch("/api/products/generate-description", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json", ...csrfHeaders() },
+          body: JSON.stringify({
+            name,
+            category: form.category ?? null,
+            attributes: [form.unit, form.badge].filter(Boolean).join(", ") || null,
+            tone: "friendly",
+          }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error((err as { error?: string }).error ?? "Error al generar");
+        }
+        const data = (await res.json()) as { description: string };
+        setter((f) => ({ ...f, description: data.description }));
+      } catch (e) {
+        setAiDescError(e instanceof Error ? e.message : "Error al generar");
+      } finally {
+        setAiDescGenerating(false);
+      }
+    },
+    [],
+  );
   const addImgRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
   const editImgRef = useRef<HTMLInputElement>(null);
 
   // National DB search
   const [dbQuery, setDbQuery] = useState("");
-  const [dbResults, setDbResults] = useState<Array<{ name: string; brand: string; barcode: string; image: string; quantity: string; unit: string }>>([]);
+  const [dbResults, setDbResults] = useState<
+    Array<{
+      name: string;
+      brand: string;
+      barcode: string;
+      image: string;
+      quantity: string;
+      unit: string;
+    }>
+  >([]);
   const [dbSearching, setDbSearching] = useState(false);
 
   // Bulk selection
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [bulkModal, setBulkModal] = useState(false);
   const bulkModalRef = useRef<HTMLDivElement>(null);
-  const ventanaBulk = useVentanaDeModal(bulkModal, { ref: bulkModalRef, aplicarTranslate: true, claveMemoria: "inventario-edicion-masiva" });
-  const [bulkField, setBulkField] = useState<"active" | "category" | "price" | "priceDelta" | "pricePercent" | "stock" | "stockMin" | "stockMax" | "badge">("active");
+  const ventanaBulk = useVentanaDeModal(bulkModal, {
+    ref: bulkModalRef,
+    aplicarTranslate: true,
+    claveMemoria: "inventario-edicion-masiva",
+  });
+  const [bulkField, setBulkField] = useState<
+    | "active"
+    | "category"
+    | "price"
+    | "priceDelta"
+    | "pricePercent"
+    | "stock"
+    | "stockMin"
+    | "stockMax"
+    | "badge"
+  >("active");
   const [bulkValue, setBulkValue] = useState("");
   const [bulkSaving, setBulkSaving] = useState(false);
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
@@ -234,20 +346,31 @@ export function useInventarioEstado() {
   const [dontAskBulkClear, setDontAskBulkClear] = useState(false);
 
   // Mejora 5 nueva: Auto-reorden config
-  const [autoReorderConfigs, setAutoReorderConfigs] = useState<Record<number, { threshold: number; qty: number; supplierId: string }>>(() => {
+  const [autoReorderConfigs, setAutoReorderConfigs] = useState<
+    Record<number, { threshold: number; qty: number; supplierId: string }>
+  >(() => {
     if (typeof window === "undefined") return {};
     try {
       const raw = localStorage.getItem("auto-reorder-configs");
       return raw ? JSON.parse(raw) : {};
-    } catch { return {}; }
+    } catch {
+      return {};
+    }
   });
   const [showAutoReorder, setShowAutoReorder] = useState<number | null>(null);
   const [arThreshold, setArThreshold] = useState("");
   const [arQty, setArQty] = useState("");
   const autoReorderPanelRef = useRef<HTMLDivElement>(null);
   const autoReorderTitleId = useId();
-  useModalAccesible(autoReorderPanelRef, { onCerrar: () => setShowAutoReorder(null), activo: showAutoReorder !== null });
-  const ventanaAutoReorder = useVentanaDeModal(showAutoReorder !== null, { ref: autoReorderPanelRef, aplicarTranslate: true, claveMemoria: "inventario-auto-reorden" });
+  useModalAccesible(autoReorderPanelRef, {
+    onCerrar: () => setShowAutoReorder(null),
+    activo: showAutoReorder !== null,
+  });
+  const ventanaAutoReorder = useVentanaDeModal(showAutoReorder !== null, {
+    ref: autoReorderPanelRef,
+    aplicarTranslate: true,
+    claveMemoria: "inventario-auto-reorden",
+  });
 
   // Mejora 6 nueva: QR modal
   const [showQRProduct, setShowQRProduct] = useState<DbProduct | null>(null);
@@ -255,19 +378,38 @@ export function useInventarioEstado() {
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const qrPanelRef = useRef<HTMLDivElement>(null);
   const qrTitleId = useId();
-  useModalAccesible(qrPanelRef, { onCerrar: () => setShowQRProduct(null), activo: !!showQRProduct });
-  const ventanaQR = useVentanaDeModal(!!showQRProduct, { ref: qrPanelRef, aplicarTranslate: true, claveMemoria: "inventario-qr" });
+  useModalAccesible(qrPanelRef, {
+    onCerrar: () => setShowQRProduct(null),
+    activo: !!showQRProduct,
+  });
+  const ventanaQR = useVentanaDeModal(!!showQRProduct, {
+    ref: qrPanelRef,
+    aplicarTranslate: true,
+    claveMemoria: "inventario-qr",
+  });
   useEffect(() => {
-    if (!showQRProduct) { setQrDataUrl(null); return; }
+    if (!showQRProduct) {
+      setQrDataUrl(null);
+      return;
+    }
     const payload = `PROD:${showQRProduct.id}|${showQRProduct.name}|S/${showQRProduct.price}`;
-    QRCode.toDataURL(payload, { width: 300, margin: 2, color: { dark: "#1a3d2e", light: "#ffffff" } })
-      .then(setQrDataUrl).catch(() => setQrDataUrl(null));
+    QRCode.toDataURL(payload, {
+      width: 300,
+      margin: 2,
+      color: { dark: "#1a3d2e", light: "#ffffff" },
+    })
+      .then(setQrDataUrl)
+      .catch(() => setQrDataUrl(null));
   }, [showQRProduct]);
 
   // Mejora visual: Toggle de columnas extendidas
   const [showExtendedCols, setShowExtendedCols] = useState(() => {
     if (typeof window === "undefined") return false;
-    try { return localStorage.getItem("inv-extended-cols") === "true"; } catch { return false; }
+    try {
+      return localStorage.getItem("inv-extended-cols") === "true";
+    } catch {
+      return false;
+    }
   });
 
   // Expanded table modal
@@ -279,38 +421,175 @@ export function useInventarioEstado() {
   const [csvImporting, setCsvImporting] = useState(false);
   const [csvResult, setCsvResult] = useState<{ created: number; errors: string[] } | null>(null);
   const [kardexProduct, setKardexProduct] = useState<{ id: number; name: string } | null>(null);
-  const [modifiersProduct, setModifiersProduct] = useState<{ id: number; name: string } | null>(null);
+  const [modifiersProduct, setModifiersProduct] = useState<{ id: number; name: string } | null>(
+    null,
+  );
 
   // Context menu state for right-click on product rows
   const [ctxMenu, setCtxMenu] = useState<{ product: DbProduct; x: number; y: number } | null>(null);
 
-  useScrollLock(!!(showAdd || showPicker || editModalProduct || showScanner || bulkModal || bulkDeleteConfirm || bulkClearImagesConfirm));
+  useScrollLock(!!(showScanner || bulkModal || bulkDeleteConfirm || bulkClearImagesConfirm));
   return {
-    confirm, showUndo, products, setProducts, movements, setMovements, loading, setLoading, view,
-    setView, search, setSearch, searchPlaceholders, phIndex, setPhIndex, catFilter, setCatFilter,
-    catalogoCategorias, setCatalogoCategorias, lowOnly, setLowOnly, estadoFiltro, setEstadoFiltro,
-    showInactive, stockRango, setStockRango, vencRango, setVencRango, noImageOnly, setNoImageOnly,
-    faltaDato, setFaltaDato, showFilters, setShowFilters, viewMode, setViewMode, expandedOC,
-    setExpandedOC, generatingOC, setGeneratingOC, editModalProduct, setEditModalProduct, setEditModalProductSinUrl, fichaProducto, editForm,
-    setEditForm, saving, setSaving, editModalRef, ventanaEdit, showAdd, setShowAdd, addModalRef,
-    ventanaAdd, showPicker, setShowPicker, pickerModalRef, ventanaPicker, pickerSearch,
-    setPickerSearch, pickerCat, setPickerCat, EMPTY_ADD, addForm, setAddForm, addVariants,
-    setAddVariants, addModifierGroups, setAddModifierGroups, addSeo, setAddSeo, addGallery,
-    setAddGallery, galleryUploading, setGalleryUploading, addSpecs, setAddSpecs, addRich, setAddRich,
-    editSpecs, setEditSpecs, editRich, setEditRich, showScanner, setShowScanner, scanLoading,
-    setScanLoading, imgUploading, setImgUploading, imgInfo, setImgInfo, imgError, setImgError,
-    aiDescGenerating, setAiDescGenerating, aiDescError, setAiDescError, showImageBank,
-    setShowImageBank, showBulkImageAssign, setShowBulkImageAssign, generateDescriptionAI, addImgRef,
-    galleryRef, editImgRef, dbQuery, setDbQuery, dbResults, setDbResults, dbSearching, setDbSearching,
-    selectedIds, setSelectedIds, bulkModal, setBulkModal, bulkModalRef, ventanaBulk, bulkField,
-    setBulkField, bulkValue, setBulkValue, bulkSaving, setBulkSaving, bulkDeleteConfirm,
-    setBulkDeleteConfirm, bulkDeleting, setBulkDeleting, bulkClearImagesConfirm,
-    setBulkClearImagesConfirm, bulkClearingImages, setBulkClearingImages, dontAskBulkClear,
-    setDontAskBulkClear, autoReorderConfigs, setAutoReorderConfigs, showAutoReorder,
-    setShowAutoReorder, arThreshold, setArThreshold, arQty, setArQty, autoReorderPanelRef,
-    autoReorderTitleId, ventanaAutoReorder, showQRProduct, setShowQRProduct, qrDataUrl, setQrDataUrl,
-    qrPanelRef, qrTitleId, ventanaQR, showExtendedCols, setShowExtendedCols, showExpandedTable,
-    setShowExpandedTable, orden, csvImportRef, csvImporting, setCsvImporting, csvResult, setCsvResult,
-    kardexProduct, setKardexProduct, modifiersProduct, setModifiersProduct, ctxMenu, setCtxMenu,
+    confirm,
+    showUndo,
+    products,
+    setProducts,
+    movements,
+    setMovements,
+    loading,
+    setLoading,
+    view,
+    setView,
+    search,
+    setSearch,
+    searchPlaceholders,
+    phIndex,
+    setPhIndex,
+    catFilter,
+    setCatFilter,
+    catalogoCategorias,
+    setCatalogoCategorias,
+    lowOnly,
+    setLowOnly,
+    estadoFiltro,
+    setEstadoFiltro,
+    showInactive,
+    stockRango,
+    setStockRango,
+    vencRango,
+    setVencRango,
+    noImageOnly,
+    setNoImageOnly,
+    faltaDato,
+    setFaltaDato,
+    showFilters,
+    setShowFilters,
+    viewMode,
+    setViewMode,
+    expandedOC,
+    setExpandedOC,
+    generatingOC,
+    setGeneratingOC,
+    editModalProduct,
+    setEditModalProduct,
+    setEditModalProductSinUrl,
+    fichaProducto,
+    editForm,
+    setEditForm,
+    saving,
+    setSaving,
+    showAdd,
+    setShowAdd,
+    showPicker,
+    setShowPicker,
+    pickerSearch,
+    setPickerSearch,
+    pickerCat,
+    setPickerCat,
+    EMPTY_ADD,
+    addForm,
+    setAddForm,
+    addVariants,
+    setAddVariants,
+    addModifierGroups,
+    setAddModifierGroups,
+    addSeo,
+    setAddSeo,
+    addGallery,
+    setAddGallery,
+    galleryUploading,
+    setGalleryUploading,
+    addSpecs,
+    setAddSpecs,
+    addRich,
+    setAddRich,
+    editSpecs,
+    setEditSpecs,
+    editRich,
+    setEditRich,
+    showScanner,
+    setShowScanner,
+    scanLoading,
+    setScanLoading,
+    imgUploading,
+    setImgUploading,
+    imgInfo,
+    setImgInfo,
+    imgError,
+    setImgError,
+    aiDescGenerating,
+    setAiDescGenerating,
+    aiDescError,
+    setAiDescError,
+    showImageBank,
+    setShowImageBank,
+    showBulkImageAssign,
+    setShowBulkImageAssign,
+    generateDescriptionAI,
+    addImgRef,
+    galleryRef,
+    editImgRef,
+    dbQuery,
+    setDbQuery,
+    dbResults,
+    setDbResults,
+    dbSearching,
+    setDbSearching,
+    selectedIds,
+    setSelectedIds,
+    bulkModal,
+    setBulkModal,
+    bulkModalRef,
+    ventanaBulk,
+    bulkField,
+    setBulkField,
+    bulkValue,
+    setBulkValue,
+    bulkSaving,
+    setBulkSaving,
+    bulkDeleteConfirm,
+    setBulkDeleteConfirm,
+    bulkDeleting,
+    setBulkDeleting,
+    bulkClearImagesConfirm,
+    setBulkClearImagesConfirm,
+    bulkClearingImages,
+    setBulkClearingImages,
+    dontAskBulkClear,
+    setDontAskBulkClear,
+    autoReorderConfigs,
+    setAutoReorderConfigs,
+    showAutoReorder,
+    setShowAutoReorder,
+    arThreshold,
+    setArThreshold,
+    arQty,
+    setArQty,
+    autoReorderPanelRef,
+    autoReorderTitleId,
+    ventanaAutoReorder,
+    showQRProduct,
+    setShowQRProduct,
+    qrDataUrl,
+    setQrDataUrl,
+    qrPanelRef,
+    qrTitleId,
+    ventanaQR,
+    showExtendedCols,
+    setShowExtendedCols,
+    showExpandedTable,
+    setShowExpandedTable,
+    orden,
+    csvImportRef,
+    csvImporting,
+    setCsvImporting,
+    csvResult,
+    setCsvResult,
+    kardexProduct,
+    setKardexProduct,
+    modifiersProduct,
+    setModifiersProduct,
+    ctxMenu,
+    setCtxMenu,
   };
 }

@@ -30,7 +30,13 @@ import { limaDateKey } from "@/lib/utils";
 import { useRecibirGuiaTh } from "./hooks/use-recibir-guia-th";
 import { useConteoGuiaTh } from "./hooks/use-conteo-guia-th";
 import ContarAlBajar from "./ctp-recibir-guia-th-conteo";
-import { Cuenta, Dato, GuiaRecibida, ListaDeAvisos, ResumenPorEspecie } from "./ctp-recibir-guia-th-partes";
+import {
+  Cuenta,
+  Dato,
+  GuiaRecibida,
+  ListaDeAvisos,
+  ResumenPorEspecie,
+} from "./ctp-recibir-guia-th-partes";
 import { Btn, I } from "./ctp-shared";
 
 export interface CtpRecibirGuiaThModalProps {
@@ -54,7 +60,14 @@ export default function CtpRecibirGuiaThModal({
   onClose,
   onRecibida,
 }: CtpRecibirGuiaThModalProps) {
-  const { preparado: p, cargando, errorCarga, recibir, enviando, recargar } = useRecibirGuiaTh(guardadaId);
+  const {
+    preparado: p,
+    cargando,
+    errorCarga,
+    recibir,
+    enviando,
+    recargar,
+  } = useRecibirGuiaTh(guardadaId);
   const conteo = useConteoGuiaTh(p?.lineas ?? null, p?.huella ?? null);
   const { resumen, envio } = conteo;
   const hoy = limaDateKey();
@@ -78,7 +91,15 @@ export default function CtpRecibirGuiaThModal({
 
   const llegaran = envio ? envio.conteo.filter((c) => c.llego).length : (resumen?.llegaron ?? 0);
   const faltaMotivo = vencida != null && motivoVencida.trim().length < MIN_MOTIVO_VENCIDA;
-  const puede = Boolean(p) && !cargando && !enviando && !cambio && Boolean(llegada) && !faltaMotivo && envio != null && llegaran > 0;
+  const puede =
+    Boolean(p) &&
+    !cargando &&
+    !enviando &&
+    !cambio &&
+    Boolean(llegada) &&
+    !faltaMotivo &&
+    envio != null &&
+    llegaran > 0;
 
   const enviar = async () => {
     if (!puede || !p || !envio) return;
@@ -119,30 +140,38 @@ export default function CtpRecibirGuiaThModal({
       : `Recibir ${llegaran} de ${total} ${trozas(total)}`;
   /* Por qué el botón está apagado, dicho en el pie (no un botón mudo). */
   const pista =
-    !resumen || recibida ? null
-    : resumen.llegaron === 0 && resumen.sinContar === resumen.total ? "Cuenta las trozas que bajaron del camión."
-    : envio == null && conteo.filas.some((f) => f.errorMedida) ? "Corrige la medida en planta que está mal escrita."
-    : envio == null ? `Cuenta ${resumen.sinContar === 1 ? "la que falta" : `las ${resumen.sinContar} que faltan`} o marca que no llegó.`
-    : llegaran === 0 ? "No llegó ninguna: así no se recibe."
-    : null;
+    !resumen || recibida
+      ? null
+      : resumen.llegaron === 0 && resumen.sinContar === resumen.total
+        ? "Cuenta las trozas que bajaron del camión."
+        : envio == null && conteo.filas.some((f) => f.errorMedida)
+          ? "Corrige la medida en planta que está mal escrita."
+          : envio == null
+            ? `Cuenta ${resumen.sinContar === 1 ? "la que falta" : `las ${resumen.sinContar} que faltan`} o marca que no llegó.`
+            : llegaran === 0
+              ? "No llegó ninguna: así no se recibe."
+              : null;
 
   return (
     <AdminModal
       open
       onClose={onClose}
       title={`Recibir la guía ${p?.gtfNumber ?? gtfNumber}`}
-      description={recibida ? "Quedó en tu Libro CTP" : "Viene de tu Libro TH: cuenta lo que bajó y entra con sus trozas"}
+      description={
+        recibida
+          ? "Quedó en tu Libro CTP"
+          : "Viene de tu Libro TH: cuenta lo que bajó y entra con sus trozas"
+      }
       icon={TreePine}
-      variant="wide"
-      /* 60rem: a 1280 cada troza entra en UNA fila (código, medidas, estado y
-         botones); el `wide` de 42rem la partía en dos. */
-      className="sm:max-w-[60rem]"
+      size="xl"
       aboveModals={aboveModals}
       claveVentana="ctp-recibir-guia-th"
       footer={
         recibida ? (
           <ModalFooter>
-            <Btn variant="primary" onClick={onClose}>Listo</Btn>
+            <Btn variant="primary" onClick={onClose}>
+              Listo
+            </Btn>
           </ModalFooter>
         ) : (
           <ModalFooter
@@ -150,12 +179,18 @@ export default function CtpRecibirGuiaThModal({
             nota={
               resumen ? (
                 <span className="flex flex-col">
-                  <span className="font-bold tabular-nums text-[var(--text-primary)]" data-testid="recibir-th-pie">
-                    {resumen.llegaron} de {resumen.total} {trozas(resumen.total)} · {fmtM3(resumen.m3Recibido)} de {fmtM3(resumen.m3Declarado)} m³
+                  <span
+                    className="font-bold tabular-nums text-[var(--text-primary)]"
+                    data-testid="recibir-th-pie"
+                  >
+                    {resumen.llegaron} de {resumen.total} {trozas(resumen.total)} ·{" "}
+                    {fmtM3(resumen.m3Recibido)} de {fmtM3(resumen.m3Declarado)} m³
                   </span>
                   {pista && <span>{pista}</span>}
                 </span>
-              ) : cargando ? "Leyendo la guía de tu Libro TH…" : null
+              ) : cargando ? (
+                "Leyendo la guía de tu Libro TH…"
+              ) : null
             }
           >
             {resumen && resumen.sinContar > 0 && (
@@ -167,13 +202,20 @@ export default function CtpRecibirGuiaThModal({
                   className="h-5 w-5 accent-[var(--accent)]"
                   data-testid="recibir-th-resto-no-llego"
                 />
-                {resumen.sinContar === 1 ? "La que no conté no llegó" : `Las ${resumen.sinContar} que no conté no llegaron`}
+                {resumen.sinContar === 1
+                  ? "La que no conté no llegó"
+                  : `Las ${resumen.sinContar} que no conté no llegaron`}
               </label>
             )}
             <Btn variant="secondary" onClick={onClose} disabled={enviando}>
               Cancelar
             </Btn>
-            <Btn variant="primary" onClick={() => void enviar()} disabled={!puede} data-testid="recibir-th-enviar">
+            <Btn
+              variant="primary"
+              onClick={() => void enviar()}
+              disabled={!puede}
+              data-testid="recibir-th-enviar"
+            >
               {rotulo}
             </Btn>
           </ModalFooter>
@@ -193,7 +235,10 @@ export default function CtpRecibirGuiaThModal({
 
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
               <span className="inline-flex items-center gap-1.5">
-                <label htmlFor="recibir-th-llegada" className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
+                <label
+                  htmlFor="recibir-th-llegada"
+                  className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]"
+                >
                   <CalendarClock className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
                   Llegó al patio el
                 </label>
@@ -226,7 +271,8 @@ export default function CtpRecibirGuiaThModal({
               >
                 <p className="flex items-start gap-2 text-sm font-bold text-[var(--data-warning-ink)]">
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-                  La guía venció el {dia(vencida || null)} y la madera llega el {dia(llegada)}. Si de verdad llegó así, escribe por qué.
+                  La guía venció el {dia(vencida || null)} y la madera llega el {dia(llegada)}. Si
+                  de verdad llegó así, escribe por qué.
                 </p>
                 <input
                   aria-label="Por qué llegó después del vencimiento"
@@ -242,10 +288,15 @@ export default function CtpRecibirGuiaThModal({
             )}
 
             {cambio && (
-              <div role="alert" className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 dark:bg-[var(--data-error-500)]/10" data-testid="recibir-th-cambio">
+              <div
+                role="alert"
+                className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 dark:bg-[var(--data-error-500)]/10"
+                data-testid="recibir-th-cambio"
+              >
                 <p className="flex min-w-0 flex-1 items-start gap-2 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-                  La guía cambió en tu Libro TH, vuelve a abrirla: lo que contaste era de la lista anterior.
+                  La guía cambió en tu Libro TH, vuelve a abrirla: lo que contaste era de la lista
+                  anterior.
                 </p>
                 <Btn variant="secondary" onClick={volverAAbrir} disabled={cargando}>
                   <RefreshCw className="h-4 w-4" aria-hidden /> Volver a abrirla
@@ -259,7 +310,8 @@ export default function CtpRecibirGuiaThModal({
 
             <label className="flex flex-col gap-1.5">
               <span className="text-sm font-bold text-[var(--text-primary)]">
-                Observación <span className="font-normal text-[var(--text-tertiary)]">(opcional)</span>
+                Observación{" "}
+                <span className="font-normal text-[var(--text-tertiary)]">(opcional)</span>
               </span>
               <input
                 value={observacion}
@@ -273,10 +325,17 @@ export default function CtpRecibirGuiaThModal({
             </label>
           </>
         )}
-        {cargando && !p && <p className="text-sm text-[var(--text-tertiary)]">Leyendo la guía de tu Libro TH…</p>}
+        {cargando && !p && (
+          <p className="text-sm text-[var(--text-tertiary)]">Leyendo la guía de tu Libro TH…</p>
+        )}
         {!cargando && !p && errorCarga && (
           <div className="flex flex-col items-start gap-2">
-            <p role="alert" className="text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{errorCarga}</p>
+            <p
+              role="alert"
+              className="text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
+            >
+              {errorCarga}
+            </p>
             <Btn variant="secondary" onClick={recargar}>
               <RefreshCw className="h-4 w-4" aria-hidden /> Reintentar
             </Btn>

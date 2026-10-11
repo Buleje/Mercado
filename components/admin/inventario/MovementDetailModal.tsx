@@ -13,15 +13,12 @@
  * inventario tiene que poder demostrar.
  */
 
-import { useId, useRef, useState } from "react";
-import { SectionTitle } from "@buleje/design-system";
-import { AlertTriangle, Loader2, Undo2, X, type LucideIcon } from "@buleje/design-system/icons";
+import { useState } from "react";
+import { AlertTriangle, Loader2, Undo2, type LucideIcon } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { cn } from "@/lib/utils";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { formatDate, formatDateLong, formatNumber, formatTime } from "@/lib/format";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 
 export type MovementDetail = {
   id: string;
@@ -80,7 +77,9 @@ function motivoNoReversible(m: MovementDetail): string | null {
 function Dato({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="min-w-0">
-      <dt className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">{label}</dt>
+      <dt className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+        {label}
+      </dt>
       <dd className="mt-0.5 break-words text-base text-[var(--text-primary)]">{children}</dd>
     </div>
   );
@@ -92,7 +91,10 @@ export type DatosDePerdida = { causa: string; costo: number; soles: number };
 const soles = (n: number) => `S/ ${formatNumber(n, { min: 2 })}`;
 
 export default function MovementDetailModal({
-  movimiento, perdida, onRevertido, onClose,
+  movimiento,
+  perdida,
+  onRevertido,
+  onClose,
 }: {
   movimiento: MovementDetail;
   perdida?: DatosDePerdida;
@@ -102,10 +104,6 @@ export default function MovementDetailModal({
   const [revirtiendo, setRevirtiendo] = useState(false);
   const [confirma, setConfirma] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const titleId = useId();
-  const panelRef = useRef<HTMLDivElement>(null);
-  useModalAccesible(panelRef, { onCerrar: () => { if (!revirtiendo) onClose(); }, activo: true });
-  const ventana = useVentanaDeModal(true, { ref: panelRef, aplicarTranslate: true, claveMemoria: "inventario-detalle-movimiento" });
 
   const m = movimiento;
   const bloqueo = motivoNoReversible(m);
@@ -129,7 +127,11 @@ export default function MovementDetailModal({
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        setError(typeof body?.error === "string" ? body.error : `No se pudo revertir (error ${res.status})`);
+        setError(
+          typeof body?.error === "string"
+            ? body.error
+            : `No se pudo revertir (error ${res.status})`,
+        );
         return;
       }
       onRevertido();
@@ -143,116 +145,121 @@ export default function MovementDetailModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-modal flex items-end justify-center bg-black/60 backdrop-blur-[2px] sm:items-center sm:p-4"
-      onClick={(e) => e.target === e.currentTarget && !revirtiendo && !ventana.fijado && onClose()}
+    <AdminModal
+      open
+      onClose={() => {
+        if (!revirtiendo) onClose();
+      }}
+      title={m.productName}
+      description={`${formatDateLong(fecha)} · ${formatTime(fecha)}`}
+      claveVentana="inventario-detalle-movimiento"
     >
-      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="relative max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-xl sm:max-w-lg sm:rounded-2xl">
-        <div {...ventana.asaProps} className="sticky top-0 z-dropdown flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)]/95 px-6 py-4 backdrop-blur">
-          <div className="min-w-0">
-            <SectionTitle id={titleId} as="h2" className="truncate leading-tight font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">{m.productName}</SectionTitle>
-            <p className="text-sm text-[var(--text-secondary)]">
-              {formatDateLong(fecha)}
-              {" · "}
-              {formatTime(fecha)}
-            </p>
+      <div className={`space-y-4 ${MODAL_BODY}`}>
+        {/* Lo que pasó con el stock, en una línea que se lee sola. */}
+        <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3.5">
+          <div className="flex items-center gap-2">
+            <m.Icon className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden />
+            <span className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+              {m.label}
+            </span>
           </div>
-          <span className="ml-auto flex items-center gap-1 shrink-0">
-            <ControlesDeVentana ventana={ventana} />
-            <button type="button" onClick={onClose} aria-label="Cerrar" className="h-12 w-12 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">
-              <X className="h-5 w-5" />
-            </button>
-          </span>
+          <p className="mt-1 font-mono text-3xl font-bold tabular-nums text-[var(--text-primary)]">
+            {m.dir === "neutral"
+              ? "sin cambio"
+              : m.dir === "in"
+                ? `+${m.quantity}`
+                : `−${m.quantity}`}
+          </p>
+          <p className="mt-1 text-sm text-[var(--text-secondary)]">
+            Stock {m.previousStock} →{" "}
+            <span className="font-bold text-[var(--text-primary)]">{m.newStock}</span>
+            {m.unit ? ` ${m.unit}` : ""}
+          </p>
         </div>
 
-        <div className="space-y-4 p-6">
-          {/* Lo que pasó con el stock, en una línea que se lee sola. */}
-          <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3.5">
-            <div className="flex items-center gap-2">
-              <m.Icon className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden />
-              <span className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)]">{m.label}</span>
+        <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {perdida && <Dato label="Causa">{perdida.causa}</Dato>}
+          {perdida && (
+            <Dato label="Cuesta">
+              {perdida.costo > 0
+                ? `${soles(perdida.soles)} (${m.quantity} × ${soles(perdida.costo)}, costo de hoy)`
+                : "El producto no tiene costo cargado"}
+            </Dato>
+          )}
+          {m.createdBy && <Dato label="Lo registró">{m.createdBy}</Dato>}
+          {m.reference && <Dato label="Referencia">{m.reference}</Dato>}
+          {m.notes && (
+            <div className="sm:col-span-2">
+              <Dato label="Motivo">{m.notes}</Dato>
             </div>
-            <p className="mt-1 font-mono text-3xl font-bold tabular-nums text-[var(--text-primary)]">
-              {m.dir === "neutral" ? "sin cambio" : m.dir === "in" ? `+${m.quantity}` : `−${m.quantity}`}
+          )}
+        </dl>
+
+        {bloqueo ? (
+          <p className="flex items-start gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2.5 text-sm text-[var(--text-primary)]">
+            <AlertTriangle
+              className="mt-0.5 h-4 w-4 shrink-0 text-[var(--text-secondary)]"
+              aria-hidden
+            />
+            {bloqueo}
+          </p>
+        ) : confirma ? (
+          <div className="rounded-xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 px-3 py-2.5">
+            <p className="text-sm text-[var(--text-primary)]">
+              Se va a registrar un movimiento contrario de{" "}
+              <span className="font-bold">{m.quantity}</span>: el stock queda en{" "}
+              <span className="font-bold tabular-nums">{m.previousStock}</span>. El movimiento
+              original no se borra.
             </p>
-            <p className="mt-1 text-sm text-[var(--text-secondary)]">
-              Stock {m.previousStock} → <span className="font-bold text-[var(--text-primary)]">{m.newStock}</span>
-              {m.unit ? ` ${m.unit}` : ""}
-            </p>
+            <div className="mt-2.5 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={revertir}
+                disabled={revirtiendo}
+                className="inline-flex h-12 items-center gap-1.5 rounded-xl bg-[var(--data-warning-500)] px-4 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+              >
+                {revirtiendo ? (
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                ) : (
+                  <Undo2 className="h-4 w-4" aria-hidden />
+                )}
+                Sí, revertir
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirma(false)}
+                disabled={revirtiendo}
+                className="inline-flex h-12 items-center rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-raised)] disabled:opacity-50"
+              >
+                No
+              </button>
+            </div>
           </div>
-
-          <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {perdida && <Dato label="Causa">{perdida.causa}</Dato>}
-            {perdida && (
-              <Dato label="Cuesta">
-                {perdida.costo > 0 ? `${soles(perdida.soles)} (${m.quantity} × ${soles(perdida.costo)}, costo de hoy)` : "El producto no tiene costo cargado"}
-              </Dato>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setConfirma(true)}
+            className={cn(
+              "inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--data-warning-500)]/50 hover:text-[var(--data-warning-600)] dark:hover:text-[var(--data-warning-500)]",
             )}
-            {m.createdBy && <Dato label="Lo registró">{m.createdBy}</Dato>}
-            {m.reference && <Dato label="Referencia">{m.reference}</Dato>}
-            {m.notes && (
-              <div className="sm:col-span-2">
-                <Dato label="Motivo">{m.notes}</Dato>
-              </div>
-            )}
-          </dl>
+          >
+            <Undo2 className="h-4 w-4" aria-hidden />
+            Revertir este movimiento
+          </button>
+        )}
 
-          {bloqueo ? (
-            <p className="flex items-start gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2.5 text-sm text-[var(--text-primary)]">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--text-secondary)]" aria-hidden />
-              {bloqueo}
-            </p>
-          ) : confirma ? (
-            <div className="rounded-xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 px-3 py-2.5">
-              <p className="text-sm text-[var(--text-primary)]">
-                Se va a registrar un movimiento contrario de{" "}
-                <span className="font-bold">{m.quantity}</span>: el stock queda en{" "}
-                <span className="font-bold tabular-nums">{m.previousStock}</span>. El movimiento original
-                no se borra.
-              </p>
-              <div className="mt-2.5 flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={revertir}
-                  disabled={revirtiendo}
-                  className="inline-flex h-12 items-center gap-1.5 rounded-xl bg-[var(--data-warning-500)] px-4 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-                >
-                  {revirtiendo ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Undo2 className="h-4 w-4" aria-hidden />}
-                  Sí, revertir
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setConfirma(false)}
-                  disabled={revirtiendo}
-                  className="inline-flex h-12 items-center rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-raised)] disabled:opacity-50"
-                >
-                  No
-                </button>
-              </div>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setConfirma(true)}
-              className={cn(
-                "inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--data-warning-500)]/50 hover:text-[var(--data-warning-600)] dark:hover:text-[var(--data-warning-500)]",
-              )}
-            >
-              <Undo2 className="h-4 w-4" aria-hidden />
-              Revertir este movimiento
-            </button>
-          )}
+        {error && (
+          <p
+            className="flex items-center gap-2 text-sm font-semibold text-[var(--data-error-500)]"
+            role="alert"
+          >
+            <AlertTriangle className="h-4 w-4" aria-hidden />
+            {error}
+          </p>
+        )}
 
-          {error && (
-            <p className="flex items-center gap-2 text-sm font-semibold text-[var(--data-error-500)]" role="alert">
-              <AlertTriangle className="h-4 w-4" aria-hidden />{error}
-            </p>
-          )}
-
-          <p className="text-sm text-[var(--text-tertiary)]">Id del movimiento: {m.id}</p>
-        </div>
-        <TiradorDeVentana ventana={ventana} />
+        <p className="text-sm text-[var(--text-tertiary)]">Id del movimiento: {m.id}</p>
       </div>
-    </div>
+    </AdminModal>
   );
 }

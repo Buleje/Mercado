@@ -93,21 +93,27 @@ import {
 // El anexo arrastra jsPDF/exceljs: entra solo cuando alguien lo pide.
 const Anexo04Modal = dynamic(() => import("./Anexo04Modal"), { ssr: false });
 /* Cubicación comercial del despacho (ADR-483): se abre poco, va aparte del libro. */
-const CtpCubicacionComercialModal = dynamic(() => import("./CtpCubicacionComercialModal"), { ssr: false });
+const CtpCubicacionComercialModal = dynamic(() => import("./CtpCubicacionComercialModal"), {
+  ssr: false,
+});
 import {
   COLUMNAS_PRODUCCION_OPCIONALES,
   type CtpEntry,
   type CtpSection,
 } from "./ctp-section-shared";
-import { ColumnasMenu, TablaSkeleton, useColumnasVisibles, type CtpIngresosFiltroRapido } from "./ctp-shared";
+import {
+  ColumnasMenu,
+  TablaSkeleton,
+  useColumnasVisibles,
+  type CtpIngresosFiltroRapido,
+} from "./ctp-shared";
 import { CtpPaginacion, usePaginacion } from "./ctp-tabla";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatNumber } from "@/lib/format";
 
 /* Totales de período: dos decimales, como el resumen y las tarjetas que viven
    al lado. Los tres de `fmtM3` son para medir una troza. */
-const n2m3 = (v: number) =>
-  formatNumber(v, 2);
+const n2m3 = (v: number) => formatNumber(v, 2);
 
 /**
  * El repaso de las corridas cuyas cifras no pueden ser (piezas contra volumen).
@@ -155,9 +161,8 @@ function ListaCifrasImposibles({
               <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm">
                 <b className="font-mono text-[var(--text-primary)]">N° {f.lineNo}</b>
                 <span className="font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
-                  {formatNumber(f.piezas)} piezas en{" "}
-                  {formatNumber(f.volumenM3, 4)}{" "}
-                  m³ = {fmtVolumenDePieza(f.m3PorPieza)} por pieza
+                  {formatNumber(f.piezas)} piezas en {formatNumber(f.volumenM3, 4)} m³ ={" "}
+                  {fmtVolumenDePieza(f.m3PorPieza)} por pieza
                 </span>
                 <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
                   {f.producto}
@@ -214,7 +219,8 @@ const SECTION_META: Record<
     icon: Boxes,
     cta: "Declarar producción",
     empty: "Sin transformaciones registradas.",
-    ayudaVacio: "Elige un lote en «Declarar producción»: salen sus trozas para elegir cuáles entran a la sierra.",
+    ayudaVacio:
+      "Elige un lote en «Declarar producción»: salen sus trozas para elegir cuáles entran a la sierra.",
   },
   despacho: {
     label: "Despacho",
@@ -334,12 +340,10 @@ function ZonaLibro({
     <AdminModal
       open
       onClose={onCerrar}
-      variant="wide"
+      size="planilla"
       title="Producción · Todos y registrados"
       description={subtitulo}
       icon={Table}
-      /* Es una tabla de nueve columnas con totales: a `2xl` se leía en zigzag. */
-      className="sm:w-[min(96vw,105rem)] sm:max-w-none"
     >
       <div className="space-y-3 px-5 py-4 sm:px-6">{children}</div>
     </AdminModal>
@@ -720,8 +724,16 @@ export function CtpEntriesView({
      relee cuando cambia el conjunto de corridas sin trozas del período: se
      declaró, se vinculó o se anuló algo. */
   const idsSinOrigen = sinOrigen.map((e) => e.id).join("|");
-  const diagnostico = useDiagnosticoSinOrigen({ activo: section === "produccion", clave: idsSinOrigen });
-  const { datos: diagDatos, cargando: diagCargando, error: diagError, recargar: releerDiagnostico } = diagnostico;
+  const diagnostico = useDiagnosticoSinOrigen({
+    activo: section === "produccion",
+    clave: idsSinOrigen,
+  });
+  const {
+    datos: diagDatos,
+    cargando: diagCargando,
+    error: diagError,
+    recargar: releerDiagnostico,
+  } = diagnostico;
 
   const enProceso = useMemo(
     () =>
@@ -1157,9 +1169,7 @@ export function CtpEntriesView({
         key: "cifras-imposibles",
         valor: cifrasImposibles.length,
         label:
-          cifrasImposibles.length === 1
-            ? "cifra que no puede ser"
-            : "cifras que no pueden ser",
+          cifrasImposibles.length === 1 ? "cifra que no puede ser" : "cifras que no pueden ser",
         hint: `N° ${peor.lineNo}: ${fmtVolumenDePieza(peor.m3PorPieza)} por pieza`,
         tono: "error",
         title:
@@ -1208,7 +1218,10 @@ export function CtpEntriesView({
       items.push({
         key: "especies-dos-formas",
         valor: especiesDosFormas.length,
-        label: especiesDosFormas.length === 1 ? "especie escrita de dos formas" : "especies escritas de dos formas",
+        label:
+          especiesDosFormas.length === 1
+            ? "especie escrita de dos formas"
+            : "especies escritas de dos formas",
         hint: e.grafias.map((g) => `«${g.texto}» ${g.usos}`).join(" vs "),
         tono: "warning",
         title:
@@ -1557,21 +1570,23 @@ export function CtpEntriesView({
 
       {verTarifa && <CtpTarifaAserrioModal open onClose={() => setVerTarifa(false)} />}
 
-      {section === "produccion" && cobrarAserrioId && (() => {
-        const corrida = entries.find((e) => e.id === cobrarAserrioId);
-        if (!corrida) return null;
-        return (
-          <CtpCobrarAserrioModal
-            entry={corrida}
-            onCerrar={() => setCobrarAserrioId(null)}
-            onListo={(msg, detalle) => {
-              pushToast({ tono: "success", msg, detail: detalle });
-              setCobrarAserrioId(null);
-              void load();
-            }}
-          />
-        );
-      })()}
+      {section === "produccion" &&
+        cobrarAserrioId &&
+        (() => {
+          const corrida = entries.find((e) => e.id === cobrarAserrioId);
+          if (!corrida) return null;
+          return (
+            <CtpCobrarAserrioModal
+              entry={corrida}
+              onCerrar={() => setCobrarAserrioId(null)}
+              onListo={(msg, detalle) => {
+                pushToast({ tono: "success", msg, detail: detalle });
+                setCobrarAserrioId(null);
+                void load();
+              }}
+            />
+          );
+        })()}
 
       {section === "produccion" && cobrarEnTanda && (
         <CtpCobrarEnTandaModal
@@ -2014,7 +2029,8 @@ export function CtpEntriesView({
         {section === "produccion" && seleccionCobro.size > 0 && (
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-[var(--accent)] bg-[var(--accent-soft)] px-3 py-2">
             <span className="text-sm font-bold text-[var(--text-primary)]">
-              {seleccionCobro.size} {seleccionCobro.size === 1 ? "corrida marcada" : "corridas marcadas"}
+              {seleccionCobro.size}{" "}
+              {seleccionCobro.size === 1 ? "corrida marcada" : "corridas marcadas"}
             </span>
             <div className="flex items-center gap-2">
               <button
@@ -2101,7 +2117,9 @@ export function CtpEntriesView({
             <Icon className="mx-auto mb-3 h-10 w-10 opacity-30" />
             <p className="flex items-center justify-center gap-1.5 text-base font-medium">
               {search.trim() ? "Ninguna línea coincide con la búsqueda." : meta.empty}
-              {!search.trim() && <InfoTip icono="ayuda" title={meta.label} what={meta.ayudaVacio} />}
+              {!search.trim() && (
+                <InfoTip icono="ayuda" title={meta.label} what={meta.ayudaVacio} />
+              )}
             </p>
             {!search.trim() && period.from && (
               <p className="mt-1 text-sm">
@@ -2218,7 +2236,10 @@ export function CtpEntriesView({
         />
       )}
       {comercialEntry && (
-        <CtpCubicacionComercialModal despachoId={comercialEntry.id} onClose={() => setComercialEntry(null)} />
+        <CtpCubicacionComercialModal
+          despachoId={comercialEntry.id}
+          onClose={() => setComercialEntry(null)}
+        />
       )}
       {papelesEntry && (
         <CtpPapelesDespachoModal

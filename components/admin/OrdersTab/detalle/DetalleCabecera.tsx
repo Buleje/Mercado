@@ -13,11 +13,10 @@
 import type { ReactNode } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { Check, X } from "@buleje/design-system/icons";
-import { ControlesDeVentana } from "@/components/admin/shared/modal-controles-ventana";
+import { CabeceraPropia } from "@/components/admin/shared/AdminModal";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { button } from "@/components/ui-system/button-variants";
-import type { VentanaDeModal } from "@/hooks/use-ventana-de-modal";
 import { formatDate } from "@/lib/admin-helpers";
 import { formatCurrency } from "@/lib/format";
 import type { DbOrder } from "@/lib/jsondb";
@@ -30,20 +29,21 @@ function haceCuanto(fecha: string): string {
   return texto === "recién" ? "recién" : `hace ${texto}`;
 }
 
-export function DetalleCabecera({
-  order,
-  ventana,
-  onClose,
-}: {
-  order: DbOrder;
-  ventana: VentanaDeModal;
-  onClose: () => void;
-}) {
+export function DetalleCabecera({ order, onClose }: { order: DbOrder; onClose: () => void }) {
   const pago = nombreDelPago(order.paymentMethod);
   return (
-    <header
-      {...ventana.asaProps}
-      className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] px-5 py-3"
+    <CabeceraPropia
+      className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] px-5 py-3 sm:px-6"
+      acciones={
+        <button
+          type="button"
+          onClick={onClose}
+          className="inline-flex h-12 w-12 items-center justify-center rounded-xl text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+          aria-label="Cerrar panel"
+        >
+          <X className="h-5 w-5" strokeWidth={2} aria-hidden />
+        </button>
+      }
     >
       <div className="min-w-0">
         <CardTitle
@@ -84,17 +84,8 @@ export function DetalleCabecera({
           <span className="sr-only">Total </span>
           {formatCurrency(Number(order.total))}
         </p>
-        <ControlesDeVentana ventana={ventana} />
-        <button
-          type="button"
-          onClick={onClose}
-          className="inline-flex h-12 w-12 items-center justify-center rounded-xl text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
-          aria-label="Cerrar panel"
-        >
-          <X className="h-5 w-5" strokeWidth={2} aria-hidden />
-        </button>
       </div>
-    </header>
+    </CabeceraPropia>
   );
 }
 

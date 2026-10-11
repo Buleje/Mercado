@@ -54,8 +54,16 @@ export function lotesQueNoCuadran(lotes: readonly LoteAserrio[]): LoteDescuadrad
             ? /* Sin cifra del SNIFFS para comparar, lo que está esperando ser
                  declarado es la materia prima que ya entró a la sierra. */
               cuadre.consumidoLoteM3
-            : Math.max(Math.abs(cuadre.deltaProducidoM3 ?? 0), Math.abs(cuadre.deltaConsumidoM3 ?? 0));
-      return { lote, cuadre, peso, resoluble: corridaAcompletar(lote) != null } satisfies LoteDescuadrado;
+            : Math.max(
+                Math.abs(cuadre.deltaProducidoM3 ?? 0),
+                Math.abs(cuadre.deltaConsumidoM3 ?? 0),
+              );
+      return {
+        lote,
+        cuadre,
+        peso,
+        resoluble: corridaAcompletar(lote) != null,
+      } satisfies LoteDescuadrado;
     })
     .filter((x): x is LoteDescuadrado => x !== null)
     .sort((a, b) => b.peso - a.peso);
@@ -75,15 +83,16 @@ export default function CtpCuadreSniffsModal({
   onClose: () => void;
 }) {
   const filas = useMemo(() => lotesQueNoCuadran(lotes), [lotes]);
-  const pendientes = filas.filter((f) => f.cuadre.estado === "pendiente" || f.cuadre.produccionPendiente);
+  const pendientes = filas.filter(
+    (f) => f.cuadre.estado === "pendiente" || f.cuadre.produccionPendiente,
+  );
   const totalPendienteM3 = Math.round(pendientes.reduce((a, f) => a + f.peso, 0) * 10_000) / 10_000;
 
   return (
     <AdminModal
       open
       onClose={onClose}
-      variant="info"
-      className="sm:max-w-[72rem]"
+      size="planilla"
       icon={ScanText}
       title="Qué no cuadra con el SNIFFS"
       description="Los lotes cuyo libro no dice lo mismo que quedó declarado en SERFOR, del que más pesa al que menos"
@@ -95,7 +104,8 @@ export default function CtpCuadreSniffsModal({
             ) : (
               <span className="font-mono tabular-nums">
                 {filas.length} lote{filas.length === 1 ? "" : "s"}
-                {pendientes.length > 0 && ` · ${pendientes.length} sin declarar (${fmtM3(totalPendienteM3)} m³)`}
+                {pendientes.length > 0 &&
+                  ` · ${pendientes.length} sin declarar (${fmtM3(totalPendienteM3)} m³)`}
               </span>
             )
           }
@@ -109,7 +119,10 @@ export default function CtpCuadreSniffsModal({
       <ModalBody className="space-y-3">
         {filas.length > 0 && (
           <p className="flex items-center gap-2 rounded-xl bg-[var(--surface-sunken)] px-3 py-2 text-sm text-[var(--text-secondary)]">
-            <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" aria-hidden />
+            <AlertTriangle
+              className="h-4 w-4 shrink-0 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+              aria-hidden
+            />
             <span>Una diferencia no es un error todavía: lo que no puede quedar es sin mirar.</span>
             <InfoTip
               icono="ayuda"
@@ -122,19 +135,22 @@ export default function CtpCuadreSniffsModal({
         <TablaCtp altoMax="max-h-[55vh]">
           <TheadCtp>
             <tr>
-              <th className="px-3 py-2 font-bold">Lote</th>
-              <th className="px-3 py-2 font-bold">SNIFFS</th>
-              <th className="px-3 py-2 font-bold">Qué pasa</th>
-              <th className="w-32 px-3 py-2 text-right font-bold">SNIFFS (m³)</th>
-              <th className="w-32 px-3 py-2 text-right font-bold">Libro (m³)</th>
+              <th className="font-bold">Lote</th>
+              <th className="font-bold">SNIFFS</th>
+              <th className="font-bold">Qué pasa</th>
+              <th className="w-32 text-right font-bold">SNIFFS (m³)</th>
+              <th className="w-32 text-right font-bold">Libro (m³)</th>
               {/* «Diferencia» no describe la fila de lo pendiente, donde el
                   SNIFFS no dijo nada: lo que hay en juego son los m³ que
                   esperan ser declarados. Un encabezado que sólo vale para la
                   mitad de las filas hace leer mal la otra mitad. */}
-              <th className="w-32 px-3 py-2 text-right font-bold" title="Los m³ que hay que resolver en esa fila">
+              <th
+                className="w-32 text-right font-bold"
+                title="Los m³ que hay que resolver en esa fila"
+              >
                 m³ en juego
               </th>
-              <th className="px-3 py-2">
+              <th>
                 <span className="sr-only">Resolver</span>
               </th>
             </tr>
@@ -149,13 +165,13 @@ export default function CtpCuadreSniffsModal({
               </FilaVacia>
             )}
             {filas.map(({ lote, cuadre, peso, resoluble }) => (
-              <tr key={lote.id} className="hover:bg-[var(--surface-sunken)]">
-                <td className="px-3 py-2">
+              <tr key={lote.id}>
+                <td>
                   <b className="font-mono text-[var(--text-primary)]">{lote.code}</b>
                   <span className="ml-2 text-[var(--text-tertiary)]">{lote.speciesCommon}</span>
                 </td>
-                <td className="px-3 py-2 font-mono text-[var(--text-secondary)]">{cuadre.lote ?? "—"}</td>
-                <td className="px-3 py-2">
+                <td className="font-mono text-[var(--text-secondary)]">{cuadre.lote ?? "—"}</td>
+                <td>
                   <span
                     className={`inline-block rounded-lg px-2 py-0.5 text-sm font-bold ${
                       cuadre.estado === "pendiente" || cuadre.estado === "cuadra"
@@ -163,7 +179,8 @@ export default function CtpCuadreSniffsModal({
                         : "bg-[var(--data-warning-500)]/15 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
                     }`}
                   >
-                    {cuadre.estado === "pendiente" || (cuadre.estado === "cuadra" && cuadre.produccionPendiente)
+                    {cuadre.estado === "pendiente" ||
+                    (cuadre.estado === "cuadra" && cuadre.produccionPendiente)
                       ? "falta declararlo acá"
                       : cuadre.deltaProducidoM3 == null
                         ? "el consumo difiere"
@@ -174,29 +191,34 @@ export default function CtpCuadreSniffsModal({
                     habla la fila. En la de lo pendiente el SNIFFS no trae
                     productos: ahí dice «—», y repetir el consumido a los dos
                     lados hacía leer tres veces el mismo número. */}
-                <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
                   {cuadre.deltaProducidoM3 == null
                     ? cuadre.estado === "difiere" && cuadre.consumidoSniffsM3 != null
                       ? `${fmtM3(cuadre.consumidoSniffsM3)} consumidos`
                       : "—"
                     : fmtM3(cuadre.producidoSniffsM3)}
                 </td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
                   {cuadre.deltaProducidoM3 == null && cuadre.estado === "difiere"
                     ? `${fmtM3(cuadre.consumidoLoteM3)} consumidos`
                     : fmtM3(cuadre.producidoLoteM3)}
                 </td>
-                <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                  {fmtM3(peso)}
-                </td>
-                <td className="px-3 py-2 text-right">
+                <td className="text-right font-mono font-bold tabular-nums">{fmtM3(peso)}</td>
+                <td className="text-right">
                   {resoluble ? (
                     <Btn size="sm" variant="primary" onClick={() => onResolver(lote)}>
                       <Boxes className="h-4 w-4" />
-                      {cuadre.produccionPendiente || cuadre.estado === "pendiente" ? "Declarar" : "Completar"}
+                      {cuadre.produccionPendiente || cuadre.estado === "pendiente"
+                        ? "Declarar"
+                        : "Completar"}
                     </Btn>
                   ) : (
-                    <Btn size="sm" variant="ghost" onClick={() => onVer(lote)} title="No hay corrida viva que declarar: mira la ficha">
+                    <Btn
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => onVer(lote)}
+                      title="No hay corrida viva que declarar: mira la ficha"
+                    >
                       Ver la ficha
                     </Btn>
                   )}

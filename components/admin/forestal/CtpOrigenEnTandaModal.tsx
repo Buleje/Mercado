@@ -49,7 +49,9 @@ export default function CtpOrigenEnTandaModal({
   const ocupado = estado.vinculando != null || estado.fila != null || estado.cargando;
   const enFila = d ? gruposEnFila(d.propuesta, estado.elecciones, estado.resultados) : [];
   const va = d ? loQueVa(d.propuesta, estado.elecciones, estado.resultados) : null;
-  const primeroQueFalta = grupos.find((g) => g.corridas.some((c) => !yaTieneOrigen(estado.resultados[c.corridaId])))?.clave;
+  const primeroQueFalta = grupos.find((g) =>
+    g.corridas.some((c) => !yaTieneOrigen(estado.resultados[c.corridaId])),
+  )?.clave;
   const abiertoReal = abierto ?? primeroQueFalta ?? grupos[0]?.clave ?? "";
   const grupoEnCurso = grupos.find((g) => g.clave === estado.vinculando?.clave);
   const sim = d?.simulacion;
@@ -69,17 +71,21 @@ export default function CtpOrigenEnTandaModal({
       title="Vincular en tanda"
       description="Las corridas que ya tienen madera de su especie y su permiso en el patio"
       icon={Link2}
-      variant="wide"
+      size="lg"
       aboveModals
       claveVentana="ctp-origen-en-tanda"
-      className="sm:max-w-[48rem]"
       footer={
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p role="status" aria-live="polite" className="min-w-0 text-xs tabular-nums text-[var(--text-secondary)]">
+          <p
+            role="status"
+            aria-live="polite"
+            className="min-w-0 text-xs tabular-nums text-[var(--text-secondary)]"
+          >
             {estado.fila?.espera ? (
               <span className="inline-flex items-center gap-1.5 text-[var(--data-warning-ink)]">
                 <Loader2 aria-hidden className="h-3.5 w-3.5 animate-spin" />
-                {estado.fila.espera.motivo} · vuelve a intentar en <Faltan hasta={estado.fila.espera.hasta} />
+                {estado.fila.espera.motivo} · vuelve a intentar en{" "}
+                <Faltan hasta={estado.fila.espera.hasta} />
               </span>
             ) : estado.vinculando && estado.fila ? (
               <span className="inline-flex items-center gap-1.5">
@@ -96,7 +102,11 @@ export default function CtpOrigenEnTandaModal({
                 <span className="text-xs font-semibold text-[var(--text-primary)]">
                   ¿Vincular {de(va?.corridas ?? 0, "corrida", "corridas")}, grupo por grupo?
                 </span>
-                <button type="button" onClick={() => setConfirmar(false)} className={BOTON_SECUNDARIO}>
+                <button
+                  type="button"
+                  onClick={() => setConfirmar(false)}
+                  className={BOTON_SECUNDARIO}
+                >
                   No
                 </button>
                 <button
@@ -120,7 +130,12 @@ export default function CtpOrigenEnTandaModal({
                   Cerrar
                 </button>
                 {estado.fila ? (
-                  <button type="button" onClick={estado.detener} disabled={estado.fila.deteniendo} className={BOTON_SECUNDARIO}>
+                  <button
+                    type="button"
+                    onClick={estado.detener}
+                    disabled={estado.fila.deteniendo}
+                    className={BOTON_SECUNDARIO}
+                  >
                     Detener
                   </button>
                 ) : (
@@ -138,10 +153,18 @@ export default function CtpOrigenEnTandaModal({
                       type="button"
                       onClick={() => setConfirmar(true)}
                       disabled={ocupado || !firma || enFila.length === 0}
-                      title={!firma ? "Las vincula el dueño o un administrador" : "Vincula en orden, grupo por grupo: si una corrida falla, las demás siguen"}
+                      title={
+                        !firma
+                          ? "Las vincula el dueño o un administrador"
+                          : "Vincula en orden, grupo por grupo: si una corrida falla, las demás siguen"
+                      }
                       className={BOTON_PRIMARIO}
                     >
-                      {!va || va.corridas === 0 ? "Vincular" : va.corridas === 1 ? "Vincular la corrida" : `Vincular las ${va.corridas}`}
+                      {!va || va.corridas === 0
+                        ? "Vincular"
+                        : va.corridas === 1
+                          ? "Vincular la corrida"
+                          : `Vincular las ${va.corridas}`}
                     </button>
                   </>
                 )}
@@ -154,7 +177,9 @@ export default function CtpOrigenEnTandaModal({
       <div className="space-y-3 px-5 py-4 sm:px-6">
         {d && va && grupos.length > 0 && (
           <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm tabular-nums text-[var(--text-secondary)]">
-            <span className="font-bold text-[var(--text-primary)]">{de(va.corridas, "corrida", "corridas")}</span>
+            <span className="font-bold text-[var(--text-primary)]">
+              {de(va.corridas, "corrida", "corridas")}
+            </span>
             <span className="font-semibold text-[var(--text-primary)]">{fmtPt(va.pt)} pt</span>
             <span>{fmtM3(va.m3Producido)} m³</span>
             <span>
@@ -172,7 +197,12 @@ export default function CtpOrigenEnTandaModal({
               example="Copal del permiso 2026-007: la N.º 34 con la troza C-12 rinde 46 %. Si la C-12 no entró, desmárcala."
               ancho="w-96"
             />
-            {estado.cargando && d && <Loader2 aria-label="Actualizando" className="h-4 w-4 animate-spin text-[var(--text-tertiary)]" />}
+            {estado.cargando && d && (
+              <Loader2
+                aria-label="Actualizando"
+                className="h-4 w-4 animate-spin text-[var(--text-tertiary)]"
+              />
+            )}
           </div>
         )}
 
@@ -184,7 +214,12 @@ export default function CtpOrigenEnTandaModal({
             <AlertTriangle aria-hidden className="h-4 w-4 shrink-0" />
             <span className="min-w-0 flex-1">{estado.error ?? estado.aviso}</span>
             {estado.error && (
-              <button type="button" onClick={() => void estado.cargar()} disabled={ocupado} className={BOTON_SECUNDARIO}>
+              <button
+                type="button"
+                onClick={() => void estado.cargar()}
+                disabled={ocupado}
+                className={BOTON_SECUNDARIO}
+              >
                 Reintentar
               </button>
             )}
@@ -194,7 +229,8 @@ export default function CtpOrigenEnTandaModal({
         {!d && estado.cargando && (
           <div aria-busy="true" className="space-y-2">
             <p className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]">
-              <Loader2 aria-hidden className="h-4 w-4 animate-spin" /> Armando la propuesta con el patio de hoy…
+              <Loader2 aria-hidden className="h-4 w-4 animate-spin" /> Armando la propuesta con el
+              patio de hoy…
             </p>
             {[0, 1, 2].map((i) => (
               <div key={i} className="h-14 animate-pulse rounded-xl bg-[var(--surface-sunken)]" />
@@ -205,10 +241,14 @@ export default function CtpOrigenEnTandaModal({
         {estado.hechas.length > 0 && (
           <ul aria-label="Vinculadas en esta sesión" className="space-y-1">
             {estado.hechas.map((h) => (
-              <li key={h.corridaId} className="flex items-start gap-1.5 text-sm tabular-nums text-[var(--data-success-ink)]">
+              <li
+                key={h.corridaId}
+                className="flex items-start gap-1.5 text-sm tabular-nums text-[var(--data-success-ink)]"
+              >
                 <Check aria-hidden className="mt-0.5 h-4 w-4 shrink-0" />
                 <span>
-                  <b>N.º {h.lineNo ?? "—"}</b> {h.especie} · {etiquetaLarga(h.fecha)} · {textoDeResultado(h.resultado)}
+                  <b>N.º {h.lineNo ?? "—"}</b> {h.especie} · {etiquetaLarga(h.fecha)} ·{" "}
+                  {textoDeResultado(h.resultado)}
                 </span>
               </li>
             ))}
@@ -234,7 +274,9 @@ export default function CtpOrigenEnTandaModal({
                 elecciones={estado.elecciones}
                 resultados={estado.resultados}
                 ocupado={ocupado}
-                vinculandoDesde={estado.vinculando?.clave === g.clave ? estado.vinculando.desde : null}
+                vinculandoDesde={
+                  estado.vinculando?.clave === g.clave ? estado.vinculando.desde : null
+                }
                 firma={firma}
                 onAlternarTroza={estado.alternarTroza}
                 onMarcarTodas={estado.marcarTodas}

@@ -39,24 +39,37 @@ export function ModalFooter({
   // propio renglón y en celular quedaba en una columna de una palabra por
   // línea al lado de los botones (medido a 400 px en Declarar producción).
   const mensaje = error ? (
-    <div role="alert" className="min-w-0 flex-1 max-sm:basis-full text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+    <div
+      role="alert"
+      className="min-w-0 flex-1 max-sm:basis-full text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
+    >
       {error}
     </div>
   ) : aviso ? (
-    <div className="min-w-0 flex-1 max-sm:basis-full text-sm font-medium text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">{aviso}</div>
+    <div className="min-w-0 flex-1 max-sm:basis-full text-sm font-medium text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+      {aviso}
+    </div>
   ) : nota ? (
-    <div className="min-w-0 flex-1 max-sm:basis-full text-sm text-[var(--text-tertiary)]">{nota}</div>
+    <div className="min-w-0 flex-1 max-sm:basis-full text-sm text-[var(--text-tertiary)]">
+      {nota}
+    </div>
   ) : atajo ? (
     <div className="hidden min-w-0 flex-1 text-xs text-[var(--text-tertiary)] sm:block">
-      <kbd className="rounded border border-[var(--rule-base)] px-1 py-0.5 font-mono text-[length:var(--ts-2xs,11px)]">Ctrl</kbd>
+      <kbd className="rounded border border-[var(--rule-base)] px-1 py-0.5 font-mono text-[length:var(--ts-2xs,11px)]">
+        Ctrl
+      </kbd>
       {" + "}
-      <kbd className="rounded border border-[var(--rule-base)] px-1 py-0.5 font-mono text-[length:var(--ts-2xs,11px)]">Enter</kbd>
+      <kbd className="rounded border border-[var(--rule-base)] px-1 py-0.5 font-mono text-[length:var(--ts-2xs,11px)]">
+        Enter
+      </kbd>
       {" guarda"}
     </div>
   ) : null;
 
   return (
-    <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2">
+    // Cancelar a la izquierda y la acción principal a la derecha (el orden lo
+    // da quien llama); todos a 48 px aunque vengan de `Btn` (40) — ADR-489.
+    <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2 [&>button]:min-h-12 [&>a]:min-h-12">
       {mensaje}
       {children}
     </div>

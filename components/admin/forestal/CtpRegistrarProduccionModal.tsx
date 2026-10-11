@@ -14,7 +14,18 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, Boxes, ChevronDown, Copy, Gauge, Loader2, Pencil, Plus, Trash2, X } from "@buleje/design-system/icons";
+import {
+  AlertTriangle,
+  Boxes,
+  ChevronDown,
+  Copy,
+  Gauge,
+  Loader2,
+  Pencil,
+  Plus,
+  Trash2,
+  X,
+} from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -145,7 +156,9 @@ function Bloque({
           {resumen}
         </span>
       ) : (
-        meta && <span className="font-mono text-xs tabular-nums text-[var(--text-tertiary)]">{meta}</span>
+        meta && (
+          <span className="font-mono text-xs tabular-nums text-[var(--text-tertiary)]">{meta}</span>
+        )
       )}
     </>
   );
@@ -167,7 +180,10 @@ function Bloque({
           </button>
         </CardTitle>
       ) : (
-        <CardTitle as="h3" className="text-sm font-bold flex flex-wrap items-center justify-between gap-2 rounded-t-xl bg-[var(--surface-sunken)] px-3 py-2">
+        <CardTitle
+          as="h3"
+          className="text-sm font-bold flex flex-wrap items-center justify-between gap-2 rounded-t-xl bg-[var(--surface-sunken)] px-3 py-2"
+        >
           {cabecera}
           {acciones}
         </CardTitle>
@@ -286,7 +302,11 @@ export default function CtpRegistrarProduccionModal({
    * ampliar sin tocar el bloque le seguía cobrando de más al dueño viejo
    * porque en verdad no se le seguía cobrando NADA, ver `confirmar`).
    */
-  cobroInicial?: { duenoParteId: string | null; precioManualPt?: number | null; nombreGuardado?: string | null };
+  cobroInicial?: {
+    duenoParteId: string | null;
+    precioManualPt?: number | null;
+    nombreGuardado?: string | null;
+  };
   /**
    * La fecha REAL e inmutable de una corrida que YA EXISTE. `declarar_produccion`
    * / `ampliar_produccion` no reescriben `entryDate` — el `día` de abajo es sólo
@@ -329,7 +349,10 @@ export default function CtpRegistrarProduccionModal({
 
   // ── El formulario de «Agregar producción» ──
   const [codigo, setCodigo] = useState("");
-  const codigosUsados = useMemo(() => (paquetesPrevios ?? []).map((p) => p.codigo), [paquetesPrevios]);
+  const codigosUsados = useMemo(
+    () => (paquetesPrevios ?? []).map((p) => p.codigo),
+    [paquetesPrevios],
+  );
   /**
    * Los códigos que la planta ENTERA ya usó.
    *
@@ -343,13 +366,21 @@ export default function CtpRegistrarProduccionModal({
     let vivo = true;
     fetch("/api/admin/forestal/ctp?codigosPaquete=1", { credentials: "include" })
       .then((r) => (r.ok ? r.json() : { codigos: [] }))
-      .then((j: { codigos?: string[] }) => { if (vivo) setCodigosPlanta(j.codigos ?? []); })
+      .then((j: { codigos?: string[] }) => {
+        if (vivo) setCodigosPlanta(j.codigos ?? []);
+      })
       /* Sin la serie se tipea a mano y el servidor sigue validando: es una
          ayuda, no un requisito. */
-      .catch(() => { if (vivo) setCodigosPlanta([]); });
-    return () => { vivo = false; };
+      .catch(() => {
+        if (vivo) setCodigosPlanta([]);
+      });
+    return () => {
+      vivo = false;
+    };
   }, []);
-  const [producto, setProducto] = useState<string>(productoInicial || TIPOS_PRODUCTO_SALIDA[0]?.valor || "");
+  const [producto, setProducto] = useState<string>(
+    productoInicial || TIPOS_PRODUCTO_SALIDA[0]?.valor || "",
+  );
   /* Arranca en la del producto inicial, para que el primer paquete no salga con
      una presentación que el producto contradice. */
   const [presentacion, setPresentacion] = useState<string>(
@@ -370,7 +401,14 @@ export default function CtpRegistrarProduccionModal({
    * pedir cuando cambia.
    */
   const [medidas, setMedidas] = useState<
-    { productType: string | null; presentacion: string | null; espesorCm: number; anchoCm: number; largoM: number; veces: number }[]
+    {
+      productType: string | null;
+      presentacion: string | null;
+      espesorCm: number;
+      anchoCm: number;
+      largoM: number;
+      veces: number;
+    }[]
   >([]);
   /** Las que se muestran son de OTROS productos: no hay historial de éste. */
   const [medidasDeOtros, setMedidasDeOtros] = useState(false);
@@ -383,7 +421,11 @@ export default function CtpRegistrarProduccionModal({
     pedir(`/api/admin/forestal/ctp?medidas=1&producto=${encodeURIComponent(producto)}`)
       .then(async (propias) => {
         if (!vivo) return;
-        if (propias.length > 0) { setMedidas(propias); setMedidasDeOtros(false); return; }
+        if (propias.length > 0) {
+          setMedidas(propias);
+          setMedidasDeOtros(false);
+          return;
+        }
         /* Un producto que nunca se declaró no tiene plantillas: antes que dejar
            el hueco vacío se ofrecen las de la planta, DICIENDO que son de otros
            productos — la medida sirve igual, el que no sirve es un atajo mudo. */
@@ -393,8 +435,15 @@ export default function CtpRegistrarProduccionModal({
         setMedidasDeOtros(generales.length > 0);
       })
       /* Sin plantillas se tipea como siempre: es un atajo, no un requisito. */
-      .catch(() => { if (vivo) { setMedidas([]); setMedidasDeOtros(false); } });
-    return () => { vivo = false; };
+      .catch(() => {
+        if (vivo) {
+          setMedidas([]);
+          setMedidasDeOtros(false);
+        }
+      });
+    return () => {
+      vivo = false;
+    };
   }, [producto]);
 
   /**
@@ -517,7 +566,12 @@ export default function CtpRegistrarProduccionModal({
     try {
       const crudo = localStorage.getItem(claveBorrador);
       if (!crudo) return;
-      const b = JSON.parse(crudo) as { paquetes?: PaqueteBorrador[]; dia?: string; linea?: string; observaciones?: string };
+      const b = JSON.parse(crudo) as {
+        paquetes?: PaqueteBorrador[];
+        dia?: string;
+        linea?: string;
+        observaciones?: string;
+      };
       const yaEnElLibro = new Set(codigosUsados);
       const rescatados = (b.paquetes ?? []).filter((p) => p?.codigo && !yaEnElLibro.has(p.codigo));
       if (rescatados.length === 0) {
@@ -546,7 +600,11 @@ export default function CtpRegistrarProduccionModal({
     if (!borradorLeido.current) return;
     try {
       if (paquetes.length === 0) localStorage.removeItem(claveBorrador);
-      else localStorage.setItem(claveBorrador, JSON.stringify({ paquetes, dia, linea, observaciones }));
+      else
+        localStorage.setItem(
+          claveBorrador,
+          JSON.stringify({ paquetes, dia, linea, observaciones }),
+        );
     } catch {
       /* Sin persistencia se sigue cargando igual: es una red, no un requisito. */
     }
@@ -554,18 +612,31 @@ export default function CtpRegistrarProduccionModal({
   const descartarBorrador = () => {
     setPaquetes([]);
     setBorradorRecuperado(0);
-    try { localStorage.removeItem(claveBorrador); } catch { /* idem */ }
+    try {
+      localStorage.removeItem(claveBorrador);
+    } catch {
+      /* idem */
+    }
   };
 
   const piezas = Number(cantidad) || 0;
   /** Dimensionado, el volumen se CALCULA: tipearlo aparte da dos verdades. */
   const volumenCalculado = useMemo(
-    () => volumenDimensionado(Number(espesor) || null, Number(ancho) || null, Number(largo) || null, piezas),
+    () =>
+      volumenDimensionado(
+        Number(espesor) || null,
+        Number(ancho) || null,
+        Number(largo) || null,
+        piezas,
+      ),
     [espesor, ancho, largo, piezas],
   );
   const volumenAUsar = dimensionar ? volumenCalculado : Number(volumen) || null;
 
-  const totales = useMemo(() => totalesProduccion(paquetes, material.volumenM3), [paquetes, material.volumenM3]);
+  const totales = useMemo(
+    () => totalesProduccion(paquetes, material.volumenM3),
+    [paquetes, material.volumenM3],
+  );
   /**
    * Lo que la corrida va a declarar EN TOTAL: lo de tandas anteriores más lo de
    * ahora. El tope, el rendimiento y la barra se miden contra esto — mirar sólo
@@ -574,7 +645,9 @@ export default function CtpRegistrarProduccionModal({
   const previo = Math.max(0, Number(yaDeclaradoM3) || 0);
   const acumulado = Math.round((previo + totales.volumen) * 10_000) / 10_000;
   const rendimientoPct =
-    material.volumenM3 > 0 && acumulado > 0 ? Math.round((acumulado / material.volumenM3) * 1000) / 10 : null;
+    material.volumenM3 > 0 && acumulado > 0
+      ? Math.round((acumulado / material.volumenM3) * 1000) / 10
+      : null;
   const veredicto = juzgarRendimientoLote(rendimientoPct);
   /* El techo del 56 %: no se guarda un asiento que declare más producto del que
      sale físicamente de lo que entró (ADR-358). */
@@ -587,7 +660,10 @@ export default function CtpRegistrarProduccionModal({
    * Si no se lo devolviera, corregir «3.0 → 3.0» diría que no entra: el propio
    * paquete estaría compitiendo consigo mismo por el tope.
    */
-  const editando = useMemo(() => paquetes.find((p) => p.id === editandoId) ?? null, [paquetes, editandoId]);
+  const editando = useMemo(
+    () => paquetes.find((p) => p.id === editandoId) ?? null,
+    [paquetes, editandoId],
+  );
   const margenParaEste = Math.round((margen + (editando?.volumenM3 ?? 0)) * 10_000) / 10_000;
   /** Cuántos iguales se van a crear. Editando siempre es 1: se corrige uno. */
   const veces = editandoId ? 1 : Math.max(1, Math.min(200, Math.floor(Number(repetir) || 1)));
@@ -635,7 +711,12 @@ export default function CtpRegistrarProduccionModal({
   const bloquesAserrio = useMemo(
     () =>
       bloquesDeCorrida(
-        { lineNo: null, speciesCommon: material.especie, productType: paquetes[0]?.productType ?? productoInicial ?? null, quantity: acumulado },
+        {
+          lineNo: null,
+          speciesCommon: material.especie,
+          productType: paquetes[0]?.productType ?? productoInicial ?? null,
+          quantity: acumulado,
+        },
         [
           ...(paquetesPrevios ?? []).map((p) => ({
             codigo: p.codigo,
@@ -668,7 +749,11 @@ export default function CtpRegistrarProduccionModal({
    */
   const confirmar = useCallback(() => {
     if (!listo) return;
-    try { localStorage.removeItem(claveBorrador); } catch { /* storage bloqueado */ }
+    try {
+      localStorage.removeItem(claveBorrador);
+    } catch {
+      /* storage bloqueado */
+    }
     onConfirmar({
       fecha: dia,
       lineaProduccion: linea,
@@ -688,7 +773,19 @@ export default function CtpRegistrarProduccionModal({
               ...(precioTocado ? { precioManualPt: aserrio.precioManualPt } : {}),
             },
     });
-  }, [listo, claveBorrador, onConfirmar, dia, linea, observaciones, paquetes, totales.volumen, aserrio, duenoTocado, precioTocado]);
+  }, [
+    listo,
+    claveBorrador,
+    onConfirmar,
+    dia,
+    linea,
+    observaciones,
+    paquetes,
+    totales.volumen,
+    aserrio,
+    duenoTocado,
+    precioTocado,
+  ]);
 
   /* Ctrl+Enter guarda desde cualquier campo: con veinte paquetes cargados,
      buscar el botón con el mouse es el último peaje de la jornada. */
@@ -831,11 +928,7 @@ export default function CtpRegistrarProduccionModal({
     <AdminModal
       open
       onClose={guardando ? () => {} : onClose}
-      variant="info"
-      /* 80rem en vez de las 64 del variant: con dos columnas, 64rem dejaba los
-         campos del paquete en ~110 px cada uno. `cn` usa twMerge, así que este
-         ancho le gana al de la variante. */
-      className="sm:max-w-[88rem]"
+      size="planilla"
       icon={Boxes}
       title={titulo ?? `Producción del lote ${lote ? lote.code : "—"}`}
       description={
@@ -860,7 +953,11 @@ export default function CtpRegistrarProduccionModal({
             Cerrar
           </Btn>
           <Btn variant="primary" disabled={!listo} onClick={confirmar} title="Ctrl+Enter">
-            {guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Boxes className="h-4 w-4" />}
+            {guardando ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Boxes className="h-4 w-4" />
+            )}
             {ctaLabel ?? "Guardar producción"}
           </Btn>
         </ModalFooter>
@@ -887,7 +984,6 @@ export default function CtpRegistrarProduccionModal({
           </p>
         )}
 
-
         {/**
          * La FRANJA DE ESTADO: el único renglón que gobierna la tarea.
          *
@@ -908,12 +1004,18 @@ export default function CtpRegistrarProduccionModal({
           <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1 text-sm">
             <span className="text-[var(--text-secondary)]">
               Entró{" "}
-              <b className="font-mono tabular-nums text-[var(--text-primary)]">{fmtM3(material.volumenM3)} m³</b>
+              <b className="font-mono tabular-nums text-[var(--text-primary)]">
+                {fmtM3(material.volumenM3)} m³
+              </b>
             </span>
-            <span aria-hidden className="text-[var(--text-tertiary)]">→</span>
+            <span aria-hidden className="text-[var(--text-tertiary)]">
+              →
+            </span>
             <span className="text-[var(--text-secondary)]">
               Declarado{" "}
-              <b className="font-mono text-base tabular-nums text-[var(--text-primary)]">{fmtM3(acumulado)} m³</b>
+              <b className="font-mono text-base tabular-nums text-[var(--text-primary)]">
+                {fmtM3(acumulado)} m³
+              </b>
               {previo > 0 && (
                 <span className="ml-1 text-xs text-[var(--text-tertiary)]">
                   ({fmtM3(previo)} de antes + {fmtM3(totales.volumen)} ahora)
@@ -929,12 +1031,12 @@ export default function CtpRegistrarProduccionModal({
             >
               {margen > 0 ? (
                 <>
-                  Quedan{" "}
-                  <b className="font-mono text-base tabular-nums">{fmtM3(margen)} m³</b>
+                  Quedan <b className="font-mono text-base tabular-nums">{fmtM3(margen)} m³</b>
                 </>
               ) : (
                 <span className="inline-flex items-center gap-1.5">
-                  <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden /> Sin margen: saca volumen para guardar
+                  <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden /> Sin margen: saca
+                  volumen para guardar
                 </span>
               )}
             </span>
@@ -1029,182 +1131,199 @@ export default function CtpRegistrarProduccionModal({
          * Los dos primeros van plegados, en un renglón: se leen una vez.
          */}
         <div className="grid gap-3 @3xl:grid-cols-2">
-        {/* ── Material ── */}
-        <div className="@container">
-        <Bloque
-          titulo="Material"
-          plegable
-          resumen={`${material.especie}${material.piezas > 0 ? ` · ${material.piezas} trozas` : ""} · ${fmtM3(material.volumenM3)} m³`}
-          meta={
-            lote
-              ? `Lote ${lote.code} · ${fmtDia(lote.inicioProceso ?? lote.fechaApertura)} → ${fmtDia(lote.finProceso)}`
-              : undefined
-          }
-        >
-          <div className="grid gap-3 @lg:grid-cols-2 @3xl:grid-cols-4">
-            {/* Inventario declarado (ADR-?) no trae piezas reales que contar:
+          {/* ── Material ── */}
+          <div className="@container">
+            <Bloque
+              titulo="Material"
+              plegable
+              resumen={`${material.especie}${material.piezas > 0 ? ` · ${material.piezas} trozas` : ""} · ${fmtM3(material.volumenM3)} m³`}
+              meta={
+                lote
+                  ? `Lote ${lote.code} · ${fmtDia(lote.inicioProceso ?? lote.fechaApertura)} → ${fmtDia(lote.finProceso)}`
+                  : undefined
+              }
+            >
+              <div className="grid gap-3 @lg:grid-cols-2 @3xl:grid-cols-4">
+                {/* Inventario declarado (ADR-?) no trae piezas reales que contar:
                 un "Cantidad: 0" al lado de "Volumen: 10.0000" se lee como que
                 falta algo, cuando en realidad no aplica. Sólo se muestra
                 cuando hay piezas de verdad. */}
-            <div className={material.piezas > 0 ? "sm:col-span-2" : "sm:col-span-2 lg:col-span-3"}>
-              <Dato
-                label="Especie"
-                valor={
-                  material.especieCientifica
-                    ? `${material.especieCientifica} (${material.especie.toUpperCase()})`
-                    : material.especie
-                }
-              />
-            </div>
-            {material.piezas > 0 && <Dato label="Cantidad" valor={String(material.piezas)} />}
-            <div className="grid grid-cols-2 gap-2">
-              <Dato label="Volumen" valor={fmtM3(material.volumenM3)} />
-              <div className="text-sm">
-                <span className="mb-1 block font-bold text-[var(--text-secondary)]">Rendimiento</span>
-                <p
-                  className={`flex h-11 items-center gap-1.5 rounded-xl px-2.5 font-mono font-bold tabular-nums ${
-                    veredicto.tono === "ok"
-                      ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
-                      : veredicto.tono === "neutro"
-                        ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
-                        : "bg-[var(--data-warning-500)]/12 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
-                  }`}
+                <div
+                  className={material.piezas > 0 ? "sm:col-span-2" : "sm:col-span-2 lg:col-span-3"}
                 >
-                  <Gauge className="h-4 w-4" aria-hidden />
-                  {rendimientoPct != null ? `${rendimientoPct} %` : "—"}
-                </p>
+                  <Dato
+                    label="Especie"
+                    valor={
+                      material.especieCientifica
+                        ? `${material.especieCientifica} (${material.especie.toUpperCase()})`
+                        : material.especie
+                    }
+                  />
+                </div>
+                {material.piezas > 0 && <Dato label="Cantidad" valor={String(material.piezas)} />}
+                <div className="grid grid-cols-2 gap-2">
+                  <Dato label="Volumen" valor={fmtM3(material.volumenM3)} />
+                  <div className="text-sm">
+                    <span className="mb-1 block font-bold text-[var(--text-secondary)]">
+                      Rendimiento
+                    </span>
+                    <p
+                      className={`flex h-11 items-center gap-1.5 rounded-xl px-2.5 font-mono font-bold tabular-nums ${
+                        veredicto.tono === "ok"
+                          ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
+                          : veredicto.tono === "neutro"
+                            ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
+                            : "bg-[var(--data-warning-500)]/12 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+                      }`}
+                    >
+                      <Gauge className="h-4 w-4" aria-hidden />
+                      {rendimientoPct != null ? `${rendimientoPct} %` : "—"}
+                    </p>
+                  </div>
+                </div>
               </div>
-            </div>
+
+              {/* Reparto entre títulos habilitantes (ADR-358). */}
+              {reparto.length > 1 ? (
+                <div className="mt-3 overflow-hidden rounded-xl border border-[var(--rule-base)]">
+                  <div className="flex items-center gap-1.5 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+                    Cómo se reparte entre los títulos habilitantes
+                    <InfoTip
+                      title="Reparto entre títulos"
+                      what="Proporcional al volumen que puso cada uno: de una tabla no se puede decir de qué árbol salió."
+                      affects="Pero sí en qué proporción entró cada título."
+                    />
+                  </div>
+                  <ul className="divide-y divide-[var(--rule-soft)]">
+                    {reparto.map((o) => (
+                      <li
+                        key={o.permiso ?? "sin"}
+                        className="flex flex-wrap items-baseline justify-between gap-2 px-3 py-1.5 text-sm"
+                      >
+                        <span className="min-w-0 flex-1 truncate">
+                          <b className="font-mono text-[var(--text-primary)]">
+                            {o.permiso ?? "sin título declarado"}
+                          </b>
+                          <span className="ml-2 text-[var(--text-tertiary)]">
+                            {o.piezas} pza · {fmtM3(o.volumenM3)} m³ de materia prima (
+                            {o.pctMateriaPrima} %)
+                          </span>
+                        </span>
+                        <span className="shrink-0 font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                          {fmtM3(o.produccionM3)} m³
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                material.permisos.length > 0 && (
+                  <p className="mt-2 text-sm text-[var(--text-tertiary)]">
+                    Amparada por {material.permisos.length === 1 ? "el título" : "los títulos"}{" "}
+                    <b className="text-[var(--text-secondary)]">{material.permisos.join(" · ")}</b>
+                  </p>
+                )
+              )}
+
+              {/**
+               * Lo que hay que tener a mano mientras se declara: la madera pieza por
+               * pieza, de qué guía y título viene, y lo que la corrida ya declaró.
+               * Plegado en solapas — sin esto había que cerrar el modal (perdiendo
+               * lo tipeado) para ir a buscarlo a otra pestaña.
+               */}
+              <CtpMaterialPanel
+                trozas={trozas}
+                origenes={material.origenes}
+                paquetesPrevios={paquetesPrevios}
+                fecha={dia}
+              />
+            </Bloque>
           </div>
 
-          {/* Reparto entre títulos habilitantes (ADR-358). */}
-          {reparto.length > 1 ? (
-            <div className="mt-3 overflow-hidden rounded-xl border border-[var(--rule-base)]">
-              <div className="flex items-center gap-1.5 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3 py-2 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                Cómo se reparte entre los títulos habilitantes
-                <InfoTip
-                  title="Reparto entre títulos"
-                  what="Proporcional al volumen que puso cada uno: de una tabla no se puede decir de qué árbol salió."
-                  affects="Pero sí en qué proporción entró cada título."
-                />
-              </div>
-              <ul className="divide-y divide-[var(--rule-soft)]">
-                {reparto.map((o) => (
-                  <li key={o.permiso ?? "sin"} className="flex flex-wrap items-baseline justify-between gap-2 px-3 py-1.5 text-sm">
-                    <span className="min-w-0 flex-1 truncate">
-                      <b className="font-mono text-[var(--text-primary)]">{o.permiso ?? "sin título declarado"}</b>
-                      <span className="ml-2 text-[var(--text-tertiary)]">
-                        {o.piezas} pza · {fmtM3(o.volumenM3)} m³ de materia prima ({o.pctMateriaPrima} %)
-                      </span>
-                    </span>
-                    <span className="shrink-0 font-mono font-bold tabular-nums text-[var(--text-primary)]">
-                      {fmtM3(o.produccionM3)} m³
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : (
-            material.permisos.length > 0 && (
-              <p className="mt-2 text-sm text-[var(--text-tertiary)]">
-                Amparada por {material.permisos.length === 1 ? "el título" : "los títulos"}{" "}
-                <b className="text-[var(--text-secondary)]">{material.permisos.join(" · ")}</b>
-              </p>
-            )
-          )}
-
-          {/**
-           * Lo que hay que tener a mano mientras se declara: la madera pieza por
-           * pieza, de qué guía y título viene, y lo que la corrida ya declaró.
-           * Plegado en solapas — sin esto había que cerrar el modal (perdiendo
-           * lo tipeado) para ir a buscarlo a otra pestaña.
-           */}
-          <CtpMaterialPanel
-            trozas={trozas}
-            origenes={material.origenes}
-            paquetesPrevios={paquetesPrevios}
-            fecha={dia}
-          />
-        </Bloque>
-        </div>
-
-        {/* ── La corrida: se llena UNA vez ──────────────────────────────────
+          {/* ── La corrida: se llena UNA vez ──────────────────────────────────
             Estaba mezclada con los campos del paquete, que se repiten por cada
             atado. Dos cosas distintas en la misma grilla hacían tipear la línea
             y la fecha creyendo que eran del paquete. */}
-        <div className="@container">
-        <Bloque titulo="La corrida" plegable resumen={`${fmtDia(dia)} · ${linea}`}>
-          <div className="grid gap-3 @lg:grid-cols-2 @2xl:grid-cols-3">
-            {/**
-             * Ampliando, la corrida YA existe: su fecha y su línea son las del
-             * asiento que se está completando y el servidor no las toca. Se
-             * muestran como dato — un campo editable que no viaja es una mentira
-             * de la pantalla.
-             */}
-            {previo > 0 ? (
-              <>
-                <Dato label="Línea de producción" valor={linea} />
-                <Dato label="Fecha de producción" valor={fmtDia(dia)} />
-              </>
-            ) : (
-              <>
-                <Campo label="Línea de producción">
-                  <select value={linea} onChange={(e) => setLinea(e.target.value)} className={CAMPO}>
-                    {/* Las dos del Cuadro Resumen 3: principal y recuperación. */}
-                    <option value="LP">LP · línea principal</option>
-                    <option value="LRE">LRE · línea de recuperación</option>
-                  </select>
-                </Campo>
-                <Campo label="Fecha de producción">
+          <div className="@container">
+            <Bloque titulo="La corrida" plegable resumen={`${fmtDia(dia)} · ${linea}`}>
+              <div className="grid gap-3 @lg:grid-cols-2 @2xl:grid-cols-3">
+                {/**
+                 * Ampliando, la corrida YA existe: su fecha y su línea son las del
+                 * asiento que se está completando y el servidor no las toca. Se
+                 * muestran como dato — un campo editable que no viaja es una mentira
+                 * de la pantalla.
+                 */}
+                {previo > 0 ? (
+                  <>
+                    <Dato label="Línea de producción" valor={linea} />
+                    <Dato label="Fecha de producción" valor={fmtDia(dia)} />
+                  </>
+                ) : (
+                  <>
+                    <Campo label="Línea de producción">
+                      <select
+                        value={linea}
+                        onChange={(e) => setLinea(e.target.value)}
+                        className={CAMPO}
+                      >
+                        {/* Las dos del Cuadro Resumen 3: principal y recuperación. */}
+                        <option value="LP">LP · línea principal</option>
+                        <option value="LRE">LRE · línea de recuperación</option>
+                      </select>
+                    </Campo>
+                    <Campo label="Fecha de producción">
+                      <input
+                        type="date"
+                        value={dia}
+                        onChange={(e) => {
+                          setDia(e.target.value);
+                          /* Tipear una fecha de otra semana mueve la tira de arriba. */
+                          if (esIsoValido(e.target.value)) setSemana(e.target.value);
+                        }}
+                        className={CAMPO}
+                      />
+                    </Campo>
+                  </>
+                )}
+                <Campo label="Observación de la corrida">
                   <input
-                    type="date"
-                    value={dia}
-                    onChange={(e) => {
-                      setDia(e.target.value);
-                      /* Tipear una fecha de otra semana mueve la tira de arriba. */
-                      if (esIsoValido(e.target.value)) setSemana(e.target.value);
-                    }}
+                    value={observaciones}
+                    onChange={(e) => setObservaciones(e.target.value)}
+                    placeholder={
+                      previo > 0 ? "Si la escribes, reemplaza la anterior" : "Turno, sierra…"
+                    }
+                    maxLength={300}
                     className={CAMPO}
                   />
                 </Campo>
-              </>
-            )}
-            <Campo label="Observación de la corrida">
-              <input
-                value={observaciones}
-                onChange={(e) => setObservaciones(e.target.value)}
-                placeholder={previo > 0 ? "Si la escribes, reemplaza la anterior" : "Turno, sierra…"}
-                maxLength={300}
-                className={CAMPO}
-              />
-            </Campo>
-          </div>
+              </div>
 
-          {/* De quién es esta madera y a qué precio se le asierra (ADR-412).
+              {/* De quién es esta madera y a qué precio se le asierra (ADR-412).
               Sobre TODOS los bloques declarados, no sólo los de esta tanda: es
               lo mismo que mide el rendimiento acumulado de arriba. */}
-          <div className="mt-3 border-t border-[var(--rule-soft)] pt-3">
-            <CtpCobroAserrio
-              fecha={fechaCorridaFija ?? dia}
-              bloques={bloquesAserrio}
-              valor={aserrio}
-              nombreGuardado={cobroInicial?.nombreGuardado}
-              onValidez={setAserrioValido}
-              onChange={(v, tocado) => {
-                setAserrio(v);
-                if (tocado.dueno) setDuenoTocado(true);
-                if (tocado.precio) setPrecioTocado(true);
-              }}
-            />
+              <div className="mt-3 border-t border-[var(--rule-soft)] pt-3">
+                <CtpCobroAserrio
+                  fecha={fechaCorridaFija ?? dia}
+                  bloques={bloquesAserrio}
+                  valor={aserrio}
+                  nombreGuardado={cobroInicial?.nombreGuardado}
+                  onValidez={setAserrioValido}
+                  onChange={(v, tocado) => {
+                    setAserrio(v);
+                    if (tocado.dueno) setDuenoTocado(true);
+                    if (tocado.precio) setPrecioTocado(true);
+                  }}
+                />
+              </div>
+            </Bloque>
           </div>
-        </Bloque>
-        </div>
-
         </div>
 
         {/* ── El paquete: se repite por cada atado que sale de la sierra ── */}
         <Bloque
-          titulo={editandoId ? `Corrigiendo el paquete ${editando?.codigo ?? ""}` : "Agregar paquete"}
+          titulo={
+            editandoId ? `Corrigiendo el paquete ${editando?.codigo ?? ""}` : "Agregar paquete"
+          }
           meta={editandoId ? "Enter guarda el cambio" : "Enter añade · Ctrl+Enter guarda"}
           /* El interruptor era una fila entera para una casilla. En la barra de
              título ocupa cero alto y sigue estando ANTES de los campos que
@@ -1226,7 +1345,8 @@ export default function CtpRegistrarProduccionModal({
                sin querer. Ctrl+Enter lo maneja el atajo global de guardar. */
             if (e.key !== "Enter" || e.ctrlKey || e.metaKey) return;
             const t = e.target as HTMLElement;
-            if (t.tagName === "SELECT" || t.tagName === "BUTTON" || t.tagName === "TEXTAREA") return;
+            if (t.tagName === "SELECT" || t.tagName === "BUTTON" || t.tagName === "TEXTAREA")
+              return;
             e.preventDefault();
             if (!noEntra) agregar();
           }}
@@ -1236,7 +1356,9 @@ export default function CtpRegistrarProduccionModal({
           {medidas.length > 0 && (
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                {medidasDeOtros ? "Las de siempre (de otros productos)" : `Las de siempre en ${producto}`}
+                {medidasDeOtros
+                  ? "Las de siempre (de otros productos)"
+                  : `Las de siempre en ${producto}`}
               </span>
               {medidas.map((m) => (
                 <button
@@ -1264,7 +1386,10 @@ export default function CtpRegistrarProduccionModal({
             <Campo label="Código de paquete">
               <input
                 value={codigo}
-                onChange={(e) => { codigoTocado.current = true; setCodigo(e.target.value); }}
+                onChange={(e) => {
+                  codigoTocado.current = true;
+                  setCodigo(e.target.value);
+                }}
                 placeholder="PQ-001"
                 maxLength={60}
                 className={CAMPO}
@@ -1329,7 +1454,10 @@ export default function CtpRegistrarProduccionModal({
             <Campo label="Presentación">
               <select
                 value={presentacion}
-                onChange={(e) => { setPresentacion(e.target.value); setPresentacionAuto(false); }}
+                onChange={(e) => {
+                  setPresentacion(e.target.value);
+                  setPresentacionAuto(false);
+                }}
                 className={CAMPO}
               >
                 {PRESENTACIONES_LOCTP.map((p) => (
@@ -1363,13 +1491,34 @@ export default function CtpRegistrarProduccionModal({
             {dimensionar ? (
               <>
                 <Campo label="Espesor (cm)">
-                  <input type="number" min={0} step="0.01" value={espesor} onChange={(e) => setEspesor(e.target.value)} className={CAMPO} />
+                  <input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={espesor}
+                    onChange={(e) => setEspesor(e.target.value)}
+                    className={CAMPO}
+                  />
                 </Campo>
                 <Campo label="Ancho (cm)">
-                  <input type="number" min={0} step="0.01" value={ancho} onChange={(e) => setAncho(e.target.value)} className={CAMPO} />
+                  <input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={ancho}
+                    onChange={(e) => setAncho(e.target.value)}
+                    className={CAMPO}
+                  />
                 </Campo>
                 <Campo label="Largo (m)">
-                  <input type="number" min={0} step="0.01" value={largo} onChange={(e) => setLargo(e.target.value)} className={CAMPO} />
+                  <input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={largo}
+                    onChange={(e) => setLargo(e.target.value)}
+                    className={CAMPO}
+                  />
                 </Campo>
                 {/* Calculado, no tipeado: con las medidas puestas, escribir otro
                     volumen crea dos verdades sobre el mismo paquete. */}
@@ -1419,16 +1568,27 @@ export default function CtpRegistrarProduccionModal({
                     type="number"
                     min={0}
                     step="1"
-                    value={volumen === "" ? "" : String(Math.round((Number(volumen) || 0) * PT_POR_M3))}
+                    value={
+                      volumen === "" ? "" : String(Math.round((Number(volumen) || 0) * PT_POR_M3))
+                    }
                     onChange={(e) => {
                       const pt = Number(e.target.value);
-                      setVolumen(e.target.value === "" || !Number.isFinite(pt) ? "" : String(Math.round((pt / PT_POR_M3) * 10_000) / 10_000));
+                      setVolumen(
+                        e.target.value === "" || !Number.isFinite(pt)
+                          ? ""
+                          : String(Math.round((pt / PT_POR_M3) * 10_000) / 10_000),
+                      );
                     }}
                     className={CAMPO}
                   />
                 </Campo>
                 <Campo label="Observación del paquete">
-                  <input value={obsPaquete} onChange={(e) => setObsPaquete(e.target.value)} maxLength={300} className={CAMPO} />
+                  <input
+                    value={obsPaquete}
+                    onChange={(e) => setObsPaquete(e.target.value)}
+                    maxLength={300}
+                    className={CAMPO}
+                  />
                 </Campo>
               </>
             )}
@@ -1453,7 +1613,12 @@ export default function CtpRegistrarProduccionModal({
                   />
                 </label>
               )}
-              <Btn variant="primary" onClick={agregar} disabled={Boolean(noEntra)} title={noEntra ?? undefined}>
+              <Btn
+                variant="primary"
+                onClick={agregar}
+                disabled={Boolean(noEntra)}
+                title={noEntra ?? undefined}
+              >
                 {editandoId ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
                 {editandoId ? "Guardar cambios" : veces > 1 ? `Añadir ${veces}` : "Añadir"}
               </Btn>
@@ -1486,8 +1651,16 @@ export default function CtpRegistrarProduccionModal({
 
         {/* ── Producción cargada ── */}
         <Bloque
-          titulo={previo > 0 ? `Paquetes que se agregan (${paquetes.length})` : `Producción (${paquetes.length})`}
-          meta={previo > 0 ? `La corrida ya tiene ${codigosUsados?.length ?? 0} paquete(s) cargados` : undefined}
+          titulo={
+            previo > 0
+              ? `Paquetes que se agregan (${paquetes.length})`
+              : `Producción (${paquetes.length})`
+          }
+          meta={
+            previo > 0
+              ? `La corrida ya tiene ${codigosUsados?.length ?? 0} paquete(s) cargados`
+              : undefined
+          }
         >
           {/**
            * Traer del SNIFFS (ADR-397): la pantalla que el operador ya declaró
@@ -1514,22 +1687,22 @@ export default function CtpRegistrarProduccionModal({
           <TablaCtp altoMax="max-h-[45vh]">
             <TheadCtp>
               <tr>
-                <th className="px-3 py-2 font-bold">Código paquete</th>
-                <th className="px-3 py-2 font-bold">Producto</th>
-                <th className="px-3 py-2 font-bold">Presentación</th>
-                <th className="px-3 py-2 text-right font-bold">Cant.</th>
-                <th className="px-3 py-2 text-right font-bold">Esp. (cm)</th>
-                <th className="px-3 py-2 text-right font-bold">Ancho (cm)</th>
-                <th className="px-3 py-2 text-right font-bold">Largo (m)</th>
-                <th className="px-3 py-2 text-right font-bold">Volumen</th>
+                <th className="font-bold">Código paquete</th>
+                <th className="font-bold">Producto</th>
+                <th className="font-bold">Presentación</th>
+                <th className="text-right font-bold">Cant.</th>
+                <th className="text-right font-bold">Esp. (cm)</th>
+                <th className="text-right font-bold">Ancho (cm)</th>
+                <th className="text-right font-bold">Largo (m)</th>
+                <th className="text-right font-bold">Volumen</th>
                 {/* Igual al "% aprovechado" del Resumen de Producción por PMF y
                     Producto oficial (Brandon, 2026-09-01): qué parte del
                     consumido representa este paquete, no del acumulado — un
                     número que ya se ve en Rendimiento arriba. */}
-                <th className="px-3 py-2 text-right font-bold" title="Del volumen consumido por esta corrida">
+                <th className="text-right font-bold" title="Del volumen consumido por esta corrida">
                   % aprov.
                 </th>
-                <th className="px-3 py-2">
+                <th>
                   <span className="sr-only">Quitar</span>
                 </th>
               </tr>
@@ -1551,26 +1724,28 @@ export default function CtpRegistrarProduccionModal({
                       : "hover:bg-[var(--surface-sunken)]"
                   }
                 >
-                  <td className="px-3 py-2 font-mono font-bold text-[var(--text-primary)]">{p.codigo}</td>
-                  <td className="px-3 py-2 text-[var(--text-secondary)]">{p.productType}</td>
-                  <td className="px-3 py-2 text-[var(--text-secondary)]">{p.presentacion}</td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums">{p.cantidad}</td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">
+                  <td className="font-mono font-bold">{p.codigo}</td>
+                  <td className="text-[var(--text-secondary)]">{p.productType}</td>
+                  <td className="text-[var(--text-secondary)]">{p.presentacion}</td>
+                  <td className="text-right font-mono tabular-nums">{p.cantidad}</td>
+                  <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">
                     {p.espesorCm ?? "—"}
                   </td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">
+                  <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">
                     {p.anchoCm ?? "—"}
                   </td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">
+                  <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">
                     {p.largoM ?? "—"}
                   </td>
-                  <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                  <td className="text-right font-mono font-bold tabular-nums">
                     {fmtM3(p.volumenM3)}
                   </td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-secondary)]">
-                    {material.volumenM3 > 0 ? `${((p.volumenM3 / material.volumenM3) * 100).toFixed(2)}%` : "—"}
+                  <td className="text-right font-mono tabular-nums text-[var(--text-secondary)]">
+                    {material.volumenM3 > 0
+                      ? `${((p.volumenM3 / material.volumenM3) * 100).toFixed(2)}%`
+                      : "—"}
                   </td>
-                  <td className="px-3 py-2 text-right">
+                  <td className="text-right">
                     <div className="inline-flex items-center gap-1">
                       {/* Corregir sin re-tipear: el volumen del paquete 3 de 15
                           se arregla acá, no borrando y volviendo a cargar. */}
@@ -1630,22 +1805,25 @@ export default function CtpRegistrarProduccionModal({
            * `juzgarRendimientoConsumo` que usan los KPI y la tarjeta del lote: no
            * se inventa acá un segundo umbral.
            */}
-          {paquetes.length > 0 && rendimientoPct != null && veredicto.tono !== "ok" && veredicto.tono !== "neutro" && (
-            <p
-              className={`mt-2 flex items-start gap-2 rounded-xl px-3 py-2 text-sm ${
-                veredicto.tono === "malo"
-                  ? "bg-[var(--data-error-500)]/12 font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
-                  : "bg-[var(--data-warning-500)]/12 font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
-              }`}
-            >
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-              <span>
-                {veredicto.tono === "malo"
-                  ? `Rendimiento ${rendimientoPct} %: por encima del ${RENDIMIENTO_PLAUSIBLE_MAX} % que se ve en aserrío. Revisa que ningún paquete esté cargado de más.`
-                  : `Rendimiento ${rendimientoPct} %: por debajo del ${RENDIMIENTO_PLAUSIBLE_MIN} % habitual en aserrío. ¿Falta declarar algún paquete? Se puede guardar igual — es un aviso, no un bloqueo.`}
-              </span>
-            </p>
-          )}
+          {paquetes.length > 0 &&
+            rendimientoPct != null &&
+            veredicto.tono !== "ok" &&
+            veredicto.tono !== "neutro" && (
+              <p
+                className={`mt-2 flex items-start gap-2 rounded-xl px-3 py-2 text-sm ${
+                  veredicto.tono === "malo"
+                    ? "bg-[var(--data-error-500)]/12 font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
+                    : "bg-[var(--data-warning-500)]/12 font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
+                }`}
+              >
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                <span>
+                  {veredicto.tono === "malo"
+                    ? `Rendimiento ${rendimientoPct} %: por encima del ${RENDIMIENTO_PLAUSIBLE_MAX} % que se ve en aserrío. Revisa que ningún paquete esté cargado de más.`
+                    : `Rendimiento ${rendimientoPct} %: por debajo del ${RENDIMIENTO_PLAUSIBLE_MIN} % habitual en aserrío. ¿Falta declarar algún paquete? Se puede guardar igual — es un aviso, no un bloqueo.`}
+                </span>
+              </p>
+            )}
 
           {/**
            * Cifras que no pueden ser: piezas contra volumen.

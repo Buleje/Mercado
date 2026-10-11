@@ -209,479 +209,493 @@ export default function CacaoProducerDrawer({
 
   return (
     <>
-    <AdminModal open onClose={onClose} variant="side" hideCloseButton className="!max-w-[480px]"
-      footer={
-        producer && !loading ? (
-        <div className="flex items-center justify-between gap-2">
+      <AdminModal
+        open
+        onClose={onClose}
+        variant="side"
+        hideCloseButton
+        footer={
+          producer && !loading ? (
+            <div className="flex items-center justify-between gap-2">
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => patch({ status: inactive ? "activo" : "inactivo" })}
+                className={`inline-flex h-10 items-center gap-2 rounded-xl border-2 px-3.5 text-sm font-semibold ${inactive ? "border-[var(--data-success-500)] text-[var(--data-success-700)] hover:bg-[var(--data-success-50)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`}
+              >
+                <Power className="h-4 w-4" /> {inactive ? "Activar" : "Desactivar"}
+              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={!producer || !agg}
+                  onClick={() => {
+                    if (!producer || !agg) return;
+                    const t = [
+                      `*Estado de cuenta — ${producer.nombre}*`,
+                      `Kg comprados: ${n2(agg.totalKg)} kg`,
+                      `A pagar: S/ ${n2(agg.totalPagado)}`,
+                      `Pagado: S/ ${n2(agg.montoPagado)}`,
+                      `Saldo: S/ ${n2(agg.saldo)}`,
+                      `Lotes: ${agg.loteCount}`,
+                    ].join("\n");
+                    shareCacaoText(`Estado de cuenta — ${producer.nombre}`, t);
+                  }}
+                  className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--data-success-500)] px-3.5 text-sm font-semibold text-[var(--data-success-700)] hover:bg-[var(--data-success-50)] disabled:opacity-50"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  Compartir
+                </button>
+                <button
+                  type="button"
+                  disabled={lotes.length === 0}
+                  onClick={() =>
+                    producer &&
+                    printCacaoLiquidacion(
+                      {
+                        nombre: producer.nombre,
+                        codigo: producer.codigo,
+                        dni: producer.dni,
+                        sector: producer.sector,
+                      },
+                      lotes.map((l) => ({
+                        loteCode: l.loteCode,
+                        fecha: l.fecha,
+                        variedad: l.variedad,
+                        pesoKg: l.pesoKg,
+                        grado: l.grado,
+                        humedadPct: l.humedadPct,
+                        totalPagado: l.totalPagado,
+                      })),
+                    )
+                  }
+                  className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+                >
+                  <Printer className="h-4 w-4" />
+                  Liquidación
+                </button>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="inline-flex h-10 items-center rounded-xl px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          ) : undefined
+        }
+      >
+        <div className="flex h-full max-h-screen flex-col bg-[var(--surface-raised)]">
+          <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4">
+            <div className="flex items-center gap-3">
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
+                <Users className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                  Productor {producer?.codigo ? `· ${producer.codigo}` : ""}
+                  {inactive && " · inactivo"}
+                </p>
+                <SectionTitle as="h2" className="text-sm font-bold text-[var(--text-primary)]">
+                  {producer?.nombre ?? "…"}
+                </SectionTitle>
+              </div>
+            </div>
             <button
               type="button"
-              disabled={saving}
-              onClick={() => patch({ status: inactive ? "activo" : "inactivo" })}
-              className={`inline-flex h-10 items-center gap-2 rounded-xl border-2 px-3.5 text-sm font-semibold ${inactive ? "border-[var(--data-success-500)] text-[var(--data-success-700)] hover:bg-[var(--data-success-50)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`}
+              onClick={onClose}
+              aria-label="Cerrar"
+              className="rounded-xl p-2 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
             >
-              <Power className="h-4 w-4" /> {inactive ? "Activar" : "Desactivar"}
+              <XIcon className="h-5 w-5" />
             </button>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                disabled={!producer || !agg}
-                onClick={() => {
-                  if (!producer || !agg) return;
-                  const t = [
-                    `*Estado de cuenta — ${producer.nombre}*`,
-                    `Kg comprados: ${n2(agg.totalKg)} kg`,
-                    `A pagar: S/ ${n2(agg.totalPagado)}`,
-                    `Pagado: S/ ${n2(agg.montoPagado)}`,
-                    `Saldo: S/ ${n2(agg.saldo)}`,
-                    `Lotes: ${agg.loteCount}`,
-                  ].join("\n");
-                  shareCacaoText(`Estado de cuenta — ${producer.nombre}`, t);
-                }}
-                className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--data-success-500)] px-3.5 text-sm font-semibold text-[var(--data-success-700)] hover:bg-[var(--data-success-50)] disabled:opacity-50"
-              >
-                <MessageCircle className="h-4 w-4" />
-                Compartir
-              </button>
-              <button
-                type="button"
-                disabled={lotes.length === 0}
-                onClick={() =>
-                  producer &&
-                  printCacaoLiquidacion(
-                    {
-                      nombre: producer.nombre,
-                      codigo: producer.codigo,
-                      dni: producer.dni,
-                      sector: producer.sector,
-                    },
-                    lotes.map((l) => ({
-                      loteCode: l.loteCode,
-                      fecha: l.fecha,
-                      variedad: l.variedad,
-                      pesoKg: l.pesoKg,
-                      grado: l.grado,
-                      humedadPct: l.humedadPct,
-                      totalPagado: l.totalPagado,
-                    })),
-                  )
-                }
-                className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
-              >
-                <Printer className="h-4 w-4" />
-                Liquidación
-              </button>
-              <button
-                type="button"
-                onClick={onClose}
-                className="inline-flex h-10 items-center rounded-xl px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
-              >
-                Cerrar
-              </button>
-            </div>
-        </div>
-        ) : undefined
-      }
-    >
-      <div className="flex h-full max-h-screen flex-col bg-[var(--surface-raised)]">
-        <header className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rule-base)] px-5 py-4">
-          <div className="flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
-              <Users className="h-5 w-5" />
-            </span>
-            <div>
-              <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                Productor {producer?.codigo ? `· ${producer.codigo}` : ""}
-                {inactive && " · inactivo"}
-              </p>
-              <SectionTitle as="h2" className="text-sm font-bold text-[var(--text-primary)]">
-                {producer?.nombre ?? "…"}
-              </SectionTitle>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="rounded-xl p-2 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
-          >
-            <XIcon className="h-5 w-5" />
-          </button>
-        </header>
+          </header>
 
-        <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5 text-sm">
-          {loading && (
-            <div className="flex items-center justify-center gap-2 py-16 text-[var(--text-tertiary)]">
-              <Loader2 className="h-5 w-5 animate-spin" /> Cargando…
-            </div>
-          )}
-          {error && (
-            <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-[var(--data-error-700)]">
-              {error}
-            </div>
-          )}
-
-          {producer && !loading && (
-            <>
-              {/* KPIs historial */}
-              <div className="grid grid-cols-3 gap-2">
-                <KStat icon={PackageCheck} label="Lotes" value={String(agg?.loteCount ?? 0)} />
-                <KStat icon={Scale} label="Kg comprados" value={n2(agg?.totalKg ?? 0)} />
-                <KStat icon={Coins} label="A pagar" value={`S/ ${n2(agg?.totalPagado ?? 0)}`} />
+          <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5 text-sm">
+            {loading && (
+              <div className="flex items-center justify-center gap-2 py-16 text-[var(--text-tertiary)]">
+                <Loader2 className="h-5 w-5 animate-spin" /> Cargando…
               </div>
+            )}
+            {error && (
+              <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-[var(--data-error-700)]">
+                {error}
+              </div>
+            )}
 
-              {/* Estado de cuenta con el productor (deuda / abonado / saldo) */}
-              {agg && agg.totalPagado > 0 && (
-                <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)]/40 p-3">
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
-                      Estado de cuenta
-                    </span>
-                    {agg.saldo > 0 ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-100)] px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]">
-                        <AlertTriangle className="h-3 w-3" /> Debes S/ {n2(agg.saldo)}
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success-100)] px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)]">
-                        <Check className="h-3 w-3" /> Al día
-                      </span>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-3 gap-2 text-center">
-                    <AcctCell label="Debido" value={`S/ ${n2(agg.totalPagado)}`} />
-                    <AcctCell label="Pagado" value={`S/ ${n2(agg.montoPagado)}`} tone="success" />
-                    <AcctCell
-                      label="Saldo"
-                      value={`S/ ${n2(agg.saldo)}`}
-                      tone={agg.saldo > 0 ? "warning" : "muted"}
-                    />
-                  </div>
+            {producer && !loading && (
+              <>
+                {/* KPIs historial */}
+                <div className="grid grid-cols-3 gap-2">
+                  <KStat icon={PackageCheck} label="Lotes" value={String(agg?.loteCount ?? 0)} />
+                  <KStat icon={Scale} label="Kg comprados" value={n2(agg?.totalKg ?? 0)} />
+                  <KStat icon={Coins} label="A pagar" value={`S/ ${n2(agg?.totalPagado ?? 0)}`} />
                 </div>
-              )}
-              {agg && (agg.avgIndice != null || Object.keys(agg.gradoCounts).length > 0) && (
-                <div className="flex flex-wrap items-center gap-2 text-xs">
-                  {agg.avgIndice != null && (
-                    <span className="rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 font-medium text-[var(--text-secondary)]">
-                      Índice ferm. prom: <b>{agg.avgIndice}%</b>
-                    </span>
-                  )}
-                  {Object.entries(agg.gradoCounts).map(([g, c]) => (
-                    <span
-                      key={g}
-                      className="rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 font-medium text-[var(--text-secondary)]"
-                    >
-                      {g === "sin_clasificar" ? "Sin clasif." : (GRADO_LABEL[g as CacaoGrado] ?? g)}
-                      : <b>{c}</b>
-                    </span>
-                  ))}
-                </div>
-              )}
 
-              {/* Perfil / edición */}
-              <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)]/40 p-4">
-                <div className="mb-3 flex items-center justify-between">
-                  <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">Perfil</CardTitle>
-                  {!editing ? (
-                    <button
-                      type="button"
-                      onClick={() => setEditing(true)}
-                      className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
-                    >
-                      <Pencil className="h-3.5 w-3.5" /> Editar
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      disabled={saving || !form.nombre?.trim()}
-                      onClick={saveEdit}
-                      className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 text-xs font-bold text-white hover:opacity-90 disabled:opacity-50"
-                    >
-                      {saving ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                {/* Estado de cuenta con el productor (deuda / abonado / saldo) */}
+                {agg && agg.totalPagado > 0 && (
+                  <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)]/40 p-3">
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+                        Estado de cuenta
+                      </span>
+                      {agg.saldo > 0 ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-warning-100)] px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)]">
+                          <AlertTriangle className="h-3 w-3" /> Debes S/ {n2(agg.saldo)}
+                        </span>
                       ) : (
-                        <Check className="h-3.5 w-3.5" />
-                      )}{" "}
-                      Guardar
-                    </button>
-                  )}
-                </div>
-                {!editing ? (
-                  <div className="space-y-1.5">
-                    <PRow icon={Users} label="DNI" value={producer.dni ?? "—"} />
-                    <PRow icon={MapPin} label="Sector" value={producer.sector ?? "—"} />
-                    <PRow
-                      icon={Scale}
-                      label="Parcela"
-                      value={
-                        producer.parcelaHa ? `${Number(producer.parcelaHa).toFixed(1)} ha` : "—"
-                      }
-                    />
-                    <PRow
-                      icon={MapPin}
-                      label="Altitud"
-                      value={producer.altitudMsnm != null ? `${producer.altitudMsnm} msnm` : "—"}
-                    />
-                    <PhoneRow phone={producer.telefono} nombre={producer.nombre} />
-                    <PRow
-                      icon={Award}
-                      label="Certificación"
-                      value={
-                        producer.certificacion ? producer.certificacion.replace("_", " ") : "—"
-                      }
-                    />
-                    {producer.variedad && (
-                      <PRow icon={Award} label="Variedad" value={producer.variedad} />
-                    )}
-                    {producer.observaciones && (
-                      <p className="pt-1 text-[var(--text-secondary)]">{producer.observaciones}</p>
-                    )}
-                    {producer.latitud && producer.longitud && (
-                      <div className="pt-2">
-                        <div className="mb-1.5 flex items-center justify-between">
-                          <span className="flex items-center gap-1.5 text-[var(--text-tertiary)]">
-                            <MapPin className="h-3.5 w-3.5" /> Parcela
-                          </span>
-                          <a
-                            href={`https://www.openstreetmap.org/?mlat=${producer.latitud}&mlon=${producer.longitud}#map=15/${producer.latitud}/${producer.longitud}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-xs font-bold text-[var(--accent)] hover:underline"
-                          >
-                            Ver en mapa
-                          </a>
-                        </div>
-                        <div className="overflow-hidden rounded-xl border border-[var(--rule-base)]">
-                          <LeafletMap
-                            lat={Number(producer.latitud)}
-                            lon={Number(producer.longitud)}
-                            height={160}
-                            zoom={14}
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <Lbl span="Nombre">
-                      <input
-                        value={form.nombre ?? ""}
-                        onChange={(e) => set("nombre", e.target.value)}
-                        className={I}
+                        <span className="inline-flex items-center gap-1 rounded-full bg-[var(--data-success-100)] px-2.5 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)]">
+                          <Check className="h-3 w-3" /> Al día
+                        </span>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <AcctCell label="Debido" value={`S/ ${n2(agg.totalPagado)}`} />
+                      <AcctCell label="Pagado" value={`S/ ${n2(agg.montoPagado)}`} tone="success" />
+                      <AcctCell
+                        label="Saldo"
+                        value={`S/ ${n2(agg.saldo)}`}
+                        tone={agg.saldo > 0 ? "warning" : "muted"}
                       />
-                    </Lbl>
-                    <Lbl span="DNI">
-                      <input
-                        value={form.dni ?? ""}
-                        onChange={(e) => set("dni", e.target.value)}
-                        className={I}
-                      />
-                    </Lbl>
-                    <Lbl span="Sector">
-                      <input
-                        value={form.sector ?? ""}
-                        onChange={(e) => set("sector", e.target.value)}
-                        className={I}
-                      />
-                    </Lbl>
-                    <Lbl span="Parcela (ha)">
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={form.parcelaHa ?? ""}
-                        onChange={(e) => set("parcelaHa", e.target.value)}
-                        className={`${I} font-mono`}
-                      />
-                    </Lbl>
-                    <Lbl span="Altitud (msnm)">
-                      <input
-                        type="number"
-                        value={form.altitudMsnm ?? ""}
-                        onChange={(e) => set("altitudMsnm", e.target.value)}
-                        className={`${I} font-mono`}
-                      />
-                    </Lbl>
-                    <Lbl span="Teléfono">
-                      <input
-                        value={form.telefono ?? ""}
-                        onChange={(e) => set("telefono", e.target.value)}
-                        className={I}
-                      />
-                    </Lbl>
-                    <Lbl span="Variedad">
-                      <select
-                        value={form.variedad ?? ""}
-                        onChange={(e) => set("variedad", e.target.value)}
-                        className={I}
-                      >
-                        <option value="">—</option>
-                        {CACAO_VARIEDADES.map((v) => (
-                          <option key={v} value={v}>
-                            {v}
-                          </option>
-                        ))}
-                      </select>
-                    </Lbl>
-                    <Lbl span="Certificación">
-                      <select
-                        value={form.certificacion ?? ""}
-                        onChange={(e) => set("certificacion", e.target.value)}
-                        className={I}
-                      >
-                        <option value="">—</option>
-                        {CACAO_CERTIFICACIONES.map((c) => (
-                          <option key={c} value={c}>
-                            {c.replace("_", " ")}
-                          </option>
-                        ))}
-                      </select>
-                    </Lbl>
-                    <div className="col-span-2">
-                      <Lbl span="Observaciones">
-                        <textarea
-                          value={form.observaciones ?? ""}
-                          onChange={(e) => set("observaciones", e.target.value)}
-                          rows={2}
-                          className={`${I} h-auto resize-none py-2`}
-                        />
-                      </Lbl>
                     </div>
                   </div>
                 )}
-              </div>
+                {agg && (agg.avgIndice != null || Object.keys(agg.gradoCounts).length > 0) && (
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    {agg.avgIndice != null && (
+                      <span className="rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 font-medium text-[var(--text-secondary)]">
+                        Índice ferm. prom: <b>{agg.avgIndice}%</b>
+                      </span>
+                    )}
+                    {Object.entries(agg.gradoCounts).map(([g, c]) => (
+                      <span
+                        key={g}
+                        className="rounded-full bg-[var(--surface-sunken)] px-2.5 py-1 font-medium text-[var(--text-secondary)]"
+                      >
+                        {g === "sin_clasificar"
+                          ? "Sin clasif."
+                          : (GRADO_LABEL[g as CacaoGrado] ?? g)}
+                        : <b>{c}</b>
+                      </span>
+                    ))}
+                  </div>
+                )}
 
-              {/* Historial de lotes */}
-              <div>
-                <CardTitle as="h3" className="mb-2 text-sm font-bold text-[var(--text-primary)]">
-                  Historial de lotes ({lotes.length})
-                </CardTitle>
-                <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)]">
-                  {lotes.length === 0 ? (
-                    <p className="p-4 text-center text-[var(--text-tertiary)]">
-                      Sin lotes registrados.
-                    </p>
-                  ) : (
-                    lotes.map((l) => {
-                      const debido = Number(l.totalPagado ?? 0);
-                      const saldo = loteSaldo(l);
-                      return (
-                        <div
-                          key={l.id}
-                          className="flex items-center gap-2 border-b border-[var(--rule-soft)] px-3 py-2.5 last:border-0 hover:bg-[var(--surface-sunken)]"
-                        >
-                          <button
-                            type="button"
-                            onClick={() => onOpenLote?.(l.id)}
-                            className="flex min-w-0 flex-1 items-center justify-between gap-3 text-left"
-                          >
-                            <span className="min-w-0">
-                              <span className="font-mono text-xs font-bold text-[var(--text-primary)]">
-                                {l.loteCode}
-                              </span>
-                              <span className="ml-2 text-xs text-[var(--text-tertiary)]">
-                                {fdate(l.fecha)}
-                              </span>
+                {/* Perfil / edición */}
+                <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)]/40 p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
+                      Perfil
+                    </CardTitle>
+                    {!editing ? (
+                      <button
+                        type="button"
+                        onClick={() => setEditing(true)}
+                        className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+                      >
+                        <Pencil className="h-3.5 w-3.5" /> Editar
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={saving || !form.nombre?.trim()}
+                        onClick={saveEdit}
+                        className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 text-xs font-bold text-white hover:opacity-90 disabled:opacity-50"
+                      >
+                        {saving ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Check className="h-3.5 w-3.5" />
+                        )}{" "}
+                        Guardar
+                      </button>
+                    )}
+                  </div>
+                  {!editing ? (
+                    <div className="space-y-1.5">
+                      <PRow icon={Users} label="DNI" value={producer.dni ?? "—"} />
+                      <PRow icon={MapPin} label="Sector" value={producer.sector ?? "—"} />
+                      <PRow
+                        icon={Scale}
+                        label="Parcela"
+                        value={
+                          producer.parcelaHa ? `${Number(producer.parcelaHa).toFixed(1)} ha` : "—"
+                        }
+                      />
+                      <PRow
+                        icon={MapPin}
+                        label="Altitud"
+                        value={producer.altitudMsnm != null ? `${producer.altitudMsnm} msnm` : "—"}
+                      />
+                      <PhoneRow phone={producer.telefono} nombre={producer.nombre} />
+                      <PRow
+                        icon={Award}
+                        label="Certificación"
+                        value={
+                          producer.certificacion ? producer.certificacion.replace("_", " ") : "—"
+                        }
+                      />
+                      {producer.variedad && (
+                        <PRow icon={Award} label="Variedad" value={producer.variedad} />
+                      )}
+                      {producer.observaciones && (
+                        <p className="pt-1 text-[var(--text-secondary)]">
+                          {producer.observaciones}
+                        </p>
+                      )}
+                      {producer.latitud && producer.longitud && (
+                        <div className="pt-2">
+                          <div className="mb-1.5 flex items-center justify-between">
+                            <span className="flex items-center gap-1.5 text-[var(--text-tertiary)]">
+                              <MapPin className="h-3.5 w-3.5" /> Parcela
                             </span>
-                            <span className="flex shrink-0 items-center gap-2">
-                              <span className="font-mono text-xs tabular-nums text-[var(--text-secondary)]">
-                                {n2(l.pesoKg)} kg
-                              </span>
-                              <GradoMini grado={l.grado} />
-                              <span className="font-mono text-xs font-bold tabular-nums text-[var(--text-primary)]">
-                                {l.totalPagado ? `S/ ${n2(l.totalPagado)}` : "—"}
-                              </span>
-                            </span>
-                          </button>
-                          {debido > 0 &&
-                            (saldo > 0 ? (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setPayLote(l);
-                                  setPayMonto(String(debido));
-                                }}
-                                title={`Saldo S/ ${n2(saldo)}`}
-                                className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-2 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)] hover:brightness-95"
-                              >
-                                <HandCoins className="h-3.5 w-3.5" /> Pagar
-                              </button>
-                            ) : (
-                              <span
-                                title="Pagado"
-                                className="inline-flex h-8 shrink-0 items-center gap-1 px-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)]"
-                              >
-                                <Check className="h-3.5 w-3.5" /> Pagado
-                              </span>
-                            ))}
+                            <a
+                              href={`https://www.openstreetmap.org/?mlat=${producer.latitud}&mlon=${producer.longitud}#map=15/${producer.latitud}/${producer.longitud}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-xs font-bold text-[var(--accent)] hover:underline"
+                            >
+                              Ver en mapa
+                            </a>
+                          </div>
+                          <div className="overflow-hidden rounded-xl border border-[var(--rule-base)]">
+                            <LeafletMap
+                              lat={Number(producer.latitud)}
+                              lon={Number(producer.longitud)}
+                              height={160}
+                              zoom={14}
+                            />
+                          </div>
                         </div>
-                      );
-                    })
+                      )}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <Lbl span="Nombre">
+                        <input
+                          value={form.nombre ?? ""}
+                          onChange={(e) => set("nombre", e.target.value)}
+                          className={I}
+                        />
+                      </Lbl>
+                      <Lbl span="DNI">
+                        <input
+                          value={form.dni ?? ""}
+                          onChange={(e) => set("dni", e.target.value)}
+                          className={I}
+                        />
+                      </Lbl>
+                      <Lbl span="Sector">
+                        <input
+                          value={form.sector ?? ""}
+                          onChange={(e) => set("sector", e.target.value)}
+                          className={I}
+                        />
+                      </Lbl>
+                      <Lbl span="Parcela (ha)">
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={form.parcelaHa ?? ""}
+                          onChange={(e) => set("parcelaHa", e.target.value)}
+                          className={`${I} font-mono`}
+                        />
+                      </Lbl>
+                      <Lbl span="Altitud (msnm)">
+                        <input
+                          type="number"
+                          value={form.altitudMsnm ?? ""}
+                          onChange={(e) => set("altitudMsnm", e.target.value)}
+                          className={`${I} font-mono`}
+                        />
+                      </Lbl>
+                      <Lbl span="Teléfono">
+                        <input
+                          value={form.telefono ?? ""}
+                          onChange={(e) => set("telefono", e.target.value)}
+                          className={I}
+                        />
+                      </Lbl>
+                      <Lbl span="Variedad">
+                        <select
+                          value={form.variedad ?? ""}
+                          onChange={(e) => set("variedad", e.target.value)}
+                          className={I}
+                        >
+                          <option value="">—</option>
+                          {CACAO_VARIEDADES.map((v) => (
+                            <option key={v} value={v}>
+                              {v}
+                            </option>
+                          ))}
+                        </select>
+                      </Lbl>
+                      <Lbl span="Certificación">
+                        <select
+                          value={form.certificacion ?? ""}
+                          onChange={(e) => set("certificacion", e.target.value)}
+                          className={I}
+                        >
+                          <option value="">—</option>
+                          {CACAO_CERTIFICACIONES.map((c) => (
+                            <option key={c} value={c}>
+                              {c.replace("_", " ")}
+                            </option>
+                          ))}
+                        </select>
+                      </Lbl>
+                      <div className="col-span-2">
+                        <Lbl span="Observaciones">
+                          <textarea
+                            value={form.observaciones ?? ""}
+                            onChange={(e) => set("observaciones", e.target.value)}
+                            rows={2}
+                            className={`${I} h-auto resize-none py-2`}
+                          />
+                        </Lbl>
+                      </div>
+                    </div>
                   )}
                 </div>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-    </AdminModal>
 
-    {payLote && (
-      <AdminModal open onClose={() => setPayLote(null)} variant="centered-sm" hideCloseButton>
-        <div className="bg-[var(--surface-raised)] px-5 py-5 sm:px-6">
-          <div className="flex items-start gap-3">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
-              <HandCoins className="h-6 w-6" />
-            </span>
-            <div className="min-w-0">
-              <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
-                Registrar pago — lote {payLote.loteCode}
-              </CardTitle>
-              <p className="mt-0.5 text-sm text-[var(--text-tertiary)]">
-                Debido S/ {n2(payLote.totalPagado)} · pagado S/ {n2(payLote.montoPagado)} · saldo S/{" "}
-                {n2(loteSaldo(payLote))}
-              </p>
-            </div>
-          </div>
-          <label className="mt-4 block">
-            <span className="mb-1.5 block text-sm font-medium text-[var(--text-primary)]">
-              Monto pagado acumulado (adelanto + abonos)
-            </span>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={payMonto}
-              onChange={(e) => setPayMonto(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !saving) registrarPago();
-              }}
-              className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 font-mono text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
-            />
-            <span className="mt-1 block text-xs text-[var(--text-tertiary)]">
-              Es el total pagado, no solo el abono de hoy. Igual o mayor al debido = liquidado.
-            </span>
-          </label>
-          <div className="mt-5 flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setPayLote(null)}
-              className="inline-flex h-10 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              disabled={saving}
-              onClick={registrarPago}
-              className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
-            >
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-              Guardar pago
-            </button>
+                {/* Historial de lotes */}
+                <div>
+                  <CardTitle as="h3" className="mb-2 text-sm font-bold text-[var(--text-primary)]">
+                    Historial de lotes ({lotes.length})
+                  </CardTitle>
+                  <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)]">
+                    {lotes.length === 0 ? (
+                      <p className="p-4 text-center text-[var(--text-tertiary)]">
+                        Sin lotes registrados.
+                      </p>
+                    ) : (
+                      lotes.map((l) => {
+                        const debido = Number(l.totalPagado ?? 0);
+                        const saldo = loteSaldo(l);
+                        return (
+                          <div
+                            key={l.id}
+                            className="flex items-center gap-2 border-b border-[var(--rule-soft)] px-3 py-2.5 last:border-0 hover:bg-[var(--surface-sunken)]"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => onOpenLote?.(l.id)}
+                              className="flex min-w-0 flex-1 items-center justify-between gap-3 text-left"
+                            >
+                              <span className="min-w-0">
+                                <span className="font-mono text-xs font-bold text-[var(--text-primary)]">
+                                  {l.loteCode}
+                                </span>
+                                <span className="ml-2 text-xs text-[var(--text-tertiary)]">
+                                  {fdate(l.fecha)}
+                                </span>
+                              </span>
+                              <span className="flex shrink-0 items-center gap-2">
+                                <span className="font-mono text-xs tabular-nums text-[var(--text-secondary)]">
+                                  {n2(l.pesoKg)} kg
+                                </span>
+                                <GradoMini grado={l.grado} />
+                                <span className="font-mono text-xs font-bold tabular-nums text-[var(--text-primary)]">
+                                  {l.totalPagado ? `S/ ${n2(l.totalPagado)}` : "—"}
+                                </span>
+                              </span>
+                            </button>
+                            {debido > 0 &&
+                              (saldo > 0 ? (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setPayLote(l);
+                                    setPayMonto(String(debido));
+                                  }}
+                                  title={`Saldo S/ ${n2(saldo)}`}
+                                  className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-2 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-700)] hover:brightness-95"
+                                >
+                                  <HandCoins className="h-3.5 w-3.5" /> Pagar
+                                </button>
+                              ) : (
+                                <span
+                                  title="Pagado"
+                                  className="inline-flex h-8 shrink-0 items-center gap-1 px-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)]"
+                                >
+                                  <Check className="h-3.5 w-3.5" /> Pagado
+                                </span>
+                              ))}
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </AdminModal>
-    )}
+
+      {payLote && (
+        <AdminModal open onClose={() => setPayLote(null)} variant="centered-sm" hideCloseButton>
+          <div className="bg-[var(--surface-raised)] px-5 py-5 sm:px-6">
+            <div className="flex items-start gap-3">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
+                <HandCoins className="h-6 w-6" />
+              </span>
+              <div className="min-w-0">
+                <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
+                  Registrar pago — lote {payLote.loteCode}
+                </CardTitle>
+                <p className="mt-0.5 text-sm text-[var(--text-tertiary)]">
+                  Debido S/ {n2(payLote.totalPagado)} · pagado S/ {n2(payLote.montoPagado)} · saldo
+                  S/ {n2(loteSaldo(payLote))}
+                </p>
+              </div>
+            </div>
+            <label className="mt-4 block">
+              <span className="mb-1.5 block text-sm font-medium text-[var(--text-primary)]">
+                Monto pagado acumulado (adelanto + abonos)
+              </span>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={payMonto}
+                onChange={(e) => setPayMonto(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !saving) registrarPago();
+                }}
+                className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 font-mono text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+              />
+              <span className="mt-1 block text-xs text-[var(--text-tertiary)]">
+                Es el total pagado, no solo el abono de hoy. Igual o mayor al debido = liquidado.
+              </span>
+            </label>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setPayLote(null)}
+                className="inline-flex h-10 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={registrarPago}
+                className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+              >
+                {saving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+                Guardar pago
+              </button>
+            </div>
+          </div>
+        </AdminModal>
+      )}
     </>
   );
 }

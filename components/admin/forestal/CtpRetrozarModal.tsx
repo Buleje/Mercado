@@ -6,7 +6,17 @@ import { DataTable } from "@buleje/design-system";
 import { Scissors, Plus, Trash2, Loader2, AlertTriangle, Check } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { calcularRetrozado, volumenHuber, type RetrozoNuevo } from "@/lib/forestal/ctp-retrozado";
-import { Btn, Field, I, ModalBody, ModalFooter, Seccion, useAtajoGuardar, useCierreSeguro, useHayCambios } from "./ctp-shared";
+import {
+  Btn,
+  Field,
+  I,
+  ModalBody,
+  ModalFooter,
+  Seccion,
+  useAtajoGuardar,
+  useCierreSeguro,
+  useHayCambios,
+} from "./ctp-shared";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 
 /**
@@ -32,7 +42,14 @@ export type TrozaParaCortar = {
   retrozos?: Array<{ volumenM3: number | null; largoM: number | null; descarte?: boolean }>;
 };
 
-type Fila = { d1: string; d2: string; largo: string; volumen: string; obs: string; descarte: boolean };
+type Fila = {
+  d1: string;
+  d2: string;
+  largo: string;
+  volumen: string;
+  obs: string;
+  descarte: boolean;
+};
 
 const FILA_VACIA: Fila = { d1: "", d2: "", largo: "", volumen: "", obs: "", descarte: false };
 
@@ -116,11 +133,10 @@ export default function CtpRetrozarModal({
     <AdminModal
       open
       onClose={cerrar}
-      variant="info"
+      size="planilla"
       title={`Retrozar ${troza.codificacion ?? "la troza"}`}
       description={`${troza.especieComun ?? "—"} · ${troza.volumenM3 != null ? fmtM3(troza.volumenM3) : "—"} m³`}
       icon={Scissors}
-      className="sm:w-[min(95vw,72rem)] sm:max-w-none sm:max-h-[92vh]"
       footer={
         <ModalFooter
           error={error}
@@ -131,9 +147,15 @@ export default function CtpRetrozarModal({
           }
           atajo
         >
-          <Btn variant="ghost" onClick={cerrar}>Cancelar</Btn>
+          <Btn variant="ghost" onClick={cerrar}>
+            Cancelar
+          </Btn>
           <Btn variant="dark" onClick={() => void guardar()} disabled={!calculo?.ok || guardando}>
-            {guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Scissors className="h-4 w-4" />}
+            {guardando ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Scissors className="h-4 w-4" />
+            )}
             Registrar el corte
           </Btn>
         </ModalFooter>
@@ -144,7 +166,11 @@ export default function CtpRetrozarModal({
         <div className="grid grid-cols-2 gap-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-4 sm:grid-cols-4">
           <Dato label="Troza" valor={troza.codificacion ?? "—"} mono />
           <Dato label="Medidas (guía)" valor={troza.dimensiones ?? "—"} mono />
-          <Dato label="Volumen" valor={`${troza.volumenM3 != null ? fmtM3(troza.volumenM3) : "0"} m³`} mono />
+          <Dato
+            label="Volumen"
+            valor={`${troza.volumenM3 != null ? fmtM3(troza.volumenM3) : "0"} m³`}
+            mono
+          />
           <Dato
             label="Ya cortado"
             valor={`${fmtM3(previos.reduce((a, r) => a + (r.volumenM3 ?? 0), 0))} m³`}
@@ -154,41 +180,72 @@ export default function CtpRetrozarModal({
 
         <Seccion numero={1} title="Los pedazos que salen">
           <Field span={4} label="Fecha del corte" required>
-            <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className={I} />
+            <input
+              type="date"
+              value={fecha}
+              onChange={(e) => setFecha(e.target.value)}
+              className={I}
+            />
           </Field>
 
           <div className="sm:col-span-12 overflow-x-auto">
-            <DataTable className="w-full min-w-[46rem] text-sm">
+            <DataTable className="w-full min-w-[46rem]">
               <thead>
-                <tr className="border-b border-[var(--rule-soft)] text-left text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
-                  <th className="py-2 pr-2 font-bold">Código</th>
-                  <th className="px-2 py-2 font-bold">D1 (cm)</th>
-                  <th className="px-2 py-2 font-bold">D2 (cm)</th>
-                  <th className="px-2 py-2 font-bold">Largo (m)</th>
-                  <th className="px-2 py-2 font-bold">Volumen (m³)</th>
-                  <th className="px-2 py-2 font-bold">Observaciones</th>
-                  <th className="px-2 py-2 text-center font-bold">Descarte</th>
-                  <th className="py-2 pl-2" />
+                <tr>
+                  <th className="pr-2">Código</th>
+                  <th>D1 (cm)</th>
+                  <th>D2 (cm)</th>
+                  <th>Largo (m)</th>
+                  <th>Volumen (m³)</th>
+                  <th>Observaciones</th>
+                  <th className="text-center">Descarte</th>
+                  <th className="pl-2" />
                 </tr>
               </thead>
               <tbody>
                 {filas.map((f, i) => {
                   const auto = volumenHuber(Number(f.d1), Number(f.d2), Number(f.largo));
                   return (
-                    <tr key={i} className="border-b border-[var(--rule-soft)] last:border-0">
-                      <td className="py-2 pr-2 font-mono text-xs text-[var(--text-tertiary)]">
-                        {troza.codificacion ? `${troza.codificacion}-${previos.length + i + 1}` : "—"}
+                    <tr key={i} className="border-[var(--rule-soft)] last:border-0">
+                      <td className="pr-2 font-mono text-[var(--text-tertiary)]">
+                        {troza.codificacion
+                          ? `${troza.codificacion}-${previos.length + i + 1}`
+                          : "—"}
                       </td>
-                      <td className="px-2 py-2">
-                        <input type="number" step="0.1" min="0" value={f.d1} onChange={(e) => set(i, "d1", e.target.value)} placeholder="73" className={`${I} h-10 w-24`} />
+                      <td>
+                        <input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          value={f.d1}
+                          onChange={(e) => set(i, "d1", e.target.value)}
+                          placeholder="73"
+                          className={`${I} h-10 w-24`}
+                        />
                       </td>
-                      <td className="px-2 py-2">
-                        <input type="number" step="0.1" min="0" value={f.d2} onChange={(e) => set(i, "d2", e.target.value)} placeholder="66" className={`${I} h-10 w-24`} />
+                      <td>
+                        <input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          value={f.d2}
+                          onChange={(e) => set(i, "d2", e.target.value)}
+                          placeholder="66"
+                          className={`${I} h-10 w-24`}
+                        />
                       </td>
-                      <td className="px-2 py-2">
-                        <input type="number" step="0.01" min="0" value={f.largo} onChange={(e) => set(i, "largo", e.target.value)} placeholder="5.00" className={`${I} h-10 w-24`} />
+                      <td>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={f.largo}
+                          onChange={(e) => set(i, "largo", e.target.value)}
+                          placeholder="5.00"
+                          className={`${I} h-10 w-24`}
+                        />
                       </td>
-                      <td className="px-2 py-2">
+                      <td>
                         {/* El placeholder muestra el calculado: si el operador no
                             escribe nada, ése es el que se guarda. */}
                         <input
@@ -201,10 +258,15 @@ export default function CtpRetrozarModal({
                           className={`${I} h-10 w-28 font-mono`}
                         />
                       </td>
-                      <td className="px-2 py-2">
-                        <input value={f.obs} onChange={(e) => set(i, "obs", e.target.value)} placeholder="Tramo podrido…" className={`${I} h-10 min-w-40`} />
+                      <td>
+                        <input
+                          value={f.obs}
+                          onChange={(e) => set(i, "obs", e.target.value)}
+                          placeholder="Tramo podrido…"
+                          className={`${I} h-10 min-w-40`}
+                        />
                       </td>
-                      <td className="px-2 py-2 text-center">
+                      <td className="text-center">
                         <input
                           type="checkbox"
                           checked={f.descarte}
@@ -213,7 +275,7 @@ export default function CtpRetrozarModal({
                           className="h-4 w-4 accent-[var(--accent)]"
                         />
                       </td>
-                      <td className="py-2 pl-2">
+                      <td className="pl-2">
                         {filas.length > 1 && (
                           <button
                             type="button"
@@ -251,7 +313,9 @@ export default function CtpRetrozarModal({
             </p>
             <ul className="space-y-1">
               {calculo.errores.map((e, i) => (
-                <li key={i} className="text-sm leading-snug text-[var(--text-secondary)]">{e}</li>
+                <li key={i} className="text-sm leading-snug text-[var(--text-secondary)]">
+                  {e}
+                </li>
               ))}
             </ul>
           </div>
@@ -260,20 +324,31 @@ export default function CtpRetrozarModal({
         {calculo?.ok && (
           <div className="rounded-xl border border-[var(--data-success-500)]/30 bg-[var(--data-success-50)] p-4 dark:bg-[var(--data-success-500)]/10">
             <p className="mb-2 flex items-center gap-1.5 text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
-              <Check className="h-3.5 w-3.5" /> {calculo.retrozos.length} pedazo{calculo.retrozos.length === 1 ? "" : "s"}
+              <Check className="h-3.5 w-3.5" /> {calculo.retrozos.length} pedazo
+              {calculo.retrozos.length === 1 ? "" : "s"}
             </p>
             <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-[var(--text-secondary)]">
-              <span>Cortado: <b className="font-mono text-[var(--text-primary)]">{fmtM3(calculo.volumenRetrozado)} m³</b></span>
-              <span>Sin cortar: <b className="font-mono text-[var(--text-primary)]">{fmtM3(calculo.volumenLibre)} m³</b></span>
+              <span>
+                Cortado:{" "}
+                <b className="font-mono text-[var(--text-primary)]">
+                  {fmtM3(calculo.volumenRetrozado)} m³
+                </b>
+              </span>
+              <span>
+                Sin cortar:{" "}
+                <b className="font-mono text-[var(--text-primary)]">
+                  {fmtM3(calculo.volumenLibre)} m³
+                </b>
+              </span>
             </div>
             {calculo.volumenLibre > 0.001 && (
               <p className="mt-1.5 text-xs text-[var(--text-tertiary)]">
-                Queda madera sin asignar. Está permitido —al aserrar se pierde— pero conviene que sea a propósito.
+                Queda madera sin asignar. Está permitido —al aserrar se pierde— pero conviene que
+                sea a propósito.
               </p>
             )}
           </div>
         )}
-
       </ModalBody>
     </AdminModal>
   );
@@ -282,8 +357,14 @@ export default function CtpRetrozarModal({
 function Dato({ label, valor, mono }: { label: string; valor: string; mono?: boolean }) {
   return (
     <div className="min-w-0">
-      <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">{label}</div>
-      <div className={`truncate text-sm font-medium text-[var(--text-primary)] ${mono ? "font-mono" : ""}`}>{valor}</div>
+      <div className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]">
+        {label}
+      </div>
+      <div
+        className={`truncate text-sm font-medium text-[var(--text-primary)] ${mono ? "font-mono" : ""}`}
+      >
+        {valor}
+      </div>
     </div>
   );
 }

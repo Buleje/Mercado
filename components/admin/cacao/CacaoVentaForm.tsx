@@ -185,7 +185,12 @@ export default function CacaoVentaForm({ onClose, onSaved }: Props) {
   }
 
   return (
-    <AdminModal open onClose={onClose} variant="wide" hideCloseButton claveVentana="cacao-registrar-venta" className="sm:max-w-[900px]"
+    <AdminModal
+      open
+      onClose={onClose}
+      size="xl"
+      hideCloseButton
+      claveVentana="cacao-registrar-venta"
       footer={
         <div className="flex items-center justify-end gap-2">
           <button
@@ -547,7 +552,6 @@ export default function CacaoVentaForm({ onClose, onSaved }: Props) {
             </aside>
           </div>
         </div>
-
       </div>
     </AdminModal>
   );

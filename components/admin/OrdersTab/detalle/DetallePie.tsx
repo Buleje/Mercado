@@ -22,7 +22,7 @@ export function DetallePie({
 }) {
   const enMarcha = order.status !== "cancelado" && order.status !== "entregado";
   return (
-    <footer className="flex shrink-0 flex-wrap items-center gap-1.5 border-t border-[var(--rule-soft)] bg-[var(--surface-raised)] px-5 py-2">
+    <footer className="flex shrink-0 flex-wrap items-center gap-1.5 bg-[var(--surface-raised)] px-5 py-2 sm:px-6">
       {enMarcha && (
         <button
           type="button"

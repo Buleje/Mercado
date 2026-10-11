@@ -253,10 +253,9 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
     <AdminModal
       open
       onClose={onClose}
-      variant="wide"
+      size="xl"
       hideCloseButton
       claveVentana="cacao-nuevo-lote"
-      className="sm:max-w-[940px]"
       // Fuera del scroll: si no, "Registrar lote" queda debajo del borde.
       footer={
         <div className="flex items-center justify-end gap-2">
@@ -330,8 +329,8 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
               {!online && (
                 <div className="flex items-center gap-2 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-4 py-3 text-sm font-medium text-[var(--data-warning-700)]">
                   <WifiOff className="h-4 w-4 shrink-0" />
-                  Sin conexión. Puedes seguir cargando; si al guardar falla la red, el lote queda como
-                  borrador y lo reintentas.
+                  Sin conexión. Puedes seguir cargando; si al guardar falla la red, el lote queda
+                  como borrador y lo reintentas.
                 </div>
               )}
               {pendingDraft && (
@@ -488,7 +487,10 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
                       className={`${I} font-mono tabular-nums`}
                     />
                   </Field>
-                  <Field label="Humedad (%)" hint={humOk === false ? "sobre 7% (alto)" : "meta ≤ 7%"}>
+                  <Field
+                    label="Humedad (%)"
+                    hint={humOk === false ? "sobre 7% (alto)" : "meta ≤ 7%"}
+                  >
                     <input
                       type="number"
                       step="0.1"
@@ -679,7 +681,6 @@ export default function CacaoLoteForm({ onClose, onSaved }: Props) {
             </aside>
           </div>
         </div>
-
       </div>
     </AdminModal>
   );

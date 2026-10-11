@@ -121,14 +121,21 @@ export default function CtpGuiaFichaModal({
   const plata = usePlataDeGuia(guia.gtfNumber);
   const docs = useDocumentosGuia(guia.gtfNumber);
 
-  const secciones = useMemo(() => seccionesDeGuia(guia as unknown as GuiaIngreso<LineaConGuia>), [guia]);
+  const secciones = useMemo(
+    () => seccionesDeGuia(guia as unknown as GuiaIngreso<LineaConGuia>),
+    [guia],
+  );
   const completitud = useMemo(() => completitudFicha(secciones), [secciones]);
   /* El mismo cálculo que el chip de la tabla: un solo criterio de descuadre. */
   const cuadre = cuadreDeIngreso(guia.volumenM3, guia.trozasM3, guia.trozasCount);
   const porFila = useMemo(
     () =>
       trozasPorFila(
-        guia.lineas.map((l) => ({ id: l.id, especie: l.speciesCommonName, cientifico: l.speciesScientificName ?? null })),
+        guia.lineas.map((l) => ({
+          id: l.id,
+          especie: l.speciesCommonName,
+          cientifico: l.speciesScientificName ?? null,
+        })),
         trozas ?? [],
       ),
     [guia.lineas, trozas],
@@ -149,8 +156,14 @@ export default function CtpGuiaFichaModal({
   const fotos = useMemo(() => normalizarFotos(guia.lineas[0]?.photos), [guia.lineas]);
   /* ≈ pt aserrable: el MISMO cálculo que «Plata de la guía» (rolliza al 56 %).
      La ficha vieja decía m³ × 424 y la misma pila salía con dos cifras. */
-  const pt = guia.lineas.reduce((s, l) => s + ptDeLinea({ volumeM3: Number(l.volumeM3) || 0, productType: l.productType }), 0);
-  const oxapampa = useMemo(() => (trozas ? { ...resumenOxapampa(trozas), total: trozas.length } : null), [trozas]);
+  const pt = guia.lineas.reduce(
+    (s, l) => s + ptDeLinea({ volumeM3: Number(l.volumeM3) || 0, productType: l.productType }),
+    0,
+  );
+  const oxapampa = useMemo(
+    () => (trozas ? { ...resumenOxapampa(trozas), total: trozas.length } : null),
+    [trozas],
+  );
   const especies = useMemo(
     () => [...new Set((trozas ?? []).map((t) => t.especieComun ?? "").filter(Boolean))],
     [trozas],
@@ -171,8 +184,7 @@ export default function CtpGuiaFichaModal({
     <AdminModal
       open
       onClose={recepcionando ? () => {} : onClose}
-      variant="info"
-      className="sm:max-w-[80rem]"
+      size="planilla"
       icon={FileText}
       title="Ficha de la guía"
       claveVentana="ctp-guia-ficha"
@@ -182,7 +194,8 @@ export default function CtpGuiaFichaModal({
           nota={
             <span className="font-mono tabular-nums">
               {completitud.llenos}/{completitud.total} casilleros
-              {guia.trozasCount > 0 && ` · ${guia.trozasDecididas}/${guia.trozasCount} piezas recibidas`}
+              {guia.trozasCount > 0 &&
+                ` · ${guia.trozasDecididas}/${guia.trozasCount} piezas recibidas`}
             </span>
           }
         >
@@ -190,7 +203,11 @@ export default function CtpGuiaFichaModal({
             Cerrar
           </Btn>
           <Btn variant="primary" onClick={onRecepcionar} disabled={recepcionando || yaRecepcionada}>
-            {recepcionando ? <Loader2 className="h-4 w-4 animate-spin" /> : <PackageCheck className="h-4 w-4" />}
+            {recepcionando ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <PackageCheck className="h-4 w-4" />
+            )}
             {yaRecepcionada ? "Ya recepcionada" : "Recepcionar guía"}
           </Btn>
         </ModalFooter>
@@ -211,7 +228,9 @@ export default function CtpGuiaFichaModal({
         />
 
         <FichaAvisos
-          descuadre={descuadra(cuadre) ? { declarado: guia.volumenM3, trozas: guia.trozasM3 ?? 0 } : null}
+          descuadre={
+            descuadra(cuadre) ? { declarado: guia.volumenM3, trozas: guia.trozasM3 ?? 0 } : null
+          }
           enOtraFila={porFila.enOtraFila.size}
           vencida={vencida}
           onCuadrar={onCuadrar}
@@ -268,7 +287,13 @@ export default function CtpGuiaFichaModal({
             ocupado={ocupado}
             indice={6}
           />
-          <BloqueFotos fotos={fotos} onFotos={onFotos} ocupado={ocupado} indice={7} className="@min-[72rem]/ficha:col-span-2" />
+          <BloqueFotos
+            fotos={fotos}
+            onFotos={onFotos}
+            ocupado={ocupado}
+            indice={7}
+            className="@min-[72rem]/ficha:col-span-2"
+          />
         </div>
       </ModalBody>
     </AdminModal>

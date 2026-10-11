@@ -32,11 +32,25 @@ import { CtpPaginacion, FilaVacia, TablaCtp, TbodyCtp, usePaginacion } from "./c
 import { formatDateNumeric } from "@/lib/format";
 import { FiltroColumnaMulti, type FacetaOpcion } from "@/components/admin/shared/filtros-columna";
 import { CampoDeFiltro } from "./ctp-filtros-panel";
-import { BotonRestablecerColumnas, EnOrden, useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
+import {
+  BotonRestablecerColumnas,
+  EnOrden,
+  useOrdenColumnas,
+} from "@/components/admin/shared/columnas-ordenables";
 import EscanerTrozas, { bloqueoDeConsumo } from "./EscanerTrozas";
 
 /** Las columnas movibles, en su orden de fábrica (Brandon, 2026-09-26). */
-const ORDEN_TROZAS_DEFECTO = ["codigo", "marca", "especie", "gtf", "titulo", "recepcion", "largo", "volumen", "estado"] as const;
+const ORDEN_TROZAS_DEFECTO = [
+  "codigo",
+  "marca",
+  "especie",
+  "gtf",
+  "titulo",
+  "recepcion",
+  "largo",
+  "volumen",
+  "estado",
+] as const;
 
 const CAMPO =
   "h-12 w-full rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
@@ -105,10 +119,21 @@ export default function CtpTrozasDespachoModal({
     let vivo = true;
     fetch("/api/admin/forestal/trozas/patio", { credentials: "include" })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
-      .then((j: { trozas?: TrozaConsumible[] }) => { if (vivo) { setTrozas(j.trozas ?? []); setError(null); } })
-      .catch((e) => { if (vivo) setError(e instanceof Error ? e.message : String(e)); })
-      .finally(() => { if (vivo) setCargando(false); });
-    return () => { vivo = false; };
+      .then((j: { trozas?: TrozaConsumible[] }) => {
+        if (vivo) {
+          setTrozas(j.trozas ?? []);
+          setError(null);
+        }
+      })
+      .catch((e) => {
+        if (vivo) setError(e instanceof Error ? e.message : String(e));
+      })
+      .finally(() => {
+        if (vivo) setCargando(false);
+      });
+    return () => {
+      vivo = false;
+    };
   }, []);
 
   const opciones = useMemo(() => {
@@ -119,25 +144,40 @@ export default function CtpTrozasDespachoModal({
         if (!v) continue;
         map.set(v, (map.get(v) ?? 0) + 1);
       }
-      return [...map.entries()].map(([value, count]) => ({ value, count })).sort((a, b) => b.count - a.count || a.value.localeCompare(b.value));
+      return [...map.entries()]
+        .map(([value, count]) => ({ value, count }))
+        .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value));
     };
     return { especies: contar((t) => t.especieComun), guias: contar((t) => t.gtfNumber) };
   }, [trozas]);
 
   const visibles = useMemo(() => {
-    const base = filtrarTrozas(trozas, { texto, soloDisponibles }).filter((t) => !yaElegidas.has(t.id));
+    const base = filtrarTrozas(trozas, { texto, soloDisponibles }).filter(
+      (t) => !yaElegidas.has(t.id),
+    );
     return base.filter((t) => {
       // `norm()` en los dos lados: las opciones del autofiltro sólo llevan
       // `.trim()` (línea de arriba), así que «Cedro» elegido en el popover
       // debe seguir encontrando una troza escrita «CEDRO» en el patio.
-      if (especieFiltro.length > 0 && !especieFiltro.some((v) => norm(v) === norm(t.especieComun))) return false;
-      if (gtfFiltro.length > 0 && !gtfFiltro.some((v) => norm(v) === norm(t.gtfNumber))) return false;
+      if (especieFiltro.length > 0 && !especieFiltro.some((v) => norm(v) === norm(t.especieComun)))
+        return false;
+      if (gtfFiltro.length > 0 && !gtfFiltro.some((v) => norm(v) === norm(t.gtfNumber)))
+        return false;
       return true;
     });
   }, [trozas, texto, soloDisponibles, especieFiltro, gtfFiltro, yaElegidas]);
-  const { visibles: enPagina, rango, porPagina, setPorPagina, ir } = usePaginacion(visibles, { porPaginaInicial: 25 });
+  const {
+    visibles: enPagina,
+    rango,
+    porPagina,
+    setPorPagina,
+    ir,
+  } = usePaginacion(visibles, { porPaginaInicial: 25 });
 
-  const seleccionadas = useMemo(() => visibles.filter((t) => elegidas.has(t.id)), [visibles, elegidas]);
+  const seleccionadas = useMemo(
+    () => visibles.filter((t) => elegidas.has(t.id)),
+    [visibles, elegidas],
+  );
   const totalM3 = r4(seleccionadas.reduce((a, t) => a + Number(t.volumenM3 ?? 0), 0));
   const orden = useOrdenColumnas("ctp-trozas-despacho", ORDEN_TROZAS_DEFECTO);
 
@@ -147,36 +187,44 @@ export default function CtpTrozasDespachoModal({
   const yaEnLaGuia = useMemo(() => new Set([...yaElegidas, ...elegidas]), [yaElegidas, elegidas]);
   const idsVisibles = useMemo(() => new Set(visibles.map((t) => t.id)), [visibles]);
   const bloqueoDespacho = (t: TrozaConsumible): string | null =>
-    bloqueoDeConsumo(t) ?? (idsVisibles.has(t.id) ? null : "No se ve con los filtros de ahora: límpialos para tildarla");
+    bloqueoDeConsumo(t) ??
+    (idsVisibles.has(t.id) ? null : "No se ve con los filtros de ahora: límpialos para tildarla");
 
   return (
     <AdminModal
       open
       onClose={onCerrar}
-      variant="wide"
+      size="planilla"
       title="Trozas y productos ingresados"
       description="La madera que sale como entró, sin pasar por la sierra"
       icon={TreePine}
-      className="sm:w-[min(96vw,84rem)] sm:max-w-none"
       footer={
         <ModalFooter
           error={error}
           nota={
             seleccionadas.length > 0 ? (
               <span>
-                <b className="text-[var(--text-primary)]">{seleccionadas.length}</b> troza{seleccionadas.length === 1 ? "" : "s"} ·{" "}
+                <b className="text-[var(--text-primary)]">{seleccionadas.length}</b> troza
+                {seleccionadas.length === 1 ? "" : "s"} ·{" "}
                 <span className="font-mono tabular-nums">{fmtM3(totalM3)} m³</span>
               </span>
             ) : (
-              <span>{visibles.length} pieza{visibles.length === 1 ? "" : "s"} en el patio</span>
+              <span>
+                {visibles.length} pieza{visibles.length === 1 ? "" : "s"} en el patio
+              </span>
             )
           }
         >
-          <Btn variant="ghost" onClick={onCerrar}>Cerrar</Btn>
+          <Btn variant="ghost" onClick={onCerrar}>
+            Cerrar
+          </Btn>
           <Btn
             variant="primary"
             disabled={seleccionadas.length === 0}
-            onClick={() => { onAgregar(seleccionadas.map(filaDeTroza)); onCerrar(); }}
+            onClick={() => {
+              onAgregar(seleccionadas.map(filaDeTroza));
+              onCerrar();
+            }}
           >
             Agregar trozas{seleccionadas.length > 0 ? ` (${seleccionadas.length})` : ""}
           </Btn>
@@ -186,7 +234,10 @@ export default function CtpTrozasDespachoModal({
       <div className="space-y-3 px-5 py-4 sm:px-6">
         {/* Especie y GTF de ingreso ahora se filtran desde su propia columna. */}
         <label className="relative block">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]"
+            aria-hidden
+          />
           <input
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
@@ -208,11 +259,23 @@ export default function CtpTrozasDespachoModal({
         <div className="grid grid-cols-2 gap-2 sm:hidden">
           <div className="flex flex-col gap-1">
             <span className="text-sm font-bold text-[var(--text-secondary)]">Especie</span>
-            <CampoDeFiltro label="Especie" value={especieFiltro} options={opciones.especies} onChange={setEspecieFiltro} placeholder="Todas" />
+            <CampoDeFiltro
+              label="Especie"
+              value={especieFiltro}
+              options={opciones.especies}
+              onChange={setEspecieFiltro}
+              placeholder="Todas"
+            />
           </div>
           <div className="flex flex-col gap-1">
             <span className="text-sm font-bold text-[var(--text-secondary)]">GTF de ingreso</span>
-            <CampoDeFiltro label="GTF de ingreso" value={gtfFiltro} options={opciones.guias} onChange={setGtfFiltro} placeholder="Todas" />
+            <CampoDeFiltro
+              label="GTF de ingreso"
+              value={gtfFiltro}
+              options={opciones.guias}
+              onChange={setGtfFiltro}
+              placeholder="Todas"
+            />
           </div>
         </div>
 
@@ -225,7 +288,8 @@ export default function CtpTrozasDespachoModal({
           />
           Sólo las que se pueden despachar
           <span className="text-xs text-[var(--text-tertiary)]">
-            (una troza ya aserrada, no recibida, descarte o partida en pedazos no puede subir al camión)
+            (una troza ya aserrada, no recibida, descarte o partida en pedazos no puede subir al
+            camión)
           </span>
         </label>
 
@@ -233,34 +297,51 @@ export default function CtpTrozasDespachoModal({
           <BotonRestablecerColumnas cambiado={orden.cambiado} onRestablecer={orden.restablecer} />
         </div>
         <TablaCtp altoMax="max-h-[52vh]">
-          <thead
-            ref={orden.refCabecera}
-            className="sticky top-0 z-10 bg-[var(--surface-sunken)] text-left align-top text-[length:var(--ts-2xs)] uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]"
-          >
+          <thead ref={orden.refCabecera} className="sticky top-0 z-10 align-top">
             <tr>
-              <th className="px-2 py-2" />
+              <th />
               <EnOrden
                 orden={orden.orden}
                 celdas={{
-                  codigo: <th data-col="codigo" className="px-3 py-2 font-bold">Código</th>,
-                  marca: <th data-col="marca" className="px-3 py-2 font-bold">Marca de planta</th>,
+                  codigo: <th data-col="codigo">Código</th>,
+                  marca: <th data-col="marca">Marca de planta</th>,
                   especie: (
-                    <th data-col="especie" className="px-3 py-2 font-bold">
+                    <th data-col="especie">
                       <span className="block">Especie</span>
-                      <FiltroColumnaMulti label="Especie" value={especieFiltro} options={opciones.especies} onChange={setEspecieFiltro} placeholder="Todas" />
+                      <FiltroColumnaMulti
+                        label="Especie"
+                        value={especieFiltro}
+                        options={opciones.especies}
+                        onChange={setEspecieFiltro}
+                        placeholder="Todas"
+                      />
                     </th>
                   ),
                   gtf: (
-                    <th data-col="gtf" className="px-3 py-2 font-bold">
+                    <th data-col="gtf">
                       <span className="block">GTF de ingreso</span>
-                      <FiltroColumnaMulti label="GTF de ingreso" value={gtfFiltro} options={opciones.guias} onChange={setGtfFiltro} placeholder="Todas" />
+                      <FiltroColumnaMulti
+                        label="GTF de ingreso"
+                        value={gtfFiltro}
+                        options={opciones.guias}
+                        onChange={setGtfFiltro}
+                        placeholder="Todas"
+                      />
                     </th>
                   ),
-                  titulo: <th data-col="titulo" className="px-3 py-2 font-bold">Título habilitante</th>,
-                  recepcion: <th data-col="recepcion" className="px-3 py-2 font-bold">Recepción</th>,
-                  largo: <th data-col="largo" className="px-3 py-2 text-right font-bold">Largo (m)</th>,
-                  volumen: <th data-col="volumen" className="px-3 py-2 text-right font-bold">Volumen (m³)</th>,
-                  estado: <th data-col="estado" className="px-3 py-2 font-bold">Estado</th>,
+                  titulo: <th data-col="titulo">Título habilitante</th>,
+                  recepcion: <th data-col="recepcion">Recepción</th>,
+                  largo: (
+                    <th data-col="largo" className="text-right">
+                      Largo (m)
+                    </th>
+                  ),
+                  volumen: (
+                    <th data-col="volumen" className="text-right">
+                      Volumen (m³)
+                    </th>
+                  ),
+                  estado: <th data-col="estado">Estado</th>,
                 }}
               />
             </tr>
@@ -269,7 +350,9 @@ export default function CtpTrozasDespachoModal({
             {enPagina.length === 0 && (
               <FilaVacia cols={10}>
                 {cargando ? (
-                  <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Leyendo el patio…</span>
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Leyendo el patio…
+                  </span>
                 ) : trozas.length === 0 ? (
                   "El patio no tiene piezas cargadas. Se cargan al recibir la guía, en Ingresos."
                 ) : (
@@ -282,8 +365,13 @@ export default function CtpTrozasDespachoModal({
               const libre = estaDisponible(t);
               const elegida = elegidas.has(t.id);
               return (
-                <tr key={t.id} className={elegida ? "bg-[var(--data-success-500)]/10" : "hover:bg-[var(--surface-sunken)]"}>
-                  <td className="px-2 py-2">
+                <tr
+                  key={t.id}
+                  className={
+                    elegida ? "bg-[var(--data-success-500)]/10" : "hover:bg-[var(--surface-sunken)]"
+                  }
+                >
+                  <td>
                     <input
                       type="checkbox"
                       checked={elegida}
@@ -291,7 +379,8 @@ export default function CtpTrozasDespachoModal({
                       onChange={() =>
                         setElegidas((prev) => {
                           const s = new Set(prev);
-                          if (s.has(t.id)) s.delete(t.id); else s.add(t.id);
+                          if (s.has(t.id)) s.delete(t.id);
+                          else s.add(t.id);
                           return s;
                         })
                       }
@@ -302,24 +391,50 @@ export default function CtpTrozasDespachoModal({
                   <EnOrden
                     orden={orden.orden}
                     celdas={{
-                      codigo: <td className="px-3 py-2 font-mono text-sm font-bold text-[var(--text-primary)]">{t.codificacion ?? "—"}</td>,
-                      marca: <td className="px-3 py-2 font-mono text-xs text-[var(--text-secondary)]">{t.codigoPlanta ?? "—"}</td>,
-                      especie: <td className="px-3 py-2 text-[var(--text-secondary)]">{t.especieComun ?? "—"}</td>,
-                      gtf: <td className="px-3 py-2 font-mono text-xs text-[var(--text-secondary)]">{t.gtfNumber ?? "—"}</td>,
-                      titulo: <td className="max-w-[14rem] truncate px-3 py-2 text-xs text-[var(--text-tertiary)]">{t.permiso ?? "—"}</td>,
-                      recepcion: <td className="px-3 py-2 text-xs tabular-nums text-[var(--text-tertiary)]">{fmtDia(t.fechaRecepcion ?? t.fechaIngreso)}</td>,
-                      largo: <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--text-tertiary)]">{t.largoM ?? "—"}</td>,
+                      codigo: <td className="font-mono font-bold">{t.codificacion ?? "—"}</td>,
+                      marca: (
+                        <td className="font-mono text-[var(--text-secondary)]">
+                          {t.codigoPlanta ?? "—"}
+                        </td>
+                      ),
+                      especie: (
+                        <td className="text-[var(--text-secondary)]">{t.especieComun ?? "—"}</td>
+                      ),
+                      gtf: (
+                        <td className="font-mono text-[var(--text-secondary)]">
+                          {t.gtfNumber ?? "—"}
+                        </td>
+                      ),
+                      titulo: (
+                        <td className="max-w-[14rem] truncate text-[var(--text-tertiary)]">
+                          {t.permiso ?? "—"}
+                        </td>
+                      ),
+                      recepcion: (
+                        <td className="tabular-nums text-[var(--text-tertiary)]">
+                          {fmtDia(t.fechaRecepcion ?? t.fechaIngreso)}
+                        </td>
+                      ),
+                      largo: (
+                        <td className="text-right font-mono tabular-nums text-[var(--text-tertiary)]">
+                          {t.largoM ?? "—"}
+                        </td>
+                      ),
                       volumen: (
-                        <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-[var(--text-primary)]">
+                        <td className="text-right font-mono font-bold tabular-nums">
                           {fmtM3(Number(t.volumenM3 ?? 0))}
                         </td>
                       ),
                       estado: (
-                        <td className="px-3 py-2 text-xs">
+                        <td>
                           {bloqueo ? (
-                            <span className="text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">{LABEL_BLOQUEO[bloqueo]}</span>
+                            <span className="text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+                              {LABEL_BLOQUEO[bloqueo]}
+                            </span>
                           ) : (
-                            <span className="text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">En el patio</span>
+                            <span className="text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+                              En el patio
+                            </span>
                           )}
                         </td>
                       ),
@@ -332,7 +447,13 @@ export default function CtpTrozasDespachoModal({
         </TablaCtp>
 
         {visibles.length > 0 && (
-          <CtpPaginacion rango={rango} porPagina={porPagina} onPorPagina={setPorPagina} onIr={ir} sustantivo="troza" />
+          <CtpPaginacion
+            rango={rango}
+            porPagina={porPagina}
+            onPorPagina={setPorPagina}
+            onIr={ir}
+            sustantivo="troza"
+          />
         )}
       </div>
     </AdminModal>

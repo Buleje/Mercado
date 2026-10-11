@@ -145,8 +145,7 @@ export default function CtpCubicarOxapampaModal({
       open
       onClose={p.guardando ? () => {} : () => void cerrar()}
       aboveModals={aboveModals}
-      variant="info"
-      className="sm:max-w-[62rem]"
+      size="xl"
       icon={Ruler}
       title="Cubicar Oxapampa"
       description={contexto}

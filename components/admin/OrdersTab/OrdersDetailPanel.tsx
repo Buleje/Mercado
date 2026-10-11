@@ -16,10 +16,8 @@
  * salía dos veces y el medio de pago también). Texto de 14 px y botones de
  * 48 px (antes rótulos de 10 px y el cerrar de 32 px).
  */
-import { useEffect, useRef, useState } from "react";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import { TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
+import { useState } from "react";
+import AdminModal from "@/components/admin/shared/AdminModal";
 import type { DbOrder } from "@/lib/jsondb";
 import { DespachoSection } from "./DespachoSection";
 import ManualDeliveryModal from "./ManualDeliveryModal";
@@ -66,11 +64,6 @@ export function OrdersDetailPanel({
   onSaveCustomDriver,
   onPatchOrder,
 }: OrdersDetailPanelProps) {
-  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
-  const cajaRef = useRef<HTMLDivElement>(null);
-  /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
-       el foco, la trampa de Tab y el scroll, no una segunda salida. */
-  useModalAccesible(cajaRef, { onCerrar: onClose, cerrarConEscape: false });
   const adminNotes = (order as DbOrder & { adminNotes?: string }).adminNotes;
   // FIX 2026-05-07: «Entregado sin reparto» pide método y nota antes de marcar
   // entregado. Persiste en OrderStatusHistory.note para auditoría.
@@ -85,63 +78,32 @@ export function OrdersDetailPanel({
     });
   };
 
-  // a11y/UX (Brandon 2026-06-04): foco entra al panel al abrir + Escape cierra.
-  // No cierra si el sub-modal de entrega manual está encima.
-  const panelRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    panelRef.current?.focus();
-  }, []);
-  const ventana = useVentanaDeModal(true, {
-    ref: panelRef,
-    aplicarTranslate: true,
-    claveMemoria: "pedido-detalle",
-  });
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !manualOpen) {
-        // Con el modal abierto, Escape cierra SOLO el modal: no dispara los
-        // atajos globales del admin ni el tour (escuchan en window, después).
-        e.stopPropagation();
-        onClose();
-      }
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose, manualOpen]);
+  // Foco, Escape y clic afuera los pone el AdminModal; con «Entregado sin
+  // reparto» encima, Escape cierra sólo esa (Radix apila las dos).
 
   return (
-    <div
-      ref={cajaRef}
-      tabIndex={-1}
-      className="fixed inset-0 z-modal flex items-start sm:items-center justify-center p-3 sm:p-6 bg-black/55 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-[var(--dur-fast)]"
-      onClick={(e) => {
-        if (e.target === e.currentTarget && !ventana.fijado) onClose();
-      }}
-      onKeyDown={(e) => {
-        if (e.key === "Escape") onClose();
-      }}
-    >
-      {/* El diálogo es el PANEL, no el velo: es lo que se mueve como ventana. */}
-      <div
-        ref={panelRef}
-        tabIndex={-1}
-        role="dialog"
-        aria-modal="true"
-        aria-label={`Detalle del pedido de ${order.customer.name}`}
-        className="relative w-full max-w-3xl bg-[var(--surface-canvas)] border border-[var(--rule-base)] rounded-3xl shadow-[var(--shadow-xl)] flex flex-col max-h-[calc(100vh-3rem)] overflow-hidden focus:outline-none"
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => e.stopPropagation()}
+    <>
+      <AdminModal
+        open
+        onClose={onClose}
+        hideCloseButton
+        size="lg"
+        claveVentana="pedido-detalle"
+        footerBare
+        footer={<DetallePie order={order} onRechazar={onShowRejectModal} />}
       >
-        <DetalleCabecera order={order} ventana={ventana} onClose={onClose} />
-        <DetallePasoSiguiente
-          order={order}
-          onVerifyYape={onVerifyYape}
-          onRejectYape={onRejectYape}
-          onPatchOrder={onPatchOrder}
-          onEntregaManual={() => setManualOpen(true)}
-        />
+        <div className="sticky top-0 z-10">
+          <DetalleCabecera order={order} onClose={onClose} />
+          <DetallePasoSiguiente
+            order={order}
+            onVerifyYape={onVerifyYape}
+            onRejectYape={onRejectYape}
+            onPatchOrder={onPatchOrder}
+            onEntregaManual={() => setManualOpen(true)}
+          />
+        </div>
 
-        <div className="flex-1 space-y-4 overflow-y-auto bg-[var(--surface-canvas)] px-5 py-4">
+        <div className="space-y-4 bg-[var(--surface-canvas)] px-5 py-4 sm:px-6">
           <DetalleProductos order={order} />
           <DetalleContacto order={order} />
           <DespachoSection
@@ -164,16 +126,13 @@ export function OrdersDetailPanel({
           />
           <DetalleLineaDeTiempo order={order} />
         </div>
-
-        <DetallePie order={order} onRechazar={onShowRejectModal} />
-        <TiradorDeVentana ventana={ventana} />
-      </div>
+      </AdminModal>
       <ManualDeliveryModal
         open={manualOpen}
         customerName={order.customer.name}
         onConfirm={handleManualConfirm}
         onCancel={() => setManualOpen(false)}
       />
-    </div>
+    </>
   );
 }

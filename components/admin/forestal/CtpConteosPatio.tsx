@@ -33,13 +33,27 @@ const URL_CONTAR = urlContarElPatio(`/admin?tab=${TAB_LIBRO_CTP}&vista=trozas`);
 /** La entrada al conteo: un enlace (abre el modo patio en el celular), no un botón. */
 function ContarElPatio({ className }: { className?: string }) {
   return (
-    <a href={URL_CONTAR} className={cn(BOTON_PRIMARIO, "no-underline", className)} data-contar-patio>
+    <a
+      href={URL_CONTAR}
+      className={cn(BOTON_PRIMARIO, "no-underline", className)}
+      data-contar-patio
+    >
       <ScanLine className="h-4 w-4" aria-hidden /> Contar el patio
     </a>
   );
 }
-import { Cargando, DetalleConteo, ErrorConReintento, HistorialConteos } from "./ctp-conteos-patio-partes";
-import { useActaConteo, useHistorialConteos, useNombreDelNegocio, useUltimoConteo } from "./hooks/use-conteos-patio";
+import {
+  Cargando,
+  DetalleConteo,
+  ErrorConReintento,
+  HistorialConteos,
+} from "./ctp-conteos-patio-partes";
+import {
+  useActaConteo,
+  useHistorialConteos,
+  useNombreDelNegocio,
+  useUltimoConteo,
+} from "./hooks/use-conteos-patio";
 
 function ConteosPatioModal({ onClose }: { onClose: () => void }) {
   const historial = useHistorialConteos(true);
@@ -62,12 +76,12 @@ function ConteosPatioModal({ onClose }: { onClose: () => void }) {
 
   return (
     <AdminModal
+      size="xl"
       open
       onClose={onClose}
       title="Conteos del patio"
       description="Las actas de «Contar el patio», del modo patio."
       icon={ClipboardList}
-      className="sm:max-w-[56rem]"
       footer={
         <ModalFooter>
           {elegida ? (
@@ -79,7 +93,11 @@ function ConteosPatioModal({ onClose }: { onClose: () => void }) {
                 variant="primary"
                 onClick={imprimir}
                 disabled={!detalle.acta?.conteo}
-                title={detalle.acta && !detalle.acta.conteo ? "Esta acta no guardó el conteo completo" : undefined}
+                title={
+                  detalle.acta && !detalle.acta.conteo
+                    ? "Esta acta no guardó el conteo completo"
+                    : undefined
+                }
               >
                 <Printer className="h-4 w-4" aria-hidden /> Imprimir el acta
               </Btn>
@@ -97,7 +115,10 @@ function ConteosPatioModal({ onClose }: { onClose: () => void }) {
     >
       <div className={cn("space-y-3", MODAL_BODY)}>
         {errorImprimir && (
-          <p role="alert" className="text-sm font-bold text-[var(--data-error-ink)] dark:text-[var(--data-error-500)]">
+          <p
+            role="alert"
+            className="text-sm font-bold text-[var(--data-error-ink)] dark:text-[var(--data-error-500)]"
+          >
             {errorImprimir}
           </p>
         )}
@@ -169,7 +190,12 @@ export default function CtpConteosPatio() {
         ) : (
           <ClipboardList className="h-4 w-4 shrink-0 text-[var(--accent)]" aria-hidden />
         )}
-        <span className={cn("min-w-0", pideMirar && "text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]")}>
+        <span
+          className={cn(
+            "min-w-0",
+            pideMirar && "text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]",
+          )}
+        >
           {texto}
         </span>
       </button>

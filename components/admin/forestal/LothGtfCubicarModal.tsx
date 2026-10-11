@@ -29,14 +29,27 @@ import GuardarEnLaCuentaModal from "./cubicador-trozas-guardar";
 import ValorizarCubicacionModal from "./cubicador-trozas-valorizar";
 import { CabeceraCubicar, FilaCubicarGuia, PieDescuentos } from "./loth-gtf-cubicar-fila";
 import { ESTADO_CUB } from "./hooks/use-cubicaciones-trozas";
-import { fmtNum, paraGuardar, usePlanillaGuia, usePrefillLoth } from "./hooks/use-cubicar-guia-loth";
+import {
+  fmtNum,
+  paraGuardar,
+  usePlanillaGuia,
+  usePrefillLoth,
+} from "./hooks/use-cubicar-guia-loth";
 
 /** Enter como Excel (a la celda siguiente); ↑ ↓ en la misma columna. */
 function moverFoco(e: React.KeyboardEvent<HTMLInputElement>, caja: HTMLElement | null) {
-  if (e.ctrlKey || e.metaKey || e.altKey || !caja || !["Enter", "ArrowDown", "ArrowUp"].includes(e.key)) return;
+  if (
+    e.ctrlKey ||
+    e.metaKey ||
+    e.altKey ||
+    !caja ||
+    !["Enter", "ArrowDown", "ArrowUp"].includes(e.key)
+  )
+    return;
   const el = e.currentTarget;
   const celdas = [...caja.querySelectorAll<HTMLInputElement>("input[data-celda]")];
-  const lista = e.key === "Enter" ? celdas : celdas.filter((c) => c.dataset.celda === el.dataset.celda);
+  const lista =
+    e.key === "Enter" ? celdas : celdas.filter((c) => c.dataset.celda === el.dataset.celda);
   const paso = e.key === "ArrowUp" || (e.key === "Enter" && e.shiftKey) ? -1 : 1;
   e.preventDefault();
   const destino = lista[lista.indexOf(el) + paso];
@@ -49,7 +62,8 @@ const CIFRA = "rounded-2xl border px-3 py-2";
 const ROTULO = "block text-xs font-semibold text-[var(--text-secondary)]";
 
 export default function LothGtfCubicarModal({
-  g, onClose,
+  g,
+  onClose,
 }: {
   g: Pick<Gtf, "id" | "gtfNumber" | "titularName" | "items">;
   onClose: () => void;
@@ -61,7 +75,10 @@ export default function LothGtfCubicarModal({
   const [guardando, setGuardando] = useState(false);
   const [abierta, setAbierta] = useState<string | null>(null);
   const cajaRef = useRef<HTMLDivElement>(null);
-  const onTecla = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => moverFoco(e, cajaRef.current), []);
+  const onTecla = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => moverFoco(e, cajaRef.current),
+    [],
+  );
   /* Lo guardado no se pierde al cerrar: sólo pregunta si cambió algo después de «Guardar». */
   const [foto, setFoto] = useState<string | null>(null);
   const cerrar = useCierreSeguro(p.tocadas > 0 && JSON.stringify(p.planilla) !== foto, onClose);
@@ -92,8 +109,7 @@ export default function LothGtfCubicarModal({
     <AdminModal
       open
       onClose={() => void cerrar()}
-      variant="info"
-      className="sm:max-w-[66rem]"
+      size="xl"
       icon={Ruler}
       title="Cubicar en Oxapampina"
       description={`GTF ${g.gtfNumber}${g.titularName ? ` · ${g.titularName}` : ""}`}
@@ -103,18 +119,40 @@ export default function LothGtfCubicarModal({
           error={c?.errorLote ?? null}
           nota={
             c && (
-              <span aria-live="polite" className="flex flex-wrap items-baseline gap-x-2 tabular-nums">
-                <span className="font-mono text-lg font-bold text-[var(--text-primary)]">{fmtVolumen(c.neto, p.formula)}</span>
-                <span>{c.completas} de {total} trozas</span>
+              <span
+                aria-live="polite"
+                className="flex flex-wrap items-baseline gap-x-2 tabular-nums"
+              >
+                <span className="font-mono text-lg font-bold text-[var(--text-primary)]">
+                  {fmtVolumen(c.neto, p.formula)}
+                </span>
+                <span>
+                  {c.completas} de {total} trozas
+                </span>
                 {c.bruto > c.neto && <span>· bruto {fmtVolumen(c.bruto, p.formula)}</span>}
-                {sinMedida > 0 && <span className="font-semibold text-[var(--data-warning-ink)]">· {sinMedida} sin medida: no van</span>}
-                {c.conError > 0 && <span className="font-semibold text-[var(--data-error-ink)]">· {c.conError} con error</span>}
+                {sinMedida > 0 && (
+                  <span className="font-semibold text-[var(--data-warning-ink)]">
+                    · {sinMedida} sin medida: no van
+                  </span>
+                )}
+                {c.conError > 0 && (
+                  <span className="font-semibold text-[var(--data-error-ink)]">
+                    · {c.conError} con error
+                  </span>
+                )}
               </span>
             )
           }
         >
-          <Btn variant="secondary" onClick={() => void cerrar()}>Cerrar</Btn>
-          <Btn variant="primary" disabled={!listo} onClick={() => setGuardando(true)} data-accion="guardar-en-la-cuenta">
+          <Btn variant="secondary" onClick={() => void cerrar()}>
+            Cerrar
+          </Btn>
+          <Btn
+            variant="primary"
+            disabled={!listo}
+            onClick={() => setGuardando(true)}
+            data-accion="guardar-en-la-cuenta"
+          >
             <Save className="h-4 w-4" /> Guardar en la cuenta
           </Btn>
         </ModalFooter>
@@ -122,40 +160,62 @@ export default function LothGtfCubicarModal({
     >
       <ModalBody className="space-y-3">
         {errorCarga ? (
-          <div role="alert" className="flex flex-wrap items-center gap-2 rounded-2xl border border-[var(--data-error-500)] p-3 text-sm font-semibold text-[var(--data-error-ink)]">
+          <div
+            role="alert"
+            className="flex flex-wrap items-center gap-2 rounded-2xl border border-[var(--data-error-500)] p-3 text-sm font-semibold text-[var(--data-error-ink)]"
+          >
             <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden /> {errorCarga}
-            <Btn size="sm" onClick={recargar}>Reintentar</Btn>
+            <Btn size="sm" onClick={recargar}>
+              Reintentar
+            </Btn>
           </div>
         ) : !prefill || !p.planilla || !c ? (
           <div className="space-y-2" aria-busy="true" aria-label="Cargando las trozas de la guía">
-            {Array.from({ length: 6 }, (_, i) => <div key={i} className="h-11 animate-pulse rounded-lg bg-[var(--surface-sunken)]" />)}
+            {Array.from({ length: 6 }, (_, i) => (
+              <div key={i} className="h-11 animate-pulse rounded-lg bg-[var(--surface-sunken)]" />
+            ))}
           </div>
         ) : (
           <>
             <div className="grid gap-2 sm:grid-cols-2">
-              <div className={`${CIFRA} border-[var(--rule-base)] bg-[var(--surface-sunken)]`} data-cifra="serfor">
+              <div
+                className={`${CIFRA} border-[var(--rule-base)] bg-[var(--surface-sunken)]`}
+                data-cifra="serfor"
+              >
                 <span className={ROTULO}>SERFOR (Smalian) · lo que declara la guía</span>
                 <span className="font-mono text-xl font-bold tabular-nums text-[var(--text-primary)]">
                   {declarado != null ? fmtVolumen(declarado, "smalian") : "sin volumen declarado"}
                 </span>
               </div>
-              <div className={`${CIFRA} border-[var(--accent)] bg-[var(--accent)]/5`} data-cifra="neta">
+              <div
+                className={`${CIFRA} border-[var(--accent)] bg-[var(--accent)]/5`}
+                data-cifra="neta"
+              >
                 <span className={ROTULO}>{u.nombre} neta · lo que se paga</span>
-                <span className="font-mono text-xl font-bold tabular-nums text-[var(--text-primary)]">{fmtVolumen(c.neto, p.formula)}</span>
+                <span className="font-mono text-xl font-bold tabular-nums text-[var(--text-primary)]">
+                  {fmtVolumen(c.neto, p.formula)}
+                </span>
                 {c.bruto > c.neto && (
                   <span className="ml-2 text-sm tabular-nums text-[var(--text-secondary)]">
-                    de {fmtVolumen(c.bruto, p.formula)} bruto (−{fmtVolumen(c.bruto - c.neto, p.formula)})
+                    de {fmtVolumen(c.bruto, p.formula)} bruto (−
+                    {fmtVolumen(c.bruto - c.neto, p.formula)})
                   </span>
                 )}
               </div>
             </div>
             {comparacion && (
-              <p className="flex flex-wrap items-center gap-1 text-sm text-[var(--text-secondary)]" data-cifra="derivada">
-                {p.formula === "oxapampina"
-                  ? <>≈ {fmtNum(comparacion.base, 0)} PT si se pasara lo declarado a PT (×424): </>
-                  : <>Frente a lo declarado: </>}
+              <p
+                className="flex flex-wrap items-center gap-1 text-sm text-[var(--text-secondary)]"
+                data-cifra="derivada"
+              >
+                {p.formula === "oxapampina" ? (
+                  <>≈ {fmtNum(comparacion.base, 0)} PT si se pasara lo declarado a PT (×424): </>
+                ) : (
+                  <>Frente a lo declarado: </>
+                )}
                 <b className="tabular-nums text-[var(--text-primary)]">
-                  {fmtNum(Math.abs(comparacion.menos), 1)} % {comparacion.menos >= 0 ? "menos" : "más"}
+                  {fmtNum(Math.abs(comparacion.menos), 1)} %{" "}
+                  {comparacion.menos >= 0 ? "menos" : "más"}
                 </b>
                 <InfoTip
                   title="Es un derivado"
@@ -169,19 +229,37 @@ export default function LothGtfCubicarModal({
             {existentes.length > 0 && (
               <div className="space-y-1.5" data-vista="cubicaciones-de-la-guia">
                 {pagada && (
-                  <p role="alert" className="flex items-start gap-1.5 text-sm font-semibold text-[var(--data-warning-ink)]">
+                  <p
+                    role="alert"
+                    className="flex items-start gap-1.5 text-sm font-semibold text-[var(--data-warning-ink)]"
+                  >
                     <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-                    Esta guía ya se pagó con {pagada.codigo}: otra cubicación de las mismas trozas la pagaría dos veces.
+                    Esta guía ya se pagó con {pagada.codigo}: otra cubicación de las mismas trozas
+                    la pagaría dos veces.
                   </p>
                 )}
                 <div className="flex flex-wrap gap-2">
                   {existentes.map((e) => (
-                    <button key={e.id} type="button" onClick={() => setAbierta(e.id)}
-                      className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--rule-base)] px-3 text-sm hover:border-[var(--accent)]">
+                    <button
+                      key={e.id}
+                      type="button"
+                      onClick={() => setAbierta(e.id)}
+                      className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--rule-base)] px-3 text-sm hover:border-[var(--accent)]"
+                    >
                       <b className="font-mono text-[var(--text-primary)]">{e.codigo}</b>
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${ESTADO_CUB[e.estado].clase}`}>{ESTADO_CUB[e.estado].label}</span>
-                      {e.personaNombre && <span className="text-[var(--text-secondary)]">{e.personaNombre}</span>}
-                      {e.monto != null && <span className="font-semibold tabular-nums text-[var(--text-primary)]">{formatCurrency(e.monto)}</span>}
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-xs font-semibold ${ESTADO_CUB[e.estado].clase}`}
+                      >
+                        {ESTADO_CUB[e.estado].label}
+                      </span>
+                      {e.personaNombre && (
+                        <span className="text-[var(--text-secondary)]">{e.personaNombre}</span>
+                      )}
+                      {e.monto != null && (
+                        <span className="font-semibold tabular-nums text-[var(--text-primary)]">
+                          {formatCurrency(e.monto)}
+                        </span>
+                      )}
                     </button>
                   ))}
                 </div>
@@ -194,7 +272,10 @@ export default function LothGtfCubicarModal({
                 onChange={p.setFormula}
                 size="sm"
                 label="Fórmula con la que se cubica la guía"
-                options={FORMULAS_TROZAS.map((f) => ({ value: f, label: UNIDADES_FORMULA[f].etiqueta }))}
+                options={FORMULAS_TROZAS.map((f) => ({
+                  value: f,
+                  label: UNIDADES_FORMULA[f].etiqueta,
+                }))}
               />
               <InfoTip
                 title="Cómo se descuenta"
@@ -203,24 +284,48 @@ export default function LothGtfCubicarModal({
                 example="20″ y 20″, 10′ = 163,27 PT; hueco 6″ (14,69 PT) → 148,58 PT neto."
               />
               {prefill.sinMedidas > 0 && (
-                <span className="text-sm text-[var(--text-tertiary)]">{prefill.sinMedidas} trozas de la guía sin D1/D2/largo: no se prellenan.</span>
+                <span className="text-sm text-[var(--text-tertiary)]">
+                  {prefill.sinMedidas} trozas de la guía sin D1/D2/largo: no se prellenan.
+                </span>
               )}
             </div>
 
             {total === 0 ? (
-              <p className="py-6 text-center text-sm text-[var(--text-secondary)]">Esta guía no trae trozas con medidas.</p>
+              <p className="py-6 text-center text-sm text-[var(--text-secondary)]">
+                Esta guía no trae trozas con medidas.
+              </p>
             ) : (
-              <div ref={cajaRef} role="table" aria-label="Trozas de la guía: medidas y descuentos"
-                className="@container/cubicar divide-y divide-[var(--rule-soft)] overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-                <div role="rowgroup" className="bg-[var(--surface-sunken)]"><CabeceraCubicar formula={p.formula} /></div>
+              <div
+                ref={cajaRef}
+                role="table"
+                aria-label="Trozas de la guía: medidas y descuentos"
+                className="@container/cubicar divide-y divide-[var(--rule-soft)] overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]"
+              >
+                <div role="rowgroup" className="bg-[var(--surface-sunken)]">
+                  <CabeceraCubicar formula={p.formula} />
+                </div>
                 {p.planilla.filas.map((f, i) => (
-                  <FilaCubicarGuia key={f.codigo ?? i} i={i} fila={f} calculo={c.filas[i]} formula={p.formula} onSet={p.set} onTecla={onTecla} />
+                  <FilaCubicarGuia
+                    key={f.codigo ?? i}
+                    i={i}
+                    fila={f}
+                    calculo={c.filas[i]}
+                    formula={p.formula}
+                    onSet={p.set}
+                    onTecla={onTecla}
+                  />
                 ))}
               </div>
             )}
 
             {c.especies.length > 0 && (
-              <PieDescuentos formula={p.formula} especies={c.especies} lineas={c.lineas} lote={p.planilla.lote} onLote={p.setLote} />
+              <PieDescuentos
+                formula={p.formula}
+                especies={c.especies}
+                lineas={c.lineas}
+                lote={p.planilla.lote}
+                onLote={p.setLote}
+              />
             )}
           </>
         )}
@@ -241,12 +346,23 @@ export default function LothGtfCubicarModal({
             descuentosPorTroza: guardar.descuentosPorTroza,
             sentidoInicial: "compra",
           }}
-          onGuardada={(cub) => { setGuardando(false); setFoto(JSON.stringify(p.planilla)); recargar(); setAbierta(cub.id); }}
+          onGuardada={(cub) => {
+            setGuardando(false);
+            setFoto(JSON.stringify(p.planilla));
+            recargar();
+            setAbierta(cub.id);
+          }}
           onCerrar={() => setGuardando(false)}
         />
       )}
       {abierta && (
-        <ValorizarCubicacionModal id={abierta} puedeAplicar={puedeAplicar} aboveModals onCambio={recargar} onCerrar={() => setAbierta(null)} />
+        <ValorizarCubicacionModal
+          id={abierta}
+          puedeAplicar={puedeAplicar}
+          aboveModals
+          onCambio={recargar}
+          onCerrar={() => setAbierta(null)}
+        />
       )}
     </AdminModal>
   );

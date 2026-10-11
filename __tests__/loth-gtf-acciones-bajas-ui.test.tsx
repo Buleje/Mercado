@@ -106,7 +106,8 @@ describe("Modal «Datos»", () => {
     expect(screen.getAllByText("A-2")).toHaveLength(2);
     expect(screen.getByRole("columnheader", { name: "Código en la guía" })).toBeTruthy();
     expect(screen.getByRole("columnheader", { name: "Código único" })).toBeTruthy();
-    expect(screen.getByRole("dialog").className).toContain("sm:max-w-[min(96vw,1400px)]");
+    // El ancho es el tamaño con nombre `planilla` (ADR-489: sin anchos sueltos); el alto fijo es lo propio.
+    expect(screen.getByRole("dialog").getAttribute("data-modal-tamano")).toBe("planilla");
     expect(screen.getByRole("dialog").className).toContain("sm:h-[90vh]");
   });
 });

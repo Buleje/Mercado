@@ -19,7 +19,10 @@ import { ModalFooter } from "@/components/admin/shared/ModalFooter";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtM3, fmtPt } from "@/lib/forestal/cubicacion-formato";
 import { ptAserrableDeRolliza } from "@/lib/forestal/loth-restante";
-import { IMPORTAR_GUIAS_MAX, IMPORTAR_SERFOR_POR_PEDIDO } from "@/lib/forestal/loth-importar-guia-tipos";
+import {
+  IMPORTAR_GUIAS_MAX,
+  IMPORTAR_SERFOR_POR_PEDIDO,
+} from "@/lib/forestal/loth-importar-guia-tipos";
 import { registrosDelTexto, type PestanaFuente } from "./hooks/importar-guias-pantalla";
 import { useImportarGuias, type ImportarGuias } from "./hooks/use-importar-guias";
 import LothImportarGuiasRecibidas from "./LothImportarGuiasRecibidas";
@@ -50,11 +53,10 @@ export default function LothImportarGuiasModal({
     <AdminModal
       open
       onClose={onClose}
-      variant="wide"
+      size="planilla"
       title="Importar guías despachadas"
       description="Libro TH · las guías que ya salieron, con sus trozas, su tala referencial y su permiso"
       icon={FileDown}
-      className="sm:w-[min(96vw,76rem)] sm:max-w-none sm:max-h-[95vh]"
       footer={<Pie s={s} onClose={onClose} />}
     >
       <div className="space-y-3 px-5 py-4 sm:px-6">
@@ -200,7 +202,8 @@ function Pie({ s, onClose }: { s: ImportarGuias; onClose: () => void }) {
     );
 
   if (s.fase === "vista") {
-    const { listas, trozas, m3, fichas, faltaPermiso, faltaMotivo, pasanDespacho, faltaRenombre } = s.plan;
+    const { listas, trozas, m3, fichas, faltaPermiso, faltaMotivo, pasanDespacho, faltaRenombre } =
+      s.plan;
     const n = listas.length;
     return (
       <ModalFooter
@@ -268,7 +271,8 @@ function Pie({ s, onClose }: { s: ImportarGuias; onClose: () => void }) {
       nota={
         deSerfor > IMPORTAR_SERFOR_POR_PEDIDO ? (
           <span className="font-semibold text-[var(--data-warning-ink)]">
-            {deSerfor} N° de registro: van hasta {IMPORTAR_SERFOR_POR_PEDIDO} por vez (cada uno se consulta en SERFOR)
+            {deSerfor} N° de registro: van hasta {IMPORTAR_SERFOR_POR_PEDIDO} por vez (cada uno se
+            consulta en SERFOR)
           </span>
         ) : demasiadas ? (
           <span className="font-semibold text-[var(--data-warning-ink)]">

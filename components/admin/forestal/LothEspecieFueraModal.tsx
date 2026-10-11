@@ -48,14 +48,16 @@ const VOCES = {
     porDocumento: "por la resolución",
     enElPlan: "en el plan",
     siEsta: "Sí está en la resolución",
-    siEstaAyuda: "La resolución la autoriza y faltaba cargarla acá. Se agrega a las especies del plan con su volumen.",
+    siEstaAyuda:
+      "La resolución la autoriza y faltaba cargarla acá. Se agrega a las especies del plan con su volumen.",
     noEsta: "No está autorizada",
     comoPrueba: "en el censo como prueba",
     cargarNoAutoriza: (e: string) =>
       `Cargarla acá no la autoriza: el volumen tiene que ser el que dice el documento aprobado. Si ${e} no figura en la resolución, vuelve y descarta los árboles.`,
     volumen: "Volumen autorizado (m³)",
     segun: "según la resolución",
-    volumenCero: "El volumen autorizado tiene que ser mayor que cero — es el que dice la resolución.",
+    volumenCero:
+      "El volumen autorizado tiene que ser mayor que cero — es el que dice la resolución.",
   },
   plantacion: {
     titulo: "marcada fuera del registro",
@@ -64,19 +66,27 @@ const VOCES = {
     porDocumento: "con el código",
     enElPlan: "en el registro",
     siEsta: "Sí está en el registro",
-    siEstaAyuda: "La constancia del registro la incluye y faltaba cargarla acá. Se agrega con sus m³ registrados.",
+    siEstaAyuda:
+      "La constancia del registro la incluye y faltaba cargarla acá. Se agrega con sus m³ registrados.",
     noEsta: "No está en el registro",
     comoPrueba: "entre los árboles marcados como prueba",
     cargarNoAutoriza: (e: string) =>
       `Cargarla acá no la registra: los m³ tienen que ser los de la constancia de inscripción. Si ${e} no figura en el registro, vuelve y descarta los árboles.`,
     volumen: "Volumen registrado (m³)",
     segun: "según la constancia",
-    volumenCero: "El volumen registrado tiene que ser mayor que cero — es el que dice la constancia.",
+    volumenCero:
+      "El volumen registrado tiene que ser mayor que cero — es el que dice la constancia.",
   },
 } as const;
 
 export default function LothEspecieFueraModal({
-  planId, especie, arboles, resolucion, plantacion = false, onClose, onResuelto,
+  planId,
+  especie,
+  arboles,
+  resolucion,
+  plantacion = false,
+  onClose,
+  onResuelto,
 }: LothEspecieFueraModalProps) {
   const v = plantacion ? VOCES.plantacion : VOCES.bosque;
   const [modo, setModo] = useState<"elegir" | "agregar" | "descartar">("elegir");
@@ -91,15 +101,21 @@ export default function LothEspecieFueraModal({
 
   const agregarAlPlan = async () => {
     const m3Pedido = Number(vol);
-    if (!(m3Pedido > 0)) { setError(v.volumenCero); return; }
-    setBusy(true); setError(null);
+    if (!(m3Pedido > 0)) {
+      setError(v.volumenCero);
+      return;
+    }
+    setBusy(true);
+    setError(null);
     try {
       const r = await fetch("/api/admin/forestal/plan/species", {
         method: "POST",
         credentials: "include",
         headers: { "content-type": "application/json", ...csrfHeaders() },
         body: JSON.stringify({
-          planId, speciesCommon: especie, volumenAutorizadoM3: m3Pedido,
+          planId,
+          speciesCommon: especie,
+          volumenAutorizadoM3: m3Pedido,
           arbolesAutorizados: Number(narb) > 0 ? Number(narb) : null,
           cites,
         }),
@@ -110,11 +126,14 @@ export default function LothEspecieFueraModal({
       onClose();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   };
 
   const descartar = async () => {
-    setBusy(true); setError(null);
+    setBusy(true);
+    setError(null);
     try {
       /* Uno por uno porque el endpoint es single. De a tandas para no abrir
          treinta conexiones de golpe contra el pooler. */
@@ -133,22 +152,27 @@ export default function LothEspecieFueraModal({
         );
         fallos.push(...res.filter((x) => !x.ok).map((x) => x.code));
       }
-      if (fallos.length > 0) throw new Error(`No se pudieron descartar: ${fallos.slice(0, 5).join(", ")}${fallos.length > 5 ? "…" : ""}`);
+      if (fallos.length > 0)
+        throw new Error(
+          `No se pudieron descartar: ${fallos.slice(0, 5).join(", ")}${fallos.length > 5 ? "…" : ""}`,
+        );
       onResuelto();
       onClose();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
     <AdminModal
+      size="lg"
       open
       onClose={onClose}
       title={`${especie}: ${v.titulo}`}
       description={`${arboles.length} ${arboles.length === 1 ? "árbol" : "árboles"} · ${fmtM3(m3)} m³`}
       icon={ShieldAlert}
-      className="max-w-2xl"
     >
       <div className={`space-y-3 ${MODAL_BODY}`}>
         {error && (
@@ -158,10 +182,18 @@ export default function LothEspecieFueraModal({
         )}
 
         <p className="rounded-xl bg-[var(--surface-sunken)] p-3 text-sm text-[var(--text-secondary)]">
-          {v.tiene} {arboles.length} {arboles.length === 1 ? "árbol" : "árboles"} de <b className="text-[var(--text-primary)]">{especie}</b>,
-          y esa especie no figura {v.dondeNoFigura}
-          {resolucion ? <> {v.porDocumento} <span className="font-mono">{resolucion}</span></> : ` ${v.enElPlan}`}.
-          Tumbarlos o movilizarlos sería aprovechamiento no autorizado.
+          {v.tiene} {arboles.length} {arboles.length === 1 ? "árbol" : "árboles"} de{" "}
+          <b className="text-[var(--text-primary)]">{especie}</b>, y esa especie no figura{" "}
+          {v.dondeNoFigura}
+          {resolucion ? (
+            <>
+              {" "}
+              {v.porDocumento} <span className="font-mono">{resolucion}</span>
+            </>
+          ) : (
+            ` ${v.enElPlan}`
+          )}
+          . Tumbarlos o movilizarlos sería aprovechamiento no autorizado.
         </p>
 
         {modo === "elegir" && (
@@ -189,7 +221,10 @@ export default function LothEspecieFueraModal({
                 {v.noEsta}
               </span>
               <span className="mt-1 block text-xs text-[var(--text-secondary)]">
-                {enPie.length === 1 ? "El que está" : `Los ${enPie.length}`} en pie {enPie.length === 1 ? "pasa" : "pasan"} a «descartado»: {enPie.length === 1 ? "queda" : "quedan"} {v.comoPrueba}, pero fuera de todo cálculo.
+                {enPie.length === 1 ? "El que está" : `Los ${enPie.length}`} en pie{" "}
+                {enPie.length === 1 ? "pasa" : "pasan"} a «descartado»:{" "}
+                {enPie.length === 1 ? "queda" : "quedan"} {v.comoPrueba}, pero fuera de todo
+                cálculo.
               </span>
             </button>
           </div>
@@ -203,9 +238,14 @@ export default function LothEspecieFueraModal({
             </p>
             <div className="grid gap-3 sm:grid-cols-3">
               <label className="block">
-                <span className="mb-1 block text-xs font-bold text-[var(--text-secondary)]">{v.volumen} *</span>
+                <span className="mb-1 block text-xs font-bold text-[var(--text-secondary)]">
+                  {v.volumen} *
+                </span>
                 <input
-                  type="number" step="0.0001" value={vol} onChange={(e) => setVol(e.target.value)}
+                  type="number"
+                  step="0.0001"
+                  value={vol}
+                  onChange={(e) => setVol(e.target.value)}
                   placeholder={v.segun}
                   // eslint-disable-next-line jsx-a11y/no-autofocus -- el modal se abre para escribir el volumen autorizado de inmediato
                   autoFocus
@@ -213,24 +253,42 @@ export default function LothEspecieFueraModal({
                 />
               </label>
               <label className="block">
-                <span className="mb-1 block text-xs font-bold text-[var(--text-secondary)]">N° de árboles</span>
+                <span className="mb-1 block text-xs font-bold text-[var(--text-secondary)]">
+                  N° de árboles
+                </span>
                 <input
-                  type="number" value={narb} onChange={(e) => setNarb(e.target.value)}
+                  type="number"
+                  value={narb}
+                  onChange={(e) => setNarb(e.target.value)}
                   className="h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 font-mono text-sm text-[var(--text-primary)] focus:border-primary focus:outline-none"
                 />
               </label>
               <label className="flex items-end gap-2 pb-3">
-                <input type="checkbox" checked={cites} onChange={(e) => setCites(e.target.checked)} className="h-4 w-4 accent-[var(--accent)]" />
+                <input
+                  type="checkbox"
+                  checked={cites}
+                  onChange={(e) => setCites(e.target.checked)}
+                  className="h-4 w-4 accent-[var(--accent)]"
+                />
                 <span className="text-sm font-bold text-[var(--text-primary)]">Es CITES</span>
               </label>
             </div>
             <div className="flex justify-end gap-2">
-              <button type="button" onClick={() => setModo("elegir")} className="h-11 rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Volver</button>
               <button
-                type="button" onClick={() => void agregarAlPlan()} disabled={busy}
+                type="button"
+                onClick={() => setModo("elegir")}
+                className="h-11 rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+              >
+                Volver
+              </button>
+              <button
+                type="button"
+                onClick={() => void agregarAlPlan()}
+                disabled={busy}
                 className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent-dark)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
               >
-                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Agregar al plan
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}{" "}
+                Agregar al plan
               </button>
             </div>
           </div>
@@ -239,20 +297,32 @@ export default function LothEspecieFueraModal({
         {modo === "descartar" && (
           <div className="space-y-3">
             <p className="rounded-xl bg-[var(--surface-sunken)] p-3 text-sm text-[var(--text-secondary)]">
-              Se {enPie.length === 1 ? "marca" : "marcan"} <b className="text-[var(--text-primary)]">{enPie.length}</b> {enPie.length === 1 ? "árbol" : "árboles"} como {enPie.length === 1 ? "descartado" : "descartados"}. No se borran: el censo
-              es prueba de lo que se levantó en campo, y un censo retocable no probaría nada. Dejan de contar como aprovechables
-              y el libro va a bloquear su tala.
+              Se {enPie.length === 1 ? "marca" : "marcan"}{" "}
+              <b className="text-[var(--text-primary)]">{enPie.length}</b>{" "}
+              {enPie.length === 1 ? "árbol" : "árboles"} como{" "}
+              {enPie.length === 1 ? "descartado" : "descartados"}. No se borran: el censo es prueba
+              de lo que se levantó en campo, y un censo retocable no probaría nada. Dejan de contar
+              como aprovechables y el libro va a bloquear su tala.
               {enPie.length < arboles.length && (
                 <> Los otros {arboles.length - enPie.length} ya no están en pie y no se tocan.</>
               )}
             </p>
             <div className="flex justify-end gap-2">
-              <button type="button" onClick={() => setModo("elegir")} className="h-11 rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Volver</button>
               <button
-                type="button" onClick={() => void descartar()} disabled={busy || enPie.length === 0}
+                type="button"
+                onClick={() => setModo("elegir")}
+                className="h-11 rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+              >
+                Volver
+              </button>
+              <button
+                type="button"
+                onClick={() => void descartar()}
+                disabled={busy || enPie.length === 0}
                 className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-error-700)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
               >
-                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />} Descartar {enPie.length}
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />}{" "}
+                Descartar {enPie.length}
               </button>
             </div>
           </div>

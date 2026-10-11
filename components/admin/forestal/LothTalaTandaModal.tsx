@@ -23,11 +23,24 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { Plus, ShieldAlert, TreePine } from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
-import { especieDeLinea, saldoDeLaPlanilla, type EspecieDelRegistro } from "@/lib/forestal/loth-tala-plantacion";
-import { codigosDeLaPlanilla, pideJustificacion, type FilaTala } from "@/lib/forestal/loth-tala-tanda";
+import {
+  especieDeLinea,
+  saldoDeLaPlanilla,
+  type EspecieDelRegistro,
+} from "@/lib/forestal/loth-tala-plantacion";
+import {
+  codigosDeLaPlanilla,
+  pideJustificacion,
+  type FilaTala,
+} from "@/lib/forestal/loth-tala-tanda";
 import { useCensoDeTala } from "./hooks/use-censo-de-tala";
 import { useRegistroPlantacion } from "./hooks/use-registro-plantacion";
-import { useMotosierristas, usePlanDeLaTanda, useTalaEnTanda, type TandaTalaInicial } from "./hooks/use-tala-en-tanda";
+import {
+  useMotosierristas,
+  usePlanDeLaTanda,
+  useTalaEnTanda,
+  type TandaTalaInicial,
+} from "./hooks/use-tala-en-tanda";
 import LothCensoElegirModal from "./LothCensoElegirModal";
 import LothTalaTandaComunes from "./LothTalaTandaComunes";
 import LothTalaTandaPie from "./LothTalaTandaPie";
@@ -78,7 +91,11 @@ export default function LothTalaTandaModal({
   const sembradoRef = useRef(false);
   /** Para pintar: el ref guarda contra el doble efecto, el estado avisa que ya está. */
   const [sembrado, setSembrado] = useState(false);
-  const listoRegistro = plantacion && !registro.cargando && registro.error == null && registro.listoPara === inicial.planId;
+  const listoRegistro =
+    plantacion &&
+    !registro.cargando &&
+    registro.error == null &&
+    registro.listoPara === inicial.planId;
   useEffect(() => {
     if (sembradoRef.current || !listoRegistro || !inicial.porEspecie?.length) return;
     sembradoRef.current = true;
@@ -91,7 +108,11 @@ export default function LothTalaTandaModal({
     // Una vez por planilla: lo que se agregue después va por «Agregar por especie».
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listoRegistro]);
-  const sembrando = Boolean(inicial.porEspecie?.length) && !sembrado && registro.error == null && (!planTanda.listo || plantacion);
+  const sembrando =
+    Boolean(inicial.porEspecie?.length) &&
+    !sembrado &&
+    registro.error == null &&
+    (!planTanda.listo || plantacion);
   const idLista = useId();
   const guardarRef = useRef<HTMLButtonElement>(null);
   const [agregando, setAgregando] = useState(false);
@@ -99,7 +120,10 @@ export default function LothTalaTandaModal({
   const [abiertas, setAbiertas] = useState<ReadonlyMap<string, boolean>>(new Map());
   const guardando = t.avance != null;
 
-  const abiertaDe = (f: FilaTala) => abiertas.get(f.id) ?? (f.resultado?.estado === "fallida" || (pideJustificacion(f) && f.resultado?.estado !== "guardada"));
+  const abiertaDe = (f: FilaTala) =>
+    abiertas.get(f.id) ??
+    (f.resultado?.estado === "fallida" ||
+      (pideJustificacion(f) && f.resultado?.estado !== "guardada"));
   const alternar = (id: string) => {
     const f = t.filas.find((x) => x.id === id);
     if (!f) return;
@@ -108,7 +132,10 @@ export default function LothTalaTandaModal({
 
   /** Los que el regente (o el DMC) dice que no se tumban y todavía no entraron. */
   const conReparo = useMemo(
-    () => t.filas.filter((f) => f.arbol.reparo?.nivel === "infraccion" && f.resultado?.estado !== "guardada"),
+    () =>
+      t.filas.filter(
+        (f) => f.arbol.reparo?.nivel === "infraccion" && f.resultado?.estado !== "guardada",
+      ),
     [t.filas],
   );
   const enPlanilla = useMemo(() => new Set(t.filas.map((f) => f.id)), [t.filas]);
@@ -117,37 +144,48 @@ export default function LothTalaTandaModal({
     () =>
       saldoDeLaPlanilla(
         conRegistro ? registro.especies : [],
-        conRegistro ? t.filas.map((f, i) => ({ especie: f.arbol.speciesCommon, cientifico: f.arbol.speciesScientific, volumenM3: t.calc[i].volumenM3 })) : [],
+        conRegistro
+          ? t.filas.map((f, i) => ({
+              especie: f.arbol.speciesCommon,
+              cientifico: f.arbol.speciesScientific,
+              volumenM3: t.calc[i].volumenM3,
+            }))
+          : [],
       ),
     [conRegistro, registro.especies, t.filas, t.calc],
   );
   const fueraDelRegistro = useCallback(
-    (f: FilaTala) => conRegistro && especieDeLinea(registro.especies, f.arbol.speciesCommon, f.arbol.speciesScientific) == null,
+    (f: FilaTala) =>
+      conRegistro &&
+      especieDeLinea(registro.especies, f.arbol.speciesCommon, f.arbol.speciesScientific) == null,
     [conRegistro, registro.especies],
   );
   /** Una plantación sin árboles marcados no tiene censo que ofrecer. */
   const sinMarcados = plantacion && !censo.cargando && censo.arboles.length === 0;
   // Recortado: el servidor guarda el código sin espacios y «Trozar estos árboles» lo busca así.
-  const guardadas = t.filas.filter((f) => f.resultado?.estado === "guardada").map((f) => f.arbol.treeCode.trim());
+  const guardadas = t.filas
+    .filter((f) => f.resultado?.estado === "guardada")
+    .map((f) => f.arbol.treeCode.trim());
 
   const guardar = async () => {
     await t.guardar();
     // Se abrió sola la que falló: llevarla a la vista para corregirla.
-    requestAnimationFrame(() => document.querySelector('[data-fila-tala] [role="alert"]')?.scrollIntoView({ block: "center", behavior: "smooth" }));
+    requestAnimationFrame(() =>
+      document
+        .querySelector('[data-fila-tala] [role="alert"]')
+        ?.scrollIntoView({ block: "center", behavior: "smooth" }),
+    );
   };
 
   return (
     <AdminModal
       open
       onClose={guardando ? () => {} : onClose}
-      variant="wide"
+      size="xl"
       icon={TreePine}
       title="Talar varios árboles"
       description={inicial.planLabel ?? "Sección 1 · Tala"}
       claveVentana="loth-tala-tanda"
-      // La planilla pide ancho: árbol, fecha, 3 a 5 medidas y el resultado en
-      // una fila. Debajo de lg cada árbol es una tarjeta.
-      className="sm:max-w-[44rem] lg:max-w-[66rem]"
       footer={
         <LothTalaTandaPie
           ref={guardarRef}
@@ -173,11 +211,22 @@ export default function LothTalaTandaModal({
         />
 
         {conReparo.length > 0 && (
-          <div role="note" className="flex flex-wrap items-start gap-2 rounded-xl border-2 border-[var(--data-error-500)]/60 bg-[var(--data-error-50)] px-3 py-2.5 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
+          <div
+            role="note"
+            className="flex flex-wrap items-start gap-2 rounded-xl border-2 border-[var(--data-error-500)]/60 bg-[var(--data-error-50)] px-3 py-2.5 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]"
+          >
             <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
             <p className="min-w-0 flex-1">
-              <b>{conReparo.length === 1 ? "Un árbol no se debería talar" : `${conReparo.length} árboles no se deberían talar`}:</b>{" "}
-              {conReparo.map((f) => `${f.arbol.treeCode} (${f.arbol.reparo?.titulo.toLowerCase()})`).join(" · ")}.
+              <b>
+                {conReparo.length === 1
+                  ? "Un árbol no se debería talar"
+                  : `${conReparo.length} árboles no se deberían talar`}
+                :
+              </b>{" "}
+              {conReparo
+                .map((f) => `${f.arbol.treeCode} (${f.arbol.reparo?.titulo.toLowerCase()})`)
+                .join(" · ")}
+              .
             </p>
             <button
               type="button"
@@ -204,7 +253,8 @@ export default function LothTalaTandaModal({
 
         {sembrando && t.filas.length === 0 && (
           <p className="rounded-xl border border-dashed border-[var(--rule-base)] px-3 py-4 text-center text-sm text-[var(--text-secondary)]">
-            Preparando la planilla con {inicial.porEspecie?.map((x) => `${x.especie} × ${x.n}`).join(" · ")}…
+            Preparando la planilla con{" "}
+            {inicial.porEspecie?.map((x) => `${x.especie} × ${x.n}`).join(" · ")}…
           </p>
         )}
 
@@ -237,7 +287,8 @@ export default function LothTalaTandaModal({
             disabled={guardando || !inicial.planId}
             className="inline-flex h-11 items-center gap-2 rounded-xl border border-dashed border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent-ink)] disabled:opacity-50 dark:hover:text-[var(--accent)]"
           >
-            <Plus className="h-4 w-4" /> {plantacion ? "Agregar árboles marcados" : "Agregar del censo"}
+            <Plus className="h-4 w-4" />{" "}
+            {plantacion ? "Agregar árboles marcados" : "Agregar del censo"}
           </button>
         )}
       </div>

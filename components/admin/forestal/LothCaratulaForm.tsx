@@ -15,7 +15,15 @@
  */
 
 import { useEffect, useId, useRef, useState } from "react";
-import { FileText, Loader2, X, AlertTriangle, Check, ArrowLeft, ArrowRight } from "@buleje/design-system/icons";
+import {
+  FileText,
+  Loader2,
+  X,
+  AlertTriangle,
+  Check,
+  ArrowLeft,
+  ArrowRight,
+} from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import AdminModal, { CabeceraPropia } from "@/components/admin/shared/AdminModal";
@@ -54,14 +62,23 @@ interface Props {
   onSaved: () => void;
 }
 
-const BTN_BASE = "inline-flex h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50 sm:h-10";
+const BTN_BASE =
+  "inline-flex h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50 sm:h-10";
 
-export default function LothCaratulaForm({ current, transformaEnElTh = null, pasoInicial, onClose, onSaved }: Props) {
+export default function LothCaratulaForm({
+  current,
+  transformaEnElTh = null,
+  pasoInicial,
+  onClose,
+  onSaved,
+}: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [enElTh, setEnElTh] = useState<boolean | null>(transformaEnElTh);
   const [error, setError] = useState<string | null>(null);
   const [f, setF] = useState<CaratulaValores>(() => valoresDeCaratula(current));
-  const [paso, setPaso] = useState<PasoCaratula>(() => pasoInicial ?? primerPasoIncompleto(valoresDeCaratula(current)));
+  const [paso, setPaso] = useState<PasoCaratula>(
+    () => pasoInicial ?? primerPasoIncompleto(valoresDeCaratula(current)),
+  );
   const [propuestos, setPropuestos] = useState<Propuestos>({});
   const [traido, setTraido] = useState<string | null>(null);
   const cites = useLothCitesPermisos();
@@ -136,7 +153,9 @@ export default function LothCaratulaForm({ current, transformaEnElTh = null, pas
       });
       if (!res.ok) {
         const r = await res.json().catch(() => ({}));
-        throw new Error(r.message ?? (r.issues && r.issues[0]?.message) ?? r.error ?? `HTTP ${res.status}`);
+        throw new Error(
+          r.message ?? (r.issues && r.issues[0]?.message) ?? r.error ?? `HTTP ${res.status}`,
+        );
       }
 
       // Guardar el catálogo CITES (KV, independiente de la carátula Prisma).
@@ -144,11 +163,15 @@ export default function LothCaratulaForm({ current, transformaEnElTh = null, pas
         method: "PUT",
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         credentials: "include",
-        body: JSON.stringify({ permisos: cites.permisos.filter((p) => p.especie.trim() || p.numero.trim()) }),
+        body: JSON.stringify({
+          permisos: cites.permisos.filter((p) => p.especie.trim() || p.numero.trim()),
+        }),
       });
       if (!cRes.ok) {
         const r = await cRes.json().catch(() => ({}));
-        throw new Error(r.message ?? r.error ?? `No se pudieron guardar los permisos CITES (HTTP ${cRes.status})`);
+        throw new Error(
+          r.message ?? r.error ?? `No se pudieron guardar los permisos CITES (HTTP ${cRes.status})`,
+        );
       }
       onSaved();
     } catch (err) {
@@ -164,14 +187,19 @@ export default function LothCaratulaForm({ current, transformaEnElTh = null, pas
     else void guardar();
   }
 
-  const camposErrados = (Object.keys(errores) as CampoCaratula[]).map((c) => (c === "ruc" ? "RUC" : c === "dni" ? "DNI" : "fecha"));
+  const camposErrados = (Object.keys(errores) as CampoCaratula[]).map((c) =>
+    c === "ruc" ? "RUC" : c === "dni" ? "DNI" : "fecha",
+  );
   const resumen = !f.titularName.trim()
     ? null
     : tieneErrores
       ? `Corrige: ${camposErrados.join(", ")}`
       : faltas.length === 0
         ? `Listo para ${current ? "actualizar" : "crear"}`
-        : `Se guarda ahora. Falta: ${faltas.slice(0, 2).map((x) => x.texto).join(", ")}${faltas.length > 2 ? ` y ${faltas.length - 2} más` : ""}`;
+        : `Se guarda ahora. Falta: ${faltas
+            .slice(0, 2)
+            .map((x) => x.texto)
+            .join(", ")}${faltas.length > 2 ? ` y ${faltas.length - 2} más` : ""}`;
 
   const props = { f, set, err: errores, propuestos };
 
@@ -179,23 +207,39 @@ export default function LothCaratulaForm({ current, transformaEnElTh = null, pas
     <AdminModal
       open
       onClose={onClose}
-      variant="wide"
+      size="lg"
       hideCloseButton
       claveVentana="loth-caratula"
-      className="sm:max-w-[44rem]"
       footer={
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-          <p id={idEstado} aria-live="polite" className="flex min-w-0 items-center gap-1.5 text-xs text-[var(--text-secondary)]">
+          <p
+            id={idEstado}
+            aria-live="polite"
+            className="flex min-w-0 items-center gap-1.5 text-xs text-[var(--text-secondary)]"
+          >
             {resumen ? (
               <>
-                {faltas.length === 0 && !tieneErrores && <Check className="h-3.5 w-3.5 shrink-0 text-[var(--data-success-600)]" aria-hidden="true" />}
-                <span className={`min-w-0 ${tieneErrores ? "font-semibold text-[var(--data-error-700)]" : ""}`}>{resumen}</span>
+                {faltas.length === 0 && !tieneErrores && (
+                  <Check
+                    className="h-3.5 w-3.5 shrink-0 text-[var(--data-success-600)]"
+                    aria-hidden="true"
+                  />
+                )}
+                <span
+                  className={`min-w-0 ${tieneErrores ? "font-semibold text-[var(--data-error-700)]" : ""}`}
+                >
+                  {resumen}
+                </span>
               </>
             ) : (
               <>
                 <span>Falta el titular para guardar.</span>
                 {paso !== 2 && (
-                  <button type="button" onClick={() => setPaso(2)} className="shrink-0 rounded font-bold text-[var(--accent-dark)] underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] dark:text-[var(--accent)]">
+                  <button
+                    type="button"
+                    onClick={() => setPaso(2)}
+                    className="shrink-0 rounded font-bold text-[var(--accent-dark)] underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] dark:text-[var(--accent)]"
+                  >
                     Ir al paso 2
                   </button>
                 )}
@@ -204,12 +248,22 @@ export default function LothCaratulaForm({ current, transformaEnElTh = null, pas
           </p>
           <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
             {paso > 1 && (
-              <button type="button" onClick={() => setPaso((paso - 1) as PasoCaratula)} disabled={submitting} className={`${BTN_BASE} text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]`}>
+              <button
+                type="button"
+                onClick={() => setPaso((paso - 1) as PasoCaratula)}
+                disabled={submitting}
+                className={`${BTN_BASE} text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]`}
+              >
                 <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Atrás
               </button>
             )}
             {paso < 4 && (
-              <button type="submit" form="loth-caratula-form" disabled={submitting} className={`${BTN_BASE} border border-[var(--rule-strong)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]`}>
+              <button
+                type="submit"
+                form="loth-caratula-form"
+                disabled={submitting}
+                className={`${BTN_BASE} border border-[var(--rule-strong)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]`}
+              >
                 Siguiente <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </button>
             )}
@@ -221,7 +275,16 @@ export default function LothCaratulaForm({ current, transformaEnElTh = null, pas
               aria-describedby={idEstado}
               className={`${BTN_BASE} bg-[var(--accent-dark)] text-white hover:opacity-90`}
             >
-              {submitting ? (<><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />Guardando</>) : current ? "Actualizar" : "Guardar"}
+              {submitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  Guardando
+                </>
+              ) : current ? (
+                "Actualizar"
+              ) : (
+                "Guardar"
+              )}
             </button>
           </div>
         </div>
@@ -231,7 +294,12 @@ export default function LothCaratulaForm({ current, transformaEnElTh = null, pas
         <CabeceraPropia
           className="sticky top-0 z-10 flex shrink-0 items-center justify-between gap-3 border-b border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-3 sm:px-6"
           acciones={
-            <button type="button" onClick={onClose} aria-label="Cerrar" className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] sm:h-9 sm:w-9">
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Cerrar"
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] sm:h-9 sm:w-9"
+            >
               <X className="h-4 w-4" aria-hidden="true" />
             </button>
           }
@@ -241,7 +309,9 @@ export default function LothCaratulaForm({ current, transformaEnElTh = null, pas
               <FileText className="h-5 w-5" strokeWidth={1.75} aria-hidden="true" />
             </span>
             <span className="flex min-w-0 items-center gap-1.5">
-              <CardTitle as="h2" className="truncate text-sm font-bold text-[var(--text-primary)]">Carátula del libro</CardTitle>
+              <CardTitle as="h2" className="truncate text-sm font-bold text-[var(--text-primary)]">
+                Carátula del libro
+              </CardTitle>
               <InfoTip
                 title="Carátula del libro"
                 what="Los datos del titular y del documento de gestión (Anexo 1 SERFOR): se imprimen en cada hoja del LO-TH. Se guarda con sólo el titular; lo demás se completa después."
@@ -254,9 +324,17 @@ export default function LothCaratulaForm({ current, transformaEnElTh = null, pas
 
         <LothCaratulaBarra paso={paso} pasos={pasos} progreso={progreso} onIr={setPaso} />
 
-        <form id="loth-caratula-form" onSubmit={alEnviar} noValidate className="min-w-0 flex-1 space-y-3 px-5 py-4 sm:px-6">
+        <form
+          id="loth-caratula-form"
+          onSubmit={alEnviar}
+          noValidate
+          className="min-w-0 flex-1 space-y-3 px-5 py-4 sm:px-6"
+        >
           {error && (
-            <div role="alert" className="flex items-start gap-3 rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)]">
+            <div
+              role="alert"
+              className="flex items-start gap-3 rounded-xl border border-[var(--data-error-100)] bg-[var(--data-error-50)] px-4 py-3 text-sm text-[var(--data-error-700)]"
+            >
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
               <div>{error}</div>
             </div>
@@ -265,14 +343,23 @@ export default function LothCaratulaForm({ current, transformaEnElTh = null, pas
           <div className="flex flex-wrap items-center justify-between gap-2">
             <CardTitle as="h3" className="text-sm font-bold text-[var(--text-primary)]">
               {PASOS_CARATULA[paso - 1].titulo}
-              {PASOS_CARATULA[paso - 1].opcional && <span className="ml-1.5 font-normal text-[var(--text-tertiary)]">(opcional)</span>}
+              {PASOS_CARATULA[paso - 1].opcional && (
+                <span className="ml-1.5 font-normal text-[var(--text-tertiary)]">(opcional)</span>
+              )}
             </CardTitle>
             {paso === 2 && (
-              <DirectorioPicker rol="proveedor" label="Traer del Directorio" ayuda="El titular del título habilitante: su RUC, domicilio y permiso" onElegir={traerDelDirectorio} />
+              <DirectorioPicker
+                rol="proveedor"
+                label="Traer del Directorio"
+                ayuda="El titular del título habilitante: su RUC, domicilio y permiso"
+                onElegir={traerDelDirectorio}
+              />
             )}
           </div>
           {paso === 2 && traido && (
-            <p className="text-xs text-[var(--text-tertiary)]">Completado con los datos de {traido} — revisa lo que quedó.</p>
+            <p className="text-xs text-[var(--text-tertiary)]">
+              Completado con los datos de {traido} — revisa lo que quedó.
+            </p>
           )}
 
           <div ref={cuerpo}>
