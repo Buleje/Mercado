@@ -1,20 +1,46 @@
 "use client";
-import { useState, useEffect, useId, useRef } from "react";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
-import { DataTable, SectionTitle } from "@buleje/design-system";
-import { AlertCircle, Check, CheckCircle, ExternalLink, Eye, EyeOff, ImageOff, Megaphone, Minus, Package, PackageX, Pencil, RefreshCw, Search, Sparkles, TrendingDown, TrendingUp, X } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
+
+/**
+ * Productos del Marketplace (`?tab=marketplace&vista=productos`) con el patrón
+ * del panel (11-10): una fila de filtros pegada a la tabla (buscador · estado ·
+ * mostrar · categoría · Indicadores), un producto por fila con
+ * Publicar/Despublicar a la vista y lo demás en «⋯». Los precios se siguen
+ * editando en la celda; destacar abre su ventana; «Sincronizar» va al «⋯ Más».
+ */
+
+import { useState } from "react";
+import { AlertCircle, CheckCircle, Eye, EyeOff, Package, RefreshCw, Search, X } from "@buleje/design-system/icons";
+import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
+import { useAccionesDeVista } from "@/components/admin/marketplace/acciones-de-vista";
+import { button } from "@/components/ui-system/button-variants";
 import { useMarketplaceProducts, type MarketplaceProduct } from "@/components/admin/marketplace/hooks/use-marketplace-products";
 import { useMarketplaceTienda } from "@/components/admin/marketplace/hooks/use-marketplace-tienda";
-import { KpiTile, SortIcon, TableSkeleton, CounterChip } from "@/components/admin/marketplace/shared";
-import { formatCurrency, formatDateLong, formatNumber } from "@/lib/format";
+import { useEdicionPrecio, useProductosVista, type FiltroPublicado, type FiltroStock, type ProductosVista } from "@/components/admin/marketplace/hooks/use-productos-vista";
+import { BuscadorEnFila, CAMPO_EN_FILA, CounterChip, TableSkeleton } from "@/components/admin/marketplace/shared";
+import { BoostModal } from "@/components/admin/marketplace/productos/BoostModal";
+import { ProductosTabla } from "@/components/admin/marketplace/productos/ProductosTabla";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { cn } from "@/lib/utils";
 
-// ─────────────────────────────────────────────
-// Sub-tab: Productos
-// ─────────────────────────────────────────────
-type SortKey = "name" | "retailPrice" | "wholesalePrice" | "stock";
+function useIndicadoresProductos(v: ProductosVista, cargando: boolean) {
+  const { publicados, inactivos, critico, sinStock } = v.conteos;
+  const porEstado = (f: FiltroPublicado) => () => { v.setPublicado(v.publicado === f ? "todos" : f); v.setStock("todos"); };
+  const porStock = (f: FiltroStock) => () => { v.setStock(v.stock === f ? "todos" : f); v.setPublicado("todos"); };
+  return useKpisPlegables({
+    claveMemoria: "marketplace-productos",
+    alto: "md",
+    compactoEnMovil: true,
+    sinDatosAun: cargando,
+    filtrosActivos: (v.publicado !== "todos" ? 1 : 0) + (v.stock !== "todos" ? 1 : 0),
+    resumen: `${sinStock} sin stock`,
+    tarjetas: [
+      <CounterChip key="pub" label="Publicados" value={publicados} tone="success" active={v.publicado === "publicados"} onClick={porEstado("publicados")} />,
+      <CounterChip key="ina" label="Inactivos" value={inactivos} tone="neutral" active={v.publicado === "inactivos"} onClick={porEstado("inactivos")} />,
+      <CounterChip key="cri" label="Stock crítico" value={critico} tone="warning" active={v.stock === "critico"} onClick={porStock("critico")} />,
+      <CounterChip key="sin" label="Sin stock" value={sinStock} tone="danger" active={v.stock === "sin-stock"} onClick={porStock("sin-stock")} />,
+    ],
+  });
+}
 
 export function MarketplaceProductosTab() {
   const {
@@ -22,609 +48,149 @@ export function MarketplaceProductosTab() {
     load, handleSync, toggleActive, bulkSetActive, updatePrice, updateOferta, createBoost, stopBoost,
   } = useMarketplaceProducts();
   const { store } = useMarketplaceTienda();
-  const storeSlug = store.slug;
   const storeId = store.id ?? "";
-
-  // Brandon mayo 2026 v7 — Nivel A + B:
-  // A: búsqueda, filtros estado/stock, KPI strip, imagen, sticky header, link público.
-  // B: selección múltiple + bulk publish/despublicar, sort por columna, filtro
-  //    por categoría, editar precio retail/mayorista inline.
-  const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"todos" | "publicados" | "inactivos">("todos");
-  const [stockFilter, setStockFilter] = useState<"todos" | "ok" | "critico" | "sin-stock">("todos");
-  const [categoryFilter, setCategoryFilter] = useState<string>("todos");
-  const [sortKey, setSortKey] = useState<SortKey>("name");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [editingPrice, setEditingPrice] = useState<{ id: string; field: "retailPrice" | "wholesalePrice" | "discountPrice"; value: string } | null>(null);
-  // Brandon mayo 2026 v7 (Nivel C): modal para destacar producto en marketplace.
-  const [boostingProduct, setBoostingProduct] = useState<MarketplaceProduct | null>(null);
+  const v = useProductosVista(products);
+  const precio = useEdicionPrecio(updatePrice, updateOferta);
+  const kpis = useIndicadoresProductos(v, loading);
+  const [destacando, setDestacando] = useState<MarketplaceProduct | null>(null);
+  useAccionesDeVista([
+    { id: "sync", label: syncing ? "Sincronizando…" : "Sincronizar inventario", hint: "Trae los productos nuevos de tu inventario y saca los que diste de baja", icon: RefreshCw, disabled: syncing, onSelect: () => void handleSync() },
+  ]);
+  const mostrar = v.publicado !== "todos" ? v.publicado : v.stock === "critico" || v.stock === "sin-stock" ? v.stock : "todos";
+  const elegirMostrar = (valor: string) => {
+    v.setPublicado(valor === "publicados" || valor === "inactivos" ? valor : "todos");
+    v.setStock(valor === "critico" || valor === "sin-stock" ? valor : "todos");
+  };
 
   if (loading) return <TableSkeleton />;
 
-  const counters = {
-    publicados: products.filter((p) => p.isActive).length,
-    inactivos: products.filter((p) => !p.isActive).length,
-    sinStock: products.filter((p) => p.stock <= 0).length,
-    stockCritico: products.filter((p) => p.stock > 0 && p.stock <= 5).length,
-  };
-
-  // Lista única de categorías presentes en el catálogo — para el filtro.
-  const availableCategories = Array.from(
-    new Set(products.map((p) => p.category).filter((c): c is string => !!c)),
-  ).sort();
-
-  const filteredUnsorted = products.filter((p) => {
-    if (statusFilter === "publicados" && !p.isActive) return false;
-    if (statusFilter === "inactivos" && p.isActive) return false;
-    if (stockFilter === "ok" && p.stock <= 5) return false;
-    if (stockFilter === "critico" && (p.stock <= 0 || p.stock > 5)) return false;
-    if (stockFilter === "sin-stock" && p.stock > 0) return false;
-    if (categoryFilter !== "todos" && p.category !== categoryFilter) return false;
-    if (query.trim()) {
-      const q = query.toLowerCase();
-      const hit =
-        p.name.toLowerCase().includes(q) ||
-        p.sku.toLowerCase().includes(q) ||
-        (p.category?.toLowerCase().includes(q) ?? false);
-      if (!hit) return false;
-    }
-    return true;
-  });
-
-  // Sort por columna activa.
-  const filtered = [...filteredUnsorted].sort((a, b) => {
-    const dir = sortDir === "asc" ? 1 : -1;
-    const av = a[sortKey];
-    const bv = b[sortKey];
-    if (typeof av === "string" && typeof bv === "string") {
-      return av.localeCompare(bv) * dir;
-    }
-    if (typeof av === "number" && typeof bv === "number") {
-      return (av - bv) * dir;
-    }
-    return 0;
-  });
-
-  const allFilteredIds = filtered.map((p) => p.id);
-  const allSelected = allFilteredIds.length > 0 && allFilteredIds.every((id) => selectedIds.has(id));
-  const someSelected = allFilteredIds.some((id) => selectedIds.has(id));
-  const selectedCount = selectedIds.size;
-
-  function toggleSelect(id: string) {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  async function enLote(isActive: boolean) {
+    const r = await bulkSetActive(Array.from(v.seleccion), isActive);
+    if (r.ok) v.setSeleccion(new Set());
   }
 
-  function toggleSelectAll() {
-    if (allSelected) {
-      setSelectedIds((prev) => {
-        const next = new Set(prev);
-        allFilteredIds.forEach((id) => next.delete(id));
-        return next;
-      });
-    } else {
-      setSelectedIds((prev) => {
-        const next = new Set(prev);
-        allFilteredIds.forEach((id) => next.add(id));
-        return next;
-      });
-    }
-  }
-
-  function clickHeader(key: SortKey) {
-    if (sortKey === key) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    } else {
-      setSortKey(key);
-      setSortDir(key === "name" ? "asc" : "desc");
-    }
-  }
-
-  async function handleBulk(isActive: boolean) {
-    const ids = Array.from(selectedIds);
-    const result = await bulkSetActive(ids, isActive);
-    if (result.ok) {
-      setSelectedIds(new Set());
-    }
-  }
-
-  function startEditPrice(
-    id: string,
-    field: "retailPrice" | "wholesalePrice" | "discountPrice",
-    current: number | null,
-  ) {
-    setEditingPrice({ id, field, value: current != null ? current.toFixed(2) : "" });
-  }
-
-  async function commitEditPrice() {
-    if (!editingPrice) return;
-    const num = Number(editingPrice.value);
-    /* La oferta admite vacío: significa "sin rebaja" y se manda como `null`.
-       Los precios no — un retail vacío no es un precio, es un descarte. */
-    if (editingPrice.field === "discountPrice") {
-      const vacio = editingPrice.value.trim() === "";
-      if (!vacio && (!Number.isFinite(num) || num <= 0)) { setEditingPrice(null); return; }
-      const result = await updateOferta(editingPrice.id, { discountPrice: vacio ? null : num });
-      // Si el backend rechazó (la oferta no baja el precio), se deja el valor
-      // tipeado en pantalla: el error ya se muestra arriba y así se corrige.
-      if (result.ok) setEditingPrice(null);
-      return;
-    }
-    if (!Number.isFinite(num) || num < 0) {
-      setEditingPrice(null);
-      return;
-    }
-    const result = await updatePrice(editingPrice.id, { [editingPrice.field]: num });
-    if (result.ok) setEditingPrice(null);
-  }
-
-  async function quitarOferta(id: string) {
-    await updateOferta(id, { discountPrice: null });
-  }
+  const elegidos = v.seleccion.size;
 
   return (
-    <div className="space-y-4">
-      {/* ── KPI strip — pulso del marketplace al primer vistazo ─────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-        <CounterChip
-          label="Publicados"
-          value={counters.publicados}
-          tone="success"
-          onClick={() => {
-            setStatusFilter(statusFilter === "publicados" ? "todos" : "publicados");
-            setStockFilter("todos");
-          }}
-          active={statusFilter === "publicados"}
-        />
-        <CounterChip
-          label="Inactivos"
-          value={counters.inactivos}
-          tone="neutral"
-          onClick={() => {
-            setStatusFilter(statusFilter === "inactivos" ? "todos" : "inactivos");
-            setStockFilter("todos");
-          }}
-          active={statusFilter === "inactivos"}
-        />
-        <CounterChip
-          label="Stock crítico"
-          value={counters.stockCritico}
-          tone="warning"
-          onClick={() => {
-            setStockFilter(stockFilter === "critico" ? "todos" : "critico");
-            setStatusFilter("todos");
-          }}
-          active={stockFilter === "critico"}
-        />
-        <CounterChip
-          label="Sin stock"
-          value={counters.sinStock}
-          tone="danger"
-          onClick={() => {
-            setStockFilter(stockFilter === "sin-stock" ? "todos" : "sin-stock");
-            setStatusFilter("todos");
-          }}
-          active={stockFilter === "sin-stock"}
-        />
-      </div>
-
-      {/* ── Toolbar: search + categoria + sync ─────────────────────── */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <div className="relative flex-1 min-w-[240px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)] pointer-events-none" aria-hidden />
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar por nombre, SKU o categoría…"
-            className="w-full h-10 pl-10 pr-9 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-medium text-[var(--text-primary)] outline-none focus:border-[var(--accent)] transition-colors"
-          />
-          {query && (
-            <button
-              type="button"
-              onClick={() => setQuery("")}
-              aria-label="Limpiar búsqueda"
-              className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 rounded-full flex items-center justify-center text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
-        {availableCategories.length > 0 && (
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="h-10 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-extrabold text-[var(--text-primary)] outline-none focus:border-[var(--accent)] transition-colors capitalize"
-            aria-label="Filtrar por categoría"
-          >
+    <div className="space-y-3">
+      {/* Una fila: ⓘ · buscador · mostrar · categoría · Indicadores. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="hidden h-12 w-8 shrink-0 items-center justify-center sm:inline-flex">
+          <InfoTip title="Productos en el marketplace" what="Qué productos de tu inventario se ven en el marketplace y a qué precio. Toca un precio para cambiarlo ahí mismo." affects="«Sincronizar» trae los nuevos de tu inventario y saca los que diste de baja. Publicar o sacar uno no toca tu stock." example="Arroz 5 kg a S/ 24 con oferta S/ 21,90 (-9 %) y «12 % caro» = está sobre el promedio de otras tiendas." side="bottom" />
+        </span>
+        <BuscadorEnFila valor={v.query} onCambiar={v.setQuery} placeholder="Buscar por nombre, SKU o categoría" className="sm:basis-48" />
+        {/* Publicado y stock en UN select: las tarjetas ya los usaban como excluyentes (tocar una limpia la otra). */}
+        <select value={mostrar} onChange={(e) => elegirMostrar(e.target.value)} aria-label="Mostrar" className={cn(CAMPO_EN_FILA, "min-w-0 flex-1 px-3 sm:flex-none sm:shrink-0")}>
+          <option value="todos">Todos los productos</option>
+          <option value="publicados">Publicados</option>
+          <option value="inactivos">Inactivos</option>
+          <option value="critico">Stock crítico</option>
+          <option value="sin-stock">Sin stock</option>
+        </select>
+        {v.categorias.length > 0 && (
+          <select value={v.categoria} onChange={(e) => v.setCategoria(e.target.value)} aria-label="Categoría" className={cn(CAMPO_EN_FILA, "min-w-0 flex-1 px-3 sm:max-w-[12rem] sm:flex-none sm:shrink-0")}>
             <option value="todos">Todas las categorías</option>
-            {availableCategories.map((c) => (
-              <option key={c} value={c} className="capitalize">{c}</option>
+            {v.categorias.map((c) => (
+              <option key={c} value={c}>{c}</option>
             ))}
           </select>
         )}
-        <button
-          onClick={handleSync}
-          disabled={syncing}
-          className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-[var(--accent)] text-white text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
-        >
-          <RefreshCw className={cn("h-4 w-4", syncing && "animate-spin")} aria-hidden />
-          {syncing ? "Sincronizando…" : "Sincronizar inventario"}
-        </button>
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          {kpis.boton}
+        </div>
       </div>
+      {kpis.panel}
 
-      {/* ── Bulk action bar — aparece cuando hay selección ─────────── */}
-      {selectedCount > 0 && (
-        <div className="flex items-center gap-2 flex-wrap p-3 rounded-xl border-2 border-[var(--accent)]/40 bg-primary/10">
-          <span className="inline-flex items-center gap-1.5 text-sm font-extrabold text-[var(--accent)]">
-            <Check className="h-4 w-4" strokeWidth={3} />
-            {selectedCount} seleccionado{selectedCount !== 1 ? "s" : ""}
-          </span>
-          <span className="text-xs text-[var(--text-secondary)] hidden sm:inline">
-            Aplica la acción a todos a la vez:
-          </span>
+      {elegidos > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--accent)]/40 bg-primary/10 p-2 pl-3">
+          <p className="text-sm font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)]">
+            {elegidos} elegido{elegidos !== 1 ? "s" : ""}
+          </p>
           <div className="ml-auto flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => handleBulk(true)}
-              disabled={bulkBusy}
-              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-[var(--data-success-500)]/15 text-[var(--data-success-500)] hover:bg-[var(--data-success-500)]/25 text-xs font-extrabold disabled:opacity-50"
-            >
-              <Eye className="h-3.5 w-3.5" />
-              Publicar {selectedCount}
+            <button type="button" onClick={() => void enLote(true)} disabled={bulkBusy} className="inline-flex h-12 items-center gap-1.5 rounded-xl bg-[var(--data-success-500)]/15 px-3 text-sm font-semibold text-[var(--data-success-ink)] hover:bg-[var(--data-success-500)]/25 disabled:opacity-60">
+              <Eye className="h-4 w-4" aria-hidden /> Publicar
             </button>
-            <button
-              type="button"
-              onClick={() => handleBulk(false)}
-              disabled={bulkBusy}
-              className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] text-xs font-extrabold disabled:opacity-50"
-            >
-              <EyeOff className="h-3.5 w-3.5" />
-              Despublicar
+            <button type="button" onClick={() => void enLote(false)} disabled={bulkBusy} className="inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-60">
+              <EyeOff className="h-4 w-4" aria-hidden /> Despublicar
             </button>
-            <button
-              type="button"
-              onClick={() => setSelectedIds(new Set())}
-              aria-label="Cancelar selección"
-              className="inline-flex items-center h-9 px-2 rounded-lg text-xs font-bold text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
-            >
-              <X className="h-3.5 w-3.5" />
+            <button type="button" onClick={() => v.setSeleccion(new Set())} className="inline-flex h-12 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-raised)]">
+              <X className="h-4 w-4" aria-hidden /> Soltar
             </button>
           </div>
         </div>
       )}
 
       {syncResult && (
-        <div className="flex items-center gap-2 p-3 bg-[var(--data-success-500)]/10 border border-[var(--data-success-500)]/30 rounded-xl text-sm font-bold text-[var(--data-success-500)]">
-          <CheckCircle className="h-4 w-4 shrink-0" />
-          {syncResult}
-        </div>
+        <p className="flex items-center gap-2 rounded-xl border border-[var(--data-success-500)]/30 bg-[var(--data-success-500)]/10 p-3 text-sm font-semibold text-[var(--data-success-ink)]" role="status">
+          <CheckCircle className="h-4 w-4 shrink-0" aria-hidden /> Sincronizado: {syncResult}
+        </p>
       )}
 
       {error && (
-        <div className="flex items-center gap-2 p-3 bg-[var(--data-error-500)]/10 border border-[var(--data-error-500)]/30 rounded-xl text-sm font-bold text-[var(--data-error-500)]">
-          <AlertCircle className="h-4 w-4 shrink-0" />
+        <div className="flex items-center gap-2 rounded-xl border border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/10 p-2 pl-3 text-sm font-semibold text-[var(--data-error-ink)]">
+          <AlertCircle className="h-4 w-4 shrink-0" aria-hidden />
           {error}
-          <button onClick={load} className="ml-auto text-xs underline">Reintentar</button>
+          <button type="button" onClick={load} className="ml-auto h-12 rounded-xl px-3 underline">Reintentar</button>
         </div>
       )}
 
       {products.length === 0 && !error ? (
-        <div className="text-center py-16 text-[var(--text-tertiary)] rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)]">
-          <Package className="h-10 w-10 mx-auto mb-3 opacity-40" />
-          <p className="text-sm font-semibold">Sin productos publicados</p>
-          <p className="text-xs mt-1">Activa productos desde tu catálogo para mostrarlos en el marketplace.</p>
+        <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] py-12 text-[var(--text-tertiary)]">
+          <Package className="h-8 w-8 opacity-40" aria-hidden />
+          <p className="text-sm font-semibold">Todavía no publicaste productos: trae los de tu inventario.</p>
+          <button type="button" onClick={handleSync} disabled={syncing} className={button({ variant: "primary", className: "h-12 gap-2 rounded-xl px-4" })}>
+            <RefreshCw className={cn("h-4 w-4", syncing && "animate-spin")} aria-hidden />
+            {syncing ? "Sincronizando…" : "Sincronizar inventario"}
+          </button>
         </div>
-      ) : filtered.length === 0 ? (
-        <div className="text-center py-12 text-[var(--text-tertiary)] rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)]">
-          <Search className="h-8 w-8 mx-auto mb-2 opacity-40" />
-          <p className="text-sm font-semibold">Sin resultados con esos filtros</p>
-          <button
-            type="button"
-            onClick={() => {
-              setQuery("");
-              setStatusFilter("todos");
-              setStockFilter("todos");
-            }}
-            className="mt-2 text-xs font-bold text-[var(--accent)] hover:underline"
-          >
-            Limpiar filtros
+      ) : v.filtrados.length === 0 ? (
+        <div className="flex flex-col items-center gap-1 rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] py-10 text-[var(--text-tertiary)]">
+          <Search className="h-6 w-6 opacity-40" aria-hidden />
+          <p className="text-sm font-semibold">Ningún producto con esos filtros.</p>
+          <button type="button" onClick={v.limpiar} className="h-12 px-3 text-sm font-semibold text-[var(--accent-ink)] hover:underline dark:text-[var(--accent)]">
+            Ver todos
           </button>
         </div>
       ) : (
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden">
-          <div className="overflow-x-auto max-h-[calc(100vh-22rem)]">
-            <DataTable className="w-full text-sm">
-              <thead className="bg-[var(--surface-sunken)] sticky top-0 z-10 border-b border-[var(--rule-base)]">
-                <tr>
-                  <th className="w-10 px-3 py-3">
-                    <input
-                      type="checkbox"
-                      checked={allSelected}
-                      ref={(el) => {
-                        if (el) el.indeterminate = !allSelected && someSelected;
-                      }}
-                      onChange={toggleSelectAll}
-                      aria-label="Seleccionar todos los productos visibles"
-                      className="h-4 w-4 rounded border border-[var(--rule-base)] accent-[var(--accent)] cursor-pointer"
-                    />
-                  </th>
-                  <th className="text-left px-3 py-3 text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
-                    <button
-                      type="button"
-                      onClick={() => clickHeader("name")}
-                      className="inline-flex items-center gap-1 hover:text-[var(--text-primary)] transition-colors"
-                    >
-                      Producto <SortIcon k="name" currentKey={sortKey} currentDir={sortDir} />
-                    </button>
-                  </th>
-                  <th className="text-right px-3 py-3 text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
-                    <button
-                      type="button"
-                      onClick={() => clickHeader("retailPrice")}
-                      className="inline-flex items-center gap-1 hover:text-[var(--text-primary)] transition-colors ml-auto"
-                    >
-                      Precio retail <SortIcon k="retailPrice" currentKey={sortKey} currentDir={sortDir} />
-                    </button>
-                  </th>
-                  <th className="text-right px-3 py-3 text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
-                    Oferta
-                  </th>
-                  <th className="text-right px-3 py-3 text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] hidden md:table-cell">
-                    <button
-                      type="button"
-                      onClick={() => clickHeader("wholesalePrice")}
-                      className="inline-flex items-center gap-1 hover:text-[var(--text-primary)] transition-colors ml-auto"
-                    >
-                      Mayorista <SortIcon k="wholesalePrice" currentKey={sortKey} currentDir={sortDir} />
-                    </button>
-                  </th>
-                  <th className="text-right px-3 py-3 text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">
-                    <button
-                      type="button"
-                      onClick={() => clickHeader("stock")}
-                      className="inline-flex items-center gap-1 hover:text-[var(--text-primary)] transition-colors ml-auto"
-                    >
-                      Stock <SortIcon k="stock" currentKey={sortKey} currentDir={sortDir} />
-                    </button>
-                  </th>
-                  <th className="text-center px-3 py-3 text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)]">Estado</th>
-                  <th className="text-center px-3 py-3 text-xs font-extrabold uppercase tracking-wider text-[var(--text-secondary)] hidden lg:table-cell">Destacar</th>
-                  <th className="px-3 py-3 w-12" aria-label="Acciones" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--rule-soft)]">
-                {filtered.map((p) => {
-                  const stockTone = p.stock <= 0
-                    ? "danger"
-                    : p.stock <= 5
-                      ? "warning"
-                      : "success";
-                  const isSel = selectedIds.has(p.id);
-                  return (
-                    <tr key={p.id} className={cn(
-                      "transition-colors",
-                      isSel ? "bg-primary/10" : "hover:bg-[var(--surface-sunken)]/50",
-                    )}>
-                      <td className="w-10 px-3 py-2.5">
-                        <input
-                          type="checkbox"
-                          checked={isSel}
-                          onChange={() => toggleSelect(p.id)}
-                          aria-label={`Seleccionar ${p.name}`}
-                          className="h-4 w-4 rounded border border-[var(--rule-base)] accent-[var(--accent)] cursor-pointer"
-                        />
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="relative h-10 w-10 shrink-0 rounded-lg overflow-hidden bg-[var(--surface-sunken)]">
-                            {p.image ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={p.image}
-                                alt={p.name}
-                                className="h-full w-full object-cover"
-                                loading="lazy"
-                              />
-                            ) : (
-                              <div className="h-full w-full flex items-center justify-center text-[var(--text-tertiary)]">
-                                <ImageOff className="h-4 w-4 opacity-50" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-semibold text-[var(--text-primary)] truncate">{p.name}</p>
-                            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-mono truncate">
-                              {p.sku || "—"}
-                              {p.category && <span className="ml-2 text-[var(--text-secondary)] font-sans capitalize">· {p.category}</span>}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      {/* Retail price — editable inline + chip competencia */}
-                      <td className="px-3 py-2.5 text-right">
-                        <div className="flex flex-col items-end gap-0.5">
-                          <PriceCell
-                            value={p.retailPrice}
-                            isEditing={editingPrice?.id === p.id && editingPrice.field === "retailPrice"}
-                            editValue={editingPrice?.id === p.id && editingPrice.field === "retailPrice" ? editingPrice.value : ""}
-                            busy={pricingId === p.id}
-                            onStartEdit={() => startEditPrice(p.id, "retailPrice", p.retailPrice)}
-                            onChange={(v) => setEditingPrice((prev) => prev ? { ...prev, value: v } : prev)}
-                            onCommit={commitEditPrice}
-                            onCancel={() => setEditingPrice(null)}
-                            alwaysBold
-                          />
-                          <CompetitionChip
-                            myPrice={p.retailPrice}
-                            avg={p.competitionAvgPrice ?? null}
-                            count={p.competitionStoreCount ?? 0}
-                          />
-                        </div>
-                      </td>
-                      {/* Oferta — editable inline. El precio que se cobra sale
-                          de `precioVigente()`: una vencida NO se aplica. */}
-                      <td className="px-3 py-2.5 text-right">
-                        <OfertaCell
-                          lista={p.retailPrice}
-                          oferta={p.discountPrice ?? null}
-                          hasta={p.discountUntil ?? null}
-                          isEditing={editingPrice?.id === p.id && editingPrice.field === "discountPrice"}
-                          editValue={editingPrice?.id === p.id && editingPrice.field === "discountPrice" ? editingPrice.value : ""}
-                          busy={pricingId === p.id}
-                          onStartEdit={() => startEditPrice(p.id, "discountPrice", p.discountPrice ?? null)}
-                          onChange={(v) => setEditingPrice((prev) => prev ? { ...prev, value: v } : prev)}
-                          onCommit={commitEditPrice}
-                          onCancel={() => setEditingPrice(null)}
-                          onQuitar={() => void quitarOferta(p.id)}
-                        />
-                      </td>
-                      {/* Mayorista — editable inline */}
-                      <td className="px-3 py-2.5 text-right hidden md:table-cell">
-                        <PriceCell
-                          value={p.wholesalePrice}
-                          isEditing={editingPrice?.id === p.id && editingPrice.field === "wholesalePrice"}
-                          editValue={editingPrice?.id === p.id && editingPrice.field === "wholesalePrice" ? editingPrice.value : ""}
-                          busy={pricingId === p.id}
-                          onStartEdit={() => startEditPrice(p.id, "wholesalePrice", p.wholesalePrice)}
-                          onChange={(v) => setEditingPrice((prev) => prev ? { ...prev, value: v } : prev)}
-                          onCommit={commitEditPrice}
-                          onCancel={() => setEditingPrice(null)}
-                        />
-                      </td>
-                      <td className="px-3 py-2.5 text-right">
-                        <span className={cn(
-                          "inline-flex items-center justify-center min-w-[42px] h-7 px-2 rounded-full text-xs font-extrabold tabular-nums",
-                          stockTone === "success" && "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]",
-                          stockTone === "warning" && "bg-[var(--data-warning-500)]/10 text-[var(--data-warning-500)]",
-                          stockTone === "danger" && "bg-[var(--data-error-500)]/10 text-[var(--data-error-500)]",
-                        )}>
-                          {p.stock}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2.5 text-center">
-                        <div className="inline-flex flex-col items-center gap-1">
-                          <button
-                            onClick={() => toggleActive(p)}
-                            disabled={toggling === p.id}
-                            aria-pressed={p.isActive}
-                            title={p.isActive ? "Despublicar del marketplace" : "Publicar en marketplace"}
-                            className={cn(
-                              "inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-extrabold transition-colors min-w-[110px] justify-center",
-                              p.isActive
-                                ? "bg-[var(--data-success-500)]/10 text-[var(--data-success-500)] hover:bg-[var(--data-success-500)]/20"
-                                : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-base)]",
-                            )}
-                          >
-                            {toggling === p.id ? (
-                              <div className="h-3.5 w-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                            ) : p.isActive ? (
-                              <><Eye className="h-3.5 w-3.5" /> Publicado</>
-                            ) : (
-                              <><EyeOff className="h-3.5 w-3.5" /> Inactivo</>
-                            )}
-                          </button>
-                          {p.stock <= 0 && p.isActive && (
-                            <span
-                              className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--data-error-500)]"
-                              title="Sin stock — los clientes no pueden comprar"
-                            >
-                              <PackageX className="h-3 w-3" />
-                              Sin stock
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      {/* Columna destacar (sponsored boost) */}
-                      <td className="px-3 py-2.5 text-center hidden lg:table-cell">
-                        {p.boost ? (
-                          <button
-                            type="button"
-                            onClick={() => setBoostingProduct(p)}
-                            title={`Boost activo · S/${p.boost.bidAmount}/día · Gastado ${formatCurrency(p.boost.totalSpentPen)} / S/${p.boost.maxBudgetPen.toFixed(0)}`}
-                            className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-[var(--brand-secondary)]/15 text-[var(--brand-secondary)] text-xs font-extrabold hover:bg-[var(--brand-secondary)]/25 transition-colors"
-                          >
-                            <Sparkles className="h-3.5 w-3.5" />
-                            Destacado
-                          </button>
-                        ) : p.isActive && p.productId ? (
-                          <button
-                            type="button"
-                            onClick={() => setBoostingProduct(p)}
-                            title="Destacar este producto en el marketplace"
-                            className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)] text-xs font-bold hover:border-[var(--brand-secondary)] hover:text-[var(--brand-secondary)] transition-colors"
-                          >
-                            <Megaphone className="h-3.5 w-3.5" />
-                            Destacar
-                          </button>
-                        ) : (
-                          <span className="text-[var(--text-tertiary)] text-xs">—</span>
-                        )}
-                      </td>
-                      <td className="px-3 py-2.5 text-right">
-                        {p.isActive && storeSlug ? (
-                          <a
-                            href={`/marketplace/${storeSlug}#producto-${p.id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            title="Ver en marketplace público"
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-primary/10 hover:text-[var(--accent)] transition-colors"
-                          >
-                            <ExternalLink className="h-3.5 w-3.5" aria-hidden />
-                          </a>
-                        ) : (
-                          <span className="inline-block h-8 w-8" aria-hidden />
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </DataTable>
-          </div>
-          {filtered.length < products.length && (
-            <div className="border-t border-[var(--rule-base)] px-4 py-2 bg-[var(--surface-sunken)] text-xs font-bold text-[var(--text-secondary)] flex items-center justify-between">
+        <>
+          <ProductosTabla
+            v={v}
+            precio={precio}
+            pricingId={pricingId}
+            toggling={toggling}
+            slug={store.slug}
+            onPublicar={(p) => void toggleActive(p)}
+            onQuitarOferta={(id) => void updateOferta(id, { discountPrice: null })}
+            onDestacar={setDestacando}
+          />
+          {v.filtrados.length < products.length && (
+            <div className="flex items-center justify-between gap-2 text-sm text-[var(--text-secondary)]">
               <span>
-                Mostrando <strong className="tabular-nums">{filtered.length}</strong> de{" "}
-                <strong className="tabular-nums">{products.length}</strong> productos
+                <strong className="tabular-nums">{v.filtrados.length}</strong> de <strong className="tabular-nums">{products.length}</strong> productos
               </span>
-              <button
-                type="button"
-                onClick={() => {
-                  setQuery("");
-                  setStatusFilter("todos");
-                  setStockFilter("todos");
-                }}
-                className="text-[var(--accent)] hover:underline"
-              >
-                Limpiar filtros
+              <button type="button" onClick={v.limpiar} className="h-12 px-3 font-semibold text-[var(--accent-ink)] hover:underline dark:text-[var(--accent)]">
+                Ver todos
               </button>
             </div>
           )}
-        </div>
+        </>
       )}
 
-      {/* Modal "Destacar producto" — sponsored boost */}
-      {boostingProduct && (
+      {destacando && (
         <BoostModal
-          product={boostingProduct}
+          product={destacando}
           storeId={storeId}
-          onClose={() => setBoostingProduct(null)}
+          onClose={() => setDestacando(null)}
           onCreate={async (payload) => {
-            if (!boostingProduct.productId) return { ok: false };
-            const r = await createBoost(boostingProduct.productId, storeId, payload);
-            if (r.ok) setBoostingProduct(null);
+            if (!destacando.productId) return { ok: false };
+            const r = await createBoost(destacando.productId, storeId, payload);
+            if (r.ok) setDestacando(null);
             return r;
           }}
           onStop={async () => {
-            if (!boostingProduct.boost) return { ok: false };
-            const r = await stopBoost(boostingProduct.boost.id);
-            if (r.ok) setBoostingProduct(null);
+            if (!destacando.boost) return { ok: false };
+            const r = await stopBoost(destacando.boost.id);
+            if (r.ok) setDestacando(null);
             return r;
           }}
         />
@@ -632,473 +198,3 @@ export function MarketplaceProductosTab() {
     </div>
   );
 }
-
-// ── Chip de comparación contra el promedio del marketplace ──────────────
-function CompetitionChip({
-  myPrice,
-  avg,
-  count,
-}: {
-  myPrice: number;
-  avg: number | null;
-  count: number;
-}) {
-  if (!avg || count === 0) return null;
-  const diff = ((myPrice - avg) / avg) * 100;
-  if (Math.abs(diff) < 3) {
-    return (
-      <span
-        title={`En precio (promedio ${formatCurrency(avg)} en ${count} tienda${count === 1 ? "" : "s"})`}
-        className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] tabular-nums"
-      >
-        <Minus className="h-3 w-3" />
-        En precio
-      </span>
-    );
-  }
-  if (diff > 0) {
-    return (
-      <span
-        title={`Caro · ${diff.toFixed(0)}% sobre el promedio ${formatCurrency(avg)} (${count} tienda${count === 1 ? "" : "s"})`}
-        className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-500)] tabular-nums"
-      >
-        <TrendingUp className="h-3 w-3" />
-        {diff.toFixed(0)}% caro
-      </span>
-    );
-  }
-  return (
-    <span
-      title={`Barato · ${Math.abs(diff).toFixed(0)}% bajo el promedio ${formatCurrency(avg)} (${count} tienda${count === 1 ? "" : "s"})`}
-      className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-500)] tabular-nums"
-    >
-      <TrendingDown className="h-3 w-3" />
-      {Math.abs(diff).toFixed(0)}% barato
-    </span>
-  );
-}
-
-// ── Modal: destacar producto (SponsoredBoost) ───────────────────────────
-function BoostModal({
-  product,
-  storeId,
-  onClose,
-  onCreate,
-  onStop,
-}: {
-  product: MarketplaceProduct;
-  storeId: string;
-  onClose: () => void;
-  onCreate: (payload: { bidAmount: number; days: number; maxBudgetPen: number }) => Promise<{ ok: boolean }>;
-  onStop: () => Promise<{ ok: boolean }>;
-}) {
-  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
-  const cajaRef = useRef<HTMLDivElement>(null);
-  /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
-       el foco, la trampa de Tab y el scroll, no una segunda salida. */
-  useModalAccesible(cajaRef, { onCerrar: onClose, cerrarConEscape: false });
-  const ventana = useVentanaDeModal(true, { ref: cajaRef, aplicarTranslate: true, claveMemoria: "marketplace-boost-producto" });
-  const existing = product.boost;
-  const [bidAmount, setBidAmount] = useState<string>(existing ? String(existing.bidAmount) : "3");
-  const [days, setDays] = useState<string>("7");
-  const [maxBudget, setMaxBudget] = useState<string>(existing ? String(existing.maxBudgetPen) : "21");
-  const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handler);
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", handler);
-      document.body.style.overflow = "";
-    };
-  }, [onClose]);
-
-  const bidNum = Number(bidAmount);
-  const daysNum = Number(days);
-  const budgetNum = Number(maxBudget);
-  const estimated = Number.isFinite(bidNum) && Number.isFinite(daysNum) ? bidNum * daysNum : 0;
-  const canSubmit =
-    !!storeId &&
-    !!product.productId &&
-    bidNum > 0 &&
-    daysNum > 0 &&
-    daysNum <= 90 &&
-    budgetNum >= bidNum;
-
-  async function handleSubmit() {
-    if (!canSubmit) return;
-    setSubmitting(true);
-    await onCreate({ bidAmount: bidNum, days: daysNum, maxBudgetPen: budgetNum });
-    setSubmitting(false);
-  }
-
-  return (
-    <div
-      onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) onClose(); }}
-      className="fixed inset-0 z-system flex items-center justify-center bg-black/55 backdrop-blur-[2px] p-4"
-    >
-      <div
-        ref={cajaRef} tabIndex={-1}
-        role="dialog"
-        aria-modal="true"
-        onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-lg rounded-3xl bg-[var(--surface-raised)] border border-[var(--rule-base)] shadow-[var(--shadow-xl)] overflow-hidden"
-      >
-        <header {...ventana.asaProps} className="flex items-start gap-3 border-b-2 border-[var(--rule-soft)] px-5 py-5 sm:px-6">
-          <span aria-hidden className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--brand-secondary)]/15 text-[var(--brand-secondary)] shrink-0">
-            <Sparkles className="h-6 w-6" strokeWidth={2.25} />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-0.5">
-              Marketplace · Boost
-            </p>
-            <SectionTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)] leading-tight">
-              {existing ? "Boost activo" : "Destacar producto"}
-            </SectionTitle>
-            <p className="mt-1 text-sm text-[var(--text-secondary)] leading-relaxed truncate">
-              {product.name}
-            </p>
-          </div>
-          <span className="ml-auto flex items-center gap-1 shrink-0">
-            <ControlesDeVentana ventana={ventana} />
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Cerrar"
-              className="h-10 w-10 rounded-full flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </span>
-        </header>
-
-        {existing ? (
-          <div className="px-6 py-5 space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <KpiTile label="Puja diaria" value={`${formatCurrency(existing.bidAmount)}`} />
-              <KpiTile label="Gastado" value={`${formatCurrency(existing.totalSpentPen)}`} sub={`de S/ ${existing.maxBudgetPen.toFixed(0)}`} />
-              <KpiTile label="Impresiones" value={formatNumber(existing.impressionsCount)} />
-              <KpiTile label="Clicks" value={formatNumber(existing.clicksCount)} />
-            </div>
-            <div className="rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-soft)] p-3 text-xs text-[var(--text-secondary)]">
-              Termina el{" "}
-              <strong className="text-[var(--text-primary)]">
-                {formatDateLong(existing.endDate)}
-              </strong>
-            </div>
-          </div>
-        ) : (
-          <div className="px-6 py-5 space-y-4">
-            <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-              Destacar tu producto en el marketplace. Aparece arriba en los listados de su categoría y muestra el badge <strong className="text-[var(--brand-secondary)]">Destacado</strong>.
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <NumberField label="Puja diaria" prefix="S/" value={bidAmount} onChange={setBidAmount} hint="Mínimo S/ 1" />
-              <NumberField label="Duración" suffix="días" value={days} onChange={setDays} hint="Máx 90" />
-              <NumberField label="Tope total" prefix="S/" value={maxBudget} onChange={setMaxBudget} hint="Corta al llegar" />
-            </div>
-            <div className="rounded-xl bg-primary/10 border-2 border-[var(--accent)]/30 p-3 flex items-center justify-between">
-              <span className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">
-                Gasto estimado
-              </span>
-              <span className="text-xl font-extrabold tabular-nums text-[var(--accent)]">
-                {formatCurrency(estimated)}
-              </span>
-            </div>
-          </div>
-        )}
-
-        <footer className="bg-[var(--surface-sunken)] border-t-2 border-[var(--rule-soft)] flex items-center justify-end gap-2 px-5 py-4 sm:px-6">
-          {existing ? (
-            <button
-              type="button"
-              onClick={async () => {
-                setSubmitting(true);
-                await onStop();
-                setSubmitting(false);
-              }}
-              disabled={submitting}
-              className="inline-flex items-center gap-1.5 h-11 px-4 rounded-xl bg-[var(--data-error-500)]/10 text-[var(--data-error-500)] font-semibold text-sm hover:bg-[var(--data-error-500)]/20 transition-colors disabled:opacity-50"
-            >
-              <X className="h-4 w-4" />
-              Detener boost
-            </button>
-          ) : (
-            <>
-              <button
-                type="button"
-                onClick={onClose}
-                className="h-11 px-4 rounded-xl text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-raised)]"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={!canSubmit || submitting}
-                className="inline-flex items-center gap-1.5 h-11 px-5 rounded-xl bg-[var(--brand-secondary)] text-white font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
-              >
-                <Sparkles className="h-4 w-4" />
-                {submitting ? "Creando…" : "Destacar"}
-              </button>
-            </>
-          )}
-        </footer>
-        <TiradorDeVentana ventana={ventana} />
-      </div>
-    </div>
-  );
-}
-
-
-function NumberField({
-  label,
-  prefix,
-  suffix,
-  value,
-  onChange,
-  hint,
-}: {
-  label: string;
-  prefix?: string;
-  suffix?: string;
-  value: string;
-  onChange: (v: string) => void;
-  hint?: string;
-}) {
-  const id = useId();
-  return (
-    <div>
-      <label htmlFor={id} className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5 block">{label}</label>
-      <div className="relative">
-        {prefix && (
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[var(--text-tertiary)] pointer-events-none">
-            {prefix}
-          </span>
-        )}
-        <input
-          id={id}
-          type="number"
-          min={0}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className={cn(
-            "w-full h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-base font-extrabold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]",
-            prefix ? "pl-8 pr-3" : "px-3",
-            suffix ? "pr-12" : "",
-            "text-right tabular-nums",
-          )}
-        />
-        {suffix && (
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[var(--text-tertiary)] pointer-events-none">
-            {suffix}
-          </span>
-        )}
-      </div>
-      {hint && <p className="mt-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{hint}</p>}
-    </div>
-  );
-}
-
-// ── Celda de precio editable inline ──────────────────────────────────────
-/**
- * OfertaCell — poner, cambiar o sacar la rebaja de un producto.
- *
- * Hasta ahora `discountPrice` no se podía cargar desde ninguna pantalla, así que
- * la vidriera tenía el tachado y el chip «-30%» listos para nada (148 productos,
- * 0 ofertas). Acá se carga.
- *
- * Muestra el % calculado mientras se tipea —igual que el S//m³ del libro
- * forestal— porque un 19.90 sobre 24.90 no dice nada y un «-20%» sí. Y distingue
- * la oferta VENCIDA de la vigente: el precio que se cobra sale de
- * `precioVigente()`, no de que el campo esté lleno.
- */
-function OfertaCell({
-  lista,
-  oferta,
-  hasta,
-  isEditing,
-  editValue,
-  busy,
-  onStartEdit,
-  onChange,
-  onCommit,
-  onCancel,
-  onQuitar,
-}: {
-  lista: number;
-  oferta: number | null;
-  hasta: string | null;
-  isEditing: boolean;
-  editValue: string;
-  busy: boolean;
-  onStartEdit: () => void;
-  onChange: (v: string) => void;
-  onCommit: () => void;
-  onCancel: () => void;
-  onQuitar: () => void;
-}) {
-  if (isEditing) {
-    const n = Number(editValue);
-    // El % en vivo delata el dedazo: 199 en vez de 19.90 salta como "-699%".
-    const pct = Number.isFinite(n) && n > 0 && lista > 0 ? Math.round(((lista - n) / lista) * 100) : null;
-    return (
-      <div className="inline-flex items-center gap-1 justify-end">
-        <span className="text-xs font-bold text-[var(--text-tertiary)]">S/</span>
-        <input
-          type="number"
-          aria-label="Precio de oferta"
-          autoFocus
-          min={0}
-          step={0.5}
-          value={editValue}
-          onChange={(e) => onChange(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") { e.preventDefault(); onCommit(); }
-            if (e.key === "Escape") onCancel();
-          }}
-          onBlur={onCommit}
-          disabled={busy}
-          className="w-20 h-7 px-2 rounded-xl border-2 border-[var(--accent)] bg-[var(--surface-raised)] text-sm font-extrabold text-right tabular-nums outline-none"
-        />
-        {pct != null && (
-          <span className={cn(
-            "text-[length:var(--ts-2xs)] font-bold tabular-nums",
-            pct > 0 && pct < 100 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]",
-          )}>
-            {pct > 0 ? `-${pct}%` : "no baja"}
-          </span>
-        )}
-      </div>
-    );
-  }
-
-  if (oferta == null) {
-    return (
-      <button
-        type="button"
-        onClick={onStartEdit}
-        title="Poner este producto en oferta"
-        className="inline-flex items-center gap-1 text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors"
-      >
-        <Pencil className="h-3 w-3 opacity-60" aria-hidden /> —
-      </button>
-    );
-  }
-
-  const vencida = hasta != null && new Date(hasta).getTime() <= Date.now();
-  const pct = lista > 0 ? Math.round(((lista - oferta) / lista) * 100) : 0;
-  return (
-    <div className="inline-flex flex-col items-end gap-0.5">
-      <div className="inline-flex items-center gap-1.5">
-        <button
-          type="button"
-          onClick={onStartEdit}
-          title="Click para editar la oferta"
-          className="group inline-flex items-center gap-1.5 tabular-nums font-extrabold text-[var(--text-primary)] hover:text-[var(--accent)] transition-colors"
-        >
-          <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-60 transition-opacity" aria-hidden />
-          {formatCurrency(oferta)}
-        </button>
-        <button
-          type="button"
-          onClick={onQuitar}
-          disabled={busy}
-          title="Quitar la oferta"
-          aria-label="Quitar la oferta"
-          className="rounded p-0.5 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors disabled:opacity-40"
-        >
-          <X className="h-3.5 w-3.5" aria-hidden />
-        </button>
-      </div>
-      {/* Vencida ≠ cargada: el cliente paga el precio de lista igual. */}
-      <span className={cn(
-        "text-[length:var(--ts-2xs)] font-bold tabular-nums",
-        vencida ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]",
-      )}>
-        {vencida ? "vencida · no se aplica" : `-${pct}%`}
-      </span>
-    </div>
-  );
-}
-
-function PriceCell({
-  value,
-  isEditing,
-  editValue,
-  busy,
-  onStartEdit,
-  onChange,
-  onCommit,
-  onCancel,
-  alwaysBold = false,
-}: {
-  value: number;
-  isEditing: boolean;
-  editValue: string;
-  busy: boolean;
-  onStartEdit: () => void;
-  onChange: (v: string) => void;
-  onCommit: () => void;
-  onCancel: () => void;
-  alwaysBold?: boolean;
-}) {
-  if (isEditing) {
-    return (
-      <div className="inline-flex items-center gap-1 justify-end">
-        <span className="text-xs font-bold text-[var(--text-tertiary)]">S/</span>
-        <input
-          type="number"
-          aria-label="Precio"
-          autoFocus
-          min={0}
-          step={0.5}
-          value={editValue}
-          onChange={(e) => onChange(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              onCommit();
-            }
-            if (e.key === "Escape") onCancel();
-          }}
-          onBlur={onCommit}
-          disabled={busy}
-          className="w-20 h-7 px-2 rounded-xl border-2 border-[var(--accent)] bg-[var(--surface-raised)] text-sm font-extrabold text-right tabular-nums outline-none"
-        />
-      </div>
-    );
-  }
-  if (value <= 0 && !alwaysBold) {
-    return (
-      <button
-        type="button"
-        onClick={onStartEdit}
-        title="Agregar precio mayorista"
-        className="inline-flex items-center gap-1 text-[var(--text-tertiary)] hover:text-[var(--accent)] transition-colors"
-      >
-        <Pencil className="h-3 w-3 opacity-60" aria-hidden /> —
-      </button>
-    );
-  }
-  return (
-    <button
-      type="button"
-      onClick={onStartEdit}
-      title="Click para editar"
-      className={cn(
-        "group inline-flex items-center gap-1.5 tabular-nums hover:text-[var(--accent)] transition-colors",
-        alwaysBold
-          ? "font-extrabold text-[var(--text-primary)]"
-          : "text-[var(--text-secondary)]",
-      )}
-    >
-      <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-60 transition-opacity" aria-hidden />
-      {formatCurrency(value)}
-    </button>
-  );
-}
-

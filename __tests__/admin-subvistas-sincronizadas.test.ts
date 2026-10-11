@@ -172,7 +172,7 @@ describe("VISTAS_POR_MODULO refleja las pestañas reales de cada módulo", () =>
     for (const moduleId of Object.keys(VISTAS_LOCALES_POR_MODULO)) {
       expect(Object.hasOwn(VISTAS_POR_MODULO, moduleId), moduleId).toBe(false);
       const src = readFileSync(join(RAIZ, MODULOS[moduleId].archivo), "utf8");
-      expect(src, `${moduleId} ya usa useVistaModulo: múdalo a VISTAS_POR_MODULO`).not.toMatch(/useVistaModulo\(/);
+      expect(src, `${moduleId} ya usa useVistaModulo: múdalo a VISTAS_POR_MODULO`).not.toMatch(/useVistaModulo(<[^>]*>)?\(/);
     }
   });
 

@@ -17,7 +17,7 @@ import { logger } from "@/lib/logger";
 
 /**
  * Ids de pestaña en `Notification.actionUrl` de toda la base (09-10: 271 avisos
- * en 9 ids). `ordenes` (60) viene de `/admin?module=marketplace&tab=ordenes`:
+ * en 9 ids). `ordenes` (60) viene de `/admin?module=marketplace&tab=ordenes` (desde 11-10 abre la vista Órdenes):
  * `tab` no va primero y una búsqueda de `/admin?tab=` no lo veía.
  */
 const IDS_EN_AVISOS = [
@@ -53,7 +53,7 @@ describe("resolverDestino — los mapas del panel", () => {
     expect(resolverDestino("cobranza")).toEqual({ tab: "plata", vista: "adelantos", sub: "cobranza" });
     expect(resolverDestino("inicio")).toEqual({ tab: "vendor-dashboard" });
     // Formato viejo `?module=x&tab=y`: el `tab` era la sección del módulo.
-    expect(resolverDestino("ordenes")).toEqual({ tab: "marketplace" });
+    expect(resolverDestino("ordenes")).toEqual({ tab: "marketplace", vista: "ordenes" });
     expect(resolverDestino("stock")).toEqual({ tab: "inventario", vista: "stock" });
   });
 
@@ -146,8 +146,8 @@ describe("la URL corregida", () => {
 
   it("formato viejo `?module=x&tab=y` (avisos de pedidos y push de stock): lee el tab aunque no vaya primero", () => {
     const pedidos = destinoDeUrl("https://x.pe/admin?module=marketplace&tab=ordenes");
-    expect(pedidos?.destino).toEqual({ tab: "marketplace" });
-    expect(Object.fromEntries(new URL(pedidos?.url ?? "").searchParams)).toEqual({ module: "marketplace", tab: "marketplace" });
+    expect(pedidos?.destino).toEqual({ tab: "marketplace", vista: "ordenes" });
+    expect(Object.fromEntries(new URL(pedidos?.url ?? "").searchParams)).toEqual({ module: "marketplace", tab: "marketplace", vista: "ordenes" });
     const stock = destinoDeUrl("https://x.pe/admin?module=inventario&tab=stock");
     expect(Object.fromEntries(new URL(stock?.url ?? "").searchParams)).toEqual({
       module: "inventario", tab: "inventario", vista: "stock",

@@ -1,87 +1,47 @@
 "use client";
+import type { ReactNode } from "react";
 import { SectionTitle } from "@buleje/design-system";
-import { DollarSign, ExternalLink, Eye, Globe, MapPin, Store } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { cn } from "@/lib/utils";
 import type { MarketplaceStoreData } from "@/components/admin/marketplace/hooks/use-marketplace-tienda";
 import { inicialesTienda } from "./shared";
 
-/** Cabecera de «Mi tienda»: logo, estado, URL, chips y «Ver pública». Único título de la vista. */
-export function TiendaHero({ store }: { store: MarketplaceStoreData }) {
-  const initials = inicialesTienda(store);
-  const statusBadge = !store.isActive
-    ? { label: "Borrador", className: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] border border-[var(--rule-base)]" }
+/**
+ * Cabecera de «Mi tienda» en UNA fila (11-10): logo, nombre, estado y ⓘ (la
+ * dirección pública y la comisión) · secciones. Antes era un banner de ~210 px
+ * que repetía la descripción, la categoría y las zonas que se editan abajo, y
+ * una tarjeta aparte de 200 px sólo para la comisión (de sólo lectura).
+ * «Ver pública» está en el «⋯ Más» de la cabecera del hub.
+ */
+export function TiendaHero({ store, secciones }: { store: MarketplaceStoreData; secciones?: ReactNode }) {
+  const estado = !store.isActive
+    ? { label: "Borrador", className: "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)]" }
     : store.vacationMode
-    ? { label: "Vacaciones", className: "bg-[var(--data-warning-50)] text-[var(--data-warning)] border-2 border-[var(--data-warning)]/40" }
-    : { label: "Publicada", className: "bg-[var(--data-success-50)] text-[var(--data-success)] border-2 border-[var(--data-success)]/40" };
-
+      ? { label: "Vacaciones", className: "border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 text-[var(--data-warning-ink)]" }
+      : { label: "Publicada", className: "border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/10 text-[var(--data-success-ink)]" };
   return (
-    <header className="relative overflow-hidden rounded-3xl border border-[var(--rule-base)] bg-linear-to-br from-primary/8 via-[var(--surface-canvas)] to-[var(--accent-soft)]/30 px-6 py-7 sm:px-8 sm:py-8">
-      <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-primary/15 blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-[var(--accent)]/10 blur-3xl pointer-events-none" />
-      <div className="relative flex flex-col md:flex-row items-start md:items-center gap-6">
-        {/* Logo grande */}
-        <div className="relative shrink-0">
-          <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-3xl overflow-hidden border-4 border-[var(--surface-canvas)] shadow-xl bg-[var(--surface-raised)] flex items-center justify-center">
-            {store.logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={store.logoUrl} alt={store.name || store.slug} className="h-full w-full object-cover" />
-            ) : (
-              <span className="text-3xl font-extrabold text-primary">{initials}</span>
-            )}
-          </div>
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+      <div className="flex min-w-0 shrink-0 items-center gap-3">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
+          {store.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={store.logoUrl} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <span className="text-base font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">{inicialesTienda(store)}</span>
+          )}
         </div>
-
-        {/* Identidad */}
-        <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-3 mb-2">
-            <span className={cn("inline-flex items-center h-7 px-3 rounded-full text-xs font-extrabold uppercase tracking-wider", statusBadge.className)}>
-              {statusBadge.label}
-            </span>
-            {store.slug && (
-              <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--text-tertiary)]">
-                <Globe className="h-3.5 w-3.5" />
-                <span className="font-mono">/marketplace/{store.slug}</span>
-              </span>
-            )}
-          </div>
-          <SectionTitle className="text-[var(--text-primary)] tracking-tight truncate">
-            {store.name || "Tu tienda en el marketplace"}
-          </SectionTitle>
-          <p className="mt-2 text-base text-[var(--text-secondary)] line-clamp-2 max-w-2xl leading-relaxed">
-            {store.description || "Sin descripción todavía. Cuéntale a los clientes qué te hace especial."}
-          </p>
-          <div className="mt-4 flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-[var(--surface-canvas)] border border-[var(--rule-base)] text-sm font-bold text-[var(--text-primary)]">
-              <Store className="h-4 w-4 text-primary" />
-              {store.category || "Sin categoría"}
-            </span>
-            <span className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-[var(--surface-canvas)] border border-[var(--rule-base)] text-sm font-bold text-[var(--text-primary)]">
-              <MapPin className="h-4 w-4 text-[var(--accent)]" />
-              {(store.coverageZones?.length ?? 0) > 0
-                ? `${store.coverageZones!.length} zona${store.coverageZones!.length === 1 ? "" : "s"}`
-                : store.zone || "Sin zonas"}
-            </span>
-            <span className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-[var(--surface-canvas)] border border-[var(--rule-base)] text-sm font-bold text-[var(--text-primary)]">
-              <DollarSign className="h-4 w-4 text-[var(--data-success)]" />
-              {store.commissionRate}% comisión
-            </span>
-          </div>
-        </div>
-
-        {/* CTAs */}
-        {store.slug && (
-          <a
-            href={`/marketplace/${store.slug}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="shrink-0 inline-flex items-center gap-2 h-12 px-5 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] text-base font-extrabold text-[var(--text-primary)] hover:border-primary hover:text-primary hover:shadow-md transition-all"
-          >
-            <Eye className="h-5 w-5" />
-            Ver pública
-            <ExternalLink className="h-4 w-4 opacity-60" />
-          </a>
-        )}
+        <SectionTitle className="max-w-[16rem] truncate whitespace-nowrap text-[var(--text-primary)]">
+          {store.name || "Tu tienda en el marketplace"}
+        </SectionTitle>
+        <span className={cn("inline-flex h-8 items-center rounded-full border px-3 text-sm font-semibold", estado.className)}>{estado.label}</span>
+        <InfoTip
+          title="Tu tienda en el marketplace"
+          what={`Así te encuentran los compradores en Buleje${store.slug ? `: /marketplace/${store.slug}` : ""}. Los cambios se ven en tu tienda pública apenas guardas.`}
+          affects={`Buleje cobra ${store.commissionRate} % por cada venta. La fija la plataforma: para revisarla, escríbenos por WhatsApp.`}
+          example="Borrador = sólo tú la ves; Publicada = aparece en el marketplace; Vacaciones = se ve, pero no recibe pedidos."
+        />
       </div>
-    </header>
+      {secciones && <div className="order-last w-full min-w-0 sm:order-none sm:w-auto">{secciones}</div>}
+    </div>
   );
 }

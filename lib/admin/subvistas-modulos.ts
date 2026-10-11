@@ -306,6 +306,18 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
     { key: "expediente", label: "Expediente", hint: "Qué se presentó y en qué estado está", origen: ["forestal-tramites"] },
     { key: "plantaciones", label: "Plantaciones", hint: "Registro RNPF — inscripción y actualización", origen: ["forestal-tramites"] },
   ],
+  // Marketplace (11-10): ganó `?vista=` (useVistaModulo) y se mudó desde
+  // `VISTAS_LOCALES_POR_MODULO`: el buscador ya puede ofrecer sus vistas.
+  marketplace: [
+    { key: "resumen", label: "Resumen", hint: "Cómo te va en el marketplace" },
+    { key: "tienda", label: "Mi Tienda Personal", hint: "Cómo se ve tu tienda dentro del marketplace" },
+    { key: "productos", label: "Productos", hint: "Qué productos tuyos están publicados" },
+    { key: "ordenes", label: "Órdenes", hint: "Los pedidos que entraron por el marketplace" },
+    { key: "comisiones", label: "Comisiones", hint: "Lo que cobra la plataforma por cada venta" },
+    { key: "precios", label: "Precios", hint: "Tus precios al lado de los de otras tiendas" },
+    { key: "resenas", label: "Reseñas", hint: "Lo que opinan los compradores del marketplace" },
+    { key: "fidelidad", label: "Fidelidad", hint: "Historial de puntos de un cliente y sumar puntos a mano; el programa entero está en Campañas › Puntos" },
+  ],
 };
 
 /**
@@ -317,17 +329,6 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
  * ola 4) se muda a `VISTAS_POR_MODULO`; lo cuida admin-subvistas-sincronizadas.
  */
 export const VISTAS_LOCALES_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[]>> = {
-  marketplace: [
-    { key: "resumen", label: "Resumen", hint: "Cómo te va en el marketplace" },
-    { key: "tienda", label: "Mi Tienda Personal", hint: "Cómo se ve tu tienda dentro del marketplace" },
-    { key: "productos", label: "Productos", hint: "Qué productos tuyos están publicados" },
-    { key: "ordenes", label: "Órdenes", hint: "Los pedidos que entraron por el marketplace" },
-    { key: "comisiones", label: "Comisiones", hint: "Lo que cobra la plataforma por cada venta" },
-    { key: "precios", label: "Precios", hint: "Tus precios al lado de los de otras tiendas" },
-    { key: "cupones", label: "Cupones", hint: "Descuentos que valen en el marketplace" },
-    { key: "resenas", label: "Reseñas", hint: "Lo que opinan los compradores del marketplace" },
-    { key: "fidelidad", label: "Fidelidad", hint: "Premios para los compradores que vuelven" },
-  ],
 };
 
 /**

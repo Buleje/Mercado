@@ -31,6 +31,7 @@ import {
 import { SectionTitle, Kicker } from "@buleje/design-system";
 import type { MarketplaceOrderDetail } from "./hooks/use-marketplace-orders";
 import { cn } from "@/lib/utils";
+import { button } from "@/components/ui-system/button-variants";
 import { formatDateTime } from "@/lib/format";
 
 interface Props {
@@ -38,7 +39,8 @@ interface Props {
   loading?: boolean;
   onClose: () => void;
   onWhatsApp?: (order: MarketplaceOrderDetail) => void;
-  onChangeStatus?: (order: MarketplaceOrderDetail) => void;
+  /** Los cambios de estado que admite el pedido (el primero, a la vista). Cerrar y cambiar lo hace quien llama. */
+  acciones?: { id: string; label: string; peligro?: boolean; onSelect: () => void }[];
 }
 
 const PEN_FMT = new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" });
@@ -55,7 +57,7 @@ const STATUS_META: Record<
   cancelado:  { label: "Cancelado",  dot: "bg-[var(--data-error)]",   chip: "bg-[var(--data-error)]/15 border-[var(--data-error)]/30",     text: "text-[var(--data-error)]" },
 };
 
-export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChangeStatus }: Props) {
+export function OrderDetailModal({ order, loading, onClose, onWhatsApp, acciones = [] }: Props) {
   /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
   const cajaRef = useRef<HTMLDivElement>(null);
   /* Escape ya lo maneja el atajo propio de esta pantalla: el hook pone
@@ -344,35 +346,44 @@ export function OrderDetailModal({ order, loading, onClose, onWhatsApp, onChange
 
         {/* ── Footer (acciones, sticky bottom) ──────────── */}
         {order && (
-          <footer className="shrink-0 border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-6 py-3 flex items-center justify-between gap-3">
+          <footer className="shrink-0 border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)] px-6 py-3 flex flex-wrap items-center justify-between gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="h-11 px-4 rounded-xl text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-raised)] transition-colors"
+              className="h-12 px-4 rounded-xl text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-raised)] transition-colors"
             >
               Cerrar
             </button>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2">
               {onWhatsApp && order.customerPhone && (
                 <button
                   type="button"
                   onClick={() => onWhatsApp(order)}
-                  className="h-11 px-4 rounded-xl inline-flex items-center gap-2 bg-[var(--data-success)] text-white text-sm font-semibold hover:opacity-90 transition-colors"
+                  className="h-12 px-4 rounded-xl inline-flex items-center gap-2 border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
                 >
-                  <MessageCircle className="h-4 w-4" />
+                  <MessageCircle className="h-4 w-4" aria-hidden />
                   WhatsApp
                 </button>
               )}
-              {onChangeStatus && (
+              {/* Antes: «Cambiar estado» cerraba esto y abría un menú en la fila. Ahora el cambio va aquí mismo. */}
+              {acciones.map((a, i) => (
                 <button
+                  key={a.id}
                   type="button"
-                  onClick={() => onChangeStatus(order)}
-                  className="h-11 px-4 rounded-xl inline-flex items-center gap-1.5 bg-[var(--accent)] text-white text-sm font-semibold hover:opacity-90 transition-opacity"
+                  onClick={a.onSelect}
+                  className={cn(
+                    "h-12 px-4 rounded-xl inline-flex items-center gap-1.5 text-sm font-semibold transition-colors",
+                    a.peligro
+                      ? "text-[var(--data-error-ink)] hover:bg-[var(--data-error-500)]/10"
+                      : i === 0
+                        ? button({ variant: "primary", className: "rounded-xl h-12" })
+                        : "border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]",
+                  )}
                 >
-                  Cambiar estado
-                  <ChevronRight className="h-4 w-4" />
+                  {a.label}
+                  {!a.peligro && i === 0 && <ChevronRight className="h-4 w-4" aria-hidden />}
                 </button>
-              )}
+              ))}
             </div>
           </footer>
         )}

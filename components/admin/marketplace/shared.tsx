@@ -1,6 +1,6 @@
 import type React from "react";
 import { StatCard } from "@buleje/design-system";
-import { ChevronDown, ChevronUp, Clock, CheckCircle } from "@buleje/design-system/icons";
+import { ChevronDown, ChevronUp, Clock, CheckCircle, Search, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 /**
@@ -100,7 +100,14 @@ export const TIER_CONFIG: Record<string, { label: string; className: string; min
   oro:    { label: "Oro",    className: "bg-[var(--data-warning-100)] text-[var(--data-warning)]", minPoints: "1000+" },
 };
 
-// ── Counter chip clickeable para el KPI strip (usado por Órdenes + Productos) ──
+// ── Indicador clickeable (Órdenes + Productos): la cifra y, al tocarla, el filtro ──
+const TONO_INDICADOR = {
+  success: { activo: "border-[var(--data-success-500)] bg-[var(--data-success-500)]/10", hover: "hover:border-[var(--data-success-500)]", cifra: "text-[var(--data-success-ink)]" },
+  warning: { activo: "border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10", hover: "hover:border-[var(--data-warning-500)]", cifra: "text-[var(--data-warning-ink)]" },
+  danger: { activo: "border-[var(--data-error-500)] bg-[var(--data-error-500)]/10", hover: "hover:border-[var(--data-error-500)]", cifra: "text-[var(--data-error-ink)]" },
+  neutral: { activo: "border-[var(--text-tertiary)] bg-[var(--surface-sunken)]", hover: "hover:border-[var(--text-tertiary)]", cifra: "text-[var(--text-primary)]" },
+} as const;
+
 export function CounterChip({
   label,
   value,
@@ -110,35 +117,55 @@ export function CounterChip({
 }: {
   label: string;
   value: number;
-  tone: "success" | "warning" | "danger" | "neutral";
+  tone: keyof typeof TONO_INDICADOR;
   active: boolean;
   onClick: () => void;
 }) {
-  const toneClasses = {
-    success: { bg: "bg-[var(--data-success-500)]/10", text: "text-[var(--data-success-500)]", border: "border-[var(--data-success-500)]" },
-    warning: { bg: "bg-[var(--data-warning-500)]/10", text: "text-[var(--data-warning-500)]", border: "border-[var(--data-warning-500)]" },
-    danger: { bg: "bg-[var(--data-error-500)]/10", text: "text-[var(--data-error-500)]", border: "border-[var(--data-error-500)]" },
-    neutral: { bg: "bg-[var(--surface-sunken)]", text: "text-[var(--text-secondary)]", border: "border-[var(--text-tertiary)]" },
-  } as const;
-  const t = toneClasses[tone];
+  const t = TONO_INDICADOR[tone];
   return (
     <button
       type="button"
       onClick={onClick}
       aria-pressed={active}
+      title={active ? "Quitar el filtro" : `Ver sólo: ${label.toLowerCase()}`}
       className={cn(
-        "text-left rounded-xl border-2 px-3.5 min-h-11 transition-colors",
-        active
-          ? cn(t.border, t.bg)
-          : cn("border-[var(--rule-base)] bg-[var(--surface-raised)]", `hover:${t.border}`, `hover:${t.bg}`),
+        "flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border-2 px-3 py-2 text-left transition-colors",
+        active ? t.activo : cn("border-[var(--rule-base)] bg-[var(--surface-raised)]", t.hover),
       )}
     >
-      <p className="text-[length:var(--ts-2xs)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)] mb-0.5">
-        {label}
-      </p>
-      <p className={cn("text-2xl font-extrabold tabular-nums leading-none", active ? t.text : "text-[var(--text-primary)]")}>
-        {value}
-      </p>
+      <span className="text-sm font-semibold text-[var(--text-secondary)]">{label}</span>
+      <span className={cn("text-xl font-bold tabular-nums leading-none", active ? t.cifra : "text-[var(--text-primary)]")}>{value}</span>
     </button>
+  );
+}
+
+/** Campo de la fila de filtros (buscador, selects): 48 px, texto de 14. */
+export const CAMPO_EN_FILA =
+  "h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none transition-colors focus:border-primary";
+
+/** El buscador de la fila de filtros, con su «×» para vaciarlo. */
+export function BuscadorEnFila({ valor, onCambiar, placeholder, className }: { valor: string; onCambiar: (v: string) => void; placeholder: string; className?: string }) {
+  return (
+    <div className={cn("relative h-12 min-w-0 grow basis-full sm:basis-64", className)}>
+      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
+      <input
+        type="search"
+        value={valor}
+        onChange={(e) => onCambiar(e.target.value)}
+        placeholder={placeholder}
+        aria-label={placeholder}
+        className={cn(CAMPO_EN_FILA, "w-full pl-10 pr-12")}
+      />
+      {valor && (
+        <button
+          type="button"
+          onClick={() => onCambiar("")}
+          aria-label="Vaciar la búsqueda"
+          className="absolute right-0.5 top-1/2 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]"
+        >
+          <X className="h-4 w-4" aria-hidden />
+        </button>
+      )}
+    </div>
   );
 }

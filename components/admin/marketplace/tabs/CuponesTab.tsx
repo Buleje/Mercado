@@ -11,6 +11,12 @@ import { TableSkeleton } from "@/components/admin/marketplace/shared";
 import { CheckCircle, Clock, DollarSign, Eye, EyeOff, Star, Ticket, X } from "@buleje/design-system/icons";
 import { formatCurrency, formatDateShort } from "@/lib/format";
 
+/**
+ * Cupones del marketplace: se monta en Productos e inventario › Ofertas y
+ * cupones (selector «Vale en › Marketplace»). La pestaña Cupones del hub
+ * Marketplace se fundió ahí el 11-10 (misma tabla `Coupon`; el alias
+ * `marketplace:cupones` lleva a esa vista).
+ */
 export function MarketplaceCuponesTab() {
   const {
     coupons, loading, showForm, setShowForm,

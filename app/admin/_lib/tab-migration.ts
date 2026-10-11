@@ -104,16 +104,15 @@ export const TAB_MIGRATION: Record<string, Tab | DestinoTab> = {
   pedidos: "pedidos",
   // Marketplace & Delivery
   marketplace: "marketplace",
-  "marketplace-tienda": "marketplace",
-  "marketplace-productos": "marketplace",
-  "marketplace-ordenes": "marketplace",
-  "marketplace-comisiones": "marketplace",
+  "marketplace-tienda": { tab: "marketplace", vista: "tienda" },
+  "marketplace-productos": { tab: "marketplace", vista: "productos" },
+  "marketplace-ordenes": { tab: "marketplace", vista: "ordenes" },
+  "marketplace-comisiones": { tab: "marketplace", vista: "comisiones" },
   // Formato viejo `/admin?module=marketplace&tab=ordenes`: el aviso «Nuevo
   // pedido marketplace» (app/api/marketplace/orders y el webhook de Mercado
-  // Pago). 60 guardados en 5 negocios caían en Inicio (09-10). Sin vista a
-  // propósito: Marketplace elige su sección con estado local; cuando lea
-  // `?vista=` (ola 4) este alias y los `marketplace-*` llevan la suya.
-  ordenes: "marketplace",
+  // Pago). 60 guardados en 5 negocios caían en Inicio (09-10). Desde el 11-10
+  // Marketplace lee `?vista=`: el aviso abre Órdenes.
+  ordenes: { tab: "marketplace", vista: "ordenes" },
   // Rendimiento técnico (`rendimiento` → Configuración › Sistema, abajo)
   "web-vitals": "rendimiento",
   "salud-sistema-tech": "rendimiento",
@@ -203,6 +202,8 @@ export const TAB_MIGRATION: Record<string, Tab | DestinoTab> = {
  * integradores de cada ola (pedido `vistaMigracion` en `SP/panel/registro`).
  */
 export const VISTA_MIGRATION: Record<string, DestinoTab> = {
+  // Marketplace › Cupones era la misma tabla `Coupon` que Ofertas y cupones (11-10).
+  "marketplace:cupones": { tab: "inventario", vista: "ofertas", sub: "cupones" },
   // Campañas › Segmentos se fundió en Campañas (fila «Para quién», 11-10).
   "campanas:segmentos": { tab: "campanas", vista: "campanas" },
   // Recetas › Resumen repetía Producción (lotes del mes y gráfico semanal) → se fundió ahí (11-10).

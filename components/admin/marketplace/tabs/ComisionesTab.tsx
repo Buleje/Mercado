@@ -1,201 +1,165 @@
 "use client";
-import { CardTitle, DataTable } from "@buleje/design-system";
-import { cn } from "@/lib/utils";
-import { useMarketplaceCommissions } from "@/components/admin/marketplace/hooks/use-marketplace-commissions";
-import { TableSkeleton, COMMISSION_STATUS_CONFIG } from "@/components/admin/marketplace/shared";
-import { AlertCircle, CheckCircle, Clock, DollarSign } from "@buleje/design-system/icons";
-import { formatCurrency, formatDate } from "@/lib/format";
+
+/**
+ * Marketplace › Comisiones: lo que la plataforma cobra por cada venta tuya en
+ * el marketplace (`/api/commissions/ledger`). No es Ventas › Comisiones de
+ * vendedores (lo que ganan tus empleados por lo que venden).
+ *
+ * Patrón del panel (11-10): una fila de cabecera con las tres cifras del
+ * backend en Indicadores, los estados como chips pegados a la tabla y
+ * «Liquidar» en el «⋯» de cada fila. Antes: un héroe con el total sumado en el
+ * cliente, la misma cifra otra vez en los chips y una columna «Total» que
+ * siempre decía S/ 0,00 (el ledger no trae el total de la orden), y botones
+ * «Marcar pagado» / «Pagar liquidado» que en realidad liquidan (el PATCH sólo
+ * pasa pendiente → liquidada; no existe el paso a pagada).
+ */
+import { DataTable } from "@buleje/design-system";
+import { CheckCircle, Clock, Download, MoreHorizontal, Users, Wallet } from "@buleje/design-system/icons";
+import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
+import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
+import { useMarketplaceCommissions, type CommissionEntry } from "@/components/admin/marketplace/hooks/use-marketplace-commissions";
+import { TableSkeleton } from "@/components/admin/marketplace/shared";
+import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
+import { formatCurrency } from "@/lib/format";
+import { cn, exportToCSV } from "@/lib/utils";
+import { useAccionesDeVista } from "@/components/admin/marketplace/acciones-de-vista";
+import { diaDe, ENCABEZADOS_14, ErrorDeCarga, FilaDeVista, SelectFiltro, TarjetaCifra, VacioDeUnaFrase, type OpcionFiltro } from "./cabecera-vista";
+
+type Filtro = "all" | CommissionEntry["status"];
+
+const ROTULO: Record<CommissionEntry["status"], string> = { pendiente: "Por liquidar", liquidado: "Liquidadas", pagado: "Pagadas" };
+/** El estado de UNA fila, con texto `-ink` (el `--data-warning` de shared.tsx da < 4,5:1 a 14 px). */
+const ESTADO_FILA: Record<CommissionEntry["status"], { rotulo: string; clase: string }> = {
+  pendiente: { rotulo: "Por liquidar", clase: "bg-[var(--data-warning-100)] text-[var(--data-warning-ink)] dark:bg-[var(--data-warning-500)]/15 dark:text-[var(--data-warning-500)]" },
+  liquidado: { rotulo: "Liquidada", clase: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" },
+  pagado: { rotulo: "Pagada", clase: "bg-[var(--data-success-100)] text-[var(--data-success-ink)] dark:bg-[var(--data-success-500)]/15 dark:text-[var(--data-success-500)]" },
+};
+const HREF_COMISIONES_VENDEDORES = "/admin?tab=ventas-caja&vista=comisiones";
 
 export function MarketplaceComisionesTab() {
-  const {
-    filtered, summary, loading, error,
-    filterStatus, setFilterStatus,
-    markingPaid, load,
-    handleMarkPaid, handleBulkPay,
-  } = useMarketplaceCommissions();
+  const { entries, filtered, summary, loading, error, filterStatus, setFilterStatus, markingPaid, load, handleMarkPaid, handleBulkPay } =
+    useMarketplaceCommissions();
+  const pendientes = entries.filter((e) => e.status === "pendiente");
 
-  if (loading) return <TableSkeleton />;
+  const kpis = useKpisPlegables({
+    claveMemoria: "marketplace-comisiones",
+    alto: "md",
+    compactoEnMovil: true,
+    anchoFijo: true,
+    sinDatosAun: loading && entries.length === 0,
+    resumen: `Por liquidar ${formatCurrency(summary.pendiente)}`,
+    tarjetas: [
+      <TarjetaCifra key="p" rotulo="Por liquidar" valor={formatCurrency(summary.pendiente)} icono={Clock} destacado ayuda="Comisiones de ventas que todavía no se liquidaron." />,
+      <TarjetaCifra key="l" rotulo="Liquidadas" valor={formatCurrency(summary.liquidado)} icono={CheckCircle} ayuda="Ya calculadas y cerradas; falta que se paguen." />,
+      <TarjetaCifra key="g" rotulo="Pagadas" valor={formatCurrency(summary.pagado)} icono={Wallet} />,
+    ],
+  });
 
-  // Total absoluto y % en cada estado para barras de proporción visual.
-  const total = (summary.pendiente || 0) + (summary.liquidado || 0) + (summary.pagado || 0);
-  const pct = (n: number) => (total > 0 ? Math.max(2, (n / total) * 100) : 0);
+  const acciones: MenuAccion[] = [
+    {
+      id: "liquidar",
+      label: "Liquidar las pendientes",
+      hint: pendientes.length > 0 ? `${pendientes.length} por ${formatCurrency(summary.pendiente)}: pasan a liquidadas` : "No hay comisiones por liquidar",
+      icon: CheckCircle,
+      busy: markingPaid === "bulk",
+      disabled: pendientes.length === 0 || markingPaid === "bulk",
+      onSelect: () => void handleBulkPay(),
+    },
+    {
+      id: "csv",
+      label: "Exportar a Excel",
+      hint: `${filtered.length} comisiones, con el filtro de abajo`,
+      icon: Download,
+      disabled: filtered.length === 0,
+      onSelect: () =>
+        exportToCSV(
+          filtered.map((e) => ({ orden: e.orderId, comision: e.amount, estado: ROTULO[e.status], fecha: e.createdAt.slice(0, 10) })),
+          "comisiones-marketplace",
+        ),
+    },
+    { id: "vendedores", label: "Comisiones de tus vendedores", hint: "Ventas › lo que gana cada empleado", icon: Users, onSelect: () => irAEnlace(HREF_COMISIONES_VENDEDORES) },
+  ];
+  /* Al «⋯ Más» del hub (una sola banda); «Actualizar» ya lo pone el hub. */
+  useAccionesDeVista(acciones);
+
+  const opciones: OpcionFiltro<Filtro>[] = [
+    { valor: "all", rotulo: "Todos los estados", cuenta: entries.length },
+    ...(Object.keys(ROTULO) as CommissionEntry["status"][]).map((s) => ({ valor: s, rotulo: ROTULO[s], cuenta: entries.filter((e) => e.status === s).length })),
+  ];
 
   return (
-    <div className="space-y-6">
-      {error && (
-        <div className="flex items-center gap-2 p-3 bg-[var(--data-error-50)] border border-[var(--data-error)] rounded-xl text-sm text-[var(--data-error)]">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          {error}
-          <button onClick={load} className="ml-auto text-xs underline">Reintentar</button>
-        </div>
-      )}
+    <div className="space-y-3 sm:space-y-4">
+      <FilaDeVista
+        titulo="Comisiones"
+        ayuda={{
+          what: "Lo que la plataforma cobra por cada venta tuya en el marketplace: un porcentaje de la orden.",
+          affects: "Liquidar una comisión la cierra con su monto; después se paga. Lo que ganan tus vendedores por lo que venden está en Ventas › Comisiones de vendedores.",
+          example: "Una orden de S/ 39,50 con 5 % deja S/ 1,98 de comisión «por liquidar».",
+        }}
+        derecha={kpis.boton}
+      >
+        <SelectFiltro opciones={opciones} activo={filterStatus as Filtro} onCambiar={setFilterStatus} etiqueta="Estado de la comisión" />
+      </FilaDeVista>
+      {kpis.panel}
+      {error && <ErrorDeCarga mensaje={error} onReintentar={load} />}
 
-      {/* ── Hero card: total + barra de distribución ── */}
-      <div className="relative overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-linear-to-br from-primary/5 via-white to-[var(--surface-sunken)] p-5 sm:p-6">
-        <div className="absolute -top-20 -right-16 h-48 w-48 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-        <div className="relative flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-4">
-          <div>
-            <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Comisiones marketplace</p>
-            <CardTitle className="mt-1 text-3xl sm:text-4xl font-extrabold text-[var(--text-primary)] tracking-tight tabular-nums">
-              {formatCurrency(total)}
-            </CardTitle>
-            <p className="text-xs text-[var(--text-secondary)] mt-1">Suma de todos los estados · {filtered.length} {filtered.length === 1 ? "comisión" : "comisiones"} listadas</p>
-          </div>
-          {summary.liquidado > 0 && (
-            <button
-              onClick={handleBulkPay}
-              disabled={markingPaid === "bulk"}
-              className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 shadow-sm"
-            >
-              <DollarSign className="h-4 w-4" />
-              {markingPaid === "bulk" ? "Procesando..." : `Pagar liquidado · ${formatCurrency(summary.liquidado)}`}
-            </button>
-          )}
-        </div>
-
-        {/* Barra de proporción visual (Pendiente / Liquidado / Pagado) */}
-        <div className="relative">
-          <div className="flex h-2 rounded-full overflow-hidden bg-[var(--rule-soft)]">
-            {total > 0 ? (
-              <>
-                <span className="bg-[var(--data-warning)]" style={{ width: `${pct(summary.pendiente)}%` }} />
-                <span className="bg-primary" style={{ width: `${pct(summary.liquidado)}%` }} />
-                <span className="bg-[var(--data-success)]" style={{ width: `${pct(summary.pagado)}%` }} />
-              </>
-            ) : null}
-          </div>
-        </div>
-
-        {/* Detalle por estado */}
-        <div className="grid grid-cols-3 gap-3 mt-4">
-          {[
-            { key: "pendiente", label: "Por pagar", value: summary.pendiente, dot: "bg-[var(--data-warning)]", icon: Clock },
-            { key: "liquidado", label: "Liquidado", value: summary.liquidado, dot: "bg-primary", icon: CheckCircle },
-            { key: "pagado", label: "Pagado", value: summary.pagado, dot: "bg-[var(--data-success)]", icon: CheckCircle },
-          ].map(({ key, label, value, dot, icon: Icon }) => (
-            <div key={key} className="flex items-start gap-2.5">
-              <span className={cn("mt-1.5 h-2 w-2 rounded-full shrink-0", dot)} />
-              <div className="min-w-0">
-                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] truncate">{label}</p>
-                <p className="text-base sm:text-lg font-extrabold text-[var(--text-primary)] tabular-nums">{formatCurrency(value || 0)}</p>
-              </div>
-              <Icon className="h-3.5 w-3.5 text-[var(--text-tertiary)] ml-auto mt-1 shrink-0" />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Filtros como chips grandes con monto ── */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {[
-          { value: "all", label: "Todas", amount: total },
-          { value: "pendiente", label: "Por pagar", amount: summary.pendiente },
-          { value: "liquidado", label: "Liquidado", amount: summary.liquidado },
-          { value: "pagado", label: "Pagado", amount: summary.pagado },
-        ].map((f) => {
-          const active = filterStatus === f.value;
-          return (
-            <button
-              key={f.value}
-              onClick={() => setFilterStatus(f.value)}
-              className={cn(
-                "inline-flex items-center gap-2 h-10 px-4 rounded-xl border-2 text-sm font-semibold transition-all tabular-nums",
-                active
-                  ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-                  : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--text-tertiary)]"
-              )}
-            >
-              {f.label}
-              <span className={cn("text-xs font-semibold tabular-nums", active ? "text-primary/80" : "text-[var(--text-tertiary)]")}>
-                S/{(f.amount || 0).toFixed(0)}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      {filtered.length === 0 && !error ? (
-        <div className="text-center py-20 px-6 rounded-2xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)]">
-          <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-4">
-            <DollarSign className="h-6 w-6" />
-          </div>
-          <p className="text-base font-extrabold text-[var(--text-primary)]">
-            {filterStatus !== "all" ? `Sin comisiones en "${filterStatus}"` : "Sin comisiones registradas aún"}
-          </p>
-          <p className="text-sm text-[var(--text-secondary)] mt-1.5 max-w-sm mx-auto">
-            {filterStatus !== "all"
-              ? "Prueba con otro filtro o ve al estado anterior del flujo."
-              : "Cuando recibas pedidos por marketplace, las comisiones aparecerán acá."}
-          </p>
-        </div>
+      {loading && entries.length === 0 ? (
+        <TableSkeleton />
+      ) : filtered.length === 0 ? (
+        <VacioDeUnaFrase>
+          {filterStatus !== "all" ? `No hay comisiones ${ROTULO[filterStatus as CommissionEntry["status"]]?.toLowerCase() ?? ""}.` : "Sin comisiones todavía: aparecen con tu primera venta en el marketplace."}
+        </VacioDeUnaFrase>
       ) : (
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <DataTable className="w-full text-sm">
-              <thead className="bg-[var(--surface-sunken)] border-b border-[var(--rule-base)]">
-                <tr>
-                  <th className="text-left px-5 py-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Orden</th>
-                  <th className="text-right px-5 py-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Total</th>
-                  <th className="text-right px-5 py-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Comisión</th>
-                  <th className="text-center px-5 py-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Estado</th>
-                  <th className="text-right px-5 py-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Fecha</th>
-                  <th className="text-center px-5 py-3 text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Acción</th>
+        <DataTable className={ENCABEZADOS_14}>
+          <thead>
+            <tr>
+              <th>Orden</th>
+              <th className="text-right">Comisión</th>
+              <th>Estado</th>
+              <th>Fecha</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((e) => {
+              const sc = ESTADO_FILA[e.status] ?? ESTADO_FILA.pendiente;
+              return (
+                <tr key={e.id}>
+                  <td data-label="Orden" className="font-mono text-sm font-bold text-[var(--text-primary)]">#{e.orderId.slice(-8).toUpperCase()}</td>
+                  <td data-label="Comisión" className="text-right text-sm font-extrabold tabular-nums text-[var(--text-primary)]">{formatCurrency(e.amount)}</td>
+                  <td data-label="Estado">
+                    <span className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-sm font-semibold", sc.clase)}>{sc.rotulo}</span>
+                  </td>
+                  <td data-label="Fecha" className="text-sm text-[var(--text-secondary)]">{diaDe(e.createdAt)}</td>
+                  <td className="w-12 text-right max-sm:empty:hidden">
+                    {e.status === "pendiente" && (
+                      <ActionMenu
+                        label="Acciones"
+                        icon={MoreHorizontal}
+                        soloIcono
+                        size="md"
+                        className="w-12"
+                        title={`Acciones de la comisión de la orden #${e.orderId.slice(-8).toUpperCase()}`}
+                        actions={[
+                          {
+                            id: "liquidar",
+                            label: "Liquidar",
+                            hint: `${formatCurrency(e.amount)} pasa a liquidada`,
+                            icon: CheckCircle,
+                            busy: markingPaid === e.id,
+                            disabled: markingPaid === e.id,
+                            onSelect: () => void handleMarkPaid(e.id),
+                          },
+                        ]}
+                      />
+                    )}
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--rule-soft)]">
-                {filtered.map((e) => {
-                  const sc = COMMISSION_STATUS_CONFIG[e.status] ?? COMMISSION_STATUS_CONFIG.pendiente;
-                  const StatusIcon = sc.icon;
-                  return (
-                    <tr key={e.id} className="hover:bg-[var(--surface-sunken)] transition-colors">
-                      <td className="px-5 py-3">
-                        <span className="inline-flex items-center gap-2 font-mono text-xs font-bold text-[var(--text-primary)] bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-md px-2 py-1">
-                          #{e.orderId.slice(-8).toUpperCase()}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3 text-right text-sm text-[var(--text-secondary)] tabular-nums">{formatCurrency(e.orderTotal)}</td>
-                      <td className="px-5 py-3 text-right text-sm font-extrabold text-[var(--text-primary)] tabular-nums">{formatCurrency(e.amount)}</td>
-                      <td className="px-5 py-3 text-center">
-                        <span className={cn("inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider", sc.className)}>
-                          <StatusIcon className="h-3 w-3" />
-                          {sc.label}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3 text-right text-xs text-[var(--text-secondary)] tabular-nums">
-                        {formatDate(e.createdAt)}
-                      </td>
-                      <td className="px-5 py-3 text-center">
-                        {e.status !== "pagado" ? (
-                          <button
-                            onClick={() => handleMarkPaid(e.id)}
-                            disabled={markingPaid === e.id}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold hover:bg-primary hover:text-white transition-colors disabled:opacity-50"
-                          >
-                            {markingPaid === e.id ? (
-                              <div className="h-3 w-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                            ) : (
-                              <CheckCircle className="h-3.5 w-3.5" />
-                            )}
-                            {markingPaid === e.id ? "..." : "Marcar pagado"}
-                          </button>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">
-                            <CheckCircle className="h-3 w-3" /> Pagado
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </DataTable>
-          </div>
-        </div>
+              );
+            })}
+          </tbody>
+        </DataTable>
       )}
     </div>
   );
 }
-
-// ─────────────────────────────────────────────
-// Sub-tab: Cupones
-// ─────────────────────────────────────────────

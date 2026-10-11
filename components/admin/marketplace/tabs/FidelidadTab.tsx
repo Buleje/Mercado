@@ -1,349 +1,193 @@
 "use client";
 
-import { useState } from "react";
-import { CardTitle } from "@buleje/design-system";
-import {
-  CheckCircle,
-  Clock,
-  DollarSign,
-  Eye,
-  Gift,
-  Star,
-  TrendingUp,
-  Award,
-  Medal,
-  Trophy,
-  type LucideIcon,
-} from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
+/**
+ * Marketplace › Fidelidad (11-10, «pestaña por pestaña, sin duplicados»).
+ *
+ * Medido: es el MISMO programa que Campañas › Puntos — las dos leen y
+ * escriben `Customer.loyaltyPoints` y `LoyaltyTransaction` del tenant (acá por
+ * `/api/marketplace/loyalty`, allá por `/api/loyalty/*`). Puntos es la
+ * completa (lista de clientes, ficha, canje, notas, referido, niveles), así
+ * que la acción principal lleva allá. Se quedan aquí las dos cosas que
+ * Puntos no tiene: el historial de movimientos de un cliente y sumarle
+ * puntos a mano.
+ *
+ * Salió lo que decía otra cosa que el sistema: niveles por PUNTOS (500 / 1000)
+ * cuando el nivel real sale de lo GASTADO (500 / 1500 / 5000, con diamante),
+ * beneficios «5 % / 10 % + envío prioritario» que nada aplica y «100 pts = S/ 1»
+ * cuando un punto vale S/ 0,10. Y el historial leía `points`, `description` y
+ * `type`, que la API no manda (`amount`, `reason`, `metadata`): salía
+ * «undefined pts» en rojo para cada compra.
+ */
+import { useState, type FormEvent } from "react";
+import { ArrowRight, Plus, Search } from "@buleje/design-system/icons";
+import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
+import { solesDePuntos } from "@/components/admin/crecimiento/puntos/mensajes";
+import { button } from "@/components/ui-system/button-variants";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { formatCurrency, formatNumber } from "@/lib/format";
+import { cn } from "@/lib/utils";
+import { diaDe, FilaDeVista, VacioDeUnaFrase } from "./cabecera-vista";
 
-// Extraído de MarketplaceModule.tsx (refactor 2026-05-25) — sin cambios de comportamiento.
-// 2026-09-22: los emojis 🥉🥈🥇 se reemplazaron por Award/Medal/Trophy (barrido emojis→íconos).
-
-interface LoyaltyTransaction {
+interface Movimiento {
   id: string;
-  type: string;
-  points: number;
-  description: string;
+  amount: number;
+  reason: string;
+  metadata?: { description?: string } | null;
   createdAt: string;
 }
 
-interface LoyaltyData {
+interface Ficha {
   name: string;
   phone: string;
   points: number;
-  tier: string;
   totalSpent: number;
-  transactions: LoyaltyTransaction[];
+  transactions: Movimiento[];
 }
+
+const HREF_PUNTOS = "/admin?tab=campanas&vista=puntos";
+const CAMPO = "h-12 min-w-0 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary";
+const MOTIVO: Record<string, string> = { purchase: "Compra", manual: "Puesto a mano", redemption: "Canje", referral: "Referido", bonus: "Bono", adjustment: "Ajuste" };
 
 export function MarketplaceFidelidadTab() {
   const [phone, setPhone] = useState("");
-  const [data, setData] = useState<LoyaltyData | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [earnPoints, setEarnPoints] = useState("");
-  const [saving, setSaving] = useState(false);
+  const [ficha, setFicha] = useState<Ficha | null>(null);
+  const [estado, setEstado] = useState<"inicio" | "buscando" | "listo" | "error">("inicio");
+  const [sumar, setSumar] = useState("");
+  const [guardando, setGuardando] = useState(false);
+  const [aviso, setAviso] = useState<string | null>(null);
 
-  const searchCustomer = async () => {
-    if (!phone.trim()) return;
-    setLoading(true);
+  const buscar = async (tel = phone.trim()) => {
+    if (!tel) return;
+    setEstado("buscando");
+    setAviso(null);
     try {
-      const res = await fetch(`/api/marketplace/loyalty?phone=${encodeURIComponent(phone.trim())}`);
-      if (res.ok) {
-        const d = await res.json();
-        setData(d.data);
-      } else {
-        setData(null);
-      }
-    } catch {}
-    setLoading(false);
+      const res = await fetch(`/api/marketplace/loyalty?phone=${encodeURIComponent(tel)}`);
+      if (!res.ok) throw new Error(`loyalty ${res.status}`);
+      const d = (await res.json()) as { data?: Ficha };
+      setFicha(d.data ?? null);
+      setEstado("listo");
+    } catch {
+      setFicha(null);
+      setEstado("error");
+    }
   };
 
-  const handleEarn = async () => {
-    if (!data || !earnPoints) return;
-    setSaving(true);
+  const alBuscar = (e: FormEvent) => {
+    e.preventDefault();
+    void buscar();
+  };
+
+  const puntos = Number(sumar);
+  const sumaValida = Number.isInteger(puntos) && puntos > 0;
+  const sumarPuntos = async () => {
+    if (!ficha || !sumaValida) return;
+    setGuardando(true);
+    setAviso(null);
     try {
       const res = await fetch("/api/marketplace/loyalty", {
         method: "POST",
-        // Brandon 2026-05-17 (audit csrf): mutating fetch debe incluir CSRF token.
         headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({
-          action: "earn",
-          phone: data.phone,
-          points: Number(earnPoints),
-          description: "Puntos asignados manualmente",
-        }),
+        body: JSON.stringify({ action: "earn", phone: ficha.phone, points: puntos, description: "Puntos asignados manualmente" }),
       });
-      if (res.ok) {
-        setEarnPoints("");
-        searchCustomer();
-      }
-    } catch {}
-    setSaving(false);
+      if (!res.ok) throw new Error(`earn ${res.status}`);
+      setSumar("");
+      setAviso(`Listo: +${formatNumber(puntos)} puntos.`);
+      await buscar(ficha.phone);
+    } catch {
+      setAviso("No se pudieron sumar los puntos. Intenta de nuevo.");
+    } finally {
+      setGuardando(false);
+    }
   };
 
-  // Datos visuales por tier (rediseño 2026-05-09)
-  const tierVisuals: Record<string, { label: string; icon: LucideIcon; gradient: string; ring: string; benefit: string; minPts: number; maxPts: number | null }> = {
-    bronce: { label: "Bronce", icon: Award,  gradient: "from-orange-100 to-orange-50",  ring: "ring-orange-300/40", benefit: "Acumula puntos en cada compra", minPts: 0, maxPts: 499 },
-    plata:  { label: "Plata",  icon: Medal,  gradient: "from-slate-100 to-slate-50",    ring: "ring-slate-300/50",  benefit: "5% de descuento en pedidos",      minPts: 500, maxPts: 999 },
-    oro:    { label: "Oro",    icon: Trophy, gradient: "from-amber-100 to-yellow-50",   ring: "ring-amber-300/50",  benefit: "10% de descuento + envío prioritario", minPts: 1000, maxPts: null },
-  };
-
-  // Cliente actual: barra de progreso al siguiente tier
-  const currentTier = data ? (tierVisuals[data.tier] ?? tierVisuals.bronce) : null;
-  const nextTierKey = data?.tier === "bronce" ? "plata" : data?.tier === "plata" ? "oro" : null;
-  const nextTier = nextTierKey ? tierVisuals[nextTierKey] : null;
-  const pointsToNext = nextTier ? Math.max(0, nextTier.minPts - (data?.points ?? 0)) : 0;
-  const tierProgress = data && currentTier
-    ? currentTier.maxPts
-      ? Math.min(100, ((data.points - currentTier.minPts) / (currentTier.maxPts - currentTier.minPts + 1)) * 100)
-      : 100
-    : 0;
+  const sinCliente = estado === "listo" && (!ficha || (!ficha.name && ficha.points === 0 && ficha.transactions.length === 0));
 
   return (
-    <div className="space-y-6">
-      {/* ── Hero: tarjetas de tier ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {Object.entries(tierVisuals).map(([key, tv]) => {
-          const isCurrent = data?.tier === key;
-          return (
-            <div
-              key={key}
-              className={cn(
-                "relative overflow-hidden rounded-2xl border-2 p-4 transition-all bg-linear-to-br",
-                tv.gradient,
-                isCurrent ? `ring-4 ${tv.ring} border-[var(--data-warning)]` : "border-[var(--rule-base)]"
-              )}
-            >
-              {isCurrent && (
-                <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider bg-[var(--data-warning)] text-white">
-                  Actual
-                </span>
-              )}
-              <div className="flex items-center gap-3">
-                <tv.icon className="h-8 w-8 text-[var(--text-primary)]" aria-hidden />
-                <div className="min-w-0">
-                  <p className="text-base font-extrabold text-[var(--text-primary)] tracking-tight">{tv.label}</p>
-                  <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] tabular-nums">
-                    {tv.minPts}{tv.maxPts ? ` - ${tv.maxPts}` : "+"} pts
-                  </p>
-                </div>
-              </div>
-              <p className="mt-3 text-xs font-semibold text-[var(--text-secondary)] leading-snug">{tv.benefit}</p>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* ── Buscador ── */}
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-5">
-        <header className="flex items-center gap-2 mb-3">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]">
-            <Gift className="h-4 w-4" />
-          </span>
-          <div>
-            <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Buscar cliente</CardTitle>
-            <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Por número de WhatsApp para ver y gestionar puntos</p>
-          </div>
-        </header>
-        <div className="flex items-stretch gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all overflow-hidden">
-          <span className="inline-flex items-center px-3 text-xs font-bold text-[var(--text-tertiary)] bg-[var(--surface-sunken)] border-r-2 border-[var(--rule-base)] whitespace-nowrap">
-            +51
-          </span>
+    <div className="space-y-3 sm:space-y-4">
+      <FilaDeVista
+        titulo="Fidelidad"
+        ayuda={{
+          what: "Los puntos de tus clientes: 1 punto por cada S/ 1 que compran, en tu tienda y en el marketplace. Es el mismo programa de Campañas › Puntos.",
+          affects: "Aquí ves el historial de un cliente y le sumas puntos a mano; la lista de clientes, el canje y los niveles están en Campañas › Puntos.",
+          example: "Un cliente con 124 puntos tiene S/ 12,40 para canjear.",
+        }}
+        derecha={
+          <EnlacePanel href={HREF_PUNTOS} apariencia="heredada" className={button({ variant: "primary", className: "h-12 shrink-0 rounded-xl" })}>
+            Abrir Puntos <ArrowRight className="h-4 w-4" aria-hidden />
+          </EnlacePanel>
+        }
+      >
+        <form onSubmit={alBuscar} className="flex min-w-0 basis-full items-center gap-2 sm:flex-1 sm:basis-auto">
           <input
-            type="text"
-            placeholder="961 234 567"
+            type="tel"
+            inputMode="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && searchCustomer()}
-            className="flex-1 min-w-0 px-3 h-11 bg-transparent text-sm font-semibold text-[var(--text-primary)] outline-none tabular-nums tracking-wide"
+            placeholder="Celular del cliente, p. ej. 961 234 567"
+            aria-label="Celular del cliente"
+            className={cn(CAMPO, "flex-1 sm:max-w-sm")}
           />
-          <button
-            onClick={searchCustomer}
-            disabled={loading || !phone.trim()}
-            className="inline-flex items-center gap-2 px-5 bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50"
-          >
-            {loading ? (
-              <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <Eye className="h-4 w-4" />
-            )}
-            {loading ? "Buscando…" : "Buscar"}
+          <button type="submit" disabled={!phone.trim() || estado === "buscando"} className={button({ variant: "secondary", className: "h-12 shrink-0 rounded-xl" })}>
+            <Search className="h-4 w-4" aria-hidden /> {estado === "buscando" ? "Buscando…" : "Buscar"}
           </button>
-        </div>
-      </div>
+        </form>
+      </FilaDeVista>
 
-      {/* ── Cliente encontrado ── */}
-      {data && currentTier && (
-        <div className="space-y-4">
-          {/* Hero del cliente */}
-          <div className={cn(
-            "relative overflow-hidden rounded-2xl border-2 p-5 sm:p-6 bg-linear-to-br",
-            currentTier.gradient
-          )}>
-            <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
-              <div className="flex items-center gap-4 min-w-0">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--surface-raised)] shadow-lg shrink-0">
-                  <currentTier.icon className="h-9 w-9 text-[var(--text-primary)]" aria-hidden />
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-extrabold text-base text-[var(--text-primary)] truncate">{data.name}</span>
-                    <span className="px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider bg-[var(--surface-raised)] border border-[var(--data-warning)]/30 text-[var(--data-warning)]">
-                      {currentTier.label}
+      {estado === "inicio" && <VacioDeUnaFrase>Busca un cliente por su celular para ver su historial de puntos o sumarle puntos a mano.</VacioDeUnaFrase>}
+      {estado === "error" && <VacioDeUnaFrase>No se pudo buscar ese celular. Intenta de nuevo.</VacioDeUnaFrase>}
+      {sinCliente && <VacioDeUnaFrase>No hay un cliente con ese celular.</VacioDeUnaFrase>}
+
+      {estado === "listo" && ficha && !sinCliente && (
+        <section aria-label={`Puntos de ${ficha.name || ficha.phone}`} className="space-y-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+            <span className="text-base font-bold text-[var(--text-primary)]">{ficha.name || "Sin nombre"}</span>
+            <span className="text-sm tabular-nums text-[var(--text-secondary)]">{ficha.phone}</span>
+            <span className="ml-auto text-lg font-extrabold tabular-nums text-[var(--accent-ink)] dark:text-[var(--accent)]">{formatNumber(ficha.points)} puntos</span>
+          </div>
+          <p className="text-sm text-[var(--text-secondary)]">
+            Vale {solesDePuntos(ficha.points)} al canjear
+            {ficha.totalSpent > 0 && ` · compró ${formatCurrency(ficha.totalSpent)} en total`}
+          </p>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              type="number"
+              min={1}
+              step={1}
+              value={sumar}
+              onChange={(e) => setSumar(e.target.value)}
+              placeholder="Puntos"
+              aria-label="Puntos para sumar"
+              className={cn(CAMPO, "w-32")}
+            />
+            <button type="button" onClick={() => void sumarPuntos()} disabled={!sumaValida || guardando} className={button({ variant: "secondary", className: "h-12 shrink-0 rounded-xl" })}>
+              <Plus className="h-4 w-4" aria-hidden /> {guardando ? "Sumando…" : "Sumar a mano"}
+            </button>
+            {aviso && <span role="status" className="text-sm text-[var(--text-secondary)]">{aviso}</span>}
+          </div>
+
+          {ficha.transactions.length === 0 ? (
+            <p className="text-sm text-[var(--text-tertiary)]">Todavía no tiene movimientos de puntos.</p>
+          ) : (
+            <ul className="divide-y divide-[var(--rule-soft)] border-t border-[var(--rule-soft)]" aria-label="Historial de puntos">
+              {ficha.transactions.map((tx) => {
+                const suma = tx.amount >= 0;
+                return (
+                  <li key={tx.id} className="flex min-h-12 items-center gap-3 py-2">
+                    <span className="min-w-0 flex-1 text-sm text-[var(--text-primary)]">
+                      {MOTIVO[tx.reason] ?? tx.reason}
+                      {tx.metadata?.description && <span className="text-[var(--text-secondary)]"> · {tx.metadata.description}</span>}
                     </span>
-                  </div>
-                  <p className="text-xs font-semibold text-[var(--text-secondary)] tabular-nums mt-0.5">{data.phone}</p>
-                  <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1">
-                    Gasto total · <span className="font-bold text-[var(--text-secondary)] tabular-nums">{formatCurrency(data.totalSpent)}</span>
-                  </p>
-                </div>
-              </div>
-
-              <div className="text-right">
-                <p className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Puntos disponibles</p>
-                <p className="text-4xl font-extrabold text-[var(--text-primary)] tabular-nums leading-none">{data.points}</p>
-                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-0.5 tabular-nums">≈ {formatCurrency(data.points / 100)} canjeable</p>
-              </div>
-            </div>
-
-            {/* Progreso al siguiente tier */}
-            {nextTier && (
-              <div className="mt-5">
-                <div className="flex items-center justify-between text-xs mb-1.5">
-                  <span className="font-semibold text-[var(--text-secondary)]">
-                    Progreso a <span className="font-extrabold text-[var(--text-primary)]">{nextTier.label}</span>
-                  </span>
-                  <span className="tabular-nums font-bold text-[var(--text-tertiary)]">
-                    {pointsToNext > 0 ? `Faltan ${pointsToNext} pts` : "¡Lo lograste!"}
-                  </span>
-                </div>
-                <div className="h-2.5 rounded-full bg-white/60 overflow-hidden border border-white">
-                  <div
-                    className="h-full bg-[var(--data-warning)] rounded-full transition-all"
-                    style={{ width: `${tierProgress}%` }}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Asignar puntos manualmente */}
-          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-5">
-            <header className="flex items-center gap-2 mb-3">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--data-success)]/10 text-[var(--data-success)]">
-                <CheckCircle className="h-4 w-4" />
-              </span>
-              <div>
-                <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Asignar puntos manualmente</CardTitle>
-                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">Para premios fuera de compra (eventos, referidos, fidelidad)</p>
-              </div>
-            </header>
-            <div className="flex items-stretch gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all overflow-hidden">
-              <input
-                type="number"
-                placeholder="100"
-                value={earnPoints}
-                onChange={(e) => setEarnPoints(e.target.value)}
-                min={1}
-                className="flex-1 min-w-0 px-4 h-11 bg-transparent text-base font-extrabold text-[var(--text-primary)] outline-none tabular-nums"
-              />
-              <span className="inline-flex items-center px-3 text-xs font-bold text-[var(--text-tertiary)] bg-[var(--surface-sunken)] border-l-2 border-[var(--rule-base)]">
-                pts
-              </span>
-              <button
-                onClick={handleEarn}
-                disabled={saving || !earnPoints}
-                className="inline-flex items-center gap-2 px-5 bg-[var(--data-success)] text-white text-sm font-semibold hover:opacity-90 transition disabled:opacity-50"
-              >
-                {saving ? (
-                  <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <Gift className="h-4 w-4" />
-                )}
-                {saving ? "Asignando…" : "Dar puntos"}
-              </button>
-            </div>
-          </div>
-
-          {/* Historial de transacciones */}
-          {data.transactions.length > 0 && (
-            <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl overflow-hidden">
-              <header className="flex items-center gap-2 px-5 py-3 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)]">
-                <Clock className="h-4 w-4 text-[var(--text-tertiary)]" />
-                <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Historial reciente</CardTitle>
-                <span className="ml-auto text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] tabular-nums">{data.transactions.length} movs</span>
-              </header>
-              <ul className="divide-y divide-[var(--rule-soft)] max-h-80 overflow-y-auto">
-                {data.transactions.map((tx) => {
-                  const isEarn = tx.type === "earn" || tx.points > 0;
-                  return (
-                    <li key={tx.id} className="flex items-center gap-3 px-5 py-3">
-                      <span className={cn(
-                        "flex h-8 w-8 items-center justify-center rounded-full shrink-0",
-                        isEarn ? "bg-[var(--data-success)]/10 text-[var(--data-success)]" : "bg-[var(--data-error)]/10 text-[var(--data-error)]"
-                      )}>
-                        {isEarn ? <Gift className="h-4 w-4" /> : <DollarSign className="h-4 w-4" />}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-[var(--text-primary)] truncate">{tx.description}</p>
-                        <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] tabular-nums">
-                          {formatDate(tx.createdAt)}
-                        </p>
-                      </div>
-                      <span className={cn(
-                        "text-sm font-extrabold tabular-nums shrink-0",
-                        isEarn ? "text-[var(--data-success)]" : "text-[var(--data-error)]"
-                      )}>
-                        {isEarn ? "+" : ""}{tx.points} pts
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
+                    <span className="text-sm text-[var(--text-secondary)]">{diaDe(tx.createdAt)}</span>
+                    <span className={cn("w-20 text-right text-sm font-bold tabular-nums", suma ? "text-[var(--data-success-ink)] dark:text-[var(--data-success-500)]" : "text-[var(--data-error-ink)] dark:text-[var(--data-error-500)]")}>
+                      {suma ? "+" : "−"}{formatNumber(Math.abs(tx.amount))}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
           )}
-        </div>
-      )}
-
-      {/* ── Empty state: sin búsqueda ── */}
-      {!data && !loading && (
-        <div className="bg-[var(--surface-raised)] border border-dashed border-[var(--rule-base)] rounded-2xl p-8 sm:p-10">
-          <div className="text-center max-w-md mx-auto">
-            <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] mb-4">
-              <Gift className="h-6 w-6" />
-            </div>
-            <p className="text-base font-extrabold text-[var(--text-primary)]">Programa de fidelidad</p>
-            <p className="text-sm text-[var(--text-secondary)] mt-1.5">
-              Busca un cliente por teléfono para ver sus puntos, asignar bonus o consultar el historial.
-            </p>
-          </div>
-
-          {/* Reglas en 4 cards */}
-          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto">
-            {[
-              { icon: Gift,        title: "Acumular",        desc: "1 punto por cada S/ 1 gastado en compras" },
-              { icon: TrendingUp,  title: "Subir de nivel",  desc: "500 pts → Plata · 1000 pts → Oro" },
-              { icon: DollarSign,  title: "Canjear",         desc: "100 pts equivalen a S/ 1 de descuento" },
-              { icon: Star,        title: "Beneficios extra",desc: "Plata 5% off · Oro 10% off + envío prioritario" },
-            ].map((rule, i) => {
-              const Icon = rule.icon;
-              return (
-                <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-base)]">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--surface-raised)] border border-[var(--rule-base)] text-primary shrink-0">
-                    <Icon className="h-4 w-4" />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-sm font-extrabold text-[var(--text-primary)]">{rule.title}</p>
-                    <p className="text-xs text-[var(--text-secondary)] leading-snug mt-0.5">{rule.desc}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        </section>
       )}
     </div>
   );

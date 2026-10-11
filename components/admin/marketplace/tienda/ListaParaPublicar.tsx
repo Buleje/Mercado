@@ -82,9 +82,13 @@ function armarPuntos(l: ListaPublicar, onUsarUbicacion: () => void): Punto[] {
   ];
 }
 
-function irAAncla(id: string) {
+/** Va al bloque y enfoca su primer campo. Si su sección recién se abre, lo espera unos cuadros. */
+function irAAncla(id: string, intentos = 12) {
   const el = document.getElementById(id);
-  if (!el) return;
+  if (!el) {
+    if (intentos > 0) requestAnimationFrame(() => irAAncla(id, intentos - 1));
+    return;
+  }
   el.scrollIntoView({ behavior: "smooth", block: "start" });
   el.querySelector<HTMLElement>("input, button")?.focus({ preventScroll: true });
 }
@@ -103,6 +107,7 @@ export function ListaParaPublicar({
   publicando,
   onPublicar,
   onUsarUbicacion,
+  onAbrirAncla,
 }: {
   lista: ListaPublicar;
   publicada: boolean;
@@ -110,6 +115,8 @@ export function ListaParaPublicar({
   onPublicar: () => void;
   /** Guarda la tienda: el PUT copia la ubicación de Ajustes si la tienda no tiene. */
   onUsarUbicacion: () => void;
+  /** Abre la sección donde vive el bloque (`tienda-imagen`, `tienda-horario`) antes de ir. */
+  onAbrirAncla?: (anclaId: string) => void;
 }) {
   const [plegada, setPlegada] = useLocalStorage<boolean>("admin:mkt-tienda:lista-plegada", false);
   const puntos = armarPuntos(lista, onUsarUbicacion);
@@ -173,9 +180,10 @@ export function ListaParaPublicar({
         </span>
       </header>
 
-      {!plegada && (
+      {!plegada && puntos.some((p) => !p.ok) && (
         <ul id="lista-publicar-puntos" className="border-t-2 border-[var(--rule-base)] divide-y divide-[var(--rule-soft)]">
-          {puntos.map((p) => {
+          {/* Sólo lo que falta: lo listo ya lo cuenta el «3 de 4 listos» de arriba (11-10). */}
+          {puntos.filter((p) => !p.ok).map((p) => {
             const Icono = p.ok ? CheckCircle : AlertCircle;
             const tono = p.ok ? "text-[var(--data-success)]" : p.aMedias ? "text-[var(--data-warning-700)]" : "text-[var(--data-error)]";
             return (
@@ -200,7 +208,7 @@ export function ListaParaPublicar({
                   </button>
                 )}
                 {p.accion?.anclaId && (
-                  <button type="button" onClick={() => irAAncla(p.accion!.anclaId!)} className={BOTON}>
+                  <button type="button" onClick={() => { onAbrirAncla?.(p.accion!.anclaId!); irAAncla(p.accion!.anclaId!); }} className={BOTON}>
                     {p.accion.label}
                   </button>
                 )}
