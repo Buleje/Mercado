@@ -39,6 +39,15 @@ export const TITULO_MODULO =
 
 export const ROTULO_MODULO = "libro-kicker block leading-none";
 
+/**
+ * Bloque de texto con rótulo Y ⓘ: grilla en vez del flex que envuelve. Un
+ * flex-wrap mide de ancho natural rótulo + título + ⓘ EN UNA FILA aunque se
+ * dibujen en dos, y la banda reservaba ~130-170 px vacíos (10-10: «Ventas y
+ * caja» ocupaba 328 px para 162 visibles). En la grilla el rótulo cruza las
+ * dos columnas y el ⓘ queda pegado al título.
+ */
+const TEXTO_CON_ROTULO_Y_AYUDA = "grid grid-cols-[auto_1fr] items-center justify-items-start gap-x-2 [&>:first-child]:col-span-2";
+
 export interface TituloModuloProps {
   icon?: ComponentType<{ className?: string }>;
   /** Rótulo chico de arriba («Forestal · LO-TH SERFOR»). */
@@ -59,11 +68,17 @@ export function TituloModulo({ icon: Icon, eyebrow, title, as, ayuda, className 
           <Icon className="h-5 w-5" />
         </span>
       )}
-      {/* Con ⓘ, el bloque pasa a flex que envuelve: el rótulo ocupa su renglón
-          (`basis-full`) y el ⓘ queda pegado al título, sin otra caja en el
-          medio (rótulo y título siguen siendo hermanos, como en el libro). */}
-      <div className={cn("min-w-0", ayuda && "flex flex-wrap items-center gap-x-2", className)}>
-        {eyebrow ? <Kicker className={cn(ROTULO_MODULO, ayuda && "basis-full")}>{eyebrow}</Kicker> : null}
+      {/* Con ⓘ y sin rótulo, flex en una fila; con rótulo, grilla (arriba): el ⓘ
+          queda pegado al título, sin otra caja en el medio (rótulo y título
+          siguen siendo hermanos, como en el libro). */}
+      <div
+        className={cn(
+          "min-w-0",
+          ayuda && (eyebrow ? TEXTO_CON_ROTULO_Y_AYUDA : "flex flex-wrap items-center gap-x-2"),
+          className,
+        )}
+      >
+        {eyebrow ? <Kicker className={ROTULO_MODULO}>{eyebrow}</Kicker> : null}
         <PageTitle as={as} className={TITULO_MODULO}>
           {title}
         </PageTitle>
