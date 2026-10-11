@@ -19,6 +19,8 @@ import "server-only";
 import { cache } from "react";
 import { PriceHistoryDB, ProductsDB } from "@/lib/db/products.db";
 import { SettingsDB } from "@/lib/db/settings.db";
+import { leerConfigPedidos } from "@/lib/tienda-cliente/config";
+import type { ConfigPedidosCliente } from "@/lib/tienda-cliente/contrato";
 import { StorePageDB } from "@/lib/db/store-page.db";
 import { slugify } from "@/data/products";
 import { sinDato } from "@/lib/errores/sin-dato";
@@ -124,6 +126,8 @@ export interface DatosMarco {
   categorias: string[];
   /** Código (`barcode`: MU001, KT02…) y «por encargo» de cada producto, por id: los usa el pedido por WhatsApp. */
   codigos: CodigosProductos;
+  /** «Cómo te piden» (panel › Apariencia › Pedidos): Google, celular, ubicación e imagen del pedido. */
+  pedidos: ConfigPedidosCliente;
 }
 
 export interface DatosVitrina {
@@ -180,6 +184,7 @@ export const cargarMarco = cache(async (tenantId: string): Promise<DatosMarco> =
       [ajustes?.yapeEnabled ? "Yape" : "", ajustes?.plinEnabled ? "Plin" : "", ajustes?.cashEnabled !== false ? "efectivo contra entrega" : ""].filter(Boolean),
     ),
     categorias: CATEGORIAS.map((c) => c.nombre).filter((c) => conProductos.has(c)),
+    pedidos: leerConfigPedidos(ajustes?.storeTheme),
     // Nombre, precio, imagen y componentes: los usa «Drucila te sugiere» en la bolsa (SugerenciaKit);
     // sólo un kit ACTIVO lleva `componentes`, así nunca se sugiere uno apagado.
     codigos: Object.fromEntries(

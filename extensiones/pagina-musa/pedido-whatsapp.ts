@@ -65,6 +65,10 @@ export interface DatosPedido {
   pago: Pago;
   /** Mientras dura la Campaña 01 (`preventaVigente`): el mensaje pregunta por el 10 % de las primeras 20. */
   preventa10?: boolean;
+  /** Celular del cliente, ya legible («987 654 321»); sin él no va la línea «Celular:». */
+  celular?: string | null;
+  /** Enlace de Google Maps de su ubicación en vivo; sin él no va la línea «Ubicación:». */
+  ubicacion?: string | null;
 }
 
 /**
@@ -105,12 +109,13 @@ export function armarMensajePedido(
     if (l.porEncargo) renglones.push(NOTA_ENCARGO);
   }
   const total = totalCentimos / 100;
-  renglones.push(
-    `Total: ${solesPedido(total)}`,
-    `Nombre: ${nombre}`,
-    `Entrega: ${d.pueblo}`,
-    `Pago: ${d.pago}`,
-  );
+  const celular = d.celular?.trim();
+  const ubicacion = d.ubicacion?.trim();
+  renglones.push(`Total: ${solesPedido(total)}`, `Nombre: ${nombre}`);
+  if (celular) renglones.push(`Celular: ${celular}`);
+  renglones.push(`Entrega: ${d.pueblo}`);
+  if (ubicacion) renglones.push(`Ubicación: ${ubicacion}`);
+  renglones.push(`Pago: ${d.pago}`);
   if (d.preventa10) renglones.push(PREGUNTA_PREVENTA_10);
   const mensaje = renglones.join("\n");
   return {

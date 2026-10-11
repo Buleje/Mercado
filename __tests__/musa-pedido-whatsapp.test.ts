@@ -136,6 +136,38 @@ describe("armarMensajePedido (Musa · pedido por WhatsApp)", () => {
     expect(esPorEncargo("Preventa")).toBe(false);
   });
 
+  it("suma «Celular:» tras el nombre y «Ubicación:» tras la entrega sólo cuando existen", () => {
+    const r = armarMensajePedido({
+      lineas: [fps],
+      nombre: "Ana",
+      pueblo: "Ciudad Constitución",
+      pago: "Yape",
+      celular: "987 654 321",
+      ubicacion: "https://maps.google.com/?q=-10.000000,-75.000000",
+    });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.mensaje.split("\n").slice(2)).toEqual([
+      "Total: S/ 79",
+      "Nombre: Ana",
+      "Celular: 987 654 321",
+      "Entrega: Ciudad Constitución",
+      "Ubicación: https://maps.google.com/?q=-10.000000,-75.000000",
+      "Pago: Yape",
+    ]);
+    expect(decodeURIComponent(r.url.split("?text=")[1])).toBe(r.mensaje);
+    // Vacíos o en blanco: el mensaje queda igual que sin ellos.
+    const sin = armarMensajePedido({
+      lineas: [fps],
+      nombre: "Ana",
+      pueblo: "Ciudad Constitución",
+      pago: "Yape",
+      celular: "  ",
+      ubicacion: null,
+    });
+    expect(sin.ok && sin.mensaje).not.toMatch(/Celular|Ubicación/);
+  });
+
   it("pide nombre y bolsa con algo", () => {
     expect(
       armarMensajePedido({ lineas: [kit], nombre: "   ", pueblo: "Otro", pago: "Yape" }),

@@ -5,11 +5,12 @@
  * Lo abre `abrirBolsa()` (botón del encabezado, aviso flotante o `?carrito=abrir`),
  * no el `isOpen` del carrito: ver `estado-bolsa.ts`.
  *
- * Arriba: «Tu bolsa», cuántos productos y unidades llevas, y el avance hacia el
- * envío gratis y el regalo de la campaña. Al medio, una línea por producto (su
- * ilustración, código, contador − N + y lo que suma) y «Drucila te sugiere». Abajo,
- * pegado al fondo: subtotal y «Pedir por WhatsApp» (Musa NO usa el checkout).
- * Quitar algo deja 5 s para deshacerlo.
+ * Pocas palabras a la vista (Brandon 11-10: «muchos textos abruman»): arriba «Tu
+ * bolsa» con su sello contador y una línea de chips (envío gratis, regalo). Al medio,
+ * una fila por producto (foto, nombre, precio, contador − N +) y «Drucila te sugiere»
+ * en una fila. Abajo, pegado al fondo: el total, quién pide (de a poco), «Envío a …»
+ * plegado y UN botón, «Pedir por WhatsApp» (Musa NO usa el checkout). Quitar algo
+ * deja 5 s para deshacerlo.
  *
  * Capa `z-system`: por encima del cupón de bienvenida de la tienda (z 7000),
  * que en el celular tapaba el botón del pie.
@@ -17,18 +18,18 @@
 import { useEffect, useRef, useState } from "react";
 import { Undo2, X } from "@buleje/design-system/icons";
 import { useCart, type CartItem } from "@/contexts/cart-context";
-import { solesPedido as soles } from "./pedido-whatsapp";
+import type { ConfigPedidosCliente } from "@/lib/tienda-cliente/contrato";
 import { reducirMovimiento } from "./efecto-agregar";
-import { cerrarBolsa, useBolsaAbierta, usePedido } from "./estado-bolsa";
+import { cerrarBolsa, useAbrirBolsaDelEnlace, useBolsaAbierta, usePedido } from "./estado-bolsa";
 import { AvanceBolsa } from "./AvanceBolsa";
 import { PedirPorWhatsapp, type CodigosProductos } from "./PedirPorWhatsapp";
 import { BolsaVacia, LineaBolsa } from "./BolsaPartes";
+import { SelloContador } from "./Sello";
 import { SugerenciaKit } from "./SugerenciaKit";
 
 const ENTRA = { duration: 320, easing: "cubic-bezier(0.22, 1, 0.36, 1)" };
 const SALE = { duration: 240, easing: "cubic-bezier(0.22, 1, 0.36, 1)" };
 const DESHACER_MS = 5000;
-const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
 
 /** Sigue a `abierta`, pero al cerrar espera a que el panel termine de salir (240 ms). */
 function useMontado(
@@ -65,10 +66,18 @@ function useMontado(
   return montado;
 }
 
-export function Cajon({ codigos }: { codigos: CodigosProductos }) {
+/** Lo que el servidor manda a la bolsa: los productos, «cómo te piden» del panel y el nombre del negocio. */
+export interface PropsCajon {
+  codigos: CodigosProductos;
+  pedidos: ConfigPedidosCliente;
+  negocio: string;
+}
+
+export function Cajon({ codigos, pedidos, negocio }: PropsCajon) {
   const { items, count, total, removeItem, addMultiple } = useCart();
   const abierta = useBolsaAbierta();
   const pedido = usePedido();
+  useAbrirBolsaDelEnlace();
   const panel = useRef<HTMLDivElement>(null);
   const fondo = useRef<HTMLDivElement>(null);
   const cerrarBtn = useRef<HTMLButtonElement>(null);
@@ -147,7 +156,7 @@ export function Cajon({ codigos }: { codigos: CodigosProductos }) {
     }
     if (e.key !== "Tab" || !panel.current) return;
     const focos = panel.current.querySelectorAll<HTMLElement>(
-      "a[href], button:not([disabled]), input, select",
+      "a[href], button:not([disabled]), input, select, summary",
     );
     if (focos.length === 0) return;
     const primero = focos[0];
@@ -176,28 +185,19 @@ export function Cajon({ codigos }: { codigos: CodigosProductos }) {
         aria-labelledby="mu-bolsa-titulo"
         className="mu-sombra-flotante absolute inset-y-0 right-0 flex w-full flex-col bg-[var(--surface-canvas)] sm:max-w-[27.5rem] sm:rounded-l-[var(--mu-radio-tarjeta)]"
       >
-        <header className="relative flex items-start justify-between gap-3 border-b border-[var(--rule-soft)] px-5 pb-3 pt-4">
-          <div className="min-w-0">
-            <h2
-              id="mu-bolsa-titulo"
-              className="mu-serif flex flex-wrap items-baseline gap-x-3 text-[length:var(--mu-t-titulo)] leading-none text-[var(--text-primary)]"
-            >
-              Tu bolsa
-              {items.length > 0 && (
-                <span
-                  aria-hidden="true"
-                  className="mu-script -rotate-3 text-[2rem] font-normal leading-none text-[var(--mu-rosa-tinta)]"
-                >
-                  lo que llevas
-                </span>
-              )}
-            </h2>
-            <p className="mt-1.5 text-sm text-[var(--text-tertiary)]">
-              {items.length === 0
-                ? "Todavía no agregaste nada"
-                : `${plural(items.length, "producto", "productos")} · ${plural(count, "unidad", "unidades")}`}
-            </p>
-          </div>
+        <header className="relative flex items-center justify-between gap-3 border-b border-[var(--rule-soft)] py-2 pl-5 pr-3">
+          <h2
+            id="mu-bolsa-titulo"
+            className="mu-serif flex items-center gap-2.5 text-[length:var(--mu-t-titulo)] leading-none text-[var(--text-primary)]"
+          >
+            Tu bolsa
+            {count > 0 && (
+              <>
+                <SelloContador n={count} tamano={28} />
+                <span className="sr-only">: {count === 1 ? "1 unidad" : `${count} unidades`}</span>
+              </>
+            )}
+          </h2>
           <button
             ref={cerrarBtn}
             type="button"
@@ -245,7 +245,7 @@ export function Cajon({ codigos }: { codigos: CodigosProductos }) {
           >
             <div className="flex-1 px-5 pt-4">
               <AvanceBolsa subtotal={total} pueblo={pedido.pueblo} />
-              <ul aria-label="Lo que llevas" className="mt-2 divide-y divide-[var(--rule-soft)]">
+              <ul aria-label="Lo que llevas" className="mt-1 divide-y divide-[var(--rule-soft)]">
                 {items.map((i) => (
                   <LineaBolsa key={i.id} item={i} info={codigos[String(i.id)]} alQuitar={quitar} />
                 ))}
@@ -253,20 +253,14 @@ export function Cajon({ codigos }: { codigos: CodigosProductos }) {
               <SugerenciaKit items={items} codigos={codigos} />
             </div>
             <footer className="sticky bottom-0 border-t border-[var(--rule-soft)] bg-[var(--surface-raised)] px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 [@media(max-height:40rem)]:static">
-              <div className="flex items-baseline justify-between gap-3">
-                <span className="mu-kicker text-[var(--text-secondary)]">Subtotal</span>
-                <span className="mu-precio text-[2rem] text-[var(--text-primary)]">
-                  {soles(total)}
-                </span>
-              </div>
-              <div className="mt-3">
-                <PedirPorWhatsapp
-                  items={items}
-                  codigos={codigos}
-                  pedido={pedido}
-                  subtotal={total}
-                />
-              </div>
+              <PedirPorWhatsapp
+                items={items}
+                codigos={codigos}
+                pedido={pedido}
+                subtotal={total}
+                config={pedidos}
+                negocio={negocio}
+              />
             </footer>
           </div>
         )}

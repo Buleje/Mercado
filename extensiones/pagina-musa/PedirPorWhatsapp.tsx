@@ -1,43 +1,38 @@
 "use client";
 
 /**
- * El pedido de la bolsa de Musa. No crea un pedido en el sistema (decisión de
- * Brandon, 09-10): llega al WhatsApp de Drucila, que confirma envío y pago.
+ * El pie de la bolsa de Musa: el total, quién pide (de a poco, `DatosCliente`),
+ * «Envío a … · …» plegado (`DetallesEnvio`) y UN botón: «Pedir por WhatsApp».
+ * No crea un pedido en el sistema (decisión de Brandon, 09-10): llega al WhatsApp
+ * de Drucila, que confirma envío y pago. El total es una vista previa.
  *
- * · El estado (nombre, pueblo y pago) es `usePedido` de `estado-bolsa.ts`: vive
- *   en el cajón porque el pueblo lo leen la barra de envío y el formulario.
- * · (La barra de envío gratis y del regalo, arriba del cajón, es `AvanceBolsa.tsx`.)
- * · `PedirPorWhatsapp` — el formulario compacto y el enlace a `wa.me` con el
- *   mensaje de `armarMensajePedido` (su formato no cambia: lo cuida su test).
- *
- * Contraentrega sólo aparece con Ciudad Constitución; si cambian de pueblo con
- * ella elegida, vuelve a Yape.
+ * El botón según lo que el negocio prendió en su panel (`ConfigPedidosCliente`):
+ * · falta un dato → dice cuál y lleva el foco a ese campo;
+ * · `pedidoComoImagen` → `BotonPedidoWhatsapp` (la imagen se dibuja ANTES del clic:
+ *   el navegador sólo deja compartir o copiar dentro del gesto);
+ * · sin imagen → el enlace a `wa.me` con el texto de `armarMensajePedido` (su
+ *   formato lo cuida su test).
  */
-import { useId, useState, type ReactNode } from "react";
-import {
-  ChevronDown,
-  MapPin,
-  MessageCircle,
-  User,
-  Wallet,
-  type LucideIcon,
-} from "@buleje/design-system/icons";
+import { useId, useState } from "react";
+import { MessageCircle } from "@buleje/design-system/icons";
 import type { CartItem } from "@/contexts/cart-context";
+import { BotonPedidoWhatsapp } from "@/components/store/cliente/BotonPedidoWhatsapp";
+import { formatearCelularPe } from "@/lib/tienda-cliente/celular";
+import { resolverColorCss } from "@/lib/tienda-cliente/imagen-pedido";
+import type { ConfigPedidosCliente, DatosImagenPedido } from "@/lib/tienda-cliente/contrato";
 import {
   armarMensajePedido,
   avanceEnvio,
-  ENVIO_GRATIS_DESDE,
   esPorEncargo,
-  pagosPara,
-  PUEBLO_SIN_COSTO,
+  NOTA_ENCARGO,
   preventaVigente,
-  PUEBLOS,
   solesPedido,
-  type Pago,
-  type Pueblo,
+  WHATSAPP_MUSA,
 } from "./pedido-whatsapp";
-import { avisoEnviosProvincia, NOTA_PREVENTA_10 } from "./preventa";
 import type { Pedido } from "./estado-bolsa";
+import { DatosCliente, faltaDato } from "./DatosCliente";
+import { DetallesEnvio } from "./DetallesEnvio";
+import { imagenDe } from "./imagenes";
 
 /**
  * Lo que el servidor sabe de cada producto, por id (`cargarMarco().codigos`). `codigo`
@@ -56,66 +51,23 @@ export interface InfoProducto {
 }
 export type CodigosProductos = Readonly<Record<string, InfoProducto>>;
 
-/** Lo que se lee en la lista (a 400 px el nombre entero no entra); el mensaje lleva el nombre completo. */
-const CORTO: Partial<Record<Pueblo, string>> = {
-  "Ciudad Constitución": "Constitución",
-  "Puerto Bermúdez": "Pto. Bermúdez",
-};
-
-/* ── El formulario y el botón ─────────────────────────────────────────────── */
-
-const CAMPO =
-  "h-12 w-full appearance-none rounded-[var(--mu-radio-control)] border border-[var(--rule-base)] bg-[var(--surface-canvas)] pl-9 text-base text-[var(--text-primary)] transition-colors duration-[var(--mu-dur-corto)] placeholder:text-[var(--text-tertiary)] hover:border-[var(--mu-nude-fuerte)] focus:border-[var(--mu-foco)] aria-invalid:border-[var(--mu-encargo)] mu-foco";
-
-function Campo({
-  id,
-  etiqueta,
-  icono: Icono,
-  flecha = false,
-  className = "",
-  children,
-}: {
-  id: string;
-  etiqueta: string;
-  icono: LucideIcon;
-  flecha?: boolean;
-  className?: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className={className}>
-      <label htmlFor={id} className="mb-1 block text-sm font-semibold text-[var(--text-secondary)]">
-        {etiqueta}
-      </label>
-      <div className="relative">
-        <Icono
-          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--mu-acento-tinta)]"
-          aria-hidden="true"
-        />
-        {children}
-        {flecha && (
-          <ChevronDown
-            className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]"
-            aria-hidden="true"
-          />
-        )}
-      </div>
-    </div>
-  );
-}
-
 const BOTON =
-  "mu-foco mt-3 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--mu-whatsapp-fondo)] text-base font-semibold text-[var(--mu-whatsapp-texto)] transition duration-[var(--mu-dur-corto)] ease-[var(--mu-ease)] hover:-translate-y-0.5 hover:brightness-110 active:scale-[.97]";
+  "mu-foco inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--mu-whatsapp-fondo)] text-base font-semibold text-[var(--mu-whatsapp-texto)] transition duration-[var(--mu-dur-corto)] ease-[var(--mu-ease)] hover:-translate-y-0.5 hover:brightness-110 active:scale-[.97]";
 
-function notaEnvio(pueblo: Pueblo, subtotal: number): string {
-  if (pueblo === PUEBLO_SIN_COSTO)
-    return "Te lo llevamos gratis. Drucila te confirma el pago por WhatsApp.";
-  // Fuera de Constitución va por agencia: para Navidad, hasta el 18 dic (manual, «Fechas que más venden»).
-  const navidad = avisoEnviosProvincia();
-  const fin = navidad ? ` ${navidad}` : "";
-  if (avanceEnvio(subtotal, pueblo).logrado)
-    return `Envío gratis por agencia. Drucila te confirma el envío y el pago por WhatsApp.${fin}`;
-  return `La agencia la pagas tú (gratis desde ${solesPedido(ENVIO_GRATIS_DESDE)}). Drucila te confirma el envío y el pago por WhatsApp.${fin}`;
+const AVISOS = {
+  nombre: "Escribe tu nombre para que Drucila sepa quién pide.",
+  celular: "Escribe tu celular: 9 dígitos, empieza con 9.",
+  contraentrega_fuera: "Elige otra forma de pago en «Envío a…».",
+} as const;
+
+/**
+ * El color de la marca ya resuelto (el lienzo de la imagen no entiende `var(--x)`).
+ * Las variables `--mu-*` viven en el `[data-pagina]` de Musa, no en `<html>`.
+ */
+function acentoDeLaPagina(): string {
+  const raiz = typeof document === "undefined" ? null : document.querySelector("[data-pagina]");
+  const musa = raiz ? getComputedStyle(raiz).getPropertyValue("--mu-acento").trim() : "";
+  return musa || resolverColorCss("var(--accent)");
 }
 
 export function PedirPorWhatsapp({
@@ -123,79 +75,113 @@ export function PedirPorWhatsapp({
   codigos,
   pedido,
   subtotal,
+  config,
+  negocio,
 }: {
   items: readonly CartItem[];
   codigos: CodigosProductos;
   pedido: Pedido;
   subtotal: number;
+  config: ConfigPedidosCliente;
+  negocio: string;
 }) {
   const id = useId();
-  const [aviso, setAviso] = useState("");
-  const { nombre, pueblo, pago } = pedido;
+  const [aviso, setAviso] = useState<keyof typeof AVISOS | null>(null);
+  const [acento] = useState(acentoDeLaPagina);
+  const falta = faltaDato(pedido, config);
+  const celular = config.pedirCelular ? formatearCelularPe(pedido.celular) : null;
+  const ubicacion = config.pedirUbicacion ? pedido.gps.ubicacion : null;
+  const lineas = items.map((i) => ({
+    nombre: i.name,
+    codigo: codigos[String(i.id)]?.codigo ?? null,
+    cantidad: i.quantity,
+    precio: i.price,
+    porEncargo: codigos[String(i.id)]?.encargo ?? esPorEncargo(i.badge),
+    imagen: imagenDe({ imagen: i.image, codigo: codigos[String(i.id)]?.codigo ?? null }).src,
+  }));
   const r = armarMensajePedido({
-    lineas: items.map((i) => ({
-      nombre: i.name,
-      codigo: codigos[String(i.id)]?.codigo ?? null,
-      cantidad: i.quantity,
-      precio: i.price,
-      porEncargo: codigos[String(i.id)]?.encargo ?? esPorEncargo(i.badge),
-    })),
-    nombre,
-    pueblo,
-    pago,
+    lineas,
+    nombre: pedido.nombre,
+    pueblo: pedido.pueblo,
+    pago: pedido.pago,
     preventa10: preventaVigente(),
+    celular,
+    ubicacion: ubicacion?.enlaceMapa ?? null,
   });
+  const listo = r.ok && falta === null;
+
+  // La imagen del pedido: sólo con todo listo. `BotonPedidoWhatsapp` la dibuja antes del
+  // clic y no la rehace si los datos son los mismos (compara por contenido, no por objeto).
+  const envio = avanceEnvio(subtotal, pedido.pueblo);
+  const datosImagen: DatosImagenPedido | null =
+    listo && r.ok
+      ? {
+          negocio: { nombre: negocio, colorAcento: acento },
+          lineas: lineas.map((l) => ({
+            nombre: l.nombre,
+            codigo: l.codigo,
+            cantidad: l.cantidad,
+            precio: l.precio,
+            imagen: l.imagen,
+            nota: l.porEncargo ? NOTA_ENCARGO : null,
+          })),
+          total: r.total,
+          cliente: {
+            nombre: pedido.nombre.trim(),
+            celular,
+            entrega: pedido.pueblo,
+            ubicacion,
+            pago: pedido.pago,
+          },
+          notas: [
+            envio.siempreGratis
+              ? "Envío gratis a tu casa"
+              : envio.logrado
+                ? "Envío gratis por agencia"
+                : "Envío por agencia",
+          ],
+        }
+      : null;
+
+  const guiar = () => {
+    const motivo = falta ?? (!r.ok && r.motivo === "contraentrega_fuera" ? r.motivo : null);
+    if (!motivo) return;
+    setAviso(motivo);
+    if (motivo !== "contraentrega_fuera")
+      document.getElementById(motivo === "nombre" ? `${id}-nombre` : `${id}-celular`)?.focus();
+  };
 
   return (
-    <div>
-      <div className="grid grid-cols-2 gap-x-2.5 gap-y-2">
-        <Campo id={`${id}-nombre`} etiqueta="Tu nombre" icono={User} className="col-span-2">
-          <input
-            id={`${id}-nombre`}
-            value={nombre}
-            onChange={(e) => {
-              pedido.setNombre(e.target.value);
-              setAviso("");
-            }}
-            autoComplete="given-name"
-            maxLength={60}
-            placeholder="Para que Drucila sepa quién pide"
-            aria-invalid={aviso ? true : undefined}
-            aria-describedby={aviso ? `${id}-aviso` : undefined}
-            className={`${CAMPO} pr-3`}
-          />
-        </Campo>
-        <Campo id={`${id}-pueblo`} etiqueta="¿A dónde te lo enviamos?" icono={MapPin} flecha>
-          <select
-            id={`${id}-pueblo`}
-            value={pueblo}
-            onChange={(e) => pedido.setPueblo(e.target.value as Pueblo)}
-            className={`${CAMPO} pr-8`}
-          >
-            {PUEBLOS.map((p) => (
-              <option key={p} value={p}>
-                {CORTO[p] ?? p}
-              </option>
-            ))}
-          </select>
-        </Campo>
-        <Campo id={`${id}-pago`} etiqueta="¿Cómo pagas?" icono={Wallet} flecha>
-          <select
-            id={`${id}-pago`}
-            value={pago}
-            onChange={(e) => pedido.setPago(e.target.value as Pago)}
-            className={`${CAMPO} pr-8`}
-          >
-            {pagosPara(pueblo).map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
-        </Campo>
+    <div className="flex flex-col gap-2.5">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-base font-semibold text-[var(--text-secondary)]">Total</span>
+        <span className="mu-precio text-[2rem] leading-none text-[var(--text-primary)]">
+          {solesPedido(subtotal)}
+        </span>
       </div>
-
-      {r.ok ? (
+      <DatosCliente
+        pedido={pedido}
+        config={config}
+        idNombre={`${id}-nombre`}
+        idCelular={`${id}-celular`}
+        invalido={aviso === "nombre" || aviso === "celular" ? aviso : null}
+        alEscribir={() => setAviso(null)}
+      />
+      <DetallesEnvio pedido={pedido} subtotal={subtotal} />
+      {listo && r.ok && config.pedidoComoImagen ? (
+        <BotonPedidoWhatsapp
+          datos={datosImagen}
+          comoImagen
+          texto={r.mensaje}
+          numero={WHATSAPP_MUSA}
+          nombreArchivo={`pedido-${negocio.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.png`}
+          className={`${BOTON} disabled:hover:translate-y-0`}
+          claseAviso="text-center text-[var(--text-secondary)] empty:hidden"
+          claseEnlace="text-[var(--text-primary)]"
+        >
+          Pedir por WhatsApp
+        </BotonPedidoWhatsapp>
+      ) : listo && r.ok ? (
         <a
           href={r.url}
           target="_blank"
@@ -209,14 +195,8 @@ export function PedirPorWhatsapp({
         <button
           type="button"
           className={BOTON}
-          onClick={() => {
-            setAviso(
-              r.motivo === "falta_nombre"
-                ? "Escribe tu nombre para que Drucila sepa quién pide."
-                : "Elige otra forma de pago.",
-            );
-            if (r.motivo === "falta_nombre") document.getElementById(`${id}-nombre`)?.focus();
-          }}
+          onClick={guiar}
+          aria-describedby={aviso ? `${id}-aviso` : undefined}
         >
           <MessageCircle className="h-5 w-5" aria-hidden="true" /> Pedir por WhatsApp
         </button>
@@ -224,18 +204,10 @@ export function PedirPorWhatsapp({
       <p
         id={`${id}-aviso`}
         role="status"
-        className="mt-2 text-sm font-semibold text-[var(--mu-encargo)] empty:hidden"
+        className="-mt-1 text-center text-sm font-semibold text-[var(--mu-encargo)] empty:hidden"
       >
-        {aviso}
+        {aviso ? AVISOS[aviso] : ""}
       </p>
-      <p className="mt-2 text-center text-base leading-snug text-[var(--text-secondary)]">
-        {notaEnvio(pueblo, subtotal)}
-      </p>
-      {preventaVigente() && (
-        <p data-mu-preventa-10 className="mt-2 text-center text-base leading-snug text-[var(--text-secondary)]">
-          {NOTA_PREVENTA_10}
-        </p>
-      )}
     </div>
   );
 }

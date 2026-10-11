@@ -87,7 +87,7 @@ export async function PaginaSalon({ tenantId, slug }: { tenantId: string; slug: 
   return (
     <Lienzo>
       <TenantPageTracker tenantSlug={slug} />
-      <ProveedorBolsa slug={slug} codigos={m.codigos}>
+      <ProveedorBolsa slug={slug} codigos={m.codigos} pedidos={m.pedidos} negocio={m.nombre}>
         <Suspense fallback={<FranjaAnuncio mensajes={mensajesFranja(m.pagos, null)} />}>
           <FranjaConDescuento tenantId={tenantId} slug={slug} pagos={m.pagos} />
         </Suspense>

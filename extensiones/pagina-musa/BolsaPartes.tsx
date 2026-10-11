@@ -12,7 +12,8 @@
  *   arriba y a los lados: se acerca ×1,32 desde abajo (88 %) para que el envase se
  *   lea a 64 px. Medido en las 27: ningún envase se corta (el más alto empieza al
  *   26 % y los kits ocupan del 18 al 82 % del ancho).
- * · `LineaBolsa` — una línea: ilustración, nombre, código, contador y lo que suma.
+ * · `LineaBolsa` — una línea: ilustración, nombre, contador y lo que suma (el código
+ *   del producto no se lee: va en el mensaje del pedido).
  *   Con 1 unidad el «−» es un tacho y la fila se va deslizando (200 ms).
  * · `BolsaVacia` — el sello, «aún vacía», «Ver kits» y las necesidades.
  * («Drucila te sugiere», el kit que completa lo que llevas, es `SugerenciaKit.tsx`.)
@@ -194,14 +195,12 @@ export function LineaBolsa({
             <p className="line-clamp-2 text-sm font-medium leading-snug text-[var(--text-primary)]">
               {item.name}
             </p>
-            <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-sm text-[var(--mu-acento-tinta)]">
-              {info?.codigo && <span>Cód. {info.codigo}</span>}
-              {info?.encargo && (
-                <span className="rounded-full bg-[var(--mu-encargo-fondo)] px-1.5 font-medium text-[var(--mu-encargo)]">
-                  Por encargo
-                </span>
-              )}
-            </p>
+            {/* El código (MU001…) ya no se lee acá: lo lleva el mensaje del pedido. */}
+            {info?.encargo && (
+              <span className="mt-1 inline-block rounded-full bg-[var(--mu-encargo-fondo)] px-2 text-sm font-medium text-[var(--mu-encargo)]">
+                Por encargo
+              </span>
+            )}
           </div>
           <span className="mu-precio shrink-0 text-xl text-[var(--text-primary)]">
             {soles(item.price * item.quantity)}

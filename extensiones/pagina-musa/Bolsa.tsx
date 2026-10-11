@@ -18,8 +18,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { ShoppingBag } from "@buleje/design-system/icons";
 import { CartProvider, useCart } from "@/contexts/cart-context";
-import { Cajon } from "./Cajon";
-import type { CodigosProductos } from "./PedirPorWhatsapp";
+import { Cajon, type PropsCajon } from "./Cajon";
 import { FichaRapida } from "./FichaRapida";
 import { solesPedido } from "./pedido-whatsapp";
 import { SelloContador } from "./Sello";
@@ -27,29 +26,30 @@ import { abrirBolsa, useBolsaAbierta } from "./estado-bolsa";
 
 export function ProveedorBolsa({
   slug,
-  codigos,
   children,
-}: {
+  ...bolsa
+}: PropsCajon & {
   slug: string;
-  codigos: CodigosProductos;
   children: ReactNode;
 }) {
   return (
     <CartProvider tenantSlug={slug}>
       {children}
-      <PartesBolsa codigos={codigos} />
+      <PartesBolsa {...bolsa} />
     </CartProvider>
   );
 }
 
 /**
  * El cajón, la píldora del celular y la ficha rápida (el modal que abren las
- * tarjetas). `codigos`: lo que el servidor sabe de cada producto, para el pedido.
+ * tarjetas). `codigos`: lo que el servidor sabe de cada producto, para el pedido;
+ * `pedidos`: «cómo te piden» que el negocio prendió en su panel (Google, celular,
+ * ubicación, imagen); `negocio`: su nombre, para la imagen del pedido.
  */
-export function PartesBolsa({ codigos }: { codigos: CodigosProductos }) {
+export function PartesBolsa(bolsa: PropsCajon) {
   return (
     <>
-      <Cajon codigos={codigos} />
+      <Cajon {...bolsa} />
       <AvisoFlotante />
       <FichaRapida />
     </>

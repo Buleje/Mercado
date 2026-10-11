@@ -83,7 +83,7 @@ async function PieDelMarco({ tenantId, slug }: { tenantId: string; slug: string 
 /** La bolsa con los códigos de los productos (los escribe el pedido por WhatsApp); `cargarMarco` ya está en caché. */
 async function BolsaDelMarco({ tenantId }: { tenantId: string }) {
   const m = await cargarMarco(tenantId);
-  return <PartesBolsa codigos={m.codigos} />;
+  return <PartesBolsa codigos={m.codigos} pedidos={m.pedidos} negocio={m.nombre} />;
 }
 
 export function marco({ ctx }: PropsMarco<Opciones>): MarcoTienda {
