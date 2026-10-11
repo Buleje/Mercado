@@ -371,6 +371,35 @@ async function enrutarComoDueno(
   }
 }
 
+/**
+ * Manda el aviso de «estamos cerrados» si toca. Cualquier fallo se loguea y
+ * sigue: el aviso nunca le quita la respuesta del bot al cliente.
+ */
+async function avisarFueraDeHorario(
+  tenantId: string,
+  phoneNumberId: string,
+  token: string,
+  senderPhone: string,
+  contactNames: Map<string, string>,
+): Promise<void> {
+  try {
+    const { avisarSiEstaCerrado } = await import("@/lib/whatsapp/aviso-fuera-de-horario");
+    await avisarSiEstaCerrado({
+      tenantId,
+      phoneNumberId,
+      customerPhone: senderPhone,
+      customerName: contactNames.get(senderPhone),
+      enviar: (texto) => sendReply(phoneNumberId, token, senderPhone, texto),
+    });
+  } catch (err) {
+    logger.warn("[whatsapp/webhook] aviso fuera de horario falló — sigue el bot", {
+      tenantId,
+      from: redactPhone(senderPhone),
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+}
+
 async function handleSingleMessage(
   message: MetaTextMessage,
   phoneNumberId: string,
@@ -521,6 +550,13 @@ async function handleSingleMessage(
       error: err instanceof Error ? err.message : String(err),
     });
   }
+
+  // ── Aviso de «estamos cerrados» (Mensajes › Números y bot) ────────────────
+  // Si el dueño lo prendió y la tienda está cerrada según SU horario, va antes
+  // de la respuesta del bot, una sola vez cada 12 h por cliente. El bot sigue
+  // contestando después (precios, pedidos). Un hilo pausado no lo recibe (ya
+  // salió arriba): ahí atiende una persona.
+  await avisarFueraDeHorario(effectiveTenantId, phoneNumberId, effectiveToken, senderPhone, contactNames);
 
   // ── ADR-058: AI-first routing con fallback al engine legacy ───────────────
   // El Concierge AI (ADR-046) jamás lanza — captura todo internamente y

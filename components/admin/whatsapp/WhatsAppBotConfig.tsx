@@ -21,6 +21,7 @@ import {
 } from "@buleje/design-system/icons";
 import WaConnectionGuide from "./WaConnectionGuide";
 import WaNumberForm, { type WaConfigView } from "./WaNumberForm";
+import FueraDeHorarioBot from "./FueraDeHorarioBot";
 
 /**
  * WhatsAppBotConfig — manager de números WhatsApp del tenant (multi-número 311).
@@ -192,6 +193,9 @@ export default function WhatsAppBotConfig() {
           ))}
         </ul>
       )}
+
+      {/* El aviso de «estamos cerrados» sólo tiene sentido con un número conectado que lo mande. */}
+      {configs.some((c) => c.isActive) && <FueraDeHorarioBot />}
 
       <AdminModal
         open={editing !== null}
