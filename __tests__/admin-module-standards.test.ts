@@ -275,9 +275,12 @@ const REGLAS_PESTANA: Record<ReglaPestana, (rel: string) => boolean> = {
     if (dibujaIdentidad(c)) return true;
     if (/<AdminTabBar\b/.test(c)) return false; // barra propia sin título
     // Envoltorio: vale la identidad del módulo que monta (import estático o dinámico).
-    const hijos = [...c.matchAll(/(?:from\s+|import\(\s*)["'](@\/components\/admin\/[^"']+)["']/g)]
-      .map((m) => resolverModulo(m[1]))
-      .filter((r): r is string => !!r && /Module(\/index)?\.tsx$/.test(r));
+    // Lo que carga con `dynamic(import())` vale aunque no se llame *Module: es la
+    // pantalla entera (CamarasModule → forestal/CamarasView, que dibuja la banda; 10-10).
+    const hijos = [...c.matchAll(/(from\s+|import\(\s*)["'](@\/components\/admin\/[^"']+)["']/g)]
+      .map((m) => ({ ruta: resolverModulo(m[2]), dinamico: m[1].startsWith("import") }))
+      .filter((h) => !!h.ruta && (h.dinamico || /Module(\/index)?\.tsx$/.test(h.ruta)))
+      .map((h) => h.ruta as string);
     return hijos.some((h) => dibujaIdentidad(leerRepo(h)));
   },
   sinApilar: (rel) => {

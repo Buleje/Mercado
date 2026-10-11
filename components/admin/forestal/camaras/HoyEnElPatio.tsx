@@ -7,24 +7,22 @@
  * fotos, qué camiones y con qué guía, cuánta gente en la hora más movida, quién
  * estuvo sin marcar asistencia y qué pasó con la pila. Sale entero de
  * `/api/admin/camaras/resumen`: la pantalla no suma nada.
+ *
+ * 10-10 (Brandon: «compactar, sin repetidos»): la cabecera es UNA fila (el día
+ * y los Indicadores; el título ya lo dice la pestaña). «Personas distintas»
+ * dejó de ir acá: era la MISMA cifra que «Personas» (mismo pedido,
+ * `/personas/resumen`), y vive allá. «Gente por hora» entró al panel de
+ * Indicadores y salió la tarjeta «Más gente junta», que repetía su barra más alta.
  */
 
 import { useEffect, useRef, useState } from "react";
-import { SectionTitle, StatCard } from "@buleje/design-system";
-import {
-  Camera,
-  Loader2,
-  Truck,
-  Users,
-  UserX,
-} from "@buleje/design-system/icons";
+import { StatCard } from "@buleje/design-system";
+import { Camera, Loader2, Truck, UserX } from "@buleje/design-system/icons";
 import { limaDateKey } from "@/lib/utils";
 import { useKpisPlegables } from "../kpis-plegables";
 import GentePorHora from "./GentePorHora";
 import { ActividadYCamaras, CamionesDelDia, ChalecosDelDia, PilaDelDia } from "./ListasDelDia";
 import { useResumenPatio } from "./use-resumen-patio";
-import { useResumenPersonas } from "./use-resumen-personas";
-import ResumenPersonasHoy from "./ResumenPersonasHoy";
 import SelectorDia from "./SelectorDia";
 import TrozasALaVista from "./TrozasALaVista";
 import { BLOQUE, diaLegible } from "./camaras-ui";
@@ -40,9 +38,6 @@ export default function HoyEnElPatio({ activo, recarga, onAsignarChaleco }: Prop
   const hoy = limaDateKey();
   const [fecha, setFecha] = useState(hoy);
   const { resumen: r, cargando, error, recargar } = useResumenPatio(fecha, activo);
-  /* Personas DISTINTAS (por la ropa, ADR-479): la pastilla lleva a «Personas». */
-  const personas = useResumenPersonas(fecha, activo);
-  const recargarPersonas = personas.recargar;
 
   /* Sólo cuando se aprieta «Actualizar»: el día nuevo ya lo pide el hook, y al
      montar también (sin esto, volver a la vista pedía el día dos veces). */
@@ -52,24 +47,24 @@ export default function HoyEnElPatio({ activo, recarga, onAsignarChaleco }: Prop
     recargaVista.current = recarga;
     if (!activo) return;
     void recargar();
-    void recargarPersonas();
-  }, [recarga, activo, recargar, recargarPersonas]);
+  }, [recarga, activo, recargar]);
 
   const esHoy = fecha === hoy;
   const titulo = esHoy ? "Hoy en el patio" : `El patio el ${diaLegible(fecha)}`;
-  const pico = r?.personasPorHora.length
-    ? r.personasPorHora.reduce((a, b) => (b.max > a.max ? b : a))
-    : null;
   const conGuia = r?.camiones.filter((c) => c.etiquetaCruce).length ?? 0;
   const sinMarcar = r?.chalecos.filter((c) => c.sinMarcacion).length ?? 0;
   const conFotos = r?.porCamara.filter((c) => c.fotos > 0).length ?? 0;
 
-  /* Las cuatro cifras del día se pliegan (Brandon 05-10). Sin fotos no hay cifras que plegar. */
+  /* Las cifras del día se pliegan (Brandon 05-10). Sin fotos no hay cifras que plegar.
+     Titular corto (~22 caracteres entran en el botón `md`). */
   const kpis = useKpisPlegables({
     claveMemoria: "camaras-hoy",
+    alto: "md",
+    compactoEnMovil: true,
     resumen: r && r.fotos > 0
-      ? `${r.fotos} ${r.fotos === 1 ? "foto" : "fotos"} · ${r.camiones.length} ${r.camiones.length === 1 ? "camión" : "camiones"} · ${sinMarcar} sin marcación`
+      ? `${r.fotos} ${r.fotos === 1 ? "foto" : "fotos"} · ${r.camiones.length} ${r.camiones.length === 1 ? "camión" : "camiones"}`
       : undefined,
+    encabezado: r && r.fotos > 0 ? <GentePorHora filas={r.personasPorHora} /> : undefined,
     tarjetas: r && r.fotos > 0 ? [
       <StatCard
         key="fotos"
@@ -90,15 +85,6 @@ export default function HoyEnElPatio({ activo, recarga, onAsignarChaleco }: Prop
         subValue={`${conGuia} con guía o flete`}
       />,
       <StatCard
-        key="pico"
-        label="Más gente junta"
-        value={pico ? pico.max : "—"}
-        icon={Users}
-        subValue={
-          pico ? `a las ${String(pico.hora).padStart(2, "0")} h, en una foto` : "sin fotos"
-        }
-      />,
-      <StatCard
         key="sin-marcar"
         label="Sin marcación"
         value={sinMarcar}
@@ -111,18 +97,12 @@ export default function HoyEnElPatio({ activo, recarga, onAsignarChaleco }: Prop
 
   return (
     <div className="space-y-4" data-testid="camaras-hoy">
+      {/* Una fila: el día · Indicadores. El título visible es la pestaña. */}
       <div className="flex flex-wrap items-center gap-2">
-        <SectionTitle className="mr-auto">
-          {titulo}
-          {esHoy && (
-            <span className="ml-2 text-sm font-normal text-[var(--text-tertiary)]">
-              {diaLegible(fecha)}
-            </span>
-          )}
-        </SectionTitle>
-        <ResumenPersonasHoy resumen={personas.resumen} esHoy={esHoy} enlace />
-        {kpis.boton}
+        <h2 className="sr-only">{titulo}</h2>
         <SelectorDia fecha={fecha} hoy={hoy} onCambiar={setFecha} etiqueta="Día del resumen" />
+        <span className="text-sm font-bold text-[var(--text-secondary)]">{diaLegible(fecha)}</span>
+        <div className="ml-auto flex min-w-0 items-center gap-2">{kpis.boton}</div>
       </div>
 
       {error ? (
@@ -154,7 +134,6 @@ export default function HoyEnElPatio({ activo, recarga, onAsignarChaleco }: Prop
       ) : (
         <>
           <div className={cargando ? "opacity-60" : undefined} aria-busy={cargando}>{kpis.panel}</div>
-          <GentePorHora filas={r.personasPorHora} />
           <div className="grid gap-4 lg:grid-cols-2">
             <CamionesDelDia camiones={r.camiones} />
             <ChalecosDelDia chalecos={r.chalecos} onAsignar={onAsignarChaleco} />

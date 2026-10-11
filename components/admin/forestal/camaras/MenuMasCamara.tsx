@@ -2,12 +2,13 @@
 
 /**
  * «Más» de una cámara: subir a mano (cámara del celular), subir desde la
- * galería, las zonas que el detector de personas ignora (08-10) y quitar. Salió de `CamaraFila` el 05-10 sin cambiar el DOM: la fila
+ * galería, las zonas que el detector de personas ignora (08-10), cambiar la
+ * dirección (10-10: era un botón suelto que partía la fila en dos) y quitar. Salió de `CamaraFila` el 05-10 sin cambiar el DOM: la fila
  * pasaba de 300 líneas con «En vivo» y «Último aviso».
  */
 
 import { useRef } from "react";
-import { EyeOff, MoreHorizontal, Trash2, Upload } from "@buleje/design-system/icons";
+import { EyeOff, MoreHorizontal, RefreshCw, Trash2, Upload } from "@buleje/design-system/icons";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 
@@ -20,9 +21,11 @@ interface Props {
   /** Cuántas zonas ignora hoy el detector de personas de esta cámara. */
   zonas: number;
   onZonas: () => void;
+  /** Dirección nueva: la anterior deja de funcionar. */
+  onRotar: () => void;
 }
 
-export default function MenuMasCamara({ nombre, guardando, subiendo, onSubir, onQuitar, zonas, onZonas }: Props) {
+export default function MenuMasCamara({ nombre, guardando, subiendo, onSubir, onQuitar, zonas, onZonas, onRotar }: Props) {
   const { confirm } = useConfirm();
   const archivoRef = useRef<HTMLInputElement>(null);
   /* Sin `capture`: abre la galería, para subir una captura de pantalla de la
@@ -57,6 +60,14 @@ export default function MenuMasCamara({ nombre, guardando, subiendo, onSubir, on
       onSelect: onZonas,
     },
     {
+      id: "rotar",
+      label: "Cambiar la dirección",
+      hint: "Dirección nueva: la anterior deja de funcionar",
+      icon: RefreshCw,
+      disabled: guardando,
+      onSelect: onRotar,
+    },
+    {
       id: "quitar",
       label: "Quitar la cámara",
       hint: "Las fotos que mandó se quedan",
@@ -81,7 +92,8 @@ export default function MenuMasCamara({ nombre, guardando, subiendo, onSubir, on
         label={`Más de ${nombre}`}
         icon={MoreHorizontal}
         soloIcono
-        size="sm"
+        size="md"
+        className="w-12 shrink-0"
         actions={menu}
       />
       <input

@@ -20,14 +20,14 @@ interface Props {
 export default function InterruptorPila({ camara: c, guardando, onCambiar }: Props) {
   const pilaSinAviso = c.vigilaPila && !numeroParaAvisoPila(c);
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-[var(--rule-soft)] pt-2">
+    <div className="flex flex-wrap items-center gap-2">
       <button
         type="button"
         role="switch"
         aria-checked={Boolean(c.vigilaPila)}
         onClick={() => onCambiar(!c.vigilaPila)}
         disabled={guardando}
-        className="inline-flex min-h-9 items-center gap-2 rounded-lg pr-2 text-sm font-bold text-[var(--text-secondary)] disabled:opacity-50"
+        className="inline-flex min-h-12 items-center gap-2 rounded-lg pr-2 text-sm font-bold text-[var(--text-secondary)] disabled:opacity-50"
       >
         <span
           aria-hidden
@@ -48,7 +48,7 @@ export default function InterruptorPila({ camara: c, guardando, onCambiar }: Pro
         example="Prende sólo la cámara que tiene la pila de frente: cada comparación usa la IA."
       />
       {pilaSinAviso && (
-        <span className="text-xs text-[var(--text-tertiary)]">
+        <span className="text-sm text-[var(--text-tertiary)]">
           sin WhatsApp: no avisa, queda en la foto
         </span>
       )}

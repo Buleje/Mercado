@@ -7,9 +7,9 @@
  * pantalla de formularios antes de mostrarse.
  */
 
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { CardTitle } from "@buleje/design-system";
-import { Camera, Hash, Loader2, Plus } from "@buleje/design-system/icons";
+import { Camera, Hash, Plus } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import CamaraFila from "./CamaraFila";
 import LecturaUltimaFoto from "./LecturaUltimaFoto";
@@ -19,7 +19,6 @@ import { useRecargaPuente } from "./use-puente-pc";
 import RetencionPersonas from "./RetencionPersonas";
 import GuiaHikvision from "./GuiaHikvision";
 import VincularHikConnect from "./VincularHikConnect";
-import { DireccionAviso } from "./AvisosCamaras";
 import { direccionLocal, type DatosCamaras } from "./use-camaras";
 import type { useConexionDirecta } from "./use-conexion-directa";
 import {
@@ -33,9 +32,6 @@ import {
   type EstadoDireccion,
 } from "./camaras-ui";
 
-const CAMPO =
-  "mt-1 h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
-
 interface Props {
   datos: DatosCamaras;
   conexion: ReturnType<typeof useConexionDirecta>;
@@ -43,6 +39,8 @@ interface Props {
   direccionParaCamara: (token: string) => string;
   onConectar: (id: string) => void;
   onAbrirChalecos: () => void;
+  /** «Agregar cámara»: el alta vive en un modal (la acción principal de la cabecera). */
+  onAgregar: () => void;
   /** Tocar un chaleco sin dueño en la lectura del puente: abre la asignación con ese número. */
   onAsignarChaleco: (numero: string) => void;
 }
@@ -54,16 +52,9 @@ export default function VistaCamaras({
   direccionParaCamara,
   onConectar,
   onAbrirChalecos,
+  onAgregar,
   onAsignarChaleco,
 }: Props) {
-  const [nombre, setNombre] = useState("");
-  const [lugar, setLugar] = useState("");
-  const crear = async () => {
-    if (await d.crear(nombre, lugar)) {
-      setNombre("");
-      setLugar("");
-    }
-  };
   const { cargar } = d;
   const recargarCamaras = useCallback(() => void cargar({ silenciosa: true }), [cargar]);
   const esPuente = (c: (typeof d.camaras)[number]) => camposPuente(c).fuente === "puente_pc";
@@ -74,8 +65,6 @@ export default function VistaCamaras({
 
   return (
     <div className="space-y-4">
-      <DireccionAviso estado={estadoDireccion} />
-
       <section className={BLOQUE} aria-labelledby="camaras-lista-titulo">
         <div className="mb-3 flex flex-wrap items-center gap-1.5">
           <Camera className="h-4 w-4 text-[var(--accent-ink)]" aria-hidden />
@@ -90,48 +79,8 @@ export default function VistaCamaras({
           />
           <MosaicoNubeBoton camaras={d.camaras} />
         </div>
-        <form
-          className="grid gap-2 sm:grid-cols-[1fr_1fr_auto] sm:items-end"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void crear();
-          }}
-        >
-          <label className="block">
-            <span className="text-sm font-bold text-[var(--text-secondary)]">Cámara nueva</span>
-            <input
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              placeholder="Portón de entrada"
-              className={CAMPO}
-            />
-          </label>
-          <label className="block">
-            <span className="text-sm font-bold text-[var(--text-secondary)]">
-              Qué mira (opcional)
-            </span>
-            <input
-              value={lugar}
-              onChange={(e) => setLugar(e.target.value)}
-              placeholder="Patio de trozas"
-              className={CAMPO}
-            />
-          </label>
-          <button
-            type="submit"
-            disabled={d.guardando || !nombre.trim()}
-            className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl bg-[var(--accent-600,var(--accent))] px-4 text-sm font-bold text-white transition hover:brightness-95 disabled:opacity-50"
-          >
-            {d.guardando ? (
-              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-            ) : (
-              <Plus className="h-4 w-4" aria-hidden />
-            )}
-            Agregar
-          </button>
-        </form>
 
-        <ul className="mt-3 space-y-2">
+        <ul className="space-y-2">
           {d.camaras.map((c) => (
             <CamaraFila
               key={c.id}
@@ -167,9 +116,11 @@ export default function VistaCamaras({
             />
           ))}
           {d.camaras.length === 0 && !d.cargando && (
-            <li className="px-1 py-3 text-sm text-[var(--text-tertiary)]">
-              Todavía no hay ninguna. Agrega la primera, copia su dirección y sigue la guía de
-              abajo.
+            <li className="flex flex-wrap items-center gap-2 px-1 py-3 text-sm text-[var(--text-tertiary)]">
+              Todavía no hay ninguna.
+              <button type="button" onClick={onAgregar} className={BTN}>
+                <Plus className="h-4 w-4" aria-hidden /> Agregar la primera
+              </button>
             </li>
           )}
         </ul>

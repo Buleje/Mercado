@@ -12,6 +12,10 @@
  *
  * Abierta, recarga las cámaras cada 20 s: el «último aviso» cambia solo
  * mientras Brandon configura en la otra ventana.
+ *
+ * Arranca PLEGADA (Brandon 10-10: «compactar»): abierta ocupaba más de una
+ * pantalla en «Cámaras» cada vez que se entraba. Mientras ninguna cámara avisó
+ * nunca, el título lleva «Falta hacer» para que no se pierda.
  */
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -36,7 +40,7 @@ import ValoresHttpListening from "./ValoresHttpListening";
 const RECARGA_MS = 20_000;
 const ENLACE = "font-bold text-[var(--accent-ink)] underline underline-offset-2";
 const RUTA =
-  "rounded bg-[var(--surface-sunken)] px-1 py-0.5 text-xs font-semibold text-[var(--text-primary)]";
+  "rounded bg-[var(--surface-sunken)] px-1 py-0.5 text-sm font-semibold text-[var(--text-primary)]";
 
 function Paso({
   n,
@@ -53,7 +57,7 @@ function Paso({
     <li className="flex gap-2.5">
       <span
         aria-hidden
-        className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[var(--accent-soft)] text-xs font-bold text-[var(--accent-ink)]"
+        className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[var(--accent-soft)] text-sm font-bold text-[var(--accent-ink)]"
       >
         {n}
       </span>
@@ -84,11 +88,10 @@ export default function GuiaHikvision({
   onRecargar,
   onErrorCopia,
 }: Props) {
-  /* Sin tocarla, abierta mientras ninguna cámara avisó (es lo que falta hacer);
-     las cámaras llegan después del primer dibujo, por eso se deriva hasta el
-     primer cambio. */
-  const [tocada, setTocada] = useState<boolean | null>(null);
-  const abierta = tocada ?? (camaras.length > 0 && camaras.every((c) => !c.ultimoAviso));
+  /* Plegada hasta que se la abre. «Falta hacer» se deriva de las cámaras (llegan
+     después del primer dibujo): ninguna avisó nunca. */
+  const [abierta, setAbierta] = useState(false);
+  const faltaHacer = camaras.length > 0 && camaras.every((c) => !c.ultimoAviso);
   const recargarRef = useRef(onRecargar);
   const [elegida, setElegida] = useState<string | null>(null);
   const ahora = useAhora();
@@ -107,16 +110,14 @@ export default function GuiaHikvision({
   return (
     <details
       open={abierta}
-      /* Cualquier cambio queda fijo —también el que hizo la derivación—: si la
-         cámara avisa por primera vez con la guía abierta, la guía no se cierra
-         sola debajo de quien está mirando el paso 5. */
-      onToggle={(e) => setTocada(e.currentTarget.open)}
-      className="mt-3 rounded-xl border border-[var(--rule-base)] px-3 py-2"
+      onToggle={(e) => setAbierta(e.currentTarget.open)}
+      className="mt-3 rounded-xl border border-[var(--rule-base)] px-3 [&[open]]:pb-3"
       data-testid="guia-hikvision"
     >
-      <summary className="flex cursor-pointer items-center gap-2 text-sm font-bold text-[var(--text-secondary)]">
-        <HelpCircle className="h-4 w-4 shrink-0" aria-hidden /> Conectar la Hikvision DS-2CFSP4/4G:
-        que mande cada persona o vehículo
+      <summary className="flex min-h-12 cursor-pointer flex-wrap items-center gap-2 text-sm font-bold text-[var(--text-secondary)]">
+        <HelpCircle className="h-4 w-4 shrink-0" aria-hidden /> Guía: conectar la Hikvision
+        DS-2CFSP4/4G para que mande cada persona o vehículo
+        {faltaHacer && <span className={`${CHIP_BASE} ${CHIP_TONO.aviso}`}>Falta hacer</span>}
       </summary>
 
       <div className="mt-3 space-y-3 text-sm text-[var(--text-secondary)]">

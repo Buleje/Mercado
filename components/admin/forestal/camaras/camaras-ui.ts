@@ -39,9 +39,9 @@ export type { ResumenDelDia };
 
 /* ── Clases que se repiten ─────────────────────────────────────────────── */
 
-/** Botón secundario de 36 px: los de la fila de cada cámara y de las tarjetas. */
+/** Botón secundario de 48 px (10-10: el panel pide h-12 en todo lo que se toca): filas de cámara y tarjetas. */
 export const BTN =
-  "inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-sm font-bold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:opacity-50";
+  "inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:opacity-50";
 
 /** Bloque de la pantalla: tarjeta con borde. */
 export const BLOQUE = "rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4";
@@ -71,7 +71,7 @@ export const ICONO_TONO: Record<Tono, string> = {
 };
 
 export const CHIP_BASE =
-  "inline-flex max-w-full items-center gap-1 rounded-md border px-1.5 py-0.5 text-xs font-semibold text-[var(--text-primary)]";
+  "inline-flex max-w-full items-center gap-1 rounded-md border px-1.5 py-0.5 text-sm font-semibold text-[var(--text-primary)]";
 
 /* ── Personas ──────────────────────────────────────────────────────────── */
 

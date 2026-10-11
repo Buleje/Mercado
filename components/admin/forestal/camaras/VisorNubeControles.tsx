@@ -32,7 +32,9 @@ import { hoyLocal, horaHaceUnaHora } from "./hik-connect-teams";
 import type { AnalisisCuadro } from "./use-analizar-cuadro";
 import type { Calidad, VisorNubeEstado } from "./use-visor-nube";
 
-const BTN = `${BTN_BASE} max-sm:h-11 max-sm:min-w-11 max-sm:justify-center`;
+/* El visor conserva su botón de 36 px (va sobre el video, también en el mosaico):
+   el BTN de la pantalla subió a 48 px el 10-10. */
+const BTN = cn(BTN_BASE, "h-9 rounded-lg px-2.5 max-sm:h-11 max-sm:min-w-11 max-sm:justify-center");
 
 const CAMPO =
   "h-9 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";

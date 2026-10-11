@@ -199,7 +199,7 @@ export default function ChipsDeCaptura({
                 {p.etiqueta} · {parecida ? "parecida" : "exacta"}
               </Chip>
               {p.confirmadoEn ? (
-                <span className="inline-flex items-center gap-1 text-xs text-[var(--text-secondary)]">
+                <span className="inline-flex items-center gap-1 text-sm text-[var(--text-secondary)]">
                   <CheckCircle2
                     className="h-3.5 w-3.5 text-[var(--data-success-ink)]"
                     aria-hidden
@@ -212,7 +212,7 @@ export default function ChipsDeCaptura({
                   onClick={() => onConfirmar(p.refId)}
                   disabled={confirmando !== null}
                   aria-label={`Confirmar que la placa ${p.placa} es ${p.etiqueta}`}
-                  className="inline-flex h-8 items-center gap-1 rounded-lg border border-[var(--accent)] px-2 text-xs font-bold text-[var(--accent-ink)] transition hover:bg-[var(--accent)]/10 disabled:opacity-50"
+                  className="inline-flex h-8 items-center gap-1 rounded-lg border border-[var(--accent)] px-2 text-sm font-bold text-[var(--accent-ink)] transition hover:bg-[var(--accent)]/10 disabled:opacity-50"
                 >
                   {confirmando === p.refId ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />

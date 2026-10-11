@@ -117,7 +117,7 @@ export default function EstadoCamaras({
                 disabled={guardando}
                 title="Dirección nueva: la anterior deja de funcionar"
                 aria-label={`Cambiar la dirección de ${c.nombre}`}
-                className={cn(BTN, "w-9 justify-center px-0")}
+                className={cn(BTN, "w-12 justify-center px-0")}
               >
                 <RefreshCw className="h-4 w-4" aria-hidden />
               </button>

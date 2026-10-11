@@ -1,12 +1,14 @@
 "use client";
 
 /**
- * Los avisos de arriba de Cámaras: una línea cada uno, con el detalle en ⓘ.
+ * Los avisos de arriba de Cámaras: UNA línea para todos, con el detalle en ⓘ.
  *
  * Son los que deciden si la cámara funciona o no, y por eso viven fuera de las
- * vistas: la dirección que se copia en el aparato, la IA sin clave y la cámara
- * que dejó de mandar. Un aviso que pide acción dice QUÉ pasa en la línea; el
+ * vistas: la dirección que se copia en el aparato, la cámara que dejó de mandar
+ * y la IA sin clave. Un aviso que pide acción dice QUÉ pasa en la línea; el
  * cómo se arregla va en el ⓘ (Brandon 09-24: «mucho texto por todos lados»).
+ *
+ * Juntos en una línea: `AvisosEnUnaLinea.tsx` (10-10).
  */
 
 import type { ReactNode } from "react";
@@ -31,22 +33,26 @@ function Banner({
   children,
   tip,
   testId,
+  extra,
 }: {
   tono: Tono;
   icono: LucideIcon;
   children: ReactNode;
   tip?: ReactNode;
   testId?: string;
+  /** Lo que va al final de la línea, después del ⓘ (el «+2» que despliega el resto). */
+  extra?: ReactNode;
 }) {
   return (
     <div
       data-testid={testId}
       role={tono === "aviso" || tono === "alerta" ? "status" : undefined}
-      className={`flex items-start gap-2 rounded-xl border px-3 py-2 ${FONDO[tono]}`}
+      className={`flex min-h-12 items-center gap-2 rounded-xl border px-3 ${FONDO[tono]}`}
     >
-      <Icono className={`mt-0.5 h-4 w-4 shrink-0 ${ICONO_TONO[tono]}`} aria-hidden />
-      <p className="min-w-0 flex-1 text-sm text-[var(--text-primary)]">{children}</p>
+      <Icono className={`h-4 w-4 shrink-0 ${ICONO_TONO[tono]}`} aria-hidden />
+      <p className="min-w-0 flex-1 py-2 text-sm text-[var(--text-primary)]">{children}</p>
       {tip}
+      {extra}
     </div>
   );
 }
@@ -59,9 +65,11 @@ function Banner({
 export function DireccionAviso({
   estado,
   soloProblemas = false,
+  extra,
 }: {
   estado: EstadoDireccion;
   soloProblemas?: boolean;
+  extra?: ReactNode;
 }) {
   if (estado.tipo === "cargando" || estado.tipo === "pagina") return null;
   if (soloProblemas && (estado.tipo === "tunel" || estado.tipo === "fija")) return null;
@@ -72,6 +80,7 @@ export function DireccionAviso({
         tono="ok"
         icono={Globe}
         testId="camaras-direccion"
+        extra={extra}
         tip={
           <InfoTip
             title="Dirección pública"
@@ -98,6 +107,7 @@ export function DireccionAviso({
         tono="ok"
         icono={Globe}
         testId="camaras-direccion"
+        extra={extra}
         tip={
           <InfoTip
             title="Dirección pública fija"
@@ -117,6 +127,7 @@ export function DireccionAviso({
         tono="aviso"
         icono={WifiOff}
         testId="camaras-direccion"
+        extra={extra}
         tip={
           <InfoTip
             title="Túnel cerrado"
@@ -141,6 +152,7 @@ export function DireccionAviso({
       tono="aviso"
       icono={AlertTriangle}
       testId="camaras-direccion"
+      extra={extra}
       tip={
         <InfoTip
           title="Falta la dirección pública"
@@ -162,12 +174,13 @@ export function DireccionAviso({
 }
 
 /** La cámara guarda fotos pero la IA no las lee: sin clave no hay placa, chaleco ni pila. */
-export function SinIaAviso() {
+export function SinIaAviso({ extra }: { extra?: ReactNode }) {
   return (
     <Banner
       tono="aviso"
       icono={Sparkles}
       testId="camaras-sin-ia"
+      extra={extra}
       tip={
         <InfoTip
           title="La IA no está leyendo"
@@ -184,12 +197,20 @@ export function SinIaAviso() {
 }
 
 /** Con panel solar, dos días nublados la apagan; una SIM sin datos deja de subir sin decir nada. */
-export function CalladasAviso({ calladas }: { calladas: CamaraConConexion[] }) {
+export function CalladasAviso({
+  calladas,
+  extra,
+}: {
+  calladas: CamaraConConexion[];
+  extra?: ReactNode;
+}) {
   if (calladas.length === 0) return null;
   return (
     <Banner
       tono="aviso"
       icono={AlertTriangle}
+      testId="camaras-calladas"
+      extra={extra}
       tip={
         <InfoTip
           title="Cámara callada"

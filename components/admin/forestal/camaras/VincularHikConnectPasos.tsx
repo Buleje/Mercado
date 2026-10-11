@@ -68,7 +68,7 @@ export default function VincularHikConnectPasos() {
 
 function Paso({ n }: { n: number }) {
   return (
-    <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[var(--accent-soft)] text-xs font-bold text-[var(--accent-ink)]">
+    <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[var(--accent-soft)] text-sm font-bold text-[var(--accent-ink)]">
       {n}
     </span>
   );

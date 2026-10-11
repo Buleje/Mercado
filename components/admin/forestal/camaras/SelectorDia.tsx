@@ -26,7 +26,7 @@ export default function SelectorDia({ fecha, hoy, onCambiar, etiqueta }: Props) 
         type="button"
         onClick={() => onCambiar(moverDia(fecha, -1))}
         aria-label="Día anterior"
-        className={cn(BTN, "w-10 justify-center px-0")}
+        className={cn(BTN, "w-12 justify-center px-0")}
       >
         <ChevronLeft className="h-4 w-4" aria-hidden />
       </button>
@@ -38,14 +38,14 @@ export default function SelectorDia({ fecha, hoy, onCambiar, etiqueta }: Props) 
           if (/^\d{4}-\d{2}-\d{2}$/.test(e.target.value)) onCambiar(e.target.value);
         }}
         aria-label={etiqueta}
-        className="h-9 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+        className="h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
       />
       <button
         type="button"
         onClick={() => onCambiar(moverDia(fecha, 1))}
         disabled={esHoy}
         aria-label="Día siguiente"
-        className={cn(BTN, "w-10 justify-center px-0")}
+        className={cn(BTN, "w-12 justify-center px-0")}
       >
         <ChevronRight className="h-4 w-4" aria-hidden />
       </button>

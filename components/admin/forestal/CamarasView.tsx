@@ -18,7 +18,13 @@
  *    se configura una vez.
  *
  * Arriba, en todas, sólo lo que hace que la cámara funcione o no: el túnel
- * cerrado, la IA sin clave, la cámara que dejó de mandar.
+ * cerrado, la IA sin clave, la cámara que dejó de mandar — en UNA línea, el
+ * más grave primero y «+N» para el resto.
+ *
+ * La banda es la del panel (Brandon 10-10): título · pestañas · acción
+ * principal («Agregar cámara» en «Cámaras») · «Más» (Actualizar, otra
+ * pantalla). La identidad la dibuja esta barra: `CamarasModule` ya no pone
+ * su AdminModuleHeader.
  *
  * Los datos y las escrituras viven en `camaras/use-camaras.ts`; la dirección
  * pública en `use-direccion-publica.ts`; la conexión directa en
@@ -26,12 +32,13 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CalendarDays, Camera, Image as ImageIcon, MoreHorizontal, RefreshCw, Tv, Users } from "@buleje/design-system/icons";
+import { CalendarDays, Camera, Image as ImageIcon, MoreHorizontal, Plus, RefreshCw, Tv, Users } from "@buleje/design-system/icons";
+import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
 import ActionMenu from "@/components/admin/shared/action-menu";
-import SegmentedControl from "@/components/ui-system/SegmentedControl";
+import { button } from "@/components/ui-system/button-variants";
 import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import { estaCallada } from "@/lib/camaras/camaras";
-import { normalizarChaleco } from "@/lib/camaras/cruces";
+import AgregarCamaraModal from "./camaras/AgregarCamaraModal";
 import ConectarCamaraModal from "./camaras/ConectarCamaraModal";
 import ChalecosModal from "./camaras/ChalecosModal";
 import HistorialFotos from "./camaras/HistorialFotos";
@@ -39,17 +46,20 @@ import HoyEnElPatio from "./camaras/HoyEnElPatio";
 import OtraPantallaModal, { type PestanaOtraPantalla } from "./camaras/OtraPantallaModal";
 import VistaCamaras from "./camaras/VistaCamaras";
 import VistaPersonas from "./camaras/VistaPersonas";
-import { CalladasAviso, DireccionAviso, MensajeAccion, SinIaAviso } from "./camaras/AvisosCamaras";
+import AvisosEnUnaLinea from "./camaras/AvisosEnUnaLinea";
+import { MensajeAccion } from "./camaras/AvisosCamaras";
 import { useCamaras } from "./camaras/use-camaras";
 import { EVENTO_FOTO_NUEVA } from "./camaras/use-analizar-cuadro";
 import { useConexionDirecta } from "./camaras/use-conexion-directa";
 import { useDireccionPublica } from "./camaras/use-direccion-publica";
-import { usePantallaAngosta } from "./camaras/use-pantalla-angosta";
+import { useVistosSinAsignar } from "./camaras/use-vistos-sin-asignar";
 import EstadoCamaras from "./camaras/EstadoCamaras";
 import { VisorNubeProvider } from "./camaras/VisorNubeContexto";
-import { BTN, faltaClaveIa, porQueNoSeCopia } from "./camaras/camaras-ui";
+import { faltaClaveIa, porQueNoSeCopia } from "./camaras/camaras-ui";
 
+const MODULE_ID = "camaras";
 const VISTAS = ["fotos", "patio", "personas", "camaras"] as const;
+type Vista = (typeof VISTAS)[number];
 
 /** «Ver en otra pantalla» abierto (Modo TV), y en qué pestaña. */
 type OtraPantalla = { pestana: PestanaOtraPantalla; codigo?: string } | null;
@@ -70,16 +80,11 @@ function PantallaCamaras({ otra, setOtra }: { otra: OtraPantalla; setOtra: (o: O
   const d = useCamaras();
   const conexion = useConexionDirecta(d);
   const dir = useDireccionPublica();
-  const { vista, irA } = useVistaModulo("camaras", VISTAS, "fotos");
-  /* A 400 px «Hoy en el patio» partía el control en dos renglones y dejaba
-     «Actualizar» solo en una fila: en el celular la pestaña dice «Hoy» y van
-     sin ícono (medido: 373 px de 368 con los íconos). Con «Personas» (cuatro
-     pestañas, 348 px) ya no entraban los dos botones: «Actualizar» pasa a «⋯» y
-     el control se desliza de costado, todo en una fila. */
-  const angosta = usePantallaAngosta();
+  const { vista, irA } = useVistaModulo<Vista>(MODULE_ID, VISTAS, "fotos");
   const [recarga, setRecarga] = useState(0);
   const [conectando, setConectando] = useState<string | null>(null);
   const [chalecos, setChalecos] = useState<{ numero: string | null } | null>(null);
+  const [agregando, setAgregando] = useState(false);
   /* «En vivo» desde Fotos de una cámara con visor propio: el visor vive en
      «Cámaras». Se cambia de vista y, ya montada, se baja hasta esa cámara. */
   const focoRef = useRef<string | null>(null);
@@ -118,23 +123,7 @@ function PantallaCamaras({ otra, setOtra }: { otra: OtraPantalla; setOtra: (o: O
   const sinIa = useMemo(() => faltaClaveIa(d.capturas), [d.capturas]);
   const camaraAConectar = d.camaras.find((c) => c.id === conectando) ?? null;
 
-  /* Los números que la IA leyó y no son de nadie: el modal los ofrece para
-     asignarlos sin tipearlos. Cuenta fotos, no lecturas repetidas. */
-  const vistosSinAsignar = useMemo(() => {
-    const fotos = new Map<string, number>();
-    for (const c of d.capturas) {
-      const numeros = new Set<string>();
-      for (const x of c.cruces?.chalecos ?? []) if (!x.colaboradorId) numeros.add(x.numero);
-      for (const n of c.lectura?.chalecos ?? []) {
-        const k = normalizarChaleco(n);
-        if (k && !d.chalecos[k]) numeros.add(k);
-      }
-      for (const n of numeros) if (!d.chalecos[n]) fotos.set(n, (fotos.get(n) ?? 0) + 1);
-    }
-    return [...fotos.entries()]
-      .map(([numero, n]) => ({ numero, fotos: n }))
-      .sort((a, b) => a.numero.localeCompare(b.numero, "es", { numeric: true }));
-  }, [d.capturas, d.chalecos]);
+  const vistosSinAsignar = useVistosSinAsignar(d.capturas, d.chalecos);
 
   const abrirChalecos = (numero: string | null) => {
     d.setError(null);
@@ -153,111 +142,110 @@ function PantallaCamaras({ otra, setOtra }: { otra: OtraPantalla; setOtra: (o: O
     setRecarga((n) => n + 1);
   };
 
-  return (
-    <div className="space-y-4" data-vista="camaras">
-      <div className="flex items-center gap-2 sm:flex-wrap">
-        <SegmentedControl
-          value={vista}
-          onChange={(v) => irA(v)}
-          label="Qué mirar de las cámaras"
-          className="mr-auto min-w-0 max-w-full overflow-x-auto whitespace-nowrap"
-          options={[
-            /* El conteo va en el rótulo y no en `badge`: la pastilla del control
-               marcado da 2,98:1 (blanco sobre turquesa a 12 px, medido con axe). */
-            {
-              value: "fotos",
-              label: d.capturas.length ? `Fotos (${d.capturas.length})` : "Fotos",
-              icon: angosta ? undefined : <ImageIcon className="h-4 w-4" aria-hidden />,
-            },
-            {
-              value: "patio",
-              label: angosta ? "Hoy" : "Hoy en el patio",
-              icon: angosta ? undefined : <CalendarDays className="h-4 w-4" aria-hidden />,
-            },
-            {
-              value: "personas",
-              label: "Personas",
-              icon: angosta ? undefined : <Users className="h-4 w-4" aria-hidden />,
-            },
-            {
-              value: "camaras",
-              label: "Cámaras",
-              icon: angosta ? undefined : <Camera className="h-4 w-4" aria-hidden />,
-            },
-          ]}
-        />
-        {!angosta && (
-          <button type="button" onClick={actualizar} title="Actualizar" className={BTN}>
-            <RefreshCw className={`h-4 w-4 ${d.cargando ? "animate-spin" : ""}`} aria-hidden />
-            <span className="max-sm:sr-only">Actualizar</span>
-          </button>
-        )}
-        <ActionMenu
-          label="Más acciones de cámaras"
-          icon={MoreHorizontal}
-          soloIcono
-          size="sm"
-          actions={[
-            ...(angosta ? [{ id: "actualizar", label: "Actualizar", icon: RefreshCw, onSelect: actualizar }] : []),
-            {
-              id: "otra-pantalla",
-              label: "Ver en otra pantalla",
-              hint: "En tu Smart TV o en tu celular",
-              icon: Tv,
-              onSelect: () => setOtra({ pestana: "tv" }),
-            },
-          ]}
-        />
-      </div>
-
-      {/* En «Cámaras» el aviso va con la lista (también en verde): acá sólo los problemas, y una vez. */}
-      {vista !== "camaras" && <DireccionAviso estado={dir.estado} soloProblemas />}
-      {sinIa && <SinIaAviso />}
-      <CalladasAviso calladas={calladas} />
-      <MensajeAccion error={chalecos ? null : d.error} aviso={chalecos ? null : d.aviso} />
-
-      {vista === "fotos" && (
-        <EstadoCamaras
-          camaras={d.camaras}
-          direccionParaCamara={dir.direccionParaCamara}
-          motivoSinDireccion={porQueNoSeCopia(dir.estado)}
-          guardando={d.guardando}
-          onRotar={(id) => void d.rotar(id)}
-          onErrorCopia={() =>
-            d.setError("El navegador no dejó copiar. Selecciona la dirección a mano.")
-          }
-          onVerVisor={verVisor}
-        />
-      )}
-      {vista === "fotos" && (
-        <HistorialFotos
-          camaras={d.camaras}
-          capturas={d.capturas}
-          cargando={d.cargando}
-          guardando={d.guardando}
-          onBorrar={(id) => void d.borrarCaptura(id)}
-          onConfirmar={d.confirmarCruce}
-          onAsignarChaleco={abrirChalecos}
-          chalecosVivos={d.chalecos}
-          onIrACamaras={() => irA("camaras")}
-          onVerVisor={verVisor}
-        />
-      )}
-      {vista === "patio" && (
-        <HoyEnElPatio activo recarga={recarga} onAsignarChaleco={abrirChalecos} />
-      )}
-      {vista === "personas" && <VistaPersonas activo recarga={recarga} camaras={d.camaras} />}
+  /* El conteo va en el rótulo y no en `badge` (la pastilla marcada daba 2,98:1). */
+  const tabs: AdminTab[] = [
+    { id: "fotos", label: d.capturas.length ? `Fotos (${d.capturas.length})` : "Fotos", icon: ImageIcon },
+    { id: "patio", label: "Hoy en el patio", icon: CalendarDays },
+    { id: "personas", label: "Personas", icon: Users },
+    { id: "camaras", label: "Cámaras", icon: Camera },
+  ];
+  /* Banda del panel (Brandon 10-10): título · pestañas · acción principal · «Más». */
+  const acciones = (
+    <>
       {vista === "camaras" && (
-        <VistaCamaras
-          datos={d}
-          conexion={conexion}
-          estadoDireccion={dir.estado}
-          direccionParaCamara={dir.direccionParaCamara}
-          onConectar={setConectando}
-          onAbrirChalecos={() => abrirChalecos(null)}
-          onAsignarChaleco={abrirChalecos}
-        />
+        <button
+          type="button"
+          onClick={() => {
+            d.setError(null);
+            setAgregando(true);
+          }}
+          title="Agregar cámara"
+          className={button({ variant: "primary", className: "shrink-0 gap-1.5 rounded-xl max-sm:w-12 max-sm:px-0" })}
+        >
+          <Plus className="h-4 w-4" aria-hidden />
+          <span className="max-sm:sr-only">Agregar cámara</span>
+        </button>
       )}
+      <ActionMenu
+        label="Más acciones de cámaras"
+        icon={MoreHorizontal}
+        soloIcono
+        size="md"
+        className="w-12 shrink-0"
+        title="Actualizar y ver en otra pantalla"
+        actions={[
+          { id: "actualizar", label: "Actualizar", hint: "Vuelve a pedir fotos, cámaras y el día", icon: RefreshCw, onSelect: actualizar },
+          { id: "otra-pantalla", label: "Ver en otra pantalla", hint: "En tu Smart TV o en tu celular", icon: Tv, onSelect: () => setOtra({ pestana: "tv" }) },
+        ]}
+      />
+    </>
+  );
+
+  return (
+    <>
+      <AdminTabBar
+        heading={{
+          title: "Cámaras",
+          icon: Camera,
+          description:
+            "Lo que mandó la cámara del patio con su hora y lo que se ve en cada foto (Fotos), el día entero (Hoy en el patio), las fotos del detector de personas (Personas) y el alta y la conexión de cada cámara (Cámaras).",
+          actions: acciones,
+        }}
+        tabs={tabs}
+        activeTab={vista}
+        onTabChange={(id) => irA(id as Vista)}
+        moduleId={MODULE_ID}
+      >
+        <div className="space-y-3" data-vista="camaras">
+          {/* Los avisos en UNA línea, el más grave primero; en «Cámaras» también la dirección en verde. */}
+          <AvisosEnUnaLinea estado={dir.estado} calladas={calladas} sinIa={sinIa} conDireccionOk={vista === "camaras"} />
+          <MensajeAccion error={chalecos || agregando ? null : d.error} aviso={chalecos ? null : d.aviso} />
+
+          {vista === "fotos" && (
+            <EstadoCamaras
+              camaras={d.camaras}
+              direccionParaCamara={dir.direccionParaCamara}
+              motivoSinDireccion={porQueNoSeCopia(dir.estado)}
+              guardando={d.guardando}
+              onRotar={(id) => void d.rotar(id)}
+              onErrorCopia={() =>
+                d.setError("El navegador no dejó copiar. Selecciona la dirección a mano.")
+              }
+              onVerVisor={verVisor}
+            />
+          )}
+          {vista === "fotos" && (
+            <HistorialFotos
+              camaras={d.camaras}
+              capturas={d.capturas}
+              cargando={d.cargando}
+              guardando={d.guardando}
+              onBorrar={(id) => void d.borrarCaptura(id)}
+              onConfirmar={d.confirmarCruce}
+              onAsignarChaleco={abrirChalecos}
+              chalecosVivos={d.chalecos}
+              onIrACamaras={() => irA("camaras")}
+              onVerVisor={verVisor}
+            />
+          )}
+          {vista === "patio" && (
+            <HoyEnElPatio activo recarga={recarga} onAsignarChaleco={abrirChalecos} />
+          )}
+          {vista === "personas" && <VistaPersonas activo recarga={recarga} camaras={d.camaras} />}
+          {vista === "camaras" && (
+            <VistaCamaras
+              datos={d}
+              conexion={conexion}
+              estadoDireccion={dir.estado}
+              direccionParaCamara={dir.direccionParaCamara}
+              onConectar={setConectando}
+              onAbrirChalecos={() => abrirChalecos(null)}
+              onAgregar={() => setAgregando(true)}
+              onAsignarChaleco={abrirChalecos}
+            />
+          )}
+        </div>
+      </AdminTabBar>
 
       {camaraAConectar && (
         <ConectarCamaraModal
@@ -282,6 +270,9 @@ function PantallaCamaras({ otra, setOtra }: { otra: OtraPantalla; setOtra: (o: O
           onCerrar={() => setOtra(null)}
         />
       )}
+      {agregando && (
+        <AgregarCamaraModal guardando={d.guardando} error={d.error} onCrear={d.crear} onCerrar={() => setAgregando(false)} />
+      )}
       {chalecos && (
         <ChalecosModal
           key={chalecos.numero ?? "nuevo"}
@@ -295,6 +286,6 @@ function PantallaCamaras({ otra, setOtra }: { otra: OtraPantalla; setOtra: (o: O
           onCerrar={() => setChalecos(null)}
         />
       )}
-    </div>
+    </>
   );
 }

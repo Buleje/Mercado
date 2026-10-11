@@ -32,7 +32,7 @@ const ESTADO: Record<EstadoTrozaALaVista, { texto: string; tono: Tono }> = {
 };
 
 const sePuede = (t: TrozaALaVista) => t.estado === "libre" && t.motivo === null;
-const TH = "px-2 py-2 text-left text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]";
+const TH = "px-2 py-2 text-left text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]";
 const TD = "px-2 py-2 align-top text-sm text-[var(--text-primary)]";
 
 function Fila({ t, elegida, onElegir }: { t: TrozaALaVista; elegida: boolean; onElegir: (v: boolean) => void }) {
@@ -58,7 +58,7 @@ function Fila({ t, elegida, onElegir }: { t: TrozaALaVista; elegida: boolean; on
           {t.troza?.loteCode && t.estado !== "libre" ? `${e.texto} ${t.troza.loteCode}` : e.texto}
         </span>
         {t.motivo && t.estado === "libre" && (
-          <span className="mt-0.5 block text-xs text-[var(--text-tertiary)]">{t.motivo}</span>
+          <span className="mt-0.5 block text-sm text-[var(--text-tertiary)]">{t.motivo}</span>
         )}
       </td>
       <td className={`${TD} tabular-nums text-[var(--text-secondary)]`}>{formatTime(t.ultima)}</td>

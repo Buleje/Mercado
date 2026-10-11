@@ -30,7 +30,8 @@ export default function FilaAvisosWhatsapp({ camara: c, guardando, onGuardarAvis
   };
 
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-[var(--rule-soft)] pt-2">
+    /* Comparte renglón con «Mira la pila» (10-10): la raya y el margen los pone `CamaraFila`. */
+    <div className="flex min-w-0 flex-[1_1_32rem] flex-wrap items-center gap-2">
       {/* En el celular la etiqueta y el número se quedan con la fila entera:
           con `min-w-*` (anulado por el `min-width: 0` global) el campo
           quedaba de 10 px a 400. El ⓘ va pegado al rótulo: al final de la
@@ -53,14 +54,14 @@ export default function FilaAvisosWhatsapp({ camara: c, guardando, onGuardarAvis
           inputMode="tel"
           placeholder="9 dígitos"
           aria-label={`WhatsApp al que avisa ${c.nombre}`}
-          className="h-9 w-full min-w-0 flex-1 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+          className="h-12 w-full min-w-0 flex-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
         />
       </div>
       <select
         value={avisos.cuando}
         onChange={(e) => setEdit({ ...avisos, cuando: e.target.value as AvisosCamara["cuando"] })}
         aria-label={`Cuándo avisa ${c.nombre}`}
-        className="h-9 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+        className="h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
       >
         <option value="noche">sólo de noche (19–06)</option>
         <option value="siempre">siempre</option>

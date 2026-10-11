@@ -34,7 +34,7 @@ function Copiable({
   const [listo, setListo] = useState(false);
   return (
     <span className="flex min-w-0 items-center gap-1.5">
-      <code className="min-w-0 break-all rounded bg-[var(--surface-sunken)] px-1.5 py-0.5 font-mono text-xs text-[var(--text-primary)]">
+      <code className="min-w-0 break-all rounded bg-[var(--surface-sunken)] px-1.5 py-0.5 font-mono text-sm text-[var(--text-primary)]">
         {mostrar ?? valor}
       </code>
       <button
@@ -117,7 +117,7 @@ export default function ValoresHttpListening({ direccion, estado, conToken, sinC
       <dl className="grid gap-x-3 gap-y-1.5 sm:grid-cols-[minmax(10rem,auto)_1fr]">
         {filas.map((f) => (
           <div key={f.campo} className="contents">
-            <dt className="text-xs font-bold text-[var(--text-tertiary)] sm:pt-1.5">{f.campo}</dt>
+            <dt className="text-sm font-bold text-[var(--text-tertiary)] sm:pt-1.5">{f.campo}</dt>
             <dd className="flex min-w-0 items-center gap-1.5">
               {f.copiar ? (
                 <Copiable valor={f.valor} mostrar={f.mostrar} onErrorCopia={onErrorCopia} />
@@ -145,7 +145,7 @@ export default function ValoresHttpListening({ direccion, estado, conToken, sinC
         ))}
       </dl>
       {v.alternativa && (
-        <p className="text-xs text-[var(--text-tertiary)]">
+        <p className="text-sm text-[var(--text-tertiary)]">
           ¿El menú no ofrece HTTPS? Protocolo <b>HTTP</b> y puerto <b>{v.alternativa.puerto}</b>,
           mismo host y URL. La prueba del paso 5 dice si así llega.
         </p>

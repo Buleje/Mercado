@@ -69,7 +69,7 @@ export default function CapturaTarjeta({
             <span className="block truncate text-sm font-bold text-[var(--text-primary)]">
               {nombreCamara}
             </span>
-            <span className="block truncate text-xs text-[var(--text-tertiary)]">
+            <span className="block truncate text-sm text-[var(--text-tertiary)]">
               {cuando} · {etiquetaDeCaptura(c)}
             </span>
           </span>
@@ -87,7 +87,7 @@ export default function CapturaTarjeta({
         </div>
         {c.lectura?.descripcion && (
           <p
-            className="line-clamp-2 text-xs leading-snug text-[var(--text-secondary)]"
+            className="line-clamp-2 text-sm leading-snug text-[var(--text-secondary)]"
             title={c.lectura.descripcion}
           >
             {c.lectura.descripcion}

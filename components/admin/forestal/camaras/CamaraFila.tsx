@@ -124,16 +124,13 @@ export default function CamaraFila({
             </span>
             {/* El lápiz relee la lista con la misma recarga silenciosa que una foto subida. */}
             <RenombrarCamara id={c.id} nombre={c.nombre} lugar={c.lugar ?? ""} onListo={onFotoGuardada} />
+            {/* La pastilla va con el nombre (10-10): a la derecha partía la fila de botones en dos. */}
+            {puente.esPuente ? <PastillaPuente cuadro={puente.cuadro} /> : <PastillaConexion estado={est} />}
           </span>
-          <span className="block truncate text-xs text-[var(--text-tertiary)]">
+          <span className="block truncate text-sm text-[var(--text-tertiary)]">
             {c.lugar || "Sin lugar declarado"} · {lineaDeAviso(c, ahora)}
           </span>
         </span>
-        {puente.esPuente ? (
-          <PastillaPuente cuadro={puente.cuadro} />
-        ) : (
-          <PastillaConexion estado={est} />
-        )}
         {/* Sin visor propio, «En vivo» abre Hik-Connect; con él, lo hace el ojo de abajo. */}
         {est.tipo !== "conectada" && !puente.esPuente && <BotonEnVivo nombre={c.nombre} camaraId={c.id} />}
         <button
@@ -167,7 +164,7 @@ export default function CamaraFila({
             title={visorOculto ? "Ver en vivo con el visor del panel" : "Ocultar el visor"}
             aria-label={visorOculto ? `Ver ${c.nombre} ahora` : `Ocultar el visor de ${c.nombre}`}
             aria-pressed={!visorOculto}
-            className={cn(BTN, "w-9 justify-center px-0")}
+            className={cn(BTN, "w-12 justify-center px-0")}
           >
             {visorOculto ? (
               <Eye className="h-4 w-4" aria-hidden />
@@ -176,16 +173,6 @@ export default function CamaraFila({
             )}
           </button>
         )}
-        <button
-          type="button"
-          onClick={onRotar}
-          disabled={guardando}
-          title="Dirección nueva: la anterior deja de funcionar"
-          aria-label={`Cambiar la dirección de ${c.nombre}`}
-          className={cn(BTN, "w-9 justify-center px-0")}
-        >
-          <RefreshCw className="h-4 w-4" aria-hidden />
-        </button>
         <MenuMasCamara
           nombre={c.nombre}
           guardando={guardando}
@@ -194,13 +181,15 @@ export default function CamaraFila({
           onQuitar={onQuitar}
           zonas={zonas.length}
           onZonas={() => setZonasAbierto(true)}
+          onRotar={onRotar}
         />
       </div>
 
-      {/* Avisos y pila: lo que la cámara hace sola con cada foto. */}
-      <FilaAvisosWhatsapp camara={c} guardando={guardando} onGuardarAvisos={onGuardarAvisos} />
-
-      <InterruptorPila camara={c} guardando={guardando} onCambiar={onVigilarPila} />
+      {/* Avisos y pila: lo que la cámara hace sola con cada foto. Un renglón si entra (10-10). */}
+      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-[var(--rule-soft)] pt-2">
+        <FilaAvisosWhatsapp camara={c} guardando={guardando} onGuardarAvisos={onGuardarAvisos} />
+        <InterruptorPila camara={c} guardando={guardando} onCambiar={onVigilarPila} />
+      </div>
 
       {/* Conexión directa: sólo aparece cuando hay algo que decir. */}
       {est.tipo === "falla" && (

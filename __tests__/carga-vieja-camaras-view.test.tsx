@@ -91,6 +91,16 @@ async function resolver(p: Pendiente | undefined, cuerpo: unknown) {
 }
 
 async function clic(nombre: string) {
+  /* «Actualizar» vive en el menú «Más» de la banda desde el 10-10. */
+  if (nombre === "Actualizar") {
+    await act(async () => {
+      screen.getByRole("button", { name: /Más acciones de cámaras/ }).click();
+    });
+    await act(async () => {
+      screen.getByRole("menuitem", { name: /Actualizar/ }).click();
+    });
+    return;
+  }
   await act(async () => {
     screen.getByRole("button", { name: nombre }).click();
   });

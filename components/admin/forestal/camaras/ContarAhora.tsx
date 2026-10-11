@@ -141,7 +141,7 @@ export default function ContarAhora({ esHoy, onContado }: { esHoy: boolean; onCo
           example="#37 · 5,2 px/celda · holgado · 3/3 = la troza del marcador 37 se ve bien en las tres fotos."
         />
         {esHoy && c.camaras && conFoto.length === 0 && (
-          <span className="text-xs text-[var(--text-tertiary)]">Enlaza la cámara con Hik-Connect para contar desde aquí.</span>
+          <span className="text-sm text-[var(--text-tertiary)]">Enlaza la cámara con Hik-Connect para contar desde aquí.</span>
         )}
       </div>
       {ocupado && (

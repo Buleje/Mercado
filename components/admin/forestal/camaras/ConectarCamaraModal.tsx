@@ -162,20 +162,20 @@ export default function ConectarCamaraModal({
 export function PastillaConexion({ estado }: { estado: EstadoConexion }) {
   if (estado.tipo === "conectada") {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/10 px-2 py-1 text-xs font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+      <span className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/10 px-2 py-1 text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
         <Wifi className="h-3.5 w-3.5" aria-hidden /> Conectada · {nombreDelAparato(estado.conexion)}
       </span>
     );
   }
   if (estado.tipo === "falla") {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/10 px-2 py-1 text-xs font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+      <span className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/10 px-2 py-1 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
         <AlertTriangle className="h-3.5 w-3.5" aria-hidden /> Falló la conexión
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-2 py-1 text-xs font-bold text-[var(--text-secondary)]">
+    <span className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-2 py-1 text-sm font-bold text-[var(--text-secondary)]">
       <WifiOff className="h-3.5 w-3.5" aria-hidden /> Sólo recibe fotos
     </span>
   );

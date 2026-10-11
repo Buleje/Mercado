@@ -48,7 +48,7 @@ export default function RetencionPersonas() {
             disabled={!retencion.puedeEditar}
             aria-label="Días que se guardan las fotos de personas"
             aria-invalid={!valido}
-            className="h-9 w-20 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-center text-sm tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)] disabled:opacity-60"
+            className="h-12 w-20 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-center text-sm tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)] disabled:opacity-60"
           />
           <span>días</span>
         </label>

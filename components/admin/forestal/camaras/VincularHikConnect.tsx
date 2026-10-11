@@ -13,6 +13,7 @@
 
 import { useState } from "react";
 import { CardTitle } from "@buleje/design-system";
+import { button } from "@/components/ui-system/button-variants";
 import { ChevronDown, KeyRound, Link2, Loader2, Trash2, Video } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useMiRol } from "@/hooks/use-mi-rol";
@@ -25,7 +26,7 @@ import QuienMiro from "./QuienMiro";
 import VincularHikConnectPasos from "./VincularHikConnectPasos";
 
 const CAMPO =
-  "mt-1 h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
+  "mt-1 h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
 
 const REGIONES: { value: RegionElegida; label: string }[] = [
   { value: "auto", label: "Automática (recomendado)" },
@@ -58,7 +59,9 @@ export default function VincularHikConnect({
   const { hik } = ctx;
   const e = hik.estado;
   const vinculado = !!e?.vinculado;
-  const pasosAbiertos = verPasos || (!vinculado && puedeEscribir);
+  /* Los pasos para sacar las claves arrancan plegados también sin vincular
+     (Brandon 10-10: «compactar»): el formulario queda a la vista y la guía, a un toque. */
+  const pasosAbiertos = verPasos;
 
   const vincular = async () => {
     if (await hik.vincular(appKey, secretKey, region)) {
@@ -92,12 +95,12 @@ export default function VincularHikConnect({
 
         <MensajeAccion error={hik.error} aviso={hik.aviso} />
 
-        {vinculado && (
+        {(vinculado || puedeEscribir) && (
           <button
             type="button"
             onClick={() => setVerPasos((v) => !v)}
             aria-expanded={pasosAbiertos}
-            className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-[var(--text-secondary)]"
+            className="inline-flex min-h-12 items-center gap-1 text-sm font-bold text-[var(--text-secondary)]"
           >
             <ChevronDown
               className={`h-4 w-4 transition ${pasosAbiertos ? "rotate-180" : ""}`}
@@ -177,7 +180,7 @@ export default function VincularHikConnect({
                   appKey.trim().length < 8 ||
                   secretKey.trim().length < 8
                 }
-                className="inline-flex h-11 flex-1 items-center justify-center gap-1.5 rounded-xl bg-[var(--accent-600,var(--accent))] px-4 text-sm font-bold text-white transition hover:brightness-95 disabled:opacity-50"
+                className={button({ variant: "primary", className: "flex-1 gap-1.5 rounded-xl" })}
               >
                 {hik.trabajando === "vincular" ? (
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
