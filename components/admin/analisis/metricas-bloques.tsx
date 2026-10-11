@@ -2,7 +2,7 @@
 
 /**
  * Bloques de Análisis › Métricas con su propia carga: Top 10 clientes,
- * producto estrella, alertas de ventas y segmentación RFM. Salieron tal cual de
+ * producto estrella, alertas de ventas y enlace a los mejores clientes de Campañas. Salieron tal cual de
  * `AnalyticsBIModule.tsx` (886 líneas) al pasarlo al patrón del panel.
  */
 
@@ -11,12 +11,12 @@ import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import Image from "next/image";
 import { Flame } from "@buleje/design-system/icons";
 import { formatCurrency, formatNumber } from "@/lib/format";
-import type { Sale, Customer } from "@/types/erp";
+import type { Sale } from "@/types/erp";
 import { useReportChartEmpty } from "@/components/admin/shared/ChartManager";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
+import EnlacePanel from "@/components/admin/shared/EnlacePanel";
 
 const AnomalyDetector = lazy(() => import("@/components/admin/analytics/AnomalyDetector"));
-const RFMSegmentationPanel = lazy(() => import("@/components/admin/analytics/RFMSegmentationPanel"));
 
 // ── Top 10 Clientes ─────────────────────────────────────────────────────────
 export function Top10Clientes({ refreshKey, reportEmpty = true }: { refreshKey: number; reportEmpty?: boolean }) {
@@ -259,33 +259,14 @@ export function AnomalyDetectorWrapper({ refreshKey }: { refreshKey: number }) {
   );
 }
 
-// ── RFMWrapper — fetches data for RFMSegmentationPanel ──────────────────────
-export function RFMWrapper({ refreshKey }: { refreshKey: number }) {
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [sales, setSales] = useState<Sale[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [customersRaw, salesRaw] = await Promise.all([
-        fetch("/api/customers?limit=500", { credentials: "include" }).then(r => r.ok ? r.json() : []).catch(() => []),
-        fetch("/api/sales?limit=1000", { credentials: "include" }).then(r => r.ok ? r.json() : []).catch(() => []),
-      ]);
-      setCustomers(Array.isArray(customersRaw) ? customersRaw : customersRaw.customers ?? customersRaw.data ?? []);
-      setSales(Array.isArray(salesRaw) ? salesRaw : salesRaw.sales ?? []);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { fetchData(); }, [fetchData, refreshKey]);
-
-  if (loading) return <S />;
-
+// ── Segmentos RFM: una sola regla, la de Campañas › Mejores clientes ────────
+// Antes se recalculaba acá con otros cortes y nombres en inglés (Champions,
+// At Risk…). Ahora se manda a donde ya vive, con los nombres en español.
+export function MejoresClientesEnlace() {
   return (
-    <Suspense fallback={<S />}>
-      <RFMSegmentationPanel customers={customers} sales={sales} />
-    </Suspense>
+    <div className="flex flex-col items-start gap-1 py-6 text-sm text-[var(--text-secondary)]">
+      <p>Los segmentos por cómo compra cada cliente (los mejores, fieles, en riesgo, dormidos) viven en Campañas, con qué hacer con cada grupo.</p>
+      <EnlacePanel href="/admin?tab=campanas&vista=rfm">Ver Mejores clientes en Campañas</EnlacePanel>
+    </div>
   );
 }

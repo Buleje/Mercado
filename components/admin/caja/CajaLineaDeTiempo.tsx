@@ -6,6 +6,7 @@ import { activateProps } from "@/components/admin/shared/a11y";
 import { medioDeMovimiento } from "@/lib/caja/saldo-esperado";
 import { formatTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useCierreACiegas } from "@/components/admin/turnos/cierre-a-ciegas";
 import type { ItemLineaDeTiempo } from "./use-caja-registradora";
 import { COLOR_SIGNO, fmt, signoDe } from "./tipos";
 
@@ -26,6 +27,8 @@ const hora = (iso: string, segundos = false) => {
 
 export function CajaLineaDeTiempo({ items, efectivoActual }: { items: ItemLineaDeTiempo[]; efectivoActual: number }) {
   const [abierto, setAbierto] = useState<number | null>(null);
+  /* Cierre a ciegas: «Efectivo actual» es lo esperado; el cajero no lo ve. */
+  const { ciego } = useCierreACiegas();
   return (
     <div className="max-h-[70vh] overflow-y-auto px-4 py-3">
       {items.map((item, idx) => {
@@ -71,7 +74,7 @@ export function CajaLineaDeTiempo({ items, efectivoActual }: { items: ItemLineaD
         <div className="w-2.5 h-2.5 rounded-full bg-[var(--data-warning-500)] animate-pulse shrink-0 mt-1" />
         <div className="pb-1">
           <span className="text-sm text-[var(--text-secondary)] font-mono">ahora</span>
-          <p className="text-sm font-bold text-[var(--text-primary)]">Efectivo actual: {fmt(efectivoActual)}</p>
+          <p className="text-sm font-bold text-[var(--text-primary)]">{ciego !== false ? "Efectivo actual: al contar" : `Efectivo actual: ${fmt(efectivoActual)}`}</p>
         </div>
       </div>
     </div>

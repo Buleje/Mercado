@@ -22,7 +22,7 @@ import ChartsEmptyState from "@/components/admin/shared/ChartsEmptyState";
 import { BarraDeSecciones, idPestanaDeSeccion } from "@/components/admin/shared/BarraDeSecciones";
 import { CabeceraAnalisis } from "@/components/admin/analisis/CabeceraAnalisis";
 import { AnalyticsCard, TabbedCard } from "@/components/admin/analisis/metricas-tarjetas";
-import { AnomalyDetectorWrapper, RFMWrapper, StarProductCard, Top10Clientes } from "@/components/admin/analisis/metricas-bloques";
+import { AnomalyDetectorWrapper, MejoresClientesEnlace, StarProductCard, Top10Clientes } from "@/components/admin/analisis/metricas-bloques";
 import { useIndicadoresMetricas } from "@/components/admin/analisis/use-indicadores-metricas";
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
@@ -106,7 +106,7 @@ function graficosDe(seccion: Seccion, vuelta: number): ChartDefinition[] {
       return [
         { id: "client-intelligence", label: "Segmentos y ranking", description: "Segmentación RFM y ranking de mejores clientes", component: (
           <TabbedCard title="Segmentos y ranking" subtitle="Por cómo compran (recencia, frecuencia y monto) · los mejores" icon={Users} tabs={[
-            { id: "rfm", label: "Segmentos", content: <RFMWrapper refreshKey={vuelta} /> },
+            { id: "rfm", label: "Segmentos", content: <MejoresClientesEnlace /> },
             { id: "top10", label: "Top 10", content: <Top10Clientes refreshKey={vuelta} reportEmpty={false} /> },
           ]} />
         ) },

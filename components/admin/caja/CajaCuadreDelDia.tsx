@@ -15,6 +15,7 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { ParteDelDia } from "@/lib/caja/parte-del-dia";
 import { formatTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useCierreACiegas } from "@/components/admin/turnos/cierre-a-ciegas";
 import { fmt } from "./tipos";
 
 interface Props {
@@ -27,6 +28,9 @@ interface Props {
 }
 
 export function CajaCuadreDelDia({ parte, cargando, error, onReintentar, compacto }: Props) {
+  /* Cierre a ciegas: el cajero no ve lo esperado en el cajón hasta contar. */
+  const { ciego } = useCierreACiegas();
+  const sinEsperado = ciego !== false;
   const [verSinCaja, setVerSinCaja] = useState(false);
   const marco = compacto
     ? ""
@@ -207,7 +211,7 @@ export function CajaCuadreDelDia({ parte, cargando, error, onReintentar, compact
                   colSpan={3}
                   className="py-2 pl-2 text-right font-extrabold tabular-nums text-primary"
                 >
-                  {fmt(parte.esperado)}
+                  {sinEsperado ? <span className="text-sm font-semibold text-[var(--text-secondary)]">Al contar</span> : fmt(parte.esperado)}
                   {parte.contado != null && (
                     <span
                       className={cn(

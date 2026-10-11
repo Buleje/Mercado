@@ -18,6 +18,7 @@ import { Loader2 } from "@buleje/design-system/icons";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { METODOS_DE_CAJA, medioDeMovimiento } from "@/lib/caja/saldo-esperado";
+import { useCierreACiegas } from "@/components/admin/turnos/cierre-a-ciegas";
 import {
   NOMBRE_DEL_MEDIO_DE_CAJA,
   esperadoTrasCambiarMedio,
@@ -41,6 +42,10 @@ export function CambiarMedioMovimiento({ cashRegisterId, movimiento, esperadoAct
   const { confirm, notice } = useConfirm();
   const [guardando, setGuardando] = useState(false);
   const selectId = useId();
+  /* Cierre a ciegas (0ddc10d13): quien cuenta sin ver lo esperado tampoco lo ve acá — la
+     confirmación y el aviso lo decían («el esperado pasa de…»). `null` (cargando) = ocultar. */
+  const { ciego } = useCierreACiegas();
+  const ocultarEsperado = ciego !== false;
   const actual = medioDeMovimiento(movimiento.method);
   const opciones = METODOS_DE_CAJA.filter((m) => m !== actual);
 
@@ -51,7 +56,7 @@ export function CambiarMedioMovimiento({ cashRegisterId, movimiento, esperadoAct
       title: `¿Pasar este ${tipo} de ${nombreDelMedio(actual)} a ${NOMBRE_DEL_MEDIO_DE_CAJA[nuevo]}?`,
       description:
         `${formato(movimiento.amount)}${movimiento.description ? ` · ${movimiento.description}` : ""}. ` +
-        textoCambioDelEsperado(cambio, formato) +
+        (ocultarEsperado ? "" : textoCambioDelEsperado(cambio, formato)) +
         " Queda registrado quién lo cambió.",
       intent: "warning",
       confirmLabel: `Sí, pasar a ${NOMBRE_DEL_MEDIO_DE_CAJA[nuevo]}`,
@@ -74,7 +79,11 @@ export function CambiarMedioMovimiento({ cashRegisterId, movimiento, esperadoAct
         return;
       }
       const esperado = typeof body.esperadoDespues === "number" ? body.esperadoDespues : cambio.despues;
-      toast.success(`Medio cambiado a ${NOMBRE_DEL_MEDIO_DE_CAJA[nuevo]}. Efectivo esperado: ${formato(esperado)}.`);
+      toast.success(
+        ocultarEsperado
+          ? `Medio cambiado a ${NOMBRE_DEL_MEDIO_DE_CAJA[nuevo]}.`
+          : `Medio cambiado a ${NOMBRE_DEL_MEDIO_DE_CAJA[nuevo]}. Efectivo esperado: ${formato(esperado)}.`,
+      );
       onCambiado();
     } catch {
       await notice({

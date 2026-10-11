@@ -197,7 +197,7 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
     { key: "negocio", label: "Datos del negocio", hint: "Nombre, RUC, WhatsApp, dirección, horario, logo, portada y redes" },
     { key: "cobros", label: "Cobros y comprobantes", hint: "Efectivo, Yape, Plin, transferencia, alerta de caja, hora de cierre, RUC emisor, IGV y conexión con SUNAT" },
     { key: "delivery", label: "Delivery", hint: "Zonas con tarifa y tiempo, y desde cuánto el envío es gratis" },
-    { key: "tienda", label: "Tienda web", hint: "Colores, slogan, modo vacaciones y las secciones y menú de la tienda" },
+    { key: "tienda", label: "Tienda web", hint: "Modo vacaciones y los atajos a Mi tienda › Apariencia (colores, eslogan, secciones)" },
     { key: "plan", label: "Plan", hint: "Tu plan, el uso del mes, funcionalidades, dominio propio, portal de facturación y comparar planes (Stripe o Mercado Pago)", origen: ["config", "plan"] },
     { key: "equipo", label: "Usuarios y acceso", hint: "Usuarios y roles, tu perfil y contraseña, sesión activa y dispositivos" },
     { key: "panel", label: "Mi panel", hint: "Módulos, orden de la barra lateral, accesos directos y pestaña por defecto" },

@@ -1,18 +1,12 @@
-import dynamic from "next/dynamic";
-import { useTenant } from "@/contexts/tenant-context";
+import EnlacePanel from "@/components/admin/shared/EnlacePanel";
 import { toast } from "sonner";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { Palmtree } from "@buleje/design-system/icons";
-import { FieldLabel, TextInput, Toggle, SectionCard, Plegable } from "@/components/admin/settings/campos";
+import { FieldLabel, TextInput, Toggle, SectionCard } from "@/components/admin/settings/campos";
 import type { AjustesEstado } from "@/components/admin/settings/use-ajustes";
 
-const StorefrontEditor = dynamic(() => import("@/components/admin/StorefrontEditor"), { ssr: false });
-
 export function SeccionTienda({ aj }: { aj: AjustesEstado }) {
-  const { businessName, maintenanceMode, setMaintenanceMode, maintenanceMsg, setMaintenanceMsg, primaryColor, setPrimaryColor, secondaryColor, setSecondaryColor, slogan, setSlogan, marcarGuardado } = aj;
-  const { branding } = useTenant();
-  // Vista previa: el nombre del negocio, o el del tenant si todavía no lo escribiste.
-  const nombreVisible = businessName.trim() || branding.name || "Tu tienda";
+  const { maintenanceMode, setMaintenanceMode, maintenanceMsg, setMaintenanceMsg, marcarGuardado } = aj;
   return (
     <div className="space-y-4">
       <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
@@ -54,44 +48,18 @@ export function SeccionTienda({ aj }: { aj: AjustesEstado }) {
         )}
       </SectionCard>
 
-      <SectionCard title="Colores de marca" desc="Personaliza los colores de tu tienda">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <FieldLabel htmlFor="settings-primaryColor">Color primario</FieldLabel>
-            <div className="flex items-center gap-2">
-              <input aria-label="Elegir color primario" type="color" value={primaryColor} onChange={e => setPrimaryColor(e.target.value)} className="h-12 w-12 shrink-0 rounded-xl border border-[var(--rule-base)] cursor-pointer" />
-              <TextInput id="settings-primaryColor" value={primaryColor} onChange={setPrimaryColor} mono />
-            </div>
-          </div>
-          <div>
-            <FieldLabel htmlFor="settings-secondaryColor">Color secundario</FieldLabel>
-            <div className="flex items-center gap-2">
-              <input aria-label="Elegir color secundario" type="color" value={secondaryColor} onChange={e => setSecondaryColor(e.target.value)} className="h-12 w-12 shrink-0 rounded-xl border border-[var(--rule-base)] cursor-pointer" />
-              <TextInput id="settings-secondaryColor" value={secondaryColor} onChange={setSecondaryColor} mono />
-            </div>
-          </div>
-          <div className="sm:col-span-2"><FieldLabel htmlFor="settings-slogan">Slogan</FieldLabel><TextInput id="settings-slogan" value={slogan} onChange={setSlogan} placeholder="Productos frescos, precios justos" /></div>
-        </div>
-        {/* Live preview */}
-        <div className="p-4 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)]" style={{ background: `linear-gradient(135deg, ${primaryColor}15, ${secondaryColor}15)` }}>
-          <p className="text-sm font-semibold text-[var(--text-secondary)] mb-2">Vista previa</p>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-sm" style={{ backgroundColor: primaryColor }}>{nombreVisible.slice(0, 1).toUpperCase()}</div>
-            <div><p className="text-sm font-extrabold" style={{ color: primaryColor }}>{nombreVisible}</p><p className="text-xs" style={{ color: secondaryColor }}>{slogan || "Tu slogan"}</p></div>
-          </div>
-          <div className="mt-3 flex gap-2">
-            <span className="px-3 py-1.5 rounded-lg text-xs font-bold text-white" style={{ backgroundColor: primaryColor }}>Primario</span>
-            <span className="px-3 py-1.5 rounded-lg text-xs font-bold text-white" style={{ backgroundColor: secondaryColor }}>Secundario</span>
-          </div>
-        </div>
+      {/* Colores, eslogan y secciones del inicio: los lee la tienda desde Mi tienda › Apariencia
+          (medido 11-10: Configuración guardaba otro color y la tienda no lo mostraba). */}
+      <SectionCard title="Apariencia de la tienda" desc="Colores, eslogan y secciones del inicio se editan en un solo lugar">
+        <ul className="space-y-2 text-sm">
+          <li><EnlacePanel href="/admin?tab=pagina-inicio&vista=apariencia&sub=colores">Editar colores en Mi tienda › Apariencia</EnlacePanel></li>
+          <li><EnlacePanel href="/admin?tab=pagina-inicio&vista=apariencia&sub=identidad">Editar nombre y eslogan en Mi tienda › Apariencia</EnlacePanel></li>
+          <li><EnlacePanel href="/admin?tab=pagina-inicio&vista=apariencia&sub=contacto">Secciones del inicio y contacto en Mi tienda › Apariencia</EnlacePanel></li>
+        </ul>
       </SectionCard>
 
       </div>
 
-
-      <Plegable clave="tienda-secciones-menu" titulo="Secciones y menú de la tienda" resumen="Qué bloques salen en el inicio de tu tienda y en qué orden">
-        <StorefrontEditor />
-      </Plegable>
     </div>
   );
 }
