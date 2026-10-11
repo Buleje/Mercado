@@ -45,6 +45,9 @@
  *                                   main; el barrido parcheaba fetch a mano, 3 intentos). Igual que `fallar`: se quita
  *                                   con {"fallar": null}. Si va AL PRINCIPIO de los pasos rige desde la primera carga;
  *                                   más abajo, desde la próxima ({"eval": "location.reload()"}).
+ *   {"espiar": "/api/x"}          → anota método, ruta y cuerpo de cada pedido a esa ruta (sale en el reporte y en
+ *                                   el resumen). {"espiar": ["/api/x", "POST", true]}: sólo ese método y lo FRENA con
+ *                                   200 {} — probar un botón que escribe sin tocar la base. Al principio rige desde la carga.
  *   {"clicTexto": "Rolliza"}      → clic por el DOM en el botón/pestaña/opción cuyo texto
  *                                   EMPIEZA con eso (dentro de main o de un diálogo). Para
  *                                   lo que `click` no alcanza: radios segmentados, botones
@@ -263,6 +266,8 @@ const evals = [];
 const capturas = [];
 /** «Failed to load resource: 404» no dice de qué: acá va el método, estado y ruta. */
 const respuestas = [];
+/** Lo que mandaron los pedidos espiados (`{"espiar": …}`): método, ruta y cuerpo. */
+const espiados = [];
 
 /** El fondo real del centro: el primer ancestro con fondo casi opaco (un tinte
  *  `bg-primary/10` no dice de qué tema es la superficie de abajo). */
@@ -415,6 +420,19 @@ async function reglasCss(page, sel, prop) {
 
 /** `fallar` (GET → 500 o el status dado; `null` quita todo) y `parchear` (→ 200 con ese JSON). */
 async function rutear(page, tipo, valor) {
+  if (tipo === "espiar") {
+    /* {"espiar": "/api/x"} anota cada pedido a esa ruta (método, query y cuerpo) en el reporte;
+       {"espiar": ["/api/x", "POST", true]} además lo FRENA con 200 {} — probar un botón que
+       escribe sin tocar la base (11-10: dos carriles parchearon `window.fetch` a mano). */
+    const [ruta, metodo = null, frenar = false] = Array.isArray(valor) ? valor : [valor, null, false];
+    return page.route((u) => u.pathname === ruta, (r) => {
+      const req = r.request();
+      if (metodo && req.method() !== metodo) return r.fallback();
+      const u = new URL(req.url());
+      espiados.push({ metodo: req.method(), ruta: u.pathname + u.search, cuerpo: (req.postData() ?? "").slice(0, 2000) });
+      return frenar ? r.fulfill({ status: 200, contentType: "application/json", body: "{}" }) : r.fallback();
+    });
+  }
   if (tipo === "fallar") {
     if (valor == null) return page.unrouteAll({ behavior: "ignoreErrors" });
     const [ruta, status = 500] = Array.isArray(valor) ? valor : [valor, 500];
@@ -447,7 +465,7 @@ async function recorrido(t, primero) {
      carriles midieron la vista vacía creyéndola parcheada, porque el patch sólo
      tocaba los pedidos de DESPUÉS). Los de más abajo siguen pidiendo un reload. */
   let rutasIniciales = 0;
-  while (rutasIniciales < pasos.length && ["fallar", "parchear"].includes(Object.keys(pasos[rutasIniciales] ?? {})[0])) {
+  while (rutasIniciales < pasos.length && ["fallar", "parchear", "espiar"].includes(Object.keys(pasos[rutasIniciales] ?? {})[0])) {
     const [tipo, valor] = Object.entries(pasos[rutasIniciales])[0];
     await rutear(page, tipo, valor);
     rutasIniciales++;
@@ -495,7 +513,7 @@ async function recorrido(t, primero) {
         else if (tipo === "llenar") await visible(page, valor[0]).fill(String(valor[1]), { timeout: 15_000 });
         else if (tipo === "elegir") await visible(page, valor[0]).selectOption(String(valor[1]), { timeout: 15_000 });
         else if (tipo === "subir") await page.locator(valor[0]).first().setInputFiles(String(valor[1]), { timeout: 15_000 });
-        else if (tipo === "fallar" || tipo === "parchear") {
+        else if (tipo === "fallar" || tipo === "parchear" || tipo === "espiar") {
           if (i < rutasIniciales) continue; // ya rige desde la primera carga
           await rutear(page, tipo, valor);
         }
@@ -698,7 +716,7 @@ try {
 }
 
 const ok = !falla && pageerrors.length === 0;
-const reporte = { ok, falla, tenant, ruta, capturas, respuestas: [...new Set(respuestas)], consola: consola.length, consolaTextos: [...new Set(consola)].slice(0, 8), pageerrors, evals, ms: Date.now() - t0 };
+const reporte = { ok, falla, tenant, ruta, capturas, respuestas: [...new Set(respuestas)], consola: consola.length, consolaTextos: [...new Set(consola)].slice(0, 8), pageerrors, evals, espiados, ms: Date.now() - t0 };
 const archivoReporte = path.join(salida, "reporte.json");
 try { writeFileSync(archivoReporte, JSON.stringify({ ...reporte, generado: new Date().toISOString() }, null, 1)); }
 catch (e) { console.error(`no pude escribir ${archivoReporte}: ${e.message}`); }
@@ -707,7 +725,7 @@ if (bandera("resumen")) {
      y un carril lo pidió como «Para acelerar»). El valor entero sigue en reporte.json. */
   const corto = (v) => { const j = JSON.stringify(v) ?? "undefined"; return j.length > 400 ? `${j.slice(0, 400)}…` : v; };
   const evalsCortos = evals.map(({ valor, ...resto }) => ({ ...resto, valor: corto(valor) }));
-  console.log(JSON.stringify({ ok, falla, tenant, ruta, capturas: capturas.map((c) => c.archivo), respuestasMalas: reporte.respuestas.slice(0, 5), consola: reporte.consola, pageerrors, evals: evalsCortos, ms: reporte.ms, reporte: archivoReporte }, null, 1));
+  console.log(JSON.stringify({ ok, falla, tenant, ruta, capturas: capturas.map((c) => c.archivo), respuestasMalas: reporte.respuestas.slice(0, 5), consola: reporte.consola, pageerrors, evals: evalsCortos, ...(espiados.length ? { espiados: espiados.map((e) => ({ ...e, cuerpo: e.cuerpo.slice(0, 300) })) } : {}), ms: reporte.ms, reporte: archivoReporte }, null, 1));
 } else {
   console.log(JSON.stringify({ ...reporte, reporte: archivoReporte }, null, 1));
 }
