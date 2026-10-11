@@ -1,887 +1,138 @@
 "use client";
 
-import { CardTitle, DataTable, LoadingState, SectionTitle, BlockTitle } from "@buleje/design-system";
-import { Field } from "@/components/admin/shared/Field";
-import { useState, useEffect, useId, useMemo, useCallback, useRef } from "react";
+/**
+ * Compras › Órdenes y recepción › Recepciones: lo que llegó de cada proveedor,
+ * con o sin orden, y «Recibir mercadería». Partido el 10-10 (887 líneas → piezas
+ * en `ordenes-compra/recepciones/`) con la misma lógica y el mismo guardado;
+ * la vista sigue el patrón del panel: cabecera en una fila, indicadores
+ * plegables, filtros en una fila pegada a la tabla.
+ */
+import { useId, useRef, useState, type ReactNode } from "react";
+import { AlertTriangle, CheckCircle2, ClipboardList, Download, PackageCheck, RotateCcw, ScanLine } from "@buleje/design-system/icons";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
-import {
-  PackageCheck, Download, Search, Eye, X,
-  Camera, AlertTriangle, CheckCircle2, XCircle,
-  ScanLine, ClipboardList, Plus, Check, Loader2, Sparkles,
-} from "@buleje/design-system/icons";
-import { cn, exportToCSV } from "@/lib/utils";
-import { csrfHeaders } from "@/lib/csrf-client";
-import ProductCombobox, { type ProductOption } from "@/components/admin/shared/ProductCombobox";
-import AvisoCreditoRecepcion, { type CreditoDeRecepcion } from "@/components/admin/cuentas-por-pagar/AvisoCreditoRecepcion";
-import { useConfirmarCreditoRecepcion } from "@/components/admin/cuentas-por-pagar/use-confirmar-credito-recepcion";
-import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import VenceLoteCampo from "@/components/admin/compras/VenceLoteCampo";
-import { errorDeVencimiento, pideLote, textoVence } from "@/lib/compras/lotes-recepcion";
-import { formatCurrency, formatDate } from "@/lib/format";
-import EnlacePanel from "@/components/admin/shared/EnlacePanel";
-import { enRango, rangoActivo, textoDeRango, type ChipFiltro, type FacetaOpcion, type Rango } from "@/lib/admin/filtros-columna";
-import { ChipsDeFiltros, FiltroColumnaMulti, FiltroColumnaRango } from "@/components/admin/shared/filtros-columna";
-import { useOrdenColumnas, EnOrden, BotonRestablecerColumnas } from "@/components/admin/shared/columnas-ordenables";
+import { exportToCSV } from "@/lib/utils";
+import { button } from "@/components/ui-system/button-variants";
+import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
+import AvisoCreditoRecepcion from "@/components/admin/cuentas-por-pagar/AvisoCreditoRecepcion";
+import type { MenuAccion } from "@/components/admin/shared/action-menu";
+import CabeceraOrdenes from "@/components/admin/ordenes-compra/CabeceraOrdenes";
+import { STATUS_MAP, type Reception } from "@/components/admin/ordenes-compra/recepciones/tipos";
+import { useRecepciones } from "@/components/admin/ordenes-compra/recepciones/use-recepciones";
+import { useNuevaRecepcion } from "@/components/admin/ordenes-compra/recepciones/use-nueva-recepcion";
+import RecepcionesFiltros from "@/components/admin/ordenes-compra/recepciones/RecepcionesFiltros";
+import RecepcionesTabla from "@/components/admin/ordenes-compra/recepciones/RecepcionesTabla";
+import RecepcionDetalle from "@/components/admin/ordenes-compra/recepciones/RecepcionDetalle";
+import NuevaRecepcion from "@/components/admin/ordenes-compra/recepciones/NuevaRecepcion";
 
-interface PendingOC {
-  id: string;
-  supplierId?: string;
-  supplierName?: string;
-  status?: string;
-  total?: number;
-  createdAt?: string;
-  items?: Array<{ productId?: number; name?: string; quantity?: number; unit?: string; unitCost?: number }>;
-}
-
-type ReceptionStatus = "programada" | "en-proceso" | "aceptada" | "parcial" | "rechazada";
-
-type ItemCondition = "ok" | "dañado" | "vencido" | "faltante";
-
-type ReceptionItem = {
-  product: string;
-  productId?: number;
-  expectedQty: number;
-  receivedQty: number;
-  condition: ItemCondition;
-  notes: string;
-  /** «Vence» de lo que llegó (YYYY-MM-DD). Con fecha, lo que entra a stock nace como lote. */
-  expiryDate?: string;
-  /** Lote del proveedor; sin él, el lote lleva la referencia de la recepción. */
-  lote?: string;
+const AYUDA = {
+  title: "Recepciones",
+  what: "Cada vez que llegó mercadería: de quién, contra qué orden, quién la revisó y qué llegó mal o no llegó.",
+  affects: "Recibir suma al stock con su costo y, si es contra una orden, la pasa a parcial o recibida. Lo dañado, vencido o faltante baja de lo que le debes al proveedor.",
+  example: "Llegaron 37 de 40 atunes y 2 abollados: «Recibir mercadería», eliges la orden y marcas 35 OK + 2 dañados + 3 faltantes.",
 };
 
-type Reception = {
-  id: string;
-  ref: string;
-  orderRef: string;
-  supplier: string;
-  scheduledDate: string;
-  receivedDate?: string;
-  status: ReceptionStatus;
-  inspector: string;
-  items: ReceptionItem[];
-  photos: number;
-  nonConformities: number;
-  invoiceUrl?: string;
-};
+const TARJETAS = [
+  { clave: "scheduled", rotulo: "Programadas", icono: ClipboardList },
+  { clave: "inProgress", rotulo: "En proceso", icono: ScanLine },
+  { clave: "accepted", rotulo: "Aceptadas", icono: CheckCircle2 },
+  { clave: "totalNonConf", rotulo: "No conformidades", icono: AlertTriangle },
+] as const;
 
-const STATUS_MAP: Record<ReceptionStatus, { label: string; color: string; bg: string }> = {
-  programada:   { label: "Programada",  color: "text-[var(--data-success-500)]",    bg: "bg-primary/10 dark:bg-primary/15" },
-  "en-proceso": { label: "En proceso",  color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
-  aceptada:     { label: "Aceptada",    color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
-  parcial:      { label: "Parcial",     color: "text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30" },
-  rechazada:    { label: "Rechazada",   color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30" },
-};
+export default function ReceivingTab({ barra }: { barra?: ReactNode }) {
+  const r = useRecepciones();
+  const { receptions, setReceptions, loading, stats, ordenRecepciones, proveedorIdDe, products, supplierNames } = r;
+  const n = useNuevaRecepcion(setReceptions);
+  const { setShowNew, showNew, avisoCredito, setAvisoCredito } = n;
 
-// `opcion`: cómo se lee en el selector. «Faltante» baja la deuda y cierra la
-// línea de la orden: no sirve para «llega mañana».
-const COND_MAP: Record<ItemCondition, { label: string; color: string; bg: string; opcion?: string }> = {
-  ok:       { label: "OK",       color: "text-[var(--data-success-500)]", bg: "bg-primary/10 dark:bg-primary/15" },
-  "dañado": { label: "Dañado",   color: "text-[var(--data-error-500)]",     bg: "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/20" },
-  vencido:  { label: "Vencido",  color: "text-[var(--data-warning-500)]",  bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20" },
-  faltante: { label: "Faltante", opcion: "Faltante (no llegará)", color: "text-[var(--data-warning-500)]",   bg: "bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20" },
-};
-
-function fmtDate(iso: string) {
-  if (!iso) return "—";
-  return formatDate(iso);
-}
-
-const EMPTY_CHECKLIST: ReceptionItem = { product: "", expectedQty: 0, receivedQty: 0, condition: "ok", notes: "" };
-
-export default function ReceivingTab() {
-  const [receptions, setReceptions]     = useState<Reception[]>([]);
-  const [loading, setLoading]           = useState(true);
-  const [search, setSearch]             = useState("");
-  // Filtros en la cabecera, estilo Excel (Brandon, 2026-09-03/22): un solo
-  // estado por columna; las pastillas de arriba y el autofiltro del `<th>`
-  // escriben lo mismo. `[]` = todos los estados (antes era el sentinela
-  // "todos"), y ahora admite VARIOS a la vez (antes sólo 4 de los 5 estados
-  // tenían pastilla — "parcial"/"rechazada" quedaban sin forma de filtrarse).
-  const [estadoFiltro, setEstadoFiltro] = useState<ReceptionStatus[]>([]);
-  // Proveedor, en su columna: no existía ningún filtro para esto antes.
-  const [proveedorFiltro, setProveedorFiltro] = useState<string[]>([]);
-  // Fecha programada, en su columna: "entre estas fechas".
-  const [programadaRango, setProgramadaRango] = useState<Rango<string>>({ min: null, max: null });
-  // Columnas de la tabla: arrastrar el título para reordenarlas.
-  const ordenRecepciones = useOrdenColumnas("recepciones-lista", ["ref", "proveedor", "programada", "recibida", "inspector", "estado", "fotos", "nc"]);
-  const [detail, setDetail]             = useState<Reception | null>(null);
-  const [showNew, setShowNew]           = useState(false);
+  const [detail, setDetail] = useState<Reception | null>(null);
   const detailTitleId = useId();
   const detailPanelRef = useRef<HTMLDivElement>(null);
   useModalAccesible(detailPanelRef, { onCerrar: () => setDetail(null), activo: !!detail });
   const ventanaDetalle = useVentanaDeModal(!!detail, { ref: detailPanelRef, aplicarTranslate: true, claveMemoria: "recepcion-detalle" });
-  const newTitleId = useId();
-  const newPanelRef = useRef<HTMLDivElement>(null);
-  useModalAccesible(newPanelRef, { onCerrar: () => setShowNew(false), activo: showNew });
-  const ventanaNueva = useVentanaDeModal(showNew, { ref: newPanelRef, aplicarTranslate: true, claveMemoria: "recepcion-nueva" });
 
-  // Órdenes pendientes de recibir (para el dropdown del modal)
-  const [pendingOCs, setPendingOCs] = useState<PendingOC[]>([]);
-  const confirmarCredito = useConfirmarCreditoRecepcion();
-  const [selectedOcId, setSelectedOcId] = useState("");
-
-  // New reception form
-  const [newForm, setNewForm] = useState({
-    supplier: "", orderRef: "", scheduledDate: new Date().toISOString().slice(0, 10), inspector: "",
+  const kpis = useKpisPlegables({
+    claveMemoria: "compras-recepciones",
+    alto: "md",
+    compactoEnMovil: true,
+    anchoFijo: true,
+    sinDatosAun: loading && receptions.length === 0,
+    /* Lo que pide mirar: las no conformidades; sin ninguna, cuántas hay. Corto: la fila del título va llena. */
+    resumen: stats.totalNonConf > 0 ? `${stats.totalNonConf} con NC` : `${receptions.length} recepciones`,
+    tarjetas: TARJETAS.map(({ clave, rotulo, icono: Icono }) => (
+      <div key={clave} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
+        <div className="mb-1 flex items-center gap-2">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
+            <Icono className="h-4 w-4" aria-hidden />
+          </span>
+          <span className="text-sm font-semibold text-[var(--text-secondary)]">{rotulo}</span>
+        </div>
+        <p className={`text-lg font-extrabold tabular-nums ${clave === "totalNonConf" && stats.totalNonConf > 0 ? "text-[var(--data-error-ink)]" : "text-[var(--text-primary)]"}`}>
+          {stats[clave]}
+        </p>
+      </div>
+    )),
   });
-  const [checklist, setChecklist] = useState<ReceptionItem[]>([{ ...EMPTY_CHECKLIST }]);
-  const [saving, setSaving] = useState(false);
-  /** Lo que la última recepción bajó de la cuenta por pagar o dejó como reclamo. */
-  const [avisoCredito, setAvisoCredito] = useState<(CreditoDeRecepcion & { proveedor: string }) | null>(null);
-  // Factura del proveedor adjunta a la recepción (foto/imagen → /api/upload).
-  const [invoiceUrl, setInvoiceUrl] = useState("");
-  const [uploadingInvoice, setUploadingInvoice] = useState(false);
-  const [invoiceError, setInvoiceError] = useState("");
-  // Datos reales para los campos que eran texto libre (reporte QA): productos
-  // del inventario (combobox con id/unidad) + proveedores (datalist).
-  const [products, setProducts] = useState<ProductOption[]>([]);
-  const [supplierNames, setSupplierNames] = useState<string[]>([]);
-  /* La recepción guarda el NOMBRE del proveedor: su id (para el enlace a la ficha) sale
-     de la lista. Un nombre repetido no se sabe de quién es: queda como texto. */
-  const [proveedorIdDe, setProveedorIdDe] = useState<ReadonlyMap<string, string | null>>(() => new Map());
 
-  // Carga recepciones con cache localStorage stale-while-revalidate
-  useEffect(() => {
-    const KEY = "admin-recepciones-cache";
-    const TTL = 60 * 1000;
-    let active = true;
-
-    // 1. Hidratar instantaneo desde cache
-    try {
-      const cached = localStorage.getItem(KEY);
-      if (cached) {
-        const { data, ts } = JSON.parse(cached) as { data: Reception[]; ts: number };
-        if (Array.isArray(data)) {
-          setReceptions(data);
-          setLoading(false);
-          if (Date.now() - ts < TTL) return;
-        }
-      }
-    } catch { /* ignore */ }
-
-    // 2. Refrescar de red
-    fetch("/api/compras/recepciones").then(r => r.ok ? r.json() : []).then((data: Reception[]) => {
-      if (!active) return;
-      setReceptions(data);
-      setLoading(false);
-      try { localStorage.setItem(KEY, JSON.stringify({ data, ts: Date.now() })); } catch { /* quota */ }
-    }).catch(() => { if (active) setLoading(false); });
-
-    return () => { active = false; };
-  }, []);
-
-  // Carga OCs pendientes al abrir el modal de nueva recepción
-  const loadPendingOCs = useCallback(async () => {
-    try {
-      const res = await fetch("/api/purchases", { credentials: "include" });
-      if (!res.ok) return;
-      const json = await res.json();
-      const all: PendingOC[] = Array.isArray(json) ? json : (json?.purchases ?? []);
-      // Solo mostrar OCs pendientes / parciales / auto_generated
-      const pending = all.filter((p) => {
-        const s = (p.status ?? "").toLowerCase();
-        return s === "pendiente" || s === "parcial" || s === "auto_generated" || s === "ordered" || s === "draft";
-      });
-      setPendingOCs(pending);
-    } catch { /* silent */ }
-  }, []);
-
-  useEffect(() => {
-    if (showNew) void loadPendingOCs();
-  }, [showNew, loadPendingOCs]);
-
-  // Carga real para los pickers: productos (combobox) + proveedores (datalist).
-  useEffect(() => {
-    let cancelled = false;
-    const toArr = (data: unknown, key: string) =>
-      (Array.isArray(data) ? data : (data as Record<string, unknown[]>)?.[key] ?? []) as unknown[];
-    Promise.all([
-      fetch("/api/products").then(r => (r.ok ? r.json() : [])).catch(() => []),
-      fetch("/api/suppliers").then(r => (r.ok ? r.json() : [])).catch(() => []),
-    ]).then(([prods, sups]) => {
-      if (cancelled) return;
-      const prodList = (toArr(prods, "products") as Array<{ id?: number | string; name?: string; stock?: number | null; unit?: string; barcode?: string }>)
-        .filter(p => !!p.name)
-        .map(p => ({ id: p.id ?? p.name!, name: p.name!, stock: p.stock ?? null, unit: p.unit, barcode: p.barcode }));
-      setProducts(prodList);
-      const supList = toArr(sups, "suppliers") as Array<{ id?: string; name?: string }>;
-      const supNames = supList.map(s => s.name).filter((n): n is string => !!n);
-      setSupplierNames(Array.from(new Set(supNames)).sort());
-      const ids = new Map<string, string | null>();
-      for (const sp of supList) if (sp.name && sp.id) ids.set(sp.name, ids.has(sp.name) ? null : sp.id);
-      setProveedorIdDe(ids);
-    });
-    return () => { cancelled = true; };
-  }, []);
-
-  const stats = useMemo(() => {
-    const scheduled   = receptions.filter(r => r.status === "programada").length;
-    const inProgress  = receptions.filter(r => r.status === "en-proceso").length;
-    const accepted    = receptions.filter(r => r.status === "aceptada").length;
-    const totalNonConf = receptions.reduce((s, r) => s + r.nonConformities, 0);
-    return { scheduled, inProgress, accepted, totalNonConf };
-  }, [receptions]);
-
-  const filtered = useMemo(() => {
-    let list = receptions;
-    if (estadoFiltro.length > 0) list = list.filter(r => estadoFiltro.includes(r.status));
-    if (proveedorFiltro.length > 0) list = list.filter(r => proveedorFiltro.includes(r.supplier));
-    list = list.filter(r => enRango(r.scheduledDate || null, programadaRango));
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter(r =>
-        r.supplier.toLowerCase().includes(q) ||
-        r.ref.toLowerCase().includes(q) ||
-        r.orderRef.toLowerCase().includes(q)
-      );
-    }
-    return list;
-  }, [receptions, search, estadoFiltro, proveedorFiltro, programadaRango]);
-
-  // Opciones de los autofiltros de columna, con su peso (cuántas recepciones).
-  const proveedorFaceta = useMemo((): FacetaOpcion[] => {
-    const m = new Map<string, number>();
-    for (const r of receptions) m.set(r.supplier, (m.get(r.supplier) ?? 0) + 1);
-    return [...m.entries()].map(([value, count]) => ({ value, count })).sort((a, b) => b.count - a.count);
-  }, [receptions]);
-  const estadoFaceta = useMemo((): FacetaOpcion[] => {
-    const m = new Map<ReceptionStatus, number>();
-    for (const r of receptions) m.set(r.status, (m.get(r.status) ?? 0) + 1);
-    return (Object.keys(STATUS_MAP) as ReceptionStatus[])
-      .filter(k => (m.get(k) ?? 0) > 0)
-      .map(k => ({ value: k, count: m.get(k) ?? 0 }));
-  }, [receptions]);
-
-  // Discrepancy summary for a reception
-  const getDiscrepancies = (items: ReceptionItem[]) =>
-    items.filter(it => it.condition !== "ok" || it.receivedQty !== it.expectedQty);
-
-  const addChecklistRow  = () => setChecklist(prev => [...prev, { ...EMPTY_CHECKLIST }]);
-  const removeChecklistRow = (idx: number) => setChecklist(prev => prev.filter((_, i) => i !== idx));
-  const updateChecklistRow = <K extends keyof ReceptionItem>(idx: number, key: K, value: ReceptionItem[K]) =>
-    setChecklist(prev => prev.map((row, i) => i === idx ? { ...row, [key]: value } : row));
-
-  // Sube la foto de la factura del proveedor y guarda su URL (solo imágenes).
-  const uploadInvoice = async (file: File) => {
-    setInvoiceError("");
-    setUploadingInvoice(true);
-    try {
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("folder", "recepciones");
-      const res = await fetch("/api/upload", { method: "POST", headers: csrfHeaders(), body: fd });
-      const body = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
-      if (!res.ok || !body.url) throw new Error(body.error ?? "No se pudo subir la factura");
-      setInvoiceUrl(body.url);
-    } catch (err) {
-      setInvoiceError(err instanceof Error ? err.message : "Error al subir la factura");
-    } finally {
-      setUploadingInvoice(false);
-    }
-  };
-
-  /** Una fecha de vencimiento imposible frena el guardado (el servidor la rechazaría igual). */
-  const venceConError = checklist.some((r) => pideLote(r) && errorDeVencimiento(r.expiryDate ?? "") !== null);
-
-  const saveReception = async () => {
-    if (!newForm.supplier || !newForm.orderRef || checklist.some(r => !r.product)) return;
-    const ocElegida = pendingOCs.find((p) => p.id === selectedOcId);
-    if (!(await confirmarCredito(ocElegida, newForm.supplier, checklist))) return;
-    setSaving(true);
-    const nonConformities = checklist.filter(it => it.condition !== "ok" || it.receivedQty < it.expectedQty).length;
-    const body = {
-      ...newForm,
-      status: "en-proceso" as ReceptionStatus,
-      // Lo dañado, vencido o faltante no hace lote: la fecha no viaja.
-      items: checklist.map(({ expiryDate, lote, ...it }) => (it.condition === "ok" ? { ...it, expiryDate, lote } : it)),
-      photos: 0,
-      nonConformities,
-      invoiceUrl: invoiceUrl || undefined,
-    };
-    const res = await fetch("/api/compras/recepciones", {
-      method: "POST",
-      headers: csrfHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify(body),
-    });
-    if (res.ok) {
-      const created: Reception & { credito?: CreditoDeRecepcion } = await res.json();
-      setAvisoCredito(created.credito && created.credito.total > 0 ? { ...created.credito, proveedor: created.supplier } : null);
-      setReceptions(prev => {
-        const next = [created, ...prev];
-        try { localStorage.setItem("admin-recepciones-cache", JSON.stringify({ data: next, ts: Date.now() })); } catch { /* quota */ }
-        return next;
-      });
-    }
-    setSaving(false);
-    setShowNew(false);
-    setNewForm({ supplier: "", orderRef: "", scheduledDate: new Date().toISOString().slice(0, 10), inspector: "" });
-    setChecklist([{ ...EMPTY_CHECKLIST }]);
-    setInvoiceUrl("");
-    setInvoiceError("");
-    setSelectedOcId("");
-  };
-
-  // Al elegir una OC del dropdown — auto-llena proveedor + items
-  const applyOC = useCallback((ocId: string) => {
-    setSelectedOcId(ocId);
-    if (!ocId) return;
-    const oc = pendingOCs.find((p) => p.id === ocId);
-    if (!oc) return;
-    setNewForm((f) => ({
-      ...f,
-      supplier: oc.supplierName ?? f.supplier,
-      orderRef: oc.id,
-    }));
-    if (oc.items && oc.items.length > 0) {
-      setChecklist(oc.items.map((it) => ({
-        product: it.name ?? "",
-        productId: typeof it.productId === "number" ? it.productId : undefined,
-        expectedQty: Number(it.quantity ?? 0),
-        receivedQty: Number(it.quantity ?? 0),
-        condition: "ok" as ItemCondition,
-        notes: "",
-      })));
-    }
-  }, [pendingOCs]);
+  const acciones: MenuAccion[] = [
+    {
+      id: "csv",
+      label: "Descargar CSV",
+      hint: `${receptions.length} recepciones`,
+      icon: Download,
+      disabled: receptions.length === 0,
+      onSelect: () => exportToCSV(receptions.map(rec => ({
+        ref: rec.ref, oc: rec.orderRef, proveedor: rec.supplier,
+        programada: rec.scheduledDate, recibida: rec.receivedDate ?? "-",
+        estado: STATUS_MAP[rec.status].label, inspector: rec.inspector,
+        items: rec.items.length, fotos: rec.photos, no_conformidades: rec.nonConformities,
+      })), "recepciones"),
+    },
+    {
+      id: "columnas",
+      label: "Restablecer columnas",
+      hint: "El orden de siempre (arrastraste un título)",
+      icon: RotateCcw,
+      disabled: !ordenRecepciones.cambiado,
+      onSelect: ordenRecepciones.restablecer,
+    },
+  ];
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <SectionTitle className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-            Recepción de Mercadería
-          </SectionTitle>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => exportToCSV(receptions.map(r => ({
-              ref: r.ref, oc: r.orderRef, proveedor: r.supplier,
-              programada: r.scheduledDate, recibida: r.receivedDate ?? "-",
-              estado: STATUS_MAP[r.status].label, inspector: r.inspector,
-              items: r.items.length, fotos: r.photos, no_conformidades: r.nonConformities,
-            })), "recepciones")}
-            className="flex items-center gap-1.5 px-3 min-h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition"
-          >
-            <Download className="h-4 w-4" /> Exportar
+    <div className="space-y-4">
+      <CabeceraOrdenes
+        barra={barra}
+        ayuda={AYUDA}
+        indicadores={kpis.boton}
+        principal={
+          <button type="button" onClick={() => setShowNew(true)} title="Recibir mercadería, con o sin orden" className={button({ variant: "primary", className: "shrink-0 rounded-xl px-4" })}>
+            <PackageCheck className="h-4 w-4" aria-hidden /> Recibir
           </button>
-          <button
-            onClick={() => setShowNew(true)}
-            className="flex items-center gap-1.5 px-3 min-h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition"
-          >
-            <Plus className="h-4 w-4" /> Nueva recepción
-          </button>
-          <BotonRestablecerColumnas cambiado={ordenRecepciones.cambiado} onRestablecer={ordenRecepciones.restablecer} />
-        </div>
-      </div>
+        }
+        acciones={acciones}
+        tituloMenu="Descargar CSV y restablecer columnas"
+      />
+
+      {kpis.panel}
 
       {avisoCredito && <AvisoCreditoRecepcion credito={avisoCredito} proveedor={avisoCredito.proveedor} onCerrar={() => setAvisoCredito(null)} />}
 
-      {/* KPI summary minimalista */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {[
-          { label: "Programadas",      value: stats.scheduled,    icon: ClipboardList, color: "text-[var(--text-primary)]"  },
-          { label: "En proceso",       value: stats.inProgress,   icon: ScanLine,      color: "text-[var(--data-warning-500)]"  },
-          { label: "Aceptadas",        value: stats.accepted,     icon: CheckCircle2,  color: "text-[var(--data-success-500)]"  },
-          { label: "No conformidades", value: stats.totalNonConf, icon: AlertTriangle, color: stats.totalNonConf > 0 ? "text-[var(--data-error-500)]" : "text-[var(--text-primary)]" },
-        ].map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 flex items-center justify-between gap-3 min-w-0">
-            <div className="min-w-0">
-              <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] truncate">{label}</p>
-              <p className={cn("text-2xl font-extrabold tabular-nums leading-none mt-1.5", color)}>{value}</p>
-            </div>
-            <Icon className={cn("h-5 w-5 shrink-0", color)} />
-          </div>
-        ))}
-      </div>
+      <RecepcionesFiltros r={r} />
 
-      {/* Filter pills + buscador */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {([
-          { id: "todos",       label: "Todos",      count: receptions.length },
-          { id: "programada",  label: "Programadas", count: stats.scheduled  },
-          { id: "en-proceso",  label: "En proceso",  count: stats.inProgress },
-          { id: "aceptada",    label: "Aceptadas",   count: stats.accepted   },
-        ] as const).map((p) => (
-          <button
-            key={p.id}
-            // Atajo rápido: escribe el mismo `estadoFiltro` que el autofiltro
-            // de la columna Estado (que sí ofrece los 5 estados, no sólo 4).
-            onClick={() => setEstadoFiltro(p.id === "todos" ? [] : [p.id as ReceptionStatus])}
-            className={cn(
-              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border",
-              (p.id === "todos" ? estadoFiltro.length === 0 : estadoFiltro.length === 1 && estadoFiltro[0] === p.id)
-                ? "bg-[var(--text-primary)] text-white border-[var(--text-primary)]"
-                : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
-            )}
-          >
-            {p.label}
-            <span className={cn(
-              "rounded-full px-1.5 py-0.5 text-xs font-bold tabular-nums min-w-[20px] text-center",
-              (p.id === "todos" ? estadoFiltro.length === 0 : estadoFiltro.length === 1 && estadoFiltro[0] === p.id) ? "bg-white/25" : "bg-[var(--surface-sunken)]"
-            )}>
-              {p.count}
-            </span>
-          </button>
-        ))}
-        <div className="relative ml-auto flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-          <input
-            value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Buscar proveedor, ref, OC..."
-            className="w-full pl-9 pr-3 py-1.5 text-sm border border-[var(--rule-base)] rounded-xl bg-[var(--surface-raised)] text-[var(--text-primary)] outline-none focus:border-primary"
-          />
-        </div>
-      </div>
+      <RecepcionesTabla r={r} onVer={setDetail} />
 
-      {/* Filtros de columna puestos, con su cruz — arriba de la tabla, para
-          que nunca quede acotada sin un control visible que lo saque. */}
-      <ChipsDeFiltros
-        chips={[
-          ...(proveedorFiltro.length > 0
-            ? [{ id: "proveedor", label: "Proveedor", texto: proveedorFiltro.length === 1 ? proveedorFiltro[0] : `Proveedor: ${proveedorFiltro.length} elegidos` }]
-            : []),
-          ...(rangoActivo(programadaRango)
-            ? [{ id: "programada", label: "Programada", texto: textoDeRango("Programada", programadaRango, { formatear: (v) => fmtDate(String(v)) }) }]
-            : []),
-          ...(estadoFiltro.length > 0
-            ? [{ id: "estado", label: "Estado", texto: estadoFiltro.length === 1 ? STATUS_MAP[estadoFiltro[0]].label : `Estado: ${estadoFiltro.length} elegidos` }]
-            : []),
-        ] satisfies ChipFiltro[]}
-        onQuitar={(id) => {
-          if (id === "proveedor") setProveedorFiltro([]);
-          else if (id === "programada") setProgramadaRango({ min: null, max: null });
-          else if (id === "estado") setEstadoFiltro([]);
-        }}
-        onLimpiarTodo={() => { setProveedorFiltro([]); setProgramadaRango({ min: null, max: null }); setEstadoFiltro([]); }}
-      />
-
-      {/* <640px la tabla es cards y el <thead> no existe: acá viven los mismos
-          autofiltros (mismo estado, un solo filtro cada uno). Sólo mobile —
-          en desktop ya están en su <th> y repetirlos enseña a dudar de cuál manda. */}
-      <div className="flex flex-wrap gap-2 sm:hidden [&>details]:mt-0">
-        <FiltroColumnaMulti label="Proveedor" value={proveedorFiltro} options={proveedorFaceta} onChange={setProveedorFiltro} placeholder="Proveedor" />
-        <FiltroColumnaRango label="Programada" esFecha placeholder="Programada" valor={programadaRango} onChange={(r) => setProgramadaRango(r as Rango<string>)} />
-        <FiltroColumnaMulti
-          label="Estado"
-          value={estadoFiltro}
-          options={estadoFaceta}
-          etiqueta={(v) => STATUS_MAP[v as ReceptionStatus]?.label ?? v}
-          onChange={(v) => setEstadoFiltro(v as ReceptionStatus[])}
-          placeholder="Estado"
-        />
-      </div>
-
-      {/* Table */}
-      <div>
-        {loading ? (
-          <LoadingState />
-        ) : (
-          <DataTable filtrable className="min-w-[720px]">
-              <thead ref={ordenRecepciones.refCabecera}>
-                <tr>
-                  <EnOrden
-                    orden={ordenRecepciones.orden}
-                    celdas={{
-                      ref: <th data-col="ref">Ref</th>,
-                      proveedor: (
-                        <th data-col="proveedor">
-                          <span className="block">Proveedor</span>
-                          <FiltroColumnaMulti
-                            label="Proveedor"
-                            value={proveedorFiltro}
-                            options={proveedorFaceta}
-                            onChange={setProveedorFiltro}
-                            placeholder="Todos"
-                          />
-                        </th>
-                      ),
-                      programada: (
-                        <th data-col="programada">
-                          <span className="block">Programada</span>
-                          <FiltroColumnaRango
-                            label="Programada"
-                            esFecha
-                            valor={programadaRango}
-                            onChange={(r) => setProgramadaRango(r as Rango<string>)}
-                          />
-                        </th>
-                      ),
-                      recibida: <th data-col="recibida">Recibida</th>,
-                      inspector: <th data-col="inspector">Inspector</th>,
-                      estado: (
-                        <th data-col="estado">
-                          <span className="block">Estado</span>
-                          <FiltroColumnaMulti
-                            label="Estado"
-                            value={estadoFiltro}
-                            options={estadoFaceta}
-                            etiqueta={(v) => STATUS_MAP[v as ReceptionStatus]?.label ?? v}
-                            onChange={(v) => setEstadoFiltro(v as ReceptionStatus[])}
-                            placeholder="Todos"
-                          />
-                        </th>
-                      ),
-                      fotos: <th data-col="fotos" className="text-center">Fotos</th>,
-                      nc: <th data-col="nc" className="text-center">NC</th>,
-                    }}
-                  />
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(r => {
-                  const discrepancies = getDiscrepancies(r.items);
-                  return (
-                    <tr key={r.id}>
-                      <EnOrden
-                        orden={ordenRecepciones.orden}
-                        celdas={{
-                          ref: (
-                            <td>
-                              <div className="font-mono text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{r.ref}</div>
-                              <div className="font-mono text-xs text-[var(--text-tertiary)]">{r.orderRef}</div>
-                            </td>
-                          ),
-                          proveedor: (
-                            <td className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-                              <EnlacePanel cosa="proveedor" id={proveedorIdDe.get(r.supplier)} apariencia="heredada">{r.supplier}</EnlacePanel>
-                            </td>
-                          ),
-                          programada: <td className="text-[var(--text-secondary)] dark:text-muted text-xs">{fmtDate(r.scheduledDate)}</td>,
-                          recibida: <td className="text-[var(--text-secondary)] dark:text-muted text-xs">{r.receivedDate ? fmtDate(r.receivedDate) : "—"}</td>,
-                          inspector: <td className="text-xs text-[var(--text-secondary)] dark:text-muted">{r.inspector || "—"}</td>,
-                          estado: (
-                            <td>
-                              <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", STATUS_MAP[r.status].bg, STATUS_MAP[r.status].color)}>
-                                {STATUS_MAP[r.status].label}
-                              </span>
-                            </td>
-                          ),
-                          fotos: (
-                            <td className="text-center">
-                              {r.photos > 0 ? (
-                                <span className="flex items-center justify-center gap-0.5 text-xs text-[var(--text-secondary)]">
-                                  <Camera className="h-3 w-3" />{r.photos}
-                                </span>
-                              ) : <span className="text-[var(--text-tertiary)] text-xs">—</span>}
-                            </td>
-                          ),
-                          nc: (
-                            <td className="text-center">
-                              {r.nonConformities > 0 ? (
-                                <span className="bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] text-xs font-bold px-2 py-0.5 rounded-full">
-                                  {r.nonConformities}
-                                </span>
-                              ) : discrepancies.length === 0 ? (
-                                <CheckCircle2 className="h-3.5 w-3.5 text-[var(--data-success-500)] mx-auto" />
-                              ) : null}
-                            </td>
-                          ),
-                        }}
-                      />
-                      <td>
-                        <button aria-label="Ver" onClick={() => setDetail(r)} className="p-1 rounded-xl hover:bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] transition">
-                          <Eye className="h-3.5 w-3.5" />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {filtered.length === 0 && (
-                  <tr><td colSpan={9} className="py-10 text-center text-sm text-[var(--text-tertiary)]">Sin recepciones que mostrar</td></tr>
-                )}
-              </tbody>
-            </DataTable>
-        )}
-      </div>
-
-      {/* Detail Modal */}
       {detail && (
-        <div className="modal-backdrop p-4" onClick={(e) => { if (e.target === e.currentTarget && !ventanaDetalle.fijado) setDetail(null); }}>
-          <div
-            ref={detailPanelRef}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={detailTitleId}
-            tabIndex={-1}
-            className="relative bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-6 w-full max-w-2xl space-y-4 max-h-[85vh] overflow-auto"
-            onClick={e => e.stopPropagation()}
-          >
-            <div {...ventanaDetalle.asaProps} className="flex items-start justify-between">
-              <div>
-                <CardTitle id={detailTitleId} className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{detail.ref}</CardTitle>
-                <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
-                  OC: {detail.orderRef} ·{" "}
-                  <EnlacePanel cosa="proveedor" id={proveedorIdDe.get(detail.supplier)} apariencia="heredada">{detail.supplier}</EnlacePanel>
-                </p>
-                {detail.inspector && <p className="text-xs text-[var(--text-tertiary)]">Inspector: {detail.inspector}</p>}
-              </div>
-              <span className="ml-auto flex items-center gap-1">
-                <ControlesDeVentana ventana={ventanaDetalle} />
-                <button aria-label="Cerrar" onClick={() => setDetail(null)} className="p-1 rounded-xl hover:bg-[var(--rule-soft)] ">
-                  <X className="h-4 w-4 text-[var(--text-tertiary)]" />
-                </button>
-              </span>
-            </div>
-
-            {/* Discrepancy alert */}
-            {getDiscrepancies(detail.items).length > 0 && (
-              <div className="flex items-start gap-2 text-xs bg-[var(--data-error-50)] dark:bg-red-950/10 text-[var(--data-error-500)] dark:text-[var(--data-error-500)] px-3 py-2 rounded-xl">
-                <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                <span>
-                  <strong>{getDiscrepancies(detail.items).length} discrepancia{getDiscrepancies(detail.items).length !== 1 ? "s" : ""}</strong> detectadas en esta recepción.
-                </span>
-              </div>
-            )}
-
-            {/* Checklist table */}
-            <DataTable className="min-w-[520px]">
-                <thead>
-                  <tr>
-                    <th>Producto</th>
-                    <th className="text-center">Esperado</th>
-                    <th className="text-center">Recibido</th>
-                    <th>Condición</th>
-                    <th>Notas</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {detail.items.map((it, i) => (
-                    <tr key={i} className={cn(it.condition !== "ok" && "bg-[var(--data-error-50)]/30 dark:bg-red-950/10")}>
-                      <td className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-                        <EnlacePanel cosa="producto" id={it.productId != null ? String(it.productId) : null} apariencia="heredada">{it.product}</EnlacePanel>
-                      </td>
-                      <td className="text-[var(--text-secondary)] text-center">{it.expectedQty}</td>
-                      <td className={cn("font-bold text-center",
-                        it.receivedQty < it.expectedQty ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]"
-                      )}>
-                        {it.receivedQty}
-                        {it.receivedQty !== it.expectedQty && (
-                          <span className="ml-1 text-xs">({it.receivedQty > it.expectedQty ? "+" : ""}{it.receivedQty - it.expectedQty})</span>
-                        )}
-                      </td>
-                      <td>
-                        <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", COND_MAP[it.condition].bg, COND_MAP[it.condition].color)}>
-                          {COND_MAP[it.condition].label}
-                        </span>
-                      </td>
-                      <td className="text-xs text-[var(--text-tertiary)]">
-                        {it.notes || (it.expiryDate ? null : "—")}
-                        {it.expiryDate && (
-                          <span className="block font-semibold text-[var(--text-secondary)]">
-                            Vence {textoVence(it.expiryDate)}{it.lote ? ` · Lote ${it.lote}` : ""}
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </DataTable>
-
-            <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--text-secondary)]">
-              {detail.invoiceUrl && (
-                <a href={detail.invoiceUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 font-semibold text-primary hover:underline">
-                  <PackageCheck className="h-4 w-4" /> Ver factura
-                </a>
-              )}
-              {detail.photos > 0 && (
-                <span className="flex items-center gap-1"><Camera className="h-4 w-4" /> {detail.photos} fotos</span>
-              )}
-              {detail.nonConformities > 0 && (
-                <span className="flex items-center gap-1 text-[var(--data-error-500)]"><XCircle className="h-4 w-4" /> {detail.nonConformities} no conformidades</span>
-              )}
-              {detail.nonConformities === 0 && (
-                <span className="flex items-center gap-1 text-[var(--data-success-500)]"><CheckCircle2 className="h-4 w-4" /> Sin no conformidades</span>
-              )}
-            </div>
-            <TiradorDeVentana ventana={ventanaDetalle} />
-          </div>
-        </div>
+        <RecepcionDetalle
+          detail={detail}
+          setDetail={setDetail}
+          detailPanelRef={detailPanelRef}
+          detailTitleId={detailTitleId}
+          ventanaDetalle={ventanaDetalle}
+          proveedorIdDe={proveedorIdDe}
+        />
       )}
 
-      {/* New reception modal */}
-      {showNew && (
-        <div className="modal-backdrop p-4" onClick={(e) => { if (e.target === e.currentTarget && !ventanaNueva.fijado) setShowNew(false); }}>
-          <div
-            ref={newPanelRef}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={newTitleId}
-            tabIndex={-1}
-            className="relative bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 sm:p-6 w-full max-w-2xl space-y-4 max-h-[90vh] overflow-auto"
-            onClick={e => e.stopPropagation()}
-          >
-            <div {...ventanaNueva.asaProps} className="flex items-center justify-between">
-              <CardTitle id={newTitleId} className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Nueva recepción de mercadería</CardTitle>
-              <span className="ml-auto flex items-center gap-1">
-                <ControlesDeVentana ventana={ventanaNueva} />
-                <button aria-label="Cerrar" onClick={() => setShowNew(false)}><X className="h-4 w-4 text-[var(--text-tertiary)]" /></button>
-              </span>
-            </div>
-
-            {/* Dropdown OC pendiente — auto-completa todo */}
-            {pendingOCs.length > 0 && (
-              <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-2">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-primary" />
-                  <p className="text-sm font-bold text-[var(--text-primary)]">Auto-completar desde OC pendiente</p>
-                </div>
-                <select
-                  value={selectedOcId}
-                  onChange={(e) => applyOC(e.target.value)}
-                  aria-label="Elegir orden de compra para auto-completar"
-                  className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm"
-                >
-                  <option value="">— Elegir orden de compra —</option>
-                  {pendingOCs.map((oc) => (
-                    <option key={oc.id} value={oc.id}>
-                      {oc.id} · {oc.supplierName ?? "Sin proveedor"} · {oc.items?.length ?? 0} items{oc.total ? ` · ${formatCurrency(Number(oc.total))}` : ""}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-xs text-[var(--text-tertiary)]">
-                  Al elegir, se rellenan proveedor, ref y los items del checklist con la cantidad esperada.
-                </p>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field label="Proveedor" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
-                {/* Al recibir contra una OC, proveedor y Nro. OC quedan
-                    BLOQUEADOS (derivados de la OC) → trazabilidad garantizada,
-                    no se puede escribir un proveedor/OC inexistente (reporte QA). */}
-                <input value={newForm.supplier} onChange={e => setNewForm(f => ({ ...f, supplier: e.target.value }))}
-                  placeholder="Distribuidora ABC" list={selectedOcId ? undefined : "recep-proveedores"} readOnly={!!selectedOcId}
-                  className={cn("w-full mt-1 px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm", selectedOcId ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)] cursor-not-allowed" : "bg-[var(--surface-raised)] ")} />
-                <datalist id="recep-proveedores">
-                  {supplierNames.map(n => <option key={n} value={n} />)}
-                </datalist>
-              </Field>
-              <Field label="Nro. Orden de Compra" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
-                <input value={newForm.orderRef} onChange={e => setNewForm(f => ({ ...f, orderRef: e.target.value }))}
-                  placeholder="OC-001" readOnly={!!selectedOcId}
-                  className={cn("w-full mt-1 px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-mono", selectedOcId ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)] cursor-not-allowed" : "bg-[var(--surface-raised)] ")} />
-                {selectedOcId && <p className="mt-1 text-xs text-primary">De la OC seleccionada</p>}
-              </Field>
-              <Field label="Fecha programada" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
-                <input type="date" value={newForm.scheduledDate} onChange={e => setNewForm(f => ({ ...f, scheduledDate: e.target.value }))}
-                  className="w-full mt-1 px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm" />
-              </Field>
-              <Field label="Inspector" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
-                <input value={newForm.inspector} onChange={e => setNewForm(f => ({ ...f, inspector: e.target.value }))}
-                  placeholder="Nombre del responsable"
-                  className="w-full mt-1 px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm" />
-              </Field>
-            </div>
-
-            {/* Checklist */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-1.5">
-                  <BlockTitle>Checklist de productos</BlockTitle>
-                  <InfoTip
-                    title="Dañado, vencido y faltante"
-                    what="Lo que marcas dañado, vencido o faltante se baja de lo que le debes al proveedor por esta orden. «Faltante (no llegará)» además cierra esa línea: la orden deja de esperarla."
-                    affects="Antes de guardar te mostramos cuánto se descuenta. No se puede deshacer: si lo que falta llega en otro viaje, no lo marques faltante; déjalo en «OK» con lo que llegó y registra el otro viaje cuando llegue."
-                    example="Pediste 10 arroz y llegaron 7, los 3 no los mandarán: Recibido 7 + «Faltante (no llegará)» → se descuentan los 3 de la cuenta."
-                  />
-                </div>
-                <button onClick={addChecklistRow} className="text-xs text-primary font-bold flex items-center gap-1 hover:underline">
-                  <Plus className="h-3 w-3" /> Agregar fila
-                </button>
-              </div>
-              <div className="space-y-2">
-                {checklist.map((row, idx) => (
-                  <div key={idx} className="flex flex-wrap items-center gap-2 bg-[var(--surface-sunken)] rounded-xl p-2">
-                    <ProductCombobox
-                      id={`recep-prod-${idx}`}
-                      products={products}
-                      value={row.product}
-                      placeholder="Producto"
-                      onChange={(text) => setChecklist(prev => prev.map((r, i) => i === idx ? { ...r, product: text, productId: undefined } : r))}
-                      onSelect={(p) => setChecklist(prev => prev.map((r, i) => i === idx ? { ...r, product: p.name, productId: typeof p.id === "number" ? p.id : undefined, expectedQty: r.expectedQty } : r))}
-                    />
-                    <input type="number" min="0" value={row.expectedQty} onChange={e => updateChecklistRow(idx, "expectedQty", +e.target.value)}
-                      placeholder="Esperado" className="w-20 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs" />
-                    <input type="number" min="0" value={row.receivedQty} onChange={e => updateChecklistRow(idx, "receivedQty", +e.target.value)}
-                      placeholder="Recibido" className="w-20 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs" />
-                    <select value={row.condition} onChange={e => updateChecklistRow(idx, "condition", e.target.value as ItemCondition)}
-                      aria-label={`Condición de ${row.product || "el producto"}`}
-                      className="px-2 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs">
-                      {Object.entries(COND_MAP).map(([k, v]) => <option key={k} value={k}>{v.opcion ?? v.label}</option>)}
-                    </select>
-                    <input value={row.notes} onChange={e => updateChecklistRow(idx, "notes", e.target.value)}
-                      placeholder="Notas (opcional)" className="flex-1 min-w-24 px-2 py-1.5 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs" />
-                    {checklist.length > 1 && (
-                      <button aria-label="Quitar" onClick={() => removeChecklistRow(idx)} className="p-1 rounded-xl hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition">
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    )}
-                    {row.condition === "ok" && (
-                      <VenceLoteCampo
-                        id={`recep-vence-${idx}`}
-                        producto={row.product || "el producto"}
-                        valor={row}
-                        ayuda={idx === 0}
-                        onChange={(patch) => setChecklist(prev => prev.map((r, i) => i === idx ? { ...r, ...patch } : r))}
-                        className="basis-full"
-                      />
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Factura del proveedor — se adjunta a la recepción (foto). Antes
-                el módulo de factura estaba separado en Punto de Compra. */}
-            <div>
-              <label className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted block mb-1.5">
-                Factura del proveedor <span className="font-normal text-[var(--text-tertiary)]">(opcional, foto)</span>
-              </label>
-              {invoiceUrl ? (
-                <div className="flex items-center gap-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-alt)] px-3 py-2">
-                  <CheckCircle2 className="h-4 w-4 text-[var(--data-success-500)] shrink-0" aria-hidden />
-                  <a href={invoiceUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-primary hover:underline flex-1 truncate">
-                    Ver factura adjunta
-                  </a>
-                  <button type="button" onClick={() => setInvoiceUrl("")} className="text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors" aria-label="Quitar factura">
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              ) : (
-                <label className={cn(
-                  "flex items-center gap-2 rounded-lg border border-dashed border-[var(--rule-base)] px-3 py-2.5 cursor-pointer hover:border-primary/50 transition-colors text-sm text-[var(--text-secondary)] dark:text-muted",
-                  uploadingInvoice && "opacity-60 cursor-wait",
-                )}>
-                  {uploadingInvoice ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Camera className="h-4 w-4" aria-hidden />}
-                  {uploadingInvoice ? "Subiendo…" : "Adjuntar foto de la factura"}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    disabled={uploadingInvoice}
-                    onChange={e => { const f = e.target.files?.[0]; if (f) void uploadInvoice(f); e.target.value = ""; }}
-                  />
-                </label>
-              )}
-              {invoiceError && <p className="text-xs text-[var(--data-error-500)] mt-1">{invoiceError}</p>}
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2">
-              <button onClick={() => setShowNew(false)} className="px-4 py-2 rounded-xl text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--rule-soft)] ">Cancelar</button>
-              <button onClick={saveReception} disabled={saving || venceConError} title={venceConError ? "Corrige la fecha de vencimiento marcada en rojo" : undefined} className="px-4 min-h-10 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary/90 disabled:opacity-50 flex items-center gap-1.5">
-                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                Guardar recepción
-              </button>
-            </div>
-            <TiradorDeVentana ventana={ventanaNueva} />
-          </div>
-        </div>
-      )}
+      {showNew && <NuevaRecepcion n={n} products={products} supplierNames={supplierNames} />}
     </div>
   );
 }

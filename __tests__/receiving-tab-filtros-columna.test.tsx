@@ -73,13 +73,13 @@ async function montar() {
   await waitFor(() => expect(tabla().getByText("REC-001")).toBeTruthy());
 }
 
-describe("ReceivingTab — autofiltro de cabecera (Proveedor, Estado)", () => {
-  it("filtra por Proveedor desde el <th>", async () => {
+describe("ReceivingTab — filtros en la fila de arriba de la tabla (Proveedor, Estado)", () => {
+  it("filtra por Proveedor desde la fila de filtros", async () => {
     await montar();
     expect(tabla().getByText("REC-002")).toBeTruthy();
 
-    fireEvent.click(tabla().getByLabelText(/Filtrar por Proveedor/));
-    const popover = tabla().getByRole("group", { name: "Valores de Proveedor" });
+    fireEvent.click(screen.getByLabelText(/Filtrar por Proveedor/));
+    const popover = screen.getByRole("group", { name: "Valores de Proveedor" });
     fireEvent.click(within(popover).getByLabelText("Proveedor: Molinera Pasco"));
 
     expect(tabla().queryByText("REC-001")).toBeNull();
@@ -90,12 +90,12 @@ describe("ReceivingTab — autofiltro de cabecera (Proveedor, Estado)", () => {
   it("combina Proveedor + Estado en AND", async () => {
     await montar();
 
-    fireEvent.click(tabla().getByLabelText(/Filtrar por Proveedor/));
-    fireEvent.click(within(tabla().getByRole("group", { name: "Valores de Proveedor" })).getByLabelText("Proveedor: Molinera Pasco"));
+    fireEvent.click(screen.getByLabelText(/Filtrar por Proveedor/));
+    fireEvent.click(within(screen.getByRole("group", { name: "Valores de Proveedor" })).getByLabelText("Proveedor: Molinera Pasco"));
     await waitFor(() => expect(tabla().queryByText("REC-001")).toBeNull());
 
-    fireEvent.click(tabla().getByLabelText(/Filtrar por Estado/));
-    fireEvent.click(within(tabla().getByRole("group", { name: "Valores de Estado" })).getByLabelText("Estado: Rechazada"));
+    fireEvent.click(screen.getByLabelText(/Filtrar por Estado/));
+    fireEvent.click(within(screen.getByRole("group", { name: "Valores de Estado" })).getByLabelText("Estado: Rechazada"));
 
     expect(tabla().queryByText("REC-002")).toBeNull();
     expect(tabla().getByText("REC-003")).toBeTruthy();

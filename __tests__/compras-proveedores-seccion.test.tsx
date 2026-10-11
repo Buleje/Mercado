@@ -41,6 +41,8 @@ const montada = () => screen.getAllByTestId(/^seccion-/).map((n) => n.dataset.te
 const param = (p: string) => new URLSearchParams(window.location.search).get(p);
 
 beforeEach(() => {
+  // La barra de secciones centra la elegida con un ResizeObserver (jsdom no lo trae).
+  vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
   localStorage.clear();
 });
 

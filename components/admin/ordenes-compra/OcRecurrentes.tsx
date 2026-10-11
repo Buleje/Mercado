@@ -31,7 +31,7 @@ export default function OcRecurrentes({ oc }: { oc: OrdenesCompra }) {
                 const tocan = upcomingRecurring.filter(r => r.daysUntil <= r.notifyDaysBefore).length;
                 if (tocan === 0) return null;
                 return (
-                  <p className="text-xs font-bold text-[var(--data-warning-ink)]">
+                  <p className="text-sm font-bold text-[var(--data-warning-ink)]">
                     {tocan === 1 ? "1 toca pedirlo ahora" : `${tocan} tocan pedirlos ahora`}
                   </p>
                 );
@@ -60,11 +60,11 @@ export default function OcRecurrentes({ oc }: { oc: OrdenesCompra }) {
                 >
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">OC a</p>
+                      <p className="text-sm font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">OC a</p>
                       <p className="text-sm font-extrabold text-[var(--text-primary)] truncate">
                         <EnlacePanel cosa="proveedor" id={r.supplierId} apariencia="heredada">{r.supplierName}</EnlacePanel>
                       </p>
-                      <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                      <p className="text-sm text-[var(--text-secondary)] mt-0.5">
                         {r.items.length} producto{r.items.length === 1 ? "" : "s"} · {formatCurrency(r.items.reduce((s, i) => s + i.quantity * i.unitCost, 0))}
                       </p>
                     </div>
@@ -91,7 +91,7 @@ export default function OcRecurrentes({ oc }: { oc: OrdenesCompra }) {
                   </div>
                   <div className="flex items-center gap-2 mb-3 flex-wrap">
                     <span className={cn(
-                      "inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-xs font-bold border",
+                      "inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-sm font-bold border",
                       dueToday
                         ? "bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 text-[var(--data-error-500)] border-[var(--data-error-500)]/30"
                         : dueSoon
@@ -101,7 +101,7 @@ export default function OcRecurrentes({ oc }: { oc: OrdenesCompra }) {
                       <Calendar className="h-3.5 w-3.5" />
                       {r.vencido ? "Atrasado" : dueToday ? "Hoy" : r.daysUntil === 1 ? "Mañana" : `En ${r.daysUntil} días`}
                     </span>
-                    <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-xs font-semibold bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
+                    <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-sm font-semibold bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
                       <Repeat className="h-3 w-3" />
                       Cada {r.intervalDays}d
                     </span>
@@ -131,7 +131,7 @@ export default function OcRecurrentes({ oc }: { oc: OrdenesCompra }) {
                   <li key={r.id} className="flex flex-wrap items-center gap-2 px-3 py-2.5">
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-bold text-[var(--text-primary)] truncate">{r.notes || r.supplierName}</p>
-                      <p className="text-xs text-[var(--text-secondary)] truncate">
+                      <p className="text-sm text-[var(--text-secondary)] truncate">
                         {r.notes && (
                           <>
                             <EnlacePanel cosa="proveedor" id={r.supplierId} apariencia="heredada">{r.supplierName}</EnlacePanel>

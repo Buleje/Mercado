@@ -35,13 +35,13 @@ export default function OcHistorialProveedores({ oc }: { oc: OrdenesCompra }) {
                         <History className="h-5 w-5 text-primary" />
                         <EnlacePanel cosa="proveedor" id={supplier.id} apariencia="heredada">{supplier.name}</EnlacePanel>
                       </CardTitle>
-                      <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-0.5">
+                      <p className="text-sm text-[var(--text-tertiary)] dark:text-muted mt-0.5">
                         {supplier.ruc && `RUC: ${supplier.ruc}`}
                       </p>
                     </div>
                     <button
                       onClick={() => setExpandedHistorySupplier(isExpanded ? null : supplier.id)}
-                      className="text-xs font-bold text-primary hover:text-primary-dark flex items-center gap-1"
+                      className="text-sm font-bold text-primary hover:text-primary-dark flex items-center gap-1"
                     >
                       {isExpanded ? "Ocultar" : "Ver historial completo"}
                       {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
@@ -51,27 +51,27 @@ export default function OcHistorialProveedores({ oc }: { oc: OrdenesCompra }) {
                   {/* Stats Grid */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
                     <div className="bg-primary/10 dark:bg-primary/15 rounded-xl p-3 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
-                      <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] uppercase mb-1">Órdenes</p>
+                      <p className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] uppercase mb-1">Órdenes</p>
                       <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{stats.count}</p>
                     </div>
                     <div className="bg-primary/10 dark:bg-primary/15 rounded-xl p-3 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
-                      <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] uppercase mb-1">Total gastado</p>
+                      <p className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] uppercase mb-1">Total gastado</p>
                       <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatCurrency(Number(stats.totalAmount))}</p>
                     </div>
                     <div className="bg-[var(--surface-sunken)] rounded-xl p-3 border border-[var(--rule-base)]">
-                      <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)] uppercase mb-1">Promedio</p>
+                      <p className="text-sm font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)] uppercase mb-1">Promedio</p>
                       <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatCurrency(Number(stats.avgAmount))}</p>
                     </div>
                     <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 rounded-xl p-3 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30">
-                      <p className="text-xs font-bold text-[var(--data-warning-ink)] dark:text-[var(--data-warning-ink)] uppercase mb-1">Última compra</p>
-                      <p className="text-xs font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{stats.lastPurchase ? formatDate(stats.lastPurchase) : "—"}</p>
+                      <p className="text-sm font-bold text-[var(--data-warning-ink)] dark:text-[var(--data-warning-ink)] uppercase mb-1">Última compra</p>
+                      <p className="text-sm font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{stats.lastPurchase ? formatDate(stats.lastPurchase) : "—"}</p>
                     </div>
                   </div>
 
                   {/* Top Products */}
                   {stats.topProducts.length > 0 && (
                     <div className="bg-[var(--surface-alt)] rounded-xl p-3 mb-3 border border-[var(--rule-base)] dark:border-[var(--rule-base)]">
-                      <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase mb-2 flex items-center gap-1">
+                      <p className="text-sm font-bold text-[var(--text-secondary)] dark:text-muted uppercase mb-2 flex items-center gap-1">
                         <TrendingUp className="h-3.5 w-3.5" />
                         Top 3 productos más comprados
                       </p>
@@ -79,9 +79,9 @@ export default function OcHistorialProveedores({ oc }: { oc: OrdenesCompra }) {
                         {stats.topProducts.map((prod, idx) => (
                           <div key={prod.id} className="flex items-center justify-between text-sm">
                             <span className="text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-1.5">
-                              <span className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted">#{idx + 1}</span>
+                              <span className="text-sm font-bold text-[var(--text-tertiary)] dark:text-muted">#{idx + 1}</span>
                               <EnlacePanel cosa="producto" id={prod.id} apariencia="heredada">{prod.name}</EnlacePanel>
-                              <span className="text-[var(--text-tertiary)] dark:text-muted text-xs">({prod.count} und)</span>
+                              <span className="text-[var(--text-tertiary)] dark:text-muted text-sm">({prod.count} und)</span>
                             </span>
                             <span className="font-semibold text-primary">{formatCurrency(Number(prod.total))}</span>
                           </div>
@@ -92,7 +92,7 @@ export default function OcHistorialProveedores({ oc }: { oc: OrdenesCompra }) {
 
                   {/* Monthly Chart */}
                   <div className="bg-[var(--surface-sunken)] rounded-xl p-3 border border-[var(--rule-base)]">
-                    <p className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] uppercase mb-2 flex items-center gap-1">
+                    <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] uppercase mb-2 flex items-center gap-1">
                       <BarChart3 className="h-3.5 w-3.5 text-primary" />
                       Gastos mensuales (últimos 6 meses)
                     </p>
@@ -108,7 +108,7 @@ export default function OcHistorialProveedores({ oc }: { oc: OrdenesCompra }) {
                                 title={`${m.month}: ${formatCurrency(Number(m.amount))}`}
                               ></div>
                             </div>
-                            <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase">{m.month}</p>
+                            <p className="text-sm font-bold text-[var(--text-secondary)] dark:text-muted uppercase">{m.month}</p>
                           </div>
                         );
                       })}

@@ -35,7 +35,7 @@ export default function FleteTardio({
         type="button"
         onClick={() => setAbierto(true)}
         className={cn(
-          "mt-3 inline-flex items-center gap-1.5 h-9 px-3 rounded-xl border-2 text-xs font-bold transition-colors",
+          "mt-3 inline-flex items-center gap-1.5 h-9 px-3 rounded-xl border-2 text-sm font-bold transition-colors",
           yaTiene
             ? "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
             : "border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/10 text-[var(--data-warning-500)]",
@@ -73,7 +73,7 @@ export default function FleteTardio({
 
   return (
     <div className="mt-3 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3.5 space-y-2.5">
-      <p className="text-xs text-[var(--text-secondary)]">
+      <p className="text-sm text-[var(--text-secondary)]">
         Lo que costó traer esta compra (mototaxi, carga, estiba). Se reparte entre las unidades
         que todavía tienes en stock, para que el costo del producto deje de ser optimista.
       </p>

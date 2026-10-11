@@ -20,7 +20,7 @@ export default function OcDetalleOrden({ oc, o }: { oc: OrdenesCompra; o: DbPurc
       {/* Expanded details */}
       {expanded === o.id && (
         <div className="border-t border-[var(--rule-soft)] dark:border-[var(--rule-base)] px-2 sm:px-4 py-2 sm:py-3 bg-[var(--surface-alt)] ">
-          <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted mb-2">Detalle de productos</p>
+          <p className="text-sm font-bold text-[var(--text-tertiary)] dark:text-muted mb-2">Detalle de productos</p>
           <div className="space-y-1.5">
             {o.items.map((item, i) => {
               // Mejora 20: Buscar último precio del mismo producto + mismo proveedor
@@ -50,13 +50,13 @@ export default function OcDetalleOrden({ oc, o }: { oc: OrdenesCompra; o: DbPurc
                       <span className="text-[var(--text-tertiary)] dark:text-muted">({item.unit})</span>
                     </span>
                     <div className="text-right">
-                      <span className="text-[var(--text-tertiary)] dark:text-muted text-xs mr-2">{formatCurrency(Number(item.unitCost))} c/u</span>
+                      <span className="text-[var(--text-tertiary)] dark:text-muted text-sm mr-2">{formatCurrency(Number(item.unitCost))} c/u</span>
                       <span className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatCurrency(item.quantity * item.unitCost)}</span>
                     </div>
                   </div>
                   {/* Mejora 20: Referencia de precio anterior */}
                   {prevPrice != null && (
-                    <p className="text-xs text-[var(--text-tertiary)] pl-5 mt-0.5">
+                    <p className="text-sm text-[var(--text-tertiary)] pl-5 mt-0.5">
                       Última vez: {formatCurrency(prevPrice)} ({prevDateRelative})
                       {diff != null && diff > 0 && <span className="text-[var(--data-error-500)] ml-1">↑ {formatCurrency(diff)} mas caro</span>}
                       {diff != null && diff < 0 && <span className="text-[var(--data-success-500)] ml-1">↓ {formatCurrency(Math.abs(diff))} mas barato</span>}
@@ -85,7 +85,7 @@ export default function OcDetalleOrden({ oc, o }: { oc: OrdenesCompra; o: DbPurc
             return (
               <div className="mt-3 flex flex-wrap gap-2">
                 {datos.map(d => (
-                  <span key={d.etiqueta} className="inline-flex items-center gap-1.5 h-8 px-3 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-xs">
+                  <span key={d.etiqueta} className="inline-flex items-center gap-1.5 h-8 px-3 rounded-xl bg-[var(--surface-sunken)] border border-[var(--rule-base)] text-sm">
                     <span className="font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{d.etiqueta}</span>
                     <span className="font-extrabold text-[var(--text-primary)]">{d.valor}</span>
                   </span>
@@ -101,12 +101,12 @@ export default function OcDetalleOrden({ oc, o }: { oc: OrdenesCompra; o: DbPurc
               (new Date(o.receivedDate).getTime() - new Date(o.deliveryDate).getTime()) / 86400000,
             );
             if (dias <= 0) return (
-              <p className="mt-2 text-xs font-bold text-[var(--data-success-500)]">
+              <p className="mt-2 text-sm font-bold text-[var(--data-success-500)]">
                 Llegó {dias === 0 ? "el día prometido" : `${Math.abs(dias)} día${Math.abs(dias) === 1 ? "" : "s"} antes`}
               </p>
             );
             return (
-              <p className="mt-2 text-xs font-bold text-[var(--data-warning-ink)]">
+              <p className="mt-2 text-sm font-bold text-[var(--data-warning-ink)]">
                 Llegó {dias} día{dias === 1 ? "" : "s"} después de lo prometido
               </p>
             );
@@ -116,7 +116,7 @@ export default function OcDetalleOrden({ oc, o }: { oc: OrdenesCompra; o: DbPurc
               productos se calculó sin ese gasto (ADR-377). */}
           <FleteTardio orden={o} onGuardado={(msg) => { avisar(msg); load(); }} />
 
-          <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-2">ID: {o.id}</p>
+          <p className="text-sm text-[var(--text-tertiary)] dark:text-muted mt-2">ID: {o.id}</p>
 
           {/* Mejora 14: Ahorro vs compra anterior del proveedor */}
           {(() => {
@@ -124,10 +124,10 @@ export default function OcDetalleOrden({ oc, o }: { oc: OrdenesCompra; o: DbPurc
               .filter(po => po.id !== o.id && po.supplierId === o.supplierId && new Date(po.createdAt) < new Date(o.createdAt) && po.status !== "cancelado")
               .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
             const prevOC = prevOCs[0];
-            if (!prevOC) return <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1 italic">Primera compra a este proveedor</p>;
+            if (!prevOC) return <p className="text-sm text-[var(--text-tertiary)] dark:text-muted mt-1 italic">Primera compra a este proveedor</p>;
             const diff = o.total - prevOC.total;
             return (
-              <div className={cn("mt-2 inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-lg",
+              <div className={cn("mt-2 inline-flex items-center gap-1.5 text-sm font-bold px-2.5 py-1 rounded-lg",
                 diff < 0
                   ? "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
                   : diff > 0

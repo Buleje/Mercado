@@ -3,7 +3,11 @@
 /**
  * Compras › Órdenes y recepción (plan «panel unificado», ola 3): las órdenes de
  * compra y la recepción de mercadería en UNA vista, con dos secciones en
- * `?sub=`: «Órdenes» y «Recibir».
+ * `?sub=`: «Órdenes» (`ordenes`) y «Recepciones» (`recibir`).
+ *
+ * Sin tercer nivel de pestañas (10-10): las secciones son una `BarraDeSecciones`
+ * que va DENTRO de la fila del título de cada una (prop `barra`), como Ofertas y
+ * cupones. Antes era un SegmentedControl suelto arriba de todo.
  *
  * Recibir va con o sin orden: `ReceivingTab` (la orden es un auto-completado
  * opcional) y el «Recibir» de cada orden (`OCRecepcionModal`) escriben al mismo
@@ -16,8 +20,7 @@
  */
 
 import dynamic from "next/dynamic";
-import { ClipboardList, PackageCheck } from "@buleje/design-system/icons";
-import SegmentedControl from "@/components/ui-system/SegmentedControl";
+import { BarraDeSecciones, idPestanaDeSeccion } from "@/components/admin/shared/BarraDeSecciones";
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { useParamPedido } from "@/hooks/use-vistas-permitidas";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
@@ -28,6 +31,12 @@ const ReceivingTab = dynamic(() => import("@/components/admin/ReceivingTab"), { 
 
 export const SECCIONES_ORDENES = ["ordenes", "recibir"] as const;
 export type SeccionOrdenes = (typeof SECCIONES_ORDENES)[number];
+
+const ID_PANEL = "panel-ordenes-y-recepcion";
+const SECCIONES = [
+  { clave: "ordenes" as const, rotulo: "Órdenes" },
+  { clave: "recibir" as const, rotulo: "Recepciones" },
+];
 
 export default function OrdenesYRecepcion({
   seccionInicial,
@@ -44,19 +53,13 @@ export default function OrdenesYRecepcion({
   );
   useSeccionDeLaFicha(oc, "ordenes", irA);
 
+  const barra = (
+    <BarraDeSecciones secciones={SECCIONES} activa={vista} onCambiar={irA} etiqueta="Secciones de Órdenes y recepción" idPanel={ID_PANEL} />
+  );
+
   return (
-    <div className="space-y-4">
-      <SegmentedControl<SeccionOrdenes>
-        value={vista}
-        onChange={irA}
-        label="Órdenes o recepción"
-        size="lg"
-        options={[
-          { value: "ordenes", label: "Órdenes", icon: <ClipboardList className="h-4 w-4" aria-hidden /> },
-          { value: "recibir", label: "Recibir", icon: <PackageCheck className="h-4 w-4" aria-hidden /> },
-        ]}
-      />
-      {vista === "ordenes" ? <PurchaseOrdersTab /> : <ReceivingTab />}
+    <div role="tabpanel" id={ID_PANEL} aria-labelledby={idPestanaDeSeccion(ID_PANEL, vista)} className="space-y-4">
+      {vista === "ordenes" ? <PurchaseOrdersTab barra={barra} /> : <ReceivingTab barra={barra} />}
     </div>
   );
 }

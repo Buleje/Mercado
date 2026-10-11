@@ -76,7 +76,20 @@ afterEach(() => {
 const getsDe = (url: string) => pendientes.filter((p) => p.metodo === "GET" && p.url === url);
 const gets = () => getsDe(URL_RECURRENTES);
 const pedido = (metodo: string, url: string) => pendientes.find((p) => p.metodo === metodo && p.url === url);
-const estadoEnPantalla = () => (screen.getByLabelText("Cambiar estado") as HTMLSelectElement).value;
+/* El estado es una pastilla desde 10-10 (antes un <select>); se cambia por el «⋯» de la fila. */
+const estadoEnPantalla = () => screen.getByTestId("estado-oc").dataset.estado;
+const estadosEnPantalla = () => screen.getAllByTestId("estado-oc").map((e) => e.dataset.estado).sort();
+
+/** Abre el «⋯» de la orden de `proveedor` y elige `opcion` (texto de la acción). */
+async function cambiarEstado(proveedor: string, opcion: RegExp) {
+  await act(async () => {
+    fireEvent.click(screen.getByRole("button", { name: `Más acciones de la orden de ${proveedor}` }));
+  });
+  const item = await screen.findByRole("menuitem", { name: opcion });
+  await act(async () => {
+    fireEvent.click(item);
+  });
+}
 
 async function resolver(p: Pendiente | undefined, cuerpo: unknown) {
   if (!p) throw new Error("el pedido todavía no salió");
@@ -142,12 +155,10 @@ describe("PurchaseOrdersTab — una carga vieja de órdenes no deshace el cambio
     await waitFor(() => expect(getsDe(URL_ORDENES)).toHaveLength(2));
 
     await resolverCargaDeOrdenes(1, [ORDEN]);
-    expect(((await screen.findByLabelText("Cambiar estado")) as HTMLSelectElement).value).toBe("pendiente");
+    expect((await screen.findByTestId("estado-oc")).dataset.estado).toBe("pendiente");
 
     // Elegir «parcial»: la pantalla cambia al toque y el PATCH queda pendiente.
-    await act(async () => {
-      fireEvent.change(screen.getByLabelText("Cambiar estado"), { target: { value: "parcial" } });
-    });
+    await cambiarEstado("Distribuidora Pucallpa", /Pasar a parcial/);
     expect(estadoEnPantalla()).toBe("parcial");
 
     // La carga que salió en el montaje llega ahora, con la orden todavía pendiente.
@@ -158,14 +169,13 @@ describe("PurchaseOrdersTab — una carga vieja de órdenes no deshace el cambio
     await resolver(pedido("PATCH", `${URL_ORDENES}/oc1`), { ...ORDEN, status: "parcial" });
     await waitFor(() => expect(getsDe(URL_ORDENES)).toHaveLength(3));
     await resolverCargaDeOrdenes(2, [{ ...ORDEN, status: "parcial" }]);
-    expect(((await screen.findByLabelText("Cambiar estado")) as HTMLSelectElement).value).toBe("parcial");
+    expect((await screen.findByTestId("estado-oc")).dataset.estado).toBe("parcial");
   });
 
   it("un cambio de estado hecho mientras viaja la recarga silenciosa de otro no se revierte", async () => {
     const AUTOMATICA = { ...ORDEN, id: "oc2", supplierName: "Molinera Pasco", status: "auto_generated", createdAt: "2026-09-14T16:00:00.000Z" };
     const PARCIAL = { ...ORDEN, status: "parcial" };
-    const estados = () => screen.getAllByLabelText("Cambiar estado").map((s) => (s as HTMLSelectElement).value).sort();
-    const selectCon = (valor: string) => screen.getAllByLabelText("Cambiar estado").find((s) => (s as HTMLSelectElement).value === valor)!;
+    const estados = estadosEnPantalla;
 
     montar();
     await waitFor(() => expect(getsDe(URL_ORDENES)).toHaveLength(2));
@@ -174,16 +184,12 @@ describe("PurchaseOrdersTab — una carga vieja de órdenes no deshace el cambio
     await waitFor(() => expect(estados()).toEqual(["auto_generated", "parcial"]));
 
     // Pasar la automática a pendiente: su recarga silenciosa queda en vuelo.
-    await act(async () => {
-      fireEvent.change(selectCon("auto_generated"), { target: { value: "pendiente" } });
-    });
+    await cambiarEstado("Molinera Pasco", /Aprobar la orden/);
     await resolver(pedido("PATCH", `${URL_ORDENES}/oc2`), { ...AUTOMATICA, status: "pendiente" });
     await waitFor(() => expect(getsDe(URL_ORDENES)).toHaveLength(3));
 
     // Marcar recibida la otra mientras esa recarga viaja; su PATCH queda pendiente.
-    await act(async () => {
-      fireEvent.change(selectCon("parcial"), { target: { value: "recibido" } });
-    });
+    await cambiarEstado("Distribuidora Pucallpa", /Marcar recibida entera/);
     expect(estados()).toEqual(["pendiente", "recibido"]);
 
     // La recarga llega con lo de antes del segundo PATCH: no puede revertir la pantalla.
@@ -202,9 +208,9 @@ describe("PurchaseOrdersTab — una carga vieja de órdenes no deshace el cambio
     await waitFor(() => expect(getsDe(URL_ORDENES)).toHaveLength(2));
 
     await resolverCargaDeOrdenes(1, [ORDEN]);
-    expect(await screen.findByLabelText("Cambiar estado")).toBeTruthy();
+    expect(await screen.findByTestId("estado-oc")).toBeTruthy();
 
     await resolverCargaDeOrdenes(0, []);
-    expect(screen.getByLabelText("Cambiar estado")).toBeTruthy();
+    expect(screen.getByTestId("estado-oc")).toBeTruthy();
   });
 });

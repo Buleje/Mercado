@@ -27,7 +27,7 @@ interface VenceLoteCampoProps {
 }
 
 const CAMPO =
-  "h-8 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-xs text-[var(--text-primary)] outline-none focus:border-primary";
+  "h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary";
 
 export default function VenceLoteCampo({ id, producto, valor, onChange, ayuda, className }: VenceLoteCampoProps) {
   const hoy = limaDateKey();
@@ -36,7 +36,7 @@ export default function VenceLoteCampo({ id, producto, valor, onChange, ayuda, c
 
   return (
     <div className={cn("flex flex-wrap items-center gap-1.5", className)}>
-      <label htmlFor={`${id}-vence`} className="text-xs font-semibold text-[var(--text-secondary)]">
+      <label htmlFor={`${id}-vence`} className="text-sm font-semibold text-[var(--text-secondary)]">
         Vence
       </label>
       {ayuda && (
@@ -56,7 +56,7 @@ export default function VenceLoteCampo({ id, producto, valor, onChange, ayuda, c
         aria-invalid={problema ? true : undefined}
         aria-describedby={problema ? `${id}-error` : undefined}
         aria-label={`Vence ${producto}`}
-        className={cn(CAMPO, "w-36", problema && "border-[var(--data-error-500)]")}
+        className={cn(CAMPO, "w-40", problema && "border-[var(--data-error-500)]")}
       />
       {ATAJOS_VENCE_DIAS.map((dias) => {
         const fecha = venceEnDias(dias, hoy);
@@ -69,9 +69,9 @@ export default function VenceLoteCampo({ id, producto, valor, onChange, ayuda, c
             aria-pressed={elegido}
             aria-label={`${producto}: vence en ${dias} días`}
             className={cn(
-              "h-8 rounded-lg border px-2 text-xs font-semibold transition-colors",
+              "h-12 rounded-xl border px-3 text-sm font-semibold transition-colors",
               elegido
-                ? "border-primary bg-primary/10 text-primary"
+                ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary",
             )}
           >
@@ -88,7 +88,7 @@ export default function VenceLoteCampo({ id, producto, valor, onChange, ayuda, c
         className={cn(CAMPO, "w-32")}
       />
       {problema && (
-        <p id={`${id}-error`} role="alert" className="basis-full text-xs font-semibold text-[var(--data-error-500)]">
+        <p id={`${id}-error`} role="alert" className="basis-full text-sm font-semibold text-[var(--data-error-ink)]">
           {problema}
         </p>
       )}

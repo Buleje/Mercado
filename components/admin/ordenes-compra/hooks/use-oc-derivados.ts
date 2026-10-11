@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { formatMonth } from "@/lib/format";
+import { esAutomatica, mesEnLima } from "@/components/admin/ordenes-compra/oc-compartido";
 import { useOcEstado } from "@/components/admin/ordenes-compra/hooks/use-oc-estado";
 import { useOcRecurrentes } from "@/components/admin/ordenes-compra/hooks/use-oc-recurrentes";
 import { useOcModales } from "@/components/admin/ordenes-compra/hooks/use-oc-modales";
@@ -30,7 +31,9 @@ export function useOcDerivados(previo: ReturnType<typeof useOcEstado> & ReturnTy
     let totalMes = 0;
     let canceladas = 0;
     let montoCancelado = 0;
-    const mesActual = new Date().toISOString().slice(0, 7);
+    let montoPorRecibir = 0;
+    // El mes de Lima, no el de UTC: a las 7 p. m. del 31 la cuenta ya saltaba al mes siguiente.
+    const mesActual = mesEnLima(new Date());
     for (const o of orders) {
       if (counts[o.status as keyof typeof counts] != null) counts[o.status as keyof typeof counts] += 1;
       // Una orden cancelada no se le compró a nadie: sumarla al acumulado
@@ -41,9 +44,34 @@ export function useOcDerivados(previo: ReturnType<typeof useOcEstado> & ReturnTy
         continue;
       }
       totalAcumulado += o.total;
-      if (o.createdAt.startsWith(mesActual)) totalMes += o.total;
+      if (o.status !== "recibido") montoPorRecibir += o.total;
+      if (mesEnLima(o.createdAt) === mesActual) totalMes += o.total;
     }
-    return { counts, totalAcumulado, totalMes, canceladas, montoCancelado, total: orders.length };
+    const porRecibir = counts.pendiente + counts.parcial + counts.auto_generated;
+    return { counts, totalAcumulado, totalMes, canceladas, montoCancelado, porRecibir, montoPorRecibir, total: orders.length };
+  }, [orders]);
+
+  /**
+   * Órdenes automáticas abiertas que repiten el MISMO pedido al mismo proveedor (10-10, main:
+   * 33 de 35 pendientes eran «Atún Florida ×40» a Frigorífico Amazonia, una por día: el
+   * reabastecimiento no mira si ya hay una abierta). Se avisa el grupo más grande.
+   */
+  const repetidas = useMemo(() => {
+    const grupos = new Map<string, { supplierId: string; proveedor: string; detalle: string; n: number }>();
+    for (const o of orders) {
+      if (!esAutomatica(o) || !["pendiente", "auto_generated"].includes(o.status)) continue;
+      const firma = o.items.map((i) => `${i.productId}:${i.quantity}`).sort().join("|");
+      const clave = `${o.supplierId}#${firma}`;
+      const g = grupos.get(clave);
+      if (g) g.n += 1;
+      else grupos.set(clave, {
+        supplierId: o.supplierId,
+        proveedor: o.supplierName ?? "",
+        detalle: o.items.slice(0, 2).map((i) => `${i.name} ×${i.quantity}`).join(", ") + (o.items.length > 2 ? "…" : ""),
+        n: 1,
+      });
+    }
+    return [...grupos.values()].filter((g) => g.n > 1).sort((a, b) => b.n - a.n)[0] ?? null;
   }, [orders]);
 
   // Supplier analytics
@@ -92,6 +120,6 @@ export function useOcDerivados(previo: ReturnType<typeof useOcEstado> & ReturnTy
     };
   };
   return {
-    itemsTotal, totalConDescuento, sobrecostos, filteredOrders, kpis, getSupplierStats,
+    itemsTotal, totalConDescuento, sobrecostos, filteredOrders, kpis, repetidas, getSupplierStats,
   };
 }

@@ -179,13 +179,13 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
             <SectionTitle id={titleId} className="text-[var(--text-primary)] dark:text-[var(--text-primary)]">
               Recepcion de Pedido
             </SectionTitle>
-            <p className="text-xs text-[var(--text-secondary)] dark:text-muted">
+            <p className="text-sm text-[var(--text-secondary)] dark:text-muted">
               OC #{ocId.slice(-8).toUpperCase()} - Paso {step} de 3
             </p>
           </div>
           <span className="ml-auto flex items-center gap-1">
             <ControlesDeVentana ventana={ventana} />
-            <button aria-label="Cerrar" onClick={onClose} className="p-2 rounded-xl hover:bg-[var(--rule-soft)] transition-colors">
+            <button type="button" aria-label="Cerrar" onClick={onClose} className="inline-flex h-12 w-12 items-center justify-center rounded-xl hover:bg-[var(--rule-soft)] transition-colors">
               <X className="h-5 w-5 text-[var(--text-secondary)]" />
             </button>
           </span>
@@ -216,7 +216,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
               <div className="overflow-x-auto">
                 <DataTable className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs text-[var(--text-secondary)] dark:text-muted">
+                    <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-secondary)] dark:text-muted">
                       <th className="text-left py-2 px-2">Producto</th>
                       <th className="text-center py-2 px-1">Pedido</th>
                       <th className="text-center py-2 px-1">Recibido</th>
@@ -259,7 +259,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
                           </td>
                           <td className="py-2 px-1 text-center">
                             {diff !== 0 && (
-                              <span className={cn("text-xs font-bold", diff < 0 ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]")}>
+                              <span className={cn("text-sm font-bold", diff < 0 ? "text-[var(--data-error-ink)]" : "text-[var(--data-success-ink)]")}>
                                 {diff < 0 ? `Faltaron ${Math.abs(diff)}` : `+${diff}`}
                               </span>
                             )}
@@ -325,7 +325,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
               <div className="overflow-x-auto">
                 <DataTable className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] text-xs text-[var(--text-secondary)] dark:text-muted">
+                    <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm text-[var(--text-secondary)] dark:text-muted">
                       <th className="text-left py-2 px-2">Producto</th>
                       <th className="text-right py-2 px-1">Precio anterior</th>
                       <th className="text-center py-2 px-1">Precio factura</th>
@@ -366,8 +366,8 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
                               {priceDiff !== 0 && (
                                 <span
                                   className={cn(
-                                    "text-xs font-semibold flex items-center justify-end gap-0.5",
-                                    isSignificant ? "text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]" : "text-[var(--text-secondary)]",
+                                    "text-sm font-semibold flex items-center justify-end gap-0.5",
+                                    isSignificant ? "text-[var(--data-warning-ink)]" : "text-[var(--text-secondary)]",
                                   )}
                                 >
                                   {isSignificant && <AlertTriangle className="h-3 w-3" />}
@@ -400,15 +400,15 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
 
               <div className="grid grid-cols-3 gap-3">
                 <div className="bg-primary/10 dark:bg-primary/15 rounded-xl p-3 text-center border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
-                  <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] uppercase">Recibidos</p>
+                  <p className="text-sm font-bold text-[var(--data-success-ink)] uppercase">Recibidos</p>
                   <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{itemsRecibidos.length}</p>
                 </div>
                 <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 rounded-xl p-3 text-center border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30">
-                  <p className="text-xs font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] uppercase">Con diferencia</p>
+                  <p className="text-sm font-bold text-[var(--data-warning-ink)] uppercase">Con diferencia</p>
                   <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{itemsConDiferencia.length}</p>
                 </div>
                 <div className="bg-primary/10 dark:bg-primary/15 rounded-xl p-3 text-center border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30">
-                  <p className="text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] uppercase">Total factura</p>
+                  <p className="text-sm font-bold text-[var(--data-success-ink)] uppercase">Total factura</p>
                   <p className="text-lg font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatCurrency(totalFactura)}</p>
                 </div>
               </div>
@@ -416,7 +416,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
               {/* Items summary */}
               <div className="bg-[var(--surface-sunken)] dark:bg-accent/50 rounded-xl p-3 space-y-1 max-h-40 overflow-y-auto">
                 {receivedItems.map((item) => (
-                  <div key={item.productId} className="flex justify-between text-xs">
+                  <div key={item.productId} className="flex justify-between text-sm">
                     <span className={cn("text-[var(--text-primary)] dark:text-[var(--text-primary)]", item.receivedQty === 0 && "line-through text-[var(--text-tertiary)]")}>
                       {item.name}
                     </span>
@@ -450,7 +450,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
           {step > 1 ? (
             <button
               onClick={() => setStep((s) => s - 1)}
-              className="flex items-center gap-1 text-sm font-bold text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] transition-colors"
+              className="flex min-h-12 items-center gap-1 rounded-xl px-3 text-sm font-bold text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] transition-colors"
             >
               <ChevronLeft className="h-4 w-4" /> Anterior
             </button>
@@ -463,7 +463,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
               onClick={() => setStep((s) => s + 1)}
               disabled={step === 1 && venceConError}
               title={step === 1 && venceConError ? "Corrige la fecha de vencimiento marcada en rojo" : undefined}
-              className="flex items-center gap-1 px-4 min-h-10 bg-primary hover:bg-primary/90 disabled:opacity-50 text-white font-semibold text-sm rounded-xl transition-colors"
+              className="flex items-center gap-1 px-4 min-h-12 bg-[var(--accent-dark)] hover:brightness-110 disabled:opacity-50 text-white font-semibold text-sm rounded-xl transition-colors"
             >
               Siguiente <ChevronRight className="h-4 w-4" />
             </button>
@@ -471,7 +471,7 @@ export default function OCRecepcionModal({ ocId, supplier, items, onComplete, on
             <button
               onClick={handleConfirm}
               disabled={saving || itemsRecibidos.length === 0}
-              className="flex items-center gap-2 px-4 min-h-10 bg-primary hover:bg-primary/90 disabled:opacity-50 text-white font-semibold text-sm rounded-xl transition-colors"
+              className="flex items-center gap-2 px-4 min-h-12 bg-[var(--accent-dark)] hover:brightness-110 disabled:opacity-50 text-white font-semibold text-sm rounded-xl transition-colors"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
               Confirmar recepción

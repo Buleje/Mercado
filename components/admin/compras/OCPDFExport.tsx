@@ -1,73 +1,44 @@
-"use client";
-
-import { FileText, MessageCircle } from "@buleje/design-system/icons";
 import type { DbPurchaseOrder, DbSupplier } from "@/lib/jsondb";
 import { printPurchaseOrder } from "../PurchaseOrderPDF";
 import { totalesOC } from "@/lib/compras/totales-oc";
 import { formatCurrency, formatDateNumeric } from "@/lib/format";
 
-interface OCPDFExportProps {
-  oc: DbPurchaseOrder;
-  supplier?: DbSupplier;
+/**
+ * PDF y WhatsApp de una orden de compra. Antes eran dos botones de 28 px en cada
+ * tarjeta; desde 10-10 son acciones del «⋯» de la fila (Órdenes de compra).
+ */
+export function imprimirOC(oc: DbPurchaseOrder, supplier?: DbSupplier): void {
+  printPurchaseOrder(oc, supplier);
 }
 
-export default function OCPDFExport({ oc, supplier }: OCPDFExportProps) {
-  const handlePrint = () => {
-    printPurchaseOrder(oc, supplier);
-  };
+export function enviarOCPorWhatsApp(oc: DbPurchaseOrder, supplier?: DbSupplier): void {
+  const items = oc.items
+    .map((i, idx) => `${idx + 1}. ${i.name} x${i.quantity} ${i.unit} @ ${formatCurrency(Number(i.unitCost))} = ${formatCurrency(i.quantity * i.unitCost)}`)
+    .join("\n");
 
-  const handleWhatsApp = () => {
-    const items = oc.items
-      .map((i, idx) => `${idx + 1}. ${i.name} x${i.quantity} ${i.unit} @ ${formatCurrency(Number(i.unitCost))} = ${formatCurrency(i.quantity * i.unitCost)}`)
-      .join("\n");
+  // El monto que se le manda al proveedor es el de la orden. Antes se le
+  // sumaba 18% encima y se ignoraba el descuento: el mensaje prometía hasta
+  // S/89.70 más de lo pactado.
+  const t = totalesOC(oc);
 
-    // El monto que se le manda al proveedor es el de la orden. Antes se le
-    // sumaba 18% encima y se ignoraba el descuento: el mensaje prometía hasta
-    // S/89.70 más de lo pactado.
-    const t = totalesOC(oc);
-
-    const message = encodeURIComponent(
-      `*ORDEN DE COMPRA #${oc.id.slice(-8).toUpperCase()}*\n\n` +
-      `Proveedor: ${supplier?.name ?? oc.supplierName}\n` +
-      `Fecha: ${formatDateNumeric(oc.createdAt)}\n\n` +
-      `*Productos:*\n${items}\n\n` +
-      (t.descuentoPct > 0
-        ? `Subtotal: ${formatCurrency(t.subtotalBruto)}\n` +
-          `Descuento (${t.descuentoPct}%): -${formatCurrency(t.descuentoMonto)}\n`
-        : "") +
-      `*TOTAL: ${formatCurrency(t.total)}*\n` +
-      `(incluye IGV ${formatCurrency(t.igvContenido)})\n\n` +
-      `Buleje - Pucallpa`,
-    );
-
-    const phone = supplier?.phone?.replace(/\D/g, "") ?? "";
-    const url = phone
-      ? `https://wa.me/${phone.length === 9 ? "51" + phone : phone}?text=${message}`
-      : `https://wa.me/?text=${message}`;
-
-    window.open(url, "_blank");
-  };
-
-  return (
-    <div className="flex items-center gap-1.5">
-      <button
-        type="button"
-        onClick={handlePrint}
-        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[var(--data-warning-50)] dark:bg-amber-950/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] hover:bg-[var(--data-warning-100)] dark:hover:bg-[var(--data-warning-500)]/30 text-xs font-bold transition-colors"
-        title="Descargar / Imprimir PDF"
-      >
-        <FileText className="h-3.5 w-3.5" />
-        PDF
-      </button>
-      <button
-        type="button"
-        onClick={handleWhatsApp}
-        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)] hover:bg-primary/10 dark:hover:bg-primary/15 text-xs font-bold transition-colors"
-        title="Enviar por WhatsApp"
-      >
-        <MessageCircle className="h-3.5 w-3.5" />
-        WhatsApp
-      </button>
-    </div>
+  const message = encodeURIComponent(
+    `*ORDEN DE COMPRA #${oc.id.slice(-8).toUpperCase()}*\n\n` +
+    `Proveedor: ${supplier?.name ?? oc.supplierName}\n` +
+    `Fecha: ${formatDateNumeric(oc.createdAt)}\n\n` +
+    `*Productos:*\n${items}\n\n` +
+    (t.descuentoPct > 0
+      ? `Subtotal: ${formatCurrency(t.subtotalBruto)}\n` +
+        `Descuento (${t.descuentoPct}%): -${formatCurrency(t.descuentoMonto)}\n`
+      : "") +
+    `*TOTAL: ${formatCurrency(t.total)}*\n` +
+    `(incluye IGV ${formatCurrency(t.igvContenido)})\n\n` +
+    `Buleje - Pucallpa`,
   );
+
+  const phone = supplier?.phone?.replace(/\D/g, "") ?? "";
+  const url = phone
+    ? `https://wa.me/${phone.length === 9 ? "51" + phone : phone}?text=${message}`
+    : `https://wa.me/?text=${message}`;
+
+  window.open(url, "_blank");
 }
