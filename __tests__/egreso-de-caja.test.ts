@@ -24,6 +24,8 @@ vi.mock("@/lib/rate-limit", () => ({ applyRateLimit: vi.fn(() => null) }));
 vi.mock("@/lib/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() } }));
 vi.mock("@/lib/jsondb", () => ({ ExpensesDB: { getById: h.getTpl }, PayablesDB: { getById: h.getById } }));
 vi.mock("@/lib/auth/csrf", () => ({ assertCsrf: vi.fn(() => null) }));
+// El aviso de comprobante repetido tiene su test (gasto-comprobante-repetido): acá, nunca hay otro igual.
+vi.mock("@/lib/db/expenses.db", () => ({ ExpensesDB: { comprobanteRepetido: vi.fn(async () => null) } }));
 vi.mock("@/lib/activity-logger", () => ({ logActivity: vi.fn(async () => undefined) }));
 vi.mock("@/lib/db/gasto-con-caja.db", () => {
   class PagoExcedeSaldoError extends Error {}

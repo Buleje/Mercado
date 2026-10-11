@@ -17,6 +17,7 @@ import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
 import { sendInvoice } from "@/lib/sunat/nubefact-client";
 import { buildBoleta, buildFactura, lineasDeOrden } from "@/lib/sunat/invoice-builder";
+import { faltaDniEnBoleta } from "@/lib/sunat/boleta-dni";
 import { montosParaRegistro } from "@/lib/sunat/lineas-comprobante";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { DomainEvents } from "@/lib/domain-events";
@@ -88,6 +89,12 @@ async function emitHandler(
 
     if (!order) {
       return NextResponse.json({ error: "Orden no encontrada." }, { status: 404 });
+    }
+
+    // Boleta de más de S/ 700 sin DNI: 400 ANTES de gastar un correlativo (SUNAT la pide con documento).
+    const sinDni = faltaDniEnBoleta(type, toNumOrZero(order.total), customerDni);
+    if (sinDni) {
+      return NextResponse.json({ error: sinDni, campo: "customerDni" }, { status: 400 });
     }
 
     // Verificar que no existe ya un comprobante aceptado para esta orden

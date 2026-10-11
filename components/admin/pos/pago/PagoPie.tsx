@@ -7,12 +7,17 @@ import type { PagoModal } from "@/components/admin/pos/pago/usePagoModal";
 
 /** Pie del cobro: Confirmar venta / Registrar fiado. */
 export default function PagoPie({ p }: { p: PagoModal }) {
-  const { processing, customerPhone, total, handleConfirm, isFiado, canConfirm } = p;
+  const { processing, customerPhone, total, handleConfirm, isFiado, canConfirm, faltaDni } = p;
   return (
         <div className="shrink-0 px-5 sm:px-6 py-3.5 border-t border-[var(--rule-soft)] bg-[var(--surface-raised)] shadow-[0_-4px_12px_-4px_rgba(0,0,0,0.06)]">
           {isFiado && !customerPhone && (
             <p className="text-sm text-[var(--data-error-500)] font-semibold text-center mb-3">
               Selecciona un cliente para continuar
+            </p>
+          )}
+          {faltaDni && !processing && (
+            <p role="status" className="text-sm text-[var(--data-warning-ink)] font-semibold text-center mb-3">
+              Escribe el DNI del cliente para confirmar esta boleta.
             </p>
           )}
           <button

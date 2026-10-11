@@ -7,6 +7,7 @@
  */
 import { formatCurrency, formatDate } from "@/lib/format";
 import { limaDateKey } from "@/lib/utils";
+import { cierreDelNegocio, conNombreDelNegocio, type FirmaNegocio } from "@/lib/admin/membrete";
 
 export type CotizacionStatus = "BORRADOR" | "ENVIADA" | "ACEPTADA" | "RECHAZADA" | "VENCIDA" | "CONVERTIDA";
 
@@ -148,13 +149,13 @@ export function saveTemplates(templates: Plantilla[]): void {
 
 // ── WhatsApp ────────────────────────────────────────────────────────────────
 
-/** El presupuesto entero como mensaje (Mejora M10). */
-export function textoWhatsApp(c: Cotizacion): string {
+/** El presupuesto entero como mensaje (Mejora M10), firmado por el negocio de la sesión. */
+export function textoWhatsApp(c: Cotizacion, firma?: FirmaNegocio | null): string {
   const itemsText = (c.items ?? [])
     .map((it, i) => `${i + 1}. ${it.descripcion} x ${it.cantidad} — ${formatCurrency(Number(it.subtotal))}`)
     .join("\n");
   return [
-    `*Cotización ${c.numero} — Buleje*`,
+    `*${conNombreDelNegocio(`Cotización ${c.numero}`, firma)}*`,
     `Cliente: ${c.clienteNombre}`,
     `Fecha: ${formatDate(c.createdAt)}`,
     `Valida hasta: ${formatDate(c.validoHasta)}`,
@@ -165,8 +166,8 @@ export function textoWhatsApp(c: Cotizacion): string {
     `IGV (18%): ${formatCurrency(Number(c.igv))}`,
     `*Total: ${formatCurrency(Number(c.total))}*`,
     `─────────`,
-    `Te interesa? Responde a este mensaje.`,
-    `Buleje — Pucallpa`,
+    `¿Te interesa? Responde a este mensaje.`,
+    ...cierreDelNegocio(firma, ""),
   ].join("\n");
 }
 

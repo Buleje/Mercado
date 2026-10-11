@@ -17,6 +17,10 @@ export interface Membrete {
   logoUrl: string | null;
   telefono: string | null;
   direccion: string | null;
+  /** RUC del negocio (`Settings.ruc`, si no el de SUNAT): lo pide el proveedor para facturarle. */
+  ruc: string | null;
+  /** El pie que el negocio escribió para sus comprobantes (`Settings.invoiceFooterText`). */
+  pie: string | null;
 }
 
 /** El logo ya listo para jsPDF: PNG en data URL y su tamaño en píxeles, para respetar la proporción. */
@@ -35,6 +39,9 @@ export function armarMembrete(
         logoUrl?: string | null;
         businessPhone?: string | null;
         businessAddress?: string | null;
+        invoiceFooterText?: string | null;
+        ruc?: string | null;
+        sunatRuc?: string | null;
         /** Lo que se configuró para la tienda: `phone`, `whatsapp`, `address`. */
         storeTheme?: Record<string, unknown> | null;
       }
@@ -47,5 +54,30 @@ export function armarMembrete(
     logoUrl: limpio(settings?.logoUrl) ?? limpio(tenant?.logoUrl),
     telefono: limpio(settings?.businessPhone) ?? limpio(settings?.storeTheme?.phone) ?? limpio(settings?.storeTheme?.whatsapp),
     direccion: limpio(settings?.businessAddress) ?? limpio(settings?.storeTheme?.address),
+    ruc: limpio(settings?.ruc) ?? limpio(settings?.sunatRuc),
+    pie: limpio(settings?.invoiceFooterText),
   };
+}
+
+/** Lo que el cierre de un ticket o mensaje necesita del membrete. */
+export type FirmaNegocio = Pick<Membrete, "nombre" | "direccion" | "pie">;
+
+/**
+ * Las últimas líneas de un ticket o recibo que recibe un cliente: el
+ * agradecimiento, «Nombre — dirección» y el pie del negocio. Con pie, el pie
+ * reemplaza al agradecimiento genérico (es lo que el dueño eligió decir al
+ * final). Sin datos no sale ninguna marca: nunca el nombre de la plataforma.
+ */
+export function cierreDelNegocio(firma: FirmaNegocio | null | undefined, gracias: string): string[] {
+  const nombre = limpio(firma?.nombre);
+  const direccion = limpio(firma?.direccion);
+  const pie = limpio(firma?.pie);
+  const quien = [nombre, direccion].filter(Boolean).join(" — ");
+  return [pie ? null : gracias, quien || null, pie].filter((l): l is string => !!l);
+}
+
+/** «Boleta — Musa»: el título con el nombre del negocio, o sólo el título. */
+export function conNombreDelNegocio(titulo: string, firma: FirmaNegocio | null | undefined): string {
+  const nombre = limpio(firma?.nombre);
+  return nombre ? `${titulo} — ${nombre}` : titulo;
 }

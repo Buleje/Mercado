@@ -115,8 +115,8 @@ describe("guardián: Ajustes guarda y valida el campo que lee la ruta", () => {
     expect(ruta).toMatch(/TOPE_CAJERO_SCHEMA\.safeParse\(body\.maxDiscountPercent\)/);
   });
 
-  it("la sección Cobros manda el campo con topeCajeroParaGuardar", () => {
-    expect(leer("components/admin/settings/SeccionCobros.tsx")).toMatch(
+  it("Configuración › Cobros manda el campo con topeCajeroParaGuardar (formulario de use-ajustes)", () => {
+    expect(leer("components/admin/settings/use-ajustes.ts")).toMatch(
       /maxDiscountPercent: topeCajeroParaGuardar\(maxDiscountPercent\)/,
     );
   });

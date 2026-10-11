@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import QRCode from "qrcode";
 import { useBilleteraNegocio, tieneQR, type Billetera } from "@/components/admin/pos/pago/useBilleteraNegocio";
 import { useFiadoResumen } from "@/components/admin/pos/pago/useFiadoResumen";
+import { boletaPideDni, esDni, faltaDniEnBoleta } from "@/lib/sunat/boleta-dni";
 import { isValidRuc, type PaymentLine, type PaymentLineMethod, type ComprobanteTipo, type POSPaymentModalProps } from "@/components/admin/pos/pago/pago-shared";
 
 /** Estado del modal de cobro del POS (pago, descuento, cliente, comprobante, billetes). */
@@ -28,6 +29,8 @@ export function usePagoModal({
   const [comprobanteTipo, setComprobanteTipo] = useState<ComprobanteTipo>("ticket");
   const [comprobanteRuc, setComprobanteRuc] = useState("");
   const [rucError, setRucError] = useState("");
+  /** DNI del cliente: sólo se pide (y se manda) en una boleta de más de S/ 700. */
+  const [comprobanteDni, setComprobanteDni] = useState("");
 
   // Split payment mode
   const [showSplit, setShowSplit] = useState(false);
@@ -164,7 +167,8 @@ export function usePagoModal({
       : paymentLines;
     onConfirm(confirmedPayments, customerPhone || undefined, {
       comprobanteTipo,
-      comprobanteRuc: comprobanteTipo === "factura" ? comprobanteRuc : undefined,
+      // El documento del comprobante: el RUC de la factura o el DNI de la boleta grande.
+      comprobanteRuc: comprobanteTipo === "factura" ? comprobanteRuc : pideDni && esDni(comprobanteDni) ? comprobanteDni.trim() : undefined,
       customerName: customerName || undefined,
       discountAmount: discountAmount > 0 ? discountAmount : undefined,
       discountPercent: discountPercent > 0 ? discountPercent : undefined,
@@ -231,14 +235,20 @@ export function usePagoModal({
   // Lo que el cliente ya debe: el aviso de Fiado dice en cuánto quedaría con esta venta.
   const deuda = useFiadoResumen(customerPhone);
 
+  // SUNAT: la boleta de más de S/ 700 lleva el DNI del cliente (con el descuento ya aplicado).
+  const pideDni = boletaPideDni(comprobanteTipo, total);
+  const faltaDni = faltaDniEnBoleta(comprobanteTipo, total, comprobanteDni);
+
   const canConfirm =
     (isFiado ? !!customerPhone : pendiente <= 0.01) &&
     !processing &&
-    (comprobanteTipo !== "factura" || isValidRuc(comprobanteRuc));
+    (comprobanteTipo !== "factura" || isValidRuc(comprobanteRuc)) &&
+    !faltaDni;
 
   return {
     subtotal, cartCount, onCancel, processing, onRepeatOrder, paymentLines, setPaymentLines, customerPhone, setCustomerPhone, customerName, setCustomerName, comprobanteTipo, setComprobanteTipo, comprobanteRuc, setComprobanteRuc, rucError, setRucError, showSplit, setShowSplit, voiceEnabled, setVoiceEnabled, showDiscount, setShowDiscount, discountMode, setDiscountMode, discountValue, setDiscountValue, showCustomerList, setShowCustomerList, yapeNumber, setYapeNumber, plinNumber, setPlinNumber, qrDataUrl, setQrDataUrl, showNewCustomer, setShowNewCustomer, newCustName, setNewCustName, newCustPhone, setNewCustPhone, savingCustomer, setSavingCustomer, billetes, setBilletes, numDiscountValue, discountAmount, discountPercent, total, linesTotal, pendiente, lastLine, vuelto, currentMethod, showQR, addLine, removeLine, updateMethod, updateAmount, handleConfirm, handleSplitConfirm, quickPercent, quickFixed, quickDiscountValues, applyQuickDiscount, totalBilletes, addBillete, limpiarBilletes, quickAmounts, isSinglePayment, isFiado, canConfirm,
     billeteras, qrAbierto, setQrAbierto, elegirMetodo, deuda,
+    comprobanteDni, setComprobanteDni, pideDni, faltaDni,
   };
 }
 

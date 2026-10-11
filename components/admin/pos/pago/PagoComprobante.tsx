@@ -4,11 +4,12 @@ import { Receipt } from "@buleje/design-system/icons";
 import { Kicker } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import { isValidRuc, type ComprobanteTipo } from "@/components/admin/pos/pago/pago-shared";
+import { AVISO_DNI_BOLETA } from "@/lib/sunat/boleta-dni";
 import type { PagoModal } from "@/components/admin/pos/pago/usePagoModal";
 
 /** Tarjeta Comprobante: ticket, boleta, factura (RUC), cotización, proforma. */
 export default function PagoComprobante({ p }: { p: PagoModal }) {
-  const { comprobanteTipo, setComprobanteTipo, comprobanteRuc, setComprobanteRuc, rucError, setRucError } = p;
+  const { comprobanteTipo, setComprobanteTipo, comprobanteRuc, setComprobanteRuc, rucError, setRucError, comprobanteDni, setComprobanteDni, pideDni } = p;
   return (
     <>
             <div className="lg:col-span-4 min-w-0 rounded-2xl bg-[var(--surface-raised)] border border-[var(--rule-soft)] shadow-sm overflow-hidden">
@@ -102,6 +103,27 @@ export default function PagoComprobante({ p }: { p: PagoModal }) {
                       {11 - comprobanteRuc.length} dígitos restantes
                     </p>
                   )}
+              </div>
+            )}
+            {/* SUNAT: la boleta de más de S/ 700 lleva el DNI del cliente. Por debajo no se pide. */}
+            {pideDni && (
+              <div className="mt-3">
+                <input
+                  type="text"
+                  value={comprobanteDni}
+                  onChange={(e) => setComprobanteDni(e.target.value.replace(/\D/g, "").slice(0, 8))}
+                  placeholder="DNI del cliente (8 dígitos)"
+                  aria-label="DNI del cliente para la boleta"
+                  aria-describedby="pos-aviso-dni-boleta"
+                  inputMode="numeric"
+                  maxLength={8}
+                  className="w-full px-3 h-11 rounded-xl border border-[var(--data-warning-500)] text-sm text-[var(--text-primary)] outline-none transition-colors focus:border-primary"
+                />
+                <p id="pos-aviso-dni-boleta" className="text-sm text-[var(--data-warning-ink)] mt-1.5">
+                  {comprobanteDni.length > 0 && comprobanteDni.length < 8
+                    ? `Faltan ${8 - comprobanteDni.length} dígitos. ${AVISO_DNI_BOLETA}`
+                    : AVISO_DNI_BOLETA}
+                </p>
               </div>
             )}
           </div>

@@ -10,6 +10,7 @@ import { Bookmark, Check, Copy, MessageCircle, Printer, Send, ShoppingCart, XCir
 import { button } from "@/components/ui-system/button-variants";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import type { DetalleCotizacion } from "./use-detalle-cotizacion";
+import { useMembrete } from "@/hooks/use-membrete";
 import { abrirWhatsApp, textoWhatsApp, type Cotizacion } from "./tipos";
 
 interface Props {
@@ -25,6 +26,7 @@ const SECUNDARIO = button({ variant: "secondary", className: "gap-1.5 rounded-xl
 
 export function AccionesCotizacion({ c, detalle, onDuplicar, onImprimir, onGuardarPlantilla }: Props) {
   const [guardando, setGuardando] = useState(false);
+  const membrete = useMembrete();
   const [nombre, setNombre] = useState("");
   const { actionLoading, cambiarEstado, convertir, pedidoCreado, convertirError, estadoError } = detalle;
 
@@ -58,7 +60,7 @@ export function AccionesCotizacion({ c, detalle, onDuplicar, onImprimir, onGuard
             <ShoppingCart className="h-4 w-4" aria-hidden /> Convertir en pedido
           </button>
         )}
-        <button type="button" onClick={() => abrirWhatsApp(textoWhatsApp(c))} className={SECUNDARIO}>
+        <button type="button" onClick={() => abrirWhatsApp(textoWhatsApp(c, membrete))} className={SECUNDARIO}>
           <MessageCircle className="h-4 w-4 text-[var(--data-success-ink)] dark:text-[var(--data-success-500)]" aria-hidden /> WhatsApp
         </button>
         <button type="button" onClick={onDuplicar} className={SECUNDARIO}>

@@ -65,6 +65,8 @@ export function useGastoNuevo(abierto: boolean, onGuardado: (r: GastoGuardado) =
   const [padron, setPadron] = useState<Padron | null>(null);
   const [buscandoRuc, setBuscandoRuc] = useState(false);
   const [caja, setCaja] = useState<CajaAbierta | null>(null);
+  /** El servidor encontró el mismo RUC + serie-número ya anotado: el aviso para confirmar. */
+  const [repetido, setRepetido] = useState<string | null>(null);
 
   // La caja se mira al abrir: decide si «sale de la caja» se puede marcar.
   useEffect(() => {
@@ -80,6 +82,8 @@ export function useGastoNuevo(abierto: boolean, onGuardado: (r: GastoGuardado) =
   const set = <K extends keyof FormGasto>(campo: K, valor: FormGasto[K]) => {
     setForm((f) => ({ ...f, [campo]: valor }));
     if (error?.campo === campo) setError(null);
+    // Otro número u otro RUC ya no es «el mismo papel»: la pregunta se va.
+    if (campo === "documentNumber" || campo === "supplierRuc" || campo === "documentType") setRepetido(null);
   };
 
   const monto = Number(form.amount) || 0;
@@ -141,10 +145,12 @@ export function useGastoNuevo(abierto: boolean, onGuardado: (r: GastoGuardado) =
     }
   };
 
-  const guardar = async () => {
+  /** `esOtro`: la persona ya vio el aviso de comprobante repetido y confirmó. */
+  const guardar = async (esOtro = false) => {
     if (!puedeGuardar) return;
     setSaving(true);
     setError(null);
+    setRepetido(null);
     try {
       const res = await fetch("/api/expenses", {
         method: "POST",
@@ -159,9 +165,14 @@ export function useGastoNuevo(abierto: boolean, onGuardado: (r: GastoGuardado) =
           supplierRuc: (conPapel && form.supplierRuc.trim()) || undefined,
           afectoIgv: esFactura ? form.afectoIgv : undefined,
           attachmentUrl: form.attachmentUrl || undefined,
+          confirmarDuplicado: esOtro || undefined,
         }),
       });
-      const body = (await res.json().catch(() => ({}))) as { error?: string; campo?: string; caja?: { sinCaja: boolean } };
+      const body = (await res.json().catch(() => ({}))) as { error?: string; campo?: string; codigo?: string; caja?: { sinCaja: boolean } };
+      if (res.status === 409 && body.codigo === "COMPROBANTE_REPETIDO") {
+        setRepetido(body.error ?? "Ya anotaste este comprobante — ¿es otro?");
+        return;
+      }
       if (!res.ok) {
         setError({ texto: body.error ?? "No se pudo guardar el gasto", campo: body.campo });
         return;
@@ -177,7 +188,7 @@ export function useGastoNuevo(abierto: boolean, onGuardado: (r: GastoGuardado) =
   };
 
   return {
-    form, set, monto, saving, error, subiendo, padron, buscandoRuc, caja,
+    form, set, monto, saving, error, subiendo, padron, buscandoRuc, caja, repetido, descartarRepetido: () => setRepetido(null),
     igvVistaPrevia, errorRuc, esDeHoy, puedeSalirDeCaja, puedeGuardar, motivoBloqueo, buscarRuc, subirFoto, guardar,
   };
 }

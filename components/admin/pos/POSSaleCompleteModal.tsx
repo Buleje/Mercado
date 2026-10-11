@@ -9,6 +9,8 @@ import { formatCurrency, formatDateNumeric, formatTime } from "@/lib/format";
 import { fmt, type CartItem } from "@/components/admin/pos/pos-shared";
 import { SaleConfetti, useCountUp } from "@/components/admin/pos/POSSaleConfetti";
 import QuickAbonoFromSale from "@/components/admin/pos/POSQuickAbono";
+import { useMembrete } from "@/hooks/use-membrete";
+import { cierreDelNegocio, conNombreDelNegocio } from "@/lib/admin/membrete";
 
 // ── Sale Complete Modal (Mejora 4: WhatsApp mejorado + Mejora 1: animaciones) ──
 
@@ -39,6 +41,8 @@ export default function SaleCompleteModal({
   onClose: () => void;
 }) {
   const [manualPhone, setManualPhone] = useState("");
+  // El nombre, la dirección y el pie de ESTE negocio (no el de la plataforma).
+  const membrete = useMembrete();
   const displayTotal = lastSaleDetails?.total ?? cartTotal;
   // Fix 2026-07-08 (reporte ventas-caja): el count-up 0→total tardaba 1000ms →
   // un vistazo/captura al abrir el modal "¡Venta completada!" podía leer un
@@ -70,7 +74,7 @@ export default function SaleCompleteModal({
       .join("\n");
 
     const lines = [
-      `🧾 *${comprobanteLabel} Buleje*`,
+      `🧾 *${conNombreDelNegocio(comprobanteLabel, membrete)}*`,
       ...(comprobanteNum ? [`📋 N° ${comprobanteNum}`] : []),
       `📅 ${dateStr} ${timeStr}`,
       `─────────`,
@@ -86,8 +90,7 @@ export default function SaleCompleteModal({
     lines.push(
       `💳 Pagado con: ${payment}`,
       `─────────`,
-      `¡Gracias por su compra! 😊`,
-      `Buleje — Pucallpa`
+      ...cierreDelNegocio(membrete, `¡Gracias por tu compra! 😊`),
     );
 
     const text = lines.join("\n");
@@ -271,7 +274,10 @@ export default function SaleCompleteModal({
               onClick={async () => {
                 try {
                   await printThermal({
-                    businessName: "Buleje",
+                    businessName: membrete?.nombre ?? "",
+                    businessAddress: membrete?.direccion ?? undefined,
+                    businessPhone: membrete?.telefono ?? undefined,
+                    footerText: membrete?.pie ?? undefined,
                     ticketId: saleComplete.id,
                     date: new Date(),
                     items: cart.map(i => ({ name: i.product.name, quantity: i.quantity, price: i.product.price, unit: i.product.unit })),

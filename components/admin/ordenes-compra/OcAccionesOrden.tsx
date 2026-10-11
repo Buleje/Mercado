@@ -11,6 +11,7 @@ import { opcionesDeEstado } from "@/lib/compras/estados-oc";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { enviarOCPorWhatsApp, imprimirOC } from "@/components/admin/compras/OCPDFExport";
+import { useMembrete } from "@/hooks/use-membrete";
 import type { OrdenesCompra } from "@/components/admin/ordenes-compra/hooks/use-ordenes-compra";
 
 /** Cómo se lee cada cambio de estado en el menú: el destino dice qué pasa, no sólo su nombre. */
@@ -36,6 +37,7 @@ export default function OcAccionesOrden({
   /* El menú cierra sin devolver el foco a su botón: la ventana que se abre
      guardaba «body» y, al cerrarla, el teclado volvía al inicio de la página. */
   const ref = useRef<HTMLDivElement>(null);
+  const membrete = useMembrete();
   const enfocarMenu = () => ref.current?.querySelector<HTMLButtonElement>("button[aria-haspopup]")?.focus({ preventScroll: true });
   const espera = o.status === "pendiente" || o.status === "parcial";
 
@@ -62,8 +64,8 @@ export default function OcAccionesOrden({
 
   const base: MenuAccion[] = [
     { id: "detalle", label: abierta ? "Ocultar detalle" : "Ver detalle", hint: "Productos, precios contra la compra anterior y flete", icon: ChevronDown, onSelect: () => setExpanded(abierta ? null : o.id) },
-    { id: "pdf", label: "Descargar PDF", icon: FileText, onSelect: () => imprimirOC(o, supplier) },
-    { id: "whatsapp", label: "Enviar por WhatsApp", hint: supplier?.phone ? `Al ${supplier.phone}` : "Eliges a quién en WhatsApp", icon: MessageCircle, onSelect: () => enviarOCPorWhatsApp(o, supplier) },
+    { id: "pdf", label: "Descargar PDF", icon: FileText, onSelect: () => imprimirOC(o, supplier, membrete) },
+    { id: "whatsapp", label: "Enviar por WhatsApp", hint: supplier?.phone ? `Al ${supplier.phone}` : "Eliges a quién en WhatsApp", icon: MessageCircle, onSelect: () => enviarOCPorWhatsApp(o, supplier, membrete) },
     { id: "duplicar", label: "Duplicar", hint: "Una orden nueva con los mismos productos", icon: Copy, onSelect: () => void duplicateOrder(o) },
     ...(o.status === "recibido" || o.status === "parcial"
       ? [{ id: "recurrente", label: "Hacer recurrente", hint: "Repetir este pedido cada cierto tiempo", icon: Repeat, onSelect: () => { setShowRecurringModal(o); setRecurringInterval(15); setRecurringNotifyDays(2); } }]

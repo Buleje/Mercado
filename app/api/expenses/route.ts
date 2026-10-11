@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { ExpensesDB } from "@/lib/jsondb";
+import { ExpensesDB as GastosDB } from "@/lib/db/expenses.db";
+import { avisoDeComprobanteRepetido } from "@/lib/gastos/factura-repetida";
 import { GastoConCajaDB } from "@/lib/db/gasto-con-caja.db";
 import { revisarComprobante } from "@/lib/gastos/comprobante-del-gasto";
 import { esDeHoyEnLima, pedidoInvalido, saleDeCaja, SOLO_EFECTIVO_SALE_DE_CAJA, SOLO_HOY_SALE_DE_CAJA } from "@/lib/caja/egreso-de-caja";
@@ -44,6 +46,8 @@ const BodySchema = z.object({
   contratoId: z.string().max(64).nullish(),
   /** Contrato «sale de la caja» (`lib/caja/egreso-de-caja.ts`): sólo con efectivo. */
   salidaDeCaja: z.boolean().optional().default(false),
+  /** «Sí, es otra»: el mismo RUC + serie-número ya estaba anotado y la persona confirmó. */
+  confirmarDuplicado: z.boolean().optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -124,6 +128,17 @@ export async function POST(req: NextRequest) {
     const comprobante = revisarComprobante(body.amount, body);
     if (!comprobante.ok) {
       return NextResponse.json({ error: comprobante.error, campo: comprobante.campo }, { status: 400 });
+    }
+    // El mismo papel dos veces duplica el gasto y el IGV: se pregunta (409), no se bloquea.
+    const { supplierRuc, documentNumber } = comprobante.datos;
+    if (supplierRuc && documentNumber && body.confirmarDuplicado !== true) {
+      const repetido = await GastosDB.comprobanteRepetido(auth.tenantId, supplierRuc, documentNumber);
+      if (repetido) {
+        return NextResponse.json(
+          { error: avisoDeComprobanteRepetido(repetido), campo: "documentNumber", codigo: "COMPROBANTE_REPETIDO", repetido },
+          { status: 409 },
+        );
+      }
     }
     const { gasto: expense, caja } = await GastoConCajaDB.registrarGasto(auth.tenantId, {
       category: body.category,

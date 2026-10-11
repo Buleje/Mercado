@@ -36,12 +36,36 @@ export default function GastoNuevoModal({ open, onClose, onGuardado }: Props) {
       icon={Wallet}
       footer={
         <div className="flex flex-col gap-2">
-          {error ? (
+          {g.repetido ? (
+            <div role="alert" className="flex flex-col gap-2 rounded-xl bg-[var(--data-warning-500)]/10 p-3">
+              <p className="text-sm font-semibold text-[var(--data-warning-ink)]">{g.repetido}</p>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  // El botón «Guardar» que tenía el foco desaparece: el foco queda en la opción segura.
+                  autoFocus
+                  onClick={g.descartarRepetido}
+                  className="min-h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-semibold text-[var(--text-primary)] transition hover:bg-[var(--surface-sunken)]"
+                >
+                  No, revisar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void g.guardar(true)}
+                  disabled={g.saving}
+                  className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-white transition hover:bg-primary/90 disabled:opacity-50"
+                >
+                  {g.saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Sí, es otra: guardar
+                </button>
+              </div>
+            </div>
+          ) : error ? (
             <p role="alert" className="text-sm font-semibold text-[var(--data-error-500)]">{error.texto}</p>
           ) : g.motivoBloqueo ? (
             <p aria-live="polite" className="text-sm text-[var(--text-secondary)]">{g.motivoBloqueo}</p>
           ) : null}
-          <button
+          {!g.repetido && <button
             type="button"
             onClick={() => void g.guardar()}
             disabled={!g.puedeGuardar}
@@ -49,7 +73,7 @@ export default function GastoNuevoModal({ open, onClose, onGuardado }: Props) {
           >
             {g.saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
             Guardar gasto{g.monto > 0 ? ` de ${formatCurrency(g.monto)}` : ""}
-          </button>
+          </button>}
         </div>
       }
     >

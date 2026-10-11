@@ -15,6 +15,7 @@ import { ETIQUETA_METODO, type MetodoCobro } from "@/lib/fiados/cobro-metodo";
 import CobroMasivoModal from "./CobroMasivoModal";
 import type { DatosCobroMasivo, Reparto } from "./use-cobro-masivo";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
+import { useMembrete } from "@/hooks/use-membrete";
 import {
   X,
   CheckCircle2, MessageCircle,
@@ -104,6 +105,11 @@ export default function FiadoModals({
   // (El «Registrar Pago» que vivía acá pasó a PagoFiadoModal: medio + caja.)
 
   const cerrarCobro = useCallback(() => setShowCobroMasivo(false), [setShowCobroMasivo]);
+
+  // El recibo, el compromiso y el recordatorio van firmados por ESTE negocio.
+  const membrete = useMembrete();
+  const quienCobra = [membrete?.nombre, membrete?.direccion].filter(Boolean).join(" — ");
+  const graciasDelRecibo = membrete?.pie ?? "¡Gracias por tu pago! Vuelve pronto.";
 
   const reciboPanelRef = useRef<HTMLDivElement>(null);
   const reciboTitleId = useId();
@@ -201,7 +207,7 @@ export default function FiadoModals({
                     <CheckCircle2 className="h-6 w-6 text-[var(--data-success-500)]" />
                   </div>
                   <CardTitle id={reciboTitleId} className="text-sm font-bold text-[var(--text-primary)] print:text-lg">RECIBO DE PAGO</CardTitle>
-                  <p className="text-xs text-[var(--text-tertiary)] print:text-sm print:font-bold">Buleje</p>
+                  {quienCobra && <p className="text-xs text-[var(--text-tertiary)] print:text-sm print:font-bold">{quienCobra}</p>}
                 </div>
 
                 {/* Separator */}
@@ -259,7 +265,7 @@ export default function FiadoModals({
                     <p className="text-xs text-[var(--text-tertiary)] print:text-black">Firma del cliente: ___________________</p>
                   </div>
                   <div className="border-t border-[var(--rule-base)] print:border-gray-400" />
-                  <p className="text-xs text-[var(--text-tertiary)] text-center italic print:text-black">Gracias por tu pago. Vuelve pronto!</p>
+                  <p className="text-xs text-[var(--text-tertiary)] text-center italic print:text-black whitespace-pre-line">{graciasDelRecibo}</p>
                 </div>
 
                 {/* Actions */}
@@ -274,7 +280,7 @@ export default function FiadoModals({
                   <a
                     href={waLink(
                       reciboData.clientePhone,
-                      `*RECIBO DE PAGO*\n${"=".repeat(25)}\nBuleje\nFecha: ${reciboData.fecha}\n${"─".repeat(25)}\nCliente: ${reciboData.clienteNombre}\nMonto pagado: ${formatCurrency(Number(reciboData.montoPagado))}\nSaldo anterior: ${formatCurrency(Number(reciboData.saldoAnterior))}\n*Saldo actual: ${formatCurrency(Number(reciboData.saldoActual))}*\n${"─".repeat(25)}\nGracias por tu pago. Vuelve pronto!`,
+                      `*RECIBO DE PAGO*\n${"=".repeat(25)}\n${quienCobra ? `${quienCobra}\n` : ""}Fecha: ${reciboData.fecha}\n${"─".repeat(25)}\nCliente: ${reciboData.clienteNombre}\nMonto pagado: ${formatCurrency(Number(reciboData.montoPagado))}\nSaldo anterior: ${formatCurrency(Number(reciboData.saldoAnterior))}\n*Saldo actual: ${formatCurrency(Number(reciboData.saldoActual))}*\n${"─".repeat(25)}\n${graciasDelRecibo}`,
                     ) ?? "#"}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -443,7 +449,7 @@ export default function FiadoModals({
                 <div className="border border-[var(--rule-base)] rounded-xl p-4 text-sm space-y-3">
                   <div className="text-center border-b border-[var(--rule-base)] pb-3">
                     <p className="text-base font-extrabold text-[var(--text-primary)]">Compromiso de Pago</p>
-                    <p className="text-xs text-[var(--text-tertiary)] mt-0.5">Buleje — Pucallpa</p>
+                    {quienCobra && <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{quienCobra}</p>}
                   </div>
                   <p className="text-[var(--text-primary)] leading-relaxed">
                     Yo, <strong>{selected.customerName || selected.customerId}</strong>, me comprometo a pagar{" "}
@@ -671,7 +677,7 @@ export default function FiadoModals({
                                       </div>
                                       <div className="flex gap-1 shrink-0">
                                         <a
-                                          href={waLink(f.customerId, `Hola ${f.customerName || f.customerId}, te recordamos que tienes un pendiente de ${formatCurrency(Number(f.saldo))} en Buleje.`) ?? "#"}
+                                          href={waLink(f.customerId, `Hola ${f.customerName || f.customerId}, te recordamos que tienes un pendiente de ${formatCurrency(Number(f.saldo))} ${membrete?.nombre ? `en ${membrete.nombre}` : "con nosotros"}.`) ?? "#"}
                                           target="_blank" rel="noopener noreferrer"
                                           className="p-1.5 rounded-lg bg-[var(--color-whatsapp)]/10 text-[var(--color-whatsapp)] hover:bg-[var(--color-whatsapp)]/20 transition-colors"
                                           title="WhatsApp"

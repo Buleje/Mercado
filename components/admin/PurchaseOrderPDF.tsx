@@ -3,13 +3,25 @@
 import type { DbPurchaseOrder, DbSupplier } from "@/lib/jsondb";
 import { totalesOC } from "@/lib/compras/totales-oc";
 import { formatCurrency, formatDateLong } from "@/lib/format";
+import type { Membrete } from "@/lib/admin/membrete";
 
 interface PurchaseOrderPDFProps {
   order: DbPurchaseOrder;
   supplier?: DbSupplier;
 }
 
-export function printPurchaseOrder(order: DbPurchaseOrder, supplier?: DbSupplier) {
+/** Texto del negocio dentro del HTML del papel (un «&» o «<» en el nombre no rompe la hoja). */
+const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+/**
+ * El papel de la orden de compra, encabezado con el negocio de la sesión
+ * (`membrete`). Antes decía «Buleje», «Jr. Los Pinos 123» y un RUC de relleno
+ * en la orden de cualquier negocio.
+ */
+export function printPurchaseOrder(order: DbPurchaseOrder, supplier?: DbSupplier, membrete?: Membrete | null) {
+  const datosNegocio = [membrete?.ruc && `RUC: ${esc(membrete.ruc)}`, membrete?.telefono && `Tel: ${esc(membrete.telefono)}`]
+    .filter(Boolean)
+    .join("<br>");
   // El TOTAL del papel es el de la orden. Antes se calculaba acá sumando 18%
   // encima del costo e ignorando el descuento, así que el PDF que se le
   // entregaba al proveedor no coincidía con la orden ni con la pantalla.
@@ -104,13 +116,9 @@ export function printPurchaseOrder(order: DbPurchaseOrder, supplier?: DbSupplier
   <!-- Header -->
   <div class="header">
     <div>
-      <div class="brand-name">Buleje</div>
-      <div class="brand-sub">Abarrotes y Delivery - Pucallpa, Peru</div>
-      <div class="brand-info">
-        Jr. Los Pinos 123, Pucallpa<br>
-        RUC: 10XXXXXXXXXX<br>
-        Tel: 061-XXXXXX
-      </div>
+      <div class="brand-name">${esc(membrete?.nombre ?? "")}</div>
+      ${membrete?.direccion ? `<div class="brand-sub">${esc(membrete.direccion)}</div>` : ""}
+      ${datosNegocio ? `<div class="brand-info">${datosNegocio}</div>` : ""}
     </div>
     <div>
       <div class="oc-badge">

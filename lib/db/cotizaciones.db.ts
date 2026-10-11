@@ -90,13 +90,17 @@ function mapCotizacion(
 
 async function getDocPrefix(tenantId: string): Promise<string> {
   try {
-    const settings = await prisma.settings.findFirst({
-      where: { tenantId },
-      select: { businessName: true },
-    });
-    if (settings?.businessName) {
+    // El nombre configurado y, si está vacío (Blas: ""), el registrado: es el
+    // mismo respaldo que el membrete. Antes caía en «Buleje» y el cliente de
+    // cualquier negocio recibía «Cotización Buleje-COT-0001».
+    const [settings, tenant] = await Promise.all([
+      prisma.settings.findFirst({ where: { tenantId }, select: { businessName: true } }),
+      prisma.tenant.findUnique({ where: { id: tenantId }, select: { name: true } }),
+    ]);
+    const nombre = settings?.businessName?.trim() || tenant?.name?.trim() || "";
+    if (nombre) {
       // Use first 3 letters of business name
-      const prefix = settings.businessName
+      const prefix = nombre
         .replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, "")
         .trim()
         .slice(0, 3)
@@ -109,7 +113,7 @@ async function getDocPrefix(tenantId: string): Promise<string> {
       { err: e instanceof Error ? e.message : String(e), op: "CotizacionesDB.getDocPrefix", tenantId },
     );
   }
-  return "Buleje";
+  return "DOC";
 }
 
 export const CotizacionesDB = {
