@@ -105,7 +105,7 @@ const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>
 <section>
   <div class="kicker">Buleje · noche autónoma</div>
   <h1>${esc(tituloDoc)}</h1>
-  <p>Trabajé solo mientras dormías, con varios equipos de agentes a la vez. Cada mejora pasó por un revisor distinto del que la construyó (y por seguridad cuando tocaba permisos), y solo se guarda con todas las pruebas en verde. Nada se subió a producción.</p>
+  <p>Trabajé solo mientras dormías, con varios equipos de agentes a la vez. Lo que toca plata, datos o permisos pasó por un revisor distinto del que lo construyó (y por seguridad cuando tocaba permisos); cada cambio se midió antes y después y solo se guarda con las pruebas en verde. Nada se subió a producción.</p>
   <div class="cifras">
     <div class="cifra"><b>${guardadas}</b>mejoras guardadas${items.length > guardadas ? ` de ${items.length}` : ""}</div>
     <div class="cifra"><b>${log.length}</b>commits</div>

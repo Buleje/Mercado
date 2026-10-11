@@ -1,3 +1,29 @@
+# SESSION HANDOFF — 2026-10-11 (noche autónoma 00:25-07:00): panel compactado en 7 tandas + mejoras de otros sistemas — 36+ commits
+
+**Estado:** commits `da2440089` → HEAD (más los de la tarde 10-10 desde `e9e3e748d`), **sin subir** (no se pidió push; el deploy sigue bloqueado: memoria `deploy-produccion-bloqueos-2026-10-09`). Typecheck y guardianes verdes en cada tanda. Árbol limpio salvo `.claude/autonomo/`, capturas VRT sin versionar y `components/admin/forestal/.claude/` (del 02-10).
+
+**Hecho:** ver memoria `noche-autonoma-2026-10-11-resultados` y el PDF `C:\Users\Usuario\Desktop\Mejoras-de-la-noche-2026-10-11.pdf` (30 mejoras por área, antes/después medido, «Lo que decides tú»). Bitácora por tanda en `.claude/autonomo/plan-2026-10-11-noche.md`. Medición final: `reports/orden-admin/noche-11-10-tabs.json` (59 pestañas; pantallas promedio 1,28 → 1,13 vs el 09-10).
+
+**Decide Brandon:** fundir Reportes comparativos en Comparar períodos · prender el aviso «estamos cerrados» · construir el canje de puntos REAL en el POS (hoy «Aplicar −S/» sólo cierra el control) · `/puntos` del cliente no canjea (necesita ruta de cliente) · logo duplicado Mi Tienda (marketplace) vs Contenido · Fidelidad del marketplace → Campañas › Puntos · 2 bajos de comisiones (PATCH sin filtro del cron; cancelar no revierte liquidadas) · plantilla global esconde Compras/Clientes/Plata · túnel Cloudflare abierto.
+
+**Al retomar:** si se borra una ruta de `app/api`, correr `npx next typegen` antes del typecheck. La medición completa del panel (277 lugares) no llegó a terminar con agentes vivos: correrla sola (`node scripts/medir-orden-admin.mjs`, ~40 min) para tener las vistas además de las pestañas.
+
+---
+
+# SESSION HANDOFF — 2026-10-10 (noche autónoma 00:00-06:30): tienda Musa rediseñada, olas 2 y 7 del panel, 12 brechas diseñadas
+
+**Estado:** commits `54d782941` → HEAD (desde `7e7b7575c`), **sin subir** (no se pidió push). A las 06:30 seguían en cola con reintento (`commit-tanda.sh o2 …`): O2-K4 Pedidos y reparto, O2-K5 Forestal, O2-K6 integrador y REMATES; y la **ola 3 seguía corriendo** (workflow `panel-ola`, run `wf_632096e5-257`: Mi Plata, Ventas y caja, Compras, Productos e inventario con KPIs en la fila + conteo físico como subvista, Comprobantes).
+
+**Hecho:** Musa entera (imágenes de los 27, identidad, portada, catálogo/ficha con contador, bolsa, pulido) · ola 2 (Configuración, Equipo, Tienda online, Pedidos y reparto, Forestal) + remates (enlace dentro del mismo hub 8/12 → 12/12) · ola 7: feed por negocio, kiosko de asistencia (apagado), libros del contador 14.1/8.1/13.1 «de trabajo», cierre de conteo por DB class, etiquetas de precio · fugas cerradas: cola de Stripe → superadmin, token Meta CAPI → admin · `docs/panel/brechas-mercado-diseno-2026-10.md`. PDF: Escritorio › `Mejoras-noche-10-10.pdf`.
+
+**Decide Brandon:** ver «Decide Brandon» de `.claude/autonomo/plan-2026-10-10-noche.md` (costo inventado del 70 %, conteo que pisa el stock, precios de 4 productos de Musa, orden de las brechas, kiosko, build de Vercel, lector de la caja).
+
+**Ola 3 terminó 06:50** (21 agentes; typecheck y guardianes verdes, 75/77 enlaces viejos en su lugar). Mensajes listos en `.claude/autonomo/dia/msg-o3-*.txt` y `o3-files.json`. **Retroceso que queda (decide/arregla con `security`):** Compras abierto por un enlace (?tab=compras&vista=comparador o el aviso de Inventario) muestra 2 de 7 vistas porque la plantilla global del superadmin oculta `compras` (`components/admin/unified/ComprasModule.tsx:101`, `lib/admin/permiso-vista.ts:218-256`); falta `"productos:benchmark"` en VISTA_MIGRATION; Plan Básico ve Mi Plata entero (documentado, decisión de precio). 07:00: un agente devuelve los chips «Método de pago» que la ola 2 sacó de la barra de Pedidos (`orders-tab-metodo-pago-toolbar.test.tsx` rojo) y después se commitea `o2 O2-K4 O2-K5 O2-K6 REMATES` + `o3 O3-K1…K6`.
+
+**Al retomar:** (1) cuando termine la ola 3: `node .claude/autonomo/dia/extraer.mjs <salida> o3` → `sed -i 's#session_01Jsjn[A-Za-z0-9]*#session_01FPZtLuFgjg2iV3E2dQEHXL#' .claude/autonomo/dia/msg-o3-*.txt` → `commit-tanda.sh o3 O3-K1 … O3-K6`; (2) recién entonces montar los 3 componentes sin montar: `components/contabilidad/LibrosContador.tsx` (Comprobantes, ver «montaje» de O7-LIB), `components/inventario/EtiquetasPrecio.tsx` (Productos e inventario), `components/rrhh/KioskoAsistenciaAjustes.tsx` (Equipo); (3) **`__tests__/orders-tab-metodo-pago-toolbar.test.tsx` en rojo** (filtro del kanban por método de pago: 2 casos) tumba el commit de O2-K4 Pedidos y reparto y el de REMATES (15 intentos, 06:24): averiguar si lo rompió la ola 2 (OrdersTab en 4 vistas) o es el test que quedó viejo, arreglar y relanzar `commit-tanda.sh o2 O2-K4 O2-K5 O2-K6 REMATES`; (4) verificar que entraron K4/K5/K6/REMATES (`git status` de sus archivos en `.claude/autonomo/dia/o2-files.json`).
+
+---
+
 # SESSION HANDOFF — 2026-10-09 (día y tarde): día autónomo, sesión, Inicio, Metas, Comandos IA y ola 1 del panel unificado — 54 commits
 
 **Estado:** 54 commits `c5e59b084` → `2139201b3` (desde `75496a457`), **sin subir** (no se pidió push). Árbol limpio salvo `.claude/autonomo/`, 2 capturas VRT sin versionar y `components/admin/forestal/.claude/`. `npm run typecheck` verde (9,3 s) al cerrar.
