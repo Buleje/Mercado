@@ -41,7 +41,7 @@ function MetricBar({ label, value, icon: Icon }: { label: string; value: number;
   const color = value > 70 ? "bg-primary/10" : value > 55 ? "bg-[var(--data-warning-500)]" : "bg-[var(--data-error-500)]";
   return (
     <div className="space-y-1">
-      <div className="flex items-center justify-between text-xs">
+      <div className="flex items-center justify-between text-sm">
         <span className="flex items-center gap-1 text-[var(--text-secondary)] dark:text-muted font-medium">
           <Icon className="h-3 w-3" /> {label}
         </span>
@@ -106,7 +106,7 @@ export default function SupplierScorecard({ supplierId }: SupplierScorecardProps
         <p className="text-sm text-[var(--text-secondary)] dark:text-muted">
           Todavía no alcanza para calificarlo
         </p>
-        <p className="text-xs font-bold text-[var(--text-primary)] mt-1 tabular-nums">
+        <p className="text-sm font-bold text-[var(--text-primary)] mt-1 tabular-nums">
           {data.totalOC} de {MIN_OC_EVALUACION} órdenes registradas
         </p>
         <div
@@ -122,7 +122,7 @@ export default function SupplierScorecard({ supplierId }: SupplierScorecardProps
             style={{ width: `${(hechas / MIN_OC_EVALUACION) * 100}%` }}
           />
         </div>
-        <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-2">
+        <p className="text-sm text-[var(--text-tertiary)] dark:text-muted mt-2">
           {MIN_OC_EVALUACION - data.totalOC === 1
             ? "Falta 1 orden para ver puntaje, cumplimiento y demoras."
             : `Faltan ${MIN_OC_EVALUACION - data.totalOC} órdenes para ver puntaje, cumplimiento y demoras.`}
@@ -165,16 +165,16 @@ export default function SupplierScorecard({ supplierId }: SupplierScorecardProps
               {data.grade}
             </span>
             {score > 70 ? (
-              <span className="text-xs font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] flex items-center gap-1">
+              <span className="text-sm font-semibold text-[var(--data-success-500)] dark:text-[var(--data-success-500)] flex items-center gap-1">
                 <CheckCircle2 className="h-3.5 w-3.5" /> Proveedor confiable
               </span>
             ) : score <= 55 ? (
-              <span className="text-xs font-semibold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] flex items-center gap-1">
+              <span className="text-sm font-semibold text-[var(--data-error-500)] dark:text-[var(--data-error-500)] flex items-center gap-1">
                 <AlertTriangle className="h-3.5 w-3.5" /> Revisa condiciones
               </span>
             ) : null}
           </div>
-          <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-1">
+          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-1">
             Basado en {data.totalOC} ordenes de compra
           </p>
         </div>

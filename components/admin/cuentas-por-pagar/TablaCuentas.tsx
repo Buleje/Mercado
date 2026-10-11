@@ -38,7 +38,7 @@ export default function TablaCuentas({ cuentas, hoy, abierto, setAbierto, saving
   return (
     <div className="overflow-x-auto rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <table className="w-full text-sm">
-        <thead className="bg-[var(--surface-sunken)] text-left text-xs font-semibold text-[var(--text-secondary)]">
+        <thead className="bg-[var(--surface-sunken)] text-left text-sm font-semibold text-[var(--text-secondary)]">
           <tr>
             <th className="px-4 py-2.5">Proveedor</th>
             <th className="px-4 py-2.5 text-right">Te falta pagar</th>
@@ -67,13 +67,13 @@ export default function TablaCuentas({ cuentas, hoy, abierto, setAbierto, saving
                         {/* El proveedor lleva a su ficha (con sus órdenes); sin id, queda el texto. */}
                         <EnlacePanel cosa="proveedor" id={c.supplierId} apariencia="heredada">{c.supplierName || "Sin nombre"}</EnlacePanel>
                       </p>
-                      {c.description && <p className="mt-0.5 line-clamp-2 text-xs text-[var(--text-secondary)]">{c.description}</p>}
+                      {c.description && <p className="mt-0.5 line-clamp-2 text-sm text-[var(--text-secondary)]">{c.description}</p>}
                     </div>
                   </td>
                   <td className="px-4 py-3 text-right align-top tabular-nums">
                     <div className="min-w-0">
                       <p className={cn("font-bold", pagada ? "text-[var(--text-secondary)]" : "text-[var(--text-primary)]")}>{formatCurrency(falta)}</p>
-                      <p className="text-xs text-[var(--text-secondary)]">de {formatCurrency(c.amount)}</p>
+                      <p className="text-sm text-[var(--text-secondary)]">de {formatCurrency(c.amount)}</p>
                       <div className="ml-auto mt-1 h-1.5 w-24 max-w-full rounded-full bg-[var(--surface-sunken)]" aria-hidden>
                         <div className={cn("h-1.5 rounded-full", pct >= 100 ? "bg-[var(--data-success-500)]" : "bg-primary")} style={{ width: `${pct}%` }} />
                       </div>
@@ -82,7 +82,7 @@ export default function TablaCuentas({ cuentas, hoy, abierto, setAbierto, saving
                   <td className="px-4 py-3 align-top">
                     <div className="min-w-0">
                       <p className="text-[var(--text-primary)]">{fechaConDia(diaDeVencimiento(c.dueDate))}</p>
-                      <span className={cn("mt-1 inline-flex rounded-full px-2 py-0.5 text-xs font-semibold", CHIP[v.tono])}>{v.texto}</span>
+                      <span className={cn("mt-1 inline-flex rounded-full px-2 py-0.5 text-sm font-semibold", CHIP[v.tono])}>{v.texto}</span>
                     </div>
                   </td>
                   <td className="px-4 py-3 align-top">
@@ -92,12 +92,12 @@ export default function TablaCuentas({ cuentas, hoy, abierto, setAbierto, saving
                           type="button"
                           onClick={() => setAbierto(abierto?.id === c.id && abierto.que === "pagar" ? null : { id: c.id, que: "pagar" })}
                           aria-expanded={abierto?.id === c.id && abierto.que === "pagar"}
-                          className="inline-flex h-10 items-center gap-1 rounded-xl bg-primary px-3 text-sm font-bold text-white transition-colors hover:bg-primary/90"
+                          className="inline-flex h-12 items-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-bold text-white transition-colors hover:bg-primary/90"
                         >
                           <DollarSign className="h-4 w-4" aria-hidden /> Pagar
                         </button>
                       )}
-                      <ActionMenu label={`Más de la cuenta con ${c.supplierName}`} soloIcono icon={MoreHorizontal} actions={acciones} />
+                      <ActionMenu label={`Más de la cuenta con ${c.supplierName}`} soloIcono size="md" className="w-12 shrink-0" icon={MoreHorizontal} actions={acciones} />
                     </div>
                   </td>
                 </tr>
@@ -143,13 +143,13 @@ function HistorialPagos({ cuenta }: { cuenta: CuentaPorPagar }) {
             <span>
               <strong className="tabular-nums text-[var(--text-primary)]">{formatCurrency(Number(p.amount))}</strong>
               <span className="ml-2 text-[var(--text-secondary)]">{METODOS[p.method as MetodoPago] ?? p.method}</span>
-              {p.reference && <span className="ml-2 text-xs text-[var(--text-secondary)]">Ref: {p.reference}</span>}
+              {p.reference && <span className="ml-2 text-sm text-[var(--text-secondary)]">Ref: {p.reference}</span>}
             </span>
-            <span className="text-xs text-[var(--text-secondary)]">{formatDate(p.date)}</span>
+            <span className="text-sm text-[var(--text-secondary)]">{formatDate(p.date)}</span>
           </div>
         ))
       )}
-      <p className="pt-1 text-xs text-[var(--text-secondary)]">
+      <p className="pt-1 text-sm text-[var(--text-secondary)]">
         Cuenta {cuenta.id}
         {cuenta.purchaseOrderId && (
           <>

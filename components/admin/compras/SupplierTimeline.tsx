@@ -161,7 +161,7 @@ export default function SupplierTimeline({ supplierId, supplierName }: SupplierT
         <p className="text-sm text-[var(--text-secondary)] dark:text-muted">No se pudo cargar el historial{supplierName ? ` de ${supplierName}` : ""}.</p>
         <button
           onClick={() => setReloadKey((k) => k + 1)}
-          className="flex items-center gap-1.5 text-xs font-bold text-primary hover:text-primary/80 transition-colors"
+          className="flex items-center gap-1.5 text-sm font-bold text-primary hover:text-primary/80 transition-colors"
         >
           <RotateCw className="h-3.5 w-3.5" /> Reintentar
         </button>
@@ -202,7 +202,7 @@ export default function SupplierTimeline({ supplierId, supplierName }: SupplierT
                 </p>
                 <span
                   className={cn(
-                    "shrink-0 rounded-full px-2 py-0.5 text-xs font-bold",
+                    "shrink-0 rounded-full px-2 py-0.5 text-sm font-bold",
                     isPurchase ? PURCHASE_STATUS_COLOR[entry.status] : RETURN_ESTADO_COLOR[entry.estado],
                   )}
                 >
@@ -214,7 +214,7 @@ export default function SupplierTimeline({ supplierId, supplierName }: SupplierT
                   ? `Total ${formatCurrency(Number(entry.total))}`
                   : `${entry.motivo} · ${entry.itemsCount} item${entry.itemsCount !== 1 ? "s" : ""}`}
               </p>
-              <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1" title={absoluta}>
+              <p className="text-sm text-[var(--text-tertiary)] dark:text-muted mt-1" title={absoluta}>
                 {relativa} · {absoluta}
               </p>
             </div>

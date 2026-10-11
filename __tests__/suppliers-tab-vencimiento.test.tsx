@@ -9,7 +9,7 @@
  * `limaDateKey()` de hoy) — ver components/admin/SuppliersTab.tsx.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import SuppliersTab from "@/components/admin/SuppliersTab";
 import type { DbSupplier } from "@/lib/jsondb";
 
@@ -43,11 +43,6 @@ function stubFetch() {
   }) as typeof fetch;
 }
 
-async function abrirAlertas() {
-  const boton = await screen.findByRole("button", { name: /Ver alertas/i });
-  fireEvent.click(boton);
-}
-
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
@@ -59,7 +54,7 @@ describe("SuppliersTab — vencido/próximo por día de calendario, no por hora 
     stubFetch();
   });
 
-  it("hoy 15/10 a las 20:00 Lima: una cuenta que vence el 15 dice «Vence hoy», no vencida", async () => {
+  it("hoy 15/10 a las 20:00 Lima: una cuenta que vence el 15 sale «Próximo a vencer», no vencida", async () => {
     // 2026-10-15 20:00 America/Lima (UTC-5) = 2026-10-16T01:00:00.000Z.
     // `shouldAdvanceTime`: el reloj real sigue corriendo (lo necesitan los
     // `findBy*` de Testing Library, que hacen polling con setTimeout real).
@@ -67,10 +62,10 @@ describe("SuppliersTab — vencido/próximo por día de calendario, no por hora 
     vi.setSystemTime(new Date("2026-10-16T01:00:00.000Z"));
 
     render(<SuppliersTab />);
-    await abrirAlertas();
 
-    expect(await screen.findByText("Vence hoy")).toBeInTheDocument();
-    expect(screen.queryByText(/días vencido/)).not.toBeInTheDocument();
+    // Vence hoy = no vencida todavía: «Próximo a vencer», sin «Deuda vencida».
+    expect(await screen.findByText("Próximo a vencer")).toBeInTheDocument();
+    expect(screen.queryByText("Deuda vencida")).not.toBeInTheDocument();
   });
 
   it("hoy 16/10 (un día después): la misma cuenta ya está vencida", async () => {
@@ -79,9 +74,8 @@ describe("SuppliersTab — vencido/próximo por día de calendario, no por hora 
     vi.setSystemTime(new Date("2026-10-16T17:00:00.000Z"));
 
     render(<SuppliersTab />);
-    await abrirAlertas();
 
-    expect(await screen.findByText("1 días vencido")).toBeInTheDocument();
-    expect(screen.queryByText("Vence hoy")).not.toBeInTheDocument();
+    expect(await screen.findByText("Deuda vencida")).toBeInTheDocument();
+    expect(screen.queryByText("Próximo a vencer")).not.toBeInTheDocument();
   });
 });

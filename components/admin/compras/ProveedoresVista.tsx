@@ -7,17 +7,19 @@
  * `?vista=comparador` llega con `seccionInicial` (lo lee `ComprasModule` antes
  * de reescribir la URL) o con `&sub=comparar` (VISTA_MIGRATION).
  *
+ * Las dos secciones comparten la fila del título (`CabeceraProveedores`): la
+ * lista le suma sus Indicadores y «Nuevo proveedor»; Comparar va sola.
+ *
  * Una ficha abierta por enlace (`?proveedor=`) siempre abre la lista: es la que
  * la lee. También con la vista ya montada en Comparar («Precio por producto» →
  * un proveedor): ver `useSeccionDeLaFicha`.
  */
 
 import dynamic from "next/dynamic";
-import { BarChart3, Users } from "@buleje/design-system/icons";
-import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { useParamPedido } from "@/hooks/use-vistas-permitidas";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
+import CabeceraProveedores, { ID_PANEL_PROVEEDORES, idPestanaDeSeccion } from "@/components/admin/proveedores/CabeceraProveedores";
 import { useSeccionDeLaFicha } from "./use-seccion-de-la-ficha";
 
 const SuppliersTab = dynamic(() => import("@/components/admin/SuppliersTab"), { loading: S });
@@ -43,20 +45,15 @@ export default function ProveedoresVista({
     proveedor ? "lista" : seccionInicial,
   );
   useSeccionDeLaFicha(proveedor, "lista", irA);
+  const barra = { activa: vista, onCambiar: irA };
 
+  if (vista === "lista") return <SuppliersTab barra={barra} />;
   return (
     <div className="space-y-4">
-      <SegmentedControl<SeccionProveedores>
-        value={vista}
-        onChange={irA}
-        label="Lista o comparar"
-        size="lg"
-        options={[
-          { value: "lista", label: "Proveedores", icon: <Users className="h-4 w-4" aria-hidden /> },
-          { value: "comparar", label: "Comparar", icon: <BarChart3 className="h-4 w-4" aria-hidden /> },
-        ]}
-      />
-      {vista === "lista" ? <SuppliersTab /> : <CompararProveedores onCreateOC={onCrearOC} />}
+      <CabeceraProveedores barra={barra} />
+      <div role="tabpanel" id={ID_PANEL_PROVEEDORES} aria-labelledby={idPestanaDeSeccion(ID_PANEL_PROVEEDORES, vista)}>
+        <CompararProveedores onCreateOC={onCrearOC} />
+      </div>
     </div>
   );
 }

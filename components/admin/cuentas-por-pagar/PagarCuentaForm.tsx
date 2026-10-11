@@ -12,8 +12,8 @@ export const METODOS: Record<MetodoPago, string> = {
   efectivo: "Efectivo", yape: "Yape", plin: "Plin", transferencia: "Transferencia",
 };
 
-const CAMPO = "h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
-const ROTULO = "mb-1 block text-xs font-semibold text-[var(--text-secondary)]";
+const CAMPO = "h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
+const ROTULO = "mb-1 block text-sm font-semibold text-[var(--text-secondary)]";
 
 /**
  * Pagar (todo o una parte de) una cuenta. Con efectivo ofrece «Sale de la caja»:
@@ -73,7 +73,7 @@ export default function PagarCuentaForm({ saldo, proveedor, saving, onPagar, onC
         />
       </Field>
       {efectivo && (
-        <div className="flex h-10 items-center gap-1.5">
+        <div className="flex h-12 items-center gap-1.5">
           <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
             <input
               type="checkbox"
@@ -92,10 +92,10 @@ export default function PagarCuentaForm({ saldo, proveedor, saving, onPagar, onC
         </div>
       )}
       <div className="flex gap-2">
-        <button type="submit" disabled={saving} className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-bold text-white transition-colors hover:bg-primary/90 disabled:opacity-60">
+        <button type="submit" disabled={saving} className="inline-flex h-12 items-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-bold text-white transition-colors hover:bg-primary/90 disabled:opacity-60">
           <Check className="h-4 w-4" aria-hidden /> {saving ? "Registrando…" : "Registrar pago"}
         </button>
-        <button type="button" onClick={onCancelar} className="h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]">
+        <button type="button" onClick={onCancelar} className="h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]">
           Cancelar
         </button>
       </div>

@@ -12,8 +12,8 @@ import { limaDateKey } from "@/lib/utils";
 import { venceConCredito } from "./resumen-cuentas";
 import type { NuevaCuenta, ProveedorBasico } from "./use-cuentas-por-pagar";
 
-const ROTULO = "mb-1 block text-xs font-semibold text-[var(--text-secondary)]";
-const CAMPO = "h-10 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
+const ROTULO = "mb-1 block text-sm font-semibold text-[var(--text-secondary)]";
+const CAMPO = "h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
 const VACIA: NuevaCuenta = { supplierId: "", description: "", amount: "", dueDate: "" };
 
 /** Alta a mano de una cuenta por pagar (las de una OC a crédito nacen solas). */

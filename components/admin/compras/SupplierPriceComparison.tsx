@@ -1,14 +1,11 @@
 "use client";
 
-import { CardTitle, DataTable } from "@buleje/design-system";
-import { useId, useRef, useState, useEffect } from "react";
-import { TrendingUp, TrendingDown, AlertTriangle, BarChart3, X, Check } from "@buleje/design-system/icons";
+import { DataTable } from "@buleje/design-system";
+import { useState, useEffect } from "react";
+import { TrendingUp, TrendingDown, AlertTriangle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import EnlacePanel from "@/components/admin/shared/EnlacePanel";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
-import { formatCurrency, formatDate, formatDateShort } from "@/lib/format";
+import { formatCurrency, formatDate } from "@/lib/format";
 
 type Comparacion = {
   supplierId: string;
@@ -24,214 +21,8 @@ interface SupplierPriceComparisonProps {
   productName: string;
 }
 
-// ── Mejora 16: Tipo para cotización completa ────────────────────────────────
+export { QuotationComparator } from "./QuotationComparator";
 
-type OCForComparison = {
-  id: string;
-  supplierId: string;
-  supplierName: string;
-  items: Array<{ productId: number; name: string; unitCost: number; quantity: number }>;
-  total: number;
-  createdAt: string;
-};
-
-/** Comparador de cotizaciones completas (Mejora 16) */
-export function QuotationComparator({ orders, suppliers }: {
-  orders: Array<{ id: string; supplierId: string; supplierName?: string; items: Array<{ productId: number; name: string; unitCost: number; quantity: number }>; total: number; createdAt: string; status: string }>;
-  suppliers: Array<{ id: string; name: string }>;
-}) {
-  const [open, setOpen] = useState(false);
-  const [selectedOCIds, setSelectedOCIds] = useState<string[]>([]);
-  const titleId = useId();
-  const panelRef = useRef<HTMLDivElement>(null);
-  useModalAccesible(panelRef, { onCerrar: () => setOpen(false), activo: open });
-  const ventana = useVentanaDeModal(open, { ref: panelRef, aplicarTranslate: true, claveMemoria: "comparar-cotizaciones" });
-
-  if (!open) {
-    return (
-      <button
-        onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 text-sm font-bold text-[var(--text-secondary)] dark:text-[var(--text-primary)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)] dark:hover:bg-[var(--data-info-500)]/30 px-3 py-2 rounded-xl transition-colors"
-      >
-        <BarChart3 className="h-4 w-4" /> Comparar cotizaciones
-      </button>
-    );
-  }
-
-  const toggleOC = (id: string) => {
-    setSelectedOCIds(prev => {
-      if (prev.includes(id)) return prev.filter(x => x !== id);
-      if (prev.length >= 3) return prev; // Max 3
-      return [...prev, id];
-    });
-  };
-
-  const selectedOCs: OCForComparison[] = selectedOCIds
-    .map(id => {
-      const oc = orders.find(o => o.id === id);
-      if (!oc) return null;
-      const sup = suppliers.find(s => s.id === oc.supplierId);
-      return { ...oc, supplierName: sup?.name || oc.supplierName || oc.supplierId } as OCForComparison;
-    })
-    .filter(Boolean) as OCForComparison[];
-
-  // Build comparison table
-  const allProductIds = new Set<number>();
-  for (const oc of selectedOCs) {
-    for (const item of oc.items) allProductIds.add(item.productId);
-  }
-  const productIds = Array.from(allProductIds);
-  const productNames: Record<number, string> = {};
-  for (const oc of selectedOCs) {
-    for (const item of oc.items) { productNames[item.productId] = item.name; }
-  }
-
-  // Per-product best price
-  const bestPerProduct: Record<number, { price: number; ocId: string }> = {};
-  for (const pid of productIds) {
-    let best = Infinity;
-    let bestOcId = "";
-    for (const oc of selectedOCs) {
-      const item = oc.items.find(i => i.productId === pid);
-      if (item && item.unitCost < best) { best = item.unitCost; bestOcId = oc.id; }
-    }
-    if (best < Infinity) bestPerProduct[pid] = { price: best, ocId: bestOcId };
-  }
-
-  // Totals
-  const ocTotals = selectedOCs.map(oc => ({
-    id: oc.id,
-    total: oc.items.reduce((s, i) => s + i.unitCost * i.quantity, 0),
-  }));
-  const bestTotalOcId = ocTotals.length > 0 ? ocTotals.reduce((a, b) => a.total < b.total ? a : b).id : "";
-  const worstTotal = ocTotals.length > 0 ? Math.max(...ocTotals.map(t => t.total)) : 0;
-  const bestTotal = ocTotals.length > 0 ? Math.min(...ocTotals.map(t => t.total)) : 0;
-  const savings = worstTotal - bestTotal;
-
-  return (
-    <div className="modal-backdrop p-4" onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) setOpen(false); }}>
-      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="relative bg-[var(--surface-raised)] rounded-xl w-full max-w-3xl max-h-[85vh] overflow-y-auto p-5 space-y-4" onClick={e => e.stopPropagation()}>
-        <div {...ventana.asaProps} className="flex items-center justify-between">
-          <CardTitle id={titleId} className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-[var(--text-secondary)]" /> Comparar cotizaciones completas
-          </CardTitle>
-          <span className="ml-auto flex items-center gap-1">
-            <ControlesDeVentana ventana={ventana} />
-            <button aria-label="Cerrar" onClick={() => setOpen(false)} className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)] transition-colors">
-              <X className="h-5 w-5 text-[var(--text-tertiary)]" />
-            </button>
-          </span>
-        </div>
-
-        {/* Step 1: Select OCs */}
-        <div>
-          <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted uppercase mb-2">Selecciona 2-3 OCs para comparar</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto">
-            {orders.slice(0, 20).map(oc => {
-              const sup = suppliers.find(s => s.id === oc.supplierId);
-              const isSelected = selectedOCIds.includes(oc.id);
-              return (
-                <button
-                  key={oc.id}
-                  onClick={() => toggleOC(oc.id)}
-                  disabled={!isSelected && selectedOCIds.length >= 3}
-                  className={cn(
-                    "text-left px-3 py-2 rounded-xl border text-xs transition-colors",
-                    isSelected
-                      ? "border-[var(--data-info-500)] bg-[var(--surface-sunken)] text-[var(--text-secondary)] dark:text-[var(--text-primary)] font-bold"
-                      : "border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:bg-[var(--surface-sunken)] text-[var(--text-primary)] dark:text-[var(--text-primary)]",
-                    !isSelected && selectedOCIds.length >= 3 && "opacity-40 cursor-not-allowed"
-                  )}
-                >
-                  <span className="font-semibold">{sup?.name || oc.supplierId}</span>
-                  <span className="text-[var(--text-tertiary)] ml-2">{formatCurrency(Number(oc.total))} · {oc.items.length} items · {formatDateShort(oc.createdAt)}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Step 2: Comparison Table */}
-        {selectedOCs.length < 2 ? (
-          <p className="text-sm text-[var(--text-tertiary)] dark:text-muted text-center py-6">Necesitas al menos 2 OCs para comparar</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <DataTable className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
-                  <th className="text-left py-2 px-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Producto</th>
-                  {selectedOCs.map(oc => (
-                    <th key={oc.id} className="text-right py-2 px-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
-                      <EnlacePanel cosa="proveedor" id={oc.supplierId} apariencia="heredada">{oc.supplierName}</EnlacePanel>
-                    </th>
-                  ))}
-                  <th className="text-center py-2 px-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Mejor</th>
-                </tr>
-              </thead>
-              <tbody>
-                {productIds.map(pid => {
-                  const best = bestPerProduct[pid];
-                  return (
-                    <tr key={pid} className="border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]/50">
-                      <td className="py-2 px-2 text-[var(--text-primary)] dark:text-[var(--text-primary)] font-medium">
-                        <EnlacePanel cosa="producto" id={String(pid)} apariencia="heredada">{productNames[pid]}</EnlacePanel>
-                      </td>
-                      {selectedOCs.map(oc => {
-                        const item = oc.items.find(i => i.productId === pid);
-                        const isBest = best && best.ocId === oc.id;
-                        return (
-                          <td key={oc.id} className={cn("py-2 px-2 text-right font-semibold", isBest ? "text-[var(--data-success-500)] dark:text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
-                            {item ? `${formatCurrency(Number(item.unitCost))}` : "—"}
-                          </td>
-                        );
-                      })}
-                      <td className="py-2 px-2 text-center">
-                        {best && (
-                          <span className="inline-flex items-center gap-1 text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
-                            {selectedOCs.find(oc => oc.id === best.ocId)?.supplierName?.split(" ")[0] ?? ""} <Check className="h-3.5 w-3.5" aria-hidden />
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-                {/* TOTAL row */}
-                <tr className="border-t-2 border-[var(--rule-base)] font-bold">
-                  <td className="py-2 px-2 text-[var(--text-primary)] dark:text-[var(--text-primary)]">TOTAL</td>
-                  {selectedOCs.map(oc => {
-                    const total = ocTotals.find(t => t.id === oc.id)?.total ?? 0;
-                    const isBest = oc.id === bestTotalOcId;
-                    return (
-                      <td key={oc.id} className={cn("py-2 px-2 text-right", isBest ? "text-[var(--data-success-500)] dark:text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15" : "text-[var(--text-primary)] dark:text-[var(--text-primary)]")}>
-                        {formatCurrency(total)}
-                      </td>
-                    );
-                  })}
-                  <td className="py-2 px-2 text-center">
-                    <span className="inline-flex items-center gap-1 text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
-                      {selectedOCs.find(oc => oc.id === bestTotalOcId)?.supplierName?.split(" ")[0] ?? ""} <Check className="h-3.5 w-3.5" aria-hidden />
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-            </DataTable>
-
-            {/* Savings */}
-            {savings > 0 && (
-              <div className="mt-3 flex items-center gap-2 bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl px-4 py-2.5">
-                <TrendingDown className="h-4 w-4 text-[var(--data-success-500)] shrink-0" />
-                <span className="text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-500)]">
-                  Ahorro vs mas caro: {formatCurrency(savings)}
-                </span>
-              </div>
-            )}
-          </div>
-        )}
-        <TiradorDeVentana ventana={ventana} />
-      </div>
-    </div>
-  );
-}
 
 function SkeletonTable() {
   return (
@@ -280,13 +71,13 @@ export default function SupplierPriceComparison({ productId, productName }: Supp
 
   return (
     <div className="space-y-2">
-      <h4 className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+      <h4 className="text-sm font-bold text-[var(--text-secondary)] dark:text-muted">
         Comparación de precios:{" "}
         <EnlacePanel cosa="producto" id={String(productId)} apariencia="heredada">{productName}</EnlacePanel>
       </h4>
 
       {comparaciones.length === 1 && (
-        <div className="flex items-center gap-2 text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 rounded-lg px-3 py-2">
+        <div className="flex items-center gap-2 text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 rounded-lg px-3 py-2">
           <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
           Solo has comprado a 1 proveedor. Considera cotizar con otros.
         </div>
@@ -296,11 +87,11 @@ export default function SupplierPriceComparison({ productId, productName }: Supp
         <DataTable className="w-full text-sm">
           <thead>
             <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
-              <th className="text-left py-2 px-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Proveedor</th>
-              <th className="text-right py-2 px-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Último precio</th>
-              <th className="text-right py-2 px-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">Fecha</th>
-              <th className="text-center py-2 px-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted"># Compras</th>
-              <th className="text-right py-2 px-2 text-xs font-bold text-[var(--text-secondary)] dark:text-muted">vs Mejor</th>
+              <th className="text-left py-2 px-2 text-sm font-bold text-[var(--text-secondary)] dark:text-muted">Proveedor</th>
+              <th className="text-right py-2 px-2 text-sm font-bold text-[var(--text-secondary)] dark:text-muted">Último precio</th>
+              <th className="text-right py-2 px-2 text-sm font-bold text-[var(--text-secondary)] dark:text-muted">Fecha</th>
+              <th className="text-center py-2 px-2 text-sm font-bold text-[var(--text-secondary)] dark:text-muted"># Compras</th>
+              <th className="text-right py-2 px-2 text-sm font-bold text-[var(--text-secondary)] dark:text-muted">vs Mejor</th>
             </tr>
           </thead>
           <tbody>
@@ -317,7 +108,7 @@ export default function SupplierPriceComparison({ productId, productName }: Supp
                   <td className="py-2 px-2 font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                     <EnlacePanel cosa="proveedor" id={c.supplierId} apariencia="heredada">{c.supplierName}</EnlacePanel>
                     {c.isCheapest && (
-                      <span className="ml-2 inline-flex items-center gap-0.5 text-xs font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 px-1.5 py-0.5 rounded-full">
+                      <span className="ml-2 inline-flex items-center gap-0.5 text-sm font-bold text-[var(--data-success-500)] dark:text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 dark:bg-primary/15 px-1.5 py-0.5 rounded-full">
                         <TrendingDown className="h-2.5 w-2.5" /> Mejor precio
                       </span>
                     )}
@@ -325,7 +116,7 @@ export default function SupplierPriceComparison({ productId, productName }: Supp
                   <td className="py-2 px-2 text-right font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
                     {formatCurrency(Number(c.lastPrice))}
                   </td>
-                  <td className="py-2 px-2 text-right text-[var(--text-secondary)] dark:text-muted text-xs">
+                  <td className="py-2 px-2 text-right text-[var(--text-secondary)] dark:text-muted text-sm">
                     {formatDate(c.lastDate)}
                   </td>
                   <td className="py-2 px-2 text-center text-[var(--text-secondary)] dark:text-muted">
@@ -333,9 +124,9 @@ export default function SupplierPriceComparison({ productId, productName }: Supp
                   </td>
                   <td className="py-2 px-2 text-right">
                     {c.isCheapest ? (
-                      <span className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-bold text-xs">Mejor</span>
+                      <span className="text-[var(--data-success-500)] dark:text-[var(--data-success-500)] font-bold text-sm">Mejor</span>
                     ) : (
-                      <span className="text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-semibold text-xs flex items-center justify-end gap-0.5">
+                      <span className="text-[var(--data-error-500)] dark:text-[var(--data-error-500)] font-semibold text-sm flex items-center justify-end gap-0.5">
                         <TrendingUp className="h-3 w-3" /> +{diff.toFixed(0)}%
                       </span>
                     )}
