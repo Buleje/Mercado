@@ -7,15 +7,19 @@ import Image from "next/image";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import {
-  Palette, Store, Layout, Phone, Settings2, Image as ImageIcon,
-  Save, Loader2, Check, Eye, EyeOff,
+  Store, Layout, Phone, Settings2, Image as ImageIcon,
+  Check, Eye, EyeOff,
   Megaphone, Grid3x3, ShoppingBag, Tag, Package, BookOpen,
   MessageSquare, HelpCircle, Map, Sun, Moon, Type, Sliders,
   Paintbrush, FileText, Sparkles, Square, LayoutGrid,
   Smartphone, Monitor, Zap, Truck, Star, Clock, ExternalLink, AlertTriangle, RefreshCw } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import { LoadingState, PageTitle, SectionTitle, CardTitle } from "@buleje/design-system";
-import AdminTabBar from "@/components/admin/shared/AdminTabBar";
+import { LoadingState, PageTitle } from "@buleje/design-system";
+import { Bloque } from "@/components/admin/store-customizer/Bloque";
+import { BarraSinGuardar } from "@/components/admin/store-customizer/BarraSinGuardar";
+import { CabeceraApariencia, ID_PANEL_APARIENCIA, SECCIONES_APARIENCIA, type SeccionApariencia } from "@/components/admin/store-customizer/CabeceraApariencia";
+import { cambiosDe, cuantos } from "@/components/admin/store-customizer/cambios";
+import { saludDeLaTienda } from "@/components/admin/store-customizer/salud";
 import { button } from "@/components/ui-system/button-variants";
 import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -33,8 +37,6 @@ import { Field } from "@/components/admin/shared/Field";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
-type Tab = "identidad" | "marca" | "colores" | "secciones" | "portada" | "promos" | "contacto" | "estilos" | "contenido" | "catalogo" | "avanzado";
-const TAB_IDS_CUSTOMIZER: readonly Tab[] = ["identidad", "marca", "colores", "secciones", "portada", "promos", "contacto", "estilos", "contenido", "catalogo", "avanzado"];
 
 export interface StoreTheme {
   logo: string;
@@ -525,46 +527,8 @@ function ColorPicker({
  * banner de 5 líneas con el párrafo a la vista (pasada de diseño 10-10: la
  * ayuda va en el ⓘ, como en StyleSection).
  */
-function EncabezadoBloque({ icon, titulo, ayuda }: { icon: React.ReactNode; titulo: string; ayuda: string }) {
-  return (
-    <header className="flex items-center gap-3">
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10" aria-hidden>
-        {icon}
-      </span>
-      <CardTitle className="text-sm font-bold text-[var(--text-primary)]">{titulo}</CardTitle>
-      <InfoTip title={titulo} what={<span>{ayuda}</span>} />
-    </header>
-  );
-}
-
-function StyleSection({
-  icon,
-  title,
-  description,
-  children,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="space-y-4">
-      <header className="flex items-start gap-3">
-        <div className="shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-          {icon}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
-            <CardTitle className="text-sm font-bold text-[var(--text-primary)]">{title}</CardTitle>
-            <InfoTip title={title} what={<span>{description}</span>} />
-          </div>
-        </div>
-      </header>
-      <div>{children}</div>
-    </section>
-  );
-}
+/** Un bloque del editor: plegable y recordado (ver `store-customizer/Bloque`). */
+const StyleSection = Bloque;
 
 const inputCls =
   "w-full px-4 h-12 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-base text-[var(--text-primary)] placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all";
@@ -626,19 +590,20 @@ function HeroTab({
   const accent = theme.accentColor || theme.primaryColor;
 
   return (
-    <div className="space-y-6">
-      <EncabezadoBloque icon={<ImageIcon className="h-5 w-5 text-primary" />} titulo="El primer mensaje que ve tu cliente" ayuda="La portada es el banner grande arriba de tu tienda. Vende el por qué — qué problema resuelves, en cuánto tiempo, con qué garantía. Cambia los textos abajo y mira el preview en vivo." />
+    <div className="space-y-3">
 
       {/* ── Layout 2-col (Brandon 2026-06-24): preview STICKY a la derecha
           (siempre visible mientras editas), form a la izquierda. Mismo patrón
-          que el tab Identidad. En mobile apila: preview arriba, form abajo. ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8 items-start">
+          que el tab Identidad. En el celular apila: el formulario arriba y la
+          vista previa debajo (11-10: antes iba arriba y empujaba los campos). ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-4 items-start">
       {/* ── Columna preview ── */}
-      <aside className="min-w-0 space-y-3 lg:col-start-2 lg:row-start-1 lg:sticky lg:top-4">
+      <aside className="order-last min-w-0 space-y-3 lg:order-none lg:col-start-2 lg:row-start-1 lg:sticky lg:top-4">
       {/* ── LIVE PREVIEW (fiel al hero real) ────────────────── */}
       <StyleSection
         icon={<Eye className="h-5 w-5 text-primary" />}
         title="Vista previa en vivo"
+        fijo
         description="Idéntica a la portada real de tu tienda. Cambia entre computadora y celular para ver ambas."
       >
         <div className="space-y-3">
@@ -819,11 +784,13 @@ function HeroTab({
       </aside>
 
       {/* ── Columna form (izquierda) ── */}
-      <div className="min-w-0 space-y-8 lg:col-start-1 lg:row-start-1">
+      <div className="min-w-0 space-y-3 lg:col-start-1 lg:row-start-1">
       {/* ── 1. TÍTULO PRINCIPAL ─────────────────────────────── */}
       <StyleSection
         icon={<Type className="h-5 w-5 text-primary" />}
         title="Título principal"
+        abierto
+        resumen={theme.heroTitle}
         description="El gancho — la primera frase que va a leer un cliente nuevo. Corto, directo, máximo 8 palabras."
       >
         <div className="space-y-3">
@@ -873,6 +840,7 @@ function HeroTab({
       <StyleSection
         icon={<FileText className="h-5 w-5 text-primary" />}
         title="Subtítulo"
+        resumen={theme.heroSubtitle}
         description="Refuerza el título — el por qué deberían comprarte a ti. Máximo 2 líneas."
       >
         <div className="space-y-3">
@@ -921,6 +889,7 @@ function HeroTab({
       <StyleSection
         icon={<Sparkles className="h-5 w-5 text-primary" />}
         title="Badge superior"
+        resumen={theme.heroBadge}
         description="Etiqueta destacada arriba del título — promociones, garantías o urgencia. Opcional pero potente."
       >
         <div className="space-y-3">
@@ -971,6 +940,7 @@ function HeroTab({
       <StyleSection
         icon={<Sparkles className="h-5 w-5 text-primary" />}
         title="Badge de origen"
+        resumen={theme.heroOriginBadge}
         description="Etiqueta debajo del logo circular en la portada — comunica de dónde es tu negocio."
       >
         <div className="space-y-3">
@@ -1010,6 +980,7 @@ function HeroTab({
       <StyleSection
         icon={<Sparkles className="h-5 w-5 text-primary" />}
         title="Chips de confianza"
+        resumen={`${(theme.trustChips ?? []).length} chips`}
         description="Barra que scrollea con tus garantías y beneficios. Una chip por línea — sin íconos (los asignamos automático)."
       >
         <div className="space-y-3">
@@ -1039,6 +1010,7 @@ function HeroTab({
       <StyleSection
         icon={<MessageSquare className="h-5 w-5 text-primary" />}
         title="Botón de acción (CTA)"
+        resumen={theme.heroCTA}
         description="El click más importante de toda la tienda. Texto + destino al que lleva."
       >
         <div className="space-y-5">
@@ -1149,6 +1121,7 @@ function HeroTab({
       <StyleSection
         icon={<ImageIcon className="h-5 w-5 text-primary" />}
         title="Imagen de fondo"
+        resumen={theme.heroImage?.trim() ? "Con imagen" : "Sin imagen: se usa el degradado"}
         description="Opcional. Si dejas vacío, se usa el fondo oscuro editorial con tu color de acento."
       >
         <ImageUpload
@@ -1311,7 +1284,7 @@ function HeroTab({
  * Identidad: `useSubvistaModulo` no tiene alias, así que va como vista forzada
  * (la URL válida le sigue ganando).
  */
-function portadaDeSubVieja(): Tab | undefined {
+function portadaDeSubVieja(): SeccionApariencia | undefined {
   if (typeof window === "undefined") return undefined;
   const deUrl = new URLSearchParams(window.location.search).get("sub");
   if (deUrl === "hero") return "portada";
@@ -1333,69 +1306,20 @@ function ValorDeMedicion({ valor, id }: { valor?: string | null; id?: string }) 
   );
 }
 
-// ── Tabs del panel — formato AdminTabBar (horizontal, draggable como otros módulos) ──
-
 const MODULE_ID = "store-customizer";
 
-// Fusión ADR-299 fase 2: 11 → 6 tabs. Marca→Colores; Promos/Secciones/Catálogo
-// + Contacto → "Página"; Textos → Avanzado. Se consolidan por condición de
-// render (sin mover bloques) — los ids viejos quedan en el type pero sin botón.
-const TABS = [
-  { id: "identidad" as Tab, label: "Identidad", shortLabel: "Identidad", icon: Store },
-  { id: "colores" as Tab, label: "Colores y tipografía", shortLabel: "Colores", icon: Palette },
-  { id: "estilos" as Tab, label: "Estilos", icon: Paintbrush },
-  { id: "portada" as Tab, label: "Portada", icon: ImageIcon },
-  // Antes «Página»: chocaba con «Páginas» de la barra de arriba. Junta contacto,
-  // horarios, secciones del inicio y qué productos se ven (por eso el `title`).
-  { id: "contacto" as Tab, label: "Contacto", title: "Contacto, horarios, secciones del inicio y productos visibles", icon: Layout },
-  { id: "avanzado" as Tab, label: "Avanzado", icon: Settings2 },
-] as const;
+/**
+ * Las 6 secciones de hoy (fusión ADR-299 fase 2: 11 → 6). Lista literal: la lee
+ * `__tests__/admin-subvistas-sincronizadas` contra `lib/admin/subvistas-modulos`.
+ */
+const TAB_IDS_CUSTOMIZER: readonly SeccionApariencia[] = ["identidad", "colores", "estilos", "portada", "contacto", "avanzado"];
 
-// ── Salud de la marca (Brandon 2026-06-26): completitud por tab + avisos ──────
-type HealthTab = "identidad" | "portada" | "colores" | "contacto" | "avanzado";
-const HEALTH_TABS: { id: HealthTab; label: string; keys: (keyof StoreTheme)[] }[] = [
-  { id: "identidad", label: "Identidad", keys: ["logo", "storeName", "slogan", "description"] },
-  { id: "portada", label: "Portada", keys: ["heroTitle", "heroSubtitle", "heroImage"] },
-  { id: "colores", label: "Colores", keys: ["primaryColor", "secondaryColor", "accentColor"] },
-  { id: "contacto", label: "Contacto", keys: ["whatsapp", "email", "phone", "address"] },
-  { id: "avanzado", label: "Avanzado", keys: ["analyticsId", "favicon"] },
-];
-function fieldFilled(v: unknown): boolean {
-  if (typeof v === "string") return v.trim() !== "" && v !== "var(--color-primary)";
-  return Boolean(v);
-}
-/** Contraste WCAG del color (hex) contra texto blanco. null si no es hex. */
-function contrastWithWhite(hex: string): number | null {
-  const m = /^#?([0-9a-fA-F]{6})$/.exec((hex ?? "").trim());
-  if (!m) return null;
-  const n = parseInt(m[1], 16);
-  const lum = [(n >> 16) & 255, (n >> 8) & 255, n & 255]
-    .map((v) => { const c = v / 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); });
-  const L = 0.2126 * lum[0] + 0.7152 * lum[1] + 0.0722 * lum[2];
-  return Math.round((1.05 / (L + 0.05)) * 10) / 10;
-}
-interface StoreHealth {
-  pct: number;
-  perTab: { id: HealthTab; label: string; filled: number; total: number }[];
-  issues: { label: string; tab: HealthTab }[];
-}
-function computeStoreHealth(theme: StoreTheme): StoreHealth {
-  const perTab = HEALTH_TABS.map((t) => ({
-    id: t.id,
-    label: t.label,
-    filled: t.keys.filter((k) => fieldFilled(theme[k])).length,
-    total: t.keys.length,
-  }));
-  const filled = perTab.reduce((a, t) => a + t.filled, 0);
-  const total = perTab.reduce((a, t) => a + t.total, 0);
-  const issues: { label: string; tab: HealthTab }[] = [];
-  if (!fieldFilled(theme.logo)) issues.push({ label: "Falta el logo de tu tienda", tab: "identidad" });
-  if (!fieldFilled(theme.whatsapp)) issues.push({ label: "Sin número de WhatsApp para pedidos", tab: "contacto" });
-  if (!fieldFilled(theme.heroImage)) issues.push({ label: "La portada no tiene imagen de fondo", tab: "portada" });
-  const c = contrastWithWhite(theme.primaryColor);
-  if (c != null && c < 3) issues.push({ label: `Color principal con contraste bajo (${c}:1) sobre texto blanco`, tab: "colores" });
-  return { pct: total ? Math.round((filled / total) * 100) : 0, perTab, issues };
-}
+/**
+ * Ids viejos de `?sub=` (links, favoritos, memoria del navegador) → la sección
+ * donde quedó su contenido: Marca en Colores; Secciones, Promos y Catálogo en
+ * Contacto; Textos en Avanzado; Hero es Portada.
+ */
+const ALIAS_SECCION = { hero: "portada", marca: "colores", secciones: "contacto", promos: "contacto", catalogo: "contacto", contenido: "avanzado" } as const;
 
 // ── Preview en vivo ───────────────────────────────────────────────────────────
 
@@ -1563,16 +1487,25 @@ function _StorePreview({ theme }: { theme: StoreTheme }) {
 
 // ── Componente principal ──────────────────────────────────────────────────────
 
+/** Campos de TenantStorePage que edita Identidad (SEO, publicado, «Acerca de»). */
+const PAGINA_VACIA = {
+  metaTitle: "",
+  metaDescription: "",
+  ogImageUrl: "",
+  published: true,
+  aboutTitle: "",
+  aboutBody: "",
+};
+
 export default function StoreCustomizer() {
   // La sub-vista vive en `?sub=` (useSubvistaModulo): este módulo se muestra dentro de un hub
   // que ya usa `?vista=`. Link compartible y «atrás» del navegador (antes era estado local).
   const [subVieja] = useState(portadaDeSubVieja);
-  const { vista: activeTab, irA: setActiveTab } = useSubvistaModulo<Tab>(MODULE_ID, TAB_IDS_CUSTOMIZER, "identidad", subVieja);
+  const { vista: activeTab, irA: setActiveTab } = useSubvistaModulo<SeccionApariencia>(MODULE_ID, TAB_IDS_CUSTOMIZER, "identidad", subVieja, { alias: ALIAS_SECCION });
   const [theme, setTheme] = useState<StoreTheme>(DEFAULT_THEME);
   const [savedTheme, setSavedTheme] = useState<StoreTheme>(DEFAULT_THEME);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const previewPanelRef = useRef<HTMLDivElement>(null);
@@ -1596,24 +1529,25 @@ export default function StoreCustomizer() {
   // Campos que viven en TenantStorePage (no en storeTheme) — absorbidos al
   // editor unificado (ADR-299 fase 2): SEO + publicado + about. Carga/guardado
   // vía /api/store-page/customization (store distinto → save cross-store).
-  const [pageFields, setPageFields] = useState({
-    metaTitle: "",
-    metaDescription: "",
-    ogImageUrl: "",
-    published: true,
-    aboutTitle: "",
-    aboutBody: "",
-  });
+  const [pageFields, setPageFields] = useState(PAGINA_VACIA);
+  const [savedPageFields, setSavedPageFields] = useState(PAGINA_VACIA);
   const updatePage = useCallback(
     (patch: Partial<typeof pageFields>) => {
       setPageFields((prev) => ({ ...prev, ...patch }));
-      setSaved(false);
     },
     [],
   );
 
-  // Detecta si hay cambios pendientes comparando con la última versión guardada
-  const hasUnsavedChanges = JSON.stringify(theme) !== JSON.stringify(savedTheme);
+  // Cambios pendientes contra lo último guardado: los cuenta la barra de
+  // abajo y es lo ÚNICO que viaja al guardar (ver store-customizer/cambios).
+  const cambiosTema = cambiosDe(savedTheme, theme);
+  const cambiosPagina = cambiosDe(savedPageFields, pageFields);
+  const totalCambios = cuantos(cambiosTema) + cuantos(cambiosPagina);
+  const descartar = useCallback(() => {
+    setTheme(savedTheme);
+    setPageFields(savedPageFields);
+    setError(null);
+  }, [savedTheme, savedPageFields]);
 
   const _logoInputRef = useRef<HTMLInputElement>(null);
   const _heroImageInputRef = useRef<HTMLInputElement>(null);
@@ -1634,14 +1568,16 @@ export default function StoreCustomizer() {
         if (!res.ok || cancelled) return;
         const p = (await res.json()) as Record<string, unknown>;
         if (cancelled) return;
-        setPageFields({
+        const cargados = {
           metaTitle: typeof p.metaTitle === "string" ? p.metaTitle : "",
           metaDescription: typeof p.metaDescription === "string" ? p.metaDescription : "",
           ogImageUrl: typeof p.ogImageUrl === "string" ? p.ogImageUrl : "",
           published: p.published !== false,
           aboutTitle: typeof p.aboutTitle === "string" ? p.aboutTitle : "",
           aboutBody: typeof p.aboutBody === "string" ? p.aboutBody : "",
-        });
+        };
+        setPageFields(cargados);
+        setSavedPageFields(cargados);
       } catch {
         /* fallback: campos vacíos */
       }
@@ -1688,7 +1624,6 @@ export default function StoreCustomizer() {
 
   const update = useCallback(<K extends keyof StoreTheme>(key: K, value: StoreTheme[K]) => {
     setTheme((prev) => ({ ...prev, [key]: value }));
-    setSaved(false);
   }, []);
 
   const handleReset = useCallback(async () => {
@@ -1699,7 +1634,6 @@ export default function StoreCustomizer() {
       confirmLabel: "Sí, restaurar",
     }))) return;
     setTheme(DEFAULT_THEME);
-    setSaved(false);
   }, [confirm]);
 
   const _handleImageUpload = (
@@ -1719,35 +1653,39 @@ export default function StoreCustomizer() {
   // ── Guardar ────────────────────────────────────────────────────────────────
 
   const saveTheme = useCallback(async (themeToSave: StoreTheme, options?: { silent?: boolean }) => {
+    const delTema = cambiosDe(savedTheme, themeToSave);
+    const deLaPagina = cambiosDe(savedPageFields, pageFields);
+    if (cuantos(delTema) + cuantos(deLaPagina) === 0) return;
     setSaving(true);
     setError(null);
     try {
       const tenantSlug = activeTenantSlug || await resolveActiveTenantSlug();
-      const res = await fetch("/api/settings", {
-        method: "PUT",
-        headers: csrfHeaders({ "Content-Type": "application/json", "x-tenant-id": tenantSlug }),
-        body: JSON.stringify({ storeTheme: themeToSave }),
-      });
-      if (!res.ok) throw new Error("Error al guardar");
-      // Cross-store: guardar también SEO/publicado/about en TenantStorePage
-      // (ADR-299 fase 2). Secundario — si falla, el theme ya quedó guardado.
-      try {
-        await fetch("/api/store-page/customization", {
+      if (cuantos(delTema) > 0) {
+        // Sólo las claves que cambiaron: el servidor las mezcla con el tema
+        // guardado y no pisa lo que otro editor guardó mientras tanto.
+        const res = await fetch("/api/settings", {
+          method: "PUT",
+          headers: csrfHeaders({ "Content-Type": "application/json", "x-tenant-id": tenantSlug }),
+          body: JSON.stringify({ storeTheme: delTema }),
+        });
+        if (!res.ok) throw new Error("Error al guardar");
+        setSavedTheme(themeToSave);
+      }
+      // SEO/publicado/about viven en TenantStorePage (ADR-299 fase 2).
+      if (cuantos(deLaPagina) > 0) {
+        const res = await fetch("/api/store-page/customization", {
           method: "PUT",
           headers: csrfHeaders({ "Content-Type": "application/json", "x-tenant-id": tenantSlug }),
           body: JSON.stringify(pageFields),
         });
-      } catch {
-        /* el theme ya se guardó; estos campos son secundarios */
+        if (!res.ok) throw new Error("Error al guardar SEO y «Acerca de»");
+        setSavedPageFields(pageFields);
       }
-      setSaved(true);
-      setSavedTheme(themeToSave);
       if (!options?.silent) {
         setToastMsg("Cambios guardados correctamente");
       }
       // Recargar iframe de vista previa
       setPreviewKey((k) => k + 1);
-      setTimeout(() => setSaved(false), 3000);
       if (!options?.silent) {
         setTimeout(() => setToastMsg(null), 3000);
       }
@@ -1756,7 +1694,7 @@ export default function StoreCustomizer() {
     } finally {
       setSaving(false);
     }
-  }, [activeTenantSlug, pageFields]);
+  }, [activeTenantSlug, pageFields, savedPageFields, savedTheme]);
 
   const handleSave = useCallback(async () => {
     await saveTheme(theme);
@@ -1817,11 +1755,11 @@ export default function StoreCustomizer() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
-  const activeTabMeta = TABS.find((t) => t.id === activeTab);
-  const health = computeStoreHealth(theme);
+  const salud = saludDeLaTienda(theme);
+  const urlTienda = `/t/${activeTenantSlug}`;
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="space-y-3">
       {/* Toast de éxito — patrón estándar admin (mismo estilo que plantilla/notificaciones) */}
       {toastMsg && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-modal flex items-center gap-2.5 px-5 py-3 rounded-xl bg-[var(--text-primary)] text-[var(--surface-canvas)] text-sm font-bold shadow-[var(--shadow-xl)] animate-[fadeDown_0.35s_ease-out_both] pointer-events-none">
@@ -1830,121 +1768,20 @@ export default function StoreCustomizer() {
         </div>
       )}
 
-      {/* ── Sin cabecera propia (10-10, panel unificado): el título es el de la
-          barra de arriba («Tienda online» › Apariencia). Las acciones de la
-          cabecera vieja (Ver tienda, Vista previa, Modo Creativo) y el aviso de
-          cambios sin guardar viven en la fila de «Tu tienda: N % configurada»;
-          la explicación, en su ⓘ. ── */}
-
-      {/* ── Salud de la marca: completitud + indicadores por-tab + avisos (Brandon 2026-06-26) ── */}
-      <div className="mb-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3 sm:p-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="flex shrink-0 items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]">
-            Tu tienda: {health.pct}% configurada
-            <InfoTip
-              title="Apariencia de tu tienda"
-              what={<span>Logo, colores, tipografía y CSS de tu tienda: la piel, cómo se ve.</span>}
-              affects={<span>Qué secciones, banners y promociones salen en el inicio se arma en Contenido.</span>}
-            />
-          </span>
-          <div className="h-2 min-w-[120px] flex-1 overflow-hidden rounded-full bg-[var(--surface-sunken)]">
-            <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${health.pct}%` }} />
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {hasUnsavedChanges && (
-              <span className="inline-flex items-center rounded-full bg-[var(--data-warning-50)] px-2.5 py-1 text-xs font-bold text-[var(--data-warning-ink)]">
-                Cambios sin guardar
-              </span>
-            )}
-            <a
-              href={`/t/${activeTenantSlug}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              title="Ver tienda"
-              className={button({ variant: "secondary", className: "rounded-xl max-sm:w-12 max-sm:px-0" })}
-            >
-              <Store className="h-4 w-4" aria-hidden />
-              <span className="max-sm:sr-only">Ver tienda</span>
-            </a>
-            <button
-              type="button"
-              onClick={() => setShowPreview(true)}
-              title="Vista previa"
-              className={button({ variant: "secondary", className: "rounded-xl max-sm:w-12 max-sm:px-0" })}
-            >
-              <Eye className="h-4 w-4" aria-hidden />
-              <span className="max-sm:sr-only">Vista previa</span>
-            </button>
-            <button type="button" onClick={() => setShowCreativeMode(true)} className={button({ variant: "primary", className: "rounded-xl" })}>
-              <Paintbrush className="h-4 w-4" aria-hidden />
-              Modo Creativo
-            </button>
-          </div>
-        </div>
-        {/* Avance por pestaña: es estado, no navegación (pasada de diseño 10-10).
-            Eran 5 botones de 22 px que repetían la barra de pestañas de abajo;
-            los avisos de abajo traen su «Arreglar» de 48 px. */}
-        <div className="mt-3 flex flex-wrap items-center gap-1.5">
-          {health.perTab.map((t) => {
-            const done = t.filled === t.total;
-            return (
-              <span
-                key={t.id}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--rule-soft)] bg-[var(--surface-canvas)] px-2.5 py-1 text-xs font-bold text-[var(--text-secondary)]"
-              >
-                <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: done ? "var(--data-success-500)" : "var(--text-tertiary)" }} aria-hidden />
-                {t.label}<span className="text-[var(--text-tertiary)]">{t.filled}/{t.total}</span>
-              </span>
-            );
-          })}
-          {/* Era el «Página de inicio →» de la cabecera vieja. */}
-          <EnlacePanel href="/admin?tab=pagina-inicio&vista=contenido" className="ml-auto self-center text-xs">
-            Secciones, banners y promociones: Contenido →
-          </EnlacePanel>
-        </div>
-        {health.issues.length > 0 ? (
-          <ul className="mt-3 border-t border-[var(--rule-soft)] pt-1">
-            {health.issues.map((i, idx) => (
-              <li key={idx} className="flex items-center justify-between gap-2 text-sm">
-                <span className="flex items-center gap-1.5 text-[var(--text-secondary)]">
-                  <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--data-warning-500)]" aria-hidden /> {i.label}
-                </span>
-                <button type="button" onClick={() => setActiveTab(i.tab as Tab)} className={button({ variant: "ghost", className: "shrink-0 rounded-xl text-[var(--accent-ink)] dark:text-[var(--accent)]" })}>Arreglar →</button>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-3 flex items-center gap-1.5 border-t border-[var(--rule-soft)] pt-3 text-xs font-bold text-[var(--data-success-ink)]">
-            <Check className="h-3.5 w-3.5" /> Tu tienda está lista — sin pendientes.
-          </p>
-        )}
-      </div>
-
-      {/* ── AdminTabBar (horizontal arriba, draggable, mismo patrón que POSCajaModule/Compras) ── */}
-      <AdminTabBar
-        tabs={TABS.map((t) => ({
-          id: t.id,
-          label: t.label,
-          shortLabel: "shortLabel" in t ? t.shortLabel : undefined,
-          title: "title" in t ? t.title : undefined,
-          icon: t.icon,
-        }))}
-        activeTab={activeTab}
-        onTabChange={(id) => setActiveTab(id as Tab)}
-        moduleId={MODULE_ID}
+      {/* ── Patrón del panel (11-10): una fila con título · secciones · «Ver
+          mi tienda» · «⋯», y una línea de estado. Sin la caja de salud de 4
+          filas ni la 2.ª barra de pestañas (tercer nivel) ni el encabezado
+          repetido de la sección. Cada bloque es un plegable recordado. ── */}
+      <CabeceraApariencia
+        seccion={activeTab}
+        onSeccion={setActiveTab}
+        salud={salud}
+        urlTienda={urlTienda}
+        onVistaPrevia={() => setShowPreview(true)}
+        onModoCreativo={() => setShowCreativeMode(true)}
       />
 
-      {/* ── Panel de contenido ──────────────────────────────────────── */}
-      <div className="flex flex-col flex-1 min-h-0 bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-soft)] dark:border-[var(--rule-base)] overflow-hidden">
-
-        {/* Tab header with active tab info — usa SectionTitle del DS */}
-        <div className="flex items-center gap-3 px-6 py-4 border-b-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-sunken)]/40 shrink-0">
-          {activeTabMeta && <activeTabMeta.icon className="h-5 w-5 text-primary" />}
-          <SectionTitle className="text-sm font-bold">{activeTabMeta?.label}</SectionTitle>
-        </div>
-
-        {/* Contenido del tab activo */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      <div role="tabpanel" id={ID_PANEL_APARIENCIA} aria-label={SECCIONES_APARIENCIA.find((x) => x.clave === activeTab)?.rotulo} className="space-y-3">
 
             {/* ── TAB: IDENTIDAD ───────────────────────────────────────
                 Rediseño 2026-06-05 (Brandon): minimalista, 2 columnas.
@@ -1953,8 +1790,8 @@ export default function StoreCustomizer() {
                 exactamente dónde aparece cada campo (cabecera de su
                 tienda + resultado de Google) mientras tipea. */}
             {activeTab === "identidad" && (
-              <div className="space-y-8">
-              <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8 items-start">
+              <div className="space-y-3">
+              <div className="grid grid-cols-1 items-start gap-6 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:p-5 lg:grid-cols-[1fr_400px]">
                 {/* ── Columna form ── */}
                 <div className="space-y-6 min-w-0">
                   {/* Logo + Nombre — misma fila, sin caja contenedora */}
@@ -2149,6 +1986,7 @@ export default function StoreCustomizer() {
               <StyleSection
                 icon={<Settings2 className="h-5 w-5 text-primary" />}
                 title="SEO y visibilidad"
+                resumen={`${pageFields.published ? "Publicada" : "Oculta al público"}${pageFields.metaTitle.trim() ? ` · ${pageFields.metaTitle.trim()}` : ""}`}
                 description="Cómo aparece tu tienda en Google y si está publicada (antes vivía en 'Mi tienda pública')."
               >
                 <div className="space-y-4">
@@ -2171,6 +2009,7 @@ export default function StoreCustomizer() {
               <StyleSection
                 icon={<FileText className="h-5 w-5 text-primary" />}
                 title="Acerca de tu tienda"
+                resumen={pageFields.aboutTitle.trim() || "Sin escribir"}
                 description="Sección «sobre nosotros» de tu tienda. Opcional."
               >
                 <div className="space-y-4">
@@ -2185,39 +2024,16 @@ export default function StoreCustomizer() {
               </div>
             )}
 
-            {/* ── TAB: MARCA — análisis de logo + conceptos ─────────── */}
-            {/* Marca → fusionado en "Colores & Tipografía" (ADR-299) */}
-            {activeTab === "colores" && (
-              <BrandConceptTab
-                theme={theme}
-                onApplyConcept={(patches) => {
-                  // Aplicar todos los patches en cascada usando el helper update
-                  Object.entries(patches).forEach(([key, value]) => {
-                    if (value !== undefined) {
-                      update(key as keyof StoreTheme, value as never);
-                    }
-                  });
-                }}
-              />
-            )}
-
-            {/* ── TAB: PROMOS POR CATEGORÍA ─────────────────────────── */}
-            {/* Promos → fusionado en "Página" (ADR-299) */}
-            {activeTab === "contacto" && (
-              <CategoryBannersTab theme={theme} update={update} inputCls={inputCls} />
-            )}
-
             {/* ── TAB: COLORES ───────────────────────────────────────── */}
             {activeTab === "colores" && (
-              <div className="space-y-6">
-                <EncabezadoBloque icon={<Palette className="h-5 w-5 text-primary" />} titulo="La paleta de tu marca" ayuda="Empieza con una plantilla ya curada o ajusta cada color manual. Cada cambio se previsualiza en vivo abajo y se aplica a botones, links, badges y CTAs en toda tu tienda." />
+              <div className="space-y-3">
 
                 {/* ── Layout 2-col (Brandon 2026-06-24): preview STICKY a la
                     derecha (siempre visible mientras eliges colores), form a la
                     izquierda. Mismo patrón que Hero/Identidad. ── */}
-                <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8 items-start">
+                <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-4 items-start">
                 {/* ── Columna form (izquierda) ── */}
-                <div className="min-w-0 space-y-8 lg:col-start-1 lg:row-start-1">
+                <div className="min-w-0 space-y-3 lg:col-start-1 lg:row-start-1">
                 {/* ── 1. PLANTILLAS LISTAS ──────────────────────────── */}
                 <StyleSection
                   icon={<Sparkles className="h-5 w-5 text-primary" />}
@@ -2292,6 +2108,8 @@ export default function StoreCustomizer() {
                 <StyleSection
                   icon={<Paintbrush className="h-5 w-5 text-primary" />}
                   title="Colores personalizados"
+                  abierto
+                  resumen={[theme.primaryColor, theme.secondaryColor, theme.accentColor].filter(Boolean).join(" · ")}
                   description="Ajusta cada color por separado. Tip: el primario manda en CTAs y links, el secundario en badges de oferta."
                 >
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -2374,6 +2192,7 @@ export default function StoreCustomizer() {
                 <StyleSection
                   icon={<Moon className="h-5 w-5 text-primary" />}
                   title="Modo oscuro por defecto"
+                  resumen={theme.darkModeDefault ? "Tu tienda arranca en oscuro" : "Tu tienda arranca en claro"}
                   description="Cuando un cliente nuevo entra a tu tienda, ¿en qué modo abre? Igual cada usuario puede cambiar después."
                 >
                   <div className="grid grid-cols-2 gap-3">
@@ -2438,6 +2257,7 @@ export default function StoreCustomizer() {
                 <StyleSection
                   icon={<Eye className="h-5 w-5 text-primary" />}
                   title="Vista previa en vivo"
+                  fijo
                   description="Cómo se aplican tus colores a un componente real de tu tienda."
                 >
                   <div className="rounded-2xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] overflow-hidden">
@@ -2533,13 +2353,25 @@ export default function StoreCustomizer() {
               </div>
             )}
 
-            {/* ── TAB: SECCIONES — delegado a StorefrontEditor ──────── */}
-            {/* Secciones → fusionado en "Página" (ADR-299) */}
-            {activeTab === "contacto" && (
-              <div className="space-y-8">
-                <EncabezadoBloque icon={<Layout className="h-5 w-5 text-primary" />} titulo="Las secciones que ve tu cliente" ayuda="Activa, desactiva y reordena los bloques de tu tienda con drag &amp; drop. Las secciones desactivadas no se renderizan — la página se compacta automáticamente." />
-                <StorefrontEditor />
-              </div>
+            {/* ── Marca (ADR-299: fusionado en Colores) — ideas desde el logo, plegado ── */}
+            {activeTab === "colores" && (
+              <StyleSection
+                icon={<Sparkles className="h-5 w-5 text-primary" />}
+                title="Ideas desde tu logo"
+                description="Lee los colores de tu logo y te propone conceptos de marca listos para aplicar a tu paleta."
+              >
+                <BrandConceptTab
+                  theme={theme}
+                  onApplyConcept={(patches) => {
+                    // Aplicar todos los patches en cascada usando el helper update
+                    Object.entries(patches).forEach(([key, value]) => {
+                      if (value !== undefined) {
+                        update(key as keyof StoreTheme, value as never);
+                      }
+                    });
+                  }}
+                />
+              </StyleSection>
             )}
 
             {/* ── TAB: PORTADA ──────────────────────────────────────────── */}
@@ -2553,13 +2385,14 @@ export default function StoreCustomizer() {
 
             {/* ── TAB: CONTACTO ──────────────────────────────────────── */}
             {activeTab === "contacto" && (
-              <div className="space-y-8">
-                <EncabezadoBloque icon={<Phone className="h-5 w-5 text-primary" />} titulo="Cómo te puede contactar el cliente" ayuda="Aparecen en el footer, mapa, sección de contacto y JSON-LD para Google. WhatsApp es el canal #1 — asegurate de que esté activo." />
+              <div className="space-y-3">
 
                 {/* ── 1. CANALES DE CONTACTO ──────────────────────── */}
                 <StyleSection
                   icon={<MessageSquare className="h-5 w-5 text-primary" />}
                   title="Canales de contacto"
+                  abierto
+                  resumen={theme.whatsapp?.trim() ? `WhatsApp ${theme.whatsapp.trim()}` : "Sin WhatsApp para pedidos"}
                   description="Los datos por los que el cliente te encuentra y escribe."
                 >
                   <div className="space-y-5">
@@ -2676,13 +2509,13 @@ export default function StoreCustomizer() {
 
             {/* ── TAB: ESTILOS ───────────────────────────────────────── */}
             {activeTab === "estilos" && (
-              <div className="space-y-8">
-                <EncabezadoBloque icon={<Sparkles className="h-5 w-5 text-primary" />} titulo="Cómo se ven los elementos" ayuda="Cada opción muestra una vista previa real. Tus cambios se aplican al guardar y se ven inmediatamente en tu tienda online." />
+              <div className="space-y-3">
 
                 {/* ── 1. CARDS DE PRODUCTOS ─────────────────────────── */}
                 <StyleSection
                   icon={<Package className="h-5 w-5 text-primary" />}
                   title="Cards de productos"
+                  abierto
                   description="Cómo se ven las cards en /tienda y resultados de búsqueda."
                 >
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -2975,8 +2808,7 @@ export default function StoreCustomizer() {
             {/* ── TAB: CONTENIDO ────────────────────────────────────── */}
             {/* Textos y popup → fusionado en "Avanzado" (ADR-299) */}
             {activeTab === "avanzado" && (
-              <div className="space-y-8">
-                <EncabezadoBloque icon={<FileText className="h-5 w-5 text-primary" />} titulo="Textos y mensajes de tu tienda" ayuda="Configura los mensajes que aparecen automáticamente al cliente: el saludo de WhatsApp, el footer con tu storytelling y el popup de bienvenida con cupón." />
+              <div className="space-y-3">
 
                 {/* ── 1. MENSAJES AUTOMÁTICOS ──────────────────────── */}
                 <StyleSection
@@ -3026,6 +2858,7 @@ export default function StoreCustomizer() {
                 <StyleSection
                   icon={<Sparkles className="h-5 w-5 text-primary" />}
                   title="Popup de bienvenida"
+                  resumen={theme.welcomePopupEnabled ? "Activo" : "Apagado"}
                   description="Aparece una sola vez al visitante nuevo con un cupón de descuento. Aumenta conversión en primeras compras."
                 >
                   <div className={cn(
@@ -3143,19 +2976,42 @@ export default function StoreCustomizer() {
               </div>
             )}
 
+            {/* ── Contacto, después: secciones del inicio y banners por categoría
+                (ADR-299: Secciones y Promos fusionados aquí), plegados. ── */}
+            {activeTab === "contacto" && (
+              <StyleSection
+                icon={<Layout className="h-5 w-5 text-primary" />}
+                title="Secciones del inicio"
+                description="Activa, desactiva y reordena los bloques del inicio de tu tienda arrastrándolos. Las que apagues no salen y la página se acomoda sola. Se guarda con su propio botón."
+              >
+                <StorefrontEditor />
+              </StyleSection>
+            )}
+            {activeTab === "contacto" && (
+              <StyleSection
+                icon={<Tag className="h-5 w-5 text-primary" />}
+                title="Banners por categoría"
+                description="Un banner de promoción arriba de cada categoría de tu tienda."
+              >
+                <CategoryBannersTab theme={theme} update={update} inputCls={inputCls} />
+              </StyleSection>
+            )}
+
             {/* ── TAB: CATÁLOGO (visibilidad de productos) ─────────── */}
             {/* Catálogo → fusionado en "Página" (ADR-299) */}
             {activeTab === "contacto" && (
-              <div className="space-y-8">
-                <EncabezadoBloque icon={<Package className="h-5 w-5 text-primary" />} titulo="Qué productos ve el cliente" ayuda="Activa o pausa productos del inventario en tu tienda online sin borrarlos. Útil para retirar items de temporada o stockout temporario." />
+              <StyleSection
+                icon={<Package className="h-5 w-5 text-primary" />}
+                title="Qué productos ve el cliente"
+                description="Activa o pausa productos del inventario en tu tienda sin borrarlos: para retirar los de temporada o los que se agotaron."
+              >
                 <CatalogoTiendaTab />
-              </div>
+              </StyleSection>
             )}
 
             {/* ── TAB: AVANZADO ──────────────────────────────────────── */}
             {activeTab === "avanzado" && (
-              <div className="space-y-8">
-                <EncabezadoBloque icon={<Settings2 className="h-5 w-5 text-primary" />} titulo="Configuración fina y SEO" ayuda="Tipografía con vista previa real, densidad, favicon, los IDs de medición, CSS propio con fragmentos listos y cómo aparece tu tienda en Google." />
+              <div className="space-y-3">
 
                 {/* Las visitas y compras de la tienda viven en Redes y medición
                     (panel unificado, 10-10): una sola vista con las cifras y los
@@ -3169,6 +3025,7 @@ export default function StoreCustomizer() {
                 <StyleSection
                   icon={<Type className="h-5 w-5 text-primary" />}
                   title="Tipografía"
+                  resumen={theme.fontFamily}
                   description="Elige la fuente que más matchea con tu marca. La preview muestra cómo se verá realmente en tu tienda."
                 >
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
@@ -3299,6 +3156,7 @@ export default function StoreCustomizer() {
                 <StyleSection
                   icon={<ImageIcon className="h-5 w-5 text-primary" />}
                   title="Favicon"
+                  resumen={theme.favicon?.trim() ? "Con favicon" : "Sin favicon"}
                   description="El ícono que aparece en la pestaña del navegador y al guardar como marcador."
                 >
                   <div className="space-y-4">
@@ -3374,6 +3232,7 @@ export default function StoreCustomizer() {
                 <StyleSection
                   icon={<Sliders className="h-5 w-5 text-primary" />}
                   title="Medición"
+                  resumen={`GA4 ${theme.analyticsId?.trim() || "sin ID"} · Pixel ${theme.pixelId?.trim() || "sin ID"}`}
                   description="Los IDs que miden tu tráfico y tus ventas en todas las páginas de tu tienda. Se editan en Redes y medición; aquí solo se ven."
                 >
                   <div className="space-y-5">
@@ -3452,6 +3311,7 @@ export default function StoreCustomizer() {
                 <StyleSection
                   icon={<Paintbrush className="h-5 w-5 text-primary" />}
                   title="CSS personalizado"
+                  resumen={theme.customCSS?.trim() ? "Con CSS propio" : "Sin CSS propio"}
                   description="Reglas CSS inyectadas en tu tienda. Solo si sabes CSS — un error puede romper tu tienda."
                 >
                   <div className="space-y-4">
@@ -3533,38 +3393,14 @@ export default function StoreCustomizer() {
             )}
           </div>
 
-          {/* Botón guardar — fijo abajo del panel */}
-          <div className="shrink-0 px-6 py-4 border-t-2 border-[var(--rule-base)] dark:border-[var(--rule-base)] space-y-2 bg-[var(--surface-raised)]">
-            {error && (
-              <p className="text-sm text-[var(--data-error-500)] font-semibold text-center">{error}</p>
-            )}
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={saving}
-              className={cn(
-                "w-full flex items-center justify-center gap-2.5 h-14 rounded-2xl text-base font-semibold transition-all relative shadow-[var(--shadow-md)]",
-                saved
-                  ? "bg-[var(--data-success-500)] text-white"
-                  : "bg-primary hover:bg-primary-dark text-white hover:shadow-[var(--shadow-lg)] active:scale-[0.98]",
-                saving && "opacity-60 cursor-not-allowed"
-              )}
-            >
-              {saving ? (
-                <><Loader2 className="h-5 w-5 animate-spin" /> Guardando...</>
-              ) : saved ? (
-                <><Check className="h-5 w-5" /> Cambios guardados</>
-              ) : (
-                <><Save className="h-5 w-5" /> Guardar cambios</>
-              )}
-              {hasUnsavedChanges && !saving && !saved && (
-                <span className="absolute -top-2 -right-2 h-6 px-2 rounded-full bg-[var(--data-warning-500)] text-xs font-bold text-[var(--text-primary)] flex items-center shadow">
-                  Sin guardar
-                </span>
-              )}
-            </button>
-          </div>
-        </div>
+      {/* Guardar: la barra aparece sólo si hay cambios y se queda pegada abajo. */}
+      <BarraSinGuardar
+        texto={totalCambios > 0 ? (totalCambios === 1 ? "1 cambio sin guardar" : `${totalCambios} cambios sin guardar`) : null}
+        guardando={saving}
+        error={error}
+        onGuardar={handleSave}
+        onDescartar={descartar}
+      />
 
       {/* ── Modal fullscreen de preview ──────────────────────────── */}
       {showPreview && (

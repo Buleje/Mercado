@@ -4,9 +4,11 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, FileText, Pencil, Eye, Trash2, Copy } from "@buleje/design-system/icons";
+import { Plus, FileText, Pencil, Eye, Trash2, Copy, MoreHorizontal, Send, Undo2 } from "@buleje/design-system/icons";
 import { SectionTitle, LoadingState } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
+import { button } from "@/components/ui-system/button-variants";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import AdminEmptyState from "@/app/admin/_components/_shared/AdminEmptyState";
 import { ADMIN_TOKENS } from "@/app/admin/_components/_shared/admin-tokens";
@@ -21,9 +23,6 @@ const PILDORA: Record<PaginaResumen["status"], string> = {
   DRAFT: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]",
   ARCHIVED: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]",
 };
-
-const BTN_FILA =
-  "inline-flex items-center justify-center gap-1.5 min-h-10 px-3 rounded-lg border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)] transition-colors disabled:opacity-50";
 
 /** Dónde se ve la página de verdad: bajo el negocio, no bajo el host de quien la mire. */
 function enlacePublico(tenantSlug: string, slug: string): string {
@@ -77,19 +76,36 @@ export default function PaginasPorBloquesTab() {
     }
   }
 
+  function accionesDe(p: PaginaResumen): MenuAccion[] {
+    const publicada = p.status === "PUBLISHED";
+    return [
+      ...(publicada
+        ? [
+            { id: "ver", label: "Ver en tu tienda", icon: Eye, onSelect: () => window.open(`/t/${tenantSlug}/cms/${p.slug}`, "_blank", "noopener,noreferrer") },
+            { id: "copiar", label: "Copiar enlace", icon: Copy, onSelect: () => void copiar(p) },
+          ]
+        : []),
+      publicada
+        ? { id: "estado", label: "Despublicar", hint: "Vuelve a borrador y deja de verse", icon: Undo2, onSelect: () => void cambiarEstado(p) }
+        : { id: "estado", label: "Publicar", hint: "Se ve en /cms/ y se puede enlazar", icon: Send, onSelect: () => void cambiarEstado(p) },
+      { id: "eliminar", label: "Eliminar", icon: Trash2, tone: "danger", onSelect: () => void borrar(p) },
+    ];
+  }
+
   return (
-    <section className="space-y-4" aria-label="Páginas por bloques">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
+    <section className="space-y-3" aria-label="Páginas por bloques">
+      <header className="flex flex-wrap items-center gap-x-2 gap-y-2">
+        <div className="flex shrink-0 items-center gap-2">
           <SectionTitle>Páginas por bloques</SectionTitle>
           <InfoTip
             title="Páginas por bloques"
             what="Arma páginas como «Ofertas» o «Nosotros» juntando bloques (portada, productos, preguntas, contacto). Quedan en borrador hasta que las publiques; entonces se ven en /cms/ y se pueden enlazar desde tu portada."
           />
         </div>
-        <button type="button" onClick={() => setNueva(true)} className={ADMIN_TOKENS.btnPrimary}>
+        {/* A 400 px queda en ícono: la cabecera no se parte en dos filas. */}
+        <button type="button" onClick={() => setNueva(true)} title="Nueva página" className={button({ variant: "primary", className: "ml-auto h-12 rounded-xl max-sm:w-12 max-sm:px-0" })}>
           <Plus className="w-4 h-4" aria-hidden />
-          Nueva página
+          <span className="max-sm:sr-only">Nueva página</span>
         </button>
       </header>
 
@@ -108,22 +124,20 @@ export default function PaginasPorBloquesTab() {
         <div className={ADMIN_TOKENS.card}>
           <AdminEmptyState
             icon={FileText}
-            title="Aún no tienes páginas"
-            description="Crea la primera: eliges un título y vas sumando bloques."
-            action={{ label: "Crear mi primera página", onClick: () => setNueva(true) }}
+            title="Aún no tienes páginas: crea la primera con «Nueva página»."
             compact
           />
         </div>
       ) : (
         <ul className={`${ADMIN_TOKENS.card} divide-y divide-[var(--rule-soft)]`}>
           {paginas.map((p) => (
-            <li key={p.id} className="flex flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
-              <div className="min-w-0">
+            <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+              <div className="min-w-0 flex-1 basis-60">
                 <div className="flex flex-wrap items-center gap-2">
                   <Link href={`/admin/cms/pages/${p.id}`} className="font-semibold text-base text-[var(--text-primary)] hover:text-[var(--accent)] truncate">
                     {p.title}
                   </Link>
-                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${PILDORA[p.status]}`}>
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-sm font-semibold ${PILDORA[p.status]}`}>
                     {ETIQUETA_ESTADO[p.status]}
                   </span>
                 </div>
@@ -131,32 +145,21 @@ export default function PaginasPorBloquesTab() {
                   /cms/{p.slug} · {p._count.blocks} {p._count.blocks === 1 ? "bloque" : "bloques"} · editada {formatDate(p.updatedAt)}
                 </p>
               </div>
-              <div className="flex flex-wrap items-center gap-2 shrink-0">
-                <Link href={`/admin/cms/pages/${p.id}`} className={BTN_FILA}>
+              {/* La principal a la vista (48 px); el resto en «⋯» (patrón del panel, 11-10).
+                  Antes: cinco botones de 40 px por fila. */}
+              <div className="flex shrink-0 items-center gap-2">
+                <Link href={`/admin/cms/pages/${p.id}`} className={button({ variant: "secondary", className: "h-12 rounded-xl" })}>
                   <Pencil className="w-4 h-4" aria-hidden /> Editar
                 </Link>
-                {p.status === "PUBLISHED" && (
-                  <>
-                    <a href={`/t/${tenantSlug}/cms/${p.slug}`} target="_blank" rel="noopener noreferrer" className={BTN_FILA}>
-                      <Eye className="w-4 h-4" aria-hidden /> Ver
-                    </a>
-                    <button type="button" onClick={() => void copiar(p)} className={BTN_FILA} aria-label={`Copiar el enlace de ${p.title}`}>
-                      <Copy className="w-4 h-4" aria-hidden /> Copiar enlace
-                    </button>
-                  </>
-                )}
-                <button type="button" onClick={() => void cambiarEstado(p)} disabled={ocupada === p.id} className={BTN_FILA}>
-                  {p.status === "PUBLISHED" ? "Despublicar" : "Publicar"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void borrar(p)}
+                <ActionMenu
+                  label={`Más acciones de ${p.title}`}
+                  icon={MoreHorizontal}
+                  actions={accionesDe(p)}
+                  soloIcono
+                  size="md"
+                  className="w-12 shrink-0"
                   disabled={ocupada === p.id}
-                  className={`${BTN_FILA} text-[var(--data-error-700)]`}
-                  aria-label={`Eliminar ${p.title}`}
-                >
-                  <Trash2 className="w-4 h-4" aria-hidden />
-                </button>
+                />
               </div>
             </li>
           ))}

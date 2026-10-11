@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { BarChart3, Eye, Target, TrendingUp, RefreshCw } from "@buleje/design-system/icons";
-import { BlockTitle, CardTitle, ErrorAlert, LoadingState, StatCard } from "@buleje/design-system";
+import { Eye, Target, TrendingUp, RefreshCw } from "@buleje/design-system/icons";
+import { BlockTitle, ErrorAlert, LoadingState } from "@buleje/design-system";
 import { button } from "@/components/ui-system/button-variants";
 import { SERIES } from "@/components/admin/shared/chart-palette";
+import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { PermisoDe } from "@/components/admin/shared/PermisoDe";
@@ -24,12 +25,19 @@ import { PermisoDe } from "@/components/admin/shared/PermisoDe";
  * la atribución de S/ por canal requeriría capturar utm_source en el checkout
  * (zona de pagos). Se aclara en la UI para no prometer un dato que no existe.
  *
+ * 11-10 (patrón del panel): las cuatro cifras van en los Indicadores plegables
+ * de la cabecera de Redes y medición (`useIndicadoresVisitas`) y el detalle
+ * —por canal, por día, sitios y campañas— en un bloque plegado
+ * (`DetalleVisitas`). Antes las cuatro tarjetas con su minigráfico repetían la
+ * barra «Visitas por día» y «Campañas» repetía el «Directo» de «Por canal»
+ * (202 visitas tres veces en main).
+ *
  * Las variaciones «vs semana previa» de AnalyticsTab NO se trajeron: comparaba
  * contra un tercio de los otros 23 días (no la semana previa) y la etiqueta
  * mentía. Sin la serie de 14 días del backend no hay delta honesto.
  */
 
-type Analytics = {
+export type Analytics = {
   visits7d?: number;
   visits30d?: number;
   conversions7d?: number;
@@ -63,7 +71,10 @@ function colorOf(key: string): string {
 
 const n = (v: number | undefined) => (v ?? 0).toLocaleString("es-PE");
 
-export default function SalesChannelsAnalyticsPanel() {
+/** Lo que no es campaña: entrar directo o sin `utm_source`. Ya sale como «Directo» en Por canal. */
+const SIN_CAMPANA = new Set(["", "(none)", "none", "direct", "directo"]);
+
+export function useVisitasTienda() {
   const [data, setData] = useState<Analytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [fallo, setFallo] = useState(false);
@@ -93,39 +104,52 @@ export default function SalesChannelsAnalyticsPanel() {
     };
   }, [cargar]);
 
-  return (
-    <section className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 sm:p-5 space-y-4">
-      <header className="flex items-center gap-2">
-        <BarChart3 className="h-5 w-5 text-[var(--accent)]" aria-hidden />
-        <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Visitas de tu tienda</CardTitle>
-        <InfoTip
-          title="Visitas de tu tienda"
-          what={<span>Visitas y conversiones de tu tienda en los últimos 30 días, de qué red llegaron y qué sitios te enlazan.</span>}
-          example={<span>Para ver soles (S/) por canal hay que capturar el <span className="font-mono">utm_source</span> en el checkout.</span>}
-        />
-      </header>
-
-      {loading ? (
-        <LoadingState message={null} className="py-8" />
-      ) : fallo || !data ? (
-        <ErrorAlert
-          description="No se pudieron cargar las visitas."
-          action={
-            <button type="button" onClick={() => cargar()} className={button({ variant: "secondary", className: "rounded-xl" })}>
-              <RefreshCw className="h-4 w-4" aria-hidden /> Reintentar
-            </button>
-          }
-        />
-      ) : (
-        <Medicion data={data} />
-      )}
-    </section>
-  );
+  return { data, loading, fallo, cargar };
 }
 
-function Medicion({ data }: { data: Analytics }) {
-  const dias = data.visitsByDay ?? [];
+export type VisitasTienda = ReturnType<typeof useVisitasTienda>;
 
+/** Las cuatro cifras de las visitas, en los Indicadores plegables de la cabecera. */
+export function useIndicadoresVisitas({ data, loading, fallo }: VisitasTienda) {
+  const tarjetas = [
+    { rotulo: "Visitas, 7 días", valor: n(data?.visits7d), icono: Eye },
+    { rotulo: "Visitas, 30 días", valor: n(data?.visits30d), icono: Eye },
+    { rotulo: "Conversiones, 30 días", valor: n(data?.conversions30d), icono: Target, ayuda: "Visitas que terminaron en un pedido." },
+    { rotulo: "Conversión, 30 días", valor: `${(data?.conversionRate30d ?? 0).toFixed(1)} %`, icono: TrendingUp, ayuda: "Conversiones ÷ visitas de los últimos 30 días." },
+  ];
+  return useKpisPlegables({
+    claveMemoria: "tienda-redes-visitas",
+    alto: "md",
+    compactoEnMovil: true,
+    anchoFijo: true,
+    sinDatosAun: loading && !data,
+    resumen: fallo && !data ? "Visitas sin cargar" : `${n(data?.visits30d)} visitas en 30 días`,
+    tarjetas: tarjetas.map(({ rotulo, valor, icono: Icono, ayuda }) => (
+      <div key={rotulo} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
+        <div className="mb-1 flex items-center gap-2">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
+            <Icono className="h-4 w-4" aria-hidden />
+          </span>
+          <span className="text-sm font-semibold text-[var(--text-secondary)]">{rotulo}</span>
+          {ayuda && <InfoTip what={<span>{ayuda}</span>} />}
+        </div>
+        <p className="text-lg font-extrabold tabular-nums text-[var(--text-primary)]">{valor}</p>
+      </div>
+    )),
+  });
+}
+
+/** El resumen de una línea del bloque plegado: de dónde llega lo más. */
+export function resumenDeVisitas({ data, loading, fallo }: VisitasTienda): string {
+  if (loading && !data) return "Cargando…";
+  if (fallo || !data) return "No se pudieron cargar";
+  const [primero] = canales(data);
+  const sitios = (data.topReferrers ?? []).length;
+  if (!primero) return sitios ? `${sitios} sitios te enlazan` : "Sin visitas todavía";
+  return `${primero.key} ${primero.pct} %${sitios ? ` · ${sitios} sitios te enlazan` : ""}`;
+}
+
+function canales(data: Analytics) {
   // Agrupa las fuentes UTM en canales y suma sus visitas.
   const byChannel = new Map<string, number>();
   let tracked = 0;
@@ -134,29 +158,39 @@ function Medicion({ data }: { data: Analytics }) {
     byChannel.set(k, (byChannel.get(k) ?? 0) + count);
     tracked += count;
   }
-  const rows = [...byChannel.entries()]
+  return [...byChannel.entries()]
     .map(([key, visits]) => ({ key, visits, pct: tracked ? Math.round((visits / tracked) * 100) : 0 }))
     .sort((a, b) => b.visits - a.visits);
+}
+
+/** El detalle de las visitas: por canal, por día, sitios que enlazan y campañas. */
+export function DetalleVisitas({ data, loading, fallo, cargar }: VisitasTienda) {
+  if (loading && !data) return <LoadingState message={null} className="py-8" />;
+  if (fallo || !data) {
+    return (
+      <ErrorAlert
+        description="No se pudieron cargar las visitas."
+        action={
+          <button type="button" onClick={() => cargar()} className={button({ variant: "secondary", className: "rounded-xl" })}>
+            <RefreshCw className="h-4 w-4" aria-hidden /> Reintentar
+          </button>
+        }
+      />
+    );
+  }
+  const dias = data.visitsByDay ?? [];
+  const rows = canales(data);
   const maxDay = Math.max(1, ...dias.map((d) => d.visits));
+  const campanas = (data.topUtmSources ?? []).filter((r) => !SIN_CAMPANA.has((r.source ?? "").toLowerCase().trim()));
 
   return (
-    <>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {/* Rótulo corto + período en subValue: «Conversiones, 30 días» partía en
-            dos renglones a 1280 y a 400 (captura 10-10). */}
-        <StatCard density="compact" icon={Eye} label="Visitas" subValue="últimos 7 días" value={n(data.visits7d)} sparkline={{ data: dias.slice(-7).map((d) => d.visits) }} />
-        <StatCard density="compact" icon={Eye} label="Visitas" subValue="últimos 30 días" value={n(data.visits30d)} sparkline={{ data: dias.map((d) => d.visits) }} />
-        <StatCard density="compact" icon={Target} label="Conversiones" subValue="últimos 30 días" value={n(data.conversions30d)} sparkline={{ data: dias.map((d) => d.conversions) }} />
-        <StatCard density="compact" icon={TrendingUp} label="Conversión" subValue="últimos 30 días" value={`${(data.conversionRate30d ?? 0).toFixed(1)} %`} />
-      </div>
-
-      {/* R2: el reparto por red era de Canales (Pro); las cifras y las listas
-          de abajo las veía también Mi Tienda (Básico) en Avanzado. */}
+    <div className="space-y-4">
+      {/* R2: el reparto por red era de Canales (Pro). */}
       <PermisoDe origen="canales">
       <div className="space-y-2.5">
         <BlockTitle className="text-sm">Por canal</BlockTitle>
         {rows.length === 0 ? (
-          <p className="flex items-center justify-center gap-1.5 text-sm text-[var(--text-secondary)] rounded-xl border border-dashed border-[var(--rule-base)] px-3 py-4 text-center">
+          <p className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
             Aún no hay visitas por canal
             <InfoTip
               title="Visitas por canal"
@@ -205,20 +239,21 @@ function Medicion({ data }: { data: Analytics }) {
         />
         <ListaDeFuentes
           titulo="Campañas (utm_source)"
-          filas={(data.topUtmSources ?? []).map((r) => ({ nombre: r.source || "(sin nombre)", count: r.count }))}
+          vacio="Sin campañas: todo llegó directo."
+          filas={campanas.map((r) => ({ nombre: r.source, count: r.count }))}
         />
       </div>
-    </>
+    </div>
   );
 }
 
 /** Top de fuentes de los últimos 30 días (lo que mostraba AnalyticsTab). */
-function ListaDeFuentes({ titulo, filas }: { titulo: string; filas: { nombre: string; count: number }[] }) {
+function ListaDeFuentes({ titulo, filas, vacio = "Sin visitas todavía." }: { titulo: string; filas: { nombre: string; count: number }[]; vacio?: string }) {
   return (
     <div className="space-y-2">
       <BlockTitle className="text-sm">{titulo}</BlockTitle>
       {filas.length === 0 ? (
-        <p className="text-sm text-[var(--text-tertiary)]">Sin visitas todavía.</p>
+        <p className="text-sm text-[var(--text-tertiary)]">{vacio}</p>
       ) : (
         <ul className="space-y-1.5">
           {filas.map((f) => (
