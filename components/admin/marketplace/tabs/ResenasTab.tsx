@@ -2,7 +2,9 @@
 
 /**
  * Marketplace › Reseñas: aprobar, rechazar y responder las reseñas de tu
- * puesto del marketplace (`/api/reviews?all=1`, las que traen `storeId`).
+ * tienda y del marketplace (`/api/reviews?all=1`, todas las del negocio menos
+ * los comentarios de producto). Antes filtraba por `storeId`, que esa ruta no
+ * devuelve: la lista salía siempre vacía (11-10).
  *
  * No duplica a Clientes › Opiniones: aquélla lee el mismo endpoint pero sólo
  * para el análisis (promedio, tendencia, sin acciones); ésta es la de
@@ -60,7 +62,7 @@ export function MarketplaceResenasTab() {
     resumen: total > 0 ? `${promedio.toFixed(1)} ★ · ${pendingCount} por moderar` : "Sin reseñas",
     tarjetas: [
       <TarjetaCifra key="p" rotulo="Promedio" valor={total > 0 ? `${promedio.toFixed(1)} de 5` : "—"} icono={Star} ayuda={`De ${total} reseñas de tu puesto, también las que esperan.`} />,
-      <TarjetaCifra key="m" rotulo="Por moderar" valor={pendingCount} icono={MessageSquare} destacado={pendingCount > 0} ayuda="No se ven en el marketplace hasta que las apruebes." />,
+      <TarjetaCifra key="m" rotulo="Por moderar" valor={pendingCount} icono={MessageSquare} destacado={pendingCount > 0} ayuda="No se ven en tu tienda hasta que las apruebes." />,
       <TarjetaCifra key="r" rotulo="Respondidas" valor={aprobadas.length > 0 ? `${respondidas} de ${aprobadas.length}` : "—"} icono={ThumbsUp} ayuda="De las aprobadas, cuántas tienen tu respuesta." />,
     ],
   });
@@ -83,8 +85,8 @@ export function MarketplaceResenasTab() {
   };
   const accionesDe = (x: ReviewItem): MenuAccion[] => [
     { id: "responder", label: x.adminReply ? "Editar respuesta" : "Responder", icon: MessageSquare, onSelect: () => abrirRespuesta(x) },
-    ...(x.status !== "approved" ? [{ id: "aprobar", label: "Aprobar", hint: "Se ve en el marketplace", icon: Check, onSelect: () => void handleStatusChange(x.id, "approved") }] : []),
-    ...(x.status !== "rejected" ? [{ id: "rechazar", label: "Rechazar", hint: "Deja de verse en el marketplace", icon: X, tone: "danger" as const, onSelect: () => void handleStatusChange(x.id, "rejected") }] : []),
+    ...(x.status !== "approved" ? [{ id: "aprobar", label: "Aprobar", hint: "Se ve en tu tienda", icon: Check, onSelect: () => void handleStatusChange(x.id, "approved") }] : []),
+    ...(x.status !== "rejected" ? [{ id: "rechazar", label: "Rechazar", hint: "Deja de verse en tu tienda", icon: X, tone: "danger" as const, onSelect: () => void handleStatusChange(x.id, "rejected") }] : []),
   ];
 
   return (
@@ -92,8 +94,8 @@ export function MarketplaceResenasTab() {
       <FilaDeVista
         titulo="Reseñas"
         ayuda={{
-          what: "Lo que opinan quienes te compraron por el marketplace. Aquí las apruebas, las rechazas y las respondes.",
-          affects: "Sólo las aprobadas se ven en tu puesto del marketplace, con tu respuesta debajo. El promedio y la tendencia de todas están en Clientes › Opiniones.",
+          what: "Lo que opinan quienes te compraron, en tu tienda o por el marketplace. Aquí las apruebas, las rechazas y las respondes.",
+          affects: "Sólo las aprobadas se ven en tu tienda, con tu respuesta debajo. El promedio y la tendencia de todas están en Clientes › Opiniones.",
           example: "«Faltó una lata de leche» → respondes «Ya quedó corregido» y la apruebas.",
         }}
         derecha={kpis.boton}
@@ -105,7 +107,7 @@ export function MarketplaceResenasTab() {
       {loading && total === 0 ? (
         <TableSkeleton />
       ) : filtered.length === 0 ? (
-        <VacioDeUnaFrase>{total === 0 ? "Sin reseñas todavía: aparecen cuando alguien califica tu puesto del marketplace." : "Ninguna reseña en ese estado."}</VacioDeUnaFrase>
+        <VacioDeUnaFrase>{total === 0 ? "Sin reseñas todavía: aparecen cuando un cliente califica tu tienda." : "Ninguna reseña en ese estado."}</VacioDeUnaFrase>
       ) : (
         <ul className="divide-y divide-[var(--rule-soft)] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
           {filtered.map((x) => {

@@ -1,6 +1,5 @@
-import type React from "react";
 import { StatCard } from "@buleje/design-system";
-import { ChevronDown, ChevronUp, Clock, CheckCircle, Search, X } from "@buleje/design-system/icons";
+import { ChevronDown, ChevronUp, Search, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 /**
@@ -80,18 +79,6 @@ export const ORDER_STATUS_CONFIG: Record<string, { label: string; className: str
   en_camino:   { label: "En camino",  className: "bg-[var(--data-info-500)]/15 text-[var(--data-info-ink)]" },
   entregado:   { label: "Entregado",  className: "bg-[var(--data-success-500)]/15 text-[var(--data-success-ink)]" },
   cancelado:   { label: "Cancelado",  className: "bg-[var(--data-error-500)]/15 text-[var(--data-error-ink)]" },
-};
-
-export const COMMISSION_STATUS_CONFIG: Record<string, { label: string; className: string; icon: React.ElementType }> = {
-  pendiente:  { label: "Pendiente",  className: "bg-[var(--data-warning-100)] text-[var(--data-warning)]",     icon: Clock },
-  liquidado:  { label: "Liquidado",  className: "bg-primary/10 text-[var(--data-success)]",         icon: CheckCircle },
-  pagado:     { label: "Pagado",     className: "bg-primary/10 text-[var(--data-success)]", icon: CheckCircle },
-};
-
-export const REVIEW_STATUS_CONFIG: Record<string, { label: string; className: string }> = {
-  pending:  { label: "Pendiente", className: "bg-[var(--data-warning-100)] text-[var(--data-warning)]" },
-  approved: { label: "Aprobada",  className: "bg-primary/10 text-[var(--data-success)]" },
-  rejected: { label: "Rechazada", className: "bg-[var(--data-error-100)] text-[var(--data-error)]" },
 };
 
 export const TIER_CONFIG: Record<string, { label: string; className: string; minPoints: string }> = {
