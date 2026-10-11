@@ -1,88 +1,45 @@
-'use client';
+"use client";
 
+/**
+ * Recetario web: las recetas PÚBLICAS de la tienda (con pasos, tiempo y
+ * porciones). No es la receta de producción de la pestaña «Recetas»: ésta se
+ * publica a los clientes, aquella descuenta insumos. Fila de filtros pegada a
+ * la tabla; por receta, «Editar» y un «⋯» con publicar/ocultar y eliminar.
+ */
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import { Search, Plus, BookOpen, Clock, Users, Eye, EyeOff, Trash2, MoreHorizontal } from "@buleje/design-system/icons";
 import { DataTable, LoadingState } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { toast } from "sonner";
-
-import { useState, useEffect, useCallback } from "react";
-import {
-  Search, Plus, X, Loader2, Trash2, ChevronUp, ChevronDown,
-  Eye, EyeOff, Save, BookOpen, Clock, Users, BarChart3,
-} from "@buleje/design-system/icons";
 import AdminModal from "@/components/admin/shared/AdminModal";
-import { Field } from "@/components/admin/shared/Field";
-import { FiltroColumnaMulti } from "@/components/admin/shared/filtros-columna";
+import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
+import { button } from "@/components/ui-system/button-variants";
+import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
 import { useOrdenColumnas, EnOrden, BotonRestablecerColumnas } from "@/components/admin/shared/columnas-ordenables";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
+import { ModalRecetario } from "./ModalRecetario";
+import { CATEGORIAS, type ProductSearch, type RecetaPublica } from "./recetario-tipos";
 
-// ── Types ─────────────────────────────────────────────────────
-type Ingrediente = {
-  nombre: string;
-  cantidad: number;
-  unidad: string;
-  precio: number;
-  productoId?: number | null;
-};
+const CAJA = "h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
+const TH = "px-4 py-3 text-sm font-semibold text-[var(--text-secondary)]";
 
-type RecetaPublica = {
-  id: string;
-  _noteId?: string;
-  nombre: string;
-  descripcion: string;
-  emoji: string;
-  tiempoMinutos: number;
-  porciones: number;
-  dificultad: "Fácil" | "Media" | "Dificil";
-  categoria: string;
-  videoUrl: string | null;
-  ingredientes: Ingrediente[];
-  totalIngredientes: number;
-  pasos: string[];
-  activa: boolean;
-  createdAt?: string;
-};
+async function mensajeDeError(res: Response, porDefecto: string) {
+  const body = await res.json().catch(() => ({}));
+  return typeof body?.error === "string" ? body.error : `${porDefecto} (error ${res.status})`;
+}
 
-type ProductSearch = {
-  id: number;
-  name: string;
-  price: number;
-};
-
-const CATEGORIAS = ["Entradas", "Platos de fondo", "Sopas", "Postres", "Bebidas"];
-const UNIDADES = ["unidad", "kg", "litro", "atado", "botella", "bolsa", "sobre", "lata", "paquete", "pack"];
-const DIFICULTADES: ("Fácil" | "Media" | "Dificil")[] = ["Fácil", "Media", "Dificil"];
-
-// ── Main Component ───────────────────────────────────────────
 export default function RecetarioAdminTab() {
   const [recetas, setRecetas] = useState<RecetaPublica[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  // Categoria es una columna de la tabla: autofiltro en su `<th>` (Brandon
-  // 2026-09-24), `[]` = todas, admite varias a la vez.
-  const [filterCat, setFilterCat] = useState<string[]>([]);
+  const [filterCat, setFilterCat] = useState("");
   // Columnas de la tabla: arrastrar el título para reordenarlas.
   const ordenRecetario = useOrdenColumnas("recetario-lista", ["receta", "categoria", "ingredientes", "costo", "estado"]);
-  const [showModal, setShowModal] = useState(false);
-  const [editing, setEditing] = useState<RecetaPublica | null>(null);
-  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState<{ abierto: boolean; receta: RecetaPublica | null; clave: number }>({ abierto: false, receta: null, clave: 0 });
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [products, setProducts] = useState<ProductSearch[]>([]);
 
-  // ── Form state ──
-  const [nombre, setNombre] = useState("");
-  const [descripcion, setDescripcion] = useState("");
-  const [emoji, setEmoji] = useState("");
-  const [tiempoMinutos, setTiempoMinutos] = useState(30);
-  const [porciones, setPorciones] = useState(4);
-  const [dificultad, setDificultad] = useState<"Fácil" | "Media" | "Dificil">("Fácil");
-  const [categoria, setCategoria] = useState("Platos de fondo");
-  const [videoUrl, setVideoUrl] = useState("");
-  const [ingredientes, setIngredientes] = useState<Ingrediente[]>([]);
-  const [pasos, setPasos] = useState<string[]>([""]);
-  const [modalTab, setModalTab] = useState<"info" | "ingredientes" | "pasos" | "preview">("info");
-
-  // ── Fetch recetas ──
   const fetchRecetas = useCallback(async () => {
     setLoading(true);
     try {
@@ -97,7 +54,7 @@ export default function RecetarioAdminTab() {
 
   useEffect(() => { fetchRecetas(); }, [fetchRecetas]);
 
-  // ── Fetch products for autocomplete ──
+  // Productos para sugerir al escribir un ingrediente.
   useEffect(() => {
     fetch("/api/products?limit=500")
       .then(r => r.json())
@@ -105,107 +62,9 @@ export default function RecetarioAdminTab() {
       .catch((err) => console.warn("[RecetarioAdminTab] products fetch failed:", String(err)));
   }, []);
 
-  // ── Form helpers ──
-  const resetForm = () => {
-    setNombre(""); setDescripcion(""); setEmoji(""); setTiempoMinutos(30);
-    setPorciones(4); setDificultad("Fácil"); setCategoria("Platos de fondo");
-    setVideoUrl(""); setIngredientes([]); setPasos([""]); setModalTab("info");
-    setEditing(null);
-  };
+  const abrirForm = (receta: RecetaPublica | null) => setForm(f => ({ abierto: true, receta, clave: f.clave + 1 }));
+  const cerrarForm = () => setForm(f => ({ ...f, abierto: false }));
 
-  const openNew = () => { resetForm(); setShowModal(true); };
-
-  const openEdit = (r: RecetaPublica) => {
-    setEditing(r);
-    setNombre(r.nombre);
-    setDescripcion(r.descripcion || "");
-    setEmoji(r.emoji || "");
-    setTiempoMinutos(r.tiempoMinutos);
-    setPorciones(r.porciones);
-    setDificultad(r.dificultad);
-    setCategoria(r.categoria);
-    setVideoUrl(r.videoUrl || "");
-    setIngredientes(r.ingredientes.map(i => ({ ...i })));
-    setPasos([...r.pasos]);
-    setModalTab("info");
-    setShowModal(true);
-  };
-
-  const addIngrediente = () => {
-    setIngredientes(prev => [...prev, { nombre: "", cantidad: 1, unidad: "unidad", precio: 0 }]);
-  };
-
-  const removeIngrediente = (idx: number) => {
-    setIngredientes(prev => prev.filter((_, i) => i !== idx));
-  };
-
-  const updateIngrediente = (idx: number, field: keyof Ingrediente, value: string | number) => {
-    setIngredientes(prev => prev.map((ing, i) => i === idx ? { ...ing, [field]: value } : ing));
-  };
-
-  const addPaso = () => setPasos(prev => [...prev, ""]);
-  const removePaso = (idx: number) => setPasos(prev => prev.filter((_, i) => i !== idx));
-  const updatePaso = (idx: number, val: string) => setPasos(prev => prev.map((p, i) => i === idx ? val : p));
-  const movePaso = (idx: number, dir: -1 | 1) => {
-    const target = idx + dir;
-    if (target < 0 || target >= pasos.length) return;
-    setPasos(prev => {
-      const next = [...prev];
-      [next[idx], next[target]] = [next[target], next[idx]];
-      return next;
-    });
-  };
-
-  const totalIngredientes = ingredientes.reduce((s, i) => s + i.precio * i.cantidad, 0);
-
-  // ── Save (create or update) ──
-  const handleSave = async () => {
-    if (!nombre.trim() || ingredientes.length === 0 || pasos.filter(p => p.trim()).length === 0) return;
-    setSaving(true);
-    try {
-      const body = {
-        nombre: nombre.trim(),
-        descripcion: descripcion.trim(),
-        emoji,
-        tiempoMinutos,
-        porciones,
-        dificultad,
-        categoria,
-        videoUrl: videoUrl.trim() || null,
-        ingredientes: ingredientes.filter(i => i.nombre.trim()),
-        pasos: pasos.filter(p => p.trim()),
-        activa: true,
-      };
-
-      const res = editing?._noteId
-        ? await fetch(`/api/admin/recetario/${editing._noteId}`, {
-            method: "PATCH",
-            headers: csrfHeaders({ "Content-Type": "application/json" }),
-            body: JSON.stringify(body),
-          })
-        : await fetch("/api/admin/recetario", {
-            method: "POST",
-            headers: csrfHeaders({ "Content-Type": "application/json" }),
-            body: JSON.stringify(body),
-          });
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => ({}));
-        toast.error(typeof errBody?.error === "string" ? errBody.error : `No se pudo guardar la receta (error ${res.status})`);
-        setSaving(false);
-        return;
-      }
-      toast.success(editing ? "Receta actualizada" : "Receta creada");
-      setShowModal(false);
-      resetForm();
-      fetchRecetas();
-    } catch (err) {
-      console.warn("[RecetarioAdminTab] guardar receta falló", err);
-      toast.error("No se pudo guardar la receta — revisa tu conexión.");
-    }
-    setSaving(false);
-  };
-
-  // ── Toggle activa ──
   const toggleActiva = async (r: RecetaPublica) => {
     if (!r._noteId) return;
     try {
@@ -214,11 +73,7 @@ export default function RecetarioAdminTab() {
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ activa: !r.activa }),
       });
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => ({}));
-        toast.error(typeof errBody?.error === "string" ? errBody.error : `No se pudo cambiar el estado (error ${res.status})`);
-        return;
-      }
+      if (!res.ok) { toast.error(await mensajeDeError(res, "No se pudo cambiar el estado")); return; }
       fetchRecetas();
     } catch (err) {
       console.warn("[RecetarioAdminTab] cambiar estado falló", err);
@@ -226,15 +81,10 @@ export default function RecetarioAdminTab() {
     }
   };
 
-  // ── Delete ──
   const handleDelete = async (noteId: string) => {
     try {
       const res = await fetch(`/api/admin/recetario/${noteId}`, { method: "DELETE", headers: csrfHeaders() });
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => ({}));
-        toast.error(typeof errBody?.error === "string" ? errBody.error : `No se pudo eliminar la receta (error ${res.status})`);
-        return;
-      }
+      if (!res.ok) { toast.error(await mensajeDeError(res, "No se pudo eliminar la receta")); return; }
       toast.success("Receta eliminada");
       setDeleteConfirm(null);
       fetchRecetas();
@@ -244,477 +94,147 @@ export default function RecetarioAdminTab() {
     }
   };
 
-  // ── Filter ──
-  const filtered = recetas.filter(r => {
-    const matchSearch = !searchTerm || r.nombre.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchCat = filterCat.length === 0 || filterCat.includes(r.categoria);
-    return matchSearch && matchCat;
-  });
+  const filtered = useMemo(() => recetas.filter(r =>
+    (!searchTerm || r.nombre.toLowerCase().includes(searchTerm.toLowerCase())) && (!filterCat || r.categoria === filterCat),
+  ), [recetas, searchTerm, filterCat]);
 
-  // ── Stats ──
   const activas = recetas.filter(r => r.activa !== false).length;
   const avgIng = recetas.length > 0 ? Math.round(recetas.reduce((s, r) => s + (r.ingredientes?.length || 0), 0) / recetas.length) : 0;
   const avgCost = recetas.length > 0 ? recetas.reduce((s, r) => s + (r.totalIngredientes || 0), 0) / recetas.length : 0;
 
-  // ── Product autocomplete helper ──
-  const selectProduct = (idx: number, prod: ProductSearch) => {
-    setIngredientes(prev => prev.map((ing, i) =>
-      i === idx ? { ...ing, nombre: prod.name, precio: prod.price, productoId: prod.id } : ing
-    ));
-  };
+  const kpis = useKpisPlegables({
+    claveMemoria: "recetas-recetario",
+    alto: "md",
+    compactoEnMovil: true,
+    anchoFijo: true,
+    sinDatosAun: loading && recetas.length === 0,
+    resumen: `${activas} publicada${activas === 1 ? "" : "s"} · costo prom. ${formatCurrency(avgCost)}`,
+    tarjetas: [
+      ["Recetas publicadas", String(activas)],
+      ["Ingredientes promedio", String(avgIng)],
+      ["Costo promedio", formatCurrency(avgCost)],
+    ].map(([rotulo, valor]) => (
+      <div key={rotulo} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
+        <span className="text-sm font-semibold text-[var(--text-secondary)]">{rotulo}</span>
+        <p className="text-lg font-extrabold tabular-nums text-[var(--text-primary)]">{valor}</p>
+      </div>
+    )),
+  });
+
+  const accionesDe = (r: RecetaPublica): MenuAccion[] => [
+    { id: "activa", label: r.activa !== false ? "Ocultar de la tienda" : "Publicar en la tienda", icon: r.activa !== false ? EyeOff : Eye, onSelect: () => toggleActiva(r) },
+    { id: "eliminar", label: "Eliminar", icon: Trash2, tone: "danger", onSelect: () => setDeleteConfirm(r._noteId || null) },
+  ];
 
   return (
-    <div className="space-y-6">
-      {/* Stats bar */}
-      <div className="flex flex-wrap gap-3 text-xs">
-        <div className="flex items-center gap-1.5 bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] px-3 py-1.5 rounded-lg font-bold">
-          <BookOpen className="h-3.5 w-3.5" />
-          Recetas publicadas: {activas}
-        </div>
-        <div className="flex items-center gap-1.5 bg-[var(--accent-soft)] text-[var(--accent-ink)] dark:text-[var(--accent)] px-3 py-1.5 rounded-lg font-bold">
-          <BarChart3 className="h-3.5 w-3.5" />
-          Ingredientes promedio: {avgIng}
-        </div>
-        <div className="flex items-center gap-1.5 bg-[var(--data-warning-50)] text-[var(--data-warning-500)] px-3 py-1.5 rounded-lg font-bold">
-          Costo promedio: {formatCurrency(avgCost)}
-        </div>
-      </div>
-
-      {/* Search & Filter */}
-      <div className="flex flex-col sm:flex-row gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            placeholder="Buscar receta..."
-            className="w-full pl-10 pr-4 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-          />
-        </div>
-        {/* Categoria ya tiene su autofiltro en el `<th>` — este select es el
-            atajo para cuando esa columna se esconde (< sm). */}
-        <select
-          value={filterCat[0] ?? ""}
-          onChange={e => setFilterCat(e.target.value ? [e.target.value] : [])}
-          aria-label="Filtrar por categoría"
-          className="sm:hidden px-3 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-        >
-          <option value="">Todas las categorias</option>
-          {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap">
+        <label className="relative min-w-0 grow basis-full sm:basis-60">
+          <span className="sr-only">Buscar receta</span>
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
+          <input type="search" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Buscar receta…" className={cn(CAJA, "w-full pl-9 pr-3 placeholder:text-[var(--text-tertiary)]")} />
+        </label>
+        <select value={filterCat} onChange={e => setFilterCat(e.target.value)} aria-label="Filtrar por categoría" className={cn(CAJA, "shrink-0 px-3")}>
+          <option value="">Todas las categorías</option>
+          {CATEGORIAS.map(c => <option key={c} value={c}>{c} ({recetas.filter(r => r.categoria === c).length})</option>)}
         </select>
-        <button
-          onClick={openNew}
-          className="inline-flex items-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark  transition-colors shrink-0"
-        >
-          <Plus className="h-4 w-4" />
-          Nueva Receta
-        </button>
         <BotonRestablecerColumnas cambiado={ordenRecetario.cambiado} onRestablecer={ordenRecetario.restablecer} />
+        <div className="ml-auto flex items-center gap-2">
+          {kpis.boton}
+          <button type="button" onClick={() => abrirForm(null)} className={button({ variant: "primary", className: "shrink-0 gap-2 rounded-xl" })}>
+            <Plus className="h-4 w-4" aria-hidden /> Nueva receta
+          </button>
+        </div>
       </div>
+      {kpis.panel}
 
-      {/* Table */}
       {loading ? (
         <LoadingState />
       ) : recetas.length === 0 ? (
-        // El vacío de "no hay nada" se decide por el total SIN filtrar: si el
-        // recetario tiene recetas pero el filtro las dejó todas afuera, la
-        // tabla (con su `<thead>`) sigue abajo con una fila que ofrece quitarlos.
-        <div className="flex flex-col items-center justify-center py-12 gap-2">
-          <BookOpen className="h-8 w-8 text-[var(--text-tertiary)]" />
-          <p className="text-sm text-[var(--text-secondary)]">No hay recetas en el recetario</p>
-          <button onClick={openNew} className="text-xs text-primary hover:underline font-semibold mt-1">
-            Crear la primera receta
-          </button>
+        // «No hay nada» se decide por el total SIN filtrar: con filtro que deja todo afuera, la tabla sigue y ofrece quitarlo.
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-[var(--rule-base)] px-4 py-10 text-center">
+          <BookOpen className="h-8 w-8 text-[var(--text-tertiary)]" aria-hidden />
+          <p className="text-sm text-[var(--text-secondary)]">Aún no hay recetas en el recetario.</p>
+          <button type="button" onClick={() => abrirForm(null)} className={button({ variant: "secondary", className: "rounded-xl" })}>Crear la primera receta</button>
         </div>
       ) : (
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden ">
-          <div className="overflow-x-auto">
-            <DataTable className="w-full text-sm">
-              <thead ref={ordenRecetario.refCabecera}>
-                <tr className="border-b border-[var(--rule-soft)] text-left">
-                  <EnOrden
-                    orden={ordenRecetario.orden}
-                    celdas={{
-                      receta: <th data-col="receta" className="px-4 py-3 font-semibold text-[var(--text-secondary)]">Receta</th>,
-                      categoria: (
-                        <th data-col="categoria" className="px-4 py-3 font-semibold text-[var(--text-secondary)] hidden sm:table-cell">
-                          <span className="block">Categoria</span>
-                          <FiltroColumnaMulti
-                            label="Categoria"
-                            value={filterCat}
-                            options={CATEGORIAS.map(c => ({ value: c, count: recetas.filter(r => r.categoria === c).length }))}
-                            onChange={setFilterCat}
-                            placeholder="Todas"
-                            className="font-normal"
-                          />
-                        </th>
-                      ),
-                      ingredientes: <th data-col="ingredientes" className="px-4 py-3 font-semibold text-[var(--text-secondary)] text-center hidden md:table-cell">Ing.</th>,
-                      costo: <th data-col="costo" className="px-4 py-3 font-semibold text-[var(--text-secondary)] text-right">Costo</th>,
-                      estado: <th data-col="estado" className="px-4 py-3 font-semibold text-[var(--text-secondary)] text-center">Estado</th>,
-                    }}
-                  />
-                  <th className="px-4 py-3 font-semibold text-[var(--text-secondary)] text-right">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center">
-                      <p className="text-sm text-[var(--text-secondary)]">Ninguna receta coincide con el filtro.</p>
-                      <button
-                        onClick={() => { setSearchTerm(""); setFilterCat([]); }}
-                        className="mt-2 text-xs text-primary hover:underline font-semibold"
-                      >
-                        Quitar filtros
-                      </button>
-                    </td>
-                  </tr>
-                )}
-                {filtered.map(r => (
-                  <tr key={r._noteId || r.id} className="border-b border-gray-50 hover:bg-[var(--surface-sunken)] transition-colors">
-                    <EnOrden
-                      orden={ordenRecetario.orden}
-                      celdas={{
-                        receta: (
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2">
-                              <span className="text-lg">{r.emoji}</span>
-                              <div>
-                                <p className="font-medium text-[var(--text-primary)]">{r.nombre}</p>
-                                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] flex items-center gap-2">
-                                  <span className="flex items-center gap-0.5"><Clock className="h-3 w-3" />{r.tiempoMinutos}min</span>
-                                  <span className="flex items-center gap-0.5"><Users className="h-3 w-3" />{r.porciones}p</span>
-                                </p>
-                              </div>
-                            </div>
-                          </td>
-                        ),
-                        categoria: (
-                          <td className="px-4 py-3 text-[var(--text-secondary)] hidden sm:table-cell">
-                            <span className="text-xs bg-[var(--rule-soft)] px-2 py-1 rounded-lg">{r.categoria}</span>
-                          </td>
-                        ),
-                        ingredientes: <td className="px-4 py-3 text-center text-[var(--text-secondary)] hidden md:table-cell">{r.ingredientes?.length || 0}</td>,
-                        costo: <td className="px-4 py-3 text-right font-bold text-[var(--text-primary)]">{formatCurrency(r.totalIngredientes || 0)}</td>,
-                        estado: (
-                          <td className="px-4 py-3 text-center">
-                            <button
-                              onClick={() => toggleActiva(r)}
-                              className={cn(
-                                "inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold transition-colors",
-                                r.activa !== false
-                                  ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
-                                  : "bg-[var(--rule-soft)] text-[var(--text-secondary)]"
-                              )}
-                            >
-                              {r.activa !== false ? <><Eye className="h-3 w-3" /> Activa</> : <><EyeOff className="h-3 w-3" /> Inactiva</>}
-                            </button>
-                          </td>
-                        ),
-                      }}
-                    />
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => openEdit(r)}
-                          className="p-1.5 rounded-xl hover:bg-[var(--rule-soft)] text-[var(--text-tertiary)] hover:text-primary transition-colors"
-                          title="Editar"
-                        >
-                          <Save className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => setDeleteConfirm(r._noteId || null)}
-                          className="p-1.5 rounded-xl hover:bg-[var(--data-error-50)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors"
-                          title="Eliminar"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </DataTable>
-          </div>
-        </div>
+        <DataTable className="w-full text-sm [&_thead_th]:text-sm [&_thead_th]:normal-case [&_thead_th]:tracking-normal">
+          <thead ref={ordenRecetario.refCabecera}>
+            <tr className="border-b border-[var(--rule-soft)] text-left">
+              <EnOrden
+                orden={ordenRecetario.orden}
+                celdas={{
+                  receta: <th data-col="receta" className={TH}>Receta</th>,
+                  categoria: <th data-col="categoria" className={cn(TH, "hidden sm:table-cell")}>Categoría</th>,
+                  ingredientes: <th data-col="ingredientes" className={cn(TH, "hidden text-center md:table-cell")}>Ingredientes</th>,
+                  costo: <th data-col="costo" className={cn(TH, "text-right")}>Costo</th>,
+                  estado: <th data-col="estado" className={cn(TH, "text-center")}>Estado</th>,
+                }}
+              />
+              <th className={TH}><span className="sr-only">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 && (
+              <tr>
+                <td colSpan={6} className="px-4 py-8 text-center">
+                  <p className="text-sm text-[var(--text-secondary)]">Ninguna receta coincide con el filtro.</p>
+                  <button type="button" onClick={() => { setSearchTerm(""); setFilterCat(""); }} className={button({ variant: "secondary", className: "mt-2 rounded-xl" })}>Quitar filtros</button>
+                </td>
+              </tr>
+            )}
+            {filtered.map(r => (
+              <tr key={r._noteId || r.id} className="border-b border-[var(--rule-soft)] transition-colors hover:bg-[var(--surface-sunken)]">
+                <EnOrden
+                  orden={ordenRecetario.orden}
+                  celdas={{
+                    receta: (
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg" aria-hidden>{r.emoji}</span>
+                          <div>
+                            <p className="font-medium text-[var(--text-primary)]">{r.nombre}</p>
+                            <p className="flex items-center gap-3 text-sm text-[var(--text-secondary)]">
+                              <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" aria-hidden />{r.tiempoMinutos} min</span>
+                              <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" aria-hidden />{r.porciones} porc.</span>
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                    ),
+                    categoria: <td className="hidden px-4 py-3 text-sm text-[var(--text-secondary)] sm:table-cell">{r.categoria}</td>,
+                    ingredientes: <td className="hidden px-4 py-3 text-center text-sm text-[var(--text-secondary)] md:table-cell">{r.ingredientes?.length || 0}</td>,
+                    costo: <td className="px-4 py-3 text-right text-sm font-bold tabular-nums text-[var(--text-primary)]">{formatCurrency(r.totalIngredientes || 0)}</td>,
+                    estado: (
+                      <td className={cn("px-4 py-3 text-center text-sm font-semibold", r.activa !== false ? "text-[var(--data-success-ink)] dark:text-[var(--data-success-500)]" : "text-[var(--text-tertiary)]")}>
+                        {r.activa !== false ? "Publicada" : "Oculta"}
+                      </td>
+                    ),
+                  }}
+                />
+                <td className="px-4 py-3">
+                  <div className="flex items-center justify-end gap-2">
+                    <button type="button" onClick={() => abrirForm(r)} className={button({ variant: "secondary", className: "rounded-xl" })}>Editar</button>
+                    <ActionMenu label="Más" icon={MoreHorizontal} soloIcono size="md" className="w-12 shrink-0" title={`Más acciones de ${r.nombre}`} actions={accionesDe(r)} />
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </DataTable>
       )}
 
-      {/* Delete Confirm */}
       <AdminModal open={!!deleteConfirm} onClose={() => setDeleteConfirm(null)} title="Eliminar receta" variant="centered-sm">
         <div className="space-y-4 px-5 py-5 sm:px-6">
-          <p className="text-sm text-[var(--text-secondary)]">Esta accion no se puede deshacer. La receta se eliminara del recetario público.</p>
+          <p className="text-sm text-[var(--text-secondary)]">Esta acción no se puede deshacer. La receta se eliminará del recetario público.</p>
           <div className="flex gap-2">
-            <button onClick={() => setDeleteConfirm(null)} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold bg-[var(--rule-soft)] text-[var(--text-secondary)] hover:bg-[var(--rule-base)] transition-colors">Cancelar</button>
-            <button onClick={() => deleteConfirm && handleDelete(deleteConfirm)} className="flex-1 px-4 min-h-11 rounded-xl text-sm font-semibold bg-[var(--data-error-500)] text-white hover:bg-[var(--data-error-500)] transition-colors">Eliminar</button>
+            <button type="button" onClick={() => setDeleteConfirm(null)} className={button({ variant: "secondary", className: "flex-1 rounded-xl" })}>Cancelar</button>
+            <button type="button" onClick={() => deleteConfirm && handleDelete(deleteConfirm)} className={button({ variant: "danger", className: "flex-1 rounded-xl" })}>Eliminar</button>
           </div>
         </div>
       </AdminModal>
 
-      {/* Create/Edit Modal */}
-      <AdminModal
-        open={showModal}
-        onClose={() => { setShowModal(false); resetForm(); }}
-        title={editing ? "Editar Receta" : "Nueva Receta del Recetario"}
-        variant="wide"
-      >
-          {/* Modal Tabs */}
-          <div className="flex gap-1 pt-3 border-b border-[var(--rule-soft)] px-5 py-5 sm:px-6">
-            {(["info", "ingredientes", "pasos", "preview"] as const).map(t => (
-              <button
-                key={t}
-                onClick={() => setModalTab(t)}
-                className={cn(
-                  "px-3 py-2 text-xs font-bold rounded-t-lg border-b-2 transition-colors",
-                  modalTab === t
-                    ? "border-primary text-primary"
-                    : "border-transparent text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
-                )}
-              >
-                {t === "info" ? "Info Básica" : t === "ingredientes" ? "Ingredientes" : t === "pasos" ? "Pasos" : "Vista previa"}
-              </button>
-            ))}
-          </div>
-
-          {/* Modal Body */}
-          <div className="px-5 py-4 space-y-4">
-                  {/* A) Info Básica */}
-                  {modalTab === "info" && (
-                    <div className="space-y-3">
-                      <Field label="Nombre *" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
-                        <input type="text" value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Ej: Ceviche Clasico" className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                      </Field>
-                      <Field label="Descripcion" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
-                        <textarea value={descripcion} onChange={e => setDescripcion(e.target.value)} placeholder="Descripcion de la receta..." rows={3} className="w-full px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                      </Field>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        <Field label="Emoji" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
-                          <input type="text" value={emoji} onChange={e => setEmoji(e.target.value)} placeholder="🍲" maxLength={2} className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                        </Field>
-                        <Field label="Tiempo (min)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
-                          <input type="number" value={tiempoMinutos} onChange={e => setTiempoMinutos(Number(e.target.value))} min={1} className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                        </Field>
-                        <Field label="Porciones" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
-                          <input type="number" value={porciones} onChange={e => setPorciones(Number(e.target.value))} min={1} className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                        </Field>
-                        <Field label="Dificultad" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
-                          <select value={dificultad} onChange={e => setDificultad(e.target.value as typeof dificultad)} className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
-                            {DIFICULTADES.map(d => <option key={d} value={d}>{d}</option>)}
-                          </select>
-                        </Field>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <Field label="Categoria" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
-                          <select value={categoria} onChange={e => setCategoria(e.target.value)} className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
-                            {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
-                          </select>
-                        </Field>
-                        <Field label="URL Video YouTube (opcional)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
-                          <input type="text" value={videoUrl} onChange={e => setVideoUrl(e.target.value)} placeholder="https://youtube.com/..." className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-                        </Field>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* B) Ingredientes */}
-                  {modalTab === "ingredientes" && (
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-bold text-[var(--text-primary)]">Ingredientes ({ingredientes.length})</p>
-                        <button onClick={addIngrediente} className="text-xs font-bold text-primary hover:underline flex items-center gap-1">
-                          <Plus className="h-3 w-3" /> Agregar ingrediente
-                        </button>
-                      </div>
-                      {ingredientes.length === 0 && (
-                        <p className="text-xs text-[var(--text-tertiary)] text-center py-6">Agrega ingredientes para la receta</p>
-                      )}
-                      {ingredientes.map((ing, idx) => (
-                        <div key={idx} className="bg-[var(--surface-sunken)] rounded-xl p-3 space-y-2">
-                          <div className="flex gap-2 items-start">
-                            <Field
-                              label="Nombre del ingrediente"
-                              labelClassName="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5"
-                              className="flex-1"
-                            >
-                              {(id) => (
-                                <>
-                                  <div className="relative">
-                                    <input
-                                      id={id}
-                                      type="text"
-                                      value={ing.nombre}
-                                      onChange={e => updateIngrediente(idx, "nombre", e.target.value)}
-                                      placeholder="Buscar producto o escribir..."
-                                      className="w-full px-2.5 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs focus:outline-none focus:ring-1 focus:ring-primary/30"
-                                      list={`prod-list-${idx}`}
-                                    />
-                                    <datalist id={`prod-list-${idx}`}>
-                                      {products
-                                        .filter(p => p.name.toLowerCase().includes((ing.nombre || "").toLowerCase()))
-                                        .slice(0, 8)
-                                        .map(p => (
-                                          <option key={p.id} value={p.name} onClick={() => selectProduct(idx, p)} />
-                                        ))}
-                                    </datalist>
-                                  </div>
-                                  {/* Quick product select buttons */}
-                                  {ing.nombre && ing.nombre.length >= 2 && (
-                                    <div className="flex flex-wrap gap-1 mt-1">
-                                      {products
-                                        .filter(p => p.name.toLowerCase().includes(ing.nombre.toLowerCase()))
-                                        .slice(0, 3)
-                                        .map(p => (
-                                          <button
-                                            key={p.id}
-                                            onClick={() => selectProduct(idx, p)}
-                                            className="text-[length:var(--ts-2xs)] bg-[var(--accent-soft)] text-[var(--accent-ink)] dark:text-[var(--accent)] px-2 py-0.5 rounded-lg hover:bg-[var(--accent-muted)] transition-colors"
-                                          >
-                                            {p.name} — {formatCurrency(Number(p.price))}
-                                          </button>
-                                        ))}
-                                    </div>
-                                  )}
-                                </>
-                              )}
-                            </Field>
-                            <button aria-label="Quitar" onClick={() => removeIngrediente(idx)} className="p-1 rounded-xl hover:bg-[var(--data-error-100)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors mt-4 shrink-0">
-                              <X className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                          <div className="grid grid-cols-3 gap-2">
-                            <Field label="Cantidad" labelClassName="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">
-                              <input type="number" step="0.01" min="0" value={ing.cantidad} onChange={e => updateIngrediente(idx, "cantidad", parseFloat(e.target.value) || 0)} className="w-full px-2.5 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs focus:outline-none focus:ring-1 focus:ring-primary/30" />
-                            </Field>
-                            <Field label="Unidad" labelClassName="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">
-                              <select value={ing.unidad} onChange={e => updateIngrediente(idx, "unidad", e.target.value)} className="w-full px-2.5 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs focus:outline-none focus:ring-1 focus:ring-primary/30">
-                                {UNIDADES.map(u => <option key={u} value={u}>{u}</option>)}
-                              </select>
-                            </Field>
-                            <Field label="Precio (S/)" labelClassName="block text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] mb-0.5">
-                              <input type="number" step="0.01" min="0" value={ing.precio} onChange={e => updateIngrediente(idx, "precio", parseFloat(e.target.value) || 0)} className="w-full px-2.5 py-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs focus:outline-none focus:ring-1 focus:ring-primary/30" />
-                            </Field>
-                          </div>
-                        </div>
-                      ))}
-                      {ingredientes.length > 0 && (
-                        <div className="flex items-center justify-between bg-primary/5 rounded-xl p-3 border border-primary/20">
-                          <span className="text-xs font-bold text-primary">Total ingredientes</span>
-                          <span className="text-sm font-bold text-primary">{formatCurrency(totalIngredientes)}</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* C) Pasos */}
-                  {modalTab === "pasos" && (
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-bold text-[var(--text-primary)]">Pasos de preparacion ({pasos.filter(p => p.trim()).length})</p>
-                        <button onClick={addPaso} className="text-xs font-bold text-primary hover:underline flex items-center gap-1">
-                          <Plus className="h-3 w-3" /> Agregar paso
-                        </button>
-                      </div>
-                      {pasos.map((paso, idx) => (
-                        <div key={idx} className="flex gap-2 items-start">
-                          <span className="flex items-center justify-center h-7 w-7 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-xs font-bold shrink-0 mt-1">{idx + 1}</span>
-                          <textarea
-                            value={paso}
-                            onChange={e => updatePaso(idx, e.target.value)}
-                            placeholder={`Paso ${idx + 1}...`}
-                            rows={2}
-                            className="flex-1 px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm resize-none focus:outline-none focus:ring-1 focus:ring-primary/30"
-                          />
-                          <div className="flex flex-col gap-0.5 shrink-0">
-                            <button aria-label="Subir" onClick={() => movePaso(idx, -1)} disabled={idx === 0} className="p-1 rounded hover:bg-[var(--rule-soft)] disabled:opacity-30 transition-colors">
-                              <ChevronUp className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
-                            </button>
-                            <button aria-label="Bajar" onClick={() => movePaso(idx, 1)} disabled={idx === pasos.length - 1} className="p-1 rounded hover:bg-[var(--rule-soft)] disabled:opacity-30 transition-colors">
-                              <ChevronDown className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
-                            </button>
-                            <button aria-label="Quitar" onClick={() => removePaso(idx)} className="p-1 rounded hover:bg-[var(--data-error-50)] text-[var(--text-tertiary)] hover:text-[var(--data-error-500)] transition-colors">
-                              <X className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* D) Preview */}
-                  {modalTab === "preview" && (
-                    <div className="space-y-6">
-                      <p className="text-xs font-bold text-[var(--text-tertiary)]">Vista previa de la receta</p>
-                      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden ">
-                        <div className="bg-[var(--brand-ink)] p-4 text-[var(--surface-canvas)]">
-                          <div className="flex items-center gap-3">
-                            <span className="text-3xl">{emoji || "🍽️"}</span>
-                            <div>
-                              <h4 className="text-lg font-bold">{nombre || "Nombre de la receta"}</h4>
-                              <div className="flex items-center gap-3 text-white/70 text-xs mt-1">
-                                <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{tiempoMinutos} min</span>
-                                <span className="flex items-center gap-1"><Users className="h-3 w-3" />{porciones} porciones</span>
-                                <span className={cn(
-                                  "px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold",
-                                  dificultad === "Fácil" ? "bg-primary/10" : dificultad === "Media" ? "bg-[var(--data-warning-500)]/30" : "bg-[var(--data-error-500)]/30"
-                                )}>{dificultad}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="p-4 space-y-3">
-                          {descripcion && <p className="text-sm text-[var(--text-secondary)]">{descripcion}</p>}
-                          {ingredientes.length > 0 && (
-                            <div>
-                              <p className="text-xs font-bold text-[var(--text-primary)] mb-2">Ingredientes</p>
-                              <div className="space-y-1">
-                                {ingredientes.filter(i => i.nombre).map((ing, idx) => (
-                                  <div key={idx} className="flex justify-between text-xs text-[var(--text-secondary)]">
-                                    <span>{ing.cantidad} {ing.unidad} de {ing.nombre}</span>
-                                    <span className="font-bold">{formatCurrency(ing.precio * ing.cantidad)}</span>
-                                  </div>
-                                ))}
-                                <div className="flex justify-between text-xs font-bold text-primary pt-1 border-t border-[var(--rule-soft)]">
-                                  <span>Total</span>
-                                  <span>{formatCurrency(totalIngredientes)}</span>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                          {pasos.filter(p => p.trim()).length > 0 && (
-                            <div>
-                              <p className="text-xs font-bold text-[var(--text-primary)] mb-2">Preparacion</p>
-                              <ol className="space-y-1.5">
-                                {pasos.filter(p => p.trim()).map((p, idx) => (
-                                  <li key={idx} className="flex gap-2 text-xs text-[var(--text-secondary)]">
-                                    <span className="flex items-center justify-center h-5 w-5 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-[length:var(--ts-2xs)] font-bold shrink-0">{idx + 1}</span>
-                                    {p}
-                                  </li>
-                                ))}
-                              </ol>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-          {/* Modal Footer */}
-          <div className="flex gap-2 px-5 py-4 border-t border-[var(--rule-soft)]">
-            <button onClick={() => { setShowModal(false); resetForm(); }} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--rule-soft)] hover:bg-[var(--rule-base)] transition-colors">
-              Cancelar
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={saving || !nombre.trim() || ingredientes.length === 0}
-              className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 transition-colors"
-            >
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              {editing ? "Actualizar" : "Guardar"}
-            </button>
-          </div>
-      </AdminModal>
+      <ModalRecetario key={form.clave} abierto={form.abierto} editando={form.receta} products={products} onCerrar={cerrarForm} onGuardada={fetchRecetas} />
     </div>
   );
 }
