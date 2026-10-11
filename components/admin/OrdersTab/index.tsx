@@ -111,7 +111,7 @@ export default function OrdersTab({ initialTab }: { initialTab?: string } = {}) 
       onTabChange={irA}
       moduleId={MODULE_ID}
     >
-      <div className="space-y-3">
+      <div className="space-y-3 pt-3">
         {enMarchaVisible && (
           <>
             {datos.loadError && (

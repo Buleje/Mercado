@@ -110,7 +110,7 @@ export function BarraPedidos({
         aria-label="Filtrar pedidos"
         className="flex min-w-0 grow flex-wrap items-center gap-2 max-sm:basis-0"
       >
-        <div className="relative min-w-0 flex-1 sm:w-52 sm:flex-none">
+        <div className="relative min-w-0 flex-1 sm:w-60 sm:flex-none">
           <Search
             className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]"
             aria-hidden

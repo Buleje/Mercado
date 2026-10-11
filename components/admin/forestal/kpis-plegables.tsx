@@ -72,6 +72,11 @@ export interface KpisPlegablesProps {
    * pantalla y el titular se calla): así entra en la fila del título a 400 px.
    */
   compactoEnMovil?: boolean;
+  /**
+   * Siempre ícono + cuenta (la palabra va al lector de pantalla y el titular
+   * al `title`): para una banda de título que ya va llena a 1280 px.
+   */
+  soloIcono?: boolean;
 }
 
 export function useKpisPlegables({
@@ -88,6 +93,7 @@ export function useKpisPlegables({
   abiertoPorDefecto = false,
   anchoFijo = false,
   compactoEnMovil = false,
+  soloIcono = false,
 }: KpisPlegablesProps): { boton: ReactNode; panel: ReactNode; abierto: boolean } {
   /* Clave `v2`: la v1 guardaba «¿está abierta la SEGUNDA fila?», otra pregunta. */
   const [abierto, setAbierto] = useState(abiertoPorDefecto);
@@ -147,7 +153,7 @@ export function useKpisPlegables({
       }`}
     >
       <BarChart3 className="h-4 w-4 shrink-0" aria-hidden />
-      <span className={`shrink-0 ${compactoEnMovil ? "max-sm:sr-only" : ""}`}>Indicadores</span>
+      <span className={`shrink-0 ${soloIcono ? "sr-only" : compactoEnMovil ? "max-sm:sr-only" : ""}`}>Indicadores</span>
       <span className="shrink-0 rounded-full bg-[var(--surface-sunken)] px-1.5 text-sm tabular-nums text-[var(--text-tertiary)]">
         {tarjetas.length}
       </span>
@@ -156,7 +162,7 @@ export function useKpisPlegables({
       {!abierto && resumen && (
         <span
           className={`min-w-0 truncate font-mono text-sm font-normal tabular-nums text-[var(--text-secondary)] ${
-            compactoEnMovil ? "max-sm:hidden" : ""
+            soloIcono ? "max-xl:sr-only" : compactoEnMovil ? "max-sm:hidden" : ""
           }`}
         >
           {resumen}

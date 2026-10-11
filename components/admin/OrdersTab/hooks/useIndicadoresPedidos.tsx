@@ -145,6 +145,7 @@ export function useIndicadoresPedidos({
     claveMemoria: "pedidos-en-marcha",
     alto: "md",
     compactoEnMovil: true,
+    soloIcono: true,
     anchoFijo: true,
     sinDatosAun: cargando,
     filtrosActivos,
