@@ -24,15 +24,14 @@ import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import {
   Upload, Search, Grid3x3, List, FolderArchive,
-  FileSpreadsheet, File as FileIcon, Download, Trash2, Eye,
+  FileSpreadsheet, File as FileIcon, Download, Trash2,
   Plus, Folder, Star, Clock, HardDrive, X, Sparkles, Check, CheckSquare, Monitor,
-  Camera, AlarmClock, Wand2, Tag, MoreVertical, MoreHorizontal, FileArchive, Loader2,
-  ChevronRight, ChevronDown, ChevronUp, Pencil, FolderInput, MessageCircle, Palette, History, PenLine, Share2, FolderTree,
-  CalendarDays, Stamp, Combine, LayoutDashboard, RotateCw, Scissors, Scan, FileStack, Link2, Copy, Columns3, ArrowUpDown,
+  Camera, AlarmClock, Wand2, Tag, MoreHorizontal, FileArchive, Loader2,
+  ChevronRight, ChevronDown, ChevronUp, Pencil, MessageCircle, Palette, History, Share2, FolderTree,
+  CalendarDays, Combine, LayoutDashboard, Scan, Link2, Copy, Columns3, ArrowUpDown,
 } from "@buleje/design-system/icons";
-import { DataTable } from "@buleje/design-system";
+import { DataTable, SectionTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
-import TituloDeVista from "@/components/admin/rrhh/TituloDeVista";
 import { button } from "@/components/ui-system/button-variants";
 import { ModuleActionMenu } from "@/components/admin/shared/ModuleActionMenu";
 import { useDocuments, getSignedDownloadUrl, analyzeDoc, mergeDocs, rotateDoc, splitDoc, fetchTags, fetchSharedLinks } from "@/hooks/use-documents";
@@ -83,6 +82,9 @@ import { TagTaxonomyModal } from "./TagTaxonomyModal";
 import { TagEditModal } from "./TagEditModal";
 import { BulkTagModal } from "./BulkTagModal";
 import { PapeleraView } from "./PapeleraView";
+import AvisosDelArchivo from "./AvisosDelArchivo";
+import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
+import MenuDocumento, { type EstadoDelMenu, type PuntoDeMenu } from "./MenuDocumento";
 import { formatBytes, getFileIcon } from "./archivo-visual";
 import { formatDate, formatDateLong, formatDateNumeric, formatDateShort, formatNumber } from "@/lib/format";
 import { esTagDeMaquinaPlan } from "@/lib/forestal/plan-documentos-tipos";
@@ -207,7 +209,7 @@ function StructuredChip({ doc }: { doc: DbDocument }) {
   const label = total ?? (s.docType ? s.docType : null);
   if (!label) return null;
   return (
-    <span className="inline-flex items-center gap-1 rounded-md bg-[var(--data-success-500)]/12 px-1.5 py-0.5 text-[length:var(--ts-2xs,11px)] font-bold text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/20 dark:text-[var(--data-success-500)]" title={`${s.docType ?? "comprobante"}${s.numero ? " " + s.numero : ""}`}>
+    <span className="inline-flex items-center gap-1 rounded-md bg-[var(--data-success-500)]/12 px-1.5 py-0.5 text-sm font-bold text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/20 dark:text-[var(--data-success-500)]" title={`${s.docType ?? "comprobante"}${s.numero ? " " + s.numero : ""}`}>
       <FileSpreadsheet className="h-2.5 w-2.5" />{label}
     </span>
   );
@@ -330,9 +332,6 @@ export default function DocumentosModule() {
       return raw >= SIDEBAR_MIN_W && raw <= SIDEBAR_MAX_W ? raw : SIDEBAR_DEFAULT_W;
     } catch { return SIDEBAR_DEFAULT_W; }
   });
-  const [kpisVisible, setKpisVisible] = useState(() => {
-    try { return localStorage.getItem("doc-kpis-visible") === "1"; } catch { return false; }
-  });
   // Todo lo que no es "Todos" (Resumen, Asistente IA, Favoritos… hasta
   // Papelera) vive colapsado bajo "Más vistas" por defecto — la lista plana
   // de hasta 12 ítems era la mitad del sidebar antes de llegar a "Carpetas".
@@ -340,7 +339,6 @@ export default function DocumentosModule() {
     try { return localStorage.getItem("doc-sidebar-otros-abierto") === "1"; } catch { return false; }
   });
   useEffect(() => { try { localStorage.setItem("doc-view-mode", view); } catch { /* quota */ } }, [view]);
-  useEffect(() => { try { localStorage.setItem("doc-kpis-visible", kpisVisible ? "1" : "0"); } catch { /* quota */ } }, [kpisVisible]);
   useEffect(() => { try { localStorage.setItem("doc-sidebar-otros-abierto", otrosAbierto ? "1" : "0"); } catch { /* quota */ } }, [otrosAbierto]);
   // Columnas opcionales de la vista lista (Nombre y Acción son fijas).
   // Etiquetas/Vencimiento arrancan ocultas: son nuevas, no cambiar lo que
@@ -1301,9 +1299,87 @@ export default function DocumentosModule() {
     }
   }, [analyzingId, refresh]);
 
+  // Hero stats — en la papelera se ocultan: el listado que hay en memoria es el
+  // de los BORRADOS, así que "Total archivos" y "Espacio usado" contaban la
+  // papelera como si fuera el drive (4 archivos, 976 KB, con 41 vivos). Ocultos
+  // por defecto (Brandon 2026-08-30): empujaban los documentos, que es lo que
+  // se busca casi siempre al abrir el drive.
+  const kpis = useKpisPlegables({
+    claveMemoria: "documentos-archivo",
+    alto: "md",
+    compactoEnMovil: true,
+    resumen: `${formatNumber(shownDocCount)} archivos`,
+    tarjetas: [
+      <StatBlock key="total" label="Total archivos" value={shownDocCount.toString()} icon={FileIcon} tint="text-primary" />,
+      <StorageRing key="espacio" usedBytes={totalSize} quotaBytes={STORAGE_QUOTA_BYTES} />,
+      <button
+        key="vencer"
+        type="button"
+        onClick={() => { setFilterMode("expiring"); setActiveFolderId(null); }}
+        className={cn(
+          "text-left bg-[var(--surface-raised)] border rounded-2xl p-4 transition-all hover:shadow-md",
+          expiringSoonCount > 0 ? "border-[var(--data-error-500)]/40 hover:border-[var(--data-error-500)]" : "border-[var(--rule-base)] hover:border-primary/40"
+        )}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-[var(--text-tertiary)]">Por vencer (30 días)</p>
+            <p className={cn("text-2xl font-extrabold tabular-nums mt-0.5", expiringSoonCount > 0 ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]")}>{expiringSoonCount}</p>
+          </div>
+          <AlarmClock className={cn("h-5 w-5 shrink-0 mt-0.5", expiringSoonCount > 0 ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]")} />
+        </div>
+      </button>,
+      <StatBlock key="fav" label="Favoritos" value={favCount.toString()} icon={Star} tint="text-amber-500" />,
+    ],
+  });
+
+  // ── «⋯» por documento (tarjeta y fila) + clic derecho ──
+  // Un solo menú abierto por clic derecho a la vez: el punto vive acá y cada
+  // documento sabe si es el suyo.
+  const [menuEn, setMenuEn] = useState<({ id: string } & PuntoDeMenu) | null>(null);
+  const abrirMenuEn = (e: React.MouseEvent, id: string) => {
+    // Dentro de un campo (renombrar) el menú del navegador sigue: copiar/pegar.
+    if ((e.target as HTMLElement).closest("input, textarea")) return;
+    e.preventDefault();
+    setMenuEn({ id, x: e.clientX, y: e.clientY });
+  };
+  const menuDe = (doc: DbDocument, variante: "fila" | "flotante" = "fila") => (
+    <MenuDocumento
+      flotante={variante === "flotante"}
+      nombre={doc.name}
+      estados={ESTADOS_DEL_MENU}
+      status={doc.status}
+      favorite={!!doc.favorite}
+      isPdf={doc.mimeType === "application/pdf"}
+      abrirEn={menuEn?.id === doc.id ? menuEn : null}
+      onCerrado={() => setMenuEn((m) => (m?.id === doc.id ? null : m))}
+      onPreview={() => setPreview(doc)}
+      onAnalyze={() => handleAnalyze(doc)}
+      onDownload={() => handleDownload(doc)}
+      onRename={() => startRename(doc)}
+      onMove={() => setMovingDoc(doc)}
+      onTag={() => setTagDocId(doc.id)}
+      onWhatsApp={() => setWhatsappDoc([doc])}
+      onSign={() => setSignDoc(doc)}
+      onStamp={() => setStampTarget(doc)}
+      onRotate={() => handleRotate(doc)}
+      onSplit={() => handleSplit(doc)}
+      onEditPages={() => setPageEditorDoc(doc)}
+      onToggleFav={() => patch(doc.id, { favorite: !doc.favorite })}
+      onSetStatus={(st) => patch(doc.id, { status: st })}
+      onDelete={async () => {
+        if (!(await confirm({ title: `¿Eliminar "${doc.name}"?`, intent: "danger", confirmLabel: "Sí, eliminar" }))) return;
+        // Acá había un `patch(doc.id, {})` "para calentar el camino": un PATCH
+        // sin campos que el servidor rechaza, y que reventaba el borrado con un
+        // error en pantalla antes de llegar a borrar nada.
+        await bulk("delete", [doc.id]);
+      }}
+    />
+  );
+
   return (
     <div
-      className="space-y-6 relative"
+      className="space-y-4 relative"
       onDrop={onDrop}
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
@@ -1322,34 +1398,32 @@ export default function DocumentosModule() {
       {/* Un título por vista (Documentos › Archivo, ola 3 del panel unificado):
           el título del hub ya dice «Documentos»; acá va el de la vista, con la
           explicación en la ⓘ y las acciones en la misma fila. */}
-      <TituloDeVista
-        titulo="Archivo del negocio"
-        ayuda={{
-          what: "Tus documentos en carpetas: contratos, licencias, facturas, fotos y planillas.",
-          affects: "Un documento con fecha de vencimiento te avisa 30 días antes. La IA lo nombra y lo clasifica al escanearlo.",
-          example: "Subes la licencia de funcionamiento con vencimiento el 15/03: el 13/02 te aparece en «por vencer».",
-        }}
-      >
+      {/* Una fila (11-10): título · ⓘ · escritorio · Indicadores · ⋯ · Subir.
+          Con `TituloDeVista` (gap de 16 px y los botones en su propio bloque)
+          el titular de Indicadores partía la fila en dos a 1280 px. */}
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
+        <div className="flex shrink-0 items-center gap-2">
+          <SectionTitle className="whitespace-nowrap">Archivo del negocio</SectionTitle>
+          <InfoTip
+            title="Archivo del negocio"
+            side="bottom"
+            what="Tus documentos en carpetas: contratos, licencias, facturas, fotos y planillas."
+            affects="Un documento con fecha de vencimiento te avisa 30 días antes. La IA lo nombra y lo clasifica al escanearlo. Clic derecho sobre un archivo abre sus acciones."
+            example="Subes la licencia de funcionamiento con vencimiento el 15/03: el 13/02 te aparece en «por vencer»."
+          />
+        </div>
+        <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-2">
         {/* Si está conectado con el escritorio o no, a la vista sin entrar a
             "Mi PC" (Brandon 2026-08-28). No se ve nada si el navegador no
             soporta la File System Access API — no tiene sentido avisar de
             algo que ahí no se puede usar. */}
         <EstadoCarpetaLocalBadge tenantId={slugActivo()} onAbrir={() => setFilterMode("sync")} />
 
-        {/* El botón de resumen vivía en su propia fila, antes del contenido
-            (Brandon 2026-09-24: «alineado con otros botones, para evitar que
-            ocupe mucho espacio»). En la papelera no hay resumen que mostrar. */}
-        {filterMode !== "trash" && (
-          <button
-            onClick={() => setKpisVisible((v) => !v)}
-            aria-expanded={kpisVisible}
-            aria-label={kpisVisible ? "Ocultar resumen" : "Mostrar resumen"}
-            title={kpisVisible ? "Ocultar resumen" : "Mostrar resumen"}
-            className="inline-flex items-center justify-center h-12 w-12 shrink-0 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary"
-          >
-            {kpisVisible ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </button>
-        )}
+        {/* Los indicadores del drive, como en el resto del panel: el botón
+            «Indicadores» con el titular en una línea y las tarjetas debajo al
+            abrirlo (antes un ▾ suelto, 2026-09-24). En la papelera no hay
+            resumen que mostrar. */}
+        {filterMode !== "trash" && kpis.boton}
 
         {/* Cinco acciones en el header no entraban en pantallas medianas: se
             partían en dos-tres filas y competían con el primario. Queda UNA
@@ -1389,7 +1463,7 @@ export default function DocumentosModule() {
         />
         <button
           onClick={() => fileInputRef.current?.click()}
-          className={button({ variant: "primary", className: "rounded-xl" })}
+          className={button({ variant: "primary", className: cn("rounded-xl", !uploadProgress && "max-sm:w-12 max-sm:px-0") })}
         >
           {uploadProgress ? (
             <>
@@ -1398,7 +1472,7 @@ export default function DocumentosModule() {
             </>
           ) : (
             <>
-              <Upload className="h-4 w-4" /> Subir archivos
+              <Upload className="h-4 w-4" aria-hidden /> <span className="max-sm:sr-only">Subir archivos</span>
             </>
           )}
         </button>
@@ -1417,98 +1491,23 @@ export default function DocumentosModule() {
           className="hidden"
           onChange={(e) => e.target.files && handleScan(e.target.files)}
         />
-      </TituloDeVista>
-
-      {/* Aviso proactivo: documentos por vencer (la promesa del módulo) */}
-      {expiringDocs.length > 0 && !expiryBannerDismissed && (
-        <div className="flex items-start gap-3 rounded-2xl border-2 border-[var(--data-error-500)]/50 bg-[var(--data-error-50)] dark:bg-[var(--data-error-500)]/15 px-4 py-3">
-          <AlarmClock className="mt-0.5 h-5 w-5 shrink-0 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" />
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5">
-              <p className="text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
-                {expiringDocs.length} por vencer en 30 días
-              </p>
-              <InfoTip
-                title="Documentos por vencer"
-                what={
-                  <span>
-                    {expiringDocs.slice(0, 5).map(({ d, n }) => `${d.name} (${n < 0 ? "vencido" : n === 0 ? "vence hoy" : `${n}d`})`).join(" · ")}
-                    {expiringDocs.length > 5 ? ` y ${expiringDocs.length - 5} más` : ""}
-                  </span>
-                }
-                affects={<span>Te avisamos por WhatsApp y en el panel unos 7 días antes de cada vencimiento.</span>}
-              />
-            </div>
-          </div>
-          <button
-            onClick={() => { setFilterMode("expiring"); setActiveFolderId(null); }}
-            className="shrink-0 rounded-lg bg-[var(--data-error-700)] dark:bg-[var(--data-error-500)] px-3 py-1.5 text-xs font-bold text-white hover:opacity-90"
-          >
-            Ver
-          </button>
-          <button onClick={() => setExpiryBannerDismissed(true)} className="shrink-0 rounded-xl p-1 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]" aria-label="Descartar aviso"><X className="h-4 w-4" /></button>
         </div>
-      )}
+      </div>
 
-      {/* Sugerencias IA de organización: carpeta + vencimiento detectados */}
-      {sugerenciasIA.length > 0 && (
-        <div className="rounded-2xl border-2 border-[var(--accent)]/40 bg-primary/10 px-4 py-3">
-          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-            <p className="inline-flex items-center gap-1.5 text-sm font-bold text-[var(--accent)]">
-              <Sparkles className="h-4 w-4" /> La IA sugiere organizar
-            </p>
-            {sugerenciasIA.length > 1 && (
-              <button
-                type="button"
-                onClick={() => void aplicarTodasLasSugerencias()}
-                disabled={aplicandoTodas}
-                title="Guardar las carpetas y los vencimientos sugeridos de todos"
-                className="inline-flex items-center gap-1.5 rounded-lg border-2 border-[var(--accent)] px-2.5 py-1 text-xs font-bold text-[var(--accent)] transition-colors hover:bg-[var(--accent)]/10 disabled:opacity-60"
-              >
-                {aplicandoTodas
-                  ? <><span className="h-3 w-3 animate-spin rounded-full border-2 border-[var(--accent)] border-t-transparent" /> Aplicando…</>
-                  : <>Aplicar las {sugerenciasIA.length}</>}
-              </button>
-            )}
-          </div>
-          <div className="space-y-2">
-            {sugerenciasIA.map(({ doc, carpeta, vence }) => (
-              <div key={doc.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[var(--surface-raised)] px-3 py-2">
-                <div className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-bold text-[var(--text-primary)]" title={doc.name}>{doc.name}</span>
-                  <span className="block text-xs text-[var(--text-secondary)]">
-                    {carpeta && <>mover a <b className="text-[var(--accent)]">{carpeta.folderName}</b></>}
-                    {carpeta && vence && " · "}
-                    {vence && <>vence el <b className="text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">{fmtFechaCorta(vence)}</b></>}
-                  </span>
-                </div>
-                <div className="flex shrink-0 gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => void aplicarSugerencia(doc.id, {
-                      ...(carpeta ? { folderId: carpeta.folderId } : {}),
-                      ...(vence ? { expiresAt: vence } : {}),
-                    })}
-                    title="Aplicar la sugerencia"
-                    aria-label={`Aplicar la sugerencia para ${doc.name}`}
-                    className="rounded-lg bg-[var(--accent)] px-2.5 py-1.5 text-white hover:brightness-95"
-                  >
-                    <Check className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => descartarSugerencia(doc.id)}
-                    aria-label={`Descartar sugerencia para ${doc.name}`}
-                    className="rounded-lg border border-[var(--rule-base)] px-2 py-1.5 text-xs font-bold text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Avisos en una fila: por vencer (la promesa del módulo) y lo que la IA
+          sugiere ordenar, cada uno con su acción. */}
+      <AvisosDelArchivo
+        porVencer={expiringDocs}
+        porVencerDescartado={expiryBannerDismissed}
+        onVerPorVencer={() => { setFilterMode("expiring"); setActiveFolderId(null); }}
+        onDescartarPorVencer={() => setExpiryBannerDismissed(true)}
+        sugerencias={sugerenciasIA}
+        onAplicar={(id, cambios) => void aplicarSugerencia(id, cambios)}
+        onDescartar={descartarSugerencia}
+        onAplicarTodas={() => void aplicarTodasLasSugerencias()}
+        aplicandoTodas={aplicandoTodas}
+        fechaCorta={fmtFechaCorta}
+      />
 
       {/* Resultado del escaneo IA */}
       {scanResult && (
@@ -1574,28 +1573,7 @@ export default function DocumentosModule() {
           los documentos, que es lo que se busca casi siempre al abrir el drive.
           El botón que los muestra vive arriba, en el header (alineado con
           "Subir archivos" — 2026-09-24), acá sólo queda el panel. */}
-      {filterMode !== "trash" && kpisVisible && (
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-          <StatBlock label="Total archivos" value={shownDocCount.toString()} icon={FileIcon} tint="text-primary" />
-          <StorageRing usedBytes={totalSize} quotaBytes={STORAGE_QUOTA_BYTES} />
-          <button
-            onClick={() => { setFilterMode("expiring"); setActiveFolderId(null); }}
-            className={cn(
-              "text-left bg-[var(--surface-raised)] border rounded-2xl p-4 transition-all hover:shadow-md",
-              expiringSoonCount > 0 ? "border-[var(--data-error-500)]/40 hover:border-[var(--data-error-500)]" : "border-[var(--rule-base)] hover:border-primary/40"
-            )}
-          >
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Por vencer (30d)</p>
-                <p className={cn("text-2xl font-extrabold tabular-nums mt-0.5", expiringSoonCount > 0 ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]")}>{expiringSoonCount}</p>
-              </div>
-              <AlarmClock className={cn("h-5 w-5 shrink-0 mt-0.5", expiringSoonCount > 0 ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]")} />
-            </div>
-          </button>
-          <StatBlock label="Favoritos" value={favCount.toString()} icon={Star} tint="text-amber-500" />
-        </div>
-      )}
+      {filterMode !== "trash" && kpis.panel}
 
       <div
         className="grid grid-cols-1 lg:grid-cols-[var(--docs-sidebar-w)_12px_1fr] gap-5 lg:gap-x-0"
@@ -1995,16 +1973,17 @@ export default function DocumentosModule() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className={cn(
-                  "w-full pl-9 pr-3 h-11 rounded-xl border-2 bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all",
+                  "w-full pl-9 pr-3 h-12 rounded-xl border-2 bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all",
                   semantic ? "border-[var(--accent)]" : "border-[var(--rule-base)]"
                 )}
               />
             </div>
             <button
               onClick={() => setSemantic((s) => !s)}
+              aria-pressed={semantic}
               className={cn(
-                "inline-flex items-center gap-1.5 px-3 min-h-11 rounded-xl border-2 text-sm font-semibold transition-colors",
-                semantic ? "bg-[var(--accent)]/10 border-[var(--accent)] text-[var(--accent)]" : "bg-[var(--surface-raised)] border-[var(--rule-base)] text-[var(--text-tertiary)] hover:border-[var(--accent)]/40"
+                "inline-flex items-center gap-1.5 px-3 min-h-12 rounded-xl border-2 text-sm font-semibold transition-colors",
+                semantic ? "bg-[var(--accent)]/10 border-[var(--accent)] text-[var(--accent-ink)] dark:text-[var(--accent)]" : "bg-[var(--surface-raised)] border-[var(--rule-base)] text-[var(--text-tertiary)] hover:border-[var(--accent)]/40"
               )}
               title="Búsqueda inteligente: entiende lo que quieres decir, no solo palabras exactas"
             >
@@ -2025,7 +2004,7 @@ export default function DocumentosModule() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-              className="h-[42px] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-secondary)] outline-none focus:border-primary"
+              className="h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-secondary)] outline-none focus:border-primary"
               aria-label="Ordenar documentos"
               title="Ordenar documentos"
             >
@@ -2040,14 +2019,16 @@ export default function DocumentosModule() {
             <div className="inline-flex rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] overflow-hidden">
               <button
                 onClick={() => setView("grid")}
-                className={cn("px-3 min-h-10 transition-colors", view === "grid" ? "bg-primary text-white" : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]")}
+                aria-pressed={view === "grid"}
+                className={cn("flex h-12 w-12 items-center justify-center transition-colors", view === "grid" ? "bg-primary text-white" : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]")}
                 aria-label="Vista grilla"
               >
                 <Grid3x3 className="h-4 w-4" />
               </button>
               <button
                 onClick={() => setView("list")}
-                className={cn("px-3 min-h-10 transition-colors border-l-2 border-[var(--rule-base)]", view === "list" ? "bg-primary text-white" : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]")}
+                aria-pressed={view === "list"}
+                className={cn("flex h-12 w-12 items-center justify-center transition-colors border-l border-[var(--rule-base)]", view === "list" ? "bg-primary text-white" : "text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)]")}
                 aria-label="Vista lista"
               >
                 <List className="h-4 w-4" />
@@ -2332,10 +2313,11 @@ export default function DocumentosModule() {
           {/* Filtro por estado (workflow) */}
           {!VISTAS_CON_CONTENIDO_PROPIO.has(filterMode) && filterMode !== "trash" && (statusFilter !== null || STATUS_ORDER.some((k) => statusCounts[k] > 0)) && (
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Estado</span>
+              <span className="text-sm font-bold text-[var(--text-tertiary)]">Estado</span>
               <button
                 onClick={() => setStatusFilter(null)}
-                className={cn("rounded-lg px-2.5 py-1 text-xs font-bold transition-colors", statusFilter === null ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-primary")}
+                aria-pressed={statusFilter === null}
+                className={cn("min-h-10 rounded-xl px-3 text-sm font-bold transition-colors", statusFilter === null ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-primary")}
               >
                 Todos
               </button>
@@ -2347,8 +2329,9 @@ export default function DocumentosModule() {
                   <button
                     key={k}
                     onClick={() => setStatusFilter(active ? null : k)}
+                    aria-pressed={active}
                     className={cn(
-                      "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold transition-colors",
+                      "inline-flex min-h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-bold transition-colors",
                       active ? cn(m.bg, m.text, "ring-2 ring-primary") : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-primary"
                     )}
                   >
@@ -2363,9 +2346,9 @@ export default function DocumentosModule() {
               real del drive: un archivo sin descripción sólo aparece si te
               acuerdas de su nombre. */}
           {!VISTAS_CON_CONTENIDO_PROPIO.has(filterMode) && filterMode !== "trash" && (indexableDocs.length > 0 || soloSinDescribir) && (
-            <div className="flex flex-wrap items-center gap-2 rounded-xl border-2 border-dashed border-[var(--accent)]/35 bg-[var(--accent)]/5 px-3 py-2">
-              <Sparkles className="h-4 w-4 shrink-0 text-[var(--accent)]" aria-hidden />
-              <p className="min-w-0 flex-1 text-xs font-semibold text-[var(--text-secondary)]">
+            <div className="flex flex-wrap items-center gap-x-2 rounded-xl border border-dashed border-[var(--accent)]/35 bg-[var(--accent)]/5 pl-3">
+              <Sparkles className="h-4 w-4 shrink-0 text-[var(--accent-ink)] dark:text-[var(--accent)]" aria-hidden />
+              <p className="min-w-0 flex-1 text-sm font-semibold text-[var(--text-secondary)]">
                 {indexableDocs.length > 0 ? (
                   <>
                     <span className="tabular-nums font-bold text-[var(--text-primary)]">{indexableDocs.length}</span>{" "}
@@ -2383,11 +2366,12 @@ export default function DocumentosModule() {
               </p>
               <button
                 onClick={() => setSoloSinDescribir((v) => !v)}
+                aria-pressed={soloSinDescribir}
                 className={cn(
-                  "shrink-0 rounded-lg border-2 px-2.5 py-1 text-xs font-bold transition-colors",
+                  "h-12 shrink-0 px-3 text-sm font-bold transition-colors",
                   soloSinDescribir
-                    ? "border-[var(--accent)] bg-[var(--accent)]/15 text-[var(--accent)]"
-                    : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50 ",
+                    ? "bg-[var(--accent)]/15 text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                    : "text-[var(--text-secondary)] hover:bg-[var(--accent)]/10",
                 )}
               >
                 {soloSinDescribir ? "Ver todos" : "Ver cuáles"}
@@ -2397,15 +2381,15 @@ export default function DocumentosModule() {
                   onClick={describirFaltantes}
                   disabled={!!progresoDesc}
                   title="La IA lee cada uno y escribe de qué se trata (tarda unos segundos por documento)"
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-2.5 py-1 text-xs font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+                  className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-r-xl px-3 text-sm font-bold text-[var(--accent-ink)] transition-colors hover:bg-[var(--accent)]/10 disabled:opacity-60 dark:text-[var(--accent)]"
                 >
                   {progresoDesc ? (
                     <>
-                      <span className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      <span className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
                       <span className="tabular-nums">{progresoDesc.hechos}/{progresoDesc.total}</span>
                     </>
                   ) : (
-                    <><Sparkles className="h-3 w-3" /> Describirlos con IA</>
+                    <><Wand2 className="h-4 w-4" aria-hidden /> Describirlos con IA</>
                   )}
                 </button>
               )}
@@ -2413,7 +2397,7 @@ export default function DocumentosModule() {
                   sin modelo que MIRE las fotos) se dice acá, con lo que hay que
                   hacer, en vez de dejar el contador clavado sin explicación. */}
               {avisoIA && (
-                <p className="w-full text-xs font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
+                <p className="w-full pb-2 text-sm font-semibold text-[var(--data-warning-ink)]">
                   {avisoIA}
                 </p>
               )}
@@ -2472,7 +2456,7 @@ export default function DocumentosModule() {
             <EmptyState onUpload={() => fileInputRef.current?.click()} />
           ) : view === "grid" ? (
             <div className="space-y-3">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
               {displayDocs.slice(0, tarjetasVisibles).map((doc) => (
                 <DocCard
                   key={doc.id}
@@ -2490,22 +2474,13 @@ export default function DocumentosModule() {
                     patch(doc.id, { tags: [...doc.tags, t] });
                     reloadAllTags();
                   }}
-                  onToggleFav={() => patch(doc.id, { favorite: !doc.favorite })}
-                  onWhatsApp={() => setWhatsappDoc([doc])}
                   onSetStatus={(s) => patch(doc.id, { status: s })}
-                  onRemove={async () => {
-                    if (!(await confirm({ title: `¿Eliminar "${doc.name}"?`, intent: "danger", confirmLabel: "Sí, eliminar" }))) return;
-                    // Acá había un `patch(doc.id, {})` "para calentar el
-                    // camino": un PATCH sin campos que el servidor rechaza, y
-                    // que reventaba el borrado con un error en pantalla antes
-                    // de llegar a borrar nada.
-                    await bulk("delete", [doc.id]);
-                  }}
+                  menu={menuDe(doc, "flotante")}
+                  onMenuContextual={(e) => abrirMenuEn(e, doc.id)}
                   onStartRename={() => startRename(doc)}
                   onCommitRename={commitRename}
                   onCancelRename={() => setRenaming(null)}
                   onRenameChange={(v) => setRenaming(renaming ? { ...renaming, value: v } : null)}
-                  onDownload={() => handleDownload(doc)}
                   onDragStart={(e) => {
                     e.dataTransfer.setData("application/x-doc-id", doc.id);
                     e.dataTransfer.effectAllowed = "move";
@@ -2589,7 +2564,7 @@ export default function DocumentosModule() {
                   {displayDocs.map((doc) => {
                     const { Icon, tint, bg } = getFileIcon(doc.mimeType, doc.name);
                     return (
-                      <tr key={doc.id} className={cn("hover:bg-[var(--surface-sunken)] transition-colors", selectedIds.has(doc.id) && "bg-primary/5")}>
+                      <tr key={doc.id} onContextMenu={(e) => abrirMenuEn(e, doc.id)} className={cn("hover:bg-[var(--surface-sunken)] transition-colors", selectedIds.has(doc.id) && "bg-primary/5")}>
                         <td className="px-3 py-3">
                           <input
                             type="checkbox"
@@ -2675,25 +2650,8 @@ export default function DocumentosModule() {
                             {formatDateShort(doc.uploadedAt)}
                           </td>
                         )}
-                        <td className="px-4 py-3 text-center">
-                          <RowActions
-                            favorite={!!doc.favorite}
-                            onPreview={() => setPreview(doc)}
-                            onAnalyze={() => handleAnalyze(doc)}
-                            onRename={() => startRename(doc)}
-                            onMove={() => setMovingDoc(doc)}
-                            onTag={() => setTagDocId(doc.id)}
-                            onWhatsApp={() => setWhatsappDoc([doc])}
-                            onSign={() => setSignDoc(doc)}
-                            onStamp={() => setStampTarget(doc)}
-                            onRotate={() => handleRotate(doc)}
-                            onSplit={() => handleSplit(doc)}
-                            onEditPages={() => setPageEditorDoc(doc)}
-                            isPdf={doc.mimeType === "application/pdf"}
-                            onDownload={() => handleDownload(doc)}
-                            onToggleFav={() => patch(doc.id, { favorite: !doc.favorite })}
-                            onDelete={async () => { if (await confirm({ title: `¿Eliminar "${doc.name}"?`, intent: "danger", confirmLabel: "Sí, eliminar" })) bulk("delete", [doc.id]); }}
-                          />
+                        <td className="px-2 py-1 text-center">
+                          {menuDe(doc)}
                         </td>
                       </tr>
                     );
@@ -3041,7 +2999,7 @@ function StatBlock({ label, value, icon: Icon, tint }: { label: string; value: s
     <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-2xl p-4">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">{label}</p>
+          <p className="text-sm font-bold text-[var(--text-tertiary)]">{label}</p>
           <p className={cn("text-2xl font-extrabold tabular-nums mt-0.5 truncate", tint)}>{value}</p>
         </div>
         <Icon className={cn("h-5 w-5 shrink-0 mt-0.5", tint)} />
@@ -3067,9 +3025,9 @@ function StorageRing({ usedBytes, quotaBytes }: { usedBytes: number; quotaBytes:
         <HardDrive className="absolute inset-0 m-auto h-4 w-4" style={{ color }} />
       </div>
       <div className="min-w-0">
-        <p className="text-[length:var(--ts-2xs,11px)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Espacio usado</p>
+        <p className="text-sm font-bold text-[var(--text-tertiary)]">Espacio usado</p>
         <p className="text-xl font-extrabold tabular-nums leading-tight whitespace-nowrap" style={{ color }}>{formatBytes(usedBytes)}</p>
-        <p className="text-[length:var(--ts-2xs,11px)] text-[var(--text-tertiary)] tabular-nums">{pct}% de {formatBytes(quotaBytes)}</p>
+        <p className="text-sm text-[var(--text-tertiary)] tabular-nums">{pct}% de {formatBytes(quotaBytes)}</p>
       </div>
     </div>
   );
@@ -3084,13 +3042,13 @@ function StorageRing({ usedBytes, quotaBytes }: { usedBytes: number; quotaBytes:
 function FolderChip({ nombre, onClick }: { nombre: string | null; onClick?: () => void }) {
   if (nombre === null) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-md border border-dashed border-[var(--rule-strong)] px-1.5 py-0.5 text-[length:var(--ts-2xs,11px)] font-bold text-[var(--text-tertiary)]" title="Este documento no está en ninguna carpeta">
+      <span className="inline-flex items-center gap-1 rounded-md border border-dashed border-[var(--rule-strong)] px-1.5 py-0.5 text-sm font-bold text-[var(--text-tertiary)]" title="Este documento no está en ninguna carpeta">
         <Folder className="h-3 w-3 shrink-0" /> Sin carpeta
       </span>
     );
   }
   // Sin `onClick` (las tarjetas) es un rótulo; con él (la lista), un enlace a la carpeta.
-  const cls = "inline-flex max-w-[140px] items-center gap-1 rounded-lg bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[length:var(--ts-2xs,11px)] font-bold text-[var(--text-secondary)]";
+  const cls = "inline-flex max-w-[140px] items-center gap-1 rounded-lg bg-[var(--surface-sunken)] px-1.5 py-0.5 text-sm font-bold text-[var(--text-secondary)]";
   if (!onClick) {
     return (
       <span title={`Carpeta "${nombre}"`} className={cls}>
@@ -3127,7 +3085,7 @@ function ExpiryBadge({ expiresAt, className }: { expiresAt: string | null; class
       ? { label: `Vence en ${n}d`, cls: warn }
       : { label: formatDate(expiresAt!), cls: ok };
   return (
-    <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[length:var(--ts-2xs,11px)] font-bold", cls, className)}>
+    <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-sm font-bold", cls, className)}>
       <AlarmClock className="h-3 w-3" /> {label}
     </span>
   );
@@ -3173,6 +3131,8 @@ const STATUS_META: Record<string, { label: string; dot: string; text: string; bg
   ORDEN_ESTADOS.map((e) => [e, pinta(e)]),
 );
 const STATUS_ORDER: string[] = ORDEN_ESTADOS;
+/** Los estados que ofrece el «⋯» de cada documento, con el mismo punto de color que el chip. */
+const ESTADOS_DEL_MENU: EstadoDelMenu[] = ORDEN_ESTADOS.map((e) => ({ clave: e, label: STATUS_META[e].label, dot: STATUS_META[e].dot }));
 
 // Chip de estado que además abre un dropdown (fixed) para cambiarlo. "none" = sin estado.
 function StatusControl({ status, onChange }: { status: string; onChange: (s: string) => void }) {
@@ -3207,7 +3167,7 @@ function StatusControl({ status, onChange }: { status: string; onChange: (s: str
         title={meta ? `Estado: ${meta.label}` : "Poner un estado"}
         aria-label={meta ? `Estado: ${meta.label}` : "Poner un estado"}
         className={cn(
-          "inline-flex items-center gap-1 rounded-lg px-1.5 py-0.5 text-[length:var(--ts-2xs,11px)] font-bold transition-colors",
+          "inline-flex items-center gap-1 rounded-lg px-1.5 py-0.5 text-sm font-bold transition-colors",
           meta ? cn(meta.bg, meta.text) : "border border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)] hover:border-primary hover:text-primary"
         )}
       >
@@ -3248,8 +3208,8 @@ function StatusControl({ status, onChange }: { status: string; onChange: (s: str
 
 function DocCard({
   doc, selected, isRenaming, renameValue, terminos, folderNombre,
-  onSelect, onPreview, onToggleFav, onRemove, onWhatsApp, onSetStatus,
-  onStartRename, onCommitRename, onCancelRename, onRenameChange, onDownload,
+  onSelect, onPreview, onSetStatus, menu, onMenuContextual,
+  onStartRename, onCommitRename, onCancelRename, onRenameChange,
   onDragStart, onDragEnd, dragging, tagsActivos, onPromoteAiTag,
 }: {
   doc: DbDocument;
@@ -3262,15 +3222,15 @@ function DocCard({
   folderNombre?: string | null;
   onSelect: () => void;
   onPreview: () => void;
-  onToggleFav: () => void;
-  onRemove: () => void;
-  onWhatsApp: () => void;
   onSetStatus: (s: string) => void;
+  /** El «⋯» del documento (MenuDocumento): favorito, WhatsApp, descargar, eliminar y el resto. */
+  menu: React.ReactNode;
+  /** Clic derecho sobre la tarjeta: abre ese mismo menú donde está el mouse. */
+  onMenuContextual: (e: React.MouseEvent) => void;
   onStartRename: () => void;
   onCommitRename: () => void;
   onCancelRename: () => void;
   onRenameChange: (v: string) => void;
-  onDownload: () => void;
   onDragStart: (e: React.DragEvent) => void;
   onDragEnd: () => void;
   dragging: boolean;
@@ -3287,6 +3247,7 @@ function DocCard({
       draggable
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
+      onContextMenu={onMenuContextual}
       // Pasar el mouse ya trae el visor: cuando hace clic, el chunk pesado
       // (exceljs / jszip) suele estar listo y la vista previa abre de una.
       onMouseEnter={() => precargarVisor(familiaDe(doc.name, doc.mimeType))}
@@ -3326,35 +3287,20 @@ function DocCard({
       />
 
       {/* Thumbnail — imagen real para imágenes, 1ª página para PDFs, ícono para el resto. */}
-      <button onClick={onPreview} className="block w-full aspect-square bg-[var(--surface-sunken)] overflow-hidden" aria-label={`Ver ${doc.name}`}>
+      <button onClick={onPreview} className="block w-full aspect-[4/3] bg-[var(--surface-sunken)] overflow-hidden" aria-label={`Ver ${doc.name}`}>
         <DocThumb doc={doc} Icon={Icon} tint={tint} bg={bg} />
       </button>
 
-      {/* Hover actions */}
-      <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button
-          onClick={(e) => { e.stopPropagation(); onToggleFav(); }}
-          className={cn(
-            "h-7 w-7 rounded-full flex items-center justify-center backdrop-blur-sm",
-            doc.favorite ? "bg-amber-400 text-white" : "bg-white/85 text-[var(--text-tertiary)] hover:text-amber-500"
-          )}
-          aria-label={doc.favorite ? "Quitar favorito" : "Marcar favorito"}
-        >
-          <Star className={cn("h-3.5 w-3.5", doc.favorite && "fill-current")} />
-        </button>
-        <button onClick={(e) => { e.stopPropagation(); onWhatsApp(); }} className="h-7 w-7 rounded-full flex items-center justify-center bg-white/85 backdrop-blur-sm text-[var(--text-tertiary)] hover:text-[var(--data-success-700)]" aria-label="Enviar por WhatsApp">
-          <MessageCircle className="h-3.5 w-3.5" />
-        </button>
-        <button onClick={(e) => { e.stopPropagation(); onDownload(); }} className="h-7 w-7 rounded-full flex items-center justify-center bg-white/85 backdrop-blur-sm text-[var(--text-tertiary)] hover:text-primary" aria-label="Descargar">
-          <Download className="h-3.5 w-3.5" />
-        </button>
-        <button onClick={(e) => { e.stopPropagation(); onRemove(); }} className="h-7 w-7 rounded-full flex items-center justify-center bg-white/85 backdrop-blur-sm text-[var(--text-tertiary)] hover:text-[var(--data-error)]" aria-label="Eliminar">
-          <Trash2 className="h-3.5 w-3.5" />
-        </button>
-      </div>
+      {/* El «⋯» de la tarjeta: los cuatro íconos de 28 px que aparecían al
+          pasar el mouse (favorito, WhatsApp, descargar, eliminar) viven ahora
+          en el menú — en el celular, sin hover, ni se veían (11-10). Siempre a
+          la vista, con 48 px de toque y el círculo chico para no tapar la foto. */}
+      <div className="absolute right-0 top-0 z-10">{menu}</div>
 
       {/* Info */}
       <div className="p-3">
+        <div className="flex items-center gap-1">
+        {doc.favorite && <Star className="h-4 w-4 shrink-0 fill-amber-400 text-amber-400" aria-label="Favorito" />}
         {isRenaming ? (
           <input
             type="text"
@@ -3364,7 +3310,7 @@ function DocCard({
             onKeyDown={(e) => { if (e.key === "Enter") onCommitRename(); if (e.key === "Escape") onCancelRename(); }}
             onBlur={onCommitRename}
             ref={(el) => el?.focus()}
-            className="w-full px-2 py-1 rounded-xl border-2 border-primary text-sm font-bold outline-none"
+            className="min-w-0 flex-1 px-2 py-1 rounded-xl border-2 border-primary text-sm font-bold outline-none"
           />
         ) : (
           // El nombre es un dato, no un botón más: la miniatura ya abre la vista
@@ -3373,13 +3319,14 @@ function DocCard({
           <p
             onClick={onPreview}
             onDoubleClick={(e) => { e.preventDefault(); onStartRename(); }}
-            className="w-full cursor-pointer truncate text-left text-sm font-bold text-[var(--text-primary)] transition-colors hover:text-primary"
+            className="min-w-0 flex-1 cursor-pointer truncate text-left text-sm font-bold text-[var(--text-primary)] transition-colors hover:text-primary"
             title={`${doc.name}${descripcionDe(doc) ? `\n${descripcionDe(doc)!.texto}` : ""}\n(doble clic para renombrar)`}
           >
             {doc.name}
           </p>
         )}
-        <div className="flex items-center justify-between mt-1 text-[length:var(--ts-2xs,11px)]">
+        </div>
+        <div className="flex items-center justify-between gap-2 text-sm">
           {/* Qué ES el archivo, no su MIME: "Hoja de cálculo · ODS" se entiende,
               "application/vnd.oasis.opendocument.spreadsheet" no. */}
           <span className="min-w-0 truncate text-[var(--text-tertiary)]" title={doc.category}>
@@ -3391,7 +3338,8 @@ function DocCard({
         <PorQueAparecio doc={doc} terminos={terminos} />
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
           {folderNombre !== undefined && <FolderChip nombre={folderNombre} />}
-          <StatusControl status={doc.status} onChange={onSetStatus} />
+          {/* Sin estado no se dibuja nada: ponerlo es «⋯ › Estado». */}
+          {marca && <StatusControl status={doc.status} onChange={onSetStatus} />}
           <ExpiryBadge expiresAt={doc.expiresAt} />
           <StructuredChip doc={doc} />
         </div>
@@ -3410,7 +3358,7 @@ function DocCard({
                 <span
                   title={`#${primera} — para filtrar por esta etiqueta usa «Filtros»`}
                   className={cn(
-                    "max-w-full truncate text-[length:var(--ts-2xs,11px)] px-1.5 py-0.5 rounded font-bold",
+                    "max-w-full truncate text-sm px-1.5 py-0.5 rounded font-bold",
                     tagsActivos.includes(primera)
                       ? "bg-primary text-white"
                       : "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]",
@@ -3423,13 +3371,13 @@ function DocCard({
                 <button
                   onClick={(e) => { e.stopPropagation(); onPromoteAiTag(ia); }}
                   title="Sugerencia de la IA — clic para aceptarla como etiqueta"
-                  className="inline-flex max-w-full items-center gap-0.5 truncate rounded bg-violet-100 px-1.5 py-0.5 text-[length:var(--ts-2xs,11px)] font-bold text-[var(--accent)] hover:bg-violet-200"
+                  className="inline-flex max-w-full items-center gap-0.5 truncate rounded bg-violet-100 px-1.5 py-0.5 text-sm font-bold text-[var(--accent)] hover:bg-violet-200"
                 >
                   <Sparkles className="h-2.5 w-2.5" />{ia}
                 </button>
               )}
               {resto.length > 0 && (
-                <span className="cursor-help text-[length:var(--ts-2xs,11px)] font-bold tabular-nums text-[var(--text-tertiary)]" title={resto.map((t) => `#${t}`).join("  ")}>
+                <span className="cursor-help text-sm font-bold tabular-nums text-[var(--text-tertiary)]" title={resto.map((t) => `#${t}`).join("  ")}>
                   +{resto.length}
                 </span>
               )}
@@ -3455,103 +3403,6 @@ function EmptyState({ onUpload }: { onUpload: () => void }) {
         <Upload className="h-4 w-4" /> Subir archivos
       </button>
     </div>
-  );
-}
-
-// ── Menú de acciones por fila (kebab) — reemplaza los 5 íconos amontonados en
-// la vista lista. Dropdown `position: fixed` para no quedar recortado por el
-// overflow del contenedor de la tabla. ──
-function RowActions({ onPreview, onAnalyze, onDownload, onRename, onMove, onTag, onWhatsApp, onSign, onStamp, onRotate, onSplit, onEditPages, isPdf, onToggleFav, onDelete, favorite }: {
-  onPreview: () => void; onAnalyze: () => void; onDownload: () => void; onRename: () => void; onMove: () => void; onTag: () => void; onWhatsApp: () => void; onSign: () => void; onStamp: () => void; onRotate: () => void; onSplit: () => void; onEditPages: () => void; isPdf: boolean; onToggleFav: () => void; onDelete: () => void; favorite: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState<{ top?: number; bottom?: number; right: number; maxHeight: number } | null>(null);
-  const btnRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const closeAll = () => setOpen(false);
-    // Scrollear DENTRO del menú (para ver las opciones que no entran) no debe
-    // cerrarlo — el listener de "scroll" en window recibe TAMBIÉN el scroll de
-    // este contenedor interno (fase de captura), así que hay que distinguir
-    // por `e.target`. Un scroll de la página de atrás (o cualquier otro
-    // contenedor) sí cierra, como antes.
-    const onScroll = (e: Event) => {
-      if (menuRef.current?.contains(e.target as Node)) return;
-      setOpen(false);
-    };
-    window.addEventListener("click", closeAll);
-    window.addEventListener("scroll", onScroll, true);
-    window.addEventListener("resize", closeAll);
-    return () => {
-      window.removeEventListener("click", closeAll);
-      window.removeEventListener("scroll", onScroll, true);
-      window.removeEventListener("resize", closeAll);
-    };
-  }, [open]);
-  const toggle = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (open) { setOpen(false); return; }
-    const r = btnRef.current?.getBoundingClientRect();
-    if (r) {
-      const GAP = 4;
-      const MARGIN = 12;
-      const right = window.innerWidth - r.right;
-      const spaceBelow = window.innerHeight - r.bottom - GAP - MARGIN;
-      const spaceAbove = r.top - GAP - MARGIN;
-      // El menú puede tener hasta 13 ítems: una fila cerca del final de la
-      // tabla no siempre tiene sitio abajo. Con scroll interno alcanza casi
-      // siempre, pero si abajo queda MUY poco (y arriba hay más), mejor
-      // abrirlo hacia arriba que dejarlo apretado contra el borde inferior.
-      if (spaceBelow < 160 && spaceAbove > spaceBelow) {
-        setPos({ bottom: window.innerHeight - r.top + GAP, right, maxHeight: Math.max(120, spaceAbove) });
-      } else {
-        setPos({ top: r.bottom + GAP, right, maxHeight: Math.max(120, spaceBelow) });
-      }
-    }
-    setOpen(true);
-  };
-  const item = (Icon: typeof Eye, label: string, onClick: () => void, danger?: boolean) => (
-    <button
-      onClick={(e) => { e.stopPropagation(); setOpen(false); onClick(); }}
-      className={cn(
-        "flex w-full items-center gap-2 px-3 py-2 text-sm font-medium transition-colors hover:bg-[var(--surface-sunken)]",
-        danger ? "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" : "text-[var(--text-secondary)]"
-      )}
-    >
-      <Icon className="h-4 w-4 shrink-0" /> {label}
-    </button>
-  );
-  return (
-    <>
-      <button ref={btnRef} onClick={toggle} className="p-1.5 rounded-xl text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)]" title="Acciones" aria-label="Acciones del documento">
-        <MoreVertical className="h-4 w-4" />
-      </button>
-      {open && pos && (
-        <div
-          ref={menuRef}
-          className="fixed z-50 min-w-[170px] overflow-y-auto overscroll-contain rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] py-1 shadow-xl"
-          style={{ top: pos.top, bottom: pos.bottom, right: pos.right, maxHeight: pos.maxHeight }}
-          onClick={(e) => e.stopPropagation()}
-          onKeyDown={(e) => e.stopPropagation()}
-        >
-          {item(Eye, "Ver", onPreview)}
-          {item(Wand2, "Analizar con IA", onAnalyze)}
-          {item(Pencil, "Renombrar", onRename)}
-          {item(FolderInput, "Mover a carpeta", onMove)}
-          {item(Tag, "Etiquetar", onTag)}
-          {item(MessageCircle, "Enviar por WhatsApp", onWhatsApp)}
-          {item(PenLine, "Solicitar firma", onSign)}
-          {isPdf && item(Stamp, "Poner sello", onStamp)}
-          {isPdf && item(RotateCw, "Rotar 90°", onRotate)}
-          {isPdf && item(FileStack, "Editar páginas", onEditPages)}
-          {isPdf && item(Scissors, "Dividir en páginas", onSplit)}
-          {item(Download, "Descargar", onDownload)}
-          {item(Star, favorite ? "Quitar favorito" : "Marcar favorito", onToggleFav)}
-          {item(Trash2, "Eliminar", onDelete, true)}
-        </div>
-      )}
-    </>
   );
 }
 

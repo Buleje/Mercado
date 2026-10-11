@@ -3,19 +3,18 @@
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { CardTitle, DataTable, LoadingState, SectionTitle, BlockTitle } from "@buleje/design-system";
 import { csrfHeaders } from "@/lib/csrf-client";
-import TituloDeVista from "@/components/admin/rrhh/TituloDeVista";
-import { button } from "@/components/ui-system/button-variants";
-import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
+import ActionMenu from "@/components/admin/shared/action-menu";
+import CabeceraContratos from "@/components/admin/contratos/CabeceraContratos";
 import { activateProps } from "@/components/admin/shared/a11y";
 import { useState, useEffect, useCallback, useId, useRef, useMemo } from "react";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import {
-  Search, Plus, X, ChevronLeft, ChevronRight, Loader2, AlertTriangle,
+  Search, X, ChevronLeft, ChevronRight, Loader2, AlertTriangle,
   FileText, User, Printer, DollarSign, Clock, CheckCircle, BookOpen, LayoutGrid, List,
   Download, Copy, Eye, Edit3, ArrowRight, ArrowLeft, Briefcase, Truck, Home, Package, Users,
-  Lock, TreePine, Scale, PenTool, Save, BarChart3, AlertCircle, ClipboardCopy,
-  MapPin, Info } from "@buleje/design-system/icons";
+  Lock, TreePine, Scale, PenTool, Save, AlertCircle, ClipboardCopy,
+  MapPin, Info, MoreHorizontal } from "@buleje/design-system/icons";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import {
@@ -182,12 +181,14 @@ export default function ContratosModule() {
   const { vista: activeTab, irA: setActiveTab } = useSubvistaModulo<TabId>(
     MODULE_ID,
     CONTRATOS_VISTAS,
-    "dashboard",
+    // Lo que se abre es la lista (11-10): antes, el tablero de cifras, que
+    // ahora vive en «Indicadores». `?sub=dashboard` sigue llevando al resumen.
+    "contratos",
   );
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [viewMode, setViewMode] = useState<"cards" | "list">("cards");
+  const [viewMode, setViewMode] = useState<"cards" | "list">("list");
   const [filterTipo, setFilterTipo] = useState<string>("ALL");
   const [filterEstado, setFilterEstado] = useState<string>("ALL");
 
@@ -661,53 +662,38 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
     setActiveTab("crear");
   };
 
-  // ── Tab definitions ───────────────────────────────────────────────────
-
-  const TABS: AdminTab[] = [
-    { id: "dashboard", label: "Dashboard", icon: BarChart3 },
-    { id: "plantillas", label: "Plantillas", icon: BookOpen },
-    { id: "contratos", label: "Mis Contratos", icon: FileText },
-    { id: "crear", label: "Crear Contrato", icon: Plus },
-    { id: "editor", label: "Editor", icon: Edit3 },
-  ];
+  // ── «⋯» por contrato (fila y tarjeta): ver, PDF y Word. La fila entera ya abre
+  // la ficha; los dos íconos de 28 px de cada fila pasaron acá (11-10).
+  const menuDeContrato = (c: ContratoAPI) => (
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+    <div className="inline-flex" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+      <ActionMenu
+        label={`Acciones del contrato ${c.numero}`}
+        icon={MoreHorizontal}
+        soloIcono
+        size="md"
+        className="w-12 border-transparent bg-transparent shadow-none"
+        actions={[
+          { id: "ver", label: "Ver contrato", hint: "Firmantes, historial y vencimiento", icon: Eye, onSelect: () => setSelected(c) },
+          { id: "pdf", label: "Imprimir o guardar PDF", icon: Printer, onSelect: () => downloadPDF(c) },
+          { id: "word", label: "Descargar Word", icon: Download, onSelect: () => downloadWord(c) },
+        ]}
+      />
+    </div>
+  );
 
   // ── Render ────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-6">
-      {/* Un título por vista (Documentos › Contratos): sin el antetítulo
-          «Legal · Documentos» y con la explicación en la ⓘ. */}
-      <TituloDeVista
-        titulo="Contratos"
-        ayuda={{
-          what: "Los contratos del negocio armados con plantillas peruanas: alquiler, servicios, trabajo y compraventa, con su firma y su vencimiento.",
-          affects: "Un contrato por vencer te avisa antes de la fecha. Los de una persona del equipo se ven también en Equipo › Contratos.",
-          example: "Alquilas el local de Jr. Ucayali por un año: eliges la plantilla, completas los datos y lo mandas a firmar.",
-        }}
-      >
-        {contratos.length > 0 && (
-          <span className="bg-[var(--surface-sunken)] text-xs px-2.5 py-1 rounded-full font-semibold text-[var(--text-secondary)]">{contratos.length}</span>
-        )}
-        <button
-          type="button"
-          onClick={() => setActiveTab("plantillas")}
-          className={button({ variant: "primary", className: "rounded-xl" })}
-        >
-          <Plus className="h-4 w-4" aria-hidden />
-          Nuevo contrato
-        </button>
-      </TituloDeVista>
-
-      {/* AdminTabBar, el mismo componente que el resto del panel. Antes esto
-          era un segmented control propio: mismo rol que las sub-pestañas de
-          Mi Plata o Marketplace pero con otro alto, otro radio y otro estado
-          activo, y sin el reorden por arrastre ni la persistencia del último
-          tab que el resto sí tiene. */}
-      <AdminTabBar
-        tabs={TABS}
-        activeTab={activeTab}
-        onTabChange={(id) => setActiveTab(id as TabId)}
-        moduleId={MODULE_ID}
+    <div className="space-y-4">
+      <CabeceraContratos
+        seccion={activeTab}
+        irA={setActiveTab}
+        cifras={stats}
+        plataVigente={formatMoney(stats.montoVigente)}
+        hayDolares={stats.hayDolares}
+        cargando={loading}
+        onActualizar={fetchContratos}
       />
 
       {/* Loading / Error */}
@@ -735,68 +721,22 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
             {/* ═══ DASHBOARD ═══ */}
             {activeTab === "dashboard" && (
               <div className="space-y-6">
-                {/* KPI Cards — uniform surface; intent solo en icono+valor cuando count > 0 */}
-                <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-                  {([
-                    { label: "Contratos", value: stats.total, icon: FileText, tone: "neutral" as const },
-                    { label: "Vigentes", value: stats.vigentes, icon: CheckCircle, tone: "neutral" as const },
-                    { label: "Esperando firma", value: stats.pendientesFirma, icon: PenTool, tone: "neutral" as const },
-                    { label: "Por vencer", value: stats.porVencer, icon: Clock, tone: (stats.porVencer > 0 ? "warning" : "neutral") as "neutral" | "warning" },
-                    { label: "Vencidos", value: stats.vencidos, icon: AlertCircle, tone: (stats.vencidos > 0 ? "danger" : "neutral") as "neutral" | "danger" },
-                  ]).map(kpi => {
-                    const iconBg =
-                      kpi.tone === "warning" ? "bg-[color-mix(in_oklch,var(--data-warning)_12%,transparent)]" :
-                      kpi.tone === "danger" ? "bg-[color-mix(in_oklch,var(--data-error)_12%,transparent)]" :
-                      "bg-[color-mix(in_oklch,var(--accent)_10%,transparent)]";
-                    const iconColor =
-                      kpi.tone === "warning" ? "text-[var(--data-warning-500)]" :
-                      kpi.tone === "danger" ? "text-[var(--data-error-500)]" :
-                      "text-[var(--text-secondary)]";
-                    const valueColor =
-                      kpi.tone === "warning" ? "text-[var(--data-warning-500)]" :
-                      kpi.tone === "danger" ? "text-[var(--data-error-500)]" :
-                      "text-[var(--text-primary)]";
-                    return (
-                      <div key={kpi.label} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4">
-                        <div className="flex items-center gap-3">
-                          <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center", iconBg)}>
-                            <kpi.icon className={cn("h-5 w-5", iconColor)} />
-                          </div>
-                          <div>
-                            <p className={cn("text-2xl font-bold tabular-nums", valueColor)}>{kpi.value}</p>
-                            <p className="text-xs text-[var(--text-tertiary)]">{kpi.label}</p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Plata comprometida — sólo lo que sigue en pie */}
-                <div className="bg-[var(--brand-ink)] rounded-lg p-6 text-[var(--surface-canvas)]">
-                  <p className="text-sm opacity-80">Plata comprometida en contratos vigentes</p>
-                  <p className="text-3xl font-bold mt-1">{formatMoney(stats.montoVigente)}</p>
-                  {stats.hayDolares && (
-                    <p className="text-xs opacity-70 mt-1">
-                      Hay contratos en dólares: se muestran aparte en cada ficha, no se suman acá.
-                    </p>
-                  )}
-                </div>
-
+                {/* Las cinco cifras y la plata comprometida viven en «Indicadores»
+                    (la cabecera): acá quedan los gráficos y los que vencen. */}
                 {/* Charts Row — gráficos sin datos NO se muestran (lo decide ContratosChart) */}
                 <ContratosChart typeData={stats.typeData} monthData={stats.monthData} />
 
                 {/* Contratos por vencer */}
                 {stats.porVencer > 0 && (
                   <div className="bg-[var(--data-warning-50)] dark:bg-amber-950/20 border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/50 rounded-xl p-4">
-                    <CardTitle className="text-sm font-bold text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] mb-3 flex items-center gap-2">
-                      <Clock className="h-4 w-4" /> Contratos por vencer (30 dias)
+                    <CardTitle className="mb-2 flex items-center gap-2 text-[var(--data-warning-ink)]">
+                      <Clock className="h-4 w-4" /> Contratos por vencer (30 días)
                     </CardTitle>
                     <div className="space-y-2">
                       {contratos.filter(c => estadoVisible(c) === "POR_VENCER").slice(0, 5).map(c => (
-                        <div key={c.id} className="flex items-center justify-between text-xs">
-                          <span className="text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]"><EnlacePanel {...enlaceDeContraparte(c)} apariencia="heredada" className="font-bold underline">{c.clienteNombre}</EnlacePanel> — {c.numero} — vence {formatDatePeru(c.fechaVencimiento!)}</span>
-                          <button onClick={() => { setSelected(c); }} className="px-2 py-1 rounded-lg bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/40 text-[var(--data-warning-500)] font-bold hover:bg-[var(--data-warning-500)] transition-colors">
+                        <div key={c.id} className="flex items-center justify-between gap-2 text-sm">
+                          <span className="text-[var(--data-warning-ink)]"><EnlacePanel {...enlaceDeContraparte(c)} apariencia="heredada" className="font-bold underline">{c.clienteNombre}</EnlacePanel> — {c.numero} — vence {formatDatePeru(c.fechaVencimiento!)}</span>
+                          <button type="button" onClick={() => { setSelected(c); }} className="h-12 shrink-0 rounded-xl px-4 font-bold text-[var(--data-warning-ink)] transition-colors hover:bg-[var(--data-warning-500)]/15">
                             Ver
                           </button>
                         </div>
@@ -810,7 +750,6 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
             {/* ═══ PLANTILLAS ═══ */}
             {activeTab === "plantillas" && (
               <div className="space-y-6">
-                <p className="text-sm text-[var(--text-secondary)]">Selecciona una plantilla para crear un contrato con clausulas legales peruanas reales.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {PLANTILLAS.map(tpl => (
                     <m.div
@@ -825,13 +764,12 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                         </div>
                         <div className="min-w-0 flex-1">
                           <BlockTitle>{tpl.name}</BlockTitle>
-                          <p className="text-xs text-[var(--text-secondary)] mt-1 line-clamp-2">{tpl.description}</p>
+                          <p className="text-sm text-[var(--text-secondary)] mt-1 line-clamp-2">{tpl.description}</p>
                           <div className="mt-2 flex items-center gap-2 flex-wrap">
-                            <span className="text-[length:var(--ts-2xs)] px-2 py-0.5 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] font-bold">{tpl.category}</span>
-                            <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{tpl.fields.length} campos</span>
-                            <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{tpl.clausulas.length} clausulas</span>
+                            <span className="text-sm px-2 py-0.5 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] font-bold">{tpl.category}</span>
+                            <span className="text-sm text-[var(--text-tertiary)]">{tpl.fields.length} campos · {tpl.clausulas.length} cláusulas</span>
                           </div>
-                          <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] mt-1 italic">{tpl.legalBasis}</p>
+                          <p className="text-sm text-[var(--text-tertiary)] mt-1 italic">{tpl.legalBasis}</p>
                         </div>
                       </div>
                     </m.div>
@@ -843,35 +781,35 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
             {/* ═══ MIS CONTRATOS ═══ */}
             {activeTab === "contratos" && (
               <div className="space-y-6">
-                {/* Filters */}
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
+                {/* Filtros en UNA fila pegada a la lista (11-10): buscador, tipo,
+                    estado y vista, todos de 48 px. Los autofiltros que vivían en
+                    las cabeceras de la tabla repetían estos dos selects: fuera. */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="relative w-full sm:w-auto sm:min-w-[14rem] sm:flex-1">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
                     <input
-                      type="text"
-                      placeholder="Buscar por cliente, número..."
+                      type="search"
+                      aria-label="Buscar contratos"
+                      placeholder="Buscar por cliente, número…"
                       value={search}
                       onChange={e => setSearch(e.target.value)}
-                      className="w-full pl-9 pr-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
                   </div>
-                  {/* Tipo y Estado ya tienen su autofiltro en el `<th>` de la vista lista
-                      (Brandon, 2026-09-24): acá se ocultan justo cuando esa columna se ve
-                      (mismo breakpoint que el `<th>`), y siguen visibles en cuadrícula
-                      (sin cabecera) o en pantallas donde la columna se esconde. */}
-                  <select aria-label="Filtrar por tipo" value={filterTipo} onChange={e => setFilterTipo(e.target.value)} className={cn("px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30", viewMode === "list" && "sm:hidden")}>
+                  <select aria-label="Filtrar por tipo" value={filterTipo} onChange={e => setFilterTipo(e.target.value)} className="h-12 min-w-0 flex-1 sm:flex-none rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30">
                     <option value="ALL">Todos los tipos</option>
                     {Object.entries(TIPO_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                   </select>
-                  <select aria-label="Filtrar por estado" value={filterEstado} onChange={e => setFilterEstado(e.target.value)} className={cn("px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30", viewMode === "list" && "lg:hidden")}>
+                  <select aria-label="Filtrar por estado" value={filterEstado} onChange={e => setFilterEstado(e.target.value)} className="h-12 min-w-0 flex-1 sm:flex-none rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30">
                     <option value="ALL">Todos los estados</option>
                     <option value="VIGENTE">Vigentes</option>
                     <option value="POR_VENCER">Por vencer</option>
                     <option value="VENCIDO">Vencidos</option>
                   </select>
-                  <div className="flex items-center gap-1">
-                    <button aria-label="Vista en cuadrícula" onClick={() => setViewMode("cards")} className={cn("p-2 rounded-xl transition-colors", viewMode === "cards" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]")}><LayoutGrid className="h-4 w-4" /></button>
-                    <button aria-label="Vista en lista" onClick={() => setViewMode("list")} className={cn("p-2 rounded-xl transition-colors", viewMode === "list" ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]")}><List className="h-4 w-4" /></button>
+                  {/* En el celular la lista ya se dibuja como tarjetas: el cambio de vista sobra. */}
+                  <div className="flex items-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-0.5 max-sm:hidden" role="group" aria-label="Cómo ver los contratos">
+                    <button type="button" aria-label="Vista en lista" aria-pressed={viewMode === "list"} title="Lista" onClick={() => setViewMode("list")} className={cn("flex h-11 w-11 items-center justify-center rounded-[10px] transition-colors", viewMode === "list" ? "bg-primary text-white" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]")}><List className="h-4 w-4" aria-hidden /></button>
+                    <button type="button" aria-label="Vista en cuadrícula" aria-pressed={viewMode === "cards"} title="Tarjetas" onClick={() => setViewMode("cards")} className={cn("flex h-11 w-11 items-center justify-center rounded-[10px] transition-colors", viewMode === "cards" ? "bg-primary text-white" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]")}><LayoutGrid className="h-4 w-4" aria-hidden /></button>
                   </div>
                 </div>
 
@@ -907,10 +845,10 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                           <div className="p-4 space-y-3">
                             <div className="flex items-start justify-between">
                               <div className="min-w-0 flex-1">
-                                <p className="text-xs text-[var(--text-tertiary)] font-mono">{c.numero}</p>
+                                <p className="text-sm text-[var(--text-tertiary)] font-mono">{c.numero}</p>
                                 <p className="text-sm font-bold text-[var(--text-primary)] mt-0.5">{TIPO_LABELS[c.tipo] || c.tipo}</p>
                               </div>
-                              <span className={cn("px-2 py-0.5 rounded-lg text-[length:var(--ts-2xs)] font-bold shrink-0 ml-2", ESTADO_STYLES[estado])}>
+                              <span className={cn("px-2 py-0.5 rounded-full text-sm font-bold shrink-0 ml-2", ESTADO_STYLES[estado])}>
                                 {ESTADO_VISIBLE_LABELS[estado]}
                               </span>
                             </div>
@@ -918,19 +856,16 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                               <div className="h-7 w-7 rounded-full bg-secondary/20 flex items-center justify-center shrink-0"><User className="h-3.5 w-3.5 text-secondary" /></div>
                               <div className="min-w-0">
                                 <p className="text-sm text-[var(--text-secondary)] truncate"><EnlacePanel {...enlaceDeContraparte(c)}>{c.clienteNombre}</EnlacePanel></p>
-                                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{c.clienteDoc}</p>
+                                <p className="text-sm text-[var(--text-tertiary)]">{c.clienteDoc}</p>
                               </div>
                             </div>
-                            <div className="text-xs text-[var(--text-secondary)] space-y-0.5">
+                            <div className="text-sm text-[var(--text-secondary)] space-y-0.5">
                               <p>Fecha: {formatDatePeru(c.fechaInicio || c.createdAt)}</p>
                               {c.fechaVencimiento && <p>Vence: {formatDatePeru(c.fechaVencimiento)} {dias !== null && dias >= 0 ? `(${dias}d)` : dias !== null ? `(hace ${Math.abs(dias)}d)` : ""}</p>}
                             </div>
                             <div className="flex items-center justify-between pt-2 border-t border-[var(--rule-soft)] ">
                               <p className="text-sm font-bold text-primary">{formatMoney(c.monto, c.moneda)}</p>
-                              <div className="flex gap-1">
-                                <button onClick={e => { e.stopPropagation(); downloadPDF(c); }} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)] hover:text-primary transition-colors" title="PDF"><Printer className="h-3.5 w-3.5" /></button>
-                                <button onClick={e => { e.stopPropagation(); downloadWord(c); }} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)] hover:text-primary transition-colors" title="Word"><Download className="h-3.5 w-3.5" /></button>
-                              </div>
+                              {menuDeContrato(c)}
                             </div>
                           </div>
                         </div>
@@ -943,25 +878,11 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                         <tr>
                           <th>N.o</th>
                           <th>Cliente</th>
-                          <th className="hidden sm:table-cell">
-                            <span className="block">Tipo</span>
-                            <select aria-label="Filtrar por tipo" value={filterTipo} onChange={e => setFilterTipo(e.target.value)} className="mt-1 h-7 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-1.5 text-[length:var(--ts-2xs)] font-normal normal-case text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30">
-                              <option value="ALL">Todos</option>
-                              {Object.entries(TIPO_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                            </select>
-                          </th>
+                          <th className="hidden sm:table-cell">Tipo</th>
                           <th className="text-right">Monto</th>
                           <th className="hidden md:table-cell">Fecha</th>
-                          <th className="hidden lg:table-cell">
-                            <span className="block">Estado</span>
-                            <select aria-label="Filtrar por estado" value={filterEstado} onChange={e => setFilterEstado(e.target.value)} className="mt-1 h-7 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-1.5 text-[length:var(--ts-2xs)] font-normal normal-case text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-primary/30">
-                              <option value="ALL">Todos</option>
-                              <option value="VIGENTE">Vigentes</option>
-                              <option value="POR_VENCER">Por vencer</option>
-                              <option value="VENCIDO">Vencidos</option>
-                            </select>
-                          </th>
-                          <th>Acciones</th>
+                          <th>Estado</th>
+                          <th><span className="sr-only">Acciones</span></th>
                         </tr>
                       </thead>
                       <tbody>
@@ -969,7 +890,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                           <tr>
                             <td colSpan={7} className="px-4 py-10 text-center">
                               <p className="text-sm font-semibold text-[var(--text-secondary)]">Ningún contrato coincide con el filtro.</p>
-                              <button onClick={clearContratosFilters} className="mt-2 text-xs font-extrabold text-primary hover:underline">Quitar filtros</button>
+                              <button type="button" onClick={clearContratosFilters} className="mt-2 h-12 rounded-xl px-4 text-sm font-bold text-[var(--accent-ink)] hover:bg-[var(--accent)]/10 dark:text-[var(--accent)]">Quitar filtros</button>
                             </td>
                           </tr>
                         )}
@@ -985,25 +906,23 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                               onKeyDown={(e) => { if (e.target !== e.currentTarget) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSelected(c); } }}
                               className="cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
                             >
-                              <td className="font-mono text-xs text-[var(--text-secondary)]">{c.numero}</td>
+                              <td className="font-mono text-sm text-[var(--text-secondary)]">{c.numero}</td>
                               <td>
-                                <p className="font-medium text-[var(--text-primary)] truncate"><EnlacePanel {...enlaceDeContraparte(c)}>{c.clienteNombre}</EnlacePanel></p>
-                                <p className="text-xs text-[var(--text-tertiary)]">{c.clienteDoc}</p>
+                                {/* Un div: en las tarjetas del celular la celda es flex y partía nombre y documento en dos columnas. */}
+                                <div className="min-w-0">
+                                  <p className="font-medium text-[var(--text-primary)] truncate"><EnlacePanel {...enlaceDeContraparte(c)}>{c.clienteNombre}</EnlacePanel></p>
+                                  <p className="text-sm text-[var(--text-tertiary)]">{c.clienteDoc}</p>
+                                </div>
                               </td>
                               <td className="hidden sm:table-cell">
-                                <span className="px-2 py-0.5 rounded-lg text-xs font-bold bg-[var(--surface-sunken)] text-[var(--text-secondary)]">{TIPO_LABELS[c.tipo] || c.tipo}</span>
+                                <span className="text-sm text-[var(--text-secondary)]">{TIPO_LABELS[c.tipo] || c.tipo}</span>
                               </td>
                               <td className="text-right font-bold text-[var(--text-primary)]">{formatMoney(c.monto, c.moneda)}</td>
                               <td className="text-[var(--text-secondary)] hidden md:table-cell">{formatDatePeru(c.fechaInicio || c.createdAt)}</td>
-                              <td className="hidden lg:table-cell">
-                                <span className={cn("px-2 py-0.5 rounded-lg text-[length:var(--ts-2xs)] font-bold", ESTADO_STYLES[estado])}>{ESTADO_VISIBLE_LABELS[estado]}</span>
-                              </td>
                               <td>
-                                <div className="flex gap-1">
-                                  <button onClick={e => { e.stopPropagation(); downloadPDF(c); }} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]" title="PDF"><Printer className="h-4 w-4" /></button>
-                                  <button onClick={e => { e.stopPropagation(); downloadWord(c); }} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]" title="Word"><Download className="h-4 w-4" /></button>
-                                </div>
+                                <span className={cn("inline-flex whitespace-nowrap px-2.5 py-0.5 rounded-full text-sm font-bold", ESTADO_STYLES[estado])}>{ESTADO_VISIBLE_LABELS[estado]}</span>
                               </td>
+                              <td className="w-14 text-right">{menuDeContrato(c)}</td>
                             </tr>
                           );
                         })}
@@ -1014,10 +933,10 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                 {/* Pagination */}
                 {totalPages > 1 && (
                   <div className="flex items-center justify-between">
-                    <p className="text-xs text-[var(--text-secondary)]">{filteredContratos.length} contrato{filteredContratos.length !== 1 ? "s" : ""} — Pag. {page}/{totalPages}</p>
+                    <p className="text-sm text-[var(--text-secondary)]">{filteredContratos.length} contrato{filteredContratos.length !== 1 ? "s" : ""} · página {page} de {totalPages}</p>
                     <div className="flex gap-1">
-                      <button aria-label="Anterior" disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30"><ChevronLeft className="h-4 w-4" /></button>
-                      <button aria-label="Siguiente" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30"><ChevronRight className="h-4 w-4" /></button>
+                      <button type="button" aria-label="Anterior" disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="flex h-12 w-12 items-center justify-center rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30"><ChevronLeft className="h-4 w-4" /></button>
+                      <button type="button" aria-label="Siguiente" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="flex h-12 w-12 items-center justify-center rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30"><ChevronRight className="h-4 w-4" /></button>
                     </div>
                   </div>
                 )}
@@ -1031,7 +950,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                   <div className="text-center py-16">
                     <BookOpen className="h-12 w-12 text-[var(--text-tertiary)] mx-auto mb-3" />
                     <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] mb-2">Selecciona una plantilla</CardTitle>
-                    <p className="text-sm text-[var(--text-secondary)] mb-6">Ve a la pestana &quot;Plantillas&quot; para elegir una plantilla legal</p>
+                    <p className="text-sm text-[var(--text-secondary)] mb-6">Elige una plantilla legal para empezar.</p>
                     <button onClick={() => setActiveTab("plantillas")} className="bg-primary text-white px-6 min-h-11 rounded-xl font-medium hover:bg-primary-dark">Ver Plantillas</button>
                   </div>
                 ) : (

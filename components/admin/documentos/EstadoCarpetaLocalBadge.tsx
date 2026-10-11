@@ -96,12 +96,13 @@ export default function EstadoCarpetaLocalBadge({
       onClick={onAbrir}
       title={m.titulo}
       className={cn(
-        "inline-flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-bold transition-colors",
+        "inline-flex min-h-12 shrink-0 items-center gap-1.5 rounded-xl px-3 text-sm font-bold transition-colors max-sm:w-12 max-sm:justify-center max-sm:px-0",
         m.cls,
       )}
     >
-      <m.Icon className="h-4 w-4 shrink-0" />
-      {m.texto}
+      <m.Icon className="h-4 w-4 shrink-0" aria-hidden />
+      {/* A 400 px la fila del título no da para el texto: queda el ícono con su `title`. */}
+      <span className="max-sm:sr-only">{m.texto}</span>
     </button>
   );
 }
