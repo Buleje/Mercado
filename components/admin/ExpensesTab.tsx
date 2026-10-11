@@ -1,15 +1,27 @@
 "use client";
 
-import { CardTitle, LoadingState, SectionTitle } from "@buleje/design-system";
+/**
+ * Mi Plata › Movimientos › Gastos. Patrón del panel (noche 11-10): cabecera en
+ * una fila (título · Indicadores · «Anotar gasto» · «⋯»), y la lista con su
+ * fila de filtros —buscador, categoría y el período— pegada encima. Lo que
+ * antes ocupaba la primera pantalla (dos cifras grandes, la línea de fijos,
+ * ocho tarjetas de categoría y el gráfico de 6 meses) vive en los Indicadores.
+ */
+
+import { LoadingState, SectionTitle } from "@buleje/design-system";
 import { toast } from "sonner";
 import { useState, useEffect, useMemo } from "react";
-import { Wallet, Plus, Calendar, BarChart2, RefreshCw } from "@buleje/design-system/icons";
-import { cn, limaDateKey } from "@/lib/utils";
+import { Download, MoreHorizontal, Plus, Receipt, RefreshCw } from "@buleje/design-system/icons";
+import { limaDateKey } from "@/lib/utils";
 import { formatCurrency, formatMonth } from "@/lib/format";
 import { diaDelGasto, primeroDelMes } from "@/lib/gastos/lista-gastos";
+import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
+import { button } from "@/components/ui-system/button-variants";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import GastoNuevoModal from "@/components/admin/gastos/GastoNuevoModal";
-import ListaGastos, { type GastoDeLaLista } from "@/components/admin/gastos/ListaGastos";
+import ListaGastos, { descargarCsvGastos, gastosVisibles, type GastoDeLaLista } from "@/components/admin/gastos/ListaGastos";
 import type { GastoGuardado } from "@/components/admin/gastos/use-gasto-nuevo";
+import { useIndicadoresGastos } from "@/components/admin/unified/finanzas/gastos/use-indicadores-gastos";
 
 type Expense = GastoDeLaLista;
 
@@ -43,6 +55,7 @@ export default function ExpensesTab({ onVerCatalogo, recarga = 0 }: Props = {}) 
   const [error, setError] = useState(false);
   /** Filtra la lista; se elige en el selector o tocando una tarjeta de categoría. */
   const [categoria, setCategoria] = useState<string | null>(null);
+  const [buscar, setBuscar] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [tick, setTick] = useState(0);
   /** Las relecturas propias (borrar, guardar) y las que pide quien la monta. */
@@ -108,116 +121,65 @@ export default function ExpensesTab({ onVerCatalogo, recarga = 0 }: Props = {}) 
   }, [historicExpenses]);
 
   const totalPeriod = expenses.reduce((s, e) => s + Number(e.amount), 0);
-  const totalAll = summary.reduce((s, item) => s + item.total, 0);
-  const maxCat = summary.length > 0 ? summary.reduce((a, b) => a.total > b.total ? a : b) : null;
+  const visibles = useMemo(() => gastosVisibles(expenses, buscar, categoria), [expenses, buscar, categoria]);
+  const kpis = useIndicadoresGastos({
+    delPeriodo: totalPeriod,
+    cuantosDelPeriodo: expenses.length,
+    desde: from,
+    hasta: to,
+    categorias: summary,
+    fijos: { cuantos: templates.length, monto: templates.reduce((s, t) => s + Number(t.amount), 0) },
+    porMes: monthlyExpenseData,
+    cargando: loading,
+  });
 
   if (loading) return <LoadingState />;
 
+  const acciones: MenuAccion[] = [
+    {
+      id: "csv",
+      label: "Descargar CSV",
+      hint: `${visibles.length} ${visibles.length === 1 ? "gasto" : "gastos"}, con el buscador y la categoría`,
+      icon: Download,
+      onSelect: () => descargarCsvGastos(visibles, from, to, categoria),
+      disabled: visibles.length === 0,
+    },
+    /* Sin `onVerCatalogo` no hay catálogo a la vista (quien no veía Compras no
+       lo ve acá tampoco): una acción que no abre nada, no. */
+    ...(onVerCatalogo
+      ? [{ id: "catalogo", label: "Gastos fijos del catálogo", hint: templates.length > 0 ? `${templates.length} configurados: no suman hasta pagarlos` : "Pagar con un toque o agregar uno", icon: Receipt, onSelect: onVerCatalogo }]
+      : []),
+    { id: "actualizar", label: "Actualizar", icon: RefreshCw, onSelect: () => setTick((v) => v + 1) },
+  ];
+
   return (
-    <div className="space-y-3 sm:space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <SectionTitle className="text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><Wallet className="h-6 w-6 text-primary" />Control de Gastos</SectionTitle>
-        <button onClick={() => setShowForm(true)} className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition flex flex-wrap items-center gap-2"><Plus className="h-4 w-4" />Nuevo Gasto</button>
+    <div className="space-y-4">
+      {/* Una fila: título · Indicadores · Anotar gasto · «⋯». */}
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">Gastos</SectionTitle>
+          <InfoTip
+            title="Gastos"
+            what="Lo que salió del negocio que no es mercadería: alquiler, luz, transporte, estiba. Elige el período en la fila de filtros."
+            affects="Los fijos del catálogo no suman hasta que registras su pago. El techo de estos gastos está abajo, en Presupuesto del mes."
+            example="Pagaste la luz de setiembre el 05/10: es un gasto de octubre."
+          />
+        </div>
+        {/* `justify-end`: si el titular del botón se corta, el hueco queda a la izquierda y no después del «⋯». */}
+        <div className="ml-auto flex min-w-0 items-center justify-end gap-2">
+          {kpis.boton}
+          <button
+            type="button"
+            onClick={() => setShowForm(true)}
+            className={button({ variant: "primary", className: "h-12 shrink-0 gap-2 rounded-xl px-4" })}
+          >
+            <Plus className="h-4 w-4" aria-hidden />
+            <span className="max-sm:sr-only">Anotar gasto</span>
+          </button>
+          <ActionMenu label="Más" icon={MoreHorizontal} actions={acciones} soloIcono size="md" className="w-12 shrink-0" title="Descargar CSV, gastos fijos y actualizar" />
+        </div>
       </div>
-
-      {/* Date filter + stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 sm:gap-4">
-        <div className="sm:col-span-2 flex flex-wrap items-center gap-2 bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-3">
-          <Calendar className="h-4 w-4 text-[var(--text-tertiary)] shrink-0" />
-          <input type="date" value={from} onChange={e => setFrom(e.target.value)} aria-label="Desde" className="bg-transparent text-sm flex-1 min-w-0" />
-          <span className="text-[var(--text-tertiary)]">→</span>
-          <input type="date" value={to} onChange={e => setTo(e.target.value)} aria-label="Hasta" className="bg-transparent text-sm flex-1 min-w-0" />
-        </div>
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 text-center">
-          <p className="text-xl sm:text-2xl font-extrabold text-[var(--data-error-500)]">{formatCurrency(totalPeriod)}</p>
-          <p className="text-xs text-[var(--text-tertiary)]">Este periodo</p>
-        </div>
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 text-center">
-          <p className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatCurrency(totalAll)}</p>
-          <p className="text-xs text-[var(--text-tertiary)]">Total histórico</p>
-        </div>
-      </div>
-
-      {/* Los fijos configurados: existen, pero todavía no son plata gastada. */}
-      {templates.length > 0 && (
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3">
-          <Calendar className="h-5 w-5 shrink-0 text-[var(--text-secondary)]" />
-          <p className="flex-1 min-w-[200px] text-sm text-[var(--text-secondary)]">
-            <span className="font-bold text-[var(--text-primary)]">
-              {templates.length} gasto{templates.length === 1 ? "" : "s"} fijo{templates.length === 1 ? "" : "s"} configurado{templates.length === 1 ? "" : "s"}
-            </span>{" "}
-            por {formatCurrency(templates.reduce((s, t) => s + Number(t.amount), 0))} al período. No suman
-            acá hasta que registres el pago.
-          </p>
-          {/* Sin `onVerCatalogo` no hay catálogo a la vista (quien no veía
-              Compras no lo ve acá tampoco): un botón que no abre nada, no. */}
-          {onVerCatalogo && (
-            <button
-              type="button"
-              onClick={onVerCatalogo}
-              className="inline-flex h-12 items-center rounded-lg border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-raised)]"
-            >
-              Ver el catálogo
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Category summary */}
-      {summary.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {summary.map(s => (
-            <button
-              type="button"
-              key={s.category}
-              aria-pressed={categoria === s.category}
-              title={categoria === s.category ? "Ver todas las categorías" : `Ver sólo ${s.category} en la lista`}
-              onClick={() => setCategoria(c => (c === s.category ? null : s.category))}
-              className={cn(
-                "bg-[var(--surface-raised)] border rounded-xl p-3 text-center transition hover:bg-[var(--surface-sunken)]",
-                categoria === s.category ? "border-[var(--accent)] dark:border-[var(--accent)] ring-2 ring-[var(--accent-muted)]"
-                  : s.category === maxCat?.category ? "border-[var(--data-error-500)] dark:border-[var(--data-error-500)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)]",
-              )}
-            >
-              <span className="block font-extrabold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)]">S/{Number(s.total).toFixed(0)}</span>
-              <span className="block text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] capitalize">{s.category} ({s.count})</span>
-              {totalAll > 0 && <span className="mt-1 block h-1 bg-[var(--surface-sunken)] rounded-full overflow-hidden"><span className="block h-full bg-primary rounded-full" style={{ width: `${(s.total / totalAll) * 100}%` }} /></span>}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Monthly expense trend chart */}
-      {monthlyExpenseData.some(m => m.total > 0) && (() => {
-        const maxVal = Math.max(...monthlyExpenseData.map(m => m.total), 1);
-        return (
-          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4 ">
-            <div className="flex flex-wrap items-center gap-2 mb-4">
-              <BarChart2 className="h-4 w-4 text-primary" />
-              <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">Gastos mensuales (6 meses)</CardTitle>
-            </div>
-            <div className="flex flex-wrap items-end gap-2 h-28">
-              {monthlyExpenseData.map((m, i) => {
-                const barH = m.total > 0 ? Math.max((m.total / maxVal) * 80, 4) : 4;
-                const isCurrent = i === 5;
-                return (
-                  <div key={i} className="flex flex-col items-center gap-1 flex-1 group">
-                    <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] dark:text-muted opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                      S/{Number(m.total).toFixed(0)}
-                    </span>
-                    <div
-                      className={cn("w-full rounded-t-md transition-all", isCurrent ? "bg-[var(--data-error-500)]" : "bg-[var(--data-error-500)]/70 dark:bg-[var(--data-error-500)]/40")}
-                      style={{ height: `${barH}px`, opacity: m.total > 0 ? 1 : 0.25 }}
-                      title={`${m.label}: ${formatCurrency(Number(m.total))}`}
-                    />
-                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted capitalize">{m.label}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })()}
+      {kpis.panel}
 
       <GastoNuevoModal
         open={showForm}
@@ -225,11 +187,11 @@ export default function ExpensesTab({ onVerCatalogo, recarga = 0 }: Props = {}) 
         onGuardado={(r) => { setShowForm(false); setTick(v => v + 1); avisoGuardado(r); }}
       />
 
-      {/* La lista del período: buscar, filtrar, CSV y borrar con confirmación. */}
+      {/* La lista del período: buscar, categoría, fechas y borrar con confirmación. */}
       {error ? (
         <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--data-error-500)] bg-[var(--surface-raised)] px-4 py-3">
           <p className="text-sm font-bold text-[var(--text-primary)]">No se pudieron cargar los gastos del período.</p>
-          <button type="button" onClick={() => setTick(v => v + 1)} className="inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]">
+          <button type="button" onClick={() => setTick(v => v + 1)} className="inline-flex h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]">
             <RefreshCw className="h-4 w-4" aria-hidden />Reintentar
           </button>
         </div>
@@ -238,13 +200,15 @@ export default function ExpensesTab({ onVerCatalogo, recarga = 0 }: Props = {}) 
           gastos={expenses}
           desde={from}
           hasta={to}
+          onDesde={setFrom}
+          onHasta={setTo}
+          buscar={buscar}
+          onBuscar={setBuscar}
           categoria={categoria}
           onCategoria={setCategoria}
-          onNuevo={() => setShowForm(true)}
           onCambio={() => setTick(v => v + 1)}
         />
       )}
     </div>
   );
 }
-

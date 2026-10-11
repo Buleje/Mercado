@@ -106,6 +106,8 @@ export default function GastosConPresupuesto({ pedidoPorUrl, hayPresupuesto }: P
           <div id="plata-presupuesto" className="scroll-mt-24">
             <Plegable
               clave={CLAVE_PRESUPUESTO}
+              variante="franja"
+              resumenAbierto
               titulo="Presupuesto del mes"
               resumen={
                 hayPresupuesto === false

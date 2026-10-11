@@ -10,8 +10,9 @@
  */
 
 import { DataTable } from "@buleje/design-system";
-import { cn } from "@/lib/utils";
-import { formatDateTimeShort } from "@/lib/format";
+import { cn, limaDateKey } from "@/lib/utils";
+import { diaConNombre } from "@/lib/gastos/lista-gastos";
+import { horaDeLima } from "@/lib/camaras/resumen";
 import { montoEnMoneda } from "@/lib/adelantos/cuenta-unificada";
 import type { MovimientoTesoreria } from "@/hooks/use-tesoreria";
 import { montoConSigno, origenLegible, tipoDeMovimiento } from "./estilo";
@@ -28,7 +29,7 @@ interface Props {
 
 export default function MovimientosTesoreria({ movimientos, monedaDe, notaDe, conCuenta }: Props) {
   return (
-    <DataTable zebra>
+    <DataTable zebra className="[&_thead_th]:text-sm [&_thead_th]:normal-case [&_thead_th]:tracking-normal">
       <thead>
         <tr>
           <th>Cuándo</th>
@@ -50,19 +51,19 @@ export default function MovimientosTesoreria({ movimientos, monedaDe, notaDe, co
             .join(" · ");
           return (
             <tr key={m.id}>
-              <td className="align-top whitespace-nowrap text-[var(--text-secondary)] tabular-nums">{formatDateTimeShort(m.createdAt)}</td>
+              <td className="align-top whitespace-nowrap text-[var(--text-secondary)] tabular-nums">{diaConNombre(limaDateKey(m.createdAt))} · {horaDeLima(m.createdAt)}</td>
               {conCuenta && <td className="align-top font-semibold text-[var(--text-primary)]">{m.cuentaNombre ?? "—"}</td>}
               <td className="align-top">
                 {/* UN solo hijo: en el celular la celda es una fila flex y
                     varios hijos sueltos se pisaban. */}
                 <div className="min-w-0">
                   <span className="flex flex-wrap items-center gap-2">
-                    <span className={cn("inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1 text-[length:var(--ts-xs)] font-bold", tipo.chip)}>
+                    <span className={cn("inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1 text-sm font-bold", tipo.chip)}>
                       <Icon className="h-3.5 w-3.5" aria-hidden="true" />{tipo.label}
                     </span>
                     <span className="font-medium text-[var(--text-primary)]">{m.descripcion || tipo.label}</span>
                   </span>
-                  {extra && <span className="mt-0.5 block text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">{extra}</span>}
+                  {extra && <span className="mt-0.5 block text-sm text-[var(--text-tertiary)]">{extra}</span>}
                 </div>
               </td>
               <td className={cn("align-top text-right font-extrabold tabular-nums whitespace-nowrap", tipo.monto)}>

@@ -13,14 +13,19 @@
  *   · fiados pendientes con recordatorio por WhatsApp → Por cobrar › Fiados;
  *   · flujo de 30 días → Movimientos › Caja (la proyección de 13 semanas).
  *
+ * Cabecera en una fila (título · «Tienes …» · «⋯»): el total ES el dato de la
+ * vista, va a la vista y no en un panel de indicadores.
+ *
  * Todo sale de `/api/treasury/*` vía `useTesoreria`; los totales los suma el
  * servidor (`/api/treasury/resumen`). SÓLO LECTURA: ver el porqué en el hook.
  */
 
 import { useCallback, useMemo, useState } from "react";
 import { CardTitle, SectionTitle } from "@buleje/design-system";
-import { Landmark, RefreshCw } from "@buleje/design-system/icons";
+import { Landmark, MoreHorizontal, RefreshCw, Waves } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
+import { irAlOrigen } from "@/components/admin/unified/finanzas/resultado/ir-al-origen";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { montoEnMoneda } from "@/lib/adelantos/cuenta-unificada";
 import { TOPE_MOVIMIENTOS, useTesoreria } from "@/hooks/use-tesoreria";
@@ -58,18 +63,28 @@ export default function TreasuryDashboard() {
   const error = cuentas.error ?? resumen.error;
   const cargando = cuentas.cargando || resumen.cargando || movimientos.cargando;
   const sinCuentas = !cuentas.cargando && !cuentas.error && lista.length === 0;
+  const acciones: MenuAccion[] = [
+    { id: "actualizar", label: "Actualizar", hint: "Las cuentas y sus movimientos", icon: RefreshCw, onSelect: recargar },
+    {
+      id: "proyeccion",
+      label: "Cómo sigue tu caja",
+      hint: "La proyección de 13 semanas arranca con este saldo",
+      icon: Waves,
+      onSelect: () => irAlOrigen({ tab: "plata", params: { vista: "flujo-caja" } }),
+    },
+  ];
 
   return (
-    <div className="space-y-5">
-      {/* Una sola fila: la cifra y «Actualizar». Dentro de Mi Plata no va
-          cabecera propia (el título del hub ya está arriba). */}
-      <div className="flex items-start gap-3">
+    <div className="space-y-4">
+      {/* Una fila: título · cuánto tienes · «⋯» (patrón del panel, noche 11-10). */}
+      <div className="flex items-center gap-2">
         <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-3 gap-y-1">
-          {r && r.cuentasActivas > 0 ? (
+          <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">Tesorería</SectionTitle>
+          {r && r.cuentasActivas > 0 && (
             <>
-              <SectionTitle as="h3">Tienes</SectionTitle>
+              <span className="text-sm text-[var(--text-secondary)]">Tienes</span>
               <span className="text-2xl font-extrabold tabular-nums text-[var(--text-primary)]">{enMonedas(porMoneda)}</span>
-              <span className="text-sm text-[var(--text-tertiary)]">
+              <span className="text-sm text-[var(--text-secondary)]">
                 en {r.cuentasActivas} {r.cuentasActivas === 1 ? "cuenta" : "cuentas"}
               </span>
               {/* El mes del resumen suma todas las monedas juntas: sólo se
@@ -80,8 +95,6 @@ export default function TreasuryDashboard() {
                 </span>
               )}
             </>
-          ) : (
-            <SectionTitle as="h3">Tus cuentas</SectionTitle>
           )}
           <InfoTip
             title="Tesorería"
@@ -90,15 +103,7 @@ export default function TreasuryDashboard() {
             example="BCP con S/ 15 000 y la caja chica con S/ 5 500: tienes S/ 20 500. Toca una cuenta para ver solo sus movimientos."
           />
         </div>
-        <button
-          type="button"
-          onClick={recargar}
-          className="shrink-0 rounded-xl p-2 text-[var(--text-tertiary)] transition-colors hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
-          title="Actualizar"
-          aria-label="Actualizar las cuentas y sus movimientos"
-        >
-          <RefreshCw className={cn("h-4 w-4", cargando && "animate-spin")} aria-hidden="true" />
-        </button>
+        <ActionMenu label="Más" icon={MoreHorizontal} actions={acciones} soloIcono size="md" className="w-12 shrink-0" title="Actualizar y cómo sigue tu caja" />
       </div>
 
       {error && <p className={AVISO_ERROR}>No se pudieron cargar tus cuentas: {error}</p>}
@@ -155,7 +160,7 @@ export default function TreasuryDashboard() {
             <MovimientosTesoreria movimientos={filas} monedaDe={monedaDe} notaDe={notaDe} conCuenta={!cuentaElegida} />
           )}
           {filas.length >= TOPE_MOVIMIENTOS && (
-            <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+            <p className="text-sm text-[var(--text-secondary)]">
               Son los últimos {TOPE_MOVIMIENTOS}. Toca una cuenta para ver solo los suyos.
             </p>
           )}

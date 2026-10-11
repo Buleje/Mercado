@@ -138,7 +138,16 @@ function responder(o: { proyeccion?: number } = {}) {
 }
 const pidio = (parte: string) => mockFetch.mock.calls.some(([u]) => String(u).includes(parte));
 
+/* Lo plegado (caja del mes, detalle por concepto, indicadores) se abre para
+   probar su contenido; «lo plegado por defecto» tiene su propio caso abajo. */
+const abrirTodo = () => {
+  localStorage.setItem("plata:caja:del-mes", "true");
+  localStorage.setItem("plata:caja:detalle-semanas", "true");
+  localStorage.setItem("ctp-kpis-v2:plata-proyeccion-caja", "1");
+};
+
 beforeEach(() => {
+  abrirTodo();
   rol.actual = "admin";
   mockFetch.mockReset();
   globalThis.fetch = mockFetch as unknown as typeof fetch;
@@ -150,7 +159,7 @@ describe("la caja del mes, arriba de la proyección", () => {
     responder();
     render(<CashflowRollingTable />);
     expect(await screen.findByText(`Caja de ${nombreMes(MES)}`)).toBeTruthy();
-    expect(screen.getByText("S/ 3,251.00")).toBeTruthy();
+    expect(await screen.findByText("S/ 3,251.00")).toBeTruthy();
     /* El total de «Salió» y su único renglón, «Gastos pagados». */
     expect(screen.getAllByText("S/ 20.00")).toHaveLength(2);
     expect(screen.getByText("+ S/ 3,231.00")).toBeTruthy();
@@ -197,14 +206,30 @@ describe("la proyección de 13 semanas", () => {
     expect(screen.getByText(/S\/ 5,156\.34 · 14 pendientes/)).toBeTruthy();
   });
 
-  it("en el celular, una línea por semana con sólo lo que se mueve", async () => {
+  it("semana a semana: sólo lo que se mueve, y las semanas quietas seguidas en un renglón", async () => {
     responder();
     render(<CashflowRollingTable />);
     const lista = await screen.findByRole("list", { name: "Las próximas 13 semanas" });
-    expect(within(lista).getAllByRole("listitem").filter((li) => li.parentElement === lista)).toHaveLength(13);
-    /* Sólo la semana 2 paga a proveedores: las otras 12 dicen «Sin movimientos». */
+    /* Sólo la semana 2 paga a proveedores: S1, S2 y S3–S13 (quietas y con el mismo cierre). */
+    expect(within(lista).getAllByRole("listitem").filter((li) => li.parentElement === lista)).toHaveLength(3);
     expect(within(lista).getByText("− Pagos a proveedores")).toBeTruthy();
-    expect(within(lista).getAllByText("Sin movimientos")).toHaveLength(12);
+    expect(within(lista).getAllByText("Sin movimientos")).toHaveLength(2);
+    expect(within(lista).getByText(/^S3–S13 · /)).toBeTruthy();
+  });
+
+  it("por defecto, a la vista lo que viene; la caja del mes y el detalle, plegados con su resumen", async () => {
+    localStorage.clear();
+    responder();
+    render(<CashflowRollingTable />);
+    expect(await screen.findByRole("list", { name: "Las próximas 13 semanas" })).toBeTruthy();
+    expect(await screen.findByText("Te van a pagar")).toBeTruthy();
+    const caja = screen.getByRole("button", { name: `Caja de ${nombreMes(MES)}` });
+    expect(caja.getAttribute("aria-expanded")).toBe("false");
+    expect(screen.getByText("Entró S/ 3,251.00 · salió S/ 20.00")).toBeTruthy();
+    expect(screen.queryByText("Sin sumar:")).toBeNull();
+    expect(screen.getByRole("button", { name: "Detalle por concepto" }).getAttribute("aria-expanded")).toBe("false");
+    /* El saldo de hoy viaja en el botón de Indicadores, plegado. */
+    expect(screen.getByText(/^Hoy ≈ S\/ 20,500\.00$/)).toBeTruthy();
   });
 
   it("un 403 de la proyección es una frase, y la caja del mes sigue", async () => {

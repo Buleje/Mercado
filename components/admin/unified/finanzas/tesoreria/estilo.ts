@@ -102,5 +102,5 @@ export function montoConSigno(monto: number, signo: 1 | -1, moneda: string): str
   return `${signo > 0 ? "+" : "−"} ${montoEnMoneda(Math.abs(monto), moneda)}`;
 }
 
-export const CHIP = "inline-flex h-11 items-center gap-2 rounded-2xl border px-4 text-sm font-bold transition-colors sm:h-9";
+export const CHIP = "inline-flex h-12 items-center gap-2 rounded-2xl border px-4 text-sm font-bold transition-colors";
 export const CHIP_OFF = "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50";

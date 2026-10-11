@@ -30,7 +30,14 @@ const aFila = (r: RenglonCaja): FilaDeCifra => ({
 
 const movs = (n: number) => `${formatNumber(n, 0)} ${n === 1 ? "movimiento" : "movimientos"}`;
 
-export default function CajaDelMes({ caja, onAbrir }: { caja: Caja; onAbrir: (f: FuenteDetalle) => void }) {
+interface Props {
+  caja: Caja;
+  onAbrir: (f: FuenteDetalle) => void;
+  /** Dentro de un plegable que ya se titula «Caja de …»: sin título propio, el neto en una línea. */
+  sinTitulo?: boolean;
+}
+
+export default function CajaDelMes({ caja, onAbrir, sinTitulo = false }: Props) {
   const nombre = nombreMes(caja.mes);
   const entroAprox = caja.entro.some((r) => esAproximado(r.certeza));
   const salioAprox = caja.salio.some((r) => esAproximado(r.certeza));
@@ -40,9 +47,13 @@ export default function CajaDelMes({ caja, onAbrir }: { caja: Caja; onAbrir: (f:
   return (
     <div className="@container overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--rule-base)] px-4 py-3 sm:px-5">
-        <div className="min-w-0">
+        <div className={cn("min-w-0", sinTitulo && "flex flex-wrap items-baseline gap-x-3")}>
           <div className="flex items-center gap-1.5">
-            <CardTitle className="text-sm font-bold" as="h3">Caja de {nombre}</CardTitle>
+            {sinTitulo ? (
+              <span className="text-sm font-semibold text-[var(--text-secondary)]">Neto del mes</span>
+            ) : (
+              <CardTitle className="text-sm font-bold" as="h3">Caja de {nombre}</CardTitle>
+            )}
             <InfoTip
               title="Lo que entró y salió de verdad"
               what="La plata que entró y salió en el mes, por de dónde vino. Cada sol se cuenta una vez."
@@ -58,7 +69,7 @@ export default function CajaDelMes({ caja, onAbrir }: { caja: Caja; onAbrir: (f:
           >
             {montoTexto(caja.neto, { aproximado: caja.estimado, signo: true })}
           </p>
-          <p className="text-xs text-[var(--text-secondary)]">Neto del mes: entró menos salió</p>
+          {!sinTitulo && <p className="text-sm text-[var(--text-secondary)]">Neto del mes: entró menos salió</p>}
         </div>
       </div>
 
@@ -95,7 +106,7 @@ export default function CajaDelMes({ caja, onAbrir }: { caja: Caja; onAbrir: (f:
                 type="button"
                 onClick={() => onAbrir("caja_sin_sumar")}
                 aria-label="Ver los movimientos a mano en la caja"
-                className="inline-flex min-h-8 items-center gap-0.5 rounded-md px-1.5 text-xs font-semibold text-[var(--text-primary)] underline decoration-[var(--rule-strong)] underline-offset-2 hover:bg-[var(--surface-sunken)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                className="inline-flex min-h-12 items-center gap-0.5 rounded-md px-2 text-sm font-semibold text-[var(--text-primary)] underline decoration-[var(--rule-strong)] underline-offset-2 hover:bg-[var(--surface-sunken)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
               >
                 Ver <ChevronRight className="h-3.5 w-3.5" aria-hidden />
               </button>

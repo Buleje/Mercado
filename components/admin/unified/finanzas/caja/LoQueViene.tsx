@@ -45,14 +45,14 @@ function FilaViene({ item }: { item: ItemViene }) {
         type="button"
         onClick={() => irAlOrigen(item.enlace)}
         aria-label={`${nombre}: ${montoTexto(item.monto, { aproximado: esAproximado(item.certeza) })}. ${VER[item.tipo] ?? "Ver"}`}
-        className="group flex min-h-11 flex-1 items-center justify-between gap-3 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-[var(--surface-sunken)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+        className="group flex min-h-12 flex-1 items-center justify-between gap-3 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-[var(--surface-sunken)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
       >
         <span className="flex min-w-0 items-start gap-2">
           <Icono className="mt-0.5 h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
           <span className="min-w-0">
             <span className="block text-sm font-semibold text-[var(--text-primary)]">{nombre}</span>
             {quienes.length > 0 && (
-              <span className="line-clamp-2 text-xs text-[var(--text-secondary)] [overflow-wrap:anywhere]" title={detalle}>
+              <span className="line-clamp-2 text-sm text-[var(--text-secondary)] [overflow-wrap:anywhere]" title={detalle}>
                 {detalle}
               </span>
             )}
@@ -95,7 +95,7 @@ function Grupo({ titulo, total, aproximado, items }: { titulo: string; total: nu
           type="button"
           onClick={() => setVerTodos((v) => !v)}
           aria-expanded={verTodos}
-          className="mt-1 min-h-9 rounded-lg px-2 text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+          className="mt-1 min-h-12 rounded-lg px-2 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
         >
           {verTodos ? "Ocultar los que están en cero" : `+${ceros} en cero`}
         </button>

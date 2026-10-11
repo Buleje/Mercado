@@ -13,7 +13,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, renderHook, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, renderHook, screen, waitFor, within } from "@testing-library/react";
 import { SECCIONES, ubicar } from "@/components/admin/unified/finanzas/estructura";
 import TreasuryDashboard from "@/components/admin/TreasuryDashboard";
 import type { CuentaTesoreria, MovimientoTesoreria, ResumenTesoreria, TransferenciaTesoreria } from "@/hooks/use-tesoreria";
@@ -100,7 +100,8 @@ describe("la pantalla de Tesorería", () => {
     expect(await screen.findByText("S/ 20,500.00")).toBeTruthy();
     expect(screen.getByText("en 2 cuentas")).toBeTruthy();
     const bcp = screen.getByRole("button", { name: /^BCP Corriente: S\/ 15,000\.00/ });
-    expect(within(bcp).getByText("Empezó con S/ 20,000.00 el 04 set.")).toBeTruthy();
+    /* El día de Lima, con su nombre: el 05/09 03:08 UTC es el viernes 04/09 en Pucallpa. */
+    expect(within(bcp).getByText("Empezó con S/ 20,000.00 el viernes 04/09")).toBeTruthy();
     expect(within(bcp).getByText("Banco · corriente · BCP")).toBeTruthy();
     expect(within(bcp).getByText(/191-2345678-0-12/)).toBeTruthy();
     expect(screen.getByRole("button", { name: /^Caja chica: S\/ 5,500\.00/ })).toBeTruthy();
@@ -159,7 +160,9 @@ describe("la pantalla de Tesorería", () => {
     responder({ cuentas: [], resumen: { ...RESUMEN, saldoTotal: 0, saldoPorMoneda: {}, cuentasActivas: 0 } });
     render(<TreasuryDashboard />);
     expect(await screen.findByText("Todavía no hay cuentas de banco, caja ni billeteras registradas.")).toBeTruthy();
-    expect(screen.getByText("Tus cuentas")).toBeTruthy();
+    /* El título de la vista va siempre; sin cuentas no hay «Tienes …». */
+    expect(screen.getByText("Tesorería")).toBeTruthy();
+    expect(screen.queryByText("Tienes")).toBeNull();
     expect(screen.queryByText("Movimientos")).toBeNull();
   });
 
@@ -174,7 +177,9 @@ describe("la pantalla de Tesorería", () => {
     render(<TreasuryDashboard />);
     await screen.findByText("S/ 20,500.00");
     fireEvent.click(screen.getByRole("button", { name: /^Caja chica:/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Actualizar las cuentas y sus movimientos" }));
+    /* «Actualizar» vive en el «⋯» de la cabecera (patrón del panel, 11-10). */
+    await act(async () => screen.getByRole("button", { name: "Más" }).click());
+    await act(async () => screen.getByRole("menuitem", { name: /Actualizar/ }).click());
     await waitFor(() => expect(mockFetch.mock.calls.length).toBeGreaterThanOrEqual(9));
     for (const [url, init] of mockFetch.mock.calls as [string, RequestInit | undefined][]) {
       expect(String(url).startsWith("/api/treasury/")).toBe(true);

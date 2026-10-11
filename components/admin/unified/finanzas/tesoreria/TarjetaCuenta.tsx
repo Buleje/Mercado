@@ -7,8 +7,8 @@
  */
 
 import { BadgeStatus } from "@buleje/design-system";
-import { cn } from "@/lib/utils";
-import { formatDateShort } from "@/lib/format";
+import { cn, limaDateKey } from "@/lib/utils";
+import { diaConNombre } from "@/lib/gastos/lista-gastos";
 import { montoEnMoneda } from "@/lib/adelantos/cuenta-unificada";
 import type { CuentaTesoreria } from "@/hooks/use-tesoreria";
 import { tipoDeCuenta } from "./estilo";
@@ -42,7 +42,7 @@ export default function TarjetaCuenta({ cuenta: c, elegida, onElegir }: Props) {
         </span>
         <span className="min-w-0 flex-1">
           <span className="block truncate font-bold text-[var(--text-primary)]">{c.nombre}</span>
-          <span className="block truncate text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
+          <span className="block truncate text-sm text-[var(--text-tertiary)]">
             {tipo.label}{c.banco ? ` · ${c.banco}` : ""}{c.moneda !== "PEN" ? ` · ${c.moneda}` : ""}
           </span>
         </span>
@@ -57,18 +57,18 @@ export default function TarjetaCuenta({ cuenta: c, elegida, onElegir }: Props) {
       >
         {montoEnMoneda(c.saldo, c.moneda)}
       </span>
-      <span className="text-[length:var(--ts-xs)] text-[var(--text-secondary)]">
-        Empezó con {montoEnMoneda(c.saldoInicial, c.moneda)} el {formatDateShort(c.createdAt)}
+      <span className="text-sm text-[var(--text-secondary)]">
+        Empezó con {montoEnMoneda(c.saldoInicial, c.moneda)} el {diaConNombre(limaDateKey(c.createdAt))}
       </span>
 
       {(c.numeroCuenta || c.cci) && (
-        <span className="text-[length:var(--ts-xs)] tabular-nums text-[var(--text-tertiary)]">
+        <span className="text-sm tabular-nums text-[var(--text-tertiary)]">
           {c.numeroCuenta && <>N.º {c.numeroCuenta}</>}
           {c.numeroCuenta && c.cci && " · "}
           {c.cci && <>CCI {c.cci}</>}
         </span>
       )}
-      {c.notas && <span className="line-clamp-2 text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">{c.notas}</span>}
+      {c.notas && <span className="line-clamp-2 text-sm text-[var(--text-tertiary)]">{c.notas}</span>}
     </button>
   );
 }
