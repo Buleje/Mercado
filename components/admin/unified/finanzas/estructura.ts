@@ -57,11 +57,14 @@ export const TABS = [
   { id: "resumen" as const,            label: "Resumen",              icon: BarChart3 },
   { id: "resultado" as const,          label: "Resultado",            icon: TrendingUp },
   { id: "movimientos" as const,        label: "Movimientos",          icon: ArrowRightLeft },
-  { id: "por-cobrar" as const,         label: "Por cobrar y pagar",   icon: CreditCard },
+  /* `shortLabel`: con los rótulos largos las ocho no entraban en una fila a
+     1280 px y «Impuestos y reportes» bajaba sola a una segunda (medido
+     2026-10-11). El largo sigue en el tooltip y en el nombre de la vista. */
+  { id: "por-cobrar" as const,         label: "Por cobrar y pagar",   shortLabel: "Deudas", icon: CreditCard },
   { id: "prestamos" as const,          label: "Préstamos",            icon: Banknote },
   { id: "adelantos" as const,          label: "Adelantos",            icon: Coins },
   { id: "activos" as const,            label: "Activos",              icon: Construction },
-  { id: "impuestos-reportes" as const, label: "Impuestos y reportes", icon: FileBarChart },
+  { id: "impuestos-reportes" as const, label: "Impuestos y reportes", shortLabel: "Impuestos", icon: FileBarChart },
 ];
 
 /** Las pestañas cuyo segundo nivel es el del módulo que montan (su `?sub=`). */
@@ -131,7 +134,7 @@ export const SECCIONES: Partial<Record<TabId, Seccion[]>> = {
     { id: "reportes",  label: "Reporte mensual",     corto: "Mensual",   icon: FileBarChart },
     { id: "contador",  label: "Para el contador",    corto: "Contador",  icon: Briefcase },
     { id: "importar",  label: "Importar y exportar", corto: "Importar",  icon: ArrowUpDown },
-    { id: "cierres",   label: "Cierres",                                 icon: Archive },
+    { id: "cierres",   label: "Cierres del día",     corto: "Cierres",   icon: Archive },
   ],
 };
 

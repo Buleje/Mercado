@@ -1,7 +1,6 @@
 "use client";
 
 import { DataTable } from "@buleje/design-system";
-import { Calculator } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/currency";
 import type { Fiscal } from "./tipos";
@@ -19,15 +18,20 @@ const CELDA_SIN_DATO = "py-2.5 text-right text-sm text-[var(--text-secondary)]";
  * (18 %)» y «IGV a pagar» calculados con ×18/118, y abajo, en cursiva,
  * «referencia aproximada». La cifra se leía como la del contador. Ahora cada
  * fila de IGV sale de su campo propio o dice que no hay registro.
+ *
+ * 2026-10-11: sin «Ventas del mes» (= «Entró» de la franja de arriba) ni
+ * «Gastos del mes» (sólo los registrados: un TERCER número al lado de «Salió»
+ * y de los costos de Ganancias). Quedan las tres filas del IGV, y la tarjeta
+ * «IGV a pagar» de los indicadores, que repetía la última, ya no está.
  */
-export default function ResumenFiscal({ fiscal, mesCapitalized }: { fiscal: Fiscal | null; mesCapitalized: string }) {
+export default function ResumenFiscal({ fiscal }: { fiscal: Fiscal | null }) {
   if (!fiscal) return null;
   const igv = leerIgv(fiscal.igv);
   const registrado = igv?.tipo === "registrado" ? igv : null;
   return (
     <BloquePlegable
       id="fiscal"
-      titulo={<span className="inline-flex items-center gap-2"><Calculator className="h-4 w-4 text-secondary" aria-hidden />Resumen fiscal de {mesCapitalized.toLowerCase()}</span>}
+      titulo="IGV del mes"
       resumen={registrado
         ? `${registrado.neto < 0 ? "saldo a favor" : "IGV a pagar"} ${formatCurrency(Math.abs(Math.round(registrado.neto)), { decimals: 0 })}`
         : !igv ? "no se pudo leer el IGV" : igv.tipo === "exoneradas" ? "sin IGV" : "sin IGV registrado"}
@@ -43,18 +47,10 @@ export default function ResumenFiscal({ fiscal, mesCapitalized }: { fiscal: Fisc
           </thead>
           <tbody className="divide-y divide-[var(--rule-soft)]">
             <tr>
-              <td className="py-2.5 text-[var(--text-secondary)]">Ventas del mes</td>
-              <td className={CELDA_MONTO}>{formatCurrency(Math.round(fiscal.ventas), { decimals: 0 })}</td>
-            </tr>
-            <tr>
               <td className="py-2.5 text-[var(--text-secondary)]">IGV de tus comprobantes</td>
               {registrado && registrado.comprobantes > 0
                 ? <td className={CELDA_MONTO}>{formatCurrency(Math.round(registrado.debito), { decimals: 0 })}</td>
                 : <td className={CELDA_SIN_DATO}>{igv ? "Sin comprobantes electrónicos" : "—"}</td>}
-            </tr>
-            <tr>
-              <td className="py-2.5 text-[var(--text-secondary)]">Gastos del mes</td>
-              <td className={CELDA_MONTO}>{formatCurrency(Math.round(fiscal.compras), { decimals: 0 })}</td>
             </tr>
             <tr>
               <td className="py-2.5 text-[var(--text-secondary)]">IGV de tus gastos</td>

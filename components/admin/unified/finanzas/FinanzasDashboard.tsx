@@ -14,20 +14,27 @@
  * 2026-10-09: medía 5,26 pantallas. Arriba queda lo de hoy (caja, deudas,
  * indicadores del mes y el gráfico); el resto son bloques plegables y
  * recordados (`./resumen/BloquePlegable`) que plegados dicen su cifra.
+ *
+ * 2026-10-11: la primera pantalla contesta cuánto entró, salió y quedó en el
+ * mes y qué falta (te deben, debes, la caja) en una franja (`CifrasDelMes`).
+ * Se fueron el selector de período que no cambiaba nada, los avisos que
+ * repetían tarjetas, los ocho indicadores (cuatro eran parte de otra cifra) y
+ * «Comparar meses» (la misma serie de seis meses que el gráfico de acá y que
+ * Resultado › Ganancias, con su propia sección en Comparar períodos). El
+ * gráfico, plegado como los demás bloques.
  */
 
 import { CardTitle } from "@buleje/design-system";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { BarChart3 } from "@buleje/design-system/icons";
-import { formatCurrency } from "@/lib/currency";
 import { useFavoriteCharts } from "@/hooks/use-favorite-charts";
 import { useResumenPlata } from "@/hooks/use-resumen-plata";
 import { useCajaAbierta, efectivoConocido, type UsoCajaAbierta } from "@/hooks/use-caja-abierta";
 import { StaggerItem } from "@/components/admin/finanzas/charts";
 import { calcHealthScore } from "@/components/admin/finanzas/shared";
 import { formatMonthYear } from "@/lib/format";
-import CabeceraDelResumen, { type Alerta, type Periodo } from "./resumen/CabeceraDelResumen";
-import KpisDelResumen from "./resumen/KpisDelResumen";
+import CabeceraDelResumen from "./resumen/CabeceraDelResumen";
+import CifrasDelMes from "./resumen/CifrasDelMes";
 import GraficoIngresosGastos from "./resumen/GraficoIngresosGastos";
 import DonutsGastosYPagos from "./resumen/DonutsGastosYPagos";
 import FlujoCajaDiario from "./resumen/FlujoCajaDiario";
@@ -35,7 +42,6 @@ import ProyeccionDelMes from "./resumen/ProyeccionDelMes";
 import ResumenFiscal from "./resumen/ResumenFiscal";
 import { IndicadoresDeSalud, SaludDelNegocio } from "./resumen/SaludFinanciera";
 import DeudasYCobros from "./resumen/DeudasYCobros";
-import CompararMeses from "./resumen/CompararMeses";
 import GraficosAmpliados from "./resumen/GraficosAmpliados";
 import EsqueletoResumen from "./resumen/EsqueletoResumen";
 import CajaDelResumen from "./resumen/CajaDelResumen";
@@ -53,25 +59,13 @@ function motivoSinLiquidez({ caja, error }: UsoCajaAbierta): string {
 export default function FinanzasDashboard() {
   const {
     loading, kpis, monthlyData, expensesByCategory, paymentMethods, cashFlow,
-    topPayables, topFiados, projection, fiscal, healthData, deudas, lastRefresh, recargar,
+    topPayables, topFiados, projection, fiscal, healthData, deudas,
   } = useResumenPlata();
   const caja = useCajaAbierta();
   // Mejora 13: Expand chart modal
   const [expandedChart, setExpandedChart] = useState<string | null>(null);
-  // Mejora 1: Period selector
-  const [period, setPeriod] = useState<Periodo>("month");
-  // Mejora 3: Auto-refresh
-  const [minAgo, setMinAgo] = useState(0);
   // Mejora 5: Favoritos
   const finFavs = useFavoriteCharts("finanzas");
-
-  // Mejora 3: Auto-refresh timer
-  useEffect(() => {
-    const minuteInterval = setInterval(() => {
-      setMinAgo(Math.floor((Date.now() - lastRefresh.getTime()) / 60000));
-    }, 60000);
-    return () => clearInterval(minuteInterval);
-  }, [lastRefresh]);
 
   // El efectivo es el esperado de la caja abierta, o no se sabe. Antes:
   // `ingresos * 0.3`, un número que nadie contó.
@@ -81,15 +75,6 @@ export default function FinanzasDashboard() {
     [healthData, efectivo],
   );
   const sinLiquidez = motivoSinLiquidez(caja);
-
-  // Mejora 6: Alertas inteligentes — ALL hooks MUST be before any early return
-  const alertas = useMemo(() => {
-    const a: Alerta[] = [];
-    if ((kpis.fiados ?? 0) > 0) a.push({ msg: `${formatCurrency(kpis.fiados ?? 0, { decimals: 0 })} en fiados pendientes`, color: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]" });
-    if ((kpis.utilidad ?? 0) < 0) a.push({ msg: "Balance negativo este mes", color: "bg-[var(--data-error-100)] text-[var(--data-error-500)]" });
-    if (topPayables.some(p => p.vencido)) a.push({ msg: `${topPayables.filter(p => p.vencido).length} pagos vencidos a proveedores`, color: "bg-[var(--data-error-100)] text-[var(--data-error-500)]" });
-    return a;
-  }, [kpis, topPayables]);
 
   if (loading) return <EsqueletoResumen />;
 
@@ -116,23 +101,20 @@ export default function FinanzasDashboard() {
 
   return (
     <div className="space-y-4">
-      <CabeceraDelResumen
-        period={period}
-        setPeriod={setPeriod}
-        minAgo={minAgo}
-        onRefresh={() => { recargar(); caja.recargar(); setMinAgo(0); }}
-        alertas={alertas}
+      <CabeceraDelResumen mes={mesCapitalized} />
+
+      <CifrasDelMes
+        kpis={kpis}
+        monthlyData={monthlyData}
+        deudas={deudas}
+        vencidos={{ fiados: healthData?.fiadosVencidos ?? 0, pagos: healthData?.payablesVencidos ?? 0 }}
       />
 
       <CajaDelResumen {...caja} />
 
-      {/* Lo que te deben y lo que debes, arriba: es el estado de hoy, no del mes. */}
-      <TeDebenYDebes deudas={deudas} />
-
-      <StaggerItem index={1}>
-        <KpisDelResumen kpis={kpis} monthlyData={monthlyData} fiscal={fiscal} />
-      </StaggerItem>
-
+      {/* Los bloques plegados, juntos y apretados: plegados son una lista de
+          renglones con su cifra, no tarjetas sueltas con 16 px de aire. */}
+      <div className="space-y-2">
       <StaggerItem index={1}>
         <GraficoIngresosGastos monthlyData={monthlyData} finFavs={finFavs} setExpandedChart={setExpandedChart} />
       </StaggerItem>
@@ -146,11 +128,11 @@ export default function FinanzasDashboard() {
       </StaggerItem>
 
       <StaggerItem index={4}>
-        <ProyeccionDelMes projection={projection} mesCapitalized={mesCapitalized} />
+        <ProyeccionDelMes projection={projection} />
       </StaggerItem>
 
       <StaggerItem index={5}>
-        <ResumenFiscal fiscal={fiscal} mesCapitalized={mesCapitalized} />
+        <ResumenFiscal fiscal={fiscal} />
       </StaggerItem>
 
       {/* Los indicadores y el puntaje hablan de lo mismo: un solo bloque, que
@@ -173,10 +155,7 @@ export default function FinanzasDashboard() {
       <StaggerItem index={7}>
         <DeudasYCobros topPayables={topPayables} topFiados={topFiados} />
       </StaggerItem>
-
-      <StaggerItem index={9}>
-        <CompararMeses monthlyData={monthlyData} />
-      </StaggerItem>
+      </div>
 
       <GraficosAmpliados
         expandedChart={expandedChart}

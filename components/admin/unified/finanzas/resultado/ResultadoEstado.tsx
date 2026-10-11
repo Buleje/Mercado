@@ -7,7 +7,6 @@
  * suma nada, sólo se decide cómo se lee.
  */
 
-import { CardTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { cn } from "@/lib/utils";
 import type { FuenteDetalle, PuntoSerie, Renglon, ResultadoDelMes } from "@/lib/finance/resultado-del-negocio";
@@ -25,7 +24,7 @@ const aFila = (r: Renglon): FilaDeCifra => ({
   nota: r.nota,
 });
 
-const CHIP = "inline-flex min-h-7 items-center rounded-full border px-2.5 text-xs font-bold text-[var(--text-primary)]";
+const CHIP = "inline-flex min-h-7 items-center rounded-full border px-2.5 text-sm font-bold text-[var(--text-primary)]";
 
 export default function ResultadoEstado({
   actual,
@@ -49,15 +48,7 @@ export default function ResultadoEstado({
     <div className="@container overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
       <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--rule-base)] px-4 py-3 sm:px-5">
         <div className="min-w-0">
-          <div className="flex items-center gap-1.5">
-            <CardTitle className="text-sm font-bold" as="h3">Resultado de {nombre}</CardTitle>
-            <InfoTip
-              title="Resultado del mes"
-              what="Lo que ganaste en el mes: lo que vendiste y cobraste por aserrío, menos lo que te costó."
-              affects="«≈» quiere decir que alguna cifra es estimada o le falta un dato. Toca un renglón para ver sus filas."
-              example="El aserrío de una corrida del 10/09 cuenta en setiembre aunque te lo paguen en octubre."
-            />
-          </div>
+          {/* El título y su ⓘ viven en la cabecera de la vista (PLTab): una vista, un título. */}
           <p
             className={cn(
               "text-2xl font-extrabold tabular-nums",
@@ -67,7 +58,7 @@ export default function ResultadoEstado({
             {montoTexto(actual.resultado, { aproximado: actual.estimado, signo: true })}
           </p>
           {anterior && (
-            <p className="text-xs text-[var(--text-secondary)] tabular-nums">
+            <p className="text-sm text-[var(--text-secondary)] tabular-nums">
               En {nombreMes(anterior.mes)}: {montoTexto(anterior.resultado, { aproximado: anterior.estimado, signo: true })}
             </p>
           )}

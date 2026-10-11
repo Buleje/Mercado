@@ -12,9 +12,10 @@
  */
 
 import { useState } from "react";
-import { LoadingState } from "@buleje/design-system";
-import { DollarSign, Download, Lock, RefreshCw } from "@buleje/design-system/icons";
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { LoadingState, SectionTitle } from "@buleje/design-system";
+import { Download, Lock, MoreHorizontal, RefreshCw } from "@buleje/design-system/icons";
+import ActionMenu from "@/components/admin/shared/action-menu";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import DetalleRenglonModal from "@/components/admin/unified/finanzas/resultado/DetalleRenglonModal";
 import ResultadoEstado from "@/components/admin/unified/finanzas/resultado/ResultadoEstado";
 import ResultadoSerie from "@/components/admin/unified/finanzas/resultado/ResultadoSerie";
@@ -29,7 +30,7 @@ const MESES_DEL_ANIO = Array.from({ length: 12 }, (_, i) => {
 });
 
 const CONTROL =
-  "h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]";
+  "h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]";
 
 /** El CSV del mes: los mismos renglones y totales que la pantalla. `null` va vacío, no 0. */
 function descargar(r: ResultadoDelMes) {
@@ -83,45 +84,53 @@ export default function PLTab() {
 
   return (
     <div className="space-y-4">
-      <AdminModuleHeader
-        as="h2"
-        title="Ganancias y pérdidas del mes"
-        description="Lo que ganaste: ingresos menos costos, con el aserrío y la madera adentro"
-        icon={DollarSign}
-      >
-        <select value={mes0} onChange={(e) => setMes(claveMes(anio, Number(e.target.value)))} aria-label="Mes" className={CONTROL}>
-          {MESES_DEL_ANIO.map((m, i) => (
-            <option key={m} value={i}>
-              {m}
-            </option>
-          ))}
-        </select>
-        <select value={anio} onChange={(e) => setMes(claveMes(Number(e.target.value), mes0))} aria-label="Año" className={CONTROL}>
-          {[anioLima - 1, anioLima, anioLima + 1].map((y) => (
-            <option key={y} value={y}>
-              {y}
-            </option>
-          ))}
-        </select>
-        <button
-          type="button"
-          aria-label="Actualizar"
-          title="Actualizar"
-          onClick={recargar}
-          disabled={noLoVe}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-50"
-        >
-          <RefreshCw className={cn("h-4 w-4 text-[var(--text-secondary)]", cargando && delMes && "animate-spin")} />
-        </button>
-        <button
-          type="button"
-          onClick={() => delMes && descargar(delMes.actual)}
-          disabled={!delMes}
-          className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-50"
-        >
-          <Download className="h-4 w-4" aria-hidden /> Descargar
-        </button>
-      </AdminModuleHeader>
+      {/* Una fila (2026-10-11): el título del mes con su ⓘ, el mes y el año
+          (el filtro del período) y «Más». Antes eran dos filas: los controles
+          solos arriba y el título dentro de la tarjeta de abajo. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">Resultado de {nombreMes(mes)}</SectionTitle>
+        <InfoTip
+          title="Resultado del mes"
+          what="Lo que ganaste en el mes: lo que vendiste y cobraste por aserrío, menos lo que te costó."
+          affects="«≈» quiere decir que alguna cifra es estimada o le falta un dato. Toca un renglón para ver sus filas."
+          example="El aserrío de una corrida del 10/09 cuenta en setiembre aunque te lo paguen en octubre."
+        />
+        <div className="ml-auto flex items-center gap-2">
+          <select value={mes0} onChange={(e) => setMes(claveMes(anio, Number(e.target.value)))} aria-label="Mes" className={CONTROL}>
+            {MESES_DEL_ANIO.map((m, i) => (
+              <option key={m} value={i}>
+                {m}
+              </option>
+            ))}
+          </select>
+          <select value={anio} onChange={(e) => setMes(claveMes(Number(e.target.value), mes0))} aria-label="Año" className={CONTROL}>
+            {[anioLima - 1, anioLima, anioLima + 1].map((y) => (
+              <option key={y} value={y}>
+                {y}
+              </option>
+            ))}
+          </select>
+          <ActionMenu
+            label="Más"
+            icon={MoreHorizontal}
+            soloIcono
+            size="md"
+            className="w-12 shrink-0"
+            title="Actualizar y descargar"
+            actions={[
+              { id: "actualizar", label: "Actualizar", icon: RefreshCw, onSelect: recargar, disabled: noLoVe, busy: cargando && !!delMes },
+              {
+                id: "descargar",
+                label: "Descargar el mes (CSV)",
+                hint: "Los mismos renglones y totales que ves",
+                icon: Download,
+                onSelect: () => delMes && descargar(delMes.actual),
+                disabled: !delMes,
+              },
+            ]}
+          />
+        </div>
+      </div>
 
       {noLoVe ? (
         <Recuadro>

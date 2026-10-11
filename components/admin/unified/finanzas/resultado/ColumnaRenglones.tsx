@@ -43,10 +43,10 @@ function RenglonFila({ fila, onAbrir }: { fila: FilaDeCifra; onAbrir: (f: Fuente
       <span className="min-w-0">
         <span className="block text-sm font-semibold text-[var(--text-primary)]">{label}</span>
         {partes.length > 0 && (
-          <span className="block text-xs text-[var(--text-secondary)] tabular-nums">{partes.join(" · ")}</span>
+          <span className="block text-sm text-[var(--text-secondary)] tabular-nums">{partes.join(" · ")}</span>
         )}
         {fila.faltan && (
-          <span className="block text-xs font-medium text-[var(--data-warning-ink)]">Falta: {fila.faltan.motivo}</span>
+          <span className="block text-sm font-medium text-[var(--data-warning-ink)]">Falta: {fila.faltan.motivo}</span>
         )}
       </span>
       <span className="flex shrink-0 items-center gap-1 text-sm font-bold tabular-nums text-[var(--text-primary)]">
@@ -126,7 +126,7 @@ export default function ColumnaRenglones({
           type="button"
           onClick={() => setVerTodos((v) => !v)}
           aria-expanded={verTodos}
-          className="mt-1 min-h-9 rounded-lg px-2 text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+          className="mt-1 min-h-11 rounded-lg px-2 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
         >
           {verTodos ? "Ocultar los que están en cero" : `+${plegadas} sin movimiento`}
         </button>

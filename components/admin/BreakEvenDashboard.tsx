@@ -22,7 +22,7 @@ import {
   AlertTriangle,
   RefreshCw,
 } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
+import { cn, limaDateKey } from "@/lib/utils";
 
 const BreakEvenGauge = dynamic(() => import("./BreakEvenGauge"), {
   ssr: false,
@@ -32,11 +32,14 @@ const BreakEvenGauge = dynamic(() => import("./BreakEvenGauge"), {
     </div>
   ),
 });
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { CardTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { irAlOrigen } from "@/components/admin/unified/finanzas/resultado/ir-al-origen";
 import { formatNumber, formatTime } from "@/lib/format";
 
+/* Dos decimales fijos: con sólo el mínimo, S/ 2 653 ÷ 30 salía «S/ 88.438». */
 const fmt = (n: number) =>
-  `S/ ${formatNumber(n, { min: 2 })}`;
+  `S/ ${formatNumber(n, { min: 2, max: 2 })}`;
 
 type SaleRecord = {
   id: string;
@@ -46,10 +49,23 @@ type SaleRecord = {
 
 type ExpenseRecord = {
   id: string;
-  amount: number;
+  amount: number | string;
   recurring: boolean;
-  date: string;
+  frequency?: string | null;
 };
+
+/**
+ * Cuántas veces al mes se paga un gasto fijo según su frecuencia (la del
+ * formulario de gastos recurrentes). Sin frecuencia, una vez al mes.
+ */
+const VECES_AL_MES: Record<string, number> = {
+  diario: 30, semanal: 52 / 12, quincenal: 2, mensual: 1, bimestral: 1 / 2, trimestral: 1 / 3, semestral: 1 / 6, anual: 1 / 12,
+};
+export function costoFijoMensual(gastos: ExpenseRecord[]): number {
+  return gastos
+    .filter((g) => g.recurring)
+    .reduce((suma, g) => suma + (Number(g.amount) || 0) * (VECES_AL_MES[String(g.frequency ?? "mensual").toLowerCase()] ?? 1), 0);
+}
 
 export default function BreakEvenDashboard() {
   const [sales, setSales] = useState<SaleRecord[]>([]);
@@ -61,11 +77,18 @@ export default function BreakEvenDashboard() {
   const load = () => {
     setLoading(true);
     setError(null);
-    const today = new Date().toISOString().split("T")[0];
+    /* El día de Lima: con `toISOString()`, desde las 19:00 pedía el de mañana. */
+    const today = limaDateKey();
 
     Promise.all([
       fetch(`/api/sales?date=${today}&limit=500`).then((r) => (r.ok ? r.json() : [])),
-      fetch("/api/expenses/summary?limit=200").then((r) => (r.ok ? r.json() : [])),
+      /* Los gastos FIJOS (el catálogo de recurrentes, con su frecuencia). Antes
+         leía `/api/expenses/summary`, que devuelve totales por categoría sin
+         `recurring` ni `amount`: el costo fijo salía S/ 0 siempre y la pantalla
+         decía «Ganando · ya cubriste los costos fijos» sin haber vendido nada
+         (medido 2026-10-11 en `main`, con alquiler, internet y combustible
+         anotados como fijos). */
+      fetch("/api/expenses?recurring=true").then((r) => (r.ok ? r.json() : [])),
     ])
       .then(([salesData, expData]) => {
         const salesRows: SaleRecord[] = Array.isArray(salesData)
@@ -90,18 +113,17 @@ export default function BreakEvenDashboard() {
 
   const stats = useMemo(() => {
     const now = new Date();
-    const todayStr = now.toISOString().split("T")[0];
+    const todayStr = limaDateKey(now);
 
-    const todaySales = sales.filter((s) => s.createdAt.startsWith(todayStr));
-    const totalSalesToday = todaySales.reduce((s, r) => s + r.total, 0);
+    const todaySales = sales.filter((s) => limaDateKey(s.createdAt) === todayStr);
+    const totalSalesToday = todaySales.reduce((s, r) => s + (Number(r.total) || 0), 0);
 
-    const monthlyFixed = expenses
-      .filter((e) => e.recurring)
-      .reduce((s, e) => s + e.amount, 0);
+    const monthlyFixed = costoFijoMensual(expenses);
     const dailyFixed = monthlyFixed / 30;
 
     const progress = dailyFixed > 0 ? (totalSalesToday / dailyFixed) * 100 : 0;
-    const reached = totalSalesToday >= dailyFixed;
+    /* Sin gastos fijos anotados no hay punto que alcanzar: no es «Ganando». */
+    const reached = dailyFixed > 0 && totalSalesToday >= dailyFixed;
     const remaining = Math.max(0, dailyFixed - totalSalesToday);
 
     const hoursElapsed = now.getHours() + now.getMinutes() / 60 - 6;
@@ -124,27 +146,35 @@ export default function BreakEvenDashboard() {
       estimatedHour,
       salesPerHour,
       transactionCount: todaySales.length,
+      sinFijos: dailyFixed === 0,
     };
   }, [sales, expenses]);
 
   return (
     <div className="space-y-3 sm:space-y-6">
-      <AdminModuleHeader
-        eyebrow="Rentabilidad · Hoy"
-        title="Punto de equilibrio diario"
-        description="Cuanto necesitas vender hoy para cubrir tus costos fijos. Refresco automatico cada 5 min."
-        icon={Target}
-      >
+      {/* Un bloque de Rentabilidad, no una pantalla: título de bloque con su ⓘ y
+          el «actualizar» a la derecha, en una fila. Antes el encabezado de
+          módulo escondía el título dentro de Mi Plata y el botón quedaba solo. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Target className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
+        <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">Punto de equilibrio de hoy</CardTitle>
+        <InfoTip
+          title="Punto de equilibrio de hoy"
+          what="Cuánto necesitas vender hoy para cubrir tus gastos fijos: la suma de tus gastos recurrentes llevada al mes (un semanal cuenta 4,3 veces) ÷ 30."
+          affects="Cuenta las ventas del mostrador de hoy, hora de Lima. Se actualiza solo cada 5 minutos."
+          example="Alquiler S/ 850 + internet S/ 130 al mes = S/ 980 ÷ 30: necesitas vender S/ 32.67 cada día."
+        />
         <button
           type="button"
           onClick={load}
           disabled={loading}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[length:var(--ts-xs)] font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
+          title={`Actualizado a las ${formatTime(lastRefresh)}`}
+          className="ml-auto inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
         >
-          <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
+          <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} aria-hidden />
           {formatTime(lastRefresh)}
         </button>
-      </AdminModuleHeader>
+      </div>
 
       {error && (
         <div className="flex items-center gap-2 rounded-xl border border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/10 px-4 py-3 text-[length:var(--ts-sm)] text-[var(--data-error-500)]">
@@ -160,7 +190,22 @@ export default function BreakEvenDashboard() {
         </div>
       )}
 
-      {!loading && !error && (
+      {/* Sin gastos fijos no hay punto de equilibrio que medir: una frase y adónde ir. */}
+      {!loading && !error && stats.sinFijos && (
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3 text-sm text-[var(--text-primary)]">
+          <Target className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+          <span>Anota tus gastos fijos (alquiler, luz, internet) para saber cuánto tienes que vender cada día.</span>
+          <button
+            type="button"
+            onClick={() => irAlOrigen({ tab: "plata", params: { vista: "gastos" } })}
+            className="ml-auto inline-flex min-h-11 items-center rounded-lg border border-[var(--rule-base)] px-3 font-semibold hover:bg-[var(--surface-sunken)]"
+          >
+            Ir a Gastos
+          </button>
+        </div>
+      )}
+
+      {!loading && !error && !stats.sinFijos && (
         <>
           {/* HERO con gauge + 4 KPIs inline */}
           <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5 sm:p-7">
@@ -249,7 +294,7 @@ export default function BreakEvenDashboard() {
             <div className="min-w-0 flex-1">
               {stats.reached ? (
                 <p className="text-[length:var(--ts-sm)] font-semibold text-[var(--data-success-500)]">
-                  Ya cubriste los costos fijos del dia. Cada sol adicional es ganancia neta.
+                  Ya cubriste los costos fijos del día. Cada sol adicional es ganancia neta.
                 </p>
               ) : stats.estimatedHour ? (
                 <p className="text-[length:var(--ts-sm)] font-medium text-[var(--text-secondary)]">

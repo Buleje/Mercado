@@ -1,8 +1,10 @@
 "use client";
 
-import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { SectionTitle } from "@buleje/design-system";
 import { useState, useMemo, useEffect, startTransition } from "react";
-import { GitCompareArrows, ArrowUp, ArrowDown, Minus, Calendar, Download, BarChart3 } from "@buleje/design-system/icons";
+import { ArrowUp, ArrowDown, Minus, Download, BarChart3, MoreHorizontal } from "@buleje/design-system/icons";
+import ActionMenu from "@/components/admin/shared/action-menu";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { cn, exportToCSV } from "@/lib/utils";
 import { formatCurrency, formatNumber } from "@/lib/format";
 
@@ -10,18 +12,24 @@ type Metric = { label: string; periodA: number; periodB: number; format: "money"
 
 function fmt(n: number) { return `${formatCurrency(n)}`; }
 function fmtNum(n: number, format: Metric["format"]) {
+  if (!Number.isFinite(n)) return "—";
   if (format === "money") return fmt(n);
   if (format === "pct") return `${n.toFixed(1)}%`;
   return formatNumber(n);
 }
 
+/* «Personalizado» se fue (2026-10-11): no pedía fechas y comparaba lo mismo
+   que «Mes». Los rótulos van cortos: viven en la fila del título. */
 const PRESETS = [
-  { id: "week", label: "Semana vs anterior", aLabel: "Esta semana", bLabel: "Semana pasada" },
-  { id: "month", label: "Mes vs anterior", aLabel: "Este mes", bLabel: "Mes pasado" },
-  { id: "quarter", label: "Trimestre vs anterior", aLabel: "Q actual", bLabel: "Q anterior" },
-  { id: "year", label: "Año vs anterior", aLabel: "Este año", bLabel: "Año pasado" },
-  { id: "custom", label: "Personalizado", aLabel: "Periodo A", bLabel: "Periodo B" },
+  { id: "week", label: "Semana", aLabel: "Esta semana", bLabel: "Semana pasada" },
+  { id: "month", label: "Mes", aLabel: "Este mes", bLabel: "Mes pasado" },
+  { id: "quarter", label: "Trimestre", aLabel: "Este trimestre", bLabel: "Trimestre pasado" },
+  { id: "year", label: "Año", aLabel: "Este año", bLabel: "Año pasado" },
 ];
+
+/** Métricas en las que bajar es lo bueno: que el costo de lo vendido suba no es una mejora. */
+const BAJAR_ES_BUENO = new Set(["Costo de ventas"]);
+const cambioTexto = (a: number, b: number) => (b !== 0 && Number.isFinite(a) && Number.isFinite(b) ? `${(((a - b) / Math.abs(b)) * 100).toFixed(1)}%` : "—");
 
 type SaleRecord = { total: number; totalCogs?: number; customerPhone?: string; createdAt: string; items?: Array<unknown> };
 
@@ -72,7 +80,10 @@ function computeMetrics(periodSales: SaleRecord[]): { revenue: number; txns: num
   const avgTicket = txns > 0 ? revenue / txns : 0;
   const uniqueClients = new Set(periodSales.map(x => x.customerPhone ?? "anon")).size;
   const cogs = periodSales.reduce((s, x) => s + (x.totalCogs ?? 0), 0);
-  const grossMargin = revenue > 0 ? ((revenue - cogs) / revenue) * 100 : 0;
+  /* Sin ventas, o pasado ±999 %, el margen no dice nada (S/ 0.10 de venta y
+     S/ 18.29 de costo daban «−18190.0%»): queda sin dato, como en el Resumen. */
+  const margen = revenue > 0 ? ((revenue - cogs) / revenue) * 100 : NaN;
+  const grossMargin = Math.abs(margen) <= 999 ? margen : NaN;
   return { revenue, txns, avgTicket, uniqueClients, cogs, grossMargin };
 }
 
@@ -116,44 +127,67 @@ export default function PeriodComparatorTab() {
   const improvements = useMemo(() => data.filter(m => {
     const change = m.periodA - m.periodB;
     // For "bad" metrics (devoluciones, stock agotado), decrease is good
-    const isInverse = m.label.includes("Devoluciones") || m.label.includes("Stock agotado");
-    return isInverse ? change < 0 : change > 0;
+    if (!Number.isFinite(change)) return false;
+    return BAJAR_ES_BUENO.has(m.label) ? change < 0 : change > 0;
   }).length, [data]);
 
+  const exportar = () =>
+    exportToCSV(
+      data.map(m => ({ metrica: m.label, [current.aLabel]: fmtNum(m.periodA, m.format), [current.bLabel]: fmtNum(m.periodB, m.format), cambio: cambioTexto(m.periodA, m.periodB) })),
+      `comparador-${preset}`,
+    );
+
   return (
-    <div className="space-y-3 sm:space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <SectionTitle className="text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><GitCompareArrows className="h-6 w-6 text-primary" /> Comparador de Periodos</SectionTitle>
-          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Compara métricas clave entre dos rangos de fecha</p>
+    <div className="space-y-4">
+      {/* Una fila: título · ⓘ · el período · cuántas mejoraron · Más. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">Comparar períodos</SectionTitle>
+        <InfoTip
+          title="Comparar períodos"
+          what="Tus ventas de mostrador de este período contra el anterior: total, transacciones, ticket, clientes, costo y margen bruto."
+          affects="Cuenta las ventas del mostrador, no los pedidos web ni el aserrío. La ganancia del mes con todos los costos está en Ganancias."
+          example="«Mes» compara del 1 a hoy contra el mes pasado entero."
+        />
+        <div role="radiogroup" aria-label="Período" className="inline-flex overflow-hidden rounded-xl border border-[var(--rule-base)]">
+          {PRESETS.map(p => (
+            <button
+              key={p.id}
+              type="button"
+              role="radio"
+              aria-checked={preset === p.id}
+              onClick={() => setPreset(p.id)}
+              className={cn(
+                "min-h-12 px-3 text-sm font-semibold transition-colors",
+                preset === p.id
+                  ? "bg-[var(--accent-ink)] text-white dark:bg-[var(--accent)] dark:text-[var(--surface-canvas)]"
+                  : "bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
+              )}
+            >
+              {p.label}
+            </button>
+          ))}
         </div>
-        <button onClick={() => exportToCSV(data.map(m => ({ metrica: m.label, [current.aLabel]: fmtNum(m.periodA, m.format), [current.bLabel]: fmtNum(m.periodB, m.format), cambio: `${((m.periodA - m.periodB) / m.periodB * 100).toFixed(1)}%` })), `comparador-${preset}`)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10 transition-colors"><Download className="h-3.5 w-3.5" /> Exportar CSV</button>
-      </div>
-
-      {/* Preset selector */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <Calendar className="h-4 w-4 text-[var(--text-tertiary)]" />
-        {PRESETS.map(p => (
-          <button key={p.id} onClick={() => setPreset(p.id)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", preset === p.id ? "bg-primary text-white" : "bg-[var(--rule-soft)] text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--rule-base)] ")}>{p.label}</button>
-        ))}
-      </div>
-
-      {/* Summary */}
-      <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-3 sm:p-5">
-        <div className="flex items-center justify-between mb-4">
-          <CardTitle className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2"><BarChart3 className="h-4 w-4 text-primary" /> Resumen</CardTitle>
-          <span className="text-xs font-semibold text-[var(--data-success-500)]">{improvements}/{data.length} métricas mejoraron</span>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-center text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-3">
-          <span>Métrica</span>
-          <span className="text-[var(--data-success-500)]">{current.aLabel}</span>
-          <span className="text-[var(--text-secondary)]">{current.bLabel}</span>
+        {data.length > 0 && (
+          <span className="text-sm font-semibold text-[var(--text-secondary)]">
+            {improvements} de {data.length} mejoraron
+          </span>
+        )}
+        <div className="ml-auto">
+          <ActionMenu
+            label="Más"
+            icon={MoreHorizontal}
+            soloIcono
+            size="md"
+            className="w-12 shrink-0"
+            title="Descargar"
+            actions={[{ id: "csv", label: "Descargar (CSV)", icon: Download, onSelect: exportar, disabled: data.length === 0 }]}
+          />
         </div>
       </div>
 
       {/* Comparison cards */}
       {loading ? (
-        <div className="text-center py-10 text-sm text-[var(--text-tertiary)]">Cargando datos de ventas...</div>
+        <div className="text-center py-10 text-sm text-[var(--text-tertiary)]">Cargando tus ventas…</div>
       ) : data.length === 0 ? (
         <div className="text-center py-10">
           <BarChart3 className="h-10 w-10 text-[var(--text-tertiary)] dark:text-surface mx-auto mb-2" />
@@ -164,36 +198,36 @@ export default function PeriodComparatorTab() {
         {data.map(m => {
           const diff = m.periodA - m.periodB;
           const pct = m.periodB !== 0 ? (diff / m.periodB) * 100 : 0;
-          const isInverse = m.label.includes("Devoluciones") || m.label.includes("Stock agotado");
-          const isGood = isInverse ? diff <= 0 : diff >= 0;
-          const maxVal = Math.max(m.periodA, m.periodB);
+          const sinDato = !Number.isFinite(diff);
+          const isGood = BAJAR_ES_BUENO.has(m.label) ? diff <= 0 : diff >= 0;
+          const maxVal = Math.max(Number.isFinite(m.periodA) ? m.periodA : 0, Number.isFinite(m.periodB) ? m.periodB : 0);
 
           return (
             <div key={m.label} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{m.label}</span>
-                <span className={cn("flex items-center gap-0.5 text-xs font-bold", isGood ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
-                  {diff === 0 ? <Minus className="h-3 w-3" /> : isGood ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
-                  {pct > 0 ? "+" : ""}{pct.toFixed(1)}%
+                <span className={cn("flex items-center gap-0.5 text-sm font-bold", sinDato ? "text-[var(--text-tertiary)]" : isGood ? "text-[var(--data-success-ink)]" : "text-[var(--data-error-ink)]")}>
+                  {sinDato || diff === 0 ? <Minus className="h-3 w-3" /> : isGood ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+                  {!sinDato && m.periodB !== 0 ? `${pct > 0 ? "+" : ""}${pct.toFixed(1)}%` : "—"}
                 </span>
               </div>
               <div className="space-y-2">
                 <div>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-[var(--data-success-500)] font-semibold">{current.aLabel}</span>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-[var(--text-primary)] font-semibold">{current.aLabel}</span>
                     <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmtNum(m.periodA, m.format)}</span>
                   </div>
                   <div className="w-full h-2 bg-[var(--rule-soft)] rounded-full overflow-hidden">
-                    <div className="h-full bg-primary/10 rounded-full transition-all" style={{ width: `${(m.periodA / maxVal) * 100}%` }} />
+                    <div className="h-full bg-[var(--accent)] rounded-full transition-all" style={{ width: `${maxVal > 0 && Number.isFinite(m.periodA) ? Math.max(0, (m.periodA / maxVal) * 100) : 0}%` }} />
                   </div>
                 </div>
                 <div>
-                  <div className="flex justify-between text-xs mb-1">
+                  <div className="flex justify-between text-sm mb-1">
                     <span className="text-[var(--text-secondary)] font-semibold">{current.bLabel}</span>
                     <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmtNum(m.periodB, m.format)}</span>
                   </div>
                   <div className="w-full h-2 bg-[var(--rule-soft)] rounded-full overflow-hidden">
-                    <div className="h-full bg-[var(--text-primary)] rounded-full transition-all" style={{ width: `${(m.periodB / maxVal) * 100}%` }} />
+                    <div className="h-full bg-[var(--text-tertiary)] rounded-full transition-all" style={{ width: `${maxVal > 0 && Number.isFinite(m.periodB) ? Math.max(0, (m.periodB / maxVal) * 100) : 0}%` }} />
                   </div>
                 </div>
               </div>

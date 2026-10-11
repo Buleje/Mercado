@@ -76,7 +76,10 @@ export async function GET(req: NextRequest) {
         costEstimated: false,
       };
       entry.unitsSold += line.quantity;
-      entry.revenue += line.price * line.quantity;
+      // Lo cobrado, con el descuento de la venta repartido entre sus líneas:
+      // con `price × quantity` una venta de S/ 24.90 cobrada S/ 0.10 contaba
+      // S/ 24.90 y Rentabilidad no cuadraba con Ganancias.
+      entry.revenue += line.cobrado;
       entry.cogs += unitCost * line.quantity;
       if (line.costPrice === null) entry.costEstimated = true;
       map.set(line.productId, entry);

@@ -14,7 +14,7 @@ import type { Aviso, FuenteDetalle, OtraMoneda, ResultadoDelMes } from "@/lib/fi
 import { montoTexto } from "./fuentes";
 
 const BOTON_VER =
-  "inline-flex min-h-8 shrink-0 items-center align-middle gap-0.5 rounded-md px-1.5 text-xs font-semibold text-[var(--text-primary)] underline decoration-[var(--rule-strong)] underline-offset-2 hover:bg-[var(--surface-sunken)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]";
+  "inline-flex min-h-8 shrink-0 items-center align-middle gap-0.5 rounded-md px-1.5 text-sm font-semibold text-[var(--text-primary)] underline decoration-[var(--rule-strong)] underline-offset-2 hover:bg-[var(--surface-sunken)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]";
 
 /** «Compraste S/ X de madera: resta al venderse», con el ⓘ del porqué. */
 export function MemoCompras({ memo, onAbrir }: { memo: ResultadoDelMes["memo"]; onAbrir: (f: FuenteDetalle) => void }) {

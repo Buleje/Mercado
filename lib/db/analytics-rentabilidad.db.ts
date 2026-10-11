@@ -1,5 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { cobradoPorLinea } from "@/lib/finance/repartir-descuento";
+import { ESTADOS_PEDIDO_QUE_ENTRAN } from "@/lib/finance/ingresos-del-periodo";
 
 /**
  * lib/db/analytics-rentabilidad.db.ts
@@ -35,6 +37,12 @@ export type RentabilidadProductLineRaw = {
   category: string | null;
   price: number;
   quantity: number;
+  /**
+   * Lo COBRADO por la línea: precio × cantidad menos su parte del descuento
+   * de la venta u orden (`lib/finance/repartir-descuento.ts`). Es lo que suma
+   * Ganancias; `price × quantity` es el precio de lista.
+   */
+  cobrado: number;
   costPrice: number | null;
   productCostPrice: number | null;
 };
@@ -113,12 +121,17 @@ export const AnalyticsRentabilidadDB = {
         quantity: true,
         costPrice: true,
         product: { select: { category: true, costPrice: true } },
+        sale: { select: { id: true, total: true } },
       },
       orderBy: { id: "desc" },
       take: 50_000,
     });
 
-    return rows.map((r) => ({
+    const cobrado = cobradoPorLinea(
+      rows.map((r) => ({ doc: r.sale.id, totalDoc: Number(r.sale.total), price: Number(r.price), quantity: r.quantity })),
+    );
+    return rows.map((r, i) => ({
+      cobrado: cobrado[i],
       productId: r.productId,
       name: r.name,
       category: r.product.category,
@@ -145,10 +158,13 @@ export const AnalyticsRentabilidadDB = {
     tenantId: string,
     since: Date
   ): Promise<RentabilidadProductLineRaw[]> {
+    // También las líneas sin producto: no se cuentan, pero su subtotal entra
+    // en el reparto del descuento de su orden.
     const rows = await prisma.orderItem.findMany({
       where: {
-        productId: { not: null },
-        order: { tenantId, status: { not: "cancelado" }, createdAt: { gte: since } },
+        // Los mismos pedidos que Ganancias (`ESTADOS_PEDIDO_QUE_ENTRAN`) y sin los borrados
+        // (reviewer 11-10): antes entraban los pendientes y los eliminados.
+        order: { tenantId, status: { in: [...ESTADOS_PEDIDO_QUE_ENTRAN] }, deletedAt: null, createdAt: { gte: since } },
       },
       select: {
         productId: true,
@@ -157,16 +173,21 @@ export const AnalyticsRentabilidadDB = {
         quantity: true,
         costPrice: true,
         product: { select: { category: true, costPrice: true } },
+        order: { select: { id: true, total: true } },
       },
       orderBy: { id: "desc" },
       take: 50_000,
     });
 
-    return rows.flatMap((r) =>
+    const cobrado = cobradoPorLinea(
+      rows.map((r) => ({ doc: r.order.id, totalDoc: Number(r.order.total), price: Number(r.price), quantity: r.quantity })),
+    );
+    return rows.flatMap((r, i) =>
       r.productId === null
         ? []
         : [
             {
+              cobrado: cobrado[i],
               productId: r.productId,
               name: r.name,
               category: r.product?.category ?? null,

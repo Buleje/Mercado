@@ -1,6 +1,5 @@
 "use client";
 
-import { TrendingUp } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/currency";
 import { SERIE } from "@/components/admin/shared/chart-palette";
@@ -8,7 +7,7 @@ import type { Proyeccion } from "./tipos";
 import BloquePlegable from "./BloquePlegable";
 
 /** A qué ritmo va el mes: lo vendido y gastado, llevado a fin de mes. */
-export default function ProyeccionDelMes({ projection, mesCapitalized }: { projection: Proyeccion | null; mesCapitalized: string }) {
+export default function ProyeccionDelMes({ projection }: { projection: Proyeccion | null }) {
   const projVentasDiarias = projection ? projection.ventasMes / projection.diasTranscurridos : 0;
   const projVentas = projection ? Math.round(projVentasDiarias * projection.diasTotales) : 0;
   const projGastos = projection ? Math.round((projection.gastosMes / projection.diasTranscurridos) * projection.diasTotales) : 0;
@@ -20,7 +19,7 @@ export default function ProyeccionDelMes({ projection, mesCapitalized }: { proje
       {projection && (
         <BloquePlegable
           id="proyeccion"
-          titulo={<span className="inline-flex items-center gap-2"><TrendingUp className="h-4 w-4" strokeWidth={1.75} aria-hidden />Proyección de {mesCapitalized.toLowerCase()}</span>}
+          titulo="Proyección al cierre del mes"
           resumen={`ventas ${formatCurrency(projVentas, { decimals: 0 })} · gastos ${formatCurrency(projGastos, { decimals: 0 })} · utilidad ${projUtilidad < 0 ? "−" : ""}${formatCurrency(Math.abs(projUtilidad), { decimals: 0 })}`}
         >
           <div className="grid grid-cols-3 gap-4 mb-5">

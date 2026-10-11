@@ -1,53 +1,57 @@
 "use client";
 
-import { RefreshCw, AlertTriangle } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
-import ExportButton from "@/components/admin/shared/ExportButton";
-import PeriodSelector from "@/components/admin/shared/PeriodSelector";
-import { StaggerItem } from "@/components/admin/finanzas/charts";
+/**
+ * La cabecera del Resumen, en UNA fila: el mes · ⓘ · «Más».
+ *
+ * Antes (medido 2026-10-11): un selector «Hoy / 7 dias / 30 dias / Este mes»
+ * que no cambiaba ninguna cifra (el período no llegaba a los datos), «Actualizado
+ * hace N min» con su botón al lado del «Actualiza en …» de la banda del hub, un
+ * «Exportar» que imprimía la página, y una fila de avisos que repetía tarjetas
+ * de abajo. Ahora todo es del mes —lo dice el título— y lo de uso ocasional va
+ * al menú.
+ */
 
-export type Periodo = "today" | "7d" | "30d" | "month";
-export type Alerta = { msg: string; color: string };
+import { SectionTitle } from "@buleje/design-system";
+import { GitCompareArrows, MoreHorizontal, Printer, TrendingUp } from "@buleje/design-system/icons";
+import ActionMenu from "@/components/admin/shared/action-menu";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { irAlOrigen } from "@/components/admin/unified/finanzas/resultado/ir-al-origen";
 
-/** Período, «actualizado hace…», exportar y las alertas del mes. */
-export default function CabeceraDelResumen({
-  period, setPeriod, minAgo, onRefresh, alertas,
-}: {
-  period: Periodo;
-  setPeriod: (p: Periodo) => void;
-  minAgo: number;
-  onRefresh: () => void;
-  alertas: Alerta[];
-}) {
+export default function CabeceraDelResumen({ mes }: { mes: string }) {
   return (
-    <>
-      <StaggerItem index={0}>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <PeriodSelector value={period} onChange={setPeriod} />
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
-            <span>Actualizado hace {minAgo} min</span>
-            <button onClick={onRefresh} className="p-1 h-11 w-11 flex items-center justify-center hover:bg-[var(--surface-sunken)] rounded transition-colors" title="Actualizar datos">
-              <RefreshCw className="h-3 w-3" />
-            </button>
-          </div>
-          <ExportButton />
-        </div>
+    <div className="flex flex-wrap items-center gap-2">
+      <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">{mes}</SectionTitle>
+      <InfoTip
+        title="Resumen del mes"
+        what="Arriba, lo que entró, salió y quedó en el mes (hora de Lima) y lo que te deben y debes hoy. Abajo, cada bloque se abre con un clic y recuerda cómo lo dejaste."
+        affects="Entró, salió y quedó son los totales de Resultado › Ganancias, que trae cada renglón. Toca una cifra para ir a su detalle."
+        example="Si vendiste S/ 1 000 y te costó S/ 850 entre mercadería y luz: entró S/ 1 000, salió S/ 850 y quedó S/ 150."
+      />
+      <div className="ml-auto">
+        <ActionMenu
+          label="Más"
+          icon={MoreHorizontal}
+          soloIcono
+          size="md"
+          className="w-12 shrink-0"
+          title="Imprimir, ganancias y comparar períodos"
+          actions={[
+            { id: "imprimir", label: "Imprimir el resumen", icon: Printer, onSelect: () => window.print() },
+            {
+              id: "ganancias",
+              label: "Ganancias del mes, renglón por renglón",
+              icon: TrendingUp,
+              onSelect: () => irAlOrigen({ tab: "plata", params: { vista: "pl" } }),
+            },
+            {
+              id: "comparar",
+              label: "Comparar períodos",
+              icon: GitCompareArrows,
+              onSelect: () => irAlOrigen({ tab: "plata", params: { vista: "comparador" } }),
+            },
+          ]}
+        />
       </div>
-      </StaggerItem>
-
-      {/* ════════ ALERTAS INTELIGENTES ════════ */}
-      {alertas.length > 0 && (
-        <StaggerItem index={0}>
-        <div className="flex flex-wrap gap-2">
-          {alertas.map((a, i) => (
-            <span key={i} className={cn("inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold", a.color)}>
-              <AlertTriangle className="h-3 w-3" /> {a.msg}
-            </span>
-          ))}
-        </div>
-        </StaggerItem>
-      )}
-    </>
+    </div>
   );
 }

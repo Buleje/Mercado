@@ -23,6 +23,7 @@ import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import AutoRefreshControl from "@/components/admin/shared/AutoRefreshControl";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
+import { invalidateFinanzasCache } from "@/components/admin/finanzas/shared";
 import { useAutoRefresh } from "@/hooks/use-auto-refresh";
 import { useVistaModulo, type ParamsDeVista } from "@/hooks/use-vista-modulo";
 import { useSeccionesConDatos } from "@/hooks/use-secciones-con-datos";
@@ -119,7 +120,14 @@ function HubDePlata({ initialTab }: { initialTab?: string }) {
       TABS.filter((t) => {
         const secciones = SECCIONES[t.id];
         return secciones ? secciones.some((s) => permitidas.has(s.id)) : permitidas.has(t.id);
-      }).map((t) => (SECCIONES[t.id] ? t : { ...t, label: rotulo.get(t.id) ?? t.label })),
+      }).map((t) =>
+        /* Sin «Impuestos del mes» a la vista (en `main` la plantilla esconde
+           facturación y documentos, su origen) la pestaña sólo abre reportes:
+           que no se llame «Impuestos» (medido 2026-10-11 en vista=cierres). */
+        t.id === "impuestos-reportes" && !permitidas.has("impuestos")
+          ? { ...t, label: "Reportes", shortLabel: undefined }
+          : SECCIONES[t.id] ? t : { ...t, label: rotulo.get(t.id) ?? t.label },
+      ),
     [permitidas, rotulo],
   );
   const secciones = useMemo(
@@ -143,7 +151,12 @@ function HubDePlata({ initialTab }: { initialTab?: string }) {
   const [vuelta, setVuelta] = useState(0);
   const autoRefresh = useAutoRefresh({
     intervalSeconds: 300,
-    onRefresh: useCallback(() => setVuelta((k) => k + 1), []),
+    /* Sin vaciar la caché de Finanzas (30 s), «Actualizar ahora» volvía a
+       pintar las respuestas de recién: el Resumen ya no tiene botón propio. */
+    onRefresh: useCallback(() => {
+      invalidateFinanzasCache();
+      setVuelta((k) => k + 1);
+    }, []),
     enabled: vista === "resumen",
   });
 

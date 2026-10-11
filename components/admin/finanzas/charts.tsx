@@ -1,14 +1,13 @@
 "use client";
 import { SERIE, SERIES } from "@/components/admin/shared/chart-palette";
 import { useState, useEffect, useMemo } from "react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, ReferenceLine, PieChart, Pie, Cell } from "recharts";
+import { Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { TrendingUp, Calculator } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/currency";
 import { logger } from "@/lib/logger";
-import { fetchFinanzas, n, calcHealthScore, MESES, type HealthData } from "@/components/admin/finanzas/shared";
+import { fetchFinanzas, n, calcHealthScore, type HealthData } from "@/components/admin/finanzas/shared";
 import { formatMonthYear } from "@/lib/format";
-import { gastoDelMes, type FilaGasto } from "@/lib/finance/ingresos-del-periodo";
 
 export function HealthSemaphore() {
   const [data, setData] = useState<HealthData | null>(null);
@@ -83,95 +82,8 @@ export function HealthSemaphore() {
   );
 }
 
-// ── Mejora 12: Gráfica comparativa mes a mes ─────────────────────────────────
-
-
-export function ComparativoMensual() {
-  const [chartData, setChartData] = useState<Array<{ mes: string; ingresos: number; gastos: number; utilidad: number }>>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Ingresos mensuales agregados SERVER-SIDE (Sale + Order, INGRESO_ORDER_STATUSES).
-    // Antes: /api/sales?limit=5000 crudo bucketeado acá (y sumaba SOLO Sale →
-    // inconsistente con el trend de P&L). Reusa /api/finanzas/monthly-summary.
-    //
-    // Gastos: de la lista de gastos reales (sin plantillas de gasto fijo) con
-    // la misma partición de meses que los ingresos. Se leían de
-    // `/api/expenses/summary`.monthly, un campo que ese endpoint no manda: cada
-    // barra de gasto salía en 0 (medido 2026-09-28 en QA: agosto S/ 930).
-    Promise.all([
-      fetchFinanzas<FilaGasto[]>("/api/expenses?limit=2000&recurring=false", []),
-      fetchFinanzas<Array<{ month: string; ingresos: number }>>("/api/finanzas/monthly-summary?months=6", []),
-    ])
-      .then(([expenses, monthly]) => {
-        const series = Array.isArray(monthly) ? monthly : [];
-        const gastosReales = Array.isArray(expenses) ? expenses : [];
-        const months = series.map(({ month: monthKey, ingresos }) => {
-          const mm = Number(monthKey.split("-")[1]);
-          const label = MESES[(mm || 1) - 1];
-          const gastos = gastoDelMes(monthKey, gastosReales);
-          return { mes: label, ingresos: Math.round(ingresos), gastos: Math.round(gastos), utilidad: Math.round(ingresos - gastos) };
-        });
-        setChartData(months);
-      })
-      .catch((err) => logger.warn("[FinanzasModule] fetch failed (non-critical)", { err: String(err).slice(0, 120) }))
-      .finally(() => setLoading(false));
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 animate-pulse">
-        <div className="h-75 bg-[var(--surface-sunken)] rounded-xl" />
-      </div>
-    );
-  }
-
-  if (chartData.every(d => d.ingresos === 0 && d.gastos === 0)) {
-    return null;
-  }
-
-  return (
-    <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-5">
-      <p className="text-xs font-bold text-[var(--text-secondary)] mb-3">Comparativo Mensual</p>
-      <ResponsiveContainer minWidth={0} width="100%" height={300}>
-        <BarChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--rule-base)" />
-          <XAxis dataKey="mes" tick={{ fontSize: 12 }} />
-          <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => formatCurrency(v, { decimals: 0 })} />
-          <Tooltip
-            formatter={(value: unknown, name: unknown) => {
-              const v = Number(value);
-              const n = String(name);
-              return [formatCurrency(v, { decimals: 0 }), n === "ingresos" ? "Ingresos" : n === "gastos" ? "Gastos" : "Utilidad"];
-            }}
-            labelFormatter={(label: unknown) => `${String(label)} 2026`}
-          />
-          <Legend formatter={(value: unknown) => { const v = String(value); return v === "ingresos" ? "Ingresos" : v === "gastos" ? "Gastos" : "Utilidad"; }} />
-          <Bar dataKey="ingresos" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
-          <Bar dataKey="gastos" fill={SERIE.gastos} radius={[4, 4, 0, 0]} />
-          <Bar dataKey="utilidad" fill={SERIE.utilidad} radius={[4, 4, 0, 0]} />
-          {/* Mejora 14: Linea de punto de equilibrio (promedio gastos) */}
-          {(() => {
-            const avgGastos = chartData.reduce((s, d) => s + d.gastos, 0) / Math.max(chartData.length, 1);
-            return avgGastos > 0 ? (
-              <ReferenceLine
-                y={avgGastos}
-                stroke={SERIE.gastos}
-                strokeDasharray="5 5"
-                strokeWidth={1.5}
-                label={{ value: `PE: S/${Math.round(avgGastos)}`, position: "right", fill: SERIE.gastos, fontSize: 10 }}
-              />
-            ) : null;
-          })()}
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
-  );
-}
-
 // ── Mejora 14: Punto de equilibrio visual ─────────────────────────────────────
 
- 
 export function PuntoEquilibrio() {
   const [data, setData] = useState<{ gastoDiario: number; ventasHoy: number } | null>(null);
   const [loading, setLoading] = useState(true);

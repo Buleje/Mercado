@@ -14,6 +14,7 @@ import type { useFavoriteCharts } from "@/hooks/use-favorite-charts";
 import { useMetaDeVentas } from "@/hooks/use-meta-de-ventas";
 import type { MesResumen } from "./tipos";
 import MetaDelGrafico from "./MetaDelGrafico";
+import BloquePlegable from "./BloquePlegable";
 
 /**
  * Ingresos, gastos y utilidad de los últimos seis meses, con la meta de ventas
@@ -28,22 +29,33 @@ export default function GraficoIngresosGastos({
 }) {
   const uso = useMetaDeVentas();
   const meta = uso.meta?.target ?? null;
+  if (monthlyData.length === 0) return null;
+  const primero = monthlyData[0];
+  const ultimo = monthlyData[monthlyData.length - 1];
   return (
-    <>
-      {monthlyData.length > 0 && (
-        <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6">
-          <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-            <div className="flex items-center gap-2">
-              <FavStar id="ingresos-vs-gastos" favs={finFavs} />
-              <div className="h-2 w-2 rounded-full bg-primary" />
-              <p className="text-sm font-bold text-[var(--text-primary)]">Ingresos vs Gastos vs Utilidad</p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <MetaDelGrafico {...uso} />
-              <span className="text-xs text-[var(--text-tertiary)] font-medium">Últimos 6 meses</span>
-              <button onClick={() => setExpandedChart("ingresos-gastos")} className="p-1 hover:bg-[var(--surface-sunken)] rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /></button>
-            </div>
-          </div>
+    /* Plegado por defecto (2026-10-11): la franja de arriba ya dice el mes, y
+       el gráfico ocupaba 410 px de la primera pantalla. Plegado no repite
+       cifras de Ganancias: dice qué meses cubre. */
+    <BloquePlegable
+      id="grafico-6-meses"
+      titulo="Ingresos, costos y utilidad"
+      resumen={`${monthlyData.length} meses, de ${primero.mes.toLowerCase()} a ${ultimo.mes.toLowerCase()}`}
+      acciones={
+        <>
+          <FavStar id="ingresos-vs-gastos" favs={finFavs} />
+          <MetaDelGrafico {...uso} />
+          <button
+            type="button"
+            onClick={() => setExpandedChart("ingresos-gastos")}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+            title="Ampliar el gráfico"
+            aria-label="Ampliar el gráfico"
+          >
+            <Maximize2 className="h-4 w-4" aria-hidden />
+          </button>
+        </>
+      }
+    >
           <ResponsiveContainer minWidth={0} width="100%" height={320}>
             <ComposedChart data={monthlyData} margin={{ top: 10, right: 15, left: 0, bottom: 5 }}>
               <defs>
@@ -75,8 +87,6 @@ export default function GraficoIngresosGastos({
               <Line type="monotone" dataKey="utilidad" stroke={SERIE.utilidad} strokeWidth={3} dot={{ r: 5, fill: SERIE.utilidad, strokeWidth: 2, stroke: "var(--surface-raised)" }} activeDot={{ r: 7 }} />
             </ComposedChart>
           </ResponsiveContainer>
-        </div>
-      )}
-    </>
+    </BloquePlegable>
   );
 }

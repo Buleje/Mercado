@@ -67,12 +67,12 @@ export default function ResultadoSerie({
                 <span className="flex flex-col justify-start" style={{ height: abajo }} aria-hidden>
                   {p.resultado < 0 && <span className={cn("mx-auto w-3/5 rounded-b", color)} style={{ height: Math.max(alto, 2) }} />}
                 </span>
-                <span className="mt-1 text-center text-xs font-semibold text-[var(--text-primary)]">
+                <span className="mt-1 text-center text-sm font-semibold text-[var(--text-primary)]">
                   {mesCorto(p.mes)}
                   {p.estimado && <span className="font-normal text-[var(--text-secondary)]"> ≈</span>}
                   {p.cerradoCtp && <span className="sr-only"> (cerrado)</span>}
                 </span>
-                <span className="whitespace-nowrap text-center text-xs tabular-nums text-[var(--text-secondary)]">
+                <span className="whitespace-nowrap text-center text-sm tabular-nums text-[var(--text-secondary)]">
                   {p.resultado < 0 ? "−" : ""}
                   {formatNumber(Math.abs(p.resultado), 0)}
                 </span>

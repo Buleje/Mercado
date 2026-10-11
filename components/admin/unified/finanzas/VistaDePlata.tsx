@@ -13,10 +13,10 @@
 import dynamic from "next/dynamic";
 import { Suspense } from "react";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
-import { ComparativoMensual } from "@/components/admin/finanzas/charts";
 import Plegable from "@/components/admin/shared/Plegable";
 import type { MapaDeDatos } from "@/hooks/use-secciones-con-datos";
 import BloqueMudado from "./BloqueMudado";
+import BloquePlegable from "./resumen/BloquePlegable";
 import GastosConPresupuesto from "./GastosConPresupuesto";
 
 const FinanzasDashboard = dynamic(() => import("./FinanzasDashboard"), { loading: S });
@@ -26,8 +26,6 @@ const ReportsTab = dynamic(() => import("@/components/admin/ReportsTab"), { load
 const ImportExportTab = dynamic(() => import("@/components/admin/ImportExportTab"), { loading: S });
 const WeeklyReportCard = dynamic(() => import("@/components/admin/WeeklyReportCard"), { loading: S });
 const BudgetAlertWidget = dynamic(() => import("@/components/admin/BudgetAlertWidget"), { loading: S });
-const MonthProjectionCard = dynamic(() => import("@/components/admin/MonthProjectionCard"), { loading: S });
-const ProfitLossAutoCard = dynamic(() => import("@/components/admin/ProfitLossAutoCard"), { loading: S });
 const CashflowRollingTable = dynamic(() => import("@/components/admin/finance/CashflowRollingTable"), { loading: S });
 const BreakEvenDashboard = dynamic(() => import("@/components/admin/BreakEvenDashboard"), { loading: S });
 const MoneyLeakDetector = dynamic(() => import("@/components/admin/MoneyLeakDetector"), { loading: S });
@@ -49,8 +47,6 @@ const ScoringCrediticioTab = dynamic(() => import("@/components/admin/ScoringCre
 // ── Llegaron de otra pestaña (ola 3) ──
 /* Análisis › Inteligencia › Comparativo: la otra lectura de «comparar períodos». */
 const ComparativeReportsTab = dynamic(() => import("@/components/admin/ComparativeReportsTab"), { loading: S });
-/* Análisis › Clientes › Fiados › «Quién te debe»: el riesgo, leído por la IA. */
-const FiadosRiesgoIA = dynamic(() => import("@/components/admin/fiados/FiadosRiesgoIA"), { loading: S });
 /* Comprobantes › Impuestos y Obligaciones: contabilidad, no comprobantes. */
 const TaxTab = dynamic(() => import("@/components/admin/TaxTab"), { loading: S });
 const ObligacionesTab = dynamic(() => import("@/components/admin/ObligacionesTab"), { loading: S });
@@ -69,35 +65,35 @@ export default function VistaDePlata({ vista, seccion, datos, irA, vuelta }: Pro
   switch (vista) {
     case "resumen":
       return (
-        <div className="space-y-6" key={vuelta}>
+        <div className="space-y-2" key={vuelta}>
           <FinanzasDashboard />
-          {/* El detector de fugas no vive en ninguna otra parte: queda afuera del
-              pliegue. Las otras cuatro tarjetas son la versión corta de otra
-              sección y colgaban al final de un tablero de casi 5000 px. */}
+          {/* El detector de fugas no vive en ninguna otra parte. */}
           <MoneyLeakDetector />
-          <Plegable
-            clave="plata:resumen:automaticos"
-            titulo="Resúmenes automáticos"
-            resumen="Resultado del mes, proyección, presupuesto y reporte semanal"
+          {/* 2026-10-11: de los cuatro «resúmenes automáticos» quedan los dos
+              que no están en otra parte. «Resultado del mes» repetía Entró /
+              Salió / Quedó de la franja de arriba (y Ganancias), y la
+              «Proyección del mes» repetía el bloque Proyección con otra cuenta
+              (sólo ventas de mostrador, sumadas en el navegador). */}
+          <BloquePlegable
+            id="semana-y-presupuesto"
+            titulo="Esta semana y el presupuesto"
+            resumen="ventas y margen de los últimos 7 días · lo gastado contra tu presupuesto del mes"
           >
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <ProfitLossAutoCard />
-              <MonthProjectionCard />
-              <BudgetAlertWidget />
               <WeeklyReportCard />
+              <BudgetAlertWidget />
             </div>
-          </Plegable>
+          </BloquePlegable>
         </div>
       );
 
     /* ── Resultado: la misma pregunta —«¿cuánto gané?»— en tres presentaciones ── */
     case "pl":
-      return (
-        <div className="space-y-6">
-          <PLTab />
-          <ComparativoMensual />
-        </div>
-      );
+      /* Sin el «Comparativo Mensual» de abajo (2026-10-11): restaba sólo los
+         gastos registrados, así que su utilidad de setiembre en `main` era
+         −S/ 386 con la tira de arriba diciendo −S/ 2 966. La tira de seis
+         meses de Ganancias sale del servidor y es la que vale. */
+      return <PLTab />;
     case "rentabilidad":
       return (
         <div className="space-y-6">
@@ -139,20 +135,11 @@ export default function VistaDePlata({ vista, seccion, datos, irA, vuelta }: Pro
     case "por-pagar":
       return <PorPagarDashboard onIr={irA} />;
     case "scoring":
-      return (
-        <div className="space-y-6">
-          <ScoringCrediticioTab />
-          <BloqueMudado
-            origen="analytics-pro"
-            deDonde="Análisis"
-            clave="plata:fiarle:quien-te-debe"
-            titulo="Quién te debe"
-            resumen="Los fiados abiertos con su riesgo: vencidos, por vencer y el recordatorio por WhatsApp"
-          >
-            <FiadosRiesgoIA />
-          </BloqueMudado>
-        </div>
-      );
+      /* Sin el bloque mudado «Quién te debe» (2026-10-11, pedido del carril de
+         Por cobrar): la lista de fiados con vencidos y el recordatorio ya viven
+         en Ventas y caja › Me deben, y su cifra en «Todo lo que me deben». Sigue
+         montado en Análisis («ia-fiados»). */
+      return <ScoringCrediticioTab />;
 
     /* ── Pestañas con su propio segundo nivel (`?sub=`) ── */
     case "prestamos":
@@ -169,10 +156,12 @@ export default function VistaDePlata({ vista, seccion, datos, irA, vuelta }: Pro
           <TaxTab />
           {/* Plegada: abierta, la vista medía 3,4 pantallas y 126 palabras de
               ayuda (medir-orden, 2026-10-10). Plegada no pide sus datos. */}
+          {/* «El año» (pedido del carril de Impuestos, 2026-10-11): la tabla
+              de los 12 meses; el total del mes ya lo dice TaxTab arriba. */}
           <Plegable
             clave="plata:impuestos:obligaciones"
-            titulo="Obligaciones y declaraciones"
-            resumen="El total a pagar del mes y cada obligación con su fórmula"
+            titulo="El año"
+            resumen={<span className="text-sm">Cada mes: ingresos, IGV, Renta y si lo declaraste</span>}
           >
             <ObligacionesTab />
           </Plegable>
