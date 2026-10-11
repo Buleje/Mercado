@@ -22,8 +22,9 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { CardTitle, SectionTitle } from "@buleje/design-system";
-import { Landmark, MoreHorizontal, RefreshCw, Waves } from "@buleje/design-system/icons";
+import { Landmark, MoreHorizontal, RefreshCw, Scale, Waves } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import { button } from "@/components/ui-system/button-variants";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { irAlOrigen } from "@/components/admin/unified/finanzas/resultado/ir-al-origen";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -32,6 +33,7 @@ import { TOPE_MOVIMIENTOS, useTesoreria } from "@/hooks/use-tesoreria";
 import TarjetaCuenta from "@/components/admin/unified/finanzas/tesoreria/TarjetaCuenta";
 import MovimientosTesoreria from "@/components/admin/unified/finanzas/tesoreria/MovimientosTesoreria";
 import { CHIP, CHIP_OFF, enMonedas } from "@/components/admin/unified/finanzas/tesoreria/estilo";
+import CuadrarConBanco from "@/components/admin/unified/finanzas/tesoreria/CuadrarConBanco";
 
 const AVISO_ERROR = "rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/10 px-4 py-3 text-sm font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]";
 const AVISO_NEUTRO = "flex items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3 text-sm font-bold text-[var(--text-secondary)]";
@@ -39,6 +41,8 @@ const AVISO_NEUTRO = "flex items-center gap-2 rounded-xl border border-[var(--ru
 export default function TreasuryDashboard() {
   /** La cuenta cuyos movimientos se miran; `null` = todas. */
   const [elegida, setElegida] = useState<string | null>(null);
+  /** El modal de «Cuadrar con el banco» (sube el extracto; no guarda nada). */
+  const [cuadrando, setCuadrando] = useState(false);
   const { cuentas, resumen, movimientos, transferencias, recargar } = useTesoreria(elegida);
 
   const lista = useMemo(() => cuentas.datos ?? [], [cuentas.datos]);
@@ -103,6 +107,15 @@ export default function TreasuryDashboard() {
             example="BCP con S/ 15 000 y la caja chica con S/ 5 500: tienes S/ 20 500. Toca una cuenta para ver solo sus movimientos."
           />
         </div>
+        <button
+          type="button"
+          onClick={() => setCuadrando(true)}
+          title="Sube el extracto del banco y mira qué coincide con lo anotado"
+          className={button({ variant: "secondary", className: "shrink-0 rounded-xl" })}
+        >
+          <Scale className="h-4 w-4" aria-hidden="true" />
+          <span className="max-sm:sr-only">Cuadrar con el banco</span>
+        </button>
         <ActionMenu label="Más" icon={MoreHorizontal} actions={acciones} soloIcono size="md" className="w-12 shrink-0" title="Actualizar y cómo sigue tu caja" />
       </div>
 
@@ -166,6 +179,8 @@ export default function TreasuryDashboard() {
           )}
         </section>
       )}
+
+      <CuadrarConBanco open={cuadrando} onClose={() => setCuadrando(false)} cuentas={lista} />
     </div>
   );
 }
