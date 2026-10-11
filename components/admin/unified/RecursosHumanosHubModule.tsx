@@ -22,7 +22,6 @@ import { useVistaModulo } from "@/hooks/use-vista-modulo";
 import { useRrhhResumen } from "@/hooks/use-rrhh-resumen";
 import { useContextoPermiso, useVistasPermitidas } from "@/hooks/use-vistas-permitidas";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
-import EncabezadoDeVista from "@/components/admin/rrhh/EncabezadoDeVista";
 import { LoadingState, ErrorAlert } from "@buleje/design-system";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 import { button } from "@/components/ui-system/button-variants";
@@ -148,7 +147,8 @@ function HubConNivel({
       >
         <div className="space-y-4">
           {aviso}
-          {n && <EncabezadoDeVista vista={sub} />}
+          {/* Cada vista pinta su propia cabecera (`EncabezadoDeVista`): título,
+              acción principal y «⋯» en una fila, con los datos de la vista. */}
           {n && sub === "asistencia" && <AsistenciaView nivel={n} onCambioPersonal={onCambioPersonal} />}
           {n && sub === "personal" && <PersonalView nivel={n} />}
           {n === "completo" && sub === "ganado" && <GanadoView />}

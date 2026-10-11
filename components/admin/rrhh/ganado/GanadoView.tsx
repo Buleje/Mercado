@@ -22,8 +22,9 @@
 import { Info } from "@buleje/design-system/icons";
 import { useEffect, useMemo, useState } from "react";
 import { DataTable, EmptyState, ErrorAlert, LoadingState, StatCard } from "@buleje/design-system";
+import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
+import EncabezadoDeVista from "../EncabezadoDeVista";
 import { Wallet } from "@buleje/design-system/icons";
-import { Field } from "@/components/admin/shared/Field";
 import { useRrhhGanado } from "@/hooks/use-rrhh-ganado";
 import { diasDelMes, mesDe, semanaDe, sumarDias } from "@/lib/rrhh/fechas";
 import { totalQuedaPorPagar } from "@/lib/rrhh/ganado";
@@ -36,9 +37,6 @@ import DescuentoPlanillaModal from "@/components/admin/adelantos/DescuentoPlanil
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import { useDescontarAdelantos } from "./use-descontar-adelantos";
 
-/** 48 px, la altura de botones y filtros del panel (Brandon 2026-10-09). `claseChipFiltro` y
- *  `CLASE_CAMPO` son de todo RRHH (h-9/h-11): se suben acá hasta que la ola 5 los cambie allá. */
-const ALTO = "h-12";
 
 type Chip = "esta-semana" | "semana-pasada" | "este-mes" | "mes-pasado" | "rango";
 
@@ -94,6 +92,31 @@ export default function GanadoView() {
   const queda = useMemo(() => totalQuedaPorPagar(ganado?.personas ?? []), [ganado]);
   const descuento = useDescontarAdelantos();
 
+  /* Las cuatro cifras, plegadas (patrón del panel): el pie de la tabla ya
+     suma Ganado y Queda por pagar; el titular dice lo que falta pagar. */
+  const sinCuenta = !ganado || queda.personas === 0;
+  const kpis = useKpisPlegables({
+    claveMemoria: "rrhh-ganado",
+    alto: "md",
+    compactoEnMovil: true,
+    sinDatosAun: !ganado,
+    resumen: sinCuenta ? `Ganado ${formatearPEN(ganado?.total ?? 0)}` : `Queda ${formatearPEN(queda.aPagar)}`,
+    tarjetas: [
+      <StatCard key="t" label="Total de referencia" value={formatearPEN(ganado?.total ?? 0)} density="compact" />,
+      <StatCard
+        key="q"
+        label="Queda por pagar"
+        /* Sin nadie con cuenta vinculada el total NO es S/ 0.00: es que no
+           se puede calcular. Un cero acá se leería como «no se debe nada». */
+        value={sinCuenta ? "—" : formatearPEN(queda.aPagar)}
+        subValue={sinCuenta ? "Nadie con cuenta de Adelantos vinculada" : `${pluralizar(queda.personas, "persona", "personas")} de ${ganado?.personas.length ?? 0}`}
+        density="compact"
+      />,
+      <StatCard key="p" label="Personas" value={ganado?.personas.length ?? 0} density="compact" />,
+      <StatCard key="a" label="Con avisos" value={personasConAvisos} density="compact" emphasis={personasConAvisos > 0 ? "warning" : "neutral"} />,
+    ],
+  });
+
   const CHIPS: { id: Chip; label: string }[] = [
     { id: "esta-semana", label: "Esta semana" },
     { id: "semana-pasada", label: "Semana pasada" },
@@ -103,41 +126,30 @@ export default function GanadoView() {
   ];
 
   return (
-    <div className="space-y-4">
-      <AvisoRrhh tono="info" icono={Info}>{COPY_REFERENCIA}</AvisoRrhh>
+    <div className="space-y-3">
+      <EncabezadoDeVista vista="ganado" acciones={kpis.boton} />
 
+      {/* Período en UNA fila: chips, el rango si se pidió y las fechas que rigen. */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
       <div role="group" aria-label="Filtrar por período" className="flex flex-wrap gap-1.5">
         {CHIPS.map((c) => (
-          <button key={c.id} type="button" aria-pressed={chip === c.id} onClick={() => setChip(c.id)} className={cn(claseChipFiltro(chip === c.id), ALTO)}>
+          <button key={c.id} type="button" aria-pressed={chip === c.id} onClick={() => setChip(c.id)} className={claseChipFiltro(chip === c.id)}>
             {c.label}
           </button>
         ))}
       </div>
 
       {chip === "rango" && (
-        <div className="flex flex-wrap items-start gap-3">
-          <Field label="Desde" className="w-40">
-            {(id) => (
-              <input
-                id={id}
-                type="date"
-                value={rangoManual.desde}
-                onChange={(e) => setRangoManual((r) => ({ ...r, desde: e.target.value }))}
-                className={cn(CLASE_CAMPO, ALTO)}
-              />
-            )}
-          </Field>
-          <Field label="Hasta" className="w-40">
-            {(id) => (
-              <input
-                id={id}
-                type="date"
-                value={rangoManual.hasta}
-                onChange={(e) => setRangoManual((r) => ({ ...r, hasta: e.target.value }))}
-                className={cn(CLASE_CAMPO, ALTO)}
-              />
-            )}
-          </Field>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Etiqueta en línea, al lado del campo: el rango vive en la fila del período. */}
+          <label className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--text-secondary)]">
+            Desde
+            <input type="date" value={rangoManual.desde} onChange={(e) => setRangoManual((r) => ({ ...r, desde: e.target.value }))} className={cn(CLASE_CAMPO, "w-40")} />
+          </label>
+          <label className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--text-secondary)]">
+            Hasta
+            <input type="date" value={rangoManual.hasta} onChange={(e) => setRangoManual((r) => ({ ...r, hasta: e.target.value }))} className={cn(CLASE_CAMPO, "w-40")} />
+          </label>
           {rangoInvertido && (
             <p role="alert" className="w-full text-sm font-medium text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
               «Desde» no puede ser posterior a «Hasta» — corrige las fechas para ver el cálculo.
@@ -149,6 +161,9 @@ export default function GanadoView() {
       <p className="text-sm text-[var(--text-secondary)]">
         Del <strong className="text-[var(--text-primary)]">{formatearFecha(desde)}</strong> al <strong className="text-[var(--text-primary)]">{formatearFecha(hasta)}</strong>
       </p>
+      </div>
+
+      {kpis.panel}
 
       {descuento.error && (
         <AvisoRrhh tono="error" accion={<button type="button" onClick={descuento.olvidarAviso} aria-label="Cerrar el aviso" className="text-sm font-bold underline">Cerrar</button>}>
@@ -190,21 +205,6 @@ export default function GanadoView() {
           <EmptyState icon={Wallet} title="Sin personal activo en este período" />
         ) : (
           <>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
-              <StatCard label="Total de referencia" value={formatearPEN(ganado.total)} density="compact" />
-              <StatCard
-                label="Queda por pagar"
-                /* Sin nadie con cuenta vinculada el total NO es S/ 0.00: es que no
-                   se puede calcular. Un cero acá se leería como «no se debe nada». */
-                value={queda.personas === 0 ? "—" : formatearPEN(queda.aPagar)}
-                subValue={queda.personas === 0
-                  ? "Nadie con cuenta de Adelantos vinculada"
-                  : `${pluralizar(queda.personas, "persona", "personas")} de ${ganado.personas.length}`}
-                density="compact"
-              />
-              <StatCard label="Personas" value={ganado.personas.length} density="compact" />
-              <StatCard label="Con avisos" value={personasConAvisos} density="compact" emphasis={personasConAvisos > 0 ? "warning" : "neutral"} />
-            </div>
             <DataTable zebra>
               <thead>
                 <tr>
@@ -246,10 +246,12 @@ export default function GanadoView() {
                 </tr>
               </tfoot>
             </DataTable>
-            <p className="text-xs leading-relaxed text-[var(--text-tertiary)]">
+            <p className="text-sm leading-relaxed text-[var(--text-tertiary)]">
               {/* La fórmula de «Queda por pagar» vive en la ⓘ del título de la vista
-                  (EncabezadoDeVista); acá queda lo que cambia con los datos. */}
-              Adelantos al {formatearFecha(ganado.hoy)}.
+                  (EncabezadoDeVista); acá queda lo que cambia con los datos. El
+                  aviso de referencia (ADR-414 §5) va junto a los montos, no arriba. */}
+              <Info className="mr-1 inline h-4 w-4 align-text-bottom" aria-hidden />
+              {COPY_REFERENCIA} Adelantos al {formatearFecha(ganado.hoy)}.
               {queda.personas === 0
                 ? ` Nadie tiene cuenta de Adelantos vinculada (${pluralizar(ganado.personas.length, "persona", "personas")} en el período), así que no hay nada que restar: vincula su cuenta desde Personal.`
                 : ` El total suma ${pluralizar(queda.personas, "persona", "personas")} de ${ganado.personas.length}${queda.sinCuenta > 0 ? ` — ${pluralizar(queda.sinCuenta, "persona", "personas")} sin cuenta vinculada queda${queda.sinCuenta === 1 ? "" : "n"} en «—»` : ""}.`}

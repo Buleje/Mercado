@@ -1,9 +1,9 @@
 "use client";
 import { CardTitle, EmptyState, LoadingState } from "@buleje/design-system";
 import { useState, useEffect } from "react";
-import { StickyNote, Plus, Trash2, Pin, Edit3, Check, Search } from "@buleje/design-system/icons";
+import { StickyNote, Plus, Trash2, Pin, Edit3, Check, Search, MoreHorizontal } from "@buleje/design-system/icons";
+import ActionMenu from "@/components/admin/shared/action-menu";
 import TituloDeVista from "@/components/admin/rrhh/TituloDeVista";
-import BotonIconoTip from "@/components/admin/shared/boton-icono-tip";
 import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
@@ -39,12 +39,12 @@ const PALETA: Record<NoteColor, { nombre: string; tarjeta: string; punto: string
 };
 const COLORES = Object.keys(PALETA) as NoteColor[];
 
-/** Los puntos para elegir el color: 32 px de dedo, nombre en el lector y el elegido marcado. */
+/** Los puntos para elegir el color: 48 px de alto, nombre en el lector y el elegido marcado. */
 function ElegirColor({ valor, onChange }: { valor: NoteColor; onChange: (c: NoteColor) => void }) {
   return (
     <div role="group" aria-label="Color de la nota" className="flex items-center">
       {COLORES.map((c) => (
-        <button key={c} type="button" aria-label={PALETA[c].nombre} aria-pressed={valor === c} title={PALETA[c].nombre} onClick={() => onChange(c)} className="grid h-8 w-8 place-items-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]">
+        <button key={c} type="button" aria-label={PALETA[c].nombre} aria-pressed={valor === c} title={PALETA[c].nombre} onClick={() => onChange(c)} className="grid h-12 w-10 place-items-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]">
           <span aria-hidden className={cn("h-5 w-5 rounded-full border-2", PALETA[c].punto, valor === c ? "border-[var(--text-primary)] ring-2 ring-[var(--surface-raised)]" : "border-transparent")} />
         </button>
       ))}
@@ -199,8 +199,9 @@ export default function QuickNotesTab() {
     }
   };
 
+  const fijadas = notes.filter((n) => n.pinned).length;
   return (
-    <div className="space-y-3 sm:space-y-6">
+    <div className="space-y-3">
       {/* El título de la vista con el buscador y la acción principal en la
           misma fila (Equipo › Notas; antes, AdminModuleHeader con subtítulo). */}
       <TituloDeVista
@@ -211,6 +212,12 @@ export default function QuickNotesTab() {
           example: "«Llega el camión de gaseosas el lunes a las 7»: la fijas y nadie se olvida.",
         }}
       >
+        {notes.length > 0 && (
+          <span className="hidden text-sm text-[var(--text-secondary)] sm:inline">
+            {notes.length} {notes.length === 1 ? "nota" : "notas"}
+            {fijadas > 0 && <> · <span className="font-semibold text-[var(--data-warning-ink)]">{fijadas} {fijadas === 1 ? "fijada" : "fijadas"}</span></>}
+          </span>
+        )}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
           <input type="search" value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar notas" aria-label="Buscar notas" className="pl-9 pr-4 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm outline-none focus:border-primary w-48" />
@@ -220,18 +227,12 @@ export default function QuickNotesTab() {
         </button>
       </TituloDeVista>
 
-      {/* Stats */}
-      <div className="flex flex-wrap items-center gap-6 text-sm">
-        <span className="text-[var(--text-secondary)] dark:text-muted">{notes.length} notas</span>
-        <span className="text-[var(--data-warning-ink)] font-semibold">{notes.filter(n => n.pinned).length} fijadas</span>
-      </div>
-
       {/* Notes grid */}
       {loading ? (
         <LoadingState message="Cargando las notas..." />
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3">
             {/* New note card */}
             {showNew && (
               <div className="bg-[var(--surface-raised)] rounded-xl border-2 border-primary/50 p-4">
@@ -245,7 +246,7 @@ export default function QuickNotesTab() {
             {filtered.map(note => {
               const isEditing = editingId === note.id;
               return (
-                <div key={note.id} className={cn("rounded-xl border p-4 transition-shadow hover:shadow-[var(--shadow-sm)]", PALETA[note.color]?.tarjeta ?? PALETA.yellow.tarjeta)}>
+                <div key={note.id} className={cn("rounded-xl border p-3 transition-shadow hover:shadow-[var(--shadow-sm)]", PALETA[note.color]?.tarjeta ?? PALETA.yellow.tarjeta)}>
                   {isEditing ? (
                     <>
                       <input type="text" value={editTitle} onChange={e => setEditTitle(e.target.value)} aria-label="Título de la nota" className="w-full text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] bg-transparent outline-none mb-2" />
@@ -254,25 +255,34 @@ export default function QuickNotesTab() {
                     </>
                   ) : (
                     <>
-                      <div className="flex items-start justify-between mb-2">
-                        <CardTitle className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] text-sm leading-snug pr-2">{note.title}</CardTitle>
-                        <BotonIconoTip
-                          label={note.pinned ? "Quitar de fijadas" : "Fijar nota"}
-                          icon={Pin}
+                      {/* Fijar a la vista; editar y eliminar en «⋯» (antes, dos íconos de 32 px al pie). */}
+                      <div className="mb-1 flex items-start gap-1">
+                        <CardTitle className="min-w-0 flex-1 py-3 text-sm font-bold leading-snug text-[var(--text-primary)]">{note.title}</CardTitle>
+                        <button
+                          type="button"
+                          aria-label={note.pinned ? "Quitar de fijadas" : "Fijar nota"}
                           aria-pressed={note.pinned}
-                          tamano="sm"
+                          title={note.pinned ? "Quitar de fijadas" : "Fijar nota"}
                           onClick={() => handlePin(note.id)}
-                          className={note.pinned ? "text-[var(--data-warning-ink)]" : undefined}
+                          className={cn("grid h-12 w-12 shrink-0 place-items-center rounded-xl transition-colors hover:bg-[var(--surface-sunken)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]", note.pinned ? "text-[var(--data-warning-ink)]" : "text-[var(--text-tertiary)]")}
+                        >
+                          <Pin className="h-4 w-4" aria-hidden />
+                        </button>
+                        <ActionMenu
+                          label={`Más de «${note.title}»`}
+                          icon={MoreHorizontal}
+                          soloIcono
+                          size="md"
+                          className="w-12 shrink-0"
+                          title="Editar o eliminar"
+                          actions={[
+                            { id: "editar", label: "Editar", icon: Edit3, onSelect: () => startEdit(note) },
+                            { id: "eliminar", label: "Eliminar", icon: Trash2, tone: "danger", onSelect: () => handleDelete(note.id) },
+                          ]}
                         />
                       </div>
-                      <p className="text-sm text-[var(--text-secondary)] dark:text-muted leading-relaxed mb-3 line-clamp-4">{note.content}</p>
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">{note.updatedAt}</p>
-                        <div className="flex items-center gap-1">
-                          <BotonIconoTip label="Editar" icon={Edit3} tamano="sm" onClick={() => startEdit(note)} />
-                          <BotonIconoTip label="Eliminar" icon={Trash2} tamano="sm" tono="peligro" onClick={() => handleDelete(note.id)} />
-                        </div>
-                      </div>
+                      <p className="mb-2 line-clamp-4 text-sm leading-relaxed text-[var(--text-secondary)]">{note.content}</p>
+                      <p className="text-sm text-[var(--text-tertiary)]">{note.updatedAt}</p>
                     </>
                   )}
                 </div>

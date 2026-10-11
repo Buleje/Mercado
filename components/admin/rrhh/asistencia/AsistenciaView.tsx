@@ -12,24 +12,28 @@
  * guardada pide el motivo, y la pregunta la hace el hook desde cualquiera de
  * las tres hojas. Montado UNA vez acá arriba, la respuesta sigue viva aunque
  * se cambie de vista mientras el modal está abierto.
+ *
+ * Día / Semana / Mes son `BarraDeSecciones` en la fila del título (noche
+ * 11-10): el estado sigue siendo local, no va a la URL.
  */
 
 import { useState, type ReactNode } from "react";
-import { CalendarDays, Columns3, Grid3x3 } from "@buleje/design-system/icons";
-import { cn, limaDateKey } from "@/lib/utils";
+import { BarraDeSecciones } from "@/components/admin/shared/BarraDeSecciones";
+import { limaDateKey } from "@/lib/utils";
 import { diasDelMes, mesDe, semanaDe } from "@/lib/rrhh/fechas";
 import HojaDelDia from "./HojaDelDia";
 import HojaDelMes from "./HojaDelMes";
 import HojaDeLaSemana from "./HojaDeLaSemana";
 import MotivoCorreccionModal from "./MotivoCorreccionModal";
+import { ID_PANEL_ASISTENCIA, type ModoAsistencia } from "./panel-asistencia";
 import type { NivelRrhh } from "@/lib/rrhh/tipos";
 
-type Modo = "dia" | "semana" | "mes";
+type Modo = ModoAsistencia;
 
 const MODOS = [
-  ["dia", "Día", CalendarDays],
-  ["semana", "Semana", Columns3],
-  ["mes", "Mes", Grid3x3],
+  { clave: "dia", rotulo: "Día" },
+  { clave: "semana", rotulo: "Semana" },
+  { clave: "mes", rotulo: "Mes" },
 ] as const;
 
 export default function AsistenciaView({ nivel, onCambioPersonal }: { nivel: NivelRrhh; onCambioPersonal?: () => void }) {
@@ -53,27 +57,9 @@ export default function AsistenciaView({ nivel, onCambioPersonal }: { nivel: Niv
     setModo(m);
   };
 
-  const selectorModo = (
-    <div role="group" aria-label="Ver la asistencia por" className="inline-flex rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-1">
-      {MODOS.map(([valor, texto, Icono]) => {
-        const activo = modo === valor;
-        return (
-          <button
-            key={valor}
-            type="button"
-            aria-pressed={activo}
-            onClick={() => elegirModo(valor)}
-            className={cn(
-              "inline-flex h-8 items-center gap-1.5 rounded-lg px-3.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]",
-              activo ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-[var(--shadow-sm)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
-            )}
-          >
-            <Icono className="h-4 w-4" /> {texto}
-          </button>
-        );
-      })}
-    </div>
-  );
+  /* Las secciones van en la fila del título (patrón del panel, como Turnos):
+     cada hoja la pinta en su `EncabezadoDeVista`. */
+  const selectorModo = <BarraDeSecciones secciones={MODOS} activa={modo} onCambiar={elegirModo} etiqueta="Ver la asistencia por" idPanel={ID_PANEL_ASISTENCIA} />;
 
   let hoja: ReactNode;
   if (modo === "dia") {

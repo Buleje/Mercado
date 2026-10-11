@@ -56,7 +56,7 @@ export default function SemanaEnCelular({ filas, colaboradores, marcas, dias, ho
           <li key={c.id} className="flex items-center justify-between gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3">
             <div className="min-w-0">
               <p className="truncate font-semibold text-[var(--text-primary)]">{c.nombre}</p>
-              <p className="text-xs text-[var(--text-tertiary)]">
+              <p className="text-sm text-[var(--text-tertiary)]">
                 {formatearDias(trabajados)} días trabajados · {conteo.FALTA} {conteo.FALTA === 1 ? "falta" : "faltas"}
               </p>
             </div>

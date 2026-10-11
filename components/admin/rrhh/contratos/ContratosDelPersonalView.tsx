@@ -12,6 +12,7 @@ import { FileSignature, FileText } from "@buleje/design-system/icons";
 import { DataTable, EmptyState, LoadingState } from "@buleje/design-system";
 import { useRrhhColaboradores } from "@/hooks/use-rrhh-colaboradores";
 import { BOTON, CLASE_CHIP } from "../rrhh-form";
+import EncabezadoDeVista from "../EncabezadoDeVista";
 import { formatearFecha, pluralizar } from "../rrhh-ui";
 import { ESTADO_VISIBLE_LABELS, TIPO_LABELS, estadoVisible, type DbContract, type EstadoVisible } from "@/lib/types/contracts";
 import { cn } from "@/lib/utils";
@@ -55,29 +56,41 @@ export default function ContratosDelPersonalView() {
     return contratos.filter((c) => c.tipo === "TRABAJO" || c.tipo === "LOCACION" || Boolean(c.colaboradorId));
   }, [contratos]);
 
-  if (!contratos && !error) return <LoadingState message="Cargando contratos..." />;
+  /* Una fila (noche 11-10): la cuenta va junto al botón que lleva a crearlos. */
+  const encabezado = (
+    <EncabezadoDeVista
+      vista="contratos"
+      acciones={
+        <>
+          {delPersonal.length > 0 && <span className="hidden text-sm text-[var(--text-secondary)] sm:inline">{pluralizar(delPersonal.length, "contrato", "contratos")}</span>}
+          <button type="button" onClick={irAContratos} className={BOTON.secundario}>
+            <FileText className="h-4 w-4" aria-hidden /> Crear o editar en Contratos
+          </button>
+        </>
+      }
+    />
+  );
+
+  if (!contratos && !error) return <div className="space-y-3">{encabezado}<LoadingState message="Cargando contratos..." /></div>;
   if (error) {
-    return <div className="rounded-xl border border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/5 p-4 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{error}</div>;
+    return <div className="space-y-3">{encabezado}<div className="rounded-xl border border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/5 p-4 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{error}</div></div>;
   }
   if (delPersonal.length === 0) {
     return (
-      <EmptyState
-        icon={FileSignature}
-        title="Sin contratos de trabajo todavía"
-        description="Los contratos de tipo Trabajo o Locación, o cualquiera vinculado a una persona, aparecen acá."
-        action={{ label: "Ir a Contratos", onClick: irAContratos }}
-      />
+      <div className="space-y-3">
+        {encabezado}
+        <EmptyState
+          icon={FileSignature}
+          title="Sin contratos de trabajo todavía"
+          description="Los contratos de tipo Trabajo o Locación, o cualquiera vinculado a una persona, aparecen acá."
+        />
+      </div>
     );
   }
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm font-semibold text-[var(--text-primary)]">{pluralizar(delPersonal.length, "contrato", "contratos")} del personal</p>
-        <button type="button" onClick={irAContratos} className={BOTON.chico}>
-          <FileText className="h-4 w-4" /> Crear o editar en Contratos
-        </button>
-      </div>
+      {encabezado}
       <DataTable zebra>
         <thead>
           <tr>

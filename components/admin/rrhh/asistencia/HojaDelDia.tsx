@@ -3,22 +3,25 @@
 /**
  * HojaDelDia — la asistencia de UN día (ADR-414 §4/§7).
  *
- * Fila por persona, resumen arriba, ‹ › para moverse de día (› apagado en
- * hoy: no se puede ir al futuro) y «Todos presentes» que sólo toca a quien NO
- * tiene marca — reemplazar exige el checkbox + confirma con el número en el
- * botón (nunca pisa lo cargado sin avisar, ADR-412).
+ * Patrón del panel (noche 11-10): título · Día/Semana/Mes · «Todos presentes
+ * (n)» · «⋯» en una fila; abajo ‹ fecha › con el resumen en una línea («2 de
+ * 6 marcados · 1 falta») y la lista, una fila por persona. «Todos presentes»
+ * sólo toca a quien NO tiene marca; reemplazar lo ya marcado está en «⋯» y
+ * pide confirmar con el número (nunca pisa lo cargado sin avisar, ADR-412).
  */
 
 import { useMemo, useState, type ReactNode } from "react";
-import { ChevronRight, Lock, Plus, UserPlus, Users } from "@buleje/design-system/icons";
+import { CheckCheck, ChevronRight, Lock, Plus, UserPlus, Users } from "@buleje/design-system/icons";
 import { LoadingState, EmptyState } from "@buleje/design-system";
+import type { MenuAccion } from "@/components/admin/shared/action-menu";
+import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { avisarFallos, useRrhhAsistencia } from "@/hooks/use-rrhh-asistencia";
 import { useRrhhDesdeAdelantos } from "@/hooks/use-rrhh-desde-adelantos";
 import { useRrhhPuestos } from "@/hooks/use-rrhh-puestos";
 import { etiquetaDia, mesDe, sumarDias } from "@/lib/rrhh/fechas";
-import { cn, limaDateKey } from "@/lib/utils";
-import { AvisoRrhh, BOTON, CLASE_CHIP } from "../rrhh-form";
-import { ESTADO_ASISTENCIA_META, ORDEN_ESTADOS_ASISTENCIA, contarEstado, dentroDeVentana, estaIncluidoEseDia, motivoFueraDeVentana, motivoNoIncluido, pluralizar } from "../rrhh-ui";
+import { limaDateKey } from "@/lib/utils";
+import { AvisoRrhh, BOTON } from "../rrhh-form";
+import { dentroDeVentana, estaIncluidoEseDia, motivoFueraDeVentana, motivoNoIncluido, pluralizar } from "../rrhh-ui";
 import AvisoDiasAbiertos from "./AvisoDiasAbiertos";
 import FilaMarcaDelDia from "./FilaMarcaDelDia";
 import { BarraFotoDeCamara, FotoDeLaMarca } from "./FotoDeCamara";
@@ -26,6 +29,9 @@ import { useFotosAsistencia } from "./use-fotos-asistencia";
 import HistorialMarcaModal from "./HistorialMarcaModal";
 import LeyendaEstados from "./LeyendaEstados";
 import NavegadorPeriodo from "./NavegadorPeriodo";
+import { propsPanelAsistencia } from "./panel-asistencia";
+import ResumenDelDia from "./ResumenDelDia";
+import EncabezadoDeVista from "../EncabezadoDeVista";
 import ColaboradorFormModal from "../personal/ColaboradorFormModal";
 import TraerDesdeAdelantosModal from "../personal/TraerDesdeAdelantosModal";
 import type { ColaboradorMinDTO, EstadoAsistencia, NivelRrhh } from "@/lib/rrhh/tipos";
@@ -35,13 +41,13 @@ interface Props {
   onCambiarFecha: (f: string) => void;
   nivel: NivelRrhh;
   onCambioPersonal?: () => void;
-  /** El switch Día/Mes, que va en la misma barra que el navegador. */
+  /** Día / Semana / Mes: va en la fila del título. */
   selectorModo?: ReactNode;
 }
 
 export default function HojaDelDia({ fecha, onCambiarFecha, nivel, onCambioPersonal, selectorModo }: Props) {
   const { hoja, loading, error, guardando, pendientes, erroresPorCelda, marcar, masivo, guardarAhora, recargar } = useRrhhAsistencia(fecha, fecha);
-  const [reemplazar, setReemplazar] = useState(false);
+  const { confirm } = useConfirm();
   const [historialDe, setHistorialDe] = useState<ColaboradorMinDTO | null>(null);
   const [altaAbierta, setAltaAbierta] = useState(false);
   const [traerAbierta, setTraerAbierta] = useState(false);
@@ -90,16 +96,23 @@ export default function HojaDelDia({ fecha, onCambiarFecha, nivel, onCambioPerso
     // Si falló, avisarlo ACÁ — el GET del día nuevo borra `erroresPorCelda`
     // antes de que el error de este día alcance a mostrarse (ALTO 5).
     if (!resultado.ok) avisarFallos(resultado.fallos);
-    setReemplazar(false);
     onCambiarFecha(destino);
   };
 
-  const ejecutarMasivo = async () => {
-    const res = await masivo({ fecha, estado: "PRESENTE", sobrescribir: reemplazar });
-    if (res.ok) {
-      setReemplazar(false);
-      onCambioPersonal?.();
-    }
+  const ejecutarMasivo = async (sobrescribir: boolean) => {
+    const res = await masivo({ fecha, estado: "PRESENTE", sobrescribir });
+    if (res.ok) onCambioPersonal?.();
+  };
+
+  /** Antes era la casilla «Reemplazar los ya marcados»: ahora una opción de «⋯» que confirma con el número. */
+  const reemplazarMarcados = async () => {
+    const ok = await confirm({
+      title: `¿Poner presente también a ${pluralizar(marcadosIncluidos.length, "la persona ya marcada", "las personas ya marcadas")}?`,
+      description: "Su marca de hoy (tardanza, falta, permiso…) se cambia por Presente.",
+      intent: "danger",
+      confirmLabel: `Sí, cambiar ${pluralizar(marcadosIncluidos.length, "marca", "marcas")}`,
+    });
+    if (ok) await ejecutarMasivo(true);
   };
 
   const alAgregar = () => {
@@ -121,8 +134,17 @@ export default function HojaDelDia({ fecha, onCambiarFecha, nivel, onCambioPerso
     </div>
   );
 
-  const porcentaje = incluidos.length > 0 ? Math.round((marcadosIncluidos.length / incluidos.length) * 100) : 0;
-  const n = reemplazar ? marcadosIncluidos.length : sinMarcar.length;
+  const menu: MenuAccion[] = !puedeGestionar
+    ? []
+    : [
+        ...(marcadosIncluidos.length > 0
+          ? [{ id: "reemplazar", label: "Presentes también los ya marcados", meta: String(marcadosIncluidos.length), hint: "Cambia por Presente lo ya marcado hoy; pide confirmar", icon: CheckCheck, tone: "danger" as const, disabled: !editable || guardando, onSelect: () => void reemplazarMarcados() }]
+          : []),
+        { id: "agregar", label: "Agregar persona", icon: UserPlus, onSelect: () => setAltaAbierta(true) },
+        ...(nivel === "completo" && candidatosAdelantos.length > 0
+          ? [{ id: "traer", label: "Traer de Adelantos", meta: String(candidatosAdelantos.length), hint: "Personas que ya tienen cuenta de Adelantos", icon: UserPlus, onSelect: () => setTraerAbierta(true) }]
+          : []),
+      ];
 
   let contenido: ReactNode;
   if (loading) {
@@ -151,57 +173,10 @@ export default function HojaDelDia({ fecha, onCambiarFecha, nivel, onCambioPerso
           </AvisoRrhh>
         )}
 
-        <section aria-label="Resumen del día" className="flex flex-col gap-4 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4 @min-[48rem]:flex-row @min-[48rem]:items-center @min-[48rem]:p-5">
-          <div className="min-w-0 flex-1 space-y-3">
-            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <p className="text-2xl font-bold tabular-nums text-[var(--text-primary)]">
-                {marcadosIncluidos.length}
-                <span className="text-base font-semibold text-[var(--text-tertiary)]"> de {incluidos.length}</span>
-              </p>
-              <p className="text-sm text-[var(--text-secondary)]">
-                {incluidos.length === 0 ? "Nadie trabaja este día" : sinMarcar.length === 0 ? "Todos marcados" : `${pluralizar(sinMarcar.length, "persona", "personas")} sin marcar`}
-              </p>
-            </div>
-            <div
-              role="progressbar"
-              aria-label="Marcados del día"
-              aria-valuemin={0}
-              aria-valuemax={incluidos.length}
-              aria-valuenow={marcadosIncluidos.length}
-              className="h-1.5 overflow-hidden rounded-full bg-[var(--surface-sunken)]"
-            >
-              <div className="h-full rounded-full bg-primary transition-[width] duration-[var(--dur-base)]" style={{ width: `${porcentaje}%` }} />
-            </div>
-            {marcadosIncluidos.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {ORDEN_ESTADOS_ASISTENCIA.filter((e) => conteo[e] > 0).map((e) => (
-                  <span key={e} className={cn(CLASE_CHIP, ESTADO_ASISTENCIA_META[e].claseChip)}>
-                    {contarEstado(conteo[e], e)}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {puedeGestionar && incluidos.length > 0 && (
-            <div className="flex flex-wrap items-center gap-3 border-t border-[var(--rule-soft)] pt-4 @min-[48rem]:border-l @min-[48rem]:border-t-0 @min-[48rem]:pl-5 @min-[48rem]:pt-0">
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-[var(--text-secondary)]">
-                <input type="checkbox" checked={reemplazar} disabled={!editable} onChange={(e) => setReemplazar(e.target.checked)} className="h-4 w-4 accent-[var(--accent)]" />
-                Reemplazar los ya marcados
-              </label>
-              {(reemplazar || n > 0) && (
-                <button type="button" onClick={ejecutarMasivo} disabled={!editable || guardando || n === 0} className={reemplazar ? BOTON.peligro : BOTON.primario}>
-                  {reemplazar ? `Poner presentes a ${pluralizar(n, "persona", "personas")}` : `Todos presentes (${n})`}
-                </button>
-              )}
-            </div>
-          )}
-        </section>
-
-        <LeyendaEstados />
         <BarraFotoDeCamara f={fotosCam} />
 
-        <div className="space-y-2">
+        {/* Una lista, no una tarjeta por persona: filas separadas por una raya. */}
+        <div className="divide-y divide-[var(--rule-soft)] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
           {incluidos.map((c) => {
             const marca = marcasDelDia.find((m) => m.colaboradorId === c.id);
             return (
@@ -250,19 +225,30 @@ export default function HojaDelDia({ fecha, onCambiarFecha, nivel, onCambioPerso
           </details>
         )}
 
-        {puedeGestionar && (
-          <button type="button" onClick={() => setAltaAbierta(true)} className={BOTON.chicoFantasma}>
-            <UserPlus className="h-4 w-4" /> Agregar persona
-          </button>
-        )}
+        <LeyendaEstados />
       </>
     );
   }
 
+  const n = sinMarcar.length;
+  const listo = Boolean(hoja && !loading && incluidos.length > 0);
   return (
-    <div className="@container space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        {selectorModo}
+    <div className="@container space-y-3">
+      <EncabezadoDeVista
+        vista="asistencia"
+        secciones={selectorModo}
+        menu={menu}
+        acciones={
+          puedeGestionar && listo && n > 0 ? (
+            <button type="button" onClick={() => void ejecutarMasivo(false)} disabled={!editable || guardando} className={BOTON.primario} title="Marca Presente a quien todavía no tiene marca hoy">
+              <CheckCheck className="h-4 w-4" aria-hidden /> Todos presentes ({n})
+            </button>
+          ) : null
+        }
+      />
+
+      <div {...(selectorModo ? propsPanelAsistencia("dia") : {})} className="space-y-3">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <NavegadorPeriodo
           etiqueta={etiquetaDia(fecha, hoy)}
           esActual={esHoy}
@@ -276,6 +262,7 @@ export default function HojaDelDia({ fecha, onCambiarFecha, nivel, onCambioPerso
           onVolver={() => irAFecha(hoy)}
           selector={{ tipo: "date", valor: fecha, max: hoy, onElegir: irAFecha }}
         />
+        {listo && <ResumenDelDia marcados={marcadosIncluidos.length} total={incluidos.length} conteo={conteo} />}
       </div>
 
       {/* Los días del mes que nadie marcó (ADR-417): sigue al mes que se está
@@ -283,6 +270,7 @@ export default function HojaDelDia({ fecha, onCambiarFecha, nivel, onCambioPerso
       <AvisoDiasAbiertos mes={mesDe(fecha)} onIrAlDia={(destino) => void irAFecha(destino)} />
 
       {contenido}
+      </div>
 
       {historialDe && <HistorialMarcaModal open onClose={() => setHistorialDe(null)} colaborador={historialDe} fecha={fecha} />}
       {altaAbierta && <ColaboradorFormModal open={altaAbierta} onClose={() => setAltaAbierta(false)} nivel={nivel} onGuardado={alAgregar} />}
@@ -300,3 +288,4 @@ export default function HojaDelDia({ fecha, onCambiarFecha, nivel, onCambioPerso
     </div>
   );
 }
+

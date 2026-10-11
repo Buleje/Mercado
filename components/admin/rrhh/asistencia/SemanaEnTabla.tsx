@@ -47,7 +47,7 @@ export default function SemanaEnTabla({ filas, dias, hoy, ventana, horarios, pen
             </th>
             {dias.map((d) => (
               <th key={d} title={etiquetaDia(d, hoy)} className={cn("px-1 text-center", d === hoy && "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]")}>
-                <span className="block text-xs font-semibold">{nombreCortoDelDia(d)}</span>
+                <span className="block text-sm font-semibold">{nombreCortoDelDia(d)}</span>
                 <span className="block tabular-nums">{d.slice(8, 10)}</span>
               </th>
             ))}
@@ -72,7 +72,7 @@ export default function SemanaEnTabla({ filas, dias, hoy, ventana, horarios, pen
                 <span className="block w-44 truncate" title={c.nombre}>
                   {c.nombre}
                 </span>
-                {c.puesto && <span className="block w-44 truncate text-xs font-normal text-[var(--text-tertiary)]">{c.puesto.nombre}</span>}
+                {c.puesto && <span className="block w-44 truncate text-sm font-normal text-[var(--text-tertiary)]">{c.puesto.nombre}</span>}
               </td>
               {dias.map((d) => {
                 const editable = dentroDeVentana(d, ventana);
@@ -96,7 +96,7 @@ export default function SemanaEnTabla({ filas, dias, hoy, ventana, horarios, pen
                         onVerHistorial={() => onVerHistorial(c, d)}
                       />
                       {conPlata && (
-                        <span className={cn("text-xs tabular-nums", importe ? "text-[var(--text-secondary)]" : "text-[var(--text-tertiary)]")}>
+                        <span className={cn("text-sm tabular-nums", importe ? "text-[var(--text-secondary)]" : "text-[var(--text-tertiary)]")}>
                           {importe == null ? "·" : formatNumber(importe, 2)}
                         </span>
                       )}
@@ -106,17 +106,17 @@ export default function SemanaEnTabla({ filas, dias, hoy, ventana, horarios, pen
               })}
               <td className="text-center font-semibold tabular-nums text-[var(--text-primary)]">
                 {formatearDias(trabajados)}
-                {sinMarcar > 0 && <span className="block text-xs font-normal text-[var(--text-tertiary)]">{sinMarcar} sin marcar</span>}
+                {sinMarcar > 0 && <span className="block text-sm font-normal text-[var(--text-tertiary)]">{sinMarcar} sin marcar</span>}
               </td>
               <td className="text-center tabular-nums">
                 {conteo.FALTA}
-                {conteo.PERMISO > 0 && <span className="block text-xs text-[var(--text-tertiary)]">+{conteo.PERMISO} perm.</span>}
+                {conteo.PERMISO > 0 && <span className="block text-sm text-[var(--text-tertiary)]">+{conteo.PERMISO} perm.</span>}
               </td>
               {conPlata && (
                 <td>
                   <span className="block whitespace-nowrap text-right text-sm tabular-nums">
                     {plata?.referencia ? formatearPEN(plata.referencia.monto) : <span className="text-[var(--text-tertiary)]">Sin tarifa</span>}
-                    {plata?.referencia && <span className="block text-xs text-[var(--text-tertiary)]">{etiquetaModalidad(plata.referencia.modalidad)}</span>}
+                    {plata?.referencia && <span className="block text-sm text-[var(--text-tertiary)]">{etiquetaModalidad(plata.referencia.modalidad)}</span>}
                   </span>
                 </td>
               )}

@@ -61,6 +61,16 @@ function montar() {
   );
 }
 
+/** Eliminar y cambiar de estado viven en el «⋯» de cada fila (noche 11-10). */
+async function elegirEnMenu(tarea: string, opcion: RegExp) {
+  await act(async () => {
+    screen.getByRole("button", { name: `Más de «${tarea}»` }).click();
+  });
+  await act(async () => {
+    screen.getByRole("menuitem", { name: opcion }).click();
+  });
+}
+
 describe("TasksTab — una carga vieja no pisa lo que ya cambió", () => {
   it("la tarea eliminada no reaparece cuando el GET del doble montaje vuelve tarde", async () => {
     montar();
@@ -69,9 +79,7 @@ describe("TasksTab — una carga vieja no pisa lo que ya cambió", () => {
     await resolver(gets()[1], [CONTAR]);
     expect(await screen.findByText("Contar el stock")).toBeTruthy();
 
-    await act(async () => {
-      screen.getByRole("button", { name: "Eliminar" }).click();
-    });
+    await elegirEnMenu("Contar el stock", /Eliminar/);
     await resolver(pedido("DELETE", "/api/tasks/k1"), { ok: true });
     expect(screen.queryByText("Contar el stock")).toBeNull();
 
@@ -93,15 +101,13 @@ describe("TasksTab — una carga vieja no pisa lo que ya cambió", () => {
     expect(await screen.findByText("Pagar la luz")).toBeTruthy();
 
     // Borrar «Contar el stock»: su carga silenciosa queda en vuelo.
-    await act(async () => {
-      screen.getAllByRole("button", { name: "Eliminar" })[0].click();
-    });
+    await elegirEnMenu("Contar el stock", /Eliminar/);
     await resolver(pedido("DELETE", "/api/tasks/k1"), { ok: true });
     await waitFor(() => expect(gets()).toHaveLength(3));
 
     // Completar «Pagar la luz» mientras esa carga viaja; el PATCH queda pendiente.
     await act(async () => {
-      screen.getByRole("button", { name: "Completada" }).click();
+      screen.getByRole("checkbox", { name: "Completar «Pagar la luz»" }).click();
     });
     expect(screen.getByText("Completadas (1)")).toBeTruthy();
 

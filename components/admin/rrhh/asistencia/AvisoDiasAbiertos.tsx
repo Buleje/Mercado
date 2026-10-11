@@ -32,8 +32,6 @@ import { AvisoRrhh, claseChipFiltro } from "../rrhh-form";
 import { diasAbiertos, notaDomingos, tituloDiasAbiertos } from "./dias-abiertos";
 import type { FechaKey } from "@/lib/rrhh/tipos";
 
-/** Cuántos chips se ven antes de plegar el resto: un mes entero sin marcar son 30 y deja de ser una banda discreta. */
-const CHIPS_VISIBLES = 12;
 
 interface Props {
   /** Mes a revisar, `"2026-09"`. Por defecto, el mes en curso en Lima. */
@@ -70,49 +68,39 @@ export default function AvisoDiasAbiertos({ mes, onIrAlDia, className }: Props) 
 
   if (loading || error || abiertos.length === 0) return null;
 
-  const visibles = desplegado ? abiertos : abiertos.slice(0, CHIPS_VISIBLES);
-  // Los que se pliegan se cuentan SIEMPRE sobre el total, no sobre lo visible:
-  // así el botón sigue existiendo desplegado («Ver menos») en vez de
-  // desaparecer bajo el dedo y dejar el foco del teclado en la nada.
-  const ocultos = abiertos.length - CHIPS_VISIBLES;
   const nota = notaDomingos(abiertos);
+  const unico = abiertos.length === 1 ? abiertos[0] : null;
+  // Una línea (noche 11-10): el título y UN botón. Con un solo día, el botón
+  // lleva a ese día; con varios, despliega los chips debajo (antes la banda
+  // pintaba 9-12 chips siempre y ocupaba 90 px arriba de la hoja).
+  const accion = unico ? (
+    <button type="button" onClick={() => onIrAlDia(unico.fecha)} aria-label={`Ir al ${unico.etiqueta}, sin marcar`} className={claseChipFiltro(false)}>
+      Ir al {unico.diaSemana.slice(0, 3)} {unico.fecha.slice(8, 10)}
+    </button>
+  ) : (
+    <button type="button" onClick={() => setDesplegado((v) => !v)} aria-expanded={desplegado} aria-controls={idLista} className={claseChipFiltro(desplegado)}>
+      {desplegado ? "Ocultar los días" : `Ver los ${abiertos.length} días`}
+    </button>
+  );
 
   return (
-    <AvisoRrhh tono="aviso" icono={CalendarOff} className={cn("items-center", className)}>
-      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-3">
-        <p className="font-semibold">
-          {tituloDiasAbiertos(abiertos, mesRevisado)}
-          {nota && <span className="font-normal text-[var(--text-secondary)]"> · {nota}</span>}
-        </p>
-        <ul id={idLista} aria-label="Días sin ninguna marca" className="flex flex-wrap items-center gap-1.5">
-          {visibles.map((dia) => (
+    <AvisoRrhh tono="aviso" icono={CalendarOff} accion={accion} className={cn("items-center py-1.5", className)}>
+      <p className="font-semibold">
+        {tituloDiasAbiertos(abiertos, mesRevisado)}
+        {nota && <span className="font-normal text-[var(--text-secondary)]"> · {nota}</span>}
+      </p>
+      {!unico && (
+        <ul id={idLista} hidden={!desplegado} aria-label="Días sin ninguna marca" className="mt-2 flex flex-wrap items-center gap-1.5">
+          {abiertos.map((dia) => (
             <li key={dia.fecha}>
-              <button
-                type="button"
-                onClick={() => onIrAlDia(dia.fecha)}
-                aria-label={`Ir al ${dia.etiqueta}, sin marcar`}
-                className={claseChipFiltro(false)}
-              >
+              <button type="button" onClick={() => onIrAlDia(dia.fecha)} aria-label={`Ir al ${dia.etiqueta}, sin marcar`} className={claseChipFiltro(false)}>
                 <span className="font-normal text-[var(--text-tertiary)]">{dia.diaSemana.slice(0, 3)}</span>
                 <span className="tabular-nums">{dia.fecha.slice(8, 10)}</span>
               </button>
             </li>
           ))}
-          {ocultos > 0 && (
-            <li>
-              <button
-                type="button"
-                onClick={() => setDesplegado((v) => !v)}
-                aria-expanded={desplegado}
-                aria-controls={idLista}
-                className={cn(claseChipFiltro(false), "font-normal")}
-              >
-                {desplegado ? "Ver menos" : `y ${ocultos} ${ocultos === 1 ? "día" : "días"} más`}
-              </button>
-            </li>
-          )}
         </ul>
-      </div>
+      )}
     </AvisoRrhh>
   );
 }

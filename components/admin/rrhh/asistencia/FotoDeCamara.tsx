@@ -32,7 +32,7 @@ export function BarraFotoDeCamara({ f }: { f: FotosAsistencia }) {
             value={f.camara.id}
             onChange={(e) => f.setCamara(e.target.value)}
             disabled={!f.activo}
-            className="h-9 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm font-semibold text-[var(--text-primary)] disabled:opacity-50"
+            className="h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm font-semibold text-[var(--text-primary)] disabled:opacity-50"
           >
             {f.camaras.map((c) => (
               <option key={c.id} value={c.id}>
@@ -65,7 +65,7 @@ export function FotoDeLaMarca({ fotos }: { fotos: readonly FotoAsistencia[] }) {
       rel="noopener noreferrer"
       title={`Foto de ${foto.camara} a las ${foto.hora}${otras}`}
       aria-label={`Ver la foto de la cámara de las ${foto.hora}`}
-      className="group relative inline-flex h-9 items-center gap-1.5 overflow-hidden rounded-lg border border-[var(--rule-base)] pr-2 text-xs font-semibold tabular-nums text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+      className="group relative inline-flex h-12 items-center gap-1.5 overflow-hidden rounded-xl border border-[var(--rule-base)] pr-2 text-sm font-semibold tabular-nums text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
       data-foto-marca
     >
       {/* eslint-disable-next-line @next/next/no-img-element -- archivo del Drive servido por la API, sin optimizador */}

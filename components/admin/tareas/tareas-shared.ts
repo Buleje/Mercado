@@ -34,4 +34,4 @@ export const EMPTY: FormData = { title: "", description: "", priority: "media", 
 /** Clase de los campos del formulario (antes repetida en cada input). */
 export const CLASE_CAMPO_TAREA =
   "w-full px-3 h-11 text-sm rounded-xl border border-[var(--rule-base)] dark:border-card-border bg-[var(--surface-sunken)] text-[var(--text-primary)] dark:text-foreground outline-none focus:border-primary transition-all";
-export const CLASE_ROTULO_TAREA = "text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-1 block";
+export const CLASE_ROTULO_TAREA = "text-sm font-bold text-[var(--text-secondary)] dark:text-muted mb-1 block";

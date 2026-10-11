@@ -1,26 +1,33 @@
+"use client";
+
 /**
- * EncabezadoDeVista — título, ⓘ y enlaces de cada vista de RRHH dentro de
- * Equipo (plan «panel unificado», ola 2). Lo pinta el hub, arriba de la vista,
- * para que el título esté también mientras carga, vacía o con error.
+ * EncabezadoDeVista — la cabecera de cada vista de RRHH dentro de Equipo, en
+ * UNA fila (patrón del panel, noche 11-10): título + ⓘ · secciones (Día /
+ * Semana / Mes) · a la derecha lo que la vista pide (Indicadores, la acción
+ * principal) y «⋯ Más» con lo secundario.
  *
- * Tareas y Notas no pasan por acá: su acción principal («Nueva tarea»,
- * «Nueva nota») vive en su propio estado, así que cada una pinta su
- * `TituloDeVista` con el botón en la misma fila.
+ * La pinta CADA vista (no el hub): la acción principal y el menú dependen de
+ * sus datos («Todos presentes (6)», «Agregar persona»). Las vistas la dibujan
+ * también mientras cargan o fallan, así el título no salta.
  *
  * Los enlaces llevan a donde vive lo operativo (regla R1 del plan): el turno
- * y las comisiones en Ventas y caja, los adelantos en Mi Plata. Cada uno se
- * dibuja sólo si esa vista se le ofrece a esta persona (`PermisoDe` con el
- * origen REGISTRADO de la vista destino).
+ * y las comisiones en Ventas y caja, los adelantos en Mi Plata, los usuarios
+ * del panel en Configuración. Van en «⋯» y sólo si esa vista se le ofrece a
+ * esta persona (el origen REGISTRADO de la vista destino, como `PermisoDe`).
  */
 
-import { ArrowUpRight } from "@buleje/design-system/icons";
-import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
-import { PermisoDe } from "@/components/admin/shared/PermisoDe";
+import { useMemo, type ReactNode } from "react";
+import { ArrowUpRight, MoreHorizontal } from "@buleje/design-system/icons";
+import { SectionTitle } from "@buleje/design-system";
+import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
+import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { useContextoPermiso } from "@/hooks/use-vistas-permitidas";
 import { hrefDeDestino } from "@/lib/admin/enlaces-panel";
-import { origenesDeVista } from "@/lib/admin/permiso-vista";
+import { origenesDeVista, vistaPermitida } from "@/lib/admin/permiso-vista";
 import { vistasDelModulo } from "@/lib/admin/subvistas-modulos";
 import type { Tab } from "@/app/admin/_lib/tabs.types";
-import TituloDeVista, { type AyudaDeVista } from "./TituloDeVista";
+import type { AyudaDeVista } from "./TituloDeVista";
 
 interface EnlaceDeVista {
   texto: string;
@@ -53,7 +60,12 @@ export const ENCABEZADOS_RRHH: Readonly<Record<string, Encabezado>> = {
       affects: "Su tarifa es la que usa Lo ganado para calcular lo que le toca.",
       example: "María entra como cajera a S/ 50 por día: con 6 días marcados, Lo ganado le da S/ 300.",
     },
-    enlaces: [{ texto: "Adelantos por persona", tab: "plata", vista: "adelantos", sub: "personas" }],
+    enlaces: [
+      { texto: "Adelantos por persona", tab: "plata", vista: "adelantos", sub: "personas" },
+      // Las CUENTAS del panel (usuario, rol, contraseña) viven en Configuración;
+      // acá están las personas del negocio, su puesto y su pago.
+      { texto: "Usuarios y acceso del panel", tab: "config", vista: "equipo" },
+    ],
   },
   ganado: {
     titulo: "Cuánto ganó cada uno",
@@ -94,19 +106,44 @@ function hrefDe(enlace: EnlaceDeVista): string {
   return hrefDeDestino({ tab: enlace.tab, params });
 }
 
-export default function EncabezadoDeVista({ vista }: { vista: string }) {
+interface Props {
+  vista: string;
+  /** Las secciones de la vista (Día / Semana / Mes), pegadas al título. */
+  secciones?: ReactNode;
+  /** A la derecha: Indicadores y la acción principal (h-12). */
+  acciones?: ReactNode;
+  /** Lo secundario de la vista; los enlaces a otras pestañas se suman al final. */
+  menu?: readonly MenuAccion[];
+}
+
+export default function EncabezadoDeVista({ vista, secciones, acciones, menu = [] }: Props) {
   const encabezado = ENCABEZADOS_RRHH[vista];
+  const ctx = useContextoPermiso();
+  const enlaces = useMemo<MenuAccion[]>(
+    () =>
+      (encabezado?.enlaces ?? [])
+        .filter((e) => ctx !== null && vistaPermitida(ctx, origenDe(e)))
+        .map((e) => ({ id: `ir-${e.tab}-${e.vista}`, label: e.texto, hint: "Se abre en su pestaña", icon: ArrowUpRight, onSelect: () => void irAEnlace(hrefDe(e)) })),
+    [encabezado, ctx],
+  );
   if (!encabezado) return null;
+  const todas = [...menu, ...enlaces];
   return (
-    <TituloDeVista titulo={encabezado.titulo} ayuda={encabezado.ayuda}>
-      {encabezado.enlaces?.map((e) => (
-        <PermisoDe key={e.texto} origen={origenDe(e) as readonly Tab[]}>
-          {/* 48 px de alto en el celular (dedo); en escritorio, la altura del texto. */}
-          <EnlacePanel href={hrefDe(e)} className="inline-flex h-12 items-center gap-1 text-sm sm:h-auto">
-            {e.texto} <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
-          </EnlacePanel>
-        </PermisoDe>
-      ))}
-    </TituloDeVista>
+    /* Como Turnos: en el celular las secciones bajan a su propia fila. */
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+      <div className="flex min-w-0 items-center gap-1.5">
+        <SectionTitle className="truncate">{encabezado.titulo}</SectionTitle>
+        <InfoTip title={encabezado.titulo} what={encabezado.ayuda.what} affects={encabezado.ayuda.affects} example={encabezado.ayuda.example} side="bottom" />
+      </div>
+      {secciones && <div className="order-last w-full min-w-0 sm:order-none sm:w-auto">{secciones}</div>}
+      {(acciones || todas.length > 0) && (
+        <div className="ml-auto flex min-w-0 items-center gap-2">
+          {acciones}
+          {todas.length > 0 && (
+            <ActionMenu label="Más" icon={MoreHorizontal} actions={todas} soloIcono size="md" className="w-12 shrink-0" title={todas.map((a) => a.label).join(", ")} />
+          )}
+        </div>
+      )}
+    </div>
   );
 }

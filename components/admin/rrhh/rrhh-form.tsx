@@ -16,18 +16,20 @@
 import type { ComponentType, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-/** Texto, select y fecha: 44 px de alto (toque cómodo en el celular), foco con el anillo del acento. */
+/** Texto, select y fecha: 48 px de alto, la medida de los campos del panel (Brandon 2026-10-09), foco con el anillo del acento. */
 export const CLASE_CAMPO =
-  "h-11 w-full min-w-0 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] transition-[border-color,box-shadow] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)] disabled:cursor-not-allowed disabled:opacity-50";
+  "h-12 w-full min-w-0 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] transition-[border-color,box-shadow] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)] disabled:cursor-not-allowed disabled:opacity-50";
 
 /** `textarea` con la misma piel que el campo. */
 export const CLASE_AREA = cn(CLASE_CAMPO, "h-auto min-h-[5.5rem] py-2.5 leading-relaxed");
 
+/* 48 px en todos los anchos (noche 11-10): el patrón del panel. Antes 40-44 px
+   (h-11 / sm:h-10) y los chicos 36: Asistencia medía 74 botones bajo 48 px. */
 const BASE_BOTON =
-  "inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold transition-[filter,background-color,border-color,color] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-raised)] disabled:cursor-not-allowed disabled:opacity-50 sm:h-10";
+  "inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold transition-[filter,background-color,border-color,color] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-raised)] disabled:cursor-not-allowed disabled:opacity-50";
 
 const BASE_BOTON_CHICO =
-  "inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50";
+  "inline-flex h-12 shrink-0 items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50";
 
 /** Botones del módulo. Pie de modal y barra de herramientas usan los de tamaño normal; filas y fichas, los `chico`. */
 export const BOTON = {
@@ -40,16 +42,16 @@ export const BOTON = {
   chicoPeligro: cn(BASE_BOTON_CHICO, "border border-[var(--data-error-500)]/40 bg-[var(--surface-raised)] text-[var(--data-error-700)] hover:bg-[var(--data-error-500)]/10 dark:text-[var(--data-error-500)]"),
   chicoFantasma: cn(BASE_BOTON_CHICO, "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"),
   /** Sólo ícono: siempre con `aria-label`. */
-  icono: "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-40",
+  icono: "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-40",
 } as const;
 
-/** Chip de estado (persona, contrato): legible, nunca `ts-2xs`. */
-export const CLASE_CHIP = "inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-bold";
+/** Chip de estado (persona, contrato): 14 px, el mínimo de texto del panel. */
+export const CLASE_CHIP = "inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-sm font-semibold";
 
-/** Chip de filtro (estados, períodos): 36 px, el activo con el acento. */
+/** Chip de filtro (estados, períodos): 48 px, el activo con el acento. */
 export function claseChipFiltro(activo: boolean): string {
   return cn(
-    "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]",
+    "inline-flex h-12 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]",
     activo
       ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
       : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--text-tertiary)] hover:text-[var(--text-primary)]",

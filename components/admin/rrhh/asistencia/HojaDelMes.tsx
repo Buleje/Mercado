@@ -26,6 +26,8 @@ import HistorialMarcaModal from "./HistorialMarcaModal";
 import LeyendaEstados from "./LeyendaEstados";
 import MesPorPersona from "./MesPorPersona";
 import NavegadorPeriodo from "./NavegadorPeriodo";
+import { propsPanelAsistencia } from "./panel-asistencia";
+import EncabezadoDeVista from "../EncabezadoDeVista";
 import { conteoDelMes } from "./conteo-mes";
 import { horariosPorColaborador, marcaConTardanza } from "./semana";
 import type { ColaboradorMinDTO } from "@/lib/rrhh/tipos";
@@ -129,7 +131,7 @@ export default function HojaDelMes({ mes, desde, hasta, onCambiarMes, selectorMo
                       <span className="block w-48 truncate" title={c.nombre}>
                         {c.nombre}
                       </span>
-                      {c.puesto && <span className="block w-48 truncate text-xs font-normal text-[var(--text-tertiary)]">{c.puesto.nombre}</span>}
+                      {c.puesto && <span className="block w-48 truncate text-sm font-normal text-[var(--text-tertiary)]">{c.puesto.nombre}</span>}
                     </td>
                     {dias.map((d) => {
                       const incluido = estaIncluidoEseDia(c, d) && d <= hoy;
@@ -153,7 +155,7 @@ export default function HojaDelMes({ mes, desde, hasta, onCambiarMes, selectorMo
                         </td>
                       );
                     })}
-                    <td className="whitespace-nowrap text-center text-xs">
+                    <td className="whitespace-nowrap text-center text-sm">
                       <span className="inline-flex flex-wrap justify-center gap-1">
                         {ORDEN_ESTADOS_ASISTENCIA.filter((e) => conteo[e] > 0).map((e) => (
                           <span key={e} title={ESTADO_ASISTENCIA_META[e].label} className={cn("rounded-md px-1.5 py-0.5 font-bold tabular-nums", ESTADO_ASISTENCIA_META[e].claseChip)}>
@@ -191,7 +193,7 @@ export default function HojaDelMes({ mes, desde, hasta, onCambiarMes, selectorMo
         <LeyendaEstados
           extra={
             <li className="inline-flex items-center gap-1.5">
-              <span aria-hidden className="inline-grid h-5 min-w-[1.5rem] place-items-center rounded-md bg-[var(--surface-sunken)] px-1 text-xs font-bold text-[var(--text-tertiary)]">
+              <span aria-hidden className="inline-grid h-6 min-w-[1.75rem] place-items-center rounded-md bg-[var(--surface-sunken)] px-1 text-sm font-bold text-[var(--text-tertiary)]">
                 ·
               </span>
               Sin marcar
@@ -203,9 +205,10 @@ export default function HojaDelMes({ mes, desde, hasta, onCambiarMes, selectorMo
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        {selectorModo}
+    <div className="space-y-3">
+      <EncabezadoDeVista vista="asistencia" secciones={selectorModo} />
+      <div {...(selectorModo ? propsPanelAsistencia("mes") : {})} className="space-y-3">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <NavegadorPeriodo
           etiqueta={`${NOMBRES_MES[Number(mes.slice(5, 7)) - 1]} ${mes.slice(0, 4)}`}
           esActual={mes === mesActual}
@@ -222,6 +225,7 @@ export default function HojaDelMes({ mes, desde, hasta, onCambiarMes, selectorMo
       </div>
 
       {contenido}
+      </div>
 
       {historial && <HistorialMarcaModal open onClose={() => setHistorial(null)} colaborador={historial.colaborador} fecha={historial.fecha} />}
     </div>

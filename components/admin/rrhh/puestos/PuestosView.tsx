@@ -6,8 +6,10 @@
  */
 
 import { useState } from "react";
-import { Briefcase, Clock, Loader2, Pencil, Plus, Trash2 } from "@buleje/design-system/icons";
+import { Briefcase, Clock, Loader2, MoreHorizontal, Pencil, Plus, Trash2 } from "@buleje/design-system/icons";
 import { EmptyState, LoadingState } from "@buleje/design-system";
+import ActionMenu from "@/components/admin/shared/action-menu";
+import EncabezadoDeVista from "../EncabezadoDeVista";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { useRrhhPuestos } from "@/hooks/use-rrhh-puestos";
 import { BOTON, CLASE_CHIP, claseChipFiltro } from "../rrhh-form";
@@ -46,19 +48,25 @@ export default function PuestosView({ nivel }: { nivel: NivelRrhh }) {
   };
 
   // Sólo la primera carga tapa la vista: tras crear, editar o borrar, `recargar()` hacía parpadear la grilla entera.
-  if (loading && puestos.length === 0) return <LoadingState message="Cargando puestos..." />;
-  if (error) return <div className="rounded-xl border border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/5 p-4 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{error}</div>;
+  /* Una fila (noche 11-10). La frase «la tarifa sólo prellena…» que iba acá
+     repetía palabra por palabra la ⓘ del título: queda sólo ahí. */
+  const encabezado = (
+    <EncabezadoDeVista
+      vista="puestos"
+      acciones={
+        <button type="button" onClick={() => setFormAbierto({ editar: null })} className={BOTON.primario}>
+          <Plus className="h-4 w-4" aria-hidden /> Nuevo puesto
+        </button>
+      }
+    />
+  );
+
+  if (loading && puestos.length === 0) return <div className="space-y-3">{encabezado}<LoadingState message="Cargando puestos..." /></div>;
+  if (error) return <div className="space-y-3">{encabezado}<div className="rounded-xl border border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/5 p-4 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{error}</div></div>;
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="max-w-prose text-sm text-[var(--text-secondary)]">
-          La tarifa del puesto sólo <strong className="text-[var(--text-primary)]">prellena</strong> la de la persona — cambiarla acá no le toca el sueldo a nadie ya contratado.
-        </p>
-        <button type="button" onClick={() => setFormAbierto({ editar: null })} className={cn(BOTON.primario, "shrink-0")}>
-          <Plus className="h-4 w-4" /> Nuevo puesto
-        </button>
-      </div>
+    <div className="space-y-3">
+      {encabezado}
 
       {puestos.length === 0 ? (
         <>
@@ -72,7 +80,7 @@ export default function PuestosView({ nivel }: { nivel: NivelRrhh }) {
                 onClick={() => crearDeChip(nombre)}
                 className={claseChipFiltro(false)}
               >
-                {creandoChip === nombre ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} {nombre}
+                {creandoChip === nombre ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} {nombre}
               </button>
             ))}
           </div>
@@ -80,22 +88,22 @@ export default function PuestosView({ nivel }: { nivel: NivelRrhh }) {
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {puestos.map((p) => (
-            <div key={p.id} className="flex flex-col gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
+            <div key={p.id} className="flex flex-col gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
               <div className="flex items-start justify-between gap-2">
-                <p className="min-w-0 truncate text-base font-semibold text-[var(--text-primary)]">{p.nombre}</p>
-                <div className="flex shrink-0 items-center gap-1">
-                  <button type="button" onClick={() => setFormAbierto({ editar: p })} className={BOTON.icono} aria-label={`Editar «${p.nombre}»`}>
-                    <Pencil className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => borrar(p)}
-                    className={cn(BOTON.icono, "hover:bg-[var(--data-error-500)]/10 hover:text-[var(--data-error-700)] dark:hover:text-[var(--data-error-500)]")}
-                    aria-label={`Eliminar «${p.nombre}»`}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
+                <button type="button" onClick={() => setFormAbierto({ editar: p })} className="-my-3 min-h-12 min-w-0 truncate rounded-lg text-left text-base font-semibold text-[var(--text-primary)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]" title="Editar el puesto">{p.nombre}</button>
+                {/* Editar y eliminar en «⋯» (antes dos íconos de 36 px por tarjeta). */}
+                <ActionMenu
+                  label={`Más de «${p.nombre}»`}
+                  icon={MoreHorizontal}
+                  soloIcono
+                  size="md"
+                  className="-mr-2 -mt-2 w-12 shrink-0"
+                  title="Editar o eliminar"
+                  actions={[
+                    { id: "editar", label: "Editar", hint: "Nombre, jornada, horario y tarifa sugerida", icon: Pencil, onSelect: () => setFormAbierto({ editar: p }) },
+                    { id: "eliminar", label: "Eliminar", hint: p.personas > 0 ? `Lo usan ${pluralizar(p.personas, "persona", "personas")}: cámbialas de puesto primero` : undefined, icon: Trash2, tone: "danger", onSelect: () => void borrar(p) },
+                  ]}
+                />
               </div>
               <div className="flex flex-wrap gap-1.5">
                 <span className={cn(CLASE_CHIP, "bg-[var(--surface-sunken)] text-[var(--text-secondary)]")}>{pluralizar(p.personas, "persona", "personas")}</span>

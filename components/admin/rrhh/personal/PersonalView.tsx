@@ -3,10 +3,14 @@
 /**
  * PersonalView — la lista de personas (ADR-414 §7, vista `personal`).
  *
- * Filtros en la cabecera (convención del panel): el estado se recorta EN EL
- * CLIENTE sobre una lista ya traída con `incluirCesados=1` — así los chips de
- * estado no disparan un fetch por click, y los KPIs de arriba (que cuentan
- * TODO el personal) no dependen de qué chip esté activo.
+ * Patrón del panel (noche 11-10): título · «Agregar persona» · «⋯» en una
+ * fila, y buscador + puesto + estado en otra, pegada a la tabla. Las cuatro
+ * tarjetas de arriba (Activos, Vacaciones/licencia…) repetían la cuenta de
+ * los chips de estado: se fueron, la cuenta queda en el chip.
+ *
+ * El estado se recorta EN EL CLIENTE sobre una lista ya traída con
+ * `incluirCesados=1` — así los chips no disparan un fetch por click y su
+ * cuenta (todo el personal) no depende de qué chip esté activo.
  *
  * BUG arreglado (2026-09-14): `useRrhhColaboradores` pone `loading=true` en
  * cada cambio de `q`, y `if (loading) return <LoadingState/>` desmontaba TODA
@@ -20,8 +24,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useFichaEnUrl } from "@/hooks/use-ficha-en-url";
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import { abreLaFicha } from "@/lib/admin/enlaces-panel";
-import { Plus, QrCode, Search, UserPlus, Users } from "@buleje/design-system/icons";
-import { DataTable, EmptyState, LoadingState, StatCard } from "@buleje/design-system";
+import { LayoutList, Plus, QrCode, Search, UserPlus, Users } from "@buleje/design-system/icons";
+import { DataTable, EmptyState, LoadingState } from "@buleje/design-system";
+import type { MenuAccion } from "@/components/admin/shared/action-menu";
+import EncabezadoDeVista from "../EncabezadoDeVista";
 import { useRrhhColaboradores } from "@/hooks/use-rrhh-colaboradores";
 import { useRrhhPuestos } from "@/hooks/use-rrhh-puestos";
 import { useRrhhDesdeAdelantos } from "@/hooks/use-rrhh-desde-adelantos";
@@ -100,24 +106,48 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
   const cargaInicial = loading && !cargoUnaVez;
   const recargando = loading && cargoUnaVez;
 
-  if (cargaInicial) return <LoadingState message="Cargando el personal..." />;
+  const menu: MenuAccion[] = [
+    ...(nivel === "completo" && candidatosAdelantos.length > 0
+      ? [{ id: "traer", label: "Traer de Adelantos", meta: String(candidatosAdelantos.length), hint: "Personas que ya tienen cuenta de Adelantos", icon: UserPlus, onSelect: () => setTraerAbierta(true) }]
+      : []),
+    ...(puedeEditar && paraFotocheck.length > 0
+      ? [modoFotocheck
+          ? { id: "tabla", label: "Ver la tabla", icon: LayoutList, onSelect: () => setModoFotocheck(false) }
+          : { id: "fotochecks", label: "Fotochecks para imprimir", meta: String(paraFotocheck.length), hint: "La lista como fotochecks, con su QR; después se descargan", icon: QrCode, onSelect: () => setModoFotocheck(true) }]
+      : []),
+  ];
+  const encabezado = (
+    <EncabezadoDeVista
+      vista="personal"
+      menu={menu}
+      acciones={
+        puedeEditar ? (
+          <button type="button" onClick={() => setAltaAbierta(true)} className={BOTON.primario}>
+            <Plus className="h-4 w-4" aria-hidden /> Agregar persona
+          </button>
+        ) : null
+      }
+    />
+  );
+
+  if (cargaInicial) return <div className="space-y-3">{encabezado}<LoadingState message="Cargando el personal..." /></div>;
   if (error) {
     return (
-      <div className="rounded-xl border border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/5 p-4 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
-        {error} <button type="button" onClick={recargar} className="ml-2 font-bold underline">Reintentar</button>
+      <div className="space-y-3">
+        {encabezado}
+        <div className="rounded-xl border border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/5 p-4 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+          {error} <button type="button" onClick={recargar} className="ml-2 min-h-12 font-bold underline">Reintentar</button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <StatCard label="Activos" value={kpis.ACTIVO} emphasis="success" density="compact" />
-        <StatCard label="Vacaciones/licencia" value={kpis.VACACIONES + kpis.LICENCIA} density="compact" />
-        <StatCard label="Suspendidos" value={kpis.SUSPENDIDO} emphasis={kpis.SUSPENDIDO > 0 ? "warning" : "neutral"} density="compact" />
-        <StatCard label="Cesados" value={kpis.CESADO} density="compact" />
-      </div>
+    <div className="space-y-3">
+      {encabezado}
 
+      {/* Buscador, puesto y estado en UNA fila pegada a la tabla. Los estados en
+          0 no se ofrecen (salvo el elegido): un chip que lleva a nada es ruido. */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative min-w-[12rem] flex-1">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" />
@@ -138,40 +168,19 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
           <option value="">Todos los puestos</option>
           {puestos.map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
         </select>
-        {nivel === "completo" && candidatosAdelantos.length > 0 && (
-          <button type="button" onClick={() => setTraerAbierta(true)} className={BOTON.secundario}>
-            <UserPlus className="h-4 w-4" /> Traer de Adelantos ({candidatosAdelantos.length})
-          </button>
-        )}
-        {puedeEditar && paraFotocheck.length > 0 && (
-          <button
-            type="button"
-            aria-pressed={modoFotocheck}
-            onClick={() => setModoFotocheck((v) => !v)}
-            className={cn(BOTON.secundario, modoFotocheck && "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]")}
-          >
-            <QrCode className="h-4 w-4" /> {modoFotocheck ? "Ver la tabla" : `Fotochecks (${paraFotocheck.length})`}
-          </button>
-        )}
-        {puedeEditar && (
-          <button type="button" onClick={() => setAltaAbierta(true)} className={cn(BOTON.primario, "ml-auto")}>
-            <Plus className="h-4 w-4" /> Agregar persona
-          </button>
-        )}
-      </div>
-
-      <div role="group" aria-label="Filtrar por estado" className="flex flex-wrap gap-1.5">
-        {CHIPS_ESTADO.map((c) => (
-          <button
-            key={c.id}
-            type="button"
-            aria-pressed={chip === c.id}
-            onClick={() => setChip(c.id)}
-            className={claseChipFiltro(chip === c.id)}
-          >
-            {c.label} <span className="tabular-nums opacity-80">{c.id === "TODOS" ? colaboradores.length : kpis[c.id]}</span>
-          </button>
-        ))}
+        <div role="group" aria-label="Filtrar por estado" className="flex flex-wrap gap-1.5">
+          {CHIPS_ESTADO.filter((c) => c.id === "TODOS" || c.id === chip || kpis[c.id] > 0).map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              aria-pressed={chip === c.id}
+              onClick={() => setChip(c.id)}
+              className={claseChipFiltro(chip === c.id)}
+            >
+              {c.label} <span className="tabular-nums opacity-80">{c.id === "TODOS" ? colaboradores.length : kpis[c.id]}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {filtrados.length === 0 ? (
@@ -242,7 +251,7 @@ export default function PersonalView({ nivel }: { nivel: NivelRrhh }) {
                     </td>
                     <td>{c.puesto?.nombre ?? <span className="text-[var(--text-tertiary)]">Sin puesto</span>}</td>
                     <td><span className={cn(CLASE_CHIP, meta.claseChip)}>{meta.label}</span></td>
-                    <td className="font-mono text-xs">{c.documento ? `${c.tipoDocumento ?? ""} ${c.documento}`.trim() : <span className="font-sans text-[var(--text-tertiary)]">—</span>}</td>
+                    <td className="whitespace-nowrap font-mono text-sm">{c.documento ? `${c.tipoDocumento ?? ""} ${c.documento}`.trim() : <span className="font-sans text-[var(--text-tertiary)]">—</span>}</td>
                     <td>{c.celular ?? <span className="text-[var(--text-tertiary)]">—</span>}</td>
                     <td>{c.fechaIngreso ? formatearFecha(c.fechaIngreso) : <span className="text-[var(--text-tertiary)]">No se sabe</span>}</td>
                   </tr>

@@ -81,7 +81,7 @@ export default function MesPorPersona({ colaboradores, marcas, dias, hoy, ventan
       </div>
 
       <div className="space-y-2">
-        <p className="text-xs text-[var(--text-tertiary)]">
+        <p className="text-sm text-[var(--text-tertiary)]">
           {i + 1} de {colaboradores.length}
           {persona.puesto && ` · ${persona.puesto.nombre}`}
         </p>
@@ -97,7 +97,7 @@ export default function MesPorPersona({ colaboradores, marcas, dias, hoy, ventan
 
       <div className="grid grid-cols-7 gap-1 text-center">
         {DIAS_SEMANA.map((letra, k) => (
-          <span key={`dia-${k}`} aria-hidden className="pb-1 text-xs font-semibold text-[var(--text-tertiary)]">
+          <span key={`dia-${k}`} aria-hidden className="pb-1 text-sm font-semibold text-[var(--text-tertiary)]">
             {letra}
           </span>
         ))}
@@ -108,7 +108,7 @@ export default function MesPorPersona({ colaboradores, marcas, dias, hoy, ventan
           const editable = dentroDeVentana(d, ventana);
           return (
             <div key={d} title={etiquetaDia(d, hoy)} className={cn("flex flex-col items-center gap-0.5 rounded-lg py-1", d === hoy && "bg-primary/10")}>
-              <span aria-hidden className={cn("text-xs tabular-nums", d === hoy ? "font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-tertiary)]")}>
+              <span aria-hidden className={cn("text-sm tabular-nums", d === hoy ? "font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-tertiary)]")}>
                 {Number(d.slice(8, 10))}
               </span>
               <CeldaMarcaPopover

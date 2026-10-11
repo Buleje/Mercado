@@ -2,28 +2,21 @@
 
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { ListChecks, Plus, Check, Pencil, Trash2, User, Clock, AlertCircle, CheckCircle2, X, Search } from "@buleje/design-system/icons";
+import { ListChecks, Plus, Check, Search } from "@buleje/design-system/icons";
 import { EmptyState, LoadingState } from "@buleje/design-system";
 import TituloDeVista from "@/components/admin/rrhh/TituloDeVista";
-import BotonIconoTip from "@/components/admin/shared/boton-icono-tip";
 import { ModalFooter } from "@/components/admin/shared/ModalFooter";
-import { Casilla } from "@/components/ui-system/Casilla";
 import { button } from "@/components/ui-system/button-variants";
-import { cn, limaDateKey } from "@/lib/utils";
-import { fechaParaMostrar } from "@/lib/admin/metas-tareas";
+import { cn } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { toast } from "sonner";
 import { Field } from "@/components/admin/shared/Field";
 import { filtrarTareas } from "@/lib/admin/tareas-buscar";
 import SelectorEncargado from "@/components/admin/tareas/SelectorEncargado";
+import FilaTarea, { STATUS_META } from "@/components/admin/tareas/FilaTarea";
 import { CLASE_CAMPO_TAREA, CLASE_ROTULO_TAREA, EMPTY, MODULES, PRIORITY_META, type FormData, type Task, type TaskStatus, type Priority } from "@/components/admin/tareas/tareas-shared";
 
-const STATUS_META: Record<TaskStatus, { label: string; color: string; icon: React.ElementType }> = {
-  pendiente:    { label: "Pendiente",    color: "text-[var(--text-secondary)]",   icon: Clock },
-  en_progreso:  { label: "En progreso",  color: "text-[var(--data-success-ink)]",  icon: AlertCircle },
-  completada:   { label: "Completada",   color: "text-[var(--data-success-ink)]",  icon: CheckCircle2 },
-  cancelada:    { label: "Cancelada",    color: "text-[var(--data-error-ink)]",    icon: X },
-};
+/* `STATUS_META` vive con la fila (`tareas/FilaTarea`), que es quien lo pinta. */
 
 export default function TasksTab() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -126,7 +119,7 @@ export default function TasksTab() {
   const counts = { pendiente: tasks.filter(t => t.status === "pendiente").length, en_progreso: tasks.filter(t => t.status === "en_progreso").length, completada: tasks.filter(t => t.status === "completada").length };
 
   return (
-    <div className="space-y-3 sm:space-y-6">
+    <div className="space-y-3">
       {/* El título de la vista con su acción principal en la misma fila
           (Equipo › Tareas; antes, AdminModuleHeader con subtítulo a la vista). */}
       <TituloDeVista
@@ -179,70 +172,11 @@ export default function TasksTab() {
           title={busqueda.trim() ? `Ninguna tarea coincide con «${busqueda.trim()}»` : `No hay tareas${filterStatus !== "todas" ? ` con estado «${STATUS_META[filterStatus].label.toLowerCase()}»` : ""}`}
         />
       ) : (
-        <div className="space-y-2.5">
-          {filtered.map(t => {
-            const pm = PRIORITY_META[t.priority];
-            const sm = STATUS_META[t.status];
-            const StatusIcon = sm.icon;
-            return (
-              <div
-                key={t.id}
-                className={cn(
-                  "bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-card-border rounded-xl p-4 hover:shadow-sm transition-shadow",
-                  t.status === "completada" && "opacity-70"
-                )}
-              >
-                <div className="flex flex-wrap items-start gap-3">
-                  {/* Completar o reabrir: la casilla del DS, con 44 px de dedo alrededor. */}
-                  <label className="-m-3 grid h-11 w-11 shrink-0 cursor-pointer place-items-center">
-                    <Casilla
-                      checked={t.status === "completada"}
-                      onChange={() => changeStatus(t.id, t.status === "completada" ? "pendiente" : "completada")}
-                      aria-label={t.status === "completada" ? `Reabrir «${t.title}»` : `Completar «${t.title}»`}
-                    />
-                  </label>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      <p className={cn("font-semibold text-sm text-[var(--text-primary)] dark:text-foreground", t.status === "completada" && "line-through text-[var(--text-tertiary)]")}>{t.title}</p>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <BotonIconoTip label="Editar" icon={Pencil} tamano="sm" onClick={() => openEdit(t)} />
-                        <BotonIconoTip label="Eliminar" icon={Trash2} tamano="sm" tono="peligro" onClick={() => deleteTask(t.id)} />
-                      </div>
-                    </div>
-                    {t.description && <p className="text-xs text-[var(--text-secondary)] dark:text-muted mt-0.5 line-clamp-2">{t.description}</p>}
-                    <div className="flex items-center gap-2 mt-2 flex-wrap">
-                      <span className={cn("px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold", pm.bg, pm.color)}>{pm.label}</span>
-                      <span className={cn("flex items-center gap-1 text-[length:var(--ts-2xs)] font-semibold", sm.color)}>
-                        <StatusIcon className="h-3 w-3" />{sm.label}
-                      </span>
-                      {t.assignedTo && (
-                        <span className="flex items-center gap-1 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">
-                          <User className="h-3 w-3" />{t.assignedTo}
-                        </span>
-                      )}
-                      {t.module && <span className="text-[length:var(--ts-2xs)] bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] px-2 py-0.5 rounded-full font-semibold">{t.module}</span>}
-                      {t.dueDate && (
-                        <span className={cn("flex items-center gap-1 text-[length:var(--ts-2xs)]", t.dueDate < limaDateKey() && t.status !== "completada" ? "text-[var(--data-error-ink)] font-bold" : "text-[var(--text-tertiary)] dark:text-muted")}>
-                          <Clock className="h-3 w-3" />{fechaParaMostrar(t.dueDate)}
-                        </span>
-                      )}
-                    </div>
-                    {t.status !== "completada" && (
-                      <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                        <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-muted">Cambiar estado:</span>
-                        {(["pendiente", "en_progreso", "completada"] as TaskStatus[]).filter(s => s !== t.status).map(s => (
-                          <button key={s} type="button" onClick={() => changeStatus(t.id, s)} className={button({ variant: "secondary", size: "sm" })}>
-                            {STATUS_META[s].label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+        /* Una lista, no una tarjeta por tarea: filas separadas por una raya. */
+        <div className="divide-y divide-[var(--rule-soft)] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
+          {filtered.map(t => (
+            <FilaTarea key={t.id} tarea={t} onCambiarEstado={(s) => changeStatus(t.id, s)} onEditar={() => openEdit(t)} onEliminar={() => deleteTask(t.id)} />
+          ))}
         </div>
       )}
 

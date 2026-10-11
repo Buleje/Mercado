@@ -73,18 +73,18 @@ export default function FilaGanado({
             <ChevronDown aria-hidden="true" className={cn("mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)] transition-transform", abierto && "rotate-180")} />
             <span>
               {persona.nombre}
-              {persona.puesto && <span className="block text-xs font-normal text-[var(--text-tertiary)]">{persona.puesto}</span>}
+              {persona.puesto && <span className="block text-sm font-normal text-[var(--text-tertiary)]">{persona.puesto}</span>}
             </span>
           </span>
         </td>
         <td className="text-right tabular-nums">{formatNumber(dias, { max: 2 })}</td>
         <td className="text-right tabular-nums">{horas > 0 ? horas.toFixed(1) : "—"}</td>
-        <td>{tarifaTexto}</td>
+        <td className="whitespace-nowrap">{tarifaTexto}</td>
         <td className="text-right font-bold tabular-nums text-[var(--text-primary)]">{formatearPEN(persona.total)}</td>
         <td className="text-right tabular-nums">
           {persona.adelantos ? formatearPEN(persona.adelantos.abiertosPen) : "—"}
           {(persona.adelantos?.descontadoPen ?? 0) > 0 && (
-            <span className="block text-xs text-[var(--text-tertiary)]">
+            <span className="block text-sm text-[var(--text-tertiary)]">
               ya descontado {formatearPEN(persona.adelantos?.descontadoPen ?? 0)}
             </span>
           )}
@@ -97,7 +97,7 @@ export default function FilaGanado({
               onClick={(e) => { e.stopPropagation(); onDescontar(); }}
               onKeyDown={(e) => e.stopPropagation()}
               aria-label={`Descontar los adelantos de ${persona.nombre}`}
-              className="mt-0.5 block w-full min-h-8 text-right text-xs font-bold text-[var(--accent-dark)] underline-offset-2 hover:underline disabled:opacity-60 dark:text-[var(--accent)]"
+              className="block min-h-12 w-full text-right text-sm font-bold text-[var(--accent-dark)] underline-offset-2 hover:underline disabled:opacity-60 dark:text-[var(--accent)]"
             >
               {descontando ? "Trayendo…" : "Descontar adelantos"}
             </button>
@@ -120,11 +120,11 @@ export default function FilaGanado({
           {avisos.length > 0 ? (
             <div className="flex flex-wrap gap-1">
               {avisos.map((a, i) => (
-                <span key={i} className={cn(CLASE_CHIP, "bg-[var(--data-warning-500)]/10 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]")}>{a}</span>
+                <span key={i} className={cn(CLASE_CHIP, "whitespace-normal rounded-lg bg-[var(--data-warning-500)]/10 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]")}>{a}</span>
               ))}
             </div>
           ) : (
-            <span className="text-xs text-[var(--text-tertiary)]">—</span>
+            <span className="text-[var(--text-tertiary)]">—</span>
           )}
         </td>
       </tr>
@@ -136,7 +136,7 @@ export default function FilaGanado({
               {queda != null && <li>{explicarQuedaPorPagar(queda)}</li>}
             </ul>
             {persona.beneficiarioId == null && (
-              <p className="mt-2 text-xs text-[var(--text-tertiary)]">
+              <p className="mt-2 text-sm text-[var(--text-tertiary)]">
                 Sin cuenta vinculada — no hay adelantos que mostrar al lado, así que tampoco se puede decir qué queda por pagar. Vincula su cuenta desde Personal.
               </p>
             )}

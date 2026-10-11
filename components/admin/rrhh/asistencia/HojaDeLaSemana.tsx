@@ -19,17 +19,20 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { AlertTriangle, Download, Users } from "@buleje/design-system/icons";
 import { EmptyState, LoadingState, StatCard } from "@buleje/design-system";
+import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
 import { avisarFallos, useRrhhAsistencia } from "@/hooks/use-rrhh-asistencia";
 import { useRrhhGanado } from "@/hooks/use-rrhh-ganado";
 import { useRrhhPuestos } from "@/hooks/use-rrhh-puestos";
 import { sinDato } from "@/lib/errores/sin-dato";
 import { rangoDeDias, semanaDe, sumarDias } from "@/lib/rrhh/fechas";
-import { cn, limaDateKey } from "@/lib/utils";
+import { limaDateKey } from "@/lib/utils";
 import { AvisoRrhh, BOTON } from "../rrhh-form";
 import { COPY_REFERENCIA, dentroDeVentana, formatearPEN, pluralizar } from "../rrhh-ui";
 import HistorialMarcaModal from "./HistorialMarcaModal";
 import LeyendaEstados from "./LeyendaEstados";
 import NavegadorPeriodo from "./NavegadorPeriodo";
+import { propsPanelAsistencia } from "./panel-asistencia";
+import EncabezadoDeVista from "../EncabezadoDeVista";
 import SemanaEnCelular from "./SemanaEnCelular";
 import SemanaEnTabla from "./SemanaEnTabla";
 import { conteoDelMes, diasTrabajados } from "./conteo-mes";
@@ -116,6 +119,23 @@ export default function HojaDeLaSemana({ desde, onCambiarSemana, nivel, selector
 
   // La marca viaja COMPLETA (`marcaConTardanza`): el buffer del hook reemplaza
   // la celda, y con sólo el estado se perdería la hora que delató la tardanza.
+  /* Las cifras de la semana, plegadas (patrón del panel): el pie de la tabla
+     ya las suma por columna; acá quedan a un clic y el titular a la vista. */
+  const kpis = useKpisPlegables({
+    claveMemoria: "rrhh-semana",
+    alto: "md",
+    compactoEnMovil: true,
+    anchoFijo: true,
+    sinDatosAun: !hoja,
+    resumen: conPlata && totales.ganado != null ? `Ganado ${formatearPEN(totales.ganado)}` : pluralizar(totales.faltas, "falta", "faltas"),
+    tarjetas: [
+      <StatCard key="p" label="Personas" value={filas.length} density="compact" />,
+      <StatCard key="d" label="Días trabajados" value={formatearDias(totales.trabajados)} density="compact" />,
+      <StatCard key="f" label="Faltas" value={totales.faltas} density="compact" />,
+      ...(conPlata ? [<StatCard key="g" label="Ganado de la semana" value={totales.ganado != null ? formatearPEN(totales.ganado) : "—"} density="compact" />] : []),
+    ],
+  });
+
   const aceptarTardanza = (colaboradorId: string, fecha: string) =>
     marcar(marcaConTardanza(hoja?.marcas.find((m) => m.colaboradorId === colaboradorId && m.fecha === fecha), colaboradorId, fecha));
 
@@ -153,12 +173,6 @@ export default function HojaDeLaSemana({ desde, onCambiarSemana, nivel, selector
   } else {
     contenido = (
       <>
-        <div className={cn("grid grid-cols-2 gap-3", conPlata ? "sm:grid-cols-4" : "sm:grid-cols-3")}>
-          <StatCard label="Personas" value={filas.length} density="compact" />
-          <StatCard label="Días trabajados" value={formatearDias(totales.trabajados)} density="compact" />
-          <StatCard label="Faltas" value={totales.faltas} density="compact" />
-          {conPlata && <StatCard label="Ganado de la semana" value={totales.ganado != null ? formatearPEN(totales.ganado) : "—"} density="compact" />}
-        </div>
 
         {conPlata && errorGanado && <AvisoRrhh tono="error">{errorGanado}: la hoja se ve igual, sin los montos.</AvisoRrhh>}
 
@@ -200,16 +214,25 @@ export default function HojaDeLaSemana({ desde, onCambiarSemana, nivel, selector
         />
 
         <LeyendaEstados />
-        {conPlata && <p className="text-xs text-[var(--text-tertiary)]">{COPY_REFERENCIA}</p>}
+        {conPlata && <p className="text-sm text-[var(--text-tertiary)]">{COPY_REFERENCIA}</p>}
       </>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        {selectorModo}
-        <div className="flex flex-wrap items-center gap-2">
+    <div className="space-y-3">
+      <EncabezadoDeVista
+        vista="asistencia"
+        secciones={selectorModo}
+        acciones={
+          <button type="button" onClick={descargar} disabled={!hoja || filas.length === 0 || descargando} className={BOTON.secundario} title="La hoja de la semana para firmar">
+            <Download className="h-4 w-4" aria-hidden />
+            {descargando ? "Armando el PDF…" : "Descargar PDF"}
+          </button>
+        }
+      />
+      <div {...(selectorModo ? propsPanelAsistencia("semana") : {})} className="space-y-3">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <NavegadorPeriodo
             etiqueta={etiquetaSemana(desde)}
             esActual={desde === semanaActual}
@@ -223,14 +246,11 @@ export default function HojaDeLaSemana({ desde, onCambiarSemana, nivel, selector
             onVolver={() => irASemana(semanaActual)}
             selector={{ tipo: "date", valor: desde, max: hoy, onElegir: (f) => irASemana(semanaDe(f).desde) }}
           />
-          <button type="button" onClick={descargar} disabled={!hoja || filas.length === 0 || descargando} className={cn(BOTON.secundario, "gap-2")}>
-            <Download className="h-4 w-4" />
-            {descargando ? "Armando el PDF…" : "Descargar PDF"}
-          </button>
-        </div>
+        <div className="ml-auto">{kpis.boton}</div>
       </div>
-
+      {kpis.panel}
       {contenido}
+      </div>
 
       {historial && <HistorialMarcaModal open onClose={() => setHistorial(null)} colaborador={historial.colaborador} fecha={historial.fecha} />}
     </div>

@@ -151,7 +151,7 @@ export default function CeldaMarcaPopover({ colaborador, fecha, marca, pendiente
         <div className="mb-2 flex items-start justify-between gap-2">
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{colaborador.nombre}</p>
-            <p className="text-xs text-[var(--text-tertiary)] first-letter:uppercase">
+            <p className="text-sm text-[var(--text-tertiary)] first-letter:uppercase">
               {etiquetaDia(fecha)} · {detalle}
             </p>
           </div>
@@ -159,7 +159,7 @@ export default function CeldaMarcaPopover({ colaborador, fecha, marca, pendiente
             <X className="h-4 w-4" />
           </button>
         </div>
-        {!editable && motivoNoEditable && <p className="mb-2 text-xs text-[var(--text-tertiary)]">{motivoNoEditable}</p>}
+        {!editable && motivoNoEditable && <p className="mb-2 text-sm text-[var(--text-tertiary)]">{motivoNoEditable}</p>}
         <div className="grid grid-cols-4 gap-1.5">
           {ORDEN_ESTADOS_ASISTENCIA.map((estado) => {
             const m = ESTADO_ASISTENCIA_META[estado];
@@ -194,7 +194,7 @@ export default function CeldaMarcaPopover({ colaborador, fecha, marca, pendiente
                 <p className="flex items-center gap-1.5 text-sm font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">
                   <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden /> Llegó {minutosTarde} min tarde
                 </p>
-                <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
+                <p className="mt-0.5 text-sm text-[var(--text-tertiary)]">
                   Entra {horario.horaEntrada} · {horario.toleranciaMin} min de tolerancia
                 </p>
                 {sugerida && (
@@ -211,7 +211,7 @@ export default function CeldaMarcaPopover({ colaborador, fecha, marca, pendiente
                 )}
               </div>
             ) : (
-              <p className="text-xs text-[var(--text-tertiary)]">Llegó a tiempo para las {horario.horaEntrada}.</p>
+              <p className="text-sm text-[var(--text-tertiary)]">Llegó a tiempo para las {horario.horaEntrada}.</p>
             )}
           </div>
         )}

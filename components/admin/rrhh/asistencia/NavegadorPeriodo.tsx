@@ -30,7 +30,7 @@ interface Props {
   selector: { tipo: "date" | "month"; valor: string; max: string; onElegir: (valor: string) => void };
 }
 
-const CLASE_FLECHA = cn(BOTON.icono, "border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)]");
+const CLASE_FLECHA = cn(BOTON.icono, "rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)]");
 
 export default function NavegadorPeriodo(p: Props) {
   const selectorRef = useRef<HTMLInputElement>(null);
@@ -56,12 +56,12 @@ export default function NavegadorPeriodo(p: Props) {
           type="button"
           onClick={abrirSelector}
           aria-label={`${p.etiqueta}. Elegir otra fecha`}
-          className="inline-flex h-9 min-w-[11rem] items-center justify-center gap-2 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+          className="inline-flex h-12 min-w-[11rem] items-center justify-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
         >
           <CalendarDays className="h-4 w-4 text-[var(--text-tertiary)]" />
           <span className="first-letter:uppercase">{p.etiqueta}</span>
           {p.esActual && (
-            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]">{p.textoActual}</span>
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-sm font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)]">{p.textoActual}</span>
           )}
         </button>
         <input
