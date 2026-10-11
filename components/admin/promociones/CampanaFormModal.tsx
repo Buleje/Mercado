@@ -30,19 +30,19 @@ export default function CampanaFormModal({ prm }: { prm: Promociones }) {
             </div>
             <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4">
               {/* Name */}
-              <Field label="Nombre de campaña *" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+              <Field label="Nombre de campaña *" labelClassName="text-sm font-bold text-[var(--text-secondary)] dark:text-muted">
                 <input type="text" value={campaignForm.name} onChange={e => setCampaignForm(f => ({ ...f, name: e.target.value }))}
-                  className="w-full mt-1 px-3 h-10 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" placeholder="Ej: Campaña de Verano" />
+                  className="w-full mt-1 px-3 h-12 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" placeholder="Ej: Campaña de Verano" />
               </Field>
               {/* Description */}
-              <Field label="Descripción" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+              <Field label="Descripción" labelClassName="text-sm font-bold text-[var(--text-secondary)] dark:text-muted">
                 <textarea value={campaignForm.description} onChange={e => setCampaignForm(f => ({ ...f, description: e.target.value }))} rows={2}
                   className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary resize-none" placeholder="Detalles de la campaña…" />
               </Field>
               {/* Target Segment */}
-              <Field label="Segmento objetivo *" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+              <Field label="Segmento objetivo *" labelClassName="text-sm font-bold text-[var(--text-secondary)] dark:text-muted">
                 <select value={campaignForm.targetSegment} onChange={e => setCampaignForm(f => ({ ...f, targetSegment: e.target.value }))}
-                  className="w-full mt-1 px-3 h-10 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary bg-[var(--surface-raised)] ">
+                  className="w-full mt-1 px-3 h-12 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary bg-[var(--surface-raised)] ">
                   <option value="all">Todos</option>
                   <option value="champions">Champions</option>
                   <option value="loyal">Loyal</option>
@@ -54,30 +54,30 @@ export default function CampanaFormModal({ prm }: { prm: Promociones }) {
               </Field>
               {/* Dates */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Field label="Fecha/hora inicio *" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+                <Field label="Fecha/hora inicio *" labelClassName="text-sm font-bold text-[var(--text-secondary)] dark:text-muted">
                   <input type="datetime-local" value={campaignForm.startDate ? campaignForm.startDate.slice(0, 16) : ""} onChange={e => setCampaignForm(f => ({ ...f, startDate: e.target.value }))}
-                    className="w-full mt-1 px-3 h-10 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary text-[var(--text-secondary)] dark:text-muted" />
+                    className="w-full mt-1 px-3 h-12 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary text-[var(--text-secondary)] dark:text-muted" />
                 </Field>
-                <Field label="Fecha/hora fin" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+                <Field label="Fecha/hora fin" labelClassName="text-sm font-bold text-[var(--text-secondary)] dark:text-muted">
                   <input type="datetime-local" value={campaignForm.endDate ? campaignForm.endDate.slice(0, 16) : ""} onChange={e => setCampaignForm(f => ({ ...f, endDate: e.target.value }))}
-                    className="w-full mt-1 px-3 h-10 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary text-[var(--text-secondary)] dark:text-muted" />
+                    className="w-full mt-1 px-3 h-12 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary text-[var(--text-secondary)] dark:text-muted" />
                 </Field>
               </div>
               {/* Message Template */}
-              <Field label="Mensaje con placeholders" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+              <Field label="Mensaje con placeholders" labelClassName="text-sm font-bold text-[var(--text-secondary)] dark:text-muted">
                 {(id) => (
                   <>
                     <textarea id={id} value={campaignForm.messageTemplate} onChange={e => setCampaignForm(f => ({ ...f, messageTemplate: e.target.value }))} rows={4}
                       className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary resize-none font-mono"
                       placeholder="¡Hola {name}! Tenemos un {discount}% de descuento especial para ti..." />
-                    <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1">Variables: {"{name}"}, {"{discount}"}, {"{code}"}</p>
+                    <p className="text-sm text-[var(--text-tertiary)] dark:text-muted mt-1">Variables: {"{name}"}, {"{discount}"}, {"{code}"}</p>
                   </>
                 )}
               </Field>
               {/* Discount Code */}
-              <Field label="Código de descuento" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+              <Field label="Código de descuento" labelClassName="text-sm font-bold text-[var(--text-secondary)] dark:text-muted">
                 <input type="text" value={campaignForm.discountCode} onChange={e => setCampaignForm(f => ({ ...f, discountCode: e.target.value.toUpperCase() }))}
-                  className="w-full mt-1 px-3 h-10 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary font-mono" placeholder="VERANO20" />
+                  className="w-full mt-1 px-3 h-12 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary font-mono" placeholder="VERANO20" />
               </Field>
               {/* Auto-send toggle */}
               <div className="flex flex-wrap items-center gap-3 p-3 bg-[var(--surface-sunken)] rounded-xl">
@@ -85,7 +85,7 @@ export default function CampanaFormModal({ prm }: { prm: Promociones }) {
                   className="rounded border-[var(--rule-base)] text-primary focus:ring-primary" />
                 <label htmlFor="autoSend" className="text-sm font-medium text-[var(--text-primary)] dark:text-[var(--text-primary)] cursor-pointer flex-1">
                   Enviar automáticamente al inicio de la campaña
-                  <span className="block text-xs text-[var(--text-tertiary)] dark:text-muted font-normal">Las notificaciones se enviarán por WhatsApp al segmento seleccionado</span>
+                  <span className="block text-sm text-[var(--text-tertiary)] dark:text-muted font-normal">Las notificaciones se enviarán por WhatsApp al segmento seleccionado</span>
                 </label>
               </div>
             </div>

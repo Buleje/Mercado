@@ -63,7 +63,7 @@ export default function PromoVentanasChicas({ prm }: { prm: Promociones }) {
                 <AlertTriangle className="h-5 w-5 text-[var(--data-error-500)]" />
               </div>
               <div>
-                <CardTitle id={deleteTitleId} className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">¿Eliminar promoción?</CardTitle>
+                <CardTitle id={deleteTitleId} className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">¿Eliminar oferta?</CardTitle>
                 <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Esta acción no se puede deshacer.</p>
               </div>
             </div>
@@ -82,7 +82,7 @@ export default function PromoVentanasChicas({ prm }: { prm: Promociones }) {
             <div {...ventanaTemplates.asaProps} className="flex items-center justify-between px-5 py-4 border-b dark:border-[var(--rule-base)] shrink-0">
               <div>
                 <CardTitle id={templatesTitleId} className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Plantillas de Campaña</CardTitle>
-                <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Selecciona una plantilla y personalízala</p>
+                <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Selecciona una plantilla y personalízala</p>
               </div>
               <span className="ml-auto flex items-center gap-1">
                 <ControlesDeVentana ventana={ventanaTemplates} />
@@ -103,8 +103,8 @@ export default function PromoVentanasChicas({ prm }: { prm: Promociones }) {
                   </span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{tpl.name}</p>
-                    <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{tpl.description}</p>
-                    <p className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-semibold mt-0.5">{tpl.form.discountPercent}% off · Mín. {formatCurrency(tpl.form.minPurchase)}</p>
+                    <p className="text-sm text-[var(--text-secondary)] dark:text-muted">{tpl.description}</p>
+                    <p className="text-sm text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] font-semibold mt-0.5">{tpl.form.discountPercent}% off · Mín. {formatCurrency(tpl.form.minPurchase)}</p>
                   </div>
                 </button>
               ))}

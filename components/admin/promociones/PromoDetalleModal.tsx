@@ -36,44 +36,44 @@ export default function PromoDetalleModal({ prm }: { prm: Promociones }) {
                 </div>
               )}
               <div className="flex flex-wrap gap-2">
-                <span className={cn("inline-flex px-2.5 py-1 rounded-full text-xs font-bold",
+                <span className={cn("inline-flex px-2.5 py-1 rounded-full text-sm font-bold",
                   detailPromo.active ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "bg-[var(--rule-soft)] dark:bg-accent text-[var(--text-secondary)] dark:text-muted"
                 )}>{detailPromo.active ? "Activa" : "Inactiva"}</span>
                 {detailPromo.discountPercent > 0 && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-[var(--data-error-100)] text-[var(--data-error-500)]">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-sm font-bold bg-[var(--data-error-100)] text-[var(--data-error-500)]">
                     <Percent className="h-3 w-3" /> {detailPromo.discountPercent}% OFF
                   </span>
                 )}
-                <span className={cn("inline-flex px-2.5 py-1 rounded-full text-xs font-bold",
+                <span className={cn("inline-flex px-2.5 py-1 rounded-full text-sm font-bold",
                   detailPromo.targetType === "all" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : detailPromo.targetType === "group" ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
                 )}>{detailPromo.targetType === "all" ? "Todos los clientes" : detailPromo.targetType === "group" ? "Grupo seleccionado" : "Individual"}</span>
               </div>
               {detailPromo.description && (
                 <div>
-                  <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted">Descripción</p>
+                  <p className="text-sm font-bold text-[var(--text-tertiary)] dark:text-muted">Descripción</p>
                   <p className="text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mt-1">{detailPromo.description}</p>
                 </div>
               )}
               {detailPromo.minPurchase && (
                 <div>
-                  <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted">Compra mínima</p>
+                  <p className="text-sm font-bold text-[var(--text-tertiary)] dark:text-muted">Compra mínima</p>
                   <p className="text-sm font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] mt-1">{formatCurrency(detailPromo.minPurchase)}</p>
                 </div>
               )}
               {detailPromo.message && (
                 <div>
-                  <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted">Mensaje WhatsApp</p>
+                  <p className="text-sm font-bold text-[var(--text-tertiary)] dark:text-muted">Mensaje WhatsApp</p>
                   <div className="bg-primary/10 rounded-xl p-3 mt-1 text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] whitespace-pre-wrap border border-[var(--data-success-500)]/30">{detailPromo.message}</div>
                 </div>
               )}
               {detailPromo.targetPhones && (
                 <div>
-                  <p className="text-xs font-bold text-[var(--text-tertiary)] dark:text-muted">Clientes objetivo</p>
+                  <p className="text-sm font-bold text-[var(--text-tertiary)] dark:text-muted">Clientes objetivo</p>
                   <div className="flex flex-wrap gap-1.5 mt-1">
                     {detailPromo.targetPhones.split(",").filter(Boolean).map(ph => {
                       const cust = customers.find(c => c.phone === ph);
                       return (
-                        <span key={ph} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs bg-[var(--rule-soft)] dark:bg-accent text-[var(--text-primary)] dark:text-[var(--text-primary)] font-medium">
+                        <span key={ph} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-sm bg-[var(--rule-soft)] dark:bg-accent text-[var(--text-primary)] dark:text-[var(--text-primary)] font-medium">
                           <Phone className="h-3 w-3" /> {cust ? cust.name : ph}
                         </span>
                       );
@@ -81,7 +81,7 @@ export default function PromoDetalleModal({ prm }: { prm: Promociones }) {
                   </div>
                 </div>
               )}
-              <div className="flex flex-wrap gap-3 text-xs text-[var(--text-tertiary)] dark:text-muted">
+              <div className="flex flex-wrap gap-3 text-sm text-[var(--text-tertiary)] dark:text-muted">
                 <span>ID: {detailPromo.id}</span>
                 <span>Creada: {formatDate(detailPromo.createdAt)}</span>
                 {detailPromo.expiresAt && <span>Expira: {formatDate(detailPromo.expiresAt)}</span>}

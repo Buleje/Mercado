@@ -25,7 +25,7 @@ export default function CuponesVentanas({ cup }: { cup: Cupones }) {
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <div>
                 <CardTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Configurar Regla</CardTitle>
-                <p className="text-xs text-[var(--text-secondary)] dark:text-muted">{ruleConfigs[editingRule.type].label}</p>
+                <p className="text-sm text-[var(--text-secondary)] dark:text-muted">{ruleConfigs[editingRule.type].label}</p>
               </div>
               <div className="flex items-center gap-1"><ControlesDeVentana ventana={ventanaRegla} />
               <button aria-label="Cerrar" onClick={() => setShowRuleConfig(false)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors">
@@ -33,33 +33,33 @@ export default function CuponesVentanas({ cup }: { cup: Cupones }) {
               </button></div>
             </div>
             <div className="px-5 py-4 space-y-4">
-              <Field label="Tipo de descuento" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+              <Field label="Tipo de descuento" labelClassName="text-sm font-bold text-[var(--text-secondary)] dark:text-muted">
                 <select value={editingRule.config.discountType} onChange={e => setEditingRule({ ...editingRule, config: { ...editingRule.config, discountType: e.target.value as "percent" | "fixed" } })}
-                  className="w-full mt-1 px-3 h-10 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary bg-[var(--surface-raised)] ">
+                  className="w-full mt-1 px-3 h-12 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary bg-[var(--surface-raised)] ">
                   <option value="percent">Porcentaje (%)</option>
                   <option value="fixed">Monto fijo (S/)</option>
                 </select>
               </Field>
-              <Field label="Valor del descuento" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+              <Field label="Valor del descuento" labelClassName="text-sm font-bold text-[var(--text-secondary)] dark:text-muted">
                 <input type="number" value={editingRule.config.discountValue} onChange={e => setEditingRule({ ...editingRule, config: { ...editingRule.config, discountValue: Number(e.target.value) } })}
-                  className="w-full mt-1 px-3 h-10 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" />
+                  className="w-full mt-1 px-3 h-12 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" />
               </Field>
               {editingRule.type !== "min-spend" && (
-                <Field label="Días de validez" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+                <Field label="Días de validez" labelClassName="text-sm font-bold text-[var(--text-secondary)] dark:text-muted">
                   <input type="number" value={editingRule.config.validityDays} onChange={e => setEditingRule({ ...editingRule, config: { ...editingRule.config, validityDays: Number(e.target.value) } })}
-                    className="w-full mt-1 px-3 h-10 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" />
+                    className="w-full mt-1 px-3 h-12 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" />
                 </Field>
               )}
               {editingRule.type === "inactive" && (
-                <Field label="Días de inactividad antes de activar" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+                <Field label="Días de inactividad antes de activar" labelClassName="text-sm font-bold text-[var(--text-secondary)] dark:text-muted">
                   <input type="number" value={editingRule.config.inactiveDays} onChange={e => setEditingRule({ ...editingRule, config: { ...editingRule.config, inactiveDays: Number(e.target.value) } })}
-                    className="w-full mt-1 px-3 h-10 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" />
+                    className="w-full mt-1 px-3 h-12 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" />
                 </Field>
               )}
               {editingRule.type === "min-spend" && (
-                <Field label="Gasto mínimo acumulado (S/)" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+                <Field label="Gasto mínimo acumulado (S/)" labelClassName="text-sm font-bold text-[var(--text-secondary)] dark:text-muted">
                   <input type="number" value={editingRule.config.minSpend} onChange={e => setEditingRule({ ...editingRule, config: { ...editingRule.config, minSpend: Number(e.target.value) } })}
-                    className="w-full mt-1 px-3 h-10 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" />
+                    className="w-full mt-1 px-3 h-12 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary" />
                 </Field>
               )}
               <div className="flex flex-wrap items-center gap-3 p-3 bg-[var(--surface-alt)] rounded-xl">
@@ -86,7 +86,7 @@ export default function CuponesVentanas({ cup }: { cup: Cupones }) {
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <div>
                 <CardTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Enviar cupón por WhatsApp</CardTitle>
-                <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Codigo: <span className="font-mono font-bold text-primary">{whatsappCoupon.code}</span></p>
+                <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Codigo: <span className="font-mono font-bold text-primary">{whatsappCoupon.code}</span></p>
               </div>
               <div className="flex items-center gap-1"><ControlesDeVentana ventana={ventanaWhatsapp} />
               <button aria-label="Quitar" onClick={() => setWhatsappCoupon(null)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors">
@@ -96,10 +96,10 @@ export default function CuponesVentanas({ cup }: { cup: Cupones }) {
             <div className="px-5 py-4 space-y-4">
               {/* Preview del mensaje */}
               <div className="bg-primary/10 dark:bg-primary/15 border border-[var(--data-success-500)]/30 dark:border-[var(--data-success-500)]/30 rounded-xl p-3">
-                <p className="text-xs text-[var(--text-primary)] dark:text-[var(--text-primary)] whitespace-pre-line">{buildWhatsappMsg(whatsappCoupon)}</p>
+                <p className="text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] whitespace-pre-line">{buildWhatsappMsg(whatsappCoupon)}</p>
               </div>
               {/* Enviar a un cliente */}
-              <Field label="Enviar a un cliente" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+              <Field label="Enviar a un cliente" labelClassName="text-sm font-bold text-[var(--text-secondary)] dark:text-muted">
                 {(id) => (
                   <div className="flex gap-2 mt-1">
                     <input
@@ -108,12 +108,12 @@ export default function CuponesVentanas({ cup }: { cup: Cupones }) {
                       value={whatsappPhone}
                       onChange={e => setWhatsappPhone(e.target.value)}
                       placeholder="Ej: 929340532"
-                      className="flex-1 px-3 h-10 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary bg-[var(--surface-raised)] "
+                      className="flex-1 px-3 h-12 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary bg-[var(--surface-raised)] "
                     />
                     <button
                       onClick={() => { if (whatsappPhone.trim()) { sendWhatsapp(whatsappPhone, buildWhatsappMsg(whatsappCoupon)); } }}
                       disabled={!whatsappPhone.trim()}
-                      className="px-4 min-h-10 rounded-xl bg-primary/10 text-white text-sm font-semibold hover:bg-primary/10 disabled:opacity-50 transition-colors inline-flex items-center gap-1"
+                      className="px-4 min-h-12 rounded-xl bg-primary/10 text-white text-sm font-semibold hover:bg-primary/10 disabled:opacity-50 transition-colors inline-flex items-center gap-1"
                     >
                       <MessageCircle className="h-4 w-4" /> Enviar
                     </button>
@@ -143,7 +143,7 @@ export default function CuponesVentanas({ cup }: { cup: Cupones }) {
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--rule-soft)] dark:border-[var(--rule-base)]">
               <div>
                 <CardTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Constructor de Plantilla</CardTitle>
-                <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Define el patrón de códigos automáticos</p>
+                <p className="text-sm text-[var(--text-secondary)] dark:text-muted">Define el patrón de códigos automáticos</p>
               </div>
               <div className="flex items-center gap-1"><ControlesDeVentana ventana={ventanaPlantilla} />
               <button aria-label="Cerrar" onClick={() => setShowTemplateBuilder(false)} className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors">
@@ -151,23 +151,23 @@ export default function CuponesVentanas({ cup }: { cup: Cupones }) {
               </button></div>
             </div>
             <div className="px-5 py-4 space-y-4">
-              <Field label="Patrón" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
+              <Field label="Patrón" labelClassName="text-sm font-bold text-[var(--text-secondary)] dark:text-muted">
                 {(id) => (
                   <>
                     <input id={id} type="text" value={templatePattern} onChange={e => setTemplatePattern(e.target.value.toUpperCase())}
-                      className="w-full mt-1 px-3 h-10 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary font-mono" placeholder="BDAY{MMDD}{RND3}" />
-                    <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-2">
+                      className="w-full mt-1 px-3 h-12 text-sm rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] outline-none focus:border-primary font-mono" placeholder="BDAY{MMDD}{RND3}" />
+                    <p className="text-sm text-[var(--text-tertiary)] dark:text-muted mt-2">
                       Variables: <span className="font-mono">{"{MMDD}"}</span> (mes/día), <span className="font-mono">{"{RND3}"}</span> (3 dígitos random)
                     </p>
                   </>
                 )}
               </Field>
               <div className="bg-[var(--surface-alt)] p-4 rounded-xl">
-                <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted mb-2">Plantillas sugeridas:</p>
+                <p className="text-sm font-bold text-[var(--text-secondary)] dark:text-muted mb-2">Plantillas sugeridas:</p>
                 <div className="space-y-1">
                   {["BDAY{MMDD}{RND3}", "NEW{RND3}", "REACT{MMDD}", "GIFT{RND3}", "VIP{MMDD}{RND3}"].map(p => (
                     <button key={p} onClick={() => setTemplatePattern(p)}
-                      className="w-full text-left px-3 min-h-10 rounded-xl text-sm font-mono bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary transition-colors">
+                      className="w-full text-left px-3 min-h-12 rounded-xl text-sm font-mono bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] hover:border-primary transition-colors">
                       {p}
                     </button>
                   ))}

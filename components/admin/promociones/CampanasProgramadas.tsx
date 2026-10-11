@@ -1,7 +1,8 @@
 "use client";
 
-import { Plus, Trash2, Check, Loader2, ExternalLink, Send, Calendar, Target, Play, Pause, Clock } from "@buleje/design-system/icons";
+import { Plus, Trash2, Check, Loader2, Send, Calendar, Target, Play, Pause, Clock, MoreHorizontal, Pencil } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
+import ActionMenu from "@/components/admin/shared/action-menu";
 import { CardTitle } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { formatDateTime } from "@/lib/format";
@@ -29,7 +30,7 @@ export default function CampanasProgramadas({ prm }: { prm: Promociones }) {
           <button
             type="button"
             onClick={openCreateCampaign}
-            className="ml-auto inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+            className="ml-auto inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
           >
             <Plus className="h-4 w-4" aria-hidden /> Nueva campaña
           </button>
@@ -57,15 +58,15 @@ export default function CampanasProgramadas({ prm }: { prm: Promociones }) {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
                         <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{c.name}</span>
-                        <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold", config.color)}>
+                        <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-sm font-bold", config.color)}>
                           <StatusIcon className="h-3 w-3" /> {config.label}
                         </span>
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--surface-sunken)] text-[var(--text-primary)]">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-sm font-bold bg-[var(--surface-sunken)] text-[var(--text-primary)]">
                           <Target className="h-3 w-3" /> {c.targetSegment.charAt(0).toUpperCase() + c.targetSegment.slice(1)}
                         </span>
                       </div>
                       <p className="text-sm text-[var(--text-secondary)] dark:text-muted mb-2">{c.description || "Sin descripción"}</p>
-                      <div className="flex flex-wrap gap-3 text-xs text-[var(--text-tertiary)] dark:text-muted">
+                      <div className="flex flex-wrap gap-3 text-sm text-[var(--text-tertiary)] dark:text-muted">
                         <span>Inicio: {formatDateTime(c.startDate)}</span>
                         {c.endDate && <span>Fin: {formatDateTime(c.endDate)}</span>}
                         {c.discountCode && <span className="font-mono font-bold text-[var(--data-success-500)]">Código: {c.discountCode}</span>}
@@ -74,44 +75,34 @@ export default function CampanasProgramadas({ prm }: { prm: Promociones }) {
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       {c.status !== "completed" && (
-                        <>
-                          <button
-                            onClick={() => sendCampaignNow(c)}
-                            disabled={sendingCampaignId === c.id}
-                            className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-primary/10 disabled:opacity-50 transition-colors"
-                            title="Enviar ahora"
-                          >
-                            {sendingCampaignId === c.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                          </button>
-                          <button
-                            onClick={() => toggleCampaignStatus(c.id)}
-                            className={cn("p-1.5 rounded-xl transition-colors",
-                              c.status === "paused" ? "text-[var(--data-success-500)] hover:bg-primary/10" : "text-[var(--data-warning-500)] hover:bg-[var(--data-warning-50)]"
-                            )}
-                            title={c.status === "paused" ? "Reanudar" : "Pausar"}
-                          >
-                            {c.status === "paused" ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
-                          </button>
-                        </>
+                        <button
+                          onClick={() => sendCampaignNow(c)}
+                          disabled={sendingCampaignId === c.id}
+                          className="inline-flex h-12 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold text-[var(--accent-ink)] transition-colors hover:bg-primary/10 disabled:opacity-50 dark:text-[var(--accent)]"
+                          title="Enviar ahora"
+                        >
+                          {sendingCampaignId === c.id ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Send className="h-4 w-4" aria-hidden />}
+                          <span className="max-sm:sr-only">Enviar ahora</span>
+                        </button>
                       )}
-                      <button
-                        onClick={() => openEditCampaign(c)}
-                        className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-primary/10 transition-colors"
-                        title="Editar"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => deleteCampaign(c.id)}
-                        className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] transition-colors"
-                        title="Eliminar"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      <ActionMenu
+                        label={`Más acciones de ${c.name}`}
+                        soloIcono
+                        size="md"
+                        className="w-12 shrink-0"
+                        icon={MoreHorizontal}
+                        actions={[
+                          { id: "editar", label: "Editar", icon: Pencil, onSelect: () => openEditCampaign(c) },
+                          ...(c.status !== "completed"
+                            ? [{ id: "pausa", label: c.status === "paused" ? "Reanudar" : "Pausar", icon: c.status === "paused" ? Play : Pause, onSelect: () => toggleCampaignStatus(c.id) }]
+                            : []),
+                          { id: "eliminar", label: "Eliminar", icon: Trash2, tone: "danger" as const, onSelect: () => deleteCampaign(c.id) },
+                        ]}
+                      />
                     </div>
                   </div>
                   {campaignFeedback?.id === c.id && (
-                    <p className={cn("mt-2 text-xs font-semibold", campaignFeedback.ok ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
+                    <p className={cn("mt-2 text-sm font-semibold", campaignFeedback.ok ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>
                       {campaignFeedback.text}
                     </p>
                   )}

@@ -184,7 +184,7 @@ export default function ProximaFechaComercial({ onArmarPromo }: { onArmarPromo: 
         />
       </div>
       <button type="button" className={button({ variant: "secondary", className: "shrink-0" })} onClick={onArmarPromo}>
-        <Sparkles className="h-4 w-4" aria-hidden /> Armar promo
+        <Sparkles className="h-4 w-4" aria-hidden /> Armar oferta
       </button>
     </div>
   );

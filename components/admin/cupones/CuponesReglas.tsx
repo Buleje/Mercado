@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { ChevronDown } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { Check, Sparkles, Settings, Calendar } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -13,11 +15,14 @@ export default function CuponesReglas({ cup }: { cup: Cupones }) {
   const {
     autoRules, generatedLogs, toggleRule, openRuleConfig,
   } = cup;
+  // Plegadas de entrada: la lista de cupones manda; las reglas se abren con un clic.
+  const [abiertas, setAbiertas] = useState(false);
+  const activas = autoRules.filter((x) => x.enabled).length;
   return (
     <>
       {/* ── Reglas automáticas: título + ⓘ (la plantilla de código pasó a «Más acciones» de la cabecera) ── */}
       <div className="bg-[var(--surface-sunken)] border border-[var(--rule-base)] rounded-xl p-3 sm:p-4">
-        <div className="mb-3 flex flex-wrap items-center gap-2">
+        <div className={cn("flex flex-wrap items-center gap-2", abiertas && "mb-3")}>
           <Sparkles className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden />
           <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Reglas automáticas</CardTitle>
           <InfoTip
@@ -26,9 +31,18 @@ export default function CuponesReglas({ cup }: { cup: Cupones }) {
             affects="Estas reglas se guardan sólo en este navegador y todavía no crean cupones. Los que el sistema ya crea solo van aparte y salen en la lista de arriba: BIENVENIDO 10 % en la primera compra, CUMPLEAÑOS 15 % y FIEL 20 % en la 10.ª compra."
             example="Cumpleaños: 10 % por 7 días; el cliente que cumple el jueves 16/10 recibiría un código como BDAY1016K7Q."
           />
+          <button
+            type="button"
+            onClick={() => setAbiertas((v) => !v)}
+            aria-expanded={abiertas}
+            className="ml-auto inline-flex min-h-12 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+          >
+            {activas} activa{activas === 1 ? "" : "s"} de {autoRules.length}
+            <ChevronDown className={cn("h-4 w-4 transition-transform", abiertas && "rotate-180")} aria-hidden />
+          </button>
         </div>
 
-        <div className="space-y-2">
+        {abiertas && <div className="space-y-2">
           {autoRules.map(rule => {
             const config = ruleConfigs[rule.type];
             const Icon = config.icon;
@@ -42,14 +56,14 @@ export default function CuponesReglas({ cup }: { cup: Cupones }) {
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{config.label}</span>
                       {rule.enabled && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-sm font-bold bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
                           <Check className="h-3 w-3" /> Activa
                         </span>
                       )}
                     </div>
                     <p className="text-sm text-[var(--text-secondary)] dark:text-muted">{config.desc}</p>
                     {rule.enabled && (
-                      <p className="text-xs text-[var(--text-tertiary)] dark:text-muted mt-1">
+                      <p className="text-sm text-[var(--text-tertiary)] dark:text-muted mt-1">
                         {rule.config.discountType === "percent" ? `${rule.config.discountValue}%` : `S/${rule.config.discountValue}`} descuento
                         {rule.config.validityDays && ` · ${rule.config.validityDays} días validez`}
                         {rule.config.autoSend && " · Auto-envío"}
@@ -59,12 +73,13 @@ export default function CuponesReglas({ cup }: { cup: Cupones }) {
                   <div className="flex flex-wrap items-center gap-2 shrink-0">
                     <button
                       onClick={() => openRuleConfig(rule)}
-                      className="p-1.5 rounded-xl text-[var(--text-tertiary)] dark:text-muted hover:text-[var(--data-success-500)] hover:bg-primary/10 transition-colors"
+                      className="inline-flex h-12 w-12 items-center justify-center rounded-xl text-[var(--text-secondary)] hover:text-[var(--accent-ink)] hover:bg-primary/10 transition-colors"
                       title="Configurar"
+                      aria-label={`Configurar ${config.label}`}
                     >
                       <Settings className="h-4 w-4" />
                     </button>
-                    <label aria-label={`${config.label}: ${rule.enabled ? "activa" : "inactiva"}`} className="relative inline-flex items-center cursor-pointer">
+                    <label aria-label={`${config.label}: ${rule.enabled ? "activa" : "inactiva"}`} className="relative inline-flex min-h-12 min-w-12 items-center justify-center cursor-pointer">
                       <input type="checkbox" checked={rule.enabled} onChange={() => toggleRule(rule.id)} className="sr-only peer" />
                       <div className="w-11 h-6 bg-[var(--rule-soft)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                     </label>
@@ -73,7 +88,7 @@ export default function CuponesReglas({ cup }: { cup: Cupones }) {
               </div>
             );
           })}
-        </div>
+        </div>}
       </div>
 
       {/* ── Cupones Generados Automáticamente ─────────────────────────────── */}
@@ -88,11 +103,11 @@ export default function CuponesReglas({ cup }: { cup: Cupones }) {
               <div key={log.id} className="flex items-center justify-between p-3 bg-[var(--surface-alt)] rounded-xl text-sm">
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{log.customer}</p>
-                  <p className="text-xs text-[var(--text-tertiary)] dark:text-muted">
+                  <p className="text-sm text-[var(--text-tertiary)] dark:text-muted">
                     {log.ruleType} · {formatDate(log.date)} · <span className="font-mono font-bold text-primary">{log.couponCode}</span>
                   </p>
                 </div>
-                <span className={cn("inline-flex px-2 py-1 rounded-full text-xs font-bold",
+                <span className={cn("inline-flex px-2 py-1 rounded-full text-sm font-bold",
                   log.status === "sent" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" :
                   log.status === "used" ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
                 )}>

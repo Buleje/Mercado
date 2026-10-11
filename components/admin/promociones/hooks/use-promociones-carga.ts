@@ -100,7 +100,7 @@ export function usePromocionesCarga(previo: ReturnType<typeof usePromocionesEsta
         toast.error(
           typeof body?.error === "string"
             ? body.error
-            : `No se pudo guardar la promoción (error ${res.status})`,
+            : `No se pudo guardar la oferta (error ${res.status})`,
         );
         return;
       }
@@ -108,7 +108,7 @@ export function usePromocionesCarga(previo: ReturnType<typeof usePromocionesEsta
       load();
     } catch (err) {
       console.warn("[PromotionsTab] guardar promoción falló", err);
-      toast.error("Sin conexión — la promoción no se guardó.");
+      toast.error("Sin conexión — la oferta no se guardó.");
     } finally {
       setSaving(false);
     }
@@ -124,11 +124,11 @@ export function usePromocionesCarga(previo: ReturnType<typeof usePromocionesEsta
         body: JSON.stringify({ active: !p.active }),
       });
       if (!res.ok) {
-        toast.error(`No se pudo ${p.active ? "pausar" : "activar"} la promoción (error ${res.status})`);
+        toast.error(`No se pudo ${p.active ? "pausar" : "activar"} la oferta (error ${res.status})`);
       }
     } catch (err) {
       console.warn("[PromotionsTab] toggle promoción falló", err);
-      toast.error("Sin conexión — la promoción no cambió.");
+      toast.error("Sin conexión — la oferta no cambió.");
     }
     load();
   };
@@ -145,7 +145,7 @@ export function usePromocionesCarga(previo: ReturnType<typeof usePromocionesEsta
         toast.error(
           typeof body?.error === "string"
             ? body.error
-            : `No se pudo eliminar la promoción (error ${res.status})`,
+            : `No se pudo eliminar la oferta (error ${res.status})`,
         );
         return;
       }
@@ -153,7 +153,7 @@ export function usePromocionesCarga(previo: ReturnType<typeof usePromocionesEsta
       load();
     } catch (err) {
       console.warn("[PromotionsTab] eliminar promoción falló", err);
-      toast.error("Sin conexión — la promoción NO se eliminó.");
+      toast.error("Sin conexión — la oferta NO se eliminó.");
     }
   };
   return {

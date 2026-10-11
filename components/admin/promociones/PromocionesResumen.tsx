@@ -53,14 +53,14 @@ export default function PromocionesResumen({ prm, abierto, id }: { prm: Promocio
             {s.estimado && (
               <InfoTip
                 title={s.label}
-                what="Es un cálculo aproximado, no sale de tus ventas: el pedido todavía no guarda qué promoción usó."
-                affects="Usos: 2 por día desde que creaste la promo (tope 50); si está inactiva, 1 por día (tope 10). Ingreso: usos × compra mínima (o S/ 50 si no tiene)."
-                example="Una promo activa creada hace 7 días con compra mínima S/ 40 cuenta ~14 usos y ~S/560."
+                what="Es un cálculo aproximado, no sale de tus ventas: el pedido todavía no guarda qué oferta usó."
+                affects="Usos: 2 por día desde que creaste la oferta (tope 50); si está inactiva, 1 por día (tope 10). Ingreso: usos × compra mínima (o S/ 50 si no tiene)."
+                example="Una oferta activa creada hace 7 días con compra mínima S/ 40 cuenta ~14 usos y ~S/560."
               />
             )}
           </div>
           <p className="mt-1.5 truncate font-display text-2xl font-extrabold tabular-nums text-[var(--text-primary)]">{s.value}</p>
-          {s.sub && <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">{s.sub}</p>}
+          {s.sub && <p className="text-sm text-[var(--text-tertiary)]">{s.sub}</p>}
         </div>
       ))}
     </div>

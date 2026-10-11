@@ -55,9 +55,9 @@ afterEach(() => {
 
 const gets = (url: string) => pendientes.filter((p) => p.metodo === "GET" && p.url === url);
 const pedido = (metodo: string, url: string) => pendientes.find((p) => p.metodo === metodo && p.url === url);
-// Filas de la lista (su botón «Eliminar»): la tarjeta «Más usada» también
-// muestra el nombre y no se oculta con el «Cargando…».
-const filas = () => screen.queryAllByTitle("Eliminar").length;
+// Filas de la lista (su menú «Más acciones de …», donde vive «Eliminar»): la tarjeta
+// «Más usada» también muestra el nombre y no se oculta con el «Cargando…».
+const filas = () => screen.queryAllByRole("button", { name: /^Más acciones de / }).length;
 
 async function resolver(p: Pendiente | undefined, cuerpo: unknown) {
   if (!p) throw new Error("el pedido todavía no salió");
@@ -91,7 +91,10 @@ describe("PromotionsTab — una carga vieja no pisa lo que ya cambió", () => {
     await waitFor(() => expect(filas()).toBeGreaterThan(0));
 
     await act(async () => {
-      fireEvent.click(screen.getByTitle("Eliminar"));
+      fireEvent.click(screen.getByRole("button", { name: /^Más acciones de / }));
+    });
+    await act(async () => {
+      fireEvent.click(await screen.findByRole("menuitem", { name: /Eliminar/ }));
     });
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "Sí, eliminar" }));
@@ -110,7 +113,7 @@ describe("PromotionsTab — una carga vieja no pisa lo que ya cambió", () => {
 
     await resolverCarga(2, []);
     expect(filas()).toBe(0);
-    expect(screen.getByText("Todavía no tienes promociones")).toBeTruthy();
+    expect(screen.getByText(/Aún no tienes ofertas/)).toBeTruthy();
   });
 
   it("CONTROL: sin cambios de por medio, la carga más nueva gana aunque la vieja llegue después", async () => {

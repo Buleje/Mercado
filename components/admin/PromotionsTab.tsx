@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useId, type ReactNode } from "react";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { usePromociones } from "@/components/admin/promociones/hooks/use-promociones";
 import PromocionesCabecera from "@/components/admin/promociones/PromocionesCabecera";
@@ -16,7 +16,8 @@ import ProximaFechaComercial from "@/components/admin/promociones/ProximaFechaCo
 
 const CLAVE_KPIS_PROMOCIONES = "promociones:kpis-abiertos";
 
-export default function PromotionsTab() {
+/** `barra`: las secciones de Ofertas y cupones, que viajan en la fila de la cabecera. */
+export default function PromotionsTab({ barra }: { barra?: ReactNode } = {}) {
   // El estado y las acciones viven en `usePromociones` (promociones/hooks/); cada bloque de la vista,
   // en su pieza de `promociones/`. Partido el 09-10 sin cambiar el DOM y ordenado después.
   const prm = usePromociones();
@@ -30,6 +31,7 @@ export default function PromotionsTab() {
         kpisAbiertos={kpisAbiertos}
         onAlternarKpis={() => setKpisAbiertos((v) => !v)}
         kpisId={kpisId}
+        barra={barra}
       />
 
       <PromocionesResumen prm={prm} abierto={kpisAbiertos} id={kpisId} />
