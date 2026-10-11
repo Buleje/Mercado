@@ -21,6 +21,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { conteoLockKey } from "@/app/api/inventory/conteo/route";
 import { getOrSet, revalidateTenantTag } from "@/lib/cache";
 import { FiadosDB } from "@/lib/db/fiados.db";
+import { KitsDB, KitError, conCostoDeKits, salidasDeKits, type Kit, type SalidaDeComponente } from "@/lib/db/kits.db";
 import { CustomersDB } from "@/lib/db/customers.db";
 import { SettingsDB } from "@/lib/db/settings.db";
 import { extractIgv, igvRateFromSettings } from "@/lib/tax";
@@ -453,6 +454,8 @@ async function salesHandler(
   // registro de deuda en la tabla Fiado.
   let sale;
   let createdFiadoId: string | null = null;
+  /** Componentes que salieron por los kits vendidos (para los lotes FEFO). */
+  let salidasDeKit: SalidaDeComponente[] = [];
   try {
     const saleRow = await prisma.$transaction(async (tx) => {
       // Pre-validar IDs de producto SCOPED a tenant — sin tenantId aquí un
@@ -473,13 +476,27 @@ async function salesHandler(
         }
       }
 
+      // Kits sin stock propio (`lib/db/kits.db.ts`): su composición, lo que sale
+      // de cada componente y su costo real (la suma de los componentes). Sólo se
+      // busca entre los productos sin control de stock: un kit con stock propio
+      // (cajas ya armadas) se vende como cualquier producto, con su costPrice.
+      const sinStockPropio = [...new Set(validItems.filter(i => productById.get(i.productId)?.stock == null).map(i => i.productId))];
+      const kits = sinStockPropio.length > 0
+        ? await KitsDB.kitsDeProductosEnTx(tx, auth.tenantId, sinStockPropio)
+        : new Map<number, Kit>();
+      salidasDeKit = salidasDeKits(validItems, kits);
+      const lineasVenta = conCostoDeKits(validItems, kits);
+      const cogsVenta = kits.size > 0
+        ? lineasVenta.reduce((s, i) => s + (i.costPrice ?? i.price * 0.7) * i.quantity, 0)
+        : totalCogs;
+
       // 1. Crear la venta
       const created = await tx.sale.create({
         data: {
           id,
           tenantId: auth.tenantId,
           total: finalTotal,
-          totalCogs: totalCogs ?? null,
+          totalCogs: cogsVenta ?? null,
           payment: data.payment ?? "efectivo",
           amountPaid: data.amountPaid ?? finalTotal,
           change: (data.amountPaid ?? finalTotal) - finalTotal,
@@ -491,8 +508,8 @@ async function salesHandler(
           descuentoPorcentaje: data.descuentoPorcentaje ?? null,
           paymentDetails: detallesDePago ?? null,
           idempotencyKey: data.idempotencyKey ?? null,
-          items: validItems.length > 0
-            ? { create: validItems.map(i => ({ productId: i.productId, name: i.name, price: i.price, costPrice: i.costPrice ?? null, quantity: i.quantity, unit: i.unit ?? "" })) }
+          items: lineasVenta.length > 0
+            ? { create: lineasVenta.map(i => ({ productId: i.productId, name: i.name, price: i.price, costPrice: i.costPrice ?? null, quantity: i.quantity, unit: i.unit ?? "" })) }
             : undefined,
         },
         include: { items: true },
@@ -510,29 +527,18 @@ async function salesHandler(
         createdFiadoId = fiado.id;
       }
 
-      // 3. Decremento atómico con guardia anti-TOCTOU.
-      //    `updateMany` con `stock: { gte: qty }` falla si entre la
-      //    pre-validación y este punto otro cajero vendió las mismas
-      //    unidades — evita stock negativo bajo concurrencia POS.
-      for (const item of validItems) {
-        const result = await tx.product.updateMany({
-          where: {
-            id: item.productId,
-            tenantId: auth.tenantId,
-            OR: [
-              { stock: null },                     // producto sin tracking de stock
-              { stock: { gte: item.quantity } },   // suficiente al momento del UPDATE
-            ],
-          },
-          data: { stock: { decrement: item.quantity } },
-        });
-        if (result.count === 0) {
-          const p = productById.get(item.productId);
-          throw new Error(
-            `Stock insuficiente para "${p?.name ?? item.productId}" (concurrencia detectada). Reintenta.`,
-          );
-        }
-      }
+      // 3. Stock, atómico y en orden de productId (`KitsDB.descontarVentaEnTx`):
+      //    cada línea con `updateMany` condicional (`stock: { gte: qty }`: si
+      //    otro cajero vendió esas unidades entre la pre-validación y acá, falla
+      //    y nada queda en negativo) y cada componente de un kit con su kardex.
+      //    El orden único evita que dos ventas cruzadas se bloqueen entre sí.
+      await KitsDB.descontarVentaEnTx(
+        tx,
+        auth.tenantId,
+        validItems.map(i => ({ productId: i.productId, quantity: i.quantity, nombre: productById.get(i.productId)?.name ?? String(i.productId) })),
+        salidasDeKit,
+        { referencia: id, creadoPor: cashierId || "system" },
+      );
 
       return created;
     });
@@ -557,7 +563,7 @@ async function salesHandler(
     };
   } catch (dbErr) {
     const msg = dbErr instanceof Error ? dbErr.message : "Error al procesar venta";
-    const isValidation = msg.startsWith("Stock insuficiente");
+    const isValidation = msg.startsWith("Stock insuficiente") || dbErr instanceof KitError;
     logger.error("[sales] POST error", { err: dbErr instanceof Error ? dbErr.message : String(dbErr), tenantId: auth.tenantId });
     return NextResponse.json({ error: msg }, { status: isValidation ? 400 : 500 });
   }
@@ -622,6 +628,25 @@ async function salesHandler(
   // a Sentry para que no se pierda silenciosamente el desync entre stock y
   // movimientos. Sigue siendo fire-and-forget para no bloquear la venta,
   // pero los fallos quedan visibles para reconciliación manual.
+  // Lotes FEFO de lo que salió físicamente: los productos sueltos y los
+  // componentes de los kits (su kardex ya quedó dentro de la transacción).
+  const saleIdLotes = sale.id;
+  const descontarLotes = (productId: number, quantity: number) => {
+    hasBatchesWithStock(auth.tenantId, productId)
+      .then((hasBatches) => {
+        if (hasBatches) {
+          return deductStockFEFO(auth.tenantId, productId, quantity);
+        }
+      })
+      .catch((err) => {
+        logger.warn("[sales] FEFO deduct failed", { saleId: saleIdLotes, productId, err: String(err) });
+        import("@sentry/nextjs")
+          .then((Sentry) => Sentry.captureException(err, { extra: { saleId: saleIdLotes, productId, type: "fefo-deduct-loss" } }))
+          .catch((sentryErr) => logger.warn("[sales] sentry capture failed (fefo)", { err: String(sentryErr) }));
+      });
+  };
+  for (const s of salidasDeKit) descontarLotes(s.productId, s.quantity);
+
   for (const item of data.items) {
     InventoryMovementsDB.record({
       productId: item.productId,
@@ -642,18 +667,7 @@ async function salesHandler(
     });
 
     // FEFO: si el producto tiene lotes, descontar del más cercano a vencer primero
-    hasBatchesWithStock(auth.tenantId, item.productId)
-      .then((hasBatches) => {
-        if (hasBatches) {
-          return deductStockFEFO(auth.tenantId, item.productId, item.quantity);
-        }
-      })
-      .catch((err) => {
-        logger.warn("[sales] FEFO deduct failed", { saleId: sale.id, productId: item.productId, err: String(err) });
-        import("@sentry/nextjs")
-          .then((Sentry) => Sentry.captureException(err, { extra: { saleId: sale.id, productId: item.productId, type: "fefo-deduct-loss" } }))
-          .catch((sentryErr) => logger.warn("[sales] sentry capture failed (fefo)", { err: String(sentryErr) }));
-      });
+    descontarLotes(item.productId, item.quantity);
   }
 
   /**

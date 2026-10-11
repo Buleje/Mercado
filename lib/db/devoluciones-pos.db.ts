@@ -17,6 +17,7 @@
 import { createHash } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { KitsDB, salidasADevolver, sumarPorProducto } from "@/lib/db/kits.db";
 import {
   calcularReembolso,
   planDevolucion,
@@ -230,6 +231,19 @@ export const DevolucionesPosDB = {
             createdBy: usuario,
             tenantId,
           });
+        }
+        // Kits sin stock propio (`lib/db/kits.db.ts`): no vuelve el kit, vuelven
+        // sus componentes según lo que el kardex de ESTA venta dice que salió
+        // (la composición pudo cambiar después), en proporción a lo devuelto.
+        if (plan.lineas.some((l) => !conStock.has(l.productId))) {
+          const vendido = await KitsDB.vendidoPorKitEnTx(tx, tenantId, saleId);
+          const salidas = salidasADevolver(
+            vendido,
+            sumarPorProducto(lineas),
+            yaDevuelto,
+            plan.lineas.filter((l) => !conStock.has(l.productId)).map((l) => ({ productId: l.productId, quantity: l.qty })),
+          );
+          movimientos.push(...(await KitsDB.reponerComponentesEnTx(tx, tenantId, salidas, { referencia: saleId, creadoPor: usuario })));
         }
         // Un solo INSERT: con el pool cargado cada viaje cuenta contra el tope de la transacción.
         if (movimientos.length > 0) await tx.inventoryMovement.createMany({ data: movimientos });

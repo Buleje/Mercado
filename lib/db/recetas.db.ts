@@ -25,6 +25,8 @@ export type DbReceta = {
   nombre: string;
   descripcion?: string;
   productoId?: number;
+  /** `"kit"` = composición de un kit (ver `lib/db/kits.db.ts`). */
+  categoria?: string;
   costoTotal: number;
   activa: boolean;
   ingredientes: DbRecetaIngrediente[];
@@ -71,6 +73,7 @@ function mapReceta(r: any): DbReceta {
     nombre: r.nombre,
     ...(r.descripcion != null && { descripcion: r.descripcion }),
     ...(r.productoId != null && { productoId: r.productoId }),
+    ...(r.categoria != null && { categoria: r.categoria }),
     costoTotal: toNum(r.costoTotal),
     activa: r.activa,
     ingredientes: (r.ingredientes ?? []).map(mapIngrediente),
@@ -117,6 +120,8 @@ export const RecetasDB = {
     nombre: string;
     descripcion?: string;
     productoId?: number;
+    /** `"kit"` = composición de un kit que descuenta sus componentes al venderse (`lib/db/kits.db.ts`). */
+    categoria?: string;
     ingredientes: { productoId: number; cantidad: number; unidad?: string }[];
   }): Promise<DbReceta> {
     const row = await prisma.receta.create({
@@ -125,6 +130,7 @@ export const RecetasDB = {
         nombre: data.nombre,
         descripcion: data.descripcion,
         productoId: data.productoId,
+        ...(data.categoria ? { categoria: data.categoria } : {}),
         ingredientes: {
           create: data.ingredientes.map((i) => ({
             productoId: i.productoId,

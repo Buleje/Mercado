@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
 import { esMarketplace } from "@/lib/tenancy/negocio-por-defecto";
+import { CATEGORIA_KIT } from "@/lib/db/kits.db";
 
 export async function GET(req: NextRequest) {
   try {
@@ -52,6 +53,8 @@ export async function GET(req: NextRequest) {
       where: {
         tenantId,
         activa: true,
+        // La composición de un kit (`lib/db/kits.db.ts`) no es una receta de cocina.
+        OR: [{ categoria: null }, { categoria: { not: CATEGORIA_KIT, mode: "insensitive" as const } }],
         ...(search ? { nombre: { contains: search, mode: "insensitive" as const } } : {}),
       },
       include: {

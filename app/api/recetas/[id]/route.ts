@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { RecetasDB } from "@/lib/db/recetas.db";
+import { KitsDB, esCategoriaKit } from "@/lib/db/kits.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
@@ -87,6 +88,18 @@ export async function PATCH(
           { status: 404 },
         );
       }
+    }
+
+    // La receta de un kit (`lib/db/kits.db.ts`) con media unidad o un kit
+    // adentro de otro dejaría a la caja sin poder vender: misma regla del alta,
+    // sobre cómo queda la receta después del cambio.
+    if (esCategoriaKit(existing.categoria)) {
+      const problema = await KitsDB.problemaDeKit(auth.tenantId, {
+        recetaId: id,
+        productoId: parsed.data.productoId !== undefined ? parsed.data.productoId : existing.productoId,
+        ingredientes: parsed.data.ingredientes ?? existing.ingredientes,
+      });
+      if (problema) return NextResponse.json({ error: problema }, { status: 400 });
     }
 
     // Build update data
