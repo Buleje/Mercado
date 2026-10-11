@@ -178,6 +178,11 @@ const nextConfig: NextConfig = {
     // Fuente: nextjs.org/blog/next-16-2
     turbopackFileSystemCacheForDev: true,
 
+    // Límite de memoria propio de Turbopack en dev (10-10): sin él llegaba a 11,7 GB (6 en RAM +
+    // 5,5 en swap) y el techo de systemd lo hacía swapear; con límite, Turbopack suelta lo frío y
+    // lo vuelve a leer de la caché de disco de arriba, mucho más rápido que del swap.
+    turbopackMemoryLimit: 5 * 1024 ** 3,
+
     // Round 28 Sprint 1 (Quick Win 1.4): inline + minify critical CSS para LCP.
     // Reduce el FOUC en /marketplace y /tienda; ahorro ~20-50ms LCP en 4G.
     // Requiere `critters` instalado (ya viene con Next 16).

@@ -111,7 +111,11 @@ function conTecho(cmd, args) {
   if (process.platform !== "linux" || process.env.BSM_DEV_SIN_TECHO === "1") return [cmd, args];
   const r = spawnSync("systemctl", ["--user", "is-system-running"], { encoding: "utf8", timeout: 2000 });
   if (!/^(running|degraded)/.test(r.stdout ?? "")) return [cmd, args];
-  const techo = process.env.BSM_DEV_TECHO || "6G";
+  /* 6G → 9G (10-10): con 6G el server pasaba el techo al minuto de arrancar y el kernel le mandaba
+     5,5 GB al swap: cada página traía de vuelta lo que necesitaba y tardaba hasta el timeout del
+     navegador. Ahora Turbopack tiene su propio límite (`turbopackMemoryLimit`, next.config.ts) y
+     libera él lo frío; el techo queda por encima, para la emergencia. */
+  const techo = process.env.BSM_DEV_TECHO || "9G";
   console.log(`[dev] techo de RAM ${techo}: pasado eso lo frío se comprime y el server sigue.`);
   return ["systemd-run", ["--user", "--scope", "--collect", "--quiet", "-p", `MemoryHigh=${techo}`, "--", resolve(cmd), ...args]];
 }
