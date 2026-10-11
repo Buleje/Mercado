@@ -109,7 +109,7 @@ export default function GastoNuevoModal({ open, onClose, onGuardado }: Props) {
                   <span className="text-[var(--text-primary)]">
                     Sale de la caja abierta
                     {caja.esperado != null && <span className="text-[var(--text-tertiary)]"> · en el cajón debería haber {formatCurrency(caja.esperado)}</span>}
-                    {pocoEnCaja && <span className="block text-xs font-semibold text-[var(--data-error-500)]">El gasto es mayor que lo que hay en el cajón.</span>}
+                    {pocoEnCaja && <span className="block text-sm font-semibold text-[var(--data-error-ink)]">El gasto es mayor que lo que hay en el cajón.</span>}
                   </span>
                 </label>
               ) : (

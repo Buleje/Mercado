@@ -14,12 +14,15 @@
 
 import { useCallback, useEffect, useState, useRef } from "react";
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
+import { BarraDeSecciones, idPestanaDeSeccion, type SeccionDeBarra } from "@/components/admin/shared/BarraDeSecciones";
+import { button } from "@/components/ui-system/button-variants";
+import SegmentedControl from "@/components/ui-system/SegmentedControl";
+import type { LucideIcon } from "@buleje/design-system/icons";
 import { toast } from "sonner";
 import {
-  Construction, Plus, X, Loader2, TrendingUp, Fuel,
+  Construction, Plus, X, Loader2, TrendingUp, Fuel, MoreHorizontal,
   Wrench, Receipt, Download, FileText,
   ClipboardCheck, CheckCircle, Calendar, CreditCard, Clock,
   Upload, BarChart3, Trophy, Store,
@@ -29,12 +32,12 @@ import { exportToCSV } from "@/lib/utils";
 import { csrfHeaders } from "@/lib/csrf-client";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import ActionMenu from "@/components/admin/shared/action-menu";
-import { CardTitle, DataTable } from "@buleje/design-system";
+import { DataTable } from "@buleje/design-system";
 import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBar";
 import { SegundoNivelEnElHub, useRanuraDelSegundoNivel } from "@/components/admin/unified/finanzas/segundo-nivel";
 import { Field } from "@/components/admin/shared/Field";
 import { generateContractPDF } from "@/lib/assets-contract";
-import { formatDate, formatDateLong, formatMonth } from "@/lib/format";
+import { formatDate, formatDateLong } from "@/lib/format";
 import { fmt, STATUS_META, TYPES, typeIcon, typeLabel, type AssetStats } from "./tipos";
 import AssetCard from "./AssetCard";
 import { useIndicadoresActivos } from "./use-indicadores-activos";
@@ -58,7 +61,7 @@ const EXPENSE_CATS = [
 const CHECKLIST_DEFAULT = ["Niveles de aceite", "Combustible", "Llantas / orugas", "Frenos", "Luces", "Fugas visibles", "Horómetro anotado", "Limpieza general"];
 
 const FIELD = "w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-3.5 py-2.5 text-sm font-medium text-[var(--text-primary)] outline-none transition-all focus:border-[var(--accent)] focus:bg-[var(--surface-raised)]";
-const LABEL = "block text-[length:var(--ts-2xs,0.6875rem)] font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5";
+const LABEL = "block text-sm font-bold uppercase tracking-wider text-[var(--text-tertiary)] mb-1.5";
 
 type View = "flota" | "cobrar" | "calendario" | "ranking";
 const VISTAS: readonly View[] = ["flota", "cobrar", "calendario", "ranking"];
@@ -148,7 +151,7 @@ export default function ActivosModule() {
           { id: "exportar", label: "Exportar reporte", hint: "Descarga la rentabilidad de cada máquina", icon: Download, onSelect: exportReport },
         ]}
       />
-      <button type="button" onClick={() => { setEditing(null); setShowForm(true); }} className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary/90 min-h-12">
+      <button type="button" onClick={() => { setEditing(null); setShowForm(true); }} className={button({ variant: "primary", className: "shrink-0 rounded-xl px-4" })}>
         <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden /> Nuevo activo
       </button>
     </>
@@ -235,7 +238,7 @@ function EmptyFleet({ onAdd }: { onAdd: () => void }) {
       <span className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Construction className="h-7 w-7" strokeWidth={2} /></span>
       <p className="text-base font-extrabold text-[var(--text-primary)]">Aún no tienes máquinas</p>
       <p className="mt-1 text-sm text-[var(--text-tertiary)]">Agrega tu cargador, oruga o camión y empieza a registrar alquileres.</p>
-      <button type="button" onClick={onAdd} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-4 min-h-11 text-sm font-semibold text-white hover:bg-primary/90"><Plus className="h-4 w-4" strokeWidth={2.5} /> Agregar primera máquina</button>
+      <button type="button" onClick={onAdd} className={button({ variant: "primary", className: "mt-4 rounded-xl px-4" })}><Plus className="h-4 w-4" strokeWidth={2.5} /> Agregar primera máquina</button>
     </div>
   );
 }
@@ -251,7 +254,7 @@ function EmptyFleet({ onAdd }: { onAdd: () => void }) {
 function FormSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="space-y-3">
-      <p className="border-b border-[var(--rule-soft)] pb-1.5 text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">{title}</p>
+      <p className="border-b border-[var(--rule-soft)] pb-1.5 text-sm font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">{title}</p>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{children}</div>
     </div>
   );
@@ -322,14 +325,14 @@ function AssetFormModal({ asset, knownTypes, onClose, onSaved, onPublishChanged 
   };
 
   return (
-    <ModalShell title={asset ? "Editar máquina" : "Nueva máquina"} subtitle="Identificación, tarifa de alquiler y control del equipo" onClose={onClose}>
+    <ModalShell title={asset ? "Editar máquina" : "Nueva máquina"} subtitle="Identificación, tarifa de alquiler y control del equipo" onClose={onClose} footer={<PieActivos onClose={onClose} onSave={save} saving={saving} saveLabel={asset ? "Guardar cambios" : "Agregar máquina"} />}>
       <div className="space-y-5">
         {/* Resumen vivo */}
         <div className="flex items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3">
           <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Preview className="h-6 w-6" strokeWidth={2} /></span>
           <div className="min-w-0">
             <p className="truncate text-sm font-extrabold text-[var(--text-primary)]">{form.name.trim() || "Nueva máquina"}</p>
-            <p className="text-xs font-medium text-[var(--text-tertiary)]">{(form.type === "__new__" ? (form.newType.trim() || "Categoría nueva") : typeLabel(form.type))}{form.hourlyRate ? ` · ${fmt(Number(form.hourlyRate))}/${unitNoun(form.rateUnit).replace(/s$/, "")}` : ""}</p>
+            <p className="text-sm font-medium text-[var(--text-tertiary)]">{(form.type === "__new__" ? (form.newType.trim() || "Categoría nueva") : typeLabel(form.type))}{form.hourlyRate ? ` · ${fmt(Number(form.hourlyRate))}/${unitNoun(form.rateUnit).replace(/s$/, "")}` : ""}</p>
           </div>
         </div>
 
@@ -362,7 +365,7 @@ function AssetFormModal({ asset, knownTypes, onClose, onSaved, onPublishChanged 
         {/* Tienda — publicar como servicio de alquiler (solo al editar una máquina ya guardada) */}
         {asset ? (
           <div className="space-y-3">
-            <p className="border-b border-[var(--rule-soft)] pb-1.5 text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Tienda</p>
+            <p className="border-b border-[var(--rule-soft)] pb-1.5 text-sm font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Tienda</p>
             <button
               type="button"
               onClick={togglePublish}
@@ -375,14 +378,13 @@ function AssetFormModal({ asset, knownTypes, onClose, onSaved, onPublishChanged 
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-bold text-[var(--text-primary)]">{published ? "Publicada en tu tienda" : "Publicar en tu tienda"}</span>
-                <span className="block text-xs text-[var(--text-tertiary)]">{published ? "Aparece en tienda y marketplace como servicio de alquiler. Toca para quitarla." : "La muestra como servicio de alquiler. No entra a inventario."}</span>
+                <span className="block text-sm text-[var(--text-tertiary)]">{published ? "Aparece en tienda y marketplace como servicio de alquiler. Toca para quitarla." : "La muestra como servicio de alquiler. No entra a inventario."}</span>
               </span>
-              <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-[length:var(--ts-2xs)] font-black uppercase", published ? "bg-[var(--accent)] text-white" : "border border-[var(--rule-base)] text-[var(--text-secondary)]")}>{published ? "On" : "Off"}</span>
+              <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-sm font-black uppercase", published ? "bg-[var(--accent)] text-white" : "border border-[var(--rule-base)] text-[var(--text-secondary)]")}>{published ? "On" : "Off"}</span>
             </button>
           </div>
         ) : null}
       </div>
-      <ModalFooter onClose={onClose} onSave={save} saving={saving} saveLabel={asset ? "Guardar cambios" : "Agregar máquina"} />
     </ModalShell>
   );
 }
@@ -423,7 +425,7 @@ function MovementModal({ asset, kind, onClose, onSaved }: { asset: AssetStats; k
   };
 
   return (
-    <ModalShell title={isIncome ? `Alquiler — ${asset.name}` : `Gasto — ${asset.name}`} subtitle={isIncome ? "Renta generada por la máquina" : "Combustible, mantenimiento u otro costo"} onClose={onClose} icon={isIncome ? TrendingUp : Fuel}>
+    <ModalShell title={isIncome ? `Alquiler — ${asset.name}` : `Gasto — ${asset.name}`} subtitle={isIncome ? "Renta generada por la máquina" : "Combustible, mantenimiento u otro costo"} onClose={onClose} icon={isIncome ? TrendingUp : Fuel} footer={<PieActivos onClose={onClose} onSave={save} saving={saving} saveLabel={isIncome ? "Registrar alquiler" : "Registrar gasto"} />}>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {isIncome ? (<>
           <Field label="Cliente" labelClassName={LABEL} className="sm:col-span-2"><input value={form.client} onChange={e => setForm(f => ({ ...f, client: e.target.value }))} placeholder="Maderera del Sur" className={FIELD} /></Field>
@@ -459,17 +461,20 @@ function MovementModal({ asset, kind, onClose, onSaved }: { asset: AssetStats; k
         <span className="text-sm font-bold text-[var(--text-secondary)]">{isIncome ? (form.paid ? "Ingreso a registrar" : "Por cobrar a registrar") : "Gasto a registrar"}</span>
         <span className={cn("font-mono text-xl font-bold tabular-nums", isIncome ? "text-primary" : "text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]")}>{fmt(effectiveAmount)}</span>
       </div>
-      <ModalFooter onClose={onClose} onSave={save} saving={saving} saveLabel={isIncome ? "Registrar alquiler" : "Registrar gasto"} />
     </ModalShell>
   );
 }
 
 // ── Drawer de detalle (movimientos + mantenimiento) ─────────────────────────
+type SeccionDetalle = "movimientos" | "mantenimiento";
+const SECCIONES_DETALLE: readonly SeccionDeBarra<SeccionDetalle>[] = [
+  { clave: "movimientos", rotulo: "Movimientos" },
+  { clave: "mantenimiento", rotulo: "Mantenimiento" },
+];
+
 function AssetDetailDrawer({ asset, onClose, onContract, onChanged }: { asset: AssetStats; onClose: () => void; onContract: () => void; onChanged: () => void }) {
-  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra. */
-  const cajaRef = useRef<HTMLDivElement>(null);
-  useModalAccesible(cajaRef, { onCerrar: onClose });
-  const [tab, setTab] = useState<"movimientos" | "mantenimiento">("movimientos");
+  const [tab, setTab] = useState<SeccionDetalle>("movimientos");
+  const idPanel = `activo-${asset.id}`;
   const [mov, setMov] = useState<{ incomes: IncomeMov[]; expenses: ExpenseMov[] } | null>(null);
   useEffect(() => {
     fetch(`/api/admin/assets/${asset.id}/movements`, { credentials: "include" })
@@ -478,24 +483,18 @@ function AssetDetailDrawer({ asset, onClose, onContract, onChanged }: { asset: A
   const all = mov ? [...mov.incomes.map(i => ({ ...i, t: "income" as const })), ...mov.expenses.map(e => ({ ...e, t: "expense" as const }))].sort((a, b) => (a.date < b.date ? 1 : -1)) : [];
 
   return (
-    <div ref={cajaRef} tabIndex={-1} role="dialog" aria-modal="true" className="fixed inset-0 z-modal flex justify-end">
-      <button type="button" aria-label="Cerrar" onClick={onClose} className="absolute inset-0 bg-[var(--text-primary)]/50 backdrop-blur-sm" />
-      <div className="relative flex h-full w-full max-w-md flex-col bg-[var(--surface-canvas)] shadow-[var(--shadow-xl)] motion-safe:animate-[slideInRight_0.25s_ease-out]">
-        <div className="flex items-center gap-3 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] px-5 py-3.5 sm:px-6">
-          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Receipt className="h-5 w-5" /></span>
-          <div className="min-w-0 flex-1">
-            <p className="truncate font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">{asset.name}</p>
-            <p className="text-xs font-bold text-[var(--text-tertiary)]">Ganancia: <span className={cn("font-mono", asset.profit >= 0 ? "text-primary" : "text-[var(--data-error-600)]")}>{fmt(asset.profit)}</span>{asset.currentHours != null && <span> · {asset.currentHours} h</span>}</p>
+    <AdminModal open onClose={onClose} variant="side" title={asset.name} icon={Receipt}>
+      <div className={cn(MODAL_BODY, "space-y-4")}>
+        <p className="text-sm text-[var(--text-secondary)]">Ganancia: <span className={cn("font-bold tabular-nums", asset.profit >= 0 ? "text-[var(--text-primary)]" : "text-[var(--data-error-ink)]")}>{fmt(asset.profit)}</span>{asset.currentHours != null && <span> · {asset.currentHours} h</span>}</p>
+        <div className="flex items-center gap-2">
+          <div className="min-w-0">
+            <BarraDeSecciones secciones={SECCIONES_DETALLE} activa={tab} onCambiar={setTab} etiqueta={`Secciones de ${asset.name}`} idPanel={idPanel} />
           </div>
-          <button type="button" onClick={onContract} aria-label="Contrato" title="Contrato / cotización" className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"><FileText className="h-4.5 w-4.5" /></button>
-          <button type="button" onClick={onClose} aria-label="Cerrar" className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"><X className="h-4.5 w-4.5" strokeWidth={2.5} /></button>
+          <button type="button" onClick={onContract} title="Contrato o cotización en PDF" className={button({ variant: "secondary", className: "ml-auto shrink-0 rounded-xl px-4" })}>
+            <FileText className="h-4 w-4" aria-hidden /> Contrato
+          </button>
         </div>
-        <div className="flex gap-1 border-b border-[var(--rule-soft)] bg-[var(--surface-raised)] pt-2 px-5 sm:px-6">
-          {([["movimientos", "Movimientos"], ["mantenimiento", "Mantenimiento"]] as const).map(([v, l]) => (
-            <button key={v} type="button" onClick={() => setTab(v)} className={cn("rounded-t-lg px-3 py-2 text-sm font-bold transition-colors", tab === v ? "border-b-2 border-[var(--accent)] text-[var(--text-primary)]" : "text-[var(--text-tertiary)]")}>{l}</button>
-          ))}
-        </div>
-        <div className="flex-1 overflow-y-auto px-5 py-4 sm:px-6">
+        <div role="tabpanel" id={idPanel} aria-labelledby={idPestanaDeSeccion(idPanel, tab)}>
           {tab === "movimientos" ? (
             !mov ? <Center><Loader2 className="h-4 w-4 animate-spin" /> Cargando…</Center>
             : all.length === 0 ? <p className="py-10 text-center text-sm font-medium text-[var(--text-tertiary)]">Aún no hay movimientos. Registra un alquiler o gasto.</p>
@@ -505,8 +504,8 @@ function AssetDetailDrawer({ asset, onClose, onContract, onChanged }: { asset: A
                   <li key={m.id} className="flex items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
                     <span className={cn("inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", inc ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "bg-[var(--data-warning-100)] text-[var(--data-warning-600)] dark:bg-amber-950/20 dark:text-[var(--data-warning-500)]")}>{inc ? <TrendingUp className="h-4 w-4" /> : (m as ExpenseMov).category === "combustible" ? <Fuel className="h-4 w-4" /> : <Wrench className="h-4 w-4" />}</span>
                     <div className="min-w-0 flex-1 leading-tight">
-                      <p className="truncate text-sm font-bold text-[var(--text-primary)]">{inc ? ((m as IncomeMov).client ?? "Alquiler") : EXPENSE_CATS.find(c => c.v === (m as ExpenseMov).category)?.label}{inc && !(m as IncomeMov).paid && <span className="ml-1 rounded bg-[var(--data-warning-100)] px-1 text-[length:var(--ts-2xs)] font-black text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]">PENDIENTE</span>}</p>
-                      <p className="text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)]">{dStr(m.date)}{m.notes ? ` · ${m.notes}` : ""}</p>
+                      <p className="truncate text-sm font-bold text-[var(--text-primary)]">{inc ? ((m as IncomeMov).client ?? "Alquiler") : EXPENSE_CATS.find(c => c.v === (m as ExpenseMov).category)?.label}{inc && !(m as IncomeMov).paid && <span className="ml-1 text-sm font-semibold text-[var(--data-warning-ink)]">· por cobrar</span>}</p>
+                      <p className="text-sm text-[var(--text-secondary)]">{dStr(m.date)}{m.notes ? ` · ${m.notes}` : ""}</p>
                     </div>
                     <span className={cn("shrink-0 font-mono text-sm font-bold tabular-nums", inc ? "text-primary" : "text-[var(--text-secondary)]")}>{inc ? "+" : "−"}{fmt(m.amount)}</span>
                   </li>
@@ -517,7 +516,7 @@ function AssetDetailDrawer({ asset, onClose, onContract, onChanged }: { asset: A
           )}
         </div>
       </div>
-    </div>
+    </AdminModal>
   );
 }
 
@@ -558,18 +557,18 @@ function MaintenanceSection({ asset, onChanged }: { asset: AssetStats; onChanged
 
   return (
     <div className="space-y-2">
-      {asset.currentHours == null && <p className="rounded-lg bg-[var(--surface-sunken)] px-3 py-2 text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)]">Tip: registra el horómetro de la máquina (en Editar) para alertas por horas.</p>}
+      {asset.currentHours == null && <p className="rounded-lg bg-[var(--surface-sunken)] px-3 py-2 text-sm font-medium text-[var(--text-tertiary)]">Tip: registra el horómetro de la máquina (en Editar) para alertas por horas.</p>}
       {items == null ? <Center><Loader2 className="h-4 w-4 animate-spin" /> Cargando…</Center>
        : items.length === 0 && !adding ? <p className="py-6 text-center text-sm font-medium text-[var(--text-tertiary)]">Sin mantenimientos programados.</p>
        : <ul className="space-y-2">{items.map(m => (
             <li key={m.id} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
               <div className="flex items-center gap-2">
                 <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-sunken)] text-[var(--text-secondary)]"><Wrench className="h-4 w-4" /></span>
-                <div className="min-w-0 flex-1"><p className="truncate text-sm font-bold text-[var(--text-primary)]">{m.title}</p><p className="text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)]">{m.intervalHours ? `cada ${m.intervalHours} h` : `cada ${m.intervalDays} d`}</p></div>
-                <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold", stChip(m.state))}>{m.detail}</span>
+                <div className="min-w-0 flex-1"><p className="truncate text-sm font-bold text-[var(--text-primary)]">{m.title}</p><p className="text-sm font-medium text-[var(--text-tertiary)]">{m.intervalHours ? `cada ${m.intervalHours} h` : `cada ${m.intervalDays} d`}</p></div>
+                <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-sm font-bold", stChip(m.state))}>{m.detail}</span>
               </div>
               <div className="mt-2 flex gap-1.5">
-                <button type="button" onClick={() => complete(m)} className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg bg-primary/10 px-2 py-1.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] hover:brightness-95"><CheckCircle className="h-3.5 w-3.5" /> Marcar hecho</button>
+                <button type="button" onClick={() => complete(m)} className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg bg-primary/10 px-2 py-1.5 text-sm font-bold text-[var(--accent)] hover:brightness-95"><CheckCircle className="h-3.5 w-3.5" /> Marcar hecho</button>
                 <button type="button" onClick={() => del(m)} aria-label={`Eliminar mantenimiento: ${m.title}`} className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:text-[var(--data-error-600)]"><X className="h-3.5 w-3.5" /></button>
               </div>
             </li>
@@ -579,12 +578,12 @@ function MaintenanceSection({ asset, onChanged }: { asset: AssetStats; onChanged
         <div className="rounded-xl border-2 border-[var(--accent)]/30 bg-[var(--surface-raised)] p-3 space-y-2">
           <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Cambio de aceite" className={FIELD} ref={tituloRef} />
           <div className="flex gap-1 rounded-lg bg-[var(--surface-sunken)] p-1">
-            {([["hours", "Por horas"], ["days", "Por días"]] as const).map(([v, l]) => <button key={v} type="button" onClick={() => setForm(f => ({ ...f, mode: v }))} className={cn("flex-1 rounded-lg px-2 py-1.5 text-xs font-bold", form.mode === v ? "bg-primary text-white" : "text-[var(--text-secondary)]")}>{l}</button>)}
+            {([["hours", "Por horas"], ["days", "Por días"]] as const).map(([v, l]) => <button key={v} type="button" onClick={() => setForm(f => ({ ...f, mode: v }))} className={cn("flex-1 rounded-lg px-2 py-1.5 text-sm font-bold", form.mode === v ? "bg-primary text-white" : "text-[var(--text-secondary)]")}>{l}</button>)}
           </div>
           <input type="number" min="1" value={form.interval} onChange={e => setForm(f => ({ ...f, interval: e.target.value }))} placeholder={form.mode === "hours" ? "cada cuántas horas (ej. 250)" : "cada cuántos días (ej. 30)"} className={FIELD} />
           <div className="flex gap-2">
-            <button type="button" onClick={() => setAdding(false)} className="flex-1 rounded-xl border border-[var(--rule-base)] py-2 text-xs font-bold text-[var(--text-secondary)]">Cancelar</button>
-            <button type="button" onClick={add} className="flex-1 rounded-xl bg-primary py-2 text-xs font-bold text-white">Programar</button>
+            <button type="button" onClick={() => setAdding(false)} className="flex-1 rounded-xl border border-[var(--rule-base)] py-2 text-sm font-bold text-[var(--text-secondary)]">Cancelar</button>
+            <button type="button" onClick={add} className="flex-1 rounded-xl bg-primary py-2 text-sm font-bold text-white">Programar</button>
           </div>
         </div>
       ) : (
@@ -624,19 +623,37 @@ function ReceivablesView({ onChanged }: { onChanged: () => void }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between rounded-xl bg-[var(--data-warning-100)] px-4 py-2.5 dark:bg-amber-950/20"><span className="text-sm font-bold text-[var(--text-secondary)]">Total por cobrar ({rows.length})</span><span className="font-mono text-lg font-bold tabular-nums text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]">{fmt(total)}</span></div>
-      {rows.map(r => (
-        <div key={r.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-bold text-[var(--text-primary)]">{r.client ?? "Cliente"} · <span className="font-medium text-[var(--text-secondary)]">{r.assetName}</span></p>
-            <p className="text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)]">{dStr(r.date)}{r.dueDate && <span className={cn("ml-1 font-bold", overdue(r) ? "text-[var(--data-error-600)] dark:text-[var(--data-error-500)]" : "text-[var(--text-tertiary)]")}>· vence {dStr(r.dueDate)}{overdue(r) ? " (vencido)" : ""}</span>}</p>
-          </div>
-          <span className="font-mono text-base font-bold tabular-nums text-[var(--data-warning-600)] dark:text-[var(--data-warning-500)]">{fmt(r.amount)}</span>
-          <div className="flex gap-1.5">
-            <button type="button" onClick={() => remind(r)} title="Recordar por WhatsApp" className="inline-flex h-9 items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"><Clock className="h-3.5 w-3.5" /> Recordar</button>
-            <button type="button" onClick={() => markPaid(r)} className="inline-flex h-9 items-center gap-1 rounded-lg bg-primary px-2.5 text-xs font-bold text-white hover:bg-primary/90"><CheckCircle className="h-3.5 w-3.5" /> Cobrado</button>
-          </div>
-        </div>
-      ))}
+      <DataTable>
+        <thead>
+          <tr><th>Cliente</th><th className="hidden sm:table-cell">Máquina</th><th>Fecha</th><th className="text-right">Monto</th><th className="w-40 text-right"><span className="sr-only">Acciones</span></th></tr>
+        </thead>
+        <tbody>
+          {rows.map(r => (
+            <tr key={r.id}>
+              <td className="font-bold">{r.client ?? "Cliente"}</td>
+              <td className="hidden sm:table-cell">{r.assetName}</td>
+              <td>
+                {dStr(r.date)}
+                {r.dueDate && <span className={cn("ml-1", overdue(r) ? "font-bold text-[var(--data-error-ink)]" : undefined)}>· vence {dStr(r.dueDate)}{overdue(r) ? " (vencido)" : ""}</span>}
+              </td>
+              <td className="text-right font-bold tabular-nums">{fmt(r.amount)}</td>
+              <td className="text-right">
+                <span className="inline-flex items-center gap-2">
+                  <button type="button" onClick={() => markPaid(r)} className={button({ variant: "primary", className: "rounded-xl px-4" })}><CheckCircle className="h-4 w-4" aria-hidden /> Cobrado</button>
+                  <ActionMenu
+                    label={`Más de ${r.client ?? "este alquiler"}`}
+                    icon={MoreHorizontal}
+                    soloIcono
+                    size="md"
+                    className="w-12 shrink-0"
+                    actions={[{ id: "recordar", label: "Recordar por WhatsApp", hint: "Le escribe el monto y la fecha", icon: Clock, onSelect: () => remind(r) }]}
+                  />
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </DataTable>
     </div>
   );
 }
@@ -660,25 +677,26 @@ function CalendarView({ assets }: { assets: AssetStats[] }) {
   );
   const now = Date.now();
   return (
-    <ul className="space-y-2">
-      {items.map(i => {
-        const start = i.startDate ?? i.date;
-        const active = i.startDate && i.endDate && new Date(i.startDate).getTime() <= now && new Date(i.endDate).getTime() >= now;
-        return (
-          <li key={i.id} className="flex items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
-            <span className={cn("inline-flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg", active ? "bg-primary text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)]")}>
-              <span className="text-sm font-black leading-none tabular-nums">{new Date(start).getDate()}</span>
-              <span className="text-[length:var(--ts-2xs)] font-bold uppercase leading-none">{formatMonth(start)}</span>
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-bold text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])]">{i.assetName} {active && <span className="rounded bg-primary/10 px-1 text-[length:var(--ts-2xs)] font-black text-[var(--accent)]">EN USO</span>}</p>
-              <p className="text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)]">{i.client ?? "Alquiler"}{i.startDate && i.endDate ? ` · ${dStr(i.startDate)} → ${dStr(i.endDate)}` : ` · ${dStr(i.date)}`}{!i.paid && " · pendiente"}</p>
-            </div>
-            <span className="font-mono text-sm font-bold tabular-nums text-primary">{fmt(i.amount)}</span>
-          </li>
-        );
-      })}
-    </ul>
+    <DataTable>
+      <thead>
+        <tr><th>Desde</th><th>Máquina</th><th className="hidden sm:table-cell">Cliente</th><th className="hidden sm:table-cell">Hasta</th><th className="text-right">Monto</th></tr>
+      </thead>
+      <tbody>
+        {items.map(i => {
+          const start = i.startDate ?? i.date;
+          const active = i.startDate && i.endDate && new Date(i.startDate).getTime() <= now && new Date(i.endDate).getTime() >= now;
+          return (
+            <tr key={i.id}>
+              <td className="whitespace-nowrap">{dStr(start)}</td>
+              <td className="font-bold">{i.assetName}{active && <span className="ml-2 text-sm font-semibold text-[var(--accent-ink)]">· en uso</span>}</td>
+              <td className="hidden sm:table-cell">{i.client ?? "Alquiler"}{!i.paid && <span className="text-[var(--data-warning-ink)]"> · pendiente</span>}</td>
+              <td className="hidden whitespace-nowrap sm:table-cell">{i.startDate && i.endDate ? dStr(i.endDate) : "—"}</td>
+              <td className="text-right font-bold tabular-nums">{fmt(i.amount)}</td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </DataTable>
   );
 }
 
@@ -702,12 +720,14 @@ function RankingView({ assets }: { assets: AssetStats[] }) {
   const METRICS = [["profit", "Ganancia"], ["roi", "ROI %"], ["util", "Utilización"], ["cost", "Costo/hora"]] as const;
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-1 rounded-xl bg-[var(--surface-sunken)] p-1">
-        {METRICS.map(([v, l]) => (
-          <button key={v} type="button" onClick={() => setMetric(v)} className={cn("flex-1 rounded-xl px-2 py-2 text-xs font-bold transition-colors", metric === v ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-[var(--shadow-sm)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]")}>{l}</button>
-        ))}
-      </div>
-      <p className="px-1 text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)]">{lowerBetter ? "Menor es mejor — la máquina más barata de operar arriba." : "Mayor es mejor — la máquina que más rinde arriba."}</p>
+      <SegmentedControl<typeof metric>
+        value={metric}
+        onChange={setMetric}
+        options={METRICS.map(([v, l]) => ({ value: v, label: l }))}
+        label="Ordenar la flota por"
+        size="lg"
+      />
+      <p className="px-1 text-sm font-medium text-[var(--text-tertiary)]">{lowerBetter ? "Menor es mejor — la máquina más barata de operar arriba." : "Mayor es mejor — la máquina que más rinde arriba."}</p>
       <ul className="space-y-2">
         {ranked.map((a, i) => {
           const v = metricVal(a);
@@ -780,7 +800,7 @@ function ImportModal({ onClose, onDone }: { knownTypes: string[]; onClose: () =>
           <button type="button" onClick={onDone} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-4 min-h-11 text-sm font-semibold text-white hover:bg-primary/90">Listo</button>
         </div>
       ) : (<>
-        <div className="rounded-xl bg-[var(--surface-sunken)] p-3 text-[length:var(--ts-2xs)] font-medium text-[var(--text-tertiary)]">
+        <div className="rounded-xl bg-[var(--surface-sunken)] p-3 text-sm font-medium text-[var(--text-tertiary)]">
           Columnas (en este orden, separadas por coma): <span className="font-bold text-[var(--text-secondary)]">Nombre, Categoría, Placa, Tarifa, Cobro (hora/día/m³/viaje), Capacidad/día</span>. Una máquina por línea.
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -789,20 +809,20 @@ function ImportModal({ onClose, onDone }: { knownTypes: string[]; onClose: () =>
             <label htmlFor="activos-import-file" className="cursor-pointer">Subir archivo</label>
             <input id="activos-import-file" type="file" accept=".csv,.tsv,.txt,text/csv" className="hidden" onChange={e => onFile(e.target.files?.[0])} />
           </span>
-          <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">o pega abajo ↓</span>
+          <span className="text-sm text-[var(--text-tertiary)]">o pega abajo ↓</span>
         </div>
         <textarea value={text} onChange={e => { setText(e.target.value); parse(e.target.value); }} rows={6} className={cn(FIELD, "mt-2 font-mono")} placeholder={"Oruga D6, oruga, PUC-123, 180, hora, 8\nCamión Volquete, camion, ABC-456, 90, viaje, 6"} />
         {rows && rows.length > 0 && (
-          <div className="mt-3 max-h-48 overflow-y-auto rounded-xl border border-[var(--rule-base)]">
-            <DataTable className="w-full text-xs">
-              <thead className="sticky top-0 bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"><tr><th className="px-2 py-1.5 text-left font-bold">Nombre</th><th className="px-2 py-1.5 text-left font-bold">Categoría</th><th className="px-2 py-1.5 text-right font-bold">Tarifa</th></tr></thead>
-              <tbody>{rows.map((r, i) => <tr key={i} className="border-t border-[var(--rule-soft)]"><td className="px-2 py-1.5 font-bold text-[var(--text-primary)]">{r.name}</td><td className="px-2 py-1.5 text-[var(--text-secondary)]">{typeLabel(r.type)}</td><td className="px-2 py-1.5 text-right font-mono tabular-nums text-[var(--text-secondary)]">{r.hourlyRate != null ? fmt(r.hourlyRate) : "—"}</td></tr>)}</tbody>
+          <div className="mt-3">
+            <DataTable stickyHeader wrapperClassName="max-h-48 overflow-y-auto">
+              <thead><tr><th>Nombre</th><th>Categoría</th><th className="text-right">Tarifa</th></tr></thead>
+              <tbody>{rows.map((r, i) => <tr key={i}><td className="font-bold">{r.name}</td><td>{typeLabel(r.type)}</td><td className="text-right tabular-nums">{r.hourlyRate != null ? fmt(r.hourlyRate) : "—"}</td></tr>)}</tbody>
             </DataTable>
           </div>
         )}
         <div className="mt-6 flex items-center gap-3">
-          <button type="button" onClick={onClose} className="h-11 rounded-xl border border-[var(--rule-base)] px-5 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-          <button type="button" onClick={run} disabled={importing || !rows || rows.length === 0} className="flex flex-1 items-center justify-center gap-2 h-11 rounded-xl bg-primary text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-50">
+          <button type="button" onClick={onClose} className={button({ variant: "secondary", className: "rounded-xl" })}>Cancelar</button>
+          <button type="button" onClick={run} disabled={importing || !rows || rows.length === 0} className={button({ variant: "primary", className: "flex-1 rounded-xl" })}>
             {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
             {importing ? "Importando…" : rows && rows.length > 0 ? `Importar ${rows.length}` : "Importar"}
           </button>
@@ -828,7 +848,7 @@ function ContractModal({ asset, onClose }: { asset: AssetStats; onClose: () => v
     toast.success("PDF generado"); onClose();
   };
   return (
-    <ModalShell title="Contrato / cotización" subtitle={`Genera el PDF de alquiler de ${asset.name}`} onClose={onClose} icon={FileText}>
+    <ModalShell title="Contrato / cotización" subtitle={`Genera el PDF de alquiler de ${asset.name}`} onClose={onClose} icon={FileText} encima>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="sm:col-span-2 flex gap-1 rounded-xl bg-[var(--surface-sunken)] p-1">
           {([["contrato", "Contrato"], ["cotizacion", "Cotización"]] as const).map(([v, l]) => <button key={v} type="button" onClick={() => setForm(f => ({ ...f, mode: v }))} className={cn("flex-1 rounded-xl px-3 min-h-10 text-sm font-semibold transition-colors", form.mode === v ? "bg-primary text-white" : "text-[var(--text-secondary)]")}>{l}</button>)}
@@ -867,7 +887,7 @@ function ChecklistModal({ asset, onClose, onSaved }: { asset: AssetStats; onClos
     } catch { toast.error("Sin conexión"); } finally { setSaving(false); }
   };
   return (
-    <ModalShell title={`Checklist — ${asset.name}`} subtitle="Inspección antes de entregar o al recibir la máquina" onClose={onClose} icon={ClipboardCheck}>
+    <ModalShell title={`Checklist — ${asset.name}`} subtitle="Inspección antes de entregar o al recibir la máquina" onClose={onClose} icon={ClipboardCheck} footer={<PieActivos onClose={onClose} onSave={save} saving={saving} saveLabel="Guardar checklist" />}>
       <div className="flex gap-1 rounded-xl bg-[var(--surface-sunken)] p-1">
         {([["salida", "Salida (entrega)"], ["retorno", "Retorno (recibo)"]] as const).map(([v, l]) => <button key={v} type="button" onClick={() => setKind(v)} className={cn("flex-1 rounded-xl px-3 min-h-10 text-sm font-semibold transition-colors", kind === v ? "bg-primary text-white" : "text-[var(--text-secondary)]")}>{l}</button>)}
       </div>
@@ -880,59 +900,45 @@ function ChecklistModal({ asset, onClose, onSaved }: { asset: AssetStats; onClos
           <button key={l} type="button" onClick={() => setChecks(c => ({ ...c, [l]: !c[l] }))} className="flex w-full items-center gap-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 min-h-11 text-left transition-colors hover:bg-[var(--surface-sunken)]">
             <span className={cn("inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2 transition-colors", checks[l] ? "border-[var(--accent)] bg-[var(--accent)] text-white" : "border-[var(--rule-base)] text-transparent")}><CheckCircle className="h-4 w-4" /></span>
             <span className="flex-1 text-sm font-bold text-[var(--text-primary)]">{l}</span>
-            <span className={cn("text-[length:var(--ts-2xs)] font-black uppercase", checks[l] ? "text-[var(--accent)]" : "text-[var(--data-error-600)] dark:text-[var(--data-error-500)]")}>{checks[l] ? "OK" : "Falla"}</span>
+            <span className={cn("text-sm font-black uppercase", checks[l] ? "text-[var(--accent)]" : "text-[var(--data-error-600)] dark:text-[var(--data-error-500)]")}>{checks[l] ? "OK" : "Falla"}</span>
           </button>
         ))}
       </div>
       <div className="mt-3"><Field label="Observaciones" labelClassName={LABEL}><textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className={cn(FIELD, "resize-none")} placeholder="Rayón en la puerta, falta 1/4 de combustible…" /></Field></div>
-      <ModalFooter onClose={onClose} onSave={save} saving={saving} saveLabel="Guardar checklist" />
     </ModalShell>
   );
 }
 
 // ── Shells reutilizables ────────────────────────────────────────────────────
-function ModalShell({ title, subtitle, onClose, children, icon: Icon = Construction }: { title: string; subtitle: string; onClose: () => void; children: React.ReactNode; icon?: React.ComponentType<{ className?: string; strokeWidth?: number }> }) {
-  /* Sin esto Tab se va a la pantalla de abajo y Escape no cierra (mismo arreglo que AssetDetailDrawer). */
-  const cajaRef = useRef<HTMLDivElement>(null);
-  useModalAccesible(cajaRef, { onCerrar: onClose });
-  /** Ventana: se mueve, se achica y se fija (ADR-420) — shell compartido por todos los modales de Activos. */
-  const ventana = useVentanaDeModal(true, {
-    ref: cajaRef,
-    aplicarTranslate: true,
-    // Parte fija del título: «Alquiler — Excavadora 3» es el mismo modal para
-    // cada máquina (la posición no se guarda por máquina).
-    claveMemoria: `activos-modal:${title.split(/ — | de /)[0]}`,
-  });
+function ModalShell({ title, subtitle, onClose, children, footer, encima, icon = Construction }: { title: string; subtitle: string; onClose: () => void; children: React.ReactNode; footer?: React.ReactNode; encima?: boolean; icon?: LucideIcon }) {
+  /* La ventana del panel (11-10, «todo parejo»): AdminModal trae foco, Escape,
+     ventana movible/fijable y el bottom-sheet del celular; el pie va fijo. */
   return (
-    <div className="fixed inset-0 z-modal flex items-end justify-center bg-black/60 backdrop-blur-[2px] sm:items-center sm:p-4" role="presentation" onClick={(e) => { if (e.target === e.currentTarget && !ventana.fijado) onClose(); }}>
-      <div ref={cajaRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title} className="relative max-h-[92dvh] w-full overflow-y-auto rounded-t-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] shadow-[var(--shadow-xl)] sm:max-w-2xl sm:rounded-2xl">
-        <div {...ventana.asaProps} className="sticky top-0 z-10 flex items-start gap-3 border-b-2 border-[var(--rule-soft)] bg-[var(--surface-raised)] px-6 py-5">
-          <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Icon className="h-6 w-6" strokeWidth={2.1} /></span>
-          <div className="min-w-0 flex-1">
-            <p className="text-[length:var(--ts-2xs,0.6875rem)] font-extrabold uppercase tracking-wider text-[var(--text-tertiary)]">Activos & Maquinaria</p>
-            <CardTitle as="h2" className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)] leading-tight">{title}</CardTitle>
-            <p className="mt-0.5 text-sm text-[var(--text-secondary)]">{subtitle}</p>
-          </div>
-          <span className="ml-auto flex shrink-0 items-center gap-1">
-            <ControlesDeVentana ventana={ventana} />
-          </span>
-          <button type="button" onClick={onClose} aria-label="Cerrar" className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"><X className="h-5 w-5" /></button>
-        </div>
-        <div className="p-6">{children}</div>
-        <TiradorDeVentana ventana={ventana} />
-      </div>
-    </div>
+    <AdminModal
+      open
+      onClose={onClose}
+      title={title}
+      description={subtitle}
+      icon={icon}
+      size="lg"
+      footer={footer}
+      aboveModals={encima}
+      // Parte fija del título: «Alquiler — Excavadora 3» es la misma ventana para cada máquina.
+      claveVentana={`activos-modal:${title.split(/ — | de /)[0]}`}
+    >
+      <div className={MODAL_BODY}>{children}</div>
+    </AdminModal>
   );
 }
 
-function ModalFooter({ onClose, onSave, saving, saveLabel }: { onClose: () => void; onSave: () => void; saving: boolean; saveLabel: string }) {
+function PieActivos({ onClose, onSave, saving, saveLabel }: { onClose: () => void; onSave: () => void; saving: boolean; saveLabel: string }) {
   return (
-    <div className="mt-6 flex items-center gap-3">
-      <button type="button" onClick={onClose} className="h-11 rounded-xl border border-[var(--rule-base)] px-5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]">Cancelar</button>
-      <button type="button" onClick={onSave} disabled={saving} className="flex flex-1 items-center justify-center gap-2 h-11 rounded-xl bg-primary text-sm font-semibold text-white transition-all hover:bg-primary/90 disabled:opacity-50">
-        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" strokeWidth={2.5} />}
+    <ModalFooter>
+      <button type="button" onClick={onClose} className={button({ variant: "secondary", className: "rounded-xl" })}>Cancelar</button>
+      <button type="button" onClick={onSave} disabled={saving} className={button({ variant: "primary", className: "rounded-xl px-5" })}>
+        {saving ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />}
         {saving ? "Guardando…" : saveLabel}
       </button>
-    </div>
+    </ModalFooter>
   );
 }

@@ -66,7 +66,7 @@ export default function FilaFiarle({ fila: f }: { fila: Fila }) {
           <span className="text-[var(--text-tertiary)]">—</span>
         )}
       </td>
-      <td className="whitespace-nowrap text-right tabular-nums text-[var(--text-secondary)]">
+      <td className="whitespace-nowrap text-right tabular-nums">
         {f.limite > 0 ? (
           <div>
             <span>{soles(f.limite)}</span>
@@ -76,7 +76,7 @@ export default function FilaFiarle({ fila: f }: { fila: Fila }) {
           <span className="text-[var(--text-tertiary)]">Sin tope</span>
         )}
       </td>
-      <td className="whitespace-nowrap text-[var(--text-secondary)]">
+      <td className="whitespace-nowrap">
         {f.fiados > 0 ? `${f.pagados} de ${f.fiados} pagados` : "Nunca"}
       </td>
       <td className="text-right">

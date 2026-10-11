@@ -46,10 +46,14 @@ interface Props {
 export function SegundoNivelEnElHub({ ranura, items, activa, onIr, etiqueta, acciones }: Props) {
   if (!ranura) return null;
   return createPortal(
-    <>
+    /* Desde `sm`, pestañas y acción en UNA línea, con lugar para el «⋯» del
+       hub: la barra (7 pestañas en Adelantos, ~770 px) es la que cede y se
+       desliza; los botones no. Sin este tope la barra tomaba la fila entera y
+       «Nuevo adelanto» bajaba a una tercera (medido 2026-10-11 a 1280 px). */
+    <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2 sm:max-w-[calc(100%-3.5rem)] sm:flex-nowrap">
       <SeccionesNav secciones={items} activa={activa} onIr={onIr} etiqueta={etiqueta} />
-      {acciones}
-    </>,
+      {acciones && <div className="flex shrink-0 items-center gap-2">{acciones}</div>}
+    </div>,
     ranura,
   );
 }

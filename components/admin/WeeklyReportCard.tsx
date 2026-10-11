@@ -2,7 +2,7 @@
 
 import { toast } from "sonner";
 import { sinDato } from "@/lib/errores/sin-dato";
-import { LoadingState } from "@buleje/design-system";
+import { CardTitle, LoadingState } from "@buleje/design-system";
 import { useState, useEffect, useCallback } from "react";
 import { FileText, Download, Loader2, RefreshCw, TrendingUp, Package, AlertTriangle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
@@ -260,25 +260,27 @@ export default function WeeklyReportCard() {
   const maxDay = data ? Math.max(...data.salesByDay.map(d => d.total), 1) : 1;
 
   return (
-    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]  overflow-hidden">
-      {/* Header */}
-      <div className="bg-primary px-5 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <FileText className="h-5 w-5 text-white" />
-          <span className="text-white font-semibold text-sm">Reporte Semanal</span>
-        </div>
+    <section aria-label="Esta semana" className="overflow-hidden rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
+      {/* La cabecera de un bloque del Resumen (2026-10-11): antes una franja
+          turquesa con texto blanco (3,2:1) que no se parecía a ningún otro
+          bloque de la sección; ahora el título del bloque y «Actualizar». */}
+      <div className="flex min-h-12 items-center gap-2 px-4 pt-2 sm:px-6">
+        <FileText className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
+        <CardTitle className="text-sm font-bold">Esta semana</CardTitle>
         <button
+          type="button"
           onClick={fetchData}
           disabled={loading}
-          className="text-white/70 hover:text-white transition-colors"
-          aria-label="Actualizar"
+          className="ml-auto inline-flex h-12 w-12 items-center justify-center rounded-xl text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+          aria-label="Actualizar la semana"
+          title="Actualizar"
         >
-          <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+          <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} aria-hidden />
         </button>
       </div>
 
       {/* Body */}
-      <div className="p-5">
+      <div className="px-4 pb-4 pt-2 sm:px-6 sm:pb-6">
         {loading ? (
           <LoadingState />
         ) : error ? (
@@ -382,6 +384,6 @@ export default function WeeklyReportCard() {
           </div>
         ) : null}
       </div>
-    </div>
+    </section>
   );
 }

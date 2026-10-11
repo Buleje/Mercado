@@ -9,6 +9,9 @@
  * boletas inventadas (B001-00000001…) sólo de pedidos web, IGV = ×18/118 y un
  * botón «Declarar» por fila que no guardaba nada. El registro real de ventas y
  * compras está en «Para el contador» (formatos 14.1 y 8.1).
+ *
+ * Dos secciones en `?sub=` (11-10, «muchos datos → secciones»): «El mes» y
+ * «El año» (la tabla de los 12 meses, antes un bloque plegable debajo).
  */
 import { useState } from "react";
 import { toast } from "sonner";
@@ -23,7 +26,35 @@ import { nombreDelMes } from "./impuestos/impuestos-del-mes";
 import { useConfigTributaria, useDeclaraciones, type EstadoDeclaracion } from "./impuestos/use-impuestos";
 import { useImpuestosDelMes } from "./impuestos/use-impuestos-del-mes";
 import ApagarDelMes from "./impuestos/APagarDelMes";
+import ObligacionesTab from "./ObligacionesTab";
+import { BarraDeSecciones, idPestanaDeSeccion, type SeccionDeBarra } from "@/components/admin/shared/BarraDeSecciones";
+import { button } from "@/components/ui-system/button-variants";
+import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import RegimenModal from "./impuestos/RegimenModal";
+
+type Seccion = "mes" | "anio";
+const SECCIONES: readonly SeccionDeBarra<Seccion>[] = [
+  { clave: "mes", rotulo: "El mes" },
+  { clave: "anio", rotulo: "El año" },
+];
+const CLAVES: readonly Seccion[] = ["mes", "anio"];
+const ID_PANEL = "impuestos-panel";
+const CONTROL = "h-12 shrink-0 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none";
+
+const AYUDA: Record<Seccion, { title: string; what: string; affects: string; example: string }> = {
+  mes: {
+    title: "Impuestos del mes",
+    what: "Cuánto le pagas a SUNAT por el mes y hasta cuándo: el IGV de lo que registraste (comprobantes electrónicos menos el IGV de tus gastos) y el pago a cuenta de la Renta según tu régimen.",
+    affects: "Es una estimación con lo registrado: no reemplaza a tu contador. No incluye planilla (ESSALUD, ONP/AFP), detracciones, percepciones ni ITAN.",
+    example: "Régimen MYPE: 1 % de tus ingresos netos del mes. Vendiste S/ 10,000 sin comprobantes electrónicos → Renta S/ 100 e IGV sin registro.",
+  },
+  anio: {
+    title: "El año",
+    what: "La misma cuenta que «El mes», mes por mes (Formulario 621 de cada uno), y si marcaste la declaración presentada o pagada.",
+    affects: "Otras declaraciones: PLAME (sólo si tienes trabajadores en planilla: ESSALUD 9 %, ONP/AFP) y la Renta anual (marzo o abril del año siguiente, sobre la renta neta del ejercicio; no se estima acá).",
+    example: "Marcas octubre como pagada en «El mes» y en «El año» la fila de octubre dice «Pagada».",
+  },
+};
 
 const SIGUIENTE: Record<EstadoDeclaracion, { estado: EstadoDeclaracion; rotulo: string } | null> = {
   pendiente: { estado: "presentada", rotulo: "Marcar presentada" },
@@ -36,6 +67,10 @@ export default function TaxTab() {
   const [mes, setMes] = useState(hoy);
   const [tick, setTick] = useState(0);
   const [regimenAbierto, setRegimenAbierto] = useState(false);
+  const { vista: seccion, irA } = useSubvistaModulo<Seccion>("plata-impuestos", CLAVES, "mes");
+  const anioActual = Number(hoy.slice(0, 4));
+  const [anio, setAnio] = useState(anioActual);
+  const ayuda = AYUDA[seccion];
   const config = useConfigTributaria();
   const declaraciones = useDeclaraciones(Number(mes.slice(0, 4)));
   const { calculo, cargando, error, kpis } = useImpuestosDelMes(mes, config.regimen, tick);
@@ -64,33 +99,35 @@ export default function TaxTab() {
 
   return (
     <div className="space-y-4">
-      {/* Una fila: título · mes · Indicadores · acción del mes · Más */}
+      {/* Una fila: título · ⓘ · secciones · mes o año · Indicadores · acción del mes · Más */}
       <div className="flex flex-wrap items-center gap-2 xl:flex-nowrap">
         <div className="flex shrink-0 items-center gap-2">
           <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">Impuestos</SectionTitle>
-          <InfoTip
-            title="Impuestos del mes"
-            what="Cuánto le pagas a SUNAT por el mes y hasta cuándo: el IGV de lo que registraste (comprobantes electrónicos menos el IGV de tus gastos) y el pago a cuenta de la Renta según tu régimen."
-            affects="Es una estimación con lo registrado: no reemplaza a tu contador. No incluye planilla (ESSALUD, ONP/AFP), detracciones, percepciones ni ITAN."
-            example={`Régimen MYPE: 1 % de tus ingresos netos del mes. Vendiste S/ 10,000 sin comprobantes electrónicos → Renta S/ 100 e IGV sin registro.`}
-          />
+          <InfoTip title={ayuda.title} what={ayuda.what} affects={ayuda.affects} example={ayuda.example} />
         </div>
-        <label className="sr-only" htmlFor="impuestos-mes">Mes</label>
-        <input
-          id="impuestos-mes"
-          type="month"
-          value={mes}
-          max={hoy}
-          onChange={(e) => e.target.value && setMes(e.target.value)}
-          className="h-12 shrink-0 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
-        />
+        <div className="min-w-0">
+          <BarraDeSecciones secciones={SECCIONES} activa={seccion} onCambiar={irA} etiqueta="Secciones de Impuestos" idPanel={ID_PANEL} />
+        </div>
+        {seccion === "mes" ? (
+          <>
+            <label className="sr-only" htmlFor="impuestos-mes">Mes</label>
+            <input id="impuestos-mes" type="month" value={mes} max={hoy} onChange={(e) => e.target.value && setMes(e.target.value)} className={CONTROL} />
+          </>
+        ) : (
+          <>
+            <label className="sr-only" htmlFor="impuestos-anio">Año</label>
+            <select id="impuestos-anio" value={anio} onChange={(e) => setAnio(Number(e.target.value))} className={CONTROL}>
+              {[anioActual, anioActual - 1].map((y) => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </>
+        )}
         <div className="ml-auto flex min-w-0 items-center gap-2">
-          {kpis.boton}
-          {siguiente ? (
+          {seccion === "mes" && kpis.boton}
+          {seccion === "mes" && siguiente ? (
             <button
               type="button"
               onClick={() => void marcar(siguiente.estado)}
-              className="inline-flex h-12 shrink-0 items-center gap-2 rounded-xl bg-[var(--accent-dark)] px-4 text-sm font-bold text-white hover:brightness-110"
+              className={button({ variant: "primary", className: "shrink-0 rounded-xl px-4" })}
               title={`Formulario 621 de ${nombreDelMes(mes)}`}
             >
               <CheckCircle className="h-4 w-4" aria-hidden />
@@ -101,19 +138,26 @@ export default function TaxTab() {
         </div>
       </div>
 
-      {kpis.panel}
-
-      <ApagarDelMes
-        mes={mes}
-        calculo={calculo}
-        cargando={cargando || !config.lista}
-        error={error}
-        estado={estado}
-        regimen={REGIMEN_LABELS[config.regimen]}
-        ruc={config.ruc}
-        onRuc={() => setRegimenAbierto(true)}
-        onReintentar={() => setTick((t) => t + 1)}
-      />
+      <div role="tabpanel" id={ID_PANEL} aria-labelledby={idPestanaDeSeccion(ID_PANEL, seccion)} className="space-y-4">
+        {seccion === "mes" ? (
+          <>
+            {kpis.panel}
+            <ApagarDelMes
+              mes={mes}
+              calculo={calculo}
+              cargando={cargando || !config.lista}
+              error={error}
+              estado={estado}
+              regimen={REGIMEN_LABELS[config.regimen]}
+              ruc={config.ruc}
+              onRuc={() => setRegimenAbierto(true)}
+              onReintentar={() => setTick((t) => t + 1)}
+            />
+          </>
+        ) : (
+          <ObligacionesTab anio={anio} />
+        )}
+      </div>
 
       {regimenAbierto && (
         <RegimenModal open onClose={() => setRegimenAbierto(false)} regimen={config.regimen} ruc={config.ruc} guardar={config.guardar} />

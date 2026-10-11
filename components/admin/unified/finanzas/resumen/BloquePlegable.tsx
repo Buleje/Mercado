@@ -1,12 +1,21 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { createContext, useContext, type ReactNode } from "react";
+import { CardTitle } from "@buleje/design-system";
 import { ChevronDown } from "@buleje/design-system/icons";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { cn } from "@/lib/utils";
 
 /** Prefijo de la preferencia «bloque abierto» de cada bloque del Resumen de Plata. */
 export const PREFIJO_PLEGADO = "plata:resumen:abierto:";
+
+/**
+ * `true` = el bloque vive en una SECCIÓN del Resumen (`BarraDeSecciones`, ley 11
+ * de la vista): se ve una sección a la vez, así que el bloque va abierto, con su
+ * título y sus controles, sin el botón de plegar. Afuera (Rentabilidad del Libro
+ * TH) sigue plegable como siempre.
+ */
+export const BloquesEnSeccion = createContext(false);
 
 /**
  * Un bloque del Resumen de Plata que se pliega y recuerda cómo lo dejaste (ley
@@ -34,8 +43,23 @@ export default function BloquePlegable({
   children: ReactNode;
   inicial?: boolean;
 }) {
-  const [abierto, setAbierto] = useLocalStorage<boolean>(`${PREFIJO_PLEGADO}${id}`, inicial);
+  const enSeccion = useContext(BloquesEnSeccion);
+  const [guardado, setAbierto] = useLocalStorage<boolean>(`${PREFIJO_PLEGADO}${id}`, inicial);
+  const abierto = enSeccion || guardado;
   const cuerpo = `plata-resumen-${id}`;
+  if (enSeccion) {
+    return (
+      <section data-bloque-plegable={id} aria-labelledby={`${cuerpo}-titulo`} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
+        <div className="flex min-h-12 flex-wrap items-center gap-x-3 gap-y-1 px-4 pt-2 sm:px-6">
+          <CardTitle id={`${cuerpo}-titulo`} className="min-w-0 text-sm font-bold">{titulo}</CardTitle>
+          {acciones && <div className="ml-auto flex shrink-0 items-center gap-2">{acciones}</div>}
+        </div>
+        <div id={cuerpo} className="px-4 pb-4 pt-2 sm:px-6 sm:pb-6">
+          {children}
+        </div>
+      </section>
+    );
+  }
   return (
     <section
       data-bloque-plegable={id}

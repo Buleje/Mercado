@@ -239,12 +239,14 @@ export default function PeriodComparatorTab() {
             <tbody>
               {filas.map((f) => (
                 <tr key={f.key}>
-                  <td className="text-sm font-semibold text-[var(--text-primary)]">{f.label}</td>
-                  <td className="text-right text-base font-bold tabular-nums text-[var(--text-primary)]">
-                    {valor(f.tipo, f.a)}
+                  {/* Sin estilos propios en las celdas (ley 10): el peso y el
+                      color van en un span, como en el resto del panel. */}
+                  <td><span className="font-semibold">{f.label}</span></td>
+                  <td className="text-right">
+                    <span className="font-bold tabular-nums">{valor(f.tipo, f.a)}</span>
                   </td>
-                  <td className="text-right text-sm tabular-nums text-[var(--text-secondary)]">
-                    {valor(f.tipo, f.b)}
+                  <td className="text-right">
+                    <span className="tabular-nums text-[var(--text-secondary)]">{valor(f.tipo, f.b)}</span>
                   </td>
                   <td className="text-right">
                     <Cambio cambio={f.cambio} sentido={f.sentido} tipo={f.tipo} />
@@ -255,11 +257,10 @@ export default function PeriodComparatorTab() {
             {juzgables.length > 0 && (
               <tfoot>
                 <tr>
-                  <td
-                    colSpan={4}
-                    className="text-right text-sm font-semibold text-[var(--text-secondary)]"
-                  >
-                    {mejoraron} de {juzgables.length} mejoraron
+                  <td colSpan={4} className="text-right">
+                    <span className="font-semibold text-[var(--text-secondary)]">
+                      {mejoraron} de {juzgables.length} mejoraron
+                    </span>
                   </td>
                 </tr>
               </tfoot>

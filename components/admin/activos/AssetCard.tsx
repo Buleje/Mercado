@@ -10,6 +10,7 @@
  */
 import { ClipboardCheck, CreditCard, FileText, Fuel, MoreHorizontal, Pencil, Store, TrendingUp, Wrench } from "@buleje/design-system/icons";
 import ActionMenu from "@/components/admin/shared/action-menu";
+import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
 import { fmt, STATUS_META, typeIcon, typeLabel, type AssetStats } from "./tipos";
 
@@ -77,10 +78,10 @@ export default function AssetCard({ asset, onRent, onExpense, onEdit, onDetail, 
       </p>
 
       <div className="mt-auto flex items-center gap-2">
-        <button type="button" onClick={onRent} className="inline-flex h-12 flex-1 items-center justify-center gap-1.5 rounded-xl bg-[var(--accent-dark)] px-3 text-sm font-bold text-white hover:brightness-110">
+        <button type="button" onClick={onRent} className={button({ variant: "primary", className: "flex-1 rounded-xl px-3" })}>
           <TrendingUp className="h-4 w-4" aria-hidden /> Alquiler
         </button>
-        <button type="button" onClick={onExpense} className="inline-flex h-12 flex-1 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]">
+        <button type="button" onClick={onExpense} className={button({ variant: "secondary", className: "flex-1 rounded-xl px-3" })}>
           <Fuel className="h-4 w-4" aria-hidden /> Gasto
         </button>
         <ActionMenu

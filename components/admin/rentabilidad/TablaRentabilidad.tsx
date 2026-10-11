@@ -22,6 +22,12 @@ import type { ProfitLine } from "./DetalleProductoModal";
 
 const fmt = (n: number) => `${formatCurrency(n)}`;
 const pct = (n: number) => (Math.abs(n) > 999 ? "—" : `${n.toFixed(1)}%`);
+/** El color de un margen por su signo (texto chico → tinta `-ink`, AA en los dos temas). */
+const tonoMargen = (n: number) =>
+  n > 0 ? "text-[var(--data-success-ink)]" : n < 0 ? "text-[var(--data-error-ink)]" : "text-[var(--text-secondary)]";
+/** El % de margen: ≥35 bien, ≥25 justo, menos o negativo, mal. */
+const tonoPct = (n: number) =>
+  n >= 35 ? "text-[var(--data-success-ink)]" : n >= 25 ? "text-[var(--data-warning-ink)]" : "text-[var(--data-error-ink)]";
 
 interface Props {
   lines: ProfitLine[];
@@ -75,7 +81,7 @@ export default function TablaRentabilidad({ lines, filtered, loading, days, catF
       {/* Table */}
       <DataTable filtrable className="min-w-[600px]">
         <thead ref={ordenProf.refCabecera}>
-          <tr className="border-b border-[var(--rule-base)] dark:border-[var(--rule-base)]">
+          <tr>
             <th>#</th>
             <EnOrden
               orden={ordenProf.orden}
@@ -105,7 +111,7 @@ export default function TablaRentabilidad({ lines, filtered, loading, days, catF
         </thead>
         <tbody>
           {loading && (
-            <tr><td colSpan={9} className="text-center text-[var(--text-tertiary)] text-sm">Calculando tus ganancias…</td></tr>
+            <tr><td colSpan={9} className="text-center"><span className="text-[var(--text-secondary)]">Calculando tus ganancias…</span></td></tr>
           )}
           {!loading && filtered.length === 0 && (
             <tr>
@@ -125,17 +131,17 @@ export default function TablaRentabilidad({ lines, filtered, loading, days, catF
           )}
           {filtered.map((l, i) => (
             <tr key={l.id}>
-              <td className="text-sm text-[var(--text-tertiary)]">{i + 1}</td>
+              <td><span className="text-[var(--text-secondary)]">{i + 1}</span></td>
               <EnOrden
                 orden={ordenProf.orden}
                 celdas={{
-                  producto: <td className="font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{l.product}</td>,
-                  categoria: <td className="text-sm text-[var(--text-secondary)] dark:text-muted">{l.category}</td>,
-                  unidades: <td className="text-right text-[var(--text-secondary)] dark:text-muted">{formatNumber(l.unitsSold)}</td>,
-                  ingresos: <td className="text-right text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(l.revenue)}</td>,
+                  producto: <td><span className="font-semibold">{l.product}</span></td>,
+                  categoria: <td><span className="text-[var(--text-secondary)]">{l.category}</span></td>,
+                  unidades: <td className="text-right"><span className="text-[var(--text-secondary)]">{formatNumber(l.unitsSold)}</span></td>,
+                  ingresos: <td className="text-right">{fmt(l.revenue)}</td>,
                   costo: (
-                    <td className="text-right text-[var(--text-secondary)]">
-                      <span className="inline-flex items-center justify-end gap-1">
+                    <td className="text-right">
+                      <span className="inline-flex items-center justify-end gap-1 text-[var(--text-secondary)]">
                         {l.costEstimated && (
                           <AlertTriangle
                             className="h-3.5 w-3.5 text-[var(--data-warning-500)] shrink-0"
@@ -146,10 +152,10 @@ export default function TablaRentabilidad({ lines, filtered, loading, days, catF
                       </span>
                     </td>
                   ),
-                  margen: <td className={cn("text-right font-bold", l.grossMargin >= 0 ? "text-[var(--data-success-500)]" : "text-[var(--data-error-500)]")}>{fmt(l.grossMargin)}</td>,
+                  margen: <td className="text-right"><span className={cn("font-bold", tonoMargen(l.grossMargin))}>{fmt(l.grossMargin)}</span></td>,
                   pct: (
                     <td className="text-right">
-                      <span className={cn("inline-flex items-center gap-0.5 text-sm font-bold", l.marginPct >= 35 ? "text-[var(--data-success-500)]" : l.marginPct >= 25 ? "text-[var(--data-warning-500)]" : "text-[var(--data-error-500)]")}>
+                      <span className={cn("inline-flex items-center gap-0.5 text-sm font-bold", tonoPct(l.marginPct))}>
                         {l.marginPct >= 35 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
                         {pct(l.marginPct)}
                       </span>
@@ -169,19 +175,20 @@ export default function TablaRentabilidad({ lines, filtered, loading, days, catF
                 etiqueta junto con «#», contando cuántas quedan al frente hoy
                 (las columnas se arrastran) — el resto de la fila sigue el
                 MISMO orden que la cabecera. */}
-            <td colSpan={1 + antesDeLosTotales} className="text-sm text-[var(--text-secondary)]">
-              {isFiltered ? `Totales (${filtered.length} de ${lines.length})` : "Totales"}
+            <td colSpan={1 + antesDeLosTotales}>
+              <span className="text-[var(--text-secondary)]">{isFiltered ? `Totales (${filtered.length} de ${lines.length})` : "Totales"}</span>
             </td>
             <EnOrden
               orden={ordenProf.orden}
               celdas={{
                 producto: idsFundidos.has("producto") ? false : <td />,
                 categoria: idsFundidos.has("categoria") ? false : <td />,
-                unidades: <td className="text-right text-[var(--text-primary)] dark:text-[var(--text-primary)]">{formatNumber(visibleTotals.units)}</td>,
-                ingresos: <td className="text-right text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(visibleTotals.revenue)}</td>,
-                costo: <td className="text-right text-[var(--text-secondary)]">{fmt(visibleTotals.cogs)}</td>,
-                margen: <td className="text-right text-[var(--data-success-500)]">{fmt(visibleTotals.grossMargin)}</td>,
-                pct: <td className="text-right text-[var(--data-success-500)]">{pct(visibleTotals.marginPct)}</td>,
+                unidades: <td className="text-right">{formatNumber(visibleTotals.units)}</td>,
+                ingresos: <td className="text-right">{fmt(visibleTotals.revenue)}</td>,
+                costo: <td className="text-right"><span className="text-[var(--text-secondary)]">{fmt(visibleTotals.cogs)}</span></td>,
+                /* Antes, verde siempre: un margen de −S/ 18.19 se pintaba como ganancia. */
+                margen: <td className="text-right"><span className={tonoMargen(visibleTotals.grossMargin)}>{fmt(visibleTotals.grossMargin)}</span></td>,
+                pct: <td className="text-right"><span className={tonoPct(visibleTotals.marginPct)}>{pct(visibleTotals.marginPct)}</span></td>,
               }}
             />
             <td />

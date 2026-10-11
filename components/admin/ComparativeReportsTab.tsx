@@ -165,9 +165,9 @@ export default function ComparativeReportsTab() {
               const b = vigente.base[m.key];
               return (
                 <tr key={m.key}>
-                  <td className="text-sm font-semibold text-[var(--text-primary)]">{m.label}</td>
-                  <td className="text-right text-base font-bold tabular-nums text-[var(--text-primary)]">{valor(m.tipo, a)}</td>
-                  <td className="text-right text-sm tabular-nums text-[var(--text-secondary)]">{valor(m.tipo, b)}</td>
+                  <td className="font-semibold">{m.label}</td>
+                  <td className="text-right font-bold tabular-nums">{valor(m.tipo, a)}</td>
+                  <td className="text-right tabular-nums text-[var(--text-secondary)]">{valor(m.tipo, b)}</td>
                   <td className="text-right">
                     <Cambio cambio={variacion(a, b)} subirEsBueno={m.subirEsBueno} />
                   </td>

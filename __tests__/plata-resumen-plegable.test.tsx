@@ -4,7 +4,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import BloquePlegable, { PREFIJO_PLEGADO } from "@/components/admin/unified/finanzas/resumen/BloquePlegable";
+import BloquePlegable, { BloquesEnSeccion, PREFIJO_PLEGADO } from "@/components/admin/unified/finanzas/resumen/BloquePlegable";
 import {
   etiquetaSalud,
   lineaDeudores,
@@ -71,5 +71,20 @@ describe("BloquePlegable", () => {
     dibujar();
     expect(screen.getByText("el gráfico")).toBeTruthy();
     expect(screen.getByRole("button", { name: /Flujo de caja/ }).getAttribute("aria-expanded")).toBe("true");
+  });
+
+  it("dentro de una sección del Resumen va abierto, con título y acciones, sin botón de plegar", () => {
+    window.localStorage.setItem(`${PREFIJO_PLEGADO}prueba`, "false");
+    render(
+      <BloquesEnSeccion.Provider value>
+        <BloquePlegable id="prueba" titulo="Flujo de caja" resumen="3 de 30 días" acciones={<button type="button">Expandir</button>}>
+          <p>el gráfico</p>
+        </BloquePlegable>
+      </BloquesEnSeccion.Provider>,
+    );
+    expect(screen.getByRole("heading", { name: "Flujo de caja" })).toBeTruthy();
+    expect(screen.getByText("el gráfico")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Expandir" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Flujo de caja/ })).toBeNull();
   });
 });

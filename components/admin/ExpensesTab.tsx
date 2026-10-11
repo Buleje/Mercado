@@ -8,16 +8,16 @@
  * ocho tarjetas de categoría y el gráfico de 6 meses) vive en los Indicadores.
  */
 
-import { LoadingState, SectionTitle } from "@buleje/design-system";
+import { LoadingState } from "@buleje/design-system";
 import { toast } from "sonner";
-import { useState, useEffect, useMemo } from "react";
-import { Download, MoreHorizontal, Plus, Receipt, RefreshCw } from "@buleje/design-system/icons";
+import { useState, useEffect, useMemo, type ReactNode } from "react";
+import { Download, Plus, Receipt, RefreshCw } from "@buleje/design-system/icons";
 import { limaDateKey } from "@/lib/utils";
 import { formatCurrency, formatMonth } from "@/lib/format";
 import { diaDelGasto, primeroDelMes } from "@/lib/gastos/lista-gastos";
-import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
+import type { MenuAccion } from "@/components/admin/shared/action-menu";
+import { CabeceraVista } from "@/components/admin/inventario/movimientos/CabeceraVista";
 import { button } from "@/components/ui-system/button-variants";
-import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import GastoNuevoModal from "@/components/admin/gastos/GastoNuevoModal";
 import ListaGastos, { descargarCsvGastos, gastosVisibles, type GastoDeLaLista } from "@/components/admin/gastos/ListaGastos";
 import type { GastoGuardado } from "@/components/admin/gastos/use-gasto-nuevo";
@@ -46,9 +46,13 @@ interface Props {
    * se pierden las fechas, la categoría ni el formulario abierto.
    */
   recarga?: number;
+  /** Las secciones de la vista (Gastos y presupuesto): van en la fila del título. */
+  barra?: ReactNode;
+  /** Con las cinco secciones la fila no entra a 1280 px: «Anotar gasto» queda en su ícono hasta 2xl. */
+  accionCompacta?: boolean;
 }
 
-export default function ExpensesTab({ onVerCatalogo, recarga = 0 }: Props = {}) {
+export default function ExpensesTab({ onVerCatalogo, recarga = 0, barra, accionCompacta = false }: Props = {}) {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [summary, setSummary] = useState<Summary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -133,8 +137,6 @@ export default function ExpensesTab({ onVerCatalogo, recarga = 0 }: Props = {}) 
     cargando: loading,
   });
 
-  if (loading) return <LoadingState />;
-
   const acciones: MenuAccion[] = [
     {
       id: "csv",
@@ -154,31 +156,25 @@ export default function ExpensesTab({ onVerCatalogo, recarga = 0 }: Props = {}) 
 
   return (
     <div className="space-y-4">
-      {/* Una fila: título · Indicadores · Anotar gasto · «⋯». */}
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
-        <div className="flex min-w-0 items-center gap-2">
-          <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">Gastos</SectionTitle>
-          <InfoTip
-            title="Gastos"
-            what="Lo que salió del negocio que no es mercadería: alquiler, luz, transporte, estiba. Elige el período en la fila de filtros."
-            affects="Los fijos del catálogo no suman hasta que registras su pago. El techo de estos gastos está abajo, en Presupuesto del mes."
-            example="Pagaste la luz de setiembre el 05/10: es un gasto de octubre."
-          />
-        </div>
-        {/* `justify-end`: si el titular del botón se corta, el hueco queda a la izquierda y no después del «⋯». */}
-        <div className="ml-auto flex min-w-0 items-center justify-end gap-2">
-          {kpis.boton}
-          <button
-            type="button"
-            onClick={() => setShowForm(true)}
-            className={button({ variant: "primary", className: "h-12 shrink-0 gap-2 rounded-xl px-4" })}
-          >
+      {/* Una fila: título · secciones · Indicadores · Anotar gasto · «⋯». */}
+      <CabeceraVista
+        titulo="Gastos"
+        ayuda={{
+          what: "Lo que salió del negocio que no es mercadería: alquiler, luz, transporte, estiba. Elige el período en la fila de filtros.",
+          affects: "Los fijos del catálogo no suman hasta que registras su pago. El techo de estos gastos está en la sección Presupuesto.",
+          example: "Pagaste la luz de setiembre el 05/10: es un gasto de octubre.",
+        }}
+        secciones={barra}
+        indicadores={kpis.boton}
+        accion={
+          <button type="button" onClick={() => setShowForm(true)} title="Anotar gasto" className={button({ variant: "primary", className: "h-12 shrink-0 gap-2 rounded-xl px-4" })}>
             <Plus className="h-4 w-4" aria-hidden />
-            <span className="max-sm:sr-only">Anotar gasto</span>
+            <span className={accionCompacta ? "max-2xl:sr-only" : "max-sm:sr-only"}>Anotar gasto</span>
           </button>
-          <ActionMenu label="Más" icon={MoreHorizontal} actions={acciones} soloIcono size="md" className="w-12 shrink-0" title="Descargar CSV, gastos fijos y actualizar" />
-        </div>
-      </div>
+        }
+        acciones={acciones}
+        tituloMenu="Descargar CSV, gastos fijos y actualizar"
+      />
       {kpis.panel}
 
       <GastoNuevoModal
@@ -188,10 +184,12 @@ export default function ExpensesTab({ onVerCatalogo, recarga = 0 }: Props = {}) 
       />
 
       {/* La lista del período: buscar, categoría, fechas y borrar con confirmación. */}
-      {error ? (
+      {loading ? (
+        <LoadingState />
+      ) : error ? (
         <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--data-error-500)] bg-[var(--surface-raised)] px-4 py-3">
           <p className="text-sm font-bold text-[var(--text-primary)]">No se pudieron cargar los gastos del período.</p>
-          <button type="button" onClick={() => setTick(v => v + 1)} className="inline-flex h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]">
+          <button type="button" onClick={() => setTick(v => v + 1)} className={button({ variant: "secondary", className: "h-12 shrink-0 gap-2 rounded-xl" })}>
             <RefreshCw className="h-4 w-4" aria-hidden />Reintentar
           </button>
         </div>

@@ -3,9 +3,10 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { useModalAccesible } from "@/hooks/use-modal-accesible";
-import { escapeDeLaPaginaConFijado, useVentanaDeModal } from "@/hooks/use-ventana-de-modal";
-import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+import ActionMenu from "@/components/admin/shared/action-menu";
+import { ModalFooter } from "@/components/admin/shared/ModalFooter";
+import { button } from "@/components/ui-system/button-variants";
 import { escapeHtml } from "@/lib/safe-html";
 import { m, AnimatePresence } from "@/components/admin/providers";
 import {
@@ -15,7 +16,7 @@ import {
   ArrowUpDown, ArrowDownToLine, ArrowUpFromLine, Building2,
   RefreshCcw, Paperclip, Coins,
   Filter, ChevronDown, ChevronUp, Trash2, AlertCircle, Bell,
-  RotateCcw, History, Scale, FileDown } from "@buleje/design-system/icons";
+  RotateCcw, History, Scale, FileDown, MoreHorizontal } from "@buleje/design-system/icons";
 import { XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, LineChart, Line } from "recharts";
 import { CardTitle, DataTable, LoadingState, SectionTitle, BlockTitle } from "@buleje/design-system";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -23,7 +24,7 @@ import AdminTabBar, { type AdminTab } from "@/components/admin/shared/AdminTabBa
 import { SegundoNivelEnElHub, useRanuraDelSegundoNivel } from "@/components/admin/unified/finanzas/segundo-nivel";
 import { Field } from "@/components/admin/shared/Field";
 import { FiltroColumnaMulti, FiltroColumnaRango } from "@/components/admin/shared/filtros-columna";
-import { useOrdenColumnas, EnOrden, BotonRestablecerColumnas } from "@/components/admin/shared/columnas-ordenables";
+import { useOrdenColumnas, EnOrden } from "@/components/admin/shared/columnas-ordenables";
 import type { Rango } from "@/lib/admin/filtros-columna";
 import { cn } from "@/lib/utils";
 import { useSettings } from "@/contexts/settings-context";
@@ -291,20 +292,7 @@ export default function PrestamosModule() {
   useEffect(() => { fetchPrestamos(); fetchResumen(); }, [fetchPrestamos, fetchResumen]);
   useEffect(() => { if (activeTab === "cobros") fetchCobros(); }, [activeTab, fetchCobros]);
 
-  // Cerrar modales con Escape
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      /* Con un modal fijado y el foco en la página, el Escape es de la página (ADR-420). */
-      if (e.key !== "Escape" || escapeDeLaPaginaConFijado()) return;
-      if (showPago) { setShowPago(false); return; }
-      if (showRefinanciar) { setShowRefinanciar(false); return; }
-      if (showCancelConfirm) { setShowCancelConfirm(false); return; }
-      if (showCreate) { setShowCreate(false); return; }
-      if (selected) { setSelected(null); return; }
-    };
-    document.addEventListener("keydown", handleEsc);
-    return () => document.removeEventListener("keydown", handleEsc);
-  }, [showPago, showRefinanciar, showCancelConfirm, showCreate, selected]);
+  // Escape: lo resuelve cada AdminModal (cierra sólo la de arriba).
 
   // ── Detail ─────────────────────────────────────────────────────────────────
 
@@ -455,6 +443,15 @@ export default function PrestamosModule() {
     });
   };
 
+  /** Lo marcado en la tabla, a un CSV (antes, un botón al lado de las pastillas). */
+  const bajarMarcadosCsv = () => {
+    const sel = prestamos.filter(p => selectedIds.has(p.id));
+    const rows = sel.map(p => [p.id, p.entidadNombre || p.customerId || "", p.monto, p.tasaInteres, p.numeroCuotas, p.status].join(","));
+    const csv = ["ID,Cliente,Monto,Tasa,Cuotas,Status", ...rows].join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    const a = document.createElement("a"); a.href = url; a.download = "prestamos.csv"; a.click(); URL.revokeObjectURL(url);
+  };
+
   const toggleSelectAll = () => {
     if (selectedIds.size === paginated.length) setSelectedIds(new Set());
     else setSelectedIds(new Set(paginated.map(p => p.id)));
@@ -529,51 +526,13 @@ export default function PrestamosModule() {
     setCreateFechaDesembolso(""); setCreateStep(1); setCreateError(null);
   };
 
-  // ── Accesibilidad de los modales a mano: foco atrapado + Escape + devolver
-  // el foco (ninguno tenía role="dialog" ni teclado — sólo backdrop de mouse). ──
-  const selectedPanelRef = useRef<HTMLDivElement>(null);
+  // Las ventanas son AdminModal (11-10): foco, Escape y ventana vienen con él.
   const cerrarSelected = useCallback(() => setSelected(null), []);
-  useModalAccesible(selectedPanelRef, { onCerrar: cerrarSelected, activo: !!selected });
-
-  const refinanciarPanelRef = useRef<HTMLDivElement>(null);
-  const cerrarRefinanciar = useCallback(() => setShowRefinanciar(false), []);
-  useModalAccesible(refinanciarPanelRef, { onCerrar: cerrarRefinanciar, activo: showRefinanciar && !!selected });
-  /** Ventana: se mueve, se achica y se fija (ADR-420). */
-  const ventanaRefinanciar = useVentanaDeModal(showRefinanciar && !!selected, {
-    ref: refinanciarPanelRef,
-    aplicarTranslate: true,
-    claveMemoria: "prestamos-refinanciar",
-  });
-
-  const cancelPanelRef = useRef<HTMLDivElement>(null);
-  const cerrarCancelConfirm = useCallback(() => setShowCancelConfirm(false), []);
-  useModalAccesible(cancelPanelRef, { onCerrar: cerrarCancelConfirm, activo: showCancelConfirm && !!selected });
-
-  const pagoPanelRef = useRef<HTMLDivElement>(null);
-  const cerrarPago = useCallback(() => setShowPago(false), []);
-  useModalAccesible(pagoPanelRef, { onCerrar: cerrarPago, activo: showPago && !!selected });
-  /** Ventana: se mueve, se achica y se fija (ADR-420). Sin fila de encabezado propia: `asaAutomatica` engancha el título. */
-  const ventanaPago = useVentanaDeModal(showPago && !!selected, {
-    ref: pagoPanelRef,
-    aplicarTranslate: true,
-    asaAutomatica: true,
-    claveMemoria: "prestamos-pagar-cuota",
-  });
-
   // `resetCreateForm` no está memoizada (se redefine cada render); un ref
-  // evita que `cerrarCreate` cambie de identidad en cada tecleo del form
-  // largo y reinicie el atrapa-foco (perdería a quién devolverle el foco).
+  // evita que `cerrarCreate` cambie de identidad en cada tecleo del form.
   const resetCreateFormRef = useRef(resetCreateForm);
   resetCreateFormRef.current = resetCreateForm;
-  const createPanelRef = useRef<HTMLDivElement>(null);
   const cerrarCreate = useCallback(() => { setShowCreate(false); resetCreateFormRef.current(); }, []);
-  useModalAccesible(createPanelRef, { onCerrar: cerrarCreate, activo: showCreate });
-  /** Ventana: se mueve, se achica y se fija (ADR-420). */
-  const ventanaCreate = useVentanaDeModal(showCreate, {
-    ref: createPanelRef,
-    aplicarTranslate: true,
-    claveMemoria: "prestamos-crear",
-  });
 
   // Bank presets para autocompletar campos
   const BANK_PRESETS: Array<{ nombre: string; entidadTipo: PrestamoEntidadTipo; tasaRef: string; moraRef: string; teaRef: string; sistema: SistemaAmortizacion }> = [
@@ -755,10 +714,10 @@ export default function PrestamosModule() {
         return (
           <m.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl border border-[var(--rule-soft)] bg-[var(--surface-raised)] border-l-2 border-l-[var(--data-warning)] p-3 flex items-center gap-3">
             <Bell className="h-4 w-4 text-[var(--data-warning-500)] shrink-0" />
-            <p className="text-xs text-[var(--text-secondary)] font-semibold flex-1">
+            <p className="text-sm text-[var(--text-secondary)] font-semibold flex-1">
               {venciendoProx.length} préstamo{venciendoProx.length > 1 ? "s" : ""} con cuotas venciendo esta semana
             </p>
-            <button onClick={() => { setPrestamoStatusFilter("ACTIVO"); setActiveTab("activos"); }} className="text-xs font-semibold text-[var(--data-warning-500)] hover:underline shrink-0">Ver</button>
+            <button type="button" onClick={() => { setPrestamoStatusFilter("ACTIVO"); setActiveTab("activos"); }} className={button({ variant: "secondary", className: "shrink-0 rounded-xl" })}>Ver</button>
           </m.div>
         );
       })()}
@@ -766,19 +725,49 @@ export default function PrestamosModule() {
       {/* Mejora 10: Búsqueda + Mejora 7: Filtros */}
       {(activeTab === "activos" || activeTab === "historial") && (
         <div className="space-y-3">
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-tertiary)]" />
-              <input type="text" value={searchQuery} onChange={e => { setSearchQuery(e.target.value); setPage(1); }} placeholder="Buscar por cliente, entidad, N° operación..." className="w-full pl-9 pr-3 h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" />
+          {/* Una fila (11-10): buscador · estado · Filtros · «⋯». Las pastillas de
+              estado (5 botones) pasan a un selector con sus cuentas; recargar,
+              restablecer columnas y bajar lo marcado, al «⋯». */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative min-w-[12rem] flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
+              <input type="search" aria-label="Buscar préstamos" value={searchQuery} onChange={e => { setSearchQuery(e.target.value); setPage(1); }} placeholder="Buscar por cliente, entidad, N° operación..." className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" />
             </div>
-            <button onClick={() => setShowFilters(f => !f)} className={cn("flex items-center gap-1.5 px-4 min-h-11 rounded-xl border text-sm font-semibold transition-colors", showFilters ? "bg-[var(--accent-600,var(--accent))] text-white border-[var(--accent)]" : "bg-[var(--surface-raised)] text-[var(--text-secondary)] border-[var(--rule-base)] hover:border-[var(--accent)] hover:text-[var(--accent)]")}>
-              <Filter className="h-4 w-4" />
-              Filtros {activeFilterCount > 0 && <span className="bg-secondary text-white rounded-full text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5">{activeFilterCount}</span>}
+            <label className="sr-only" htmlFor="prestamos-estado">Estado</label>
+            <select
+              id="prestamos-estado"
+              value={prestamoStatusFilter}
+              onChange={e => { setPrestamoStatusFilter(e.target.value as "" | PrestamoStatus); setPage(1); }}
+              className="h-12 shrink-0 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+            >
+              <option value="">Todos ({prestamos.length})</option>
+              {(Object.keys(STATUS_META) as PrestamoStatus[]).map(st => (
+                <option key={st} value={st}>{STATUS_META[st].label} ({prestamos.filter(p => p.status === st).length})</option>
+              ))}
+            </select>
+            <button type="button" onClick={() => setShowFilters(f => !f)} aria-expanded={showFilters} className={button({ variant: showFilters ? "primary" : "secondary", className: "shrink-0 rounded-xl px-4" })}>
+              <Filter className="h-4 w-4" aria-hidden />
+              Filtros {activeFilterCount > 0 && <span className="rounded-full bg-[var(--accent-soft)] px-1.5 text-sm font-bold text-[var(--accent-ink)]">{activeFilterCount}</span>}
             </button>
-            <button onClick={() => { fetchPrestamos(); fetchResumen(); }} title="Recargar" className="p-2.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] transition-colors">
-              <RotateCcw className="h-4 w-4 text-[var(--text-tertiary)]" />
-            </button>
-            <BotonRestablecerColumnas cambiado={ordenCartera.cambiado} onRestablecer={ordenCartera.restablecer} />
+            <ActionMenu
+              label="Más"
+              icon={MoreHorizontal}
+              soloIcono
+              size="md"
+              className="w-12 shrink-0"
+              badge={selectedIds.size || undefined}
+              title="Actualizar, columnas y lo marcado"
+              actions={[
+                ...(selectedIds.size > 0
+                  ? [
+                      { id: "csv", label: `Bajar ${selectedIds.size} marcados en CSV`, icon: FileDown, seccion: "Lo marcado", onSelect: () => bajarMarcadosCsv() },
+                      { id: "quitar", label: "Quitar la marca", icon: X, seccion: "Lo marcado", onSelect: () => setSelectedIds(new Set()) },
+                    ]
+                  : []),
+                { id: "actualizar", label: "Actualizar", icon: RotateCcw, onSelect: () => { fetchPrestamos(); fetchResumen(); } },
+                ...(ordenCartera.cambiado ? [{ id: "columnas", label: "Restablecer columnas", hint: "Vuelve al orden de siempre", icon: ArrowUpDown, onSelect: ordenCartera.restablecer }] : []),
+              ]}
+            />
           </div>
           <AnimatePresence>
             {showFilters && (
@@ -792,18 +781,18 @@ export default function PrestamosModule() {
                         `<thead>` ENTERO (no sólo lo que tiene `hidden sm:table-cell`),
                         así que su único `<th>` deja de ser alcanzable ahí (mismo
                         estado, no lógica nueva). */}
-                    <Field label="Desde" labelClassName="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1"><input type="date" value={filterFechaFrom} onChange={e => { setFilterFechaFrom(e.target.value); setPage(1); }} className="w-full px-2.5 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" /></Field>
-                    <Field label="Hasta" labelClassName="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1"><input type="date" value={filterFechaTo} onChange={e => { setFilterFechaTo(e.target.value); setPage(1); }} className="w-full px-2.5 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" /></Field>
-                    <Field label="Tipo" labelClassName="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1"><select value={filterTipo} onChange={e => { setFilterTipo(e.target.value as ""|PrestamoTipo); setPage(1); }} className="w-full px-2.5 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option>{Object.entries(TIPO_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select></Field>
-                    <Field label="Dirección" labelClassName="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1"><select value={filterDireccion} onChange={e => { setFilterDireccion(e.target.value as ""|PrestamoDireccion); setPage(1); }} className="w-full px-2.5 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option><option value="DADO">Dado</option><option value="RECIBIDO">Recibido</option></select></Field>
-                    <Field label="Monto (S/)" labelClassName="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1" className="sm:hidden">
+                    <Field label="Desde"><input type="date" value={filterFechaFrom} onChange={e => { setFilterFechaFrom(e.target.value); setPage(1); }} className="w-full px-2.5 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" /></Field>
+                    <Field label="Hasta"><input type="date" value={filterFechaTo} onChange={e => { setFilterFechaTo(e.target.value); setPage(1); }} className="w-full px-2.5 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" /></Field>
+                    <Field label="Tipo"><select value={filterTipo} onChange={e => { setFilterTipo(e.target.value as ""|PrestamoTipo); setPage(1); }} className="w-full px-2.5 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option>{Object.entries(TIPO_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select></Field>
+                    <Field label="Dirección"><select value={filterDireccion} onChange={e => { setFilterDireccion(e.target.value as ""|PrestamoDireccion); setPage(1); }} className="w-full px-2.5 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option><option value="DADO">Dado</option><option value="RECIBIDO">Recibido</option></select></Field>
+                    <Field label="Monto (S/)" className="sm:hidden">
                       <div className="flex items-center gap-1.5">
-                        <input type="number" step={10} min={0} value={montoRango.min ?? ""} onChange={e => { const v = e.target.value.trim() === "" ? null : Number(e.target.value); setMontoRango(r => ({ ...r, min: v })); setPage(1); }} placeholder="Desde" aria-label="Monto desde" className="w-full px-2.5 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" />
-                        <input type="number" step={10} min={0} value={montoRango.max ?? ""} onChange={e => { const v = e.target.value.trim() === "" ? null : Number(e.target.value); setMontoRango(r => ({ ...r, max: v })); setPage(1); }} placeholder="Hasta" aria-label="Monto hasta" className="w-full px-2.5 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" />
+                        <input type="number" step={10} min={0} value={montoRango.min ?? ""} onChange={e => { const v = e.target.value.trim() === "" ? null : Number(e.target.value); setMontoRango(r => ({ ...r, min: v })); setPage(1); }} placeholder="Desde" aria-label="Monto desde" className="w-full px-2.5 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" />
+                        <input type="number" step={10} min={0} value={montoRango.max ?? ""} onChange={e => { const v = e.target.value.trim() === "" ? null : Number(e.target.value); setMontoRango(r => ({ ...r, max: v })); setPage(1); }} placeholder="Hasta" aria-label="Monto hasta" className="w-full px-2.5 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" />
                       </div>
                     </Field>
-                    <Field label="Sistema amort." labelClassName="block text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)] mb-1" className="sm:hidden"><select value={filterSistema[0] ?? ""} onChange={e => { setFilterSistema(e.target.value ? [e.target.value as SistemaAmortizacion] : []); setPage(1); }} className="w-full px-2.5 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option><option value="FRANCES">Francés</option><option value="ALEMAN">Alemán</option><option value="AMERICANO">Americano</option></select></Field>
-                    <div className="flex items-end"><button onClick={clearFilters} className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--data-error-500)] bg-[var(--surface-sunken)] hover:bg-[var(--data-error-50)] transition-colors"><Trash2 className="h-3.5 w-3.5" /> Limpiar</button></div>
+                    <Field label="Sistema amort." className="sm:hidden"><select value={filterSistema[0] ?? ""} onChange={e => { setFilterSistema(e.target.value ? [e.target.value as SistemaAmortizacion] : []); setPage(1); }} className="w-full px-2.5 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none"><option value="">Todos</option><option value="FRANCES">Francés</option><option value="ALEMAN">Alemán</option><option value="AMERICANO">Americano</option></select></Field>
+                    <div className="flex items-end"><button onClick={clearFilters} className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-[var(--text-secondary)] hover:text-[var(--data-error-500)] bg-[var(--surface-sunken)] hover:bg-[var(--data-error-50)] transition-colors"><Trash2 className="h-3.5 w-3.5" /> Limpiar</button></div>
                   </div>
                 </div>
               </m.div>
@@ -812,39 +801,6 @@ export default function PrestamosModule() {
         </div>
       )}
 
-      {/* Mejora 9: Status pills + bulk actions */}
-      {(activeTab === "activos" || activeTab === "historial") && !loading && prestamos.length > 0 && (() => {
-        const counts = { ACTIVO: prestamos.filter(p => p.status === "ACTIVO").length, PAGADO: prestamos.filter(p => p.status === "PAGADO").length, VENCIDO: prestamos.filter(p => p.status === "VENCIDO").length, CANCELADO: prestamos.filter(p => p.status === "CANCELADO").length };
-        const pills = [
-          { id: "" as "" | PrestamoStatus, label: "Todos", count: prestamos.length, activeBg: "bg-[var(--accent-600,var(--accent))] text-white", inactiveClass: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]" },
-          { id: "ACTIVO" as PrestamoStatus, label: "Activos", count: counts.ACTIVO, activeBg: "bg-primary/10 text-white", inactiveClass: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] border border-[var(--data-success-500)]/30" },
-          { id: "PAGADO" as PrestamoStatus, label: "Pagados", count: counts.PAGADO, activeBg: "bg-[var(--text-tertiary)] text-white", inactiveClass: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] border border-[var(--rule-base)]" },
-          { id: "VENCIDO" as PrestamoStatus, label: "Vencidos", count: counts.VENCIDO, activeBg: "bg-[var(--data-error-500)] text-white", inactiveClass: "bg-[var(--data-error-50)] text-[var(--data-error-700)] border border-[var(--data-error-500)]/30 dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]" },
-          { id: "CANCELADO" as PrestamoStatus, label: "Cancelados", count: counts.CANCELADO, activeBg: "bg-[var(--surface-sunken)] text-white", inactiveClass: "bg-[var(--surface-sunken)] text-[var(--text-secondary)] border border-[var(--rule-base)]" },
-        ];
-        return (
-          <div className="flex flex-wrap gap-2 items-center">
-            {pills.map(pill => (
-              <button key={pill.id} onClick={() => { setPrestamoStatusFilter(pill.id); setPage(1); }} className={cn("shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors", prestamoStatusFilter === pill.id ? pill.activeBg : pill.inactiveClass)}>
-                {pill.label} ({pill.count})
-              </button>
-            ))}
-            {selectedIds.size > 0 && (
-              <div className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/10 border border-[var(--accent)]/20">
-                <span className="text-xs font-bold text-[var(--accent)]">{selectedIds.size} selec.</span>
-                <button onClick={() => {
-                  const sel = prestamos.filter(p => selectedIds.has(p.id));
-                  const rows = sel.map(p => [p.id, p.entidadNombre||p.customerId||"", p.monto, p.tasaInteres, p.numeroCuotas, p.status].join(","));
-                  const csv = ["ID,Cliente,Monto,Tasa,Cuotas,Status", ...rows].join("\n");
-                  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
-                  const a = document.createElement("a"); a.href = url; a.download = "prestamos.csv"; a.click(); URL.revokeObjectURL(url);
-                }} className="flex items-center gap-1 text-[length:var(--ts-2xs)] font-bold text-[var(--accent)] hover:underline"><FileDown className="h-3 w-3" /> CSV</button>
-                <button onClick={() => setSelectedIds(new Set())} aria-label="Quitar selección" className="text-[var(--accent)] hover:text-[var(--data-error-500)]"><X className="h-3 w-3" /></button>
-              </div>
-            )}
-          </div>
-        );
-      })()}
       {(activeTab === "activos" || activeTab === "historial") && (
         <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden">
           {loading ? (
@@ -853,7 +809,7 @@ export default function PrestamosModule() {
             <div className="flex flex-col items-center justify-center py-12 gap-2">
               <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)]" />
               <p className="text-sm text-[var(--data-error-500)]">{error}</p>
-              <button onClick={fetchPrestamos} className="text-xs text-[var(--accent)] hover:underline font-semibold">Reintentar</button>
+              <button onClick={fetchPrestamos} className="text-sm text-[var(--accent)] hover:underline font-semibold">Reintentar</button>
             </div>
           ) : (activeTab === "activos" ? activos : historial).length === 0 ? (
             // El vacío de "no hay nada" se decide por el total SIN filtrar de esta
@@ -863,7 +819,7 @@ export default function PrestamosModule() {
               <Landmark className="h-16 w-16 mb-4 text-[var(--text-tertiary)] mx-auto" />
               <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] mb-2">Sin préstamos</CardTitle>
               <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-md mx-auto">Registra préstamos a clientes con cuotas</p>
-              <button onClick={() => { setShowCreate(true); setCreateError(null); }} className="bg-[var(--accent-600,var(--accent))] text-white px-6 min-h-11 rounded-xl font-medium hover:brightness-110">Crear préstamo</button>
+              <button onClick={() => { setShowCreate(true); setCreateError(null); }} className={button({ variant: "primary", className: "rounded-xl px-6" })}>Crear préstamo</button>
             </div>
           ) : (
             <>
@@ -893,7 +849,7 @@ export default function PrestamosModule() {
                             </th>
                           ),
                           monto: (
-                            <th data-col="monto" className="text-right cursor-pointer select-none hover:text-[var(--text-primary)]" onClick={() => handleSort("monto")}>
+                            <th data-col="monto" className="text-right cursor-pointer select-none" onClick={() => handleSort("monto")}>
                               <span className="flex items-center justify-end gap-1">Monto {sortKey === "monto" ? (sortDir === "asc" ? "↑" : "↓") : <ArrowUpDown className="h-3 w-3 opacity-40" />}</span>
                               {/* `role="presentation"` corta la burbuja del click del filtro antes
                                   de que llegue al onClick de ordenar del `<th>` padre. */}
@@ -903,12 +859,12 @@ export default function PrestamosModule() {
                             </th>
                           ),
                           tasa: (
-                            <th data-col="tasa" className="text-right hidden sm:table-cell cursor-pointer select-none hover:text-[var(--text-primary)]" onClick={() => handleSort("tasaInteres")}>
+                            <th data-col="tasa" className="text-right hidden sm:table-cell cursor-pointer select-none" onClick={() => handleSort("tasaInteres")}>
                               <span className="flex items-center justify-end gap-1">Tasa {sortKey === "tasaInteres" ? (sortDir === "asc" ? "↑" : "↓") : <ArrowUpDown className="h-3 w-3 opacity-40" />}</span>
                             </th>
                           ),
                           cuotas: (
-                            <th data-col="cuotas" className="text-right hidden sm:table-cell cursor-pointer select-none hover:text-[var(--text-primary)]" onClick={() => handleSort("numeroCuotas")}>
+                            <th data-col="cuotas" className="text-right hidden sm:table-cell cursor-pointer select-none" onClick={() => handleSort("numeroCuotas")}>
                               <span className="flex items-center justify-end gap-1">Cuotas {sortKey === "numeroCuotas" ? (sortDir === "asc" ? "↑" : "↓") : <ArrowUpDown className="h-3 w-3 opacity-40" />}</span>
                             </th>
                           ),
@@ -926,7 +882,7 @@ export default function PrestamosModule() {
                           {/* `clearFilters` no toca la pastilla de Status (mejora 9,
                               estado propio) — acá sí, para garantizar que el botón
                               realmente vacíe la tabla de filtros. */}
-                          <button onClick={() => { clearFilters(); setPrestamoStatusFilter(""); }} className="mt-2 text-xs font-bold text-[var(--accent)] hover:underline">Quitar filtros</button>
+                          <button onClick={() => { clearFilters(); setPrestamoStatusFilter(""); }} className="mt-2 text-sm font-bold text-[var(--accent)] hover:underline">Quitar filtros</button>
                         </td>
                       </tr>
                     )}
@@ -971,9 +927,9 @@ export default function PrestamosModule() {
                                       <div className="w-full bg-[var(--surface-sunken)] rounded-full h-1.5 mt-1">
                                         <div className="bg-[var(--accent)] h-1.5 rounded-full" style={{ width: `${p.numeroCuotas > 0 ? (cuotasPagadas / p.numeroCuotas) * 100 : 0}%` }} />
                                       </div>
-                                      <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)]">{cuotasPagadas}/{p.numeroCuotas} cuotas</span>
+                                      <span className="text-sm text-[var(--text-tertiary)]">{cuotasPagadas}/{p.numeroCuotas} cuotas</span>
                                       {proxVence && (
-                                        <span className="ml-1 text-[length:var(--ts-2xs)] bg-[var(--data-warning-100)] text-[var(--data-warning-500)] px-1.5 py-0.5 rounded-full">
+                                        <span className="ml-1 text-sm bg-[var(--data-warning-100)] text-[var(--data-warning-500)] px-1.5 py-0.5 rounded-full">
                                           {new Date(proxVence.fechaVence).toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit" })} · {formatCurrency(proxVence.monto)}
                                         </span>
                                       )}
@@ -983,7 +939,7 @@ export default function PrestamosModule() {
                               ),
                               sistema: (
                                 <td className="hidden sm:table-cell text-center">
-                                  <span className={cn("inline-flex items-center px-1.5 py-0.5 rounded text-[length:var(--ts-2xs)] font-bold", sisBg)}>{sisBadge}</span>
+                                  <span className={cn("inline-flex items-center px-1.5 py-0.5 rounded text-sm font-bold", sisBg)}>{sisBadge}</span>
                                 </td>
                               ),
                               monto: <td className="num font-medium text-[var(--text-primary)]">{formatCurrency(p.monto)}</td>,
@@ -992,7 +948,7 @@ export default function PrestamosModule() {
                               saldo: <td className="num font-bold text-[var(--text-primary)]">{formatCurrency(saldoPend)}</td>,
                               status: (
                                 <td>
-                                  <span className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold", meta.bg, meta.color)}>
+                                  <span className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-lg text-sm font-bold", meta.bg, meta.color)}>
                                     <StatusIcon className="h-3 w-3" />
                                     {meta.label}
                                   </span>
@@ -1008,7 +964,7 @@ export default function PrestamosModule() {
               </div>
               {totalPages > 1 && (
                 <div className="flex items-center justify-between px-4 py-3 border-t border-[var(--rule-soft)]">
-                  <p className="text-xs text-[var(--text-secondary)]">{displayList.length} préstamo{displayList.length !== 1 ? "s" : ""} — Pág. {page}/{totalPages}</p>
+                  <p className="text-sm text-[var(--text-secondary)]">{displayList.length} préstamo{displayList.length !== 1 ? "s" : ""} — Pág. {page}/{totalPages}</p>
                   <div className="flex gap-1">
                     <button aria-label="Anterior" disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] disabled:opacity-30">
                       <ChevronLeft className="h-4 w-4" />
@@ -1033,12 +989,12 @@ export default function PrestamosModule() {
               <SectionTitle className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
                 <Bell className="h-4 w-4 text-[var(--data-warning-500)]" /> Centro de Cobros
               </SectionTitle>
-              <p className="text-xs text-[var(--text-secondary)] mt-0.5">Cuotas vencidas y próximas a vencer (30 días)</p>
+              <p className="text-sm text-[var(--text-secondary)] mt-0.5">Cuotas vencidas y próximas a vencer (30 días)</p>
             </div>
             <button
               onClick={fetchCobros}
               disabled={cobrosLoading}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--accent-600,var(--accent))] text-white text-xs font-bold hover:opacity-90 transition disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--accent-600,var(--accent))] text-white text-sm font-bold hover:opacity-90 transition disabled:opacity-50"
             >
               <RefreshCcw className={cn("h-3.5 w-3.5", cobrosLoading && "animate-spin")} />
               Actualizar
@@ -1076,11 +1032,11 @@ export default function PrestamosModule() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <span className="text-sm font-bold text-[var(--text-primary)] truncate">{c.nombre}</span>
-                              <span className="text-[length:var(--ts-2xs)] font-bold bg-[var(--data-error-100)] text-[var(--data-error-500)] px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                              <span className="text-sm font-bold bg-[var(--data-error-100)] text-[var(--data-error-500)] px-1.5 py-0.5 rounded-full whitespace-nowrap">
                                 {c.diasAtraso}d atraso
                               </span>
                             </div>
-                            <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                            <p className="text-sm text-[var(--text-secondary)] mt-0.5">
                               Cuota N°{c.numeroCuota} · Vencía {formatDateShort(c.fechaVence)}
                             </p>
                           </div>
@@ -1092,7 +1048,7 @@ export default function PrestamosModule() {
                               href={waLink}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/10 text-white text-xs font-bold hover:bg-primary/10 transition"
+                              className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/10 text-white text-sm font-bold hover:bg-primary/10 transition"
                               title="Enviar recordatorio por WhatsApp"
                             >
                               <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
@@ -1133,7 +1089,7 @@ export default function PrestamosModule() {
                             <div className="flex items-center gap-2">
                               <span className="text-sm font-bold text-[var(--text-primary)] truncate">{c.nombre}</span>
                               <span className={cn(
-                                "text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap",
+                                "text-sm font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap",
                                 isUrgent
                                   ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)]"
                                   : "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"
@@ -1141,7 +1097,7 @@ export default function PrestamosModule() {
                                 {c.diasRestantes}d restantes
                               </span>
                             </div>
-                            <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                            <p className="text-sm text-[var(--text-secondary)] mt-0.5">
                               Cuota N°{c.numeroCuota} · Vence {formatDateShort(c.fechaVence)}
                             </p>
                           </div>
@@ -1153,7 +1109,7 @@ export default function PrestamosModule() {
                               href={waLink}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/10 text-white text-xs font-bold hover:bg-primary/10 transition"
+                              className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/10 text-white text-sm font-bold hover:bg-primary/10 transition"
                               title="Enviar recordatorio por WhatsApp"
                             >
                               <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
@@ -1182,7 +1138,7 @@ export default function PrestamosModule() {
         <div className="space-y-6">
           <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-4 sm:p-6 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              <Field label="Monto (S/)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+              <Field label="Monto (S/)">
                 <input
                   type="number"
                   step="0.01"
@@ -1190,10 +1146,10 @@ export default function PrestamosModule() {
                   value={calcMonto}
                   onChange={e => setCalcMonto(e.target.value)}
                   placeholder="1000"
-                  className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                  className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                 />
               </Field>
-              <Field label="Tasa de interés (%)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+              <Field label="Tasa de interés (%)">
                 <input
                   type="number"
                   step="0.1"
@@ -1202,15 +1158,15 @@ export default function PrestamosModule() {
                   value={calcTasa}
                   onChange={e => setCalcTasa(e.target.value)}
                   placeholder="12"
-                  className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                  className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                 />
               </Field>
-              <Field label="N° cuotas" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
-                <input type="number" min="1" max="60" value={calcCuotas} onChange={e => setCalcCuotas(e.target.value)} placeholder="12" className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" />
+              <Field label="N° cuotas">
+                <input type="number" min="1" max="60" value={calcCuotas} onChange={e => setCalcCuotas(e.target.value)} placeholder="12" className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30" />
               </Field>
               {/* Mejora 19: Sistema selector */}
-              <Field label="Sistema amortización" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
-                <select value={calcSistema} onChange={e => setCalcSistema(e.target.value as SistemaAmortizacion)} className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30">
+              <Field label="Sistema amortización">
+                <select value={calcSistema} onChange={e => setCalcSistema(e.target.value as SistemaAmortizacion)} className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30">
                   {Object.entries(SISTEMA_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                 </select>
               </Field>
@@ -1234,7 +1190,7 @@ export default function PrestamosModule() {
             <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl overflow-hidden">
               <div className="px-4 py-3 border-b border-[var(--rule-soft)]">
                 <p className="text-sm font-bold text-[var(--text-primary)]">Tabla de amortización</p>
-                <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
+                <p className="text-sm text-[var(--text-tertiary)] mt-0.5">
                   Cuota mensual: <span className="font-bold">{formatCurrency(amortizacion[0]?.cuota ?? 0)}</span>
                   {" — "}
                   Total a pagar: <span className="font-bold">{formatCurrency(amortizacion.reduce((s, r) => s + r.cuota, 0))}</span>
@@ -1298,7 +1254,7 @@ export default function PrestamosModule() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[{ label: "Total a pagar", value: formatCurrency(totalPagar), color: "text-[var(--text-primary)]" }, { label: "Total intereses", value: formatCurrency(totalInt), color: "text-[var(--data-error-500)]" }, { label: "Cuota promedio", value: formatCurrency(cuotaProm), color: "text-[var(--accent)]" }, { label: "Costo / capital", value: montoBase > 0 ? `${((totalInt / montoBase) * 100).toFixed(1)}%` : "—", color: "text-[var(--data-warning-500)]" }].map(kpi => (
                   <div key={kpi.label} className="bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-3 text-center">
-                    <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)] mb-1">{kpi.label}</p>
+                    <p className="text-sm font-bold text-[var(--text-tertiary)] mb-1">{kpi.label}</p>
                     <p className={cn("text-lg font-extrabold font-mono", kpi.color)}>{kpi.value}</p>
                   </div>
                 ))}
@@ -1321,12 +1277,12 @@ export default function PrestamosModule() {
                     const intTotal = tabla.reduce((s, r) => s + r.interes, 0);
                     return (
                       <div key={sis} className="border border-[var(--rule-base)] rounded-xl p-4 space-y-1" style={{ borderTopColor: colores[sis], borderTopWidth: 3 }}>
-                        <p className="text-xs font-bold text-[var(--text-primary)] mb-2">{SISTEMA_LABELS[sis]}</p>
-                        <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">1ª cuota: <strong className="text-[var(--text-primary)]">{formatCurrency(tabla[0]?.cuota ?? 0)}</strong></p>
-                        <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Última: <strong className="text-[var(--text-primary)]">{formatCurrency(tabla[tabla.length-1]?.cuota ?? 0)}</strong></p>
-                        <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Intereses: <strong className="text-[var(--data-error-500)]">{formatCurrency(intTotal)}</strong></p>
-                        <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">Total: <strong className="text-[var(--text-primary)]">{formatCurrency(total)}</strong></p>
-                        <button onClick={() => { setCalcSistema(sis); setShowComparador(false); }} className="mt-2 w-full text-[length:var(--ts-2xs)] font-bold py-1.5 rounded-lg transition-colors" style={{ backgroundColor: colores[sis] + "20", color: colores[sis] }}>Usar este sistema</button>
+                        <p className="text-sm font-bold text-[var(--text-primary)] mb-2">{SISTEMA_LABELS[sis]}</p>
+                        <p className="text-sm text-[var(--text-secondary)]">1ª cuota: <strong className="text-[var(--text-primary)]">{formatCurrency(tabla[0]?.cuota ?? 0)}</strong></p>
+                        <p className="text-sm text-[var(--text-secondary)]">Última: <strong className="text-[var(--text-primary)]">{formatCurrency(tabla[tabla.length-1]?.cuota ?? 0)}</strong></p>
+                        <p className="text-sm text-[var(--text-secondary)]">Intereses: <strong className="text-[var(--data-error-500)]">{formatCurrency(intTotal)}</strong></p>
+                        <p className="text-sm text-[var(--text-secondary)]">Total: <strong className="text-[var(--text-primary)]">{formatCurrency(total)}</strong></p>
+                        <button onClick={() => { setCalcSistema(sis); setShowComparador(false); }} className="mt-2 w-full text-sm font-bold py-1.5 rounded-lg transition-colors" style={{ backgroundColor: colores[sis] + "20", color: colores[sis] }}>Usar este sistema</button>
                       </div>
                     );
                   })}
@@ -1337,38 +1293,10 @@ export default function PrestamosModule() {
         </div>
       )}
 
-      {/* ── Detail Sheet ──────────────────────────────────────────────────────── */}
-      <AnimatePresence>
-        {selected && (
-          <>
-            <m.div
-              key="prestamo-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="modal-backdrop" style={{ zIndex: 40 }}
-              onClick={() => setSelected(null)}
-            />
-            <m.div
-              key="prestamo-panel"
-              ref={selectedPanelRef}
-              role="dialog"
-              aria-modal="true"
-              aria-label="Detalle préstamo"
-              tabIndex={-1}
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-[var(--surface-raised)] border-l border-[var(--rule-base)] overflow-y-auto outline-none"
-            >
-              <div className="p-4 sm:p-6 space-y-5">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Detalle Préstamo</CardTitle>
-                  <button aria-label="Cerrar" onClick={() => setSelected(null)} className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors">
-                    <X className="h-5 w-5 text-[var(--text-secondary)]" />
-                  </button>
-                </div>
+      {/* ── Detalle: ventana lateral del panel ── */}
+      {selected && (
+        <AdminModal open onClose={cerrarSelected} variant="side" title="Detalle del préstamo" icon={Landmark}>
+              <div className={cn(MODAL_BODY, "space-y-5")}>
 
                 {/* Info */}
                 <div className="bg-[var(--surface-sunken)] rounded-xl p-4 space-y-3">
@@ -1378,23 +1306,23 @@ export default function PrestamosModule() {
                     </div>
                     <div>
                       <p className="font-bold text-[var(--text-primary)]">{selected.customerId}</p>
-                      <p className="text-xs text-[var(--text-secondary)]">Creado: {formatDate(selected.createdAt)}</p>
+                      <p className="text-sm text-[var(--text-secondary)]">Creado: {formatDate(selected.createdAt)}</p>
                     </div>
-                    <span className={cn("ml-auto inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold", STATUS_META[selected.status].bg, STATUS_META[selected.status].color)}>
+                    <span className={cn("ml-auto inline-flex items-center gap-1 px-2 py-1 rounded-lg text-sm font-bold", STATUS_META[selected.status].bg, STATUS_META[selected.status].color)}>
                       {STATUS_META[selected.status].label}
                     </span>
                   </div>
                   <div className="grid grid-cols-3 gap-3 pt-2 border-t border-[var(--rule-base)]">
                     <div>
-                      <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Monto</p>
+                      <p className="text-sm font-bold text-[var(--text-tertiary)]">Monto</p>
                       <p className="text-sm font-bold text-[var(--text-primary)]">{formatCurrency(selected.monto)}</p>
                     </div>
                     <div>
-                      <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Tasa</p>
+                      <p className="text-sm font-bold text-[var(--text-tertiary)]">Tasa</p>
                       <p className="text-sm font-bold text-[var(--text-primary)]">{selected.tasaInteres}%</p>
                     </div>
                     <div>
-                      <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Cuotas</p>
+                      <p className="text-sm font-bold text-[var(--text-tertiary)]">Cuotas</p>
                       <p className="text-sm font-bold text-[var(--text-primary)]">{selected.numeroCuotas}</p>
                     </div>
                   </div>
@@ -1410,7 +1338,7 @@ export default function PrestamosModule() {
                       <div className="mt-3 pt-3 border-t border-[var(--rule-base)] grid grid-cols-2 gap-2">
                         {[{ label: "Pagado", val: formatCurrency(totalPagado), col: "text-[var(--data-success-500)]" }, { label: "Pendiente", val: formatCurrency(totalPendiente), col: "text-secondary" }, { label: "Intereses pag.", val: formatCurrency(interesesPag), col: "text-[var(--data-error-500)]" }, { label: "Mora acum.", val: formatCurrency(moraAcum), col: moraAcum > 0 ? "text-[var(--data-warning-600)]" : "text-[var(--text-tertiary)]" }].map(item => (
                           <div key={item.label} className="bg-[var(--surface-sunken)] rounded-lg p-2 text-center">
-                            <p className="text-[length:var(--ts-2xs)] font-bold uppercase text-[var(--text-tertiary)]">{item.label}</p>
+                            <p className="text-sm font-bold text-[var(--text-tertiary)]">{item.label}</p>
                             <p className={cn("text-sm font-extrabold font-mono", item.col)}>{item.val}</p>
                           </div>
                         ))}
@@ -1421,8 +1349,8 @@ export default function PrestamosModule() {
 
                 {/* Datos del préstamo (tipo, entidad, sistema, etc.) */}
                 <div className="bg-[var(--surface-sunken)] rounded-xl p-3 space-y-2">
-                  <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)] mb-1">Información del préstamo</p>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+                  <p className="text-sm font-bold text-[var(--text-tertiary)] mb-1">Información del préstamo</p>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
                     <div className="flex justify-between">
                       <span className="text-[var(--text-secondary)]">Dirección:</span>
                       <span className="font-bold" style={{ color: DIRECCION_META[selected.direccion].color }}>{DIRECCION_META[selected.direccion].label}</span>
@@ -1497,13 +1425,13 @@ export default function PrestamosModule() {
                     <div className="flex bg-[var(--surface-sunken)] rounded-lg p-0.5">
                       <button
                         onClick={() => setDetailView("timeline")}
-                        className={cn("px-2.5 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold transition-colors", detailView === "timeline" ? "bg-[var(--surface-raised)] text-[var(--accent)] " : "text-[var(--text-secondary)]")}
+                        className={cn("px-2.5 py-1 rounded-lg text-sm font-bold transition-colors", detailView === "timeline" ? "bg-[var(--surface-raised)] text-[var(--accent)] " : "text-[var(--text-secondary)]")}
                       >
                         Timeline
                       </button>
                       <button
                         onClick={() => setDetailView("amortizacion")}
-                        className={cn("px-2.5 py-1 rounded-lg text-[length:var(--ts-2xs)] font-bold transition-colors", detailView === "amortizacion" ? "bg-[var(--surface-raised)] text-[var(--accent)] " : "text-[var(--text-secondary)]")}
+                        className={cn("px-2.5 py-1 rounded-lg text-sm font-bold transition-colors", detailView === "amortizacion" ? "bg-[var(--surface-raised)] text-[var(--accent)] " : "text-[var(--text-secondary)]")}
                       >
                         Tabla
                       </button>
@@ -1535,7 +1463,7 @@ export default function PrestamosModule() {
                         const totalCuota = selected.cuotas.reduce((s, c) => s + c.monto, 0);
                         return (
                           <div className="-mx-1">
-                            <DataTable className="text-[length:var(--ts-xs)]">
+                            <DataTable>
                               <thead>
                                 <tr className="border-b border-[var(--rule-base)]">
                                   <th>#</th>
@@ -1558,11 +1486,11 @@ export default function PrestamosModule() {
                                     <td className="text-right font-mono text-[var(--data-success-500)]">{formatCurrency(c.saldo)}</td>
                                     <td className="text-center">
                                       {c.pagadoEn ? (
-                                        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 px-1.5 py-0.5 rounded">PAGADA</span>
+                                        <span className="text-sm font-bold text-[var(--data-success-700)] dark:text-[var(--data-success-500)] bg-[var(--data-success-500)]/12 px-1.5 py-0.5 rounded">PAGADA</span>
                                       ) : new Date(c.fechaVence) < new Date() ? (
-                                        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] bg-[var(--data-error-100)] px-1.5 py-0.5 rounded">VENCIDA</span>
+                                        <span className="text-sm font-bold text-[var(--data-error-500)] bg-[var(--data-error-100)] px-1.5 py-0.5 rounded">VENCIDA</span>
                                       ) : (
-                                        <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-warning-500)] bg-[var(--data-warning-100)] px-1.5 py-0.5 rounded">PEND.</span>
+                                        <span className="text-sm font-bold text-[var(--data-warning-500)] bg-[var(--data-warning-100)] px-1.5 py-0.5 rounded">PEND.</span>
                                       )}
                                     </td>
                                   </tr>
@@ -1598,31 +1526,31 @@ export default function PrestamosModule() {
                               onClick={() => setShowPagoAnticipado(!showPagoAnticipado)}
                               className="w-full flex items-center justify-between"
                             >
-                              <span className="text-xs font-bold text-[var(--data-success-500)] flex items-center gap-1.5">
+                              <span className="text-sm font-bold text-[var(--data-success-500)] flex items-center gap-1.5">
                                 <Calculator className="h-3.5 w-3.5" /> Pago anticipado total
                               </span>
                               {showPagoAnticipado ? <ChevronUp className="h-3.5 w-3.5 text-[var(--data-success-500)]" /> : <ChevronDown className="h-3.5 w-3.5 text-[var(--data-success-500)]" />}
                             </button>
                             {showPagoAnticipado && (
                               <div className="mt-2 pt-2 border-t border-[var(--data-success-500)]/30 space-y-1.5">
-                                <div className="flex justify-between text-[length:var(--ts-xs)]">
+                                <div className="flex justify-between text-sm">
                                   <span className="text-[var(--data-success-500)]">Capital pendiente:</span>
                                   <span className="font-bold font-mono text-[var(--text-primary)]">{formatCurrency(capitalPendiente)}</span>
                                 </div>
-                                <div className="flex justify-between text-[length:var(--ts-xs)]">
+                                <div className="flex justify-between text-sm">
                                   <span className="text-[var(--data-success-500)]">Intereses pendientes:</span>
                                   <span className="font-mono text-[var(--data-error-500)]">{formatCurrency(interesPendiente)}</span>
                                 </div>
-                                <div className="flex justify-between text-[length:var(--ts-xs)]">
+                                <div className="flex justify-between text-sm">
                                   <span className="text-[var(--data-success-500)]">Interés mes actual:</span>
                                   <span className="font-mono text-[var(--text-secondary)]">{formatCurrency(pendientes[0]?.interes || 0)}</span>
                                 </div>
-                                <div className="flex justify-between text-xs pt-1 border-t border-[var(--data-success-500)]/30">
+                                <div className="flex justify-between text-sm pt-1 border-t border-[var(--data-success-500)]/30">
                                   <span className="font-bold text-[var(--data-success-500)]">Liquidación hoy:</span>
                                   <span className="font-extrabold font-mono text-[var(--data-success-500)]">{formatCurrency(pagoAnticipado)}</span>
                                 </div>
                                 {ahorro > 0 && (
-                                  <p className="text-[length:var(--ts-2xs)] text-[var(--data-success-500)] font-bold bg-primary/10 rounded-lg px-2 py-1 text-center">
+                                  <p className="text-sm text-[var(--data-success-500)] font-bold bg-primary/10 rounded-lg px-2 py-1 text-center">
                                     Ahorro de {formatCurrency(ahorro)} en intereses futuros
                                   </p>
                                 )}
@@ -1695,7 +1623,7 @@ ${cuotas.map(c => { const row = `<tr>
                             w.document.close();
                             setTimeout(() => w.print(), 300);
                           }}
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)] transition-colors"
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)] transition-colors"
                         >
                           <Printer className="h-3.5 w-3.5" /> Cronograma
                         </button>
@@ -1772,7 +1700,7 @@ ${cuotas.map(c => { const row = `<tr>
                             w.document.close();
                             setTimeout(() => w.print(), 300);
                           }}
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-[var(--accent)] bg-primary/10 hover:bg-primary/10 transition-colors"
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-[var(--accent)] bg-primary/10 hover:bg-primary/10 transition-colors"
                         >
                           <FileText className="h-3.5 w-3.5" /> Resumen Deuda
                         </button>
@@ -1781,7 +1709,7 @@ ${cuotas.map(c => { const row = `<tr>
                       {/* Acciones de pago — mejorado con multi-cuota */}
                       {selected.status === "ACTIVO" && (
                         <div className="mt-4 space-y-3">
-                          <p className="text-[length:var(--ts-2xs)] uppercase font-bold text-[var(--text-tertiary)]">Pagar cuotas</p>
+                          <p className="text-sm font-bold text-[var(--text-tertiary)]">Pagar cuotas</p>
                           {/* Selección múltiple de cuotas */}
                           <div className="space-y-1.5 max-h-40 overflow-y-auto">
                             {selected.cuotas.filter(c => !c.pagadoEn).map(c => {
@@ -1806,12 +1734,12 @@ ${cuotas.map(c => { const row = `<tr>
                                     }}
                                     className="accent-blue-600 h-3.5 w-3.5"
                                   />
-                                  <span className="flex-1 text-xs">
+                                  <span className="flex-1 text-sm">
                                     <span className="font-bold text-[var(--text-primary)]">Cuota {c.numeroCuota}</span>
                                     <span className="text-[var(--text-secondary)] ml-1">— {formatDateShort(c.fechaVence)}</span>
                                   </span>
-                                  <span className="text-xs font-bold font-mono text-[var(--text-primary)]">{formatCurrency(c.monto)}</span>
-                                  {isOverdue && <span className="text-[length:var(--ts-2xs)] font-bold text-[var(--data-error-500)] bg-[var(--data-error-100)] px-1 py-0.5 rounded">VENCIDA</span>}
+                                  <span className="text-sm font-bold font-mono text-[var(--text-primary)]">{formatCurrency(c.monto)}</span>
+                                  {isOverdue && <span className="text-sm font-bold text-[var(--data-error-500)] bg-[var(--data-error-100)] px-1 py-0.5 rounded">VENCIDA</span>}
                                 </label>
                               );
                             })}
@@ -1822,7 +1750,7 @@ ${cuotas.map(c => { const row = `<tr>
                               <button
                                 onClick={handlePagoMultiple}
                                 disabled={payingMultiple}
-                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[var(--accent-600,var(--accent))] hover:brightness-110 disabled:opacity-50 transition-colors"
+                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--accent-600,var(--accent))] hover:brightness-110 disabled:opacity-50 transition-colors"
                               >
                                 {payingMultiple ? <Loader2 className="h-4 w-4 animate-spin" /> : <DollarSign className="h-4 w-4" />}
                                 Pagar {selectedCuotaIds.size} cuota{selectedCuotaIds.size > 1 ? "s" : ""} ({formatCurrency(selected.cuotas.filter(c => selectedCuotaIds.has(c.id)).reduce((s, c) => s + c.monto, 0))})
@@ -1833,7 +1761,7 @@ ${cuotas.map(c => { const row = `<tr>
                                   const next = selected.cuotas.find(c => !c.pagadoEn);
                                   if (next) { setPagoCuotaId(next.id); setPagoMonto(String(next.monto)); setPagoError(null); setShowPago(true); }
                                 }}
-                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-[var(--accent-600,var(--accent))] hover:brightness-110 transition-colors"
+                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[var(--accent-600,var(--accent))] hover:brightness-110 transition-colors"
                               >
                                 <DollarSign className="h-4 w-4" /> Pagar siguiente cuota
                               </button>
@@ -1843,17 +1771,17 @@ ${cuotas.map(c => { const row = `<tr>
                                 const all = new Set(selected.cuotas.filter(c => !c.pagadoEn).map(c => c.id));
                                 setSelectedCuotaIds(selectedCuotaIds.size === all.size ? new Set() : all);
                               }}
-                              className="px-3 py-2.5 rounded-xl text-xs font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)] transition-colors"
+                              className="px-3 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)] transition-colors"
                               title={selectedCuotaIds.size > 0 ? "Deseleccionar todas" : "Seleccionar todas"}
                             >
                               {selectedCuotaIds.size > 0 ? <X className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
                             </button>
                           </div>
                           <div className="flex gap-2">
-                            <button onClick={() => { setRefMonto(String(selected.monto)); setRefTasa(String(selected.tasaInteres)); setRefCuotas(String(selected.numeroCuotas)); setRefSistema(selected.sistemaAmortizacion); setRefinanciarError(null); setShowRefinanciar(true); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-[var(--accent-soft)] hover:bg-[var(--accent-muted)] border border-[var(--accent)]/30">
+                            <button onClick={() => { setRefMonto(String(selected.monto)); setRefTasa(String(selected.tasaInteres)); setRefCuotas(String(selected.numeroCuotas)); setRefSistema(selected.sistemaAmortizacion); setRefinanciarError(null); setShowRefinanciar(true); }} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] bg-[var(--accent-soft)] hover:bg-[var(--accent-muted)] border border-[var(--accent)]/30">
                               <RotateCcw className="h-3.5 w-3.5" /> Refinanciar
                             </button>
-                            <button onClick={() => setShowCancelConfirm(true)} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-[var(--data-error-500)] bg-[var(--data-error-50)] hover:bg-[var(--data-error-100)] border border-[var(--data-error-500)]">
+                            <button onClick={() => setShowCancelConfirm(true)} className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold text-[var(--data-error-500)] bg-[var(--data-error-50)] hover:bg-[var(--data-error-100)] border border-[var(--data-error-500)]">
                               <Ban className="h-3.5 w-3.5" /> Cancelar
                             </button>
                           </div>
@@ -1864,26 +1792,26 @@ ${cuotas.map(c => { const row = `<tr>
                       <div>
                         <BlockTitle className="mb-2 flex items-center gap-2">
                           <Paperclip className="h-4 w-4 text-[var(--data-success-500)]" /> Documentos
-                          <span className="text-xs text-[var(--text-tertiary)] font-normal">({selected.documentos?.length ?? 0})</span>
+                          <span className="text-sm text-[var(--text-tertiary)] font-normal">({selected.documentos?.length ?? 0})</span>
                         </BlockTitle>
                         {selected.documentos && selected.documentos.length > 0 ? (
                           <div className="space-y-1.5">
                             {selected.documentos.map(doc => (
                               <a key={doc.id} href={doc.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 rounded-lg border border-[var(--rule-soft)] hover:bg-[var(--surface-sunken)] transition-colors">
                                 <FileText className="h-4 w-4 text-[var(--data-success-500)] shrink-0" />
-                                <span className="text-xs text-[var(--text-primary)] flex-1 truncate">{doc.nombre}</span>
-                                <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] shrink-0">{formatDate(doc.createdAt)}</span>
+                                <span className="text-sm text-[var(--text-primary)] flex-1 truncate">{doc.nombre}</span>
+                                <span className="text-sm text-[var(--text-tertiary)] shrink-0">{formatDate(doc.createdAt)}</span>
                               </a>
                             ))}
                           </div>
-                        ) : <p className="text-xs text-[var(--text-tertiary)] py-1">Sin documentos adjuntos</p>}
+                        ) : <p className="text-sm text-[var(--text-tertiary)] py-1">Sin documentos adjuntos</p>}
                         <label className="mt-2 flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-[var(--rule-base)] cursor-pointer hover:bg-[var(--surface-sunken)]">
                           <input type="file" className="hidden" onChange={async (e) => {
                             const file = e.target.files?.[0]; if (!file) return; setUploadingDoc(true);
                             try { const form = new FormData(); form.append("file", file); form.append("nombre", file.name); await fetch(`/api/prestamos/${selected.id}/documentos`, { method: "POST", headers: csrfHeaders(), body: form }); await openDetail(selected); } catch { /* silent */ } finally { setUploadingDoc(false); e.target.value = ""; }
                           }} />
                           {uploadingDoc ? <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--accent)]" /> : <Plus className="h-3.5 w-3.5 text-[var(--data-info-500)]" />}
-                          <span className="text-xs text-[var(--text-secondary)]">Subir documento</span>
+                          <span className="text-sm text-[var(--text-secondary)]">Subir documento</span>
                         </label>
                       </div>
 
@@ -1900,12 +1828,12 @@ ${cuotas.map(c => { const row = `<tr>
                               {pagadas.map(c => (
                                 <div key={c.id} className="flex items-center justify-between py-2 px-3 bg-primary/10 rounded-xl">
                                   <div>
-                                    <p className="text-xs font-bold text-[var(--text-primary)]">Cuota #{c.numeroCuota}</p>
-                                    <p className="text-[length:var(--ts-2xs)] text-[var(--text-secondary)]">{formatDate(c.pagadoEn!)}</p>
+                                    <p className="text-sm font-bold text-[var(--text-primary)]">Cuota #{c.numeroCuota}</p>
+                                    <p className="text-sm text-[var(--text-secondary)]">{formatDate(c.pagadoEn!)}</p>
                                   </div>
                                   <div className="text-right">
                                     <p className="text-sm font-bold text-[var(--data-success-500)]">{formatCurrency(c.montoPagado || c.monto)}</p>
-                                    {c.montoPagado && c.montoPagado > c.monto && <p className="text-[length:var(--ts-2xs)] text-[var(--data-warning-500)]">+{formatCurrency(c.montoPagado - c.monto)} mora</p>}
+                                    {c.montoPagado && c.montoPagado > c.monto && <p className="text-sm text-[var(--data-warning-500)]">+{formatCurrency(c.montoPagado - c.monto)} mora</p>}
                                   </div>
                                 </div>
                               ))}
@@ -1917,165 +1845,110 @@ ${cuotas.map(c => { const row = `<tr>
                   )}
                 </div>
               </div>
-            </m.div>
-          </>
-        )}
-      </AnimatePresence>
+        </AdminModal>
+      )}
 
-      {/* ── Refinanciar Modal (mejora 15) ──────────────────────────────────────── */}
-      <AnimatePresence>
-        {showRefinanciar && selected && (
-          <>
-            <m.div key="ref-bd" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-backdrop" style={{ zIndex: 60 }} onClick={() => setShowRefinanciar(false)} />
-            <m.div key="ref-modal" initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="fixed inset-0 z-modal-2 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && !ventanaRefinanciar.fijado && setShowRefinanciar(false)}>
-              <div ref={refinanciarPanelRef} role="dialog" aria-modal="true" aria-label="Refinanciar préstamo" tabIndex={-1} className="relative w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 outline-none">
-                <div {...ventanaRefinanciar.asaProps} className="flex items-center justify-between">
-                  <CardTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)] flex items-center gap-2"><RotateCcw className="h-5 w-5 text-[var(--data-success-500)]" /> Refinanciar Préstamo</CardTitle>
-                  <span className="ml-auto flex items-center gap-1">
-                    <ControlesDeVentana ventana={ventanaRefinanciar} />
-                  </span>
-                  <button aria-label="Cerrar" onClick={() => setShowRefinanciar(false)}><X className="h-4 w-4 text-[var(--text-secondary)]" /></button>
-                </div>
+      {/* ── Refinanciar (mejora 15): ventana del panel, se abre desde el detalle ── */}
+      {showRefinanciar && selected && (
+        <AdminModal
+          open
+          onClose={() => setShowRefinanciar(false)}
+          title="Refinanciar préstamo"
+          icon={RotateCcw}
+          size="sm"
+          aboveModals
+          claveVentana="prestamos-refinanciar"
+          footer={
+            <ModalFooter error={refinanciarError}>
+              <button type="button" onClick={() => setShowRefinanciar(false)} className={button({ variant: "secondary", className: "rounded-xl" })}>Cancelar</button>
+              <button type="button" onClick={handleRefinanciar} disabled={refinancing} className={button({ variant: "primary", className: "rounded-xl px-5" })}>
+                {refinancing ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <RotateCcw className="h-4 w-4" aria-hidden />} Refinanciar
+              </button>
+            </ModalFooter>
+          }
+        >
+          <div className={MODAL_BODY}>
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Nuevo monto (S/)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1"><input type="number" step="0.01" min="0.01" value={refMonto} onChange={e => setRefMonto(e.target.value)} className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40" /></Field>
-                  <Field label="Nueva tasa (%)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1"><input type="number" step="0.1" min="0" value={refTasa} onChange={e => setRefTasa(e.target.value)} className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40" /></Field>
-                  <Field label="N° cuotas" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1"><input type="number" min="1" value={refCuotas} onChange={e => setRefCuotas(e.target.value)} className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40" /></Field>
-                  <Field label="Sistema" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1"><select value={refSistema} onChange={e => setRefSistema(e.target.value as SistemaAmortizacion)} className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none">{Object.entries(SISTEMA_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
+                  <Field label="Nuevo monto (S/)"><input type="number" step="0.01" min="0.01" value={refMonto} onChange={e => setRefMonto(e.target.value)} className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40" /></Field>
+                  <Field label="Nueva tasa (%)"><input type="number" step="0.1" min="0" value={refTasa} onChange={e => setRefTasa(e.target.value)} className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40" /></Field>
+                  <Field label="N° cuotas"><input type="number" min="1" value={refCuotas} onChange={e => setRefCuotas(e.target.value)} className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--data-success-500)]/40" /></Field>
+                  <Field label="Sistema"><select value={refSistema} onChange={e => setRefSistema(e.target.value as SistemaAmortizacion)} className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none">{Object.entries(SISTEMA_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></Field>
                 </div>
-                {refinanciarError && <p className="text-xs text-[var(--data-error-500)] font-semibold">{refinanciarError}</p>}
-                <div className="flex gap-2">
-                  <button onClick={() => setShowRefinanciar(false)} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-                  <button onClick={handleRefinanciar} disabled={refinancing} className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-primary/10 hover:bg-primary/10 disabled:opacity-50">
-                    {refinancing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />} Refinanciar
-                  </button>
-                </div>
-                <TiradorDeVentana ventana={ventanaRefinanciar} />
-              </div>
-            </m.div>
-          </>
-        )}
-      </AnimatePresence>
+          </div>
+        </AdminModal>
+      )}
 
-      {/* ── Cancelar Préstamo Confirm (mejora 23) ─────────────────────────────── */}
-      <AnimatePresence>
-        {showCancelConfirm && selected && (
-          <>
-            <m.div key="cancel-bd" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-backdrop" style={{ zIndex: 60 }} onClick={() => setShowCancelConfirm(false)} />
-            <m.div key="cancel-modal" initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="fixed inset-0 z-modal-2 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setShowCancelConfirm(false)}>
-              <div ref={cancelPanelRef} role="dialog" aria-modal="true" aria-label="¿Cancelar este préstamo?" tabIndex={-1} className="w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 outline-none">
-                <div className="flex items-center gap-3 p-3 bg-[var(--data-error-50)] rounded-xl border border-[var(--data-error-500)]">
-                  <AlertCircle className="h-6 w-6 text-[var(--data-error-500)] shrink-0" />
-                  <div>
-                    <p className="text-sm font-bold text-[var(--data-error-500)]">¿Cancelar este préstamo?</p>
-                    <p className="text-xs text-[var(--data-error-500)] mt-0.5">Esta acción cambiará el estado a CANCELADO. Las cuotas pendientes no se cobrarán.</p>
-                  </div>
-                </div>
-                <p className="text-sm text-[var(--text-primary)]">Préstamo: <strong>{selected.entidadNombre || selected.customerId}</strong> — {formatCurrency(selected.monto)}</p>
-                <div className="flex gap-2">
-                  <button onClick={() => setShowCancelConfirm(false)} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)]">Volver</button>
-                  <button onClick={handleCancelPrestamo} disabled={canceling} className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--data-error-500)] hover:bg-[var(--data-error-500)] disabled:opacity-50">
-                    {canceling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />} Sí, cancelar
-                  </button>
-                </div>
-              </div>
-            </m.div>
-          </>
-        )}
-      </AnimatePresence>
+      {/* ── Cancelar préstamo (mejora 23) ── */}
+      {showCancelConfirm && selected && (
+        <AdminModal
+          open
+          onClose={() => setShowCancelConfirm(false)}
+          title="¿Cancelar este préstamo?"
+          icon={AlertCircle}
+          size="sm"
+          aboveModals
+          footer={
+            <ModalFooter>
+              <button type="button" onClick={() => setShowCancelConfirm(false)} className={button({ variant: "secondary", className: "rounded-xl" })}>Volver</button>
+              <button type="button" onClick={handleCancelPrestamo} disabled={canceling} className={button({ variant: "danger", className: "rounded-xl px-5" })}>
+                {canceling ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Ban className="h-4 w-4" aria-hidden />} Sí, cancelar
+              </button>
+            </ModalFooter>
+          }
+        >
+          <div className={cn(MODAL_BODY, "space-y-3")}>
+            <p className="text-sm text-[var(--text-secondary)]">Su estado pasa a «Cancelado» y las cuotas pendientes ya no se cobran.</p>
+            <p className="text-sm text-[var(--text-primary)]">Préstamo: <strong>{selected.entidadNombre || selected.customerId}</strong> — {formatCurrency(selected.monto)}</p>
+          </div>
+        </AdminModal>
+      )}
 
-      {/* ── Pago Modal ────────────────────────────────────────────────────────── */}
-      <AnimatePresence>
-        {showPago && selected && (
-          <>
-            <m.div
-              key="pago-prestamo-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="modal-backdrop" style={{ zIndex: 60 }}
-              onClick={() => setShowPago(false)}
-            />
-            <m.div
-              key="pago-prestamo-modal"
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="fixed inset-0 z-modal-2 flex items-center justify-center p-4"
-              onClick={e => e.target === e.currentTarget && !ventanaPago.fijado && setShowPago(false)}
-            >
-              <div ref={pagoPanelRef} role="dialog" aria-modal="true" aria-label="Pagar cuota" tabIndex={-1} className="relative w-full max-w-sm bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 outline-none">
-                <div {...ventanaPago.asaProps} className="flex items-center justify-between gap-2">
-                  <CardTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Pagar Cuota</CardTitle>
-                  <ControlesDeVentana ventana={ventanaPago} />
-                </div>
-                <Field label="Monto del pago (S/)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+      {/* ── Pagar cuota: se abre desde el detalle ── */}
+      {showPago && selected && (
+        <AdminModal
+          open
+          onClose={() => setShowPago(false)}
+          title="Pagar cuota"
+          icon={DollarSign}
+          size="sm"
+          aboveModals
+          claveVentana="prestamos-pagar-cuota"
+          footer={
+            <ModalFooter error={pagoError}>
+              <button type="button" onClick={() => setShowPago(false)} className={button({ variant: "secondary", className: "rounded-xl" })}>Cancelar</button>
+              <button type="button" onClick={handlePago} disabled={paying} className={button({ variant: "primary", className: "rounded-xl px-5" })}>
+                {paying ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <DollarSign className="h-4 w-4" aria-hidden />} Pagar
+              </button>
+            </ModalFooter>
+          }
+        >
+          <div className={MODAL_BODY}>
+                <Field label="Monto del pago (S/)">
                   <input
                     type="number"
                     step="0.01"
                     min="0.01"
                     value={pagoMonto}
                     onChange={e => setPagoMonto(e.target.value)}
-                    className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                    className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                   />
                 </Field>
-                {pagoError && <p className="text-xs text-[var(--data-error-500)] font-semibold">{pagoError}</p>}
-                <div className="flex gap-2">
-                  <button onClick={() => setShowPago(false)} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)] transition-colors">
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={handlePago}
-                    disabled={paying}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 min-h-11 rounded-xl text-sm font-semibold text-white bg-[var(--accent-600,var(--accent))] hover:brightness-110 disabled:opacity-50 transition-colors"
-                  >
-                    {paying ? <Loader2 className="h-4 w-4 animate-spin" /> : <DollarSign className="h-4 w-4" />}
-                    Pagar
-                  </button>
-                </div>
-                <TiradorDeVentana ventana={ventanaPago} />
-              </div>
-            </m.div>
-          </>
-        )}
-      </AnimatePresence>
+          </div>
+        </AdminModal>
+      )}
 
-      {/* ── Create Prestamo Modal ─────────────────────────────────────────────── */}
-      <AnimatePresence>
-        {showCreate && (
-          <>
-            <m.div
-              key="create-prestamo-backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="modal-backdrop"
-              onClick={() => { setShowCreate(false); resetCreateForm(); }}
-            />
-            <m.div
-              key="create-prestamo-modal"
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="fixed inset-0 z-modal flex items-center justify-center p-4 overflow-y-auto"
-              onClick={e => e.target === e.currentTarget && !ventanaCreate.fijado && (() => { setShowCreate(false); resetCreateForm(); })()}
-            >
-              <div ref={createPanelRef} role="dialog" aria-modal="true" aria-label="Crear préstamo" tabIndex={-1} className="relative w-full max-w-2xl bg-[var(--surface-raised)] border border-[var(--rule-base)] rounded-xl p-5 space-y-4 my-4 outline-none">
-                {/* Header */}
-                <div {...ventanaCreate.asaProps} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CardTitle className="font-display text-base sm:text-lg font-semibold tracking-tight text-[var(--text-primary)]">Crear Préstamo</CardTitle>
-                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]">
-                      Paso {createStep} de 2
-                    </span>
-                  </div>
-                  <span className="ml-auto flex items-center gap-1">
-                    <ControlesDeVentana ventana={ventanaCreate} />
-                  </span>
-                  <button aria-label="Cerrar" onClick={() => { setShowCreate(false); resetCreateForm(); }} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)]">
-                    <X className="h-4 w-4 text-[var(--text-secondary)]" />
-                  </button>
-                </div>
-
+      {/* ── Crear préstamo: ventana del panel (11-10, «todo parejo») ── */}
+      {showCreate && (
+        <AdminModal
+          open
+          onClose={cerrarCreate}
+          title="Crear préstamo"
+          description={`Paso ${createStep} de 2`}
+          icon={Landmark}
+          size="lg"
+          claveVentana="prestamos-crear"
+        >
+              <div className={cn(MODAL_BODY, "space-y-4")}>
                 {/* Step indicator */}
                 <div className="flex gap-2">
                   <div className={`flex-1 h-1 rounded-full transition-colors ${createStep >= 1 ? "bg-[var(--accent)]" : "bg-[var(--surface-sunken)]"}`} />
@@ -2087,7 +1960,7 @@ ${cuotas.map(c => { const row = `<tr>
                   <div className="space-y-6">
                     {/* Dirección: DADO / RECIBIDO */}
                     <div>
-                      <span className="block text-xs font-bold text-[var(--text-secondary)] mb-1.5">¿Prestas o te prestan?</span>
+                      <span className="block text-sm font-bold text-[var(--text-secondary)] mb-1.5">¿Prestas o te prestan?</span>
                       <div className="grid grid-cols-2 gap-2">
                         {(["DADO", "RECIBIDO"] as const).map(dir => {
                           const meta = DIRECCION_META[dir];
@@ -2101,7 +1974,7 @@ ${cuotas.map(c => { const row = `<tr>
                             >
                               <Icon className="h-4 w-4" />
                               {meta.label}
-                              <span className="text-[length:var(--ts-2xs)] font-normal opacity-60">{dir === "DADO" ? "(tú prestas)" : "(te prestan)"}</span>
+                              <span className="text-sm font-normal opacity-60">{dir === "DADO" ? "(tú prestas)" : "(te prestan)"}</span>
                             </button>
                           );
                         })}
@@ -2110,7 +1983,7 @@ ${cuotas.map(c => { const row = `<tr>
 
                     {/* Tipo de préstamo */}
                     <div>
-                      <span className="block text-xs font-bold text-[var(--text-secondary)] mb-1.5">Tipo de préstamo</span>
+                      <span className="block text-sm font-bold text-[var(--text-secondary)] mb-1.5">Tipo de préstamo</span>
                       <div className="grid grid-cols-2 gap-2">
                         {(["PERSONAL", "BANCARIO", "TERCERO", "PROVEEDOR"] as const).map(tipo => {
                           const meta = TIPO_META[tipo];
@@ -2125,7 +1998,7 @@ ${cuotas.map(c => { const row = `<tr>
                                 if (tipo === "BANCARIO") setCreateEntidadTipo("BANCO");
                                 if (tipo === "PROVEEDOR") setCreateEntidadTipo("PROVEEDOR");
                               }}
-                              className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-xs font-bold transition-all ${active ? `border-current bg-current/5` : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--rule-base)]"}`}
+                              className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-bold transition-all ${active ? `border-current bg-current/5` : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--rule-base)]"}`}
                               style={active ? { color: meta.color, borderColor: meta.color, backgroundColor: meta.color + "10" } : undefined}
                             >
                               <Icon className="h-3.5 w-3.5" />
@@ -2139,7 +2012,7 @@ ${cuotas.map(c => { const row = `<tr>
                     {/* Bancos rápidos — solo si tipo BANCARIO */}
                     {createTipo === "BANCARIO" && (
                       <div>
-                        <span className="block text-xs font-bold text-[var(--text-secondary)] mb-1.5">Seleccionar banco (tasa referencial)</span>
+                        <span className="block text-sm font-bold text-[var(--text-secondary)] mb-1.5">Seleccionar banco (tasa referencial)</span>
                         <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
                           {BANK_PRESETS.map(preset => {
                             const active = createEntidadNombre === preset.nombre;
@@ -2147,10 +2020,10 @@ ${cuotas.map(c => { const row = `<tr>
                               <button
                                 key={preset.nombre}
                                 onClick={() => applyBankPreset(preset)}
-                                className={`px-2 py-1.5 rounded-lg text-[length:var(--ts-xs)] font-bold transition-all border ${active ? "border-[var(--accent)] bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50"}`}
+                                className={`px-2 py-1.5 rounded-lg text-sm font-bold transition-all border ${active ? "border-[var(--accent)] bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50"}`}
                               >
                                 <span className="block">{preset.nombre}</span>
-                                <span className="block text-[length:var(--ts-2xs)] opacity-60">TEA ~{preset.teaRef}%</span>
+                                <span className="block text-sm opacity-60">TEA ~{preset.teaRef}%</span>
                               </button>
                             );
                           })}
@@ -2161,20 +2034,20 @@ ${cuotas.map(c => { const row = `<tr>
                     {/* Entidad (para no-personal) */}
                     {createTipo !== "PERSONAL" && (
                       <div className="grid grid-cols-2 gap-3">
-                        <Field label="Nombre de entidad" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                        <Field label="Nombre de entidad">
                           <input
                             type="text"
                             value={createEntidadNombre}
                             onChange={e => setCreateEntidadNombre(e.target.value)}
                             placeholder={createTipo === "BANCARIO" ? "Ej: BCP" : createTipo === "PROVEEDOR" ? "Ej: Distribuidora Lima" : "Ej: Juan Pérez"}
-                            className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                            className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                           />
                         </Field>
-                        <Field label="Tipo de entidad" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                        <Field label="Tipo de entidad">
                           <select
                             value={createEntidadTipo}
                             onChange={e => setCreateEntidadTipo(e.target.value as PrestamoEntidadTipo)}
-                            className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                            className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                           >
                             <option value="">Seleccionar...</option>
                             {(Object.entries(ENTIDAD_LABELS) as [PrestamoEntidadTipo, string][]).map(([k, v]) => (
@@ -2188,7 +2061,7 @@ ${cuotas.map(c => { const row = `<tr>
                     {/* Cliente — solo si DADO */}
                     {createDireccion === "DADO" && (
                       <div>
-                        <Field label="¿A quién le prestas? (teléfono del cliente)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                        <Field label="¿A quién le prestas? (teléfono del cliente)">
                           {(id) => (
                             <div className="flex gap-1">
                               <input
@@ -2197,12 +2070,12 @@ ${cuotas.map(c => { const row = `<tr>
                                 value={createCustomerId}
                                 onChange={e => setCreateCustomerId(e.target.value)}
                                 placeholder="Ej: 987654321"
-                                className="flex-1 px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                                className="flex-1 px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                               />
                               <button
                                 type="button"
                                 onClick={() => setShowQuickClient(true)}
-                                className="shrink-0 h-[38px] w-[38px] flex items-center justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--accent)] hover:text-white hover:border-[var(--accent)] text-[var(--text-secondary)] transition-colors"
+                                className="shrink-0 h-12 w-12 flex items-center justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--accent)] hover:text-white hover:border-[var(--accent)] text-[var(--text-secondary)] transition-colors"
                                 title="Crear cliente rápido"
                               >
                                 <Plus className="h-4 w-4" />
@@ -2214,17 +2087,17 @@ ${cuotas.map(c => { const row = `<tr>
                     )}
 
                     {/* Nro Operación */}
-                    <Field label="N° de operación (opcional)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                    <Field label="N° de operación (opcional)">
                       <input
                         type="text"
                         value={createNroOperacion}
                         onChange={e => setCreateNroOperacion(e.target.value)}
                         placeholder="Ej: OP-2025-001234"
-                        className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                        className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                       />
                     </Field>
 
-                    {createError && <p className="text-xs text-[var(--data-error-500)] font-semibold">{createError}</p>}
+                    {createError && <p className="text-sm text-[var(--data-error-500)] font-semibold">{createError}</p>}
 
                     <div className="flex gap-2 pt-1">
                       <button onClick={() => { setShowCreate(false); resetCreateForm(); }} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)] transition-colors">
@@ -2246,28 +2119,28 @@ ${cuotas.map(c => { const row = `<tr>
                   <div className="space-y-6">
                     {/* Resumen de paso 1 */}
                     <div className="bg-[var(--surface-sunken)] rounded-xl p-3 flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+                      <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
                         <span className="font-bold">{DIRECCION_META[createDireccion].label}</span>
                         <span>·</span>
                         <span style={{ color: TIPO_META[createTipo].color }} className="font-bold">{TIPO_META[createTipo].label}</span>
                         {createEntidadNombre && <><span>·</span><span className="font-medium">{createEntidadNombre}</span></>}
                       </div>
-                      <button onClick={() => setCreateStep(1)} className="text-[length:var(--ts-xs)] font-bold text-[var(--accent)] hover:underline">Editar</button>
+                      <button onClick={() => setCreateStep(1)} className="text-sm font-bold text-[var(--accent)] hover:underline">Editar</button>
                     </div>
 
                     {/* Moneda + Monto */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <Field label="Moneda" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                      <Field label="Moneda">
                         <select
                           value={createMoneda}
                           onChange={e => setCreateMoneda(e.target.value)}
-                          className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                          className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         >
                           <option value="PEN">S/ Soles</option>
                           <option value="USD">$ Dólares</option>
                         </select>
                       </Field>
-                      <Field label="Monto total" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1" className="col-span-2">
+                      <Field label="Monto total" className="col-span-2">
                         <input
                           type="number"
                           step="0.01"
@@ -2275,14 +2148,14 @@ ${cuotas.map(c => { const row = `<tr>
                           value={calcMonto}
                           onChange={e => setCalcMonto(e.target.value)}
                           placeholder="10000"
-                          className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                          className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         />
                       </Field>
                     </div>
 
                     {/* Tasa mensual + TEA + Mora */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <Field label="Tasa mensual %" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                      <Field label="Tasa mensual %">
                         <input
                           type="number"
                           step="0.01"
@@ -2291,10 +2164,10 @@ ${cuotas.map(c => { const row = `<tr>
                           value={calcTasa}
                           onChange={e => setCalcTasa(e.target.value)}
                           placeholder="1.5"
-                          className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                          className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         />
                       </Field>
-                      <Field label={<>TEA % <span className="font-normal opacity-60">(anual)</span></>} labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                      <Field label={<>TEA % <span className="font-normal opacity-60">(anual)</span></>}>
                         <input
                           type="number"
                           step="0.01"
@@ -2303,10 +2176,10 @@ ${cuotas.map(c => { const row = `<tr>
                           value={createTea}
                           onChange={e => setCreateTea(e.target.value)}
                           placeholder="19.56"
-                          className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                          className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         />
                       </Field>
-                      <Field label={<>Mora % <span className="font-normal opacity-60">(penalidad)</span></>} labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                      <Field label={<>Mora % <span className="font-normal opacity-60">(penalidad)</span></>}>
                         <input
                           type="number"
                           step="0.1"
@@ -2315,14 +2188,14 @@ ${cuotas.map(c => { const row = `<tr>
                           value={createMoraInteres}
                           onChange={e => setCreateMoraInteres(e.target.value)}
                           placeholder="15"
-                          className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                          className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         />
                       </Field>
                     </div>
 
                     {/* Cuotas + Sistema + Periodo gracia */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <Field label="N° cuotas" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                      <Field label="N° cuotas">
                         <input
                           type="number"
                           min="1"
@@ -2330,21 +2203,21 @@ ${cuotas.map(c => { const row = `<tr>
                           value={calcCuotas}
                           onChange={e => setCalcCuotas(e.target.value)}
                           placeholder="12"
-                          className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                          className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         />
                       </Field>
-                      <Field label="Amortización" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                      <Field label="Amortización">
                         <select
                           value={calcSistema}
                           onChange={e => setCalcSistema(e.target.value as SistemaAmortizacion)}
-                          className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                          className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         >
                           {(Object.entries(SISTEMA_LABELS) as [SistemaAmortizacion, string][]).map(([k, v]) => (
                             <option key={k} value={k}>{v}</option>
                           ))}
                         </select>
                       </Field>
-                      <Field label={<>Gracia <span className="font-normal opacity-60">(meses)</span></>} labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                      <Field label={<>Gracia <span className="font-normal opacity-60">(meses)</span></>}>
                         <input
                           type="number"
                           min="0"
@@ -2352,44 +2225,44 @@ ${cuotas.map(c => { const row = `<tr>
                           value={createPeriodoGracia}
                           onChange={e => setCreatePeriodoGracia(e.target.value)}
                           placeholder="0"
-                          className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                          className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         />
                       </Field>
                     </div>
 
                     {/* Fecha desembolso + Garantía */}
                     <div className="grid grid-cols-2 gap-3">
-                      <Field label="Fecha de desembolso" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                      <Field label="Fecha de desembolso">
                         <input
                           type="date"
                           value={createFechaDesembolso}
                           onChange={e => setCreateFechaDesembolso(e.target.value)}
-                          className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                          className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         />
                       </Field>
-                      <Field label={<>Garantía <span className="font-normal opacity-60">(opcional)</span></>} labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                      <Field label={<>Garantía <span className="font-normal opacity-60">(opcional)</span></>}>
                         <input
                           type="text"
                           value={createGarantia}
                           onChange={e => setCreateGarantia(e.target.value)}
                           placeholder="Ej: Título de propiedad"
-                          className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                          className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                         />
                       </Field>
                     </div>
 
                     {/* Notas */}
-                    <Field label="Notas (opcional)" labelClassName="block text-xs font-bold text-[var(--text-secondary)] mb-1">
+                    <Field label="Notas (opcional)">
                       <input
                         type="text"
                         value={createNotas}
                         onChange={e => setCreateNotas(e.target.value)}
                         placeholder="Motivo del préstamo, condiciones especiales..."
-                        className="w-full px-3 h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
+                        className="w-full px-3 h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30"
                       />
                     </Field>
 
-                    {createError && <p className="text-xs text-[var(--data-error-500)] font-semibold">{createError}</p>}
+                    {createError && <p className="text-sm text-[var(--data-error-500)] font-semibold">{createError}</p>}
 
                     <div className="flex gap-2 pt-1">
                       <button onClick={() => setCreateStep(1)} className="px-4 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface-sunken)] hover:bg-[var(--surface-sunken)] transition-colors">
@@ -2406,12 +2279,9 @@ ${cuotas.map(c => { const row = `<tr>
                     </div>
                   </div>
                 )}
-                <TiradorDeVentana ventana={ventanaCreate} />
               </div>
-            </m.div>
-          </>
-        )}
-      </AnimatePresence>
+        </AdminModal>
+      )}
 
       {/* Quick client creation modal */}
       <ClienteFormModal

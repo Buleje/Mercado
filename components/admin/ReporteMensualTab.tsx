@@ -19,6 +19,7 @@ import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { formatCurrency } from "@/lib/format";
 import { cn, limaDateKey } from "@/lib/utils";
+import { button } from "@/components/ui-system/button-variants";
 import { nombreDelMes } from "./impuestos/impuestos-del-mes";
 
 interface Resultado { ok: boolean; ingresos: number; gastos: number; utilidad: number; emailSent?: boolean; error?: string }
@@ -98,7 +99,7 @@ export default function ReporteMensualTab() {
         <div className="ml-auto flex items-center gap-2">
           <a
             href={url(mes, "&download=1")}
-            className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--accent-dark)] px-4 text-sm font-bold text-white hover:brightness-110"
+            className={button({ variant: "primary", className: "rounded-xl px-4" })}
           >
             <Download className="h-4 w-4" aria-hidden /> Descargar PDF
           </a>

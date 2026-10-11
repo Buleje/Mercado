@@ -28,10 +28,15 @@ const ESTADO: Record<EstadoDeclaracion, { rotulo: string; clase: string }> = {
 
 const NUM = "text-right tabular-nums";
 
-export default function ObligacionesTab() {
+/**
+ * `anio` lo pasa «Impuestos › El año» (su selector va en la fila del título);
+ * sin él, la tabla trae su propio selector, como antes.
+ */
+export default function ObligacionesTab({ anio: anioDeFuera }: { anio?: number } = {}) {
   const hoy = limaDateKey().slice(0, 7);
   const anioActual = Number(hoy.slice(0, 4));
-  const [anio, setAnio] = useState(anioActual);
+  const [anioPropio, setAnio] = useState(anioActual);
+  const anio = anioDeFuera ?? anioPropio;
   const { regimen } = useConfigTributaria();
   const declaraciones = useDeclaraciones(anio);
   const estado = useAnioTributario(anio, hoy, regimen);
@@ -42,7 +47,7 @@ export default function ObligacionesTab() {
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2">
+      {anioDeFuera == null && <div className="flex flex-wrap items-center gap-2">
         <label className="sr-only" htmlFor="impuestos-anio">Año</label>
         <select
           id="impuestos-anio"
@@ -59,7 +64,7 @@ export default function ObligacionesTab() {
           affects="Otras declaraciones: PLAME (sólo si tienes trabajadores en planilla: ESSALUD 9 %, ONP/AFP) y la Renta anual (marzo o abril del año siguiente, sobre la renta neta del ejercicio; no se estima acá)."
           example="Marcas octubre como pagada en «Impuestos del mes» y acá la fila de octubre dice «Pagada»."
         />
-      </div>
+      </div>}
 
       {estado.fase === "cargando" ? (
         <p className="flex items-center gap-2 py-6 text-sm text-[var(--text-secondary)]" aria-live="polite">
@@ -70,7 +75,7 @@ export default function ObligacionesTab() {
           <AlertTriangle className="h-4 w-4" aria-hidden /> No se pudieron leer los ingresos del año.
         </p>
       ) : (
-        <DataTable className="min-w-[34rem]">
+        <DataTable>
           <thead>
             <tr>
               <th>Mes</th>
@@ -87,12 +92,12 @@ export default function ObligacionesTab() {
               const sinIgv = calculo.lecturaIgv?.tipo !== "registrado";
               return (
                 <tr key={mes} className={mes === hoy ? "bg-[var(--accent-soft)]" : undefined}>
-                  <td className="capitalize text-[var(--text-primary)]">{MESES[Number(mes.slice(5, 7)) - 1]}</td>
+                  <td className="capitalize">{MESES[Number(mes.slice(5, 7)) - 1]}</td>
                   <td className={cn(NUM, "text-[var(--text-secondary)]")}>{formatCurrency(ingresos)}</td>
                   <td className={cn(NUM, sinIgv ? "text-[var(--text-secondary)]" : "text-[var(--text-primary)]")}>{sinIgv ? "—" : formatCurrency(calculo.igvAPagar)}</td>
                   <td className={cn(NUM, "text-[var(--text-primary)]")}>{calculo.esNrus ? "Cuota fija" : formatCurrency(calculo.renta)}</td>
                   <td className={cn(NUM, "font-bold text-[var(--text-primary)]")}>{formatCurrency(calculo.total)}</td>
-                  <td className={cn("text-sm font-semibold", e.clase)}>{e.rotulo}</td>
+                  <td className={cn("font-semibold", e.clase)}>{e.rotulo}</td>
                 </tr>
               );
             })}
@@ -100,7 +105,7 @@ export default function ObligacionesTab() {
           {totales && (
             <tfoot>
               <tr className="font-bold">
-                <td className="text-[var(--text-primary)]">Total {anio}</td>
+                <td>Total {anio}</td>
                 <td className={cn(NUM, "text-[var(--text-primary)]")}>{formatCurrency(totales.ingresos)}</td>
                 <td className={cn(NUM, "text-[var(--text-primary)]")}>{formatCurrency(totales.igv)}</td>
                 <td className={cn(NUM, "text-[var(--text-primary)]")}>{formatCurrency(totales.renta)}</td>

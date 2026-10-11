@@ -13,22 +13,16 @@
 import dynamic from "next/dynamic";
 import { Suspense } from "react";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
-import Plegable from "@/components/admin/shared/Plegable";
 import type { MapaDeDatos } from "@/hooks/use-secciones-con-datos";
 import BloqueMudado from "./BloqueMudado";
-import BloquePlegable from "./resumen/BloquePlegable";
 import GastosConPresupuesto from "./GastosConPresupuesto";
 
 const FinanzasDashboard = dynamic(() => import("./FinanzasDashboard"), { loading: S });
 const PLTab = dynamic(() => import("@/components/admin/PLTab"), { loading: S });
-const ProfitabilityTab = dynamic(() => import("@/components/admin/ProfitabilityTab"), { loading: S });
+const Rentabilidad = dynamic(() => import("./resultado/Rentabilidad"), { loading: S });
 const ReportsTab = dynamic(() => import("@/components/admin/ReportsTab"), { loading: S });
 const ImportExportTab = dynamic(() => import("@/components/admin/ImportExportTab"), { loading: S });
-const WeeklyReportCard = dynamic(() => import("@/components/admin/WeeklyReportCard"), { loading: S });
-const BudgetAlertWidget = dynamic(() => import("@/components/admin/BudgetAlertWidget"), { loading: S });
 const CashflowRollingTable = dynamic(() => import("@/components/admin/finance/CashflowRollingTable"), { loading: S });
-const BreakEvenDashboard = dynamic(() => import("@/components/admin/BreakEvenDashboard"), { loading: S });
-const MoneyLeakDetector = dynamic(() => import("@/components/admin/MoneyLeakDetector"), { loading: S });
 const HistorialCierresTab = dynamic(() => import("@/components/admin/HistorialCierresTab"), { loading: S });
 const ReporteMensualTab = dynamic(() => import("@/components/admin/ReporteMensualTab"), { loading: S });
 // Comparador de períodos: estaba huérfano (0 imports); real (/api/admin/dashboard),
@@ -49,7 +43,6 @@ const ScoringCrediticioTab = dynamic(() => import("@/components/admin/ScoringCre
 const ComparativeReportsTab = dynamic(() => import("@/components/admin/ComparativeReportsTab"), { loading: S });
 /* Comprobantes › Impuestos y Obligaciones: contabilidad, no comprobantes. */
 const TaxTab = dynamic(() => import("@/components/admin/TaxTab"), { loading: S });
-const ObligacionesTab = dynamic(() => import("@/components/admin/ObligacionesTab"), { loading: S });
 
 interface Props {
   vista: string;
@@ -57,35 +50,16 @@ interface Props {
   seccion: string;
   datos: MapaDeDatos;
   irA: (id: string) => void;
-  /** Cambia con el auto-refresco del Resumen: remonta el tablero. */
-  vuelta: number;
 }
 
-export default function VistaDePlata({ vista, seccion, datos, irA, vuelta }: Props) {
+export default function VistaDePlata({ vista, seccion, datos, irA }: Props) {
   switch (vista) {
     case "resumen":
-      return (
-        <div className="space-y-2" key={vuelta}>
-          <FinanzasDashboard />
-          {/* El detector de fugas no vive en ninguna otra parte. */}
-          <MoneyLeakDetector />
-          {/* 2026-10-11: de los cuatro «resúmenes automáticos» quedan los dos
-              que no están en otra parte. «Resultado del mes» repetía Entró /
-              Salió / Quedó de la franja de arriba (y Ganancias), y la
-              «Proyección del mes» repetía el bloque Proyección con otra cuenta
-              (sólo ventas de mostrador, sumadas en el navegador). */}
-          <BloquePlegable
-            id="semana-y-presupuesto"
-            titulo="Esta semana y el presupuesto"
-            resumen="ventas y margen de los últimos 7 días · lo gastado contra tu presupuesto del mes"
-          >
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <WeeklyReportCard />
-              <BudgetAlertWidget />
-            </div>
-          </BloquePlegable>
-        </div>
-      );
+      /* El detector de fugas, «Esta semana» y el presupuesto viven en las
+         secciones del Resumen (`resumen/SeccionesDelResumen`, 2026-10-11). Los
+         dos «resúmenes automáticos» que repetían la franja de arriba se fueron
+         antes (Resultado del mes, Proyección del mes). */
+      return <FinanzasDashboard />;
 
     /* ── Resultado: la misma pregunta —«¿cuánto gané?»— en tres presentaciones ── */
     case "pl":
@@ -95,12 +69,8 @@ export default function VistaDePlata({ vista, seccion, datos, irA, vuelta }: Pro
          meses de Ganancias sale del servidor y es la que vale. */
       return <PLTab />;
     case "rentabilidad":
-      return (
-        <div className="space-y-6">
-          <ProfitabilityTab />
-          <BreakEvenDashboard />
-        </div>
-      );
+      /* Por producto y el equilibrio del día, una a la vez (`?sub=`, 2026-10-11). */
+      return <Rentabilidad />;
     case "comparador":
       return (
         <div className="space-y-6">
@@ -151,22 +121,9 @@ export default function VistaDePlata({ vista, seccion, datos, irA, vuelta }: Pro
 
     /* ── Impuestos y reportes: cada pantalla en su sección (antes, cuatro apiladas) ── */
     case "impuestos":
-      return (
-        <div className="space-y-6">
-          <TaxTab />
-          {/* Plegada: abierta, la vista medía 3,4 pantallas y 126 palabras de
-              ayuda (medir-orden, 2026-10-10). Plegada no pide sus datos. */}
-          {/* «El año» (pedido del carril de Impuestos, 2026-10-11): la tabla
-              de los 12 meses; el total del mes ya lo dice TaxTab arriba. */}
-          <Plegable
-            clave="plata:impuestos:obligaciones"
-            titulo="El año"
-            resumen={<span className="text-sm">Cada mes: ingresos, IGV, Renta y si lo declaraste</span>}
-          >
-            <ObligacionesTab />
-          </Plegable>
-        </div>
-      );
+      /* «El mes / El año» son secciones de TaxTab (`?sub=`, carril plata-c,
+         2026-10-11). Antes «El año» iba además acá abajo, plegado: salía dos veces. */
+      return <TaxTab />;
     case "reportes":
       return <ReporteMensualTab />;
     case "contador":

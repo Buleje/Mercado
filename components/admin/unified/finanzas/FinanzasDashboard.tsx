@@ -22,32 +22,36 @@
  * «Comparar meses» (la misma serie de seis meses que el gráfico de acá y que
  * Resultado › Ganancias, con su propia sección en Comparar períodos). El
  * gráfico, plegado como los demás bloques.
+ *
+ * 2026-10-11 (tarde, «todo parejo»): los nueve bloques plegables apilados
+ * pasaron a SEIS SECCIONES (`./resumen/SeccionesDelResumen`, `?sub=`), una a la
+ * vista a la vez; la cabecera va en una fila (mes · ⓘ · secciones ·
+ * Indicadores · «⋯») y las cinco cifras se pliegan con «Indicadores». El
+ * auto-refresco dejó de remontar todo cada 5 min: recarga en silencio.
  */
 
 import { CardTitle } from "@buleje/design-system";
-import { useState, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { BarChart3 } from "@buleje/design-system/icons";
 import { useFavoriteCharts } from "@/hooks/use-favorite-charts";
 import { useResumenPlata } from "@/hooks/use-resumen-plata";
+import { useSubvistaModulo } from "@/hooks/use-vista-modulo";
 import { useCajaAbierta, efectivoConocido, type UsoCajaAbierta } from "@/hooks/use-caja-abierta";
-import { StaggerItem } from "@/components/admin/finanzas/charts";
 import { calcHealthScore } from "@/components/admin/finanzas/shared";
+import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
+import { BarraDeSecciones, idPestanaDeSeccion } from "@/components/admin/shared/BarraDeSecciones";
+import { CuerpoDeSeccion } from "@/components/admin/inventario/movimientos/CabeceraVista";
+import { formatCurrency } from "@/lib/currency";
 import { formatMonthYear } from "@/lib/format";
 import CabeceraDelResumen from "./resumen/CabeceraDelResumen";
 import CifrasDelMes from "./resumen/CifrasDelMes";
-import GraficoIngresosGastos from "./resumen/GraficoIngresosGastos";
-import DonutsGastosYPagos from "./resumen/DonutsGastosYPagos";
-import FlujoCajaDiario from "./resumen/FlujoCajaDiario";
-import ProyeccionDelMes from "./resumen/ProyeccionDelMes";
-import ResumenFiscal from "./resumen/ResumenFiscal";
-import { IndicadoresDeSalud, SaludDelNegocio } from "./resumen/SaludFinanciera";
-import DeudasYCobros from "./resumen/DeudasYCobros";
 import GraficosAmpliados from "./resumen/GraficosAmpliados";
 import EsqueletoResumen from "./resumen/EsqueletoResumen";
 import CajaDelResumen from "./resumen/CajaDelResumen";
 import TeDebenYDebes from "./resumen/TeDebenYDebes";
-import BloquePlegable from "./resumen/BloquePlegable";
-import { etiquetaSalud } from "./resumen/lineas-plegadas";
+import { BloquesEnSeccion } from "./resumen/BloquePlegable";
+import ContenidoDeSeccion, { CLAVES_RESUMEN, ID_PANEL_RESUMEN, SECCIONES_RESUMEN } from "./resumen/SeccionesDelResumen";
+import { useAutoActualizar } from "./resumen/use-auto-actualizar";
 
 /** Por qué la liquidez no se puede medir, en palabras del dueño. */
 function motivoSinLiquidez({ caja, error }: UsoCajaAbierta): string {
@@ -56,16 +60,31 @@ function motivoSinLiquidez({ caja, error }: UsoCajaAbierta): string {
   return "la caja espera un saldo negativo";
 }
 
+/** Las cinco cifras de la franja: el botón «Indicadores» las cuenta. */
+const CIFRAS = ["Entró", "Salió", "Quedó", "Te deben", "Debes"];
+
+const soles = (v: number) => `${v < 0 ? "−" : ""}${formatCurrency(Math.abs(v), { decimals: 0 })}`;
+
 export default function FinanzasDashboard() {
   const {
     loading, kpis, monthlyData, expensesByCategory, paymentMethods, cashFlow,
-    topPayables, topFiados, projection, fiscal, healthData, deudas,
+    topPayables, topFiados, projection, fiscal, healthData, deudas, recargar,
   } = useResumenPlata();
   const caja = useCajaAbierta();
-  // Mejora 13: Expand chart modal
   const [expandedChart, setExpandedChart] = useState<string | null>(null);
-  // Mejora 5: Favoritos
   const finFavs = useFavoriteCharts("finanzas");
+  const { vista: seccion, irA: irASeccion } = useSubvistaModulo("plata-resumen", CLAVES_RESUMEN, "meses");
+
+  /* «Actualizar» vuelve a pedir el tablero sin remontarlo (no vuelve el
+     esqueleto) y renueva los bloques que piden lo suyo (fugas, semana). */
+  const [vuelta, setVuelta] = useState(0);
+  const recargarCaja = caja.recargar;
+  const actualizar = useCallback(() => {
+    recargar();
+    recargarCaja();
+    setVuelta((v) => v + 1);
+  }, [recargar, recargarCaja]);
+  const { autoActivo, alternarAuto } = useAutoActualizar(actualizar);
 
   // El efectivo es el esperado de la caja abierta, o no se sabe. Antes:
   // `ingresos * 0.3`, un número que nadie contó.
@@ -74,7 +93,23 @@ export default function FinanzasDashboard() {
     () => healthData ? calcHealthScore({ ...healthData, efectivo }) : null,
     [healthData, efectivo],
   );
-  const sinLiquidez = motivoSinLiquidez(caja);
+
+  /* Las cinco cifras son el Resumen: arrancan abiertas, y plegadas el botón
+     sigue diciendo lo que entró y lo que quedó (plegar no es esconder). */
+  const indicadores = useKpisPlegables({
+    claveMemoria: "plata-resumen-cifras",
+    tarjetas: CIFRAS,
+    resumen: `Entró ${soles(kpis.ingresos ?? 0)} · Quedó ${soles(kpis.utilidad ?? 0)}`,
+    abiertoPorDefecto: true,
+    alto: "md",
+    soloIcono: true,
+  });
+
+  /* Lo vencido de la lista de deudores, en la pestaña «Deudas»: dónde hay que mirar. */
+  const secciones = useMemo(() => {
+    const vencidos = topPayables.filter((p) => p.vencido).length + topFiados.filter((f) => f.vencido).length;
+    return SECCIONES_RESUMEN.map((s) => (s.clave === "deudas" && vencidos > 0 ? { ...s, cuenta: vencidos } : s));
+  }, [topPayables, topFiados]);
 
   if (loading) return <EsqueletoResumen />;
 
@@ -101,61 +136,46 @@ export default function FinanzasDashboard() {
 
   return (
     <div className="space-y-4">
-      <CabeceraDelResumen mes={mesCapitalized} />
-
-      <CifrasDelMes
-        kpis={kpis}
-        monthlyData={monthlyData}
-        deudas={deudas}
-        vencidos={{ fiados: healthData?.fiadosVencidos ?? 0, pagos: healthData?.payablesVencidos ?? 0 }}
+      <CabeceraDelResumen
+        mes={mesCapitalized}
+        secciones={
+          <BarraDeSecciones
+            secciones={secciones}
+            activa={seccion}
+            onCambiar={irASeccion}
+            etiqueta="Secciones del resumen"
+            idPanel={ID_PANEL_RESUMEN}
+          />
+        }
+        indicadores={indicadores.boton}
+        autoActivo={autoActivo}
+        alternarAuto={alternarAuto}
+        actualizar={actualizar}
       />
+
+      {indicadores.abierto && (
+        <CifrasDelMes
+          kpis={kpis}
+          monthlyData={monthlyData}
+          deudas={deudas}
+          vencidos={{ fiados: healthData?.fiadosVencidos ?? 0, pagos: healthData?.payablesVencidos ?? 0 }}
+        />
+      )}
 
       <CajaDelResumen {...caja} />
 
-      {/* Los bloques plegados, juntos y apretados: plegados son una lista de
-          renglones con su cifra, no tarjetas sueltas con 16 px de aire. */}
-      <div className="space-y-2">
-      <StaggerItem index={1}>
-        <GraficoIngresosGastos monthlyData={monthlyData} finFavs={finFavs} setExpandedChart={setExpandedChart} />
-      </StaggerItem>
-
-      <StaggerItem index={2}>
-        <DonutsGastosYPagos expensesByCategory={expensesByCategory} paymentMethods={paymentMethods} finFavs={finFavs} setExpandedChart={setExpandedChart} />
-      </StaggerItem>
-
-      <StaggerItem index={3}>
-        <FlujoCajaDiario cashFlow={cashFlow} finFavs={finFavs} setExpandedChart={setExpandedChart} />
-      </StaggerItem>
-
-      <StaggerItem index={4}>
-        <ProyeccionDelMes projection={projection} />
-      </StaggerItem>
-
-      <StaggerItem index={5}>
-        <ResumenFiscal fiscal={fiscal} />
-      </StaggerItem>
-
-      {/* Los indicadores y el puntaje hablan de lo mismo: un solo bloque, que
-          plegado dice el puntaje. Antes eran dos tarjetas con casi el mismo título. */}
-      {healthScore && (
-        <StaggerItem index={6}>
-          <BloquePlegable
-            id="salud"
-            titulo="Salud del negocio"
-            resumen={`${healthScore.total}/100 — ${etiquetaSalud(healthScore.total)}`}
-          >
-            <div className="space-y-6">
-              <IndicadoresDeSalud healthScore={healthScore} motivoSinLiquidez={sinLiquidez} />
-              <SaludDelNegocio healthScore={healthScore} monthlyData={monthlyData} motivoSinLiquidez={sinLiquidez} />
-            </div>
-          </BloquePlegable>
-        </StaggerItem>
-      )}
-
-      <StaggerItem index={7}>
-        <DeudasYCobros topPayables={topPayables} topFiados={topFiados} />
-      </StaggerItem>
-      </div>
+      <CuerpoDeSeccion panel={{ id: ID_PANEL_RESUMEN, etiquetadoPor: idPestanaDeSeccion(ID_PANEL_RESUMEN, seccion) }}>
+        <BloquesEnSeccion.Provider value>
+          <ContenidoDeSeccion
+            seccion={seccion}
+            d={{
+              monthlyData, expensesByCategory, paymentMethods, cashFlow, projection, fiscal,
+              topPayables, topFiados, healthScore, motivoSinLiquidez: motivoSinLiquidez(caja),
+              finFavs, setExpandedChart, vuelta,
+            }}
+          />
+        </BloquesEnSeccion.Provider>
+      </CuerpoDeSeccion>
 
       <GraficosAmpliados
         expandedChart={expandedChart}

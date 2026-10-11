@@ -17,23 +17,21 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { FileText, Wallet } from "@buleje/design-system/icons";
+import { FileText, MoreHorizontal, Wallet } from "@buleje/design-system/icons";
 
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
-import AutoRefreshControl from "@/components/admin/shared/AutoRefreshControl";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
-import { invalidateFinanzasCache } from "@/components/admin/finanzas/shared";
-import { useAutoRefresh } from "@/hooks/use-auto-refresh";
+import { idPestanaDeSeccion } from "@/components/admin/shared/BarraDeSecciones";
 import { useVistaModulo, type ParamsDeVista } from "@/hooks/use-vista-modulo";
 import { useSeccionesConDatos } from "@/hooks/use-secciones-con-datos";
 import { useContextoPermiso, useVistasPermitidas } from "@/hooks/use-vistas-permitidas";
 
-import SeccionesNav from "./finanzas/SeccionesNav";
+import SeccionesNav, { ID_HOJA_DE_PLATA } from "./finanzas/SeccionesNav";
 import VistaDePlata from "./finanzas/VistaDePlata";
 import { RanuraDelSegundoNivel } from "./finanzas/segundo-nivel";
 import { generarReporteBancario } from "./finanzas/reporte-bancario";
-import { CON_PESTANAS_PROPIAS, MODULE_ID, SECCIONES, TABS, VISTAS, ubicar, type ClaveDeDato } from "./finanzas/estructura";
+import { CON_PESTANAS_PROPIAS, CON_SUB_PROPIO, MODULE_ID, SECCIONES, TABS, VISTAS, ubicar, type ClaveDeDato } from "./finanzas/estructura";
 
 /** Cuánto se espera al rol antes de abrir igual (con las vistas propias del hub). */
 const ESPERA_DEL_ROL_MS = 4000;
@@ -49,8 +47,14 @@ const HOJAS: readonly { id: string; label: string }[] = VISTAS.map((id) => {
   return { id, label: seccion?.label ?? tab?.label ?? id };
 });
 
-/** Al dejar Préstamos, Adelantos o Activos, su pestaña propia (`?sub=`) no viaja a la vista siguiente. */
-const PARAMS_DE_VISTA: ParamsDeVista<string> = Object.fromEntries(CON_PESTANAS_PROPIAS.map((t) => [t, ["sub"]]));
+/**
+ * Al dejar Préstamos, Adelantos o Activos, su pestaña propia (`?sub=`) no viaja
+ * a la vista siguiente. Tampoco la sección interna de las hojas que tienen la
+ * suya (`CON_SUB_PROPIO`: Resumen, Rentabilidad, Gastos, Proyección; 2026-10-11).
+ */
+const PARAMS_DE_VISTA: ParamsDeVista<string> = Object.fromEntries(
+  [...CON_PESTANAS_PROPIAS, ...CON_SUB_PROPIO].map((t) => [t, ["sub"]]),
+);
 
 export default function FinanzasModule({ initialTab }: { initialTab?: string } = {}) {
   /* Qué vistas se ven depende del plan, la plantilla y el rol (regla R2), y
@@ -147,18 +151,13 @@ function HubDePlata({ initialTab }: { initialTab?: string }) {
   }, [secciones, tab]);
   const datos = useSeccionesConDatos(claves);
 
-  // Auto-refresh every 5 minutes
-  const [vuelta, setVuelta] = useState(0);
-  const autoRefresh = useAutoRefresh({
-    intervalSeconds: 300,
-    /* Sin vaciar la caché de Finanzas (30 s), «Actualizar ahora» volvía a
-       pintar las respuestas de recién: el Resumen ya no tiene botón propio. */
-    onRefresh: useCallback(() => {
-      invalidateFinanzasCache();
-      setVuelta((k) => k + 1);
-    }, []),
-    enabled: vista === "resumen",
-  });
+  /* El auto-refresco del Resumen («Actualiza en 283s ⏸ ↻» suelto en esta
+     banda hasta el 2026-10-11) vive en el «⋯» del Resumen: re-pintaba el hub
+     cada segundo y remontaba la vista a los 5 min (`resumen/use-auto-actualizar`). */
+
+  /** El segundo nivel cambia lo que hay debajo: eso es su `tabpanel`. */
+  const conSegundoNivel = (secciones?.length ?? 0) > 1 || CON_PESTANAS_PROPIAS.includes(tab);
+  const nombreDeLaPestana = tabs.find((t) => t.id === tab)?.label ?? "Mi Plata";
 
   /** Dónde dibujan su segundo nivel Préstamos, Adelantos y Activos. */
   const [ranura, setRanura] = useState<HTMLElement | null>(null);
@@ -183,26 +182,21 @@ function HubDePlata({ initialTab }: { initialTab?: string }) {
                   activa={seccion}
                   onIr={irA}
                   datos={datos}
-                  etiqueta={`Secciones de ${tabs.find((t) => t.id === tab)?.label ?? "Mi Plata"}`}
+                  etiqueta={`Secciones de ${nombreDeLaPestana}`}
                 />
               )}
               {/* `contents`: lo que el módulo dibuja acá es parte de esta fila. */}
               <div ref={setRanura} className="contents" data-ranura-segundo-nivel="" />
-              {vista === "resumen" && (
-                <AutoRefreshControl
-                  secondsLeft={autoRefresh.secondsLeft}
-                  paused={autoRefresh.paused}
-                  isActive={autoRefresh.isActive}
-                  onTogglePause={autoRefresh.togglePause}
-                  onRefreshNow={autoRefresh.refreshNow}
-                />
-              )}
-              {/* El reporte bancario se pide una vez al mes y se llevaba 170 px
-                  fijos de la banda: al menú, con su explicación de una línea. */}
+              {/* El reporte bancario se pide una vez al mes: al «⋯», con su
+                  explicación de una línea (un «Opciones» con texto ocupaba
+                  145 px de la banda para una sola opción). */}
               <ActionMenu
-                label="Opciones"
-                size="sm"
-                compactoEnMovil
+                label="Más de Mi Plata"
+                icon={MoreHorizontal}
+                soloIcono
+                size="md"
+                className="w-12 shrink-0"
+                title="Reporte bancario"
                 actions={[
                   {
                     id: "reporte-bancario",
@@ -223,7 +217,22 @@ function HubDePlata({ initialTab }: { initialTab?: string }) {
         moduleId="finanzas"
       >
         <RanuraDelSegundoNivel.Provider value={enElHub}>
-          <VistaDePlata vista={vista} seccion={seccion} datos={datos} irA={irA} vuelta={vuelta} />
+          {conSegundoNivel ? (
+            /* Lo que controla la barra de secciones de la banda. En Préstamos,
+               Adelantos y Activos la pestaña activa la sabe el módulo: el panel
+               se nombra con la pestaña de Mi Plata. */
+            <div
+              role="tabpanel"
+              id={ID_HOJA_DE_PLATA}
+              {...(secciones && secciones.length > 1
+                ? { "aria-labelledby": idPestanaDeSeccion(ID_HOJA_DE_PLATA, seccion) }
+                : { "aria-label": nombreDeLaPestana })}
+            >
+              <VistaDePlata vista={vista} seccion={seccion} datos={datos} irA={irA} />
+            </div>
+          ) : (
+            <VistaDePlata vista={vista} seccion={seccion} datos={datos} irA={irA} />
+          )}
         </RanuraDelSegundoNivel.Provider>
       </AdminTabBar>
     </div>

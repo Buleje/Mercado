@@ -12,6 +12,10 @@
  * motor de Compras › Sugerencias). El permiso es el motor de verdad (`vistaPermitida` con la capa de rol y de
  * plan); cada `dynamic()` dibuja el nombre de lo que importa.
  *
+ * Desde el 11-10 la vista va en secciones (`?sub=`): se monta UNA a la vez, así
+ * que lo que se le ofrece a cada rol se lee en la barra (los `tab`) y lo que se
+ * monta es la primera que le toca.
+ *
  * Ejecutar: npx vitest run __tests__/gastos-con-presupuesto-permiso.test.tsx
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -34,8 +38,10 @@ vi.mock("next/dynamic", () => ({
             : fuente.includes("HistorialGastosTab")
               ? "historial-compras"
               : "otro";
-    return function Dinamico() {
-      return <div data-testid={`bloque-${nombre}`} />;
+    /* Las secciones van en la cabecera de cada bloque (la prop `barra`): el
+       doble la dibuja para que la barra se pueda leer. */
+    return function Dinamico({ barra }: { barra?: import("react").ReactNode }) {
+      return <div data-testid={`bloque-${nombre}`}>{barra}</div>;
     };
   },
 }));
@@ -53,11 +59,25 @@ import { vistasDelModulo } from "@/lib/admin/subvistas-modulos";
 import { tabsDelRol } from "@/lib/module-permissions";
 import type { PlanTier } from "@/lib/billing/plan-tiers";
 
+// La barra de secciones mide su carril con ResizeObserver: jsdom no lo trae.
+globalThis.ResizeObserver ??= class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+} as unknown as typeof ResizeObserver;
+
 afterEach(() => {
   cleanup();
   estado.ctx = null;
   window.localStorage.clear();
+  /* El hook escribe `?sub=` al montar: sin limpiar, el caso siguiente abriría
+     en la sección del anterior. */
+  window.history.replaceState(null, "", "/");
 });
+
+/** Las secciones que la barra le ofrece. */
+const secciones = () => screen.queryAllByRole("tab").map((t) => t.textContent?.trim() ?? "");
+const SECCIONES_PROPIAS = ["Anotados", "Presupuesto", "Metas"];
 
 function contexto(rol: string, plan: PlanTier, idsReales: boolean): ContextoPermiso {
   const ids = tabsDelRol(rol, null, { idsReales });
@@ -90,8 +110,9 @@ describe.each([true, false])("Gastos y presupuesto por rol (ids reales: %s)", (i
     expect(veLaVista(ctx)).toBe(true);
     const bloques = montados(ctx);
     for (const propio of PROPIOS) expect(bloques).not.toContain(propio);
-    // El presupuesto plegado tampoco deja su título a la vista.
-    expect(screen.queryByText("Presupuesto del mes")).toBeNull();
+    // Ni se le ofrecen sus secciones: abre en lo que llegó de Compras.
+    expect(secciones()).toEqual(["Fijos", "Compras"]);
+    expect(bloques).toEqual(["bloque-catalogo-fijos"]);
   });
 
   it.each<PlanTier>(["basico", "pro", "enterprise", "max"])("admin en %s: todo lo propio", (plan) => {
@@ -99,7 +120,7 @@ describe.each([true, false])("Gastos y presupuesto por rol (ids reales: %s)", (i
     expect(veLaVista(ctx)).toBe(true);
     montados(ctx);
     expect(screen.getByTestId("bloque-gastos")).toBeTruthy();
-    expect(screen.getByText("Presupuesto del mes")).toBeTruthy();
+    for (const propia of SECCIONES_PROPIAS) expect(secciones()).toContain(propia);
   });
 
   it.each<PlanTier>(["basico", "pro", "enterprise", "max"])("cajero en %s: sin los gastos del negocio", (plan) => {
@@ -107,6 +128,7 @@ describe.each([true, false])("Gastos y presupuesto por rol (ids reales: %s)", (i
     if (!veLaVista(ctx)) return; // si la barra no se la ofrece, no hay nada que filtrar
     const bloques = montados(ctx);
     for (const propio of PROPIOS) expect(bloques).not.toContain(propio);
+    for (const propia of SECCIONES_PROPIAS) expect(secciones()).not.toContain(propia);
   });
 });
 
@@ -119,12 +141,12 @@ describe("si no pasa ningún origen, se ve como antes", () => {
     const bloques = montados({ ...contexto("admin", "max", true), plantilla: (id) => ocultas.has(id) });
     expect(bloques).toContain("bloque-gastos");
     expect(bloques).not.toContain("bloque-historial-compras");
-    expect(screen.getByText("Presupuesto del mes")).toBeTruthy();
+    expect(secciones()).toEqual(SECCIONES_PROPIAS);
   });
 
   it("rol sin confirmar: lo propio sí, lo que llegó de Compras no", () => {
     render(<GastosConPresupuesto pedidoPorUrl={false} hayPresupuesto={undefined} />);
     expect(screen.getByTestId("bloque-gastos")).toBeTruthy();
-    expect(screen.queryByText("Historial de gastos y compras")).toBeNull();
+    expect(secciones()).not.toContain("Compras");
   });
 });

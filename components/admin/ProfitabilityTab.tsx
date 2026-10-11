@@ -9,16 +9,16 @@
  * categoría, plegada; la ventana del detalle, en su archivo.
  */
 
-import { SectionTitle } from "@buleje/design-system";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, type ReactNode } from "react";
 import {
-  Download, Search, AlertTriangle, RefreshCw, MoreHorizontal,
+  Download, Search, AlertTriangle, RefreshCw,
 } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 import { useProductProfitability } from "@/hooks/use-product-profitability";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { useOrdenColumnas, BotonRestablecerColumnas } from "@/components/admin/shared/columnas-ordenables";
-import ActionMenu from "@/components/admin/shared/action-menu";
+import SegmentedControl from "@/components/ui-system/SegmentedControl";
+import { CabeceraVista } from "@/components/admin/inventario/movimientos/CabeceraVista";
 import Plegable from "@/components/admin/shared/Plegable";
 import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -42,7 +42,10 @@ const PERIODOS = [
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function ProfitabilityTab() {
+type Dias = `${(typeof PERIODOS)[number]["days"]}`;
+
+/** `secciones`: la barra de Rentabilidad (Por producto · Punto de equilibrio), en esta fila. */
+export default function ProfitabilityTab({ secciones }: { secciones?: ReactNode } = {}) {
   const [days, setDays] = useState<number>(30);
   const { lines: raw, resumen, since, loading, error, refetch } = useProductProfitability(days);
   const [search, setSearch] = useState("");
@@ -132,7 +135,7 @@ export default function ProfitabilityTab() {
   const kpis = useKpisPlegables({
     claveMemoria: "plata:rentabilidad",
     alto: "md",
-    compactoEnMovil: true,
+    soloIcono: true,
     sinDatosAun: loading && lines.length === 0,
     resumen: lines.length > 0 ? `Margen ${fmt(totals.grossMargin)} · ${pct(totals.marginPct)}` : undefined,
     tarjetas: [
@@ -151,57 +154,44 @@ export default function ProfitabilityTab() {
 
   return (
     <div className="space-y-4">
-      {/* Una fila: título · ⓘ · período · Indicadores · Más. */}
-      <div className="flex flex-wrap items-center gap-2">
-        <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">Ganancia por producto</SectionTitle>
-        <InfoTip
-          title="Ganancia por producto"
-          what={`Cuánto ganas con cada producto y categoría · ${periodo}: lo que se cobró en la línea de la venta menos lo que costó.`}
-          affects="Es el margen bruto: no resta luz, alquiler ni planilla. Lo que ganó el negocio en el mes, con todos los costos, está en Ganancias."
-          example="Vendiste 10 arroces a S/ 4.50 que te costaron S/ 3.60: ingresos S/ 45, margen S/ 9 (20 %)."
-        />
-        <div role="radiogroup" aria-label="Período" className="inline-flex overflow-hidden rounded-xl border border-[var(--rule-base)]">
-          {PERIODOS.map(p => (
-            <button
-              key={p.days}
-              type="button"
-              role="radio"
-              aria-checked={days === p.days}
-              onClick={() => setDays(p.days)}
-              className={cn(
-                "min-h-12 px-3 text-sm font-semibold transition-colors",
-                days === p.days
-                  ? "bg-[var(--accent-ink)] text-white dark:bg-[var(--accent)] dark:text-[var(--surface-canvas)]"
-                  : "bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
-              )}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
-        <div className="ml-auto flex min-w-0 items-center gap-2">
-          {kpis.boton}
-          <ActionMenu
-            label="Más"
-            icon={MoreHorizontal}
-            soloIcono
-            size="md"
-            className="w-12 shrink-0"
-            title="Actualizar y descargar"
-            actions={[
-              { id: "actualizar", label: "Actualizar", icon: RefreshCw, onSelect: refetch, busy: loading },
-              {
-                id: "descargar",
-                label: "Descargar (CSV)",
-                hint: "Lo que estás viendo, con el filtro aplicado",
-                icon: Download,
-                disabled: filtered.length === 0,
-                onSelect: () => exportToCSV(filtered.map(l => ({ producto: l.product, categoria: l.category, unidades: l.unitsSold, ingresos: l.revenue, costo: l.cogs, margen_bruto: l.grossMargin, margen_pct: Number(l.marginPct).toFixed(1) + "%" })), "ganancias-producto"),
-              },
-            ]}
-          />
-        </div>
-      </div>
+      {/* Una fila: título · ⓘ · secciones · período · Indicadores · «⋯» (la
+          cabecera de vista del panel). El período usa el mismo control que
+          Comparar períodos: eran dos selectores distintos en vistas hermanas. */}
+      <CabeceraVista
+        titulo="Ganancia por producto"
+        ayuda={{
+          what: `Cuánto ganas con cada producto y categoría · ${periodo}: lo que se cobró en la línea de la venta menos lo que costó.`,
+          affects: "Es el margen bruto: no resta luz, alquiler ni planilla. Lo que ganó el negocio en el mes, con todos los costos, está en Ganancias.",
+          example: "Vendiste 10 arroces a S/ 4.50 que te costaron S/ 3.60: ingresos S/ 45, margen S/ 9 (20 %).",
+        }}
+        secciones={secciones}
+        accion={
+          /* `shrink-0`: en la fila llena el que cede es el titular de
+             Indicadores (se corta con «…»), no el período (partía «7 / días»). */
+          <div className="shrink-0">
+            <SegmentedControl
+              value={String(days) as Dias}
+              onChange={(v) => setDays(Number(v))}
+              options={PERIODOS.map((p) => ({ value: String(p.days) as Dias, label: p.label }))}
+              size="lg"
+              label="Período"
+            />
+          </div>
+        }
+        indicadores={kpis.boton}
+        tituloMenu="Actualizar y descargar"
+        acciones={[
+          { id: "actualizar", label: "Actualizar", icon: RefreshCw, onSelect: refetch, busy: loading },
+          {
+            id: "descargar",
+            label: "Descargar (CSV)",
+            hint: "Lo que estás viendo, con el filtro aplicado",
+            icon: Download,
+            disabled: filtered.length === 0,
+            onSelect: () => exportToCSV(filtered.map(l => ({ producto: l.product, categoria: l.category, unidades: l.unitsSold, ingresos: l.revenue, costo: l.cogs, margen_bruto: l.grossMargin, margen_pct: Number(l.marginPct).toFixed(1) + "%" })), "ganancias-producto"),
+          },
+        ]}
+      />
 
       {kpis.panel}
 

@@ -8,8 +8,8 @@ import { igvDeGastosSinCredito, leerIgv } from "./igv";
 import AyudaIgv from "./AyudaIgv";
 import BloquePlegable from "./BloquePlegable";
 
-const CELDA_MONTO = "py-2.5 text-right font-bold font-mono tabular-nums text-[var(--text-primary)]";
-const CELDA_SIN_DATO = "py-2.5 text-right text-sm text-[var(--text-secondary)]";
+const MONTO = "font-mono font-bold tabular-nums text-[var(--text-primary)]";
+const SIN_DATO = "text-sm text-[var(--text-secondary)]";
 
 /**
  * El IGV del mes, sólo con lo registrado.
@@ -37,43 +37,51 @@ export default function ResumenFiscal({ fiscal }: { fiscal: Fiscal | null }) {
         : !igv ? "no se pudo leer el IGV" : igv.tipo === "exoneradas" ? "sin IGV" : "sin IGV registrado"}
       acciones={igv && <AyudaIgv lectura={igv} />}
     >
+      {/* `DataTable` sin estilos propios en th/td (ley 10, «todo parejo»): el
+          color y el peso van en un span dentro de la celda. */}
       <div className="overflow-x-auto">
-        <DataTable className="w-full text-sm">
+        <DataTable>
           <thead>
-            <tr className="border-b border-[var(--rule-base)]">
-              <th className="text-left py-2 text-xs font-bold text-[var(--text-tertiary)]">Concepto</th>
-              <th className="text-right py-2 text-xs font-bold text-[var(--text-tertiary)]">Monto</th>
+            <tr>
+              <th>Concepto</th>
+              <th className="text-right">Monto</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[var(--rule-soft)]">
+          <tbody>
             <tr>
-              <td className="py-2.5 text-[var(--text-secondary)]">IGV de tus comprobantes</td>
-              {registrado && registrado.comprobantes > 0
-                ? <td className={CELDA_MONTO}>{formatCurrency(Math.round(registrado.debito), { decimals: 0 })}</td>
-                : <td className={CELDA_SIN_DATO}>{igv ? "Sin comprobantes electrónicos" : "—"}</td>}
+              <td>IGV de tus comprobantes</td>
+              <td className="text-right">
+                {registrado && registrado.comprobantes > 0
+                  ? <span className={MONTO}>{formatCurrency(Math.round(registrado.debito), { decimals: 0 })}</span>
+                  : <span className={SIN_DATO}>{igv ? "Sin comprobantes electrónicos" : "—"}</span>}
+              </td>
             </tr>
             <tr>
-              <td className="py-2.5 text-[var(--text-secondary)]">IGV de tus gastos</td>
-              {registrado && registrado.conIgv > 0
-                ? <td className={CELDA_MONTO}>{formatCurrency(Math.round(registrado.credito), { decimals: 0 })}</td>
-                : <td className={CELDA_SIN_DATO}>{igv ? igvDeGastosSinCredito(igv) : "—"}</td>}
+              <td>IGV de tus gastos</td>
+              <td className="text-right">
+                {registrado && registrado.conIgv > 0
+                  ? <span className={MONTO}>{formatCurrency(Math.round(registrado.credito), { decimals: 0 })}</span>
+                  : <span className={SIN_DATO}>{igv ? igvDeGastosSinCredito(igv) : "—"}</span>}
+              </td>
             </tr>
           </tbody>
           <tfoot>
-            <tr className="border-t-2 border-[var(--rule-base)]">
-              <td className="pt-3 pb-1 font-bold text-[var(--text-primary)]">{registrado && registrado.neto < 0 ? "Saldo a favor" : "IGV a pagar"}</td>
-              {registrado ? (
-                <td className={cn(
-                  "pt-3 pb-1 text-right font-extrabold font-mono tabular-nums text-lg",
-                  registrado.neto > 0 ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]",
-                )}>
-                  {formatCurrency(Math.abs(Math.round(registrado.neto)), { decimals: 0 })}
-                </td>
-              ) : (
-                <td className="pt-3 pb-1 text-right font-semibold text-[var(--text-secondary)]">
-                  {!igv ? "No se pudo leer" : igv.tipo === "exoneradas" ? "Sin IGV" : "Sin IGV registrado"}
-                </td>
-              )}
+            <tr>
+              <td><span className="font-bold text-[var(--text-primary)]">{registrado && registrado.neto < 0 ? "Saldo a favor" : "IGV a pagar"}</span></td>
+              <td className="text-right">
+                {registrado ? (
+                  <span className={cn(
+                    "font-mono text-lg font-extrabold tabular-nums",
+                    registrado.neto > 0 ? "text-[var(--data-error-ink)]" : "text-[var(--data-success-ink)]",
+                  )}>
+                    {formatCurrency(Math.abs(Math.round(registrado.neto)), { decimals: 0 })}
+                  </span>
+                ) : (
+                  <span className="font-semibold text-[var(--text-secondary)]">
+                    {!igv ? "No se pudo leer" : igv.tipo === "exoneradas" ? "Sin IGV" : "Sin IGV registrado"}
+                  </span>
+                )}
+              </td>
             </tr>
           </tfoot>
         </DataTable>

@@ -12,7 +12,7 @@
  *   - Tokens estrictos. Auto-refresh cada 5 min preservado.
  */
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import {
   Target,
@@ -24,6 +24,10 @@ import {
 } from "@buleje/design-system/icons";
 import { cn, limaDateKey } from "@/lib/utils";
 
+import { irAlOrigen } from "@/components/admin/unified/finanzas/resultado/ir-al-origen";
+import { CabeceraVista } from "@/components/admin/inventario/movimientos/CabeceraVista";
+import { formatNumber, formatTime } from "@/lib/format";
+
 const BreakEvenGauge = dynamic(() => import("./BreakEvenGauge"), {
   ssr: false,
   loading: () => (
@@ -32,10 +36,6 @@ const BreakEvenGauge = dynamic(() => import("./BreakEvenGauge"), {
     </div>
   ),
 });
-import { CardTitle } from "@buleje/design-system";
-import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { irAlOrigen } from "@/components/admin/unified/finanzas/resultado/ir-al-origen";
-import { formatNumber, formatTime } from "@/lib/format";
 
 /* Dos decimales fijos: con sólo el mínimo, S/ 2 653 ÷ 30 salía «S/ 88.438». */
 const fmt = (n: number) =>
@@ -67,7 +67,8 @@ export function costoFijoMensual(gastos: ExpenseRecord[]): number {
     .reduce((suma, g) => suma + (Number(g.amount) || 0) * (VECES_AL_MES[String(g.frequency ?? "mensual").toLowerCase()] ?? 1), 0);
 }
 
-export default function BreakEvenDashboard() {
+/** `secciones`: la barra de Rentabilidad, en la fila del título. */
+export default function BreakEvenDashboard({ secciones }: { secciones?: ReactNode } = {}) {
   const [sales, setSales] = useState<SaleRecord[]>([]);
   const [expenses, setExpenses] = useState<ExpenseRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -152,29 +153,29 @@ export default function BreakEvenDashboard() {
 
   return (
     <div className="space-y-3 sm:space-y-6">
-      {/* Un bloque de Rentabilidad, no una pantalla: título de bloque con su ⓘ y
-          el «actualizar» a la derecha, en una fila. Antes el encabezado de
-          módulo escondía el título dentro de Mi Plata y el botón quedaba solo. */}
-      <div className="flex flex-wrap items-center gap-2">
-        <Target className="h-4 w-4 text-[var(--text-tertiary)]" aria-hidden />
-        <CardTitle as="h3" className="text-base font-bold text-[var(--text-primary)]">Punto de equilibrio de hoy</CardTitle>
-        <InfoTip
-          title="Punto de equilibrio de hoy"
-          what="Cuánto necesitas vender hoy para cubrir tus gastos fijos: la suma de tus gastos recurrentes llevada al mes (un semanal cuenta 4,3 veces) ÷ 30."
-          affects="Cuenta las ventas del mostrador de hoy, hora de Lima. Se actualiza solo cada 5 minutos."
-          example="Alquiler S/ 850 + internet S/ 130 al mes = S/ 980 ÷ 30: necesitas vender S/ 32.67 cada día."
-        />
-        <button
-          type="button"
-          onClick={load}
-          disabled={loading}
-          title={`Actualizado a las ${formatTime(lastRefresh)}`}
-          className="ml-auto inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
-        >
-          <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} aria-hidden />
-          {formatTime(lastRefresh)}
-        </button>
-      </div>
+      {/* Una sección de Rentabilidad (2026-10-11): su cabecera es la de una
+          vista —título · ⓘ · secciones · «⋯»— y «Actualizar» va al menú con la
+          hora de la última lectura (antes, un botón suelto «↻ 07:55»). */}
+      <CabeceraVista
+        titulo="Punto de equilibrio de hoy"
+        ayuda={{
+          what: "Cuánto necesitas vender hoy para cubrir tus gastos fijos: la suma de tus gastos recurrentes llevada al mes (un semanal cuenta 4,3 veces) ÷ 30.",
+          affects: "Cuenta las ventas del mostrador de hoy, hora de Lima. Se actualiza solo cada 5 minutos.",
+          example: "Alquiler S/ 850 + internet S/ 130 al mes = S/ 980 ÷ 30: necesitas vender S/ 32.67 cada día.",
+        }}
+        secciones={secciones}
+        tituloMenu="Actualizar"
+        acciones={[
+          {
+            id: "actualizar",
+            label: "Actualizar",
+            hint: `Última lectura a las ${formatTime(lastRefresh)}`,
+            icon: RefreshCw,
+            busy: loading,
+            onSelect: load,
+          },
+        ]}
+      />
 
       {error && (
         <div className="flex items-center gap-2 rounded-xl border border-[var(--data-error-500)]/30 bg-[var(--data-error-500)]/10 px-4 py-3 text-[length:var(--ts-sm)] text-[var(--data-error-500)]">

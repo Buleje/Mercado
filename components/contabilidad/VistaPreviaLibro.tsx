@@ -4,6 +4,7 @@
  * «Libros para el contador» — totales del mes + las primeras filas del libro.
  * Totales y filas vienen ya armados del servidor; acá solo se pintan.
  */
+import { DataTable } from "@buleje/design-system";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import type { ValorCelda } from "@/lib/contabilidad/libros/comun";
 import type { VistaPrevia } from "./use-libros-contador";
@@ -41,31 +42,31 @@ export function TablaLibro({ datos }: { datos: VistaPrevia }) {
     return <p className="py-6 text-center text-sm text-[var(--text-secondary)]">No hay movimientos en este mes.</p>;
   }
   return (
-    <div className="overflow-x-auto rounded-xl border border-[var(--rule-soft)]">
-      <table className="w-full min-w-[56rem] text-sm">
-        <thead className="bg-[var(--surface-sunken)] text-left text-xs font-semibold text-[var(--text-secondary)]">
+    <div className="space-y-2">
+      <DataTable>
+        <thead>
           <tr>
             {columnas.map((c) => (
-              <th key={c.clave} scope="col" className={`px-3 py-2 ${c.soles || c.numero ? "text-right" : ""}`}>
+              <th key={c.clave} scope="col" className={c.soles || c.numero ? "text-right" : undefined}>
                 {c.corto}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-[var(--rule-soft)]">
+        <tbody>
           {datos.filas.map((f, i) => (
-            <tr key={`${String(f.idSistema ?? f.correlativo ?? "")}-${i}`} className="text-[var(--text-primary)]">
+            <tr key={`${String(f.idSistema ?? f.correlativo ?? "")}-${i}`}>
               {columnas.map((c) => (
-                <td key={c.clave} className={`px-3 py-1.5 ${c.soles || c.numero ? "text-right tabular-nums" : ""}`}>
+                <td key={c.clave} className={c.soles || c.numero ? "text-right tabular-nums" : undefined}>
                   <Celda valor={f[c.clave] ?? null} col={c} />
                 </td>
               ))}
             </tr>
           ))}
         </tbody>
-      </table>
+      </DataTable>
       {datos.totalFilas > datos.filas.length && (
-        <p className="border-t border-[var(--rule-soft)] px-3 py-2 text-xs text-[var(--text-secondary)]">
+        <p className="text-sm text-[var(--text-secondary)]">
           Ves las primeras {formatNumber(datos.filas.length)} de {formatNumber(datos.totalFilas)} filas. El archivo trae todas y todas las columnas del formato.
         </p>
       )}

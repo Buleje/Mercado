@@ -54,7 +54,7 @@ export default function FilaPorPagar({ persona: p, hoy, onAbrir }: { persona: Pe
           })}
         </ul>
       </td>
-      <td className="align-top text-right font-extrabold tabular-nums whitespace-nowrap">{enMonedas(p.debes)}</td>
+      <td className="align-top text-right tabular-nums whitespace-nowrap">{enMonedas(p.debes)}</td>
       <td className="align-top whitespace-nowrap">
         {p.vence === null
           ? <span className="text-[var(--text-secondary)]">Sin plazo</span>

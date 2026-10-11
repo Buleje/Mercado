@@ -36,7 +36,12 @@ export function CabeceraVista({ titulo, ayuda, secciones, indicadores, accion, a
       <div className="ml-auto flex min-w-0 items-center gap-2">
         {indicadores}
         {accion}
-        <ActionMenu label="Más" icon={MoreHorizontal} actions={acciones} soloIcono size="md" className="w-12 shrink-0" title={tituloMenu} />
+        {/* `shrink-0` en un envoltorio: el del botón no alcanza al `div.relative`
+            del menú, que en una fila llena se encogía a 31 px y dejaba el «⋯»
+            asomando 17 px fuera de la vista (Rentabilidad, 2026-10-11). */}
+        <div className="shrink-0">
+          <ActionMenu label="Más" icon={MoreHorizontal} actions={acciones} soloIcono size="md" className="w-12 shrink-0" title={tituloMenu} />
+        </div>
       </div>
     </div>
   );

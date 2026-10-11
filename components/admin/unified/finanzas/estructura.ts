@@ -70,6 +70,17 @@ export const TABS = [
 /** Las pestañas cuyo segundo nivel es el del módulo que montan (su `?sub=`). */
 export const CON_PESTANAS_PROPIAS: readonly TabId[] = ["prestamos", "adelantos", "activos"];
 
+/**
+ * Las HOJAS cuyo contenido tiene sus propias secciones en `?sub=` (2026-10-11,
+ * «todo parejo»): el Resumen, Rentabilidad, Gastos y presupuesto
+ * (`GastosConPresupuesto`), la Proyección de caja (`CashflowRollingTable`) e
+ * Impuestos del mes (`TaxTab`: El mes · El año). Al
+ * dejar una, su `?sub=` no viaja a la vista siguiente — igual que el de
+ * Préstamos, Adelantos y Activos. No son pestañas: su segundo nivel sigue
+ * siendo el de Mi Plata, por eso no van en `CON_PESTANAS_PROPIAS`.
+ */
+export const CON_SUB_PROPIO: readonly string[] = ["resumen", "rentabilidad", "gastos", "presupuesto", "flujo-caja", "impuestos"];
+
 export type TabId = (typeof TABS)[number]["id"];
 
 /**

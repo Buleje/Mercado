@@ -9,7 +9,7 @@
  * corrida un día (medianoche UTC leída en la hora del navegador).
  */
 import { useCallback, useEffect, useState } from "react";
-import { SectionTitle } from "@buleje/design-system";
+import { DataTable, SectionTitle } from "@buleje/design-system";
 import { CalendarClock, ChevronLeft, ChevronRight, Download, MoreHorizontal, RefreshCw, Wallet } from "@buleje/design-system/icons";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
@@ -19,6 +19,7 @@ import { abrirCierreDiario } from "@/lib/admin/abrir-cierre-diario";
 import { exportToExcel } from "@/lib/export-excel";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { button } from "@/components/ui-system/button-variants";
 import { fechaDelCierre, textoDiferencia, type CierreDelDia } from "./cierres/cierres";
 import FichaCierre from "./cierres/FichaCierre";
 
@@ -26,7 +27,7 @@ type Pagina = { items: CierreDelDia[]; total: number; page: number; limit: numbe
 
 /** 15 filas de 48 px: la lista entra en una pantalla y media. */
 const LIMIT = 15;
-const BOTON_PAG = "inline-flex h-12 items-center gap-1 rounded-xl px-3 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] aria-disabled:opacity-40";
+const BOTON_PAG = button({ variant: "ghost", className: "rounded-xl px-3 aria-disabled:opacity-40" });
 
 export default function HistorialCierresTab() {
   const [data, setData] = useState<Pagina | null>(null);
@@ -83,7 +84,7 @@ export default function HistorialCierresTab() {
           {data && <span className="text-sm text-[var(--text-secondary)]">{data.total} días</span>}
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <button type="button" onClick={abrirCierreDiario} className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--accent-dark)] px-4 text-sm font-bold text-white hover:brightness-110">
+          <button type="button" onClick={abrirCierreDiario} className={button({ variant: "primary", className: "rounded-xl px-4" })}>
             <CalendarClock className="h-4 w-4" aria-hidden /> Cerrar el día
           </button>
           <ActionMenu
@@ -107,37 +108,49 @@ export default function HistorialCierresTab() {
       ) : error ? (
         <p role="alert" className="flex items-center gap-2 py-6 text-sm text-[var(--data-error-ink)]">
           No se pudieron leer los cierres.
-          <button type="button" onClick={() => void cargar(page)} className="h-12 rounded-xl px-3 font-semibold text-[var(--accent-ink)] hover:bg-[var(--surface-sunken)]">Reintentar</button>
+          <button type="button" onClick={() => void cargar(page)} className={button({ variant: "secondary", className: "rounded-xl" })}>Reintentar</button>
         </p>
       ) : !data?.items.length ? (
         <p className="py-6 text-sm text-[var(--text-secondary)]">Todavía no cerraste ningún día.</p>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-          <div aria-hidden className="hidden grid-cols-[1fr_8rem_6rem_8rem_8rem] gap-3 border-b border-[var(--rule-soft)] px-4 py-2 text-sm font-semibold text-[var(--text-secondary)] sm:grid">
-            <span>Día</span><span className="text-right">Vendido</span><span className="text-right">Ventas</span><span className="text-right">Contado</span><span className="text-right">Cuadre</span>
-          </div>
-          <ul className={cn("divide-y divide-[var(--rule-soft)]", cargando && "opacity-60")}>
-            {data.items.map((s) => {
-              const dif = textoDiferencia(s);
-              return (
-                <li key={s.id}>
-                  <button
-                    type="button"
+        <div className={cn("space-y-2", cargando && "opacity-60")}>
+          {/* Una tabla del DS como todas: la fila entera abre la ficha (clic,
+              Enter o espacio); en el celular pasa a tarjetas sola. */}
+          <DataTable>
+            <thead>
+              <tr>
+                <th>Día</th>
+                <th className="text-right">Vendido</th>
+                <th className="hidden text-right sm:table-cell">Ventas</th>
+                <th className="hidden text-right sm:table-cell">Contado</th>
+                <th className="text-right">Cuadre</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.items.map((s) => {
+                const dif = textoDiferencia(s);
+                const dia = fechaDelCierre(s.fecha);
+                return (
+                  <tr
+                    key={s.id}
+                    tabIndex={0}
+                    aria-label={`Ver el cierre del ${dia}`}
                     onClick={() => setFicha(s)}
-                    className="grid min-h-12 w-full grid-cols-[1fr_auto_auto] items-center gap-3 px-4 py-1.5 text-left text-sm hover:bg-[var(--surface-sunken)] sm:grid-cols-[1fr_8rem_6rem_8rem_8rem]"
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setFicha(s); } }}
+                    className="cursor-pointer"
                   >
-                    <span className="font-semibold capitalize text-[var(--text-primary)]">{fechaDelCierre(s.fecha)}</span>
-                    <span className="text-right font-bold tabular-nums text-[var(--text-primary)]">{formatCurrency(Number(s.totalVentas))}</span>
-                    <span className="hidden text-right tabular-nums text-[var(--text-secondary)] sm:block">{s.cantidadVentas}</span>
-                    <span className="hidden text-right tabular-nums text-[var(--text-secondary)] sm:block">{s.efectivoContado != null ? formatCurrency(Number(s.efectivoContado)) : "—"}</span>
-                    <span className={cn("text-right font-semibold tabular-nums", dif.clase)}>{dif.texto}</span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
+                    <td className="capitalize">{dia}</td>
+                    <td className="text-right font-bold tabular-nums">{formatCurrency(Number(s.totalVentas))}</td>
+                    <td className="hidden text-right tabular-nums sm:table-cell">{s.cantidadVentas}</td>
+                    <td className="hidden text-right tabular-nums sm:table-cell">{s.efectivoContado != null ? formatCurrency(Number(s.efectivoContado)) : "—"}</td>
+                    <td className={cn("text-right font-semibold tabular-nums", dif.clase)}>{dif.texto}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </DataTable>
           {paginas > 1 && (
-            <div className="flex items-center justify-between border-t border-[var(--rule-soft)] px-2">
+            <div className="flex items-center justify-between">
               <button type="button" onClick={() => page > 1 && setPage(page - 1)} aria-disabled={page <= 1} className={BOTON_PAG}>
                 <ChevronLeft className="h-4 w-4" aria-hidden /> Más nuevos
               </button>

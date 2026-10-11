@@ -13,17 +13,16 @@
  */
 import { useState } from "react";
 import { toast } from "sonner";
-import { SectionTitle } from "@buleje/design-system";
-import { BookOpen, Download, FileSpreadsheet, History, Loader2, MoreHorizontal, Upload } from "@buleje/design-system/icons";
+import { DataTable, SectionTitle } from "@buleje/design-system";
+import { BookOpen, Download, FileSpreadsheet, History, MoreHorizontal, Upload } from "@buleje/design-system/icons";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { exportToCSV } from "@/lib/utils";
+import { button } from "@/components/ui-system/button-variants";
 import { EXPORT_MODULES, downloadExcel, fetchModuleData } from "./importar-exportar/exportar-datos";
 import SubirProductosModal from "./importar-exportar/SubirProductosModal";
 import HistorialImportacionesModal from "./importar-exportar/HistorialImportacionesModal";
-
-const BOTON = "inline-flex h-12 shrink-0 items-center justify-center gap-1.5 rounded-xl px-3 text-sm font-semibold transition-colors aria-disabled:opacity-60";
 
 export default function ImportExportTab() {
   const [exportando, setExportando] = useState<string | null>(null);
@@ -60,7 +59,7 @@ export default function ImportExportTab() {
           />
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <button type="button" onClick={() => setSubir(true)} className={`${BOTON} bg-[var(--accent-dark)] px-4 font-bold text-white hover:brightness-110`}>
+          <button type="button" onClick={() => setSubir(true)} className={button({ variant: "primary", className: "rounded-xl px-4" })}>
             <Upload className="h-4 w-4" aria-hidden /> Subir productos
           </button>
           <ActionMenu
@@ -78,36 +77,44 @@ export default function ImportExportTab() {
         </div>
       </div>
 
-      {/* Una fila por módulo: qué trae y sus dos formatos. */}
-      <ul className="divide-y divide-[var(--rule-soft)] rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-        {EXPORT_MODULES.map(({ id, label, hint, icon: Icono }) => (
-          <li key={id} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2">
-            <Icono className="h-5 w-5 shrink-0 text-[var(--text-secondary)]" aria-hidden />
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-[var(--text-primary)]">{label}</p>
-              <p className="truncate text-sm text-[var(--text-secondary)]">{hint}</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => void exportar(id, "excel")}
-              aria-disabled={exportando !== null}
-              aria-label={`Bajar ${label} en Excel`}
-              className={`${BOTON} border border-[var(--rule-base)] text-[var(--text-primary)] hover:border-[var(--accent)]`}
-            >
-              {exportando === `${id}-excel` ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <FileSpreadsheet className="h-4 w-4" aria-hidden />} Excel
-            </button>
-            <button
-              type="button"
-              onClick={() => void exportar(id, "csv")}
-              aria-disabled={exportando !== null}
-              aria-label={`Bajar ${label} en CSV`}
-              className={`${BOTON} text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]`}
-            >
-              {exportando === `${id}-csv` ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Download className="h-4 w-4" aria-hidden />} CSV
-            </button>
-          </li>
-        ))}
-      </ul>
+      {/* Una fila por módulo: qué trae y UN botón «Bajar» con sus dos formatos
+          (antes dos botones por fila: 14 a la vista). */}
+      <DataTable>
+        <thead>
+          <tr>
+            <th>Módulo</th>
+            <th className="hidden sm:table-cell">Qué trae</th>
+            <th className="w-32 text-right">Bajar</th>
+          </tr>
+        </thead>
+        <tbody>
+          {EXPORT_MODULES.map(({ id, label, hint, icon: Icono }) => (
+            <tr key={id}>
+              <td>
+                <span className="inline-flex items-center gap-2 font-semibold">
+                  <Icono className="h-5 w-5 shrink-0 text-[var(--text-secondary)]" aria-hidden />
+                  {label}
+                </span>
+              </td>
+              <td className="hidden sm:table-cell">{hint}</td>
+              <td className="text-right">
+                <ActionMenu
+                  label="Bajar"
+                  icon={Download}
+                  size="md"
+                  className="ml-auto"
+                  title={`Bajar ${label} en Excel o CSV`}
+                  disabled={exportando !== null}
+                  actions={[
+                    { id: "excel", label: "En Excel", hint: "Para abrir y corregir en Excel", icon: FileSpreadsheet, busy: exportando === `${id}-excel`, onSelect: () => void exportar(id, "excel") },
+                    { id: "csv", label: "En CSV", hint: "Texto separado por comas, para otro sistema", icon: Download, busy: exportando === `${id}-csv`, onSelect: () => void exportar(id, "csv") },
+                  ]}
+                />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </DataTable>
 
       {subir && <SubirProductosModal onClose={() => setSubir(false)} onImportado={() => undefined} />}
       {historial && <HistorialImportacionesModal onClose={() => setHistorial(false)} />}

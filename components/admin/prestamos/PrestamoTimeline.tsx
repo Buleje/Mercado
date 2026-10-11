@@ -55,11 +55,11 @@ export default function PrestamoTimeline({ cuotas, totalCuotas }: Props) {
       {/* Summary bar */}
       <div className="bg-[var(--surface-sunken)] rounded-xl p-3 space-y-2">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-bold text-[var(--text-secondary)]">
+          <p className="text-sm font-bold text-[var(--text-secondary)]">
             {pagadas} de {totalCuotas} cuotas pagadas ({porcentaje}%)
           </p>
           <span className={cn(
-            "text-xs font-bold px-2 py-0.5 rounded-lg",
+            "text-sm font-bold px-2 py-0.5 rounded-lg",
             porcentaje === 100
               ? "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
               : porcentaje > 50
@@ -139,7 +139,7 @@ export default function PrestamoTimeline({ cuotas, totalCuotas }: Props) {
                     Cuota {c.numeroCuota} — {formatCurrency(c.monto)}
                   </p>
                   <span className={cn(
-                    "text-[length:var(--ts-2xs)] font-bold px-1.5 py-0.5 rounded",
+                    "text-sm font-bold px-1.5 py-0.5 rounded",
                     status === "pagada" && "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]",
                     status === "vencida" && "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
                     status === "próxima" && "bg-[var(--data-warning-100)] dark:bg-[var(--data-warning-500)]/30 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]",

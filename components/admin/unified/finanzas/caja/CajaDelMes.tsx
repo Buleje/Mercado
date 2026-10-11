@@ -8,6 +8,7 @@
  * los cruces y entregas en especie nunca fueron plata.
  */
 
+import type { ReactNode } from "react";
 import { CardTitle } from "@buleje/design-system";
 import { ChevronRight } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -35,9 +36,11 @@ interface Props {
   onAbrir: (f: FuenteDetalle) => void;
   /** Dentro de un plegable que ya se titula «Caja de …»: sin título propio, el neto en una línea. */
   sinTitulo?: boolean;
+  /** Lo que va a la derecha del título (el mes elegido): pegado a lo que filtra. */
+  acciones?: ReactNode;
 }
 
-export default function CajaDelMes({ caja, onAbrir, sinTitulo = false }: Props) {
+export default function CajaDelMes({ caja, onAbrir, sinTitulo = false, acciones }: Props) {
   const nombre = nombreMes(caja.mes);
   const entroAprox = caja.entro.some((r) => esAproximado(r.certeza));
   const salioAprox = caja.salio.some((r) => esAproximado(r.certeza));
@@ -71,6 +74,7 @@ export default function CajaDelMes({ caja, onAbrir, sinTitulo = false }: Props) 
           </p>
           {!sinTitulo && <p className="text-sm text-[var(--text-secondary)]">Neto del mes: entró menos salió</p>}
         </div>
+        {acciones}
       </div>
 
       <div className="grid gap-5 px-3 py-4 @xl:grid-cols-2 sm:px-4">

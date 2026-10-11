@@ -33,9 +33,17 @@ export default function FlujoCajaDiario({
           resumen={lineaFlujo(cashFlow)}
           acciones={
             <>
-              <span className="text-xs text-[var(--text-tertiary)] font-medium">Últimos 30 días</span>
+              <span className="text-sm text-[var(--text-secondary)]">Últimos 30 días</span>
               <FavStar id="flujo-caja" favs={finFavs} />
-              <button onClick={() => setExpandedChart("flujo-caja")} className="p-1 hover:bg-[var(--surface-sunken)] rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-[var(--text-tertiary)]" /></button>
+              <button
+                type="button"
+                onClick={() => setExpandedChart("flujo-caja")}
+                className="inline-flex h-12 w-12 items-center justify-center rounded-xl text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+                title="Ampliar el gráfico"
+                aria-label="Ampliar el gráfico"
+              >
+                <Maximize2 className="h-4 w-4" aria-hidden />
+              </button>
             </>
           }
         >

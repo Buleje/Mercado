@@ -12,13 +12,13 @@ import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { limaDateKey } from "@/lib/utils";
+import { button } from "@/components/ui-system/button-variants";
 import type { LibroId } from "@/lib/contabilidad/libros/comun";
 import { useLibrosContador } from "./use-libros-contador";
 import { LIBROS, mesAnterior } from "./libros-contador-config";
 import { NotasLibro, TablaLibro, TotalesLibro } from "./VistaPreviaLibro";
 
-const BOTON =
-  "inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold transition disabled:opacity-60";
+const BOTON = button({ variant: "primary", className: "shrink-0 rounded-xl px-4 disabled:opacity-60" });
 
 /**
  * `titulo` y `masAcciones`: montado como «Mi Plata › Para el contador» (11-10),
@@ -50,7 +50,7 @@ export default function LibrosContador({ titulo = "Libros para el contador", mas
             value={periodo}
             max={hoy}
             onChange={(e) => e.target.value && setPeriodo(e.target.value)}
-            className="h-12 rounded-xl border-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+            className="h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
           />
         </label>
         <SegmentedControl<LibroId>
@@ -65,7 +65,7 @@ export default function LibrosContador({ titulo = "Libros para el contador", mas
             type="button"
             disabled={bajando !== null || estado.fase !== "lista"}
             onClick={() => void descargar("xlsx")}
-            className={`${BOTON} bg-[var(--accent-dark)] text-white shadow-sm hover:brightness-110`}
+            className={BOTON}
             title={`Bajar el ${actual?.ayuda ?? "libro"} en Excel, con todas las columnas y una hoja de notas`}
           >
             {bajando === "xlsx" ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <FileSpreadsheet className="h-4 w-4" aria-hidden />}

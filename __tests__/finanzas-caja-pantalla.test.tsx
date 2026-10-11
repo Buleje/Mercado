@@ -123,6 +123,13 @@ const PROYECCION: ProyeccionDeCaja = {
   sinFecha: { porCobrar: 5156.34, cuantosPorCobrar: 14, porPagar: 0, cuantosPorPagar: 0 },
 };
 
+// La barra de secciones mide su carril con ResizeObserver: jsdom no lo trae.
+globalThis.ResizeObserver ??= class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+} as unknown as typeof ResizeObserver;
+
 const mockFetch = vi.fn();
 function responder(o: { proyeccion?: number } = {}) {
   mockFetch.mockImplementation((url: string) => {
@@ -138,11 +145,14 @@ function responder(o: { proyeccion?: number } = {}) {
 }
 const pidio = (parte: string) => mockFetch.mock.calls.some(([u]) => String(u).includes(parte));
 
-/* Lo plegado (caja del mes, detalle por concepto, indicadores) se abre para
-   probar su contenido; «lo plegado por defecto» tiene su propio caso abajo. */
+/* La vista va en secciones (`?sub=`, 11-10): «Lo que viene» por defecto,
+   «Por concepto» y «Caja del mes». Cada caso elige la suya por la URL, que el
+   hook lee al montar; los Indicadores se abren para probar su contenido. */
+const RUTA = "/admin?tab=plata&vista=flujo-caja";
+const enSeccion = (sub: "semanas" | "por-concepto" | "caja-del-mes") => window.history.replaceState(null, "", `${RUTA}&sub=${sub}`);
 const abrirTodo = () => {
-  localStorage.setItem("plata:caja:del-mes", "true");
-  localStorage.setItem("plata:caja:detalle-semanas", "true");
+  window.history.replaceState(null, "", RUTA);
+  localStorage.removeItem("admin-last-tab-plata-proyeccion");
   localStorage.setItem("ctp-kpis-v2:plata-proyeccion-caja", "1");
 };
 
@@ -154,9 +164,10 @@ beforeEach(() => {
 });
 afterEach(() => vi.clearAllMocks());
 
-describe("la caja del mes, arriba de la proyección", () => {
+describe("la caja del mes, en su sección", () => {
   it("dos columnas Entró / Salió con sus totales, y lo que está en cero plegado", async () => {
     responder();
+    enSeccion("caja-del-mes");
     render(<CashflowRollingTable />);
     expect(await screen.findByText(`Caja de ${nombreMes(MES)}`)).toBeTruthy();
     expect(await screen.findByText("S/ 3,251.00")).toBeTruthy();
@@ -170,6 +181,7 @@ describe("la caja del mes, arriba de la proyección", () => {
 
   it("los movimientos a mano se muestran en «Sin sumar» y su aviso no se repite", async () => {
     responder();
+    enSeccion("caja-del-mes");
     render(<CashflowRollingTable />);
     expect(await screen.findByText("Sin sumar:")).toBeTruthy();
     expect(screen.getByText(/28 movimientos a mano en la caja · entraron S\/ 3,491\.00 · salieron S\/ 3,436\.00/)).toBeTruthy();
@@ -191,6 +203,7 @@ describe("la caja del mes, arriba de la proyección", () => {
 describe("la proyección de 13 semanas", () => {
   it("la planilla que no viaja es «—», nunca «S/ NaN», y el saldo inicial dice que es estimado", async () => {
     responder();
+    enSeccion("por-concepto");
     const { container } = render(<CashflowRollingTable />);
     const fila = (await screen.findByText("Planilla", { selector: "th span" })).closest("tr") as HTMLElement;
     expect(within(fila).getAllByText("—")).toHaveLength(13);
@@ -217,26 +230,28 @@ describe("la proyección de 13 semanas", () => {
     expect(within(lista).getByText(/^S3–S13 · /)).toBeTruthy();
   });
 
-  it("por defecto, a la vista lo que viene; la caja del mes y el detalle, plegados con su resumen", async () => {
+  it("por defecto, a la vista lo que viene; la caja del mes y el detalle son secciones", async () => {
     localStorage.clear();
     responder();
     render(<CashflowRollingTable />);
     expect(await screen.findByRole("list", { name: "Las próximas 13 semanas" })).toBeTruthy();
     expect(await screen.findByText("Te van a pagar")).toBeTruthy();
-    const caja = screen.getByRole("button", { name: `Caja de ${nombreMes(MES)}` });
-    expect(caja.getAttribute("aria-expanded")).toBe("false");
-    expect(screen.getByText("Entró S/ 3,251.00 · salió S/ 20.00")).toBeTruthy();
+    expect(screen.getByRole("tab", { name: "Lo que viene" }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByRole("tab", { name: "Caja del mes" }).getAttribute("aria-selected")).toBe("false");
+    expect(screen.getByRole("tab", { name: "Por concepto" }).getAttribute("aria-selected")).toBe("false");
     expect(screen.queryByText("Sin sumar:")).toBeNull();
-    expect(screen.getByRole("button", { name: "Detalle por concepto" }).getAttribute("aria-expanded")).toBe("false");
+    /* El mes se elige en la cabecera sólo en «Caja del mes». */
+    expect(screen.queryByRole("combobox", { name: "Mes de la caja" })).toBeNull();
     /* El saldo de hoy viaja en el botón de Indicadores, plegado. */
     expect(screen.getByText(/^Hoy ≈ S\/ 20,500\.00$/)).toBeTruthy();
   });
 
-  it("un 403 de la proyección es una frase, y la caja del mes sigue", async () => {
+  it("un 403 de la proyección es una frase, y lo que viene y la caja del mes siguen", async () => {
     responder({ proyeccion: 403 });
     render(<CashflowRollingTable />);
     expect(await screen.findByText("Tu usuario no ve la proyección de caja.")).toBeTruthy();
-    expect(await screen.findByText(`Caja de ${nombreMes(MES)}`)).toBeTruthy();
+    expect(await screen.findByText("Te van a pagar")).toBeTruthy();
+    expect(screen.getByRole("tab", { name: "Caja del mes" })).toBeTruthy();
   });
 
   it("el cajero ve la proyección pero no pide la caja del negocio", async () => {
@@ -246,6 +261,7 @@ describe("la proyección de 13 semanas", () => {
     expect(await screen.findByText("Saldo de hoy, estimado")).toBeTruthy();
     expect(pidio("/api/finanzas/caja-del-negocio")).toBe(false);
     expect(screen.queryByText(`Caja de ${nombreMes(MES)}`)).toBeNull();
+    expect(screen.queryByRole("tab", { name: "Caja del mes" })).toBeNull();
   });
 });
 
@@ -266,6 +282,7 @@ describe("ninguna fuente se pinta con su id crudo", () => {
 
   it("en pantalla, la fuente nueva sale legible y se puede abrir", async () => {
     responder();
+    enSeccion("caja-del-mes");
     render(<CashflowRollingTable />);
     expect(await screen.findByRole("button", { name: /^Prestamo cobrado: S\/ 50\.00/ })).toBeTruthy();
     expect(screen.queryByText("prestamo_cobrado")).toBeNull();

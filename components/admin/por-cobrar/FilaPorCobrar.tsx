@@ -62,8 +62,8 @@ export default function FilaPorCobrar({
           {cruce && <span className="block text-sm font-semibold text-[var(--text-secondary)]">{leerCruce(cruce)}</span>}
         </div>
       </td>
-      <td className="text-right font-extrabold tabular-nums whitespace-nowrap">{montoEnMoneda(f.monto, f.moneda)}</td>
-      <td className="whitespace-nowrap text-[var(--text-secondary)]">{fechaCorta(f.desde)}</td>
+      <td className="text-right tabular-nums whitespace-nowrap">{montoEnMoneda(f.monto, f.moneda)}</td>
+      <td className="whitespace-nowrap">{fechaCorta(f.desde)}</td>
       <td className="whitespace-nowrap">
         {f.vence === null
           ? <span className="text-[var(--text-secondary)]">Sin plazo</span>

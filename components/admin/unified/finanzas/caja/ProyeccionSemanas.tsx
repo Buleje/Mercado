@@ -93,23 +93,22 @@ export const valor = (w: SemanaProyectada, c: Clave): number | null => {
  * quiere ver de dónde sale cada cierre.
  */
 export default function ProyeccionSemanas({ d }: { d: ProyeccionDeCaja }) {
+  /* El estilo de la tabla es el de `DataTable` (Brandon 11-10: «un solo estilo
+     de tabla»). Lo único propio: la 1.ª columna queda fija al desplazar las 13
+     semanas (sticky + su fondo, o se transparenta) y el color de cada cifra,
+     que dice si entra o sale, va en el texto y no en la celda. */
   return (
-    <DataTable
-      className="w-max min-w-full border-collapse text-sm [&_thead_th]:text-sm [&_thead_th]:normal-case [&_thead_th]:tracking-normal"
-      wrapperClassName="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]"
-    >
+    <DataTable className="w-max min-w-full">
       <thead>
-        <tr className="border-b border-[var(--rule-base)]">
-          <th scope="col" className="sticky left-0 z-10 border-r border-[var(--rule-base)] bg-[var(--surface-sunken)] text-left text-sm">
+        <tr>
+          <th scope="col" className="sticky left-0 z-10">
             Concepto
           </th>
           {d.weeks.map((w) => (
-            <th
-              scope="col"
-              key={w.weekNumber}
-              className={cn("text-right text-sm whitespace-nowrap", w.isNegative && "text-[var(--data-error-ink)]")}
-            >
-              S{w.weekNumber} · {fechaCorta(limaDateKey(w.weekStart))}
+            <th scope="col" key={w.weekNumber} className="text-right whitespace-nowrap">
+              <span className={w.isNegative ? "text-[var(--data-error-ink)]" : undefined}>
+                S{w.weekNumber} · {fechaCorta(limaDateKey(w.weekStart))}
+              </span>
             </th>
           ))}
         </tr>
@@ -118,16 +117,9 @@ export default function ProyeccionSemanas({ d }: { d: ProyeccionDeCaja }) {
         {filas(d).map((f) => {
           const total = f.tono === "total";
           return (
-            <tr key={f.clave} className={cn("border-b border-[var(--rule-soft)]", total && "border-t-2 border-[var(--rule-base)] bg-[var(--surface-sunken)]")}>
-              <th
-                scope="row"
-                className={cn(
-                  "sticky left-0 z-10 border-r border-[var(--rule-base)] px-3 py-2.5 text-left text-sm font-bold whitespace-nowrap",
-                  total ? "bg-[var(--surface-sunken)] text-[var(--text-primary)]" : "bg-[var(--surface-raised)] text-[var(--text-secondary)]",
-                  f.tono === "informa" && "italic",
-                )}
-              >
-                <span className="inline-flex items-center gap-1">
+            <tr key={f.clave}>
+              <th scope="row" className="sticky left-0 z-10 whitespace-nowrap bg-[var(--surface-raised)] text-left">
+                <span className={cn("inline-flex items-center gap-1", total && "font-bold", f.tono === "informa" && "italic")}>
                   <span className="text-[var(--text-tertiary)]">{f.signo}</span>
                   <span>{f.label}</span>
                   {f.ayuda && <InfoTip title={f.label} what={f.ayuda} />}
@@ -137,19 +129,19 @@ export default function ProyeccionSemanas({ d }: { d: ProyeccionDeCaja }) {
                 const v = valor(w, f.clave);
                 const rojo = total && w.closingBalance < 0;
                 return (
-                  <td
-                    key={w.weekNumber}
-                    className={cn(
-                      "text-right text-sm tabular-nums whitespace-nowrap",
-                      f.tono === "entra" && "text-[var(--data-success-ink)]",
-                      f.tono === "sale" && "text-[var(--data-error-ink)]",
-                      f.tono === "neutro" && "text-[var(--text-secondary)]",
-                      f.tono === "informa" && "text-[var(--text-secondary)]",
-                      total && (rojo ? "font-bold text-[var(--data-error-ink)] bg-[var(--data-error-500)]/10" : "font-bold text-[var(--text-primary)]"),
-                    )}
-                  >
-                    {montoTexto(v)}
-                    {rojo && <TrendingDown className="ml-1 inline-block h-3 w-3" aria-label="saldo negativo" />}
+                  <td key={w.weekNumber} className="text-right tabular-nums whitespace-nowrap">
+                    <span
+                      className={cn(
+                        f.tono === "entra" && "text-[var(--data-success-ink)]",
+                        f.tono === "sale" && "text-[var(--data-error-ink)]",
+                        (f.tono === "neutro" || f.tono === "informa") && "text-[var(--text-secondary)]",
+                        total && "font-bold",
+                        rojo && "text-[var(--data-error-ink)]",
+                      )}
+                    >
+                      {montoTexto(v)}
+                      {rojo && <TrendingDown className="ml-1 inline-block h-4 w-4" aria-label="saldo negativo" />}
+                    </span>
                   </td>
                 );
               })}

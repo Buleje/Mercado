@@ -29,7 +29,7 @@ interface Props {
 
 export default function MovimientosTesoreria({ movimientos, monedaDe, notaDe, conCuenta }: Props) {
   return (
-    <DataTable zebra className="[&_thead_th]:text-sm [&_thead_th]:normal-case [&_thead_th]:tracking-normal">
+    <DataTable zebra>
       <thead>
         <tr>
           <th>Cuándo</th>
@@ -51,8 +51,8 @@ export default function MovimientosTesoreria({ movimientos, monedaDe, notaDe, co
             .join(" · ");
           return (
             <tr key={m.id}>
-              <td className="align-top whitespace-nowrap text-[var(--text-secondary)] tabular-nums">{diaConNombre(limaDateKey(m.createdAt))} · {horaDeLima(m.createdAt)}</td>
-              {conCuenta && <td className="align-top font-semibold text-[var(--text-primary)]">{m.cuentaNombre ?? "—"}</td>}
+              <td className="align-top whitespace-nowrap tabular-nums">{diaConNombre(limaDateKey(m.createdAt))} · {horaDeLima(m.createdAt)}</td>
+              {conCuenta && <td className="align-top">{m.cuentaNombre ?? "—"}</td>}
               <td className="align-top">
                 {/* UN solo hijo: en el celular la celda es una fila flex y
                     varios hijos sueltos se pisaban. */}
@@ -66,10 +66,11 @@ export default function MovimientosTesoreria({ movimientos, monedaDe, notaDe, co
                   {extra && <span className="mt-0.5 block text-sm text-[var(--text-tertiary)]">{extra}</span>}
                 </div>
               </td>
-              <td className={cn("align-top text-right font-extrabold tabular-nums whitespace-nowrap", tipo.monto)}>
-                {montoConSigno(m.monto, tipo.signo, moneda)}
+              {/* El color dice si entró o salió: va en el texto, no en la celda. */}
+              <td className="align-top text-right tabular-nums whitespace-nowrap">
+                <span className={tipo.monto}>{montoConSigno(m.monto, tipo.signo, moneda)}</span>
               </td>
-              <td className="align-top text-right tabular-nums whitespace-nowrap text-[var(--text-secondary)]">
+              <td className="align-top text-right tabular-nums whitespace-nowrap">
                 {montoEnMoneda(m.saldoPosterior, moneda)}
               </td>
             </tr>

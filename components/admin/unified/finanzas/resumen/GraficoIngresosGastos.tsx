@@ -47,7 +47,7 @@ export default function GraficoIngresosGastos({
           <button
             type="button"
             onClick={() => setExpandedChart("ingresos-gastos")}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+            className="inline-flex h-12 w-12 items-center justify-center rounded-xl text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
             title="Ampliar el gráfico"
             aria-label="Ampliar el gráfico"
           >

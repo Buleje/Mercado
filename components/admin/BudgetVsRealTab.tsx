@@ -1,7 +1,9 @@
 "use client";
-import { CardTitle, DataTable, LoadingState, SectionTitle } from "@buleje/design-system";
+import { CardTitle, DataTable, LoadingState } from "@buleje/design-system";
+import { CabeceraVista } from "@/components/admin/inventario/movimientos/CabeceraVista";
+import { button } from "@/components/ui-system/button-variants";
 import { Field } from "@/components/admin/shared/Field";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, type ReactNode } from "react";
 import {
   TrendingDown, TrendingUp, AlertTriangle, CheckCircle,
   Download, RefreshCw, Target, Save,
@@ -182,7 +184,7 @@ function ProgressBar({
           style={{ width: `${display}%` }}
         />
       </div>
-      <div className="flex items-center justify-between text-xs">
+      <div className="flex items-center justify-between text-sm">
         <span className={cn("font-bold px-2 py-0.5 rounded-full", bgLight, textColor)}>
           Llevas {fmt(current)} de {fmt(goal)}
         </span>
@@ -211,7 +213,7 @@ function CategoryChart({
         const isUnder = variance < -10;
         return (
           <div key={c.label} className="space-y-1">
-            <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center justify-between text-sm">
               <span className="font-semibold text-[var(--text-primary)] truncate max-w-[140px] sm:max-w-none">
                 {c.label}
               </span>
@@ -244,7 +246,7 @@ function CategoryChart({
           </div>
         );
       })}
-      <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-[var(--text-tertiary)]">
+      <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-[var(--text-tertiary)]">
         <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-primary/10" /> Presupuestado</span>
         <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-primary" /> Real (OK)</span>
         <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-[var(--data-error-500)]" /> Real (exceso)</span>
@@ -255,7 +257,12 @@ function CategoryChart({
 }
 
 /* ── Component ───────────────────────────────────────────────── */
-export default function BudgetVsRealTab() {
+interface Props {
+  /** Las secciones de la vista (Mi Plata › Gastos y presupuesto): van en la fila del título. */
+  barra?: ReactNode;
+}
+
+export default function BudgetVsRealTab({ barra }: Props = {}) {
   const ym = currentYearMonth();
 
   const [expenses, setExpenses] = useState<ExpenseItem[]>([]);
@@ -448,63 +455,70 @@ export default function BudgetVsRealTab() {
     return cats;
   }, [lines, currentMonthSales, currentMonthExpenses, budgetConfig, MONTHS]);
 
-  if (loading) {
-    return (
-      <LoadingState message="Cargando datos..." />
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <AlertTriangle className="h-10 w-10 text-[var(--data-error-500)]" />
-        <p className="text-[var(--text-secondary)] text-sm">Error cargando datos</p>
-        <button
-          onClick={load}
-          className="flex items-center gap-2 px-4 min-h-10 rounded-xl bg-primary text-white text-sm font-semibold"
-        >
-          <RefreshCw className="h-4 w-4" /> Reintentar
-        </button>
-      </div>
-    );
-  }
-
   const monthName = MONTH_LABELS[ym.split("-")[1]] ?? "";
   const yearNum = ym.split("-")[0];
   const day = dayOfMonth();
   const totalDays = daysInMonth();
 
+  const exportar = () =>
+    exportToCSV(
+      filtered.map((b) => ({
+        Categoría: b.category,
+        Departamento: b.department,
+        Mes: b.month,
+        Presupuestado: b.budgeted,
+        Real: b.actual,
+        Variación: b.budgeted > 0 ? fmtPct(((b.actual - b.budgeted) / b.budgeted) * 100) : "N/A",
+      })),
+      "meta-vs-real"
+    );
+  /* La cabecera de la vista, en UNA fila y en todos los estados: las
+     secciones no se van mientras carga. «Exportar» pasó al «⋯». */
+  const cabecera = (
+    <CabeceraVista
+      titulo="Gastos"
+      ayuda={{
+        what: `Meta vs real de ${monthName} ${yearNum} (día ${day} de ${totalDays}): tu meta de ventas y el máximo de gastos del mes contra lo que va, y cómo cerraría el mes a este ritmo.`,
+        affects: "Las metas se guardan en este navegador. La tabla compara cada categoría de gasto con un presupuesto estimado.",
+        example: "Meta de ventas S/ 15 000 y vas en S/ 6 000 al día 12: la proyección te dice si llegas.",
+      }}
+      secciones={barra}
+      acciones={[
+        { id: "exportar", label: "Exportar CSV", hint: "La tabla de categorías, con el filtro", icon: Download, onSelect: exportar, disabled: loading || error },
+        { id: "actualizar", label: "Actualizar", icon: RefreshCw, onSelect: () => void load() },
+      ]}
+      tituloMenu="Exportar y actualizar"
+    />
+  );
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        {cabecera}
+        <LoadingState message="Cargando datos..." />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-4">
+        {cabecera}
+        <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--data-error-500)] bg-[var(--surface-raised)] px-4 py-3">
+          <p className="flex items-center gap-2 text-sm font-bold text-[var(--data-error-ink)]">
+            <AlertTriangle className="h-4 w-4" aria-hidden /> No se pudieron cargar las metas y los gastos.
+          </p>
+          <button type="button" onClick={load} className={button({ variant: "secondary", className: "h-12 shrink-0 gap-2 rounded-xl" })}>
+            <RefreshCw className="h-4 w-4" aria-hidden /> Reintentar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
-        <div>
-          <SectionTitle className="text-[var(--text-primary)]">
-            Meta vs Real
-          </SectionTitle>
-          <p className="text-sm text-[var(--text-secondary)] mt-1">
-            {monthName} {yearNum} · Día {day} de {totalDays}
-          </p>
-        </div>
-        <button
-          onClick={() =>
-            exportToCSV(
-              filtered.map((b) => ({
-                Categoría: b.category,
-                Departamento: b.department,
-                Mes: b.month,
-                Presupuestado: b.budgeted,
-                Real: b.actual,
-                Variación: b.budgeted > 0 ? fmtPct(((b.actual - b.budgeted) / b.budgeted) * 100) : "N/A",
-              })),
-              "meta-vs-real"
-            )
-          }
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors min-h-[44px]"
-        >
-          <Download className="h-4 w-4" /> Exportar
-        </button>
-      </div>
+      {cabecera}
 
       {/* ── 1. Configurador de metas mensuales ── */}
       <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-4">
@@ -515,37 +529,34 @@ export default function BudgetVsRealTab() {
           </CardTitle>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Field label="Meta de ventas del mes (S/)" labelClassName="text-xs font-semibold text-[var(--text-secondary)] block mb-1">
+          <Field label="Meta de ventas del mes (S/)" labelClassName="text-sm font-semibold text-[var(--text-secondary)] block mb-1">
             <input
               type="number"
               min="0"
               value={formSalesGoal}
               onChange={(e) => setFormSalesGoal(e.target.value)}
               placeholder="Ej: 15000"
-              className="w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm outline-none focus:border-primary transition-colors min-h-[44px]"
+              className="w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm outline-none focus:border-primary transition-colors min-h-12"
             />
           </Field>
-          <Field label="Máximo de gastos del mes (S/)" labelClassName="text-xs font-semibold text-[var(--text-secondary)] block mb-1">
+          <Field label="Máximo de gastos del mes (S/)" labelClassName="text-sm font-semibold text-[var(--text-secondary)] block mb-1">
             <input
               type="number"
               min="0"
               value={formExpensesGoal}
               onChange={(e) => setFormExpensesGoal(e.target.value)}
               placeholder="Ej: 8000"
-              className="w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm outline-none focus:border-primary transition-colors min-h-[44px]"
+              className="w-full px-3 py-2.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm outline-none focus:border-primary transition-colors min-h-12"
             />
           </Field>
         </div>
+        {/* Antes, «Guardado» era blanco sobre turquesa al 10 %: no se leía. */}
         <button
+          type="button"
           onClick={handleSaveConfig}
-          className={cn(
-            "mt-3 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all min-h-[44px]",
-            savedFlash
-              ? "bg-primary/10 text-white"
-              : "bg-primary text-white hover:bg-primary/90"
-          )}
+          className={button({ variant: savedFlash ? "secondary" : "primary", className: "mt-3 h-12 gap-2 rounded-xl" })}
         >
-          <Save className="h-4 w-4" />
+          <Save className="h-4 w-4" aria-hidden />
           {savedFlash ? "Guardado" : "Guardar metas"}
         </button>
       </div>
@@ -584,7 +595,7 @@ export default function BudgetVsRealTab() {
           </CardTitle>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="bg-[var(--surface-alt)] rounded-xl p-3">
-              <p className="text-xs text-[var(--text-secondary)] font-semibold mb-1">Ventas proyectadas</p>
+              <p className="text-sm text-[var(--text-secondary)] font-semibold mb-1">Ventas proyectadas</p>
               <div className="flex items-center gap-2">
                 {projection.sales >= (budgetConfig.salesGoal || projection.sales)
                   ? <TrendingUp className="h-4 w-4 text-[var(--data-success-500)] shrink-0" />
@@ -593,12 +604,12 @@ export default function BudgetVsRealTab() {
                   {fmt(projection.sales)}
                 </span>
               </div>
-              <p className="text-xs text-[var(--text-tertiary)] mt-1">
+              <p className="text-sm text-[var(--text-tertiary)] mt-1">
                 Al ritmo actual ({fmt(currentMonthSales)} en {day} días)
               </p>
             </div>
             <div className="bg-[var(--surface-alt)] rounded-xl p-3">
-              <p className="text-xs text-[var(--text-secondary)] font-semibold mb-1">Gastos proyectados</p>
+              <p className="text-sm text-[var(--text-secondary)] font-semibold mb-1">Gastos proyectados</p>
               <div className="flex items-center gap-2">
                 {projection.expenses > (budgetConfig.expensesGoal || projection.expenses)
                   ? <TrendingUp className="h-4 w-4 text-[var(--data-error-500)] shrink-0" />
@@ -607,12 +618,12 @@ export default function BudgetVsRealTab() {
                   {fmt(projection.expenses)}
                 </span>
               </div>
-              <p className="text-xs text-[var(--text-tertiary)] mt-1">
+              <p className="text-sm text-[var(--text-tertiary)] mt-1">
                 Al ritmo actual ({fmt(currentMonthExpenses)} en {day} días)
               </p>
             </div>
             <div className="bg-[var(--surface-alt)] rounded-xl p-3">
-              <p className="text-xs text-[var(--text-secondary)] font-semibold mb-1">Ganancia proyectada</p>
+              <p className="text-sm text-[var(--text-secondary)] font-semibold mb-1">Ganancia proyectada</p>
               <div className="flex items-center gap-2">
                 {(projection.sales - projection.expenses) >= 0
                   ? <TrendingUp className="h-4 w-4 text-[var(--data-success-500)] shrink-0" />
@@ -624,7 +635,7 @@ export default function BudgetVsRealTab() {
                   {fmt(projection.sales - projection.expenses)}
                 </span>
               </div>
-              <p className="text-xs text-[var(--text-tertiary)] mt-1">
+              <p className="text-sm text-[var(--text-tertiary)] mt-1">
                 Ventas menos gastos
               </p>
             </div>
@@ -635,13 +646,13 @@ export default function BudgetVsRealTab() {
       {/* KPIs de gastos */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
         <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-4">
-          <p className="text-xs text-[var(--text-secondary)] font-semibold">Total presupuestado</p>
+          <p className="text-sm text-[var(--text-secondary)] font-semibold">Total presupuestado</p>
           <p className="text-xl font-extrabold text-[var(--text-primary)] mt-1">
             {fmt(totals.budgeted)}
           </p>
         </div>
         <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-4">
-          <p className="text-xs text-[var(--text-secondary)] font-semibold">Total ejecutado</p>
+          <p className="text-sm text-[var(--text-secondary)] font-semibold">Total ejecutado</p>
           <p className="text-xl font-extrabold text-[var(--text-primary)] mt-1">
             {fmt(totals.actual)}
           </p>
@@ -650,21 +661,21 @@ export default function BudgetVsRealTab() {
           "bg-[var(--surface-raised)] rounded-xl border p-4",
           totals.variance > 0 ? "border-[var(--data-error-500)]" : "border-[var(--data-success-500)]/30"
         )}>
-          <p className="text-xs text-[var(--text-secondary)] font-semibold">Desviación gastos</p>
+          <p className="text-sm text-[var(--text-secondary)] font-semibold">Desviación gastos</p>
           <p className={cn("text-xl font-extrabold mt-1", totals.variance > 0 ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]")}>
             {totals.variance > 0 ? "+" : ""}{fmt(totals.variance)}
           </p>
-          <p className={cn("text-xs font-bold", totals.pct > 0 ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]")}>
+          <p className={cn("text-sm font-bold", totals.pct > 0 ? "text-[var(--data-error-500)]" : "text-[var(--data-success-500)]")}>
             {fmtPct(totals.pct)}
           </p>
         </div>
         <div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] p-4">
-          <p className="text-xs text-[var(--text-secondary)] font-semibold">Alertas</p>
+          <p className="text-sm text-[var(--text-secondary)] font-semibold">Alertas</p>
           <div className="flex items-center gap-3 mt-1">
             <span className="text-[var(--data-error-500)] font-extrabold text-lg">{overBudgetCount}</span>
-            <span className="text-xs text-[var(--text-tertiary)]">sobre</span>
+            <span className="text-sm text-[var(--text-tertiary)]">sobre</span>
             <span className="text-[var(--data-success-500)] font-extrabold text-lg">{underBudgetCount}</span>
-            <span className="text-xs text-[var(--text-tertiary)]">bajo</span>
+            <span className="text-sm text-[var(--text-tertiary)]">bajo</span>
           </div>
         </div>
       </div>
@@ -690,7 +701,7 @@ export default function BudgetVsRealTab() {
           placeholder="Buscar categoría..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="px-4 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm outline-none focus:border-primary transition-colors w-48 min-h-[44px]"
+          className="px-4 py-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] text-sm outline-none focus:border-primary transition-colors w-48 min-h-12"
         />
         <BotonRestablecerColumnas cambiado={orden.cambiado} onRestablecer={orden.restablecer} />
       </div>
@@ -727,9 +738,9 @@ export default function BudgetVsRealTab() {
       </div>
 
       {/* Tabla de detalle por categoría */}
-      <DataTable filtrable className="min-w-[600px]">
+      <DataTable filtrable>
         <thead ref={orden.refCabecera}>
-          <tr className="border-b border-[var(--rule-base)]">
+          <tr>
             <EnOrden
               orden={orden.orden}
               celdas={{
@@ -790,17 +801,17 @@ export default function BudgetVsRealTab() {
                 <EnOrden
                   orden={orden.orden}
                   celdas={{
-                    categoria: <td className="font-semibold text-[var(--text-primary)]">{b.category}</td>,
-                    depto: <td className="text-[var(--text-secondary)]">{b.department}</td>,
-                    mes: <td className="text-xs text-[var(--text-tertiary)]">{b.month}</td>,
-                    presupuesto: <td className="text-right font-mono text-[var(--text-primary)]">{fmt(b.budgeted)}</td>,
-                    real: <td className="text-right font-mono font-bold text-[var(--text-primary)]">{fmt(b.actual)}</td>,
+                    categoria: <td>{b.category}</td>,
+                    depto: <td>{b.department}</td>,
+                    mes: <td className="whitespace-nowrap">{b.month}</td>,
+                    presupuesto: <td className="text-right tabular-nums whitespace-nowrap">{fmt(b.budgeted)}</td>,
+                    real: <td className="text-right tabular-nums whitespace-nowrap">{fmt(b.actual)}</td>,
                     variacion: (
-                      <td className={cn(
-                        "text-right font-bold",
-                        status === "over" ? "text-[var(--data-error-500)]" : status === "under" ? "text-[var(--data-success-500)]" : "text-[var(--text-secondary)]"
-                      )}>
-                        {fmtPct(variance)}
+                      <td className="text-right tabular-nums whitespace-nowrap">
+                        {/* El color dice si te pasaste: va en el texto, no en la celda. */}
+                        <span className={status === "over" ? "text-[var(--data-error-ink)]" : status === "under" ? "text-[var(--data-success-ink)]" : undefined}>
+                          {fmtPct(variance)}
+                        </span>
                       </td>
                     ),
                     barra: (
@@ -819,17 +830,17 @@ export default function BudgetVsRealTab() {
                     estado: (
                       <td className="text-center">
                         {status === "ok" && (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] text-xs font-bold">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] text-sm font-bold">
                             <CheckCircle className="h-3 w-3" /> OK
                           </span>
                         )}
                         {status === "over" && (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--data-error-100)] text-[var(--data-error-500)] text-xs font-bold">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--data-error-100)] text-[var(--data-error-500)] text-sm font-bold">
                             <AlertTriangle className="h-3 w-3" /> Exceso
                           </span>
                         )}
                         {status === "under" && (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] text-xs font-bold">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] text-sm font-bold">
                             <TrendingDown className="h-3 w-3" /> Ahorro
                           </span>
                         )}
@@ -842,9 +853,9 @@ export default function BudgetVsRealTab() {
           })}
           {filtered.length === 0 && (
             <tr>
-              <td colSpan={8} className="text-center text-[var(--text-tertiary)]">
+              <td colSpan={8} className="text-center">
                 {expenses.length === 0
-                  ? "No hay gastos registrados aún. Registra gastos en el módulo de Egresos."
+                  ? "Todavía no hay gastos: anótalos en la sección Anotados."
                   : "No se encontraron líneas con los filtros seleccionados."}
               </td>
             </tr>

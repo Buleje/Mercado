@@ -33,6 +33,7 @@ import { DollarSign, Gauge, HandCoins, Landmark, MoreHorizontal, RefreshCw, Scal
 import { cn, limaDateKey } from "@/lib/utils";
 import { montoEnMoneda } from "@/lib/adelantos/cuenta-unificada";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { button } from "@/components/ui-system/button-variants";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
 import { usePorCobrar } from "@/hooks/use-por-cobrar";
@@ -135,7 +136,7 @@ export default function PorCobrarDashboard({ onIr }: { onIr?: (seccion: string) 
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex min-w-0 items-center gap-2">
-          <SectionTitle as="h3" className="whitespace-nowrap text-[var(--text-primary)]">Todo lo que me deben</SectionTitle>
+          <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">Todo lo que me deben</SectionTitle>
           <InfoTip
             title="Lo que te deben"
             what="Suma lo que te debe cada uno: fiados, préstamos que diste, adelantos que diste y madera despachada a cuenta. Cada moneda va aparte. «Cobrar» te lleva al módulo donde se registra el cobro; la madera se cobra desde la cuenta corriente del Libro CTP. Lo vencido va primero."
@@ -154,7 +155,7 @@ export default function PorCobrarDashboard({ onIr }: { onIr?: (seccion: string) 
       {error && (
         <p className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/10 px-4 py-3 text-sm font-bold text-[var(--data-error-ink)]">
           No se pudo cargar lo que te deben ({error}).
-          <button type="button" onClick={recargar} className="min-h-12 rounded-xl px-3 underline">Reintentar</button>
+          <button type="button" onClick={recargar} className={button({ variant: "secondary", className: "h-12 shrink-0 rounded-xl" })}>Reintentar</button>
         </p>
       )}
       {!error && !data.crucesDisponibles && data.items.length > 0 && (
@@ -203,7 +204,7 @@ export default function PorCobrarDashboard({ onIr }: { onIr?: (seccion: string) 
           {/* `sm:pr-14`: el botón flotante «Abrir acciones rápidas» es fixed en
               x 1200-1256 y se comía el «Cobrar» de la fila que quedara a esa
               altura (medido con `elementFromPoint`): ese corredor queda libre. */}
-          <DataTable zebra className="[&_tbody_td]:py-1" wrapperClassName="sm:pr-14">
+          <DataTable zebra wrapperClassName="sm:pr-14">
             <thead>
               <tr>
                 <th>Tipo</th>
@@ -228,7 +229,7 @@ export default function PorCobrarDashboard({ onIr }: { onIr?: (seccion: string) 
               ))}
               {filas.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-6 text-center text-sm font-bold text-[var(--text-secondary)]">
+                  <td colSpan={6} className="text-center">
                     Ninguna cuenta con ese filtro. Toca «Todo» para verlas todas.
                   </td>
                 </tr>
