@@ -8,6 +8,7 @@ import { DocumentsDB } from "@/lib/db/documents.db";
 import { ROLES_CARPETA_PERSONAS, nombreCarpetaCamara } from "@/lib/camaras/personas-drive.server";
 import { arbolPersonas, armarGaleria, diaDeLima, leerMetaFoto, rangoDiaLima } from "@/lib/camaras/personas-galeria";
 import { agruparPersonasDelDia, type FotoConCajas } from "@/lib/camaras/visitantes";
+import { leerUniones } from "@/lib/camaras/visitantes-uniones.server";
 
 /**
  * GET /api/admin/camaras/personas/resumen?dia=YYYY-MM-DD — personas DISTINTAS
@@ -16,7 +17,8 @@ import { agruparPersonasDelDia, type FotoConCajas } from "@/lib/camaras/visitant
  *
  * Sólo lee. Las cajas y la firma de la ropa viven dentro de cada foto del
  * Drive (`ocrMetadata.cajas`, la calcula el servidor al guardar); acá se
- * agrupan al leer y no se guarda nada: «Visitante A» vale sólo para ese día.
+ * agrupan al leer: «Visitante A» vale sólo para ese día. Lo único guardado son
+ * las correcciones a mano «es el mismo que…» (`personas/uniones`).
  * Lee la `ocrMetadata` COMPLETA (`listImagenesEnRango`; `list()` la recorta).
  * Mismos roles que la carpeta «Personas» y el video en vivo.
  */
@@ -45,9 +47,10 @@ export const GET = withApiHandler("camaras-personas-resumen", async (req: NextRe
   }
   const dia = q.data.dia ?? diaDeLima(new Date());
 
-  const [camaras, carpetas] = await Promise.all([
+  const [camaras, carpetas, uniones] = await Promise.all([
     CamarasDB.list(auth.tenantId),
     DocumentsDB.listFolders(auth.tenantId, auth.role),
+    leerUniones(auth.tenantId, dia),
   ]);
   const arbol = arbolPersonas(carpetas);
   if (!arbol) return NextResponse.json({ ok: true, ...agruparPersonasDelDia(dia, []) });
@@ -74,5 +77,9 @@ export const GET = withApiHandler("camaras-personas-resumen", async (req: NextRe
     cajas: cajasPorDoc.get(f.id) ?? null,
   }));
 
-  return NextResponse.json({ ok: true, ...agruparPersonasDelDia(dia, fotos), truncado: crudas.length > TOPE_FOTOS });
+  return NextResponse.json({
+    ok: true,
+    ...agruparPersonasDelDia(dia, fotos, undefined, undefined, uniones),
+    truncado: crudas.length > TOPE_FOTOS,
+  });
 });

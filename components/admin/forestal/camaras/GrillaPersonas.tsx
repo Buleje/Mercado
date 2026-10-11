@@ -149,13 +149,13 @@ function Miniatura({ foto: f, conNombre, onAbrir }: { foto: FotoPersonaGaleria; 
         <div className="flex items-center justify-between gap-2">
           <span className="text-sm font-bold tabular-nums text-[var(--text-primary)]">{f.hora.slice(0, 5)}</span>
           {f.personas !== null && (
-            <span className="inline-flex items-center gap-1 text-xs font-semibold tabular-nums text-[var(--text-secondary)]" title={`${f.personas} ${f.personas === 1 ? "persona" : "personas"}`}>
+            <span className="inline-flex items-center gap-1 text-sm font-semibold tabular-nums text-[var(--text-secondary)]" title={`${f.personas} ${f.personas === 1 ? "persona" : "personas"}`}>
               <Users className="h-3.5 w-3.5" aria-hidden /> {f.personas}
             </span>
           )}
         </div>
         {motivo && f.motivo && <span className={cn(CHIP_BASE, CHIP_TONO[TONO_MOTIVO[f.motivo]])}>{motivo}</span>}
-        {conNombre && <p className="truncate text-xs text-[var(--text-tertiary)]">{f.camaraNombre}</p>}
+        {conNombre && <p className="truncate text-sm text-[var(--text-tertiary)]">{f.camaraNombre}</p>}
       </div>
     </button>
   );

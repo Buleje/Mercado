@@ -148,7 +148,7 @@ export function ChalecosDelDia({
                   sin asignar · decir de quién es
                 </button>
               )}
-              <span className="text-xs tabular-nums text-[var(--text-tertiary)]">
+              <span className="text-sm tabular-nums text-[var(--text-tertiary)]">
                 {c.primeraVez === c.ultimaVez ? c.primeraVez : `${c.primeraVez}–${c.ultimaVez}`}
               </span>
               {c.sinMarcacion ? (
@@ -232,7 +232,7 @@ export function ActividadYCamaras({
               {c.nombre}
             </span>
             {c.fotos > 0 ? (
-              <span className="text-xs tabular-nums text-[var(--text-secondary)]">
+              <span className="text-sm tabular-nums text-[var(--text-secondary)]">
                 {c.fotos} {c.fotos === 1 ? "foto" : "fotos"} ·{" "}
                 {c.primera === c.ultima ? c.primera : `${c.primera}–${c.ultima}`}
               </span>

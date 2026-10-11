@@ -38,6 +38,8 @@ interface Props {
   onElegirHora?: (hora: number | null) => void;
   /** Más baja: cuando las barras acompañan a algo más importante (la grilla de fotos). */
   compacta?: boolean;
+  /** Personas DISTINTAS por hora (visitantes, aprox.): sólo en el globo de cada barra, la cifra a la vista es una. */
+  distintas?: ReadonlyMap<number, number>;
 }
 
 export default function GentePorHora({
@@ -48,6 +50,7 @@ export default function GentePorHora({
   horaElegida = null,
   onElegirHora,
   compacta = false,
+  distintas,
 }: Props) {
   const tituloId = useId();
   const porHora = new Map(filas.map((f) => [f.hora, f]));
@@ -68,13 +71,13 @@ export default function GentePorHora({
       {filas.length === 0 ? (
         <p className="py-4 text-sm text-[var(--text-tertiary)]">{vacio}</p>
       ) : (
-        <ol className={`flex ${compacta ? "h-28" : "h-44"} gap-0.5 pt-5 sm:gap-1`} aria-label={titulo}>
+        <ol className={`flex ${compacta ? "h-28" : "h-44"} gap-0.5 pt-6 sm:gap-1`} aria-label={titulo}>
           {rango.map((h) => {
             const f = porHora.get(h);
             const alto = f && f.max > 0 ? Math.max(6, Math.round((f.max / tope) * 100)) : 3;
             const etiquetaVisible = h % 3 === 0;
             const texto = f
-              ? `${String(h).padStart(2, "0")} h: hasta ${f.max} ${f.max === 1 ? "persona" : "personas"} en ${f.fotos} ${f.fotos === 1 ? "foto" : "fotos"}`
+              ? `${String(h).padStart(2, "0")} h: hasta ${f.max} ${f.max === 1 ? "persona" : "personas"} juntas en ${f.fotos} ${f.fotos === 1 ? "foto" : "fotos"}${distintas?.get(h) ? ` · unas ${distintas.get(h)} distintas en la hora (aprox.)` : ""}`
               : `${String(h).padStart(2, "0")} h: sin fotos`;
             const apagada = horaElegida !== null && horaElegida !== h;
             const contenido = (
@@ -87,7 +90,7 @@ export default function GentePorHora({
                       className={`relative w-full rounded-t-md ${f.max > 0 ? "bg-[var(--accent)]" : "bg-[var(--rule-strong)]/30"}`}
                       style={{ height: `${alto}%` }}
                     >
-                      <span className="absolute inset-x-0 -top-5 text-center text-xs font-bold tabular-nums text-[var(--text-primary)]">
+                      <span className="absolute inset-x-0 -top-6 text-center text-sm font-bold tabular-nums text-[var(--text-primary)]">
                         {f.max}
                       </span>
                     </div>
@@ -97,7 +100,7 @@ export default function GentePorHora({
                 </div>
                 <span
                   aria-hidden
-                  className={`text-xs tabular-nums ${horaElegida === h ? "font-bold text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"} ${etiquetaVisible || horaElegida === h ? "" : "max-sm:invisible"}`}
+                  className={`text-sm tabular-nums ${horaElegida === h ? "font-bold text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"} ${etiquetaVisible || horaElegida === h ? "" : "max-sm:invisible"}`}
                 >
                   {String(h).padStart(2, "0")}
                 </span>

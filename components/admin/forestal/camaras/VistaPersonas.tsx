@@ -8,30 +8,35 @@
  *
  * Todo sale de `GET /api/admin/camaras/personas/fotos`: la pantalla no suma.
  * Las imágenes se piden a los endpoints del Drive, que chequean los permisos.
+ *
+ * 10-10 (Brandon: «compactar»): cabecera en UNA fila (el día, el Drive y los
+ * Indicadores; el título es la pestaña). La línea «7 fotos · de… a… · más en…»
+ * y la pastilla de personas distintas pasaron a Indicadores plegables; la
+ * pastilla salió también de «Hoy en el patio», que repetía la misma cifra.
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { SectionTitle } from "@buleje/design-system";
-import { FolderOpen, Loader2, Users } from "@buleje/design-system/icons";
+import { StatCard } from "@buleje/design-system";
+import { Camera, FolderOpen, Image as ImageIcon, Loader2, Users } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { enlaceAlDrive } from "@/components/admin/forestal/plan-documentos/plan-documentos-api";
 import { limaDateKey } from "@/lib/utils";
 import GentePorHora from "./GentePorHora";
 import GrillaPersonas, { type ChipCamara } from "./GrillaPersonas";
-import ResumenPersonasHoy from "./ResumenPersonasHoy";
 import VisitantesDelDia from "./VisitantesDelDia";
 import SelectorDia from "./SelectorDia";
 import VisorFotoPersona from "./VisorFotoPersona";
 import { navegarEnElPanel } from "./navegar-panel";
 import { useFotosPersonas } from "./use-fotos-personas";
 import { useResumenPersonas } from "./use-resumen-personas";
+import { useKpisPlegables } from "../kpis-plegables";
 import { BLOQUE, BTN, diaLegible } from "./camaras-ui";
 
 const INFO_POR_HORA = {
   what: "Cada barra es la foto con MÁS personas de esa hora. Toca una barra para ver sólo esas fotos.",
   affects:
     "El detector toma una foto cuando aparece alguien y, si sigue en cuadro, una por minuto: es lo más que se vio junto, no un conteo de gente distinta.",
-  example: "«3» a las 10 h: en la foto con más gente de las 10 había 3 personas.",
+  example: "«3» a las 10 h: en la foto con más gente de las 10 había 3 personas. Al pasar el mouse por la barra, cuántas DISTINTAS hubo en la hora (aprox., por la ropa).",
 };
 
 interface Props {
@@ -103,23 +108,59 @@ export default function VistaPersonas({ activo, recarga, camaras }: Props) {
   const esHoy = dia === hoy;
   const hrefDrive = enlaceAlDrive(g?.carpetaAbrir ?? null);
   const r = g?.resumen;
+  const p = personas.resumen && personas.resumen.fotosConCajas > 0 ? personas.resumen : null;
+  const hayFotos = Boolean(r && g && g.totalDia > 0);
+
+  /* Las cifras del día, plegables (como «Hoy en el patio»). Sin fotos, no hay panel. */
+  const kpis = useKpisPlegables({
+    claveMemoria: "camaras-personas",
+    alto: "md",
+    compactoEnMovil: true,
+    resumen: r && hayFotos
+      ? `${r.fotos} ${r.fotos === 1 ? "foto" : "fotos"}${p ? ` · ${p.personas} ${p.personas === 1 ? "persona" : "personas"}` : ""}`
+      : undefined,
+    tarjetas: r && hayFotos ? [
+      <StatCard
+        key="fotos"
+        label="Fotos"
+        value={r.fotos}
+        icon={ImageIcon}
+        subValue={[
+          r.primera && r.ultima ? (r.primera === r.ultima ? `a las ${r.primera}` : `de ${r.primera} a ${r.ultima}`) : null,
+          g?.truncado ? "se muestran las 2000 más nuevas" : null,
+        ].filter(Boolean).join(" · ") || undefined}
+      />,
+      ...(p ? [
+        <StatCard
+          key="personas"
+          label="Personas distintas"
+          value={p.personas}
+          icon={Users}
+          subValue={`${p.conChaleco} con chaleco · aprox.${p.sinAgrupar > 0 ? ` · ${p.sinAgrupar} lejos sin agrupar` : ""}`}
+        />,
+      ] : []),
+      ...(r.camaraTop ? [
+        <StatCard key="camara" label="Más fotos en" value={r.camaraTop.nombre} icon={Camera} subValue={`${r.camaraTop.fotos} ${r.camaraTop.fotos === 1 ? "foto" : "fotos"}`} />,
+      ] : []),
+    ] : [],
+  });
 
   return (
     <div className="space-y-4" data-testid="camaras-personas">
+      {/* Una fila: el día · ⓘ · Drive · Indicadores. El título visible es la pestaña. */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="mr-auto flex items-center gap-1.5">
-          <SectionTitle>
-            Personas
-            <span className="ml-2 text-sm font-normal text-[var(--text-tertiary)]">{diaLegible(dia)}</span>
-          </SectionTitle>
+        <h2 className="sr-only">Personas del {diaLegible(dia)}</h2>
+        <SelectorDia fecha={dia} hoy={hoy} onCambiar={cambiarDia} etiqueta="Día de las fotos" />
+        {/* El día y su ⓘ viajan juntos: a 400 px el ⓘ quedaba solo al comienzo de otra fila. */}
+        <span className="inline-flex items-center gap-1.5">
+          <span className="text-sm font-bold text-[var(--text-secondary)]">{diaLegible(dia)}</span>
           <InfoTip
             title="Personas"
-            what="Las fotos que toma el detector de personas mientras tienes abierto «Ver todas en vivo»."
-            affects="Se guardan solas en el Drive (Cámaras › Personas › cámara › día) y no pasan por la IA paga. Sólo las ven admin, dueño y almacenero."
-            example="«Apareció alguien» a las 06:42 en el Portón: la primera persona del día."
+            what="Las fotos que toma el detector de personas mientras tienes abierto «Ver todas en vivo». Se guardan solas en el Drive (Cámaras › Personas › cámara › día) y no pasan por la IA paga."
+            affects="«Personas distintas» junta las fotos por el color de la ropa, nunca por la cara: es aprox. Ropa parecida junta a dos personas; con el chaleco tapado, alguien del personal cuenta como visita. Sólo las ven admin, dueño y almacenero."
+            example="«7 fotos · 3 personas»: el detector tomó 7 fotos y en ellas había 3 personas distintas."
           />
-        </div>
-        <SelectorDia fecha={dia} hoy={hoy} onCambiar={cambiarDia} etiqueta="Día de las fotos" />
+        </span>
         {g?.carpetaId && (
           <a
             href={hrefDrive}
@@ -135,6 +176,7 @@ export default function VistaPersonas({ activo, recarga, camaras }: Props) {
             <span className="max-sm:sr-only">Abrir en el Drive</span>
           </a>
         )}
+        <div className="ml-auto flex min-w-0 items-center gap-2">{kpis.boton}</div>
       </div>
 
       {error ? (
@@ -166,34 +208,7 @@ export default function VistaPersonas({ activo, recarga, camaras }: Props) {
         </div>
       ) : (
         <div className={cargando ? "space-y-4 opacity-60" : "space-y-4"} aria-busy={cargando}>
-          {r && (
-            <p className="text-sm text-[var(--text-secondary)]" data-testid="personas-resumen">
-              <b className="tabular-nums text-[var(--text-primary)]">{r.fotos}</b> {r.fotos === 1 ? "foto" : "fotos"}
-              {r.primera && r.ultima && (
-                <>
-                  {" · "}
-                  {r.primera === r.ultima ? "a las " : "de "}
-                  <b className="tabular-nums text-[var(--text-primary)]">{r.primera}</b>
-                  {r.primera !== r.ultima && (
-                    <>
-                      {" a "}
-                      <b className="tabular-nums text-[var(--text-primary)]">{r.ultima}</b>
-                    </>
-                  )}
-                </>
-              )}
-              {r.camaraTop && (
-                <>
-                  {" · más en "}
-                  <b className="text-[var(--text-primary)]">{r.camaraTop.nombre}</b> ({r.camaraTop.fotos})
-                </>
-              )}
-              {g.truncado && " · se muestran las 2000 más nuevas"}
-              <span className="ml-2 align-middle">
-                <ResumenPersonasHoy resumen={personas.resumen} esHoy={esHoy} />
-              </span>
-            </p>
-          )}
+          {kpis.panel}
           <GentePorHora
             filas={g.porHora}
             titulo="Personas por hora"
@@ -202,11 +217,14 @@ export default function VistaPersonas({ activo, recarga, camaras }: Props) {
             horaElegida={hora}
             onElegirHora={setHora}
             compacta
+            distintas={p ? new Map(p.porHora.map((x) => [x.hora, x.personas])) : undefined}
           />
           <VisitantesDelDia
             resumen={personas.resumen}
             error={personas.error}
             elegido={elegido?.clave ?? null}
+            /* Unir o separar visitantes en su ficha: el conteo de Indicadores y la grilla se releen. */
+            onCambio={() => void recargarPersonas()}
             onElegir={(v) => {
               setVisitante(v);
               setAbierta(null);
