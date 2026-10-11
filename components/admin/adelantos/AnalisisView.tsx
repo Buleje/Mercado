@@ -21,8 +21,12 @@
  */
 
 import { useMemo, useState } from "react";
-import { CardTitle, StatCard } from "@buleje/design-system";
-import { BarChart3, TrendingDown, TrendingUp, Coins, Users, Clock, FileText, Gauge, PartyPopper, ArrowDownToLine, Wrench, Landmark } from "@buleje/design-system/icons";
+import { CardTitle, SectionTitle, StatCard } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import ActionMenu from "@/components/admin/shared/action-menu";
+import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
+import TarjetaIndicador from "@/components/admin/por-cobrar/TarjetaIndicador";
+import { BarChart3, TrendingDown, TrendingUp, Coins, Clock, FileText, Gauge, MoreHorizontal, PartyPopper, ArrowDownToLine, Wrench, Landmark } from "@buleje/design-system/icons";
 import {
   ResponsiveContainer, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip,
@@ -186,6 +190,24 @@ export function AnalisisView({
     link.click(); URL.revokeObjectURL(url);
   };
 
+  /* Indicadores plegables (patrón del panel, 11-10): las cinco tarjetas
+     repetían las cifras de Indicadores del Resumen. Plegadas dicen lo propio
+     del análisis: el % recuperado y en cuántos días vuelve la plata. */
+  const kpis = useKpisPlegables({
+    claveMemoria: "adelantos-analisis",
+    alto: "md",
+    compactoEnMovil: true,
+    anchoFijo: true,
+    sinDatosAun: loading,
+    resumen: `${kpi.pct}% recuperado`,
+    tarjetas: [
+      <TarjetaIndicador key="pct" rotulo="% recuperado" valor={`${kpi.pct}%`} detalle={velocidad !== null ? `vuelve en ~${velocidad} días en promedio` : "Sin liquidaciones"} icono={Gauge} tono="destacado" />,
+      <TarjetaIndicador key="adelantado" rotulo="Adelantado" valor={fmtMon(kpi.adelantado, cur)} detalle="Plata que diste" icono={TrendingDown} />,
+      <TarjetaIndicador key="liquidado" rotulo="Liquidado" valor={fmtMon(kpi.liquidado, cur)} detalle="Recuperado" icono={TrendingUp} />,
+      <TarjetaIndicador key="pendiente" rotulo="Pendiente" valor={fmtMon(kpi.pendiente, cur)} detalle={`${kpi.deudores} persona${kpi.deudores === 1 ? "" : "s"} con saldo abierto`} icono={Coins} />,
+    ],
+  });
+
   if (loading) return <SkeletonGrid />;
   if (adelantos.length === 0 && recibidos.length === 0) return <EmptyState icon={BarChart3} title="Sin datos" hint="Los gráficos aparecen cuando registres adelantos." />;
 
@@ -193,41 +215,46 @@ export function AnalisisView({
 
   return (
     <div className="space-y-5">
-      {/* Header + toggle de moneda + export */}
-      <div className="flex items-center justify-between gap-2 flex-wrap">
-        <CardTitle className="text-sm font-bold text-[var(--text-primary)]">Análisis del módulo</CardTitle>
-        <div className="flex items-center gap-2">
+      {/* Título · moneda · Indicadores · «⋯» en UNA fila (patrón del panel). */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">Análisis</SectionTitle>
+          <InfoTip
+            title="Análisis de adelantos"
+            what="Cómo vuelve la plata que adelantas: atraso de lo que te deben, adelantado contra liquidado por mes, por modalidad y quién debe más."
+            affects={monedas.length > 1 ? `Mostrando ${monedaLabel(cur)}: cada moneda va aparte.` : "Sólo lo que diste; lo que te dieron está en «Lo que recibiste», al pie."}
+            example="Si el % recuperado baja mes a mes, estás adelantando más rápido de lo que vuelve."
+          />
+        </div>
+        <div className="ml-auto flex min-w-0 items-center gap-2">
           {monedas.length > 1 && (
-            <div className="inline-flex rounded-xl border border-[var(--rule-base)] overflow-hidden">
+            <div className="inline-flex overflow-hidden rounded-xl border border-[var(--rule-base)]" role="group" aria-label="Moneda">
               {monedas.map((c) => (
                 <button
                   key={c}
+                  type="button"
                   onClick={() => setMoneda(c)}
-                  className={`h-10 px-4 text-sm font-semibold transition-colors ${cur === c ? "bg-primary text-white" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`}
+                  aria-pressed={cur === c}
+                  className={`h-12 px-4 text-sm font-semibold transition-colors ${cur === c ? "bg-primary text-white" : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`}
                 >
                   {c === "USD" ? "US$" : "S/"}
                 </button>
               ))}
             </div>
           )}
-          <button onClick={exportarCsv} className="inline-flex items-center gap-1 h-10 px-4 rounded-xl border border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors">
-            <FileText className="h-5 w-5" /> Exportar CSV
-          </button>
+          {kpis.boton}
+          <ActionMenu
+            label="Más"
+            icon={MoreHorizontal}
+            soloIcono
+            size="md"
+            className="w-12 shrink-0"
+            actions={[{ id: "csv", label: "Exportar CSV", hint: "El análisis, mes por mes", icon: FileText, onSelect: exportarCsv }]}
+          />
         </div>
       </div>
 
-      {monedas.length > 1 && (
-        <p className="text-sm text-[var(--text-tertiary)] -mt-2">Mostrando <strong className="text-[var(--text-secondary)]">{monedaLabel(cur)}</strong>. Cambia la moneda arriba.</p>
-      )}
-
-      {/* KPIs */}
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
-        <StatCard label="Adelantado" value={fmtMon(kpi.adelantado, cur)} icon={TrendingDown} subValue="Plata que diste" />
-        <StatCard label="Liquidado" value={fmtMon(kpi.liquidado, cur)} icon={TrendingUp} emphasis="success" subValue="Recuperado" />
-        <StatCard label="Pendiente" value={fmtMon(kpi.pendiente, cur)} icon={Coins} emphasis={kpi.pendiente > 0 ? "warning" : "neutral"} subValue="Por cobrar" />
-        <StatCard label="% Recuperado" value={`${kpi.pct}%`} icon={Gauge} emphasis={kpi.pct >= 80 ? "success" : kpi.pct >= 50 ? "neutral" : "warning"} subValue={velocidad !== null ? `~${velocidad} días prom.` : "Sin liquidaciones"} />
-        <StatCard label="Personas deben" value={String(kpi.deudores)} icon={Users} density="compact" subValue="Con saldo abierto" />
-      </div>
+      {kpis.panel}
 
       {/* Aging de saldos */}
       <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">

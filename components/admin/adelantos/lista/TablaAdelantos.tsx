@@ -233,7 +233,7 @@ export default function TablaAdelantos({
                         {a.codigoOperacion ?? "—"}
                       </span>
                       {a.reciboManual && (
-                        <span className="block truncate font-mono text-xs text-[var(--text-tertiary)]" title={`N° del recibo de papel — recibo ${a.reciboManual}`}>
+                        <span className="block truncate font-mono text-sm text-[var(--text-tertiary)]" title={`N° del recibo de papel — recibo ${a.reciboManual}`}>
                           recibo {a.reciboManual}
                         </span>
                       )}
@@ -244,14 +244,14 @@ export default function TablaAdelantos({
                         {dir.direccion === "RECIBIDO" && (
                           <span
                             title={dir.concepto ? ETIQUETA_CONCEPTO[dir.concepto] : "Plata que recibiste"}
-                            className="inline-flex items-center gap-0.5 whitespace-nowrap rounded-full bg-[var(--data-info-500)]/12 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--data-info-ink)]"
+                            className="inline-flex items-center gap-0.5 whitespace-nowrap rounded-full bg-[var(--data-info-500)]/12 px-2 py-0.5 text-sm font-bold text-[var(--data-info-ink)]"
                           >
                             <ArrowDownToLine className="h-3 w-3" aria-hidden /> {dir.concepto === "PRESTAMO" ? "Te prestaron" : "Te pagaron antes"}
                           </span>
                         )}
                         <span
                           title={MODALIDAD_LABEL[a.modalidad] ?? a.modalidad}
-                          className="inline-block whitespace-nowrap rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)]"
+                          className="inline-block whitespace-nowrap rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-sm font-bold text-[var(--text-secondary)]"
                         >
                           {MODALIDAD_CHIP[a.modalidad] ?? a.modalidad}
                           {a.entregasPactadas.length > 0 && ` · ${cumplidas}/${a.entregasPactadas.length}`}
@@ -259,7 +259,7 @@ export default function TablaAdelantos({
                         {a.piesTablares != null && a.piesTablaresTipo && (
                           <span
                             title={`${PT_TIPO_LABEL[a.piesTablaresTipo] ?? a.piesTablaresTipo} · ${fmtPt(a.piesTablares)}`}
-                            className="inline-flex items-center gap-0.5 whitespace-nowrap rounded-full bg-[var(--accent)]/10 px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]"
+                            className="inline-flex items-center gap-0.5 whitespace-nowrap rounded-full bg-[var(--accent)]/10 px-2 py-0.5 text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]"
                           >
                             <Ruler className="h-3 w-3" aria-hidden /> {fmtPt(a.piesTablares)}
                           </span>
@@ -271,7 +271,7 @@ export default function TablaAdelantos({
                         {a.beneficiario?.nombre ?? "—"}
                       </span>
                       {a.beneficiario?.telefono && (
-                        <span className="block truncate text-xs tabular-nums text-[var(--text-tertiary)]">{a.beneficiario.telefono}</span>
+                        <span className="block truncate text-sm tabular-nums text-[var(--text-tertiary)]">{a.beneficiario.telefono}</span>
                       )}
                     </td>
                     <td className="truncate px-2.5 py-2.5 text-sm tabular-nums text-[var(--text-secondary)]">
@@ -301,11 +301,11 @@ export default function TablaAdelantos({
                     <td className="whitespace-nowrap px-2.5 py-2.5 text-right font-bold tabular-nums text-[var(--text-primary)]">
                       {fmtMon(a.saldoPendiente, a.moneda)}
                       {debe === "le-debes" && (
-                        <span className="block text-xs font-semibold text-[var(--data-info-ink)]">le debes</span>
+                        <span className="block text-sm font-semibold text-[var(--data-info-ink)]">le debes</span>
                       )}
                     </td>
                     <td className="px-2.5 py-2.5">
-                      <span className={`inline-block whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold ${badge?.className ?? ""}`}>
+                      <span className={`inline-block whitespace-nowrap rounded-full px-2.5 py-1 text-sm font-bold ${badge?.className ?? ""}`}>
                         {badge?.label ?? a.status}
                       </span>
                     </td>

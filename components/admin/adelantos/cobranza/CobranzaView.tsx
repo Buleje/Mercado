@@ -15,9 +15,13 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CardTitle } from "@buleje/design-system";
-import { CheckCircle, CheckSquare, FileText, MessageCircle, Search, Settings2, Target } from "@buleje/design-system/icons";
+import { SectionTitle } from "@buleje/design-system";
+import { AlertTriangle, CalendarClock, CheckCircle, CheckSquare, FileText, MessageCircle, MoreHorizontal, Phone, Search, Settings2, Target, Wallet } from "@buleje/design-system/icons";
 import ActionMenu from "@/components/admin/shared/action-menu";
+import { button } from "@/components/ui-system/button-variants";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
+import TarjetaIndicador from "@/components/admin/por-cobrar/TarjetaIndicador";
 import { formatCurrency } from "@/lib/currency";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { logger } from "@/lib/logger";
@@ -256,118 +260,72 @@ export default function CobranzaView({
     doc.save(`cobranza-${new Date().toISOString().slice(0, 10)}.pdf`);
   };
 
+  /* Indicadores plegables (patrón del panel, 11-10): las cuatro tarjetas
+     grandes ocupaban la primera pantalla y «Por cobrar» repetía el saldo del
+     Resumen. Plegados dicen lo propio de Cobranza: lo vencido. */
+  const kpis = useKpisPlegables({
+    claveMemoria: "adelantos-cobranza",
+    alto: "md",
+    compactoEnMovil: true,
+    anchoFijo: true,
+    sinDatosAun: loading,
+    resumen: vencidoNum > 0 ? `Vencido ${fmtMonedas(vencido)}` : "Nada vencido",
+    tarjetas: [
+      <TarjetaIndicador key="cobrar" rotulo="Por cobrar" valor={fmtMonedas(totalPorCobrar)} detalle={`${deudores.length} deudor${deudores.length === 1 ? "" : "es"}`} icono={Wallet} tono="destacado" />,
+      /* % de la cartera: es una proporción sin unidad, no un monto — sumar los
+         números crudos de cada moneda para esta cuenta es la misma aproximación
+         que ya se acepta en todo lo demás (acá no hay tipo de cambio cargado). */
+      <TarjetaIndicador key="vencido" rotulo="Vencido" valor={fmtMonedas(vencido)} detalle={totalPorCobrarNum > 0 ? `${Math.round((vencidoNum / totalPorCobrarNum) * 100)}% de la cartera` : "—"} icono={AlertTriangle} tono={vencidoNum > 0 ? "alerta" : "normal"} />,
+      <TarjetaIndicador key="prometieron" rotulo="Prometieron pagar" valor={String(prometieron)} detalle={prometieron > 0 ? "con fecha comprometida" : "nadie se comprometió"} icono={CalendarClock} />,
+      <TarjetaIndicador key="recuperado" rotulo="Recuperado del mes" valor={fmtMonedas(recuperado)} detalle={avance.porcentaje == null ? "Sin meta: ponla en «⋯»" : `${avance.porcentaje}% de ${formatCurrency(avance.meta)}`} icono={Target} />,
+    ],
+  });
+
   if (loading) return <SkeletonGrid />;
   if (deudores.length === 0 && abiertos.length === 0) {
     return <EmptyState icon={CheckCircle} title="Nada por cobrar" hint="No hay adelantos abiertos con saldo pendiente." />;
   }
 
   const chip = (activo: boolean) =>
-    `h-10 rounded-xl px-3.5 text-sm font-bold transition-colors ${
+    `h-12 shrink-0 rounded-xl px-3.5 text-sm font-bold transition-colors ${
       activo
         ? "bg-primary/12 text-[var(--accent-ink)] ring-1 ring-primary/40 dark:text-[var(--accent)]"
         : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
     }`;
 
   return (
-    <div className="space-y-4">
-      <ProximosVencimientos adelantos={adelantos} />
-
-      {/* ── El estado de la cartera, en una línea ─────────────────────── */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="Por cobrar" valor={fmtMonedas(totalPorCobrar)} pie={`${deudores.length} deudores`} tono="warning" />
-        <Kpi
-          label="Vencido"
-          valor={fmtMonedas(vencido)}
-          /* % de la cartera: es una proporción sin unidad, no un monto — sumar los
-             números crudos de cada moneda para esta cuenta es la misma aproximación
-             que ya se acepta en todo lo demás (acá no hay tipo de cambio cargado). */
-          pie={totalPorCobrarNum > 0 ? `${Math.round((vencidoNum / totalPorCobrarNum) * 100)}% de la cartera` : "—"}
-          tono={vencidoNum > 0 ? "error" : "success"}
-        />
-        <Kpi
-          label="Prometieron pagar"
-          valor={String(prometieron)}
-          pie={prometieron > 0 ? "con fecha comprometida" : "nadie se comprometió"}
-          tono={prometieron > 0 ? "info" : "neutro"}
-        />
-        <button onClick={() => setVerMeta(true)} className="rounded-xl bg-[var(--surface-sunken)] p-4 text-left transition-colors hover:bg-[var(--surface-sunken)]/60">
-          <p className="flex items-center gap-1.5 text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">
-            <Target className="h-3.5 w-3.5" aria-hidden /> Recuperado del mes
-          </p>
-          <p className="mt-1 text-2xl font-extrabold tabular-nums text-[var(--data-success)]">{fmtMonedas(recuperado)}</p>
-          {avance.porcentaje == null ? (
-            <p className="text-sm text-[var(--text-secondary)]">Toca para poner una meta</p>
-          ) : (
-            <>
-              <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-[var(--surface-raised)]">
-                <div className="h-full rounded-full bg-[var(--data-success)]" style={{ width: `${avance.porcentaje}%` }} />
-              </div>
-              <p className="mt-1 text-sm text-[var(--text-secondary)]">
-                {avance.porcentaje}% de {formatCurrency(avance.meta)}
-              </p>
-            </>
-          )}
-        </button>
-      </div>
-
-      {/* ── Tramos de antigüedad: los cortes que usa un contador ──────── */}
-      <div className="flex flex-wrap gap-2">
-        <button onClick={() => setTramo("todos")} className={chip(tramo === "todos")}>
-          Todos {deudores.length}
-        </button>
-        {TRAMOS.filter((t) => totales[t.id].n > 0).map((t) => (
-          <button key={t.id} onClick={() => setTramo(t.id)} className={chip(tramo === t.id)} title={t.detalle}>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: t.tono }} />
-              {t.label} {totales[t.id].n}
-              <span className="font-semibold tabular-nums opacity-70">{fmtMonedas(totales[t.id].total)}</span>
-            </span>
-          </button>
-        ))}
-      </div>
-
-      {/* ── La lista ──────────────────────────────────────────────────── */}
-      <div className="rounded-xl bg-[var(--surface-raised)] p-3 ring-1 ring-[var(--rule-soft)]">
-        {/* Título + buscador + herramientas en UNA fila, pegados a la lista que
-            filtran (ley de la vista, 5 y 6). «Marcar todos», «Mensajes» y «PDF»
-            se usan una vez por ronda: van al «⋯»; «Modo llamada» queda a la
-            vista porque ES la forma de cobrar. */}
-        <div className="mb-2 flex flex-wrap items-center gap-2 px-1">
-          <CardTitle className="mr-auto text-sm font-bold text-[var(--text-primary)]">
-            {filtrados.length} deudor{filtrados.length === 1 ? "" : "es"}
-            {tramo !== "todos" && <span className="font-semibold text-[var(--text-tertiary)]"> de {deudores.length}</span>}
-          </CardTitle>
-          {sinTelefono > 0 && (
-            <span className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--data-warning)]/10 px-3 py-1.5 text-sm font-semibold text-[var(--data-warning)]">
-              {sinTelefono} sin teléfono
-            </span>
-          )}
-          {/* min-w-[220px] NO alcanza acá: el reset `* { min-width: 0 }` sin capa de
-              globals.css le gana a @layer utilities (memoria min-width-utilities-muertas)
-              — el buscador se aplastaba a ~40px ("Bu" nomás) apenas compartía fila con
-              "Marcar todos". El estilo inline es el escape probado en POSSearchBar. */}
-          <div className="relative flex-1 sm:max-w-xs" style={{ minWidth: 220 }}>
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--text-tertiary)]" />
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Buscar deudor…"
-              aria-label="Buscar deudor"
-              className="h-11 w-full rounded-xl bg-[var(--surface-sunken)] pl-11 pr-4 text-base text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30"
-            />
-          </div>
+    <div className="space-y-3">
+      {/* Título · Indicadores · Modo llamada · «⋯» en UNA fila (patrón del panel).
+          «Marcar todos», «Mensajes», «PDF» y la meta se usan una vez por ronda:
+          van al «⋯»; «Modo llamada» queda a la vista porque ES la forma de cobrar. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">Cobranza</SectionTitle>
+          <InfoTip
+            title="Cobranza"
+            what="A quién cobrarle primero: va adelante quien rompió lo que pactó (una entrega o un vencimiento), después lo más antiguo. Los tramos (1-30, 31-60, 61-90, +90 días) son los que usa un contador."
+            affects="Cada gestión que anotas (llamada, mensaje, promesa) queda en la fila. A los 90 días la deuda se da por incobrable."
+            example="Si Juan prometió pagar el viernes y no pagó, sube arriba con «incumplió»."
+          />
+        </div>
+        <div className="ml-auto flex min-w-0 items-center gap-2">
+          {kpis.boton}
           <button
+            type="button"
             onClick={() => setEnLlamada(true)}
             disabled={filtrados.length === 0}
             title="Una persona a la vez, en grande"
-            className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-[var(--surface-sunken)] px-3.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)] disabled:opacity-50"
+            className={button({ variant: "secondary", className: "h-12 shrink-0 rounded-xl px-4" })}
           >
-            <MessageCircle className="h-4 w-4" /> Modo llamada
+            <Phone className="h-4 w-4" aria-hidden /> Modo llamada
           </button>
           <ActionMenu
-            label="Más herramientas de cobranza"
+            label="Más"
+            icon={MoreHorizontal}
             soloIcono
-            size="sm"
+            size="md"
+            className="w-12 shrink-0"
+            title="Marcar a todos, mensajes, PDF y meta del mes"
             actions={[
               {
                 id: "marcar",
@@ -377,23 +335,56 @@ export default function CobranzaView({
                 disabled: conTelefonoVisibles.length === 0,
                 onSelect: () => setTanda(todosMarcados ? new Set() : new Set(conTelefonoVisibles)),
               },
-              {
-                id: "mensajes",
-                label: "Mensajes",
-                hint: "Qué se le escribe a cada tramo",
-                icon: Settings2,
-                onSelect: () => setVerPlantillas(true),
-              },
-              {
-                id: "pdf",
-                label: "Descargar PDF",
-                hint: "La lista de deudores para imprimir",
-                icon: FileText,
-                onSelect: () => void exportarPdf(),
-              },
+              { id: "mensajes", label: "Mensajes", hint: "Qué se le escribe a cada tramo", icon: Settings2, onSelect: () => setVerPlantillas(true) },
+              { id: "pdf", label: "Descargar PDF", hint: "La lista de deudores para imprimir", icon: FileText, onSelect: () => void exportarPdf() },
+              { id: "meta", label: "Meta del mes", hint: avance.porcentaje == null ? "Cuánto quieres recuperar este mes" : `${avance.porcentaje}% de ${formatCurrency(avance.meta)}`, icon: Target, onSelect: () => setVerMeta(true) },
             ]}
           />
         </div>
+      </div>
+
+      {kpis.panel}
+
+      <ProximosVencimientos adelantos={adelantos} />
+
+      {/* ── Buscador + tramos en UNA fila, pegada a la lista que filtran ── */}
+      <div className="flex flex-wrap items-center gap-2">
+        {/* min-w-[220px] NO alcanza acá: el reset `* { min-width: 0 }` sin capa de
+            globals.css le gana a @layer utilities (memoria min-width-utilities-muertas).
+            El estilo inline es el escape probado en POSSearchBar. */}
+        <div className="relative flex-1 sm:max-w-xs" style={{ minWidth: 220 }}>
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Buscar deudor…"
+            aria-label="Buscar deudor"
+            className="h-12 w-full rounded-xl bg-[var(--surface-sunken)] pl-11 pr-4 text-base text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-primary/30"
+          />
+        </div>
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar por antigüedad">
+          <button type="button" onClick={() => setTramo("todos")} aria-pressed={tramo === "todos"} className={chip(tramo === "todos")}>
+            Todos {deudores.length}
+          </button>
+          {TRAMOS.filter((t) => totales[t.id].n > 0).map((t) => (
+            <button key={t.id} type="button" onClick={() => setTramo(t.id)} aria-pressed={tramo === t.id} className={chip(tramo === t.id)} title={t.detalle}>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: t.tono }} aria-hidden />
+                {t.label} {totales[t.id].n}
+                <span className="font-semibold tabular-nums opacity-70">{fmtMonedas(totales[t.id].total)}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+        {sinTelefono > 0 && (
+          <span className="inline-flex h-12 items-center rounded-xl bg-[var(--data-warning)]/10 px-3 text-sm font-semibold text-[var(--data-warning-ink)]">
+            {sinTelefono} sin teléfono
+          </span>
+        )}
+      </div>
+
+      {/* ── La lista ──────────────────────────────────────────────────── */}
+      <div className="rounded-xl bg-[var(--surface-raised)] p-3 ring-1 ring-[var(--rule-soft)]">
         {filtrados.length === 0 ? (
           <p className="py-8 text-center text-base text-[var(--text-tertiary)]">Nadie en este tramo.</p>
         ) : (
@@ -513,36 +504,6 @@ export default function CobranzaView({
           onClose={() => setEnLlamada(false)}
         />
       )}
-    </div>
-  );
-}
-
-function Kpi({
-  label,
-  valor,
-  pie,
-  tono = "neutro",
-}: {
-  label: string;
-  valor: string;
-  pie: string;
-  tono?: "neutro" | "success" | "warning" | "error" | "info";
-}) {
-  const color =
-    tono === "success"
-      ? "text-[var(--data-success)]"
-      : tono === "warning"
-        ? "text-[var(--data-warning)]"
-        : tono === "error"
-          ? "text-[var(--data-error)]"
-          : tono === "info"
-            ? "text-[var(--data-info)]"
-            : "text-[var(--text-primary)]";
-  return (
-    <div className="rounded-xl bg-[var(--surface-sunken)] p-4">
-      <p className="text-sm font-bold uppercase tracking-wide text-[var(--text-tertiary)]">{label}</p>
-      <p className={`mt-1 text-2xl font-extrabold tabular-nums ${color}`}>{valor}</p>
-      <p className="text-sm text-[var(--text-secondary)]">{pie}</p>
     </div>
   );
 }

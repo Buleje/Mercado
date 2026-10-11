@@ -10,7 +10,8 @@
  * prometió y hace cuánto que nadie lo toca.
  */
 
-import { AlertTriangle, MessageCircle, NotebookPen, Phone } from "@buleje/design-system/icons";
+import { AlertTriangle, MessageCircle, MoreHorizontal, NotebookPen, Phone } from "@buleje/design-system/icons";
+import ActionMenu from "@/components/admin/shared/action-menu";
 import { enlaceWhatsAppConTexto } from "@/lib/adelantos/contacto";
 import { fmtMon } from "../shared";
 import {
@@ -136,51 +137,48 @@ export default function FilaDeudor({
         </span>
       </span>
 
+      {/* Una acción a la vista (48 px) y el resto en «⋯» (patrón del panel,
+          11-10): eran tres botones de 36 px por fila. Con teléfono, la acción es
+          Escribir; sin número la persona queda fuera de toda ronda, así que la
+          acción es cargarlo. */}
       <span className="flex shrink-0 items-center gap-1.5">
-        <button
-          type="button"
-          onClick={onAnotar}
-          title="Anotar qué pasó"
-          aria-label={`Anotar gestión de ${d.nombre}`}
-          className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--surface-sunken)] text-[var(--text-secondary)] transition-colors hover:bg-primary/12 hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
-        >
-          <NotebookPen className="h-4 w-4" />
-        </button>
         {d.telefono ? (
-          <>
-            <a
-              href={`tel:${d.telefono.replace(/\D/g, "")}`}
-              title="Llamar"
-              aria-label={`Llamar a ${d.nombre}`}
-              className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--surface-sunken)] text-[var(--text-secondary)] transition-colors hover:bg-primary/12 hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
-            >
-              <Phone className="h-4 w-4" />
-            </a>
-            <a
-              href={wa ?? "#"}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-primary/12 px-3 text-sm font-bold text-[var(--accent-ink)] transition-colors hover:bg-primary/20 dark:text-[var(--accent)]"
-            >
-              <MessageCircle className="h-4 w-4" /> Escribir
-            </a>
-          </>
+          <a
+            href={wa ?? "#"}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Escribirle a ${d.nombre} por WhatsApp`}
+            className="inline-flex h-12 items-center gap-1.5 rounded-xl bg-primary/12 px-3 text-sm font-bold text-[var(--accent-ink)] transition-colors hover:bg-primary/20 dark:text-[var(--accent)]"
+          >
+            <MessageCircle className="h-4 w-4" aria-hidden /> Escribir
+          </a>
         ) : (
-          /* Sin número esta persona queda fuera de toda ronda para siempre: el
-             aviso es un botón, no un texto muerto. */
-          /* Ícono + tooltip (ley de la vista, 6): con muchos sin número eran
-             tantos botones con texto como filas. El tono de alerta y el aviso
-             «N sin teléfono» de la cabecera dicen qué falta. */
           <button
             type="button"
             onClick={onCargarTelefono}
-            title="Cargar su teléfono: sin número no entra en ninguna ronda"
+            title="Sin número no entra en ninguna ronda"
             aria-label={`Cargar el teléfono de ${d.nombre}`}
-            className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--data-warning)]/12 text-[var(--data-warning)] transition-colors hover:bg-[var(--data-warning)]/20"
+            className="inline-flex h-12 items-center gap-1.5 rounded-xl bg-[var(--data-warning)]/12 px-3 text-sm font-bold text-[var(--data-warning-ink)] transition-colors hover:bg-[var(--data-warning)]/20"
           >
-            <Phone className="h-4 w-4" />
+            <Phone className="h-4 w-4" aria-hidden /> <span className="max-sm:sr-only">Teléfono</span>
           </button>
         )}
+        <ActionMenu
+          label={`Más sobre ${d.nombre}`}
+          icon={MoreHorizontal}
+          soloIcono
+          size="md"
+          className="w-12 shrink-0"
+          actions={[
+            { id: "anotar", label: "Anotar qué pasó", hint: "Llamada, mensaje, promesa de pago", icon: NotebookPen, onSelect: onAnotar },
+            ...(d.telefono
+              ? [
+                  { id: "llamar", label: "Llamar", hint: d.telefono, icon: Phone, onSelect: () => { window.location.href = `tel:${(d.telefono ?? "").replace(/\D/g, "")}`; } },
+                  { id: "telefono", label: "Cambiar el teléfono", icon: Phone, onSelect: onCargarTelefono },
+                ]
+              : []),
+          ]}
+        />
       </span>
     </li>
   );

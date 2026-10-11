@@ -1,332 +1,181 @@
 "use client";
 
-import { DataTable, SectionTitle } from "@buleje/design-system";
-import { useState, useEffect, useCallback, useMemo } from "react";
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Legend,
-} from "recharts";
-import {
-  TrendingUp, TrendingDown, Minus, RefreshCw, AlertTriangle, BarChart3,
-} from "@buleje/design-system/icons";
+/**
+ * Reportes comparativos (Mi Plata › Comparar) — un mes de Lima contra el
+ * pasado o contra el mismo mes del año anterior.
+ *
+ * Bug 11-10: leía `/api/admin/dashboard?from&to`, que ignora el rango y trae
+ * listas, no totales → todo S/ 0,00 y «NaN%» (Pedidos = `Number([…])`), con 1
+ * venta real en octubre en `main`. Ahora lee `/api/finanzas/comparativo`, que
+ * calcula todo en el servidor con la regla de ingresos de Mi Plata. Lo que no
+ * se puede calcular llega `null` y se muestra «—»: nunca «NaN» ni «+100 %»
+ * desde cero.
+ *
+ * Patrón del panel: el título lo pone `BloqueMudado` (no se repite acá); el
+ * selector y «⋯» en una fila; «Cambio» y «Tendencia» decían el mismo % dos
+ * veces y quedaron en una columna. El gráfico de barras ponía soles, pedidos y
+ * % en el mismo eje (S/ 0,10 junto a 1 pedido): no comparaba nada y se fue —
+ * la tabla dice lo mismo con su unidad.
+ */
+
+import { DataTable } from "@buleje/design-system";
+import { useCallback, useEffect, useState } from "react";
+import { Minus, MoreHorizontal, RefreshCw, TrendingDown, TrendingUp } from "@buleje/design-system/icons";
+import SegmentedControl from "@/components/ui-system/SegmentedControl";
+import ActionMenu from "@/components/admin/shared/action-menu";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { cn } from "@/lib/utils";
 import { formatCurrency, formatNumber } from "@/lib/format";
+import { variacion, type Contra, type PeriodoComparativo } from "@/lib/finance/comparativo-periodos";
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+type Clave = Exclude<keyof PeriodoComparativo, "mes">;
 
-type Comparison = "mes_pasado" | "mismo_mes_anyo";
-
-interface PeriodData {
-  ventas: number;
-  pedidos: number;
-  ticketPromedio: number;
-  margen: number;
-  clientesNuevos: number;
-  fiadosPendientes: number;
-}
-
-interface MetricaDef {
-  key: keyof PeriodData;
-  label: string;
-  prefix: string;
-  higherIsBetter: boolean;
-}
-
-const METRICAS: MetricaDef[] = [
-  { key: "ventas",           label: "Ventas totales",       prefix: "S/",  higherIsBetter: true  },
-  { key: "pedidos",          label: "Pedidos",              prefix: "",    higherIsBetter: true  },
-  { key: "ticketPromedio",   label: "Ticket promedio",      prefix: "S/",  higherIsBetter: true  },
-  { key: "margen",           label: "Margen (%)",           prefix: "",    higherIsBetter: true  },
-  { key: "clientesNuevos",   label: "Clientes nuevos",      prefix: "",    higherIsBetter: true  },
-  { key: "fiadosPendientes", label: "Fiados pendientes",    prefix: "S/",  higherIsBetter: false },
+const METRICAS: { key: Clave; label: string; tipo: "plata" | "numero" | "pct"; subirEsBueno: boolean }[] = [
+  { key: "ventas", label: "Ventas", tipo: "plata", subirEsBueno: true },
+  { key: "transacciones", label: "Ventas y pedidos", tipo: "numero", subirEsBueno: true },
+  { key: "ticketPromedio", label: "Ticket promedio", tipo: "plata", subirEsBueno: true },
+  { key: "margen", label: "Margen bruto", tipo: "pct", subirEsBueno: true },
+  { key: "clientesNuevos", label: "Clientes nuevos", tipo: "numero", subirEsBueno: true },
+  { key: "fiadoDado", label: "Fiado dado", tipo: "plata", subirEsBueno: false },
 ];
 
-const TOP_CHART_KEYS: (keyof PeriodData)[] = ["ventas", "pedidos", "ticketPromedio", "margen", "clientesNuevos"];
+const OPCIONES: { value: Contra; label: string }[] = [
+  { value: "mes_pasado", label: "vs. mes pasado" },
+  { value: "mismo_mes_anyo", label: "vs. hace un año" },
+];
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function fmtValue(key: keyof PeriodData, value: number) {
-  const m = METRICAS.find(m => m.key === key);
-  if (!m) return String(value);
-  if (m.prefix === "S/") {
-    return `${formatCurrency(value)}`;
-  }
-  if (key === "margen") return `${value.toFixed(1)}%`;
-  return formatNumber(value);
+/* Meses escritos a mano (`Intl` cambia por versión de ICU; en Perú, «setiembre»). */
+const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "setiembre", "octubre", "noviembre", "diciembre"];
+function nombreMes(mes: string): string {
+  const [y, m] = mes.split("-").map(Number);
+  const nombre = MESES[m - 1] ?? mes;
+  return `${nombre.charAt(0).toUpperCase()}${nombre.slice(1)} ${y}`;
 }
 
-function calcChange(a: number, b: number) {
-  if (b === 0) return a > 0 ? 100 : 0;
-  return ((a - b) / Math.abs(b)) * 100;
+function valor(tipo: "plata" | "numero" | "pct", v: number | null): string {
+  if (v == null || !Number.isFinite(v)) return "—";
+  if (tipo === "plata") return formatCurrency(v);
+  if (tipo === "pct") return `${v.toFixed(1)} %`;
+  return formatNumber(v);
 }
 
-function getPeriodDates(comparison: Comparison) {
-  const now = new Date();
-  const yearA = now.getFullYear();
-  const monthA = now.getMonth();
-
-  const startA = new Date(yearA, monthA, 1).toISOString().slice(0, 10);
-  const endA = new Date(yearA, monthA + 1, 0).toISOString().slice(0, 10);
-
-  let startB: string;
-  let endB: string;
-  let labelA: string;
-  let labelB: string;
-
-  const monthNames = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-
-  if (comparison === "mes_pasado") {
-    const prevDate = new Date(yearA, monthA - 1, 1);
-    startB = prevDate.toISOString().slice(0, 10);
-    endB = new Date(yearA, monthA, 0).toISOString().slice(0, 10);
-    labelA = `${monthNames[monthA]} ${yearA}`;
-    labelB = `${monthNames[prevDate.getMonth()]} ${prevDate.getFullYear()}`;
-  } else {
-    startB = new Date(yearA - 1, monthA, 1).toISOString().slice(0, 10);
-    endB = new Date(yearA - 1, monthA + 1, 0).toISOString().slice(0, 10);
-    labelA = `${monthNames[monthA]} ${yearA}`;
-    labelB = `${monthNames[monthA]} ${yearA - 1}`;
-  }
-
-  return { startA, endA, startB, endB, labelA, labelB };
+interface Respuesta {
+  contra: Contra;
+  actual: PeriodoComparativo;
+  base: PeriodoComparativo;
 }
 
-function mapResponse(json: Record<string, unknown>): PeriodData {
-  const ventas = Number(json.totalRevenue ?? json.ventas ?? json.revenue ?? 0);
-  const pedidos = Number(json.totalOrders ?? json.pedidos ?? json.orders ?? 0);
-  const ticketPromedio = pedidos > 0 ? ventas / pedidos : Number(json.ticketPromedio ?? 0);
-  const margen = Number(json.margin ?? json.margen ?? 0);
-  const clientesNuevos = Number(json.newCustomers ?? json.clientesNuevos ?? 0);
-  const fiadosPendientes = Number(json.fiadosPending ?? json.fiadosPendientes ?? 0);
-  return { ventas, pedidos, ticketPromedio, margen, clientesNuevos, fiadosPendientes };
-}
-
-// ── Trend Badge ───────────────────────────────────────────────────────────────
-
-function TrendBadge({ change, higherIsBetter }: { change: number; higherIsBetter: boolean }) {
-  const isGood = higherIsBetter ? change > 0 : change < 0;
-  const isNeutral = Math.abs(change) < 0.5;
-
-  if (isNeutral) {
+function Cambio({ cambio, subirEsBueno }: { cambio: number | null; subirEsBueno: boolean }) {
+  if (cambio == null) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
-        <Minus className="h-2.5 w-2.5" /> {change >= 0 ? "+" : ""}{change.toFixed(1)}%
+      <span className="text-sm text-[var(--text-tertiary)]" title="Sin base para comparar: el otro mes está en cero o sin dato">
+        —
       </span>
     );
   }
-
+  const quieto = Math.abs(cambio) < 0.5;
+  const bueno = subirEsBueno ? cambio > 0 : cambio < 0;
+  const Icono = quieto ? Minus : cambio > 0 ? TrendingUp : TrendingDown;
   return (
-    <span className={cn(
-      "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[length:var(--ts-2xs)] font-bold",
-      isGood
-        ? "bg-primary/10 dark:bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:text-[var(--data-success-500)]"
-        : "bg-[var(--data-error-100)] dark:bg-[var(--data-error-500)]/30 text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
-    )}>
-      {change > 0
-        ? <TrendingUp className="h-2.5 w-2.5" />
-        : <TrendingDown className="h-2.5 w-2.5" />}
-      {change > 0 ? "+" : ""}{change.toFixed(1)}%
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 text-sm font-bold tabular-nums",
+        quieto ? "text-[var(--text-secondary)]" : bueno ? "text-[var(--data-success-ink)]" : "text-[var(--data-error-ink)]",
+      )}
+    >
+      <Icono className="h-4 w-4" aria-hidden />
+      {cambio > 0 ? "+" : ""}
+      {cambio.toFixed(1)} %
     </span>
   );
 }
 
-// ── Main Component ────────────────────────────────────────────────────────────
-
 export default function ComparativeReportsTab() {
-  const [comparison, setComparison] = useState<Comparison>("mes_pasado");
-  const [loading, setLoading] = useState(true);
+  const [contra, setContra] = useState<Contra>("mes_pasado");
+  const [datos, setDatos] = useState<Respuesta | null>(null);
+  const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
-  const [dataA, setDataA] = useState<PeriodData | null>(null);
-  const [dataB, setDataB] = useState<PeriodData | null>(null);
 
-  const periods = useMemo(() => getPeriodDates(comparison), [comparison]);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
+  const cargar = useCallback(async () => {
+    setCargando(true);
     setError("");
     try {
-      const [resA, resB] = await Promise.all([
-        fetch(`/api/admin/dashboard?from=${periods.startA}&to=${periods.endA}`),
-        fetch(`/api/admin/dashboard?from=${periods.startB}&to=${periods.endB}`),
-      ]);
-
-      const [jsonA, jsonB] = await Promise.all([
-        resA.ok ? resA.json() : {},
-        resB.ok ? resB.json() : {},
-      ]);
-
-      setDataA(mapResponse(jsonA));
-      setDataB(mapResponse(jsonB));
+      const res = await fetch(`/api/finanzas/comparativo?contra=${contra}`, { credentials: "include", cache: "no-store" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setDatos((await res.json()) as Respuesta);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error al cargar datos comparativos");
+      setError(e instanceof Error ? e.message : "sin conexión");
     } finally {
-      setLoading(false);
+      setCargando(false);
     }
-  }, [periods]);
+  }, [contra]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    void cargar();
+  }, [cargar]);
 
-  const chartData = useMemo(() => {
-    if (!dataA || !dataB) return [];
-    return TOP_CHART_KEYS.map(key => {
-      const m = METRICAS.find(m => m.key === key)!;
-      return {
-        name: m.label,
-        [periods.labelA]: dataA[key],
-        [periods.labelB]: dataB[key],
-      };
-    });
-  }, [dataA, dataB, periods]);
-
-  // Gráfico sin datos NO se muestra (se oculta) — la tabla de métricas queda visible.
-  const hasChartData = chartData.some(
-    (row) => (Number(row[periods.labelA]) || 0) > 0 || (Number(row[periods.labelB]) || 0) > 0,
-  );
-
-  // ── Loading ──
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-16">
-        <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  // ── Error ──
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 gap-3">
-        <AlertTriangle className="h-8 w-8 text-[var(--data-error-500)]" />
-        <p className="text-sm text-[var(--data-error-500)] dark:text-[var(--data-error-500)]">{error}</p>
-        <button onClick={fetchData} className="text-xs text-primary hover:underline">Reintentar</button>
-      </div>
-    );
-  }
+  const vigente = datos?.contra === contra ? datos : null;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-primary text-white flex items-center justify-center  shrink-0">
-            <BarChart3 className="h-5 w-5" />
-          </div>
-          <div>
-            <SectionTitle className="text-[var(--text-primary)]">Reportes Comparativos</SectionTitle>
-            <p className="text-xs text-[var(--text-secondary)] dark:text-muted">Comparación de métricas entre períodos</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {/* Selector */}
-          <div className="flex bg-[var(--surface-sunken)] rounded-xl p-0.5 gap-0.5">
-            {(["mes_pasado", "mismo_mes_anyo"] as Comparison[]).map(opt => (
-              <button
-                key={opt}
-                onClick={() => setComparison(opt)}
-                className={cn(
-                  "px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
-                  comparison === opt
-                    ? "bg-[var(--surface-raised)] text-primary "
-                    : "text-[var(--text-secondary)] dark:text-muted hover:text-[var(--text-primary)] dark:hover:text-[var(--text-primary)]",
-                )}
-              >
-                {opt === "mes_pasado" ? "vs. Mes pasado" : "vs. Mismo mes año anterior"}
-              </button>
-            ))}
-          </div>
-          <button
-            onClick={fetchData}
-            className="p-2 rounded-xl hover:bg-[var(--surface-sunken)] transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
-            title="Actualizar"
-          >
-            <RefreshCw className="h-4 w-4 text-[var(--text-tertiary)]" />
-          </button>
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <SegmentedControl value={contra} onChange={setContra} options={OPCIONES} size="lg" label="Comparar contra" />
+        <InfoTip
+          title="Reportes comparativos"
+          what="El mes en curso contra el mes pasado o contra el mismo mes del año anterior. Ventas = ventas del mostrador + pedidos concretados, igual que el Resumen de Mi Plata."
+          affects="El margen sólo cuenta las ventas que guardaron su costo. «—» = no hay con qué comparar (el otro mes está en cero)."
+          example="Si en setiembre no vendiste nada y en octubre S/ 50, el cambio sale «—»: desde cero no hay porcentaje que diga algo."
+        />
+        <div className="ml-auto">
+          <ActionMenu
+            label="Más"
+            icon={MoreHorizontal}
+            soloIcono
+            size="md"
+            className="w-12 shrink-0"
+            actions={[{ id: "actualizar", label: "Actualizar", icon: RefreshCw, onSelect: () => void cargar() }]}
+          />
         </div>
       </div>
 
-      {dataA && dataB && (
-        <>
-          {/* Table */}
-          <DataTable>
-                <thead>
-                  <tr>
-                    <th>Métrica</th>
-                    <th className="text-right text-primary">{periods.labelA}</th>
-                    <th className="text-right">{periods.labelB}</th>
-                    <th className="text-right">Cambio</th>
-                    <th className="text-center">Tendencia</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {METRICAS.map(m => {
-                    const valA = dataA[m.key];
-                    const valB = dataB[m.key];
-                    const change = calcChange(valA, valB);
-                    return (
-                      <tr key={m.key}>
-                        <td>
-                          <span className="text-xs font-medium text-[var(--text-secondary)]">{m.label}</span>
-                        </td>
-                        <td className="text-right">
-                          <span className="text-xs font-bold font-mono text-[var(--text-primary)]">{fmtValue(m.key, valA)}</span>
-                        </td>
-                        <td className="text-right">
-                          <span className="text-xs font-mono text-[var(--text-secondary)] dark:text-muted">{fmtValue(m.key, valB)}</span>
-                        </td>
-                        <td className="text-right">
-                          <span className={cn(
-                            "text-xs font-bold font-mono",
-                            change >= 0 ? "text-[var(--data-success-500)] dark:text-[var(--data-success-500)]" : "text-[var(--data-error-500)] dark:text-[var(--data-error-500)]",
-                          )}>
-                            {change >= 0 ? "+" : ""}{change.toFixed(1)}%
-                          </span>
-                        </td>
-                        <td className="text-center">
-                          <TrendBadge change={change} higherIsBetter={m.higherIsBetter} />
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-          </DataTable>
+      {error && (
+        <p className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/10 px-4 py-3 text-sm font-bold text-[var(--data-error-ink)]">
+          No se pudo cargar la comparación ({error}).
+          <button type="button" onClick={() => void cargar()} className="min-h-12 rounded-xl px-3 underline">
+            Reintentar
+          </button>
+        </p>
+      )}
 
-          {/* Chart — se oculta si no hay datos */}
-          {hasChartData && (
-          <div className="bg-[var(--surface-raised)] border border-[var(--rule-base)] dark:border-[var(--rule-base)] rounded-xl p-4">
-            <p className="text-sm font-bold text-[var(--text-secondary)] mb-4">Top 5 métricas — comparación</p>
-            <div className="h-64">
-              <ResponsiveContainer initialDimension={{ width: 1, height: 1 }} minWidth={0} width="100%" height="100%">
-                <BarChart data={chartData} barCategoryGap="30%">
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--card-border, #e5e7eb)" />
-                  <XAxis
-                    dataKey="name"
-                    tick={{ fontSize: 10, fill: "var(--muted, #9ca3af)" }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 10, fill: "var(--muted, #9ca3af)" }}
-                    axisLine={false}
-                    tickLine={false}
-                    tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "var(--card, #fff)",
-                      border: "1px solid var(--card-border, #e5e7eb)",
-                      borderRadius: "0.5rem",
-                      fontSize: 12,
-                    }}
-                  />
-                  <Legend wrapperStyle={{ fontSize: 11 }} />
-                  <Bar dataKey={periods.labelA} fill="var(--accent)" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey={periods.labelB} fill="#f4a261" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-          )}
-        </>
+      {!error && cargando && !vigente && <p className="py-6 text-sm text-[var(--text-secondary)]">Cargando la comparación…</p>}
+
+      {!error && vigente && (
+        <DataTable zebra aria-busy={cargando}>
+          <thead>
+            <tr>
+              <th>Métrica</th>
+              <th className="text-right">{nombreMes(vigente.actual.mes)}</th>
+              <th className="text-right">{nombreMes(vigente.base.mes)}</th>
+              <th className="text-right">Cambio</th>
+            </tr>
+          </thead>
+          <tbody>
+            {METRICAS.map((m) => {
+              const a = vigente.actual[m.key];
+              const b = vigente.base[m.key];
+              return (
+                <tr key={m.key}>
+                  <td className="text-sm font-semibold text-[var(--text-primary)]">{m.label}</td>
+                  <td className="text-right text-base font-bold tabular-nums text-[var(--text-primary)]">{valor(m.tipo, a)}</td>
+                  <td className="text-right text-sm tabular-nums text-[var(--text-secondary)]">{valor(m.tipo, b)}</td>
+                  <td className="text-right">
+                    <Cambio cambio={variacion(a, b)} subirEsBueno={m.subirEsBueno} />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </DataTable>
       )}
     </div>
   );

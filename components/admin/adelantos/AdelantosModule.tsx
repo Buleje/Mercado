@@ -3,7 +3,10 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { leerJson } from "@/lib/errores/sin-dato";
-import { CardTitle } from "@buleje/design-system";
+import { CardTitle, SectionTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
+import TarjetaIndicador from "@/components/admin/por-cobrar/TarjetaIndicador";
 import {
   Coins,
   Users,
@@ -11,7 +14,6 @@ import {
   Wallet,
   CheckCircle,
   Ban,
-  ChevronRight,
   Search,
   Trash2,
   BarChart3,
@@ -19,8 +21,9 @@ import {
   AlertTriangle,
   Repeat,
   Download,
-  ChevronLeft,
   HandCoins,
+  MoreHorizontal,
+  TrendingUp,
 } from "@buleje/design-system/icons";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { SegundoNivelEnElHub, useRanuraDelSegundoNivel } from "@/components/admin/unified/finanzas/segundo-nivel";
@@ -32,12 +35,10 @@ import CrearAdelantoModal from "./CrearAdelantoModal";
 import DescuentoPlanillaModal from "./DescuentoPlanillaModal";
 import DetalleAdelantoModal from "./detalle/DetalleAdelantoModal";
 import TablaAdelantos from "./lista/TablaAdelantos";
-import TarjetaPersona from "./personas/TarjetaPersona";
-import FichaPersonaModal from "./personas/FichaPersonaModal";
+import PersonasView from "./personas/PersonasView";
 import CobranzaView from "./cobranza/CobranzaView";
 import ResumenView from "./resumen/ResumenView";
 import type { Resumen } from "./resumen/tipos";
-import CrearPersonaModal from "./personas/CrearPersonaModal";
 import { leerPedidoLiquidar } from "./cuentas/liquidar-por-url";
 import { borrarPedidoEntregar, leerPedidoEntregar, useAdelantoEnUrl } from "./hooks/use-adelanto-en-url";
 import { button } from "@/components/ui-system/button-variants";
@@ -45,20 +46,12 @@ import { adelantosDe } from "@/lib/adelantos/sugerencias";
 import type { PersonaEntregar } from "@/lib/adelantos/entregar-tipos";
 import { useFichaEnUrl } from "@/hooks/use-ficha-en-url";
 import { PARAM_ADELANTO } from "@/lib/adelantos/enlace-adelanto";
-import { sinTildes, fmtMon, sumByMoneda, fmtMonedas, EmptyState, SkeletonGrid, inputCls, Field, ModalShell, ModalActions, STATUS_BADGE } from "./shared";
+import { fmtMon, sumByMoneda, fmtMonedas, EmptyState, SkeletonGrid, inputCls, Field, ModalShell, ModalActions, STATUS_BADGE } from "./shared";
 import { csrfHeaders } from "@/lib/csrf-client";
-import { estadoDeCredito, requiereAtencion, saldoParaLimite } from "@/lib/adelantos/limite-credito";
 import { normalizarBusquedaCodigo } from "@/lib/adelantos/codigo-operacion";
 import { descargarCsvAdelantos } from "@/lib/adelantos/exportar-csv";
-import { paginar, type ColumnaOrden, type Direccion } from "@/lib/adelantos/ordenar-lista";
-import {
-  cumpleFiltro,
-  ordenarPersonas,
-  type FiltroPersonas,
-  type OrdenPersonas,
-} from "@/lib/adelantos/ordenar-personas";
-import { descargarCsvPersonas } from "@/lib/adelantos/exportar-csv";
-import { cuentaDePersona, leerDireccion } from "@/lib/adelantos/modos-alta";
+import { type ColumnaOrden, type Direccion } from "@/lib/adelantos/ordenar-lista";
+import { leerDireccion } from "@/lib/adelantos/modos-alta";
 import type { BeneficiarioConSaldo as BeneficiarioConSaldoBase } from "./crear-adelanto/tipos";
 import type {
   DbAdelanto,
@@ -90,14 +83,12 @@ function personaParaEntregar(b: BeneficiarioConSaldo, adelantos: readonly DbAdel
 /**
  * Filas por página del listado.
  *
- * 18 deja la lista en ≤ 2,5 pantallas a 1280×900 (ley de la vista, 7): con 25
- * eran 2,98 y con 20, 2,52 — una fila con recibo y chips mide ~90 px, no ~60.
- * Más alto vuelve al muro que esto vino a resolver.
+ * 18 dejaba la lista en 2,14 pantallas a 1280×900 (medido 11-10); el patrón
+ * del panel pide ≤ 1,5: con 12 filas (~67 px cada una) entra. Antes: con 25
+ * eran 2,98 y con 20, 2,52. Más alto vuelve al muro que esto vino a resolver.
  */
-const POR_PAGINA = 18;
+const POR_PAGINA = 12;
 
-/** Personas por página: 12 llenan tres columnas de cuatro filas sin muro. */
-const PERSONAS_POR_PAGINA = 12;
 
 
 const TABS = [
@@ -254,6 +245,7 @@ export default function AdelantosModule() {
       tab={tab} setTab={setTab} error={error} resumen={resumen} adelantos={adelantos} dados={dados}
       recibidos={recibidos} beneficiarios={beneficiarios} admiteRecibido={admiteRecibido} loading={loading}
       reload={reload} creando={creando} setCreando={setCreando}
+      onEntregar={(persona) => setEntregando({ persona })}
     />
   );
 
@@ -291,7 +283,7 @@ export default function AdelantosModule() {
 
 /** Las siete vistas de Adelantos (dentro o fuera de Mi Plata, son las mismas). */
 function VistasDeAdelantos({
-  tab, setTab, error, resumen, adelantos, dados, recibidos, beneficiarios, admiteRecibido, loading, reload, creando, setCreando,
+  tab, setTab, error, resumen, adelantos, dados, recibidos, beneficiarios, admiteRecibido, loading, reload, creando, setCreando, onEntregar,
 }: {
   tab: string;
   setTab: (v: string) => void;
@@ -306,6 +298,8 @@ function VistasDeAdelantos({
   reload: () => Promise<void>;
   creando: boolean;
   setCreando: React.Dispatch<React.SetStateAction<boolean>>;
+  /** Abre «Entregar» (ADR-491) con esa persona ya elegida. */
+  onEntregar: (persona: PersonaEntregar) => void;
 }) {
   return (
         <div>
@@ -330,7 +324,10 @@ function VistasDeAdelantos({
             />
           )}
           {tab === "personas" && (
-            <PersonasView beneficiarios={beneficiarios} adelantos={adelantos} admiteRecibido={admiteRecibido} loading={loading} onChange={reload} />
+            <PersonasView
+              beneficiarios={beneficiarios} adelantos={adelantos} admiteRecibido={admiteRecibido} loading={loading} onChange={reload}
+              onEntregar={(b) => onEntregar(personaParaEntregar(b, adelantos))}
+            />
           )}
           {tab === "cobranza" && (
             <CobranzaView
@@ -442,39 +439,58 @@ function AdelantosView({
 
   const hayPlanillaAbierta = adelantos.some((a) => a.modalidad === "DESCUENTO_PLANILLA" && a.status === "ABIERTO" && a.saldoPendiente > 0);
 
+  const hayLeDebesLista = Object.values(tot.leDebes).some((v) => v > 0);
+  /* Indicadores plegables (patrón del panel, 11-10): los totales de lo
+     filtrado eran una línea de cuatro cifras al lado del título. Plegados
+     dicen lo adelantado; «Por recuperar» es la cifra del Resumen y no se
+     repite a la vista. */
+  const kpis = useKpisPlegables({
+    claveMemoria: "adelantos-lista",
+    alto: "md",
+    compactoEnMovil: true,
+    anchoFijo: true,
+    sinDatosAun: loading && adelantos.length === 0,
+    resumen: `${filtrados.length} · ${fmtMonedas(tot.adelantado)}`,
+    tarjetas: [
+      <TarjetaIndicador key="adelantado" rotulo="Adelantado" valor={fmtMonedas(tot.adelantado)} detalle={`${filtrados.length} adelanto${filtrados.length === 1 ? "" : "s"} con el filtro de abajo`} icono={Coins} tono="destacado" />,
+      <TarjetaIndicador key="liquidado" rotulo="Liquidado" valor={fmtMonedas(tot.liquidado)} detalle="Recuperado en entregas y pagos" icono={TrendingUp} />,
+      <TarjetaIndicador key="recuperar" rotulo="Por recuperar" valor={fmtMonedas(tot.porRecuperar)} detalle="De los abiertos de esta lista" icono={Wallet} />,
+      ...(hayLeDebesLista ? [<TarjetaIndicador key="le-debes" rotulo="Le debes" valor={fmtMonedas(tot.leDebes)} detalle="Te pagaron antes o te entregaron de más" icono={Users} />] : []),
+    ],
+  });
+
+  /* h-12 y texto de 14 px, como los filtros del resto del panel. */
   const chipCls = (active: boolean) =>
-    `h-10 px-4 rounded-full border-2 text-base font-bold transition-colors ${
+    `h-12 shrink-0 px-4 rounded-xl border-2 text-sm font-bold transition-colors ${
       active
         ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
         : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
     }`;
 
   return (
-    <div className="space-y-4">
-      {/* Título + totales de lo filtrado + «⋯» en UNA fila (ley de la vista,
-          6): antes los totales eran una banda propia entre los filtros y la
-          tabla, y «Descuentos de planilla» y «CSV» dos botones con texto que se
-          usan una vez por período. */}
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-        <CardTitle className="text-sm font-bold text-[var(--text-primary)]">
-          {adelantos.length} adelanto{adelantos.length === 1 ? "" : "s"}
-        </CardTitle>
-        {adelantos.length > 0 && (
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-[var(--text-secondary)]">
-            <span>Adelantado <strong className="text-base tabular-nums text-[var(--text-primary)]">{fmtMonedas(tot.adelantado)}</strong></span>
-            <span>Liquidado <strong className="text-base tabular-nums text-[var(--data-success)]">{fmtMonedas(tot.liquidado)}</strong></span>
-            <span>Por recuperar <strong className="text-base tabular-nums text-[var(--data-warning)]">{fmtMonedas(tot.porRecuperar)}</strong></span>
-            {Object.values(tot.leDebes).some((v) => v > 0) && (
-              <span>Le debes <strong className="text-base tabular-nums text-[var(--data-info-ink)]">{fmtMonedas(tot.leDebes)}</strong></span>
-            )}
-          </div>
-        )}
-        <div className="ml-auto flex items-center gap-2">
+    <div className="space-y-3">
+      {/* Título · Indicadores · «⋯» en UNA fila. «Nuevo adelanto» y «Entregar»
+          viven en la fila del hub, visibles desde cualquier sub-vista. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">Adelantos</SectionTitle>
+          <InfoTip
+            title="Adelantos"
+            what="Cada adelanto que diste o te dieron, con su código, cuánto se recuperó y su estado. Toca una fila para ver su ficha, registrar una entrega o firmar."
+            affects="Indicadores suma lo que ves con el filtro y la búsqueda aplicados. Los cancelados no se cobran."
+            example="Busca ADL-2026-7 o el nombre de la persona para ir directo a su adelanto."
+          />
+        </div>
+        <div className="ml-auto flex min-w-0 items-center gap-2">
+          {adelantos.length > 0 && kpis.boton}
           {adelantos.length > 0 && (
             <ActionMenu
-              label="Más acciones de la lista"
+              label="Más"
+              icon={MoreHorizontal}
               soloIcono
-              size="sm"
+              size="md"
+              className="w-12 shrink-0"
+              title="Descuentos de planilla y CSV"
               actions={[
                 /* Sólo si hay adelantos de planilla abiertos: una acción que
                    abre una lista vacía enseña a no confiar en el menú. */
@@ -498,19 +514,19 @@ function AdelantosView({
               ]}
             />
           )}
-          {/* El alta la abre el botón de la barra de pestañas, que está visible
-              desde cualquier sub-vista. Repetirlo acá dejaba dos botones
-              idénticos a diez centímetros uno del otro. */}
+          {/* A pantalla chica la fila del hub no lleva el alta. */}
           <button
             onClick={() => onCreando(true)}
             disabled={beneficiarios.length === 0}
-            className="inline-flex items-center gap-2 h-12 px-5 rounded-2xl bg-primary text-white text-base font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 lg:hidden"
+            className="inline-flex items-center gap-2 h-12 px-4 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 lg:hidden"
             title={beneficiarios.length === 0 ? "Crea primero una persona" : undefined}
           >
-            <Plus className="h-5 w-5" /> Nuevo adelanto
+            <Plus className="h-4 w-4" aria-hidden /> Nuevo
           </button>
         </div>
       </div>
+
+      {adelantos.length > 0 && kpis.panel}
 
       {planilla && (
         <DescuentoPlanillaModal
@@ -524,9 +540,9 @@ function AdelantosView({
         <>
           {/* Filtros por estado + búsqueda */}
           <div className="flex flex-wrap items-center gap-2">
-            <button className={chipCls(filtro === "TODOS")} onClick={() => setFiltro("TODOS")}>Todos {adelantos.length}</button>
+            <button type="button" aria-pressed={filtro === "TODOS"} className={chipCls(filtro === "TODOS")} onClick={() => setFiltro("TODOS")}>Todos {adelantos.length}</button>
             {estadosPresentes.map((e) => (
-              <button key={e} className={chipCls(filtro === e)} onClick={() => setFiltro(e)}>
+              <button key={e} type="button" aria-pressed={filtro === e} className={chipCls(filtro === e)} onClick={() => setFiltro(e)}>
                 {STATUS_BADGE[e].label} {counts[e]}
               </button>
             ))}
@@ -536,7 +552,8 @@ function AdelantosView({
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Buscar por persona, código (ADL-2026-7) o recibo…"
+                placeholder="Persona, código o recibo…"
+                aria-label="Buscar por persona, código (ADL-2026-7) o recibo"
                 className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-11 pr-4 text-base text-[var(--text-primary)] outline-none focus:border-primary"
               />
             </div>
@@ -600,309 +617,6 @@ function AdelantosView({
 }
 
 // ── Personas ─────────────────────────────────────────────────────────────────
-function PersonasView({
-  beneficiarios,
-  adelantos,
-  admiteRecibido,
-  loading,
-  onChange,
-}: {
-  beneficiarios: BeneficiarioConSaldo[];
-  adelantos: DbAdelanto[];
-  admiteRecibido: boolean;
-  loading: boolean;
-  onChange: () => void;
-}) {
-  const [showCreate, setShowCreate] = useState(false);
-  const [editPersona, setEditPersona] = useState<BeneficiarioConSaldo | null>(null);
-  const [deletePersona, setDeletePersona] = useState<BeneficiarioConSaldo | null>(null);
-  const [adelantoPara, setAdelantoPara] = useState<string | null>(null);
-  const [ficha, setFicha] = useState<BeneficiarioConSaldo | null>(null);
-  const [detalleAdelanto, setDetalleAdelanto] = useState<DbAdelanto | null>(null);
-  const [q, setQ] = useState("");
-  const [orden, setOrden] = useState<OrdenPersonas>("saldo");
-  const [filtro, setFiltro] = useState<FiltroPersonas>("todas");
-  const [pagina, setPagina] = useState(1);
-
-  /**
-   * Se busca por nombre, documento Y teléfono, sin tildes: antes sólo por
-   * nombre y con acento exacto, así que «maria» no encontraba a «María» y un
-   * número de teléfono a mano no servía para nada.
-   */
-  const filtradas = useMemo(() => {
-    const t = sinTildes(q);
-    const soloDigitos = t.replace(/\D/g, "");
-    return beneficiarios.filter((b) => {
-      if (!cumpleFiltro(b, filtro)) return false;
-      if (!t) return true;
-      return (
-        sinTildes(b.nombre).includes(t) ||
-        (b.documento ?? "").includes(t) ||
-        (!!soloDigitos && (b.telefono ?? "").replace(/\D/g, "").includes(soloDigitos))
-      );
-    });
-  }, [beneficiarios, q, filtro]);
-
-  const ordenados = useMemo(() => ordenarPersonas(filtradas, orden), [filtradas, orden]);
-  const pag = paginar(ordenados, pagina, PERSONAS_POR_PAGINA);
-
-  /** Cambiar de filtro con la página 4 abierta dejaba una grilla en blanco. */
-  useEffect(() => setPagina(1), [q, orden, filtro]);
-
-  /**
-   * Los totales de la cartera, con la MISMA definición que la pestaña
-   * Adelantos: los cancelados no se cobran. Antes acá se sumaba todo y las dos
-   * pestañas mostraban cifras distintas para la misma pregunta.
-   */
-  /** Cada total ya viene por persona segmentado por moneda — mergear los mapas, no sumar números crudos. */
-  const mergear = (map: Record<string, number>, otro: Record<string, number>) => {
-    for (const [moneda, monto] of Object.entries(otro)) map[moneda] = (map[moneda] ?? 0) + monto;
-  };
-  const tot = beneficiarios.reduce(
-    (acc, b) => {
-      mergear(acc.adelantado, b.totalAdelantado);
-      mergear(acc.entregado, b.totalEntregado);
-      mergear(acc.porRecuperar, b.saldoPendiente);
-      /* «Le debes» = entregó de más + lo que te dio y devuelves (ADR-448 §2.6). */
-      mergear(acc.aFavor, cuentaDePersona(b).leDebes);
-      return acc;
-    },
-    { adelantado: {} as Record<string, number>, entregado: {} as Record<string, number>, porRecuperar: {} as Record<string, number>, aFavor: {} as Record<string, number> },
-  );
-  const conSaldo = beneficiarios.filter((b) => Object.values(b.saldoPendiente).some((v) => v > 0)).length;
-  const enRiesgo = beneficiarios.filter((b) => requiereAtencion(estadoDeCredito(b.limiteCredito, saldoParaLimite(b.saldoPendiente)))).length;
-  const hayTopes = beneficiarios.some((b) => (b.limiteCredito ?? 0) > 0);
-
-  const chip = (activo: boolean) =>
-    `h-10 px-3.5 rounded-full border-2 text-sm font-bold transition-colors ${
-      activo
-        ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
-        : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
-    }`;
-
-  return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <CardTitle className="text-sm font-bold text-[var(--text-primary)]">
-          {beneficiarios.length} persona{beneficiarios.length === 1 ? "" : "s"}
-          {conSaldo > 0 && <span className="font-semibold text-[var(--text-tertiary)]"> · {conSaldo} con saldo</span>}
-        </CardTitle>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="inline-flex h-12 items-center gap-2 rounded-2xl bg-primary px-5 text-base font-semibold text-white transition-colors hover:bg-primary-dark"
-        >
-          <Plus className="h-5 w-5" /> Nueva persona
-        </button>
-      </div>
-
-      {beneficiarios.length > 0 && (
-        <>
-          {/* Filtros por situación + búsqueda + orden */}
-          <div className="flex flex-wrap items-center gap-2">
-            {/* min-w-* es clase muerta acá (memoria min-width-utilities-muertas) — inline style. */}
-            <div className="relative flex-1 sm:max-w-sm" style={{ minWidth: 240 }}>
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--text-tertiary)]" />
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Buscar por nombre, documento o teléfono…"
-                aria-label="Buscar persona"
-                className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-11 pr-4 text-base text-[var(--text-primary)] outline-none focus:border-primary"
-              />
-            </div>
-            <div className="flex flex-wrap items-center gap-1.5">
-              <button className={chip(filtro === "todas")} onClick={() => setFiltro("todas")}>
-                Todas {beneficiarios.length}
-              </button>
-              {conSaldo > 0 && (
-                <button className={chip(filtro === "deben")} onClick={() => setFiltro("deben")}>
-                  Deben {conSaldo}
-                </button>
-              )}
-              <button className={chip(filtro === "al-dia")} onClick={() => setFiltro("al-dia")}>
-                Al día {beneficiarios.length - conSaldo}
-              </button>
-              {/* Sólo si hay topes cargados: un filtro que siempre da cero
-                  enseña a no confiar en los filtros. */}
-              {hayTopes && enRiesgo > 0 && (
-                <button className={chip(filtro === "riesgo")} onClick={() => setFiltro("riesgo")}>
-                  Sin margen {enRiesgo}
-                </button>
-              )}
-            </div>
-            {/* El orden, en un desplegable pegado al buscador: eran seis chips
-                en una fila propia que se miran una vez y se olvidan (ley de la
-                vista, «a la vista sólo lo de uso constante»). Las mismas seis
-                opciones, con su explicación en el texto de cada una. */}
-            <label className="ml-auto inline-flex items-center gap-2 text-sm font-semibold text-[var(--text-tertiary)]">
-              Orden
-              <select
-                value={orden}
-                onChange={(e) => setOrden(e.target.value as OrdenPersonas)}
-                aria-label="Ordenar personas por"
-                className="h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-primary"
-              >
-                <option value="saldo">Saldo</option>
-                {hayTopes && <option value="riesgo">Cerca del tope (límite de crédito)</option>}
-                <option value="nombre">Nombre</option>
-                <option value="adelantado">Adelantado</option>
-                <option value="cumplimiento">Cumplimiento (quien menos devolvió)</option>
-                <option value="reciente">Último adelanto</option>
-              </select>
-            </label>
-          </div>
-
-          {/* Totales de la cartera + export de lo filtrado */}
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-3 text-base text-[var(--text-secondary)]">
-            <span>Adelantado <strong className="tabular-nums text-[var(--text-primary)]">{fmtMonedas(tot.adelantado)}</strong></span>
-            <span>Devuelto <strong className="tabular-nums text-[var(--data-success)]">{fmtMonedas(tot.entregado)}</strong></span>
-            <span>Por recuperar <strong className="tabular-nums text-[var(--data-warning)]">{fmtMonedas(tot.porRecuperar)}</strong></span>
-            {Object.values(tot.aFavor).some((v) => v > 0) && (
-              <span>Le debes <strong className="tabular-nums text-[var(--data-info-ink)]">{fmtMonedas(tot.aFavor)}</strong></span>
-            )}
-            {/* Exportar es de una vez al mes: ícono + tooltip, no un botón
-                con texto compitiendo con los totales (ley de la vista, 6). */}
-            <button
-              onClick={() => descargarCsvPersonas(ordenados, `personas-${new Date().toISOString().slice(0, 10)}.csv`)}
-              disabled={ordenados.length === 0}
-              title={`Descargar CSV de las ${ordenados.length} personas que ves (con filtro y búsqueda)`}
-              aria-label={`Descargar CSV de las ${ordenados.length} personas que ves`}
-              className="ml-auto inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] disabled:opacity-50 dark:hover:text-[var(--accent)]"
-            >
-              <Download className="h-4 w-4" />
-            </button>
-          </div>
-        </>
-      )}
-
-      {loading ? (
-        <SkeletonGrid />
-      ) : beneficiarios.length === 0 ? (
-        <EmptyState icon={Users} title="Sin personas" hint="Agrega a quién le das adelantos." />
-      ) : ordenados.length === 0 ? (
-        <EmptyState icon={Search} title="Sin resultados" hint="Prueba con otro nombre, documento o filtro." />
-      ) : (
-        <>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {pag.items.map((b) => (
-              <TarjetaPersona
-                key={b.id}
-                persona={b}
-                onVerFicha={() => setFicha(b)}
-                onEditar={() => setEditPersona(b)}
-                onEliminar={() => setDeletePersona(b)}
-                onAdelanto={() => setAdelantoPara(b.id)}
-              />
-            ))}
-          </div>
-          {pag.totalPaginas > 1 && (
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm font-semibold tabular-nums text-[var(--text-secondary)]">
-                {pag.desde}–{pag.hasta} de {pag.total}
-              </p>
-              <div className="flex items-center gap-1.5">
-                <button
-                  onClick={() => setPagina(pag.pagina - 1)}
-                  disabled={pag.pagina <= 1}
-                  aria-label="Página anterior"
-                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] disabled:opacity-40 dark:hover:text-[var(--accent)]"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <span className="px-2 text-sm font-bold tabular-nums text-[var(--text-secondary)]">
-                  {pag.pagina} / {pag.totalPaginas}
-                </span>
-                <button
-                  onClick={() => setPagina(pag.pagina + 1)}
-                  disabled={pag.pagina >= pag.totalPaginas}
-                  aria-label="Página siguiente"
-                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] disabled:opacity-40 dark:hover:text-[var(--accent)]"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          )}
-        </>
-      )}
-
-      {showCreate && (
-        <CrearPersonaModal
-          personasExistentes={beneficiarios}
-          onClose={() => setShowCreate(false)}
-          onCreated={() => { setShowCreate(false); onChange(); }}
-        />
-      )}
-      {editPersona && (
-        <CrearPersonaModal
-          persona={editPersona}
-          personasExistentes={beneficiarios}
-          onClose={() => setEditPersona(null)}
-          onCreated={() => { setEditPersona(null); onChange(); }}
-        />
-      )}
-      {deletePersona && (
-        <EliminarPersonaModal persona={deletePersona} onClose={() => setDeletePersona(null)} onDeleted={() => { setDeletePersona(null); onChange(); }} />
-      )}
-      {adelantoPara && (
-        <CrearAdelantoModal
-          beneficiarios={beneficiarios}
-          adelantos={adelantos}
-          admiteRecibido={admiteRecibido}
-          initialBeneficiarioId={adelantoPara}
-          onPersonaCreada={onChange}
-          onClose={() => setAdelantoPara(null)}
-          onCreated={() => { setAdelantoPara(null); onChange(); }}
-        />
-      )}
-      {ficha && (
-        <FichaPersonaModal
-          persona={ficha}
-          adelantos={adelantos}
-          onClose={() => setFicha(null)}
-          onEditar={() => { setEditPersona(ficha); setFicha(null); }}
-          onNuevoAdelanto={() => { setAdelantoPara(ficha.id); setFicha(null); }}
-          onVerAdelanto={(a) => { setDetalleAdelanto(a); setFicha(null); }}
-        />
-      )}
-      {detalleAdelanto && (
-        <DetalleAdelantoModal
-          adelantoId={detalleAdelanto.id}
-          onClose={() => setDetalleAdelanto(null)}
-          onChange={onChange}
-        />
-      )}
-    </div>
-  );
-}
-function EliminarPersonaModal({ persona, onClose, onDeleted }: { persona: BeneficiarioConSaldo; onClose: () => void; onDeleted: () => void }) {
-  const [saving, setSaving] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const submit = async () => {
-    setErr(null);
-    setSaving(true);
-    const res = await fetch(`/api/adelantos/beneficiarios/${persona.id}`, { method: "DELETE", headers: jsonHeaders(), credentials: "include" });
-    setSaving(false);
-    if (res.ok) { onDeleted(); return; }
-    const body = await leerJson<{ error?: string }>(res);
-    setErr(body?.error ?? "No se pudo eliminar la persona.");
-  };
-  return (
-    <ModalShell title="Eliminar persona" onClose={onClose}>
-      <p className="text-base text-[var(--text-secondary)]">
-        ¿Seguro que quieres eliminar a <strong className="text-[var(--text-primary)]">{persona.nombre}</strong>? Esta acción no se puede deshacer.
-      </p>
-      {err && <p className="mt-3 text-base font-semibold text-[var(--data-error)]">{err}</p>}
-      <div className="mt-5 flex justify-end gap-2">
-        <button onClick={onClose} className="h-12 px-5 rounded-2xl border border-[var(--rule-base)] text-base font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-        <button onClick={submit} disabled={saving} className="h-12 px-5 rounded-2xl bg-[var(--data-error)] text-white text-base font-semibold hover:opacity-90 disabled:opacity-50">
-          {saving ? "Eliminando…" : "Eliminar"}
-        </button>
-      </div>
-    </ModalShell>
-  );
-}
-
 // ── Recurrentes (ADR-118): plantillas de adelantos automáticos ────────────────
 const FREC_LABEL: Record<RecurrenteFrecuencia, string> = { semanal: "Semanal", quincenal: "Quincenal", mensual: "Mensual" };
 

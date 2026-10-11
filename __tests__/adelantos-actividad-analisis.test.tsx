@@ -133,11 +133,13 @@ describe("AnalisisView — «Lo que recibiste» separado de lo dado", () => {
       montoAdelantado: 1731,
       saldoPendiente: 1731,
     });
+    /* Los KPI viven en Indicadores plegables (11-10): abiertos, como los dejaría el usuario. */
+    localStorage.setItem("ctp-kpis-v2:adelantos-analisis", "1");
     render(<AnalisisView adelantos={[dado]} recibidos={[recibido]} loading={false} />);
     const bloque = screen.getByText("Lo que recibiste").closest("div") as HTMLElement;
     expect(bloque).toBeTruthy();
     // El KPI "Adelantado" sigue siendo SÓLO lo dado (S/ 1,000), no S/ 2,731.
-    const adelantadoCard = screen.getByText("Adelantado").closest("div") as HTMLElement;
+    const adelantadoCard = screen.getByText("Adelantado").closest(".rounded-xl") as HTMLElement;
     expect(within(adelantadoCard).getByText(/1,000|1000/)).toBeTruthy();
   });
 
