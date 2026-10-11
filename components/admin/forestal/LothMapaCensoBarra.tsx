@@ -93,7 +93,7 @@ export default function LothMapaCensoBarra({ arb, total }: { arb: LothMapaArbole
         <button
           type="button"
           onClick={() => setFiltro(FILTRO_ARBOLES_VACIO)}
-          className="inline-flex h-11 items-center justify-center gap-1 rounded-xl px-3 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] max-sm:col-span-2 sm:h-9"
+          className="inline-flex h-12 items-center justify-center gap-1 rounded-xl px-3 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] max-sm:col-span-2"
         >
           <X className="h-3.5 w-3.5" aria-hidden="true" /> Quitar filtros
         </button>

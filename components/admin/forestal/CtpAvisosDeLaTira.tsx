@@ -14,11 +14,13 @@ import { etiquetaCorta, etiquetaLarga } from "@/lib/forestal/semana-de-registro"
 import type { JornadaDeProduccion } from "./hooks/use-jornadas-produccion";
 import { cuantos, type NombreDeLaTira } from "./tira-de-dias-copy";
 import type { CorteResumen } from "./ctp-resumen-jornadas-tablas";
+import { button } from "@/components/ui-system/button-variants";
+import { cn } from "@/lib/utils";
 
 const BOTON_RESUMEN =
-  "inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-bold transition-colors";
-const BOTON_RESUMEN_PRINCIPAL = `${BOTON_RESUMEN} border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]`;
-const BOTON_RESUMEN_OTRO = `${BOTON_RESUMEN} border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]`;
+  button({ variant: "secondary", className: "shrink-0 rounded-xl" });
+const BOTON_RESUMEN_PRINCIPAL = cn(BOTON_RESUMEN, `border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]`);
+const BOTON_RESUMEN_OTRO = cn(BOTON_RESUMEN, `border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]`);
 
 /** El día elegido YA tiene registros: el aviso que evita cargar la misma jornada dos veces. */
 export function AvisoDiaConRegistro({

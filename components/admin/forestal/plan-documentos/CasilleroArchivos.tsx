@@ -18,12 +18,14 @@ import { PastillaEstado } from "./estados";
 import ArchivoFila, { FilaSubida } from "./ArchivoFila";
 import type { ArchivoVista, CasilleroVista } from "./modelo";
 import type { SubidaEnCurso } from "../hooks/use-plan-documentos";
+import { button } from "@/components/ui-system/button-variants";
+import { cn } from "@/lib/utils";
 
 /** Lo que el Drive muestra bien y lo que se usa en un expediente. */
 export const ACEPTA = "application/pdf,image/*,.heic,.heif,.doc,.docx,.odt,.rtf,.txt,.xls,.xlsx,.ods,.csv";
 
 const BOTON =
-  "inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-40";
+  button({ variant: "secondary", className: "rounded-xl" });
 
 export default function CasilleroArchivos({
   domId,
@@ -124,10 +126,10 @@ export default function CasilleroArchivos({
 
       <div className="flex flex-wrap items-center gap-2">
         {n === 0 && subidas.length === 0 && <p className="w-full text-xs text-[var(--text-tertiary)]">{vacio}</p>}
-        <button type="button" onClick={() => camaraRef.current?.click()} disabled={ocupado} className={`${BOTON} grow basis-24 whitespace-nowrap sm:hidden`}>
+        <button type="button" onClick={() => camaraRef.current?.click()} disabled={ocupado} className={cn(BOTON, `grow basis-24 whitespace-nowrap sm:hidden`)}>
           <Camera className="h-4 w-4" aria-hidden="true" /> Foto
         </button>
-        <button type="button" onClick={() => archivoRef.current?.click()} disabled={ocupado} className={`${BOTON} grow basis-24 whitespace-nowrap sm:grow-0 sm:basis-auto`}>
+        <button type="button" onClick={() => archivoRef.current?.click()} disabled={ocupado} className={cn(BOTON, `grow basis-24 whitespace-nowrap sm:grow-0 sm:basis-auto`)}>
           <FileUp className="h-4 w-4" aria-hidden="true" />
           {n > 0 ? "Agregar otro" : "Subir archivo"}
         </button>

@@ -7,6 +7,7 @@
 
 import { formatCurrency } from "@/lib/format";
 import { puedeGuardar, type DestinoPapel, type TipoPapel } from "@/lib/admin/comandos-ia/papel";
+import { button } from "@/components/ui-system/button-variants";
 
 /**
  * ¿Mostrar el botón que guarda? Mientras el rol carga (null) se muestra: el que
@@ -58,9 +59,9 @@ export const SIN_PERMISO: Record<DestinoPapel, string> = {
 
 /** Primario sobre `--accent-dark`: con blanco da 4,8:1 en claro y oscuro (`bg-primary` daba 3,2:1). */
 export const BOTON_PRIMARIO =
-  "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[var(--accent-dark)] px-4 text-sm font-semibold text-white transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-muted)] disabled:cursor-not-allowed disabled:opacity-50";
+  button({ variant: "accent", className: "rounded-xl" });
 export const BOTON_SECUNDARIO =
-  "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] transition hover:bg-[var(--surface-sunken)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-muted)] disabled:cursor-not-allowed disabled:opacity-50";
+  button({ variant: "secondary", className: "rounded-xl" });
 export const CAMPO =
   "min-h-11 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
 /**

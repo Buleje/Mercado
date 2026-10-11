@@ -176,7 +176,7 @@ export default function ReportesSemanas({ reporte }: { reporte: ReporteDeProducc
           type="button"
           onClick={() => setTodas((v) => !v)}
           aria-expanded={todas}
-          className="mt-2 inline-flex h-10 items-center gap-1.5 rounded-lg px-2 text-sm font-bold text-[var(--accent-ink)] hover:bg-[var(--surface-sunken)] dark:text-[var(--accent)]"
+          className="mt-2 inline-flex h-12 items-center gap-1.5 rounded-lg px-2 text-sm font-bold text-[var(--accent-ink)] hover:bg-[var(--surface-sunken)] dark:text-[var(--accent)]"
         >
           <ChevronDown className={`h-4 w-4 transition-transform ${todas ? "rotate-180" : ""}`} aria-hidden />
           {todas ? `Ver sólo las ${VISIBLES} más nuevas` : `Ver las ${filas.length} semanas`}

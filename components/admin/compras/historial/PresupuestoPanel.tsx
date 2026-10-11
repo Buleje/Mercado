@@ -156,7 +156,7 @@ export default function PresupuestoPanel() {
           type="button"
           onClick={() => setAbierto((v) => !v)}
           aria-expanded={abierto}
-          className="ml-auto inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
+          className="ml-auto inline-flex h-12 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
         >
           {abierto ? "Ocultar" : "Ver detalle"}
           <ChevronDown className={cn("h-4 w-4 transition-transform", !abierto && "-rotate-90")} aria-hidden />
@@ -247,7 +247,7 @@ export default function PresupuestoPanel() {
                         type="button"
                         onClick={() => guardar(c.category)}
                         disabled={guardando}
-                        className="inline-flex h-10 items-center gap-1 rounded-xl bg-primary px-3 text-sm font-semibold text-white disabled:opacity-50"
+                        className="inline-flex h-12 items-center gap-1 rounded-xl bg-primary px-3 text-sm font-semibold text-white disabled:opacity-50"
                       >
                         {guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                         Guardar
@@ -257,7 +257,7 @@ export default function PresupuestoPanel() {
                     <button
                       type="button"
                       onClick={() => { setEditando(c.category); setBorrador(String(c.presupuesto ?? "")); }}
-                      className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+                      className="inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
                     >
                       <Pencil className="h-3.5 w-3.5" aria-hidden />
                       {c.presupuesto ? `Techo ${fmt(c.presupuesto)}` : "Poner techo"}

@@ -12,9 +12,11 @@ import { urlMiniatura } from "@/lib/documents/miniatura-version";
 import { formatNumber } from "@/lib/format";
 import type { ArchivoVista } from "./modelo";
 import type { EstadoSubida } from "../hooks/use-plan-documentos";
+import { button } from "@/components/ui-system/button-variants";
+import { cn } from "@/lib/utils";
 
 const ICONO_BTN =
-  "grid h-9 w-9 shrink-0 place-items-center rounded-lg text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] disabled:opacity-40";
+  button({ variant: "ghost", size: "icon", className: "shrink-0 rounded-xl" });
 
 export function peso(b: number): string {
   if (b >= 1024 * 1024) return `${formatNumber(b / 1024 / 1024, 1)} MB`;
@@ -125,7 +127,7 @@ export default function ArchivoFila({
           type="button"
           onClick={onQuitar}
           disabled={ocupado}
-          className={`${ICONO_BTN} hover:text-[var(--data-error-ink)]`}
+          className={cn(ICONO_BTN, `hover:text-[var(--data-error-ink)]`)}
           title={archivo.pendiente ? "Quitar de la lista" : "Mandar a la papelera de Documentos (se puede recuperar)"}
           aria-label={`Quitar «${archivo.nombre}»`}
         >

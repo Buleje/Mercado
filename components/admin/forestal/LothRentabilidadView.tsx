@@ -148,7 +148,7 @@ export default function LothRentabilidadView({
           {d.hasPlan && (
             <Btn variant="secondary" size="sm" onClick={() => setCostosAbierto(true)}><Calculator className="h-4 w-4" /> Costos operativos</Btn>
           )}
-          <ActionMenu label="Opciones de rentabilidad" actions={acciones} size="sm" soloIcono />
+          <ActionMenu label="Opciones de rentabilidad" actions={acciones} size="md" soloIcono />
         </div>
       </header>
 

@@ -317,7 +317,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
             <button
               type="button"
               onClick={() => setShowNewChat((s) => !s)}
-              className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-primary px-3.5 text-sm font-bold text-white transition hover:opacity-90"
+              className="inline-flex h-12 items-center gap-1.5 rounded-xl bg-primary px-3.5 text-sm font-bold text-white transition hover:opacity-90"
             >
               <Plus className="h-4 w-4" />
               Nueva conversación
@@ -430,7 +430,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
           <button
             type="button"
             onClick={onGoToConfig}
-            className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white transition hover:opacity-90"
+            className="inline-flex h-12 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white transition hover:opacity-90"
           >
             <Settings className="h-4 w-4" />
             Conectar mi número
@@ -454,7 +454,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
             type="button"
             onClick={() => setNumberFilter(null)}
             className={cn(
-              "h-9 rounded-full border-2 px-3.5 text-sm font-bold transition",
+              "h-12 rounded-full border-2 px-3.5 text-sm font-bold transition",
               numberFilter === null
                 ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-primary/50 dark:border-[var(--rule-base)] dark:text-[var(--text-secondary)]",
@@ -468,7 +468,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
               type="button"
               onClick={() => setNumberFilter(n.phoneNumberId)}
               className={cn(
-                "h-9 rounded-full border-2 px-3.5 text-sm font-bold transition",
+                "h-12 rounded-full border-2 px-3.5 text-sm font-bold transition",
                 numberFilter === n.phoneNumberId
                   ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                   : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-primary/50 dark:border-[var(--rule-base)] dark:text-[var(--text-secondary)]",
@@ -588,7 +588,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
                         if (!archived) setMobileView("list");
                       }}
                       className={cn(
-                        "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border-2 px-3 text-sm font-bold transition",
+                        "inline-flex h-12 shrink-0 items-center gap-1.5 rounded-full border-2 px-3 text-sm font-bold transition",
                         archived
                           ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                           : "border-[var(--rule-base)] text-[var(--text-tertiary)] hover:border-primary/50 hover:text-primary dark:border-[var(--rule-base)] dark:text-[var(--text-tertiary)]",
@@ -608,7 +608,7 @@ export default function WhatsAppInboxTab({ onGoToConfig }: Props) {
                       type="button"
                       onClick={() => void toggleBotPause(selected.customerPhone, !paused)}
                       className={cn(
-                        "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border-2 px-3 text-sm font-bold transition",
+                        "inline-flex h-12 shrink-0 items-center gap-1.5 rounded-full border-2 px-3 text-sm font-bold transition",
                         paused
                           ? "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/10"
                           : "border-[var(--data-success-500)]/40 bg-[var(--data-success-100)] text-[var(--data-success-700)]",

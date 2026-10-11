@@ -24,8 +24,9 @@ import type { PiezaCubicada } from "@/lib/forestal/cubicacion";
 import type { DatosAnexo04 } from "@/lib/forestal/anexo04-serfor";
 import { exportarAnexosPDF, type TraseraParaPdf } from "@/lib/forestal/anexo04-pdf";
 import { nombrePdfPartido, partirAnexo, type CriterioParte } from "@/lib/forestal/anexo04-partir";
+import { button } from "@/components/ui-system/button-variants";
 
-const BTN = "inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:opacity-60";
+const BTN = button({ variant: "secondary", className: "rounded-xl" });
 
 export default function Anexo04PorTipo({
   filas, especieGlobal, datos, trasera, totalManual, conCandado, onAviso,

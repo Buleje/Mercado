@@ -152,7 +152,7 @@ export default function CtpEudrMap({ origins, geoByCode }: { origins: OrigenRow[
         <button
           type="button"
           onClick={() => setLayer((l) => (l === "sat" ? "street" : "sat"))}
-          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+          className="inline-flex h-12 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
         >
           <Layers className="h-3.5 w-3.5" /> {layer === "sat" ? "Ver calles" : "Ver satélite"}
         </button>

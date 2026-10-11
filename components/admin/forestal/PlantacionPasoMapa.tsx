@@ -223,7 +223,7 @@ export default function PlantacionPasoMapa({
           <button
             type="button"
             onClick={() => setLayer((l) => (l === "sat" ? "street" : "sat"))}
-            className="absolute right-2 top-2 z-[400] inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)]/95 px-3 text-xs font-bold text-[var(--text-primary)] shadow-md backdrop-blur hover:bg-[var(--surface-canvas)]"
+            className="absolute right-2 top-2 z-[400] inline-flex h-12 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)]/95 px-3 text-xs font-bold text-[var(--text-primary)] shadow-md backdrop-blur hover:bg-[var(--surface-canvas)]"
           >
             <Layers className="h-3.5 w-3.5" /> {layer === "sat" ? "Ver calles" : "Ver satélite"}
           </button>

@@ -84,7 +84,7 @@ export default function CtpPlantaCroquisMapa(props: CtpPlantaCroquisMapaProps) {
               Tu aserradero todavía no tiene croquis
               <InfoTip title="Croquis" what="El plano de tu planta en metros, con su imagen de fondo: sobre él ubicas cada pila, cada troza y cada máquina." example="Terreno de 54 × 48 m con la lámina del plano." />
             </p>
-            <button type="button" onClick={() => setConfig(true)} className="mt-3 inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90"><Settings2 className="h-4 w-4" />Configurar croquis</button>
+            <button type="button" onClick={() => setConfig(true)} className="mt-3 inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90"><Settings2 className="h-4 w-4" />Configurar croquis</button>
           </div>
         </div>
       )}

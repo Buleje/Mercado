@@ -72,7 +72,7 @@ export default function LothCaratulaCites({ permisos, agregar, quitar, cambiar }
             );
           })
         )}
-        <button type="button" onClick={agregar} className="inline-flex h-11 items-center gap-1.5 rounded-lg border border-[var(--rule-strong)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] sm:h-9">
+        <button type="button" onClick={agregar} className="inline-flex h-12 items-center gap-1.5 rounded-lg border border-[var(--rule-strong)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)]">
           <Plus className="h-3.5 w-3.5" aria-hidden="true" /> Agregar permiso
         </button>
       </div>

@@ -86,7 +86,7 @@ export default function CacaoConfigModal({ onClose, onSaved }: Props) {
             type="button"
             onClick={onClose}
             disabled={saving}
-            className="inline-flex h-10 items-center rounded-xl px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+            className="inline-flex h-12 items-center rounded-xl px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
           >
             Cancelar
           </button>
@@ -94,7 +94,7 @@ export default function CacaoConfigModal({ onClose, onSaved }: Props) {
             type="button"
             disabled={saving || loading}
             onClick={save}
-            className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+            className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
           >
             {saving ? (
               <>

@@ -206,14 +206,14 @@ function BannerModal({
           <button
             onClick={onClose}
             disabled={saving}
-            className="flex-1 h-10 rounded-xl border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+            className="flex-1 h-12 rounded-xl border border-[var(--rule-base)] text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
           >
             Cancelar
           </button>
           <button
             onClick={() => onSave(form)}
             disabled={saving || !form.title.trim()}
-            className="flex-1 h-10 rounded-xl bg-[var(--accent)] text-white text-sm font-medium hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex-1 h-12 rounded-xl bg-[var(--accent)] text-white text-sm font-medium hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {saving && <Loader2 className="h-4 w-4 animate-spin" />}
             Guardar

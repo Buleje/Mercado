@@ -23,13 +23,13 @@ export default function LothPlanFormPie({ form, onClose }: { form: LothPlanFormE
         </p>
       )}
       {!pasoDocs && <ContadorEsenciales resumen={resumenEsenciales} intento={intentoGuardar} />}
-      <button type="button" onClick={onClose} disabled={busy} className="h-11 rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50">
+      <button type="button" onClick={onClose} disabled={busy} className="h-12 rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50">
         Cancelar
       </button>
       <button
         type="submit"
         disabled={busy}
-        className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent-dark)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+        className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--accent-dark)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
       >
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : editando ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
         {creadoId ? "Reintentar lo que faltó" : editando ? "Guardar cambios" : `Crear ${meta.sigla}`}

@@ -86,7 +86,7 @@ export default function LothCaratulaBanner({ caratula, titularSugerido, onSaved 
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--brand-ink)] px-3 text-xs font-bold text-white hover:opacity-90"
+          className="inline-flex h-12 items-center gap-1.5 rounded-lg bg-[var(--brand-ink)] px-3 text-xs font-bold text-white hover:opacity-90"
         >
           {open ? <X className="h-3.5 w-3.5" /> : null}
           {open ? "Cerrar" : "Completar en 1 paso"}

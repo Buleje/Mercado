@@ -38,10 +38,11 @@ import { hrefDeMeta } from "@/lib/admin/metas-catalogo";
 import { horaLima, metaDeVentas, type TramoVenta } from "@/lib/metas/logros-reglas";
 import { formatTime } from "@/lib/format";
 import { cn, limaDateKey } from "@/lib/utils";
+import { button } from "@/components/ui-system/button-variants";
 
 const SIN_HORAS: readonly TramoVenta[] = Array.from({ length: 24 }, () => ({ total: 0, n: 0 }));
 const BOTON_ICONO =
-  "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40";
+  button({ variant: "ghost", size: "icon", className: "shrink-0 rounded-xl" });
 
 type Modal = { modo: "crear"; objetivo?: number } | { modo: "editar" };
 

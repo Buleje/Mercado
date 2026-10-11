@@ -127,7 +127,7 @@ export function ErrorVentana({ mensaje }: { mensaje: string | null }) {
   );
 }
 
-export const BOTON_SECUNDARIO = "flex-1 inline-flex items-center justify-center gap-2 min-h-12 px-4 rounded-xl text-base font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] disabled:opacity-50 transition-colors";
+export const BOTON_SECUNDARIO = button({ variant: "secondary", className: "flex-1 rounded-xl" });
 /* El primario del DS (oscuro en claro, claro en oscuro): el blanco sobre turquesa daba 3,2:1 (10-10). */
 export const BOTON_PRIMARIO = button({ variant: "primary", className: "flex-1 min-h-12 px-4 rounded-xl text-base" });
 export const BOTON_PELIGRO = button({ variant: "danger", className: "flex-1 min-h-12 px-4 rounded-xl text-base disabled:cursor-not-allowed" });

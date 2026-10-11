@@ -16,9 +16,10 @@
 import { Check, Clipboard, Loader2, MapPin, Route, Trees, Undo2, X } from "@buleje/design-system/icons";
 import { formatDistance, lineLengthM } from "@/lib/forestal/loth-utm";
 import type { LatLng } from "@/lib/forestal/loth-geo";
+import { button } from "@/components/ui-system/button-variants";
 
 const BTN =
-  "inline-flex h-9 items-center gap-1 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40";
+  button({ variant: "secondary", className: "rounded-xl" });
 const BARRA =
   "absolute inset-x-3 top-3 z-30 flex flex-wrap items-center gap-2 rounded-2xl border bg-[var(--surface-raised)]/95 px-3 py-2 shadow-lg backdrop-blur";
 /** Magenta de la vía en curso: el mismo trazo que pinta el canvas. */
@@ -80,7 +81,7 @@ export default function LothMapaDrawBar({
           type="button"
           onClick={onSave}
           disabled={count < 3 || saving}
-          className="inline-flex h-9 items-center gap-1 rounded-lg bg-[var(--brand-ink)] px-3 text-xs font-bold text-white hover:opacity-90 disabled:opacity-40"
+          className="inline-flex h-12 items-center gap-1 rounded-lg bg-[var(--brand-ink)] px-3 text-xs font-bold text-white hover:opacity-90 disabled:opacity-40"
         >
           {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />} Guardar
         </button>
@@ -118,7 +119,7 @@ export function LothMapaViaBar({
           type="button"
           onClick={onTerminar}
           disabled={puntos.length < 2}
-          className="inline-flex h-9 items-center gap-1 rounded-lg px-3 text-xs font-bold text-white hover:opacity-90 disabled:opacity-40"
+          className="inline-flex h-12 items-center gap-1 rounded-lg px-3 text-xs font-bold text-white hover:opacity-90 disabled:opacity-40"
           style={{ backgroundColor: VIA }}
         >
           <Check className="h-3.5 w-3.5" aria-hidden="true" /> Terminar vía

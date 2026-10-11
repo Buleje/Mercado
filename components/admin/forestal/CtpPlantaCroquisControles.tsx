@@ -8,8 +8,9 @@
  */
 
 import { Plus, Minus, Maximize, Minimize, Locate } from "@buleje/design-system/icons";
+import { button } from "@/components/ui-system/button-variants";
 
-const BTN = "grid h-11 w-11 place-items-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] active:bg-[var(--surface-sunken)]";
+const BTN = button({ variant: "secondary", size: "icon", className: "rounded-xl" });
 
 export const CONTROLES_CSS = `[data-movil="1"] .leaflet-control-zoom{display:none}`;
 

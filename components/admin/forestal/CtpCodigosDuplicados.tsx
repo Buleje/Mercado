@@ -166,7 +166,7 @@ export default function CtpCodigosDuplicados() {
           type="button"
           onClick={() => setAbierto((v) => !v)}
           aria-expanded={abierto}
-          className="inline-flex h-9 shrink-0 items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2.5 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+          className="inline-flex h-12 shrink-0 items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2.5 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
         >
           {abierto ? "Cerrar" : "Elegir cuál conserva"}
           <ChevronDown className={`h-4 w-4 transition-transform ${abierto ? "rotate-180" : ""}`} aria-hidden />
@@ -175,7 +175,7 @@ export default function CtpCodigosDuplicados() {
           type="button"
           onClick={() => void renumerar(lista)}
           disabled={trabajando || lista.length === 0}
-          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-[var(--brand-ink)] px-3 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-50"
+          className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-lg bg-[var(--brand-ink)] px-3 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:opacity-50"
         >
           {trabajando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Hash className="h-4 w-4" />}
           Resolver todos

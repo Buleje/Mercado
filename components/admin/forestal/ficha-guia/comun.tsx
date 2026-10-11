@@ -13,6 +13,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { useId, useState } from "react";
 import { ChevronDown, type LucideIcon } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
+import { button } from "@/components/ui-system/button-variants";
 
 export type Tono = "neutro" | "marca" | "exito" | "aviso" | "error" | "info";
 
@@ -68,7 +69,7 @@ export function Pastilla({
 
 /** El botón chico de un bloque («Abrir la plata», «Ver las fotos»). */
 export const BOTON_BLOQUE =
-  "inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-muted)] disabled:cursor-not-allowed disabled:opacity-50";
+  button({ variant: "secondary", className: "rounded-xl" });
 
 /** Una cifra con su rótulo: el número manda, el rótulo acompaña. */
 export function Cifra({ valor, rotulo, sufijo, className = "" }: { valor: ReactNode; rotulo: string; sufijo?: string; className?: string }) {

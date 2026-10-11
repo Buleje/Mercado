@@ -10,9 +10,10 @@
 import { useRef } from "react";
 import { AlertTriangle, Loader2, ScanText, Undo2, X } from "@buleje/design-system/icons";
 import type { LeerVoucher } from "../hooks/use-leer-voucher";
+import { button } from "@/components/ui-system/button-variants";
 
 const BOTON_SUAVE =
-  "inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]";
+  button({ variant: "ghost", className: "rounded-xl" });
 
 export function BotonLeerVoucher({ voucher }: { voucher: LeerVoucher }) {
   const archivoRef = useRef<HTMLInputElement>(null);
@@ -24,7 +25,7 @@ export function BotonLeerVoucher({ voucher }: { voucher: LeerVoucher }) {
         onClick={() => archivoRef.current?.click()}
         disabled={leyendo}
         title="Sube la captura de Yape, Plin o de la transferencia: pone el monto, la fecha y la nota para que los revises."
-        className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary/12 px-3 text-sm font-bold text-[var(--accent-ink)] ring-1 ring-primary/40 transition-colors hover:bg-primary/20 disabled:opacity-60"
+        className="inline-flex h-12 items-center gap-1.5 rounded-lg bg-primary/12 px-3 text-sm font-bold text-[var(--accent-ink)] ring-1 ring-primary/40 transition-colors hover:bg-primary/20 disabled:opacity-60"
       >
         {leyendo ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <ScanText className="h-4 w-4" aria-hidden />}
         Leer voucher

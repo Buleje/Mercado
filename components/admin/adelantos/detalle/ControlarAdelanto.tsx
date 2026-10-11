@@ -97,14 +97,14 @@ export default function ControlarAdelanto({
             </p>
           )}
           <div className="flex flex-wrap justify-end gap-2">
-            <button type="button" onClick={() => setPanel(null)} className="h-11 rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">
+            <button type="button" onClick={() => setPanel(null)} className="h-12 rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">
               Cancelar
             </button>
             <button
               type="button"
               onClick={() => void confirmar()}
               disabled={guardando || sinCambio}
-              className="h-11 rounded-xl bg-[var(--accent-dark)] px-5 text-sm font-bold text-white hover:brightness-110 disabled:opacity-50"
+              className="h-12 rounded-xl bg-[var(--accent-dark)] px-5 text-sm font-bold text-white hover:brightness-110 disabled:opacity-50"
             >
               {guardando ? "Guardando…" : panel === "vencimiento" && !dia ? "Quitar la fecha" : "Guardar"}
             </button>

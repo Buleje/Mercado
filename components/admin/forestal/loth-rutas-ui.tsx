@@ -12,6 +12,7 @@ import { Check, Copy } from "@buleje/design-system/icons";
 import { useEffect, useRef, useState } from "react";
 import { formatMeters } from "@/lib/forestal/loth-utm";
 import { textoLargo, textoLatLng, type CoordRuta, type VerticeRuta } from "@/lib/forestal/loth-rutas-coordenadas";
+import { button } from "@/components/ui-system/button-variants";
 
 /** Copia al portapapeles y lo dice. */
 export function copiarTexto(texto: string, que: string): Promise<boolean> {
@@ -28,7 +29,7 @@ export function copiarTexto(texto: string, que: string): Promise<boolean> {
 }
 
 export const BTN_ICONO_RUTA =
-  "inline-flex h-10 w-10 flex-none items-center justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40";
+  button({ variant: "secondary", size: "icon", className: "flex-none rounded-xl" });
 
 /** Botón de copiar con el tilde un momento después de copiar. */
 export function BotonCopiar({ texto, que, etiqueta }: { texto: string; que: string; etiqueta: string }) {

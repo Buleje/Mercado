@@ -22,7 +22,9 @@ import { TableSkeleton } from "@/components/admin/marketplace/shared";
 import { button } from "@/components/ui-system/button-variants";
 import { cn } from "@/lib/utils";
 import { useAccionesDeVista } from "@/components/admin/marketplace/acciones-de-vista";
-import { diaDe, FilaDeVista, SelectFiltro, TarjetaCifra, VacioDeUnaFrase, type OpcionFiltro } from "./cabecera-vista";
+import { StatCard } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { diaDe, FilaDeVista, SelectFiltro, VacioDeUnaFrase, type OpcionFiltro } from "./cabecera-vista";
 
 type Filtro = "all" | "pending" | "approved" | "rejected";
 
@@ -61,9 +63,9 @@ export function MarketplaceResenasTab() {
     sinDatosAun: loading && total === 0,
     resumen: total > 0 ? `${promedio.toFixed(1)} ★ · ${pendingCount} por moderar` : "Sin reseñas",
     tarjetas: [
-      <TarjetaCifra key="p" rotulo="Promedio" valor={total > 0 ? `${promedio.toFixed(1)} de 5` : "—"} icono={Star} ayuda={`De ${total} reseñas de tu puesto, también las que esperan.`} />,
-      <TarjetaCifra key="m" rotulo="Por moderar" valor={pendingCount} icono={MessageSquare} destacado={pendingCount > 0} ayuda="No se ven en tu tienda hasta que las apruebes." />,
-      <TarjetaCifra key="r" rotulo="Respondidas" valor={aprobadas.length > 0 ? `${respondidas} de ${aprobadas.length}` : "—"} icono={ThumbsUp} ayuda="De las aprobadas, cuántas tienen tu respuesta." />,
+      <StatCard density="compact" key="p" label="Promedio" value={total > 0 ? `${promedio.toFixed(1)} de 5` : "—"} icon={Star} info={<InfoTip what={`De ${total} reseñas de tu puesto, también las que esperan.`} />} />,
+      <StatCard density="compact" key="m" label="Por moderar" value={pendingCount} icon={MessageSquare} highlight={pendingCount > 0} info={<InfoTip what="No se ven en tu tienda hasta que las apruebes." />} />,
+      <StatCard density="compact" key="r" label="Respondidas" value={aprobadas.length > 0 ? `${respondidas} de ${aprobadas.length}` : "—"} icon={ThumbsUp} info={<InfoTip what="De las aprobadas, cuántas tienen tu respuesta." />} />,
     ],
   });
 

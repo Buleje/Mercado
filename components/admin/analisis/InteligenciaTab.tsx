@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { AlertasNegocio, useAlertasNegocio } from "./AlertasNegocio";
 import { CabeceraAnalisis } from "./CabeceraAnalisis";
 import { useMudanzasAnalisis } from "./use-mudanzas-analisis";
+import { button } from "@/components/ui-system/button-variants";
 
 const SECCIONES = ["revisar", "indicadores"] as const;
 type Seccion = (typeof SECCIONES)[number];
@@ -42,7 +43,7 @@ const AYUDA = {
   },
 } as const;
 
-const BOTON_PRINCIPAL = "inline-flex min-h-12 shrink-0 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white hover:bg-primary/90";
+const BOTON_PRINCIPAL = button({ variant: "accent", className: "shrink-0 rounded-xl" });
 
 export default function InteligenciaTab() {
   const { vista: seccion, irA } = useSubvistaModulo<Seccion>("analisis-alertas", SECCIONES, "revisar");

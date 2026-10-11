@@ -676,7 +676,7 @@ export default function AdminLoginPage() {
                 type="button"
                 onClick={handleBypass}
                 disabled={bypassLoading}
-                className="w-full inline-flex items-center justify-center gap-2 h-11 rounded-xl border border-dashed border-[var(--rule-base)] bg-transparent text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition-colors disabled:opacity-50"
+                className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-xl border border-dashed border-[var(--rule-base)] bg-transparent text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)] transition-colors disabled:opacity-50"
               >
                 {bypassLoading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 Modo demo (solo dev)

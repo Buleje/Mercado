@@ -19,7 +19,7 @@
  * por el mismo endpoint que Marketplace › Productos.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { DataTable } from "@buleje/design-system";
+import { DataTable, StatCard } from "@buleje/design-system";
 import { History, Minus, NotebookPen, RefreshCw, Store, TrendingDown, TrendingUp, HelpCircle } from "@buleje/design-system/icons";
 import { toast } from "sonner";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
@@ -27,11 +27,12 @@ import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
 import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
 import { BuscadorEnFila, TableSkeleton } from "@/components/admin/marketplace/shared";
 import { useAccionesDeVista } from "@/components/admin/marketplace/acciones-de-vista";
-import { ENCABEZADOS_14, ErrorDeCarga, FilaDeVista, SelectFiltro, TarjetaCifra, VacioDeUnaFrase, type OpcionFiltro } from "@/components/admin/marketplace/tabs/cabecera-vista";
+import { ENCABEZADOS_14, ErrorDeCarga, FilaDeVista, SelectFiltro, VacioDeUnaFrase, type OpcionFiltro } from "@/components/admin/marketplace/tabs/cabecera-vista";
 import type { MenuAccion } from "@/components/admin/shared/action-menu";
 import { button } from "@/components/ui-system/button-variants";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { formatCurrency } from "@/lib/format";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { cn } from "@/lib/utils";
 
 type Suggestion = "Subir" | "Bajar" | "OK" | "Sin datos";
@@ -136,9 +137,9 @@ export default function CompetitivePricingTab() {
     sinDatosAun: loading && products.length === 0,
     resumen: `${cuenta("Subir")} para subir · ${cuenta("Bajar")} para bajar`,
     tarjetas: [
-      <TarjetaCifra key="s" rotulo="Debajo del promedio" valor={cuenta("Subir")} icono={TrendingUp} ayuda="Más de 20 % por debajo del promedio de las otras tiendas: podrías subirlo." />,
-      <TarjetaCifra key="b" rotulo="Encima del promedio" valor={cuenta("Bajar")} icono={TrendingDown} ayuda="Más de 20 % por encima: el comprador lo encuentra más barato en otra tienda." />,
-      <TarjetaCifra key="n" rotulo="Sin otras tiendas" valor={cuenta("Sin datos")} icono={HelpCircle} ayuda="Ninguna otra tienda del marketplace vende ese producto." />,
+      <StatCard density="compact" key="s" label="Debajo del promedio" value={cuenta("Subir")} icon={TrendingUp} info={<InfoTip what="Más de 20 % por debajo del promedio de las otras tiendas: podrías subirlo." />} />,
+      <StatCard density="compact" key="b" label="Encima del promedio" value={cuenta("Bajar")} icon={TrendingDown} info={<InfoTip what="Más de 20 % por encima: el comprador lo encuentra más barato en otra tienda." />} />,
+      <StatCard density="compact" key="n" label="Sin otras tiendas" value={cuenta("Sin datos")} icon={HelpCircle} info={<InfoTip what="Ninguna otra tienda del marketplace vende ese producto." />} />,
     ],
   });
 

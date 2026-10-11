@@ -63,7 +63,7 @@ function PanelAvisos({ avisos, onEditar }: { avisos: AvisoFicha[]; onEditar?: ()
               <button
                 type="button"
                 onClick={onEditar}
-                className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border-2 bg-[var(--surface-raised)] px-3 text-sm font-bold ${critico
+                className={`inline-flex h-12 shrink-0 items-center gap-1.5 rounded-lg border-2 bg-[var(--surface-raised)] px-3 text-sm font-bold ${critico
                   ? "border-[var(--data-error-500)] text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
                   : "border-[var(--data-warning-500)] text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"}`}
               >
@@ -183,7 +183,7 @@ export default function CtpFichaReadView({ ficha: f, onEditar }: { ficha: CtpFic
           <button
             type="button"
             onClick={() => setVerGtf(true)}
-            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+            className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
           >
             <FileText className="h-4 w-4" aria-hidden /> Ver cómo sale la guía
           </button>

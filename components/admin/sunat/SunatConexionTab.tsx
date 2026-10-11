@@ -311,7 +311,7 @@ export default function SunatConexionTab() {
           type="button"
           onClick={() => void guardar()}
           disabled={guardando}
-          className="inline-flex h-11 items-center gap-2 rounded-xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-5 text-base font-bold text-white shadow-sm transition hover:brightness-110 disabled:opacity-60"
+          className="inline-flex h-12 items-center gap-2 rounded-xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-5 text-base font-bold text-white shadow-sm transition hover:brightness-110 disabled:opacity-60"
         >
           {guardando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Save className="h-4 w-4" aria-hidden />}
           {existe ? "Guardar cambios" : "Conectar con SUNAT"}

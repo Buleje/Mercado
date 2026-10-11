@@ -39,10 +39,11 @@ import VistaPreviaDoc from "./plan-documentos/VistaPreviaDoc";
 import EnviarPorWhatsApp from "./EnviarPorWhatsApp";
 import GtfDocumentosCarpeta from "./GtfDocumentosCarpeta";
 import GtfPapelesDeLaGuia from "./GtfPapelesDeLaGuia";
+import { button } from "@/components/ui-system/button-variants";
 
 
 const BOTON =
-  "inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3.5 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50";
+  button({ variant: "secondary", className: "rounded-xl" });
 
 export default function GtfDocumentosModal({
   planId,
@@ -169,7 +170,7 @@ export default function GtfDocumentosModal({
               type="button"
               disabled={lista.length === 0}
               onClick={() => setEnviar(true)}
-              className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent-dark)] px-4 text-sm font-semibold text-white hover:brightness-110 disabled:opacity-50"
+              className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--accent-dark)] px-4 text-sm font-semibold text-white hover:brightness-110 disabled:opacity-50"
             >
               <MessageCircle className="h-4 w-4" aria-hidden="true" /> Enviar por WhatsApp
             </button>

@@ -125,7 +125,7 @@ export default function POSCartPanel({ carrito, customerPhone, customerName, onQ
                     <button
                       type="button"
                       onClick={() => { clearCart(); setConfirmClear(false); }}
-                      className="h-10 px-3 rounded-lg text-sm font-bold bg-[var(--data-error-600)] text-white hover:bg-[var(--data-error-700)] transition-colors"
+                      className="h-12 px-3 rounded-lg text-sm font-bold bg-[var(--data-error-600)] text-white hover:bg-[var(--data-error-700)] transition-colors"
                       aria-label="Confirmar: vaciar carrito"
                     >
                       Sí
@@ -133,7 +133,7 @@ export default function POSCartPanel({ carrito, customerPhone, customerName, onQ
                     <button
                       type="button"
                       onClick={() => setConfirmClear(false)}
-                      className="h-10 px-3 rounded-lg text-sm font-bold border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
+                      className="h-12 px-3 rounded-lg text-sm font-bold border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors"
                       aria-label="Cancelar: mantener carrito"
                     >
                       No

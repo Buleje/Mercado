@@ -24,12 +24,13 @@ import {
   type ReporteDeProduccion,
 } from "@/lib/forestal/reportes-produccion";
 import type { EleccionDePeriodo, FiltrosElegidos, TipoDePeriodo } from "../hooks/use-reporte-produccion";
+import { button } from "@/components/ui-system/button-variants";
 
 const CAMPO =
   "h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
 const ROTULO = "text-[length:var(--ts-2xs)] font-bold uppercase tracking-[var(--ls-wider)] text-[var(--text-tertiary)]";
 const BOTON_PASO =
-  "inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-40";
+  button({ variant: "secondary", size: "icon", className: "rounded-xl" });
 
 /** Los últimos 24 meses, del más nuevo al más viejo. */
 function mesesElegibles(): { value: string; label: string }[] {
@@ -240,7 +241,7 @@ export default function ReportesFiltros({
           <button
             type="button"
             onClick={onLimpiar}
-            className="flex h-10 items-center gap-1.5 self-end rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)]"
+            className="flex h-12 items-center gap-1.5 self-end rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)]"
           >
             <X className="h-4 w-4" aria-hidden /> Ver todo
           </button>

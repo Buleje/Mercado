@@ -10,11 +10,13 @@ import { Columns3, Square, Table, Upload, Volume2 } from "@buleje/design-system/
 import { CardTitle } from "@buleje/design-system";
 import { esOrdenFilas, type OrdenFilas } from "@/lib/forestal/cubicador-bloques-especie";
 import { CtpEspeciesBoton } from "./ctp-especie-campo";
+import { button } from "@/components/ui-system/button-variants";
+import { cn } from "@/lib/utils";
 
 export type ColOpcionalTroza = "especie" | "m3";
 export const COLS_DEFAULT_TROZA: Record<ColOpcionalTroza, boolean> = { especie: true, m3: true };
 
-const BTN = "inline-flex items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)]";
+const BTN = button({ variant: "secondary", className: "rounded-xl" });
 
 export default function BarraPatioTrozas({
   total, etiquetaVolumen, onImportar, onEspecies, ordenFilas, hayQueOrdenar, hayQueAgrupar, onOrden,
@@ -56,7 +58,7 @@ export default function BarraPatioTrozas({
       </CardTitle>
       <div className="flex flex-wrap gap-2">
         {onImportar && (
-          <button type="button" onClick={onImportar} className={`${BTN} hover:border-[var(--accent)]`}>
+          <button type="button" onClick={onImportar} className={cn(BTN, `hover:border-[var(--accent)]`)}>
             <Upload className="h-3.5 w-3.5" /> Importar
           </button>
         )}

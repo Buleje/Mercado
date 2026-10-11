@@ -139,7 +139,7 @@ export default function LothExtraccionView({
             onKeyChange={e.elegirPeriodo}
             onCustomChange={e.elegirRango}
           />
-          <ActionMenu label="Opciones de la extracción" actions={acciones} size="sm" soloIcono />
+          <ActionMenu label="Opciones de la extracción" actions={acciones} size="md" soloIcono />
         </div>
       </header>
 

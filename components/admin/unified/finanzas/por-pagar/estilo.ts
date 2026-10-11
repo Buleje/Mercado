@@ -7,6 +7,7 @@
 import { Coins, Truck, Landmark, Axe, Trees } from "@buleje/design-system/icons";
 import { montoEnMoneda } from "@/lib/adelantos/cuenta-unificada";
 import type { FuentePorPagar, MontoEnMoneda, PersonaPorPagar } from "@/lib/finance/por-pagar";
+import { button } from "@/components/ui-system/button-variants";
 
 /** Color e ícono de cada fuente: las mismas familias que «Por cobrar». */
 export const ESTILO: Record<FuentePorPagar, { icon: typeof Coins; chip: string }> = {
@@ -28,7 +29,7 @@ export const CHIP_OFF = "border-[var(--rule-base)] bg-[var(--surface-raised)] te
 /** El buscador de la fila de filtros (crece; los chips quedan a su lado). */
 export const BUSCADOR = "h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-10 pr-3 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
 /* La acción principal de cada fila (Cobrar, Pagar, Liquidar): 48 px, 14 px. */
-export const BOTON_FILA = "inline-flex h-12 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)]/50 hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]";
+export const BOTON_FILA = button({ variant: "secondary", className: "rounded-xl" });
 export const PARTIDA = "group flex min-h-12 w-full items-center gap-2 rounded-lg px-1 py-1 text-left transition-colors hover:bg-[var(--surface-sunken)]";
 
 /** Varias monedas en una línea, sin sumarlas entre sí. */

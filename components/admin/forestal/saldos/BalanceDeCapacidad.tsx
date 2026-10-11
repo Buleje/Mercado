@@ -147,7 +147,7 @@ export default function BalanceDeCapacidad({
             <button
               type="button"
               onClick={onLlevar}
-              className="ml-auto inline-flex h-10 items-center gap-1.5 rounded-lg border-2 border-[var(--accent)] bg-primary/10 px-3 text-sm font-bold text-[var(--accent-ink)] transition-colors hover:brightness-95 dark:text-[var(--accent)]"
+              className="ml-auto inline-flex h-12 items-center gap-1.5 rounded-lg border-2 border-[var(--accent)] bg-primary/10 px-3 text-sm font-bold text-[var(--accent-ink)] transition-colors hover:brightness-95 dark:text-[var(--accent)]"
             >
               <Ruler className="h-3.5 w-3.5" aria-hidden />
               Llevar al cubicador

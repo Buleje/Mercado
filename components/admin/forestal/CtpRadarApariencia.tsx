@@ -149,7 +149,7 @@ export default function CtpRadarApariencia({
         onClick={() => onAbierto(!abierto)}
         aria-expanded={abierto}
         title="Tamaño de los bloques y color de cada columna"
-        className={`inline-flex h-10 items-center gap-2 rounded-xl border-2 px-3 text-sm font-semibold transition ${
+        className={`inline-flex h-12 items-center gap-2 rounded-xl border-2 px-3 text-sm font-semibold transition ${
           abierto || preset?.key !== "normal" || paleta?.key !== "sistema" || aMedida
             ? "border-[var(--accent)] bg-primary/10 dark:bg-[var(--accent)]/12 text-[var(--accent)]"
             : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
@@ -197,7 +197,7 @@ export default function CtpRadarApariencia({
                   title={p.hint}
                   onClick={() => onApariencia({ ...apariencia, dims: p.dims })}
                   aria-pressed={preset?.key === p.key}
-                  className={`h-9 rounded-lg border-2 text-xs font-bold transition ${
+                  className={`h-12 rounded-lg border-2 text-xs font-bold transition ${
                     preset?.key === p.key
                       ? "border-[var(--accent)] bg-[var(--accent)] text-white"
                       : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
@@ -248,7 +248,7 @@ export default function CtpRadarApariencia({
                   title={p.hint}
                   onClick={() => onApariencia({ ...apariencia, colores: p.key === "sistema" ? {} : p.colores })}
                   aria-pressed={paleta?.key === p.key}
-                  className={`flex h-10 items-center gap-2 rounded-xl border-2 px-2.5 text-xs font-bold transition ${
+                  className={`flex h-12 items-center gap-2 rounded-xl border-2 px-2.5 text-xs font-bold transition ${
                     paleta?.key === p.key
                       ? "border-[var(--accent)] bg-primary/10 dark:bg-[var(--accent)]/12 text-[var(--accent)]"
                       : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
@@ -338,7 +338,7 @@ export default function CtpRadarApariencia({
                 type="submit"
                 disabled={!nombreVista.trim() || (vistas.length >= MAX_VISTAS && !vistas.some((v) => v.id === nombreVista.trim().toLowerCase()))}
                 title="Guarda tamaño, colores, orden, foco, agrupación y zoom bajo ese nombre"
-                className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 text-xs font-bold text-white hover:bg-[var(--accent-600)] disabled:opacity-40"
+                className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 text-xs font-bold text-white hover:bg-[var(--accent-600)] disabled:opacity-40"
               >
                 <Bookmark className="h-3.5 w-3.5" /> Guardar
               </button>

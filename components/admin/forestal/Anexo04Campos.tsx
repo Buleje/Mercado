@@ -268,14 +268,14 @@ function ObservacionesModal({
             type="button"
             onClick={() => onChange("")}
             disabled={!valor}
-            className="inline-flex h-10 items-center rounded-xl border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] transition hover:text-[var(--text-primary)] disabled:opacity-40"
+            className="inline-flex h-12 items-center rounded-xl border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] transition hover:text-[var(--text-primary)] disabled:opacity-40"
           >
             Borrar
           </button>
           <button
             type="button"
             onClick={onCerrar}
-            className="inline-flex h-10 items-center rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white transition hover:brightness-95"
+            className="inline-flex h-12 items-center rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white transition hover:brightness-95"
           >
             Listo
           </button>
@@ -353,7 +353,7 @@ export default function Anexo04Campos({
             aria-selected={tab === p.id}
             onClick={() => setTab(p.id)}
             title={p.ayuda}
-            className={`h-9 rounded-lg text-xs font-bold transition ${
+            className={`h-12 rounded-lg text-xs font-bold transition ${
               tab === p.id
                 ? "bg-[var(--surface-raised)] text-[var(--accent-ink)] shadow-[var(--shadow-xs)] dark:text-[var(--accent)]"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -419,7 +419,7 @@ export default function Anexo04Campos({
           <button
             type="button"
             onClick={() => setVerObs(true)}
-            className={`flex h-11 w-full items-center gap-2 rounded-xl border px-3 text-left text-sm font-bold transition ${
+            className={`flex h-12 w-full items-center gap-2 rounded-xl border px-3 text-left text-sm font-bold transition ${
               obs
                 ? "border-[var(--accent)] bg-primary/8 text-[var(--text-primary)]"
                 : "border-dashed border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"

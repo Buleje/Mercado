@@ -35,6 +35,7 @@ import {
   type SeccionExcepcion,
   type TonoExcepcion,
 } from "@/lib/forestal/ctp-saldos-excepciones";
+import { button } from "@/components/ui-system/button-variants";
 
 /**
  * Cada tono con su ícono además del color: en dark el rojo y el ámbar se
@@ -62,7 +63,7 @@ const TONO = {
 } as const satisfies Record<TonoExcepcion, unknown>;
 
 const BOTON =
-  "ml-auto inline-flex min-h-10 shrink-0 items-center gap-1 rounded-lg border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-primary hover:bg-primary/10";
+  button({ variant: "secondary", className: "ml-auto shrink-0 rounded-xl" });
 
 const DESTINO: Record<DestinoExcepcion, string> = {
   ingresos: "Ir a Ingresos",

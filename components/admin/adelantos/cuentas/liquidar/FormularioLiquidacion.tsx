@@ -241,7 +241,7 @@ export default function FormularioLiquidacion({
                     key={m.id}
                     type="button"
                     onClick={() => setMetodo(m.id)}
-                    className={`inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-bold transition-colors ${
+                    className={`inline-flex h-12 items-center gap-1.5 rounded-xl px-3 text-sm font-bold transition-colors ${
                       metodo === m.id
                         ? "bg-primary/12 text-[var(--accent-ink)] ring-1 ring-primary/40 dark:text-[var(--accent)]"
                         : "bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"

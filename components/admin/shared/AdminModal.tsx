@@ -52,6 +52,7 @@ import {
   type VentanaDeModal,
 } from "@/hooks/use-ventana-de-modal";
 import {
+  BOTON_VENTANA,
   ControlesDeVentana,
   PausaDeFocoRadix,
   TiradorDeVentana,
@@ -525,10 +526,10 @@ export default function AdminModal({
                   {!hideCloseButton && (
                     <Dialog.Close asChild>
                       <button
-                        className="h-10 w-10 sm:h-8 sm:w-8 rounded-xl flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] transition-colors shrink-0"
+                        className={BOTON_VENTANA}
                         aria-label="Cerrar"
                       >
-                        <X className="h-5 w-5 sm:h-4 sm:w-4" strokeWidth={1.75} />
+                        <X className="h-5 w-5" strokeWidth={1.75} />
                       </button>
                     </Dialog.Close>
                   )}

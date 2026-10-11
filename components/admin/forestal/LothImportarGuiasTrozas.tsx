@@ -11,21 +11,15 @@
  */
 
 import { useMemo } from "react";
+import { BlockTitle } from "@buleje/design-system";
 import type { TalaReferencial, TrozaImportada } from "@/lib/forestal/loth-importar-guia-tipos";
 import type { GtfSerfor } from "@/lib/forestal/serfor-gtf";
 import LothImportarGuiasBloques from "./LothImportarGuiasBloques";
 import { TablaTalas, TablaTrozas } from "./LothImportarGuiasTablas";
 
-function Rotulo({ texto, detalle }: { texto: string; detalle?: string }) {
-  return (
-    <p className="px-3 pb-1 pt-3 text-sm font-semibold text-[var(--text-primary)]">
-      {texto}
-      {detalle && (
-        <span className="ml-2 font-normal text-[var(--text-secondary)]">· {detalle}</span>
-      )}
-    </p>
-  );
-}
+/** El título de cada lista (el `BlockTitle` del DS) y su detalle en gris. */
+const ROTULO = "px-3 pb-1 pt-3";
+const DETALLE = "ml-2 font-normal text-[var(--text-secondary)]";
 
 export default function LothImportarGuiasTrozas({
   ficha,
@@ -55,10 +49,10 @@ export default function LothImportarGuiasTrozas({
     <div className="pb-1">
       {trozas.length > 0 && (
         <>
-          <Rotulo
-            texto={`Lista de trozas (${trozas.length})`}
-            detalle={especies.length ? especies.join(", ") : undefined}
-          />
+          <BlockTitle as="p" className={ROTULO}>
+            Lista de trozas ({trozas.length})
+            {especies.length > 0 && <span className={DETALLE}>· {especies.join(", ")}</span>}
+          </BlockTitle>
           <TablaTrozas trozas={trozas} />
         </>
       )}
@@ -67,10 +61,10 @@ export default function LothImportarGuiasTrozas({
       </div>
       {talas.length > 0 && (
         <div className={conTala ? "" : "opacity-60"}>
-          <Rotulo
-            texto={`Tala referencial (${talas.length} ${talas.length === 1 ? "árbol" : "árboles"})`}
-            detalle={conTala ? undefined : "no se arma"}
-          />
+          <BlockTitle as="p" className={ROTULO}>
+            Tala referencial ({talas.length} {talas.length === 1 ? "árbol" : "árboles"})
+            {!conTala && <span className={DETALLE}>· no se arma</span>}
+          </BlockTitle>
           <TablaTalas talas={talas} />
         </div>
       )}

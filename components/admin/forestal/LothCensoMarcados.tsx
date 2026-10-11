@@ -41,10 +41,10 @@ export function AvisoPendiente({
         <b>Árbol {arbol.treeCode}: {reparo.titulo}.</b> {reparo.detalle}
       </div>
       <div className="flex shrink-0 gap-2">
-        <button type="button" onClick={onVolver} className="inline-flex h-9 items-center rounded-lg px-3 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">
+        <button type="button" onClick={onVolver} className="inline-flex h-12 items-center rounded-lg px-3 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">
           Volver
         </button>
-        <button ref={confirmarRef} type="button" onClick={onElegir} className="inline-flex h-9 items-center rounded-lg border-2 border-current px-3 text-sm font-bold">
+        <button ref={confirmarRef} type="button" onClick={onElegir} className="inline-flex h-12 items-center rounded-lg border-2 border-current px-3 text-sm font-bold">
           Elegirlo igual
         </button>
       </div>
@@ -75,10 +75,10 @@ export function AvisoMarcados({
         {conReparo.map((a) => `${a.treeCode} (${a.reparo?.titulo.toLowerCase()})`).join(" · ")}.
       </div>
       <div className="flex shrink-0 gap-2">
-        <button type="button" onClick={onDesmarcar} className="inline-flex h-9 items-center rounded-lg px-3 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">
+        <button type="button" onClick={onDesmarcar} className="inline-flex h-12 items-center rounded-lg px-3 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">
           Desmarcarlos
         </button>
-        <button ref={seguirRef} type="button" onClick={onSeguir} className="inline-flex h-9 items-center rounded-lg border-2 border-current px-3 text-sm font-bold">
+        <button ref={seguirRef} type="button" onClick={onSeguir} className="inline-flex h-12 items-center rounded-lg border-2 border-current px-3 text-sm font-bold">
           Seguir con todos
         </button>
       </div>

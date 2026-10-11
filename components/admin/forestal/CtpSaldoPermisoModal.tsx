@@ -244,7 +244,7 @@ export default function CtpSaldoPermisoModal({
                     title={title}
                     onClick={() => setBase(v)}
                     aria-pressed={base === v}
-                    className={`h-10 rounded-lg px-3 text-sm font-semibold transition ${
+                    className={`h-12 rounded-lg px-3 text-sm font-semibold transition ${
                       base === v
                         ? "bg-[var(--accent)] text-white"
                         : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"

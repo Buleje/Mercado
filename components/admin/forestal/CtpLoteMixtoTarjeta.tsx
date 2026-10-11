@@ -14,9 +14,10 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { lineaDelMixto } from "@/lib/forestal/lote-mixto-vista";
 import { HistorialDeMixtos } from "./lote-mixto-partes";
 import type { EstadoLotesMixtos } from "./hooks/use-lotes-mixtos";
+import { button } from "@/components/ui-system/button-variants";
 
 const BOTON =
-  "inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)]";
+  button({ variant: "secondary", className: "rounded-xl" });
 
 export default function CtpLoteMixtoTarjeta({
   mixtos,

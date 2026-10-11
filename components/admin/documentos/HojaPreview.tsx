@@ -31,6 +31,7 @@ import { numeroALetra, type HojaFormato } from "@/lib/documentos/xlsx-formato";
 import TablaHojaLectura from "./hoja/TablaHojaLectura";
 import AvisoArchivo from "./AvisoArchivo";
 import { formatNumber } from "@/lib/format";
+import { button } from "@/components/ui-system/button-variants";
 
 /** Primera tanda de filas. Con el alto real, ~120 llenan varias pantallas. */
 const TANDA_INICIAL = 120;
@@ -229,7 +230,7 @@ export default function HojaPreview({ url, mimeType, nombre, onEnviar, miniatura
                 type="button"
                 onClick={() => setActiva(i)}
                 title={h.oculta ? `${h.nombre} — está oculta en Excel` : h.nombre}
-                className={`inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm font-bold transition-colors ${
+                className={`inline-flex h-12 items-center gap-1.5 rounded-lg px-2.5 text-sm font-bold transition-colors ${
                   i === activa
                     ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                     : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
@@ -347,7 +348,7 @@ export default function HojaPreview({ url, mimeType, nombre, onEnviar, miniatura
           <button
             type="button"
             onClick={() => setHasta((h) => h + TANDA_EXTRA)}
-            className="inline-flex h-9 items-center rounded-lg border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+            className="inline-flex h-12 items-center rounded-lg border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
           >
             Mostrar {Math.min(TANDA_EXTRA, restantes)} más
           </button>
@@ -358,7 +359,7 @@ export default function HojaPreview({ url, mimeType, nombre, onEnviar, miniatura
 }
 
 const BOTON =
-  "inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]";
+  button({ variant: "secondary", size: "icon", className: "rounded-xl" });
 
 /** Números legibles: miles separados y como mucho dos decimales. */
 function fmt(n: number): string {

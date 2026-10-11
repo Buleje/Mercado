@@ -116,14 +116,14 @@ export default function LothCampoBar({
           <button
             type="button"
             onClick={() => onCentrar([posicion.lat, posicion.lng])}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+            className="inline-flex h-12 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
           >
             <Locate className="h-3.5 w-3.5" /> Centrar
           </button>
           <button
             type="button"
             onClick={() => onMarcarAqui([posicion.lat, posicion.lng])}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--accent-ink)] px-3 text-xs font-bold text-white hover:opacity-90"
+            className="inline-flex h-12 items-center gap-1.5 rounded-lg bg-[var(--accent-ink)] px-3 text-xs font-bold text-white hover:opacity-90"
           >
             <MapPin className="h-3.5 w-3.5" /> Marcar acá
           </button>

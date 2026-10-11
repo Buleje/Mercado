@@ -253,7 +253,7 @@ export default function WaChatView({
             <button
               type="button"
               onClick={() => setShowTemplates(true)}
-              className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-primary px-3 text-sm font-bold text-white transition hover:opacity-90"
+              className="inline-flex h-12 items-center gap-1.5 rounded-xl bg-primary px-3 text-sm font-bold text-white transition hover:opacity-90"
             >
               <FileText className="h-4 w-4" />
               Usar plantilla

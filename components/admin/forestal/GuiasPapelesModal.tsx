@@ -62,7 +62,7 @@ export default function GuiasPapelesModal({
                     type="button"
                     aria-expanded={esta}
                     onClick={() => setAbierta(esta ? null : g)}
-                    className="ml-auto inline-flex h-11 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold text-[var(--accent-ink)] hover:bg-[var(--surface-sunken)] dark:text-[var(--accent)]"
+                    className="ml-auto inline-flex h-12 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold text-[var(--accent-ink)] hover:bg-[var(--surface-sunken)] dark:text-[var(--accent)]"
                   >
                     {esta ? "Cerrar" : "Subir o ver"}
                     <ChevronDown

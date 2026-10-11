@@ -171,7 +171,7 @@ export default function TrozasALaVista({ fecha, esHoy, activo }: { fecha: string
               type="button"
               disabled={sel.length === 0}
               onClick={() => navegarEnElPanel(enlaceConsumirDesdeCamara(fecha, sel.map((t) => t.marcador)))}
-              className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white transition hover:brightness-95 disabled:opacity-50"
+              className="inline-flex h-12 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white transition hover:brightness-95 disabled:opacity-50"
             >
               <Flame className="h-4 w-4" aria-hidden />
               Consumir{sel.length ? ` ${sel.length}` : ""}

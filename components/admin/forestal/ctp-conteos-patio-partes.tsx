@@ -43,7 +43,7 @@ export function ErrorConReintento({ error, onReintentar }: { error: string; onRe
       <button
         type="button"
         onClick={onReintentar}
-        className="inline-flex h-10 items-center rounded-lg border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]"
+        className="inline-flex h-12 items-center rounded-lg border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:border-[var(--accent)]"
       >
         Reintentar
       </button>

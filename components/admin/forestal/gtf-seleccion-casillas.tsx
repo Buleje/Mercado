@@ -87,7 +87,7 @@ export function ElegirFiltradasMovil({ ids, sel }: { ids: readonly string[]; sel
     <button
       type="button"
       onClick={() => sel.marcar(ids, !todas)}
-      className="inline-flex h-10 items-center rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)] sm:hidden"
+      className="inline-flex h-12 items-center rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)] sm:hidden"
     >
       {todas ? "Quitar las elegidas" : `Elegir las ${ids.length}`}
     </button>

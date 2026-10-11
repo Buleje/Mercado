@@ -41,7 +41,7 @@ export function irAlArbolEnElMapa(codigo: string): void {
 }
 
 const BOTON_MAPA =
-  "mt-1.5 inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--accent-ink)] transition-colors hover:border-[var(--accent)] dark:text-[var(--accent)] sm:h-9";
+  "mt-1.5 inline-flex h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--accent-ink)] transition-colors hover:border-[var(--accent)] dark:text-[var(--accent)] sm:h-12";
 
 /** Los renglones y el salto al mapa; lo comparten la ficha y la tarjeta. */
 function Renglones({ arbol, comoEnlace }: { arbol: ArbolDeTroza; comoEnlace?: boolean }) {

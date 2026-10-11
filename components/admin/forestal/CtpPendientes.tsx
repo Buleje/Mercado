@@ -60,7 +60,7 @@ const TONO_VIENE: Record<AvisoAnticipado["gravedad"], string> = {
 };
 
 /** El botón de la cabecera: mismo alto que «Buscar guía» y «Modo patio». */
-const BOTON = "inline-flex h-10 items-center gap-2 rounded-xl border-2 px-3 text-sm font-bold transition-colors";
+const BOTON = "inline-flex h-12 items-center gap-2 rounded-xl border-2 px-3 text-sm font-bold transition-colors";
 
 export default function CtpPendientes({
   estado,

@@ -116,7 +116,7 @@ export default function LothFichaTrozado({ arbol, cargandoCenso, codigo, libro, 
       {libro.error ? (
         <div role="alert" className={`flex items-center justify-between gap-2 rounded-xl border px-3 py-2 text-sm ${AMBAR}`}>
           <span className="min-w-0">{libro.error}</span>
-          <button type="button" onClick={libro.recargar} className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-2 font-semibold underline-offset-2 hover:underline">
+          <button type="button" onClick={libro.recargar} className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-lg px-2 font-semibold underline-offset-2 hover:underline">
             <RefreshCw className="h-4 w-4" aria-hidden="true" />
             Reintentar
           </button>

@@ -22,8 +22,9 @@ import { monthRange } from "@/lib/forestal/ctp-cierre-types";
 import { revisarCierre } from "@/lib/forestal/ctp-cierre-checklist";
 import { useCtpPendientes } from "@/hooks/use-ctp-pendientes";
 import type { CtpCierresState } from "@/hooks/use-ctp-cierres";
+import { button } from "@/components/ui-system/button-variants";
 
-const BTN = "inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] transition hover:text-[var(--text-primary)] disabled:opacity-50";
+const BTN = button({ variant: "secondary", className: "rounded-xl" });
 
 const TONO = {
   no_conviene: "border-[var(--data-error-500)]/40 bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]",
@@ -188,7 +189,7 @@ export default function CtpCierreAsistido({ onIr, cierres }: {
           onClick={() => void cerrar()}
           disabled={cerrando || cargando || yaCerrado || revision.veredicto === "no_conviene"}
           title={yaCerrado ? "Ese mes ya está cerrado" : revision.veredicto === "no_conviene" ? "Resuelve lo que impide cerrar" : `Congela costos y bloquea ${mes.label}`}
-          className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white transition hover:brightness-95 disabled:opacity-50"
+          className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white transition hover:brightness-95 disabled:opacity-50"
         >
           {cerrando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
           {cerrando ? "Cerrando…" : yaCerrado ? `${mes.label} ya está cerrado` : `Cerrar ${mes.label}`}

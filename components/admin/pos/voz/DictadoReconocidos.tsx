@@ -43,7 +43,7 @@ export default function DictadoReconocidos({ voz }: { voz: DictadoVoz }) {
                       {item.matchedProductId && (
                         <button
                           onClick={() => addItem(item)}
-                          className="inline-flex items-center gap-1 h-9 px-3 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-sm font-extrabold hover:bg-[var(--accent)] hover:text-white transition-colors"
+                          className="inline-flex items-center gap-1 h-12 px-3 rounded-full bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] text-sm font-extrabold hover:bg-[var(--accent)] hover:text-white transition-colors"
                           title="Agregar al carrito"
                         >
                           <Plus className="h-4 w-4" aria-hidden />

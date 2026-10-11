@@ -16,6 +16,7 @@ import { formatCurrency } from "@/lib/currency";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { avisoCajaAbierta, fechaCortaLima } from "@/lib/caja/caja-abierta";
 import type { UsoCajaAbierta } from "@/hooks/use-caja-abierta";
+import { button } from "@/components/ui-system/button-variants";
 
 const soles = (v: number) => `${v < 0 ? "−" : ""}${formatCurrency(Math.abs(v))}`;
 
@@ -45,7 +46,7 @@ function Linea({ tono, children }: { tono: Tono; children: React.ReactNode }) {
   );
 }
 
-const BOTON = "ml-auto inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors";
+const BOTON = button({ variant: "secondary", className: "ml-auto rounded-xl" });
 
 export default function CajaDelResumen({ caja, cargando, error, recargar }: UsoCajaAbierta) {
   if (cargando && !caja) {

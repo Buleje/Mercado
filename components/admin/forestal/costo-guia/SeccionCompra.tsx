@@ -67,7 +67,7 @@ function Proveedor({
         <button
           type="button"
           onClick={() => setEligiendo(true)}
-          className="h-9 rounded-lg px-2 text-sm font-bold text-[var(--accent-ink)] hover:underline dark:text-[var(--accent)]"
+          className="h-12 rounded-lg px-2 text-sm font-bold text-[var(--accent-ink)] hover:underline dark:text-[var(--accent)]"
         >
           Cambiar
         </button>
@@ -86,14 +86,14 @@ function Proveedor({
           <button
             type="button"
             onClick={() => b.setProveedorId(propuesto.parteId)}
-            className="h-9 rounded-lg bg-[var(--accent-dark)] px-3 font-bold text-white"
+            className="h-12 rounded-lg bg-[var(--accent-dark)] px-3 font-bold text-white"
           >
             Sí, es
           </button>
           <button
             type="button"
             onClick={() => setEligiendo(true)}
-            className="h-9 rounded-lg border border-[var(--rule-base)] px-3 font-bold text-[var(--text-secondary)]"
+            className="h-12 rounded-lg border border-[var(--rule-base)] px-3 font-bold text-[var(--text-secondary)]"
           >
             Elegir otro
           </button>

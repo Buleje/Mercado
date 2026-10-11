@@ -180,7 +180,7 @@ export default function PanelVozTrozas({
           </>
         )}
         <CampoNum label={`Largo (${u.largo})`} value={manual.largo} onChange={(v) => setManual({ ...manual, largo: v })} />
-        <button type="button" onClick={addManual} className="inline-flex h-10 items-center gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
+        <button type="button" onClick={addManual} className="inline-flex h-12 items-center gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
           <Plus className="h-4 w-4" /> Agregar a mano
         </button>
       </div>

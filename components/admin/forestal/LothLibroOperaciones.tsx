@@ -1044,7 +1044,7 @@ export default function LothLibroOperaciones() {
              identifica es el titular, en letra normal y entero hasta 18rem
              (28-09: «Maderera El Aguaja…» en mono dentro de 12rem).
              Sin carátula sí es un aviso, y el borde de color va a 2 px. */
-          className={`inline-flex h-10 items-center gap-2 rounded-xl px-3 text-sm transition-colors ${
+          className={`inline-flex h-12 items-center gap-2 rounded-xl px-3 text-sm transition-colors ${
             caratula
               ? "max-w-[18rem] border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] min-[1800px]:max-w-[26rem]"
               : "border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] font-semibold text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]"
@@ -1330,7 +1330,7 @@ export default function LothLibroOperaciones() {
             type="button"
             onClick={() => etiquetas.imprimirEtiquetas(seleccionadas)}
             disabled={etiquetas.imprimiendoEtiquetas}
-            className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+            className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
           >
             <QrCode className="h-4 w-4" /> Etiquetas QR
           </button>
@@ -1340,7 +1340,7 @@ export default function LothLibroOperaciones() {
               onClick={() => etiquetas.imprimirEtiquetasTrozado(seleccionadas)}
               disabled={etiquetas.imprimiendoTrozado}
               title="La ficha del QR se lee con la misma pistola que recibe trozas en el Libro CTP"
-              className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-ink)] hover:bg-[var(--accent)]/12 disabled:opacity-50 dark:text-[var(--accent)]"
+              className="inline-flex h-12 items-center gap-2 rounded-xl border-2 border-[var(--accent)] px-4 text-sm font-semibold text-[var(--accent-ink)] hover:bg-[var(--accent)]/12 disabled:opacity-50 dark:text-[var(--accent)]"
             >
               <QrCode className="h-4 w-4" /> Imprimir etiquetas
             </button>
@@ -1348,7 +1348,7 @@ export default function LothLibroOperaciones() {
           <button
             type="button"
             onClick={() => descargarCsv(seleccionadas, `libro-th-${section}-seleccion.csv`)}
-            className="inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+            className="inline-flex h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
           >
             CSV de la selección
           </button>
@@ -1356,7 +1356,7 @@ export default function LothLibroOperaciones() {
             type="button"
             onClick={() => setAnularLineas(seleccionadas.filter((e) => e.status !== "anulado"))}
             disabled={seleccionadas.every((e) => e.status === "anulado")}
-            className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--data-error-500)] px-4 text-sm font-semibold text-[var(--data-error-700)] hover:bg-[var(--data-error-500)]/10 disabled:opacity-40 dark:text-[var(--data-error-500)]"
+            className="inline-flex h-12 items-center gap-2 rounded-xl border-2 border-[var(--data-error-500)] px-4 text-sm font-semibold text-[var(--data-error-700)] hover:bg-[var(--data-error-500)]/10 disabled:opacity-40 dark:text-[var(--data-error-500)]"
           >
             <Ban className="h-4 w-4" /> Anular
           </button>
@@ -1367,7 +1367,7 @@ export default function LothLibroOperaciones() {
                 ids: seleccionadas.map((e) => e.id),
                 titulo: `Borrar ${seleccionadas.length === 1 ? "la línea seleccionada" : `${seleccionadas.length} líneas seleccionadas`}`,
               })}
-              className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--data-error-600)] px-4 text-sm font-semibold text-white hover:opacity-90"
+              className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--data-error-600)] px-4 text-sm font-semibold text-white hover:opacity-90"
             >
               <Trash2 className="h-4 w-4" /> Borrar…
             </button>
@@ -1375,7 +1375,7 @@ export default function LothLibroOperaciones() {
           <button
             type="button"
             onClick={() => setSeleccion(new Set())}
-            className="ml-auto inline-flex h-10 items-center rounded-xl px-3 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
+            className="ml-auto inline-flex h-12 items-center rounded-xl px-3 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
           >
             Limpiar
           </button>
@@ -1731,7 +1731,7 @@ export default function LothLibroOperaciones() {
                 setAnularLineas([]);
                 setAnnulReason("");
               }}
-              className="inline-flex h-11 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)]"
+              className="inline-flex h-12 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)]"
             >
               Cancelar
             </button>
@@ -1739,7 +1739,7 @@ export default function LothLibroOperaciones() {
               type="button"
               disabled={annulReason.trim().length < 3 || pending != null}
               onClick={() => doAnnul(anularLineas.map((e) => e.id))}
-              className="inline-flex h-11 items-center rounded-xl bg-[var(--data-error-600)] px-5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+              className="inline-flex h-12 items-center rounded-xl bg-[var(--data-error-600)] px-5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
             >
               {pending != null ? "Anulando…" : `Anular ${anularLineas.length > 1 ? anularLineas.length : ""}`}
             </button>

@@ -286,7 +286,7 @@ export default function HistorialGastosTab() {
           <button
             type="button"
             onClick={() => h.setOcultarDuplicados(!h.ocultarDuplicados)}
-            className="ml-auto inline-flex h-9 items-center rounded-lg border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-raised)]"
+            className="ml-auto inline-flex h-12 items-center rounded-lg border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-raised)]"
           >
             {h.ocultarDuplicados ? "Mostrarlos igual" : "Volver a ocultarlos"}
           </button>
@@ -329,7 +329,7 @@ export default function HistorialGastosTab() {
             <button
               type="button"
               onClick={h.limpiarFiltros}
-              className="mt-1 inline-flex h-10 items-center rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+              className="mt-1 inline-flex h-12 items-center rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
             >
               Limpiar filtros
             </button>
@@ -337,7 +337,7 @@ export default function HistorialGastosTab() {
             <button
               type="button"
               onClick={() => h.setPeriod("todo")}
-              className="mt-1 inline-flex h-10 items-center rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+              className="mt-1 inline-flex h-12 items-center rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
             >
               Ver todo el historial
             </button>

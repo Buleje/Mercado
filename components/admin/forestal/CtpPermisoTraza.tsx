@@ -96,7 +96,7 @@ export default function CtpPermisoTraza({
               onClick={() =>
                 setAbiertas(todasAbiertas ? new Set() : new Set(guias.map((g) => g.id)))
               }
-              className="inline-flex h-10 items-center rounded-lg border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+              className="inline-flex h-12 items-center rounded-lg border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
             >
               {todasAbiertas ? "Cerrar todas" : "Abrir todas"}
             </button>
@@ -147,7 +147,7 @@ export default function CtpPermisoTraza({
                     type="button"
                     onClick={() => setVincular(c.id)}
                     aria-label={`Vincular la corrida ${nLinea(c.lineNo)} con sus trozas`}
-                    className="inline-flex h-11 items-center gap-1.5 rounded-lg border border-[var(--accent)] px-3 text-sm font-semibold text-[var(--accent-ink)] transition-colors hover:bg-[var(--accent)]/10 dark:text-[var(--accent)]"
+                    className="inline-flex h-12 items-center gap-1.5 rounded-lg border border-[var(--accent)] px-3 text-sm font-semibold text-[var(--accent-ink)] transition-colors hover:bg-[var(--accent)]/10 dark:text-[var(--accent)]"
                   >
                     <Layers className="h-4 w-4" aria-hidden /> Vincular
                   </button>

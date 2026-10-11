@@ -58,7 +58,7 @@ export function BotonesBorrar({
         type="button"
         onClick={onCancelar}
         disabled={busy}
-        className="h-11 rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+        className="h-12 rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] disabled:opacity-50"
       >
         Cancelar
       </button>
@@ -66,7 +66,7 @@ export function BotonesBorrar({
         type="button"
         onClick={onBorrar}
         disabled={busy || !habilitado || n === 0}
-        className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-error-600)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+        className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--data-error-600)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
       >
         {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Trash2 className="h-4 w-4" aria-hidden />}
         {n > 0 ? `Borrar ${pluralN(n, "operación", "operaciones")}` : "Borrar"}

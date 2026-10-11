@@ -175,7 +175,7 @@ export default function FichaVisitante({ dia, grupo: g, grupos, onCambio }: Prop
                       <b className="block text-[var(--text-primary)]">{p.etiqueta}</b>
                       <span className="text-sm text-[var(--text-secondary)]">ropa parecida{pg ? ` · ${horaLima(pg.desde)}` : ""}</span>
                     </span>
-                    <button type="button" disabled={ocupado} onClick={() => void unir(p.clave)} className={`${BTN} h-9`}>
+                    <button type="button" disabled={ocupado} onClick={() => void unir(p.clave)} className={`${BTN} h-12`}>
                       <Combine className="h-4 w-4" aria-hidden /> Es el mismo
                     </button>
                   </li>
@@ -200,11 +200,11 @@ export default function FichaVisitante({ dia, grupo: g, grupos, onCambio }: Prop
                 </option>
               ))}
             </select>
-            <button type="button" disabled={ocupado || !otro} onClick={() => void unir(otro)} className={`${BTN} h-9`}>
+            <button type="button" disabled={ocupado || !otro} onClick={() => void unir(otro)} className={`${BTN} h-12`}>
               {ocupado ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Combine className="h-4 w-4" aria-hidden />} Unir
             </button>
             {g.unidos.map((clave, i) => (
-              <button key={clave} type="button" disabled={ocupado} onClick={() => void hacer("DELETE", { clave })} className={`${BTN} h-9`}>
+              <button key={clave} type="button" disabled={ocupado} onClick={() => void hacer("DELETE", { clave })} className={`${BTN} h-12`}>
                 <Undo2 className="h-4 w-4" aria-hidden /> Separar unión {g.unidos.length > 1 ? i + 1 : ""}
               </button>
             ))}

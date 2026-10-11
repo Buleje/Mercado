@@ -41,9 +41,10 @@ import {
 } from "@/lib/forestal/trozas-recepcion";
 import { useCodigosPlantaEnUso } from "@/hooks/use-codigos-planta";
 import CtpPiezasTabla, { type FilaTroza } from "./CtpPiezasTabla";
+import { button } from "@/components/ui-system/button-variants";
 
 const BTN =
-  "inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:opacity-40";
+  button({ variant: "secondary", className: "rounded-xl" });
 const CHIP =
   "inline-flex h-8 items-center gap-1 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:opacity-40";
 

@@ -45,7 +45,7 @@ interface Props {
 }
 
 const BTN_PRINCIPAL =
-  "inline-flex h-10 items-center gap-1.5 rounded-lg bg-[var(--accent-600,var(--accent))] px-4 text-sm font-bold text-white transition hover:brightness-95 disabled:opacity-50 max-sm:h-11";
+  "inline-flex h-12 items-center gap-1.5 rounded-xl bg-[var(--accent-600,var(--accent))] px-4 text-sm font-bold text-white transition hover:brightness-95 disabled:opacity-50 max-sm:h-12";
 
 const mismas = (a: readonly ZonaIgnorada[], b: readonly ZonaIgnorada[]) =>
   a.length === b.length && a.every((z, i) => z.x === b[i].x && z.y === b[i].y && z.w === b[i].w && z.h === b[i].h);

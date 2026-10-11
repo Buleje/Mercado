@@ -1,6 +1,6 @@
 "use client";
 
-import { LoadingState } from "@buleje/design-system";
+import { DataTable, LoadingState } from "@buleje/design-system";
 import { AlertCircle } from "@buleje/design-system/icons";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import { m, AnimatePresence } from "@/components/admin/providers";
@@ -10,7 +10,9 @@ import { useCrm } from "@/components/admin/crm/use-crm";
 import { useIndicadoresCrm } from "@/components/admin/crm/CrmIndicadores";
 import CrmCabecera from "@/components/admin/crm/CrmCabecera";
 import CrmFiltros from "@/components/admin/crm/CrmFiltros";
-import CrmTabla from "@/components/admin/crm/CrmTabla";
+import CrmFilas from "@/components/admin/crm/CrmFilas";
+import CrmPaginacion from "@/components/admin/crm/CrmPaginacion";
+import { EnOrden } from "@/components/admin/shared/columnas-ordenables";
 import CrmComparar from "@/components/admin/crm/CrmComparar";
 
 export { inferSegment } from "@/components/admin/crm/crm-compartido";
@@ -96,7 +98,39 @@ export default function CRMTab() {
 
       <div className="space-y-2">
         <CrmFiltros crm={crm} />
-        <CrmTabla crm={crm} />
+        {/* La tabla de clientes: cabecera ordenable (arrastrar columnas), filas y paginación. */}
+        <div className="bg-[var(--surface-raised)] rounded-xl overflow-hidden">
+          <DataTable stickyHeader className="min-w-[600px]">
+            <thead ref={crm.orden.refCabecera}>
+              <tr>
+                {crm.compareMode && <th className="w-10"><span className="sr-only">Comparar</span></th>}
+                <EnOrden
+                  orden={crm.orden.orden}
+                  celdas={{
+                    cliente: <th data-col="cliente">Cliente</th>,
+                    telefono: <th data-col="telefono">Celular</th>,
+                    ultimaCompra: <th data-col="ultimaCompra">Última compra</th>,
+                    totalGastado: <th data-col="totalGastado" className="text-right">Total gastado</th>,
+                    credito: <th data-col="credito">Crédito</th>,
+                    segmento: <th data-col="segmento">Segmento</th>,
+                  }}
+                />
+                <th className="w-28 text-right"><span className="sr-only">Acciones</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              {crm.paginated.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="text-center text-[var(--text-secondary)]">
+                    {crm.hayFiltros ? "Ningún cliente con estos filtros." : "Sin clientes."}
+                  </td>
+                </tr>
+              )}
+              <CrmFilas crm={crm} />
+            </tbody>
+          </DataTable>
+          <CrmPaginacion crm={crm} />
+        </div>
       </div>
 
       <CrmComparar crm={crm} />

@@ -50,7 +50,7 @@ export default function LothMapaCompararS2({ img, split, onSplit }: Props) {
           <button
             type="button"
             onClick={() => img.comparar(null)}
-            className="ml-auto inline-flex h-9 items-center gap-1 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)]"
+            className="ml-auto inline-flex h-12 items-center gap-1 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)]"
           >
             <X className="h-3.5 w-3.5" aria-hidden="true" /> Cerrar
           </button>

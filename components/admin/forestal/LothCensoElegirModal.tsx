@@ -50,6 +50,7 @@ import type { CensoDeTala } from "./hooks/use-censo-de-tala";
 import LothCensoElegirTabla, { type OrdenCenso } from "./LothCensoElegirTabla";
 import { AvisoMarcados, AvisoPendiente, BotonesMarcados } from "./LothCensoMarcados";
 import { useMarcadosDelCenso, type ElegirVarios } from "./hooks/use-marcados-del-censo";
+import { button } from "@/components/ui-system/button-variants";
 
 interface Props {
   open: boolean;
@@ -75,7 +76,7 @@ interface Props {
 const INPUT =
   "h-10 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]/20";
 const BTN =
-  "inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-60";
+  button({ variant: "secondary", className: "rounded-xl" });
 
 export default function LothCensoElegirModal({
   open,
@@ -250,7 +251,7 @@ export default function LothCensoElegirModal({
                   type="button"
                   aria-pressed={activo}
                   onClick={() => setFiltro(f.key)}
-                  className={`inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-sm font-semibold transition-colors ${
+                  className={`inline-flex h-12 items-center gap-1.5 rounded-lg border px-3 text-sm font-semibold transition-colors ${
                     activo
                       ? "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]"

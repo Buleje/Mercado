@@ -15,8 +15,9 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { claveLoteTrozas } from "@/lib/forestal/cubicacion-trozas-formula";
 import ResumenReparto from "./ResumenReparto";
 import ResumenTrozas from "./ResumenTrozas";
+import { button } from "@/components/ui-system/button-variants";
 
-const BTN = "inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]";
+const BTN = button({ variant: "secondary", className: "rounded-xl" });
 
 /** Trozas cubicadas hoy en el Cubicador de trozas, sumando los dos lotes (Smalian y Oxapampina). */
 export function contarTrozasCubicadas(): number {

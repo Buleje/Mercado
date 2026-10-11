@@ -28,6 +28,7 @@ import { hoyISO } from "@/lib/forestal/distribucion-registro";
 import type { CuadreReparto, EstadoCuadre, IdControl, PestanaCuadre, Trio } from "@/lib/forestal/reparto-cuadre";
 import EtiquetaCuadre, { ESTADO_CUADRE, fmtTrio } from "./reparto-cuadre-etiqueta";
 import TablaControl from "./reparto-cuadre-tabla";
+import { button } from "@/components/ui-system/button-variants";
 
 const PESTANAS: { id: PestanaCuadre; label: string }[] = [
   { id: "bloque", label: "Por bloque" },
@@ -36,7 +37,7 @@ const PESTANAS: { id: PestanaCuadre; label: string }[] = [
   { id: "especie", label: "Por especie" },
 ];
 const RANGO: Record<EstadoCuadre, number> = { exacto: 0, redondeo: 1, difiere: 2 };
-const BTN = "inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:opacity-40";
+const BTN = button({ variant: "secondary", className: "rounded-xl" });
 
 const trioExcel = (pre: string, t: Trio) => ({ [`${pre} piezas`]: t.piezas, [`${pre} PT`]: t.pt, [`${pre} m³`]: t.m3 });
 
@@ -216,7 +217,7 @@ export default function RepartoCuadreModal({ cuadre, inicial, onCerrar }: {
                   role="tab"
                   aria-selected={activa}
                   onClick={() => { setPestana(p.id); setDestino(null); }}
-                  className={`inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-bold transition-colors ${activa ? "bg-[var(--accent-soft)] text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
+                  className={`inline-flex h-12 items-center gap-1.5 rounded-lg px-3 text-sm font-bold transition-colors ${activa ? "bg-[var(--accent-soft)] text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
                 >
                   {p.label}
                   {info && info.estado !== "exacto" && (

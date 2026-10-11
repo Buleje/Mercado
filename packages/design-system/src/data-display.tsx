@@ -130,6 +130,12 @@ export interface StatCardProps {
   iconEmphasis?: boolean;
   onClick?: () => void;
   className?: string;
+  /**
+   * El ⓘ al lado del rótulo (un `InfoTip` del panel): qué es la cifra y de
+   * dónde sale. No se dibuja si la tarjeta es un botón (`onClick`): un ⓘ
+   * adentro de un botón es un control anidado (guardián `infotip-no-anidado`).
+   */
+  info?: ReactNode;
 }
 
 const DENSITY_PADDING: Record<StatCardDensity, string> = {
@@ -205,6 +211,7 @@ export function StatCard({
   iconEmphasis = false,
   onClick,
   className,
+  info,
 }: StatCardProps) {
   const inferredTrend: StatCardTrend =
     trendProp ??
@@ -268,7 +275,14 @@ export function StatCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <Kicker>{label}</Kicker>
+          {info && !onClick ? (
+            <div className="flex items-center gap-1.5">
+              <Kicker>{label}</Kicker>
+              {info}
+            </div>
+          ) : (
+            <Kicker>{label}</Kicker>
+          )}
           <div
             // En 390px una grilla de 2 columnas deja ~165px por card: "S/ 1520.00"
             // a --ts-2xl no entra y se cortaba a "S/". Un escalón menos en móvil

@@ -78,7 +78,7 @@ export function MontoRapido({ monto, onCambiar }: { monto: string; onCambiar: (v
       <button
         type="button"
         onClick={() => onCambiar(String((Number(monto) || 0) + 100))}
-        className="h-9 flex-1 rounded-lg border border-dashed border-[var(--rule-base)] px-1 text-sm font-bold text-[var(--text-tertiary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)]"
+        className="h-12 flex-1 rounded-lg border border-dashed border-[var(--rule-base)] px-1 text-sm font-bold text-[var(--text-tertiary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)]"
       >
         +100
       </button>

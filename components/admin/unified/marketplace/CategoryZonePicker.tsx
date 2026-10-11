@@ -600,7 +600,7 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
               type="button"
               onClick={() => setSubcategory(null)}
               className={cn(
-                "h-9 px-3.5 rounded-full border-2 text-xs font-extrabold transition-colors",
+                "h-12 px-3.5 rounded-full border-2 text-xs font-extrabold transition-colors",
                 value.subcategory === null
                   ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                   : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
@@ -616,7 +616,7 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
                   type="button"
                   onClick={() => setSubcategory(s.id)}
                   className={cn(
-                    "h-9 px-3.5 rounded-full border-2 text-xs font-extrabold transition-colors",
+                    "h-12 px-3.5 rounded-full border-2 text-xs font-extrabold transition-colors",
                     active
                       ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
@@ -699,7 +699,7 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
                       onClick={() => toggleZone(z.id)}
                       aria-pressed={active}
                       className={cn(
-                        "inline-flex items-center gap-1.5 h-9 px-3 rounded-full border-2 text-xs font-extrabold transition-colors",
+                        "inline-flex items-center gap-1.5 h-12 px-3 rounded-full border-2 text-xs font-extrabold transition-colors",
                         active
                           ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                           : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
@@ -739,7 +739,7 @@ export default function CategoryZonePicker({ value, onChange }: Props) {
               type="button"
               onClick={addCustomZone}
               disabled={customZoneInput.trim().length < 2}
-              className="h-10 px-3.5 rounded-xl bg-[var(--accent)] text-white font-semibold inline-flex items-center gap-1.5 text-sm disabled:opacity-50"
+              className="h-12 px-3.5 rounded-xl bg-[var(--accent)] text-white font-semibold inline-flex items-center gap-1.5 text-sm disabled:opacity-50"
             >
               <Plus className="h-3.5 w-3.5" /> Agregar
             </button>

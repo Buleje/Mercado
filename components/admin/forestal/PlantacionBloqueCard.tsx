@@ -188,7 +188,7 @@ export default function PlantacionBloqueCard({
             <button
               type="button"
               onClick={agregarEspecie}
-              className="mt-2 inline-flex h-9 items-center gap-1.5 rounded-lg border border-dashed border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
+              className="mt-2 inline-flex h-12 items-center gap-1.5 rounded-lg border border-dashed border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
             >
               <Plus className="h-3.5 w-3.5" /> Agregar especie
             </button>

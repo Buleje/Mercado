@@ -282,7 +282,7 @@ export default function LothImportLineasModal({
                   type="button"
                   onClick={() => fileRef.current?.click()}
                   disabled={leyendo}
-                  className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
+                  className="inline-flex h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
                 >
                   {leyendo ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />} Subir Excel o CSV
                 </button>
@@ -300,7 +300,7 @@ export default function LothImportLineasModal({
                   type="button"
                   onClick={bajarPlantilla}
                   disabled={bajando}
-                  className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
+                  className="inline-flex h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50"
                 >
                   {bajando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Descargar plantilla
                 </button>
@@ -429,7 +429,7 @@ export default function LothImportLineasModal({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-11 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)]"
+            className="inline-flex h-12 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)]"
           >
             {resultado ? "Cerrar" : "Cancelar"}
           </button>
@@ -438,7 +438,7 @@ export default function LothImportLineasModal({
               type="button"
               onClick={importar}
               disabled={aImportar.length === 0 || importando || faltaPermiso}
-              className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+              className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
             >
               {importando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
               {importando ? "Asentando…" : `Asentar ${aImportar.length} línea${aImportar.length === 1 ? "" : "s"}`}

@@ -30,6 +30,7 @@ import type { TotalDeLaSemana } from "./semana-de-la-tira";
 import { cuantos, type NombreDeLaTira } from "./tira-de-dias-copy";
 import { ChipsDeLaSemana } from "./ctp-casillero-marcas";
 import type { ChipDeLaSemana, FiltroDeDias } from "./marcas-del-dia";
+import { button } from "@/components/ui-system/button-variants";
 
 const BOTON_FLECHA =
   "grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]";
@@ -37,7 +38,7 @@ const BOTON_FLECHA =
    solo no se leía como «esconder la sección» (Brandon lo volvió a pedir el
    mismo día que ya existía). */
 const BOTON_PLEGAR =
-  "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-tertiary)] transition hover:border-[var(--accent)] hover:text-[var(--text-primary)]";
+  button({ variant: "secondary", size: "sm", className: "shrink-0 rounded-xl" });
 
 export default function CtpCabeceraDeLaTira({
   nombre,

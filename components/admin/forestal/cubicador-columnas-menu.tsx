@@ -89,7 +89,7 @@ export function MenuColumnas({
         title="Elegir y ordenar las columnas de la tabla"
         aria-label="Elegir columnas visibles"
         aria-expanded={abierto}
-        className={`inline-flex h-10 items-center gap-1.5 rounded-xl border px-3 text-sm font-semibold transition ${abierto ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"}`}
+        className={`inline-flex h-12 items-center gap-1.5 rounded-xl border px-3 text-sm font-semibold transition ${abierto ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"}`}
       >
         <Columns3 className="h-4 w-4" /> Columnas
       </button>

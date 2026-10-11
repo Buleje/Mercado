@@ -716,7 +716,7 @@ export default function CtpVincularMateriaPrimaModal({
                 ? "Escribe los consumos, marca las trozas y deja la corrida con su origen"
                 : "Hay algo que no cuadra: mira los avisos rojos"
             }
-            className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white transition hover:brightness-95 disabled:opacity-50"
+            className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white transition hover:brightness-95 disabled:opacity-50"
           >
             {guardando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Layers className="h-4 w-4" aria-hidden />}
             {guardando ? "Vinculando…" : "Vincular al lote"}

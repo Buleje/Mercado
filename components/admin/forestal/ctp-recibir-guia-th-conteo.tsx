@@ -20,6 +20,7 @@ import { formatNumber } from "@/lib/format";
 import { TOLERANCIA_DIAMETRO_CM, TOLERANCIA_LARGO_M } from "@/lib/forestal/conteo-guia-th";
 import EscanerTrozas, { type TrozaDelEscaner } from "./EscanerTrozas";
 import type { ConteoGuiaTh, FilaConteo, MedidaEscrita } from "./hooks/use-conteo-guia-th";
+import { button } from "@/components/ui-system/button-variants";
 
 const cm = (v: number | null) => (v == null ? "—" : formatNumber(v, { max: 1 }));
 const m = (v: number | null) => (v == null ? "—" : formatNumber(v, { max: 2 }));
@@ -27,7 +28,7 @@ const m = (v: number | null) => (v == null ? "—" : formatNumber(v, { max: 2 })
 const conSigno = (v: number) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${fmtM3(Math.abs(v))}`;
 
 const BOTON =
-  "inline-flex h-11 items-center justify-center gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-50 sm:h-9 @3xl:gap-1.5 @3xl:px-3";
+  button({ variant: "secondary", className: "rounded-xl" });
 
 const CHIP: Record<FilaConteo["estado"], string> = {
   sin_contar: "border border-dashed border-[var(--rule-strong)] text-[var(--text-secondary)]",

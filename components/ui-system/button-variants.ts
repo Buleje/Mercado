@@ -13,10 +13,12 @@ import { tv, type VariantProps } from "tailwind-variants";
 /**
  * Altura por defecto de botones y filtros del panel, en UN solo lugar.
  * Brandon (2026-10-09) eligió 48 px (h-12) «en todo el panel»; si algún día
- * se vuelve a 40 px (h-10), se cambia acá y nada más. Los tamaños con nombre
- * (xs…xl, icon) no la usan: quedan como estaban.
+ * se vuelve a 40 px (h-10), se cambia acá y nada más. El botón de sólo ícono
+ * (`size: "icon"`) es el cuadrado de la misma altura (11-10: Brandon, «todos los
+ * botones a 48 px»; tenía 1 uso y lo pisaba a h-12 w-12). Los tamaños con nombre
+ * (xs…xl) no la usan: quedan como estaban.
  */
-export const ALTURA_CONTROL = { px: 48, clase: "h-12" } as const;
+export const ALTURA_CONTROL = { px: 48, clase: "h-12", cuadrado: "h-12 w-12" } as const;
 
 export const button = tv({
   base: [
@@ -69,7 +71,7 @@ export const button = tv({
       md: "text-sm h-10 px-5",
       lg: "text-sm h-11 px-6",
       xl: "text-base h-12 px-7",
-      icon: "h-10 w-10 p-0",
+      icon: `${ALTURA_CONTROL.cuadrado} p-0`,
     },
     fullWidth: {
       true: "w-full",

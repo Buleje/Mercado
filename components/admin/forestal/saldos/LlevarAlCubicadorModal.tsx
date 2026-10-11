@@ -205,7 +205,7 @@ export default function LlevarAlCubicadorModal({
           <button
             type="button"
             onClick={onCerrar}
-            className="h-11 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
+            className="h-12 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
           >
             Cancelar
           </button>
@@ -213,7 +213,7 @@ export default function LlevarAlCubicadorModal({
             type="button"
             onClick={llevar}
             disabled={seleccion.length === 0 || yendo}
-            className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--accent)] bg-primary/10 px-4 text-sm font-bold text-[var(--accent-ink)] transition-colors hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-40 dark:text-[var(--accent)]"
+            className="inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--accent)] bg-primary/10 px-4 text-sm font-bold text-[var(--accent-ink)] transition-colors hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-40 dark:text-[var(--accent)]"
           >
             {yendo ? (
               <Loader2 className="h-4 w-4 animate-spin" />

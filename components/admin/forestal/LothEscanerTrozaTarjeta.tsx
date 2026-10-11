@@ -26,6 +26,8 @@ import { fechaConDia } from "@/lib/forestal/loth-qr-troza";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { TONO } from "./loth-tablero-partes";
 import type { NavTablero } from "./LothTableroTrozasTabla";
+import { button } from "@/components/ui-system/button-variants";
+import { cn } from "@/lib/utils";
 
 /**
  * Cambia de vista DENTRO del libro sin recargar: `pushState` + `popstate`
@@ -40,7 +42,7 @@ export function irDentroDelLibro(params: Record<string, string>): void {
 }
 
 const BTN =
-  "inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50";
+  button({ variant: "secondary", className: "rounded-xl" });
 
 function Dato({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -170,7 +172,7 @@ export default function LothEscanerTrozaTarjeta({
             <button
               type="button"
               onClick={registrarDespacho}
-              className={`${BTN} border-[var(--accent)] text-[var(--accent-dark)] dark:text-[var(--accent)]`}
+              className={cn(BTN, `border-[var(--accent)] text-[var(--accent-dark)] dark:text-[var(--accent)]`)}
             >
               <Truck className="h-4 w-4" aria-hidden="true" />
               Registrar su despacho

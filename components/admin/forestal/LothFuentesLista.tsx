@@ -192,7 +192,7 @@ export default function LothFuentesLista({ section, planId, plans, onPlan, fuent
               type="button"
               aria-pressed={plantacion.modo === m}
               onClick={() => plantacion.onModo(m)}
-              className={`inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-sm font-semibold transition-colors ${
+              className={`inline-flex h-12 items-center gap-1.5 rounded-md px-3 text-sm font-semibold transition-colors ${
                 plantacion.modo === m
                   ? "bg-[var(--accent-dark)] text-white"
                   : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
@@ -223,7 +223,7 @@ export default function LothFuentesLista({ section, planId, plans, onPlan, fuent
           <button
             type="button"
             onClick={verCenso.onAbrir}
-            className="inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-[var(--rule-strong)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)]"
+            className="inline-flex h-12 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-[var(--rule-strong)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)]"
           >
             <Table className="h-4 w-4 text-[var(--accent-ink)] dark:text-[var(--accent)]" />
             {verCenso.etiqueta ?? "Ver censo"}

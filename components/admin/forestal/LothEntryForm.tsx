@@ -1455,7 +1455,7 @@ export default function LothEntryForm({
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="inline-flex h-10 items-center whitespace-nowrap rounded-xl px-3 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
+              className="inline-flex h-12 items-center whitespace-nowrap rounded-xl px-3 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
             >
               Cancelar
             </button>
@@ -1465,7 +1465,7 @@ export default function LothEntryForm({
               disabled={!puedeGuardar || submitting}
               title={motivoBloqueo}
               aria-describedby={idEstado}
-              className="inline-flex h-10 items-center whitespace-nowrap rounded-xl border border-[var(--rule-strong)] bg-[var(--surface-raised)] px-3 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-12 items-center whitespace-nowrap rounded-xl border border-[var(--rule-strong)] bg-[var(--surface-raised)] px-3 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               Guardar y otro
             </button>
@@ -1476,7 +1476,7 @@ export default function LothEntryForm({
               disabled={!puedeGuardar || submitting}
               title={motivoBloqueo}
               aria-describedby={idEstado}
-              className="inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-xl bg-[var(--accent-dark)] px-3.5 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-12 items-center gap-2 whitespace-nowrap rounded-xl bg-[var(--accent-dark)] px-3.5 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {submitting ? (
                 <>
@@ -2293,7 +2293,7 @@ export default function LothEntryForm({
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={photoUploading}
-                  className="inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex h-12 items-center gap-2 whitespace-nowrap rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {photoUploading ? (
                     <Loader2 className="h-4 w-4 animate-spin" />

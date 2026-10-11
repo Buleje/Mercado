@@ -354,7 +354,7 @@ export default function PromocionesModule() {
             onClick={() => { setShowForm(v => !v); setFormError(null); }}
             aria-label="Nueva promoción"
             className={cn(
-              "flex items-center gap-1.5 px-3 h-9 rounded-xl text-xs font-semibold transition-all",
+              "flex items-center gap-1.5 px-3 h-12 rounded-xl text-xs font-semibold transition-all",
               "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]",
               showForm
                 ? "bg-[var(--surface-sunken)] text-[var(--text-secondary)]"
@@ -499,7 +499,7 @@ export default function PromocionesModule() {
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="w-full h-10 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] flex items-center justify-center gap-2"
+            className="w-full h-12 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] flex items-center justify-center gap-2"
             style={{
               background: "linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%)",
               boxShadow: "0 4px 12px -2px rgba(45,106,79,0.4)",

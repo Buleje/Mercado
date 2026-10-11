@@ -119,7 +119,7 @@ export default function CacaoProductores() {
           <div className="min-w-[180px] flex-1">
             <strong>{orphan.lotes} lote{orphan.lotes === 1 ? "" : "s"}</strong> (S/ {n2(orphan.pagado)}) de acopio sin vincular al padrón. No suman al historial ni a los pagos del productor.
           </div>
-          <button type="button" onClick={() => setShowReconcile(true)} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-warning-500)] px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90">
+          <button type="button" onClick={() => setShowReconcile(true)} className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--data-warning-500)] px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90">
             <Link2 className="h-4 w-4" />Vincular ahora
           </button>
         </div>
@@ -177,7 +177,7 @@ export default function CacaoProductores() {
               <span className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"><Users className="h-7 w-7" /></span>
               <p className="text-base font-bold text-[var(--text-primary)]">Aún no tienes productores</p>
               <p className="mx-auto mt-1 max-w-sm text-sm">Registra a tus proveedores para vincularlos a los lotes y ver su historial de compras y calidad.</p>
-              <button type="button" onClick={() => setShowNew(true)} className="mt-4 inline-flex h-11 items-center gap-2 rounded-2xl bg-[var(--accent)] px-5 text-sm font-semibold text-white shadow-sm hover:opacity-90"><Plus className="h-4 w-4" />Agregar productor</button>
+              <button type="button" onClick={() => setShowNew(true)} className="mt-4 inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--accent)] px-5 text-sm font-semibold text-white shadow-sm hover:opacity-90"><Plus className="h-4 w-4" />Agregar productor</button>
             </div>
         )}
       </div>

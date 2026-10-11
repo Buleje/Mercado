@@ -82,14 +82,14 @@ export default function LothRentabilidadCostos({
           />
         </p>
         <div className="sticky bottom-0 -mx-5 -mb-5 flex justify-end gap-2 border-t-2 border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 py-3">
-          <button type="button" onClick={onCerrar} className="h-11 rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">
+          <button type="button" onClick={onCerrar} className="h-12 rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">
             Cancelar
           </button>
           <button
             type="button"
             onClick={onGuardar}
             disabled={guardando}
-            className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:bg-[var(--accent-600)] disabled:opacity-50"
+            className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:bg-[var(--accent-600)] disabled:opacity-50"
           >
             {guardando ? <RefreshCw className="h-4 w-4 animate-spin" aria-hidden /> : <Save className="h-4 w-4" aria-hidden />} Guardar costos
           </button>

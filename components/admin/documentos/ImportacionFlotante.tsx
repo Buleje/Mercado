@@ -122,7 +122,7 @@ export default function ImportacionFlotante() {
             type="button"
             onClick={detener}
             disabled={estado.detenido}
-            className="inline-flex h-9 items-center rounded-xl px-3 text-sm font-bold text-[var(--data-error-700)] transition-colors hover:bg-[var(--data-error-500)]/10 disabled:opacity-50 dark:text-[var(--data-error-500)]"
+            className="inline-flex h-12 items-center rounded-xl px-3 text-sm font-bold text-[var(--data-error-700)] transition-colors hover:bg-[var(--data-error-500)]/10 disabled:opacity-50 dark:text-[var(--data-error-500)]"
           >
             {estado.detenido ? "Deteniendo…" : "Detener"}
           </button>

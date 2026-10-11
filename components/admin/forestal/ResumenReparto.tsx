@@ -97,10 +97,12 @@ import { paquetesVariado, useConfigVariado } from "./hooks/use-config-variado";
 import { agruparPiezasIguales, desglosarVariado, esVariado } from "@/lib/forestal/variado-desglose";
 import { distConVolumenOficial, repartoOficial } from "@/lib/forestal/reparto-oficial";
 import { DataTable } from "@buleje/design-system";
+import { button } from "@/components/ui-system/button-variants";
+import { cn } from "@/lib/utils";
 
 
 /** Mismo botón que la cabecera de Resúmenes: un solo alto para toda la pestaña. */
-const BTN = "inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:opacity-40 disabled:hover:border-[var(--rule-base)]";
+const BTN = button({ variant: "secondary", className: "rounded-xl" });
 
 const TONO = {
   success: "text-[var(--data-success-600)] dark:text-[var(--data-success-500)]",
@@ -1573,7 +1575,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
               disabled={bloques.length === 0}
               aria-expanded={opcionesAbiertas}
               title="Firma del responsable y qué especies incluir en el papel"
-              className={`${BTN} ${soloEspecies.size > 0 || firmaNombre.trim() ? "border-[var(--accent)] text-[var(--accent-ink)] dark:text-[var(--accent)]" : ""}`}
+              className={cn(BTN, `${soloEspecies.size > 0 || firmaNombre.trim() ? "border-[var(--accent)] text-[var(--accent-ink)] dark:text-[var(--accent)]" : ""}`)}
             >
               <SlidersHorizontal className="h-4 w-4" /> Opciones
             </button>
@@ -1591,11 +1593,11 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
               disabled={bloques.length === 0}
               aria-expanded={revisionAbierta}
               title={hallazgos.length === 0 ? "Todo cuadra: no hay nada que revisar" : `${cuenta.errores} sin resolver · ${cuenta.avisos} para mirar`}
-              className={`${BTN} ${cuenta.errores > 0
+              className={cn(BTN, `${cuenta.errores > 0
                 ? "border-[var(--data-error-500)] text-[var(--data-error-600)] dark:text-[var(--data-error-500)]"
                 : cuenta.avisos > 0
                   ? "border-[var(--data-warning-500)] text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
-                  : "border-[var(--data-success-500)] text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"}`}
+                  : "border-[var(--data-success-500)] text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"}`)}
             >
               {hallazgos.length === 0 ? <ShieldCheck className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
               Revisar
@@ -1610,11 +1612,11 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
               onClick={() => cuadreCifras.abrir()}
               disabled={bloques.length === 0}
               title={cc.estado === "exacto" ? "Todas las vistas dan las mismas cifras" : cc.estado === "redondeo" ? "Cuadra con redondeo" : `${cc.difieren} ${cc.difieren === 1 ? "control difiere" : "controles difieren"}`}
-              className={`${BTN} ${cc.estado === "difiere"
+              className={cn(BTN, `${cc.estado === "difiere"
                 ? "border-[var(--data-error-500)] text-[var(--data-error-600)] dark:text-[var(--data-error-500)]"
                 : cc.estado === "redondeo"
                   ? "border-[var(--data-warning-500)] text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
-                  : "border-[var(--data-success-500)] text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"}`}
+                  : "border-[var(--data-success-500)] text-[var(--data-success-700)] dark:text-[var(--data-success-500)]"}`)}
             >
               <Scale className="h-4 w-4" />
               Cuadre
@@ -1942,11 +1944,11 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <button type="button" onClick={candadoGuardar.conCandado(() => void guardarDistribucion())} disabled={guardandoDistribucion}
-                className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:brightness-95 disabled:opacity-50">
+                className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:brightness-95 disabled:opacity-50">
                 {guardandoDistribucion ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 {guardandoDistribucion ? "Guardando…" : distribucionActual ? "Actualizar" : "Guardar"}
               </button>
-              <button type="button" onClick={() => setMostrarGuardar(false)} className="h-10 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+              <button type="button" onClick={() => setMostrarGuardar(false)} className="h-12 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
                 Cancelar
               </button>
               <span className="text-xs text-[var(--text-tertiary)]">Queda en tu cuenta: la ves desde cualquier dispositivo.</span>
@@ -2436,7 +2438,7 @@ export default function ResumenReparto({ rows, precioDe }: { rows: PiezaCubicada
                   etiqueta: combinadoAnexo.etiqueta,
                   procedencia: combinadoAnexo.procedencia,
                 })}
-                className="inline-flex h-9 items-center gap-1.5 rounded-xl border-2 border-[var(--accent)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--accent-ink)] transition-colors hover:bg-primary/10 disabled:opacity-40 dark:text-[var(--accent)]"
+                className="inline-flex h-12 items-center gap-1.5 rounded-xl border-2 border-[var(--accent)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--accent-ink)] transition-colors hover:bg-primary/10 disabled:opacity-40 dark:text-[var(--accent)]"
               >
                 <FileText className="h-4 w-4" aria-hidden /> Anexo 04 conjunto
               </button>

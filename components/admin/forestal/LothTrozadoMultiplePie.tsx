@@ -79,7 +79,7 @@ export default function LothTrozadoMultiplePie({
       <button
         type="button"
         onClick={onCerrar}
-        className="inline-flex h-11 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)]"
+        className="inline-flex h-12 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)]"
       >
         {hayResultado ? "Cerrar" : "Cancelar"}
       </button>
@@ -88,7 +88,7 @@ export default function LothTrozadoMultiplePie({
           type="button"
           onClick={onAsentar}
           disabled={!puede}
-          className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+          className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
         >
           {guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Scissors className="h-4 w-4" />}
           {guardando ? "Asentando…" : `Asentar ${listas} troza${listas === 1 ? "" : "s"}`}

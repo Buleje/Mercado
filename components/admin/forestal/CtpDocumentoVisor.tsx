@@ -50,6 +50,8 @@ import {
 import { AIRE_HOJA_MM, esperarImagenes, marcarCortes, medidasHoja, orientacionDeHtml, paginar, type OrientacionHoja } from "@/lib/forestal/ctp-documento-print";
 import { SendWhatsAppModal } from "@/components/admin/documentos/SendWhatsAppModal";
 import { useDocumentoAcciones, type MetaArchivado } from "@/hooks/use-documento-acciones";
+import { button } from "@/components/ui-system/button-variants";
+import { cn } from "@/lib/utils";
 
 export type { MetaArchivado } from "@/hooks/use-documento-acciones";
 
@@ -202,7 +204,7 @@ export default function CtpDocumentoVisor({
   };
 
   const btn =
-    "inline-flex h-11 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-base font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)]";
+    button({ variant: "secondary", className: "rounded-xl" });
   const icono =
     "grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]";
 
@@ -292,7 +294,7 @@ export default function CtpDocumentoVisor({
               type="button"
               onClick={() => void descargarPdf()}
               disabled={pdf === "armando"}
-              className={`${btn} disabled:opacity-60`}
+              className={cn(btn, `disabled:opacity-60`)}
               aria-label="Descargar PDF"
               title="Baja el documento como PDF A4, idéntico a esta vista"
             >
@@ -308,7 +310,7 @@ export default function CtpDocumentoVisor({
                 type="button"
                 onClick={() => void archivar()}
                 disabled={drive?.estado === "guardando"}
-                className={`${btn} disabled:opacity-60`}
+                className={cn(btn, `disabled:opacity-60`)}
                 aria-label="Guardar en el expediente"
                 title="Sube el PDF al Drive del negocio, en la carpeta de guías forestales"
               >
@@ -331,7 +333,7 @@ export default function CtpDocumentoVisor({
                 disabled={preparandoWasap}
                 aria-label="Enviar por WhatsApp"
                 title="Manda el PDF por WhatsApp (lo guarda en el expediente si hace falta)"
-                className={`${btn} disabled:opacity-60`}
+                className={cn(btn, `disabled:opacity-60`)}
               >
                 {preparandoWasap ? (
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
@@ -349,7 +351,7 @@ export default function CtpDocumentoVisor({
               type="button"
               onClick={() => void imprimir()}
               aria-label="Imprimir"
-              className="inline-flex h-11 items-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-5 text-base font-semibold text-white transition hover:brightness-110"
+              className="inline-flex h-12 items-center gap-2 rounded-2xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-5 text-base font-semibold text-white transition hover:brightness-110"
             >
               {/* Decía «Imprimir PDF»: imprime; el PDF tiene su propio botón. */}
               <Printer className="h-4 w-4" aria-hidden /> <span className="max-sm:sr-only">Imprimir</span>

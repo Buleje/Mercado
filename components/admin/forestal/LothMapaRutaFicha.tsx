@@ -120,7 +120,7 @@ export default function LothMapaRutaFicha({ ruta, punto, onCerrar, onCentrar }: 
             onClick={() => setVerVertices((v) => !v)}
             aria-expanded={verVertices}
             aria-controls="loth-ficha-ruta-vertices"
-            className="mt-2 inline-flex h-10 w-full items-center justify-between rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
+            className="mt-2 inline-flex h-12 w-full items-center justify-between rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
           >
             {verVertices ? "Ocultar los vértices" : `Ver los ${ruta.vertices.length} vértices`}
             <ChevronDown className={`h-4 w-4 transition-transform ${verVertices ? "rotate-180" : ""}`} aria-hidden="true" />

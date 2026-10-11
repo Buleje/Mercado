@@ -51,7 +51,7 @@ export default function DevolucionPasoBuscar({ dev }: { dev: Devolucion }) {
                   <button
                     type="button"
                     onClick={searchQuery.trim() ? handleSearch : reintentarVentas}
-                    className="h-9 shrink-0 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+                    className="h-12 shrink-0 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
                   >
                     Reintentar
                   </button>

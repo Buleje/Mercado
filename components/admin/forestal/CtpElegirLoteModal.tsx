@@ -231,7 +231,7 @@ export default function CtpElegirLoteModal({
                   key={k}
                   type="button"
                   onClick={() => setOrden(k)}
-                  className={`h-10 rounded-lg px-3 text-sm font-semibold transition ${
+                  className={`h-12 rounded-lg px-3 text-sm font-semibold transition ${
                     orden === k
                       ? "bg-[var(--accent)] text-white"
                       : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"

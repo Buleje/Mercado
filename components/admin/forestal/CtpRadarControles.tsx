@@ -115,7 +115,7 @@ export default function CtpRadarControles({
                   type="button"
                   onClick={irAlSiguienteHueco}
                   title="Fijar el siguiente eslabón sin cerrar y traer la vista hasta él"
-                  className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-3 text-xs font-bold text-[var(--data-warning-700)] transition hover:brightness-105 dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]"
+                  className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl border-2 border-[var(--data-warning-500)] bg-[var(--data-warning-50)] px-3 text-xs font-bold text-[var(--data-warning-700)] transition hover:brightness-105 dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]"
                 >
                   <Locate className="h-3.5 w-3.5" />
                   Ir al hueco
@@ -191,7 +191,7 @@ export default function CtpRadarControles({
                 onClick={() => setAgruparManual((v) => (v === null ? !hayAgrupacion : !v))}
                 aria-pressed={hayAgrupacion}
                 title={hayAgrupacion ? "Ver línea por línea" : "Agrupar por especie, producto y destino"}
-                className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border-2 px-3 text-sm font-semibold transition ${
+                className={`inline-flex h-12 shrink-0 items-center gap-2 rounded-xl border-2 px-3 text-sm font-semibold transition ${
                   hayAgrupacion
                     ? "border-[var(--accent)] bg-primary/10 dark:bg-[var(--accent)]/12 text-[var(--accent)]"
                     : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
@@ -200,13 +200,13 @@ export default function CtpRadarControles({
                 <Layers className="h-4 w-4" /> {hayAgrupacion ? "Agrupado" : "Agrupar"}
               </button>
               {hayAgrupacion && expandidos.size > 0 && (
-                <button type="button" onClick={() => setExpandidos(new Set())} className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]">
+                <button type="button" onClick={() => setExpandidos(new Set())} className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]">
                   Cerrar los {expandidos.size} grupos abiertos
                 </button>
               )}
 
               {foco !== "todos" && (
-                <button type="button" onClick={() => setFoco("todos")} className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl border-2 border-[var(--accent)] bg-primary/10 dark:bg-[var(--accent)]/12 px-3 text-xs font-bold text-[var(--accent)]">
+                <button type="button" onClick={() => setFoco("todos")} className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl border-2 border-[var(--accent)] bg-primary/10 dark:bg-[var(--accent)]/12 px-3 text-xs font-bold text-[var(--accent)]">
                   <Maximize2 className="h-3.5 w-3.5" /> Ver toda la cadena
                 </button>
               )}

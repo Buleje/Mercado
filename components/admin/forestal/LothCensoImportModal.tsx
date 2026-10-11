@@ -26,6 +26,7 @@ import {
 } from "@/lib/forestal/loth-censo-import";
 import { descargarPlantillaCenso } from "@/lib/forestal/loth-censo-plantilla";
 import LothCensoImportPreview from "./LothCensoImportPreview";
+import { button } from "@/components/ui-system/button-variants";
 
 /** Dos filas reales de la hoja del regente (28-09), con su encabezado tal cual. */
 const EJEMPLO = `N°\tCod\tN. Comun\tN. Cientifico\tNombre en idioma nativo\tDAP\taltura\tvol\tEste\tNorte\tcondicion\tobservaciones
@@ -40,7 +41,7 @@ interface Props {
   onImport: (filas: Record<string, unknown>[]) => void;
 }
 
-const BOTON = "inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50";
+const BOTON = button({ variant: "secondary", className: "rounded-xl" });
 
 export default function LothCensoImportModal({ open, ctx, importing, onClose, onImport }: Props) {
   const [texto, setTexto] = useState("");

@@ -1217,7 +1217,7 @@ export default function CtpIngresosView({
           <button
             type="button"
             onClick={() => setBloqueAbierto(true)}
-            className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white transition-opacity hover:opacity-90"
+            className="inline-flex h-12 shrink-0 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white transition-opacity hover:opacity-90"
           >
             <PackageCheck className="h-4 w-4" aria-hidden /> Recibir en bloque
           </button>
@@ -1296,14 +1296,14 @@ export default function CtpIngresosView({
               setBulkReason("");
               setBusy(null);
             }}
-            className="inline-flex h-10 items-center rounded-xl bg-[var(--data-error-600)] px-3 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+            className="inline-flex h-12 items-center rounded-xl bg-[var(--data-error-600)] px-3 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
           >
             Confirmar rechazo
           </button>
           <button
             type="button"
             onClick={() => setBulkRejecting(false)}
-            className="inline-flex h-10 items-center rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)]"
+            className="inline-flex h-12 items-center rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)]"
           >
             Cancelar
           </button>

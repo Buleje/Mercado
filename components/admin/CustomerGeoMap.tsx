@@ -1,6 +1,6 @@
 "use client";
 
-import { LoadingState, SectionTitle } from "@buleje/design-system";
+import { LoadingState, SectionTitle, StatCard } from "@buleje/design-system";
 import { AlertTriangle, Download, Flame, MapPin, MoreHorizontal, RefreshCw, TrendingUp, Users, Wallet } from "@buleje/design-system/icons";
 import { useMemo, useState } from "react";
 import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
@@ -14,7 +14,6 @@ import { PendientesUbicacion } from "./mapa-clientes/PendientesUbicacion";
 import { COLOR_NIVEL, ETIQUETA_NIVEL, nivelDe, zonasTop, type ModoMapa, type Nivel } from "./mapa-clientes/shared";
 import { useClientesGeo } from "./mapa-clientes/use-clientes-geo";
 import { ZonasTop } from "./mapa-clientes/ZonasTop";
-import { TarjetaCifra } from "./opiniones/TarjetaCifra";
 
 interface Props {
   className?: string;
@@ -44,10 +43,10 @@ export default function CustomerGeoMap({ className }: Props) {
     sinDatosAun: cargando,
     resumen: `${conUbicacion.length} de ${total} en el mapa`,
     tarjetas: [
-      <TarjetaCifra key="con" destacado rotulo="En el mapa" icono={MapPin} valor={conUbicacion.length} detalle={`de ${total} clientes`} />,
-      <TarjetaCifra key="sin" rotulo="Sin ubicación" icono={Users} valor={sinUbicacion.length} detalle="pídeles que la compartan" />,
-      <TarjetaCifra key="gasto" rotulo="Total gastado" icono={Wallet} valor={formatCurrency(gastado)} detalle="de los que están en el mapa" />,
-      <TarjetaCifra key="zona" rotulo="Zona con más clientes" icono={TrendingUp} valor={<span className="block truncate text-sm">{zonas[0]?.zona ?? "—"}</span>} detalle={`${zonas[0]?.clientes ?? 0} clientes`} />,
+      <StatCard density="compact" key="con" highlight label="En el mapa" icon={MapPin} value={conUbicacion.length} subValue={`de ${total} clientes`} />,
+      <StatCard density="compact" key="sin" label="Sin ubicación" icon={Users} value={sinUbicacion.length} subValue="pídeles que la compartan" />,
+      <StatCard density="compact" key="gasto" label="Total gastado" icon={Wallet} value={formatCurrency(gastado)} subValue="de los que están en el mapa" />,
+      <StatCard density="compact" key="zona" label="Zona con más clientes" icon={TrendingUp} value={<span className="block truncate text-sm">{zonas[0]?.zona ?? "—"}</span>} subValue={`${zonas[0]?.clientes ?? 0} clientes`} />,
     ],
   });
 

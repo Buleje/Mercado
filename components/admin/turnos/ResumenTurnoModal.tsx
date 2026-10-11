@@ -14,6 +14,7 @@ import { enviarCortePorWhatsApp, imprimirCorte80mm } from "./corte-turno";
 import { BOTON_PRIMARIO, BOTON_SECUNDARIO, MarcoModalTurno } from "./MarcoModalTurno";
 import { ResumenTurnoDetalle } from "./ResumenTurnoDetalle";
 import { diaConFecha, type Turno, type TurnoSummary } from "./tipos";
+import { button } from "@/components/ui-system/button-variants";
 
 type Props = {
   abierto: boolean;
@@ -24,7 +25,7 @@ type Props = {
   onVerEnCaja: () => void;
 };
 
-const BOTON_SALIDA = "inline-flex items-center justify-center gap-2 min-h-11 px-3 rounded-xl text-sm font-semibold text-[var(--text-secondary)] border border-[var(--rule-base)] bg-[var(--surface-raised)] hover:bg-[var(--surface-sunken)] transition-colors";
+const BOTON_SALIDA = button({ variant: "secondary", className: "rounded-xl" });
 
 export function ResumenTurnoModal({ abierto, resumen, historial, metaVentas, onCerrar, onVerEnCaja }: Props) {
   const [aviso, setAviso] = useState<string | null>(null);

@@ -69,7 +69,7 @@ export function ModalFooter({
   return (
     // Cancelar a la izquierda y la acción principal a la derecha (el orden lo
     // da quien llama); todos a 48 px aunque vengan de `Btn` (40) — ADR-489.
-    <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2 [&>button]:min-h-12 [&>a]:min-h-12">
+    <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2 [&>button]:min-h-12 [&>a]:min-h-12 [&>button]:rounded-xl [&>a]:rounded-xl">
       {mensaje}
       {children}
     </div>

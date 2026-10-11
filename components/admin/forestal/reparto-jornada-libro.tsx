@@ -15,10 +15,12 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtM3, fmtPiezas } from "@/lib/forestal/cubicacion-formato";
 import { fechaCorta, type JornadaDelBloque } from "@/lib/forestal/jornadas-de-bloque";
 import type { AvisoLibro } from "./hooks/use-libro-de-bloques";
+import { button } from "@/components/ui-system/button-variants";
+import { cn } from "@/lib/utils";
 
 const CHIP = "inline-flex items-center gap-1 rounded-lg border px-1.5 py-0.5 text-xs font-bold";
 const BOTON =
-  "inline-flex items-center gap-1 rounded-lg border px-1.5 py-0.5 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50";
+  button({ variant: "secondary", className: "rounded-xl" });
 
 export function JornadaLibro({
   jornada,
@@ -59,7 +61,7 @@ export function JornadaLibro({
   if (j.estado === "apagada") {
     return (
       <span className="inline-flex items-center gap-1">
-        <button type="button" disabled className={`${BOTON} border-[var(--rule-base)] text-[var(--text-tertiary)]`}>
+        <button type="button" disabled className={cn(BOTON, `border-[var(--rule-base)] text-[var(--text-tertiary)]`)}>
           <BookOpen className="h-3.5 w-3.5" aria-hidden /> Registrar en el Libro
         </button>
         <InfoTip title="Todavía no se puede" what={j.motivo ?? "Sin motivo"} />
@@ -85,11 +87,11 @@ export function JornadaLibro({
             setConfirmando(false);
             onRegistrar();
           }}
-          className={`${BOTON} border-[var(--accent)] bg-[var(--accent)] text-white hover:brightness-95`}
+          className={cn(BOTON, `border-[var(--accent)] bg-[var(--accent)] text-white hover:brightness-95`)}
         >
           <BookOpen className="h-3.5 w-3.5" aria-hidden /> Confirmar
         </button>
-        <button type="button" onClick={() => setConfirmando(false)} aria-label="Cancelar" className={`${BOTON} border-[var(--rule-base)] text-[var(--text-secondary)]`}>
+        <button type="button" onClick={() => setConfirmando(false)} aria-label="Cancelar" className={cn(BOTON, `border-[var(--rule-base)] text-[var(--text-secondary)]`)}>
           <X className="h-3.5 w-3.5" aria-hidden />
         </button>
       </span>
@@ -102,7 +104,7 @@ export function JornadaLibro({
         disabled={bloqueado}
         onClick={() => setConfirmando(true)}
         title={`Registrar el ${fechaCorta(j.fecha)}: ${resumen}`}
-        className={`${BOTON} border-[var(--accent)] text-[var(--accent-ink)] hover:bg-primary/10 dark:text-[var(--accent)]`}
+        className={cn(BOTON, `border-[var(--accent)] text-[var(--accent-ink)] hover:bg-primary/10 dark:text-[var(--accent)]`)}
       >
         <BookOpen className="h-3.5 w-3.5" aria-hidden /> Registrar en el Libro
       </button>

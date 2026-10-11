@@ -385,7 +385,7 @@ export default function CtpProduccionDetalleModal({ entry, onClose }: { entry: P
                       <Btn variant="secondary" size="sm" onClick={() => setConfirmFreeze(false)} disabled={freezing}>Cancelar</Btn>
                       {/* Sin Btn: confirmación sólida "info" (irreversible) sin variante equivalente — Btn secondary
                           la volvería indistinguible del Cancelar de al lado. */}
-                      <button type="button" onClick={() => void congelar()} disabled={freezing} className="inline-flex h-9 items-center gap-2 rounded-xl bg-[var(--data-info-600)] px-3 text-xs font-bold text-white hover:opacity-90 disabled:opacity-50">
+                      <button type="button" onClick={() => void congelar()} disabled={freezing} className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--data-info-600)] px-3 text-xs font-bold text-white hover:opacity-90 disabled:opacity-50">
                         {freezing && <Loader2 className="h-3.5 w-3.5 animate-spin" />} Sí, congelar
                       </button>
                     </div>

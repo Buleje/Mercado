@@ -9,9 +9,11 @@
  */
 
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "@buleje/design-system/icons";
+import { button } from "@/components/ui-system/button-variants";
+import { cn } from "@/lib/utils";
 
 const BTN =
-  "inline-flex h-10 items-center gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-canvas)] disabled:opacity-40";
+  button({ variant: "secondary", className: "rounded-xl" });
 
 export default function CtpIngresosPaginacion({
   total,
@@ -71,7 +73,7 @@ export default function CtpIngresosPaginacion({
           onClick={() => onPage(0)}
           title="Primera página"
           aria-label="Primera página"
-          className={`${BTN} max-sm:hidden`}
+          className={cn(BTN, `max-sm:hidden`)}
         >
           <ChevronsLeft className="h-4 w-4" />
         </button>
@@ -102,7 +104,7 @@ export default function CtpIngresosPaginacion({
           onClick={() => onPage(lastPage)}
           title="Última página"
           aria-label="Última página"
-          className={`${BTN} max-sm:hidden`}
+          className={cn(BTN, `max-sm:hidden`)}
         >
           <ChevronsRight className="h-4 w-4" />
         </button>

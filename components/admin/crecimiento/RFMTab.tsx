@@ -90,7 +90,7 @@ export default function RFMTab() {
               aria-pressed={days === p.days}
               onClick={() => setDays(p.days)}
               className={cn(
-                "h-10 rounded-lg px-3 text-sm font-semibold transition-colors",
+                "h-12 rounded-lg px-3 text-sm font-semibold transition-colors",
                 days === p.days ? "bg-[var(--surface-raised)] text-[var(--accent-ink)] shadow-[var(--shadow-xs)] dark:text-[var(--accent)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
               )}
             >

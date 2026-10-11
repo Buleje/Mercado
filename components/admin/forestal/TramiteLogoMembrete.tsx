@@ -37,7 +37,7 @@ export default function TramiteLogoMembrete({
         onClick={() => ref.current?.click()}
         title={logo ? "Cambiar logo" : "Subir logo"}
         aria-label={logo ? "Cambiar logo del membrete" : "Subir logo del membrete"}
-        className={`flex h-11 w-16 items-center justify-center overflow-hidden rounded-xl border-2 bg-[var(--surface-raised)] p-1 transition ${logo ? "border-[var(--data-success-500)]/50" : "border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"}`}
+        className={`flex h-12 w-16 items-center justify-center overflow-hidden rounded-xl border-2 bg-[var(--surface-raised)] p-1 transition ${logo ? "border-[var(--data-success-500)]/50" : "border-dashed border-[var(--rule-base)] text-[var(--text-tertiary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"}`}
       >
         {logo ? (
           // eslint-disable-next-line @next/next/no-img-element -- dataURL local, no pasa por el optimizador

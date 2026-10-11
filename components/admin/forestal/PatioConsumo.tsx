@@ -227,7 +227,7 @@ export default function PatioConsumo() {
             <button
               type="button"
               onClick={() => { setElegida(null); setSeleccion(new Set()); setListo(null); }}
-              className="h-11 rounded-2xl border border-[var(--rule-base)] px-4 text-base font-semibold text-[var(--text-secondary)]"
+              className="h-12 rounded-2xl border border-[var(--rule-base)] px-4 text-base font-semibold text-[var(--text-secondary)]"
             >
               Cambiar
             </button>

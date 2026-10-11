@@ -112,7 +112,7 @@ export default function ContarAhora({ esHoy, onContado }: { esHoy: boolean; onCo
             onClick={async () => {
               if (await c.contar(elegida)) onContado();
             }}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 text-sm font-bold text-white transition hover:brightness-95 disabled:opacity-60"
+            className="inline-flex h-12 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 text-sm font-bold text-white transition hover:brightness-95 disabled:opacity-60"
           >
             {ocupado ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Camera className="h-4 w-4" aria-hidden />}
             Contar ahora

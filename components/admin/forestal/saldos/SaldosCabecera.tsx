@@ -92,7 +92,7 @@ export default function SaldosCabecera({
           <ActionMenu
             label="Descargar"
             icon={Download}
-            size="sm"
+            size="md"
             compactoEnMovil
             disabled={bloqueado}
             title={espera}

@@ -93,7 +93,7 @@ export default function LothPlanTalaPanel({
             <button
               type="button"
               onClick={() => onImprimir(meta)}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
+              className="inline-flex h-12 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
             >
               <Printer className="h-3.5 w-3.5" /> Imprimir
             </button>

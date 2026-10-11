@@ -14,7 +14,7 @@
  */
 
 import { DataTable } from "@buleje/design-system";
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState } from "react";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import {
   cierreDelKardex,
@@ -107,19 +107,19 @@ export default function LothTableroKardexTabla({
             {/* z-[2], no el z-[1] de FIJA: el popover del filtro tiene que pasar por
                 encima de la primera celda (también fija) de cada renglón. */}
             <th className={`${TH} sticky left-0 z-[2] border-r`}>
-              <Titulo>Fecha · N°{filtro("fecha")}{filtro("doc")}</Titulo>
+              <span className="whitespace-nowrap">Fecha · N°{filtro("fecha")}{filtro("doc")}</span>
             </th>
             <th className={`${TH} ${SOLO_ESCRITORIO}`}>
-              <Titulo>Movimiento{filtro("mov")}</Titulo>
+              <span className="whitespace-nowrap">Movimiento{filtro("mov")}</span>
             </th>
             <th className={`${TH} ${SOLO_ESCRITORIO}`}>
-              <Titulo>Especie · troza{filtro("especie")}</Titulo>
+              <span className="whitespace-nowrap">Especie · troza{filtro("especie")}</span>
             </th>
             <th className={`${TH} text-right`}>
-              <Titulo>Entra m³{filtro("entra")}</Titulo>
+              <span className="whitespace-nowrap">Entra m³{filtro("entra")}</span>
             </th>
             <th className={`${TH} text-right`}>
-              <Titulo>Sale m³{filtro("sale")}</Titulo>
+              <span className="whitespace-nowrap">Sale m³{filtro("sale")}</span>
             </th>
             {casilleros.map((c) => (
               <th
@@ -127,10 +127,10 @@ export default function LothTableroKardexTabla({
                 className={`${TH} text-right`}
                 title={c === "taladoSinTrozarM3" ? "Talado sin trozar: lo que sigue en el monte, con la merma" : undefined}
               >
-                <Titulo>
+                <span className="whitespace-nowrap">
                   {ETIQUETA_CASILLERO[c]}
                   {filtro(c)}
-                </Titulo>
+                </span>
               </th>
             ))}
           </tr>
@@ -218,9 +218,4 @@ export default function LothTableroKardexTabla({
       </DataTable>
     </div>
   );
-}
-
-/** El título de la columna con su autofiltro pegado, en una sola línea. */
-function Titulo({ children }: { children: ReactNode }) {
-  return <span className="whitespace-nowrap">{children}</span>;
 }

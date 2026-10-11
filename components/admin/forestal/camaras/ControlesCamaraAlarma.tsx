@@ -130,7 +130,7 @@ export default function ControlesCamaraAlarma({
                 aria-checked={duracion === s}
                 onClick={() => setDuracion(s)}
                 className={cn(
-                  "h-11 flex-1 rounded-lg border text-sm font-bold",
+                  "h-12 flex-1 rounded-lg border text-sm font-bold",
                   duracion === s
                     ? "border-[var(--data-error-500)] bg-[var(--data-error-500)]/15 text-[var(--text-primary)]"
                     : "border-[var(--rule-base)] text-[var(--text-secondary)]",
@@ -147,7 +147,7 @@ export default function ControlesCamaraAlarma({
                 setConfirmar(false);
                 onSonar(duracion);
               }}
-              className="inline-flex h-11 flex-1 items-center justify-center gap-1.5 rounded-lg bg-[var(--data-error-500)] px-3 text-sm font-bold text-white"
+              className="inline-flex h-12 flex-1 items-center justify-center gap-1.5 rounded-lg bg-[var(--data-error-500)] px-3 text-sm font-bold text-white"
               data-alarma="confirmar"
             >
               <Siren className="h-4 w-4" aria-hidden /> Sonar {duracion} s
@@ -155,7 +155,7 @@ export default function ControlesCamaraAlarma({
             <button
               type="button"
               onClick={() => setConfirmar(false)}
-              className="inline-flex h-11 items-center gap-1 rounded-lg border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)]"
+              className="inline-flex h-12 items-center gap-1 rounded-lg border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)]"
             >
               <X className="h-4 w-4" aria-hidden /> Cancelar
             </button>

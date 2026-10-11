@@ -125,7 +125,7 @@ export function SeccionNegocio({ aj }: { aj: AjustesEstado }) {
             aria-expanded={verMaquetas}
             aria-label={verMaquetas ? "Ocultar dónde aparecen" : "Ver dónde aparecen"}
             title={verMaquetas ? "Ocultar dónde aparecen" : "Ver dónde aparecen"}
-            className="inline-flex items-center gap-1.5 h-10 px-2.5 rounded-lg text-sm font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-[var(--surface-sunken)] transition-colors"
+            className="inline-flex items-center gap-1.5 h-12 px-2.5 rounded-lg text-sm font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-[var(--surface-sunken)] transition-colors"
           >
             {verMaquetas ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             <span className="hidden sm:inline">{verMaquetas ? "Ocultar dónde aparecen" : "Dónde aparecen"}</span>

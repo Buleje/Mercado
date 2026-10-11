@@ -30,12 +30,13 @@ import {
   VENTANAS_PUENTE,
   type AjustesVivo,
 } from "./puente-pc";
+import { button } from "@/components/ui-system/button-variants";
 
 const ETIQUETA = "text-[length:var(--ts-2xs)] font-bold uppercase tracking-wide text-[var(--text-tertiary)]";
 const CAMPO =
   "h-11 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
 const BOTON =
-  "inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--text-primary)]";
+  button({ variant: "secondary", className: "rounded-xl" });
 const BLOQUE = "space-y-3 rounded-xl border border-[var(--rule-base)] p-3";
 const TITULO = "flex items-center gap-1.5 text-sm font-bold text-[var(--text-primary)]";
 
@@ -246,7 +247,7 @@ export function PiePuente({
           type="button"
           onClick={onQuitar}
           disabled={guardando}
-          className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition hover:border-[var(--data-error-500)] hover:text-[var(--data-error-500)] disabled:opacity-50"
+          className="inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition hover:border-[var(--data-error-500)] hover:text-[var(--data-error-500)] disabled:opacity-50"
         >
           <PowerOff className="h-4 w-4" aria-hidden /> Dejar de usar el puente
         </button>
@@ -254,7 +255,7 @@ export function PiePuente({
       <button
         type="button"
         onClick={onCerrar}
-        className="ml-auto inline-flex h-11 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]"
+        className="ml-auto inline-flex h-12 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]"
       >
         Cancelar
       </button>
@@ -262,7 +263,7 @@ export function PiePuente({
         type="button"
         onClick={onGuardar}
         disabled={guardando || !a.hayCambios}
-        className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white transition hover:brightness-95 disabled:opacity-50"
+        className="inline-flex h-12 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white transition hover:brightness-95 disabled:opacity-50"
       >
         {guardando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Check className="h-4 w-4" aria-hidden />}
         {a.activo ? "Guardar cambios" : "Usar el puente"}

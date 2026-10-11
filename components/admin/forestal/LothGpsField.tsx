@@ -16,6 +16,7 @@
 import { useState } from "react";
 import { AlertTriangle, ExternalLink, Loader2, MapPin, Trees, X } from "@buleje/design-system/icons";
 import { formatUtmFull, fromUtm, parseUtmZone, toUtm } from "@/lib/forestal/loth-utm";
+import { button } from "@/components/ui-system/button-variants";
 
 /** De dónde salió la coordenada (se guarda con la línea: `gpsOrigen`). */
 export type GpsOrigen = "telefono" | "censo" | "utm";
@@ -49,7 +50,7 @@ interface Props {
 const INPUT =
   "h-10 w-36 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 font-mono text-sm text-[var(--text-primary)]";
 const BTN =
-  "inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-60";
+  button({ variant: "secondary", className: "rounded-xl" });
 
 export default function LothGpsField({ lat, lng, onChange, origen = null, censo, children }: Props) {
   const [loading, setLoading] = useState(false);
@@ -142,7 +143,7 @@ export default function LothGpsField({ lat, lng, onChange, origen = null, censo,
           <button
             type="button"
             onClick={aplicarManual}
-            className="inline-flex h-10 items-center rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-semibold text-white hover:opacity-90"
+            className="inline-flex h-12 items-center rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-semibold text-white hover:opacity-90"
           >
             Aplicar
           </button>

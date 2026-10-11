@@ -228,7 +228,7 @@ export default function PlantacionWizard({
                   disabled={soloLectura}
                   aria-pressed={datos.tipoTramite === t}
                   onClick={() => onChange({ tipoTramite: t })}
-                  className={`h-11 flex-1 rounded-xl border-2 text-sm font-semibold transition ${
+                  className={`h-12 flex-1 rounded-xl border-2 text-sm font-semibold transition ${
                     datos.tipoTramite === t
                       ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                       : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)]"

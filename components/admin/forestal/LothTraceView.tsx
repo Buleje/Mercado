@@ -53,10 +53,11 @@ import { useLothTraceVista } from "./hooks/use-loth-trace-vista";
 import { fmtFecha, type TraceNav } from "./loth-trace-ui";
 import { TOPE_PIEZAS_ASERRADERO } from "@/lib/forestal/loth-trace-aserradero";
 import { formatNumber } from "@/lib/format";
+import { button } from "@/components/ui-system/button-variants";
 
 const GRUPOS = ["movimiento", "terminado"] as const;
 const BOTON =
-  "inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-40";
+  button({ variant: "secondary", className: "rounded-xl" });
 
 export default function LothTraceView({
   entries,

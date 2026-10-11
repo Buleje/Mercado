@@ -44,11 +44,12 @@ import {
 import { cuadreDeEscuadria } from "@/lib/forestal/escuadria-del-paquete";
 import { CELDA, CIFRA, FILA_TOTAL, Marco } from "./ctp-resumen-jornadas-tablas";
 import { PASTILLA } from "./ctp-celda-escuadria";
+import { button } from "@/components/ui-system/button-variants";
 
 const COLUMNAS = 6;
 const PT_ACENTO = "text-[var(--accent-ink)] dark:text-[var(--accent)]";
 const BOTON_CORRIDA =
-  "inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 py-0.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 dark:hover:text-[var(--accent)]";
+  button({ variant: "secondary", size: "sm", className: "rounded-xl" });
 
 interface Props {
   corridas: readonly CorridaDelDia[];

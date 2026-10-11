@@ -67,7 +67,7 @@ export default function FilaRegistro({
             aria-expanded={varios.abierto}
             aria-label={`Talar varios árboles de ${especie}`}
             title={`Talar varios árboles de ${especie} en una planilla`}
-            className="mr-1 inline-flex h-9 shrink-0 items-center gap-1 rounded-lg px-2 text-xs font-bold text-[var(--accent-ink)] transition-colors hover:bg-[var(--accent)]/10 dark:text-[var(--accent)]"
+            className="mr-1 inline-flex h-12 shrink-0 items-center gap-1 rounded-lg px-2 text-xs font-bold text-[var(--accent-ink)] transition-colors hover:bg-[var(--accent)]/10 dark:text-[var(--accent)]"
           >
             {varios.abierto ? <X className="h-4 w-4" aria-hidden="true" /> : <Layers className="h-4 w-4" aria-hidden="true" />}
             Varios
@@ -81,7 +81,7 @@ export default function FilaRegistro({
           <button
             type="button"
             onClick={() => varios.onTalar(n)}
-            className="inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-lg bg-[var(--accent-dark)] px-3 text-sm font-semibold text-white transition-colors hover:opacity-90"
+            className="inline-flex h-12 items-center gap-1.5 whitespace-nowrap rounded-lg bg-[var(--accent-dark)] px-3 text-sm font-semibold text-white transition-colors hover:opacity-90"
           >
             <Axe className="h-4 w-4" aria-hidden="true" /> Talar {n === 1 ? "1 árbol" : `${n} árboles`}
           </button>

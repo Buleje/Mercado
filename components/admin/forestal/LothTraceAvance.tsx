@@ -93,7 +93,7 @@ export default function LothTraceAvance({
           aria-expanded={pasosAbiertos}
           aria-controls={`${id}-pasos`}
           title={pasosAbiertos ? "Ocultar los indicadores" : "Ver los indicadores"}
-          className="inline-flex h-10 min-w-0 max-w-full shrink items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
+          className="inline-flex h-12 min-w-0 max-w-full shrink items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
         >
           <BarChart3 className="h-4 w-4 shrink-0" aria-hidden="true" />
           <span className="shrink-0">Indicadores</span>
@@ -113,7 +113,7 @@ export default function LothTraceAvance({
           aria-expanded={cuentasAbiertas}
           aria-controls={`${id}-cuentas`}
           title={cuentasAbiertas ? "Oculta las cuentas. Se recuerda en este navegador." : "Cómo cierran los m³ entre un paso y el siguiente"}
-          className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
+          className="inline-flex h-12 shrink-0 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
         >
           <Calculator className="h-4 w-4" aria-hidden="true" />
           Cuentas

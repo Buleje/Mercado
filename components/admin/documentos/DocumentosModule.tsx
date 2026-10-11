@@ -2052,7 +2052,7 @@ export default function DocumentosModule() {
                 <button
                   onClick={(e) => { e.stopPropagation(); setColsMenuOpen((v) => !v); }}
                   className={cn(
-                    "inline-flex h-[42px] items-center gap-1.5 px-3 rounded-xl border-2 text-sm font-semibold transition-colors",
+                    "inline-flex h-12 items-center gap-1.5 px-3 rounded-xl border-2 text-sm font-semibold transition-colors",
                     colsMenuOpen ? "border-primary text-primary bg-primary/5" : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-primary hover:text-primary"
                   )}
                   title="Elegir columnas visibles"

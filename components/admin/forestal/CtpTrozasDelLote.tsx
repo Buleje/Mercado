@@ -300,7 +300,7 @@ export default function CtpTrozasDelLote({
             type="button"
             disabled={enElRango.length === 0}
             onClick={() => aplicarRango(true)}
-            className="h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-40 sm:h-9 sm:px-3"
+            className="h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-40 sm:px-3"
           >
             Tildar
           </button>
@@ -308,7 +308,7 @@ export default function CtpTrozasDelLote({
             type="button"
             disabled={enElRango.length === 0}
             onClick={() => aplicarRango(false)}
-            className="h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] disabled:opacity-40 sm:h-9 sm:px-3"
+            className="h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] disabled:opacity-40 sm:px-3"
           >
             Destildar
           </button>

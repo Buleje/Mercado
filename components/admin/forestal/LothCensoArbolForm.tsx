@@ -239,7 +239,7 @@ export default function LothCensoArbolForm({
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex h-10 items-center whitespace-nowrap rounded-xl px-3 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+              className="inline-flex h-12 items-center whitespace-nowrap rounded-xl px-3 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
             >
               Cancelar
             </button>
@@ -248,7 +248,7 @@ export default function LothCensoArbolForm({
               onClick={() => void agregar(true)}
               disabled={busy || !!bloqueo}
               title={bloqueo ?? "Agrega y deja el formulario listo para el siguiente árbol"}
-              className="inline-flex h-10 items-center whitespace-nowrap rounded-xl border border-[var(--rule-strong)] bg-[var(--surface-raised)] px-3 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-12 items-center whitespace-nowrap rounded-xl border border-[var(--rule-strong)] bg-[var(--surface-raised)] px-3 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               Agregar y otro
             </button>
@@ -257,7 +257,7 @@ export default function LothCensoArbolForm({
               form={FORM_ID}
               disabled={busy || !!bloqueo}
               title={bloqueo ?? undefined}
-              className="inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-xl bg-[var(--accent-dark)] px-3.5 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-12 items-center gap-2 whitespace-nowrap rounded-xl bg-[var(--accent-dark)] px-3.5 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {busy ? (
                 <Loader2 className="h-4 w-4 shrink-0 animate-spin" />

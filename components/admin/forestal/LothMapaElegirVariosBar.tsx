@@ -14,9 +14,10 @@
 import { Axe, Info, X } from "@buleje/design-system/icons";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatNumber } from "@/lib/format";
+import { button } from "@/components/ui-system/button-variants";
 
 const BTN =
-  "inline-flex h-11 items-center gap-1.5 whitespace-nowrap rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:cursor-not-allowed disabled:opacity-40";
+  button({ variant: "secondary", className: "rounded-xl" });
 
 interface Props {
   n: number;

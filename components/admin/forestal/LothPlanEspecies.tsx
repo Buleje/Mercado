@@ -17,6 +17,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Check, ClipboardList, ListChecks, Loader2, Pencil, Plus, Trash2, TreePine, X } from "@buleje/design-system/icons";
+import { DataTable } from "@buleje/design-system";
 import { toast } from "sonner";
 import AdminModal from "@/components/admin/shared/AdminModal";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
@@ -28,7 +29,7 @@ import LothPlanAutorizarLote from "./LothPlanAutorizarLote";
 import { n, soles, type Species } from "./loth-plan-shared";
 import { BarraFiltrosTabla, FiltroEnCabecera, SinCoincidenciasFila, useFiltrosTabla } from "./filtros-tabla-forestal";
 import { COLUMNAS_PLAN_ESPECIES } from "./loth-plan-columnas-filtro";
-import { AddBtn, BloquePlan, BotonPlegar, Cell, CitesPill, Field, Mono, Table, cls, editCls } from "./loth-plan-ui";
+import { AddBtn, BloquePlan, BotonPlegar, Cell, CitesPill, Field, Mono, cls, editCls } from "./loth-plan-ui";
 import { useMiRol } from "@/hooks/use-mi-rol";
 
 /** Clave de la preferencia. Exportada: la prueba en navegador la lee. */
@@ -256,10 +257,13 @@ export default function LothPlanEspecies({ planId, species, onChange, pedido, ce
       </AdminModal>
       <div id="loth-plan-autorizaciones-tabla" hidden={!mostrar || species.length === 0} className="p-3">
       <BarraFiltrosTabla f={fl} className="mb-2" />
-      <Table
-        head={["Especie", "Vol. autoriz.", "N° árb.", "Año", "Sup. ha", "Precio/m³", "VEN/m³", ""]}
-        filtroDe={(i) => (idColumna[i] ? <FiltroEnCabecera id={idColumna[i]} f={fl} compacto /> : null)}
-      >
+      <DataTable className="w-full">
+        <thead className="align-top">
+          <tr>{["Especie", "Vol. autoriz.", "N° árb.", "Año", "Sup. ha", "Precio/m³", "VEN/m³", ""].map((h, i) => (
+            <th key={i} className={i >= 2 ? "text-right" : ""}>{h}{idColumna[i] ? <FiltroEnCabecera id={idColumna[i]} f={fl} compacto /> : null}</th>
+          ))}</tr>
+        </thead>
+        <tbody>
         {fl.filtradas.length === 0 && <SinCoincidenciasFila colSpan={8} />}
         {fl.filtradas.map((s) => editingId === s.id ? (
           <tr key={s.id}>
@@ -294,7 +298,8 @@ export default function LothPlanEspecies({ planId, species, onChange, pedido, ce
             </Cell>
           </tr>
         ))}
-      </Table>
+        </tbody>
+      </DataTable>
       </div>
     </BloquePlan>
   );

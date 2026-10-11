@@ -645,10 +645,10 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
       >
           {g && !isEmpty && (
             <>
-              <button type="button" onClick={exportarCsv} title="Planilla con el saldo de cada línea y el volumen de cada eslabón" className="inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
+              <button type="button" onClick={exportarCsv} title="Planilla con el saldo de cada línea y el volumen de cada eslabón" className="inline-flex h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
                 <FileSpreadsheet className="h-4 w-4" /> CSV
               </button>
-              <button type="button" onClick={() => printCadenaCustodia(g, period.label)} title="Documento imprimible de la cadena de custodia (para adjuntar a un informe ARFFS)" className="inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
+              <button type="button" onClick={() => printCadenaCustodia(g, period.label)} title="Documento imprimible de la cadena de custodia (para adjuntar a un informe ARFFS)" className="inline-flex h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
                 <FileDown className="h-4 w-4" /> Imprimir
               </button>
               {/* El DIBUJO como archivo: lo que se entiende de un vistazo, para
@@ -668,7 +668,7 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
               )}
             </>
           )}
-          <button type="button" onClick={() => void load()} disabled={loading} className="inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60">
+          <button type="button" onClick={() => void load()} disabled={loading} className="inline-flex h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60">
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Recargar
           </button>
       </VistaHeader>
@@ -784,14 +784,14 @@ export default function CtpTrazaRadar({ period }: { period: CtpPeriod }) {
                 <div className="flex shrink-0 items-center gap-2">
                   {/* Sólo para ingresos: aislar SU cadena aguas abajo. */}
                   {pinnedNode.kind === "ingreso" && !esGrupo(pinnedNode.id) && (
-                    <button type="button" onClick={() => setSeguirId(pinnedNode.id)} title="Ver a dónde terminó esta guía, paso por paso" className="inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--accent)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--accent)] hover:bg-primary/10 dark:hover:bg-[var(--accent)]/15">
+                    <button type="button" onClick={() => setSeguirId(pinnedNode.id)} title="Ver a dónde terminó esta guía, paso por paso" className="inline-flex h-12 items-center gap-1.5 rounded-lg border-2 border-[var(--accent)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--accent)] hover:bg-primary/10 dark:hover:bg-[var(--accent)]/15">
                       <Route className="h-3.5 w-3.5" /> Seguir esta GTF
                     </button>
                   )}
                   {/* Un título habilitante no tiene ficha propia en el libro:
                       es un dato del ingreso, no una línea. */}
                   {pinnedNode.kind !== "titulo" && (
-                    <button type="button" onClick={() => { const t = targetFor(pinnedNode.id); if (t) setDetail(t); }} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 text-xs font-bold text-white hover:bg-[var(--accent-600)]">
+                    <button type="button" onClick={() => { const t = targetFor(pinnedNode.id); if (t) setDetail(t); }} className="inline-flex h-12 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 text-xs font-bold text-white hover:bg-[var(--accent-600)]">
                       <Eye className="h-3.5 w-3.5" /> Ver ficha completa
                     </button>
                   )}

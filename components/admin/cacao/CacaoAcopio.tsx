@@ -65,6 +65,7 @@ import CacaoCampo from "./CacaoCampo";
 import CacaoVentas from "./CacaoVentas";
 import CacaoAlertsBell from "./CacaoAlertsBell";
 import { formatCurrency, formatDate } from "@/lib/format";
+import CampoBuscar from "@/components/ui-system/CampoBuscar";
 
 interface Lote {
   id: string;
@@ -470,11 +471,12 @@ export default function CacaoAcopio() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <div className="min-w-[200px] flex-1">
-              <SearchBar
-                value={search}
-                onChange={setSearch}
+              <CampoBuscar
+                valor={search}
+                onCambiar={setSearch}
                 onEnter={() => load("acopio")}
                 placeholder="Buscar por lote, productor o variedad…"
+                etiqueta="Buscar en el acopio"
               />
             </div>
             <button
@@ -1142,30 +1144,6 @@ function PagoBadge({ estado, saldo }: { estado: string; saldo: number }) {
         </span>
       )}
     </span>
-  );
-}
-function SearchBar({
-  value,
-  onChange,
-  onEnter,
-  placeholder,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  onEnter: () => void;
-  placeholder: string;
-}) {
-  return (
-    <div className="flex h-12 items-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4">
-      <Search className="h-4 w-4 text-[var(--text-tertiary)]" />
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && onEnter()}
-        placeholder={placeholder}
-        className="w-full bg-transparent text-base text-[var(--text-primary)] outline-none"
-      />
-    </div>
   );
 }
 function GradoBadge({ grado }: { grado: string | null }) {

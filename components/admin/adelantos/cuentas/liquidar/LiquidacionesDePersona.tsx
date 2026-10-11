@@ -203,7 +203,7 @@ export default function LiquidacionesDePersona({
                               key={m.id}
                               type="button"
                               onClick={() => setMetodoDevolucion(m.id)}
-                              className={`inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-bold transition-colors ${
+                              className={`inline-flex h-12 items-center gap-1.5 rounded-lg px-3 text-sm font-bold transition-colors ${
                                 metodoDevolucion === m.id
                                   ? "bg-primary/12 text-[var(--accent-ink)] ring-1 ring-primary/40 dark:text-[var(--accent)]"
                                   : "bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
@@ -225,7 +225,7 @@ export default function LiquidacionesDePersona({
                     <button
                       type="button"
                       onClick={() => setAnulando(null)}
-                      className="h-9 rounded-lg px-3 text-sm font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+                      className="h-12 rounded-lg px-3 text-sm font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
                     >
                       Cancelar
                     </button>
@@ -233,7 +233,7 @@ export default function LiquidacionesDePersona({
                       type="button"
                       disabled={guardando}
                       onClick={() => confirmarAnulacion(liq.id)}
-                      className="h-9 rounded-lg bg-[var(--data-error-700)] px-3 text-sm font-bold text-white transition-colors hover:opacity-90 disabled:opacity-50"
+                      className="h-12 rounded-lg bg-[var(--data-error-700)] px-3 text-sm font-bold text-white transition-colors hover:opacity-90 disabled:opacity-50"
                     >
                       {guardando ? "Anulando…" : "Confirmar anulación"}
                     </button>

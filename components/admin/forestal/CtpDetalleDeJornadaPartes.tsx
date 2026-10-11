@@ -12,6 +12,7 @@ import { BarChart3, Loader2, Ruler, Trash2 } from "@buleje/design-system/icons";
 import { Kicker } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
 import { SIN_DUENO, type DetalleDeJornada } from "@/lib/forestal/detalle-de-jornada";
+import { button } from "@/components/ui-system/button-variants";
 
 export const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
 
@@ -141,7 +142,7 @@ export function FranjaDelDia({
 }
 
 const BOTON =
-  "inline-flex min-h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-bold";
+  button({ variant: "secondary", className: "shrink-0 rounded-xl" });
 
 /**
  * Los botones del pie del detalle. «Ver qué salió» va ÚLTIMO: Tab en el último
@@ -166,7 +167,7 @@ export function AccionesDelDetalle({
           type="button"
           onClick={onAnular}
           disabled={anulando}
-          className={`${BOTON} border-[var(--data-error-500)]/50 text-[var(--data-error-700)] hover:bg-[var(--data-error-500)]/10 disabled:opacity-60 dark:text-[var(--data-error-500)]`}
+          className={cn(BOTON, `border-[var(--data-error-500)]/50 text-[var(--data-error-700)] hover:bg-[var(--data-error-500)]/10 disabled:opacity-60 dark:text-[var(--data-error-500)]`)}
         >
           {anulando ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
@@ -181,7 +182,7 @@ export function AccionesDelDetalle({
           type="button"
           onClick={onAgregarCubicacion}
           title="Vincular la pieza por pieza a lo declarado por tipo, sin cambiar los m³"
-          className={`${BOTON} border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]`}
+          className={cn(BOTON, `border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]`)}
         >
           <Ruler className="h-3.5 w-3.5" aria-hidden /> Agregar cubicación
         </button>
@@ -189,7 +190,7 @@ export function AccionesDelDetalle({
       <button
         type="button"
         onClick={onVerResumen}
-        className={`${BOTON} grow border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] hover:bg-primary/15 dark:text-[var(--accent)]`}
+        className={cn(BOTON, `grow border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] hover:bg-primary/15 dark:text-[var(--accent)]`)}
       >
         <BarChart3 className="h-3.5 w-3.5" aria-hidden /> Ver qué salió ese día
       </button>

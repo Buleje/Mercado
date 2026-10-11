@@ -47,7 +47,7 @@ export default function CtpPatioBandeja({ cola }: { cola: PatioColaState }) {
             onClick={() => void cola.sincronizar()}
             disabled={sincronizando || !online}
             title={online ? "Intentar subir ahora" : "Sin conexión: se sube solo cuando vuelva"}
-            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)] disabled:opacity-50"
+            className="inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)] disabled:opacity-50"
           >
             {sincronizando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />} Subir
           </button>

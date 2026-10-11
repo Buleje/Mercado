@@ -114,7 +114,7 @@ export default function CtpContratosCandidatos({
                   type="button"
                   onClick={() => onSembrar([c])}
                   disabled={sembrando}
-                  className="h-10 shrink-0 rounded-lg border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:opacity-50"
+                  className="h-12 shrink-0 rounded-lg border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:opacity-50"
                 >
                   Crear
                 </button>
@@ -157,7 +157,7 @@ export default function CtpContratosCandidatos({
                   type="button"
                   onClick={() => void sembrarDudoso(c)}
                   disabled={sembrando}
-                  className="h-10 shrink-0 rounded-lg border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-tertiary)] transition-colors hover:border-[var(--data-warning-500)] hover:text-[var(--text-primary)] disabled:opacity-50"
+                  className="h-12 shrink-0 rounded-lg border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-tertiary)] transition-colors hover:border-[var(--data-warning-500)] hover:text-[var(--text-primary)] disabled:opacity-50"
                 >
                   Crear igual
                 </button>

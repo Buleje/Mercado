@@ -232,7 +232,7 @@ export default function CtpPlantaPanel({
         <button
           type="button" onClick={() => setSoloSinUbicar((v) => !v)} aria-pressed={soloSinUbicar}
           title="Ver sólo lo que todavía no tiene lugar en el mapa"
-          className={`inline-flex h-9 shrink-0 items-center rounded-lg border-2 px-2 text-[length:var(--ts-2xs)] font-bold transition ${
+          className={`inline-flex h-12 shrink-0 items-center rounded-lg border-2 px-2 text-[length:var(--ts-2xs)] font-bold transition ${
             soloSinUbicar
               ? "border-[var(--data-warning-500)] bg-[var(--data-warning-50)] text-[var(--data-warning-700)] dark:bg-[var(--data-warning-500)]/12 dark:text-[var(--data-warning-500)]"
               : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"

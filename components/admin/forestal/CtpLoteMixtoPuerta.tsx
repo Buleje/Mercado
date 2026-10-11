@@ -84,7 +84,7 @@ export function useLoteMixtoEnConsumos({
       onClick={() => setAbierto(true)}
       title="Escanear la pila mezclada: se reparte en un lote por especie y permiso"
       /* 44 px en el celular (se toca con el dedo); 40 en escritorio, alineado con «Consumir en un lote…». */
-      className="inline-flex h-11 items-center gap-2 whitespace-nowrap rounded-xl border sm:h-10 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)]"
+      className="inline-flex h-12 items-center gap-2 whitespace-nowrap rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)]"
     >
       <Combine className="h-4 w-4" aria-hidden />
       {abierta ? `Lote mixto · ${abierta.resumen.piezas}` : "Lote mixto"}

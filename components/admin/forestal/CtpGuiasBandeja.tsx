@@ -69,7 +69,7 @@ export default function CtpGuiasBandeja({ onIngresar }: { onIngresar: (gtfNumber
             <button
               type="button"
               onClick={() => onIngresar(g.gtfNumber)}
-              className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3.5 text-sm font-bold text-white transition hover:brightness-110"
+              className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3.5 text-sm font-bold text-white transition hover:brightness-110"
             >
               Ingresar <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
             </button>

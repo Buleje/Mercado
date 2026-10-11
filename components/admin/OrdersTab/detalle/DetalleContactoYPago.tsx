@@ -11,9 +11,10 @@ import { Check, ExternalLink, MapPin, MessageCircle, Phone } from "@buleje/desig
 import { PaymentProofViewer } from "@/components/admin/PaymentProofViewer";
 import type { DbOrder } from "@/lib/jsondb";
 import { googleMapsUrl } from "@/lib/order-utils";
+import { button } from "@/components/ui-system/button-variants";
 
 const BOTON =
-  "inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]";
+  button({ variant: "secondary", className: "shrink-0 rounded-xl" });
 
 export function DetalleContacto({ order }: { order: DbOrder }) {
   const phone = order.customer.phone ?? "";

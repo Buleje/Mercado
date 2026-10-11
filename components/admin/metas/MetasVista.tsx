@@ -34,9 +34,10 @@ import { useIndicadoresMetas } from "./IndicadoresMetas";
 import { ModalMeta } from "./ModalMeta";
 import { MenuPlantillas, PlantillasDestacadas, type PresetMeta } from "./PlantillasMeta";
 import { TarjetaMeta } from "./TarjetaMeta";
+import { button } from "@/components/ui-system/button-variants";
 
 const BOTON_ICONO =
-  "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40";
+  button({ variant: "ghost", size: "icon", className: "shrink-0 rounded-xl" });
 const ENLACE = "inline-flex min-h-12 items-center font-semibold text-[var(--accent-ink)] underline underline-offset-2 dark:text-[var(--accent)]";
 
 type FiltroPeriodo = PeriodoMeta | "todas";

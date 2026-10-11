@@ -6,6 +6,7 @@ import { TrendingUp, TrendingDown, AlertTriangle } from "@buleje/design-system/i
 import { cn } from "@/lib/utils";
 import EnlacePanel from "@/components/admin/shared/EnlacePanel";
 import { formatCurrency, formatDate } from "@/lib/format";
+import TableSkeleton from "@/components/admin/shared/TableSkeleton";
 
 type Comparacion = {
   supplierId: string;
@@ -24,16 +25,6 @@ interface SupplierPriceComparisonProps {
 export { QuotationComparator } from "./QuotationComparator";
 
 
-function SkeletonTable() {
-  return (
-    <div className="animate-pulse space-y-2">
-      <div className="h-8 bg-[var(--rule-base)] rounded w-full" />
-      <div className="h-6 bg-[var(--surface-sunken)] rounded w-full" />
-      <div className="h-6 bg-[var(--surface-sunken)] rounded w-full" />
-    </div>
-  );
-}
-
 export default function SupplierPriceComparison({ productId, productName }: SupplierPriceComparisonProps) {
   const [comparaciones, setComparaciones] = useState<Comparacion[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +42,7 @@ export default function SupplierPriceComparison({ productId, productName }: Supp
     return () => { cancelled = true; };
   }, [productId]);
 
-  if (loading) return <SkeletonTable />;
+  if (loading) return <TableSkeleton rows={2} cols={3} />;
 
   if (comparaciones.length === 0) {
     return (

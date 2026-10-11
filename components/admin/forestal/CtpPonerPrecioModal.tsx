@@ -204,7 +204,7 @@ export default function CtpPonerPrecioModal({
                 aria-selected={pestana === o.v}
                 title={o.hint}
                 onClick={() => setPestana(o.v)}
-                className={`inline-flex h-9 items-center rounded-full px-4 text-sm font-bold transition-colors ${
+                className={`inline-flex h-12 items-center rounded-full px-4 text-sm font-bold transition-colors ${
                   pestana === o.v
                     ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm"
                     : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
@@ -227,7 +227,7 @@ export default function CtpPonerPrecioModal({
             <button
               type="button"
               onClick={() => setVerTodasFilas((v) => !v)}
-              className="inline-flex h-10 items-center rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
+              className="inline-flex h-12 items-center rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
             >
               {verTodasFilas ? "Ver sólo las que faltan" : `Ver todas (${llevanPrecio.length})`}
             </button>

@@ -229,7 +229,7 @@ export default function CtpCubicacionComercialModal({
                 <div className="grid grid-cols-2 gap-1 rounded-2xl bg-[var(--surface-sunken)] p-1">
                   {(["venta", "compra"] as const).map((s) => (
                     <button key={s} type="button" role="radio" aria-checked={f.sentido === s} onClick={() => f.setSentido(s)}
-                      className={`h-10 rounded-xl text-sm font-bold transition-colors ${f.sentido === s ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm" : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"}`}>
+                      className={`h-12 rounded-xl text-sm font-bold transition-colors ${f.sentido === s ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm" : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"}`}>
                       {s === "venta" ? "Le vendo" : "Me vende"}
                     </button>
                   ))}

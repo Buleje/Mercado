@@ -33,7 +33,7 @@ import { useControlesCamara } from "./use-controles-camara";
 const SEGUNDOS_A_LA_VISTA = 3.5;
 
 const BOTON =
-  "inline-flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)]/85 px-3 text-sm font-bold text-[var(--text-primary)] shadow-[var(--shadow-sm)] backdrop-blur transition hover:border-[var(--accent)] disabled:opacity-50 aria-pressed:border-[var(--accent)]";
+  "inline-flex h-12 min-w-12 items-center justify-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)]/85 px-3 text-sm font-bold text-[var(--text-primary)] shadow-[var(--shadow-sm)] backdrop-blur transition hover:border-[var(--accent)] disabled:opacity-50 aria-pressed:border-[var(--accent)]";
 
 const CHIP =
   "inline-flex h-7 items-center gap-1 rounded-full border px-2 text-xs font-bold text-[var(--text-primary)] backdrop-blur";

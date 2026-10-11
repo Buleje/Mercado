@@ -17,12 +17,13 @@ import {
   type PlanDeProduccion,
   type RecorridoDeTanda,
 } from "@/lib/forestal/toda-la-produccion";
+import { button } from "@/components/ui-system/button-variants";
 
 const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
 const BTN_PRIMARIO =
-  "inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50";
+  button({ variant: "accent", className: "rounded-xl" });
 const BTN =
-  "inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] transition hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50";
+  button({ variant: "secondary", className: "rounded-xl" });
 const AYUDA = {
   what: "Registra en el Libro todos los días listos de la Distribución, uno por vez y en orden: bloque por bloque y día por día. Cada día consume sus trozas desde el lote del bloque y declara lo que salió en la línea principal (LP), igual que su botón «Registrar en el Libro».",
   affects: "Si un día falla, se detiene ahí: lo ya escrito queda en el Libro (no se deshace) y puedes reintentar lo pendiente. Después se pasa el Anexo 04 de cada permiso al libro (despacho), que descuenta del patio.",

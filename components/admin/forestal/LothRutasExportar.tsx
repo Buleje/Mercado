@@ -15,9 +15,10 @@ import { exportSheetsToExcel } from "@/lib/export-excel";
 import { geoJsonDeRutas, hojasDeRutas, kmlDeRutas, textoDeTodo, type FilaPunto, type FilaRuta } from "@/lib/forestal/loth-rutas-coordenadas";
 import { descargarTexto } from "./loth-mapa-coordenadas";
 import { copiarTexto } from "./loth-rutas-ui";
+import { button } from "@/components/ui-system/button-variants";
 
 const BTN =
-  "inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40";
+  button({ variant: "secondary", className: "rounded-xl" });
 
 export default function LothRutasExportar({ rutas, puntos }: { rutas: readonly FilaRuta[]; puntos: readonly FilaPunto[] }) {
   const [excel, setExcel] = useState(false);

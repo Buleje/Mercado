@@ -129,7 +129,7 @@ export default function LothMapaHerramientas({
           <button
             type="button"
             onClick={irACoordenada}
-            className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-semibold text-white hover:opacity-90"
+            className="inline-flex h-12 items-center gap-1.5 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-semibold text-white hover:opacity-90"
           >
             <Locate className="h-4 w-4" aria-hidden="true" /> Ir
           </button>
@@ -148,7 +148,7 @@ export default function LothMapaHerramientas({
                 type="button"
                 onClick={() => onMedicionModo(m)}
                 aria-pressed={medicionModo === m}
-                className={`h-9 px-3 text-xs font-bold transition ${
+                className={`h-12 px-3 text-xs font-bold transition ${
                   medicionModo === m ? "bg-[var(--brand-ink)] text-white" : "bg-[var(--surface-raised)] text-[var(--text-secondary)]"
                 }`}
               >

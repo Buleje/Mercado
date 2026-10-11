@@ -138,7 +138,7 @@ export default function CtpRadarRendimiento({
                         <span className="font-mono tabular-nums">{r.desvioPct > 0 ? "+" : ""}{r.desvioPct}%</span>
                       )}
                     </span>
-                    <button type="button" onClick={() => onVerCorrida(r.id)} title="Abrir la ficha de la corrida" className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
+                    <button type="button" onClick={() => onVerCorrida(r.id)} title="Abrir la ficha de la corrida" className="inline-flex h-12 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
                       <Eye className="h-3.5 w-3.5" /> Ficha
                     </button>
                   </div>

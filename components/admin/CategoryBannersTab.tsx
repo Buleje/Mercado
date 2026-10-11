@@ -164,7 +164,7 @@ export default function CategoryBannersTab({
                       type="button"
                       onClick={() => updateBanner(cat.id, { enabled: !isEnabled })}
                       className={cn(
-                        "inline-flex items-center gap-1.5 px-3 h-9 rounded-xl text-xs font-bold transition-all",
+                        "inline-flex items-center gap-1.5 px-3 h-12 rounded-xl text-xs font-bold transition-all",
                         isEnabled
                           ? "bg-[var(--data-success-500)]/10 text-[var(--data-success-700)] hover:bg-[var(--data-success-500)]/20"
                           : "bg-[var(--rule-soft)] text-muted hover:bg-[var(--rule-base)]"
@@ -260,7 +260,7 @@ export default function CategoryBannersTab({
                         <button
                           type="button"
                           onClick={() => removeBanner(cat.id)}
-                          className="inline-flex items-center gap-1.5 px-3 h-9 rounded-xl text-xs font-bold text-[var(--data-error-600)] border-2 border-[var(--data-error-500)]/20 hover:bg-[var(--data-error-500)]/5"
+                          className="inline-flex items-center gap-1.5 px-3 h-12 rounded-xl text-xs font-bold text-[var(--data-error-600)] border-2 border-[var(--data-error-500)]/20 hover:bg-[var(--data-error-500)]/5"
                         >
                           Quitar banner
                         </button>
@@ -295,7 +295,7 @@ export default function CategoryBannersTab({
                         <p className="text-sm text-white/85 mt-1 line-clamp-2">{banner.subtitle || "Hasta 20% OFF en productos seleccionados"}</p>
                         <button
                           type="button"
-                          className="mt-3 self-start inline-flex items-center gap-1.5 px-4 h-9 rounded-xl bg-[var(--surface-raised)] text-primary text-xs font-bold shadow-[var(--shadow-lg)] pointer-events-none"
+                          className="mt-3 self-start inline-flex items-center gap-1.5 px-4 h-12 rounded-xl bg-[var(--surface-raised)] text-primary text-xs font-bold shadow-[var(--shadow-lg)] pointer-events-none"
                         >
                           {banner.ctaText || `Ver ${cat.label}`}
                           <ArrowRight className="h-3.5 w-3.5" />

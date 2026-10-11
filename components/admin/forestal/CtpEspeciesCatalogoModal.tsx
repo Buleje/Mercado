@@ -143,7 +143,7 @@ export default function CtpEspeciesCatalogoModal({
             type="button"
             onClick={() => void crear()}
             disabled={cat.guardando || !nombre.trim()}
-            className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white transition hover:brightness-95 disabled:opacity-50"
+            className="inline-flex h-12 items-center justify-center gap-1.5 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white transition hover:brightness-95 disabled:opacity-50"
           >
             {cat.guardando ? (
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
@@ -311,7 +311,7 @@ export default function CtpEspeciesCatalogoModal({
                     type="button"
                     onClick={() => void cat.restaurar(e.clave).then(tras)}
                     disabled={cat.guardando}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-sm text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:opacity-50"
+                    className="inline-flex h-12 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-sm text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:opacity-50"
                   >
                     <RotateCcw className="h-3.5 w-3.5" aria-hidden /> {e.nombre}
                   </button>

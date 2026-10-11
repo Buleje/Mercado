@@ -126,7 +126,7 @@ export default function CtpPatioPorPermiso({
             type="button"
             onClick={onDescargar}
             disabled={filas.length === 0}
-            className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-50"
+            className="inline-flex h-12 shrink-0 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] disabled:opacity-50"
           >
             <FileDown className="h-4 w-4" aria-hidden />
             Descargar el patio por permiso (Excel)

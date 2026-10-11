@@ -172,7 +172,7 @@ export default function CtpBarraSeleccion({
             <button
               type="button"
               onClick={onLimpiar}
-              className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+              className="inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
             >
               <X className="h-4 w-4" aria-hidden /> <span className="max-sm:sr-only">Limpiar</span>
             </button>
@@ -182,7 +182,7 @@ export default function CtpBarraSeleccion({
                 type="button"
                 disabled={a.disabled}
                 onClick={a.onClick}
-                className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--accent)] px-3 text-sm font-semibold text-[var(--accent-ink)] transition-colors hover:bg-primary/10 disabled:opacity-50 dark:text-[var(--accent)]"
+                className="inline-flex h-12 items-center gap-1.5 rounded-xl border-2 border-[var(--accent)] px-3 text-sm font-semibold text-[var(--accent-ink)] transition-colors hover:bg-primary/10 disabled:opacity-50 dark:text-[var(--accent)]"
               >
                 <a.icon className="h-4 w-4" aria-hidden /> {a.label}
               </button>

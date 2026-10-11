@@ -176,7 +176,7 @@ export default function CobroMasivoModal({
             <button
               type="button"
               onClick={() => setMonto(total.toFixed(2))}
-              className="h-11 rounded-xl bg-[var(--surface-sunken)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--rule-soft)]"
+              className="h-12 rounded-xl bg-[var(--surface-sunken)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--rule-soft)]"
             >
               Todo
             </button>

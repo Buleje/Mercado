@@ -32,14 +32,15 @@ import type {
   RecorridoDeTanda,
 } from "@/lib/forestal/toda-la-produccion";
 import { ListaDeAvance, ResumenDeTanda } from "./reparto-registrar-todo-partes";
+import { button } from "@/components/ui-system/button-variants";
 
 /** El `id` de la sección «Anexo 04 por permiso» de la Distribución: el siguiente paso salta ahí. */
 export const ID_SECCION_ANEXO = "reparto-anexo-permiso";
 
 const BTN =
-  "inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] transition hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50";
+  button({ variant: "secondary", className: "rounded-xl" });
 const BTN_PRIMARIO =
-  "inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50";
+  button({ variant: "accent", className: "rounded-xl" });
 const CAJA = "rounded-lg border px-3 py-2 text-sm";
 const CAJA_OK = `${CAJA} border-[var(--data-success-500)]/50 bg-[var(--data-success-500)]/10 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]`;
 const CAJA_ERROR = `${CAJA} border-[var(--data-error-500)]/50 bg-[var(--data-error-500)]/10 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]`;

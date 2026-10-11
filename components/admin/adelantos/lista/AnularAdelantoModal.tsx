@@ -133,7 +133,7 @@ export default function AnularAdelantoModal({
               type="button"
               onClick={() => setVia(null)}
               aria-pressed={via === null}
-              className={`h-9 rounded-lg px-3 text-sm font-bold transition-colors ${
+              className={`h-12 rounded-lg px-3 text-sm font-bold transition-colors ${
                 via === null
                   ? "bg-primary/12 text-[var(--accent-ink)] ring-2 ring-primary"
                   : "bg-[var(--surface-raised)] text-[var(--text-secondary)]"
@@ -147,7 +147,7 @@ export default function AnularAdelantoModal({
                 type="button"
                 onClick={() => setVia(v.id)}
                 aria-pressed={via === v.id}
-                className={`h-9 rounded-lg px-3 text-sm font-bold transition-colors ${
+                className={`h-12 rounded-lg px-3 text-sm font-bold transition-colors ${
                   via === v.id
                     ? "bg-primary/12 text-[var(--accent-ink)] ring-2 ring-primary"
                     : "bg-[var(--surface-raised)] text-[var(--text-secondary)]"

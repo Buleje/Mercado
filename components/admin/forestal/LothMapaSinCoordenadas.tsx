@@ -22,7 +22,7 @@ import { tituloSinCoordenadas, type ArbolSinCoordenadas } from "./loth-mapa-sin-
 export const LISTA_ABIERTA_HASTA = 5;
 
 const BTN =
-  "inline-flex h-11 items-center gap-1.5 whitespace-nowrap rounded-xl bg-[var(--brand-ink)] px-3 text-sm font-bold text-white hover:opacity-90 sm:h-9 sm:rounded-lg sm:text-xs";
+  "inline-flex h-12 items-center gap-1.5 whitespace-nowrap rounded-xl bg-[var(--brand-ink)] px-3 text-sm font-bold text-white hover:opacity-90 sm:h-12 sm:rounded-xl sm:text-xs";
 
 interface Props {
   arboles: readonly ArbolSinCoordenadas[];

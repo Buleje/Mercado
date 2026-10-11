@@ -12,11 +12,12 @@ import { AlertTriangle, Camera, Loader2, MapPin, X } from "@buleje/design-system
 import { colaboradorPorNombre } from "./LothTalaDatosInternos";
 import { nombreDeFila, pideJustificacion, queCorregir, type ComunesTala, type FilaTala } from "@/lib/forestal/loth-tala-tanda";
 import { subirFotoEvidencia, type Motosierrista } from "./hooks/use-tala-en-tanda";
+import { button } from "@/components/ui-system/button-variants";
 
 const INPUT =
   "h-10 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-tertiary)] focus:border-[var(--accent)] disabled:opacity-70";
 const BTN =
-  "inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-60";
+  button({ variant: "secondary", className: "rounded-xl" });
 const ROTULO = "mb-1 block text-xs font-semibold text-[var(--text-secondary)]";
 const ROJO = "text-[var(--data-error-700)] dark:text-[var(--data-error-500)]";
 

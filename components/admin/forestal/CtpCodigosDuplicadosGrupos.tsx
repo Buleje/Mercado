@@ -13,6 +13,7 @@ import { Hash } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { formatDate } from "@/lib/format";
+import { button } from "@/components/ui-system/button-variants";
 
 export interface PiezaDup {
   id: string;
@@ -35,7 +36,7 @@ export interface GrupoDup {
 }
 
 const BTN =
-  "inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:opacity-40";
+  button({ variant: "secondary", className: "rounded-xl" });
 
 const ETIQUETA = "rounded px-1.5 py-0.5 text-[length:var(--ts-2xs)] font-bold";
 

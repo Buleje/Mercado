@@ -58,7 +58,7 @@ export function SeccionPlegable({ clave, titulo, ayuda, resumen, rojo, children 
           aria-expanded={abierto}
           aria-controls={`${id}-panel`}
           aria-label={`${abierto ? "Ocultar" : "Ver"} ${titulo.toLowerCase()}`}
-          className="ml-auto inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 sm:h-9"
+          className="ml-auto inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
         >
           {abierto ? "Ocultar" : "Ver"}
           <ChevronDown className={`h-4 w-4 transition-transform ${abierto ? "rotate-180" : ""}`} aria-hidden="true" />

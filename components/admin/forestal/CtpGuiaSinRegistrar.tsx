@@ -26,6 +26,7 @@ import {
   textoDeResultado,
   type TonoEstado,
 } from "./guias-sin-registrar-pantalla";
+import { button } from "@/components/ui-system/button-variants";
 
 export const PASTILLA: Record<TonoEstado, string> = {
   ok: "border-[var(--data-success-500)]/40 bg-[var(--data-success-500)]/10 text-[var(--data-success-ink)]",
@@ -35,7 +36,7 @@ export const PASTILLA: Record<TonoEstado, string> = {
 };
 
 export const BOTON_SECUNDARIO =
-  "inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-xl border border-[var(--rule-strong)] bg-[var(--surface-raised)] px-3 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-50";
+  button({ variant: "secondary", className: "rounded-xl" });
 /** Sin la opacidad de deshabilitado: el botón que está registrando se ve entero, con su reloj. */
 const PRIMARIO_BASE =
   "inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-xl bg-[var(--accent-dark)] px-3.5 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed";

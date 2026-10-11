@@ -217,7 +217,7 @@ export default function GuardarEnLaCuentaModal({
             <div className="grid grid-cols-2 gap-1 rounded-2xl bg-[var(--surface-sunken)] p-1">
               {(["compra", "venta"] as const).map((s) => (
                 <button key={s} type="button" role="radio" aria-checked={sentido === s} onClick={() => setSentido(s)}
-                  className={`h-10 rounded-xl text-sm font-bold transition-colors ${sentido === s ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm" : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"}`}>
+                  className={`h-12 rounded-xl text-sm font-bold transition-colors ${sentido === s ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm" : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"}`}>
                   {s === "compra" ? "Te la trae" : "Se la entregas"}
                 </button>
               ))}

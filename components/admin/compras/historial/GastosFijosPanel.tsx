@@ -259,7 +259,7 @@ export default function GastosFijosPanel({
           <button
             type="button"
             onClick={() => setUnificando(true)}
-            className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl border-2 border-[var(--data-warning-500)]/50 bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)]"
+            className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl border-2 border-[var(--data-warning-500)]/50 bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)]"
           >
             <Wand2 className="h-4 w-4" aria-hidden />
             Unificar
@@ -340,7 +340,7 @@ export default function GastosFijosPanel({
                 type="button"
                 onClick={() => { setErrorPago(null); setPorConfirmar(f); }}
                 disabled={pagando === f.id}
-                className="inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-xl bg-primary px-3 text-sm font-semibold text-white transition-colors hover:bg-primary/90 disabled:opacity-50"
+                className="inline-flex h-12 w-full items-center justify-center gap-1.5 rounded-xl bg-primary px-3 text-sm font-semibold text-white transition-colors hover:bg-primary/90 disabled:opacity-50"
               >
                 {pagando === f.id ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
                 Registrar pago

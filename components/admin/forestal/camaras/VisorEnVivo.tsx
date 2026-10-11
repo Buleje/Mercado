@@ -31,6 +31,8 @@ import { useGuardarCuadro } from "./use-guardar-cuadro";
 import { useTransmitir } from "./use-transmitir";
 import { useDisponibilidadDeVideo, useFotosEncadenadas, useReproductorHls } from "./use-visor-camara";
 import { formatTime } from "@/lib/format";
+import { button } from "@/components/ui-system/button-variants";
+import { cn } from "@/lib/utils";
 
 /** Cada cuánto se pide el cuadro siguiente. `0` = pausado por quien mira. */
 const RITMOS = [
@@ -44,7 +46,7 @@ const hora = (t: number) =>
   formatTime(t, { segundos: true });
 
 const BOTON_CHICO =
-  "inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:opacity-50";
+  button({ variant: "secondary", className: "rounded-xl" });
 
 interface Props {
   camaraId: string;
@@ -169,7 +171,7 @@ export default function VisorEnVivo({ camaraId, nombre, direccionWebhook, onGuar
             <button
               type="button"
               onClick={fotos.reintentar}
-              className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--accent)] px-3 text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]"
+              className="inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--accent)] px-3 text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]"
             >
               <RefreshCw className="h-4 w-4" aria-hidden /> Reintentar
             </button>
@@ -202,7 +204,7 @@ export default function VisorEnVivo({ camaraId, nombre, direccionWebhook, onGuar
             disabled={!hayVideo}
             aria-pressed={modo === "video"}
             title={hayVideo ? "Video fluido" : (disponibilidad.fase === "no" ? disponibilidad.motivo : "Viendo si hay video…")}
-            className={`${BOTON_CHICO} ${modo === "video" ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : ""}`}
+            className={cn(BOTON_CHICO, `${modo === "video" ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : ""}`)}
           >
             <Video className="h-3.5 w-3.5" aria-hidden /> Video
           </button>
@@ -210,7 +212,7 @@ export default function VisorEnVivo({ camaraId, nombre, direccionWebhook, onGuar
             type="button"
             onClick={() => setModoElegido("fotos")}
             aria-pressed={modo === "fotos"}
-            className={`${BOTON_CHICO} ${modo === "fotos" ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : ""}`}
+            className={cn(BOTON_CHICO, `${modo === "fotos" ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : ""}`)}
           >
             <ImageIcon className="h-3.5 w-3.5" aria-hidden /> Fotos
           </button>
@@ -224,7 +226,7 @@ export default function VisorEnVivo({ camaraId, nombre, direccionWebhook, onGuar
                 type="button"
                 onClick={() => setRitmo(r.ms)}
                 aria-pressed={ritmo === r.ms}
-                className={`${BOTON_CHICO} ${ritmo === r.ms ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : ""}`}
+                className={cn(BOTON_CHICO, `${ritmo === r.ms ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : ""}`)}
               >
                 {r.ms === 0 ? <Play className="h-3.5 w-3.5" aria-hidden /> : null}
                 {r.etiqueta}

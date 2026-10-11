@@ -31,7 +31,7 @@ export default function OcNuevaOrdenProductos({ oc }: { oc: OrdenesCompra }) {
             <button
               type="button"
               onClick={() => setShowScanner(true)}
-              className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors"
+              className="inline-flex items-center gap-1.5 h-12 px-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-xs font-bold text-[var(--text-secondary)] hover:border-primary hover:text-primary transition-colors"
             >
               <ScanBarcode className="h-4 w-4" />
               Escanear
@@ -39,7 +39,7 @@ export default function OcNuevaOrdenProductos({ oc }: { oc: OrdenesCompra }) {
             <button
               type="button"
               onClick={() => { setAddItemMode("search"); setAddItemSearch(""); setAddItemSel(null); setShowAddItemModal(true); }}
-              className="inline-flex items-center gap-1.5 h-10 px-4 rounded-xl bg-primary text-white text-xs font-extrabold hover:bg-primary-dark transition-colors shadow-sm"
+              className="inline-flex items-center gap-1.5 h-12 px-4 rounded-xl bg-primary text-white text-xs font-extrabold hover:bg-primary-dark transition-colors shadow-sm"
             >
               <Plus className="h-4 w-4" strokeWidth={2.5} />
               Agregar producto

@@ -32,7 +32,7 @@ interface Props {
 
 const TARJETA = "min-w-0 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] px-2.5 py-2";
 const BTN =
-  "inline-flex h-10 items-center justify-center gap-1.5 rounded-xl px-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 disabled:opacity-50";
+  "inline-flex h-12 items-center justify-center gap-1.5 rounded-xl px-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 disabled:opacity-50";
 const BTN_SEC = `${BTN} border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-[var(--rule-strong)]`;
 
 function Tarjeta({ icono: Icono, titulo, cifra, detalle, porQue, extra }: { icono: LucideIcon; titulo: string; cifra: string; detalle?: string; porQue: string; extra?: string }) {
@@ -176,7 +176,7 @@ export default function LothMapaPlanResultado({ respuesta, agregado, guardando, 
               type="button"
               onClick={() => setOrdenAbierto((v) => !v)}
               aria-expanded={ordenAbierto}
-              className="flex h-10 min-w-0 flex-1 items-center gap-1.5 pl-2.5 text-left text-sm font-bold text-[var(--text-primary)]"
+              className="flex h-12 min-w-0 flex-1 items-center gap-1.5 pl-2.5 text-left text-sm font-bold text-[var(--text-primary)]"
             >
               <ChevronDown className={`h-4 w-4 flex-none transition-transform ${ordenAbierto ? "rotate-180" : ""}`} aria-hidden="true" />
               Orden de tala

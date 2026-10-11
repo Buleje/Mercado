@@ -35,7 +35,7 @@ export default function FleteTardio({
         type="button"
         onClick={() => setAbierto(true)}
         className={cn(
-          "mt-3 inline-flex items-center gap-1.5 h-9 px-3 rounded-xl border-2 text-sm font-bold transition-colors",
+          "mt-3 inline-flex items-center gap-1.5 h-12 px-3 rounded-xl border-2 text-sm font-bold transition-colors",
           yaTiene
             ? "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]"
             : "border-[var(--data-warning-500)]/40 bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/10 text-[var(--data-warning-500)]",
@@ -92,7 +92,7 @@ export default function FleteTardio({
           type="button"
           onClick={guardar}
           disabled={guardando}
-          className="inline-flex items-center gap-1.5 h-11 px-4 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-60"
+          className="inline-flex items-center gap-1.5 h-12 px-4 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-60"
         >
           {guardando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
           Guardar
@@ -100,7 +100,7 @@ export default function FleteTardio({
         <button
           type="button"
           onClick={() => { setAbierto(false); setMonto(orden.flete ?? 0); }}
-          className="h-11 px-3 rounded-xl text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+          className="h-12 px-3 rounded-xl text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
         >
           Cancelar
         </button>

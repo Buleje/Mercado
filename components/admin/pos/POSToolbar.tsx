@@ -16,6 +16,7 @@ import { estaAgotado } from "@/lib/pos/stock-vendible";
 import { edadCatalogo } from "@/components/admin/pos/pos-catalogo-offline";
 import { fmt, type CartItem, type Product } from "@/components/admin/pos/pos-shared";
 import type { POSCarrito } from "@/components/admin/pos/usePOSCarrito";
+import { button } from "@/components/ui-system/button-variants";
 
 type TamanoLetra = "normal" | "large" | "xlarge";
 const TAMANOS: { id: TamanoLetra; label: string }[] = [
@@ -50,7 +51,7 @@ interface POSToolbarProps {
 
 type DetectorDeCodigos = new (opts?: { formats: string[] }) => { detect: (img: ImageBitmap) => Promise<Array<{ rawValue: string }>> };
 
-const BOTON_48 = "shrink-0 inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors";
+const BOTON_48 = button({ variant: "secondary", size: "icon", className: "shrink-0 rounded-xl" });
 
 /**
  * Cabecera de Vender en UNA fila (10-10): buscador con lector, dictado y cámara · lo que falta para

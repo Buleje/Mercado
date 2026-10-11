@@ -18,6 +18,7 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { formatDateShort } from "@/lib/format";
 import LothMapaPlanResultado from "./LothMapaPlanResultado";
 import type { LothPlanificador, ParamsPlan } from "./hooks/use-loth-planificador";
+import { button } from "@/components/ui-system/button-variants";
 
 interface Props {
   plan: LothPlanificador;
@@ -29,7 +30,7 @@ const INPUT =
   "mt-0.5 h-9 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-sm font-bold tabular-nums text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/30";
 const SEG = "h-9 flex-1 rounded-lg px-2 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40";
 const BTN_ICONO =
-  "inline-flex h-10 w-10 flex-none items-center justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40";
+  button({ variant: "secondary", size: "icon", className: "flex-none rounded-xl" });
 
 const CAMPOS: { clave: Exclude<keyof ParamsPlan, "soloEnPie">; rotulo: string; unidad: string; min: number; max: number; ayuda: string }[] = [
   { clave: "pendienteMax", rotulo: "Pendiente máx.", unidad: "%", min: 5, max: 100, ayuda: "Más empinado que esto, el tractor no arrastra." },
@@ -143,7 +144,7 @@ export default function LothMapaPlanPanel({ plan, onCerrar }: Props) {
           <button
             type="submit"
             disabled={cargando}
-            className="inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white transition hover:brightness-95 disabled:opacity-60"
+            className="inline-flex h-12 w-full items-center justify-center gap-1.5 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white transition hover:brightness-95 disabled:opacity-60"
           >
             {cargando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Wand2 className="h-4 w-4" aria-hidden="true" />}
             {cargando ? (geoCargando ? "Buscando ríos y caminos…" : "Calculando…") : respuesta ? "Volver a proponer" : "Proponer"}
@@ -194,7 +195,7 @@ export default function LothMapaPlanPanel({ plan, onCerrar }: Props) {
           disabled={geoCargando}
           aria-label="Actualizar geografía"
           title="Volver a pedir los ríos, caminos y la altitud a internet"
-          className="inline-flex h-9 flex-none items-center gap-1 rounded-lg px-2 font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] disabled:opacity-50"
+          className="inline-flex h-12 flex-none items-center gap-1 rounded-lg px-2 font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] disabled:opacity-50"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${geoCargando ? "animate-spin" : ""}`} aria-hidden="true" />
           <span className="max-sm:hidden">Actualizar</span>

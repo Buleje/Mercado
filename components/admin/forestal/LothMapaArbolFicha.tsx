@@ -33,6 +33,7 @@ import LothMapaArbolSimbolo from "./LothMapaArbolSimbolo";
 import LothMapaArbolCadena from "./LothMapaArbolCadena";
 import LothMapaRegistrarTala from "./LothMapaRegistrarTala";
 import type { CensoTree } from "./loth-mapa-shared";
+import { button } from "@/components/ui-system/button-variants";
 
 interface Props {
   arbol: CensoTree;
@@ -50,7 +51,7 @@ const DATO = "rounded-lg bg-[var(--surface-sunken)] px-2 py-1.5";
 const DATO_ROTULO = "block text-xs font-semibold text-[var(--text-tertiary)]";
 const DATO_VALOR = "block text-sm font-bold tabular-nums text-[var(--text-primary)]";
 const BTN_ICONO =
-  "inline-flex h-11 w-11 flex-none items-center justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--data-info-500)]";
+  button({ variant: "secondary", size: "icon", className: "flex-none rounded-xl" });
 
 export default function LothMapaArbolFicha({ arbol, desdeTi, fuera, leyendoLibro = false, onCerrar, onCentrar }: Props) {
   const fichaRef = useRef<HTMLElement>(null);

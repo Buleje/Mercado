@@ -70,7 +70,7 @@ export default function CtpAvisoLlegadaTardia({
       <button
         type="button"
         onClick={onCorregir}
-        className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl border-2 border-[var(--data-warning-500)]/60 bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)]"
+        className="inline-flex h-12 shrink-0 items-center gap-2 rounded-xl border-2 border-[var(--data-warning-500)]/60 bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)]"
       >
         <CalendarClock className="h-4 w-4" aria-hidden /> Corregir la recepción
       </button>

@@ -17,6 +17,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { BlockTitle } from "@buleje/design-system";
 import { leerJson } from "@/lib/errores/sin-dato";
 import { AlertTriangle, Building2, CheckCircle, Info, Loader2, RefreshCw, User } from "@buleje/design-system/icons";
 import { csrfHeaders } from "@/lib/csrf-client";
@@ -206,7 +207,7 @@ export default function CrearPersonaModal({
       <div className="grid gap-x-8 gap-y-4 lg:grid-cols-2">
         {/* ── Quién es ─────────────────────────────────────────────────── */}
         <section className="space-y-4">
-          <Titulo>Quién es</Titulo>
+          <BlockTitle as="h3" className="border-b border-[var(--rule-soft)] pb-2">Quién es</BlockTitle>
           <Field label={oficial?.tipo === "RUC" ? "Nombre comercial o razón social" : "Nombre"}>
             <input value={nombre} onChange={(e) => setNombre(e.target.value)} className={inputCls} />
           </Field>
@@ -253,7 +254,7 @@ export default function CrearPersonaModal({
 
         {/* ── Cómo se le paga y cuánto ─────────────────────────────────── */}
         <section className="space-y-4">
-          <Titulo>Plata</Titulo>
+          <BlockTitle as="h3" className="border-b border-[var(--rule-soft)] pb-2">Plata</BlockTitle>
           <Field
             label="Límite de crédito S/ (opcional)"
             hint="Cuánto puede deber a la vez. Al pasarlo, el sistema avisa antes de dar el adelanto."
@@ -295,14 +296,6 @@ export default function CrearPersonaModal({
 
       {err && <p className="text-base font-semibold text-[var(--data-error)]">{err}</p>}
     </ModalShell>
-  );
-}
-
-function Titulo({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="border-b border-[var(--rule-soft)] pb-2 text-sm font-extrabold uppercase tracking-wide text-[var(--text-tertiary)]">
-      {children}
-    </div>
   );
 }
 

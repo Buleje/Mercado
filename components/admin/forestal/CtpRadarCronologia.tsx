@@ -126,7 +126,7 @@ export default function CtpRadarCronologia({
                   <span className="text-[var(--text-tertiary)]"> · {a.detalle}</span>
                   <span className="ml-1 font-bold text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">({a.dias} {a.dias === 1 ? "día" : "días"} al revés)</span>
                 </span>
-                <button type="button" onClick={() => onVerNodo(a.nodoId)} className="inline-flex h-9 shrink-0 items-center rounded-lg bg-[var(--accent)] px-3 text-xs font-bold text-white hover:bg-[var(--accent-600)]">
+                <button type="button" onClick={() => onVerNodo(a.nodoId)} className="inline-flex h-12 shrink-0 items-center rounded-lg bg-[var(--accent)] px-3 text-xs font-bold text-white hover:bg-[var(--accent-600)]">
                   Corregir fecha
                 </button>
               </li>

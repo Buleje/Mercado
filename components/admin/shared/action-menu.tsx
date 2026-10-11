@@ -76,7 +76,7 @@ export interface ActionMenuProps {
    * `outline` = el resto.
    */
   variant?: "outline" | "accent" | "primary";
-  /** `md` (h-12) para las barras de las vistas; `sm` (h-10) para la cabina. */
+  /** `md` (h-12, por defecto: ADR-489, todo el panel a 48 px); `sm` (h-10) y `xs` (h-8) sólo dentro de una fila densa. */
   size?: "xs" | "sm" | "md";
   /** Número al lado del label (pendientes, seleccionados). */
   badge?: number;
@@ -178,7 +178,7 @@ export default function ActionMenu({
   actions,
   icon: Icono,
   variant = "outline",
-  size = "sm",
+  size = "md",
   badge,
   disabled,
   title,

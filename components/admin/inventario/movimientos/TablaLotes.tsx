@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { soles } from "./use-indicadores";
 import { diaConNombre } from "./tipos";
 import { fraseDeDias, type LoteConDias, type Urgencia } from "./vencimientos";
+import { button } from "@/components/ui-system/button-variants";
 
 export const URGENCIA: Record<Urgencia, { label: string; chip: string; Icon: typeof AlertTriangle }> = {
   vencido: { label: "Vencidos", chip: "bg-[var(--data-error-100)] text-[var(--data-error-ink)] dark:bg-[var(--data-error-500)]/20 dark:text-[var(--data-error-500)]", Icon: AlertTriangle },
@@ -21,7 +22,7 @@ export const URGENCIA: Record<Urgencia, { label: string; chip: string; Icon: typ
   agotado: { label: "Sin stock", chip: "bg-[var(--surface-sunken)] text-[var(--text-secondary)]", Icon: PackageX },
 };
 
-const BOTON = "inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl border px-3 text-sm font-semibold transition-colors";
+const BOTON = button({ variant: "secondary", className: "shrink-0 rounded-xl" });
 
 interface Props {
   lotes: readonly LoteConDias[];

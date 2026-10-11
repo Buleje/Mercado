@@ -94,7 +94,7 @@ export default function PlanDeEntregas({
             disabled={!(montoAdelantado > 0) || cuotas.length === 0}
             onClick={() => onCambiar(conKeys(repartirCuotas(montoAdelantado, cuotas.length || 2, r.id)))}
             title={`Recalcular las fechas ${r.label}`}
-            className="h-9 rounded-lg bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-primary/12 hover:text-[var(--accent-ink)] disabled:opacity-40"
+            className="h-12 rounded-lg bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-primary/12 hover:text-[var(--accent-ink)] disabled:opacity-40"
           >
             {r.label}
           </button>
@@ -149,7 +149,7 @@ export default function PlanDeEntregas({
         <button
           type="button"
           onClick={agregar}
-          className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[var(--surface-raised)] px-3.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-primary/12 hover:text-[var(--accent-ink)]"
+          className="inline-flex h-12 items-center gap-1.5 rounded-xl bg-[var(--surface-raised)] px-3.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-primary/12 hover:text-[var(--accent-ink)]"
         >
           <Plus className="h-4 w-4" /> Agregar cuota
         </button>

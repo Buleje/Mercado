@@ -562,7 +562,7 @@ export default function PanelEntradaVoz({
             fijo={fijas.largo != null}
             onFijar={() => onAplicarFijas(fijas.largo != null ? (() => { const n = { ...fijas }; delete n.largo; return n; })() : { ...fijas, largo: Number(manual.largo) || 0 })}
           />
-          <button type="button" onClick={() => onConfirmarCarga(grillaId)} className="col-span-2 inline-flex h-11 items-center justify-center gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] sm:col-auto sm:h-10"><Plus className="h-4 w-4" /> Agregar a mano</button>
+          <button type="button" onClick={() => onConfirmarCarga(grillaId)} className="col-span-2 inline-flex h-12 items-center justify-center gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] sm:col-auto"><Plus className="h-4 w-4" /> Agregar a mano</button>
           {/* Precarga la medida típica del Comercial mínimo (2×8×10, Brandon
               2026-09-01) — NO agrega nada sola: sólo llena los campos para que
               el operario confirme la cantidad real que sacó y la agregue con
@@ -572,7 +572,7 @@ export default function PanelEntradaVoz({
             type="button"
             onClick={() => onManualChange({ cantidad: "1", espesor: "2", ancho: "8", largo: "10" })}
             title="Precarga 2×8×10 (Comercial) — confirma la cantidad real que sacaste y toca «Agregar a mano»"
-            className="col-span-2 inline-flex h-11 items-center justify-center gap-1 rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] sm:col-auto sm:h-10"
+            className="col-span-2 inline-flex h-12 items-center justify-center gap-1 rounded-xl border border-dashed border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] sm:col-auto"
           >
             <Plus className="h-4 w-4" /> Comercial mínimo
           </button>
@@ -585,7 +585,7 @@ export default function PanelEntradaVoz({
             onClick={() => onUpdateConfig({ speak: !speakOn })}
             aria-pressed={speakOn}
             title={speakOn ? "Apagar la voz que repite cada pieza (más rápido para cargar)" : "Prender la voz que repite cada pieza"}
-            className={`col-span-2 inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border-2 px-3 text-xs font-bold transition sm:col-auto sm:h-10 ${speakOn ? "border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]" : "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"}`}
+            className={`col-span-2 inline-flex h-12 items-center justify-center gap-1.5 rounded-xl border-2 px-3 text-xs font-bold transition sm:col-auto ${speakOn ? "border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]" : "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"}`}
           >
             {speakOn ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />} Voz: {speakOn ? "sí" : "no"}
           </button>

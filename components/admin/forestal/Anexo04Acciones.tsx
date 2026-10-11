@@ -8,8 +8,9 @@
  */
 import type { ReactNode } from "react";
 import { Download, FileSpreadsheet, FileText, Printer } from "@buleje/design-system/icons";
+import { button } from "@/components/ui-system/button-variants";
 
-const BTN = "inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]";
+const BTN = button({ variant: "secondary", className: "rounded-xl" });
 
 export default function Anexo04Acciones({
   presentable, generando, onPdfDetallado, onExcel, onResumenPapel, onImprimir, onDescargar, extra,
@@ -50,7 +51,7 @@ export default function Anexo04Acciones({
         onClick={onDescargar}
         disabled={generando}
         title={presentable ? "Descargar el ANEXO N° 04" : "Se puede descargar igual (para llenar a mano), pero le faltan datos obligatorios"}
-        className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white transition hover:brightness-95 disabled:opacity-60"
+        className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white transition hover:brightness-95 disabled:opacity-60"
       >
         <Download className="h-4 w-4" /> {generando ? "Generando…" : presentable ? "Descargar PDF" : "Descargar igual"}
       </button>

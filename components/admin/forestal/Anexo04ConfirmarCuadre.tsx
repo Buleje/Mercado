@@ -23,7 +23,7 @@ import type { CuadreDelPapel } from "@/lib/forestal/cuadre-del-papel";
 
 const TONO_ERROR =
   "border-[var(--data-error-500)]/50 bg-[var(--data-error-50)] text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/15 dark:text-[var(--data-error-500)]";
-const BTN = "inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-bold transition";
+const BTN = "inline-flex h-12 items-center gap-2 rounded-xl px-4 text-sm font-bold transition";
 
 /** La línea roja: qué no cuadra, el detalle en ⓘ y el atajo al cuadre. */
 export function LineaCuadre({ cuadre, onVerCuadre }: { cuadre: CuadreDelPapel; onVerCuadre?: () => void }) {

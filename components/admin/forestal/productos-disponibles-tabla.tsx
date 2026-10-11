@@ -36,11 +36,12 @@ import { ACCIONES_FIJAS, FilaPaquete } from "./productos-disponibles-fila";
 import { FiltrosMovilProductos } from "./productos-disponibles-filtros-movil";
 import type { AccionesProductos } from "./productos-disponibles-acciones";
 import type { EstadoProductosDisponibles } from "./hooks/use-productos-disponibles";
+import { button } from "@/components/ui-system/button-variants";
 
 const nf = (n: number) => formatNumber(n);
 const TODOS: EstadoProducto[] = ["libre", "apartado", "usado"];
 const BOTON =
-  "inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent-ink)] disabled:cursor-not-allowed disabled:opacity-50 dark:hover:text-[var(--accent)]";
+  button({ variant: "secondary", className: "rounded-xl" });
 const ENLACE = "font-bold text-[var(--accent-ink)] underline decoration-dotted underline-offset-2 dark:text-[var(--accent)]";
 
 export function TablaPaquetesDisponibles({ e, a }: { e: EstadoProductosDisponibles; a: AccionesProductos }) {

@@ -11,6 +11,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import { Scale, MapPin, Info, Sparkles } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
 import { estimarPreciosRegionales } from "@/lib/cacao/cacao-precio-regional";
+import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import CacaoChartPresent from "./CacaoChartPresent";
 
 const sol = (v: number, d = 2) => v.toLocaleString("es-PE", { minimumFractionDigits: d, maximumFractionDigits: d });
@@ -30,10 +31,32 @@ export default function CacaoPreciosRegionales({
   const model = useMemo(() => estimarPreciosRegionales(refSolKg, fino), [refSolKg, fino]);
   const maxPct = useMemo(() => (model ? Math.max(...model.plazas.map((p) => p.pctRef)) : 100), [model]);
 
+  /* Título + el cacao corriente o fino (el `SegmentedControl` del panel) + el botón de presentar. */
+  const cabecera = (present?: ReactNode) => (
+    <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+      <CardTitle className="text-sm font-bold flex items-center gap-2">
+        <Scale className="h-4 w-4 text-[var(--accent)]" /> A cuánto se vende
+      </CardTitle>
+      <div className="flex items-center gap-2">
+        <SegmentedControl<"corriente" | "fino">
+          size="lg"
+          label="Tipo de cacao"
+          value={fino ? "fino" : "corriente"}
+          onChange={(v) => setFino(v === "fino")}
+          options={[
+            { value: "corriente", label: "Corriente" },
+            { value: "fino", label: "Fino de aroma", icon: <Sparkles className="h-3.5 w-3.5" aria-hidden /> },
+          ]}
+        />
+        {present}
+      </div>
+    </div>
+  );
+
   if (!model) {
     return (
       <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-5">
-        <Header fino={fino} setFino={setFino} />
+        {cabecera()}
         <p className="py-8 text-center text-sm text-[var(--text-tertiary)]">
           Esperando el precio internacional para estimar los precios locales…
         </p>
@@ -45,7 +68,7 @@ export default function CacaoPreciosRegionales({
   // copia viva (mismo toggle fino). presentBtn = null dentro del modal.
   const content = (presentBtn?: ReactNode) => (
     <>
-      <Header fino={fino} setFino={setFino} present={presentBtn} />
+      {cabecera(presentBtn)}
       <p className="mb-3 text-xs text-[var(--text-tertiary)]">
         Estimado en <b className="text-[var(--text-secondary)]">S//kg</b> desde el precio internacional de hoy
         (S/ {sol(model.refSolKg)}/kg{usdPen ? ` · FX S/ ${sol(usdPen)}/USD` : ""}). Pasa el cursor por cada plaza para el detalle.
@@ -87,39 +110,6 @@ export default function CacaoPreciosRegionales({
   return (
     <div className="group relative rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       {content(onPresent ? <CacaoChartPresent title="A cuánto se vende · S//kg por plaza" onClick={onPresent} /> : undefined)}
-    </div>
-  );
-}
-
-function Header({ fino, setFino, present }: { fino: boolean; setFino: (v: boolean) => void; present?: ReactNode }) {
-  return (
-    <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
-      <CardTitle className="text-sm font-bold flex items-center gap-2">
-        <Scale className="h-4 w-4 text-[var(--accent)]" /> A cuánto se vende
-      </CardTitle>
-      <div className="flex items-center gap-2">
-      <div className="inline-flex rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-0.5">
-        <button
-          type="button"
-          onClick={() => setFino(false)}
-          className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
-            !fino ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-          }`}
-        >
-          Corriente
-        </button>
-        <button
-          type="button"
-          onClick={() => setFino(true)}
-          className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
-            fino ? "bg-[var(--accent)] text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-          }`}
-        >
-          <Sparkles className="h-3.5 w-3.5" /> Fino de aroma
-        </button>
-      </div>
-      {present}
-      </div>
     </div>
   );
 }

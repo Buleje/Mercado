@@ -23,7 +23,7 @@ export const CAMPO_AYUDA = "mt-1 text-xs text-[var(--text-tertiary)]";
 export const CAMPO_AVISO = "mt-1 text-xs font-semibold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]";
 
 const BOTON =
-  "inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex h-12 items-center gap-1.5 rounded-xl px-3 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60";
 export const BOTON_PRIMARIO = `${BOTON} bg-[var(--accent)] text-white hover:bg-[var(--accent-600)]`;
 export const BOTON_SUAVE = `${BOTON} border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]`;
 export const BOTON_ICONO =

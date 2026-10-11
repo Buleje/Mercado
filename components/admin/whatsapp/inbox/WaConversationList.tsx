@@ -148,7 +148,7 @@ export default function WaConversationList({
             type="button"
             onClick={() => setUnreadOnly((s) => !s)}
             className={cn(
-              "inline-flex h-9 items-center gap-1 rounded-full border-2 px-3 text-sm font-bold transition",
+              "inline-flex h-12 items-center gap-1 rounded-full border-2 px-3 text-sm font-bold transition",
               unreadOnly
                 ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-primary/50 ",
@@ -190,7 +190,7 @@ export default function WaConversationList({
               type="button"
               onClick={onToggleShowArchived}
               className={cn(
-                "inline-flex h-9 items-center gap-1.5 rounded-full border-2 px-3 text-sm font-bold transition",
+                "inline-flex h-12 items-center gap-1.5 rounded-full border-2 px-3 text-sm font-bold transition",
                 showArchived
                   ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                   : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-primary/50 ",

@@ -27,6 +27,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown } from "@buleje/design-system/icons";
+import { button } from "@/components/ui-system/button-variants";
+import { cn } from "@/lib/utils";
 
 export interface AccionMenu {
   key: string;
@@ -45,7 +47,7 @@ export interface AccionMenu {
 }
 
 const BOTON =
-  "inline-flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-bold transition-colors disabled:opacity-50";
+  button({ variant: "secondary", className: "rounded-xl" });
 const NEUTRO = "border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]";
 const DESTACADO = "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]";
 
@@ -71,7 +73,7 @@ export function AccionLote({
       onClick={onClick}
       title={hint}
       disabled={disabled}
-      className={`${BOTON} ${destacado ? `${DESTACADO} hover:brightness-95` : NEUTRO}`}
+      className={cn(BOTON, destacado ? `${DESTACADO} hover:brightness-95` : NEUTRO)}
     >
       {Icono && <Icono className="h-3.5 w-3.5" />}
       {label}
@@ -128,7 +130,7 @@ export function MenuAcciones({
         onClick={() => setAbierto((v) => !v)}
         aria-expanded={abierto}
         aria-haspopup="menu"
-        className={`${BOTON} ${abierto || hayActivo || badge ? DESTACADO : NEUTRO}`}
+        className={cn(BOTON, `${abierto || hayActivo || badge ? DESTACADO : NEUTRO}`)}
       >
         {Icono && <Icono className="h-3.5 w-3.5" />}
         {etiqueta}

@@ -31,6 +31,7 @@ import LothPoaParametros from "./LothPoaParametros";
 import { BloquePlan, BotonPlegar, CifraLinea } from "./loth-plan-ui";
 import { BarraFiltrosTabla, FiltroEnCabecera, SinCoincidenciasFila, useFiltrosTabla } from "./filtros-tabla-forestal";
 import { COLUMNAS_POA } from "./loth-plan-columnas-filtro";
+import { button } from "@/components/ui-system/button-variants";
 
 /** Clave de la preferencia. Exportada: la prueba en navegador la lee. */
 export const CLAVE_INDICADORES_POA = "loth:plan:poa-indicadores-abiertos";
@@ -38,7 +39,7 @@ export const CLAVE_INDICADORES_POA = "loth:plan:poa-indicadores-abiertos";
 const CELL = "px-3 py-2 text-sm";
 const NUM = `${CELL} text-right font-mono tabular-nums`;
 const BTN =
-  "inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40";
+  button({ variant: "secondary", className: "rounded-xl" });
 
 interface Props {
   analisis: PoaAnalisis;
@@ -124,7 +125,7 @@ export default function LothPoaPanel({ analisis, config, saving, sucio = false, 
             <button
               type="button"
               onClick={onPrint}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--brand-ink)] px-3 text-xs font-bold text-white hover:opacity-90"
+              className="inline-flex h-12 items-center gap-1.5 rounded-lg bg-[var(--brand-ink)] px-3 text-xs font-bold text-white hover:opacity-90"
             >
               <Printer className="h-3.5 w-3.5" /> Anexo POA
             </button>

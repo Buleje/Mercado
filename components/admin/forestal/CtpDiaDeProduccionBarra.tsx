@@ -67,7 +67,7 @@ export default function CtpDiaDeProduccionBarra({
           disabled={bajando}
           onClick={onExcel}
           title="Un archivo con la hoja pieza por pieza y el resumen del día"
-          className={`${SECUNDARIO} h-9 px-2.5 text-xs`}
+          className={`${SECUNDARIO} h-12 px-2.5 text-xs`}
         >
           {bajando ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
@@ -81,7 +81,7 @@ export default function CtpDiaDeProduccionBarra({
             type="button"
             onClick={onAgregarCubicacion}
             title="Vincular la pieza por pieza a lo declarado por tipo, sin cambiar los m³"
-            className={`${SECUNDARIO} h-11 px-3 text-sm`}
+            className={`${SECUNDARIO} h-12 px-3 text-sm`}
           >
             <Ruler className="h-4 w-4" aria-hidden />
             Agregar cubicación
@@ -92,7 +92,7 @@ export default function CtpDiaDeProduccionBarra({
             type="button"
             onClick={onVincularMixto}
             title="Atar las corridas de este día a las trozas del lote mixto de donde salieron"
-            className={`${SECUNDARIO} h-11 px-3 text-sm`}
+            className={`${SECUNDARIO} h-12 px-3 text-sm`}
           >
             <Link2 className="h-4 w-4" aria-hidden />
             Vincular con lote mixto

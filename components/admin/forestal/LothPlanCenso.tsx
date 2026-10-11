@@ -151,7 +151,7 @@ export default function LothPlanCenso({ planId, trees, total, truncado, authoriz
       }
       acciones={
         <>
-          <button type="button" onClick={() => setImporting(true)} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Upload className="h-3.5 w-3.5" /> {plantacion ? "Importar árboles" : "Importar censo"}</button>
+          <button type="button" onClick={() => setImporting(true)} className="inline-flex h-12 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Upload className="h-3.5 w-3.5" /> {plantacion ? "Importar árboles" : "Importar censo"}</button>
           <BotonBorrarTodos total={total} borrando={borrando} onBorrar={() => void borrarVarios({ todos: true }, total, plantacion ? `los ${formatNumber(total)} árboles marcados` : `los ${formatNumber(total)} árboles del censo`)} />
           <AddBtn onClick={() => setOpen(true)} />
         </>
@@ -227,7 +227,7 @@ export default function LothPlanCenso({ planId, trees, total, truncado, authoriz
           <button
             type="button"
             onClick={() => setVisibles((v) => v + 200)}
-            className="h-10 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
+            className="h-12 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
           >
             Ver 200 más ({formatNumber(filtered.length - visibles)} restantes)
           </button>

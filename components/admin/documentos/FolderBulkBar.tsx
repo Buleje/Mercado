@@ -123,7 +123,7 @@ export default function FolderBulkBar({
   }
 
   const btn =
-    "inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold transition-colors disabled:opacity-50";
+    "inline-flex h-12 items-center gap-1.5 rounded-xl px-2.5 text-xs font-bold transition-colors disabled:opacity-50";
 
   return (
     <div

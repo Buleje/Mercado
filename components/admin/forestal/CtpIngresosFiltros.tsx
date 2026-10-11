@@ -400,7 +400,7 @@ export default function CtpIngresosFiltros({
                   <button
                     type="button"
                     onClick={onLimpiarMovil}
-                    className="mt-3 inline-flex h-11 items-center gap-1 rounded-full px-3 text-sm font-bold text-[var(--text-secondary)] underline-offset-2 hover:text-[var(--text-primary)] hover:underline"
+                    className="mt-3 inline-flex h-12 items-center gap-1 rounded-full px-3 text-sm font-bold text-[var(--text-secondary)] underline-offset-2 hover:text-[var(--text-primary)] hover:underline"
                   >
                     <X className="h-3.5 w-3.5" aria-hidden />
                     Quitar los filtros por columna
@@ -475,7 +475,7 @@ function StatusChip({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`inline-flex h-9 items-center gap-2 rounded-full border px-3.5 text-sm font-bold transition ${
+      className={`inline-flex h-12 items-center gap-2 rounded-full border px-3.5 text-sm font-bold transition ${
         active
           ? activeCls
           : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)] hover:text-[var(--text-primary)]"

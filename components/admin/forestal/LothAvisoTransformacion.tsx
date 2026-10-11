@@ -46,7 +46,7 @@ export default function LothAvisoTransformacion({
           <button
             type="button"
             onClick={onIrAlCtp}
-            className="inline-flex h-9 shrink-0 items-center gap-1 whitespace-nowrap rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--accent-ink)] transition-colors hover:bg-[var(--surface-sunken)] dark:text-[var(--accent)]"
+            className="inline-flex h-12 shrink-0 items-center gap-1 whitespace-nowrap rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--accent-ink)] transition-colors hover:bg-[var(--surface-sunken)] dark:text-[var(--accent)]"
           >
             Ir al Libro CTP
             <ArrowRight className="h-4 w-4" aria-hidden="true" />

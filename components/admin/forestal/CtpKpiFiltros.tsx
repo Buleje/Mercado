@@ -113,7 +113,7 @@ export default function CtpKpiFiltros({
         <button
           type="button"
           onClick={onLimpiar}
-          className="flex h-10 items-center gap-1.5 self-end rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)]"
+          className="flex h-12 items-center gap-1.5 self-end rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)]"
         >
           <X className="h-4 w-4" aria-hidden /> Ver todo
         </button>
@@ -253,7 +253,7 @@ export function NotaFiltrosKpi({ nota, onLimpiar }: { nota: string | null; onLim
       <button
         type="button"
         onClick={onLimpiar}
-        className="flex h-10 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)]"
+        className="flex h-12 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)]"
       >
         <X className="h-4 w-4" aria-hidden /> Ver todo
       </button>

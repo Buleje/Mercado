@@ -5,7 +5,7 @@
  */
 
 import type { ReactNode } from "react";
-import { CardTitle, DataTable } from "@buleje/design-system";
+import { CardTitle } from "@buleje/design-system";
 import { ChevronDown, Plus, ShieldAlert, type LucideIcon } from "@buleje/design-system/icons";
 import { CATEGORIA_COLOR, CATEGORIA_LABEL } from "@/lib/forestal/loth-poa";
 
@@ -101,24 +101,6 @@ export const cls = "w-full h-10 rounded-lg border border-[var(--rule-base)] bg-[
 export const editCls = "w-24 h-9 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2 text-right text-sm tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--data-success-600)] focus:ring-1 focus:ring-[var(--data-success-600)]/20";
 export function Field({ label, children }: { label: string; children: ReactNode }) {
   return <label className="block"><span className="mb-1 block text-xs font-medium text-[var(--text-secondary)]">{label}</span>{children}</label>;
-}
-export function Table({ head, children, alto, filtroDe }: {
-  head: string[]; children: ReactNode; alto?: string;
-  /** El autofiltro de la columna `i`, pegado a su título (ver `filtros-tabla-forestal`). */
-  filtroDe?: (i: number) => ReactNode;
-}) {
-  /* Sin un div de scroll alrededor: `DataTable` ya trae su caja, y dos cajas
-     anidadas despegan el `<thead>` fijo. Con `alto`, la tabla scrollea adentro
-     y la cabecera queda arriba: un censo de miles de árboles no empuja el
-     croquis tres pantallas más abajo. */
-  return (
-    <DataTable className="w-full" stickyHeader={Boolean(alto)} wrapperClassName={alto}>
-      <thead className={`${filtroDe ? "align-top" : ""}`}>
-        <tr>{head.map((h, i) => <th key={i} className={`${i >= 2 ? "text-right" : ""}`}>{h}{filtroDe?.(i)}</th>)}</tr>
-      </thead>
-      <tbody>{children}</tbody>
-    </DataTable>
-  );
 }
 export function Cell({ children, right }: { children: ReactNode; right?: boolean }) {
   return <td className={`${right ? "text-right" : ""}`}>{children}</td>;

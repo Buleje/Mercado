@@ -118,7 +118,7 @@ export default function LothEspecieFichas({
               <button
                 type="button"
                 onClick={onImprimir}
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
+                className="inline-flex h-12 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"
               >
                 <Printer className="h-3.5 w-3.5" /> Imprimir
               </button>
@@ -127,7 +127,7 @@ export default function LothEspecieFichas({
               <button
                 type="button"
                 onClick={onAgregar}
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--accent-dark)] px-3 text-xs font-bold text-white hover:opacity-90"
+                className="inline-flex h-12 items-center gap-1.5 rounded-lg bg-[var(--accent-dark)] px-3 text-xs font-bold text-white hover:opacity-90"
               >
                 + Agregar
               </button>
@@ -232,7 +232,7 @@ export default function LothEspecieFichas({
                         <button
                           type="button"
                           onClick={() => onEditar(f.speciesId!)}
-                          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-raised)]"
+                          className="inline-flex h-12 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-raised)]"
                         >
                           <Pencil className="h-3.5 w-3.5" /> Editar
                         </button>
@@ -241,7 +241,7 @@ export default function LothEspecieFichas({
                         <button
                           type="button"
                           onClick={() => onBorrar(f.speciesId!)}
-                          className="inline-flex h-9 items-center gap-1.5 rounded-lg border-2 border-[var(--data-error-500)]/40 px-3 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-500)]/10 dark:text-[var(--data-error-500)]"
+                          className="inline-flex h-12 items-center gap-1.5 rounded-lg border-2 border-[var(--data-error-500)]/40 px-3 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-500)]/10 dark:text-[var(--data-error-500)]"
                         >
                           <Trash2 className="h-3.5 w-3.5" /> Quitar del plan
                         </button>

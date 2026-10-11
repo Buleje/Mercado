@@ -28,9 +28,10 @@ import {
   type ResultadoLotesPorBloque,
 } from "@/lib/forestal/lotes-por-bloque";
 import { crearLotesPorBloque, previsualizarLotesPorBloque } from "./reparto-lotes-sugeridos-api";
+import { button } from "@/components/ui-system/button-variants";
 
-const BTN = "inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] transition hover:text-[var(--text-primary)] disabled:opacity-50";
-const BTN_PRIMARIO = "inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white transition hover:brightness-95 disabled:opacity-50";
+const BTN = button({ variant: "secondary", className: "rounded-xl" });
+const BTN_PRIMARIO = button({ variant: "accent", className: "rounded-xl" });
 const TD = "align-top";
 
 type Props = {

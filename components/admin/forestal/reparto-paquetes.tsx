@@ -29,6 +29,7 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { ctpGet } from "@/lib/forestal/ctp-fetch";
 import { fmtM3, fmtPiezas } from "@/lib/forestal/cubicacion-formato";
 import type { CorridaDisponible } from "@/lib/forestal/despacho-lista";
+import { button } from "@/components/ui-system/button-variants";
 
 /** Un candidato de la lista: un paquete con código, o la corrida entera si no tiene paquetes. */
 export interface PaqueteElegible {
@@ -102,7 +103,7 @@ export function filtrarElegibles(lista: readonly PaqueteElegible[], termino: str
   );
 }
 
-const BTN = "inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:opacity-40";
+const BTN = button({ variant: "secondary", className: "rounded-xl" });
 
 export default function RepartoPaquetesPicker({
   yaCargados, onAgregar, onCerrar,
@@ -222,7 +223,7 @@ export default function RepartoPaquetesPicker({
           type="button"
           disabled={elegidos.length === 0}
           onClick={() => { onAgregar(elegidos); onCerrar(); }}
-          className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:brightness-95 disabled:opacity-40"
+          className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:brightness-95 disabled:opacity-40"
         >
           <Check className="h-4 w-4" aria-hidden />
           {elegidos.length === 0

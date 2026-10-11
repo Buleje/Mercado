@@ -33,6 +33,8 @@ import { descargarArchivo } from "@/lib/documentos/archivo-remoto";
 import AvisoArchivo from "./AvisoArchivo";
 import FilaBloqueTexto from "./FilaBloqueTexto";
 import { formatNumber, formatTime } from "@/lib/format";
+import { button } from "@/components/ui-system/button-variants";
+import { cn } from "@/lib/utils";
 
 type Estado = "cargando" | "listo" | "guardando" | "error";
 
@@ -41,7 +43,7 @@ const AUTOGUARDADO_MS = 120_000;
 /** Tope de instantáneas de deshacer: suficiente para trabajar, acotado en memoria. */
 const MAX_HISTORIAL = 100;
 
-const BOTON_HEADER = "inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] transition hover:bg-[var(--surface-canvas)] disabled:opacity-40 disabled:hover:bg-[var(--surface-raised)]";
+const BOTON_HEADER = button({ variant: "secondary", className: "rounded-xl" });
 
 export default function DocumentoTextoEditor({
   docId, nombre, mimeType,
@@ -331,21 +333,21 @@ export default function DocumentoTextoEditor({
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <button type="button" onClick={deshacer} disabled={historial.current.pasado.length === 0}
-            title="Deshacer (Ctrl+Z)" className={`${BOTON_HEADER} w-10 px-0`}>
+            title="Deshacer (Ctrl+Z)" className={cn(BOTON_HEADER, "w-12 px-0")}>
             <Undo2 className="h-4 w-4" aria-hidden /><span className="sr-only">Deshacer</span>
           </button>
           <button type="button" onClick={rehacer} disabled={historial.current.futuro.length === 0}
-            title="Rehacer (Ctrl+Y)" className={`${BOTON_HEADER} w-10 px-0`}>
+            title="Rehacer (Ctrl+Y)" className={cn(BOTON_HEADER, "w-12 px-0")}>
             <Redo2 className="h-4 w-4" aria-hidden /><span className="sr-only">Rehacer</span>
           </button>
           <button type="button" onClick={() => insertar()} title="Agregar un párrafo al final" className={BOTON_HEADER}>
             <Plus className="h-4 w-4" aria-hidden /> <span className="hidden sm:inline">Párrafo</span>
             <span className="sr-only sm:hidden">Agregar párrafo</span>
           </button>
-          <button type="button" onClick={() => imprimirTexto(bloques, nombre)} title="Imprimir o guardar PDF" className={`${BOTON_HEADER} w-10 px-0`}>
+          <button type="button" onClick={() => imprimirTexto(bloques, nombre)} title="Imprimir o guardar PDF" className={cn(BOTON_HEADER, "w-12 px-0")}>
             <Printer className="h-4 w-4" aria-hidden /><span className="sr-only">Imprimir o guardar PDF</span>
           </button>
-          <button type="button" onClick={() => void descargar()} title="Descargar una copia con los cambios de ahora" className={`${BOTON_HEADER} w-10 px-0`}>
+          <button type="button" onClick={() => void descargar()} title="Descargar una copia con los cambios de ahora" className={cn(BOTON_HEADER, "w-12 px-0")}>
             <Download className="h-4 w-4" aria-hidden /><span className="sr-only">Descargar copia</span>
           </button>
           <button
@@ -353,7 +355,7 @@ export default function DocumentoTextoEditor({
             onClick={() => void guardar()}
             disabled={estado === "guardando" || !sucio}
             title="Guardar en el panel (Ctrl+S)"
-            className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:bg-[var(--accent-600)] disabled:opacity-50"
+            className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:bg-[var(--accent-600)] disabled:opacity-50"
           >
             {estado === "guardando" ? <Loader2 className="h-4 w-4 animate-spin" /> : sucio ? <Save className="h-4 w-4" /> : <Check className="h-4 w-4" />}
             {estado === "guardando" ? "Guardando…" : "Guardar"}

@@ -157,7 +157,7 @@ export default function CtpTrozasView() {
             type="button"
             onClick={() => setVerSinTitulo(true)}
             title="Piezas paradas sin título habilitante: ver cuáles y de qué guía"
-            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10 px-2.5 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--data-warning-500)]/20"
+            className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-lg border border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10 px-2.5 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--data-warning-500)]/20"
           >
             <ShieldAlert className="h-4 w-4 text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]" aria-hidden="true" />
             Sin título declarado
@@ -169,7 +169,7 @@ export default function CtpTrozasView() {
           {/* Qué mandar hoy a la sierra (Brandon 05-10): las más viejas primero, por especie. */}
           <button
             type="button" onClick={() => setVerPlan(true)} disabled={cargando}
-            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-[var(--accent)] px-3 text-sm font-bold text-[var(--accent-ink)] transition-colors hover:bg-primary/10 disabled:opacity-60 dark:text-[var(--accent)]"
+            className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-lg border border-[var(--accent)] px-3 text-sm font-bold text-[var(--accent-ink)] transition-colors hover:bg-primary/10 disabled:opacity-60 dark:text-[var(--accent)]"
           >
             <Axe className="h-4 w-4" aria-hidden="true" /> Plan del día
           </button>

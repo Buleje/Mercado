@@ -91,7 +91,7 @@ export default function LothMapaEtapasBarra({ arb }: { arb: LothMapaArboles }) {
           <button
             type="button"
             onClick={etapas.reintentar}
-            className="inline-flex h-9 items-center gap-1 rounded-lg px-2 font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+            className="inline-flex h-12 items-center gap-1 rounded-lg px-2 font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
           >
             <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" /> Reintentar
           </button>

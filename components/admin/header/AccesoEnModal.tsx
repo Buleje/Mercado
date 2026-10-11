@@ -30,6 +30,7 @@ import { ModuleDepthProvider } from "@/components/admin/shared/module-depth";
 import { useModalAccesible } from "@/hooks/use-modal-accesible";
 import { VistaEmbebidaProvider } from "@/hooks/use-vista-modulo";
 import { hrefDelAcceso, type AccesoId, type AccesoRapido } from "./accesos-rapidos";
+import { button } from "@/components/ui-system/button-variants";
 
 const Cargando = () => <LoadingState message="Cargando…" />;
 type Modulo = ComponentType<{ initialTab?: string } | undefined>;
@@ -55,7 +56,7 @@ const MODULOS: Record<AccesoId, Modulo> = {
 };
 
 const BOTON =
-  "grid h-12 w-12 shrink-0 place-items-center rounded-xl text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]";
+  button({ variant: "ghost", size: "icon", className: "shrink-0 rounded-xl" });
 
 /** Enfoca `selector` dentro de `caja` en cuanto se dibuja (el módulo carga aparte), con tope. */
 function enfocarAlAparecer(caja: HTMLElement | null, selector: string, topeMs = 8000): () => void {

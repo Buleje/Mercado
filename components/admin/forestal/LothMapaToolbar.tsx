@@ -143,7 +143,7 @@ export default function LothMapaToolbar({
           aria-pressed={planificar.activo}
           aria-label="Planificar la extracción"
           title="Propone patio, campamento, trochas y camino de salida según el terreno"
-          className={`inline-flex h-10 min-w-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border px-2.5 text-sm font-bold transition-colors max-sm:hidden @5xl:px-3 ${
+          className={`inline-flex h-12 min-w-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border px-2.5 text-sm font-bold transition-colors max-sm:hidden @5xl:px-3 ${
             planificar.activo
               ? "border-transparent bg-[var(--brand-ink)] text-white"
               : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
@@ -162,7 +162,7 @@ export default function LothMapaToolbar({
                 ? "Salir de elegir varios (Escape)"
                 : "Marca varios árboles en pie y tálalos juntos en una sola planilla"
             }
-            className={`inline-flex h-11 items-center gap-1.5 whitespace-nowrap rounded-xl border px-3 text-sm font-bold transition-colors ${
+            className={`inline-flex h-12 items-center gap-1.5 whitespace-nowrap rounded-xl border px-3 text-sm font-bold transition-colors ${
               variosTala.activo
                 ? "border-transparent bg-[var(--brand-ink)] text-white"
                 : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
@@ -178,7 +178,7 @@ export default function LothMapaToolbar({
             onClick={onGuardar}
             disabled={guardando}
             title="Hay referencias, vías o datos del predio que todavía no se guardaron"
-            className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10 px-3 text-sm font-bold text-[var(--data-warning-700)] transition-colors hover:bg-[var(--data-warning-500)]/20 disabled:opacity-60 dark:text-[var(--data-warning-500)]"
+            className="inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/10 px-3 text-sm font-bold text-[var(--data-warning-700)] transition-colors hover:bg-[var(--data-warning-500)]/20 disabled:opacity-60 dark:text-[var(--data-warning-500)]"
           >
             {guardando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Save className="h-4 w-4" aria-hidden="true" />}
             Guardar cambios

@@ -148,7 +148,7 @@ export default function PlantacionPasoDocumentos({
                     type="button"
                     onClick={() => inputs.current[cat.key]?.click()}
                     disabled={subiendo === cat.key}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-dashed border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent-ink)] disabled:opacity-60 dark:hover:text-[var(--accent)]"
+                    className="inline-flex h-12 items-center gap-1.5 rounded-lg border border-dashed border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent-ink)] disabled:opacity-60 dark:hover:text-[var(--accent)]"
                   >
                     {subiendo === cat.key ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <Paperclip className="h-3.5 w-3.5" aria-hidden="true" />}
                     {subiendo === cat.key ? "Subiendo…" : "Subir documento"}

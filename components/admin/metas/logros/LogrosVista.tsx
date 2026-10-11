@@ -30,9 +30,10 @@ import { AREAS_LOGRO } from "./areas-logro";
 import { avanceLogro } from "./formato-logro";
 import { useRecordsDelNegocio } from "./RecordsDelNegocio";
 import { TarjetaLogro } from "./TarjetaLogro";
+import { button } from "@/components/ui-system/button-variants";
 
 const BOTON_ICONO =
-  "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40";
+  button({ variant: "ghost", size: "icon", className: "shrink-0 rounded-xl" });
 const COLOR_AREA: ReadonlyMap<AreaLogro, string> = new Map(AREAS_LOGRO.map((a) => [a.id, a.color]));
 
 /** Ganados primero (el más reciente arriba); después los que más avanzaron; «sin dato» al final. */

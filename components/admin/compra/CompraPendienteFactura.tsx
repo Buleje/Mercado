@@ -67,7 +67,7 @@ export default function CompraPendienteFactura({ pendiente, products, categorias
           type="button"
           onClick={() => setAbierto((v) => !v)}
           aria-expanded={abierto}
-          className="inline-flex items-center gap-1 h-9 px-3 rounded-lg border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+          className="inline-flex items-center gap-1 h-12 px-3 rounded-lg border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
         >
           <Plus className="h-4 w-4" aria-hidden /> Crear
         </button>
@@ -98,7 +98,7 @@ export default function CompraPendienteFactura({ pendiente, products, categorias
             type="button"
             onClick={() => onCrear({ category: categoria, price: precioNum })}
             disabled={!listo || creando}
-            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary-dark disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 h-12 px-3 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary-dark disabled:opacity-50"
           >
             {creando && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
             Crear y agregar

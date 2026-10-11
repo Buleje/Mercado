@@ -187,7 +187,7 @@ export default function CacaoLoteDrawer({
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex h-10 items-center rounded-xl px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+              className="inline-flex h-12 items-center rounded-xl px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
             >
               Cerrar
             </button>
@@ -212,7 +212,7 @@ export default function CacaoLoteDrawer({
             <button
               type="button"
               onClick={() => printCacaoRecibo(lote, acopiador)}
-              className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:opacity-90"
+              className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:opacity-90"
             >
               <Printer className="h-4 w-4" /> Recibo
             </button>
@@ -468,7 +468,7 @@ export default function CacaoLoteDrawer({
                           setCopied(true);
                           setTimeout(() => setCopied(false), 1800);
                         }}
-                        className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+                        className="inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
                       >
                         {copied ? (
                           <Check className="h-3.5 w-3.5 text-[var(--data-success-600)]" />

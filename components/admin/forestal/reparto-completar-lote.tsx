@@ -27,9 +27,10 @@ import {
   type PlanCompletar,
 } from "@/lib/forestal/jornadas-de-bloque";
 import { RENDIMIENTO_TOPE_PCT } from "@/lib/forestal/produccion-paquetes";
+import { button } from "@/components/ui-system/button-variants";
 
-const BTN = "inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] transition hover:text-[var(--text-primary)] disabled:opacity-50";
-const BTN_PRIMARIO = "inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white transition hover:brightness-95 disabled:opacity-50";
+const BTN = button({ variant: "secondary", className: "rounded-xl" });
+const BTN_PRIMARIO = button({ variant: "accent", className: "rounded-xl" });
 const CAMPO = "h-10 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
 
 type Linea = "LPC" | "LRE";

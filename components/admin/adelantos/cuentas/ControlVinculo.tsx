@@ -117,14 +117,14 @@ export default function ControlVinculo({
           setGuardando(false);
           if (ok) setEligiendo(false);
         }}
-        className="h-9 rounded-lg bg-primary px-3 text-sm font-bold text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
+        className="h-12 rounded-lg bg-primary px-3 text-sm font-bold text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
       >
         {guardando ? "Vinculando…" : seleccion && seleccion === parteSugerida ? "Sí, vincular" : "Vincular"}
       </button>
       <button
         type="button"
         onClick={() => setEligiendo(false)}
-        className="h-9 rounded-lg px-2 text-sm font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+        className="h-12 rounded-lg px-2 text-sm font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
       >
         Cancelar
       </button>

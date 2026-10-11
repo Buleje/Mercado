@@ -174,13 +174,13 @@ export default function CtpOriginPolygonModal({ originCode, initialPolygonJson, 
             {draft.length >= 3 && <span className="text-[var(--text-tertiary)]"> · {areaHa.toFixed(2)} ha</span>}
           </span>
           <div className="ml-auto flex items-center gap-1.5">
-            <button type="button" onClick={() => setDraft((d) => d.slice(0, -1))} disabled={draft.length === 0} className="inline-flex h-9 items-center gap-1 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40">
+            <button type="button" onClick={() => setDraft((d) => d.slice(0, -1))} disabled={draft.length === 0} className="inline-flex h-12 items-center gap-1 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40">
               <Undo2 className="h-3.5 w-3.5" /> Deshacer
             </button>
-            <button type="button" onClick={() => setDraft([])} disabled={draft.length === 0} className="inline-flex h-9 items-center gap-1 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40">
+            <button type="button" onClick={() => setDraft([])} disabled={draft.length === 0} className="inline-flex h-12 items-center gap-1 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40">
               <Trash2 className="h-3.5 w-3.5" /> Limpiar
             </button>
-            <button type="button" onClick={() => setLayer((l) => (l === "sat" ? "street" : "sat"))} className="inline-flex h-9 items-center gap-1 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
+            <button type="button" onClick={() => setLayer((l) => (l === "sat" ? "street" : "sat"))} className="inline-flex h-12 items-center gap-1 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
               <Layers className="h-3.5 w-3.5" /> {layer === "sat" ? "Calles" : "Satélite"}
             </button>
           </div>
@@ -190,10 +190,10 @@ export default function CtpOriginPolygonModal({ originCode, initialPolygonJson, 
         <div ref={containerRef} className="h-[440px] w-full bg-[var(--surface-sunken)]" />
 
         <div className="flex items-center justify-end gap-2 border-t-2 border-[var(--rule-base)] px-5 py-3">
-          <button type="button" onClick={onClose} className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
+          <button type="button" onClick={onClose} className="inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
             <X className="h-4 w-4" /> Cancelar
           </button>
-          <button type="button" onClick={save} disabled={draft.length < 3 || saving} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-40">
+          <button type="button" onClick={save} disabled={draft.length < 3 || saving} className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-40">
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Guardar polígono
           </button>
         </div>

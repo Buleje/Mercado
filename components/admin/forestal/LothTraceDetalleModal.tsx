@@ -23,9 +23,10 @@ import LothTraceDetalle from "./LothTraceDetalle";
 import type { EstadoAserradero } from "./hooks/use-loth-trace-aserradero";
 import { CHAIN_META } from "./LothTraceCard";
 import { fmtPct, fmtRecorrido, type TraceNav } from "./loth-trace-ui";
+import { button } from "@/components/ui-system/button-variants";
 
 const BOTON =
-  "inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-40";
+  button({ variant: "secondary", className: "rounded-xl" });
 
 export default function LothTraceDetalleModal({
   fila,
@@ -90,7 +91,7 @@ export default function LothTraceDetalleModal({
               onClick={() => {
                 printTrozaPasaporte(op, caratula).catch((err) => console.error("[pasaporte] no se pudo abrir", err));
               }}
-              className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-semibold text-white hover:opacity-90"
+              className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-semibold text-white hover:opacity-90"
             >
               <Printer className="h-4 w-4" aria-hidden="true" /> Pasaporte
             </button>

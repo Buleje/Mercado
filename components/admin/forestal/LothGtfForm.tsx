@@ -221,7 +221,7 @@ export default function LothGtfForm({ onClose, onSaved, guias = [] }: { onClose:
           <Field label="Ø mayor"><input type="number" step="0.001" value={it.diamMayorM} onChange={(e) => setItem("diamMayorM", e.target.value)} className={I} /></Field>
           <Field label="Ø menor"><input type="number" step="0.001" value={it.diamMenorM} onChange={(e) => setItem("diamMenorM", e.target.value)} className={I} /></Field>
           <Field label={`Long. ${autoVol > 0 ? `→ ${fmtM3(autoVol)}` : ""}`}><input type="number" step="0.01" value={it.lengthM} onChange={(e) => setItem("lengthM", e.target.value)} className={I} /></Field>
-          <button type="button" onClick={addItem} className="h-10 rounded-xl bg-[var(--accent-dark)] text-sm font-semibold text-white hover:brightness-110">+ Agregar</button>
+          <button type="button" onClick={addItem} className="h-12 rounded-xl bg-[var(--accent-dark)] text-sm font-semibold text-white hover:brightness-110">+ Agregar</button>
         </div>
         {items.length > 0 && (
           <div className="mt-3 overflow-x-auto">
@@ -271,8 +271,8 @@ export default function LothGtfForm({ onClose, onSaved, guias = [] }: { onClose:
           )}
         </span>
         <div className="flex gap-2">
-          <button type="button" onClick={onClose} className="h-11 rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-          <button type="submit" disabled={busy || !f.gtfNumber.trim() || items.length === 0 || hasInvalidItems || hasMissingRequired || Boolean(placaInvalida)} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent-dark)] px-4 text-sm font-semibold text-white hover:brightness-110 disabled:opacity-50">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Truck className="h-4 w-4" />} Emitir GTF</button>
+          <button type="button" onClick={onClose} className="h-12 rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+          <button type="submit" disabled={busy || !f.gtfNumber.trim() || items.length === 0 || hasInvalidItems || hasMissingRequired || Boolean(placaInvalida)} className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--accent-dark)] px-4 text-sm font-semibold text-white hover:brightness-110 disabled:opacity-50">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Truck className="h-4 w-4" />} Emitir GTF</button>
         </div>
       </div>
     </form>

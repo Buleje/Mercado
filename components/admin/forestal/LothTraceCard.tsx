@@ -230,7 +230,7 @@ export default function LothTraceCard({
             onClick={abrir}
             aria-label={`Ver el detalle del árbol ${fila.tree}`}
             title="Ver el detalle: alertas, dónde se fue la madera y las seis secciones"
-            className="mt-0.5 inline-flex h-10 shrink-0 items-center gap-1 rounded-xl border border-[var(--rule-base)] px-2.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--rule-strong)] hover:text-[var(--text-primary)]"
+            className="mt-0.5 inline-flex h-12 shrink-0 items-center gap-1 rounded-xl border border-[var(--rule-base)] px-2.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--rule-strong)] hover:text-[var(--text-primary)]"
           >
             <span className="max-sm:sr-only">Detalle</span>
             <ChevronRight className="h-4 w-4" aria-hidden="true" />

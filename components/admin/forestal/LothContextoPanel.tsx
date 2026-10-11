@@ -27,6 +27,8 @@ import {
 } from "@/lib/forestal/loth-cartografia";
 import { formatDistance, lineLengthM } from "@/lib/forestal/loth-utm";
 import { coordDe, textoUtm } from "@/lib/forestal/loth-rutas-coordenadas";
+import { button } from "@/components/ui-system/button-variants";
+import { cn } from "@/lib/utils";
 
 /** Cuántas referencias, vías y tramos hay, para la cabecera del bloque plegado. */
 export function resumenContexto(c: LothCartografia): string {
@@ -41,7 +43,7 @@ export function resumenContexto(c: LothCartografia): string {
 const INPUT =
   "h-10 w-full rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2.5 text-sm text-[var(--text-primary)]";
 const BTN =
-  "inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40";
+  button({ variant: "secondary", className: "rounded-xl" });
 
 interface Props {
   cartografia: LothCartografia;
@@ -102,7 +104,7 @@ export default function LothContextoPanel({
               type="button"
               onClick={onToggleMark}
               aria-pressed={markMode}
-              className={markMode ? `${BTN} border-transparent bg-[var(--brand-ink)] text-white hover:bg-[var(--brand-ink)]` : BTN}
+              className={markMode ? cn(BTN, `border-transparent bg-[var(--brand-ink)] text-white hover:bg-[var(--brand-ink)]`) : BTN}
             >
               <MapPin className="h-3.5 w-3.5" aria-hidden="true" /> {markMode ? "Toca el mapa…" : "Marcar en el mapa"}
             </button>
@@ -170,7 +172,7 @@ export default function LothContextoPanel({
                 if (!trazando) onTrazarVia();
               }}
               aria-pressed={trazando}
-              className={trazando ? `${BTN} border-transparent bg-[var(--brand-ink)] text-white hover:bg-[var(--brand-ink)]` : BTN}
+              className={trazando ? cn(BTN, `border-transparent bg-[var(--brand-ink)] text-white hover:bg-[var(--brand-ink)]`) : BTN}
             >
               <Route className="h-3.5 w-3.5" aria-hidden="true" /> {trazando ? "Toca el mapa…" : "Trazar en el mapa"}
             </button>
@@ -284,7 +286,7 @@ export default function LothContextoPanel({
           type="button"
           onClick={guardar}
           disabled={saving}
-          className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+          className="inline-flex h-12 items-center gap-1.5 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : saved ? <Check className="h-4 w-4" aria-hidden="true" /> : <Save className="h-4 w-4" aria-hidden="true" />}
           {saved ? "Guardado" : "Guardar referencias y accesos"}

@@ -73,7 +73,7 @@ export default function CtpParteSaldo({
         type="button"
         onClick={onVerCuenta}
         title="Abre Adelantos → Cuenta por persona"
-        className="ml-auto inline-flex h-9 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-[var(--accent-ink)] transition-colors hover:bg-[var(--surface-sunken)] dark:text-[var(--accent)]"
+        className="ml-auto inline-flex h-12 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-[var(--accent-ink)] transition-colors hover:bg-[var(--surface-sunken)] dark:text-[var(--accent)]"
       >
         Ver su cuenta
         <ArrowRight className="h-4 w-4" aria-hidden />

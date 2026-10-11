@@ -179,7 +179,7 @@ export default function EnviarPorWhatsApp({
               onClick={() => {
                 void navigator.clipboard.writeText(listo.mensaje).then(() => setCopiado(true), (err: unknown) => console.warn("[enviar-whatsapp] no se pudo copiar", err));
               }}
-              className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+              className="inline-flex h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
             >
               {copiado ? <Check className="h-4 w-4" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />} {copiado ? "Copiado" : "Copiar mensaje"}
             </button>
@@ -224,7 +224,7 @@ export default function EnviarPorWhatsApp({
                     type="button"
                     onClick={() => { setNumero(c.telefono.replace(/^51(?=\d{9}$)/, "")); setNombre(c.nombre); setFuente(c.fuente); }}
                     title={ETIQUETA_FUENTE[c.fuente]}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-xs font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]"
+                    className="inline-flex h-12 items-center gap-1.5 rounded-full border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-xs font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]"
                   >
                     {c.nombre} <span className="font-mono font-normal text-[var(--text-tertiary)]">{telefonoLegible(c.telefono)}</span>
                   </button>
@@ -239,12 +239,12 @@ export default function EnviarPorWhatsApp({
 
           <div className="flex flex-wrap items-center justify-end gap-2">
             {numero.trim() && !telefono && <span className="mr-auto text-xs text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]">Escribe 9 dígitos de celular.</span>}
-            <button type="button" onClick={onCerrar} className="h-11 rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+            <button type="button" onClick={onCerrar} className="h-12 rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
             <button
               type="button"
               onClick={() => void enviar()}
               disabled={!telefono || enviando}
-              className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent-dark)] px-4 text-sm font-semibold text-white hover:brightness-110 disabled:opacity-50"
+              className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--accent-dark)] px-4 text-sm font-semibold text-white hover:brightness-110 disabled:opacity-50"
             >
               {enviando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <MessageCircle className="h-4 w-4" aria-hidden="true" />}
               Crear enlaces y abrir WhatsApp

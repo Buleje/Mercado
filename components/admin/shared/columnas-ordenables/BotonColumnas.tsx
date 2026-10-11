@@ -107,7 +107,7 @@ export function BotonColumnasVisibles({
               type="button"
               onClick={vis.mostrarTodas}
               disabled={todas}
-              className="h-9 flex-1 rounded-lg px-2 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] disabled:opacity-40"
+              className="h-12 flex-1 rounded-lg px-2 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] disabled:opacity-40"
             >
               Mostrar todas
             </button>
@@ -115,7 +115,7 @@ export function BotonColumnasVisibles({
               <button
                 type="button"
                 onClick={vis.restablecer}
-                className="inline-flex h-9 flex-1 items-center justify-center gap-1 rounded-lg px-2 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+                className="inline-flex h-12 flex-1 items-center justify-center gap-1 rounded-lg px-2 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
               >
                 <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" /> Las de siempre
               </button>

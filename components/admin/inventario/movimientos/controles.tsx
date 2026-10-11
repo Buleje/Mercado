@@ -4,27 +4,11 @@
  * Los controles de la fila de filtros (48 px, texto de 14 px) que comparten
  * Movimientos, Pérdidas y Vencimientos, y el aviso de error con «Reintentar».
  */
-import { AlertTriangle, Search } from "@buleje/design-system/icons";
+import { AlertTriangle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 
 /** Para `FiltroColumnaMulti` en la fila (no en la cabecera de la tabla). */
 export const FILTRO_EN_FILA = "mt-0! min-w-0 flex-1 sm:flex-none [&_summary]:h-12 [&_summary]:rounded-xl [&_summary]:text-sm";
-
-export function Buscador({ valor, onCambiar, placeholder, etiqueta }: { valor: string; onCambiar: (v: string) => void; placeholder: string; etiqueta: string }) {
-  return (
-    <div className="relative min-w-0 flex-1 basis-56 sm:max-w-sm">
-      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
-      <input
-        type="search"
-        value={valor}
-        onChange={(e) => onCambiar(e.target.value)}
-        placeholder={placeholder}
-        aria-label={etiqueta}
-        className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)]"
-      />
-    </div>
-  );
-}
 
 /** Chips de un solo valor (período, estado): un grupo de botones con `aria-pressed`. */
 export function Chips<T extends string>({ opciones, valor, onCambiar, etiqueta }: {

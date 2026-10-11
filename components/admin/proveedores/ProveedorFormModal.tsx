@@ -85,14 +85,14 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 h-10 rounded-xl border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] transition-colors"
+            className="flex-1 h-12 rounded-xl border border-[var(--rule-base)] dark:border-card-border text-sm font-semibold text-[var(--text-secondary)] dark:text-muted hover:bg-[var(--surface-sunken)] transition-colors"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={saving}
-            className="flex-1 h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+            className="flex-1 h-12 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             {saving ? 'Guardando...' : isEdit ? 'Guardar proveedor' : format === 'simple' ? 'Crear proveedor' : 'Guardar proveedor'}

@@ -13,10 +13,11 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { FILTROS_VACIOS, hayFiltro, type EstadoFiltro, type FiltrosCroquis } from "@/lib/forestal/planta-croquis";
 import type { PlantaZona } from "@/lib/forestal/planta-zona-types";
 import type { ModoCroquis } from "./hooks/use-croquis-dibujo";
+import { button } from "@/components/ui-system/button-variants";
 
-const BTN = "inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50";
-const BTN_ON = "inline-flex h-9 items-center gap-2 rounded-xl border-2 border-[var(--accent)] bg-[var(--accent-soft)] px-3 text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]";
-const BTN_PRIMARIO = "inline-flex h-9 items-center gap-2 rounded-xl bg-[var(--accent-dark)] px-4 text-sm font-bold text-white shadow-sm hover:brightness-110 disabled:opacity-50";
+const BTN = button({ variant: "secondary", className: "rounded-xl" });
+const BTN_ON = "inline-flex h-12 items-center gap-2 rounded-xl border-2 border-[var(--accent)] bg-[var(--accent-soft)] px-3 text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]";
+const BTN_PRIMARIO = button({ variant: "accent", className: "rounded-xl" });
 const SELECT = "h-9 max-w-[9.5rem] rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-sm font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--accent)]";
 
 export interface CtpPlantaCroquisBarraProps {
@@ -100,7 +101,7 @@ export default function CtpPlantaCroquisBarra(p: CtpPlantaCroquisBarraProps) {
         {/* Lo que no se usa a cada rato va al menú: la columna del mapa mide
             ~600 px a 1280 y seis botones sueltos partían la barra en tres filas. */}
         <ActionMenu
-          label="Más opciones del croquis" soloIcono icon={MoreHorizontal} size="sm"
+          label="Más opciones del croquis" soloIcono icon={MoreHorizontal} size="md"
           actions={[
             { id: "etiquetas", label: "Etiquetas sobre las zonas", hint: "Código y PT de cada zona", icon: Tag, activo: p.mostrarEtiquetas, onSelect: p.onEtiquetas },
             { id: "config", label: "Configurar croquis", hint: "Medidas, imagen del plano y maquinaria", icon: Settings2, onSelect: p.onConfigurar },

@@ -12,7 +12,7 @@
  * Por eso conviven, y el «Más» lleva de una a la otra.
  */
 import { useState } from "react";
-import { SectionTitle } from "@buleje/design-system";
+import { SectionTitle, StatCard } from "@buleje/design-system";
 import { AlertTriangle, Megaphone, MessageCircle, MoreHorizontal, Plus, RefreshCw } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
@@ -26,15 +26,6 @@ import { ModalNuevaCampana } from "@/components/admin/crecimiento/campanas/Modal
 import { TablaCampanas } from "@/components/admin/crecimiento/campanas/TablaCampanas";
 import { useCampanas } from "@/components/admin/crecimiento/campanas/use-campanas";
 import type { Segment } from "@/components/admin/crecimiento/campanas/tipos";
-
-function Cifra({ rotulo, valor }: { rotulo: string; valor: string }) {
-  return (
-    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
-      <p className="text-sm font-semibold text-[var(--text-secondary)]">{rotulo}</p>
-      <p className="mt-1 text-lg font-extrabold tabular-nums text-[var(--text-primary)]">{valor}</p>
-    </div>
-  );
-}
 
 export default function MarketingAutomationTab() {
   const c = useCampanas();
@@ -54,10 +45,10 @@ export default function MarketingAutomationTab() {
     sinDatosAun: c.loading && c.campaigns.length === 0,
     resumen: `${programadas} programada${programadas === 1 ? "" : "s"}`,
     tarjetas: [
-      <Cifra key="t" rotulo="Campañas" valor={String(c.campaigns.length)} />,
-      <Cifra key="p" rotulo="Programadas" valor={String(programadas)} />,
-      <Cifra key="e" rotulo="Enviadas" valor={String(enviadas)} />,
-      <Cifra key="a" rotulo="Clientes alcanzados" valor={formatNumber(alcance)} />,
+      <StatCard key="t" density="compact" label="Campañas" value={String(c.campaigns.length)} />,
+      <StatCard key="p" density="compact" label="Programadas" value={String(programadas)} />,
+      <StatCard key="e" density="compact" label="Enviadas" value={String(enviadas)} />,
+      <StatCard key="a" density="compact" label="Clientes alcanzados" value={formatNumber(alcance)} />,
     ],
   });
 

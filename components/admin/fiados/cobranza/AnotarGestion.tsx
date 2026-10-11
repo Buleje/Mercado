@@ -123,7 +123,7 @@ export default function AnotarGestion({
                     key={p.dias}
                     type="button"
                     onClick={() => setFechaPrometida(f)}
-                    className={`h-9 rounded-lg px-3 text-sm font-bold transition-colors ${
+                    className={`h-12 rounded-lg px-3 text-sm font-bold transition-colors ${
                       fechaPrometida === f
                         ? "bg-primary/15 text-[var(--accent-ink)] ring-1 ring-primary/40 dark:text-[var(--accent)]"
                         : "bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"

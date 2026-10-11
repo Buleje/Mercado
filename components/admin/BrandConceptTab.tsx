@@ -597,7 +597,7 @@ export default function BrandConceptTab({
               type="button"
               onClick={() => void analyze()}
               disabled={analyzing}
-              className="inline-flex items-center gap-1.5 px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-primary)] hover:border-primary/40 hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3 h-12 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] text-sm font-semibold text-[var(--text-primary)] hover:border-primary/40 hover:bg-[var(--surface-sunken)] disabled:opacity-50"
             >
               {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
               {analyzing ? "Analizando…" : "Re-analizar"}
@@ -1025,7 +1025,7 @@ function ConceptCard({
             type="button"
             onClick={onApply}
             className={cn(
-              "flex-1 h-10 rounded-xl text-xs font-extrabold transition-colors",
+              "flex-1 h-12 rounded-xl text-xs font-extrabold transition-colors",
               isActive
                 ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)] border-2 border-primary"
                 : "bg-[var(--rule-soft)] text-[var(--text-[var(--accent-ink)] dark:text-[var(--accent)])] hover:bg-primary/10 hover:text-[var(--accent-ink)] dark:text-[var(--accent)] border-2 border-transparent",
@@ -1036,7 +1036,7 @@ function ConceptCard({
           <button
             type="button"
             onClick={onApplyAndPreview}
-            className="flex-1 h-10 rounded-xl text-xs font-extrabold bg-primary text-white hover:opacity-90 inline-flex items-center justify-center gap-1.5"
+            className="flex-1 h-12 rounded-xl text-xs font-extrabold bg-primary text-white hover:opacity-90 inline-flex items-center justify-center gap-1.5"
           >
             <ExternalLink className="h-3.5 w-3.5" />
             Aplicar y ver
@@ -1099,7 +1099,7 @@ function ExpandedPreview({ concept: c }: { concept: Concept }) {
         <div className="flex flex-wrap gap-2.5">
           <button
             type="button"
-            className="inline-flex items-center gap-1.5 px-5 h-11 text-sm font-semibold text-white"
+            className="inline-flex items-center gap-1.5 px-5 h-12 text-sm font-semibold text-white"
             style={{
               background: `linear-gradient(135deg, ${c.primary} 0%, ${c.secondary} 100%)`,
               borderRadius: buttonRadius,
@@ -1111,7 +1111,7 @@ function ExpandedPreview({ concept: c }: { concept: Concept }) {
           </button>
           <button
             type="button"
-            className="inline-flex items-center gap-1.5 px-5 h-11 text-sm font-semibold border-2"
+            className="inline-flex items-center gap-1.5 px-5 h-12 text-sm font-semibold border-2"
             style={{
               backgroundColor: bgCard,
               borderRadius: buttonRadius,
@@ -1123,7 +1123,7 @@ function ExpandedPreview({ concept: c }: { concept: Concept }) {
           </button>
           <button
             type="button"
-            className="inline-flex items-center gap-1.5 px-5 h-11 text-sm font-semibold"
+            className="inline-flex items-center gap-1.5 px-5 h-12 text-sm font-semibold"
             style={{
               backgroundColor: `${c.accent}20`,
               borderRadius: buttonRadius,
@@ -1244,7 +1244,7 @@ function ExpandedPreview({ concept: c }: { concept: Concept }) {
             </div>
             <button
               type="button"
-              className="w-full mt-3 inline-flex items-center justify-center gap-1.5 h-10 text-sm font-semibold text-white"
+              className="w-full mt-3 inline-flex items-center justify-center gap-1.5 h-12 text-sm font-semibold text-white"
               style={{
                 background: `linear-gradient(135deg, ${c.primary} 0%, ${c.secondary} 100%)`,
                 borderRadius: buttonRadius,
@@ -1282,7 +1282,7 @@ function ExpandedPreview({ concept: c }: { concept: Concept }) {
           />
           <button
             type="button"
-            className="w-full mt-3 h-10 text-sm font-semibold text-white"
+            className="w-full mt-3 h-12 text-sm font-semibold text-white"
             style={{
               background: c.primary,
               borderRadius: buttonRadius,
@@ -1350,7 +1350,7 @@ function ExpandedPreview({ concept: c }: { concept: Concept }) {
         <p className="text-xs font-extrabold">Recibe ofertas exclusivas en tu WhatsApp</p>
         <button
           type="button"
-          className="inline-flex items-center gap-1.5 px-4 h-9 text-xs font-extrabold"
+          className="inline-flex items-center gap-1.5 px-4 h-12 text-xs font-extrabold"
           style={{
             backgroundColor:
               c.backgroundPattern === "gradient" ? "#fff" : c.primary,

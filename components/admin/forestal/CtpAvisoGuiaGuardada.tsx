@@ -208,7 +208,7 @@ export default function CtpAvisoGuiaGuardada({ guia, puesta, onUsar }: Props) {
         <button
           type="button"
           onClick={onUsar}
-          className="inline-flex h-9 shrink-0 items-center rounded-lg border border-[var(--accent)] px-3 text-sm font-semibold text-[var(--accent-dark)] transition-colors hover:bg-[var(--surface-raised)] dark:text-[var(--accent)]"
+          className="inline-flex h-12 shrink-0 items-center rounded-lg border border-[var(--accent)] px-3 text-sm font-semibold text-[var(--accent-dark)] transition-colors hover:bg-[var(--surface-raised)] dark:text-[var(--accent)]"
         >
           Usar sus datos
         </button>

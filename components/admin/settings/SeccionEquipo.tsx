@@ -21,7 +21,7 @@ export function SeccionEquipo({ aj, onNavigateTab }: { aj: AjustesEstado; onNavi
         accion={
           /* La puerta a Mi perfil desde Configuración (salió de la barra
              lateral; la otra es el menú del avatar). En la fila del título. */
-          <button type="button" onClick={() => onNavigateTab?.("mi-perfil")} title="Tus datos y tu contraseña, en Mi perfil" className="inline-flex h-10 items-center gap-1.5 rounded-lg px-2 text-sm font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-[var(--surface-sunken)]">
+          <button type="button" onClick={() => onNavigateTab?.("mi-perfil")} title="Tus datos y tu contraseña, en Mi perfil" className="inline-flex h-12 items-center gap-1.5 rounded-lg px-2 text-sm font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-[var(--surface-sunken)]">
             <Key className="h-4 w-4" aria-hidden /> Tu contraseña <ChevronRight className="h-4 w-4" aria-hidden />
           </button>
         }

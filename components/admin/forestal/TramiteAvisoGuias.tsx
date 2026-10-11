@@ -16,13 +16,14 @@ import { AlertTriangle, Loader2, Truck, X } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { contarGuias } from "@/lib/forestal/tramites-desde-guias";
 import { deLosLibros, type TramiteDesdeGuias } from "./hooks/use-tramite-desde-guias";
+import { button } from "@/components/ui-system/button-variants";
 
 const CAJA = "flex items-start gap-3 rounded-2xl border-2 p-4 text-sm";
 const BOTON =
-  "inline-flex h-10 items-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]";
+  button({ variant: "secondary", className: "rounded-xl" });
 /* El oficio que está abierto: marcado, no apagado (el `button[disabled]` del panel lo deja al 60 % y no se lee). */
 const BOTON_ACTUAL =
-  "inline-flex h-10 cursor-default items-center rounded-xl border-2 border-[var(--accent)] bg-[var(--accent-soft)] px-3 text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]";
+  "inline-flex h-12 cursor-default items-center rounded-xl border-2 border-[var(--accent)] bg-[var(--accent-soft)] px-3 text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)]";
 
 export default function TramiteAvisoGuias({ d }: { d: TramiteDesdeGuias }) {
   if (!d.pedido) return null;

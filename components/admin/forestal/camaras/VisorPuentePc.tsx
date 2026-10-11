@@ -16,9 +16,10 @@ import { Crop, Loader2, Maximize2, Monitor, Radio, WifiOff } from "@buleje/desig
 import { cn } from "@/lib/utils";
 import { textoPastilla, textoSenal } from "./puente-pc";
 import { useCuadroPuente, type CuadroPuente } from "./use-puente-pc";
+import { button } from "@/components/ui-system/button-variants";
 
 const BOTON_CHICO =
-  "inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--text-primary)]";
+  button({ variant: "secondary", className: "rounded-xl" });
 
 interface Props {
   nombre: string;

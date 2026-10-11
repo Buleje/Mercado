@@ -118,7 +118,7 @@ export default function CtpFichaEditor() {
           affects="Es la carátula del Libro de Operaciones y encabeza el certificado de trazabilidad y la GTF de salida."
         />
         {!editing && (
-          <button type="button" onClick={abrirEdicion} className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
+          <button type="button" onClick={abrirEdicion} className="inline-flex h-12 shrink-0 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">
             <Pencil className="h-4 w-4" /> Editar ficha
           </button>
         )}
@@ -144,8 +144,8 @@ export default function CtpFichaEditor() {
             <CtpFichaFormUbicacion draft={draft} set={set} />
 
             <div className="flex items-center justify-end gap-2 border-t-2 border-[var(--rule-soft)] pt-4">
-              <button type="button" onClick={() => { setEditing(false); setDraft(ficha); setError(null); }} disabled={saving} className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><XIcon className="h-4 w-4" /> Cancelar</button>
-              <button type="button" onClick={save} disabled={saving} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60">{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Guardar ficha</button>
+              <button type="button" onClick={() => { setEditing(false); setDraft(ficha); setError(null); }} disabled={saving} className="inline-flex h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"><XIcon className="h-4 w-4" /> Cancelar</button>
+              <button type="button" onClick={save} disabled={saving} className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60">{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Guardar ficha</button>
             </div>
           </div>
         </>

@@ -816,7 +816,7 @@ function AgregarLineaBloque({
       <button
         type="button"
         onClick={() => { setAbierto(false); setClave(""); }}
-        className="h-9 rounded-lg border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
+        className="h-12 rounded-lg border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
       >
         Listo
       </button>

@@ -1,6 +1,6 @@
 "use client";
 
-import { LoadingState, SectionTitle } from "@buleje/design-system";
+import { LoadingState, SectionTitle, StatCard } from "@buleje/design-system";
 import { AlertTriangle, Download, MessageSquare, MoreHorizontal, RefreshCw, Star, ThumbsDown, ThumbsUp, TrendingUp } from "@buleje/design-system/icons";
 import { useMemo, useState } from "react";
 import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
@@ -12,7 +12,6 @@ import { exportToCSV } from "@/lib/utils";
 import { formatDateShort, formatNumber } from "@/lib/format";
 import { ListaOpiniones } from "./opiniones/ListaOpiniones";
 import { nivelDelIndice, ETIQUETA_CANAL, ETIQUETA_PERIODO, filtrar, resumir, tendenciaMensual, tipoDe, type Canal, type Periodo } from "./opiniones/shared";
-import { TarjetaCifra } from "./opiniones/TarjetaCifra";
 import { TendenciaMensual } from "./opiniones/TendenciaMensual";
 import { useOpiniones } from "./opiniones/use-opiniones";
 
@@ -42,11 +41,11 @@ export default function NPSTab() {
     sinDatosAun: cargando,
     resumen: r.total ? `${signo(r.indice)} · ${formatNumber(r.promedioEstrellas, 1)} de 5` : "Sin opiniones",
     tarjetas: [
-      <TarjetaCifra key="indice" destacado rotulo="Satisfacción" icono={TrendingUp} valor={r.total ? `${signo(r.indice)} · ${nivelDelIndice(r.indice)}` : "Sin opiniones"}
-        ayuda="Contentos (5 estrellas) menos descontentos (3 o menos), sobre el total de opiniones. Va de −100 a +100. Es un cálculo con las estrellas de tus reseñas, no una encuesta aparte." />,
-      <TarjetaCifra key="prom" rotulo="Promedio" icono={Star} valor={r.total ? `${formatNumber(r.promedioEstrellas, 1)} de 5` : "—"} detalle={`${r.total} opiniones`} />,
-      <TarjetaCifra key="ok" rotulo="Contentos" icono={ThumbsUp} valor={r.contentos} detalle={`${pct(r.contentos)} % · 5 estrellas`} />,
-      <TarjetaCifra key="ko" rotulo="Descontentos" icono={ThumbsDown} valor={r.descontentos} detalle={`${pct(r.descontentos)} % · 3 o menos`} />,
+      <StatCard density="compact" key="indice" highlight label="Satisfacción" icon={TrendingUp} value={r.total ? `${signo(r.indice)} · ${nivelDelIndice(r.indice)}` : "Sin opiniones"}
+        info={<InfoTip what="Contentos (5 estrellas) menos descontentos (3 o menos), sobre el total de opiniones. Va de −100 a +100. Es un cálculo con las estrellas de tus reseñas, no una encuesta aparte." />} />,
+      <StatCard density="compact" key="prom" label="Promedio" icon={Star} value={r.total ? `${formatNumber(r.promedioEstrellas, 1)} de 5` : "—"} subValue={`${r.total} opiniones`} />,
+      <StatCard density="compact" key="ok" label="Contentos" icon={ThumbsUp} value={r.contentos} subValue={`${pct(r.contentos)} % · 5 estrellas`} />,
+      <StatCard density="compact" key="ko" label="Descontentos" icon={ThumbsDown} value={r.descontentos} subValue={`${pct(r.descontentos)} % · 3 o menos`} />,
     ],
   });
 

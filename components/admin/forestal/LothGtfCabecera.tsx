@@ -9,9 +9,10 @@
 import type { ReactNode } from "react";
 import { FileDown, Plus, Truck } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { button } from "@/components/ui-system/button-variants";
 
 const BOTON_BORDE =
-  "inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]";
+  button({ variant: "secondary", className: "rounded-xl" });
 
 export default function LothGtfCabecera({
   botonIndicadores,
@@ -61,7 +62,7 @@ export default function LothGtfCabecera({
           type="button"
           onClick={onDespachar}
           title="La guía completa con sus trozas: se asienta el despacho en el libro en el mismo paso"
-          className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-semibold text-white hover:opacity-90"
+          className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-semibold text-white hover:opacity-90"
         >
           <Truck className="h-4 w-4" /> Despachar con guía
         </button>

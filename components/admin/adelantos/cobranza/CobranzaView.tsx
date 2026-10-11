@@ -425,14 +425,14 @@ export default function CobranzaView({
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setTanda(new Set())}
-                className="h-10 rounded-xl px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-raised)]"
+                className="h-12 rounded-xl px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-raised)]"
               >
                 Vaciar
               </button>
               <button
                 onClick={() => void mandarLaRonda()}
                 disabled={enviandoRonda}
-                className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
+                className="inline-flex h-12 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
               >
                 <MessageCircle className="h-4 w-4" />
                 {enviandoRonda ? "Abriendo chats…" : `Escribirle a los ${tanda.size}`}

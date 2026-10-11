@@ -67,7 +67,7 @@ export function TiendaHorario({ store, setStore }: { store: MarketplaceStoreData
           <button
             type="button"
             onClick={() => setStore((p) => ({ ...p, hours: horarioBase() }))}
-            className="h-11 px-4 rounded-xl border border-[var(--rule-base)] text-base font-semibold text-[var(--text-primary)] hover:border-primary hover:text-primary"
+            className="h-12 px-4 rounded-xl border border-[var(--rule-base)] text-base font-semibold text-[var(--text-primary)] hover:border-primary hover:text-primary"
           >
             Empezar con lunes a sábado 8:00–20:00
           </button>

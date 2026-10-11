@@ -293,7 +293,7 @@ export default function CtpProducirSinLoteModal({
               type="button"
               onClick={() => setCubicandoDia(true)}
               title="El día elegido está declarado por tipo: vincúlale su pieza por pieza sin cambiar los m³"
-              className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
+              className="inline-flex h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
             >
               <Ruler className="h-4 w-4" aria-hidden /> Agregar cubicación al día
             </button>
@@ -303,7 +303,7 @@ export default function CtpProducirSinLoteModal({
             onClick={() => setDeclarando(true)}
             disabled={paquetes.length === 0 || Boolean(motivoVariado)}
             title={motivoVariado ?? undefined}
-            className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white transition hover:brightness-95 disabled:opacity-50"
+            className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white transition hover:brightness-95 disabled:opacity-50"
           >
             <Boxes className="h-4 w-4" aria-hidden /> Declarar esta producción
           </button>

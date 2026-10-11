@@ -134,7 +134,7 @@ export default function CobroFletePorPt({
                 <button
                   type="button"
                   onClick={() => onUsarHoy(!usarHoy)}
-                  className="h-9 rounded-lg border border-[var(--rule-base)] px-2 font-bold text-[var(--accent-ink)] hover:border-[var(--accent)] dark:text-[var(--accent)]"
+                  className="h-12 rounded-lg border border-[var(--rule-base)] px-2 font-bold text-[var(--accent-ink)] hover:border-[var(--accent)] dark:text-[var(--accent)]"
                 >
                   {usarHoy ? "Dejar lo cobrado" : "Usar la de hoy"}
                 </button>

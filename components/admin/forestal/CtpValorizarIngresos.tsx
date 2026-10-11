@@ -200,7 +200,7 @@ export default function CtpValorizarIngresos({ period }: { period: CtpPeriod }) 
           <button
             type="button"
             onClick={() => setEnTanda(true)}
-            className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3 text-sm font-semibold text-white transition hover:brightness-95"
+            className="inline-flex h-12 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3 text-sm font-semibold text-white transition hover:brightness-95"
           >
             <Coins className="h-4 w-4" aria-hidden /> Poner precio en tanda
           </button>
@@ -226,7 +226,7 @@ export default function CtpValorizarIngresos({ period }: { period: CtpPeriod }) 
             <button
               type="button"
               onClick={() => setSinPeriodo((v) => !v)}
-              className={`inline-flex h-10 items-center rounded-xl border-2 px-3 text-sm font-semibold transition-colors ${
+              className={`inline-flex h-12 items-center rounded-xl border-2 px-3 text-sm font-semibold transition-colors ${
                 sinPeriodo
                   ? "border-[var(--accent)] bg-primary/10 text-[var(--text-primary)]"
                   : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
@@ -237,7 +237,7 @@ export default function CtpValorizarIngresos({ period }: { period: CtpPeriod }) 
             <button
               type="button"
               onClick={() => setVerTodos((v) => !v)}
-              className="inline-flex h-10 items-center rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
+              className="inline-flex h-12 items-center rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
             >
               {verTodos ? "Ver sólo los que faltan" : `Ver todos (${ingresos.length})`}
             </button>

@@ -110,7 +110,7 @@ function PersonaElegida({ persona, onCambiar }: { persona: BeneficiarioConSaldo;
         type="button"
         onClick={onCambiar}
         aria-label="Cambiar de persona"
-        className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-sm font-bold text-[var(--accent-ink)] transition-colors hover:bg-primary/15 sm:px-3"
+        className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-sm font-bold text-[var(--accent-ink)] transition-colors hover:bg-primary/15 sm:px-3"
       >
         <Search className="h-4 w-4" aria-hidden /> <span className="hidden sm:inline">Cambiar</span>
       </button>

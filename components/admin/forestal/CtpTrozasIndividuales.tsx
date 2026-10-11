@@ -135,14 +135,14 @@ export default function CtpTrozasIndividuales({ period }: { period: CtpPeriod })
             <b className="text-[var(--text-primary)]">{filtradas.length}</b>
             {filtradas.length !== datos.total && <> de {datos.total}</>} trozas · {fmtM3(sumaVisible)} m³
           </span>
-          <button type="button" onClick={exportar} className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]">
+          <button type="button" onClick={exportar} className="inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]">
             <Download className="h-4 w-4" /> CSV
           </button>
           <button
             type="button"
             aria-pressed={sinEtiqueta}
             onClick={() => setSinEtiqueta((v) => !v)}
-            className={`inline-flex h-10 items-center gap-1.5 rounded-xl border px-3 text-sm font-semibold transition-colors ${
+            className={`inline-flex h-12 items-center gap-1.5 rounded-xl border px-3 text-sm font-semibold transition-colors ${
               sinEtiqueta
                 ? "border-[var(--accent)] bg-primary/10 text-[var(--text-primary)] dark:bg-[var(--accent)]/12"
                 : "border-[var(--rule-base)] bg-[var(--surface-canvas)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
@@ -155,7 +155,7 @@ export default function CtpTrozasIndividuales({ period }: { period: CtpPeriod })
             onClick={() => abrir()}
             disabled={seleccion.size === 0}
             title="QR grande con la ficha (se lee sin internet), QR chico del sistema y código de barras — para pegar en el rollo"
-            className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             <QrCode className="h-4 w-4" />
             Imprimir etiquetas {seleccion.size > 0 ? `(${seleccion.size})` : ""}

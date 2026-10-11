@@ -132,7 +132,7 @@ export default function CacaoProducerForm({
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="inline-flex h-10 items-center rounded-xl px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+            className="inline-flex h-12 items-center rounded-xl px-4 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
           >
             Cancelar
           </button>
@@ -140,7 +140,7 @@ export default function CacaoProducerForm({
             type="submit"
             form="cacao-producer-form"
             disabled={!isValid || submitting}
-            className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+            className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
           >
             {submitting ? (
               <>
@@ -269,7 +269,7 @@ export default function CacaoProducerForm({
                     type="button"
                     onClick={useMyLocation}
                     disabled={geoLoading}
-                    className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-[var(--accent)] px-3 text-sm font-semibold text-[var(--accent)] hover:bg-primary/10 disabled:opacity-60"
+                    className="inline-flex h-12 items-center gap-2 rounded-xl border-2 border-[var(--accent)] px-3 text-sm font-semibold text-[var(--accent)] hover:bg-primary/10 disabled:opacity-60"
                   >
                     {geoLoading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />

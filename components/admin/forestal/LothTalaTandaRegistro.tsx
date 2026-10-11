@@ -20,11 +20,12 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import { MAX_ARBOLES_POR_ESPECIE, type EspecieDelRegistro, type SaldoEnPlanilla } from "@/lib/forestal/loth-tala-plantacion";
 import { CitesPill } from "./loth-plan-ui";
+import { button } from "@/components/ui-system/button-variants";
 
 const AMBAR = "text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]";
 const NUM = "font-mono tabular-nums";
 const BTN_PASO =
-  "grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-50";
+  button({ variant: "secondary", size: "icon", className: "shrink-0 rounded-xl" });
 
 const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
 
@@ -140,7 +141,7 @@ export default function LothTalaTandaRegistro({
       ) : error ? (
         <div role="alert" className="flex items-center justify-between gap-2 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
           <span className="min-w-0">{error}</span>
-          <button type="button" onClick={onReintentar} className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-2 font-semibold underline-offset-2 hover:underline">
+          <button type="button" onClick={onReintentar} className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-lg px-2 font-semibold underline-offset-2 hover:underline">
             <RefreshCw className="h-4 w-4" aria-hidden="true" /> Reintentar
           </button>
         </div>
@@ -182,7 +183,7 @@ export default function LothTalaTandaRegistro({
                   type="button"
                   onClick={() => onAgregar(elegida, n)}
                   disabled={bloqueada}
-                  className="inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-lg border-2 border-[var(--accent)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--accent)]/10 disabled:opacity-50"
+                  className="inline-flex h-12 items-center gap-1.5 whitespace-nowrap rounded-lg border-2 border-[var(--accent)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] transition-colors hover:bg-[var(--accent)]/10 disabled:opacity-50"
                 >
                   <Plus className="h-4 w-4 text-[var(--accent-ink)] dark:text-[var(--accent)]" aria-hidden="true" />
                   Agregar {n === 1 ? "1 árbol" : `${n} árboles`}

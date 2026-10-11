@@ -15,7 +15,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LoadingState } from "@buleje/design-system";
-import { AlertCircle, RefreshCw, Printer, X, Truck, Map as MapIcon, Satellite } from "@buleje/design-system/icons";
+import { AlertCircle, RefreshCw, Printer, X, Truck, Map as MapIcon, Satellite, MoreHorizontal } from "@buleje/design-system/icons";
+import ActionMenu from "@/components/admin/shared/action-menu";
 import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import type { CtpPeriod } from "@/lib/forestal/ctp-period";
@@ -39,10 +40,10 @@ import { usePlantaCanchaUrl } from "./hooks/use-planta-cancha-url";
 import { usePlantaUbicados } from "./hooks/use-planta-ubicados";
 import { useCroquisImprimir } from "./hooks/use-croquis-imprimir";
 import type { SeleccionCroquis } from "./hooks/use-croquis-leaflet";
+import { button } from "@/components/ui-system/button-variants";
 
 export type { Item, ItemKind, ZonaInv };
 
-const BTN = "inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60";
 
 export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
   const [pref, setPref] = useLocalStorage<PlanoPlanta | null>("ctp-planta-plano", null);
@@ -179,23 +180,30 @@ export default function CtpPlantaView({ period }: { period: CtpPeriod }) {
               onClick={() => setBloque({ corridas: corridasAserradas, titulo: "Despachar aserrada de la planta" })}
               title="Elige qué paquetes suben al camión y registra su guía sin salir de acá"
               aria-label="Nuevo despacho"
-              className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-3.5 text-sm font-semibold text-white shadow-sm hover:bg-[var(--accent-600)]"
+              className={button({ variant: "primary", className: "rounded-xl" })}
             ><Truck className="h-4 w-4" /><span className="hidden sm:inline">Nuevo despacho</span></button>
           )}
-          <button
-            type="button"
-            // Con el croquis a la vista se imprime el CROQUIS (hoja A4 apaisada con
-            // vista previa); con el satélite, el plano satelital de siempre.
-            onClick={() => {
-              if (verCroquis) { void hoja.abrir().then((motivo) => { if (motivo) setAviso(motivo); }); return; }
-              try { printPlantaPlano({ zonas: zonasSat, invByZona: sat.invObj, areaTotalM2: sat.areaTotal, periodLabel: period.label }); } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
-            }}
-            disabled={hoja.armando}
-            title={verCroquis ? "Imprimir el croquis (zonas con lo que tienen, pilas, máquinas y rutas) en una hoja A4 apaisada" : "Imprimir el plano de la planta (satélite + zonas + inventario) para la visita de la ARFFS"}
-            aria-label={verCroquis ? "Imprimir croquis" : "Imprimir plano"}
-            className={BTN}
-          ><Printer className="h-4 w-4" /><span className="hidden lg:inline">{verCroquis ? "Imprimir croquis" : "Imprimir plano"}</span></button>
-          <button type="button" onClick={() => void load()} disabled={loading} aria-label="Recargar" className={BTN}><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /><span className="hidden lg:inline">Recargar</span></button>
+          {/* Imprimir y recargar no son de cada rato: al «⋯» (ADR-489, muchos botones → un botón con opciones). */}
+          <ActionMenu
+            label="Más opciones de la planta" soloIcono icon={MoreHorizontal}
+            actions={[
+              {
+                id: "imprimir",
+                label: verCroquis ? "Imprimir croquis" : "Imprimir plano",
+                // Con el croquis a la vista se imprime el CROQUIS (hoja A4 apaisada con
+                // vista previa); con el satélite, el plano satelital de siempre.
+                hint: verCroquis ? "Zonas con lo que tienen, pilas, máquinas y rutas en una hoja A4 apaisada" : "Satélite + zonas + inventario, para la visita de la ARFFS",
+                icon: Printer,
+                busy: hoja.armando,
+                disabled: hoja.armando,
+                onSelect: () => {
+                  if (verCroquis) { void hoja.abrir().then((motivo) => { if (motivo) setAviso(motivo); }); return; }
+                  try { printPlantaPlano({ zonas: zonasSat, invByZona: sat.invObj, areaTotalM2: sat.areaTotal, periodLabel: period.label }); } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+                },
+              },
+              { id: "recargar", label: "Recargar", hint: "Vuelve a leer zonas e inventario", icon: RefreshCw, busy: loading, disabled: loading, onSelect: () => void load() },
+            ]}
+          />
         </div>
       </div>
 

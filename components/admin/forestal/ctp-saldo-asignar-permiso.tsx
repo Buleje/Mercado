@@ -109,7 +109,7 @@ export default function AsignarPermisoMasivo({
       <button
         type="button"
         onClick={() => setAbierto(true)}
-        className="inline-flex h-10 items-center gap-1.5 rounded-xl border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+        className="inline-flex h-12 items-center gap-1.5 rounded-xl border-[1.5px] border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
       >
         <Tag className="h-4 w-4" aria-hidden /> Asignarles un permiso ({corridas.length})
       </button>
@@ -151,7 +151,7 @@ export default function AsignarPermisoMasivo({
           type="button"
           onClick={() => void aplicar()}
           disabled={guardando || !permiso.trim() || seleccion.length === 0}
-          className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white transition hover:brightness-95 disabled:opacity-50"
+          className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white transition hover:brightness-95 disabled:opacity-50"
         >
           {guardando ? (
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden />

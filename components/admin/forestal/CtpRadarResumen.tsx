@@ -201,7 +201,7 @@ export default function CtpRadarResumen({
               })}
             </div>
             {seguirId && (
-              <button type="button" onClick={() => setSeguirId(null)} className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-[var(--accent)] bg-primary/10 dark:bg-[var(--accent)]/12 px-3 text-xs font-bold text-[var(--accent)]">
+              <button type="button" onClick={() => setSeguirId(null)} className="inline-flex h-12 items-center gap-1.5 rounded-xl border-2 border-[var(--accent)] bg-primary/10 dark:bg-[var(--accent)]/12 px-3 text-xs font-bold text-[var(--accent)]">
                 <XIcon className="h-3.5 w-3.5" /> Dejar de seguir la GTF
               </button>
             )}

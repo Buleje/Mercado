@@ -52,9 +52,11 @@ import { useCubicacionesGuardadas } from "@/hooks/use-cubicaciones-guardadas";
 import { leerPreciosGuardados, useResolverDePrecio, type PreciosGuardados } from "./hooks/use-precio-cubicador";
 import { useEspeciesCatalogo } from "./hooks/use-especies-catalogo";
 import { formatDateLong } from "@/lib/format";
+import { button } from "@/components/ui-system/button-variants";
+import { cn } from "@/lib/utils";
 
 /** Botón de acción de la cabecera: mismo alto y peso que los filtros del admin. */
-const BTN = "inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]";
+const BTN = button({ variant: "secondary", className: "rounded-xl" });
 
 type Vista = "panorama" | "tablas" | "rolliza" | "metas";
 const VISTAS: { value: Vista; label: string; icon: typeof Compass }[] = [
@@ -347,13 +349,13 @@ export default function CubicacionResumenes() {
                 }))}
               />
             </div>
-            <button type="button" onClick={recargar} title="Volver a leer el lote del cubicador" className={`${BTN} print:hidden`}>
+            <button type="button" onClick={recargar} title="Volver a leer el lote del cubicador" className={cn(BTN, `print:hidden`)}>
               <RefreshCw className="h-4 w-4" /> Actualizar
             </button>
-            <button type="button" onClick={() => setImprimiendo(true)} title="Imprime las cuatro vistas, no sólo la que estás viendo" className={`${BTN} print:hidden`}>
+            <button type="button" onClick={() => setImprimiendo(true)} title="Imprime las cuatro vistas, no sólo la que estás viendo" className={cn(BTN, `print:hidden`)}>
               <Printer className="h-4 w-4" /> Imprimir
             </button>
-            <button type="button" onClick={exportarCSV} className={`${BTN} print:hidden`}>
+            <button type="button" onClick={exportarCSV} className={cn(BTN, `print:hidden`)}>
               <Download className="h-4 w-4" /> CSV
             </button>
           </>
@@ -401,7 +403,7 @@ export default function CubicacionResumenes() {
                   type="button"
                   onClick={() => setAnexoDeElegidas(true)}
                   title="Abre el ANEXO N° 04 con las medidas de las filas elegidas, unificadas en un solo papel"
-                  className="ml-auto inline-flex h-9 items-center gap-1.5 rounded-xl border-2 border-[var(--accent)] bg-primary/10 px-3 text-sm font-bold text-[var(--accent-ink)] transition hover:brightness-95 dark:text-[var(--accent)]"
+                  className="ml-auto inline-flex h-12 items-center gap-1.5 rounded-xl border-2 border-[var(--accent)] bg-primary/10 px-3 text-sm font-bold text-[var(--accent-ink)] transition hover:brightness-95 dark:text-[var(--accent)]"
                 >
                   <FileText className="h-4 w-4" aria-hidden /> Anexo 04 de lo elegido
                 </button>

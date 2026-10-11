@@ -7,9 +7,10 @@
  */
 
 import { formatNumber } from "@/lib/format";
+import { button } from "@/components/ui-system/button-variants";
 
 const BOTON =
-  "h-10 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40";
+  button({ variant: "secondary", className: "rounded-xl" });
 
 export default function LothSeccionPaginas({
   seccion,

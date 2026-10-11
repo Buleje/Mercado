@@ -16,6 +16,8 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { ChevronDown, SlidersHorizontal, X } from "@buleje/design-system/icons";
 import { usePopoverCabecera } from "@/components/admin/shared/filtros-columna";
+import { button } from "@/components/ui-system/button-variants";
+import { cn } from "@/lib/utils";
 
 /**
  * Una opción de cualquier autofiltro — la de una columna y la de los KPIs.
@@ -69,7 +71,7 @@ export interface FiltroToggle {
 }
 
 export const BTN_FILTRO =
-  "inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-bold text-[var(--text-primary)] transition hover:bg-[var(--surface-canvas)] disabled:opacity-60 max-sm:w-12 max-sm:px-0";
+  button({ variant: "secondary", className: "shrink-0 rounded-xl" });
 const BTN_ACTIVO =
   "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] max-sm:w-auto max-sm:px-3 dark:text-[var(--accent)]";
 
@@ -92,7 +94,7 @@ export function BotonFiltros({
       aria-expanded={abierto}
       aria-controls={panelId}
       title="Filtros por especie, proveedor y producto"
-      className={`${BTN_FILTRO} ${activos > 0 ? BTN_ACTIVO : ""}`}
+      className={cn(BTN_FILTRO, `${activos > 0 ? BTN_ACTIVO : ""}`)}
     >
       <SlidersHorizontal className="h-4 w-4" />
       <span className="max-sm:sr-only">Filtros</span>
@@ -172,7 +174,7 @@ export default function CtpFiltrosPanel({
                 type="button"
                 onClick={() => onToggle(t.id)}
                 aria-pressed={t.on}
-                className={`inline-flex h-9 items-center gap-2 rounded-full border-2 px-3.5 text-sm font-bold transition ${
+                className={`inline-flex h-12 items-center gap-2 rounded-full border-2 px-3.5 text-sm font-bold transition ${
                   t.on
                     ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                     : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)] hover:text-[var(--text-primary)]"
@@ -185,7 +187,7 @@ export default function CtpFiltrosPanel({
               <button
                 type="button"
                 onClick={onLimpiar}
-                className="inline-flex h-9 items-center gap-1 rounded-full px-3 text-sm font-bold text-[var(--text-secondary)] underline-offset-2 hover:text-[var(--text-primary)] hover:underline"
+                className="inline-flex h-12 items-center gap-1 rounded-full px-3 text-sm font-bold text-[var(--text-secondary)] underline-offset-2 hover:text-[var(--text-primary)] hover:underline"
               >
                 <X className="h-3.5 w-3.5" />
                 Limpiar

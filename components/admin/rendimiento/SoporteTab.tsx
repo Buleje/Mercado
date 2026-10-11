@@ -243,7 +243,7 @@ function StorageSection({ d }: { d: DeviceDiagnostics }) {
             onClick={clearCache}
             disabled={clearing}
             className={cn(
-              "inline-flex h-11 items-center gap-2 rounded-xl border-2 px-4 text-sm font-semibold transition-colors disabled:opacity-60",
+              "inline-flex h-12 items-center gap-2 rounded-xl border-2 px-4 text-sm font-semibold transition-colors disabled:opacity-60",
               cleared
                 ? "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-700)]"
                 : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--data-error-500)] hover:text-[var(--data-error-500)]",

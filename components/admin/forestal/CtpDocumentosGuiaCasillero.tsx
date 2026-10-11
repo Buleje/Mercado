@@ -12,11 +12,13 @@ import { Camera, FileText, FileUp, Loader2, RefreshCw, Trash2 } from "@buleje/de
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { formatDateTime } from "@/lib/format";
 import type { CasilleroConDocs, DocumentoDeGuia } from "@/hooks/use-documentos-guia";
+import { button } from "@/components/ui-system/button-variants";
+import { cn } from "@/lib/utils";
 
 const BOTON =
-  "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-primary)] transition hover:bg-[var(--surface-canvas)] disabled:opacity-40";
+  button({ variant: "secondary", className: "rounded-xl" });
 const ICONO_BTN =
-  "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[var(--text-secondary)] transition hover:bg-[var(--surface-canvas)] disabled:opacity-40";
+  button({ variant: "ghost", size: "icon", className: "shrink-0 rounded-xl" });
 
 function peso(b: number): string {
   return b >= 1024 * 1024
@@ -84,7 +86,7 @@ function Archivo({
         type="button"
         onClick={onQuitar}
         disabled={ocupado || !puedeQuitar}
-        className={`${ICONO_BTN} hover:text-[var(--data-error-600)]`}
+        className={cn(ICONO_BTN, `hover:text-[var(--data-error-600)]`)}
         title={
           puedeQuitar
             ? "Quitar (va a la papelera del Drive)"
@@ -174,7 +176,7 @@ export default function CtpDocumentosGuiaCasillero({
           type="button"
           onClick={() => camaraRef.current?.click()}
           disabled={subiendo}
-          className={`${BOTON} grow basis-24`}
+          className={cn(BOTON, `grow basis-24`)}
         >
           <Camera className="h-4 w-4" aria-hidden /> Foto
         </button>
@@ -182,7 +184,7 @@ export default function CtpDocumentosGuiaCasillero({
           type="button"
           onClick={() => archivoRef.current?.click()}
           disabled={subiendo}
-          className={`${BOTON} grow basis-24`}
+          className={cn(BOTON, `grow basis-24`)}
         >
           {subiendo ? (
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
@@ -195,7 +197,7 @@ export default function CtpDocumentosGuiaCasillero({
           <button
             type="button"
             onClick={onArmarGtf}
-            className={`${BOTON} w-full`}
+            className={cn(BOTON, `w-full`)}
             title="Abre la GTF que arma el sistema; con «Guardar en el expediente» cae en este casillero"
           >
             <FileText className="h-4 w-4" aria-hidden /> La del sistema

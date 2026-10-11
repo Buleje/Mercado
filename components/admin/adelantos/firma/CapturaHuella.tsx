@@ -19,11 +19,13 @@ import { useEffect, useId, useRef, useState } from "react";
 import { AlertTriangle, Camera, RotateCcw, Stamp, Trash2 } from "@buleje/design-system/icons";
 import { MAX_BYTES_HUELLA, TEXTO_CONSENTIMIENTO_HUELLA } from "@/lib/adelantos/entregar-tipos";
 import { logger } from "@/lib/logger";
+import { button } from "@/components/ui-system/button-variants";
+import { cn } from "@/lib/utils";
 
 const LADO_MAXIMO = 1600;
 
 const BOTON =
-  "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--text-secondary)] disabled:opacity-50";
+  button({ variant: "secondary", className: "rounded-xl" });
 
 /** La foto como JPEG de ≤1600 px por lado. `null` si el navegador no la pudo leer. */
 async function achicarFoto(archivo: File): Promise<Blob | null> {
@@ -152,7 +154,7 @@ export default function CapturaHuella({
         </div>
       ) : (
         <div className="space-y-1.5">
-          <button type="button" onClick={tomar} disabled={deshabilitado || leyendo} className={`${BOTON} w-full`} data-agregar-huella>
+          <button type="button" onClick={tomar} disabled={deshabilitado || leyendo} className={cn(BOTON, `w-full`)} data-agregar-huella>
             {leyendo ? <Stamp className="h-5 w-5 animate-pulse" aria-hidden /> : <Camera className="h-5 w-5" aria-hidden />}
             {leyendo ? "Leyendo la foto…" : obligatoria ? "Tomar la foto de la huella" : "Agregar huella (opcional)"}
           </button>

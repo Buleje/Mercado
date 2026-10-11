@@ -29,6 +29,8 @@ import {
 } from "@/lib/forestal/cubicacion-trozas-formula";
 import { formatNumber } from "@/lib/format";
 import { SeccionResumen } from "./resumen-tabla";
+import { button } from "@/components/ui-system/button-variants";
+import { cn } from "@/lib/utils";
 
 function tenantSlug(): string {
   try { return localStorage.getItem("active-tenant-slug") ?? "main"; } catch { return "main"; }
@@ -55,7 +57,7 @@ function formulaInicial(): FormulaTrozas {
 /** El PT propio de la Oxapampina va con sus 2 decimales; el equivalente de la Smalian, entero. */
 const fmtPtDe = (f: FormulaTrozas) => (f === "oxapampina" ? (v: number) => formatNumber(v, 2) : fmtPt);
 
-const BTN = "inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]";
+const BTN = button({ variant: "secondary", className: "rounded-xl" });
 
 /** Fila compacta: label · piezas · PT · m³ · barra de participación. */
 function FilaGrupo({ g, destacada, formula }: { g: GrupoTrozas; destacada?: boolean; formula: FormulaTrozas }) {
@@ -191,10 +193,10 @@ export default function ResumenTrozas() {
               options={FORMULAS_TROZAS.map((f) => ({ value: f, label: UNIDADES_FORMULA[f].etiqueta }))}
             />
           )}
-          <button type="button" onClick={recargar} title="Volver a leer el patio del cubicador de trozas" className={`${BTN} print:hidden`}>
+          <button type="button" onClick={recargar} title="Volver a leer el patio del cubicador de trozas" className={cn(BTN, `print:hidden`)}>
             <RefreshCw className="h-4 w-4" /> Actualizar
           </button>
-          <button type="button" onClick={exportarCSV} className={`${BTN} print:hidden`}>
+          <button type="button" onClick={exportarCSV} className={cn(BTN, `print:hidden`)}>
             <Download className="h-4 w-4" /> CSV
           </button>
         </>

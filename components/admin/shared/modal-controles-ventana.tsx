@@ -21,12 +21,13 @@ import { FocusScope } from "@radix-ui/react-focus-scope";
 import { Maximize2, Minimize2, Pin, PinOff, RotateCcw } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { VentanaDeModal } from "@/hooks/use-ventana-de-modal";
+import { button } from "@/components/ui-system/button-variants";
 
-/** El mismo cuerpo que la X del header, para que la fila se lea pareja. */
-const BOTON =
-  "h-10 w-10 sm:h-8 sm:w-8 rounded-xl flex items-center justify-center transition-colors shrink-0 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]";
+/** El mismo cuerpo que la X del header (AdminModal la importa), para que la fila se lea pareja: 48 px (ADR-489). */
+export const BOTON_VENTANA = button({ variant: "ghost", size: "icon", className: "shrink-0 rounded-xl" });
+const BOTON = BOTON_VENTANA;
 const BOTON_ACTIVO = "bg-primary/10 text-[var(--accent-ink)] dark:bg-primary/20 dark:text-[var(--accent)]";
-const ICONO = "h-5 w-5 sm:h-4 sm:w-4";
+const ICONO = "h-5 w-5";
 
 export function ControlesDeVentana({ ventana }: { ventana: VentanaDeModal }) {
   if (!ventana.activa) return null;

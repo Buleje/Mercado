@@ -89,7 +89,7 @@ export default function LothExtraccionAvisos({ avisos }: { avisos: readonly Avis
           type="button"
           onClick={() => setTodos((v) => !v)}
           aria-expanded={todos}
-          className="inline-flex h-9 items-center gap-1.5 rounded-lg px-2 text-sm font-bold text-[var(--accent-ink)] hover:bg-[var(--surface-sunken)] dark:text-[var(--accent)]"
+          className="inline-flex h-12 items-center gap-1.5 rounded-lg px-2 text-sm font-bold text-[var(--accent-ink)] hover:bg-[var(--surface-sunken)] dark:text-[var(--accent)]"
         >
           <ChevronDown className={`h-4 w-4 transition-transform ${todos ? "rotate-180" : ""}`} aria-hidden />
           {todos ? "Ver menos avisos" : `${ocultos} ${ocultos === 1 ? "aviso más" : "avisos más"}`}

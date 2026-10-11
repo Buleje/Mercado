@@ -40,7 +40,7 @@ export function FiltrosMovilProductos({ e }: { e: EstadoProductosDisponibles }) 
         onClick={() => setAbierto((v) => !v)}
         aria-expanded={abierto}
         aria-controls={idPanel}
-        className={`flex h-11 w-full items-center justify-center gap-2 rounded-xl border-[1.5px] px-4 text-sm font-bold text-[var(--text-primary)] transition-colors ${
+        className={`flex h-12 w-full items-center justify-center gap-2 rounded-xl border-[1.5px] px-4 text-sm font-bold text-[var(--text-primary)] transition-colors ${
           puestos > 0 || abierto ? "border-[var(--accent)]" : "border-[var(--rule-base)] hover:border-[var(--accent)]"
         }`}
       >

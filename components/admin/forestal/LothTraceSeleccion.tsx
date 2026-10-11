@@ -8,9 +8,10 @@
 
 import { Printer, X } from "@buleje/design-system/icons";
 import type { TraceFila } from "@/lib/forestal/loth-trace-tabla";
+import { button } from "@/components/ui-system/button-variants";
 
 const BOTON =
-  "inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-40";
+  button({ variant: "secondary", className: "rounded-xl" });
 
 /** Aparece sólo con algo elegido; queda pegada arriba mientras se recorre la lista. */
 export default function LothTraceSeleccion({
@@ -35,7 +36,7 @@ export default function LothTraceSeleccion({
         type="button"
         onClick={onPasaportes}
         disabled={conOperacion === 0}
-        className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-40"
+        className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-40"
       >
         <Printer className="h-4 w-4" aria-hidden="true" /> Pasaporte de {conOperacion === 1 ? "1 árbol" : `los ${conOperacion}`}
       </button>
@@ -45,7 +46,7 @@ export default function LothTraceSeleccion({
       <button
         type="button"
         onClick={onLimpiar}
-        className="ml-auto inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+        className="ml-auto inline-flex h-12 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
       >
         <X className="h-4 w-4" aria-hidden="true" /> Limpiar
       </button>

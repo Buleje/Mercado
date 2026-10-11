@@ -41,6 +41,7 @@ import {
   rotuloRango,
   type RangoPagina,
 } from "@/lib/forestal/tabla-paginacion";
+import { button } from "@/components/ui-system/button-variants";
 
 /** Estado de paginación de una tabla. `filas` es la lista YA filtrada. */
 export function usePaginacion<T>(filas: readonly T[], opciones: { porPaginaInicial?: number } = {}) {
@@ -175,7 +176,7 @@ export function FilaVacia({ cols, children }: { cols: number; children: React.Re
 }
 
 const BOTON =
-  "grid h-9 min-w-9 place-items-center rounded-lg border border-[var(--rule-base)] px-2 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] disabled:opacity-30 disabled:hover:border-[var(--rule-base)]";
+  button({ variant: "secondary", className: "min-w-9 rounded-xl" });
 
 export function CtpPaginacion({
   rango,

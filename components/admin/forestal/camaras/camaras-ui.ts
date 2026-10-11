@@ -12,6 +12,7 @@ import { ESTADO_ASISTENCIA_META } from "@/components/admin/rrhh/rrhh-ui";
 import type { EstadoAsistencia } from "@/lib/rrhh/tipos";
 import { formatDateTimeShort, formatTime, formatWeekday } from "@/lib/format";
 import { limaDateKey } from "@/lib/utils";
+import { button } from "@/components/ui-system/button-variants";
 
 export const API_CAMARAS = "/api/admin/camaras";
 
@@ -41,7 +42,7 @@ export type { ResumenDelDia };
 
 /** Botón secundario de 48 px (10-10: el panel pide h-12 en todo lo que se toca): filas de cámara y tarjetas. */
 export const BTN =
-  "inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:opacity-50";
+  button({ variant: "secondary", className: "rounded-xl" });
 
 /** Bloque de la pantalla: tarjeta con borde. */
 export const BLOQUE = "rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4";

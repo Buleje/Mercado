@@ -29,12 +29,13 @@ import EscanerTrozas, { nombreDeTroza } from "./EscanerTrozas";
 import FormMedida from "./patio-medir-form";
 import TandaMedida from "./patio-medir-tanda";
 import { useMedirPatio } from "./hooks/use-medir-patio";
+import { button } from "@/components/ui-system/button-variants";
 
 /** Se puede volver a escanear la misma troza cuantas veces haga falta (corregirla). */
 const SIN_MARCAR: ReadonlySet<string> = new Set();
 
 const BOTON_BORDE =
-  "inline-flex h-12 items-center gap-2 rounded-2xl border border-[var(--rule-base)] px-4 text-base font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]";
+  button({ variant: "secondary", className: "rounded-xl" });
 
 type Aviso = { tono: "ok" | "tablet" | "aviso" | "error"; texto: string };
 

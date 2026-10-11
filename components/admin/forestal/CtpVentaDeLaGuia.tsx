@@ -227,7 +227,7 @@ export default function CtpVentaDeLaGuia({
             type="button"
             onClick={() => setCobro(k)}
             aria-pressed={cobro === k}
-            className={`h-10 rounded-xl border-2 px-3 text-sm font-bold transition ${
+            className={`h-12 rounded-xl border-2 px-3 text-sm font-bold transition ${
               cobro === k
                 ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)]/50"

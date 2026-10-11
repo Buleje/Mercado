@@ -14,6 +14,7 @@
 import { EyeOff, Route, Wand2 } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import type { EstadoPrevia } from "./hooks/use-loth-mapa-rutas";
+import { button } from "@/components/ui-system/button-variants";
 
 interface Props {
   estado: EstadoPrevia;
@@ -24,7 +25,7 @@ interface Props {
 }
 
 const BTN =
-  "inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:border-[var(--rule-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40";
+  button({ variant: "secondary", className: "rounded-xl" });
 
 export default function LothMapaRutasAviso({ estado, error, onProponer, onOcultar }: Props) {
   if (estado === "nada" || estado === "cargando") return null;

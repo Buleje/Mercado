@@ -173,7 +173,7 @@ export default function LothTrozasRenglones({
           enfocarFila.current = renglones.length;
           onAgregar();
         }}
-        className="inline-flex h-11 items-center gap-2 rounded-xl border border-dashed border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
+        className="inline-flex h-12 items-center gap-2 rounded-xl border border-dashed border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
       >
         <Plus className="h-4 w-4" /> Agregar troza
       </button>

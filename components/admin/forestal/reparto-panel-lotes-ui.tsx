@@ -5,11 +5,12 @@
 
 import type { ReactNode } from "react";
 import { AlertTriangle, Check } from "@buleje/design-system/icons";
+import { button } from "@/components/ui-system/button-variants";
 
 export const BTN =
-  "inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition hover:text-[var(--text-primary)] disabled:opacity-50";
+  button({ variant: "secondary", className: "rounded-xl" });
 export const BTN_PRIMARIO =
-  "inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white transition hover:brightness-95 disabled:opacity-50";
+  button({ variant: "accent", className: "rounded-xl" });
 export const CAMPO =
   "h-10 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)]";
 

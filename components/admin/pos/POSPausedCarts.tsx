@@ -145,7 +145,7 @@ export default function POSPausedCarts({
                 />
                 <button
                   onClick={handlePause}
-                  className="h-10 px-2 text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:underline"
+                  className="h-12 px-2 text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:underline"
                 >
                   OK
                 </button>

@@ -120,7 +120,7 @@ export default function LothGtfBajas({
     return (
       <div className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)] dark:bg-[var(--data-error-500)]/12 dark:text-[var(--data-error-500)]">
         <span>{error}</span>
-        <button type="button" onClick={onReintentar} className="inline-flex h-9 items-center rounded-lg border-2 border-[var(--data-error-500)] px-3 text-xs font-bold hover:bg-[var(--data-error-100)]">Reintentar</button>
+        <button type="button" onClick={onReintentar} className="inline-flex h-12 items-center rounded-lg border-2 border-[var(--data-error-500)] px-3 text-xs font-bold hover:bg-[var(--data-error-100)]">Reintentar</button>
       </div>
     );
   }

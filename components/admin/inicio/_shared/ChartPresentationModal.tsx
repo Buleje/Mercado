@@ -21,6 +21,7 @@ import {
 } from "@buleje/design-system/icons";
 import { SectionTitle } from "@buleje/design-system";
 import { cn } from "@/lib/utils";
+import { button } from "@/components/ui-system/button-variants";
 
 /**
  * ChartPresentationModal — modal fullscreen para "presentar" un chart.
@@ -282,7 +283,7 @@ export function ChartPresentationModal({
   if (!activeItem || typeof document === "undefined") return null;
 
   const ctlBtn =
-    "inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-semibold transition-colors border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]";
+    button({ variant: "secondary", className: "rounded-xl" });
 
   return createPortal(
     <div

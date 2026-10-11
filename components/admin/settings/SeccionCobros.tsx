@@ -124,7 +124,7 @@ export function SeccionCobros({ aj, onNavigateTab }: { aj: AjustesEstado; onNavi
           title="Comprobantes"
           desc="Emisor e IGV de tus boletas y facturas"
           accion={
-            <button type="button" onClick={() => onNavigateTab?.("facturacion")} className="inline-flex h-10 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-[var(--surface-sunken)]" title="Tus boletas, facturas y notas emitidas, en Facturación">
+            <button type="button" onClick={() => onNavigateTab?.("facturacion")} className="inline-flex h-12 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-[var(--surface-sunken)]" title="Tus boletas, facturas y notas emitidas, en Facturación">
               Emitidos <ChevronRight className="h-4 w-4" aria-hidden />
             </button>
           }

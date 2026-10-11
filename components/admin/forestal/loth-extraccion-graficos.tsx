@@ -134,7 +134,7 @@ export default function LothExtraccionGraficos({
         type="button"
         onClick={() => setGuardado(!abierto)}
         aria-expanded={abierto}
-        className={`inline-flex h-9 items-center gap-2 rounded-lg border-[1.5px] px-3 text-sm font-bold transition-colors ${
+        className={`inline-flex h-12 items-center gap-2 rounded-lg border-[1.5px] px-3 text-sm font-bold transition-colors ${
           abierto
             ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
             : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-[var(--accent)]"

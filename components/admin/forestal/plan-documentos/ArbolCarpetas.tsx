@@ -102,7 +102,7 @@ export default function ArbolCarpetas({
       </ul>
 
       {puedeCrear && !alta && (
-        <button type="button" className={`${BOTON_SUAVE} h-10 w-full justify-center`} onClick={() => setAlta(true)}>
+        <button type="button" className={`${BOTON_SUAVE} h-12 w-full justify-center`} onClick={() => setAlta(true)}>
           <FolderPlus className="h-4 w-4" aria-hidden="true" />
           Nueva carpeta
         </button>

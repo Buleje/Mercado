@@ -84,7 +84,7 @@ const FORMAS: { id: FormaIndicadores; label: string; icon: LucideIcon; titulo: s
   { id: "cifras", label: "Cifras", icon: Rows3, titulo: "Las mismas cifras, en una sola línea" },
 ];
 
-const BTN = "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40";
+const BTN = "inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl px-2.5 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40";
 
 /**
  * El control, en la misma fila que los indicadores. Dos preguntas distintas,

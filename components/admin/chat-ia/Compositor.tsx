@@ -16,12 +16,13 @@ import { useVozContinua } from "@/hooks/use-voz-continua";
 import { AvisoCampo } from "./AvisoCampo";
 import { COMANDO_CANCELAR, COMANDOS_ENVIAR, juntar, normalizarComando } from "./dictado";
 import { useAudioAdjunto } from "./use-audio-adjunto";
+import { button } from "@/components/ui-system/button-variants";
 
 /** Botón cuadrado de 48 px dentro del campo de texto. */
 const BOTON_CAMPO =
   "absolute bottom-1 flex h-12 w-12 items-center justify-center rounded-xl transition-all";
 const BOTON_CAMPO_NEUTRO =
-  "border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--text-primary)]/40 hover:text-[var(--text-primary)]";
+  button({ variant: "secondary" });
 
 /** Lo que el chat puede pedirle al campo desde afuera. */
 export interface CompositorHandle {

@@ -18,7 +18,7 @@ import type { CensoTree } from "./loth-mapa-shared";
 
 /** El CTA oscuro del mapa (mismo que «Guardar» de la barra de dibujo), con 44 px para el dedo. */
 export const BTN_MAPA_PRIMARIO =
-  "inline-flex h-11 items-center justify-center gap-1.5 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-bold text-white hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--data-info-500)] dark:ring-1 dark:ring-[var(--rule-strong)] disabled:opacity-40";
+  "inline-flex h-12 items-center justify-center gap-1.5 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-bold text-white hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--data-info-500)] dark:ring-1 dark:ring-[var(--rule-strong)] disabled:opacity-40";
 
 export default function LothMapaRegistrarTala({ arbol, className = "" }: { arbol: CensoTree; className?: string }) {
   const tala = talaDesdeElMapa(arbol);

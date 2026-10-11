@@ -272,7 +272,7 @@ export default function PlanTierSelector({
                 onClick={() => handleSelect(tier)}
                 disabled={isCurrent}
                 className={cn(
-                  "mt-auto inline-flex h-11 items-center justify-center gap-1.5 rounded-xl text-sm font-black transition-all",
+                  "mt-auto inline-flex h-12 items-center justify-center gap-1.5 rounded-xl text-sm font-black transition-all",
                   isCurrent
                     ? "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed"
                     : accent.button,

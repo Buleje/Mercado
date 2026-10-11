@@ -157,7 +157,7 @@ export function PieConexionIp({ f, onCerrar }: { f: FormularioIp; onCerrar: () =
           type="button"
           onClick={() => void desconectar()}
           disabled={probando}
-          className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition hover:border-[var(--data-error-500)] hover:text-[var(--data-error-500)] disabled:opacity-50"
+          className="inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition hover:border-[var(--data-error-500)] hover:text-[var(--data-error-500)] disabled:opacity-50"
         >
           <WifiOff className="h-4 w-4" aria-hidden /> Desconectar
         </button>
@@ -165,7 +165,7 @@ export function PieConexionIp({ f, onCerrar }: { f: FormularioIp; onCerrar: () =
       <button
         type="button"
         onClick={onCerrar}
-        className="ml-auto inline-flex h-11 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]"
+        className="ml-auto inline-flex h-12 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]"
       >
         {resultado?.ok ? "Listo" : "Cancelar"}
       </button>
@@ -173,7 +173,7 @@ export function PieConexionIp({ f, onCerrar }: { f: FormularioIp; onCerrar: () =
         type="button"
         onClick={() => void probar()}
         disabled={!listo || probando}
-        className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white transition hover:brightness-95 disabled:opacity-50"
+        className="inline-flex h-12 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white transition hover:brightness-95 disabled:opacity-50"
       >
         {probando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Server className="h-4 w-4" aria-hidden />}
         {probando ? "Probando…" : "Probar y guardar"}

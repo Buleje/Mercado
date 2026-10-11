@@ -19,6 +19,8 @@ import type { ConfigVariado, DesgloseGrupo, MotivoSinDesglosar, ResultadoVariado
 import { ordenTipo, tipoCorto, type TipoComercial } from "@/lib/forestal/cubicacion-tipo";
 import { medidaVariadoTxt, pesosTxt } from "./cubicador-variado";
 import { useAplicarVariado, type AplicarVariado } from "./hooks/use-aplicar-variado";
+import { button } from "@/components/ui-system/button-variants";
+import { cn } from "@/lib/utils";
 
 /** La línea que se imprime en el PDF/Excel de la Distribución cuando hay Variado. */
 export const NOTA_VARIADO_PAPEL =
@@ -41,7 +43,7 @@ const MOTIVO: Record<MotivoSinDesglosar, string> = {
 const pt2 = (v: number) => formatNumber(v, 2);
 
 const BOTON =
-  "inline-flex min-h-[2.75rem] items-center gap-1.5 rounded-lg border px-2.5 font-bold transition-colors disabled:opacity-50 sm:min-h-[2rem]";
+  button({ variant: "secondary", className: "rounded-xl" });
 
 /** La copia del lote de antes: cuándo se aplicó y el botón para volver. */
 function LineaRespaldo({ v }: { v: AplicarVariado }) {
@@ -58,7 +60,7 @@ function LineaRespaldo({ v }: { v: AplicarVariado }) {
         type="button"
         onClick={() => void v.deshacer()}
         disabled={v.ocupado}
-        className={`${BOTON} border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]`}
+        className={cn(BOTON, `border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]`)}
       >
         <Undo2 className="h-3.5 w-3.5" aria-hidden /> Deshacer
       </button>
@@ -113,7 +115,7 @@ export default function RepartoVariado({ des, paquetes, bloques, cfg }: {
               type="button"
               onClick={() => void v.aplicar()}
               disabled={v.ocupado}
-              className={`${BOTON} border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-ink)] hover:bg-[var(--accent-muted)]`}
+              className={cn(BOTON, `border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-ink)] hover:bg-[var(--accent-muted)]`)}
             >
               <PackageOpen className="h-3.5 w-3.5" aria-hidden /> Aplicar el desglose al lote
             </button>

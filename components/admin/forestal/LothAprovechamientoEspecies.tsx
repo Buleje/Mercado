@@ -45,7 +45,7 @@ export default function LothAprovechamientoEspecies({ a }: { a: Aprovechamiento 
           type="button"
           onClick={() => setTodas((v) => !v)}
           aria-expanded={todas}
-          className="inline-flex h-9 items-center gap-1.5 rounded-lg px-2 text-sm font-bold text-[var(--accent-ink)] hover:bg-[var(--accent-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 dark:text-[var(--accent)]"
+          className="inline-flex h-12 items-center gap-1.5 rounded-lg px-2 text-sm font-bold text-[var(--accent-ink)] hover:bg-[var(--accent-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 dark:text-[var(--accent)]"
         >
           <ChevronDown className={`h-4 w-4 transition-transform ${todas ? "rotate-180" : ""}`} aria-hidden="true" />
           {todas ? "Ver sólo las 5 con más saldo" : `Ver las ${a.especies.length} especies`}

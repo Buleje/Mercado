@@ -254,7 +254,7 @@ export default function SectionsTab({ slug = "main" }: { slug?: string }) {
             type="button"
             onClick={() => setShowPreview((v) => !v)}
             aria-pressed={showPreview}
-            className={`inline-flex items-center gap-2 rounded-full px-4 h-10 text-sm font-extrabold transition-colors ${showPreview ? "bg-[var(--accent)] text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)]"}`}
+            className={`inline-flex items-center gap-2 rounded-full px-4 h-12 text-sm font-extrabold transition-colors ${showPreview ? "bg-[var(--accent)] text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--rule-soft)]"}`}
           >
             <Columns2 className="w-4 h-4" strokeWidth={2.5} />
             Vista previa
@@ -262,7 +262,7 @@ export default function SectionsTab({ slug = "main" }: { slug?: string }) {
           <button
             type="button"
             onClick={() => setShowTemplates(true)}
-            className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-4 h-10 text-sm font-extrabold hover:bg-[var(--accent)]/90 transition-colors shadow-md"
+            className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-4 h-12 text-sm font-extrabold hover:bg-[var(--accent)]/90 transition-colors shadow-md"
           >
             <Plus className="w-4 h-4" strokeWidth={2.5} />
             Añadir sección
@@ -300,7 +300,7 @@ export default function SectionsTab({ slug = "main" }: { slug?: string }) {
           <button
             type="button"
             onClick={() => setShowTemplates(true)}
-            className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-5 h-11 text-sm font-extrabold hover:bg-[var(--accent)]/90 transition-colors"
+            className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)] text-white px-5 h-12 text-sm font-extrabold hover:bg-[var(--accent)]/90 transition-colors"
           >
             <Sparkles className="w-4 h-4" strokeWidth={2.5} />
             Empezar con una plantilla
@@ -867,7 +867,7 @@ function SectionEditor({
             <button
               type="button"
               onClick={() => onChange({ imagePosition: "left" })}
-              className={`flex-1 rounded-xl border-2 px-3 h-10 text-xs font-extrabold transition-all ${
+              className={`flex-1 rounded-xl border-2 px-3 h-12 text-xs font-extrabold transition-all ${
                 data.imagePosition === "left"
                   ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                   : "border-[var(--rule-base)] text-[var(--text-secondary)]"
@@ -878,7 +878,7 @@ function SectionEditor({
             <button
               type="button"
               onClick={() => onChange({ imagePosition: "right" })}
-              className={`flex-1 rounded-xl border-2 px-3 h-10 text-xs font-extrabold transition-all ${
+              className={`flex-1 rounded-xl border-2 px-3 h-12 text-xs font-extrabold transition-all ${
                 data.imagePosition === "right"
                   ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                   : "border-[var(--rule-base)] text-[var(--text-secondary)]"
@@ -900,7 +900,7 @@ function SectionEditor({
                 key={b.id}
                 type="button"
                 onClick={() => onChange({ background: b.id })}
-                className={`flex-1 rounded-xl border-2 px-3 h-10 text-xs font-extrabold transition-all ${
+                className={`flex-1 rounded-xl border-2 px-3 h-12 text-xs font-extrabold transition-all ${
                   (data.background ?? "light") === b.id
                     ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                     : "border-[var(--rule-base)] text-[var(--text-secondary)]"

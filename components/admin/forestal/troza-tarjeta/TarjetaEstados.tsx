@@ -8,11 +8,12 @@ import { LogIn, RefreshCw, SearchX, WifiOff, type LucideIcon } from "@buleje/des
 import { CardTitle } from "@buleje/design-system";
 import { rutaFichaDeTroza, TAB_LIBRO_CTP } from "@/lib/forestal/ctp-troza-url";
 import type { MotivoErrorFicha } from "@/hooks/use-ficha-troza";
+import { button } from "@/components/ui-system/button-variants";
 
 export const BOTON_PRIMARIO =
-  "inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] px-5 text-base font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[var(--accent-600)] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-canvas)] disabled:opacity-60";
+  button({ variant: "accent", className: "rounded-xl" });
 export const BOTON_SECUNDARIO =
-  "inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-5 text-base font-semibold text-[var(--text-primary)] transition hover:-translate-y-0.5 hover:border-[var(--accent)] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]";
+  button({ variant: "secondary", className: "rounded-xl" });
 
 /** La trozas del libro, sin ninguna abierta. */
 const RUTA_TROZAS = `/admin?tab=${TAB_LIBRO_CTP}&vista=trozas`;

@@ -219,7 +219,7 @@ export default function CtpTrozasLista({
           <button
             type="button"
             onClick={() => onApartar(piezasElegidas)}
-            className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-[var(--accent-dark)] px-3 text-sm font-bold text-white shadow-sm transition-opacity hover:opacity-90"
+            className="inline-flex h-12 items-center gap-1.5 rounded-xl bg-[var(--accent-dark)] px-3 text-sm font-bold text-white shadow-sm transition-opacity hover:opacity-90"
           >
             <Layers className="h-4 w-4" /> Apartar en un lote
           </button>
@@ -288,7 +288,7 @@ export default function CtpTrozasLista({
               <button
                 type="button"
                 onClick={() => setTope((v) => v + 200)}
-                className="h-9 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
+                className="h-12 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)]"
               >
                 Ver 200 más ({filtradas.length - visibles.length} restantes)
               </button>

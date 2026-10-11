@@ -36,10 +36,11 @@ import { cn, limaDateKey } from "@/lib/utils";
 import { GrillaDelMes } from "./GrillaDelMes";
 import { useIndicadoresDelMes } from "./IndicadoresDelMes";
 import { cumplimientoPorDiaSemana, diasDelMes, moverMes, nombreDelMes, resumirMes } from "./calendario-calculos";
+import { button } from "@/components/ui-system/button-variants";
 
 const soles = (n: number) => cifraDeMeta(n, "S/");
 const BOTON_ICONO =
-  "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40";
+  button({ variant: "ghost", size: "icon", className: "shrink-0 rounded-xl" });
 const VACIO: VentasPorDia = {};
 
 export function CalendarioMes() {

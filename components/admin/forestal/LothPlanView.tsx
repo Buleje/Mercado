@@ -152,7 +152,7 @@ export default function LothPlanView({
           <button
             type="button"
             onClick={() => d.setShowPlanForm(true)}
-            className="mt-4 inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-semibold text-white hover:opacity-90"
+            className="mt-4 inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-semibold text-white hover:opacity-90"
           >
             <Plus className="h-4 w-4" aria-hidden="true" /> Nuevo plan
           </button>

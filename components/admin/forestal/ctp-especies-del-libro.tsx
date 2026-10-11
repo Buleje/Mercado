@@ -62,7 +62,7 @@ export function EspeciesQueFaltan({
             onSembrar(faltan.map((e) => ({ nombre: e.nombre, cientifico: e.cientifico })))
           }
           disabled={guardando}
-          className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 text-sm font-semibold text-white transition hover:brightness-95 disabled:opacity-50"
+          className="inline-flex h-12 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 text-sm font-semibold text-white transition hover:brightness-95 disabled:opacity-50"
         >
           {guardando ? (
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
@@ -149,7 +149,7 @@ export function EspeciesDuplicadas({
                         ? `Confirmar: el libro entero va a decir «${g.texto}»`
                         : `Dejar «${g.texto}» en todo el libro`
                     }
-                    className={`inline-flex h-9 items-center gap-1.5 rounded-lg border px-2.5 text-sm transition disabled:opacity-50 ${
+                    className={`inline-flex h-12 items-center gap-1.5 rounded-lg border px-2.5 text-sm transition disabled:opacity-50 ${
                       esperando
                         ? "border-[var(--data-warning-500)] bg-[var(--data-warning-500)]/12 font-bold text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
                         : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
@@ -179,7 +179,7 @@ export function EspeciesDuplicadas({
                 <button
                   type="button"
                   onClick={() => setConfirmar(null)}
-                  className="h-9 rounded-lg px-2 text-sm text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+                  className="h-12 rounded-lg px-2 text-sm text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
                 >
                   Cancelar
                 </button>

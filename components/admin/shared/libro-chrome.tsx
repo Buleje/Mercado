@@ -276,7 +276,7 @@ export default function LibroChrome({
                   role="tab"
                   aria-selected={activo}
                   onClick={() => !activo && onView?.(g.views[0].key)}
-                  className={`relative inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-sm font-bold transition-colors @max-[88rem]/banda:px-2 ${
+                  className={`relative inline-flex h-12 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-sm font-bold transition-colors @max-[88rem]/banda:px-2 ${
                     activo
                       ? "bg-[var(--surface-raised)] text-[var(--accent-dark)] shadow-[var(--shadow-sm)] dark:text-[var(--accent)]"
                       : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
@@ -374,7 +374,7 @@ export default function LibroChrome({
                   aria-selected={activo}
                   title={v.tecla ? `${v.hint}  ·  atajo: g ${v.tecla}` : v.hint}
                   onClick={() => onView?.(v.key)}
-                  className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-sm transition-colors sm:px-3 ${
+                  className={`inline-flex h-12 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-sm transition-colors sm:px-3 ${
                     activo
                       ? "bg-primary/10 font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] dark:bg-primary/20"
                       : "font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"

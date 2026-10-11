@@ -148,7 +148,7 @@ export default function LothSeccionesRiel({
             aria-expanded={abierto}
             aria-controls={grupoId}
             title={AYUDA_EN_EL_TH}
-            className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl px-2 text-sm font-semibold text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
+            className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl px-2 text-sm font-semibold text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
           >
             <ChevronRight
               className={`h-4 w-4 transition-transform ${abierto ? "rotate-90" : ""}`}
@@ -186,7 +186,7 @@ export default function LothSeccionesRiel({
               type="button"
               onClick={onIrAlCtp}
               title="Consumo, producción y despacho de lo aserrado se registran en tu Libro CTP"
-              className="inline-flex h-10 shrink-0 items-center gap-1 rounded-xl px-2 text-sm font-semibold text-[var(--accent-ink)] transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 dark:text-[var(--accent)]"
+              className="inline-flex h-12 shrink-0 items-center gap-1 rounded-xl px-2 text-sm font-semibold text-[var(--accent-ink)] transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 dark:text-[var(--accent)]"
             >
               Libro CTP
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -216,7 +216,7 @@ function VaAPlanta({ onIrAlCtp }: { onIrAlCtp?: () => void }) {
       type="button"
       onClick={onIrAlCtp}
       title={ayuda}
-      className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl px-2 text-sm font-semibold text-[var(--accent-ink)] transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 dark:text-[var(--accent)]"
+      className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl px-2 text-sm font-semibold text-[var(--accent-ink)] transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 dark:text-[var(--accent)]"
     >
       <span className="text-[var(--text-tertiary)]">
         <span className="tabular-nums">4–6</span> van a la planta ·
@@ -245,7 +245,7 @@ function ChipSeccion({
       onClick={onClick}
       aria-current={activa ? "true" : undefined}
       title={`${meta.index}. ${meta.label}: ${meta.help.toLowerCase()}`}
-      className={`inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl px-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 ${
+      className={`inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl px-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40 ${
         activa
           ? "bg-primary/10 font-bold text-[var(--accent-ink)] dark:bg-primary/20 dark:text-[var(--accent)]"
           : "font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"

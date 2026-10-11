@@ -148,7 +148,7 @@ export default function CubicadorPrecio({
             type="button"
             onClick={() => setVerEspecies((v) => !v)}
             aria-expanded={verEspecies}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+            className="inline-flex h-12 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
           >
             Por especie
             {hayPreciosEspecie && <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]" aria-label="hay precios por especie" />}

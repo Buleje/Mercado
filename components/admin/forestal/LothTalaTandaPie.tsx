@@ -111,7 +111,7 @@ const LothTalaTandaPie = forwardRef<
         type="button"
         onClick={onCerrar}
         disabled={avance != null}
-        className="inline-flex h-10 items-center whitespace-nowrap rounded-xl px-3 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+        className="inline-flex h-12 items-center whitespace-nowrap rounded-xl px-3 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-50"
       >
         {t.listas === 0 && yaGuardo ? "Cerrar" : "Cancelar"}
       </button>
@@ -121,7 +121,7 @@ const LothTalaTandaPie = forwardRef<
           onClick={onTrozar}
           disabled={avance != null || recargando}
           title={recargando ? "Actualizando el libro…" : undefined}
-          className="inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-xl border border-[var(--rule-strong)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-50"
+          className="inline-flex h-12 items-center gap-2 whitespace-nowrap rounded-xl border border-[var(--rule-strong)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:opacity-50"
         >
           {recargando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Scissors className="h-4 w-4" />} Trozar estos árboles
         </button>
@@ -133,7 +133,7 @@ const LothTalaTandaPie = forwardRef<
           onClick={onGuardar}
           disabled={t.listas === 0 || avance != null}
           title={t.listas === 0 ? "Mide al menos un árbol: la longitud y, si lo pide el modo, D1 y D2" : undefined}
-          className="inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-xl bg-[var(--accent-dark)] px-3.5 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex h-12 items-center gap-2 whitespace-nowrap rounded-xl bg-[var(--accent-dark)] px-3.5 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {avance ? <Loader2 className="h-4 w-4 animate-spin" /> : <Axe className="h-4 w-4" />}
           {yaGuardo

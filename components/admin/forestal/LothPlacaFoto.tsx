@@ -99,7 +99,7 @@ export default function LothPlacaFoto({
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={p.procesando}
-          className="inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-lg border-2 border-[var(--accent)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--accent)]/10 disabled:cursor-wait disabled:opacity-70"
+          className="inline-flex h-12 items-center gap-2 whitespace-nowrap rounded-lg border-2 border-[var(--accent)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--accent)]/10 disabled:cursor-wait disabled:opacity-70"
         >
           {p.procesando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4 text-[var(--accent-ink)] dark:text-[var(--accent)]" />}
           {p.procesando ? "Leyendo la placa…" : p.activa ? "Otra foto de la placa" : "Foto de la placa"}

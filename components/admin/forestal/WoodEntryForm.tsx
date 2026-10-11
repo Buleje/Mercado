@@ -2032,7 +2032,7 @@ export default function WoodEntryForm({
                           type="button"
                           onClick={() => void consultarSerfor()}
                           disabled={serforCargando || !nroRegistroSerfor.trim()}
-                          className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-[var(--brand-ink)] px-3.5 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl bg-[var(--brand-ink)] px-3.5 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {serforCargando ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -2047,7 +2047,7 @@ export default function WoodEntryForm({
                             onClick={() => {
                               void printGtfSerfor(serforGtf as never);
                             }}
-                            className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+                            className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3.5 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
                           >
                             <FileText className="h-4 w-4" /> Imprimir la GTF
                           </button>
@@ -2087,7 +2087,7 @@ export default function WoodEntryForm({
                         <button
                           type="button"
                           onClick={() => setModo("manual")}
-                          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+                          className="inline-flex h-12 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
                         >
                           Cargarla a mano
                         </button>
@@ -2288,7 +2288,7 @@ export default function WoodEntryForm({
                         type="button"
                         onClick={() => void cargarGuia()}
                         disabled={loadingGtf || !data.gtfNumber.trim()}
-                        className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-[var(--accent-dark)] px-3.5 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl bg-[var(--accent-dark)] px-3.5 text-sm font-semibold text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {loadingGtf ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -2300,7 +2300,7 @@ export default function WoodEntryForm({
                       <button
                         type="button"
                         onClick={toggleGuias}
-                        className={`inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl border px-3 text-sm font-semibold transition-colors ${showGuias ? "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-700)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`}
+                        className={`inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl border px-3 text-sm font-semibold transition-colors ${showGuias ? "border-[var(--data-success-500)] bg-[var(--data-success-50)] text-[var(--data-success-700)]" : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"}`}
                       >
                         <Search className="h-4 w-4" /> Ver guías
                       </button>

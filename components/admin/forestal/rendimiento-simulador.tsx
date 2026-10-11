@@ -19,6 +19,8 @@ import { claveLoteTrozas, type FormulaTrozas } from "@/lib/forestal/cubicacion-t
 import { FACTOR_OXAPAMPA_GEOMETRICO } from "@/lib/forestal/rendimiento-plata";
 import { simularAserrado, type FuenteSimulacion, type ResumenEspecie } from "@/lib/forestal/rendimiento-especie";
 import { fmtM3, fmtPct } from "./rendimiento-compartido";
+import { button } from "@/components/ui-system/button-variants";
+import { cn } from "@/lib/utils";
 
 type Entrada = { especie: string; m3: number; trozas: number };
 
@@ -67,7 +69,7 @@ export default function RendimientoSimulador({ especies }: { especies: readonly 
   const total = filas.reduce((a, f) => ({ m3: a.m3 + f.m3, pt: a.pt + f.ptEsperado, min: a.min + f.ptMin, max: a.max + f.ptMax }), { m3: 0, pt: 0, min: 0, max: 0 });
   const ox = formula === "oxapampina" && lotes.oxapampina.length > 0;
   const hayLote = lotes.smalian.length + lotes.oxapampina.length > 0;
-  const BTN = "inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]";
+  const BTN = button({ variant: "secondary", className: "rounded-xl" });
 
   return (
     <div className="space-y-3">
@@ -77,7 +79,7 @@ export default function RendimientoSimulador({ especies }: { especies: readonly 
             .filter((f) => lotes[f].length > 0)
             .map((f) => (
               <button key={f} type="button" aria-pressed={formula === f} onClick={() => setFormula(f)}
-                className={`${BTN} ${formula === f ? "border-[var(--accent)] bg-[var(--accent-soft)]" : ""}`}>
+                className={cn(BTN, `${formula === f ? "border-[var(--accent)] bg-[var(--accent-soft)]" : ""}`)}>
                 Lote {f === "smalian" ? "Smalian" : "Oxapampina"} · {lotes[f].length} trozas
               </button>
             ))
@@ -94,7 +96,7 @@ export default function RendimientoSimulador({ especies }: { especies: readonly 
               className="h-9 w-36 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-2 font-mono text-sm text-[var(--text-primary)]" />
           </>
         )}
-        <button type="button" onClick={recargar} className={`${BTN} ml-auto`} title="Volver a leer el lote del cubicador">
+        <button type="button" onClick={recargar} className={cn(BTN, `ml-auto`)} title="Volver a leer el lote del cubicador">
           <RefreshCw className="h-3.5 w-3.5" aria-hidden /> Releer lote
         </button>
       </div>

@@ -28,7 +28,7 @@ export default function LothPlanFormTipo({
               onClick={() => setMenuCopiar((v) => !v)}
               aria-expanded={menuCopiar}
               title="Trae lo que se repite: ARFFS, región, regente, UIT y costos"
-              className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--rule-strong)] hover:text-[var(--text-primary)]"
+              className="inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--rule-strong)] hover:text-[var(--text-primary)]"
             >
               <Copy className="h-4 w-4" aria-hidden="true" />
               Copiar de un plan anterior

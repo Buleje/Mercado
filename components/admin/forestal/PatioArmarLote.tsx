@@ -22,9 +22,10 @@ import CtpArmarLoteEscaneando, {
   type LoteArmado,
 } from "./CtpArmarLoteEscaneando";
 import { useLotesAserrio } from "./hooks/use-lotes-aserrio";
+import { button } from "@/components/ui-system/button-variants";
 
 const BOTON =
-  "inline-flex h-12 items-center gap-2 rounded-2xl border border-[var(--rule-base)] px-4 text-base font-semibold text-[var(--text-primary)] hover:border-[var(--accent)]";
+  button({ variant: "secondary", className: "rounded-xl" });
 
 export default function PatioArmarLote({
   onVolver,

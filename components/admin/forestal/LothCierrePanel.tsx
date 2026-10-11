@@ -202,7 +202,7 @@ export default function LothCierrePanel({
                 <button
                   type="button"
                   onClick={() => printActaCierre(resumen, null, caratula)}
-                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-raised)]"
+                  className="inline-flex h-12 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-raised)]"
                 >
                   <Printer className="h-3.5 w-3.5" /> Vista previa del acta
                 </button>

@@ -20,13 +20,14 @@ import { button } from "@/components/ui-system/button-variants";
 import { csrfHeaders } from "@/lib/csrf-client";
 import { exportToCSV, limaDateKey } from "@/lib/utils";
 import { CabeceraVista, CuerpoDeSeccion } from "./movimientos/CabeceraVista";
-import { AvisoDeError, Buscador, Chips } from "./movimientos/controles";
+import { AvisoDeError, Chips } from "./movimientos/controles";
 import { darDeBajaLote } from "./movimientos/baja-de-lote";
 import { ModalRegistrarLote } from "./movimientos/ModalRegistrarLote";
 import { TablaLotes, URGENCIA } from "./movimientos/TablaLotes";
 import { diaConNombre } from "./movimientos/tipos";
 import { useIndicadoresLotes } from "./movimientos/use-indicadores";
 import { conDias, contarLotes, fraseDeDias, type Lote, type LoteConDias, type Urgencia } from "./movimientos/vencimientos";
+import CampoBuscar from "@/components/ui-system/CampoBuscar";
 
 type Producto = { id: number; name: string; unit: string };
 type Filtro = Urgencia | "todos";
@@ -153,7 +154,7 @@ export default function SimpleExpiryTab() {
           <p className="text-sm text-[var(--data-warning-ink)] dark:text-[var(--data-warning-500)]">Se trajeron {lotes.length} de {total} lotes: las cuentas son de esos.</p>
         )}
         <div className="flex flex-wrap items-center gap-2">
-          <Buscador valor={busca} onCambiar={setBusca} placeholder="Producto, lote o proveedor…" etiqueta="Buscar lotes" />
+          <CampoBuscar className="basis-56 sm:max-w-sm" valor={busca} onCambiar={setBusca} placeholder="Producto, lote o proveedor…" etiqueta="Buscar lotes" />
           <Chips opciones={chips} valor={filtro} onCambiar={setFiltro} etiqueta="Estado del lote" />
         </div>
         {cargando && lotes.length === 0 ? (

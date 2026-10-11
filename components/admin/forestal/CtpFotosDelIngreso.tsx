@@ -37,12 +37,14 @@ import { compressIfLarge, TIPOS_QUE_ACEPTA_EL_SERVIDOR } from "@/lib/image-uploa
 import { normalizarFoto, srcDeFoto, type FotoCarga } from "@/lib/forestal/fotos-carga";
 import { lineasDelSello, momentoDeLaFoto, pieDeFoto, ubicacionVale, urlMapaDeFoto } from "@/lib/forestal/sello-foto";
 import { pedirUbicacion, sellarImagen } from "@/lib/forestal/sellar-imagen";
+import { button } from "@/components/ui-system/button-variants";
+import { cn } from "@/lib/utils";
 
 /** Lo que acepta el libro por ingreso (`photos: z.array(...).max(10)`). */
 export const MAX_FOTOS = 10;
 
 const BTN =
-  "inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-50";
+  button({ variant: "secondary", className: "rounded-xl" });
 
 /**
  * Quién está logueado, para el sello: «Nombre (usuario)». El libro guarda el
@@ -200,7 +202,7 @@ export default function CtpFotosDelIngreso({
         />
         {/* En el celular esta abre la cámara; en la computadora, el explorador. */}
         <input ref={camaraRef} type="file" accept="image/*" capture="environment" hidden onChange={(e) => void subir(e.target.files)} />
-        <button type="button" onClick={() => camaraRef.current?.click()} disabled={ocupado} className={`${BTN} sm:hidden`}>
+        <button type="button" onClick={() => camaraRef.current?.click()} disabled={ocupado} className={cn(BTN, `sm:hidden`)}>
           <Camera className="h-4 w-4" aria-hidden /> Tomar foto
         </button>
         <button type="button" onClick={() => archivoRef.current?.click()} disabled={ocupado} className={BTN}>

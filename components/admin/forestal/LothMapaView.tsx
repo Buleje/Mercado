@@ -55,6 +55,7 @@ import { useLothMapaRutas } from "./hooks/use-loth-mapa-rutas";
 import { useLothMapaFoco } from "./hooks/use-loth-mapa-foco";
 import { useLothMapaImagenes } from "./hooks/use-loth-mapa-imagenes";
 import type { TandaTalaInicial } from "./hooks/use-tala-en-tanda";
+import { button } from "@/components/ui-system/button-variants";
 
 /** Claves de los bloques plegables. Exportadas: la prueba en navegador las lee. */
 export const CLAVES_BLOQUES_MAPA = {
@@ -73,7 +74,7 @@ const TONO_PASTILLA = {
 } as const;
 const PASTILLA = "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold tabular-nums";
 const BTN_BLOQUE =
-  "inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40";
+  button({ variant: "secondary", className: "rounded-xl" });
 
 export default function LothMapaView({
   focusTree,

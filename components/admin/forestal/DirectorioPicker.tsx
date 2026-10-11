@@ -176,7 +176,7 @@ export default function DirectorioPicker({
         type="button"
         onClick={() => setAbierto((v) => !v)}
         aria-expanded={abierto}
-        className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--rule-strong)] hover:text-[var(--text-primary)]"
+        className="inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--rule-strong)] hover:text-[var(--text-primary)]"
       >
         <Users className="h-4 w-4" />
         {label}
@@ -264,7 +264,7 @@ export default function DirectorioPicker({
           <button
             type="button"
             onClick={() => setModal("nuevo")}
-            className="mt-2 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--data-success-500)] hover:text-[var(--data-success-700)]"
+            className="mt-2 inline-flex h-12 w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--data-success-500)] hover:text-[var(--data-success-700)]"
           >
             <Plus className="h-3.5 w-3.5" />
             Agregar al Directorio
@@ -375,7 +375,7 @@ function PasoPermiso({
       <button
         type="button"
         onClick={() => onElegir(null)}
-        className="mt-2 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--rule-strong)] hover:text-[var(--text-primary)]"
+        className="mt-2 inline-flex h-12 w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--rule-strong)] hover:text-[var(--text-primary)]"
       >
         Sólo los datos de la ficha
       </button>

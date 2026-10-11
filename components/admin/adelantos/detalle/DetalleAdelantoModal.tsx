@@ -116,7 +116,7 @@ export default function DetalleAdelantoModal({
                   type="button"
                   onClick={() => setFirmando(true)}
                   data-abrir-firma
-                  className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-primary/12 px-4 text-sm font-bold text-[var(--accent-ink)] transition-colors hover:bg-primary/20 dark:text-[var(--accent)]"
+                  className="inline-flex h-12 shrink-0 items-center gap-2 rounded-xl bg-primary/12 px-4 text-sm font-bold text-[var(--accent-ink)] transition-colors hover:bg-primary/20 dark:text-[var(--accent)]"
                 >
                   <FileSignature className="h-4 w-4" aria-hidden /> {firmado ? "Firmar de nuevo" : "Firmar recibo"}
                 </button>
@@ -124,7 +124,7 @@ export default function DetalleAdelantoModal({
               <button
                 type="button"
                 onClick={() => void imprimirComprobante(a)}
-                className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
+                className="inline-flex h-12 shrink-0 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
               >
                 <FileText className="h-4 w-4" /> {firmado ? "Recibo firmado (PDF)" : "Comprobante para firmar"}
               </button>

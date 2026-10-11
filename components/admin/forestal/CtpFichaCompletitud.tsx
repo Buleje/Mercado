@@ -129,7 +129,7 @@ export default function CtpFichaCompletitud({
             <button
               type="button"
               onClick={onEditar}
-              className="mt-3 inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+              className="mt-3 inline-flex h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
             >
               <Pencil className="h-4 w-4" aria-hidden /> Completar la Ficha
             </button>

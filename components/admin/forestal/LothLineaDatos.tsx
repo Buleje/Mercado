@@ -16,11 +16,12 @@ import { comoLineaDeTrozado, medidasDeLinea } from "@/lib/forestal/loth-despacho
 import { textoDelDespacho, type GuiaDelDespacho } from "@/lib/forestal/loth-despacho-por-guia";
 import { diaCorto } from "@/lib/forestal/loth-aprovechamiento";
 import { ingresarGtfAlCtp, verIngresosDelCtp } from "./LothGtfCtp";
+import { button } from "@/components/ui-system/button-variants";
 
 const n = (v: string | null, dp = 4) => (v == null ? "—" : Number(v).toFixed(dp));
 
 export const BOTON_DETALLE =
-  "inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]";
+  button({ variant: "secondary", className: "rounded-xl" });
 
 const GRILLA = "grid grid-cols-2 gap-x-4 gap-y-2 rounded-xl border border-[var(--rule-soft)] p-3 text-sm sm:grid-cols-3";
 

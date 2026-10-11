@@ -22,6 +22,7 @@ import { CheckCircle2, XCircle, MapPin, Download, FileText, Loader2, Trees } fro
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { EUDR_CUTOFF_DATE, type EudrReadiness, type LothParcela } from "@/lib/forestal/loth-geo";
 import EudrGauge from "./EudrGauge";
+import { button } from "@/components/ui-system/button-variants";
 
 interface Props {
   readiness: EudrReadiness;
@@ -46,7 +47,7 @@ const TONO_TEXTO: Record<Tono, string> = {
 };
 
 const BTN =
-  "inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-50";
+  button({ variant: "secondary", className: "rounded-xl" });
 
 /** El veredicto en una línea, para la cabecera del bloque plegado. */
 export function resumenEudr(r: EudrReadiness): string {
@@ -173,7 +174,7 @@ export default function LothEudrRail({
               }}
               aria-pressed={drawMode}
               disabled={saving}
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-50"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-[var(--brand-ink)] px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-50"
             >
               <MapPin className="h-4 w-4" aria-hidden="true" />
               {drawMode ? "Dibujando…" : "Dibujar parcela"}

@@ -12,13 +12,8 @@ import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { comparativoDelTurno, diaConFecha, lineaCajaSigueAbierta, type Turno, type TurnoSummary } from "./tipos";
 
-function Rotulo({ icono: Icono, children }: { icono?: typeof Clock; children: React.ReactNode }) {
-  return (
-    <Kicker as="h3" className="libro-kicker mb-2 flex items-center gap-1.5">
-      {Icono && <Icono className="h-3.5 w-3.5" aria-hidden />}{children}
-    </Kicker>
-  );
-}
+/** Rótulo de cada bloque del resumen: el `Kicker` del DS con su ícono. */
+const ROTULO = "libro-kicker mb-2 flex items-center gap-1.5";
 
 function Fila({ izq, der, className }: { izq: React.ReactNode; der: React.ReactNode; className?: string }) {
   return (
@@ -69,7 +64,7 @@ export function ResumenTurnoDetalle({ resumen: r, historial, metaVentas }: { res
   return (
     <>
       <section className="bg-primary/10 dark:bg-primary/15 rounded-xl p-4">
-        <Rotulo icono={ShoppingCart}>Ventas del turno</Rotulo>
+        <Kicker as="h3" className={ROTULO}><ShoppingCart className="h-3.5 w-3.5" aria-hidden />Ventas del turno</Kicker>
         <div className="grid grid-cols-3 gap-3">
           {[["Total vendido", formatCurrency(r.totalVentas)], ["Ventas", String(r.cantidadVentas)], ["Ticket prom.", formatCurrency(r.ticketPromedio)]].map(([k, v]) => (
             <div key={k}>
@@ -82,7 +77,7 @@ export function ResumenTurnoDetalle({ resumen: r, historial, metaVentas }: { res
 
       {r.metodosPago.length > 0 && (
         <section className="bg-[var(--surface-sunken)] rounded-xl p-4">
-          <Rotulo icono={CreditCard}>Por medio de pago</Rotulo>
+          <Kicker as="h3" className={ROTULO}><CreditCard className="h-3.5 w-3.5" aria-hidden />Por medio de pago</Kicker>
           <div className="space-y-1.5">
             {r.metodosPago.map((mp) => <Fila key={mp.metodo} izq={mp.metodo} der={formatCurrency(mp.total)} />)}
           </div>
@@ -90,7 +85,7 @@ export function ResumenTurnoDetalle({ resumen: r, historial, metaVentas }: { res
       )}
 
       <section className="bg-[var(--surface-sunken)] rounded-xl p-4">
-        <Rotulo icono={DollarSign}>Caja</Rotulo>
+        <Kicker as="h3" className={ROTULO}><DollarSign className="h-3.5 w-3.5" aria-hidden />Caja</Kicker>
         <div className="space-y-1.5">
           <Fila izq="Efectivo inicial" der={formatCurrency(r.inicioEfectivo)} />
           <Fila izq="Efectivo al cierre" der={r.cierreEfectivo == null ? "Sin conteo" : formatCurrency(r.cierreEfectivo)} />
@@ -115,7 +110,7 @@ export function ResumenTurnoDetalle({ resumen: r, historial, metaVentas }: { res
 
       {r.topProductos.length > 0 && (
         <section className="bg-[var(--surface-sunken)] rounded-xl p-4">
-          <Rotulo icono={TrendingUp}>Más vendidos</Rotulo>
+          <Kicker as="h3" className={ROTULO}><TrendingUp className="h-3.5 w-3.5" aria-hidden />Más vendidos</Kicker>
           <ol className="space-y-1.5">
             {r.topProductos.map((p, i) => (
               <li key={p.nombre} className="flex items-center gap-2 text-sm">
@@ -154,7 +149,7 @@ export function ResumenTurnoDetalle({ resumen: r, historial, metaVentas }: { res
         <p className="bg-primary/10 rounded-xl p-3 text-center text-sm font-bold text-[var(--data-success-ink)]">Ventas constantes durante todo el turno</p>
       ) : (
         <section className="bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/15 border border-[var(--data-warning-500)]/40 rounded-xl p-4 space-y-1">
-          <Rotulo icono={Clock}>Tiempo muerto</Rotulo>
+          <Kicker as="h3" className={ROTULO}><Clock className="h-3.5 w-3.5" aria-hidden />Tiempo muerto</Kicker>
           {huecos.map((g) => (
             <p key={g.desde} className="text-sm text-[var(--text-primary)]">Sin ventas entre {g.desde} y {g.hasta} ({g.duracion} h)</p>
           ))}
@@ -163,7 +158,7 @@ export function ResumenTurnoDetalle({ resumen: r, historial, metaVentas }: { res
 
       {(comp.ventasDiaAnterior > 0 || comp.prom7 > 0) && (
         <section className="bg-[var(--surface-sunken)] rounded-xl p-4">
-          <Rotulo icono={TrendingUp}>Comparativo</Rotulo>
+          <Kicker as="h3" className={ROTULO}><TrendingUp className="h-3.5 w-3.5" aria-hidden />Comparativo</Kicker>
           <div className="space-y-1.5">
             {comp.ventasDiaAnterior > 0 && (
               <Fila izq={esDeHoy ? "Contra ayer" : `Contra el ${diaConFecha(comp.diaAnterior)}`} der={<Porcentaje pct={comp.pctDiaAnterior} />} />

@@ -68,7 +68,7 @@ export default function LothPlanFormArea({ form }: { form: LothPlanFormEstado })
           type="button"
           onClick={() => setVigenciaAbierta((v) => !v)}
           aria-expanded={vigenciaAbierta}
-          className="mt-2 inline-flex h-9 items-center gap-1.5 rounded-lg px-2 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+          className="mt-2 inline-flex h-12 items-center gap-1.5 rounded-lg px-2 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
         >
           <ChevronDown className={`h-4 w-4 transition-transform ${vigenciaAbierta ? "rotate-180" : ""}`} aria-hidden="true" />
           Período de aprovechamiento (opcional)

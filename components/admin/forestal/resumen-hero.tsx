@@ -110,7 +110,7 @@ export function HeroResumen({ total, renglones, porEspecie, porTipo, porMedida, 
               onClick={alternar}
               aria-expanded={abierta}
               title={abierta ? "Ocultar las cifras del lote (se recuerda)" : "Mostrar las cifras del lote"}
-              className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] print:hidden"
+              className="inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] print:hidden"
             >
               <ChevronDown className={`h-4 w-4 transition-transform ${abierta ? "" : "-rotate-90"}`} aria-hidden />
               {abierta ? "Ocultar" : "Mostrar"}

@@ -46,7 +46,7 @@ export default function CtpConsumosPatioAccion({
           <button
             type="button"
             onClick={onIrALotes}
-            className="inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)]"
+            className="inline-flex h-12 items-center gap-2 whitespace-nowrap rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)]"
           >
             <Boxes className="h-4 w-4" aria-hidden />
             Programar un lote para cargar la sierra

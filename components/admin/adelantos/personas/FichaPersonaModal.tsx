@@ -147,7 +147,7 @@ export default function FichaPersonaModal({
             <button
               onClick={exportarPdf}
               disabled={movimientos.length === 0}
-              className="inline-flex h-11 items-center gap-1.5 rounded-2xl border border-[var(--rule-base)] px-4 text-base font-semibold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary disabled:opacity-50"
+              className="inline-flex h-12 items-center gap-1.5 rounded-2xl border border-[var(--rule-base)] px-4 text-base font-semibold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary disabled:opacity-50"
             >
               <FileText className="h-5 w-5" /> PDF
             </button>
@@ -163,7 +163,7 @@ export default function FichaPersonaModal({
             )}
             <button
               onClick={onNuevoAdelanto}
-              className="inline-flex h-11 items-center gap-1.5 rounded-2xl bg-primary px-5 text-base font-semibold text-white transition-colors hover:bg-primary-dark"
+              className="inline-flex h-12 items-center gap-1.5 rounded-2xl bg-primary px-5 text-base font-semibold text-white transition-colors hover:bg-primary-dark"
             >
               <Plus className="h-5 w-5" /> Nuevo adelanto
             </button>
@@ -233,7 +233,7 @@ export default function FichaPersonaModal({
       <div className="flex flex-wrap gap-2">
         <button
           onClick={onEditar}
-          className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
+          className="inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
         >
           <Pencil className="h-4 w-4" /> Editar ficha
         </button>

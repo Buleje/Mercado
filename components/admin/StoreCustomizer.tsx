@@ -623,7 +623,7 @@ function HeroTab({
                     onClick={() => setPreviewDevice(d.value)}
                     aria-pressed={active}
                     className={cn(
-                      "inline-flex items-center gap-1.5 px-3 h-9 rounded-lg text-sm font-bold transition-all",
+                      "inline-flex items-center gap-1.5 px-3 h-12 rounded-lg text-sm font-bold transition-all",
                       active
                         ? "bg-[var(--surface-raised)] text-primary shadow"
                         : "text-muted hover:text-[var(--text-primary)]"
@@ -927,7 +927,7 @@ function HeroTab({
               <button
                 type="button"
                 onClick={() => update("heroBadge", "")}
-                className="px-3 h-9 rounded-xl text-sm font-semibold border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] text-muted hover:border-[var(--data-error-500)] hover:text-[var(--data-error-500)]"
+                className="px-3 h-12 rounded-xl text-sm font-semibold border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)] text-muted hover:border-[var(--data-error-500)] hover:text-[var(--data-error-500)]"
               >
                 Sin badge
               </button>
@@ -1183,7 +1183,7 @@ function HeroTab({
                   const active = (theme.heroAlign ?? "left") === val;
                   return (
                     <button key={val} type="button" onClick={() => update("heroAlign", val)} aria-pressed={active}
-                      className={cn("h-10 rounded-xl border-2 text-sm font-semibold transition-all", active ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40")}>
+                      className={cn("h-12 rounded-xl border-2 text-sm font-semibold transition-all", active ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40")}>
                       {label}
                     </button>
                   );
@@ -1197,7 +1197,7 @@ function HeroTab({
                   const active = (theme.heroHeight ?? "normal") === val;
                   return (
                     <button key={val} type="button" onClick={() => update("heroHeight", val)} aria-pressed={active}
-                      className={cn("h-10 rounded-xl border-2 text-sm font-semibold transition-all", active ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40")}>
+                      className={cn("h-12 rounded-xl border-2 text-sm font-semibold transition-all", active ? "border-primary bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] dark:border-[var(--rule-base)] text-[var(--text-primary)] hover:border-primary/40")}>
                       {label}
                     </button>
                   );
@@ -3104,7 +3104,7 @@ export default function StoreCustomizer() {
                           />
                           <button
                             type="button"
-                            className="h-10 px-5 text-sm font-semibold text-white shadow-[var(--shadow-md)] transition-all pointer-events-none"
+                            className="h-12 px-5 text-sm font-semibold text-white shadow-[var(--shadow-md)] transition-all pointer-events-none"
                             style={{ backgroundColor: theme.primaryColor, borderRadius: `${theme.borderRadius}px` }}
                           >
                             Comprar

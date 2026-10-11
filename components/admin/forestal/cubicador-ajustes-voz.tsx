@@ -153,7 +153,7 @@ export default function AjustesDeVoz({ id, config, onUpdateConfig, voices }: Aju
           type="button"
           onClick={() => onUpdateConfig({ ...CONFIG_DEFAULT })}
           title="Vuelve la voz, lo que dice y los comandos a como vienen de fábrica"
-          className="inline-flex h-9 items-center rounded-lg px-3 text-xs font-bold text-[var(--text-tertiary)] transition hover:bg-[var(--surface-sunken)] hover:text-[var(--data-error-700)] dark:hover:text-[var(--data-error-500)]"
+          className="inline-flex h-12 items-center rounded-lg px-3 text-xs font-bold text-[var(--text-tertiary)] transition hover:bg-[var(--surface-sunken)] hover:text-[var(--data-error-700)] dark:hover:text-[var(--data-error-500)]"
         >
           Restablecer todo
         </button>

@@ -152,7 +152,7 @@ export default function OtraPantallaTv({ camaras, origen, codigoInicial = "", p 
           <button
             type="submit"
             disabled={!puede}
-            className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl bg-[var(--accent-600,var(--accent))] px-4 text-sm font-bold text-white transition hover:brightness-95 disabled:opacity-50"
+            className="inline-flex h-12 items-center justify-center gap-1.5 rounded-xl bg-[var(--accent-600,var(--accent))] px-4 text-sm font-bold text-white transition hover:brightness-95 disabled:opacity-50"
           >
             {p.guardando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Tv className="h-4 w-4" aria-hidden />}
             Vincular el televisor

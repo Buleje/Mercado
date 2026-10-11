@@ -7,6 +7,7 @@
  * cifra dos veces.
  */
 import { useMemo } from "react";
+import { StatCard } from "@buleje/design-system";
 import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { formatCurrency } from "@/lib/format";
@@ -15,18 +16,6 @@ import { calcularImpuestosDelMes, type ImpuestosDelMes } from "./impuestos-del-m
 import { useIgvDelMes, useIngresosDelAnio } from "./use-impuestos";
 
 interface Tarjeta { rotulo: string; valor: string; ayuda: string }
-
-function TarjetaKpi({ rotulo, valor, ayuda }: Tarjeta) {
-  return (
-    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
-      <div className="mb-1 flex items-center gap-1.5">
-        <span className="text-sm font-semibold text-[var(--text-secondary)]">{rotulo}</span>
-        <InfoTip what={ayuda} />
-      </div>
-      <p className="text-lg font-extrabold tabular-nums text-[var(--text-primary)]">{valor}</p>
-    </div>
-  );
-}
 
 export function useImpuestosDelMes(mes: string, regimen: RegimenTributario, tick: number) {
   const ingresos = useIngresosDelAnio(mes, tick);
@@ -66,7 +55,7 @@ export function useImpuestosDelMes(mes: string, regimen: RegimenTributario, tick
     anchoFijo: true,
     sinDatosAun: calculo == null,
     resumen: `Ingresos ${formatCurrency(ingresosMes)}`,
-    tarjetas: tarjetas.map((t) => <TarjetaKpi key={t.rotulo} {...t} />),
+    tarjetas: tarjetas.map((t) => <StatCard key={t.rotulo} density="compact" label={t.rotulo} value={t.valor} info={<InfoTip what={t.ayuda} />} />),
   });
 
   return { calculo, cargando: calculo == null && ingresos.fase === "cargando", error: ingresos.fase === "error", kpis };

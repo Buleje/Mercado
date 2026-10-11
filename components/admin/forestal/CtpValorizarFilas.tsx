@@ -109,7 +109,7 @@ export default function CtpValorizarFilas({
             type="button"
             onClick={() => void saveTodo()}
             disabled={savingId !== null}
-            className="ml-auto inline-flex h-10 items-center gap-1.5 rounded-xl border-2 border-[var(--data-warning-500)] px-3 text-sm font-semibold text-[var(--data-warning-700)] hover:bg-[var(--data-warning-100)] disabled:opacity-50 dark:text-[var(--data-warning-500)] dark:hover:bg-transparent"
+            className="ml-auto inline-flex h-12 items-center gap-1.5 rounded-xl border-2 border-[var(--data-warning-500)] px-3 text-sm font-semibold text-[var(--data-warning-700)] hover:bg-[var(--data-warning-100)] disabled:opacity-50 dark:text-[var(--data-warning-500)] dark:hover:bg-transparent"
           >
             {savingId ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <CheckCircle2 className="h-4 w-4" aria-hidden />}
             Guardar todo
@@ -184,7 +184,7 @@ export default function CtpValorizarFilas({
                 type="button"
                 onClick={() => void saveCosto(e.id)}
                 disabled={savingId === e.id || !dirty}
-                className="inline-flex h-11 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
+                className="inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-40"
               >
                 {savingId === e.id ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <CheckCircle2 className="h-4 w-4" aria-hidden />}{" "}
                 Guardar

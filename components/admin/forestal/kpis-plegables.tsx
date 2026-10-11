@@ -50,7 +50,7 @@ export interface KpisPlegablesProps {
   trabajoActivo?: boolean;
   /**
    * Alto del botón: `md` (h-12) para ir en una barra con buscador y botones de
-   * h-12; `sm` (h-9) suelto. Default `sm`.
+   * h-12; `sm` suelto (también 48 px desde 11-10, ADR-489: sólo cambia el ancho y el radio). Default `sm`.
    */
   alto?: "sm" | "md";
   /**
@@ -145,7 +145,7 @@ export function useKpisPlegables({
         /* En una barra (h-12) el botón no pasa de 24rem: el titular se corta
            con «…» y el buscador conserva su lugar (medido en Ingresos: con el
            titular entero, el buscador quedaba en 70 px). */
-        alto === "md" ? "h-12 max-w-[min(100%,24rem)] rounded-2xl" : "h-9 max-w-full rounded-lg"
+        alto === "md" ? "h-12 max-w-[min(100%,24rem)] rounded-2xl" : "h-12 max-w-full rounded-xl"
       } ${
         abierto
           ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"

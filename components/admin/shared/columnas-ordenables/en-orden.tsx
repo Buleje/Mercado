@@ -62,7 +62,7 @@ export function BotonRestablecerColumnas({
       onClick={onRestablecer}
       title="Restablecer columnas: volver al orden original"
       aria-label={soloIcono ? "Restablecer columnas" : undefined}
-      className={`inline-flex h-9 items-center gap-1.5 rounded-lg ${soloIcono ? "w-9 justify-center" : "px-2.5"} text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] ${className}`}
+      className={`inline-flex h-12 items-center gap-1.5 rounded-lg ${soloIcono ? "w-9 justify-center" : "px-2.5"} text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] ${className}`}
     >
       <RotateCcw className="h-3.5 w-3.5" aria-hidden />
       {!soloIcono && "Restablecer columnas"}

@@ -200,7 +200,7 @@ export default function LothFichaPermiso({ caratula, plan, onCompletarCaratula, 
                   <button
                     type="button"
                     onClick={completar}
-                    className="inline-flex h-11 items-center gap-1 rounded-lg px-2 font-bold text-[var(--accent-dark)] underline-offset-2 transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] sm:h-8 dark:text-[var(--accent)]"
+                    className="inline-flex h-12 items-center gap-1 rounded-lg px-2 font-bold text-[var(--accent-dark)] underline-offset-2 transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] dark:text-[var(--accent)]"
                     aria-label={`Completar: ${g.textos.join(", ")}`}
                   >
                     Completar <ArrowRight className="h-4 w-4" aria-hidden="true" />

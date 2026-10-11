@@ -26,7 +26,7 @@ import ValorizarCubicacionModal from "./cubicador-trozas-valorizar";
 import { ESTADO_CUB, useCubicacionesTrozas, type CubicacionTrozas, type EstadoCubicacion } from "./hooks/use-cubicaciones-trozas";
 
 const BOTON_CHICO =
-  "inline-flex h-11 items-center gap-2 rounded-xl px-3.5 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40";
+  "inline-flex h-12 items-center gap-2 rounded-xl px-3.5 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40";
 
 
 interface Recuerdo { id: string; codigo: string }
@@ -149,7 +149,7 @@ function ListaGuardadasModal({ onAbrir, onCerrar }: { onAbrir: (id: string) => v
         <div className="flex flex-wrap gap-1" role="tablist" aria-label="Filtrar por estado">
           {FILTROS.map((f) => (
             <button key={f.label} type="button" role="tab" aria-selected={estado === f.valor} onClick={() => setEstado(f.valor)}
-              className={`h-9 rounded-full px-3 text-sm font-semibold transition-colors ${estado === f.valor ? "bg-[var(--accent-dark)] text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>
+              className={`h-12 rounded-full px-3 text-sm font-semibold transition-colors ${estado === f.valor ? "bg-[var(--accent-dark)] text-white" : "bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}>
               {f.label}
             </button>
           ))}

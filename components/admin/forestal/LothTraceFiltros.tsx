@@ -81,7 +81,7 @@ export function LothTraceListaCabecera({
         </div>
         {/* Las columnas son de la tabla: en tarjetas no hay qué elegir. */}
         {modo === "tabla" && <BotonesColumnas className="h-10 rounded-xl" />}
-        <ActionMenu label="Opciones" title="Umbrales de merma, descargar y limpiar filtros" actions={opciones} size="sm" compactoEnMovil />
+        <ActionMenu label="Opciones" title="Umbrales de merma, descargar y limpiar filtros" actions={opciones} size="md" compactoEnMovil />
       </div>
     </div>
   );
@@ -118,7 +118,7 @@ export default function LothTraceFiltros({
                 onClick={() => onAlternar(e.key)}
                 aria-pressed={activo}
                 title={activo ? "Quitar este filtro" : `Ver sólo los árboles: ${e.label.toLowerCase()}`}
-                className={`inline-flex h-9 items-center gap-1.5 rounded-lg border px-2.5 text-sm font-bold transition-colors ${
+                className={`inline-flex h-12 items-center gap-1.5 rounded-lg border px-2.5 text-sm font-bold transition-colors ${
                   activo
                     ? "border-[var(--accent)] bg-primary/10 text-[var(--text-primary)] dark:bg-[var(--accent)]/12"
                     : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-[var(--rule-strong)]"
@@ -138,7 +138,7 @@ export default function LothTraceFiltros({
             <button
               type="button"
               onClick={onLimpiar}
-              className="inline-flex h-9 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+              className="inline-flex h-12 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
             >
               <X className="h-4 w-4" aria-hidden="true" /> Quitar filtros
             </button>

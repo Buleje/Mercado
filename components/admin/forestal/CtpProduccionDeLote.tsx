@@ -627,7 +627,7 @@ export default function CtpProduccionDeLote({
             <button
               type="button"
               onClick={onIrALotes}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-4 text-sm font-bold text-white shadow-sm transition hover:brightness-110"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-linear-to-br from-[var(--accent)] to-[var(--accent-dark)] px-4 text-sm font-bold text-white shadow-sm transition hover:brightness-110"
             >
               <PackageOpen className="h-4 w-4" aria-hidden />
               Apartar madera para {lote.code}

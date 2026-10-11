@@ -105,7 +105,7 @@ export default function PlantacionPasoBloques({
             <button
               type="button"
               onClick={agregarBloque}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--brand-ink)] px-3 text-xs font-bold text-white hover:opacity-90"
+              className="inline-flex h-12 items-center gap-1.5 rounded-lg bg-[var(--brand-ink)] px-3 text-xs font-bold text-white hover:opacity-90"
             >
               <Plus className="h-3.5 w-3.5" /> Agregar bloque
             </button>
@@ -135,7 +135,7 @@ export default function PlantacionPasoBloques({
             <button
               type="button"
               onClick={agregarBloque}
-              className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--brand-ink)] px-3 text-xs font-bold text-white hover:opacity-90"
+              className="mt-3 inline-flex h-12 items-center gap-1.5 rounded-lg bg-[var(--brand-ink)] px-3 text-xs font-bold text-white hover:opacity-90"
             >
               <Plus className="h-3.5 w-3.5" /> Agregar el primer bloque
             </button>

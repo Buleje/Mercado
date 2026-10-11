@@ -185,7 +185,7 @@ export default function LothPlanFormPlantacion({
                   onClick={() => quitar(f.uid)}
                   aria-label={`Quitar ${nombreFila}`}
                   title={`Quitar ${nombreFila}`}
-                  className="col-span-2 inline-flex h-10 items-center justify-center gap-1.5 rounded-lg text-sm font-semibold text-[var(--data-error-700)] transition-colors hover:bg-[var(--data-error-50)] dark:text-[var(--data-error-500)] dark:hover:bg-[var(--data-error-500)]/12 sm:col-span-1"
+                  className="col-span-2 inline-flex h-12 items-center justify-center gap-1.5 rounded-lg text-sm font-semibold text-[var(--data-error-700)] transition-colors hover:bg-[var(--data-error-50)] dark:text-[var(--data-error-500)] dark:hover:bg-[var(--data-error-500)]/12 sm:col-span-1"
                 >
                   <Trash2 className="h-4 w-4" aria-hidden="true" />
                   <span className="sm:sr-only">Quitar</span>
@@ -211,7 +211,7 @@ export default function LothPlanFormPlantacion({
         <button
           type="button"
           onClick={agregar}
-          className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)]"
+          className="inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)]"
         >
           <Plus className="h-4 w-4" aria-hidden="true" /> Agregar especie
         </button>
@@ -219,7 +219,7 @@ export default function LothPlanFormPlantacion({
           type="button"
           onClick={() => setConPrecio((v) => !v)}
           aria-pressed={conPrecio}
-          className={`inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold transition-colors ${
+          className={`inline-flex h-12 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold transition-colors ${
             conPrecio
               ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
               : "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
@@ -291,7 +291,7 @@ export function EspeciesSeCorrigenEnRegistro({ onIr }: { onIr?: () => void }) {
         <button
           type="button"
           onClick={onIr}
-          className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)]"
+          className="inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--accent)]"
         >
           Ir a Registro y saldo <ArrowRight className="h-4 w-4" aria-hidden="true" />
         </button>

@@ -260,7 +260,7 @@ export default function CarpetaLocalPanel({
           <button
             type="button"
             onClick={() => void c.darPermiso()}
-            className="inline-flex h-9 items-center gap-2 rounded-lg bg-[var(--data-warning-500)] px-3 text-xs font-bold text-white hover:brightness-110"
+            className="inline-flex h-12 items-center gap-2 rounded-lg bg-[var(--data-warning-500)] px-3 text-xs font-bold text-white hover:brightness-110"
           >
             Dar permiso a la carpeta
           </button>
@@ -295,14 +295,14 @@ export default function CarpetaLocalPanel({
             <button
               type="button"
               onClick={() => void c.sincronizar()}
-              className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white hover:brightness-110"
+              className="inline-flex h-12 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white hover:brightness-110"
             >
               <Check className="h-4 w-4" /> Hacerlo
             </button>
             <button
               type="button"
               onClick={c.descartarPlan}
-              className="inline-flex h-10 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+              className="inline-flex h-12 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
             >
               Ahora no
             </button>
@@ -314,7 +314,7 @@ export default function CarpetaLocalPanel({
         <button
           type="button"
           onClick={() => void c.planificar()}
-          className="mt-3 inline-flex h-10 items-center gap-2 rounded-xl border-2 border-primary px-4 text-sm font-semibold text-primary hover:bg-primary/10"
+          className="mt-3 inline-flex h-12 items-center gap-2 rounded-xl border-2 border-primary px-4 text-sm font-semibold text-primary hover:bg-primary/10"
         >
           Ver qué va a pasar antes de sincronizar
         </button>

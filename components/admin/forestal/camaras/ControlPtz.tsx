@@ -23,6 +23,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { ArrowUp, Square, ZoomIn, ZoomOut } from "@buleje/design-system/icons";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { button } from "@/components/ui-system/button-variants";
 
 /**
  * Cuánto de los 100 posibles.
@@ -57,7 +58,7 @@ const TECLAS: Record<string, readonly [number, number, number]> = {
 };
 
 const BOTON =
-  "grid h-11 w-11 place-items-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] transition select-none touch-none hover:border-[var(--accent)] hover:text-[var(--text-primary)] active:bg-primary/10 disabled:opacity-40";
+  button({ variant: "secondary", size: "icon", className: "rounded-xl" });
 
 interface Props {
   /** Manda el movimiento. `(0, 0, 0)` es frenar. */

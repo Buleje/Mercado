@@ -143,7 +143,7 @@ export default function CuentasPorPersona({ onGoTab }: { onGoTab: (tab: string) 
         <button
           type="button"
           onClick={() => setVerTodas(true)}
-          className="mt-3 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl text-sm font-bold text-primary transition-colors hover:bg-[var(--surface-sunken)]"
+          className="mt-3 inline-flex h-12 w-full items-center justify-center gap-1.5 rounded-xl text-sm font-bold text-primary transition-colors hover:bg-[var(--surface-sunken)]"
         >
           <ChevronDown className="h-4 w-4" aria-hidden /> Ver las {personas.length} personas
         </button>

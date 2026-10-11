@@ -13,7 +13,7 @@
  * «Marcar pagado» / «Pagar liquidado» que en realidad liquidan (el PATCH sólo
  * pasa pendiente → liquidada; no existe el paso a pagada).
  */
-import { DataTable } from "@buleje/design-system";
+import { DataTable, StatCard } from "@buleje/design-system";
 import { CheckCircle, Clock, Download, MoreHorizontal, RotateCcw, Users, Wallet } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
@@ -23,7 +23,8 @@ import { irAEnlace } from "@/components/admin/shared/ir-a-enlace";
 import { formatCurrency } from "@/lib/format";
 import { cn, exportToCSV } from "@/lib/utils";
 import { useAccionesDeVista } from "@/components/admin/marketplace/acciones-de-vista";
-import { diaDe, ENCABEZADOS_14, ErrorDeCarga, FilaDeVista, SelectFiltro, TarjetaCifra, VacioDeUnaFrase, type OpcionFiltro } from "./cabecera-vista";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { diaDe, ENCABEZADOS_14, ErrorDeCarga, FilaDeVista, SelectFiltro, VacioDeUnaFrase, type OpcionFiltro } from "./cabecera-vista";
 
 type Filtro = "all" | CommissionEntry["status"];
 
@@ -51,11 +52,11 @@ export function MarketplaceComisionesTab() {
     sinDatosAun: loading && entries.length === 0,
     resumen: `Por liquidar ${formatCurrency(summary.pendiente)}`,
     tarjetas: [
-      <TarjetaCifra key="p" rotulo="Por liquidar" valor={formatCurrency(summary.pendiente)} icono={Clock} destacado ayuda="Comisiones de ventas que todavía no se liquidaron." />,
-      <TarjetaCifra key="l" rotulo="Liquidadas" valor={formatCurrency(summary.liquidado)} icono={CheckCircle} ayuda="Ya calculadas y cerradas; falta que se paguen." />,
-      <TarjetaCifra key="g" rotulo="Pagadas" valor={formatCurrency(summary.pagado)} icono={Wallet} />,
+      <StatCard density="compact" key="p" label="Por liquidar" value={formatCurrency(summary.pendiente)} icon={Clock} highlight info={<InfoTip what="Comisiones de ventas que todavía no se liquidaron." />} />,
+      <StatCard density="compact" key="l" label="Liquidadas" value={formatCurrency(summary.liquidado)} icon={CheckCircle} info={<InfoTip what="Ya calculadas y cerradas; falta que se paguen." />} />,
+      <StatCard density="compact" key="g" label="Pagadas" value={formatCurrency(summary.pagado)} icon={Wallet} />,
       ...(summary.reembolsado > 0
-        ? [<TarjetaCifra key="r" rotulo="Reembolsadas" valor={formatCurrency(summary.reembolsado)} icono={RotateCcw} ayuda="Ventas devueltas: esa comisión no se cobra." />]
+        ? [<StatCard density="compact" key="r" label="Reembolsadas" value={formatCurrency(summary.reembolsado)} icon={RotateCcw} info={<InfoTip what="Ventas devueltas: esa comisión no se cobra." />} />]
         : []),
     ],
   });

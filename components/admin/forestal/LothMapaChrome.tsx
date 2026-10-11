@@ -159,7 +159,7 @@ export default function LothMapaChrome({ items, cursor, metersPerPixel, panelDer
               type="button"
               onClick={() => setLeyendaMovil((v) => !v)}
               aria-expanded={leyendaMovil}
-              className="inline-flex h-9 items-center gap-1 text-xs font-black uppercase tracking-widest text-[var(--text-secondary)] sm:hidden"
+              className="inline-flex h-12 items-center gap-1 text-xs font-black uppercase tracking-widest text-[var(--text-secondary)] sm:hidden"
             >
               Leyenda <ChevronDown className={`h-3.5 w-3.5 transition-transform ${leyendaMovil ? "rotate-180" : ""}`} aria-hidden="true" />
             </button>

@@ -82,8 +82,8 @@ export default function CtpPlantaCroquisPdfRevision({ pdf, terreno }: {
           )}
           <div className="min-w-0 @[56rem]:order-1">
           <div className="flex gap-2">
-            <button type="button" onClick={() => pdf.marcarTodas(true)} className="h-9 rounded-lg px-2.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]">Marcar todos</button>
-            <button type="button" onClick={() => pdf.marcarTodas(false)} className="h-9 rounded-lg px-2.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]">Ninguno</button>
+            <button type="button" onClick={() => pdf.marcarTodas(true)} className="h-12 rounded-lg px-2.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]">Marcar todos</button>
+            <button type="button" onClick={() => pdf.marcarTodas(false)} className="h-12 rounded-lg px-2.5 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]">Ninguno</button>
           </div>
           <ul className="mt-1 max-h-[20rem] space-y-0.5 overflow-y-auto pr-1">
             {p.componentes.map((c) => {
@@ -145,7 +145,7 @@ export default function CtpPlantaCroquisPdfRevision({ pdf, terreno }: {
                       type="button"
                       onClick={() => pdf.cambiarFila(c.clave, { forma: conContorno ? "cuadrado" : "contorno" })}
                       aria-label={`${conContorno ? "Usar cuadrado" : "Usar contorno"} para ${c.numero} ${c.nombre}`}
-                      className="h-9 shrink-0 rounded-lg px-2 text-xs font-bold text-[var(--accent-dark)] hover:bg-[var(--surface-canvas)] dark:text-[var(--accent)]"
+                      className="h-12 shrink-0 rounded-lg px-2 text-xs font-bold text-[var(--accent-dark)] hover:bg-[var(--surface-canvas)] dark:text-[var(--accent)]"
                     >
                       {conContorno ? "Usar cuadrado" : "Usar contorno"}
                     </button>

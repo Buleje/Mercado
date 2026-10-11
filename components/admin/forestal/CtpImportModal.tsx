@@ -351,7 +351,7 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
                 type="button"
                 onClick={() => void descargarPlantilla()}
                 disabled={phase === "parsing"}
-                className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
+                className="inline-flex h-12 shrink-0 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60"
               >
                 <Download className="h-4 w-4" />
                 Descargar plantilla
@@ -415,8 +415,8 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
               </ol>
             </div>
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <button type="button" onClick={reset} disabled={phase === "committing"} className="inline-flex h-11 items-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60">Elegir otro archivo</button>
-              <button type="button" onClick={() => void commitCombined()} disabled={phase === "committing" || totalCombined === 0} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40">
+              <button type="button" onClick={reset} disabled={phase === "committing"} className="inline-flex h-12 items-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60">Elegir otro archivo</button>
+              <button type="button" onClick={() => void commitCombined()} disabled={phase === "committing" || totalCombined === 0} className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40">
                 {phase === "committing" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
                 {phase === "committing" ? "Importando el libro…" : "Importar libro completo"}
               </button>
@@ -558,12 +558,12 @@ export default function CtpImportModal({ onClose, onImported }: { onClose: () =>
                       ? `Libro importado: ${describeCombined(creadosPorReg)}.`
                       : `Importad${mode === "produccion" ? "as" : "os"} ${resumen.creados} ${singleNoun}${mode === "ingresos" ? " (quedan pendientes de validar)" : mode === "salida" ? " (sin atribuir — completa la cadena luego)" : ""}.`}
                   </p>
-                  <button type="button" onClick={onClose} className="inline-flex h-11 items-center rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90">Cerrar</button>
+                  <button type="button" onClick={onClose} className="inline-flex h-12 items-center rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90">Cerrar</button>
                 </>
               ) : (
                 <>
-                  <button type="button" onClick={reset} disabled={phase === "committing"} className="inline-flex h-11 items-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60">Elegir otro archivo</button>
-                  <button type="button" onClick={() => void commit()} disabled={!((resumen?.crear ?? 0) > 0) || phase === "committing"} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40">
+                  <button type="button" onClick={reset} disabled={phase === "committing"} className="inline-flex h-12 items-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] disabled:opacity-60">Elegir otro archivo</button>
+                  <button type="button" onClick={() => void commit()} disabled={!((resumen?.crear ?? 0) > 0) || phase === "committing"} className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--brand-ink)] px-5 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40">
                     {phase === "committing" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
                     {phase === "committing" ? "Importando…" : `Importar ${resumen.crear} ${singleNoun}`}
                   </button>

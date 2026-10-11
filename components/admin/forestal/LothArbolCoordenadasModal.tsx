@@ -158,7 +158,7 @@ export default function LothArbolCoordenadasModal({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-11 items-center whitespace-nowrap rounded-xl px-3 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] sm:h-10"
+            className="inline-flex h-12 items-center whitespace-nowrap rounded-xl px-3 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
           >
             Cancelar
           </button>
@@ -167,7 +167,7 @@ export default function LothArbolCoordenadasModal({
             form={FORM_ID}
             disabled={busy}
             aria-busy={busy}
-            className="inline-flex h-11 items-center gap-2 whitespace-nowrap rounded-xl bg-[var(--accent-dark)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 sm:h-10"
+            className="inline-flex h-12 items-center gap-2 whitespace-nowrap rounded-xl bg-[var(--accent-dark)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {busy && <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" />}{" "}
             Guardar coordenadas

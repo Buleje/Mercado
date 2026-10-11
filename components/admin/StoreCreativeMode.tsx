@@ -2954,7 +2954,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
         <div className="flex items-center gap-3">
           <button
             onClick={onClose}
-            className="flex items-center gap-1.5 px-3 h-9 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800 transition-colors text-sm font-semibold"
+            className="flex items-center gap-1.5 px-3 h-12 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800 transition-colors text-sm font-semibold"
           >
             <X className="h-4 w-4" />
             Salir
@@ -3143,7 +3143,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
           <button
             onClick={handleApply}
             disabled={saving}
-            className="ml-1 flex items-center gap-2 px-4 h-9 rounded-lg bg-[var(--accent-dark)] text-white text-sm font-bold hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50"
+            className="ml-1 flex items-center gap-2 px-4 h-12 rounded-lg bg-[var(--accent-dark)] text-white text-sm font-bold hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50"
           >
             {saving ? <Sparkles className="h-4 w-4 animate-pulse" /> : <Save className="h-4 w-4" />}
             {saving ? "Aplicando..." : "Aplicar y guardar"}
@@ -3194,7 +3194,7 @@ export default function StoreCreativeMode({ tenantSlug, initialTheme, onClose, o
                   key={item.id}
                   onClick={() => { setPanel(item.id); setPbSelected(null); }}
                   className={cn(
-                    "relative w-full flex items-center gap-3 pl-3.5 pr-2.5 h-10 rounded-xl text-sm transition-colors text-left",
+                    "relative w-full flex items-center gap-3 pl-3.5 pr-2.5 h-12 rounded-xl text-sm transition-colors text-left",
                     // Activo minimalista: barra fina + texto blanco, sin caja.
                     active
                       ? "font-semibold text-white before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-5 before:w-[3px] before:rounded-full before:bg-[var(--accent)]"

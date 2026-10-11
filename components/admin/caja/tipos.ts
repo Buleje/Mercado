@@ -3,6 +3,7 @@
  * Salieron de `CashRegisterTab.tsx` (2.538 líneas) al partirlo.
  */
 import { formatCurrency, formatDateTimeShort } from "@/lib/format";
+import { button } from "@/components/ui-system/button-variants";
 
 export interface CashMovement {
   id: string;
@@ -92,4 +93,4 @@ export const COLOR_SIGNO = {
 
 /** Clases de botón compartidas: misma altura y tono en toda la pestaña. */
 export const BOTON_PRIMARIO =
-  "inline-flex items-center justify-center gap-1.5 px-4 min-h-10 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark disabled:opacity-50 transition-colors";
+  button({ variant: "accent", className: "rounded-xl" });

@@ -280,7 +280,7 @@ function NuevaPersonaInline({
         <button
           type="button"
           onClick={onCancelar}
-          className="h-11 flex-1 rounded-xl text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-raised)]"
+          className="h-12 flex-1 rounded-xl text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-raised)]"
         >
           Cancelar
         </button>
@@ -288,7 +288,7 @@ function NuevaPersonaInline({
           type="button"
           onClick={() => void crear()}
           disabled={saving}
-          className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
+          className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
         >
           <Plus className="h-4 w-4" /> {saving ? "Creando…" : "Crear y elegir"}
         </button>

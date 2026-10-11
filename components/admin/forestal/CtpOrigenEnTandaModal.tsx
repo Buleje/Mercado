@@ -125,7 +125,7 @@ export default function CtpOrigenEnTandaModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="inline-flex h-10 items-center rounded-xl px-3 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+                  className="inline-flex h-12 items-center rounded-xl px-3 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
                 >
                   Cerrar
                 </button>

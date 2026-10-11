@@ -30,7 +30,7 @@ const TECLA: Record<string, Direccion> = {
 };
 
 const BOTON =
-  "grid h-11 w-11 place-items-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)]/85 text-[var(--text-primary)] shadow-[var(--shadow-sm)] backdrop-blur transition select-none touch-none hover:border-[var(--accent)] disabled:opacity-40";
+  "grid h-12 w-12 place-items-center rounded-full border border-[var(--rule-base)] bg-[var(--surface-raised)]/85 text-[var(--text-primary)] shadow-[var(--shadow-sm)] backdrop-blur transition select-none touch-none hover:border-[var(--accent)] disabled:opacity-40";
 
 /** Las flechas ya son de otro control: un campo, el SD/HD, un menú. */
 const escribiendo = (t: EventTarget | null) =>

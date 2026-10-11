@@ -95,7 +95,7 @@ export default function ManualDeliveryModal({
                   type="button"
                   onClick={() => setMethod(m.id)}
                   className={cn(
-                    "flex items-center gap-2.5 px-3 h-10 rounded-xl border-2 text-sm font-semibold text-left transition-all",
+                    "flex items-center gap-2.5 px-3 h-12 rounded-xl border-2 text-sm font-semibold text-left transition-all",
                     isActive
                       ? "border-[var(--data-success-500)] bg-[var(--data-success-500)]/10 text-[var(--data-success-500)]"
                       : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-primary)] hover:border-[var(--data-success-500)]/40",
@@ -136,14 +136,14 @@ export default function ManualDeliveryModal({
         <button
           type="button"
           onClick={onCancel}
-          className="flex-1 sm:flex-none inline-flex items-center justify-center h-10 px-4 rounded-xl text-sm font-semibold border border-[var(--rule-base)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
+          className="flex-1 sm:flex-none inline-flex items-center justify-center h-12 px-4 rounded-xl text-sm font-semibold border border-[var(--rule-base)] text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] transition-colors"
         >
           Cancelar
         </button>
         <button
           type="button"
           onClick={handleConfirm}
-          className="flex-1 inline-flex items-center justify-center gap-1.5 h-10 px-4 rounded-xl text-sm font-semibold bg-[var(--accent-dark)] text-white hover:opacity-90 shadow-[var(--shadow-md)] shadow-[var(--accent-dark)]/30 transition-all active:scale-[0.99]"
+          className="flex-1 inline-flex items-center justify-center gap-1.5 h-12 px-4 rounded-xl text-sm font-semibold bg-[var(--accent-dark)] text-white hover:opacity-90 shadow-[var(--shadow-md)] shadow-[var(--accent-dark)]/30 transition-all active:scale-[0.99]"
         >
           <Check className="h-4 w-4" strokeWidth={2.5} />
           Confirmar entrega

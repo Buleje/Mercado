@@ -234,7 +234,7 @@ export default function CtpTrozasDeIngreso({
           <button
             type="button"
             onClick={() => setImportando(true)}
-            className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] transition hover:border-[var(--accent)]"
+            className="inline-flex h-12 shrink-0 items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 text-sm font-semibold text-[var(--text-primary)] transition hover:border-[var(--accent)]"
           >
             <ClipboardList className="h-4 w-4" aria-hidden /> Pegar la lista del proveedor
           </button>
@@ -328,7 +328,7 @@ export default function CtpTrozasDeIngreso({
           <button
             type="button"
             onClick={() => setRecibiendo(true)}
-            className="flex h-9 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)] hover:border-primary"
+            className="flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)] hover:border-primary"
             title="Anotar código de planta, parcela de corta y qué trozas no llegaron"
           >
             <PackageCheck className="h-3.5 w-3.5" aria-hidden /> Recepción
@@ -336,7 +336,7 @@ export default function CtpTrozasDeIngreso({
           <button
             type="button"
             onClick={() => setViendoLista(true)}
-            className="flex h-9 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)] hover:border-primary"
+            className="flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)] hover:border-primary"
             title="Ver la LISTA DE TROZAS A MOVILIZAR para imprimirla o guardarla"
           >
             <FileText className="h-3.5 w-3.5" aria-hidden /> Lista de trozas
@@ -366,7 +366,7 @@ export default function CtpTrozasDeIngreso({
                 type="button"
                 disabled={arreglando}
                 onClick={() => setImportando(true)}
-                className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)] disabled:opacity-60"
+                className="inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)] disabled:opacity-60"
               >
                 <ClipboardList className="h-3.5 w-3.5" aria-hidden /> Cargar las piezas que faltan
               </button>
@@ -388,7 +388,7 @@ export default function CtpTrozasDeIngreso({
                 }))) return;
                 void corregirVolumen(Number(total.toFixed(4)));
               }}
-              className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)] disabled:opacity-60"
+              className="inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--text-primary)] transition hover:border-[var(--accent)] disabled:opacity-60"
             >
               {arreglando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Pencil className="h-3.5 w-3.5" aria-hidden />}
               Corregir el volumen a {fmtM3(total)} m³

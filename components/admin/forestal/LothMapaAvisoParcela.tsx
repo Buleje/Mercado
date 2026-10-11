@@ -36,7 +36,7 @@ export default function LothMapaAvisoParcela({ fuera, total, km, onVer }: Props)
       <button
         type="button"
         onClick={onVer}
-        className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:border-[var(--rule-strong)]"
+        className="inline-flex h-12 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:border-[var(--rule-strong)]"
       >
         <Locate className="h-3.5 w-3.5" aria-hidden="true" /> Ver dónde están los árboles
       </button>

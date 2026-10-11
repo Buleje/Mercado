@@ -109,7 +109,7 @@ export default function OcRecurrentes({ oc }: { oc: OrdenesCompra }) {
                   <button
                     type="button"
                     onClick={() => generarDesdeRecurrente(r.id)}
-                    className="w-full inline-flex items-center justify-center gap-1.5 h-11 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors"
+                    className="w-full inline-flex items-center justify-center gap-1.5 h-12 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors"
                   >
                     <Plus className="h-4 w-4" />
                     Crear OC ahora
@@ -144,7 +144,7 @@ export default function OcRecurrentes({ oc }: { oc: OrdenesCompra }) {
                     <button
                       type="button"
                       onClick={() => void cambiarActivo(r, true)}
-                      className="inline-flex items-center gap-1.5 h-11 px-4 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors"
+                      className="inline-flex items-center gap-1.5 h-12 px-4 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors"
                       aria-label={`Activar ${r.notes || r.supplierName}`}
                     >
                       <Play className="h-4 w-4" aria-hidden />

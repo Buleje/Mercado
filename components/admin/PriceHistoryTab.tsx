@@ -1,16 +1,16 @@
 "use client";
 
-import { LoadingState, SectionTitle } from "@buleje/design-system";
-import { Download, MoreHorizontal, TrendingDown, TrendingUp, Repeat } from "@buleje/design-system/icons";
-import { exportToCSV } from "@/lib/utils";
-import { formatNumber } from "@/lib/format";
+import { useState } from "react";
+import { DataTable, LoadingState, SectionTitle } from "@buleje/design-system";
+import { ArrowDownRight, ArrowUpRight, Download, MoreHorizontal, TrendingDown, TrendingUp, Repeat } from "@buleje/design-system/icons";
+import { cn, exportToCSV } from "@/lib/utils";
+import { formatCurrency, formatNumber } from "@/lib/format";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useHistorialPrecios } from "@/components/admin/precios/hooks/use-historial-precios";
 import PreciosFiltros from "@/components/admin/precios/PreciosFiltros";
-import PreciosTabla from "@/components/admin/precios/PreciosTabla";
-import { fmtFecha, variacionPct } from "@/components/admin/precios/precios-compartido";
+import { FILAS_VISIBLES, fmtFecha, variacionPct } from "@/components/admin/precios/precios-compartido";
 
 interface PriceHistoryTabProps {
   /** Si se pasa, carga sólo el historial de ese producto (modo "editor de producto") */
@@ -23,7 +23,10 @@ const TARJETA = "rounded-xl border border-[var(--rule-base)] bg-[var(--surface-r
 
 export default function PriceHistoryTab({ productId, accionesExtra = [] }: PriceHistoryTabProps) {
   const h = useHistorialPrecios(productId);
+  /* La tabla muestra las primeras FILAS_VISIBLES; «Ver los N restantes» abre el resto. */
+  const [verTodos, setVerTodos] = useState(false);
   const { cuentas, filas, nombres, filtros } = h;
+  const lista = verTodos ? filas : filas.slice(0, FILAS_VISIBLES);
   const sinFiltro = productId != null;
 
   const cifras = [
@@ -116,7 +119,53 @@ export default function PriceHistoryTab({ productId, accionesExtra = [] }: Price
           {h.hayFiltros ? "Ningún cambio coincide con los filtros." : "Aún no cambiaste ningún precio."}
         </p>
       ) : (
-        <PreciosTabla filas={filas} nombres={nombres} conProducto={!sinFiltro} />
+        /* El historial a 14 px: fecha, producto (salvo en el editor de un producto), antes, ahora, % y quién. */
+        <div className="space-y-2">
+          <DataTable className="min-w-[600px]">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                {!sinFiltro && <th>Producto</th>}
+                <th className="text-right">Antes</th>
+                <th className="text-right">Ahora</th>
+                <th className="text-right">Cambio</th>
+                <th className="hidden sm:table-cell">Lo cambió</th>
+              </tr>
+            </thead>
+            <tbody>
+              {lista.map((r) => {
+                const pct = variacionPct(r);
+                const sube = r.newPrice > r.oldPrice;
+                return (
+                  <tr key={r.id}>
+                    <td className="whitespace-nowrap text-[var(--text-secondary)]">{fmtFecha(r.changedAt)}</td>
+                    {!sinFiltro && (
+                      <td className="font-semibold">{nombres[r.productId] ?? `Producto #${r.productId}`}</td>
+                    )}
+                    <td className="text-right tabular-nums text-[var(--text-secondary)] line-through">{formatCurrency(r.oldPrice)}</td>
+                    <td className="text-right font-bold tabular-nums">{formatCurrency(r.newPrice)}</td>
+                    <td className="text-right">
+                      <span className={cn("inline-flex items-center gap-0.5 font-bold tabular-nums", sube ? "text-[var(--data-error-ink)]" : "text-[var(--data-success-ink)]")}>
+                        {sube ? <ArrowUpRight className="h-4 w-4" aria-hidden /> : <ArrowDownRight className="h-4 w-4" aria-hidden />}
+                        {pct != null ? `${sube ? "+" : ""}${pct.toFixed(1)}%` : "N/A"}
+                      </span>
+                    </td>
+                    <td className="hidden text-[var(--text-secondary)] sm:table-cell">{r.changedBy ?? "—"}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </DataTable>
+          {lista.length < filas.length && (
+            <button
+              type="button"
+              onClick={() => setVerTodos(true)}
+              className="h-12 w-full rounded-xl border border-dashed border-[var(--rule-base)] text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+            >
+              Ver los {filas.length - lista.length} cambios restantes
+            </button>
+          )}
+        </div>
       )}
     </div>
   );

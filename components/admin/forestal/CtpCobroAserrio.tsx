@@ -375,7 +375,7 @@ export default function CtpCobroAserrio({
               setAbierto((v) => !v);
             }}
             aria-expanded={abierto}
-            className="flex h-11 w-full items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-left text-sm hover:border-[var(--accent)]"
+            className="flex h-12 w-full items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-left text-sm hover:border-[var(--accent)]"
           >
             <Users className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
             <span className="min-w-0 flex-1 truncate font-medium text-[var(--text-primary)]">

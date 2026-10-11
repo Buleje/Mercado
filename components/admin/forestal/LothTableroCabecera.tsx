@@ -137,12 +137,12 @@ export default function LothTableroCabecera({
             disabled={filas.length === 0}
             aria-label="Escanear troza"
             title="Escanear troza: con la cámara del celular, o tipea el código"
-            className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-2.5 text-sm font-bold text-white transition-colors hover:bg-[var(--accent-600)] disabled:cursor-not-allowed disabled:opacity-50 max-sm:px-3.5 xl:px-3.5"
+            className="inline-flex h-12 items-center gap-1.5 rounded-xl bg-[var(--accent)] px-2.5 text-sm font-bold text-white transition-colors hover:bg-[var(--accent-600)] disabled:cursor-not-allowed disabled:opacity-50 max-sm:px-3.5 xl:px-3.5"
           >
             <ScanBarcode className="h-5 w-5" aria-hidden="true" />
             <span className="hidden max-sm:inline xl:inline">Escanear troza</span>
           </button>
-          <ActionMenu label="Opciones del control" actions={menu} size="sm" soloIcono />
+          <ActionMenu label="Opciones del control" actions={menu} size="md" soloIcono />
         </div>
       </header>
       {errorExport && (

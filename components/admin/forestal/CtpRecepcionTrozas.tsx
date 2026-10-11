@@ -36,6 +36,7 @@ import CtpRecepcionTrozaCard from "./CtpRecepcionTrozaCard";
 import CtpFotosDelIngreso from "./CtpFotosDelIngreso";
 import { fmtM3 } from "@/lib/forestal/cubicacion-formato";
 import EscanerTrozas from "./EscanerTrozas";
+import { button } from "@/components/ui-system/button-variants";
 
 export interface TrozaEditable extends TrozaRecepcion {
   especieComun?: string | null;
@@ -43,7 +44,7 @@ export interface TrozaEditable extends TrozaRecepcion {
 }
 
 const BTN_LOTE =
-  "inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] px-3 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:opacity-40";
+  button({ variant: "secondary", className: "rounded-xl" });
 
 const CAMPO_TABLA =
   "h-11 rounded-xl border border-[var(--rule-base)] bg-transparent px-3 text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-muted)] disabled:opacity-40";
@@ -466,7 +467,7 @@ export default function CtpRecepcionTrozas({
           type="button"
           onClick={onCerrar}
           disabled={guardando}
-          className="h-11 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)]"
+          className="h-12 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)]"
         >
           Cancelar
         </button>
@@ -474,7 +475,7 @@ export default function CtpRecepcionTrozas({
           type="button"
           onClick={() => void guardar()}
           disabled={guardando || cambios.length === 0}
-          className="flex h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-white disabled:opacity-40"
+          className="flex h-12 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-white disabled:opacity-40"
         >
           {guardando && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
           Guardar recepción

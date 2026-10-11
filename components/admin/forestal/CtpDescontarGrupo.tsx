@@ -147,7 +147,7 @@ export default function CtpDescontarGrupo({
               type="button"
               onClick={() => setVerTrozas((v) => !v)}
               aria-expanded={verTrozas}
-              className="inline-flex h-11 items-center gap-1 rounded-xl px-2 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+              className="inline-flex h-12 items-center gap-1 rounded-xl px-2 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
             >
               Elegir trozas
               <ChevronDown className={`h-4 w-4 transition-transform ${verTrozas ? "rotate-180" : ""}`} aria-hidden />

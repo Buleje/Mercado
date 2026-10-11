@@ -152,14 +152,14 @@ export default function PagoFiadoModal({
             <button
               type="button"
               onClick={() => setMonto(saldo.toFixed(2))}
-              className="h-11 rounded-xl bg-[var(--surface-sunken)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--rule-soft)]"
+              className="h-12 rounded-xl bg-[var(--surface-sunken)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--rule-soft)]"
             >
               Todo
             </button>
             <button
               type="button"
               onClick={() => setMonto((Math.round(saldo * 50) / 100).toFixed(2))}
-              className="h-11 rounded-xl bg-[var(--surface-sunken)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--rule-soft)]"
+              className="h-12 rounded-xl bg-[var(--surface-sunken)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--rule-soft)]"
             >
               Mitad
             </button>

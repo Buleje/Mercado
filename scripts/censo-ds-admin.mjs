@@ -194,8 +194,14 @@ export const FAMILIAS = {
   },
   filtros: {
     filtrosLocales: m("baja", {
-      nota: "no cuenta el que sólo compone SegmentedControl/ActionMenu sin controles propios",
-      porArchivo: defsLocales(/(Filter|Filters|FilterBar|Filtro|Filtros|Search|SearchBar|Buscador|Busqueda)$/, ["SegmentedControl", "ActionMenu"]),
+      nota: "no cuenta el que sólo compone la barra canónica (SegmentedControl/ActionMenu/CampoBuscar/FiltroColumna*) sin controles propios",
+      porArchivo: defsLocales(/(Filter|Filters|FilterBar|Filtro|Filtros|Search|SearchBar|Buscador|Busqueda)$/, [
+        "SegmentedControl",
+        "ActionMenu",
+        /* ADR-489 §2: la barra única es buscador + SegmentedControl + filtro de fecha + filtros-columna. */
+        "CampoBuscar",
+        "FiltroColumna\\w*",
+      ]),
     }),
     alturasInput: m("baja", {
       nota: "alturas h-* distintas en <input>/<select> a mano",

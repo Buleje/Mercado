@@ -58,7 +58,7 @@ export default function ALaMedidaModule() {
                 role="tab"
                 aria-selected={esta}
                 onClick={() => irA(v.id)}
-                className={`inline-flex h-11 items-center gap-2 rounded-xl border-2 px-4 text-base font-bold transition ${
+                className={`inline-flex h-12 items-center gap-2 rounded-xl border-2 px-4 text-base font-bold transition ${
                   esta
                     ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--text-primary)]"
                     : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--accent)]"

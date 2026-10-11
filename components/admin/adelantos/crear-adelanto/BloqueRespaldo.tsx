@@ -92,7 +92,7 @@ export default function BloqueRespaldo({
           type="button"
           onClick={() => setAbierto((v) => !v)}
           aria-expanded={abierto}
-          className="inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+          className="inline-flex h-12 items-center gap-1.5 rounded-lg px-2.5 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
         >
           {abierto ? "Plegar" : "Mostrar"}
           <ChevronDown className={`h-4 w-4 transition-transform ${abierto ? "rotate-180" : ""}`} aria-hidden />

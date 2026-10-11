@@ -32,9 +32,10 @@ import {
   type Recorte,
 } from "./puente-pc";
 import { useCuadroPuente } from "./use-puente-pc";
+import { button } from "@/components/ui-system/button-variants";
 
 const BOTON =
-  "inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--text-primary)]";
+  button({ variant: "secondary", className: "rounded-xl" });
 const BOTON_ACTIVO = "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-ink)] dark:text-[var(--accent)]";
 
 interface Props {

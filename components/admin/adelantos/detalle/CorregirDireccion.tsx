@@ -136,14 +136,14 @@ export default function CorregirDireccion({
       </p>
       {err && <p className="text-sm font-semibold text-[var(--data-error-ink)]">{err}</p>}
       <div className="flex flex-wrap justify-end gap-2">
-        <button type="button" onClick={() => setAbierto(false)} className="h-11 rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">
+        <button type="button" onClick={() => setAbierto(false)} className="h-12 rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">
           Cancelar
         </button>
         <button
           type="button"
           onClick={corregir}
           disabled={saving}
-          className="h-11 rounded-xl bg-[var(--accent-dark)] px-5 text-sm font-bold text-white hover:brightness-110 disabled:opacity-50"
+          className="h-12 rounded-xl bg-[var(--accent-dark)] px-5 text-sm font-bold text-white hover:brightness-110 disabled:opacity-50"
         >
           {saving ? "Corrigiendo…" : "Corregir"}
         </button>

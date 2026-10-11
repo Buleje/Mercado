@@ -11,7 +11,8 @@
  */
 
 import type { ReactNode } from "react";
-import { ListChecks, PiggyBank, Undo2, type LucideIcon } from "@buleje/design-system/icons";
+import { ListChecks, PiggyBank, Undo2 } from "@buleje/design-system/icons";
+import { StatCard } from "@buleje/design-system";
 import { limaDateKey } from "@/lib/utils";
 import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
 import { TarjetaConsumoIA, useConsumoIA, useMedidorEnLaVista } from "../ConsumoIA";
@@ -19,19 +20,6 @@ import { usd, type ReciboIA } from "./use-recibos";
 
 /** Lo que trae `/api/admin/comandos-ia/recibos` como máximo (ActivityLogDB.list limit 50). */
 const TOPE_API = 50;
-
-function Cifra({ etiqueta, valor, detalle, icono: Icono }: { etiqueta: string; valor: string; detalle: string; icono: LucideIcon }) {
-  return (
-    <div className="flex h-full flex-col gap-1 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-4 py-3">
-      <span className="flex items-center justify-between gap-2 text-sm font-semibold text-[var(--text-secondary)]">
-        {etiqueta}
-        <Icono className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" aria-hidden />
-      </span>
-      <span className="text-2xl font-bold tabular-nums text-[var(--text-primary)]">{valor}</span>
-      <span className="text-sm text-[var(--text-secondary)]">{detalle}</span>
-    </div>
-  );
-}
 
 export function useIndicadoresIA({ recibos, listo }: { recibos: ReciboIA[]; listo: boolean }) {
   // Esta vista ya dice la cifra del mes: la franja del hub se calla mientras está.
@@ -47,26 +35,29 @@ export function useIndicadoresIA({ recibos, listo }: { recibos: ReciboIA[]; list
   const tarjetas: ReactNode[] = [];
   if (consumo) tarjetas.push(<TarjetaConsumoIA key="mes" d={consumo} />);
   tarjetas.push(
-    <Cifra
+    <StatCard
+      density="compact"
       key="acciones"
-      etiqueta="Acciones"
-      valor={String(n)}
-      icono={ListChecks}
-      detalle={`${deHoy} hoy${n >= TOPE_API ? ` · las últimas ${TOPE_API}` : ""}`}
+      label="Acciones"
+      value={String(n)}
+      icon={ListChecks}
+      subValue={`${deHoy} hoy${n >= TOPE_API ? ` · las últimas ${TOPE_API}` : ""}`}
     />,
-    <Cifra
+    <StatCard
+      density="compact"
       key="sin-ia"
-      etiqueta="Sin gastar IA"
-      valor={n ? `${sinIa} de ${n}` : "0"}
-      icono={PiggyBank}
-      detalle="Salieron con reglas: $0"
+      label="Sin gastar IA"
+      value={n ? `${sinIa} de ${n}` : "0"}
+      icon={PiggyBank}
+      subValue="Salieron con reglas: $0"
     />,
-    <Cifra
+    <StatCard
+      density="compact"
       key="deshacer"
-      etiqueta="Se pueden deshacer"
-      valor={String(deshacibles)}
-      icono={Undo2}
-      detalle={deshacibles === 1 ? "Cambio de precios" : "Cambios de precios"}
+      label="Se pueden deshacer"
+      value={String(deshacibles)}
+      icon={Undo2}
+      subValue={deshacibles === 1 ? "Cambio de precios" : "Cambios de precios"}
     />,
   );
 

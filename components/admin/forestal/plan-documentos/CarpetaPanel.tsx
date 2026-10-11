@@ -169,7 +169,7 @@ export default function CarpetaPanel({
         {carpeta.pendiente && (
           <span className="rounded-full bg-[var(--surface-sunken)] px-2 py-0.5 text-xs font-semibold text-[var(--text-secondary)]">Se crea al guardar</span>
         )}
-        {menu.length > 0 && <ActionMenu label={`Opciones de «${carpeta.nombre}»`} actions={menu} icon={MoreHorizontal} soloIcono size="sm" />}
+        {menu.length > 0 && <ActionMenu label={`Opciones de «${carpeta.nombre}»`} actions={menu} icon={MoreHorizontal} soloIcono size="md" />}
       </div>
 
       {aviso && (

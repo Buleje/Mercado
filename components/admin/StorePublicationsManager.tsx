@@ -126,7 +126,7 @@ export default function StorePublicationsManager() {
             onClick={() => setPinned((v) => !v)}
             aria-pressed={pinned}
             className={cn(
-              "inline-flex h-11 items-center gap-2 rounded-xl border-2 px-3 text-sm font-semibold transition-colors",
+              "inline-flex h-12 items-center gap-2 rounded-xl border-2 px-3 text-sm font-semibold transition-colors",
               pinned
                 ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)]",
@@ -139,7 +139,7 @@ export default function StorePublicationsManager() {
             onClick={publish}
             disabled={saving || !body.trim()}
             className={cn(
-              "inline-flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition-all",
+              "inline-flex h-12 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition-all",
               body.trim() && !saving
                 ? "bg-[var(--accent)] text-white hover:opacity-90 active:scale-95"
                 : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] cursor-not-allowed",

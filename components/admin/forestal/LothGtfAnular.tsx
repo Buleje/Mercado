@@ -95,7 +95,7 @@ export default function AnularGtfForm({
           <button
             type="button"
             onClick={verIngresosDelCtp}
-            className="inline-flex h-11 shrink-0 items-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] sm:h-9"
+            className="inline-flex h-12 shrink-0 items-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
           >
             Ir a Ingresos del CTP
           </button>
@@ -129,8 +129,8 @@ export default function AnularGtfForm({
         </label>
       )}
       <div className="flex justify-end gap-2">
-        <button type="button" onClick={onCancel} className="h-11 rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-        <button type="submit" disabled={!valido || busy} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--data-error-600)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50">
+        <button type="button" onClick={onCancel} className="h-12 rounded-xl px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+        <button type="submit" disabled={!valido || busy} className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--data-error-600)] px-4 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50">
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />} Anular la guía
         </button>
       </div>

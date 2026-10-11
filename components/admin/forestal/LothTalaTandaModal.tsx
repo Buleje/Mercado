@@ -232,7 +232,7 @@ export default function LothTalaTandaModal({
               type="button"
               disabled={guardando}
               onClick={() => conReparo.forEach((f) => t.quitar(f.id))}
-              className="inline-flex h-9 items-center rounded-lg border-2 border-current px-3 text-sm font-bold disabled:opacity-50"
+              className="inline-flex h-12 items-center rounded-lg border-2 border-current px-3 text-sm font-bold disabled:opacity-50"
             >
               {conReparo.length === 1 ? "Quitarlo" : "Quitarlos"}
             </button>
@@ -285,7 +285,7 @@ export default function LothTalaTandaModal({
             type="button"
             onClick={() => setAgregando(true)}
             disabled={guardando || !inicial.planId}
-            className="inline-flex h-11 items-center gap-2 rounded-xl border border-dashed border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent-ink)] disabled:opacity-50 dark:hover:text-[var(--accent)]"
+            className="inline-flex h-12 items-center gap-2 rounded-xl border border-dashed border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent-ink)] disabled:opacity-50 dark:hover:text-[var(--accent)]"
           >
             <Plus className="h-4 w-4" />{" "}
             {plantacion ? "Agregar árboles marcados" : "Agregar del censo"}

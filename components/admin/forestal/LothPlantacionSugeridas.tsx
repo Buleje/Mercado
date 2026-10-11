@@ -46,7 +46,7 @@ function Chips({ sugeridas, onAgregar }: { sugeridas: readonly EspecieSugerida[]
         <button
           type="button"
           onClick={() => onAgregar(sugeridas)}
-          className="inline-flex h-9 items-center rounded-full px-3 text-sm font-semibold text-[var(--accent-ink)] hover:underline dark:text-[var(--accent)]"
+          className="inline-flex h-12 items-center rounded-full px-3 text-sm font-semibold text-[var(--accent-ink)] hover:underline dark:text-[var(--accent)]"
         >
           Agregar las {sugeridas.length}
         </button>

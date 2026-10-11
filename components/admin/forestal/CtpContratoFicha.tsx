@@ -112,7 +112,7 @@ function ErrorDeCarga({
         <button
           type="button"
           onClick={onReintentar}
-          className="inline-flex h-11 items-center gap-2 rounded-xl border-2 border-[var(--accent)] px-4 text-sm font-bold text-[var(--accent-ink)] hover:bg-primary/10"
+          className="inline-flex h-12 items-center gap-2 rounded-xl border-2 border-[var(--accent)] px-4 text-sm font-bold text-[var(--accent-ink)] hover:bg-primary/10"
         >
           <RefreshCw className="h-4 w-4" aria-hidden /> Reintentar
         </button>
@@ -120,7 +120,7 @@ function ErrorDeCarga({
           <button
             type="button"
             onClick={onVolver}
-            className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
+            className="inline-flex h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden /> Volver a la lista
           </button>
@@ -247,7 +247,7 @@ export default function CtpContratoFicha({
             <button
               type="button"
               onClick={onVolver}
-              className="mb-2 inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+              className="mb-2 inline-flex h-12 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-2.5 text-xs font-bold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
             >
               <ArrowLeft className="h-3.5 w-3.5" aria-hidden /> Todos los contratos
             </button>
@@ -287,7 +287,7 @@ export default function CtpContratoFicha({
                     ? "Trayendo el volumen del permiso…"
                     : "Imprimir la ficha del permiso para SERFOR/OSINFOR (guarda como PDF)"
                 }
-                className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:opacity-50"
+                className="inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:opacity-50"
               >
                 {accionPendiente === "imprimir" ? (
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
@@ -305,7 +305,7 @@ export default function CtpContratoFicha({
                     ? "Trayendo el volumen del permiso…"
                     : "Bajar la ficha del permiso en Excel (guías, por especie, por tipo, corridas y despachos)"
                 }
-                className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:opacity-50"
+                className="inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text-primary)] disabled:opacity-50"
               >
                 {accionPendiente === "excel" || bajandoFicha ? (
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden />

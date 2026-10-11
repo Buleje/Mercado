@@ -210,7 +210,7 @@ function IrAFila({ total, onIr }: { total: number; onIr: (posicion: number) => v
         onClick={ir}
         disabled={!valido}
         title={fueraDeRango ? `Esta tabla tiene ${total} filas` : "Leer desde esa fila en adelante"}
-        className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-[var(--accent)] bg-primary/10 px-3 text-xs font-bold text-[var(--accent-ink)] transition-colors hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-40 dark:text-[var(--accent)]"
+        className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-lg border border-[var(--accent)] bg-primary/10 px-3 text-xs font-bold text-[var(--accent-ink)] transition-colors hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-40 dark:text-[var(--accent)]"
       >
         <ArrowRight className="h-3.5 w-3.5" aria-hidden /> Ir
       </button>
@@ -236,7 +236,7 @@ function Boton({
       type="button"
       onClick={onClick}
       title={hint ?? label}
-      className={`inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border text-xs font-bold transition-colors ${
+      className={`inline-flex h-12 flex-1 items-center justify-center gap-1.5 rounded-xl border text-xs font-bold transition-colors ${
         destacado
           ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] hover:brightness-95 dark:text-[var(--accent)]"
           : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"

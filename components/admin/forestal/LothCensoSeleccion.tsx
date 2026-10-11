@@ -76,7 +76,7 @@ export function BotonBorrarTodos({ total, borrando, onBorrar }: { total: number;
       disabled={borrando}
       title="Borrar todos los árboles del censo (los talados se conservan)"
       aria-label="Borrar todos los árboles del censo"
-      className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--data-error-100)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-50)] disabled:opacity-50 dark:border-[var(--data-error-500)]/40 dark:text-[var(--data-error-500)] dark:hover:bg-[var(--data-error-500)]/12"
+      className="inline-flex h-12 items-center gap-1.5 rounded-lg border border-[var(--data-error-100)] bg-[var(--surface-raised)] px-3 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-50)] disabled:opacity-50 dark:border-[var(--data-error-500)]/40 dark:text-[var(--data-error-500)] dark:hover:bg-[var(--data-error-500)]/12"
     >
       <Trash2 className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Borrar todos</span>
     </button>
@@ -100,19 +100,19 @@ export function BarraSeleccion({ marcados, filtrados, borrando, onMarcarFiltrado
         <span className="font-mono tabular-nums">{formatNumber(marcados)}</span> {marcados === 1 ? "seleccionado" : "seleccionados"}
       </span>
       {filtrados > marcados && (
-        <button type="button" onClick={onMarcarFiltrados} className="h-9 rounded-lg px-2 text-sm font-semibold text-[var(--text-secondary)] underline-offset-2 hover:underline">
+        <button type="button" onClick={onMarcarFiltrados} className="h-12 rounded-lg px-2 text-sm font-semibold text-[var(--text-secondary)] underline-offset-2 hover:underline">
           Seleccionar los {formatNumber(filtrados)} del filtro
         </button>
       )}
       <span className="grow" />
-      <button type="button" onClick={onLimpiar} className="inline-flex h-9 items-center gap-1 rounded-lg px-2.5 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">
+      <button type="button" onClick={onLimpiar} className="inline-flex h-12 items-center gap-1 rounded-lg px-2.5 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">
         <X className="h-4 w-4" /> Quitar selección
       </button>
       <button
         type="button"
         onClick={onBorrar}
         disabled={borrando}
-        className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--data-error-600)] px-3 text-sm font-bold text-[var(--text-inverse)] hover:bg-[var(--data-error-700)] disabled:opacity-50"
+        className="inline-flex h-12 items-center gap-1.5 rounded-lg bg-[var(--data-error-600)] px-3 text-sm font-bold text-[var(--text-inverse)] hover:bg-[var(--data-error-700)] disabled:opacity-50"
       >
         <Trash2 className="h-4 w-4" /> Borrar {formatNumber(marcados)}
       </button>

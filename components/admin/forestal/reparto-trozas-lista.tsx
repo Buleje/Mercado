@@ -123,7 +123,7 @@ export function TrozasEnElLote({ lote, onQuitar, quitando }: {
             disabled={ultima || quitando !== null}
             title={ultima ? "Es la última troza: un lote no queda vacío (para soltarlo, deshazlo en Lotes)" : `Sacar ${codigoDeTroza(t)} del lote`}
             aria-label={`Quitar la troza ${codigoDeTroza(t)} del lote`}
-            className="inline-flex h-9 shrink-0 items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:opacity-40"
+            className="inline-flex h-12 shrink-0 items-center gap-1 rounded-lg border border-[var(--rule-base)] px-2 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:opacity-40"
           >
             {quitando === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <Minus className="h-3.5 w-3.5" aria-hidden />} Quitar
           </button>

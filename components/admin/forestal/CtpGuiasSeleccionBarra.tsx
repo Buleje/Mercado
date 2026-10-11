@@ -18,7 +18,7 @@ import { guiaTildada, tildadasParaRecibir, tildeDeGuia } from "@/lib/forestal/re
 import type { WoodEntry } from "./ctp-shared";
 
 const BOTON =
-  "inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl px-3 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40";
+  "inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-xl px-3 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40";
 
 export default function CtpGuiasSeleccionBarra({
   guias,

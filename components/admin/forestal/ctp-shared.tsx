@@ -22,6 +22,7 @@ import { CardTitle, Kicker } from "@buleje/design-system";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import { MODAL_BODY } from "@/components/admin/shared/AdminModal";
+import { ALTURA_CONTROL } from "@/components/ui-system/button-variants";
 import { AlertCircle, AlertTriangle, Check, CheckCircle2, Clock, Columns3, Copy, ExternalLink, X as XIcon } from "@buleje/design-system/icons";
 import { PLAZO_REGISTRO_DIAS, diasDeRegistro, estaFueraDePlazo, parseCitesPermiso } from "@/lib/forestal/ctp-compliance";
 import { cuadreDeIngreso, descuadra } from "@/lib/forestal/cuadre-trozas";
@@ -792,12 +793,13 @@ export function PanelResumen({
 // Single source para que TODOS los botones de acción (modales, toolbars) tengan
 // el mismo alto/radio/estados en vez de reescribir clases sueltas por lugar.
 // Variantes: primary (verde, registrar/guardar) · dark (brand-ink, acción oficial) ·
-// secondary (borde) · ghost (texto) · danger (rojo suave). Tamaños: md (h-11) · sm (h-9).
+// secondary (borde) · ghost (texto) · danger (rojo suave). Tamaños: md (48 px, la
+// altura única del panel: ALTURA_CONTROL, ADR-489) · sm (h-9, sólo filas densas).
 export type BtnVariant = "primary" | "dark" | "secondary" | "ghost" | "danger";
 const BTN_BASE =
   "inline-flex items-center justify-center gap-2 rounded-xl font-bold whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40";
 const BTN_SIZE: Record<"md" | "sm", string> = {
-  md: "h-11 px-4 text-sm",
+  md: `${ALTURA_CONTROL.clase} px-4 text-sm`,
   sm: "h-9 px-3 text-sm",
 };
 const BTN_VARIANT: Record<BtnVariant, string> = {

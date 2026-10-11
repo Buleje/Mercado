@@ -19,8 +19,6 @@ export { default as AdminCard } from "./AdminCard";
 export { default as AdminKPI } from "./AdminKPI";
 export { default as StatusBadge } from "./StatusBadge";
 export type { BadgeVariant, StatusBadgeProps } from "./StatusBadge";
-export { default as AdminTable } from "./AdminTable";
-export type { Column as AdminTableColumn } from "./AdminTable";
 export { default as ModuleSkeleton } from "./ModuleSkeleton";
 export { default as ModuleToolbar } from "./ModuleToolbar";
 export { default as FilterChip } from "./FilterChip";

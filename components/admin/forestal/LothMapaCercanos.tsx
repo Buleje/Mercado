@@ -17,11 +17,12 @@ import LothMapaArbolSimbolo from "./LothMapaArbolSimbolo";
 import LothMapaRegistrarTala from "./LothMapaRegistrarTala";
 import type { LothMapaArboles } from "./hooks/use-loth-mapa-arboles";
 import type { CensoTree } from "./loth-mapa-shared";
+import { button } from "@/components/ui-system/button-variants";
 
 const FILA =
   "flex min-h-11 w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left hover:bg-[var(--surface-sunken)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--data-info-500)]";
 const BTN_SECUNDARIO =
-  "inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]";
+  button({ variant: "secondary", className: "rounded-xl" });
 
 const nombre = (t: CensoTree) => `${t.species}${t.speciesNative ? ` · ${t.speciesNative}` : ""}`;
 

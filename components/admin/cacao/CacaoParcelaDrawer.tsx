@@ -108,8 +108,8 @@ export default function CacaoParcelaDrawer({ parcelaId, onClose, onChanged }: { 
 
         {parcela && (
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => { setShowEdit((v) => !v); setShowForm(false); }} className={`inline-flex h-9 items-center gap-1.5 rounded-lg border-2 px-3 text-xs font-bold ${showEdit ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"}`}><Settings2 className="h-3.5 w-3.5" />Editar datos</button>
-            <button type="button" onClick={() => setShowDup(true)} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Copy className="h-3.5 w-3.5" />Duplicar</button>
+            <button type="button" onClick={() => { setShowEdit((v) => !v); setShowForm(false); }} className={`inline-flex h-12 items-center gap-1.5 rounded-lg border-2 px-3 text-xs font-bold ${showEdit ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : "border-[var(--rule-base)] text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"}`}><Settings2 className="h-3.5 w-3.5" />Editar datos</button>
+            <button type="button" onClick={() => setShowDup(true)} className="inline-flex h-12 items-center gap-1.5 rounded-lg border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><Copy className="h-3.5 w-3.5" />Duplicar</button>
           </div>
         )}
 
@@ -150,7 +150,7 @@ export default function CacaoParcelaDrawer({ parcelaId, onClose, onChanged }: { 
           })}
         </div>
 
-        <button type="button" onClick={() => setShowForm((v) => !v)} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90"><Plus className="h-4 w-4" />Registrar labor</button>
+        <button type="button" onClick={() => setShowForm((v) => !v)} className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90"><Plus className="h-4 w-4" />Registrar labor</button>
         {showForm && <RegistrarLaborForm parcelaId={parcelaId} responsables={responsables} onDone={() => { setShowForm(false); setDirty(true); load(); }} />}
 
         {/* Historial */}
@@ -254,8 +254,8 @@ function EditarParcelaForm({ parcela, onDone, onCancel }: { parcela: Parcela; on
       <label className="block text-xs font-bold text-[var(--text-secondary)]">Notas<input value={f.observaciones} onChange={set("observaciones")} placeholder="opcional" className={`mt-1 ${I}`} /></label>
       {error && <div className="rounded-lg border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-xs text-[var(--data-error-700)]">{error}</div>}
       <div className="flex gap-2 pt-1">
-        <button type="button" onClick={onCancel} className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">Cancelar</button>
-        <button type="submit" disabled={submitting} className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}Guardar datos</button>
+        <button type="button" onClick={onCancel} className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]">Cancelar</button>
+        <button type="submit" disabled={submitting} className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}Guardar datos</button>
       </div>
     </form>
   );
@@ -290,8 +290,8 @@ function DuplicarParcelaModal({ parcela, onClose, onDone }: { parcela: Parcela; 
         <p className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-sunken)] p-3 text-xs text-[var(--text-secondary)]">Se copian nombre, área, variedad, año y plantas. Dibuja su polígono y registra sus labores aparte.</p>
         {error && <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)]">{error}</div>}
         <div className="flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-4 w-4" />Cancelar</button>
-          <button type="submit" disabled={submitting} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />}Duplicar</button>
+          <button type="button" onClick={onClose} className="inline-flex h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-4 w-4" />Cancelar</button>
+          <button type="submit" disabled={submitting} className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />}Duplicar</button>
         </div>
       </form>
     </AdminModal>
@@ -331,8 +331,8 @@ function CosechaAcopioModal({ labor, onClose, onSent }: { labor: Labor; onClose:
         {precio && <p className="text-sm text-[var(--text-secondary)]">Liquidación estimada: <strong className="text-[var(--text-primary)]">S/ {money(total)}</strong></p>}
         {error && <div className="rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-sm text-[var(--data-error-700)]">{error}</div>}
         <div className="flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="inline-flex h-11 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-4 w-4" />Cancelar</button>
-          <button type="button" disabled={submitting} onClick={enviar} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Warehouse className="h-4 w-4" />}Enviar a Acopio</button>
+          <button type="button" onClick={onClose} className="inline-flex h-12 items-center gap-2 rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)]"><X className="h-4 w-4" />Cancelar</button>
+          <button type="button" disabled={submitting} onClick={enviar} className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Warehouse className="h-4 w-4" />}Enviar a Acopio</button>
         </div>
       </div>
     </AdminModal>
@@ -393,7 +393,7 @@ function RegistrarLaborForm({ parcelaId, responsables, onDone }: { parcelaId: st
       {f.recurrente && Number(f.recurrente) > 0 && <p className="flex items-center gap-1 text-xs text-[var(--text-tertiary)]"><RotateCcw className="h-3 w-3" />Al marcarla hecha, se agenda automáticamente la próxima a {f.recurrente} días.</p>}
       {fechaFutura && !error && <p className="text-xs font-bold text-[var(--data-error-700)]">Una labor “ya hecha” no puede tener fecha futura.</p>}
       {error && <div className="rounded-lg border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] p-3 text-xs text-[var(--data-error-700)]">{error}</div>}
-      <button type="submit" disabled={submitting || fechaFutura} className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}Guardar labor</button>
+      <button type="submit" disabled={submitting || fechaFutura} className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-50">{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}Guardar labor</button>
     </form>
   );
 }

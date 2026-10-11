@@ -862,8 +862,8 @@ function ContractModal({ asset, onClose }: { asset: AssetStats; onClose: () => v
       </div>
       <div className="mt-3 flex items-center justify-between rounded-xl bg-primary/10 px-4 py-3"><span className="text-sm font-bold text-[var(--text-secondary)]">Total</span><span className="font-mono text-xl font-bold tabular-nums text-[var(--accent-ink)] dark:text-[var(--accent)]">{fmt(amount)}</span></div>
       <div className="mt-6 flex items-center gap-3">
-        <button type="button" onClick={onClose} className="h-11 rounded-xl border border-[var(--rule-base)] px-5 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
-        <button type="button" onClick={gen} className="flex flex-1 items-center justify-center gap-2 h-11 rounded-xl bg-primary text-sm font-semibold text-white hover:bg-primary/90"><Download className="h-4 w-4" /> Generar PDF</button>
+        <button type="button" onClick={onClose} className="h-12 rounded-xl border border-[var(--rule-base)] px-5 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">Cancelar</button>
+        <button type="button" onClick={gen} className="flex flex-1 items-center justify-center gap-2 h-12 rounded-xl bg-primary text-sm font-semibold text-white hover:bg-primary/90"><Download className="h-4 w-4" /> Generar PDF</button>
       </div>
     </ModalShell>
   );

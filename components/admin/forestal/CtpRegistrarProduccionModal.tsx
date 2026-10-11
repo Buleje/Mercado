@@ -1375,7 +1375,7 @@ export default function CtpRegistrarProduccionModal({
                     if (m.productType) setProducto(m.productType);
                     if (m.presentacion) setPresentacion(m.presentacion);
                   }}
-                  className="h-11 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 font-mono text-sm tabular-nums text-[var(--text-primary)] transition-colors hover:border-[var(--accent)] sm:h-9"
+                  className="h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 font-mono text-sm tabular-nums text-[var(--text-primary)] transition-colors hover:border-[var(--accent)]"
                 >
                   {m.espesorCm} × {m.anchoCm} cm × {m.largoM} m
                 </button>

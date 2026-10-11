@@ -78,14 +78,14 @@ export default function CtpEntryActions({
             type="button"
             disabled={rejectReason.trim().length < 3 || busy === `${e.id}:reject`}
             onClick={() => onConfirmReject(e.id)}
-            className="inline-flex h-9 items-center gap-1 rounded-xl bg-[var(--data-error-600)] px-3 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+            className="inline-flex h-12 items-center gap-1 rounded-xl bg-[var(--data-error-600)] px-3 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
           >
             {e.status === "validado" ? "Confirmar anulación" : "Confirmar rechazo"}
           </button>
           <button
             type="button"
             onClick={onCancelReject}
-            className="inline-flex h-9 items-center rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)]"
+            className="inline-flex h-12 items-center rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)]"
           >
             Cancelar
           </button>
@@ -135,7 +135,7 @@ export default function CtpEntryActions({
               disabled={busy === `${e.id}:validate`}
               onClick={() => onValidate(e.id)}
               title="Validar ingreso"
-              className="inline-flex h-9 items-center gap-1 rounded-xl bg-[var(--accent-dark)] px-3 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+              className="inline-flex h-12 items-center gap-1 rounded-xl bg-[var(--accent-dark)] px-3 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
             >
               <ThumbsUp className="h-3.5 w-3.5" />
               Validar
@@ -163,7 +163,7 @@ export default function CtpEntryActions({
         type="button"
         onClick={() => onDetail(e)}
         title="Ver ficha completa"
-        className={`inline-flex h-9 items-center gap-1 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] ${btn}`}
+        className={`inline-flex h-12 items-center gap-1 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] ${btn}`}
       >
         <Eye className="h-3.5 w-3.5" />
         Ver
@@ -173,7 +173,7 @@ export default function CtpEntryActions({
           type="button"
           onClick={() => onDuplicate(e)}
           title="Nuevo ingreso con estos datos (mismo proveedor, origen y especie)"
-          className={`inline-flex h-9 items-center gap-1 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] ${btn}`}
+          className={`inline-flex h-12 items-center gap-1 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] ${btn}`}
         >
           <Copy className="h-3.5 w-3.5" />
           Duplicar
@@ -184,7 +184,7 @@ export default function CtpEntryActions({
           type="button"
           onClick={() => onChain(e)}
           title="Cadena: a dónde fue esta madera (corridas y despachos)"
-          className={`inline-flex h-9 items-center gap-1 rounded-xl border-2 border-[var(--data-info-500)] bg-[var(--data-info-50)] px-3 text-sm font-bold text-[var(--data-info-700)] hover:bg-[var(--data-info-100)] ${btn}`}
+          className={`inline-flex h-12 items-center gap-1 rounded-xl border-2 border-[var(--data-info-500)] bg-[var(--data-info-50)] px-3 text-sm font-bold text-[var(--data-info-700)] hover:bg-[var(--data-info-100)] ${btn}`}
         >
           <Share2 className="h-3.5 w-3.5" />
           Cadena
@@ -195,7 +195,7 @@ export default function CtpEntryActions({
           type="button"
           onClick={() => onEdit(e)}
           title="Corregir los datos del ingreso"
-          className={`inline-flex h-9 items-center gap-1 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] ${btn}`}
+          className={`inline-flex h-12 items-center gap-1 rounded-xl border border-[var(--rule-base)] px-3 text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--surface-canvas)] ${btn}`}
         >
           <Pencil className="h-3.5 w-3.5" />
           Corregir
@@ -208,7 +208,7 @@ export default function CtpEntryActions({
             disabled={busy === `${e.id}:validate`}
             onClick={() => onValidate(e.id)}
             title="Validar ingreso"
-            className={`inline-flex h-9 items-center gap-1 rounded-xl bg-[var(--accent-dark)] px-3 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50 ${btn}`}
+            className={`inline-flex h-12 items-center gap-1 rounded-xl bg-[var(--accent-dark)] px-3 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50 ${btn}`}
           >
             <ThumbsUp className="h-3 w-3" />
             Validar
@@ -217,7 +217,7 @@ export default function CtpEntryActions({
             type="button"
             onClick={() => onStartReject(e.id)}
             title="Rechazar"
-            className={`inline-flex h-9 items-center gap-1 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 text-sm font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)] ${btn}`}
+            className={`inline-flex h-12 items-center gap-1 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 text-sm font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)] ${btn}`}
           >
             <ThumbsDown className="h-3 w-3" />
             Rechazar
@@ -229,7 +229,7 @@ export default function CtpEntryActions({
           type="button"
           onClick={() => onStartReject(e.id)}
           title="Anular ingreso validado (corrección con motivo)"
-          className={`inline-flex h-9 items-center gap-1 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 text-sm font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)] ${btn}`}
+          className={`inline-flex h-12 items-center gap-1 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 text-sm font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)] ${btn}`}
         >
           <XCircle className="h-3.5 w-3.5" />
           Anular

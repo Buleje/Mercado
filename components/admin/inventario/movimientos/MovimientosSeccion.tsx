@@ -20,13 +20,14 @@ import { formatTime } from "@/lib/format";
 import { inicioDeHoy } from "@/lib/fechas/dia-local";
 import MovementDetailModal from "../MovementDetailModal";
 import { CabeceraVista, CuerpoDeSeccion, type PanelDeSeccion } from "./CabeceraVista";
-import { AvisoDeError, Buscador, Chips, FILTRO_EN_FILA } from "./controles";
+import { AvisoDeError, Chips, FILTRO_EN_FILA } from "./controles";
 import { ModalRegistrarMovimiento } from "./ModalRegistrarMovimiento";
 import { SECCION } from "./secciones";
 import { TablaMovimientos, rotuloDe, type FilaMovimiento } from "./TablaMovimientos";
 import { CAUSA, EN_EL_PERIODO, PERIODOS, causaDe, desdeDe, diaDelMovimiento, metaDeTipo, totalesDe, type Periodo, type ProductoDeMovimiento } from "./tipos";
 import { useMovimientos } from "./use-datos";
 import { useIndicadoresMovimientos } from "./use-indicadores";
+import CampoBuscar from "@/components/ui-system/CampoBuscar";
 
 const DE_A = 15;
 
@@ -126,7 +127,7 @@ export function MovimientosSeccion({ titulo, secciones, panel, productos, recarg
         {datos.error && <AvisoDeError que="los movimientos" error={datos.error} onReintentar={() => void datos.recargar()} />}
 
         <div className="flex flex-wrap items-center gap-2">
-          <Buscador valor={busca} onCambiar={(v) => { setBusca(v); setVisibles(DE_A); }} placeholder="Producto, motivo o quién…" etiqueta="Buscar movimientos" />
+          <CampoBuscar className="basis-56 sm:max-w-sm" valor={busca} onCambiar={(v) => { setBusca(v); setVisibles(DE_A); }} placeholder="Producto, motivo o quién…" etiqueta="Buscar movimientos" />
           <Chips opciones={PERIODOS} valor={periodo} onCambiar={(v) => { setPeriodo(v); setVisibles(DE_A); }} etiqueta="Período" />
           <FiltroColumnaMulti label="Tipo" value={tipos} options={opcionesTipo} etiqueta={(v) => metaDeTipo(v).label} onChange={(v) => { setTipos(v); setVisibles(DE_A); }} placeholder="Tipo: todos" className={FILTRO_EN_FILA} />
         </div>

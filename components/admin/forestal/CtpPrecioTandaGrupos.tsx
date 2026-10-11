@@ -161,7 +161,7 @@ export default function CtpPrecioTandaGrupos({
                 type="button"
                 onClick={() => alternar(p.clave)}
                 aria-expanded={abierto}
-                className="mt-2 inline-flex h-9 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+                className="mt-2 inline-flex h-12 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
               >
                 {abierto ? <ChevronDown className="h-4 w-4" aria-hidden /> : <ChevronRight className="h-4 w-4" aria-hidden />}
                 {abierto ? "Ocultar especies" : `Precio por especie (${p.especies.length})`}

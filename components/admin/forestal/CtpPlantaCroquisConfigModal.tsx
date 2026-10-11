@@ -133,7 +133,7 @@ export default function CtpPlantaCroquisConfigModal({ croquis, onClose, onGuarda
                 <input type="file" accept="image/png,image/jpeg,image/webp,application/pdf,.pdf" aria-label="Plano de fondo: imagen o PDF" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (f) void subir(f); e.target.value = ""; }} />
               </label>
               {(croquis?.imagenUrl || imagenRef) && (
-                <button type="button" onClick={() => { setImagenRef(null); setProporcion(null); pdf.limpiar(); }} className="inline-flex h-11 items-center gap-2 rounded-xl px-3 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"><Trash2 className="h-4 w-4" />Quitar</button>
+                <button type="button" onClick={() => { setImagenRef(null); setProporcion(null); pdf.limpiar(); }} className="inline-flex h-12 items-center gap-2 rounded-xl px-3 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"><Trash2 className="h-4 w-4" />Quitar</button>
               )}
             </div>
           </Field>
@@ -161,7 +161,7 @@ export default function CtpPlantaCroquisConfigModal({ croquis, onClose, onGuarda
               </li>
             ))}
           </ul>
-          <button type="button" onClick={() => setMaquinas((ms) => [...ms, { codigo: `D${ms.length + 1}`, nombre: "", x: 0, y: 0, fuera: true }])} className="mt-2 inline-flex h-10 items-center gap-2 rounded-xl border border-dashed border-[var(--rule-strong)] px-3 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">
+          <button type="button" onClick={() => setMaquinas((ms) => [...ms, { codigo: `D${ms.length + 1}`, nombre: "", x: 0, y: 0, fuera: true }])} className="mt-2 inline-flex h-12 items-center gap-2 rounded-xl border border-dashed border-[var(--rule-strong)] px-3 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]">
             <Plus className="h-4 w-4" />Agregar máquina
           </button>
         </section>

@@ -25,6 +25,7 @@ import { BotonCopiar, CoordTexto, ListaVertices, MuestraVia } from "./loth-rutas
 import type { EstadoRelieve } from "./hooks/use-loth-mapa-rutas";
 import { BarraFiltrosTabla, FiltroEnCabecera, SinCoincidenciasFila, useFiltrosTabla } from "./filtros-tabla-forestal";
 import { COLUMNAS_PUNTOS, COLUMNAS_RUTAS } from "./loth-plan-columnas-filtro";
+import { button } from "@/components/ui-system/button-variants";
 
 const plural = (n: number, uno: string, varios: string) => `${formatNumber(n)} ${n === 1 ? uno : varios}`;
 
@@ -50,9 +51,9 @@ const RELIEVE_TXT: Record<EstadoRelieve, string> = {
 
 const KICKER = "flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-[var(--text-tertiary)]";
 const BTN_NOMBRE =
-  "group inline-flex min-h-10 w-full items-center gap-2 rounded-lg px-1.5 text-left hover:bg-[var(--surface-sunken)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40";
+  button({ variant: "ghost", fullWidth: true, className: "rounded-xl" });
 const BTN_VERTICES =
-  "inline-flex h-10 items-center gap-1 whitespace-nowrap rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-2.5 text-xs font-bold text-[var(--text-primary)] hover:bg-[var(--surface-sunken)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40";
+  button({ variant: "secondary", className: "rounded-xl" });
 /** La fila resaltada: la misma que tiene el halo turquesa en el mapa. */
 const FILA_ELEGIDA = "bg-[var(--surface-sunken)] shadow-[inset_3px_0_0_var(--accent)]";
 

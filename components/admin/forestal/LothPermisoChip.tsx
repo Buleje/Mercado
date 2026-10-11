@@ -202,7 +202,7 @@ export default function LothPermisoChip() {
            fuerte que el filtro). Elegido = fondo lleno de acento; «Todos» = un
            borde fino y callado, porque no filtra nada. El titular cede primero
            cuando la banda aprieta (mismo criterio que la carátula). */
-        className={`inline-flex h-10 min-w-0 max-w-[24rem] items-center gap-2 rounded-xl px-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 ${
+        className={`inline-flex h-12 min-w-0 max-w-[24rem] items-center gap-2 rounded-xl px-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 ${
           plan || sinPlan
             ? "border border-[var(--accent-dark)] bg-[var(--accent-dark)] font-semibold text-white hover:brightness-90"
             : "border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"

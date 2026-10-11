@@ -155,7 +155,7 @@ function Pestana({
       onClick={() => s.setPestana(id)}
       aria-pressed={activa}
       aria-label={corto ? `${label}${contador != null ? ` (${contador})` : ""}` : undefined}
-      className={`inline-flex h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-t-xl border-2 border-b-0 px-2.5 text-sm font-semibold transition-colors sm:gap-2 sm:px-4 ${
+      className={`inline-flex h-12 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-t-xl border-2 border-b-0 px-2.5 text-sm font-semibold transition-colors sm:gap-2 sm:px-4 ${
         activa
           ? "border-[var(--accent)] bg-[var(--accent)] text-white"
           : "border-[var(--rule-base)] bg-[var(--surface-sunken)] text-[var(--text-secondary)] hover:bg-[var(--surface-raised)]"

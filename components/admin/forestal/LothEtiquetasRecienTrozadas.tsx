@@ -47,7 +47,7 @@ export default function LothEtiquetasRecienTrozadas({ trozas, imprimiendo, onImp
           type="button"
           onClick={onImprimir}
           disabled={imprimiendo}
-          className="inline-flex h-10 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:bg-[var(--accent-600)] disabled:opacity-50"
+          className="inline-flex h-12 items-center gap-2 rounded-xl bg-[var(--accent)] px-4 text-sm font-bold text-white hover:bg-[var(--accent-600)] disabled:opacity-50"
         >
           <Printer className="h-4 w-4" aria-hidden="true" />
           {imprimiendo ? "Generando…" : n === 1 ? "Imprimir la etiqueta" : `Imprimir las ${n} etiquetas`}
@@ -55,7 +55,7 @@ export default function LothEtiquetasRecienTrozadas({ trozas, imprimiendo, onImp
         <button
           type="button"
           onClick={onCerrar}
-          className="inline-flex h-10 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
+          className="inline-flex h-12 items-center rounded-xl border border-[var(--rule-base)] px-4 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-canvas)]"
         >
           Listo
         </button>

@@ -253,7 +253,7 @@ export default function LothPlanAvisos({ rows, onResolver, truncado, plan, onPla
                 key={r.species}
                 type="button"
                 onClick={() => onResolver?.(r.species)}
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--data-error-700)] px-3 text-xs font-bold text-white transition-opacity hover:opacity-90"
+                className="inline-flex h-12 items-center gap-1.5 rounded-lg bg-[var(--data-error-700)] px-3 text-xs font-bold text-white transition-opacity hover:opacity-90"
               >
                 Resolver {r.species}
               </button>

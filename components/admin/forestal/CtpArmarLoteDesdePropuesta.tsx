@@ -129,7 +129,7 @@ export default function CtpArmarLoteDesdePropuesta({
             ? "Abre el lote con estas trozas y lo deja elegido abajo"
             : `Guarda estas trozas en el lote ${plan.loteCode} y lo deja elegido abajo`
         }
-        className="inline-flex h-10 items-center gap-2 rounded-xl border border-[var(--accent)] px-3.5 text-sm font-semibold text-[var(--accent-ink)] transition hover:bg-[var(--accent)]/10 disabled:opacity-50 dark:text-[var(--accent)]"
+        className="inline-flex h-12 items-center gap-2 rounded-xl border border-[var(--accent)] px-3.5 text-sm font-semibold text-[var(--accent-ink)] transition hover:bg-[var(--accent)]/10 disabled:opacity-50 dark:text-[var(--accent)]"
       >
         {armando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Boxes className="h-4 w-4" aria-hidden />}
         {armando

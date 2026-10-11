@@ -102,7 +102,7 @@ export default function LothPlanesVivos({ planes, activoId, etiquetaActivo = "el
                     type="button"
                     onClick={onCompletarPlan}
                     aria-label={`Completar la vigencia de ${nombreDelPlan(plan)}`}
-                    className="ml-2 inline-flex h-11 items-center gap-1 rounded-lg px-2 font-bold text-[var(--accent-dark)] underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] sm:h-8 dark:text-[var(--accent)]"
+                    className="ml-2 inline-flex h-12 items-center gap-1 rounded-lg px-2 font-bold text-[var(--accent-dark)] underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] dark:text-[var(--accent)]"
                   >
                     Completar <ArrowRight className="h-4 w-4" aria-hidden="true" />
                   </button>

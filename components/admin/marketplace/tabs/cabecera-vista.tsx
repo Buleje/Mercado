@@ -10,7 +10,6 @@
  * (a la derecha) Indicadores y la acción principal —, como Órdenes.
  */
 import type { ReactNode } from "react";
-import type { LucideIcon } from "@buleje/design-system/icons";
 import { CAMPO_EN_FILA } from "@/components/admin/marketplace/shared";
 import { diaConNombre } from "@/components/admin/inventario/movimientos/tipos";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
@@ -58,22 +57,6 @@ export function SelectFiltro<T extends string>({ opciones, activo, onCambiar, et
         </option>
       ))}
     </select>
-  );
-}
-
-/** Una cifra del panel de Indicadores. */
-export function TarjetaCifra({ rotulo, valor, icono: Icono, ayuda, destacado }: { rotulo: string; valor: ReactNode; icono: LucideIcon; ayuda?: ReactNode; destacado?: boolean }) {
-  return (
-    <div className={cn("rounded-xl border bg-[var(--surface-raised)] p-3", destacado ? "border-primary/40 ring-1 ring-primary/20" : "border-[var(--rule-base)]")}>
-      <div className="mb-1 flex items-center gap-2">
-        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
-          <Icono className="h-4 w-4" aria-hidden />
-        </span>
-        <span className="text-sm font-semibold text-[var(--text-secondary)]">{rotulo}</span>
-        {ayuda && <InfoTip what={ayuda} />}
-      </div>
-      <p className={cn("text-lg font-extrabold tabular-nums", destacado ? "text-[var(--accent-ink)] dark:text-[var(--accent)]" : "text-[var(--text-primary)]")}>{valor}</p>
-    </div>
   );
 }
 

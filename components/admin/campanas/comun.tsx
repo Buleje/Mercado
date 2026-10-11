@@ -9,10 +9,11 @@
  */
 import type { ReactNode } from "react";
 import { SectionTitle } from "@buleje/design-system";
-import { MoreHorizontal, Search } from "@buleje/design-system/icons";
+import { MoreHorizontal } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { InfoTip, type InfoTipProps } from "@/components/superadmin/_shared/InfoTip";
 import { cn } from "@/lib/utils";
+import CampoBuscar from "@/components/ui-system/CampoBuscar";
 
 /** Una fila: título + ⓘ · (secciones) · … · indicadores + acción principal + «⋯». */
 export function CabeceraVista({
@@ -84,17 +85,7 @@ export function FilaFiltros({
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <div className="relative min-w-[12rem] flex-1">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]" aria-hidden />
-        <input
-          type="search"
-          value={valor}
-          onChange={(e) => onCambio(e.target.value)}
-          placeholder={placeholder}
-          aria-label={etiqueta}
-          className="h-12 w-full rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] pl-9 pr-3 text-sm text-[var(--text-primary)] outline-none focus:border-primary focus:ring-2 focus:ring-primary/30"
-        />
-      </div>
+      <CampoBuscar valor={valor} onCambiar={onCambio} placeholder={placeholder} etiqueta={etiqueta} className="min-w-[12rem]" />
       {children}
     </div>
   );

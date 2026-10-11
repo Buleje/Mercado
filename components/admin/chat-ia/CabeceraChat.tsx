@@ -5,6 +5,7 @@ import { Maximize2, Minimize2, ShieldCheck, Trash2 } from "@buleje/design-system
 import { EnlacePanel } from "@/components/admin/shared/EnlacePanel";
 import { cn } from "@/lib/utils";
 import type { Tono } from "./tipos";
+import { button } from "@/components/ui-system/button-variants";
 
 const TONOS: { value: Tono; label: string }[] = [
   { value: "feynman", label: "Simple" },
@@ -16,7 +17,7 @@ const TONOS: { value: Tono; label: string }[] = [
 const HREF_PENDIENTES = "/admin?tab=asistente-ia&vista=comandos&sub=historial";
 
 const BOTON =
-  "inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-xl border border-[var(--rule-soft)] text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:border-[var(--rule-base)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-50";
+  button({ variant: "secondary", className: "shrink-0 rounded-xl" });
 
 /**
  * La única fila de arriba del chat: tono de las respuestas (lo único que el

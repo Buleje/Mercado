@@ -21,13 +21,14 @@ import { formatTime } from "@/lib/format";
 import { inicioDeHoy } from "@/lib/fechas/dia-local";
 import MovementDetailModal from "../MovementDetailModal";
 import { CabeceraVista, CuerpoDeSeccion, type PanelDeSeccion } from "./CabeceraVista";
-import { AvisoDeError, Buscador, Chips, FILTRO_EN_FILA } from "./controles";
+import { AvisoDeError, Chips, FILTRO_EN_FILA } from "./controles";
 import { ModalRegistrarMovimiento } from "./ModalRegistrarMovimiento";
 import { SECCION } from "./secciones";
 import { COLUMNAS_PERDIDAS, TablaPerdidas, type FilaPerdida } from "./TablaPerdidas";
 import { CAUSA, CAUSAS, EN_EL_PERIODO, PERIODOS, causaDe, desdeDe, diaDelMovimiento, metaDeTipo, resumirPerdidas, type Causa, type Periodo, type ProductoDeMovimiento } from "./tipos";
 import { usePerdidas } from "./use-datos";
 import { useIndicadoresPerdidas } from "./use-indicadores";
+import CampoBuscar from "@/components/ui-system/CampoBuscar";
 
 interface Props {
   titulo: string;
@@ -116,7 +117,7 @@ export function PerdidasSeccion({ titulo, secciones, panel, productos, recargarP
         )}
 
         <div className="flex flex-wrap items-center gap-2">
-          <Buscador valor={busca} onCambiar={setBusca} placeholder="Producto, categoría, nota…" etiqueta="Buscar pérdidas" />
+          <CampoBuscar className="basis-56 sm:max-w-sm" valor={busca} onCambiar={setBusca} placeholder="Producto, categoría, nota…" etiqueta="Buscar pérdidas" />
           <Chips opciones={PERIODOS} valor={periodo} onCambiar={setPeriodo} etiqueta="Período" />
           <FiltroColumnaMulti label="Causa" value={causas} options={opcionesCausa} etiqueta={(v) => CAUSA[v as Causa]?.label ?? v} onChange={setCausas} placeholder="Causa: todas" className={FILTRO_EN_FILA} />
           <BotonRestablecerColumnas cambiado={orden.cambiado} onRestablecer={orden.restablecer} className="h-12!" />

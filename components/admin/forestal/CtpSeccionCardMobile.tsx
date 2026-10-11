@@ -201,7 +201,7 @@ export default function CtpSeccionCardMobile({ entry: e, section, toProductId, o
           <button
             type="button"
             onClick={() => onChain(e)}
-            className="inline-flex h-9 grow items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-50)] px-3 text-xs font-bold text-[var(--data-success-700)] hover:bg-[var(--data-success-100)]"
+            className="inline-flex h-12 grow items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--data-success-500)] bg-[var(--data-success-50)] px-3 text-xs font-bold text-[var(--data-success-700)] hover:bg-[var(--data-success-100)]"
           >
             <Link2 className="h-3.5 w-3.5" /> Cadena
           </button>
@@ -211,7 +211,7 @@ export default function CtpSeccionCardMobile({ entry: e, section, toProductId, o
             <button
               type="button"
               onClick={() => onAmpliar(e.id)}
-              className="inline-flex h-9 grow items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--accent)] bg-primary/10 px-3 text-xs font-bold text-[var(--accent-ink)] hover:brightness-105 dark:text-[var(--accent)]"
+              className="inline-flex h-12 grow items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--accent)] bg-primary/10 px-3 text-xs font-bold text-[var(--accent-ink)] hover:brightness-105 dark:text-[var(--accent)]"
             >
               <Boxes className="h-3.5 w-3.5" /> Declarar lo que faltó
             </button>
@@ -220,7 +220,7 @@ export default function CtpSeccionCardMobile({ entry: e, section, toProductId, o
             type="button"
             disabled={toProductId === e.id}
             onClick={() => onSendInventory(e.id)}
-            className="inline-flex h-9 grow items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--data-info-500)] bg-[var(--data-info-50)] px-3 text-xs font-bold text-[var(--data-info-700)] hover:bg-[var(--data-info-100)] disabled:opacity-50"
+            className="inline-flex h-12 grow items-center justify-center gap-1.5 rounded-xl border-2 border-[var(--data-info-500)] bg-[var(--data-info-50)] px-3 text-xs font-bold text-[var(--data-info-700)] hover:bg-[var(--data-info-100)] disabled:opacity-50"
           >
             <PackagePlus className="h-3.5 w-3.5" /> {toProductId === e.id ? "Creando…" : "A inventario"}
           </button>
@@ -228,7 +228,7 @@ export default function CtpSeccionCardMobile({ entry: e, section, toProductId, o
             <button
               type="button"
               onClick={() => onAnexo(e)}
-              className={`inline-flex h-9 grow items-center justify-center gap-1.5 rounded-xl border-2 px-3 text-xs font-bold ${anexoEmitido
+              className={`inline-flex h-12 grow items-center justify-center gap-1.5 rounded-xl border-2 px-3 text-xs font-bold ${anexoEmitido
                 ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"}`}
             >
@@ -243,7 +243,7 @@ export default function CtpSeccionCardMobile({ entry: e, section, toProductId, o
             <button
               type="button"
               onClick={() => onGuia(e)}
-              className={`inline-flex h-9 grow items-center justify-center gap-1.5 rounded-xl border-2 px-3 text-xs font-bold ${estadoDeGuia(e.gtfNumber) === "emitida"
+              className={`inline-flex h-12 grow items-center justify-center gap-1.5 rounded-xl border-2 px-3 text-xs font-bold ${estadoDeGuia(e.gtfNumber) === "emitida"
                 ? "border-[var(--accent)] bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]"
                 : "border-[var(--rule-base)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"}`}
             >
@@ -254,7 +254,7 @@ export default function CtpSeccionCardMobile({ entry: e, section, toProductId, o
             <button
               type="button"
               onClick={() => onPapeles(e)}
-              className="inline-flex h-9 grow items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+              className="inline-flex h-12 grow items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
             >
               <Paperclip className="h-3.5 w-3.5" /> Papeles
             </button>
@@ -263,7 +263,7 @@ export default function CtpSeccionCardMobile({ entry: e, section, toProductId, o
             <button
               type="button"
               onClick={() => onCubicacionComercial(e)}
-              className="inline-flex h-9 grow items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+              className="inline-flex h-12 grow items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
             >
               <Scale className="h-3.5 w-3.5" /> Cubicación comercial
             </button>
@@ -272,7 +272,7 @@ export default function CtpSeccionCardMobile({ entry: e, section, toProductId, o
             <button
               type="button"
               onClick={() => onCobrarAserrio(e)}
-              className="inline-flex h-9 grow items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+              className="inline-flex h-12 grow items-center justify-center gap-1.5 rounded-xl border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
             >
               <HandCoins className="h-3.5 w-3.5" /> {e.duenoParteId ? "Cambiar aserrío" : "Cobrar aserrío"}
             </button>
@@ -280,7 +280,7 @@ export default function CtpSeccionCardMobile({ entry: e, section, toProductId, o
           <button
             type="button"
             onClick={() => onAnnul(e.id)}
-            className="inline-flex h-9 grow items-center justify-center rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)]"
+            className="inline-flex h-12 grow items-center justify-center rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-50)] px-3 text-xs font-bold text-[var(--data-error-700)] hover:bg-[var(--data-error-100)]"
           >
             Anular
           </button>

@@ -259,7 +259,7 @@ export function CorregirCodigo({ inicial, abierto, onBuscar }: { inicial: string
         type="button"
         onClick={buscar}
         disabled={!texto.trim()}
-        className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg border border-[var(--rule-strong)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-lg border border-[var(--rule-strong)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-60"
       >
         <Search className="h-4 w-4" /> Buscar
       </button>

@@ -15,9 +15,10 @@ import { CabeceraPropia } from "@/components/admin/shared/AdminModal";
 import type { DiasDeLaPieza } from "@/lib/forestal/troza-ficha-recorrido";
 import type { EstadoTroza } from "@/lib/forestal/trozas-patio";
 import { ChipEstado } from "./ctp-troza-ficha-partes";
+import { button } from "@/components/ui-system/button-variants";
 
 const BOTON_ICONO =
-  "grid h-11 w-11 shrink-0 place-items-center rounded-xl text-[var(--text-tertiary)] transition-colors hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:pointer-events-none disabled:opacity-35 sm:h-9 sm:w-9";
+  button({ variant: "ghost", size: "icon", className: "shrink-0 rounded-xl" });
 
 export interface CabeceraDeFichaProps {
   /** `null` mientras se lee la pieza: va un hueco con la forma del código. */

@@ -73,14 +73,14 @@ export default function ResultadoLiquidacion({
         <button
           type="button"
           onClick={descargarPdf}
-          className="inline-flex h-11 items-center gap-1.5 rounded-2xl border border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary"
+          className="inline-flex h-12 items-center gap-1.5 rounded-2xl border border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary"
         >
           <FileDown className="h-4 w-4" aria-hidden /> Descargar comprobante
         </button>
         <button
           type="button"
           onClick={copiarWhatsApp}
-          className="inline-flex h-11 items-center gap-1.5 rounded-2xl border border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary"
+          className="inline-flex h-12 items-center gap-1.5 rounded-2xl border border-[var(--rule-base)] px-4 text-sm font-bold text-[var(--text-secondary)] transition-colors hover:border-primary hover:text-primary"
         >
           <Copy className="h-4 w-4" aria-hidden /> {copiado ? "¡Copiado!" : "Copiar para WhatsApp"}
         </button>
@@ -88,7 +88,7 @@ export default function ResultadoLiquidacion({
       <button
         type="button"
         onClick={onCerrar}
-        className="inline-flex h-11 items-center rounded-2xl bg-primary px-6 text-sm font-bold text-white transition-colors hover:bg-primary-dark"
+        className="inline-flex h-12 items-center rounded-2xl bg-primary px-6 text-sm font-bold text-white transition-colors hover:bg-primary-dark"
       >
         Cerrar
       </button>

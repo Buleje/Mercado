@@ -78,7 +78,7 @@ export default function LothMapaFechaImagen({ basemap, onBase, img, zoom, onVerZ
         data-tapa-mapa
         data-fecha-imagen
         onClick={() => onBase("s2")}
-        className="absolute left-14 top-3 z-20 inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]/95 px-3 text-xs font-bold text-[var(--text-primary)] shadow-md backdrop-blur transition-colors hover:border-[var(--accent)]"
+        className="absolute left-14 top-3 z-20 inline-flex h-12 items-center gap-1.5 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)]/95 px-3 text-xs font-bold text-[var(--text-primary)] shadow-md backdrop-blur transition-colors hover:border-[var(--accent)]"
       >
         <Satellite className="h-3.5 w-3.5 text-[var(--accent)]" aria-hidden="true" /> Satélite del {fechaCorta(escena.fecha, false)}
       </button>

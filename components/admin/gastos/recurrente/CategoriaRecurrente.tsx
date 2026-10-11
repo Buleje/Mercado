@@ -25,7 +25,7 @@ export default function CategoriaRecurrente({ r }: { r: GastoRecurrente }) {
               type="button"
               onClick={() => setSelectedCategoryName(cat.name)}
               className={cn(
-                "group inline-flex items-center gap-2 h-11 px-3.5 rounded-2xl border-2 text-sm font-semibold transition-all",
+                "group inline-flex items-center gap-2 h-12 px-3.5 rounded-2xl border-2 text-sm font-semibold transition-all",
                 active
                   ? cn(cls.bg, cls.text, cls.border, "ring-2", cls.ring)
                   : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--text-secondary)]",
@@ -53,7 +53,7 @@ export default function CategoriaRecurrente({ r }: { r: GastoRecurrente }) {
           <button
             type="button"
             onClick={() => setShowNewCategoryForm(true)}
-            className="inline-flex items-center gap-2 h-11 px-3.5 rounded-2xl border-2 border-dashed border-[var(--text-tertiary)]/40 text-sm font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/5 transition-all"
+            className="inline-flex items-center gap-2 h-12 px-3.5 rounded-2xl border-2 border-dashed border-[var(--text-tertiary)]/40 text-sm font-semibold text-[var(--text-secondary)] hover:border-primary hover:text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/5 transition-all"
           >
             <Plus className="h-4 w-4" />
             Nueva categoría
@@ -139,7 +139,7 @@ export default function CategoriaRecurrente({ r }: { r: GastoRecurrente }) {
             type="button"
             onClick={handleCreateCategory}
             disabled={!newCatName.trim()}
-            className="w-full h-11 inline-flex items-center justify-center gap-2 rounded-2xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50"
+            className="w-full h-12 inline-flex items-center justify-center gap-2 rounded-2xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50"
           >
             <Check className="h-4 w-4" />
             Guardar categoría

@@ -7,25 +7,12 @@
  * a esos 100). «Puntos por vencer» no está: el programa no vence puntos (no
  * hay cron ni movimiento `expiry`), y la tarjeta que lo mostraba lo inventaba.
  */
+import { StatCard } from "@buleje/design-system";
 import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { formatNumber } from "@/lib/format";
 import { solesDePuntos } from "./mensajes";
 import type { MetricasPuntos } from "./use-puntos";
-
-function Cifra({ rotulo, valor, detalle, ayuda }: { rotulo: string; valor: string; detalle?: string; ayuda?: string }) {
-  return (
-    <div className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
-      <div className="flex items-center gap-1.5">
-        <span className="text-sm font-semibold text-[var(--text-secondary)]">{rotulo}</span>
-        {ayuda && <InfoTip what={ayuda} />}
-      </div>
-      <p className="mt-1 text-lg font-extrabold tabular-nums text-[var(--text-primary)]">
-        {valor} {detalle && <span className="text-sm font-semibold text-[var(--text-tertiary)]">{detalle}</span>}
-      </p>
-    </div>
-  );
-}
 
 export function useIndicadoresPuntos(m: MetricasPuntos | null, cargando: boolean) {
   const n = (v: number | undefined) => (m ? formatNumber(v ?? 0) : "—");
@@ -36,16 +23,17 @@ export function useIndicadoresPuntos(m: MetricasPuntos | null, cargando: boolean
     sinDatosAun: cargando && !m,
     resumen: m ? `${m.activeMembers} con puntos · ${formatNumber(m.totalPointsCirculating)} pts` : undefined,
     tarjetas: [
-      <Cifra key="c" rotulo="Clientes con puntos" valor={n(m?.activeMembers)} detalle={m ? `de ${formatNumber(m.totalCustomers)}` : undefined} />,
-      <Cifra
+      <StatCard density="compact" key="c" label="Clientes con puntos" value={n(m?.activeMembers)} subValue={m ? `de ${formatNumber(m.totalCustomers)}` : undefined} />,
+      <StatCard
+        density="compact"
         key="p"
-        rotulo="Puntos sin canjear"
-        valor={n(m?.totalPointsCirculating)}
-        detalle={m ? `≈ ${solesDePuntos(m.totalPointsCirculating)}` : undefined}
-        ayuda="Lo que tus clientes podrían descontar hoy si canjearan todo."
+        label="Puntos sin canjear"
+        value={n(m?.totalPointsCirculating)}
+        subValue={m ? `≈ ${solesDePuntos(m.totalPointsCirculating)}` : undefined}
+        info={<InfoTip what="Lo que tus clientes podrían descontar hoy si canjearan todo." />}
       />,
-      <Cifra key="k" rotulo="Canjes en 30 días" valor={n(m?.redeemTransactions)} detalle={m ? `${formatNumber(m.pointsRedeemedLast30d)} pts` : undefined} />,
-      <Cifra key="g" rotulo="Ganados en 30 días" valor={n(m?.pointsIssuedLast30d)} detalle={m ? "pts" : undefined} />,
+      <StatCard density="compact" key="k" label="Canjes en 30 días" value={n(m?.redeemTransactions)} subValue={m ? `${formatNumber(m.pointsRedeemedLast30d)} pts` : undefined} />,
+      <StatCard density="compact" key="g" label="Ganados en 30 días" value={n(m?.pointsIssuedLast30d)} subValue={m ? "pts" : undefined} />,
     ],
   });
 }

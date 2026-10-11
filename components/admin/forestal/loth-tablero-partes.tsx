@@ -71,7 +71,7 @@ export function BotonColumnas({
       aria-expanded={abierto}
       aria-controls={panelId}
       onClick={onToggle}
-      className={`inline-flex h-10 items-center gap-1.5 rounded-xl border px-3 text-sm font-semibold transition-colors ${
+      className={`inline-flex h-12 items-center gap-1.5 rounded-xl border px-3 text-sm font-semibold transition-colors ${
         abierto
           ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--text-primary)]"
           : "border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:border-[var(--rule-strong)]"

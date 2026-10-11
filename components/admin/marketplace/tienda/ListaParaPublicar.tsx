@@ -7,6 +7,7 @@ import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { cn } from "@/lib/utils";
 import type { ListaPublicar } from "@/lib/marketplace/lista-publicar";
+import { button } from "@/components/ui-system/button-variants";
 
 interface Punto {
   id: string;
@@ -94,7 +95,7 @@ function irAAncla(id: string, intentos = 12) {
 }
 
 const BOTON =
-  "inline-flex items-center justify-center h-10 px-4 rounded-xl border border-[var(--rule-base)] text-sm font-semibold text-[var(--text-primary)] hover:border-primary hover:text-primary whitespace-nowrap";
+  button({ variant: "secondary", className: "rounded-xl" });
 
 /**
  * «Lista para publicar»: lo que le falta a tu tienda para verse completa en el
@@ -133,7 +134,7 @@ export function ListaParaPublicar({
         onClick={onPublicar}
         disabled={!puedePublicar || publicando}
         title={puedePublicar ? undefined : "Completa los puntos de la lista para publicar desde aquí"}
-        className="inline-flex items-center gap-2 h-11 px-5 rounded-xl bg-primary text-white text-base font-semibold hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed"
+        className="inline-flex items-center gap-2 h-12 px-5 rounded-xl bg-primary text-white text-base font-semibold hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <Rocket className="h-4 w-4" aria-hidden />
         {publicando ? "Publicando…" : "Publicar mi tienda"}

@@ -34,7 +34,7 @@ const PARECE_CLASE = /^(?:[a-z-]+:)*(?:px-|py-|h-|min-h-|rounded|bg-|text-|borde
 const UBICACION = /^(?:w-|min-w-|max-w-|flex-1$|flex-none$|flex-auto$|shrink|grow|self-|ml-|mr-|mt-|mb-|mx-|my-|order-|col-span|row-span|hidden$|block$|inline-block$|truncate$)/;
 
 /** `{ variant, size, fullWidth, className }` para una lista de clases, o null si no se reconoce. */
-export function variantesDe(clases) {
+export function variantesDe(clases, { esTabla = false } = {}) {
   const tk = clases.split(/\s+/).filter(Boolean);
   const base = tk.filter((t) => !t.includes(":"));
   const tiene = (re) => base.some((t) => re.test(t));
@@ -50,18 +50,33 @@ export function variantesDe(clases) {
   else if (tiene(/^underline$/) || tk.includes("hover:underline")) variant = "link";
   else if ((!tiene(/^bg-/) || tiene(/^bg-transparent$/)) && tk.some((t) => /^hover:bg-/.test(t))) variant = "ghost";
   if (!variant) return null;
+  // Un color con significado (aviso, error, turquesa) en el borde o el texto de
+  // un botón de borde/sin fondo se perdería en `secondary`/`ghost`: a revisar.
+  if (variant !== "danger" && variant !== "accent" && variant !== "primary" && tiene(/^(text|border)-(\[var\(--(data-|accent)|primary$|(red|rose|amber|emerald|green|sky|blue)-)/)) return null;
 
   const alto = base.find((t) => /^(min-)?h-\d+(\.\d+)?$/.test(t));
   const n = alto ? Number(alto.replace(/^(min-)?h-/, "")) : null;
   const ancho = base.find((t) => /^w-\d+(\.\d+)?$/.test(t));
   let size;
-  if (alto && ancho && alto.replace(/^(min-)?h-/, "") === ancho.slice(2) && !tiene(/^px-/)) size = "icon";
+  const cuadrado = alto && ancho && alto.replace(/^(min-)?h-/, "") === ancho.slice(2) && !tiene(/^px-/);
+  // Ícono chico (≤ 32 px) de una celda densa (Libro CTP/LO-TH, editor): se queda como está.
+  if (cuadrado && n !== null && n <= 8) return null;
+  if (cuadrado) size = "icon";
   else if (n !== null && n <= 7) size = "xs";
   else if (n !== null && n <= 8) size = "sm";
-  else if (n === null && tiene(/^py-(0|0\.5|1|1\.5)$/)) size = "sm";
+  else if (n === null && tiene(/^py-(0|0\.5|1|1\.5)$/) && esTabla) size = "sm";
 
   const fullWidth = base.includes("w-full");
-  const quedan = tk.filter((t) => t !== "w-full" && UBICACION.test(t.replace(/^(?:sm|md|lg|xl):/, "")) && !(size === "icon" && t === ancho));
+  const quedan = tk.filter(
+    (t) =>
+      t !== "w-full" &&
+      UBICACION.test(t.replace(/^(?:sm|md|lg|xl):/, "")) &&
+      // el ícono es cuadrado a 48 en todos los anchos: fuera su ancho (también el sm:w-8)
+      !(size === "icon" && /^(?:(?:sm|md|lg|xl):)?(?:min-)?w-/.test(t)),
+  );
+  // Forma del panel: 297 de ~330 `button()` de components/admin pasan rounded-xl
+  // (medido 11-10). Si la constante era redondeada (no pastilla), sigue igual.
+  if (variant !== "link" && tiene(/^rounded-(md|lg|xl|2xl)$/)) quedan.push("rounded-xl");
   return { variant, size, fullWidth, className: quedan.join(" ") };
 }
 
@@ -73,7 +88,7 @@ export function llamada({ variant, size, fullWidth, className }) {
   return `button({ ${partes.join(", ")} })`;
 }
 
-export function transformar(texto) {
+export function transformar(texto, rel = "") {
   let cambios = 0;
   let revisar = 0;
   const ejemplos = [];
@@ -86,7 +101,7 @@ export function transformar(texto) {
       revisar++;
       return todo;
     }
-    const v = variantesDe(clases);
+    const v = variantesDe(clases, { esTabla: /tabla/i.test(rel) });
     if (!v) {
       revisar++;
       return todo;

@@ -108,7 +108,7 @@ export default function PlanPactado({
                 <button
                   type="button"
                   onClick={() => onCumplir(p)}
-                  className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl border-2 border-primary px-3 text-sm font-bold text-[var(--accent-ink)] transition-colors hover:bg-primary/10 dark:text-[var(--accent)]"
+                  className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl border-2 border-primary px-3 text-sm font-bold text-[var(--accent-ink)] transition-colors hover:bg-primary/10 dark:text-[var(--accent)]"
                 >
                   <CheckCircle className="h-4 w-4" /> Cumplir
                 </button>

@@ -68,7 +68,7 @@ export default function CtpPeriodPicker({
         aria-expanded={open}
         aria-haspopup="dialog"
         title={`Período del libro: ${period.label}`}
-        className={`inline-flex h-10 items-center gap-2 rounded-xl border-2 bg-[var(--surface-raised)] px-3 text-sm transition-colors hover:bg-[var(--surface-canvas)] ${
+        className={`inline-flex h-12 items-center gap-2 rounded-xl border-2 bg-[var(--surface-raised)] px-3 text-sm transition-colors hover:bg-[var(--surface-canvas)] ${
           incompleto
             ? "border-[var(--data-warning-500)] text-[var(--data-warning-700)] dark:text-[var(--data-warning-500)]"
             : "border-[var(--rule-base)] text-[var(--text-primary)]"

@@ -156,7 +156,7 @@ export default function LothTableroVolumen({
           type="button"
           onClick={() => setAbierta((v) => !v)}
           aria-expanded={abierta}
-          className="inline-flex h-9 items-center gap-1.5 rounded-lg px-1 text-sm font-semibold text-[var(--accent-dark)] hover:underline dark:text-[var(--accent)]"
+          className="inline-flex h-12 items-center gap-1.5 rounded-lg px-1 text-sm font-semibold text-[var(--accent-dark)] hover:underline dark:text-[var(--accent)]"
         >
           <ChevronDown className={`h-4 w-4 transition-transform ${abierta ? "rotate-180" : ""}`} aria-hidden="true" />
           {abierta ? "Ocultar" : "Ver"} por especie ({cascada.especies.length})

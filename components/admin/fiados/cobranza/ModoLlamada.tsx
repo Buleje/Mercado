@@ -150,13 +150,13 @@ export default function ModoLlamada({
           <div className="flex flex-wrap justify-center gap-2">
             <button
               onClick={() => void marcar("NO_CONTESTA")}
-              className="h-11 rounded-xl bg-[var(--surface-sunken)] px-4 text-base font-semibold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
+              className="h-12 rounded-xl bg-[var(--surface-sunken)] px-4 text-base font-semibold text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
             >
               No contesta
             </button>
             <button
               onClick={() => void marcar("PAGO")}
-              className="h-11 rounded-xl bg-[var(--data-success)]/12 px-4 text-base font-semibold text-[var(--data-success)] transition-colors hover:bg-[var(--data-success)]/20"
+              className="h-12 rounded-xl bg-[var(--data-success)]/12 px-4 text-base font-semibold text-[var(--data-success)] transition-colors hover:bg-[var(--data-success)]/20"
             >
               Ya pagó
             </button>

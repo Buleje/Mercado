@@ -104,7 +104,7 @@ export default function DictadoPanel({
               {items.some((i) => i.matchedProductId) ? (
                 <button
                   onClick={addAllItems}
-                  className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-[var(--accent)] text-white text-sm font-extrabold hover:opacity-90 transition-opacity"
+                  className="inline-flex items-center gap-2 h-12 px-5 rounded-full bg-[var(--accent)] text-white text-sm font-extrabold hover:opacity-90 transition-opacity"
                 >
                   <Plus className="h-4 w-4" aria-hidden />
                   Agregar todo al carrito
