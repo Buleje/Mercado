@@ -33,7 +33,7 @@ const TAB_IDS = TABS.map((t) => t.id);
 type Vista = "analytics" | "forecast" | "inteligencia";
 
 /** Métricas y Alertas recuerdan su sección en `?sub=`: al cambiar de vista no viaja a la otra. */
-const PARAMS_DE_VISTA: ParamsDeVista<Vista> = { analytics: ["sub"], inteligencia: ["sub"] };
+const PARAMS_DE_VISTA: ParamsDeVista<Vista> = { analytics: ["sub"], forecast: ["sub"], inteligencia: ["sub"] };
 
 export default function AnalisisHubModule({ initialTab }: { initialTab?: string } = {}) {
   // La sub-vista vive en `?vista=`: así se comparte por link, el botón «atrás»

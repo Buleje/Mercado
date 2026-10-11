@@ -347,6 +347,15 @@ export interface SubvistaAnidada extends SubvistaModulo {
 export const ANIDADAS_POR_MODULO: Readonly<Record<string, readonly SubvistaAnidada[]>> = {
   // Clave = id del TAB (`?tab=documentos` abre el hub de Documentos). Las
   // cotizaciones se mudaron a Comprobantes (ola 3, abajo en `facturacion`).
+  // Análisis (11-10): Predicción y Alertas en secciones (`?sub=`).
+  "analytics-pro": [
+    { vista: "forecast", key: "pronostico", label: "Predicción de ventas", hint: "Ventas de la próxima semana, hora con más clientes y mejor día para ir al proveedor", origen: ["analytics-pro", "forecasting"] },
+    { vista: "forecast", key: "reponer", label: "Qué se agota pronto", hint: "Productos que se acaban y los 5 con más demanda", origen: ["analytics-pro", "forecasting"] },
+    { vista: "forecast", key: "recuperar", label: "Clientes que no regresan", hint: "Quiénes dejaron de comprar, con su WhatsApp", origen: ["analytics-pro", "forecasting"] },
+    { vista: "forecast", key: "precios", label: "Sugerencias de precio", hint: "A qué precio vender lo que vence o no rota", origen: ["analytics-pro", "forecasting"] },
+    { vista: "inteligencia", key: "revisar", label: "Qué revisar", hint: "Stock muerto, fiado vencido y margen bajo, por prioridad", origen: ["analytics-pro"] },
+    { vista: "inteligencia", key: "indicadores", label: "Mis indicadores", hint: "Tus cifras propias con su meta", origen: ["analytics-pro"] },
+  ],
   // Mi Plata (11-10, «muchos datos → secciones»): Gastos, Proyección e
   // Impuestos dejaron los bloques apilados por secciones con `?sub=`.
   plata: [

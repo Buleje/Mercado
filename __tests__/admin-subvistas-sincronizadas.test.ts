@@ -285,6 +285,15 @@ describe("VISTAS_POR_MODULO refleja las pestañas reales de cada módulo", () =>
       archivo: "components/admin/comandos-ia/ComandosIA.tsx",
       constante: /const SUBS = \[([^\]]+)\]/,
     },
+    // Análisis (11-10): Predicción y Alertas.
+    "analytics-pro/forecast": {
+      archivo: "components/admin/forecasting/prediccion-ayuda.ts",
+      constante: /export const SECCIONES_PREDICCION = \[([^\]]+)\]/,
+    },
+    "analytics-pro/inteligencia": {
+      archivo: "components/admin/analisis/InteligenciaTab.tsx",
+      constante: /const SECCIONES = \[([^\]]+)\]/,
+    },
     // Mi Plata (11-10): secciones de Gastos, Proyección e Impuestos.
     "plata/gastos": {
       archivo: "components/admin/unified/finanzas/GastosConPresupuesto.tsx",

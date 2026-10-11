@@ -151,7 +151,7 @@ export function ForecastProyeccionPanel({ f, sinProyeccion = false }: { f: Forec
         ════════════════════════════════════════════════════════════════ */}
         <PanelCard
           icon={<Star className="w-4 h-4" />}
-          title="Top 5 — Mayor Demanda Proyectada"
+          title="Top 5 por demanda"
           loading={state.loading}
           error={state.errors.reorder}
           isEmpty={state.reorder.length === 0 && !state.loading && !state.errors.reorder}
@@ -171,7 +171,7 @@ export function ForecastProyeccionPanel({ f, sinProyeccion = false }: { f: Forec
                     </span>
                     {/* Nombre + barra */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">
+                      <p className="text-sm font-semibold text-[var(--text-primary)] truncate">
                         {item.productName}
                       </p>
                       <div className="mt-1 h-2 bg-[var(--surface-sunken)] rounded-full overflow-hidden">
@@ -182,7 +182,7 @@ export function ForecastProyeccionPanel({ f, sinProyeccion = false }: { f: Forec
                       </div>
                     </div>
                     {/* Demanda */}
-                    <span className="text-xs font-bold text-[var(--text-primary)] shrink-0">
+                    <span className="text-sm font-bold text-[var(--text-primary)] shrink-0">
                       {item.demandDuringLeadTime} u.
                     </span>
                   </li>

@@ -18,6 +18,7 @@ import {
   CheckCircle,
 } from "@buleje/design-system/icons";
 import { cn, formatCurrency } from "@/lib/utils";
+import { button } from "@/components/ui-system/button-variants";
 import type { PriceSuggestion } from "./forecast-datos";
 
 /**
@@ -61,7 +62,7 @@ export function PanelCard({
       {loading && (
         <div className="flex items-center justify-center py-10 gap-2 text-[var(--text-tertiary)]">
           <Loader2 className="w-5 h-5 animate-spin" />
-          <span className="text-xs">Calculando predicciones...</span>
+          <span className="text-sm">Calculando…</span>
         </div>
       )}
 
@@ -69,7 +70,7 @@ export function PanelCard({
       {!loading && error && (
         <div className="flex items-start gap-2 rounded-xl bg-[var(--data-error-50)] dark:bg-red-950/30 border border-[var(--data-error-500)]/40 p-3">
           <AlertTriangle className="w-4 h-4 text-[var(--data-error-500)] shrink-0 mt-0.5" />
-          <p className="text-xs text-[var(--data-error-500)]">{error}</p>
+          <p className="text-sm text-[var(--data-error-ink)]">{error}</p>
         </div>
       )}
 
@@ -77,7 +78,7 @@ export function PanelCard({
       {!loading && !error && isEmpty && (
         <div className="flex flex-col items-center justify-center py-8 gap-2">
           <Package className="w-7 h-7 text-[var(--text-tertiary)]/40" />
-          <p className="text-xs text-[var(--text-tertiary)] text-center">{emptyMsg}</p>
+          <p className="text-sm text-[var(--text-secondary)] text-center">{emptyMsg}</p>
         </div>
       )}
 
@@ -188,11 +189,11 @@ export function PriceCard({ suggestion: s, isApplied, isApplying, onAplicar, esB
     )}>
       {/* Nombre + badge de razón */}
       <div className="flex items-start justify-between gap-2">
-        <p className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] leading-snug">
+        <p className="text-sm font-bold text-[var(--text-primary)] leading-snug">
           {s.productName}
         </p>
         <span className={cn(
-          "text-xs font-bold px-1.5 py-0.5 rounded-full shrink-0",
+          "text-sm font-bold px-2 py-0.5 rounded-full shrink-0",
           reasonCls,
         )}>
           {reasonLabel}
@@ -214,7 +215,7 @@ export function PriceCard({ suggestion: s, isApplied, isApplying, onAplicar, esB
           {formatCurrency(s.suggestedPrice)}
         </span>
         <span className={cn(
-          "text-xs font-bold px-1.5 py-0.5 rounded-full",
+          "text-sm font-bold px-2 py-0.5 rounded-full",
           esBaja
             ? "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-red-950/40 dark:text-[var(--data-error-500)]"
             : "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)]",
@@ -229,29 +230,27 @@ export function PriceCard({ suggestion: s, isApplied, isApplying, onAplicar, esB
       </p>
 
       {/* Stock */}
-      <p className="text-xs text-[var(--text-tertiary)]">
+      <p className="text-sm text-[var(--text-secondary)]">
         Stock actual: {s.currentStock} u.
       </p>
 
       {/* Botón Aplicar */}
       <button
+        type="button"
         onClick={onAplicar}
         disabled={isApplied || isApplying}
-        className={cn(
-          "w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold",
-          "transition-colors min-h-[44px]", // touch target
-          isApplied
-            ? "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:text-[var(--data-success-500)] dark:bg-primary/15 dark:text-[var(--data-success-500)] cursor-default"
-            : "bg-primary hover:bg-primary-dark active:bg-primary-dark text-white",
-          "disabled:opacity-60 disabled:cursor-not-allowed",
-        )}
+        className={button({
+          variant: isApplied ? "secondary" : "accent",
+          fullWidth: true,
+          className: cn("gap-1.5 rounded-xl", isApplied && "text-[var(--data-success-ink)] disabled:opacity-100"),
+        })}
         aria-label={isApplied ? "Precio aplicado" : `Aplicar precio sugerido para ${s.productName}`}
       >
         {isApplying ? (
-          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          <Loader2 className="w-4 h-4 animate-spin" />
         ) : isApplied ? (
           <>
-            <CheckCircle className="w-3.5 h-3.5" />
+            <CheckCircle className="w-4 h-4" />
             Aplicado
           </>
         ) : (
