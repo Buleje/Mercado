@@ -5,7 +5,7 @@ import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/
 import { Package, Search, Plus, X, PackagePlus } from "@buleje/design-system/icons";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { fmt } from "@/components/admin/inventario/inventario-compartido";
+import { claveCategoria, fmt } from "@/components/admin/inventario/inventario-compartido";
 import type { Inventario } from "@/components/admin/inventario/hooks/use-inventario";
 
 /** Ventana «Agregar al catálogo». Pieza de InventoryTab: recibe `useInventario` entero. */
@@ -21,7 +21,7 @@ export default function InventarioSelectorProductos({ inv }: { inv: Inventario }
         const q = pickerSearch.toLowerCase();
         const pickerProducts = products.filter(p => {
           if (!p.active) return false;
-          if (pickerCat !== "todos" && p.category !== pickerCat) return false;
+          if (pickerCat !== "todos" && claveCategoria(p.category) !== claveCategoria(pickerCat)) return false;
           if (q && !p.name.toLowerCase().includes(q) && !(p.barcode ?? "").toLowerCase().includes(q)) return false;
           return true;
         });

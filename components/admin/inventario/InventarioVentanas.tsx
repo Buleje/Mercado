@@ -2,7 +2,8 @@
 
 import { CardTitle } from "@buleje/design-system";
 import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
-import { RefreshCw, X } from "@buleje/design-system/icons";
+import { LineChart, RefreshCw, X } from "@buleje/design-system/icons";
+import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
 import ProductModifiersEditor from "@/components/admin/inventario/ProductModifiersEditor";
 import ImageBankPicker from "@/components/admin/inventario/ImageBankPicker";
 import { toast } from "sonner";
@@ -15,19 +16,20 @@ import type { Inventario } from "@/components/admin/inventario/hooks/use-inventa
 import dynamic from "next/dynamic";
 
 const ExpandedStockModal = dynamic(() => import("@/components/admin/inventario/ExpandedStockModal"), { ssr: false });
+const DemandForecast = dynamic(() => import("@/components/admin/inventario/DemandForecast"), { ssr: false });
 const BulkImageAssignModal = dynamic(() => import("@/components/admin/inventario/BulkImageAssignModal"), { ssr: false });
 
 /** Kardex, adicionales, fotos, QR, auto-reorden, tabla ampliada y menú contextual. Pieza de InventoryTab: recibe `useInventario` entero. */
 export default function InventarioVentanas({ inv }: { inv: Inventario }) {
   const {
     products, setProducts, movements, view, editModalProduct, editForm, setEditForm, showAdd,
-    setShowAdd, EMPTY_ADD, setAddForm, setImgInfo, setImgError, showImageBank, setShowImageBank,
+    setAddForm, setImgInfo, setImgError, showImageBank, setShowImageBank,
     showBulkImageAssign, setShowBulkImageAssign, showAutoReorder, setShowAutoReorder, arThreshold,
     setArThreshold, arQty, setArQty, autoReorderPanelRef, autoReorderTitleId, ventanaAutoReorder,
     showQRProduct, setShowQRProduct, qrDataUrl, qrPanelRef, qrTitleId, ventanaQR, showExpandedTable,
     setShowExpandedTable, kardexProduct, setKardexProduct, modifiersProduct, setModifiersProduct,
-    ctxMenu, setCtxMenu, openEditModal, autoSaveImage, deleteProduct, saveAutoReorder,
-    autoReorderCount,
+    ctxMenu, setCtxMenu, autoSaveImage, saveAutoReorder, autoReorderCount, accionesDeProducto,
+    pronostico, setPronostico,
   } = inv;
   return (
     <>
@@ -222,47 +224,25 @@ export default function InventarioVentanas({ inv }: { inv: Inventario }) {
         <ExpandedStockModal products={products} movements={movements} onClose={() => setShowExpandedTable(false)} />
       )}
 
+      {/* Pronóstico de demanda de un producto (el ⋯ de la fila). Antes vivía en el
+          hub detrás de `window.__openForecast`, que nadie llamaba. */}
+      <AdminModal
+        open={pronostico !== null}
+        onClose={() => setPronostico(null)}
+        title={pronostico ? `Pronóstico · ${pronostico.name}` : "Pronóstico de demanda"}
+        icon={LineChart}
+        variant="info"
+      >
+        <div className={MODAL_BODY}>{pronostico && <DemandForecast productId={pronostico.id} />}</div>
+      </AdminModal>
+
       {/* Context menu for product rows (right-click) */}
       {ctxMenu && (
         <InventoryContextMenu
-          product={ctxMenu.product}
           x={ctxMenu.x}
           y={ctxMenu.y}
           onClose={() => setCtxMenu(null)}
-          onEdit={(p) => { openEditModal(p); setCtxMenu(null); }}
-          onView={(p) => { setKardexProduct({ id: p.id, name: p.name }); setCtxMenu(null); }}
-          onDuplicate={(p) => {
-            setAddForm({
-              ...EMPTY_ADD,
-              type: p.type ?? "product",
-              brand: p.brand ?? "",
-              taxType: p.taxType ?? "gravado",
-              weightKg: p.weightKg != null ? String(p.weightKg) : "",
-              dimensions: p.dimensions ?? "",
-              durationLabel: p.durationLabel ?? "",
-              pricingUnit: p.pricingUnit ?? "fijo",
-              notes: p.notes ?? "",
-              description: p.description ?? "",
-              name: `${p.name} (Copia)`,
-              category: p.category,
-              price: String(p.price),
-              unit: p.unit,
-              badge: p.badge ?? "",
-              image: p.image ?? "",
-              barcode: "",
-              costPrice: p.costPrice != null ? String(p.costPrice) : "",
-              stock: "0",
-              stockMin: p.stockMin != null ? String(p.stockMin) : "",
-              stockMax: p.stockMax != null ? String(p.stockMax) : "",
-              expiryDate: "",
-              isVariant: false,
-              variantOf: "",
-              variantAttr: "",
-            });
-            setShowAdd(true);
-            setCtxMenu(null);
-          }}
-          onDelete={(p) => { deleteProduct(p.id); setCtxMenu(null); }}
+          acciones={accionesDeProducto(ctxMenu.product, { conEditar: true })}
         />
       )}
     </>

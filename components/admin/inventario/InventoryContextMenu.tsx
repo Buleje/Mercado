@@ -2,27 +2,24 @@
 
 /**
  * InventoryContextMenu — menú contextual (click derecho) de las filas de
- * producto. Extraído de InventoryTab.tsx (2026-06-13). Editar/Ver/Duplicar/
- * Eliminar. Cierra con click-fuera o Escape.
+ * producto. Extraído de InventoryTab.tsx (2026-06-13). Cierra con click-fuera
+ * o Escape. Desde el 10-10 dibuja la MISMA lista que el ⋯ de la fila
+ * (`useAccionesProducto`): antes tenía sus cuatro acciones propias y su
+ * propia copia de «duplicar».
  */
 
 import { useEffect, useRef } from "react";
-import { Pencil, Eye, Copy, Trash2 } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
-import type { DbProduct } from "@/lib/jsondb";
+import type { MenuAccion } from "@/components/admin/shared/action-menu";
 
 interface InventoryContextMenuProps {
-  product: DbProduct;
   x: number;
   y: number;
   onClose: () => void;
-  onEdit: (p: DbProduct) => void;
-  onView: (p: DbProduct) => void;
-  onDuplicate: (p: DbProduct) => void;
-  onDelete: (p: DbProduct) => void;
+  acciones: MenuAccion[];
 }
 
-export function InventoryContextMenu({ product, x, y, onClose, onEdit, onView, onDuplicate, onDelete }: InventoryContextMenuProps) {
+export function InventoryContextMenu({ x, y, onClose, acciones }: InventoryContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -45,32 +42,30 @@ export function InventoryContextMenu({ product, x, y, onClose, onEdit, onView, o
     };
   }, [onClose]);
 
-  const items: Array<{ label: string; icon: typeof Pencil; onClick: () => void; variant?: "default" | "danger"; divider?: boolean }> = [
-    { label: "Editar producto", icon: Pencil, onClick: () => onEdit(product) },
-    { label: "Ver detalles", icon: Eye, onClick: () => onView(product) },
-    { label: "Duplicar", icon: Copy, onClick: () => onDuplicate(product) },
-    { label: "Eliminar", icon: Trash2, onClick: () => onDelete(product), variant: "danger", divider: true },
-  ];
-
   return (
     <div
       ref={menuRef}
+      role="menu"
       className="fixed z-[9999] bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-soft)] min-w-[180px] py-1 animate-in fade-in zoom-in-95 duration-[var(--dur-fast)]"
       style={{ left: x, top: y }}
     >
-      {items.map((item, i) => {
+      {acciones.map((item) => {
         const Icon = item.icon;
+        const peligro = item.tone === "danger";
         return (
-          <div key={i}>
-            {item.divider && (
+          <div key={item.id}>
+            {peligro && (
               <div className="my-1 border-t border-[var(--rule-soft)] " />
             )}
             <button
-              onClick={item.onClick}
+              type="button"
+              role="menuitem"
+              disabled={item.disabled}
+              onClick={() => { item.onSelect(); onClose(); }}
               className={cn(
-                "w-full px-3 min-h-10 text-sm flex items-center gap-2 cursor-pointer transition-colors",
-                item.variant === "danger"
-                  ? "text-[var(--data-error-500)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20"
+                "w-full px-3 min-h-11 text-sm flex items-center gap-2 cursor-pointer transition-colors disabled:opacity-50",
+                peligro
+                  ? "text-[var(--data-error-ink)] hover:bg-[var(--data-error-50)] dark:hover:bg-[var(--data-error-500)]/20"
                   : "text-[var(--text-secondary)] hover:bg-[var(--surface-alt)] ",
               )}
             >

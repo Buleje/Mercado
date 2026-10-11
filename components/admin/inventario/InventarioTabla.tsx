@@ -4,8 +4,6 @@ import { DataTable } from "@buleje/design-system";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import { cn } from "@/lib/utils";
 import { Paginator } from "@/hooks/use-pagination";
-import type { FacetaOpcion, Rango } from "@/lib/admin/filtros-columna";
-import { FiltroColumnaMulti, FiltroColumnaRango } from "@/components/admin/shared/filtros-columna";
 import { EnOrden } from "@/components/admin/shared/columnas-ordenables";
 import type { Inventario } from "@/components/admin/inventario/hooks/use-inventario";
 import InventarioFilasTabla from "@/components/admin/inventario/InventarioFilasTabla";
@@ -13,9 +11,8 @@ import InventarioFilasTabla from "@/components/admin/inventario/InventarioFilasT
 /** Tabla de productos (cabecera ordenable). Pieza de InventoryTab: recibe `useInventario` entero. */
 export default function InventarioTabla({ inv }: { inv: Inventario }) {
   const {
-    products, catFilter, setCatFilter, estadoFiltro, setEstadoFiltro, stockRango, setStockRango,
-    vencRango, setVencRango, viewMode, selectedIds, showExtendedCols, orden, totalProducts, verColumnaCosto,
-    activeProducts, dynamicCategories, filteredProducts, pgProducts, toggleSelectAll,
+    products, viewMode, selectedIds, showExtendedCols, orden, verColumnaCosto, filteredProducts, pgProducts,
+    toggleSelectAll,
   } = inv;
   return (
     <>
@@ -24,7 +21,10 @@ export default function InventarioTabla({ inv }: { inv: Inventario }) {
         viewMode === "cards" ? "hidden" : "hidden sm:block"
       )}>
         <div className="max-h-[65vh] overflow-y-auto">
-          <DataTable stickyHeader filtrable className="min-w-[600px]">
+          {/* Encabezados a 14 px y sin versalitas (el DataTable los trae a 12). Sin
+              selects adentro: repetían Categoría/Stock/Estado de la fila de
+              filtros y de «Filtros» (10-10). */}
+          <DataTable stickyHeader className="min-w-[600px] [&_thead_th]:text-sm [&_thead_th]:normal-case [&_thead_th]:tracking-normal">
             <thead ref={orden.refCabecera}>
               <tr>
                 <th className="w-10">
@@ -33,60 +33,24 @@ export default function InventarioTabla({ inv }: { inv: Inventario }) {
                 <EnOrden
                   orden={orden.orden}
                   celdas={{
-                    img: <th data-col="img" className="w-12">Img</th>,
+                    img: <th data-col="img" className="w-12">Foto</th>,
                     producto: <th data-col="producto">Producto</th>,
-                    categoria: (
-                      <th data-col="categoria">
-                        <span className="block">Categoría</span>
-                        <FiltroColumnaMulti
-                          label="Categoría"
-                          value={catFilter}
-                          options={dynamicCategories.filter(c => c.id !== "todos").map((c): FacetaOpcion => ({ value: c.id, count: c.count }))}
-                          etiqueta={(id) => dynamicCategories.find(c => c.id === id)?.label ?? id}
-                          onChange={setCatFilter}
-                          placeholder="Todas"
-                        />
-                      </th>
-                    ),
+                    categoria: <th data-col="categoria">Categoría</th>,
                     precio: <th data-col="precio">Precio</th>,
                     historial: <th data-col="historial" className={cn(!showExtendedCols && "hidden")}>Historial</th>,
                     badge: <th data-col="badge" className={cn(!showExtendedCols && "hidden")}>Badge</th>,
-                    stock: (
-                      <th data-col="stock">
-                        <span className="block">Stock</span>
-                        <FiltroColumnaRango label="Stock" paso={1} valor={stockRango} onChange={(r) => setStockRango(r as Rango<number>)} />
-                      </th>
-                    ),
+                    stock: <th data-col="stock">Stock</th>,
                     costoProm: <th data-col="costoProm" className={cn(!verColumnaCosto && "hidden")} title="Lo que te cuesta cada unidad; con él sale el margen. Enter guarda, Esc cancela">Costo</th>,
-                    rotacion: <th data-col="rotacion" className={cn(!showExtendedCols && "hidden")}>Rotacion</th>,
+                    rotacion: <th data-col="rotacion" className={cn(!showExtendedCols && "hidden")}>Rotación</th>,
                     cambio30d: <th data-col="cambio30d" className={cn(!showExtendedCols && "hidden")}>Cambio 30d</th>,
-                    vence: (
-                      <th data-col="vence" className={cn(!showExtendedCols && "hidden")}>
-                        <span className="block">Vence</span>
-                        <FiltroColumnaRango label="Vence" esFecha valor={vencRango} onChange={(r) => setVencRango(r as Rango<string>)} />
-                      </th>
-                    ),
-                    estado: (
-                      <th data-col="estado">
-                        <span className="block">Estado</span>
-                        <FiltroColumnaMulti
-                          label="Estado"
-                          value={estadoFiltro}
-                          options={[
-                            { value: "Activo", count: activeProducts },
-                            { value: "Inactivo", count: totalProducts - activeProducts },
-                          ]}
-                          onChange={setEstadoFiltro}
-                          placeholder="Todos"
-                        />
-                      </th>
-                    ),
+                    vence: <th data-col="vence" className={cn(!showExtendedCols && "hidden")}>Vence</th>,
+                    estado: <th data-col="estado">Estado</th>,
                   }}
                 />
-                <th>Acciones</th>
+                <th className="text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody>
               <InventarioFilasTabla inv={inv} />
             </tbody>
           </DataTable>
@@ -95,7 +59,7 @@ export default function InventarioTabla({ inv }: { inv: Inventario }) {
           <EmptyState
             illustration={products.length === 0 ? "products" : "search"}
             title={products.length === 0 ? "Sin inventario" : "Sin resultados"}
-            description={products.length === 0 ? "Agrega productos y registra movimientos de stock." : "Prueba con otro filtro o busqueda."}
+            description={products.length === 0 ? "Agrega productos y registra movimientos de stock." : "Prueba con otro filtro o búsqueda."}
           />
         )}
         <Paginator page={pgProducts.page} totalPages={pgProducts.totalPages} total={pgProducts.total} pageSize={pgProducts.pageSize} onPage={pgProducts.setPage} onPageSize={pgProducts.setPageSize} />

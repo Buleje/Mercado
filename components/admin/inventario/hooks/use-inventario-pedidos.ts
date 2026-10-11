@@ -1,7 +1,6 @@
 import { useMemo } from "react";
-import { toast } from "sonner";
-import { csrfHeaders } from "@/lib/csrf-client";
 import type { DbProduct } from "@/lib/jsondb";
+import { claveCategoria } from "@/components/admin/inventario/inventario-compartido";
 import { useInventarioEstado } from "@/components/admin/inventario/hooks/use-inventario-estado";
 import { useInventarioCarga } from "@/components/admin/inventario/hooks/use-inventario-carga";
 import { useInventarioImagenes } from "@/components/admin/inventario/hooks/use-inventario-imagenes";
@@ -10,106 +9,14 @@ import { useInventarioMasivo } from "@/components/admin/inventario/hooks/use-inv
 /** Órdenes de compra, lector de barras, auto-reorden e indicadores. Parte de `useInventario`. */
 export function useInventarioPedidos(previo: ReturnType<typeof useInventarioEstado> & ReturnType<typeof useInventarioCarga> & ReturnType<typeof useInventarioImagenes> & ReturnType<typeof useInventarioMasivo>) {
   const {
-    products, setGeneratingOC, setShowAdd, setAddForm, setShowScanner, setScanLoading,
+    products, setShowAdd, setAddForm, setShowScanner, setScanLoading,
     autoReorderConfigs, setAutoReorderConfigs, setShowAutoReorder, arThreshold, setArThreshold, arQty,
-    setArQty, lowStockProducts,
+    setArQty,
   } = previo;
 
-  const generateOC = async (product: DbProduct) => {
-    const minStock = product.stockMin ?? 5;
-    const maxStock = product.stockMax ?? minStock * 2;
-    const suggestedQty = maxStock - (product.stock ?? 0);
-    const unitCost = product.costPrice ?? product.price * 0.7;
-
-    setGeneratingOC(true);
-    try {
-      /**
-       * Este botón nunca creó una orden.
-       *
-       * Manda `supplierId: ""` y la columna `PurchaseOrder.supplierId` es
-       * obligatoria con FK: Postgres responde
-       * `Foreign key constraint violated on PurchaseOrder_supplierId_fkey` y
-       * el endpoint devuelve 500 — medido. Como no se miraba la respuesta y el
-       * `catch` estaba mudo, el usuario clickeaba «Generar OC», no pasaba
-       * nada, y no había forma de saber por qué.
-       *
-       * El producto no guarda a qué proveedor se le compra, así que la orden
-       * no se puede armar sola: se dice qué falta y dónde hacerlo.
-       */
-      const res = await fetch("/api/purchases", {
-        method: "POST",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({
-          supplierId: "",
-          items: [{
-            productId: product.id,
-            name: product.name,
-            quantity: suggestedQty,
-            unitCost,
-            unit: product.unit,
-          }],
-          notes: `OC automática - stock bajo (${product.name})`,
-        }),
-      });
-      if (!res.ok) {
-        toast.error(
-          `No se pudo generar la orden de "${product.name}": falta elegir el proveedor. ` +
-          "Creala desde Compras › Órdenes, con el proveedor y la cantidad.",
-        );
-        return;
-      }
-      toast.success(`Orden generada: ${suggestedQty} × ${product.name}`);
-    } catch (err) {
-      console.warn("[InventoryTab] generar OC falló", err);
-      toast.error("Sin conexión — no se generó la orden.");
-    } finally {
-      setGeneratingOC(false);
-    }
-  };
-
-  const generateBulkOC = async () => {
-    if (lowStockProducts.length === 0) return;
-    setGeneratingOC(true);
-    try {
-      const items = lowStockProducts.map(p => {
-        const minStock = p.stockMin ?? 5;
-        const maxStock = p.stockMax ?? minStock * 2;
-        const suggestedQty = maxStock - (p.stock ?? 0);
-        const unitCost = p.costPrice ?? p.price * 0.7;
-        return {
-          productId: p.id,
-          name: p.name,
-          quantity: suggestedQty,
-          unitCost,
-          unit: p.unit,
-        };
-      });
-      // Mismo caso que `generateOC`: sin proveedor la orden no se puede crear
-      // (FK obligatoria), y antes fallaba en silencio para TODA la lista.
-      const res = await fetch("/api/purchases", {
-        method: "POST",
-        headers: csrfHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify({
-          supplierId: "",
-          items,
-          notes: "OC automática - stock bajo",
-        }),
-      });
-      if (!res.ok) {
-        toast.error(
-          `No se pudo generar la orden con ${items.length} producto${items.length === 1 ? "" : "s"}: ` +
-          "falta elegir el proveedor. Creala desde Compras › Órdenes.",
-        );
-        return;
-      }
-      toast.success(`Orden generada con ${items.length} producto${items.length === 1 ? "" : "s"}`);
-    } catch (err) {
-      console.warn("[InventoryTab] generar OC masiva falló", err);
-      toast.error("Sin conexión — no se generó la orden.");
-    } finally {
-      setGeneratingOC(false);
-    }
-  };
+  /* `generateOC` / `generateBulkOC` se fueron el 10-10: mandaban `supplierId: ""`
+     y la orden exige proveedor (FK), así que nunca crearon una. El aviso de
+     reposición lleva a Compras › Sugerencias, que la arma por proveedor. */
 
   const handleBarcodeScan = async (code: string) => {
     setShowScanner(false);
@@ -215,7 +122,7 @@ export function useInventarioPedidos(previo: ReturnType<typeof useInventarioEsta
     const catMap = new Map<string, { sum: number; count: number }>();
     for (const p of products) {
       if (!p.active || !p.costPrice || p.costPrice <= 0 || p.price <= 0) continue;
-      const cat = p.category || "otros";
+      const cat = claveCategoria(p.category); // «abarrotes» y «Abarrotes», una sola
       const ex = catMap.get(cat) || { sum: 0, count: 0 };
       ex.sum += ((p.price - p.costPrice) / p.price) * 100;
       ex.count++;
@@ -244,7 +151,7 @@ export function useInventarioPedidos(previo: ReturnType<typeof useInventarioEsta
   }, [products]);
 
   return {
-    generateOC, generateBulkOC, handleBarcodeScan, saveAutoReorder, removeAutoReorder,
+    handleBarcodeScan, saveAutoReorder, removeAutoReorder,
     autoReorderCount, isLowStock, isExpiringSoon, totalProducts, activeProducts, lowStockCount,
     expiringSoonCount, totalStockValue, duplicateWarning, categoryMargins, topRentables,
     inconsistentes,

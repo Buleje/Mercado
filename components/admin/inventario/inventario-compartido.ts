@@ -26,7 +26,58 @@ export const realCategories = categories.filter(c => c.id !== "todos");
  * `p.category !== catFilter` nunca matcheaba y elegir cualquier categoría
  * dejaba «Mostrando 0 de 57». Ya pasaba antes de los filtros de cabecera.
  */
-export const claveCategoria = (c: string | null | undefined) => (c || "otros").toLowerCase().trim();
+export const claveCategoria = (c: string | null | undefined) => normalizarCategoria(c ?? "") || "otros";
+
+/**
+ * Cómo se comparan dos nombres de categoría: sin mayúsculas, sin tildes y con
+ * guiones (10-10). «Servicios De Salón», «servicios-de-salon» y «SERVICIOS DE
+ * SALON» son la misma. Copia en cliente de `normalizarCategoria` de
+ * `lib/db/categorias-catalogo.db.ts` (ese archivo importa Prisma y no puede
+ * llegar al navegador): si cambia una, cambia la otra.
+ */
+export function normalizarCategoria(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/**
+ * El texto que se GUARDA en `Product.category` para una categoría: el que más
+ * usan sus productos hoy (en Blas «madera-aserrada», no «Madera aserrada»).
+ * La tienda y el menú QR agrupan por ese texto tal cual: guardar el nombre
+ * «bonito» partía la categoría en dos (reviewer 10-10). Sin productos, su id
+ * de Ajustes (lo que guardaba el formulario de antes).
+ */
+export function textoDeCategoria(
+  c: { id: string; label: string; valores: string[] },
+  productos: ReadonlyArray<{ category?: string | null }>,
+): string {
+  const claves = new Set([c.id, c.label, ...c.valores].map((v) => claveCategoria(v)));
+  const usos = new Map<string, number>();
+  for (const p of productos) {
+    const t = p.category ?? "";
+    if (t && claves.has(claveCategoria(t))) usos.set(t, (usos.get(t) ?? 0) + 1);
+  }
+  let mejor: string | undefined;
+  let n = 0;
+  for (const [t, k] of usos) {
+    if (k > n || (k === n && t === c.label)) { mejor = t; n = k; }
+  }
+  return mejor ?? c.valores[0] ?? c.id;
+}
+
+/** Una categoría de `GET /api/admin/categorias`: la lista de Ajustes unida con las de los productos. */
+export interface CategoriaCatalogo {
+  id: string;
+  label: string;
+  visible: boolean;
+  /** Los textos tal cual están en `Product.category` que caen en esta categoría. */
+  valores: string[];
+}
+
 
 /**
  * La búsqueda del Inventario: nombre o código, sin distinguir mayúsculas en

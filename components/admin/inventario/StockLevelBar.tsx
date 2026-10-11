@@ -24,11 +24,11 @@ export function stockStateOf(stock: number | undefined, min: number, max: number
 
 const STOCK_META: Record<StockState, { label: string; bar: string; text: string; chip: string }> = {
   none:     { label: "Sin control",  bar: "bg-[var(--rule-base)]",        text: "text-[var(--text-tertiary)]", chip: "bg-[var(--surface-sunken)] text-[var(--text-tertiary)]" },
-  out:      { label: "Agotado",      bar: "bg-[var(--data-error-500)]",   text: "text-[var(--data-error-500)]", chip: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-red-950/30" },
-  critical: { label: "Crítico",      bar: "bg-[var(--data-error-500)]",   text: "text-[var(--data-error-500)]", chip: "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-red-950/30" },
-  low:      { label: "Bajo",         bar: "bg-[var(--data-warning-500)]", text: "text-[var(--data-warning-500)]", chip: "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-amber-950/30" },
-  ok:       { label: "Saludable",    bar: "bg-[var(--data-success-500)]", text: "text-[var(--data-success-500)]", chip: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/20 dark:text-[var(--data-success-500)]" },
-  over:     { label: "Exceso",       bar: "bg-[var(--accent)]",           text: "text-[var(--accent)]",        chip: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" },
+  out:      { label: "Agotado",      bar: "bg-[var(--data-error-500)]",   text: "text-[var(--data-error-ink)]", chip: "bg-[var(--data-error-100)] text-[var(--data-error-ink)] dark:bg-red-950/30" },
+  critical: { label: "Crítico",      bar: "bg-[var(--data-error-500)]",   text: "text-[var(--data-error-ink)]", chip: "bg-[var(--data-error-100)] text-[var(--data-error-ink)] dark:bg-red-950/30" },
+  low:      { label: "Bajo",         bar: "bg-[var(--data-warning-500)]", text: "text-[var(--data-warning-ink)]", chip: "bg-[var(--data-warning-100)] text-[var(--data-warning-ink)] dark:bg-amber-950/30" },
+  ok:       { label: "Saludable",    bar: "bg-[var(--data-success-500)]", text: "text-[var(--data-success-ink)]", chip: "bg-[var(--data-success-500)]/12 text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/20 dark:text-[var(--data-success-500)]" },
+  over:     { label: "Exceso",       bar: "bg-[var(--accent)]",           text: "text-[var(--accent-ink)] dark:text-[var(--accent)]", chip: "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" },
 };
 
 export function StockLevelBar({
@@ -90,11 +90,11 @@ export function StockLevelBar({
     return (
       <div>
         <div className="mb-1.5 flex items-center justify-between gap-2">
-          <span className="text-[length:var(--ts-2xs)] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">Stock</span>
+          <span className="text-sm font-semibold text-[var(--text-tertiary)]">Stock</span>
           <span className="flex items-baseline gap-1.5">
             <span className={cn("text-base font-black tabular-nums leading-none", meta.text)}>{stock}</span>
-            {unit && <span className="text-[length:var(--ts-2xs)] font-semibold text-[var(--text-tertiary)]">{unit}</span>}
-            <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[length:var(--ts-2xs)] font-black uppercase tracking-wider", meta.chip)}>
+            {unit && <span className="text-sm font-semibold text-[var(--text-tertiary)]">{unit}</span>}
+            <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-sm font-bold", meta.chip)}>
               {(state === "out" || state === "critical" || state === "low") && <AlertTriangle className="h-3 w-3" />}
               {meta.label}
             </span>
@@ -104,7 +104,7 @@ export function StockLevelBar({
           <div className={cn("h-full rounded-full transition-[width] duration-300", meta.bar)} style={{ width: `${pct}%` }} />
           <span className="absolute top-0 bottom-0 w-px bg-[var(--text-primary)]/40" style={{ left: `${minPct}%` }} aria-hidden />
         </div>
-        <div className="mt-1 flex items-center justify-between text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)] tabular-nums">
+        <div className="mt-1 flex items-center justify-between text-sm font-bold text-[var(--text-tertiary)] tabular-nums">
           <span>Mín {min}</span>
           {stockMax != null && stockMax > 0 && <span>Máx {stockMax}</span>}
         </div>
@@ -115,7 +115,7 @@ export function StockLevelBar({
   // variant "cell" — compacto para la tabla
   return (
     <div className="flex w-[112px] max-w-full items-center gap-2" title={`${meta.label} · stock ${stock} (mín ${min}${stockMax ? ` · máx ${stockMax}` : ""})`}>
-      <span className={cn("inline-flex min-w-[2.25rem] justify-center rounded-md px-1.5 py-0.5 text-xs font-black tabular-nums", meta.chip)}>
+      <span className={cn("inline-flex min-w-[2.25rem] justify-center rounded-md px-1.5 py-0.5 text-sm font-black tabular-nums", meta.chip)}>
         {(state === "out" || state === "critical") && <AlertTriangle className="mr-0.5 h-3 w-3" />}
         {stock}
       </span>

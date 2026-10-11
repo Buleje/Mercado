@@ -102,10 +102,12 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Cabecera propia sólo suelta: dentro de la ventana (AdminModal) el título
+          y el cierre ya los pone la ventana. */}
+      {onClose && (
       <div className="flex items-center justify-between">
         <CardTitle className="text-[length:var(--ts-xl)] font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">
-          Pronostico: {data.product.name}
+          Pronóstico: {data.product.name}
         </CardTitle>
         {onClose && (
           <button
@@ -119,6 +121,7 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
           </button>
         )}
       </div>
+      )}
 
       {/* Chart — se oculta si no hay ventas registradas en los últimos 30 días */}
       {hasChartData && (<div className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">

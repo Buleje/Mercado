@@ -15,7 +15,7 @@ import { useScrollLock } from "@/hooks/use-scroll-lock";
 import type { DbProduct, DbInventoryMovement } from "@/lib/jsondb";
 import type { Rango } from "@/lib/admin/filtros-columna";
 import { useOrdenColumnas } from "@/components/admin/shared/columnas-ordenables";
-import { COLS_INVENTARIO, type View } from "@/components/admin/inventario/inventario-compartido";
+import { COLS_INVENTARIO, type CategoriaCatalogo, type View } from "@/components/admin/inventario/inventario-compartido";
 
 /** Estado de Inventario: filtros, modales, formularios y selección. Parte de `useInventario`. */
 export function useInventarioEstado() {
@@ -43,21 +43,32 @@ export function useInventarioEstado() {
   // donde tocar uno. `[]` = todas las categorías (antes era el sentinela
   // "todos"); ahora admite VARIAS a la vez.
   const [catFilter, setCatFilter] = useState<string[]>([]);
-  // Categorías que el comerciante creó en Promociones → Categorías
-  // (settings.categoryOrder). El form de productos las usa en vez del
-  // catálogo demo estático. Vacío para negocios sin categorías propias.
-  const [savedCategories, setSavedCategories] = useState<{ id: string; label: string }[]>([]);
+  /* Las categorías del catálogo (10-10): `GET /api/admin/categorias` une la
+     lista de Ajustes (orden, visibilidad) con los textos que usan los
+     productos, así que el filtro y el formulario ven las mismas. Antes se leía
+     sólo `settings.categoryOrder` y, sin lista guardada, el formulario no
+     conocía las categorías que ya tenían productos. Si el endpoint falla, la
+     lista de Ajustes como antes. */
+  const [catalogoCategorias, setCatalogoCategorias] = useState<CategoriaCatalogo[]>([]);
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/settings")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((s) => {
-        if (cancelled || !s) return;
-        const order = (s.categoryOrder ?? []) as Array<{ id: string; label: string; visible?: boolean }>;
-        setSavedCategories(order.filter((c) => c.visible !== false).map((c) => ({ id: c.id, label: c.label })));
+    const desdeAjustes = () =>
+      fetch("/api/settings")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((s) => {
+          if (cancelled || !s) return;
+          const order = (s.categoryOrder ?? []) as Array<{ id: string; label: string; visible?: boolean }>;
+          setCatalogoCategorias(order.map((c) => ({ id: c.id, label: c.label, visible: c.visible !== false, valores: [] })));
+        });
+    fetch("/api/admin/categorias", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then((d: { categorias?: CategoriaCatalogo[] }) => {
+        if (cancelled) return;
+        setCatalogoCategorias((d.categorias ?? []).map((c) => ({ id: c.id, label: c.label, visible: c.visible !== false, valores: c.valores ?? [] })));
       })
-      .catch(() => {
-        /* settings opcional — si falla, se usan las categorías por defecto del catálogo */
+      .catch(() => desdeAjustes())
+      .catch((err: unknown) => {
+        console.warn("[inventario] categorías: sin catálogo ni Ajustes", err);
       });
     return () => { cancelled = true; };
   }, []);
@@ -277,7 +288,7 @@ export function useInventarioEstado() {
   return {
     confirm, showUndo, products, setProducts, movements, setMovements, loading, setLoading, view,
     setView, search, setSearch, searchPlaceholders, phIndex, setPhIndex, catFilter, setCatFilter,
-    savedCategories, setSavedCategories, lowOnly, setLowOnly, estadoFiltro, setEstadoFiltro,
+    catalogoCategorias, setCatalogoCategorias, lowOnly, setLowOnly, estadoFiltro, setEstadoFiltro,
     showInactive, stockRango, setStockRango, vencRango, setVencRango, noImageOnly, setNoImageOnly,
     faltaDato, setFaltaDato, showFilters, setShowFilters, viewMode, setViewMode, expandedOC,
     setExpandedOC, generatingOC, setGeneratingOC, editModalProduct, setEditModalProduct, setEditModalProductSinUrl, fichaProducto, editForm,

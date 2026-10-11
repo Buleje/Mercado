@@ -14,6 +14,7 @@
 
 import { useMemo } from "react";
 import { detectCategoryFromName } from "@/lib/category-detector";
+import { claveCategoria } from "@/components/admin/inventario/inventario-compartido";
 
 export function CategorySuggestionInline({
   name,
@@ -22,12 +23,13 @@ export function CategorySuggestionInline({
 }: {
   name: string;
   currentCategory: string;
-  onApply: (id: string) => void;
+  /** El id del detector y su nombre: el formulario lo lleva a la categoría existente. */
+  onApply: (id: string, label: string) => void;
 }) {
   const detection = useMemo(() => detectCategoryFromName(name), [name]);
   if (!detection) return null;
 
-  if (detection.id === currentCategory) {
+  if (claveCategoria(detection.id) === claveCategoria(currentCategory) || claveCategoria(detection.label) === claveCategoria(currentCategory)) {
     return (
       <p className="mt-1.5 text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] flex items-center gap-1">
         <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--data-success-500)]" />
@@ -51,7 +53,7 @@ export function CategorySuggestionInline({
       </div>
       <button
         type="button"
-        onClick={() => onApply(detection.id)}
+        onClick={() => onApply(detection.id, detection.label)}
         className="shrink-0 inline-flex items-center gap-1 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-bold text-white hover:opacity-90 active:scale-95 transition-all"
       >
         Aplicar

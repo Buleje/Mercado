@@ -14,7 +14,7 @@ import type { Inventario } from "@/components/admin/inventario/hooks/use-inventa
 export default function NuevoProductoDatos({ inv }: { inv: Inventario }) {
   const {
     addForm, setAddForm, setShowScanner, dbQuery, setDbQuery, dbResults, dbSearching, handleDbSearch,
-    applyDbResult, formCategories, catLabelOf,
+    applyDbResult, formCategories, catLabelOf, opcionDeCategoria,
   } = inv;
   return (
     <>
@@ -92,11 +92,13 @@ export default function NuevoProductoDatos({ inv }: { inv: Inventario }) {
         </Field>
         <Field label="Categoría *" labelClassName={FIELD_LABEL}>
           {(id) => (<>
-            <select id={id} value={addForm.category} onChange={(e) => setAddForm(f => ({ ...f, category: e.target.value }))} className={FIELD_INPUT}>
+            {/* Se ve el nombre y se guarda el texto que ya usan sus productos; una
+                que ya existe con otra escritura cae en la existente. */}
+            <select id={id} value={opcionDeCategoria(addForm.category)?.id ?? addForm.category} onChange={(e) => setAddForm(f => ({ ...f, category: e.target.value }))} className={FIELD_INPUT}>
               {formCategories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
               {/* Categoría aplicada desde la sugerencia que aún no está
                   en la lista del comercio → mostrarla igual para no perderla. */}
-              {addForm.category && !formCategories.some(c => c.id === addForm.category) && (
+              {addForm.category && !opcionDeCategoria(addForm.category) && (
                 <option value={addForm.category}>{catLabelOf(addForm.category)}</option>
               )}
             </select>
@@ -106,7 +108,7 @@ export default function NuevoProductoDatos({ inv }: { inv: Inventario }) {
             <CategorySuggestionInline
               name={addForm.name}
               currentCategory={addForm.category}
-              onApply={(id) => setAddForm(f => ({ ...f, category: id }))}
+              onApply={(id, label) => setAddForm(f => ({ ...f, category: opcionDeCategoria(id)?.id ?? opcionDeCategoria(label)?.id ?? label }))}
             />
           </>)}
         </Field>

@@ -4,7 +4,6 @@ import { CardTitle } from "@buleje/design-system";
 import { ControlesDeVentana, TiradorDeVentana } from "@/components/admin/shared/modal-controles-ventana";
 import { X } from "@buleje/design-system/icons";
 import { Field } from "@/components/admin/shared/Field";
-import { categories } from "@/data/products";
 import type { Inventario } from "@/components/admin/inventario/hooks/use-inventario";
 
 /** Ventana de edición masiva. Pieza de InventoryTab: recibe `useInventario` entero. */
@@ -12,6 +11,7 @@ export default function InventarioEdicionMasiva({ inv }: { inv: Inventario }) {
   const {
     selectedIds, bulkModal, setBulkModal, bulkModalRef, ventanaBulk, bulkField, setBulkField,
     bulkValue, setBulkValue, bulkSaving, executeBulk,
+    formCategories,
   } = inv;
   return (
     <>
@@ -59,7 +59,9 @@ export default function InventarioEdicionMasiva({ inv }: { inv: Inventario }) {
                   <select id={bulkValId} value={bulkValue} onChange={e => setBulkValue(e.target.value)}
                     className="mt-1 w-full rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 h-10 text-sm">
                     <option value="">Seleccionar…</option>
-                    {categories.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+                    {/* Las categorías del negocio (antes, la lista de ejemplo del catálogo
+                        demo, con claves en minúsculas que el negocio quizá ni tenía). */}
+                    {formCategories.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
                   </select>
                 ) : bulkField === "badge" ? (
                   <div className="mt-1 space-y-2">

@@ -4,7 +4,7 @@ import type { DbProduct } from "@/lib/jsondb";
 import { usePagination } from "@/hooks/use-pagination";
 import { formatDateShort } from "@/lib/format";
 import { enRango, rangoActivo, textoDeRango, type ChipFiltro } from "@/lib/admin/filtros-columna";
-import { realCategories, claveCategoria, coincideBusqueda } from "@/components/admin/inventario/inventario-compartido";
+import { realCategories, claveCategoria, coincideBusqueda, textoDeCategoria } from "@/components/admin/inventario/inventario-compartido";
 import { useInventarioEstado } from "@/components/admin/inventario/hooks/use-inventario-estado";
 import { useInventarioCarga } from "@/components/admin/inventario/hooks/use-inventario-carga";
 import { useInventarioImagenes } from "@/components/admin/inventario/hooks/use-inventario-imagenes";
@@ -14,7 +14,7 @@ import { useInventarioPedidos } from "@/components/admin/inventario/hooks/use-in
 /** Categorías, filtros de columna y paginación. Parte de `useInventario`. */
 export function useInventarioFiltros(previo: ReturnType<typeof useInventarioEstado> & ReturnType<typeof useInventarioCarga> & ReturnType<typeof useInventarioImagenes> & ReturnType<typeof useInventarioMasivo> & ReturnType<typeof useInventarioPedidos>) {
   const {
-    products, movements, search, catFilter, setCatFilter, savedCategories, lowOnly, estadoFiltro,
+    products, movements, search, catFilter, setCatFilter, catalogoCategorias, lowOnly, estadoFiltro,
     setEstadoFiltro, showInactive, stockRango, setStockRango, vencRango, setVencRango, noImageOnly,
     faltaDato, showAdd, addForm, setAddForm, isLowStock,
   } = previo;
@@ -23,6 +23,33 @@ export function useInventarioFiltros(previo: ReturnType<typeof useInventarioEsta
   // categorías que efectivamente tienen productos (con conteo). Si el
   // catálogo del tenant no tiene "carnes" pero sí "panadería", solo se
   // muestra panadería. Mantenemos siempre "Todos" como primer chip.
+  /* El nombre de cada categoría, por su clave normalizada (10-10): sale del
+     catálogo unido (`/api/admin/categorias`): su id, su nombre y los textos
+     que usan sus productos caen en la MISMA clave. «abarrotes» y «Abarrotes»
+     ya no son dos pastillas. */
+  const etiquetaPorClave = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const c of catalogoCategorias) {
+      for (const v of [c.id, c.label, ...c.valores]) {
+        const k = claveCategoria(v);
+        if (v && !m.has(k)) m.set(k, c.label);
+      }
+    }
+    return m;
+  }, [catalogoCategorias]);
+  const humanize = useCallback((clave: string) => {
+    const delCatalogo = etiquetaPorClave.get(clave);
+    if (delCatalogo) return delCatalogo;
+    const known = realCategories.find(rc => claveCategoria(rc.id) === clave);
+    if (known) return known.label;
+    return clave
+      .split(/[-_\s]+/)
+      .filter(Boolean)
+      .map(t => t.charAt(0).toUpperCase() + t.slice(1))
+      .join(" ") || "Otros";
+  }, [etiquetaPorClave]);
+
+  // Las categorías con productos (con conteo), para el filtro. «Todos» primero.
   const dynamicCategories = useMemo(() => {
     const counts = new Map<string, number>();
     let total = 0;
@@ -32,20 +59,6 @@ export function useInventarioFiltros(previo: ReturnType<typeof useInventarioEsta
       counts.set(cat, (counts.get(cat) ?? 0) + 1);
       total++;
     });
-    const humanize = (id: string) => {
-      // 1) Categoría creada por el comerciante (settings.categoryOrder)
-      const saved = savedCategories.find(sc => sc.id === id);
-      if (saved) return saved.label;
-      // 2) Catálogo conocido (data/products.ts) por label oficial
-      const known = realCategories.find(rc => rc.id === id);
-      if (known) return known.label;
-      // Fallback: id-con-guiones → "Id Con Guiones"
-      return id
-        .split(/[-_\s]+/)
-        .filter(Boolean)
-        .map(s => s.charAt(0).toUpperCase() + s.slice(1))
-        .join(" ") || "Otros";
-    };
     const real = Array.from(counts.entries())
       .map(([id, count]) => ({ id, label: humanize(id), count }))
       .sort((a, b) => b.count - a.count);
@@ -53,7 +66,7 @@ export function useInventarioFiltros(previo: ReturnType<typeof useInventarioEsta
       { id: "todos", label: "Todos", count: total },
       ...real,
     ];
-  }, [products, showInactive, savedCategories]);
+  }, [products, showInactive, humanize]);
 
   /* Ley de Brandon (2026-10-01): 24 pastillas de categoría eran 24 botones a la
      vista. Quedan «Todos» + las más grandes + las que están elegidas (nunca se
@@ -69,36 +82,55 @@ export function useInventarioFiltros(previo: ReturnType<typeof useInventarioEsta
     return { chipsVisibles: visibles, chipsEnMenu: enMenu };
   }, [dynamicCategories, catFilter]);
 
-  // Categorías ASIGNABLES en el form de productos: las que el comerciante creó
-  // (categoryOrder) + las que ya usan sus productos. NADA del catálogo demo
-  // estático. Si no tiene ninguna → "General" para no bloquear el alta.
+  /* Categorías ASIGNABLES en el formulario (10-10): las visibles del catálogo
+     unido; se MUESTRA el nombre y se GUARDA el texto que ya usan sus productos
+     (`textoDeCategoria`: la tienda agrupa por ese texto tal cual). Las ocultas
+     no se ofrecen; un producto que ya está en una oculta la conserva
+     (el formulario la muestra aparte). Sin catálogo: las de los productos. */
   const formCategories = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const c of savedCategories) map.set(c.id, c.label);
-    for (const c of dynamicCategories) {
-      if (c.id !== "todos" && !map.has(c.id)) map.set(c.id, c.label);
+    // Toda clave que ya es de una categoría del catálogo (su id, su nombre y
+    // los textos de sus productos): no se vuelve a ofrecer suelta.
+    const delCatalogo = new Set(catalogoCategorias.flatMap(c => [c.id, c.label, ...c.valores].map(v => claveCategoria(v))));
+    // Valor = el texto que ya usan sus productos (lo que se guarda); rótulo = el nombre.
+    const map = new Map<string, { id: string; label: string }>();
+    for (const c of catalogoCategorias) {
+      if (c.visible) map.set(claveCategoria(c.label), { id: textoDeCategoria(c, products), label: c.label });
     }
-    const arr = Array.from(map, ([id, label]) => ({ id, label }));
-    return arr.length ? arr : [{ id: "general", label: "General" }];
-  }, [savedCategories, dynamicCategories]);
+    for (const c of dynamicCategories) {
+      if (c.id === "todos" || map.has(c.id) || delCatalogo.has(c.id)) continue;
+      map.set(c.id, { id: textoDeCategoria({ id: c.id, label: c.label, valores: [] }, products), label: c.label });
+    }
+    const arr = Array.from(map.values());
+    return arr.length ? arr : [{ id: "General", label: "General" }];
+  }, [catalogoCategorias, dynamicCategories, products]);
 
-  // Label legible de una categoría: 1) la del comerciante (categoryOrder),
-  // 2) catálogo estático conocido, 3) id humanizado.
+  /** La opción del formulario que corresponde a un texto de categoría (sin mirar mayúsculas ni tildes). */
+  const opcionDeCategoria = useCallback((texto: string | null | undefined) => {
+    if (!texto || !texto.trim()) return undefined;
+    // Por el catálogo («snacks» puede ser un texto de «Piqueos»), por el valor o por el nombre.
+    const k = claveCategoria(etiquetaPorClave.get(claveCategoria(texto)) ?? texto);
+    const directo = claveCategoria(texto);
+    return formCategories.find(c => claveCategoria(c.label) === k || claveCategoria(c.id) === directo);
+  }, [formCategories, etiquetaPorClave]);
+
+  // Nombre legible de una categoría guardada en un producto (cualquier escritura).
   const catLabelOf = useCallback((id: string): string => {
     if (!id) return "Sin categoría";
-    const saved = savedCategories.find(c => c.id === id);
-    if (saved) return saved.label;
-    const known = realCategories.find(c => c.id === id);
-    if (known) return known.label;
-    return id.split(/[-_\s]+/).filter(Boolean).map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(" ") || id;
-  }, [savedCategories]);
+    return humanize(claveCategoria(id));
+  }, [humanize]);
 
   // Default de categoría al abrir el alta: primera categoría real del comercio.
   // EMPTY_ADD nace con category="" (las categorías cargan async).
+  // Al abrir el alta: sin categoría → la primera; con una que ya existe con
+  // otra escritura (duplicar «abarrotes») → el nombre de la existente.
   useEffect(() => {
-    if (showAdd && (!addForm.category || !formCategories.some(c => c.id === addForm.category))) {
-      setAddForm(f => ({ ...f, category: formCategories[0]?.id ?? "general" }));
+    if (!showAdd) return;
+    if (!addForm.category) {
+      setAddForm(f => ({ ...f, category: formCategories[0]?.id ?? "General" }));
+      return;
     }
+    const opcion = opcionDeCategoria(addForm.category);
+    if (opcion && opcion.id !== addForm.category) setAddForm(f => ({ ...f, category: opcion.id }));
   }, [showAdd, formCategories]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Si alguna categoría elegida ya no existe en el inventario (p.ej.
@@ -186,7 +218,7 @@ export function useInventarioFiltros(previo: ReturnType<typeof useInventarioEsta
   useEffect(() => { pgProducts.reset(); }, [search, catFilter, estadoFiltro, stockRango, vencRango, lowOnly, noImageOnly, faltaDato]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { pgMovements.reset(); }, [search]); // eslint-disable-line react-hooks/exhaustive-deps
   return {
-    dynamicCategories, CATEGORIAS_A_LA_VISTA, chipsVisibles, chipsEnMenu, formCategories, catLabelOf,
+    dynamicCategories, CATEGORIAS_A_LA_VISTA, chipsVisibles, chipsEnMenu, formCategories, catLabelOf, opcionDeCategoria,
     noImageCount, expiryOf, filteredProducts, filteredMovements, fechaCorta, chipsDeColumna,
     quitarChip, pgProducts, pgMovements,
   };

@@ -61,9 +61,11 @@ function tabla() {
 
 async function montarConProductos() {
   render(<InventoryTab />);
-  await waitFor(() => expect(pedido("/api/settings")).toBeTruthy());
-  await resolver("/api/settings", {});
   await waitFor(() => expect(pedido("/api/products")).toBeTruthy());
+  // Las categorías salen de /api/admin/categorias (10-10); /api/settings lo pide
+  // el mínimo del negocio sólo en el primer montaje (queda en memoria).
+  if (pedido("/api/admin/categorias")) await resolver("/api/admin/categorias", { categorias: [] });
+  if (pedido("/api/settings")) await resolver("/api/settings", {});
   await resolver("/api/products", [AROZ, GASEOSA, VIEJO]);
   await resolver("/api/inventory-movements", []);
   // "Detergente viejo" está inactivo: con el Estado por defecto ("Activo")
@@ -72,13 +74,13 @@ async function montarConProductos() {
 }
 
 describe("InventoryTab — autofiltro de cabecera (Categoría, Estado)", () => {
-  it("filtra por Categoría desde el <th> y no toca lo que no matchea", async () => {
+  it("filtra por Categoría desde la fila de filtros y no toca lo que no matchea", async () => {
     await montarConProductos();
     expect(tabla().getByText("Gaseosa 1L")).toBeTruthy();
 
-    const disparador = tabla().getByLabelText(/Filtrar por Categoría/);
+    const disparador = screen.getByLabelText(/Filtrar por Categoría/);
     fireEvent.click(disparador);
-    const popover = tabla().getByRole("group", { name: "Valores de Categoría" });
+    const popover = screen.getByRole("group", { name: "Valores de Categoría" });
     fireEvent.click(within(popover).getByLabelText(/Categoría: Abarrotes|Categoría: abarrotes/i));
 
     expect(tabla().getByText("Arroz extra")).toBeTruthy();
@@ -89,16 +91,18 @@ describe("InventoryTab — autofiltro de cabecera (Categoría, Estado)", () => {
     await montarConProductos();
 
     // Pedir también los inactivos desde la columna Estado.
-    const disparadorEstado = tabla().getByLabelText(/Filtrar por Estado/);
+    // Estado vive en «Filtros» (10-10): ya no hay selects en las cabeceras.
+    fireEvent.click(screen.getByRole("button", { name: /^Filtros/ }));
+    const disparadorEstado = screen.getByLabelText(/Filtrar por Estado/);
     fireEvent.click(disparadorEstado);
-    const popoverEstado = tabla().getByRole("group", { name: "Valores de Estado" });
+    const popoverEstado = screen.getByRole("group", { name: "Valores de Estado" });
     fireEvent.click(within(popoverEstado).getByLabelText("Estado: Inactivo"));
     await waitFor(() => expect(tabla().getByText("Detergente viejo")).toBeTruthy());
 
     // Ahora acotar también por Categoría=limpieza: sólo debe quedar el inactivo de limpieza.
-    const disparadorCat = tabla().getByLabelText(/Filtrar por Categoría/);
+    const disparadorCat = screen.getByLabelText(/Filtrar por Categoría/);
     fireEvent.click(disparadorCat);
-    const popoverCat = tabla().getByRole("group", { name: "Valores de Categoría" });
+    const popoverCat = screen.getByRole("group", { name: "Valores de Categoría" });
     fireEvent.click(within(popoverCat).getByLabelText(/Categoría: Limpieza|Categoría: limpieza/i));
 
     expect(tabla().getByText("Detergente viejo")).toBeTruthy();

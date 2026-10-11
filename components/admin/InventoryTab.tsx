@@ -7,7 +7,8 @@ import { cn } from "@/lib/utils";
 import type { DbProduct } from "@/lib/jsondb";
 import { useInventario } from "@/components/admin/inventario/hooks/use-inventario";
 import InventarioBarra from "@/components/admin/inventario/InventarioBarra";
-import InventarioResumen from "@/components/admin/inventario/InventarioResumen";
+import InventarioCabecera from "@/components/admin/inventario/InventarioCabecera";
+import { useIndicadoresInventario, MargenPorCategoria, AvisoDuplicados } from "@/components/admin/inventario/InventarioResumen";
 import InventarioAlertaOC from "@/components/admin/inventario/InventarioAlertaOC";
 import InventarioOpciones from "@/components/admin/inventario/InventarioOpciones";
 import InventarioTarjetas from "@/components/admin/inventario/InventarioTarjetas";
@@ -35,23 +36,27 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
   // El escáner del buscador: el código leído pasa a la búsqueda (que ya mira el código de
   // barras). El otro escáner, el de «Más acciones», sigue creando un producto nuevo.
   const [escanerBusca, setEscanerBusca] = useState(false);
+  const kpis = useIndicadoresInventario(inv);
 
   if (loading) return <InventarioCargando />;
 
-  // `space-y-4` y no 6: entre la barra de filtros y el primer producto había
-  // cinco separaciones de 24 px —120 px de aire— y a Inventario se entra a ver
-  // productos, no el cromo.
+  // Patrón del panel (10-10): cabecera en una fila (título · Indicadores ·
+  // Nuevo · ⋯), los avisos en una línea y los filtros pegados a la tabla.
   return (
-    <div className="space-y-4">
-      <InventarioBarra inv={inv} onBuscarConEscaner={() => setEscanerBusca(true)} />
+    <div className="space-y-3">
+      <InventarioCabecera inv={inv} indicadores={kpis.boton} />
 
-      <InventarioResumen inv={inv} />
+      {kpis.panel}
+      {kpis.abierto && <MargenPorCategoria inv={inv} />}
 
       <InventarioAlertaOC inv={inv} />
+      <AvisoDuplicados inv={inv} />
+
+      <InventarioBarra inv={inv} onBuscarConEscaner={() => setEscanerBusca(true)} />
 
       <InventarioOpciones inv={inv} />
       {loading ? (
-        <div className="h-40 flex items-center justify-center text-[var(--text-tertiary)] dark:text-muted">
+        <div className="h-40 flex items-center justify-center text-[var(--text-tertiary)]">
           <Loader2 className="h-5 w-5 animate-spin" />
         </div>
       ) : view === "productos" ? (
@@ -82,24 +87,24 @@ export default function InventoryTab({ headerActions = [] }: { headerActions?: M
                   <div key={col.key} className={cn("rounded-xl border p-3 min-h-50", col.color)}>
                     <div className="flex items-center justify-between mb-3">
                       <BlockTitle>{col.label}</BlockTitle>
-                      <span className={cn("text-xs font-bold tabular-nums px-2 py-0.5 rounded-full", col.badgeColor)}>{items.length}</span>
+                      <span className={cn("text-sm font-bold tabular-nums px-2 py-0.5 rounded-full", col.badgeColor)}>{items.length}</span>
                     </div>
                     <div className="space-y-2 max-h-[60vh] overflow-y-auto">
                       {items.length === 0 ? (
-                        <p className="text-xs text-[var(--text-tertiary)] dark:text-muted text-center py-4">Sin productos</p>
+                        <p className="text-sm text-[var(--text-tertiary)] text-center py-4">Sin productos</p>
                       ) : items.map(p => (
                         <div key={p.id} role="button" tabIndex={0}
                           aria-label={`Editar ${p.name}`}
                           className="bg-[var(--surface-raised)] rounded-lg p-2.5  border border-[var(--rule-soft)] dark:border-border cursor-pointer hover:shadow-[var(--shadow-sm)] transition-shadow"
                           onClick={() => { setEditModalProduct(p); }}
                           onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setEditModalProduct(p); } }}>
-                          <p className="text-xs font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)] truncate">
+                          <p className="text-sm font-bold text-[var(--text-primary)] truncate">
                             {p.type === "service" && <span className="mr-1 rounded bg-primary/10 px-1 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--accent-ink)]">Serv.</span>}
                             {p.name}
                           </p>
                           <div className="flex items-center justify-between mt-1">
-                            <span className="text-xs text-[var(--text-secondary)] dark:text-muted">{catLabelOf(p.category)}</span>
-                            <span className="text-xs font-bold">{p.stock ?? 0} uds</span>
+                            <span className="text-sm text-[var(--text-secondary)]">{catLabelOf(p.category)}</span>
+                            <span className="text-sm font-bold">{p.stock ?? 0} {p.unit || "uds"}</span>
                           </div>
                         </div>
                       ))}

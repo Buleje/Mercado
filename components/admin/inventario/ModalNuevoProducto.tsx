@@ -15,7 +15,7 @@ import NuevoProductoContenido from "@/components/admin/inventario/NuevoProductoC
 export default function ModalNuevoProducto({ inv }: { inv: Inventario }) {
   const {
     saving, showAdd, setShowAdd, addModalRef, ventanaAdd, addForm, addVariants, addGallery,
-    setAddGallery, galleryUploading, setGalleryUploading, galleryRef, uploadImageFile, formCategories,
+    setAddGallery, galleryUploading, setGalleryUploading, galleryRef, uploadImageFile, catLabelOf,
     addProduct,
   } = inv;
   return (
@@ -46,7 +46,7 @@ export default function ModalNuevoProducto({ inv }: { inv: Inventario }) {
                 )}
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-extrabold text-[var(--text-primary)]">{addForm.name.trim() || "Nuevo producto"}</p>
-                  <p className="truncate text-xs text-[var(--text-tertiary)]">{formCategories.find(c => c.id === addForm.category)?.label ?? "Sin categoría"} · {addForm.type === "service" ? "Servicio" : "Producto"}</p>
+                  <p className="truncate text-xs text-[var(--text-tertiary)]">{addForm.category ? catLabelOf(addForm.category) : "Sin categoría"} · {addForm.type === "service" ? "Servicio" : "Producto"}</p>
                 </div>
                 <span className="shrink-0 font-mono text-base font-extrabold text-primary">{addForm.price ? fmt(Number(addForm.price)) : "S/—"}</span>
               </div>
@@ -136,7 +136,7 @@ export default function ModalNuevoProducto({ inv }: { inv: Inventario }) {
                       </div>
                       <div className="p-4 space-y-2">
                         <p className="text-xs text-[var(--text-tertiary)]">
-                          {formCategories.find(c => c.id === addForm.category)?.label ?? "Sin categoría"}{addForm.brand ? ` · ${addForm.brand}` : ""}
+                          {addForm.category ? catLabelOf(addForm.category) : "Sin categoría"}{addForm.brand ? ` · ${addForm.brand}` : ""}
                         </p>
                         <p className="text-sm font-extrabold text-[var(--text-primary)] line-clamp-2 min-h-[2.5em]">{addForm.name.trim() || "Nombre del producto"}</p>
                         <div className="flex items-baseline gap-2">

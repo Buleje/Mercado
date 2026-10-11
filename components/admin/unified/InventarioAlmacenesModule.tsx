@@ -7,7 +7,8 @@
  * Productos (catálogo) y el Conteo físico, que era un modal. Ocho vistas en
  * `?vista=`; cada una se monta tal cual estaba (R5), con sus endpoints de
  * siempre:
- *   stock · kardex · lotes · mermas ← inventario
+ *   stock · kardex · lotes ← inventario (Pérdidas es la sección `?sub=perdidas`
+ *   de Entradas y salidas desde el 10-10; `mermas` queda como alias)
  *   conteo ← los 3 modales de conteo (Asistente | Manual | Escáner en `?sub=`)
  *   categorias · precios ← productos
  *   ofertas ← productos (ofertas y cupones) + marketplace (sus cupones)
@@ -20,47 +21,43 @@ import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import {
   ArrowLeftRight, BadgePercent, Boxes, CalendarClock, ClipboardCheck, FileSignature, FolderTree,
-  LineChart, ListChecks, Package, Printer, TrendingDown,
+  LineChart, ListChecks, Package, Printer,
 } from "@buleje/design-system/icons";
 import { useVistaModulo, type ParamsDeVista } from "@/hooks/use-vista-modulo";
 import { useContextoPermiso, useVistasPermitidas } from "@/hooks/use-vistas-permitidas";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import AdminModal, { MODAL_BODY } from "@/components/admin/shared/AdminModal";
-import AutoRefreshControl from "@/components/admin/shared/AutoRefreshControl";
 import type { ModuleActionItem } from "@/components/admin/shared/ModuleActionMenu";
-import { useAutoRefresh } from "@/hooks/use-auto-refresh";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
 const InventoryTab = dynamic(() => import("@/components/admin/InventoryTab"), { loading: S });
 const SimpleMovementsTab = dynamic(() => import("@/components/admin/inventario/SimpleMovementsTab"), { loading: S });
 const SimpleExpiryTab = dynamic(() => import("@/components/admin/inventario/SimpleExpiryTab"), { loading: S });
-// Mermas/Pérdidas: ShrinkageTab estaba huérfano (0 imports) y roto contra /api/mermas
-// (GET paginado, cause↔lossType, registeredBy). Reparado + montado. Brandon 2026-06-20.
-const ShrinkageTab = dynamic(() => import("@/components/admin/ShrinkageTab"), { loading: S });
 const ConteoFisicoVista = dynamic(() => import("@/components/admin/inventario/ConteoFisicoVista"), { loading: S });
 const CategoriesEditorTab = dynamic(() => import("@/components/admin/CategoriesEditorTab"), { loading: S });
 const PreciosVista = dynamic(() => import("@/components/admin/inventario/PreciosVista"), { loading: S });
 const OfertasYCuponesVista = dynamic(() => import("@/components/admin/inventario/OfertasYCuponesVista"), { loading: S });
 const DeclaracionInventarioModule = dynamic(() => import("@/components/admin/DeclaracionInventarioModule"), { loading: S });
-const DemandForecast = dynamic(() => import("@/components/admin/inventario/DemandForecast"), { loading: S });
 const EtiquetasPrecio = dynamic(() => import("@/components/admin/inventario/EtiquetasPrecio"));
 
 const MODULE_ID = "inventario";
 
+/* `shortLabel` (10-10): con los nombres largos las 8 pestañas no entraban y
+   la banda iba en tres renglones (154 px). El nombre entero sigue en el
+   `title` de cada pestaña y en el buscador del panel. */
 const TABS = [
-  { id: "stock" as const, label: "Productos y stock", icon: Package },
-  { id: "kardex" as const, label: "Entradas y salidas", icon: ArrowLeftRight },
+  { id: "stock" as const, label: "Productos y stock", shortLabel: "Productos", icon: Package },
+  { id: "kardex" as const, label: "Entradas y salidas", shortLabel: "Movimientos", icon: ArrowLeftRight },
   { id: "lotes" as const, label: "Vencimientos", icon: CalendarClock },
-  { id: "mermas" as const, label: "Pérdidas", icon: TrendingDown },
-  { id: "conteo" as const, label: "Conteo físico", icon: ClipboardCheck },
+  { id: "conteo" as const, label: "Conteo físico", shortLabel: "Conteo", icon: ClipboardCheck },
   { id: "categorias" as const, label: "Categorías", icon: FolderTree },
   { id: "precios" as const, label: "Precios", icon: LineChart },
-  { id: "ofertas" as const, label: "Ofertas y cupones", icon: BadgePercent },
+  { id: "ofertas" as const, label: "Ofertas y cupones", shortLabel: "Ofertas", icon: BadgePercent },
 ];
 type Vista = (typeof TABS)[number]["id"];
 
-/** Al dejar Conteo físico u Ofertas y cupones, su `?sub=` no viaja a la vista siguiente. */
-const PARAMS_DE_VISTA: ParamsDeVista<Vista> = { conteo: ["sub"], ofertas: ["sub"] };
+/** Al dejar Entradas y salidas, Conteo físico u Ofertas y cupones, su `?sub=` no viaja a la vista siguiente. */
+const PARAMS_DE_VISTA: ParamsDeVista<Vista> = { kardex: ["sub"], conteo: ["sub"], ofertas: ["sub"] };
 
 /** Cuánto se espera al rol antes de abrir igual (con las vistas propias del hub). */
 const ESPERA_DEL_ROL_MS = 4000;
@@ -100,31 +97,17 @@ function HubInventario({ initialTab }: { initialTab?: string }) {
 
   const [verDeclaracion, setVerDeclaracion] = useState(false);
   const [verEtiquetas, setVerEtiquetas] = useState(false);
-  const [forecastProductId, setForecastProductId] = useState<number | null>(null);
 
-  // Auto-refresh: increment key to force child remount/re-fetch
-  const [refreshKey, setRefreshKey] = useState(0);
-  const { paused, togglePause, secondsLeft, refreshNow, isActive } = useAutoRefresh({
-    intervalSeconds: 300,
-    onRefresh: () => setRefreshKey((k) => k + 1),
-    enabled: vista === "stock",
-  });
-
-  // Exposed for InventoryTab: open forecast for a product
-  // This is set via a global callback so InventoryTab can trigger it
-  useEffect(() => {
-    (window as unknown as Record<string, unknown>).__openForecast = (productId: number) => {
-      setForecastProductId(productId);
-    };
-    return () => {
-      delete (window as unknown as Record<string, unknown>).__openForecast;
-    };
-  }, []);
+  /* La actualización sola de cada 5 min vive ahora en Productos y stock
+     (`useAutoActualizar`): recarga en silencio, sin el contador «Actualiza en
+     293s» que cambiaba cada segundo y sin remontar la vista (se perdían la
+     búsqueda y los filtros). El pronóstico de demanda, que colgaba de
+     `window.__openForecast` sin que nadie lo llamara, es una acción de la fila. */
 
   /* Lo que «Más acciones» de Productos y stock suma a las suyas. El Conteo
      físico ya es una vista: el ítem queda como atajo (R6, el lugar viejo deja
      enlace). Etiquetas era un botón suelto en la cabecera. */
-  const accionesStock: ModuleActionItem[] = [
+  const accionesStock: ModuleActionItem[] = useMemo(() => [
     ...(tabIds.includes("conteo")
       ? [{ label: "Conteo físico", icon: ListChecks, onClick: () => irA("conteo"), description: "Contar y conciliar el stock real" }]
       : []),
@@ -140,7 +123,7 @@ function HubInventario({ initialTab }: { initialTab?: string }) {
       onClick: () => setVerEtiquetas(true),
       description: "Etiquetas de precio en A4 para tus anaqueles",
     },
-  ];
+  ], [tabIds, irA]);
 
   return (
     <div className="space-y-4">
@@ -153,30 +136,15 @@ function HubInventario({ initialTab }: { initialTab?: string }) {
           description:
             "Tus productos con su stock, las entradas y salidas, vencimientos, pérdidas y el conteo físico; además sus categorías, el historial de precios y las ofertas y cupones.",
           icon: Boxes,
-          actions:
-            vista === "stock" ? (
-              <AutoRefreshControl
-                secondsLeft={secondsLeft}
-                paused={paused}
-                isActive={isActive}
-                onTogglePause={togglePause}
-                onRefreshNow={refreshNow}
-              />
-            ) : undefined,
         }}
         tabs={tabs}
         activeTab={vista}
         onTabChange={irA}
         moduleId={MODULE_ID}
       >
-        {vista === "stock" && (
-          <div key={refreshKey} className="space-y-6">
-            <InventoryTab headerActions={accionesStock} />
-          </div>
-        )}
+        {vista === "stock" && <InventoryTab headerActions={accionesStock} />}
         {vista === "kardex" && <SimpleMovementsTab />}
         {vista === "lotes" && <SimpleExpiryTab />}
-        {vista === "mermas" && <ShrinkageTab />}
         {vista === "conteo" && <ConteoFisicoVista onDeclaracion={() => setVerDeclaracion(true)} />}
         {vista === "categorias" && <CategoriesEditorTab />}
         {vista === "precios" && <PreciosVista />}
@@ -198,14 +166,6 @@ function HubInventario({ initialTab }: { initialTab?: string }) {
           cortaba el cierre de Radix y el foco caía al inicio de la página. */}
       <EtiquetasPrecio open={verEtiquetas} onClose={() => setVerEtiquetas(false)} />
 
-      {/* ── Demand Forecast Modal ── */}
-      {forecastProductId !== null && (
-        <div className="modal-backdrop p-4">
-          <div className="bg-[var(--surface-raised)] rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
-            <DemandForecast productId={forecastProductId} onClose={() => setForecastProductId(null)} />
-          </div>
-        </div>
-      )}
     </div>
   );
 }

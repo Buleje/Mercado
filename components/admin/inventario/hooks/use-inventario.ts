@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import type { ModuleActionItem } from "@/components/admin/shared/ModuleActionMenu";
 import { useInventarioEstado } from "@/components/admin/inventario/hooks/use-inventario-estado";
 import { useInventarioCarga } from "@/components/admin/inventario/hooks/use-inventario-carga";
@@ -6,6 +7,8 @@ import { useInventarioMasivo } from "@/components/admin/inventario/hooks/use-inv
 import { useInventarioPedidos } from "@/components/admin/inventario/hooks/use-inventario-pedidos";
 import { useInventarioFiltros } from "@/components/admin/inventario/hooks/use-inventario-filtros";
 import { useInventarioGuardar } from "@/components/admin/inventario/hooks/use-inventario-guardar";
+import { useAccionesProducto } from "@/components/admin/inventario/hooks/use-acciones-producto";
+import { useAutoActualizar } from "@/components/admin/inventario/hooks/use-auto-actualizar";
 
 /**
  * Todo el estado y las acciones de Inventario. Encadena los hooks en el MISMO orden en que estaban
@@ -19,7 +22,10 @@ export function useInventario(headerActions: ModuleActionItem[]) {
   const pedidos = useInventarioPedidos({ ...estado, ...carga, ...imagenes, ...masivo });
   const filtros = useInventarioFiltros({ ...estado, ...carga, ...imagenes, ...masivo, ...pedidos });
   const guardar = useInventarioGuardar({ ...estado, ...carga, ...imagenes, ...masivo, ...pedidos, ...filtros });
-  return { headerActions, ...estado, ...carga, ...imagenes, ...masivo, ...pedidos, ...filtros, ...guardar };
+  const acciones = useAccionesProducto({ ...estado, ...carga, ...imagenes, ...pedidos });
+  const { load } = carga;
+  const auto = useAutoActualizar(useCallback(() => { void load({ silencioso: true }); }, [load]));
+  return { headerActions, ...estado, ...carga, ...imagenes, ...masivo, ...pedidos, ...filtros, ...guardar, ...acciones, ...auto };
 }
 
 export type Inventario = ReturnType<typeof useInventario>;

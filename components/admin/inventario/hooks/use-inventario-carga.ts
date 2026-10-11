@@ -4,6 +4,7 @@ import { useAbrirFichaAlLlegar } from "@/hooks/use-abrir-ficha-al-llegar";
 import { csrfHeaders } from "@/lib/csrf-client";
 import type { DbProduct } from "@/lib/jsondb";
 import { useInventarioEstado } from "@/components/admin/inventario/hooks/use-inventario-estado";
+import { claveCategoria, textoDeCategoria } from "@/components/admin/inventario/inventario-compartido";
 
 /** Carga del catálogo, base nacional, importar CSV y editar un producto. Parte de `useInventario`. */
 export function useInventarioCarga(previo: ReturnType<typeof useInventarioEstado>) {
@@ -11,7 +12,7 @@ export function useInventarioCarga(previo: ReturnType<typeof useInventarioEstado
     setProducts, setMovements, setLoading, editModalProduct, setEditModalProduct, editForm,
     setEditForm, setSaving, setAddForm, editSpecs, setEditSpecs, editRich, setEditRich, setImgInfo,
     setImgError, dbQuery, setDbQuery, setDbResults, setDbSearching, csvImportRef, setCsvImporting,
-    setCsvResult, products, loading, fichaProducto, setEditModalProductSinUrl,
+    setCsvResult, products, loading, fichaProducto, setEditModalProductSinUrl, catalogoCategorias,
   } = previo;
 
   const handleDbSearch = async () => {
@@ -39,8 +40,20 @@ export function useInventarioCarga(previo: ReturnType<typeof useInventarioEstado
     setDbQuery("");
   };
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  /* `silencioso`: la actualización sola de cada 5 min trae los datos sin
+     cambiar la tabla por el esqueleto (antes el hub remontaba la vista entera
+     y se perdían búsqueda, filtros, selección y página). */
+  /* Una categoría de la planilla que ya existe con otra escritura («abarrotes»,
+     «ABARROTES») entra con el texto que ya usan sus productos (10-10). */
+  const nombreDeCategoria = (texto: string) => {
+    const k = claveCategoria(texto);
+    const existente = catalogoCategorias.find((c) => [c.id, c.label, ...c.valores].some((v) => claveCategoria(v) === k));
+    return existente ? textoDeCategoria(existente, products) : texto.trim();
+  };
+
+  const load = useCallback(async (opciones?: { silencioso?: boolean }) => {
+    const silencioso = opciones?.silencioso === true;
+    if (!silencioso) setLoading(true);
     try {
       // cache: "no-store" — sin esto el browser cachea la respuesta y los bulk
       // edits no se reflejan al recargar el listado (bug 2026-04-20 bulk-clear-images).
@@ -51,7 +64,7 @@ export function useInventarioCarga(previo: ReturnType<typeof useInventarioEstado
       if (pRes.ok) setProducts(await pRes.json());
       if (mRes.ok) setMovements(await mRes.json());
     } catch { /* ignore */ }
-    setLoading(false);
+    if (!silencioso) setLoading(false);
   }, [setLoading, setMovements, setProducts]);
 
   useEffect(() => { void load(); }, [load]);
@@ -95,7 +108,7 @@ export function useInventarioCarga(previo: ReturnType<typeof useInventarioEstado
       const body: Record<string, unknown> = {
         name,
         price,
-        category: categoryIdx >= 0 && cols[categoryIdx] ? cols[categoryIdx] : "otros",
+        category: categoryIdx >= 0 && cols[categoryIdx] ? nombreDeCategoria(cols[categoryIdx]) : "otros",
         unit: unitIdx >= 0 && cols[unitIdx] ? cols[unitIdx] : "und",
         active: true,
       };

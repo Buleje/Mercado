@@ -17,7 +17,7 @@ import EditarProductoMas from "@/components/admin/inventario/EditarProductoMas";
 export default function ModalEditarProducto({ inv }: { inv: Inventario }) {
   const {
     editModalProduct, editForm, setEditForm, saving, editModalRef, ventanaEdit, editSpecs,
-    setEditSpecs, editRich, setEditRich, setModifiersProduct, closeEditModal, saveEdit, formCategories,
+    setEditSpecs, editRich, setEditRich, setModifiersProduct, closeEditModal, saveEdit, catLabelOf,
   } = inv;
   return (
     <>
@@ -47,7 +47,7 @@ export default function ModalEditarProducto({ inv }: { inv: Inventario }) {
                 )}
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-extrabold text-[var(--text-primary)]">{editForm.name?.trim() || "Producto"}</p>
-                  <p className="truncate text-xs text-[var(--text-tertiary)]">{formCategories.find(c => c.id === editForm.category)?.label ?? "Sin categoría"} · {(editForm.type ?? "product") === "service" ? "Servicio" : "Producto"}</p>
+                  <p className="truncate text-xs text-[var(--text-tertiary)]">{editForm.category ? catLabelOf(editForm.category) : "Sin categoría"} · {(editForm.type ?? "product") === "service" ? "Servicio" : "Producto"}</p>
                 </div>
                 <span className="shrink-0 font-mono text-base font-extrabold text-primary">{editForm.price ? fmt(Number(editForm.price)) : "S/—"}</span>
               </div>

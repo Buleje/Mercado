@@ -13,7 +13,7 @@ import type { Inventario } from "@/components/admin/inventario/hooks/use-inventa
 export default function EditarProductoDatos({ inv }: { inv: Inventario }) {
   const {
     editForm, setEditForm, aiDescGenerating, aiDescError, generateDescriptionAI, formCategories,
-    catLabelOf,
+    catLabelOf, opcionDeCategoria,
   } = inv;
   return (
     <>
@@ -23,9 +23,11 @@ export default function EditarProductoDatos({ inv }: { inv: Inventario }) {
         </Field>
         <Field label="Categoría" labelClassName={FIELD_LABEL}>
           {(id) => (<>
-            <select id={id} value={editForm.category ?? ""} onChange={(e) => setEditForm(f => ({ ...f, category: e.target.value }))} className={FIELD_INPUT}>
+            {/* Si no se toca, el producto conserva su texto; al elegir, se guarda el
+                texto que ya usa esa categoría. Una oculta sólo aparece si ya es la suya. */}
+            <select id={id} value={opcionDeCategoria(editForm.category)?.id ?? editForm.category ?? ""} onChange={(e) => setEditForm(f => ({ ...f, category: e.target.value }))} className={FIELD_INPUT}>
               {formCategories.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
-              {editForm.category && !formCategories.some(c => c.id === editForm.category) && (
+              {editForm.category && !opcionDeCategoria(editForm.category) && (
                 <option value={editForm.category}>{catLabelOf(editForm.category)}</option>
               )}
             </select>
@@ -34,7 +36,7 @@ export default function EditarProductoDatos({ inv }: { inv: Inventario }) {
             <CategorySuggestionInline
               name={editForm.name ?? ""}
               currentCategory={editForm.category ?? ""}
-              onApply={(id) => setEditForm(f => ({ ...f, category: id }))}
+              onApply={(id, label) => setEditForm(f => ({ ...f, category: opcionDeCategoria(id)?.id ?? opcionDeCategoria(label)?.id ?? label }))}
             />
           </>)}
         </Field>

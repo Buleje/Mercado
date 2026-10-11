@@ -1,170 +1,129 @@
 "use client";
 
-import { StatCard } from "@buleje/design-system";
-import { Package, AlertTriangle, Layers, ChevronRight, Clock, Wallet } from "@buleje/design-system/icons";
-import ActionMenu from "@/components/admin/shared/action-menu";
+import type { ReactNode } from "react";
+import { AlertTriangle, Package, Wallet } from "@buleje/design-system/icons";
+import { useKpisPlegables } from "@/components/admin/forestal/kpis-plegables";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { cn } from "@/lib/utils";
 import { fmt } from "@/components/admin/inventario/inventario-compartido";
 import type { Inventario } from "@/components/admin/inventario/hooks/use-inventario";
 
-/** Categorías, indicadores, duplicados y margen por categoría. Pieza de InventoryTab: recibe `useInventario` entero. */
-export default function InventarioResumen({ inv }: { inv: Inventario }) {
-  const {
-    products, catFilter, setCatFilter, totalProducts, activeProducts, lowStockCount, expiringSoonCount,
-    totalStockValue, duplicateWarning, categoryMargins, dynamicCategories, chipsVisibles, chipsEnMenu,
-    filteredProducts,
-  } = inv;
-  return (
-    <>
-      {/* Category chips — derivadas dinámicamente del inventario real, sin emojis */}
-      {dynamicCategories.length > 1 && (
-        <div className="-mx-2 px-2 overflow-x-auto scrollbar-hide">
-          <div className="flex items-center gap-2 min-w-fit">
-            {chipsVisibles.map(c => {
-              // "Todos" está activo con la selección vacía; cualquier otra
-              // pastilla se puede combinar con otras (multi, 2026-09-22):
-              // clic para sumarla, clic de nuevo para sacarla — el mismo
-              // estado que el autofiltro de la columna Categoría.
-              const active = c.id === "todos" ? catFilter.length === 0 : catFilter.includes(c.id);
-              return (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => {
-                    if (c.id === "todos") { setCatFilter([]); return; }
-                    setCatFilter(prev => prev.includes(c.id) ? prev.filter(id => id !== c.id) : [...prev, c.id]);
-                  }}
-                  aria-pressed={active}
-                  className={cn(
-                    "shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border-2 text-sm font-bold transition-all whitespace-nowrap",
-                    active
-                      ? "border-primary bg-primary text-white shadow-[var(--shadow-sm)]"
-                      : "border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] dark:text-muted hover:border-primary/40 hover:bg-primary/5"
-                  )}
-                >
-                  <span>{c.label}</span>
-                  <span className={cn(
-                    "inline-flex items-center justify-center min-w-[1.5rem] h-5 px-1.5 rounded-full text-[length:var(--ts-2xs)] font-bold",
-                    active ? "bg-white/20 text-white" : "bg-[var(--surface-sunken)] text-[var(--text-tertiary)] dark:text-muted"
-                  )}>
-                    {c.count}
-                  </span>
-                </button>
-              );
-            })}
-            {chipsEnMenu.length > 0 && (
-              <ActionMenu
-                label={`Más categorías (${chipsEnMenu.length})`}
-                size="sm"
-                actions={chipsEnMenu.map(c => ({
-                  id: c.id,
-                  label: c.label,
-                  icon: Layers,
-                  meta: String(c.count),
-                  activo: catFilter.includes(c.id),
-                  onSelect: () => setCatFilter(prev => prev.includes(c.id) ? prev.filter(id => id !== c.id) : [...prev, c.id]),
-                }))}
-              />
-            )}
-          </div>
-        </div>
-      )}
+interface Tarjeta {
+  rotulo: string;
+  valor: string;
+  detalle: string;
+  icono: typeof Package;
+  aviso?: boolean;
+  ayuda?: ReactNode;
+}
 
-      {/* KPIs.
-          Eran cinco y dos decían lo mismo: «Productos 57 · 56 activos» al lado
-          de «Activos 56 · 1 inactivo». Ahora el estado del catálogo va en una
-          sola tarjeta y el resto son las tres cifras que se miran para decidir
-          algo: qué reponer, qué se vence, cuánto vale lo que hay.
-
-          Compactas a propósito: esta franja empujaba el primer producto de la
-          tabla fuera de la pantalla, y a Inventario se entra a ver productos. */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard
-          label="Productos"
-          value={totalProducts}
-          subValue={
-            <>
-              {activeProducts} activos
-              {totalProducts - activeProducts > 0 && ` · ${totalProducts - activeProducts} inactivo${totalProducts - activeProducts === 1 ? "" : "s"}`}
-            </>
-          }
-          icon={Package}
-          density="compact"
-        />
-        <StatCard
-          label="Bajo stock"
-          value={lowStockCount}
-          subValue={lowStockCount > 0 ? "Requieren reposición" : "Stock saludable"}
-          icon={AlertTriangle}
-          emphasis={lowStockCount > 0 ? "warning" : "neutral"}
-          density="compact"
-        />
-        <StatCard
-          label="Próx. a vencer"
-          value={expiringSoonCount}
-          subValue="Próximos 30 días"
-          icon={Clock}
-          emphasis={expiringSoonCount > 0 ? "warning" : "neutral"}
-          density="compact"
-        />
-        <StatCard
-          label="Valor inventario"
-          value={fmt(totalStockValue)}
-          subValue="Valuado a costo"
-          icon={Wallet}
-          density="compact"
-        />
-      </div>
-
-      {/* Mejora P-7: Duplicados detectados */}
-      {duplicateWarning.length > 0 && (
-        <div className="rounded-xl border border-[var(--data-warning-500)] dark:border-[var(--data-warning-500)]/30 bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 px-4 py-2.5 flex flex-wrap items-center gap-2">
-          <AlertTriangle className="h-4 w-4 text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)] shrink-0" />
-          <span className="text-xs text-[var(--data-warning-500)] dark:text-[var(--data-warning-500)]">
-            Posibles duplicados: <span className="font-bold">{duplicateWarning[0].a}</span> y <span className="font-bold">{duplicateWarning[0].b}</span>
-            {duplicateWarning.length > 1 && <span className="text-[var(--data-warning-500)]"> (y {duplicateWarning.length - 1} mas)</span>}
+/**
+ * Los indicadores de Productos y stock con el patrón del panel (10-10): un
+ * botón «Indicadores» en la cabecera que, plegado, lleva el valor del
+ * inventario adentro. Antes eran 4 tarjetas grandes siempre abiertas y el
+ * margen por categoría plegado en otra fila.
+ *
+ * «Próx. a vencer» ya no está: repetía Vencimientos (la pestaña de al lado,
+ * que lo cuenta por LOTE —el de acá contaba productos—, con sus urgencias y
+ * la baja por vencimiento). La columna «Vence» y su filtro siguen en la tabla.
+ */
+export function useIndicadoresInventario(inv: Inventario) {
+  const { totalProducts, activeProducts, lowStockCount, totalStockValue, loading } = inv;
+  const inactivos = totalProducts - activeProducts;
+  const tarjetas: Tarjeta[] = [
+    {
+      rotulo: "Productos",
+      valor: String(totalProducts),
+      detalle: `${activeProducts} activos${inactivos > 0 ? ` · ${inactivos} inactivo${inactivos === 1 ? "" : "s"}` : ""}`,
+      icono: Package,
+    },
+    {
+      rotulo: "Bajo stock",
+      valor: String(lowStockCount),
+      detalle: lowStockCount > 0 ? "Por reponer" : "Stock saludable",
+      icono: AlertTriangle,
+      aviso: lowStockCount > 0,
+      ayuda: "Productos activos con stock en su mínimo o debajo (si no le pusiste mínimo, cuenta desde 5).",
+    },
+    {
+      rotulo: "Valor del inventario",
+      valor: fmt(totalStockValue),
+      detalle: "A costo",
+      icono: Wallet,
+      ayuda: "Stock × costo de cada producto. Los que no tienen costo no suman: complétalo en «⋯ › Más columnas».",
+    },
+  ];
+  return useKpisPlegables({
+    claveMemoria: "inventario-stock",
+    alto: "md",
+    compactoEnMovil: true,
+    sinDatosAun: loading,
+    resumen: `${fmt(totalStockValue)} a costo`,
+    tarjetas: tarjetas.map(({ rotulo, valor, detalle, icono: Icono, aviso, ayuda }) => (
+      <div key={rotulo} className="rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-3">
+        <div className="mb-1 flex items-center gap-2">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
+            <Icono className="h-4 w-4" aria-hidden />
           </span>
+          <span className="text-sm font-semibold text-[var(--text-secondary)]">{rotulo}</span>
+          {ayuda && <InfoTip what={ayuda} />}
         </div>
-      )}
-
-      {/* Margen por categoría: se mira de vez en cuando y no se puede clickear
-          —no filtra nada—, así que ocupaba una fila entera para informar. Va
-          plegado: el que lo busca lo abre. */}
-      {/* Meta-información en una línea: cuántos se están viendo y el margen
-          plegado. Sin nada que decir, la fila no existe —un contenedor vacío
-          sigue costando su separación. */}
-      {(filteredProducts.length !== products.length || categoryMargins.length > 0) && (
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-      {filteredProducts.length !== products.length && (
-        <p className="text-xs text-[var(--text-tertiary)]">
-          Mostrando {filteredProducts.length} de {products.length} productos
+        <p className={cn("text-lg font-extrabold tabular-nums", aviso ? "text-[var(--data-warning-ink)]" : "text-[var(--text-primary)]")}>
+          {valor}
         </p>
-      )}
-      {categoryMargins.length > 0 && (
-        <details className="group">
-          <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-secondary)]">
-            <ChevronRight className="h-3.5 w-3.5 transition-transform group-open:rotate-90" aria-hidden />
-            Margen por categoría ({categoryMargins.length})
-          </summary>
-          <div className="mt-2 flex flex-wrap items-center gap-1.5">
-          {categoryMargins.map(cm => (
-            <span
-              key={cm.cat}
-              className={cn(
-                "text-xs font-mono font-bold px-2 py-0.5 rounded-full",
-                cm.margin > 25 ? "bg-[var(--data-success-100)] text-[var(--data-success-700)] dark:bg-[var(--data-success-500)]/30 dark:text-[var(--data-success-500)]"
-                : cm.margin >= 15 ? "bg-[var(--data-warning-100)] text-[var(--data-warning-500)] dark:bg-[var(--data-warning-500)]/30 dark:text-[var(--data-warning-500)]"
-                : "bg-[var(--data-error-100)] text-[var(--data-error-500)] dark:bg-[var(--data-error-500)]/30 dark:text-[var(--data-error-500)]"
-              )}
-            >
-              {cm.cat}: {Number(cm.margin).toFixed(0)}%
-            </span>
-          ))}
-          </div>
-        </details>
-      )}
+        <p className="text-sm text-[var(--text-secondary)]">{detalle}</p>
       </div>
-      )}
-    </>
+    )),
+  });
+}
+
+/** Tono del margen: verde > 25 %, ámbar 15-25 %, rojo < 15 % (los cortes de siempre). */
+const tonoMargen = (m: number) =>
+  m > 25
+    ? "border-[var(--data-success-500)]/40 text-[var(--data-success-ink)]"
+    : m >= 15
+      ? "border-[var(--data-warning-500)]/40 text-[var(--data-warning-ink)]"
+      : "border-[var(--data-error-500)]/40 text-[var(--data-error-ink)]";
+
+/**
+ * El margen por categoría, debajo de las tarjetas cuando los indicadores están
+ * abiertos (antes, un «› Margen por categoría (8)» plegado aparte). Con el
+ * nombre de la categoría, no su clave («abarrotes» → «Abarrotes»).
+ */
+export function MargenPorCategoria({ inv }: { inv: Inventario }) {
+  const { categoryMargins, catLabelOf } = inv;
+  if (categoryMargins.length === 0) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2">
+      <span className="text-sm font-semibold text-[var(--text-secondary)]">Margen por categoría</span>
+      <InfoTip
+        what="Margen promedio de los productos activos con costo, en las categorías con 3 o más."
+        example="Precio S/ 10 y costo S/ 7 = 30 %. Verde más de 25 %, ámbar de 15 a 25 %, rojo menos de 15 %."
+      />
+      {categoryMargins.map((cm) => (
+        <span key={cm.cat} className={cn("rounded-full border px-2.5 py-0.5 text-sm font-semibold tabular-nums", tonoMargen(cm.margin))}>
+          {catLabelOf(cm.cat)} {Number(cm.margin).toFixed(0)} %
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/** Posibles duplicados por nombre, en una línea. */
+export function AvisoDuplicados({ inv }: { inv: Inventario }) {
+  const { duplicateWarning } = inv;
+  if (duplicateWarning.length === 0) return null;
+  return (
+    <div className="flex min-h-12 flex-wrap items-center gap-2 rounded-xl border border-[var(--data-warning-500)]/40 bg-[var(--data-warning-500)]/10 px-4 py-2">
+      <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--data-warning-ink)]" aria-hidden />
+      <span className="text-sm text-[var(--data-warning-ink)]">
+        ¿Duplicados? <span className="font-bold">{duplicateWarning[0].a}</span> y <span className="font-bold">{duplicateWarning[0].b}</span>
+        {duplicateWarning.length > 1 && ` (y ${duplicateWarning.length - 1} más)`}
+      </span>
+      <InfoTip
+        what={duplicateWarning.map((d) => `${d.a} ↔ ${d.b}`).join(" · ")}
+        affects="Dos fichas del mismo producto parten el stock y las ventas en dos."
+      />
+    </div>
   );
 }
