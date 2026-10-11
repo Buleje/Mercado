@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { cacheLife, cacheTag, revalidateTag } from "next/cache";
+import { CustomersDB } from "@/lib/db/customers.db";
 
 /**
  * CampaignsDB
@@ -30,6 +31,11 @@ interface UpdateData {
   opened?: number;
   conversions?: number;
   revenue?: number;
+}
+
+/** Clientes con fiado abierto (ACTIVO + VENCIDO, saldo > 0): la deuda real, no la columna `creditBalance`. */
+export async function clientesConFiado(tenantId: string): Promise<string[]> {
+  return [...(await CustomersDB.deudaDeFiados(tenantId)).keys()];
 }
 
 export const CampaignsDB = {
@@ -66,9 +72,8 @@ export const CampaignsDB = {
         });
       }
       if (segment === "deudores") {
-        return await prisma.customer.count({
-          where: { tenantId, creditBalance: { lt: 0 } },
-        });
+        /* `Customer.creditBalance` siempre vale 0 (no sigue a los fiados): la deuda real sale de los fiados abiertos. */
+        return (await clientesConFiado(tenantId)).length;
       }
     } catch {
       /* graceful degrade */
@@ -90,6 +95,7 @@ export const CampaignsDB = {
     const now = new Date();
     const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const lastOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const conFiado = segment === "deudores" ? await clientesConFiado(tenantId) : [];
     const segWhere =
       segment === "vip"
         ? { loyaltyTier: { in: ["oro", "diamante"] } }
@@ -98,7 +104,7 @@ export const CampaignsDB = {
           : segment === "cumpleanos"
             ? { birthday: { gte: firstOfMonth, lte: lastOfMonth } }
             : segment === "deudores"
-              ? { creditBalance: { lt: 0 } }
+              ? { id: { in: conFiado } }
               : {};
     const rows = await prisma.customer.findMany({
       where: { tenantId, notifPromotions: true, ...segWhere },

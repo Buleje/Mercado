@@ -7,6 +7,8 @@
  * color que el fondo, ilegibles—.
  */
 import { DataTable } from "@buleje/design-system";
+import { Gift } from "@buleje/design-system/icons";
+import { claveDeTelefono } from "@/lib/loyalty/sellos";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { ClientePuntos } from "./use-puntos";
@@ -30,10 +32,13 @@ export function ListaPuntos({
   clientes,
   elegido,
   onElegir,
+  premios = {},
 }: {
   clientes: ClientePuntos[];
   elegido: string | null;
   onElegir: (phone: string) => void;
+  /** Tarjeta de sellos: clave de celular → premios por entregar. */
+  premios?: Record<string, number>;
 }) {
   return (
     <DataTable>
@@ -57,7 +62,14 @@ export function ListaPuntos({
                   onClick={(e) => { e.stopPropagation(); onElegir(c.phone); }}
                   className="block min-h-12 w-full max-w-[16rem] text-left"
                 >
-                  <span className="block truncate font-semibold text-[var(--text-primary)]">{c.name}</span>
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <span className="min-w-0 truncate font-semibold text-[var(--text-primary)]">{c.name}</span>
+                    {premios[claveDeTelefono(c.phone)] ? (
+                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--data-success-50)] px-2 py-0.5 text-sm font-semibold text-[var(--data-success-ink)] dark:bg-[var(--data-success-500)]/12">
+                        <Gift className="h-3.5 w-3.5" aria-hidden /> Premio
+                      </span>
+                    ) : null}
+                  </span>
                   <span className="block text-sm tabular-nums text-[var(--text-tertiary)]">{c.phone}</span>
                 </button>
               </td>

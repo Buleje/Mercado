@@ -30,7 +30,7 @@ function Plegable({ titulo, abierto: inicial = false, children }: { titulo: Reac
   );
 }
 
-export function FichaPuntos({ p, negocio, onCopiar }: { p: Puntos; negocio: string; onCopiar: (texto: string) => void }) {
+export function FichaPuntos({ p, negocio, onCopiar, sellos }: { p: Puntos; negocio: string; onCopiar: (texto: string) => void; /** La tarjeta de sellos, si está activa. */ sellos?: ReactNode }) {
   const c = p.elegido;
   const [canje, setCanje] = useState("");
   const [notas, setNotas] = useState(c?.privateNotes ?? "");
@@ -84,6 +84,8 @@ export function FichaPuntos({ p, negocio, onCopiar }: { p: Puntos; negocio: stri
           <MessageCircle className="h-4 w-4" aria-hidden /> Avisarle por WhatsApp
         </a>
       )}
+
+      {sellos && <div className="border-t border-[var(--rule-soft)] pt-3">{sellos}</div>}
 
       <div className="space-y-1.5 border-t border-[var(--rule-soft)] pt-3">
         <label htmlFor={`canje-${c.phone}`} className="text-sm font-semibold text-[var(--text-primary)]">Canjear puntos</label>

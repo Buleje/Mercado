@@ -10,7 +10,9 @@
  *    reales: entregas a tiempo, órdenes completas, precio estable).
  * 3. Precio por producto (`SupplierPriceComparison`): el último precio de cada
  *    proveedor para el producto que elijas.
- * 4. Precios del mercado (`CompetitorPriceTracker`, era Análisis › Inteligencia):
+ * 4. Cuánto ganas con cada proveedor (`MargenPorProveedor`, 11-10): ventas,
+ *    costo y ganancia de lo que le compras a cada uno (el de Lightspeed).
+ * 5. Precios del mercado (`CompetitorPriceTracker`, era Análisis › Inteligencia):
  *    sigue guardado en el navegador (llevarlo a la base es decisión de Brandon)
  *    y se ve sólo para quien lo veía allá (`PermisoDe`, regla R2).
  */
@@ -23,6 +25,7 @@ import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
 const SupplierComparator = dynamic(() => import("@/components/admin/SupplierComparator"), { ssr: false, loading: S });
 const SupplierScorecard = dynamic(() => import("./SupplierScorecard"), { ssr: false, loading: S });
+const MargenPorProveedor = dynamic(() => import("@/components/admin/proveedores/MargenPorProveedor"), { ssr: false, loading: S });
 const PrecioPorProducto = dynamic(() => import("./PrecioPorProducto"), { ssr: false, loading: S });
 const CompetitorPriceTracker = dynamic(() => import("@/components/admin/CompetitorPriceTracker"), { ssr: false, loading: S });
 
@@ -45,6 +48,14 @@ export default function CompararProveedores({ onCreateOC }: { onCreateOC: (prove
           <SupplierScorecard key={elegido.id} supplierId={elegido.id} />
         </Plegable>
       )}
+
+      <Plegable
+        clave="compras:comparar:margen"
+        titulo="Cuánto ganas con cada proveedor"
+        resumen="Ventas, costo y ganancia de lo que le compras a cada uno"
+      >
+        <MargenPorProveedor />
+      </Plegable>
 
       <Plegable
         clave="compras:comparar:precio-producto"

@@ -18,9 +18,9 @@
  *  · Contadores de referidos: leían `referralCode` de /api/customers, que no
  *    lo trae (salían 0 siempre).
  */
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { SectionTitle } from "@buleje/design-system";
-import { AlertTriangle, Copy, MoreHorizontal, RefreshCw, Search } from "@buleje/design-system/icons";
+import { AlertTriangle, Copy, MoreHorizontal, RefreshCw, Search, Stamp } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { button } from "@/components/ui-system/button-variants";
@@ -32,6 +32,9 @@ import { ListaPuntos } from "@/components/admin/crecimiento/puntos/ListaPuntos";
 import { mensajeDePuntos, VALOR_PUNTO } from "@/components/admin/crecimiento/puntos/mensajes";
 import { useIndicadoresPuntos } from "@/components/admin/crecimiento/puntos/use-indicadores-puntos";
 import { usePuntos } from "@/components/admin/crecimiento/puntos/use-puntos";
+import { useSellos } from "@/components/admin/crecimiento/puntos/use-sellos";
+import { TarjetaSellos } from "@/components/admin/crecimiento/puntos/TarjetaSellos";
+import { ModalSellos } from "@/components/admin/crecimiento/puntos/ModalSellos";
 
 const ID_FICHA = "ficha-puntos";
 
@@ -42,6 +45,12 @@ export default function LoyaltyTab() {
   const [soloConPuntos, setSoloConPuntos] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
   const kpis = useIndicadoresPuntos(p.metricas, p.loading);
+  const elegidoTel = p.elegido?.phone ?? null;
+  const s = useSellos(elegidoTel);
+  const [configSellos, setConfigSellos] = useState(false);
+  /* El foco vuelve al «Más» al cerrar la ventana: el menú se cierra antes y sin esto quedaba en <body>. */
+  const menuRef = useRef<HTMLDivElement>(null);
+  const conPremio = Object.keys(s.premios).length;
 
   const copiar = (texto: string, que = "Copiado") => {
     void navigator.clipboard.writeText(texto).then(() => {
@@ -72,6 +81,18 @@ export default function LoyaltyTab() {
       disabled: conPuntos.length === 0,
       onSelect: () => copiar(conPuntos.map((c) => `${c.name} (${c.phone}): ${mensajeDePuntos(c.name, c.loyaltyPoints, negocio)}`).join("\n\n"), `${conPuntos.length} avisos copiados`),
     },
+    {
+      id: "sellos",
+      label: "Tarjeta de sellos",
+      hint: s.config?.activo
+        ? `${s.config.compras} compras → ${s.config.premio}${conPremio ? ` · ${conPremio} con premio por entregar` : ""}`
+        : "Compra tantas veces y la siguiente tiene premio",
+      icon: Stamp,
+      onSelect: () => {
+        menuRef.current?.querySelector("button")?.focus({ preventScroll: true });
+        setConfigSellos(true);
+      },
+    },
     { id: "actualizar", label: "Actualizar", icon: RefreshCw, onSelect: p.recargar },
   ];
 
@@ -83,13 +104,15 @@ export default function LoyaltyTab() {
           <InfoTip
             title="Puntos"
             what={`Cada compra con celular suma puntos; 1 punto vale ${formatCurrency(VALOR_PUNTO)} de descuento al canjear. El nivel (bronce, plata, oro, diamante) sube con lo que el cliente gastó.`}
-            affects="Los VIP de Campañas son los de nivel oro y diamante."
+            affects="Los VIP de Campañas son los de nivel oro y diamante. La tarjeta de sellos (en Más) cuenta compras, no soles: compra 10 veces y la siguiente tiene premio."
             example={`Rosa tiene 120 puntos: puede descontar ${formatCurrency(120 * VALOR_PUNTO)} en su próxima compra.`}
           />
         </div>
         <div className="ml-auto flex min-w-0 items-center gap-2">
           {kpis.boton}
-          <ActionMenu label="Más" icon={MoreHorizontal} actions={acciones} soloIcono size="md" className="w-12 shrink-0" title="Copiar avisos y actualizar" />
+          <div ref={menuRef} className="shrink-0">
+            <ActionMenu label="Más" icon={MoreHorizontal} actions={acciones} soloIcono size="md" className="w-12 shrink-0" title="Avisos, tarjeta de sellos y actualizar" />
+          </div>
         </div>
       </div>
 
@@ -136,7 +159,7 @@ export default function LoyaltyTab() {
               <p className="p-6 text-center text-sm text-[var(--text-secondary)]">{q || soloConPuntos ? "Nadie con ese filtro." : "Aún no tienes clientes."}</p>
             ) : (
               <div className="max-h-[36rem] overflow-y-auto">
-                <ListaPuntos clientes={filtrados} elegido={p.elegido?.phone ?? null} onElegir={elegir} />
+                <ListaPuntos clientes={filtrados} elegido={elegidoTel} onElegir={elegir} premios={s.premios} />
               </div>
             )}
             {p.hayMas && !q && (
@@ -147,10 +170,28 @@ export default function LoyaltyTab() {
           </div>
           {/* En el celular la ficha va ARRIBA de la lista: abajo quedaba a 15 tarjetas de distancia. */}
           <div id={ID_FICHA} className="scroll-mt-20 max-lg:order-first">
-            <FichaPuntos key={p.elegido?.phone ?? "ninguno"} p={p} negocio={negocio} onCopiar={(t) => copiar(t)} />
+            <FichaPuntos
+              key={elegidoTel ?? "ninguno"}
+              p={p}
+              negocio={negocio}
+              onCopiar={(t) => copiar(t)}
+              sellos={
+                s.config?.activo && elegidoTel ? (
+                  <TarjetaSellos
+                    estado={s.tarjeta?.estado ?? null}
+                    canjes={s.tarjeta?.canjes ?? []}
+                    premio={s.config.premio}
+                    cargando={s.cargando || !s.tarjeta}
+                    onCanjear={() => s.canjear(elegidoTel)}
+                  />
+                ) : null
+              }
+            />
           </div>
         </div>
       )}
+
+      <ModalSellos open={configSellos} config={s.config} onClose={() => setConfigSellos(false)} onGuardar={s.guardar} />
     </div>
   );
 }
