@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import { DataTable } from "@buleje/design-system";
-import { ExternalLink, Eye, EyeOff, ImageOff, Megaphone, MoreHorizontal, Sparkles } from "@buleje/design-system/icons";
+import { ExternalLink, Eye, EyeOff, ImageOff, Megaphone, MoreHorizontal, Pencil, Sparkles, Tag, Users, X } from "@buleje/design-system/icons";
 import ActionMenu, { type MenuAccion } from "@/components/admin/shared/action-menu";
 import type { MarketplaceProduct } from "@/components/admin/marketplace/hooks/use-marketplace-products";
 import { STOCK_CRITICO, type ClaveProducto, type ProductosVista, type useEdicionPrecio } from "@/components/admin/marketplace/hooks/use-productos-vista";
@@ -25,11 +25,18 @@ function Encabezado({ clave, rotulo, v, className }: { clave: ClaveProducto; rot
 
 /** Publicar/Despublicar a la vista (48 px) y en «⋯» destacar y ver en el marketplace. */
 function AccionesProducto({
-  p, publicando, slug, onPublicar, onDestacar,
-}: { p: MarketplaceProduct; publicando: boolean; slug: string; onPublicar: () => void; onDestacar: () => void }) {
+  p, publicando, slug, onPublicar, onDestacar, onPrecio, onQuitarOferta,
+}: {
+  p: MarketplaceProduct; publicando: boolean; slug: string; onPublicar: () => void; onDestacar: () => void;
+  onPrecio: (campo: "retailPrice" | "discountPrice" | "wholesalePrice") => void; onQuitarOferta: () => void;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const enfocarMenu = () => ref.current?.querySelector<HTMLButtonElement>("button[aria-haspopup]")?.focus({ preventScroll: true });
   const base: MenuAccion[] = [
+    { id: "precio", label: "Cambiar el precio", icon: Pencil, onSelect: () => onPrecio("retailPrice") },
+    { id: "oferta", label: p.discountPrice != null ? "Cambiar la oferta" : "Poner en oferta", icon: Tag, onSelect: () => onPrecio("discountPrice") },
+    ...(p.discountPrice != null ? [{ id: "quitar-oferta", label: "Quitar la oferta", icon: X, onSelect: onQuitarOferta }] : []),
+    { id: "mayorista", label: p.wholesalePrice > 0 ? "Cambiar el precio mayorista" : "Poner precio mayorista", icon: Users, onSelect: () => onPrecio("wholesalePrice") },
     ...(p.boost
       ? [{ id: "boost", label: "Ver el destacado", hint: `S/ ${p.boost.bidAmount} por día · gastado ${formatCurrency(p.boost.totalSpentPen)} de S/ ${p.boost.maxBudgetPen.toFixed(0)}`, icon: Sparkles, onSelect: onDestacar }]
       : p.isActive && p.productId
@@ -47,9 +54,10 @@ function AccionesProducto({
         onClick={onPublicar}
         disabled={publicando}
         aria-pressed={p.isActive}
+        aria-label={`${p.isActive ? "Publicado" : "Inactivo"} en el marketplace: ${p.name}`}
         title={p.isActive ? "Publicado: tócalo para sacarlo del marketplace" : "Inactivo: tócalo para publicarlo"}
         className={cn(
-          "inline-flex h-12 min-w-[8.5rem] shrink-0 items-center justify-center gap-1.5 rounded-xl px-3 text-sm font-semibold transition-colors disabled:opacity-60",
+          "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-colors disabled:opacity-60",
           p.isActive
             ? "bg-[var(--data-success-500)]/10 text-[var(--data-success-ink)] hover:bg-[var(--data-success-500)]/20"
             : "border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
@@ -58,17 +66,16 @@ function AccionesProducto({
         {publicando ? (
           <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden />
         ) : p.isActive ? (
-          <Eye className="h-4 w-4" aria-hidden />
+          <Eye className="h-5 w-5" aria-hidden />
         ) : (
-          <EyeOff className="h-4 w-4" aria-hidden />
+          <EyeOff className="h-5 w-5" aria-hidden />
         )}
-        {p.isActive ? "Publicado" : "Inactivo"}
-        {p.boost && <Sparkles className="h-4 w-4 text-[var(--brand-secondary)]" aria-label="Destacado" />}
       </button>
+      {p.boost && <Sparkles className="h-4 w-4 shrink-0 text-[var(--brand-secondary)]" aria-label="Destacado" />}
       {acciones.length > 0 ? (
         <ActionMenu
           label={`Más acciones de ${p.name}`}
-          title="Destacar y ver en el marketplace"
+          title="Precios, destacar y ver en el marketplace"
           icon={MoreHorizontal}
           actions={acciones}
           soloIcono
@@ -193,7 +200,10 @@ export function ProductosTabla({
                     </span>
                   </td>
                   <td className="px-2 py-1.5">
-                    <AccionesProducto p={p} publicando={toggling === p.id} slug={slug} onPublicar={() => onPublicar(p)} onDestacar={() => onDestacar(p)} />
+                    <AccionesProducto p={p} publicando={toggling === p.id} slug={slug} onPublicar={() => onPublicar(p)} onDestacar={() => onDestacar(p)}
+                      onPrecio={(campo) => precio.empezar(p.id, campo, campo === "retailPrice" ? p.retailPrice : campo === "discountPrice" ? (p.discountPrice ?? null) : p.wholesalePrice)}
+                      onQuitarOferta={() => onQuitarOferta(p.id)}
+                    />
                   </td>
                 </tr>
               );

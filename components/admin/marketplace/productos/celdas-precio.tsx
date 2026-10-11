@@ -1,8 +1,25 @@
 "use client";
 
-import { Minus, Pencil, TrendingDown, TrendingUp, X } from "@buleje/design-system/icons";
+import { Minus, TrendingDown, TrendingUp, X } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import { formatCurrency, formatDateLong } from "@/lib/format";
+
+/** Precio que se edita al tocarlo: a la vista es texto (no un botón más por fila), pero
+    con rol, foco y Enter/Espacio para el teclado y el lector de pantalla. */
+function editable(alTocar: () => void) {
+  return {
+    role: "button" as const,
+    tabIndex: 0,
+    onClick: alTocar,
+    onKeyDown: (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        alTocar();
+      }
+    },
+  };
+}
+
 
 // ── Chip de comparación contra el promedio del marketplace ──────────────
 export function CompetitionChip({
@@ -124,14 +141,13 @@ export function OfertaCell({
 
   if (oferta == null) {
     return (
-      <button
-        type="button"
-        onClick={onStartEdit}
-        title="Poner este producto en oferta"
-        className="inline-flex min-h-12 items-center gap-1 text-[var(--text-tertiary)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)] transition-colors"
+      <span
+        {...editable(onStartEdit)}
+        title="Toca para poner este producto en oferta"
+        className="inline-flex min-h-12 cursor-pointer items-center whitespace-nowrap text-[var(--text-tertiary)] transition-colors hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
       >
-        <Pencil className="h-3 w-3 opacity-60" aria-hidden /> —
-      </button>
+        —
+      </span>
     );
   }
 
@@ -140,15 +156,13 @@ export function OfertaCell({
   return (
     <div className="inline-flex flex-col items-end gap-0.5">
       <div className="inline-flex items-center gap-1.5">
-        <button
-          type="button"
-          onClick={onStartEdit}
-          title="Click para editar la oferta"
-          className="group inline-flex min-h-12 items-center gap-1.5 tabular-nums font-extrabold text-[var(--text-primary)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)] transition-colors"
+        <span
+          {...editable(onStartEdit)}
+          title="Toca para editar la oferta"
+          className="inline-flex min-h-12 cursor-pointer items-center whitespace-nowrap tabular-nums font-extrabold text-[var(--text-primary)] transition-colors hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
         >
-          <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-60 transition-opacity" aria-hidden />
           {formatCurrency(oferta)}
-        </button>
+        </span>
         <button
           type="button"
           onClick={onQuitar}
@@ -220,31 +234,28 @@ export function PriceCell({
   }
   if (value <= 0 && !alwaysBold) {
     return (
-      <button
-        type="button"
-        onClick={onStartEdit}
-        title="Agregar precio mayorista"
-        className="inline-flex min-h-12 items-center gap-1 text-[var(--text-tertiary)] hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)] transition-colors"
+      <span
+        {...editable(onStartEdit)}
+        title="Toca para agregar el precio mayorista"
+        className="inline-flex min-h-12 cursor-pointer items-center whitespace-nowrap text-[var(--text-tertiary)] transition-colors hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]"
       >
-        <Pencil className="h-3 w-3 opacity-60" aria-hidden /> —
-      </button>
+        —
+      </span>
     );
   }
   return (
-    <button
-      type="button"
-      onClick={onStartEdit}
-      title="Click para editar"
+    <span
+      {...editable(onStartEdit)}
+      title="Toca para editar el precio"
       className={cn(
-        "group inline-flex min-h-12 items-center gap-1.5 tabular-nums hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)] transition-colors",
+        "inline-flex min-h-12 cursor-pointer items-center whitespace-nowrap tabular-nums transition-colors hover:text-[var(--accent-ink)] dark:hover:text-[var(--accent)]",
         alwaysBold
           ? "font-extrabold text-[var(--text-primary)]"
           : "text-[var(--text-secondary)]",
       )}
     >
-      <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-60 transition-opacity" aria-hidden />
       {formatCurrency(value)}
-    </button>
+    </span>
   );
 }
 
