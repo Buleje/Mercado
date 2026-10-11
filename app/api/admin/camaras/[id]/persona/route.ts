@@ -9,6 +9,7 @@ import { CamarasDB } from "@/lib/db/camaras.db";
 import { ImagenNoPermitida, sharpSeguro, verificarImagen } from "@/lib/camaras/imagen-segura";
 import { guardarFotoPersona, metaFotoPersonaSchema } from "@/lib/camaras/personas-drive.server";
 import { avisarPersonaDelMosaico } from "@/lib/camaras/avisar";
+import { avisarPersonaAlCelular } from "@/lib/camaras/avisar-push.server";
 import { MAX_CAJAS_POR_FOTO, leerCajasDelFormulario } from "@/lib/camaras/apariencia";
 import { firmarCajas } from "@/lib/camaras/apariencia.server";
 import type { RespuestaFotoPersona } from "@/lib/camaras/personas";
@@ -33,6 +34,8 @@ import type { RespuestaFotoPersona } from "@/lib/camaras/personas";
  * Después de contestar, avisa por WhatsApp con la configuración de avisos de la
  * cámara (número, franja, pausa de 10 min compartida con las fotos de la IA):
  * sólo «apareció» y «llegó otra», nunca «sigue» (`avisarPersonaDelMosaico`).
+ * Y desde el 10-10, por Web Push a los dispositivos que prendieron «Avisarme en
+ * el celular» en esa cámara (`avisarPersonaAlCelular`, mismo filtro de motivo).
  */
 const MAX_SIZE = 3 * 1024 * 1024;
 const ANCHO_MAX = 1280;
@@ -109,14 +112,25 @@ export const POST = withApiHandler(
       /* Aunque el Drive haya fallado: la persona estuvo igual frente a la
          cámara, y el aviso es por ella, no por el archivo. */
       const tenantId = auth.tenantId;
+      /* WhatsApp y celular van en paralelo, cada uno con su pausa: si uno se
+         cuelga (Meta tarda 18 s en el peor caso) el otro igual sale. */
       after(() =>
-        avisarPersonaDelMosaico(tenantId, camara.id, meta.data, cuando).catch((err) =>
-          logger.error("[camaras.persona] el aviso por WhatsApp falló", {
-            tenantId,
-            camaraId: camara.id,
-            error: String(err),
-          }),
-        ),
+        Promise.all([
+          avisarPersonaDelMosaico(tenantId, camara.id, meta.data, cuando).catch((err) =>
+            logger.error("[camaras.persona] el aviso por WhatsApp falló", {
+              tenantId,
+              camaraId: camara.id,
+              error: String(err),
+            }),
+          ),
+          avisarPersonaAlCelular(tenantId, camara.id, meta.data, cuando).catch((err) =>
+            logger.error("[camaras.persona] el aviso al celular falló", {
+              tenantId,
+              camaraId: camara.id,
+              error: String(err),
+            }),
+          ),
+        ]),
       );
       return NextResponse.json(res, { status: res.ok ? 200 : res.error === "storage" ? 502 : 500 });
     } catch (err) {

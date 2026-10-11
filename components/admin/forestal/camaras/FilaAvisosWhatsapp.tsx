@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import type { AvisosCamara } from "@/lib/camaras/camaras";
 import type { CamaraConConexion } from "./conexion-camara";
 import { BTN } from "./camaras-ui";
+import FilaAvisoCelular from "./FilaAvisoCelular";
 
 interface Props {
   camara: CamaraConConexion;
@@ -77,6 +78,9 @@ export default function FilaAvisosWhatsapp({ camara: c, guardando, onGuardarAvis
       >
         <Check className="h-4 w-4" aria-hidden /> Guardar
       </button>
+      {/* El aviso al celular (Web Push, 10-10) va debajo, en su propio renglón:
+          es por dispositivo, no por número. */}
+      <FilaAvisoCelular camaraId={c.id} nombre={c.nombre} />
     </div>
   );
 }
