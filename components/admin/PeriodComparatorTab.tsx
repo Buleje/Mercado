@@ -1,177 +1,179 @@
 "use client";
 
-import { SectionTitle } from "@buleje/design-system";
-import { useState, useMemo, useEffect, startTransition } from "react";
-import { ArrowUp, ArrowDown, Minus, Download, BarChart3, MoreHorizontal } from "@buleje/design-system/icons";
+/**
+ * Mi Plata › Comparar períodos — una semana, mes, trimestre o año de Lima
+ * contra el anterior o contra el mismo de hace un año.
+ *
+ * Bug 11-10: sumaba EN EL NAVEGADOR las últimas 1 000 ventas del POS que trae
+ * `/api/admin/dashboard`, con el reloj del navegador. Dejaba afuera los
+ * pedidos concretados (el año 2026 de `main` daba S/ 259,30; Mi Plata,
+ * S/ 397,50) y contaba la venta anónima como un cliente. Ahora todo sale del
+ * servidor (`/api/finanzas/comparativo?periodo=…`) con la regla de ventas de
+ * Mi Plata; lo que no se puede calcular llega `null` y se ve «—».
+ *
+ * Patrón del panel: cabecera en una fila (título · ⓘ · período · ‹ › ·
+ * contra · Más) y una tabla en vez de 6 tarjetas con barras.
+ */
+
+import { DataTable, SectionTitle } from "@buleje/design-system";
+import { useMemo, useState } from "react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  MoreHorizontal,
+  RefreshCw,
+  RotateCcw,
+} from "@buleje/design-system/icons";
+import SegmentedControl from "@/components/ui-system/SegmentedControl";
 import ActionMenu from "@/components/admin/shared/action-menu";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
-import { cn, exportToCSV } from "@/lib/utils";
-import { formatCurrency, formatNumber } from "@/lib/format";
+import { useCompararPeriodos } from "@/components/admin/comparar-periodos/use-comparar-periodos";
+import {
+  Cambio,
+  cambioDe,
+  esMejora,
+  ListaMovil,
+  METRICAS,
+  unidad,
+  valor,
+  type Fila,
+} from "@/components/admin/comparar-periodos/metricas";
+import { cn, exportToCSV, limaDateKey } from "@/lib/utils";
+import {
+  periodoSiguiente,
+  rangoDeComparacion,
+  rangoDelPeriodo,
+  type ContraPeriodo,
+  type Periodo,
+} from "@/lib/finance/comparativo-periodos";
 
-type Metric = { label: string; periodA: number; periodB: number; format: "money" | "number" | "pct" };
-
-function fmt(n: number) { return `${formatCurrency(n)}`; }
-function fmtNum(n: number, format: Metric["format"]) {
-  if (!Number.isFinite(n)) return "—";
-  if (format === "money") return fmt(n);
-  if (format === "pct") return `${n.toFixed(1)}%`;
-  return formatNumber(n);
-}
-
-/* «Personalizado» se fue (2026-10-11): no pedía fechas y comparaba lo mismo
-   que «Mes». Los rótulos van cortos: viven en la fila del título. */
-const PRESETS = [
-  { id: "week", label: "Semana", aLabel: "Esta semana", bLabel: "Semana pasada" },
-  { id: "month", label: "Mes", aLabel: "Este mes", bLabel: "Mes pasado" },
-  { id: "quarter", label: "Trimestre", aLabel: "Este trimestre", bLabel: "Trimestre pasado" },
-  { id: "year", label: "Año", aLabel: "Este año", bLabel: "Año pasado" },
+const PERIODOS: { value: Periodo; label: string }[] = [
+  { value: "semana", label: "Semana" },
+  { value: "mes", label: "Mes" },
+  { value: "trimestre", label: "Trimestre" },
+  { value: "anyo", label: "Año" },
 ];
 
-/** Métricas en las que bajar es lo bueno: que el costo de lo vendido suba no es una mejora. */
-const BAJAR_ES_BUENO = new Set(["Costo de ventas"]);
-const cambioTexto = (a: number, b: number) => (b !== 0 && Number.isFinite(a) && Number.isFinite(b) ? `${(((a - b) / Math.abs(b)) * 100).toFixed(1)}%` : "—");
+const CONTRAS: { value: ContraPeriodo; label: string }[] = [
+  { value: "anterior", label: "vs. anterior" },
+  { value: "hace_un_anyo", label: "vs. hace un año" },
+];
 
-type SaleRecord = { total: number; totalCogs?: number; customerPhone?: string; createdAt: string; items?: Array<unknown> };
-
-/** Get the [start, end) Date boundaries for each preset period and its comparison */
-function getPeriodBounds(preset: string): { aStart: Date; aEnd: Date; bStart: Date; bEnd: Date } {
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  if (preset === "week") {
-    const dayOfWeek = today.getDay() === 0 ? 6 : today.getDay() - 1; // Mon=0
-    const aStart = new Date(today); aStart.setDate(today.getDate() - dayOfWeek);
-    const aEnd = new Date(aStart); aEnd.setDate(aStart.getDate() + 7);
-    const bStart = new Date(aStart); bStart.setDate(aStart.getDate() - 7);
-    const bEnd = new Date(aStart);
-    return { aStart, aEnd, bStart, bEnd };
-  }
-  if (preset === "month") {
-    const aStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const aEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    const bStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const bEnd = aStart;
-    return { aStart, aEnd, bStart, bEnd };
-  }
-  if (preset === "quarter") {
-    const q = Math.floor(now.getMonth() / 3);
-    const aStart = new Date(now.getFullYear(), q * 3, 1);
-    const aEnd = new Date(now.getFullYear(), q * 3 + 3, 1);
-    const bStart = new Date(now.getFullYear(), (q - 1) * 3, 1);
-    const bEnd = aStart;
-    return { aStart, aEnd, bStart, bEnd };
-  }
-  if (preset === "year") {
-    const aStart = new Date(now.getFullYear(), 0, 1);
-    const aEnd = new Date(now.getFullYear() + 1, 0, 1);
-    const bStart = new Date(now.getFullYear() - 1, 0, 1);
-    const bEnd = aStart;
-    return { aStart, aEnd, bStart, bEnd };
-  }
-  // custom — default to current month vs previous
-  const aStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const aEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  const bStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  return { aStart, aEnd, bStart, bEnd: aStart };
-}
-
-function computeMetrics(periodSales: SaleRecord[]): { revenue: number; txns: number; avgTicket: number; uniqueClients: number; cogs: number; grossMargin: number } {
-  const revenue = periodSales.reduce((s, x) => s + x.total, 0);
-  const txns = periodSales.length;
-  const avgTicket = txns > 0 ? revenue / txns : 0;
-  const uniqueClients = new Set(periodSales.map(x => x.customerPhone ?? "anon")).size;
-  const cogs = periodSales.reduce((s, x) => s + (x.totalCogs ?? 0), 0);
-  /* Sin ventas, o pasado ±999 %, el margen no dice nada (S/ 0.10 de venta y
-     S/ 18.29 de costo daban «−18190.0%»): queda sin dato, como en el Resumen. */
-  const margen = revenue > 0 ? ((revenue - cogs) / revenue) * 100 : NaN;
-  const grossMargin = Math.abs(margen) <= 999 ? margen : NaN;
-  return { revenue, txns, avgTicket, uniqueClients, cogs, grossMargin };
-}
-
-function buildMetrics(aM: ReturnType<typeof computeMetrics>, bM: ReturnType<typeof computeMetrics>): Metric[] {
-  return [
-    { label: "Ventas totales", periodA: aM.revenue, periodB: bM.revenue, format: "money" },
-    { label: "Nº transacciones", periodA: aM.txns, periodB: bM.txns, format: "number" },
-    { label: "Ticket promedio", periodA: aM.avgTicket, periodB: bM.avgTicket, format: "money" },
-    { label: "Clientes únicos", periodA: aM.uniqueClients, periodB: bM.uniqueClients, format: "number" },
-    { label: "Costo de ventas", periodA: aM.cogs, periodB: bM.cogs, format: "money" },
-    { label: "Margen bruto", periodA: aM.grossMargin, periodB: bM.grossMargin, format: "pct" },
-  ];
-}
+const FLECHA =
+  "inline-flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-sunken)] disabled:cursor-not-allowed disabled:opacity-40";
 
 export default function PeriodComparatorTab() {
-  const [preset, setPreset] = useState("month");
-  const [allSales, setAllSales] = useState<SaleRecord[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [periodo, setPeriodo] = useState<Periodo>("mes");
+  const [contra, setContra] = useState<ContraPeriodo>("anterior");
+  /** null = el período de hoy; si no, un día dentro del período que se mira. */
+  const [fecha, setFecha] = useState<string | null>(null);
+  const { datos, cargando, error, recargar } = useCompararPeriodos(periodo, contra, fecha);
 
-  useEffect(() => {
-    fetch("/api/admin/dashboard")
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        startTransition(() => {
-          setAllSales((data?.sales ?? []) as SaleRecord[]);
-          setLoading(false);
-        });
-      })
-      .catch(() => startTransition(() => setLoading(false)));
-  }, []);
+  const hoy = limaDateKey(new Date());
+  const rango = rangoDelPeriodo(periodo, fecha ?? hoy);
+  const enCurso = rango.hasta >= hoy;
+  const irAtras = () => setFecha(rangoDeComparacion(periodo, rango, "anterior").desde);
+  const irAdelante = () => {
+    const siguiente = periodoSiguiente(periodo, rango);
+    setFecha(siguiente.hasta >= hoy ? null : siguiente.desde);
+  };
 
-  const data = useMemo<Metric[]>(() => {
-    if (allSales.length === 0) return [];
-    const { aStart, aEnd, bStart, bEnd } = getPeriodBounds(preset);
-    const aSales = allSales.filter(s => { const d = new Date(s.createdAt); return d >= aStart && d < aEnd; });
-    const bSales = allSales.filter(s => { const d = new Date(s.createdAt); return d >= bStart && d < bEnd; });
-    return buildMetrics(computeMetrics(aSales), computeMetrics(bSales));
-  }, [allSales, preset]);
-  const current = PRESETS.find(p => p.id === preset) ?? PRESETS[1];
+  /* Se muestra lo que corresponde a lo elegido; mientras carga lo nuevo, lo
+     anterior queda a la vista atenuado (aria-busy), sin parpadear a vacío. */
+  const vigente =
+    datos &&
+    datos.periodo === periodo &&
+    datos.contra === contra &&
+    datos.actual.desde === rango.desde
+      ? datos
+      : null;
+  const mostrado = vigente ?? datos;
 
-  const improvements = useMemo(() => data.filter(m => {
-    const change = m.periodA - m.periodB;
-    // For "bad" metrics (devoluciones, stock agotado), decrease is good
-    if (!Number.isFinite(change)) return false;
-    return BAJAR_ES_BUENO.has(m.label) ? change < 0 : change > 0;
-  }).length, [data]);
+  const filas = useMemo<Fila[]>(
+    () =>
+      mostrado
+        ? METRICAS.map((m) => ({
+            ...m,
+            a: mostrado.actual[m.key],
+            b: mostrado.base[m.key],
+            cambio: cambioDe(m.tipo, mostrado.actual[m.key], mostrado.base[m.key]),
+          }))
+        : [],
+    [mostrado],
+  );
+  const juzgables = filas
+    .map((f) => esMejora(f.cambio, f.sentido))
+    .filter((x): x is boolean => x != null);
+  const mejoraron = juzgables.filter(Boolean).length;
 
-  const exportar = () =>
+  const exportar = () => {
+    if (!mostrado) return;
     exportToCSV(
-      data.map(m => ({ metrica: m.label, [current.aLabel]: fmtNum(m.periodA, m.format), [current.bLabel]: fmtNum(m.periodB, m.format), cambio: cambioTexto(m.periodA, m.periodB) })),
-      `comparador-${preset}`,
+      filas.map((f) => ({
+        metrica: f.label,
+        [mostrado.actual.etiqueta]: valor(f.tipo, f.a),
+        [mostrado.base.etiqueta]: valor(f.tipo, f.b),
+        cambio: f.cambio == null ? "—" : `${f.cambio.toFixed(1)} ${unidad(f.tipo)}`,
+      })),
+      `comparar-${periodo}-${mostrado.actual.desde}`,
     );
+  };
 
   return (
-    <div className="space-y-4">
-      {/* Una fila: título · ⓘ · el período · cuántas mejoraron · Más. */}
+    <div className="space-y-3">
+      {/* Una fila: título · ⓘ · período · ‹ › · contra · Más. */}
       <div className="flex flex-wrap items-center gap-2">
-        <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">Comparar períodos</SectionTitle>
+        <SectionTitle className="whitespace-nowrap text-[var(--text-primary)]">
+          Comparar períodos
+        </SectionTitle>
         <InfoTip
           title="Comparar períodos"
-          what="Tus ventas de mostrador de este período contra el anterior: total, transacciones, ticket, clientes, costo y margen bruto."
-          affects="Cuenta las ventas del mostrador, no los pedidos web ni el aserrío. La ganancia del mes con todos los costos está en Ganancias."
-          example="«Mes» compara del 1 a hoy contra el mes pasado entero."
+          what="Una semana, mes, trimestre o año contra el anterior o contra el mismo de hace un año. Ventas = mostrador + pedidos concretados, igual que el Resumen de Mi Plata."
+          affects="El margen y el costo sólo cuentan las ventas que guardaron su costo. Clientes únicos = teléfonos distintos que compraron (la venta sin cliente no cuenta). «—» = no hay con qué comparar."
+          example="Con «Mes» y ‹ ves setiembre contra agosto. La semana va de lunes a domingo, en hora de Lima."
         />
-        <div role="radiogroup" aria-label="Período" className="inline-flex overflow-hidden rounded-xl border border-[var(--rule-base)]">
-          {PRESETS.map(p => (
-            <button
-              key={p.id}
-              type="button"
-              role="radio"
-              aria-checked={preset === p.id}
-              onClick={() => setPreset(p.id)}
-              className={cn(
-                "min-h-12 px-3 text-sm font-semibold transition-colors",
-                preset === p.id
-                  ? "bg-[var(--accent-ink)] text-white dark:bg-[var(--accent)] dark:text-[var(--surface-canvas)]"
-                  : "bg-[var(--surface-raised)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
-              )}
-            >
-              {p.label}
-            </button>
-          ))}
+        <SegmentedControl
+          value={periodo}
+          onChange={setPeriodo}
+          options={PERIODOS}
+          size="lg"
+          label="Período"
+        />
+        <div className="inline-flex gap-1">
+          <button
+            type="button"
+            onClick={irAtras}
+            className={FLECHA}
+            aria-label="Período anterior"
+            title="Período anterior"
+          >
+            <ChevronLeft className="h-5 w-5" aria-hidden />
+          </button>
+          <button
+            type="button"
+            onClick={irAdelante}
+            disabled={enCurso}
+            className={FLECHA}
+            aria-label="Período siguiente"
+            title="Período siguiente"
+          >
+            <ChevronRight className="h-5 w-5" aria-hidden />
+          </button>
         </div>
-        {data.length > 0 && (
-          <span className="text-sm font-semibold text-[var(--text-secondary)]">
-            {improvements} de {data.length} mejoraron
-          </span>
-        )}
+        {/* Un select y no otro segmentado: con los dos, «Más» caía a otra fila a 1280 px. */}
+        <select
+          aria-label="Comparar contra"
+          value={contra}
+          onChange={(e) => setContra(e.target.value as ContraPeriodo)}
+          className="h-12 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 text-sm font-semibold text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-primary/30"
+        >
+          {CONTRAS.map((c) => (
+            <option key={c.value} value={c.value}>
+              {c.label}
+            </option>
+          ))}
+        </select>
         <div className="ml-auto">
           <ActionMenu
             label="Más"
@@ -179,62 +181,91 @@ export default function PeriodComparatorTab() {
             soloIcono
             size="md"
             className="w-12 shrink-0"
-            title="Descargar"
-            actions={[{ id: "csv", label: "Descargar (CSV)", icon: Download, onSelect: exportar, disabled: data.length === 0 }]}
+            actions={[
+              {
+                id: "hoy",
+                label: "Volver al período de hoy",
+                icon: RotateCcw,
+                onSelect: () => setFecha(null),
+                disabled: fecha == null,
+              },
+              { id: "actualizar", label: "Actualizar", icon: RefreshCw, onSelect: recargar },
+              {
+                id: "csv",
+                label: "Descargar (CSV)",
+                icon: Download,
+                onSelect: exportar,
+                disabled: !mostrado,
+              },
+            ]}
           />
         </div>
       </div>
 
-      {/* Comparison cards */}
-      {loading ? (
-        <div className="text-center py-10 text-sm text-[var(--text-tertiary)]">Cargando tus ventas…</div>
-      ) : data.length === 0 ? (
-        <div className="text-center py-10">
-          <BarChart3 className="h-10 w-10 text-[var(--text-tertiary)] dark:text-surface mx-auto mb-2" />
-          <p className="text-sm font-semibold text-[var(--text-tertiary)]">Sin ventas en este período</p>
-        </div>
-      ) : (
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {data.map(m => {
-          const diff = m.periodA - m.periodB;
-          const pct = m.periodB !== 0 ? (diff / m.periodB) * 100 : 0;
-          const sinDato = !Number.isFinite(diff);
-          const isGood = BAJAR_ES_BUENO.has(m.label) ? diff <= 0 : diff >= 0;
-          const maxVal = Math.max(Number.isFinite(m.periodA) ? m.periodA : 0, Number.isFinite(m.periodB) ? m.periodB : 0);
+      {error && (
+        <p className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--data-error-500)]/40 bg-[var(--data-error-500)]/10 px-4 py-3 text-sm font-bold text-[var(--data-error-ink)]">
+          No se pudo cargar la comparación ({error}).
+          <button type="button" onClick={recargar} className="min-h-12 rounded-xl px-3 underline">
+            Reintentar
+          </button>
+        </p>
+      )}
 
-          return (
-            <div key={m.label} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{m.label}</span>
-                <span className={cn("flex items-center gap-0.5 text-sm font-bold", sinDato ? "text-[var(--text-tertiary)]" : isGood ? "text-[var(--data-success-ink)]" : "text-[var(--data-error-ink)]")}>
-                  {sinDato || diff === 0 ? <Minus className="h-3 w-3" /> : isGood ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
-                  {!sinDato && m.periodB !== 0 ? `${pct > 0 ? "+" : ""}${pct.toFixed(1)}%` : "—"}
-                </span>
-              </div>
-              <div className="space-y-2">
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-[var(--text-primary)] font-semibold">{current.aLabel}</span>
-                    <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmtNum(m.periodA, m.format)}</span>
-                  </div>
-                  <div className="w-full h-2 bg-[var(--rule-soft)] rounded-full overflow-hidden">
-                    <div className="h-full bg-[var(--accent)] rounded-full transition-all" style={{ width: `${maxVal > 0 && Number.isFinite(m.periodA) ? Math.max(0, (m.periodA / maxVal) * 100) : 0}%` }} />
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-[var(--text-secondary)] font-semibold">{current.bLabel}</span>
-                    <span className="font-bold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmtNum(m.periodB, m.format)}</span>
-                  </div>
-                  <div className="w-full h-2 bg-[var(--rule-soft)] rounded-full overflow-hidden">
-                    <div className="h-full bg-[var(--text-tertiary)] rounded-full transition-all" style={{ width: `${maxVal > 0 && Number.isFinite(m.periodB) ? Math.max(0, (m.periodB / maxVal) * 100) : 0}%` }} />
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      {!error && !mostrado && cargando && (
+        <p className="py-6 text-sm text-[var(--text-secondary)]">Cargando la comparación…</p>
+      )}
+
+      {!error && mostrado && (
+        <div aria-busy={cargando || !vigente} className={cn("space-y-2", !vigente && "opacity-60")}>
+          <ListaMovil
+            filas={filas}
+            etiquetaActual={mostrado.actual.etiqueta}
+            etiquetaBase={mostrado.base.etiqueta}
+          />
+          {juzgables.length > 0 && (
+            <p className="text-right text-sm font-semibold text-[var(--text-secondary)] sm:hidden">
+              {mejoraron} de {juzgables.length} mejoraron
+            </p>
+          )}
+          <DataTable zebra wrapperClassName="hidden sm:block">
+            <thead>
+              <tr>
+                <th>Métrica</th>
+                <th className="text-right">{mostrado.actual.etiqueta}</th>
+                <th className="text-right">{mostrado.base.etiqueta}</th>
+                <th className="text-right">Cambio</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filas.map((f) => (
+                <tr key={f.key}>
+                  <td className="text-sm font-semibold text-[var(--text-primary)]">{f.label}</td>
+                  <td className="text-right text-base font-bold tabular-nums text-[var(--text-primary)]">
+                    {valor(f.tipo, f.a)}
+                  </td>
+                  <td className="text-right text-sm tabular-nums text-[var(--text-secondary)]">
+                    {valor(f.tipo, f.b)}
+                  </td>
+                  <td className="text-right">
+                    <Cambio cambio={f.cambio} sentido={f.sentido} tipo={f.tipo} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            {juzgables.length > 0 && (
+              <tfoot>
+                <tr>
+                  <td
+                    colSpan={4}
+                    className="text-right text-sm font-semibold text-[var(--text-secondary)]"
+                  >
+                    {mejoraron} de {juzgables.length} mejoraron
+                  </td>
+                </tr>
+              </tfoot>
+            )}
+          </DataTable>
+        </div>
       )}
     </div>
   );
