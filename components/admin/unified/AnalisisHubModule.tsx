@@ -1,8 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { BarChart3, TrendingUp, Sparkles } from "@buleje/design-system/icons";
-import { useVistaModulo } from "@/hooks/use-vista-modulo";
+import { BarChart3, TrendingUp, BellRing } from "@buleje/design-system/icons";
+import { useVistaModulo, type ParamsDeVista } from "@/hooks/use-vista-modulo";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
 
@@ -18,20 +18,28 @@ const InteligenciaTab = dynamic(() => import("@/components/admin/analisis/Inteli
 
 const MODULE_ID = "analisis-hub";
 
+// 11-10: rótulos en su idioma («Analytics Pro» → Métricas) y la vista
+// «inteligencia» pasa a ser Alertas: lo demás que mostraba estaba repetido en
+// Mi Plata, Compras, Métricas y Predicción (ver analisis/InteligenciaTab.tsx).
+// Los ids no cambian: los enlaces guardados siguen abriendo lo mismo.
 const TABS = [
-  { id: "analytics",    label: "Analytics Pro",      icon: BarChart3 },
-  { id: "forecast",     label: "Predicción Demanda", icon: TrendingUp },
-  { id: "inteligencia", label: "Inteligencia",       icon: Sparkles },
+  { id: "analytics",    label: "Métricas",   icon: BarChart3 },
+  { id: "forecast",     label: "Predicción", icon: TrendingUp },
+  { id: "inteligencia", label: "Alertas",    icon: BellRing },
 ];
 
 /** Los ids, estables: el hook los usa como dependencia. */
 const TAB_IDS = TABS.map((t) => t.id);
+type Vista = "analytics" | "forecast" | "inteligencia";
+
+/** Métricas y Alertas recuerdan su sección en `?sub=`: al cambiar de vista no viaja a la otra. */
+const PARAMS_DE_VISTA: ParamsDeVista<Vista> = { analytics: ["sub"], inteligencia: ["sub"] };
 
 export default function AnalisisHubModule({ initialTab }: { initialTab?: string } = {}) {
   // La sub-vista vive en `?vista=`: así se comparte por link, el botón «atrás»
   // la recorre y el buscador global puede mandar directo acá. `initialTab` gana
   // cuando el módulo se abre desde un tab alias (ver useVistaModulo).
-  const { vista: sub, irA: setSub } = useVistaModulo(MODULE_ID, TAB_IDS, TAB_IDS[0], initialTab);
+  const { vista: sub, irA: setSub } = useVistaModulo<Vista>(MODULE_ID, TAB_IDS as Vista[], "analytics", initialTab, { paramsDeVista: PARAMS_DE_VISTA });
 
   return (
     <div className="space-y-4">
@@ -49,7 +57,7 @@ export default function AnalisisHubModule({ initialTab }: { initialTab?: string 
         moduleId={MODULE_ID}
         heading={{
           title: "Análisis",
-          description: "Métricas del negocio, predicción de demanda e inteligencia comercial.",
+          description: "Las cifras del negocio en gráficos, lo que se viene y lo que hay que revisar.",
           icon: BarChart3,
         }}
       >

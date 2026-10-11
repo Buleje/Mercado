@@ -56,6 +56,9 @@ const NO_TABS_MODULES = [
   // Pedidos y reparto › Reparto (2026-10-10): sus cinco secciones van en
   // `BarraDeSecciones` (`?sub=`), como Turnos y Me deben; no usa AdminTabBar.
   "DeliveryPartnersModule.tsx",
+  // Análisis › Métricas (2026-10-11): su tercer nivel de pestañas pasó a
+  // `BarraDeSecciones`; la barra y el título los pone AnalisisHubModule.
+  "AnalyticsBIModule.tsx",
 ];
 // Sub-módulos que viven SIEMPRE dentro de la pestaña de un hub y no pintan
 // título propio: la pestaña marcada arriba ya lo dice, y su propia barra de

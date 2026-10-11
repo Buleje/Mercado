@@ -1,7 +1,7 @@
 "use client";
 
 import { SectionTitle } from "@buleje/design-system";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 import { Target, Plus, Pencil, Trash2, Check, Download, RefreshCw, TrendingUp, TrendingDown, Minus } from "@buleje/design-system/icons";
 import { cn, exportToCSV } from "@/lib/utils";
 import type { CustomKpi, KpiTrendPoint } from "@/app/api/custom-kpis/route";
@@ -43,10 +43,27 @@ const COLOR_OPTIONS = [
   { label: "Gris", value: "bg-gray-500" },
 ];
 
-export default function CustomKPITab() {
+/** Lo que la vista que lo monta necesita para dibujar la cabecera en SU fila. */
+export interface AccionesIndicadores {
+  nuevo: () => void;
+  exportar: () => void;
+  recargar: () => void;
+  cargando: boolean;
+  cuantos: number;
+}
+
+/**
+ * «Mis indicadores» (Análisis › Alertas). Con `cabecera`, la vista dibuja el
+ * título, las secciones y los botones en una fila; sin ella, la de siempre.
+ *
+ * Sin indicadores guardados el endpoint devuelve cuatro de EJEMPLO
+ * (`demo: true`, cifras inventadas: «Ticket promedio S/ 54,20»): se mostraban
+ * como si fueran del negocio. Medido 11-10: 0 indicadores guardados en toda la
+ * base. Ahora `demo` = vacío.
+ */
+export default function CustomKPITab({ cabecera }: { cabecera?: (a: AccionesIndicadores) => ReactNode } = {}) {
   const [kpis, setKpis] = useState<CustomKpi[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isDemo, setIsDemo] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editKpi, setEditKpi] = useState<CustomKpi | null>(null);
   const [saving, setSaving] = useState(false);
@@ -73,8 +90,7 @@ export default function CustomKPITab() {
         const data = await res.json();
         if (!vigente()) return;
         if (cambiosAlSalir !== cargasRef.current.cambios) continue;
-        setKpis(data.kpis ?? []);
-        setIsDemo(!!data.demo);
+        setKpis(data.demo ? [] : (data.kpis ?? []));
         return;
       }
     } catch {
@@ -127,34 +143,30 @@ export default function CustomKPITab() {
     setKpis(prev => prev.filter(k => k.id !== id));
   };
 
+  const exportar = () => exportToCSV(kpis.map(k => ({ nombre: k.name, valor: k.currentValue, meta: k.target, unidad: k.unit, tendencia: k.trend, cambio: k.changePercent, categoria: k.category })), "mis-indicadores");
   const TrendIcon = (trend: CustomKpi["trend"]) =>
     trend === "up" ? <TrendingUp className="h-3.5 w-3.5" /> : trend === "down" ? <TrendingDown className="h-3.5 w-3.5" /> : <Minus className="h-3.5 w-3.5" />;
 
   return (
     <div className="space-y-3 sm:space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <SectionTitle className="text-[var(--text-primary)] dark:text-[var(--text-primary)] flex flex-wrap items-center gap-2">
-            <Target className="h-6 w-6 text-primary" /> KPIs Personalizados
-            {isDemo && <span className="text-xs font-normal text-[var(--data-warning-500)] bg-[var(--data-warning-50)] dark:bg-[var(--data-warning-500)]/20 px-2 py-0.5 rounded-full">datos demo</span>}
+      {cabecera ? cabecera({ nuevo: openCreate, exportar, recargar: load, cargando: loading, cuantos: kpis.length }) : (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <SectionTitle className="text-[var(--text-primary)] flex flex-wrap items-center gap-2">
+            <Target className="h-6 w-6 text-primary" /> Mis indicadores
           </SectionTitle>
-          <p className="text-sm text-[var(--text-secondary)] dark:text-muted mt-0.5">Define y monitorea tus métricas clave de negocio</p>
+          <div className="flex flex-wrap gap-2">
+            <button aria-label="Actualizar" onClick={load} disabled={loading} className="inline-flex h-12 w-12 items-center justify-center rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
+              <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+            </button>
+            <button onClick={exportar} className="flex min-h-12 items-center gap-1.5 px-3 rounded-xl text-sm font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10">
+              <Download className="h-4 w-4" /> CSV
+            </button>
+            <button onClick={openCreate} className="flex items-center gap-1.5 px-4 min-h-12 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary/90">
+              <Plus className="h-4 w-4" /> Nuevo indicador
+            </button>
+          </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <button aria-label="Actualizar" onClick={load} disabled={loading} className="p-1.5 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]">
-            <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
-          </button>
-          <button onClick={() => exportToCSV(kpis.map(k => ({ nombre: k.name, valor: k.currentValue, meta: k.target, unidad: k.unit, tendencia: k.trend, cambio: k.changePercent, categoria: k.category })), "kpis")}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--accent-ink)] dark:text-[var(--accent)] hover:bg-primary/10">
-            <Download className="h-3.5 w-3.5" /> CSV
-          </button>
-          <button onClick={openCreate} className="flex items-center gap-1.5 px-4 min-h-10 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary/90">
-            <Plus className="h-4 w-4" /> Nuevo KPI
-          </button>
-        </div>
-      </div>
-
+      )}
       {/* Cards */}
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -165,10 +177,10 @@ export default function CustomKPITab() {
       ) : kpis.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-[var(--text-tertiary)] bg-[var(--surface-raised)] rounded-xl border border-dashed border-[var(--rule-base)] dark:border-[var(--rule-base)]">
           <Target className="h-12 w-12 mb-3 text-[var(--text-tertiary)]" />
-          <p className="font-bold text-[var(--text-secondary)] dark:text-muted">Sin KPIs definidos</p>
-          <p className="text-sm mt-1">Crea tu primer KPI personalizado</p>
-          <button onClick={openCreate} className="mt-4 flex items-center gap-1.5 px-4 min-h-10 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary/90">
-            <Plus className="h-4 w-4" /> Crear KPI
+          <p className="font-bold text-[var(--text-secondary)]">Todavía no armaste indicadores propios</p>
+          <p className="text-sm mt-1 px-4 text-center">Para seguir una cifra con su meta y su avance que se calcula solo, usa Metas y logros.</p>
+          <button onClick={openCreate} className="mt-4 flex items-center gap-1.5 px-4 min-h-12 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary/90">
+            <Plus className="h-4 w-4" /> Crear indicador
           </button>
         </div>
       ) : (
@@ -181,16 +193,16 @@ export default function CustomKPITab() {
 
             return (
               <div key={k.id} className="bg-[var(--surface-raised)] rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] p-4 relative group">
-                <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button aria-label="Editar" onClick={() => openEdit(k)} className="p-1 rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"><Pencil className="h-3 w-3" /></button>
-                  <button aria-label="Eliminar" onClick={() => remove(k.id)} className="p-1 rounded-xl hover:bg-[var(--data-error-50)] dark:hover:bg-red-950/20 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)]"><Trash2 className="h-3 w-3" /></button>
+                <div className="absolute top-3 right-3 flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition-opacity">
+                  <button aria-label="Editar" onClick={() => openEdit(k)} className="inline-flex h-9 w-9 items-center justify-center rounded-xl hover:bg-[var(--surface-sunken)] text-[var(--text-tertiary)]"><Pencil className="h-4 w-4" /></button>
+                  <button aria-label="Eliminar" onClick={() => remove(k.id)} className="inline-flex h-9 w-9 items-center justify-center rounded-xl hover:bg-[var(--data-error-500)]/10 text-[var(--text-tertiary)] hover:text-[var(--data-error-500)]"><Trash2 className="h-4 w-4" /></button>
                 </div>
 
                 <div className="flex items-center gap-2 mb-2">
                   <div className={cn("h-2.5 w-2.5 rounded-full shrink-0", k.color)} />
-                  <p className="text-[length:var(--ts-2xs)] font-bold text-[var(--text-secondary)] dark:text-muted">{k.category}</p>
+                  <p className="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">{k.category}</p>
                 </div>
-                <p className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1 pr-12">{k.name}</p>
+                <p className="font-bold text-sm text-[var(--text-primary)] dark:text-[var(--text-primary)] mb-1 pr-20">{k.name}</p>
 
                 <div className="flex items-baseline gap-2 mb-1">
                   <span className="text-xl font-extrabold text-[var(--text-primary)] dark:text-[var(--text-primary)]">{fmt(k.currentValue, k.unit)}</span>
@@ -212,11 +224,11 @@ export default function CustomKPITab() {
                     <div className={cn("h-full rounded-full transition-all", isGood ? "bg-primary/10" : "bg-[var(--data-warning-500)]")}
                       style={{ width: `${progress}%` }} />
                   </div>
-                  <span className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] shrink-0">{fmt(k.target, k.unit)}</span>
+                  <span className="text-xs text-[var(--text-tertiary)] shrink-0">{fmt(k.target, k.unit)}</span>
                 </div>
 
-                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] font-mono mt-1 truncate">{k.formula}</p>
-                <p className="text-[length:var(--ts-2xs)] text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] mt-0.5">{k.period}</p>
+                <p className="text-xs text-[var(--text-tertiary)] font-mono mt-1 truncate">{k.formula}</p>
+                <p className="text-xs text-[var(--text-tertiary)] dark:text-[var(--text-secondary)] mt-0.5">{k.period}</p>
               </div>
             );
           })}
@@ -227,7 +239,7 @@ export default function CustomKPITab() {
       <AdminModal
         open={showModal}
         onClose={() => setShowModal(false)}
-        title={editKpi ? "Editar KPI" : "Nuevo KPI"}
+        title={editKpi ? "Editar indicador" : "Nuevo indicador"}
         variant="default"
         footer={
           <div className="flex justify-end gap-2">
@@ -243,7 +255,7 @@ export default function CustomKPITab() {
             <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="w-full mt-1 px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm" placeholder="Ej: Ticket Promedio" />
           </Field>
           <Field label="Descripción" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
-            <input value={form.desc} onChange={e => setForm(f => ({ ...f, desc: e.target.value }))} className="w-full mt-1 px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm" placeholder="¿Qué mide este KPI?" />
+            <input value={form.desc} onChange={e => setForm(f => ({ ...f, desc: e.target.value }))} className="w-full mt-1 px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm" placeholder="¿Qué mide?" />
           </Field>
           <Field label="Fórmula" labelClassName="text-xs font-bold text-[var(--text-secondary)] dark:text-muted">
             <input value={form.formula} onChange={e => setForm(f => ({ ...f, formula: e.target.value }))} className="w-full mt-1 px-3 h-10 rounded-xl border border-[var(--rule-base)] dark:border-[var(--rule-base)] bg-[var(--surface-raised)] text-sm font-mono" placeholder="ventas / transacciones" />

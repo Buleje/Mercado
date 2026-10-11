@@ -93,7 +93,7 @@ describe("CustomKPITab — una carga vieja no pisa lo que ya cambió", () => {
     // El GET que salió en el montaje llega ahora, con la lista de antes del borrado.
     await resolver(gets()[0], { kpis: [TICKET] });
     expect(screen.queryByText("Ticket promedio")).toBeNull();
-    expect(screen.getByText("Sin KPIs definidos")).toBeTruthy();
+    expect(screen.getByText("Todavía no armaste indicadores propios")).toBeTruthy();
   });
 
   it("con Eliminar en camino, un Actualizar que vuelve después no trae el KPI de vuelta", async () => {
@@ -118,7 +118,7 @@ describe("CustomKPITab — una carga vieja no pisa lo que ya cambió", () => {
     await waitFor(() => expect(gets()).toHaveLength(4));
     await resolver(gets()[3], { kpis: [] });
     expect(screen.queryByText("Ticket promedio")).toBeNull();
-    expect(screen.getByText("Sin KPIs definidos")).toBeTruthy();
+    expect(screen.getByText("Todavía no armaste indicadores propios")).toBeTruthy();
   });
 
   it("guardar un KPI nuevo mientras viaja la carga inicial no deja la lista sólo con el nuevo (se vuelve a pedir)", async () => {
@@ -126,7 +126,7 @@ describe("CustomKPITab — una carga vieja no pisa lo que ya cambió", () => {
     render(<CustomKPITab />);
     await waitFor(() => expect(gets()).toHaveLength(1));
 
-    fireEvent.click(screen.getByRole("button", { name: /Nuevo KPI/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Nuevo indicador/ }));
     fireEvent.change(await screen.findByPlaceholderText("Ej: Ticket Promedio"), { target: { value: "Margen" } });
     fireEvent.click(screen.getByRole("button", { name: /Guardar/ }));
 

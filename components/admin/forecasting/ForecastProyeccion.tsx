@@ -28,7 +28,15 @@ export default function ForecastProyeccion() {
 }
 
 /** Los paneles A y D como dos celdas de la grilla de quien los monta. */
-export function ForecastProyeccionPanel({ f }: { f: Forecasting }) {
+/**
+ * `sinProyeccion` deja sólo el panel D. El panel A proyecta UN producto (el
+ * primero de `/api/products?limit=1`) y muestra sus UNIDADES con formato de
+ * soles como si fueran «S/ X proyectados en los próximos 7 días» del negocio
+ * (`/api/inventory/forecast`: weeklyAvg = cantidad/día × 7). Análisis ›
+ * Predicción usa en su lugar el pronóstico del negocio entero
+ * (`/api/analytics/predictions`).
+ */
+export function ForecastProyeccionPanel({ f, sinProyeccion = false }: { f: Forecasting; sinProyeccion?: boolean }) {
   const { state } = f;
 
   // ── Top 5 productos por demanda proyectada (Panel D) ──────────────────────
@@ -45,6 +53,8 @@ export function ForecastProyeccionPanel({ f }: { f: Forecasting }) {
 
   return (
     <>
+        {!sinProyeccion && (
+        <>
         {/* ════════════════════════════════════════════════════════════════
             PANEL A — Resumen de ventas proyectadas (7 días)
         ════════════════════════════════════════════════════════════════ */}
@@ -133,6 +143,8 @@ export function ForecastProyeccionPanel({ f }: { f: Forecasting }) {
             </div>
           )}
         </PanelCard>
+        </>
+        )}
 
         {/* ════════════════════════════════════════════════════════════════
             PANEL D — Top 5 productos por demanda proyectada

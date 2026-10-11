@@ -1,82 +1,76 @@
 "use client";
 
-import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 /**
- * ForecastingDashboard.tsx
+ * Análisis › Predicción: cuánto se va a vender y a qué precio conviene vender.
  *
- * Dashboard de predicción de ventas para el panel admin.
- * Se integra como tab/sección dentro del admin panel existente.
+ * Patrón del panel (11-10): UNA fila con título + ⓘ · «Más» (Actualizar y el
+ * reorden, que vive en Compras). Debajo:
+ *   1. El pronóstico del negocio entero (`PredictiveAnalyticsTab`,
+ *      `/api/analytics/predictions`): ventas de la semana, lo que se agota,
+ *      mejor día para el proveedor, clientes que no vuelven, hora pico. Era la
+ *      sección «Predicciones» de Métricas.
+ *   2. Top 5 por demanda y sugerencias de precio (`ForecastProyeccion` panel D,
+ *      `ForecastPrecios`).
  *
- * Paneles:
- *   A — Resumen de ventas proyectadas (7 días)  →  GET /api/inventory/forecast?productId=...
- *       Nota: se usa sin productId para el forecast global (primer producto activo como proxy)
- *             o directamente el endpoint de demand summary
- *   B — Productos para reordenar               →  GET /api/forecasting/reorder-suggestions
- *   C — Sugerencias de precios                 →  GET /api/forecasting/price-suggestions
- *   D — Top 5 productos por demanda proyectada →  derivado de reorder-suggestions
+ * Lo que salió de aquí:
+ *   · «Ventas Proyectadas — 7 días» (panel A): era UN producto, en unidades
+ *     mostradas como soles, presentado como el negocio. Lo reemplaza (1).
+ *   · «Productos para Reordenar» + Auto-reorden (`ForecastReorden`): el mismo
+ *     panel está en Compras › Sugerencias (SugerenciasVista.tsx:51-58), donde
+ *     se generan las órdenes. Queda en «Más» para quien puede abrirlo.
  *
- * Reglas respetadas:
- *   - "use client" solo en este archivo (sin propagar hacia arriba)
- *   - safeParse de Zod para validar respuestas de la API
- *   - No librerías de gráficos externas — barras con divs
- *   - Dark mode: todas las clases incluyen variantes dark:
- *   - Touch targets mínimo 44x44px
- *   - Estados loading / error / empty en cada panel
- *   - Colores: tokens del DS (sin hex)
- *   - Refresco manual con botón "Actualizar"
- *
- * Partido en piezas (plan «panel unificado», ola 3) SIN cambiar lo que hace:
- *   forecast-datos.ts      schemas, tipos y la proyección día a día
- *   use-forecasting.ts     la carga (los 3 paneles en paralelo) y sus acciones
- *   ForecastProyeccion     paneles A y D
- *   ForecastReorden        panel B (+ Auto-reorden) — también en Compras › Sugerencias
- *   ForecastPrecios        panel C
- *   ForecastPiezas         PanelCard, TrendBadge, MetricChip, PriceCard
- * Esta cáscara los compone con una sola carga y un solo «Actualizar».
+ * Piezas: forecast-datos.ts (schemas), use-forecasting.ts (carga),
+ * ForecastProyeccion, ForecastReorden (también en Compras), ForecastPrecios,
+ * ForecastPiezas.
  */
 
-import { TrendingUp, RefreshCw } from "@buleje/design-system/icons";
-import { cn } from "@/lib/utils";
-import { useForecasting } from "./use-forecasting";
+import { useState } from "react";
+import dynamic from "next/dynamic";
+import { RefreshCw } from "@buleje/design-system/icons";
+import { CabeceraAnalisis } from "@/components/admin/analisis/CabeceraAnalisis";
+import { useMudanzasAnalisis } from "@/components/admin/analisis/use-mudanzas-analisis";
+import { TabLoadingSkeleton as S } from "@/components/ui/skeletons";
+import { useForecasting, type PanelForecast } from "./use-forecasting";
 import { ForecastProyeccionPanel } from "./ForecastProyeccion";
-import { ForecastReordenPanel } from "./ForecastReorden";
 import { ForecastPreciosPanel } from "./ForecastPrecios";
 
-export default function ForecastingDashboard() {
-  const f = useForecasting();
-  const { state, cargarDatos } = f;
+const PredictiveAnalyticsTab = dynamic(() => import("@/components/admin/PredictiveAnalyticsTab"), { loading: S });
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Render
-  // ─────────────────────────────────────────────────────────────────────────
+/** Sin «forecast»: ya no se pide el pronóstico de un producto suelto. */
+const PANELES: readonly PanelForecast[] = ["reorder", "prices"];
+
+const AYUDA = {
+  what: "Cuánto vas a vender la próxima semana, qué productos se agotan, qué día conviene ir al proveedor y a qué precio vender.",
+  affects: "Sale de tus ventas de las últimas 4 semanas. Lo que hay que reponer, con auto-reorden, está en Compras › Sugerencias (en «Más»).",
+  example: "«Ventas próxima semana S/ 4 820, +6 % vs. el promedio de 4 semanas»: compra un poco más para el sábado.",
+};
+
+export default function ForecastingDashboard() {
+  const f = useForecasting(PANELES);
+  const [vuelta, setVuelta] = useState(0);
+  const mudanzas = useMudanzasAnalisis(["reorden"]);
+
+  const actualizar = () => {
+    setVuelta((v) => v + 1);
+    void f.cargarDatos();
+  };
 
   return (
-    <div className="space-y-6">
-      <AdminModuleHeader
-        eyebrow="Inteligencia · Inventario"
-        title="Predicción de Ventas"
-        description="Proyecciones basadas en media móvil ponderada (últimos 30 días). Reorden automático y sugerencias de precio listos para aplicar."
-        icon={TrendingUp}
-      >
-        <button
-          onClick={cargarDatos}
-          disabled={state.loading}
-          className={cn(
-            "inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors",
-            "bg-primary text-white hover:bg-primary/90",
-            "disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px]",
-          )}
-          aria-label="Actualizar datos de predicción"
-        >
-          <RefreshCw className={cn("w-4 h-4", state.loading && "animate-spin")} />
-          {state.loading ? "Cargando..." : "Actualizar"}
-        </button>
-      </AdminModuleHeader>
+    <div className="space-y-3">
+      <CabeceraAnalisis
+        titulo="Predicción"
+        ayuda={AYUDA}
+        acciones={[
+          { id: "recargar", label: "Actualizar", hint: "Vuelve a calcular con las ventas de hoy", icon: RefreshCw, onSelect: actualizar },
+          ...mudanzas,
+        ]}
+        tituloMas="Actualizar y qué reponer (Compras)"
+      />
 
-      {/* ── Grid principal (2 columnas en desktop) ───────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
-        <ForecastProyeccionPanel f={f} />
-        <ForecastReordenPanel f={f} />
+      <PredictiveAnalyticsTab embebido vuelta={vuelta} />
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <ForecastProyeccionPanel f={f} sinProyeccion />
         <ForecastPreciosPanel f={f} />
       </div>
     </div>

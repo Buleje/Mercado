@@ -103,7 +103,7 @@ function ClockVisual({ hour }: { hour: number }) {
       </svg>
       <div>
         <p className="text-3xl font-extrabold text-[var(--text-primary)]">{h12}:00 {ampm}</p>
-        <p className="text-xs text-[var(--text-tertiary)]">Hora con mas clientes</p>
+        <p className="text-xs text-[var(--text-tertiary)]">Hora con más clientes</p>
       </div>
     </div>
   );
@@ -111,7 +111,11 @@ function ClockVisual({ hour }: { hour: number }) {
 
 /* ── Main Component ─────────────────────────────────────────────────────────── */
 
-export default function PredictiveAnalyticsTab() {
+/**
+ * `embebido`: la vista que lo monta (Análisis › Predicción) ya pone el título
+ * y «Actualizar» en su fila; `vuelta` cambia cuando ahí se pide actualizar.
+ */
+export default function PredictiveAnalyticsTab({ embebido = false, vuelta = 0 }: { embebido?: boolean; vuelta?: number } = {}) {
   const [data, setData] = useState<Predictions | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -131,7 +135,7 @@ export default function PredictiveAnalyticsTab() {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); }, [load, vuelta]);
 
   if (loading) {
     return (
@@ -161,14 +165,15 @@ export default function PredictiveAnalyticsTab() {
   if (!data) return null;
 
   return (
-    <div className="p-4 space-y-4">
+    <div className={embebido ? "grid gap-3 sm:grid-cols-2 xl:grid-cols-3" : "p-4 space-y-4"}>
 
-      {/* Header + refresh */}
+      {/* Header + refresh (sin él cuando la vista ya los pone) */}
+      {!embebido && (
       <div className="flex items-center justify-between">
         <div>
           <SectionTitle className="text-sm font-bold text-[var(--text-primary)]">Predicciones IA</SectionTitle>
           <p className="text-xs text-[var(--text-tertiary)]">
-            Basado en historial de 28 dias · {formatTime(data.generatedAt)}
+            Basado en historial de 28 días · {formatTime(data.generatedAt)}
           </p>
         </div>
         <button
@@ -179,6 +184,7 @@ export default function PredictiveAnalyticsTab() {
           Actualizar
         </button>
       </div>
+      )}
 
       {/* Card 1: Ventas próxima semana */}
       <PredCard icon={data.trendPct >= 0 ? TrendingUp : TrendingDown} title="Ventas próxima semana" iconBg={data.trendPct >= 0 ? "bg-primary/10" : "bg-[var(--data-error-500)]"}>
@@ -195,8 +201,8 @@ export default function PredictiveAnalyticsTab() {
         </div>
         <p className="text-xs text-[var(--text-tertiary)]">
           {data.trendPct >= 0
-            ? "La tendencia esta subiendo respecto al promedio de las 4 semanas anteriores"
-            : "La tendencia esta bajando respecto al promedio de las 4 semanas anteriores"}
+            ? "La tendencia está subiendo respecto al promedio de las 4 semanas anteriores"
+            : "La tendencia está bajando respecto al promedio de las 4 semanas anteriores"}
         </p>
       </PredCard>
 
@@ -233,13 +239,13 @@ export default function PredictiveAnalyticsTab() {
       </PredCard>
 
       {/* Card 3: Mejor día para comprar */}
-      <PredCard icon={Calendar} title="Mejor dia para ir al proveedor" iconBg="bg-primary/10">
+      <PredCard icon={Calendar} title="Mejor día para ir al proveedor" iconBg="bg-primary/10">
         <div>
           <p className="text-3xl font-extrabold text-[var(--text-primary)]">{data.bestPurchaseDay.day}</p>
           <p className="text-xs text-[var(--text-tertiary)] mt-1">{data.bestPurchaseDay.reason}</p>
         </div>
         <p className="text-xs text-[var(--text-tertiary)]">
-          Ir ese dia significa menos clientes esperando mientras recibes mercaderia
+          Ir ese día significa menos clientes esperando mientras recibes mercadería
         </p>
       </PredCard>
 
@@ -254,7 +260,7 @@ export default function PredictiveAnalyticsTab() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{c.name}</p>
                   <p className="text-[length:var(--ts-xs)] text-[var(--text-tertiary)]">
-                    {c.daysAgo !== null ? `Sin comprar hace ${c.daysAgo} dias` : "Sin historial reciente"}
+                    {c.daysAgo !== null ? `Sin comprar hace ${c.daysAgo} días` : "Sin historial reciente"}
                   </p>
                 </div>
                 {c.whatsappUrl && (
@@ -262,9 +268,9 @@ export default function PredictiveAnalyticsTab() {
                     href={c.whatsappUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary/10 text-white text-[length:var(--ts-xs)] font-bold hover:bg-primary/10 transition-colors min-h-[44px]"
+                    className="shrink-0 flex items-center gap-1 px-3 rounded-xl bg-primary/10 text-[var(--accent-ink)] text-sm font-bold hover:bg-primary/20 transition-colors min-h-12"
                   >
-                    <ExternalLink className="h-3 w-3" />
+                    <ExternalLink className="h-4 w-4" aria-hidden />
                     WhatsApp
                   </a>
                 )}
@@ -273,15 +279,15 @@ export default function PredictiveAnalyticsTab() {
           </div>
         )}
         <p className="text-xs text-[var(--text-tertiary)]">
-          Clientes que no compran hace mas de 30 dias tienen mayor riesgo de no volver
+          Clientes que no compran hace más de 30 días tienen mayor riesgo de no volver
         </p>
       </PredCard>
 
       {/* Card 5: Hora pico */}
-      <PredCard icon={Clock} title="Hora con mas clientes" iconBg="bg-[var(--text-primary)]">
+      <PredCard icon={Clock} title="Hora con más clientes" iconBg="bg-[var(--text-primary)]">
         <ClockVisual hour={data.peakHour.hour} />
         <p className="text-xs text-[var(--text-tertiary)]">
-          En los ultimos 28 dias, la hora con mas ventas fue a las {data.peakHour.label} con {data.peakHour.salesCount} transacciones
+          En los últimos 28 días, la hora con más ventas fue a las {data.peakHour.label} con {data.peakHour.salesCount} transacciones
         </p>
       </PredCard>
     </div>

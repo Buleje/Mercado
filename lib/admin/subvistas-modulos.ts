@@ -268,9 +268,9 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
     { key: "logros", label: "Logros", hint: "Lo que ganaste, lo próximo por ganar y tus récords" },
   ],
   "analytics-pro": [
-    { key: "analytics", label: "Analytics Pro", hint: "Ventas, productos y clientes en gráficos" },
-    { key: "forecast", label: "Predicción Demanda", hint: "Cuánto se va a vender y qué reponer" },
-    { key: "inteligencia", label: "Inteligencia", hint: "Indicadores propios, precios del mercado y comparativos" },
+    { key: "analytics", label: "Métricas", hint: "Ventas, productos y clientes en gráficos, con sus seis cifras en Indicadores" },
+    { key: "forecast", label: "Predicción", hint: "Cuánto vas a vender la próxima semana, qué se agota y a qué precio vender" },
+    { key: "inteligencia", label: "Alertas", hint: "Stock muerto, fiado vencido, margen bajo y tus indicadores propios" },
   ],
   // RRHH muestra según el nivel del negocio (marcar → gestión → completo):
   // con nivel «marcar» sólo existe Asistencia y una vista más alta cae ahí.
