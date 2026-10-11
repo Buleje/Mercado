@@ -150,15 +150,25 @@ function titulosGemelos(titulos) {
   return pares;
 }
 
-function puntaje(m) {
-  let p = 0;
-  if (m.pantallas > LEY.pantallas) p += (m.pantallas - LEY.pantallas) * 10;
-  if (m.botones > LEY.botones) p += (m.botones - LEY.botones) * 0.5;
-  if (m.tablas > LEY.tablas) p += (m.tablas - LEY.tablas) * 5;
-  if ((m.ayuda ?? 0) > LEY.ayuda) p += (m.ayuda - LEY.ayuda) * 0.1;
+/**
+ * De dónde sale el puntaje, regla por regla (11-10: tres carriles pidieron
+ * saberlo; «puntaje 2» no decía si eran botones, ayuda o títulos sin h2).
+ */
+function motivos(m) {
+  const out = {};
+  if (m.pantallas > LEY.pantallas) out.pantallas = (m.pantallas - LEY.pantallas) * 10;
+  if (m.botones > LEY.botones) out.botones = (m.botones - LEY.botones) * 0.5;
+  if (m.tablas > LEY.tablas) out.tablas = (m.tablas - LEY.tablas) * 5;
+  if ((m.ayuda ?? 0) > LEY.ayuda) out.ayuda = (m.ayuda - LEY.ayuda) * 0.1;
   const planos = m.h3 + m.h4;
-  if (m.h2 === 0 && planos > LEY.titulosSinJerarquia) p += (planos - LEY.titulosSinJerarquia) * 2;
-  p += m.titulosGemelos.length * 8;
+  if (m.h2 === 0 && planos > LEY.titulosSinJerarquia) out.sinH2 = (planos - LEY.titulosSinJerarquia) * 2;
+  if (m.titulosGemelos.length) out.gemelos = m.titulosGemelos.length * 8;
+  for (const k of Object.keys(out)) out[k] = Math.round(out[k] * 10) / 10;
+  return out;
+}
+
+function puntaje(m) {
+  const p = Object.values(motivos(m)).reduce((s, v) => s + v, 0);
   return Math.round(p * 10) / 10;
 }
 
@@ -394,6 +404,7 @@ async function medirLugar(page, red, lugar, tope) {
   const redirigida = llegada.tab !== lugar.tab || (lugar.vista ? llegada.vista !== lugar.vista : false) || (lugar.sub ? llegada.sub !== lugar.sub : false);
   const fila = { lugar: idDe(lugar), ...lugar, llegadaId, redirigida, espera, ...m, titulosGemelos: titulosGemelos(m.titulos) };
   fila.huella = huellaDe(fila);
+  fila.motivos = motivos(fila);
   fila.puntaje = puntaje(fila);
   return fila;
 }
@@ -401,6 +412,7 @@ async function medirLugar(page, red, lugar, tope) {
 function lineaDe(f) {
   const marca = f.puntaje === 0 ? "✅" : f.puntaje < 10 ? "🟡" : "🔴";
   const extra = [
+    f.puntaje > 0 && f.motivos ? `por ${Object.entries(f.motivos).map(([k, v]) => `${k} +${v}`).join(", ")}` : "",
     f.titulosGemelos.length ? `${f.titulosGemelos.length} títulos gemelos` : "",
     f.redirigida ? `→ ${f.llegadaId}` : "",
     f.espera.listo ? "" : `⏱ tope (${[...(f.espera.cargadores ?? []), ...(f.espera.pedidos ?? [])].join(", ")})`,
