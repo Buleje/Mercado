@@ -7,6 +7,7 @@ import { X, Package, Truck, CheckCircle2, ShoppingBag, MapPin, Phone, User, Rece
 import { m, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useSettings } from "@/contexts/settings-context";
+import { PedidoConfirmadoWhatsapp } from "@/components/checkout/parts/PedidoConfirmadoWhatsapp";
 
 const LeafletMap = dynamic(() => import("./LeafletMap"), {});
 const Confetti  = dynamic(() => import("./Confetti"),   {});
@@ -623,6 +624,10 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                   >
                     ← Ver todos mis pedidos ({activeOrders.length})
                   </button>
+                )}
+                {/* Pedido recién confirmado → al WhatsApp del negocio, con foto (pedidosCliente) */}
+                {order.status !== "entregado" && order.status !== "cancelado" && (
+                  <PedidoConfirmadoWhatsapp orderId={order.id} className="mb-4" />
                 )}
                 {/* ═══ HERO MAP — protagonista visual ═══ */}
                 {(() => {

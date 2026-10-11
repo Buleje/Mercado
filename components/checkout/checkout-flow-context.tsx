@@ -39,3 +39,8 @@ export function useCheckoutFlow(): CheckoutFlowValue {
   }
   return ctx;
 }
+
+/** Igual, pero `null` fuera del provider (pantallas que también se montan sin checkout). */
+export function useCheckoutFlowOpcional(): CheckoutFlowValue | null {
+  return useContext(CheckoutFlowContext);
+}

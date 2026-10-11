@@ -43,6 +43,11 @@ export type AddressState = {
   useNewAddress: boolean;
   /** Distancia haversine al local cuando hay GPS. */
   distanceKm: number | undefined;
+  /**
+   * Enlace de Google Maps de la ubicación en vivo (`pedidosCliente.pedirUbicacion`).
+   * No es un campo del pedido: `buildOrderPayload` lo suma como renglón de las notas.
+   */
+  ubicacionEnVivo?: string;
 };
 
 export type CouponState = {
@@ -118,6 +123,8 @@ export type CheckoutAction =
   | { type: "RESET"; initial: CheckoutState }
   | { type: "SET_STEP"; step: Step }
   | { type: "SET_CUSTOMER"; patch: Partial<CustomerInfoState> }
+  /** Pone el nombre SÓLO si el estado de ese momento no tiene uno (Google tras el reset). */
+  | { type: "RELLENAR_NOMBRE_SI_VACIO"; name: string }
   | { type: "SET_ADDRESS"; patch: Partial<AddressState> }
   | { type: "SET_COUPON"; patch: Partial<CouponState> }
   | { type: "RESET_COUPON" }

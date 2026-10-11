@@ -3,6 +3,7 @@
 import { Hash, User, Phone, Loader2, CheckCircle2, AlertCircle } from "@buleje/design-system/icons";
 import { cn } from "@/lib/utils";
 import type { DniLookupState } from "../types";
+import { LARGO_MAX_CELULAR_ESCRITO, limpiarCelularEscrito } from "./phone-validation";
 
 /**
  * CustomerFormFields — los inputs DNI / Nombre / Teléfono.
@@ -203,9 +204,9 @@ export function CustomerFormFields({
           <input
             type="tel"
             value={phone}
-            onChange={(e) => onPhoneChange(e.target.value.replace(/[^\d]/g, ""))}
+            onChange={(e) => onPhoneChange(limpiarCelularEscrito(e.target.value))}
             placeholder="987 654 321"
-            maxLength={9}
+            maxLength={LARGO_MAX_CELULAR_ESCRITO}
             data-testid="phone-input"
             className={cn(inputBase, "pl-10 pr-10", phoneBorder)}
           />

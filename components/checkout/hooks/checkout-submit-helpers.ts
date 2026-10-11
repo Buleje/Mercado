@@ -8,6 +8,7 @@ import {
   type DescuentoAutomaticoVista,
 } from "@/lib/pricing/total-pedido";
 import { PTS_PER_SOL } from "@/lib/loyalty-constants";
+import { notasDelPedido } from "../parts/ubicacion-en-notas";
 
 /**
  * Helpers puros para el flow de submit del checkout.
@@ -163,7 +164,8 @@ export function buildOrderPayload(args: {
     },
     items: orderItems,
     total: totalPedido,
-    notes: (state.address.notes ?? "").trim() || undefined,
+    // La ubicación en vivo va como renglón de las notas (sin campo nuevo en el pedido).
+    notes: notasDelPedido(state.address.notes ?? "", state.address.ubicacionEnVivo) || undefined,
     deliverySlot:
       state.delivery.slot !== "lo-antes-posible"
         ? state.delivery.slot

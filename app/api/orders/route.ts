@@ -34,6 +34,7 @@ import { calcularTotalPedido, porcentajeDe } from "@/lib/pricing/total-pedido";
 import { validarCanjePuntos, type CanjePuntos } from "@/lib/pricing/canje-puntos";
 import { LoyaltyInsufficientBalanceError } from "@/lib/db/loyalty.db";
 import { withApiHandler } from "@/lib/api-handler";
+import { sanearNotasUbicacion } from "@/components/checkout/parts/ubicacion-en-notas";
 
 const OrderItemModifierSchema = z.object({
   groupId: z.string().min(1).max(50),
@@ -351,6 +352,9 @@ export const POST = withApiHandler("orders-create", async (req) => {
     );
   }
   const body = parsed.data;
+  // Un renglón «Mi ubicación: …» que no sea un enlace de Google Maps con
+  // coordenadas no se guarda (el checkout siempre manda el formato estricto).
+  const notasLimpias = sanearNotasUbicacion(body.notes);
 
     // ── HOTFIX-001: Server-authoritative pricing ────────────────────────────
     // NEVER trust body.items[i].price — attacker can send price=0.01 and have
@@ -772,10 +776,10 @@ export const POST = withApiHandler("orders-create", async (req) => {
       // (como el marketplace) para que el panel vea por qué baja el total. El
       // dato que manda (y el que devuelve la cancelación) es el libro de puntos.
       notes: canje
-        ? [body.notes?.trim(), `Canje de puntos: ${canje.puntos} pts (−S/ ${canje.soles.toFixed(2)})`]
+        ? [notasLimpias?.trim(), `Canje de puntos: ${canje.puntos} pts (−S/ ${canje.soles.toFixed(2)})`]
             .filter(Boolean)
             .join("\n")
-        : body.notes,
+        : notasLimpias,
       deliverySlot: body.deliverySlot,
       yapeOperationNumber: body.yapeOperationNumber,
       deuda: body.deuda,

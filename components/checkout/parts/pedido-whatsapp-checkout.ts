@@ -1,0 +1,129 @@
+/**
+ * El pedido YA confirmado como mensaje e imagen de WhatsApp para el negocio
+ * (2026-10-11, `pedidosCliente.pedidoComoImagen`). Funciones puras.
+ *
+ * - `total` es el que devolvió el servidor al crear el pedido (`buleje-last-order`).
+ * - El descuento es UNO solo: subtotal de los renglones − total final (promo,
+ *   cupón, primera compra y puntos juntos); así siempre cuadra con el total.
+ * - El total dice «(lo confirma el negocio)»: el negocio lo revisa en su panel.
+ */
+
+import type { DatosImagenPedido } from "@/lib/tienda-cliente/contrato";
+import { formatearCelularPe } from "@/lib/tienda-cliente/celular";
+import { formatCurrency } from "@/lib/utils";
+import type { PaymentMethod } from "../types";
+import { ubicacionDeEnlace } from "./ubicacion-en-notas";
+
+export interface LineaPedidoCheckout {
+  name: string;
+  price: number;
+  quantity: number;
+  unit?: string;
+  image?: string;
+  note?: string;
+}
+
+export interface ClientePedidoCheckout {
+  nombre: string;
+  celular: string;
+  direccion: string;
+  referencia: string;
+  pago: PaymentMethod | null;
+  /** «Mensaje especial» que escribió el cliente. */
+  notas: string;
+  /** Enlace de Google Maps de la ubicación ("" = no la compartió). */
+  ubicacion: string;
+}
+
+export interface PedidoConfirmado {
+  negocio: string;
+  /** Id del pedido que devolvió `POST /api/orders`. */
+  numero: string;
+  items: readonly LineaPedidoCheckout[];
+  /** Total que cobró el servidor. */
+  total: number;
+  cliente: ClientePedidoCheckout;
+}
+
+const PAGO: Record<PaymentMethod, string> = {
+  yape: "Yape",
+  efectivo: "Efectivo",
+  fiado: "Fiado (pago el día de pago)",
+};
+
+const LARGO_NOTA = 160;
+
+function entregaDe(c: ClientePedidoCheckout): string {
+  const dir = c.direccion.trim();
+  const ref = c.referencia.trim();
+  if (dir && ref) return `${dir} (${ref})`;
+  return dir || ref;
+}
+
+function recortar(texto: string, max: number): string {
+  return texto.length > max ? `${texto.slice(0, max - 1).trimEnd()}…` : texto;
+}
+
+/** Subtotal de los renglones − total del servidor, en céntimos para no arrastrar decimales. */
+export function descuentoTotal(p: Pick<PedidoConfirmado, "items" | "total">): number {
+  const subtotal = p.items.reduce((s, i) => s + Math.round(i.price * 100) * i.quantity, 0);
+  const diferencia = subtotal - Math.round(p.total * 100);
+  return diferencia > 0 ? diferencia / 100 : 0;
+}
+
+/** El mensaje que va siempre (respaldo de la imagen y lo que se lee en el chat). */
+export function textoPedidoWhatsapp(p: PedidoConfirmado): string {
+  const c = p.cliente;
+  const renglones: string[] = [`Hola ${p.negocio}, acabo de hacer el pedido #${p.numero} en la tienda en línea:`, ""];
+  for (const i of p.items) {
+    renglones.push(`• ${i.name} x${i.quantity} — ${formatCurrency(i.price * i.quantity)}`);
+    if (i.note) renglones.push(`  Nota: ${i.note}`);
+  }
+  renglones.push("");
+  const descuento = descuentoTotal(p);
+  if (descuento > 0) renglones.push(`Descuentos: −${formatCurrency(descuento)}`);
+  renglones.push(`Total: ${formatCurrency(p.total)} (lo confirma el negocio)`, "");
+  if (c.nombre.trim()) renglones.push(`Nombre: ${c.nombre.trim()}`);
+  if (c.celular.trim()) renglones.push(`Celular: ${formatearCelularPe(c.celular)}`);
+  const entrega = entregaDe(c);
+  if (entrega) renglones.push(`Entrega: ${entrega}`);
+  const ubicacion = ubicacionDeEnlace(c.ubicacion);
+  if (ubicacion) renglones.push(`Ubicación: ${ubicacion.enlaceMapa}`);
+  if (c.pago) renglones.push(`Pago: ${PAGO[c.pago]}`);
+  const nota = c.notas.trim();
+  if (nota) renglones.push(`Notas: ${nota}`);
+  return renglones.join("\n").trim();
+}
+
+/** Los datos para `dibujarImagenPedido` (productos con foto, precios, cliente). */
+export function datosImagenCheckout(
+  p: PedidoConfirmado,
+  marca: { colorAcento: string; logo: string | null },
+): DatosImagenPedido {
+  const c = p.cliente;
+  const nota = c.notas.trim();
+  const descuento = descuentoTotal(p);
+  const notas: string[] = [`Pedido #${p.numero}`];
+  if (descuento > 0) notas.push(`Descuentos: −${formatCurrency(descuento)}`);
+  if (nota) notas.push(`Nota: ${recortar(nota.replace(/\s+/g, " "), LARGO_NOTA)}`);
+  return {
+    negocio: { nombre: p.negocio, colorAcento: marca.colorAcento, logo: marca.logo },
+    lineas: p.items.map((i) => ({
+      nombre: i.name,
+      codigo: null,
+      cantidad: i.quantity,
+      precio: i.price,
+      imagen: i.image || null,
+      nota: i.note || null,
+    })),
+    total: p.total,
+    cliente: {
+      nombre: c.nombre.trim(),
+      celular: c.celular.trim() || null,
+      entrega: entregaDe(c) || null,
+      ubicacion: ubicacionDeEnlace(c.ubicacion),
+      pago: c.pago ? PAGO[c.pago] : null,
+    },
+    notas,
+  };
+}

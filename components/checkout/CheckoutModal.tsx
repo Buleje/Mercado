@@ -36,7 +36,8 @@ import { useCheckoutSubmit } from "./hooks/useCheckoutSubmit";
 import { useCheckoutHandlers } from "./hooks/useCheckoutHandlers";
 import { useCheckoutInit } from "./hooks/useCheckoutInit";
 import { validatePhone } from "./parts/phone-validation";
-import { getSupabaseBrowser, isSupabaseAuthConfigured } from "@/lib/supabase/client";
+import { useGoogleCheckout } from "./hooks/useGoogleCheckout";
+import { usePedidosTienda } from "./hooks/usePedidosTienda";
 
 /**
  * CheckoutModal — orquestador del wizard de checkout.
@@ -61,6 +62,7 @@ export default function CheckoutModal() {
     close: closeCart,
     markOrderPending,
     removeItem,
+    openCheckout,
   } = useCart();
   const { customer, register, findByPhone, openOrderStatusModal } = useCustomer();
   const {
@@ -68,6 +70,8 @@ export default function CheckoutModal() {
     cashEnabled,
     businessName,
     storeTheme,
+    mode,
+    modeLoading,
   } = useSettings();
   const { getBestPromotion } = usePromotions();
 
@@ -137,7 +141,9 @@ export default function CheckoutModal() {
   const coupon = useCoupon({ state: state.coupon, cartTotal, dispatch });
   const loyalty = useLoyalty(dispatch);
   useDniLookup({ dni: state.customer.dni, dispatch });
-  const geo = useGeolocation({ dispatch });
+  // «Cómo te piden» del negocio (Google, ubicación…), ya en el contexto de settings.
+  const pedidosTienda = usePedidosTienda();
+  const geo = useGeolocation({ dispatch, compartirEnlace: pedidosTienda.config.pedirUbicacion });
   useStockCheck({ enabled: checkoutOpen, items, dispatch });
   usePendingOrders({
     step: state.step,
@@ -176,6 +182,7 @@ export default function CheckoutModal() {
     fetchLoyaltyPoints: loyalty.fetchPoints,
     fetchReferenceSuggestion: geo.fetchReferenceSuggestion,
     submit: submitter.submit,
+    compartirUbicacion: pedidosTienda.config.pedirUbicacion,
   });
 
   useScrollLock(checkoutOpen);
@@ -191,6 +198,17 @@ export default function CheckoutModal() {
     setEditingCustomerData,
     setSkippedAccount,
     fetchLoyaltyPoints: loyalty.fetchPoints,
+  });
+
+  // Google en un toque (interruptor del negocio). Sólo rellena el nombre.
+  const google = useGoogleCheckout({
+    activo: pedidosTienda.config.loginGoogle,
+    checkoutOpen,
+    nombreActual: state.customer.name,
+    dispatch,
+    hayProductos: items.length > 0,
+    puedeReabrir: !modeLoading && mode === "checkout",
+    openCheckout,
   });
 
   if (!checkoutOpen) return null;
@@ -237,30 +255,9 @@ export default function CheckoutModal() {
             phoneNotFound={phoneSearch.notFound}
             onPhoneSearch={handlers.handlePhoneSearchSubmit}
             onSkipAccount={handlers.handleSkipAccount}
-            onGoogleSignIn={async () => {
-              // IGUAL QUE EL MARKETPLACE (Brandon 2026-06-22): Google sign-in vía
-              // Supabase OAuth (el mismo flujo que `OAuthButton` usa en /marketplace
-              // y el login). Vuelve a la ruta actual; el callback
-              // `/api/auth/oauth/callback` crea la sesión de customer (tenant-aware
-              // por `x-tenant-id` del middleware, igual que el marketplace).
-              const here = typeof window !== "undefined" ? window.location.pathname + window.location.search : "/";
-              if (!isSupabaseAuthConfigured()) {
-                // Fallback al flujo custom si Supabase no está configurado.
-                window.location.href = `/api/auth/google?redirect=${encodeURIComponent(here)}`;
-                return;
-              }
-              const supabase = getSupabaseBrowser();
-              const origin = typeof window !== "undefined" ? window.location.origin : "";
-              const { error } = await supabase.auth.signInWithOAuth({
-                provider: "google",
-                options: { redirectTo: `${origin}/api/auth/oauth/callback?next=${encodeURIComponent(here)}` },
-              });
-              if (error) {
-                // Si Supabase falla, degradamos al flujo custom para no dejar al
-                // cliente sin opción de continuar con Google.
-                window.location.href = `/api/auth/google?redirect=${encodeURIComponent(here)}`;
-              }
-            }}
+            onGoogleSignIn={google.entrar}
+            clienteGoogle={google.cliente}
+            onSalirGoogle={google.salir}
           />
         )}
 

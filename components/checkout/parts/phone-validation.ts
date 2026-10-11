@@ -5,6 +5,8 @@
  * Función pura — separada para poder testearla aisladamente.
  */
 
+import { normalizarCelularPe } from "@/lib/tienda-cliente/celular";
+
 export type PhoneValidationResult = {
   valid: boolean;
   hint: string;
@@ -26,3 +28,15 @@ export function validatePhone(value: string): PhoneValidationResult {
     return { valid: false, hint: "Debe empezar con 9", color: "text-[var(--data-error-500)]" };
   return { valid: false, hint: "Máximo 9 dígitos", color: "text-[var(--data-error-500)]" };
 }
+
+/**
+ * Lo que escribió o pegó el cliente en un campo de celular → hasta 9 dígitos.
+ * Un celular entero con prefijo («+51 987 654 321», «0051…») sale limpio con
+ * `normalizarCelularPe`; si no, se quedan los primeros 9 dígitos (igual que antes).
+ */
+export function limpiarCelularEscrito(raw: string): string {
+  return normalizarCelularPe(raw) ?? raw.replace(/\D/g, "").slice(0, 9);
+}
+
+/** Tope del input: deja pegar «(+51) 987.654.321» entero; el estado queda en 9 dígitos. */
+export const LARGO_MAX_CELULAR_ESCRITO = 20;

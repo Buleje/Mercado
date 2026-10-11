@@ -110,6 +110,12 @@ export function checkoutReducer(
       return { ...state, step: action.step };
     case "SET_CUSTOMER":
       return { ...state, customer: { ...state.customer, ...action.patch } };
+    case "RELLENAR_NOMBRE_SI_VACIO":
+      // Se decide aquí y no en el efecto: el efecto ve el estado de ANTES del
+      // RESET de la apertura y pisaba el nombre del cliente registrado.
+      return state.customer.name.trim() || !action.name.trim()
+        ? state
+        : { ...state, customer: { ...state.customer, name: action.name.trim() } };
     case "SET_ADDRESS":
       return { ...state, address: { ...state.address, ...action.patch } };
     case "SET_COUPON":
