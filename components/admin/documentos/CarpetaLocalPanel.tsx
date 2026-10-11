@@ -15,10 +15,23 @@
 
 import { useId, useMemo, useState } from "react";
 import {
-  AlertTriangle, Check, FolderOpen, HardDriveDownload, HardDriveUpload, Link2Off,
-  Loader2, Lock, Pause, Play, RefreshCw, Trash2, TriangleAlert, Info,
+  AlertTriangle,
+  Check,
+  FolderOpen,
+  HardDriveDownload,
+  HardDriveUpload,
+  Link2Off,
+  Loader2,
+  Lock,
+  Pause,
+  Play,
+  RefreshCw,
+  Trash2,
+  TriangleAlert,
+  Info,
 } from "@buleje/design-system/icons";
 import { CardTitle } from "@buleje/design-system";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { cn } from "@/lib/utils";
 import type { DbDocument, DbDocumentFolder } from "@/lib/types/documents";
 import { useCarpetaLocal } from "@/hooks/use-carpeta-local";
@@ -44,20 +57,24 @@ function Cifras({ r }: { r: ResultadoCiclo }) {
   ].filter((f) => f.n > 0);
 
   if (filas.length === 0 && r.resumen.conflictos === 0) {
-    return <p className="text-sm text-[var(--text-tertiary)]">Todo estaba igual de los dos lados.</p>;
+    return (
+      <p className="text-sm text-[var(--text-tertiary)]">Todo estaba igual de los dos lados.</p>
+    );
   }
   return (
     <ul className="space-y-1">
       {filas.map((f) => (
         <li key={f.texto} className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
           <f.icono className="h-3.5 w-3.5 shrink-0 text-[var(--text-tertiary)]" />
-          <strong className="font-bold tabular-nums text-[var(--text-primary)]">{f.n}</strong> {f.texto}
+          <strong className="font-bold tabular-nums text-[var(--text-primary)]">{f.n}</strong>{" "}
+          {f.texto}
         </li>
       ))}
       {r.resumen.conflictos > 0 && (
         <li className="flex items-center gap-2 text-sm text-[var(--data-warning-700)] dark:text-[var(--data-warning)]">
           <TriangleAlert className="h-3.5 w-3.5 shrink-0" />
-          <strong className="font-bold tabular-nums">{r.resumen.conflictos}</strong> cambiados de los dos lados: se guardaron las dos versiones
+          <strong className="font-bold tabular-nums">{r.resumen.conflictos}</strong> cambiados de
+          los dos lados: se guardaron las dos versiones
         </li>
       )}
     </ul>
@@ -65,7 +82,10 @@ function Cifras({ r }: { r: ResultadoCiclo }) {
 }
 
 export default function CarpetaLocalPanel({
-  tenantId, documentos, carpetas, onCambios,
+  tenantId,
+  documentos,
+  carpetas,
+  onCambios,
 }: {
   tenantId: string;
   documentos: DbDocument[];
@@ -86,7 +106,7 @@ export default function CarpetaLocalPanel({
    */
   const destinoPerdido = !!c.vinculo?.folderIdRaiz && !carpetaDestino;
   const nombreDestino = c.vinculo?.folderIdRaiz
-    ? carpetaDestino?.name ?? "una carpeta que ya no está"
+    ? (carpetaDestino?.name ?? "una carpeta que ya no está")
     : "todo el drive";
 
   if (!c.soportado) {
@@ -95,8 +115,9 @@ export default function CarpetaLocalPanel({
         <p className="flex items-start gap-2 text-sm text-[var(--text-secondary)]">
           <Info className="mt-0.5 h-4 w-4 shrink-0 text-[var(--text-tertiary)]" />
           <span>
-            Este navegador no deja elegir una carpeta de tu PC. Funciona en <strong>Chrome, Edge, Brave y Opera</strong>.
-            Con Firefox o Safari, usa el agente de Windows de más abajo.
+            Este navegador no deja elegir una carpeta de tu PC. Funciona en{" "}
+            <strong>Chrome, Edge, Brave y Opera</strong>. Con Firefox o Safari, usa el agente de
+            Windows de más abajo.
           </span>
         </p>
       </div>
@@ -107,16 +128,26 @@ export default function CarpetaLocalPanel({
   if (!c.vinculo) {
     return (
       <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
-        <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
-          <FolderOpen className="h-5 w-5 text-primary" aria-hidden="true" />
-          Vincular una carpeta de tu PC
-        </CardTitle>
-        <p className="mt-1 max-w-2xl text-sm text-[var(--text-secondary)]">
-          Eliges una carpeta del escritorio y queda emparejada con el drive: lo que edites, agregues o borres de
-          un lado pasa al otro. No hay que instalar nada — sincroniza mientras tengas el panel abierto.
-        </p>
+        <div className="flex min-w-0 items-center gap-2">
+          <CardTitle
+            as="h3"
+            className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]"
+          >
+            <FolderOpen className="h-5 w-5 text-primary" aria-hidden="true" />
+            Vincular una carpeta de tu PC
+          </CardTitle>
+          <InfoTip
+            title="Carpeta de tu PC"
+            what="Eliges una carpeta del escritorio y queda emparejada con el drive: lo que edites, agregues o borres de un lado pasa al otro."
+            affects="No hay que instalar nada: sincroniza mientras tengas el panel abierto (se revisa sola cada minuto)."
+            example="Si borras un archivo en tu PC, el documento va a la papelera del panel (recuperable); si lo borras en el panel, se borra de tu carpeta."
+          />
+        </div>
 
-        <label htmlFor={destinoId} className="mt-3 block text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
+        <label
+          htmlFor={destinoId}
+          className="mt-3 block text-xs font-bold uppercase tracking-wider text-[var(--text-tertiary)]"
+        >
           Emparejar con
         </label>
         <select
@@ -127,7 +158,10 @@ export default function CarpetaLocalPanel({
         >
           <option value="">Todo el drive</option>
           {filas.map(({ folder, depth }) => (
-            <option key={folder.id} value={folder.id}>{`${"└ ".repeat(depth)}${folder.name}`}</option>
+            <option
+              key={folder.id}
+              value={folder.id}
+            >{`${"└ ".repeat(depth)}${folder.name}`}</option>
           ))}
         </select>
 
@@ -138,7 +172,11 @@ export default function CarpetaLocalPanel({
         >
           <FolderOpen className="h-4 w-4" /> Elegir la carpeta…
         </button>
-        {c.error && <p className="mt-2 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{c.error}</p>}
+        {c.error && (
+          <p className="mt-2 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+            {c.error}
+          </p>
+        )}
       </div>
     );
   }
@@ -147,17 +185,23 @@ export default function CarpetaLocalPanel({
     <div className="rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)] p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <CardTitle as="h3" className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
-            <FolderOpen className="h-5 w-5 text-primary" aria-hidden="true" />
-            <span className="truncate">{c.vinculo.nombre}</span>
-            {c.vinculo.pausado && (
-              <span className="rounded-md bg-[var(--surface-sunken)] px-2 py-0.5 text-[length:var(--ts-2xs)] font-bold text-[var(--text-tertiary)]">
-                en pausa
-              </span>
-            )}
-          </CardTitle>
+          <div className="flex min-w-0 items-center gap-2">
+            <CardTitle
+              as="h3"
+              className="flex min-w-0 items-center gap-2 text-sm font-bold text-[var(--text-primary)]"
+            >
+              <FolderOpen className="h-5 w-5 text-primary" aria-hidden="true" />
+              <span className="truncate">{c.vinculo.nombre}</span>
+            </CardTitle>
+            <InfoTip
+              title="Carpeta de tu PC"
+              what="Mientras el panel esté abierto se revisa sola cada minuto."
+              example="Si borras un archivo en tu PC, el documento va a la papelera del panel (recuperable); si lo borras en el panel, el archivo se borra de tu carpeta."
+            />
+          </div>
           <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
-            Emparejada con <strong className="font-bold text-[var(--text-secondary)]">{nombreDestino}</strong> ·
+            Emparejada con{" "}
+            <strong className="font-bold text-[var(--text-secondary)]">{nombreDestino}</strong> ·
             última vez: {hace(c.vinculo.ultimaSync)}
           </p>
         </div>
@@ -166,27 +210,33 @@ export default function CarpetaLocalPanel({
             type="button"
             onClick={() => void c.sincronizar()}
             disabled={
-              c.estado === "sincronizando" || c.estado === "planificando" || c.estado === "sin-permiso" || destinoPerdido
+              c.estado === "sincronizando" ||
+              c.estado === "planificando" ||
+              c.estado === "sin-permiso" ||
+              destinoPerdido
             }
-            className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-3 text-xs font-bold text-white hover:brightness-110 disabled:opacity-60"
+            className="inline-flex h-12 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-white hover:brightness-110 disabled:opacity-60"
           >
-            <RefreshCw className={cn("h-3.5 w-3.5", c.estado === "sincronizando" && "animate-spin")} />
+            <RefreshCw className={cn("h-4 w-4", c.estado === "sincronizando" && "animate-spin")} />
             Sincronizar ahora
           </button>
           <button
             type="button"
             onClick={() => void c.alternarPausa()}
-            className="inline-flex h-9 items-center gap-2 rounded-lg border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
+            aria-label={c.vinculo.pausado ? "Reanudar" : "Pausar"}
+            title={c.vinculo.pausado ? "Reanudar" : "Pausar"}
+            className="inline-flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--rule-base)] text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
           >
-            {c.vinculo.pausado ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
-            {c.vinculo.pausado ? "Reanudar" : "Pausar"}
+            {c.vinculo.pausado ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
           </button>
           <button
             type="button"
             onClick={() => void c.desvincular()}
-            className="inline-flex h-9 items-center gap-2 rounded-lg border border-[var(--rule-base)] px-3 text-xs font-bold text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
+            aria-label="Desvincular"
+            title="Desvincular esta carpeta"
+            className="inline-flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--rule-base)] text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-[var(--text-primary)]"
           >
-            <Link2Off className="h-3.5 w-3.5" /> Desvincular
+            <Link2Off className="h-4 w-4" />
           </button>
         </div>
       </div>
@@ -195,8 +245,8 @@ export default function CarpetaLocalPanel({
         <div className="mt-3 flex flex-wrap items-center gap-3 rounded-xl border-2 border-[var(--data-error-500)] bg-[var(--data-error-500)]/10 p-3">
           <AlertTriangle className="h-4 w-4 shrink-0 text-[var(--data-error-700)] dark:text-[var(--data-error-500)]" />
           <p className="min-w-0 flex-1 text-sm text-[var(--text-secondary)]">
-            La carpeta del panel con la que estaba emparejada ya no existe. La sincronización queda detenida
-            para no mezclar archivos: desvincula y vuelve a elegir con qué carpeta emparejarla.
+            La carpeta del panel emparejada ya no existe: sincronización detenida. Desvincula y
+            vuelve a elegir.
           </p>
         </div>
       )}
@@ -221,7 +271,9 @@ export default function CarpetaLocalPanel({
         <div className="mt-3 rounded-xl border border-[var(--rule-base)] bg-[var(--surface-canvas)] p-3">
           <p className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
             <Loader2 className="h-4 w-4 shrink-0 animate-spin text-primary" />
-            <span className="tabular-nums">{c.paso.hechas + 1}/{c.paso.total}</span>
+            <span className="tabular-nums">
+              {c.paso.hechas + 1}/{c.paso.total}
+            </span>
             <span className="truncate">{c.paso.ruta}</span>
           </p>
         </div>
@@ -231,7 +283,9 @@ export default function CarpetaLocalPanel({
       {c.plan && (
         <div className="mt-3 rounded-xl border-2 border-primary/40 bg-primary/5 p-3">
           <p className="text-sm font-bold text-[var(--text-primary)]">Esto es lo que va a pasar:</p>
-          <div className="mt-2"><Cifras r={c.plan} /></div>
+          <div className="mt-2">
+            <Cifras r={c.plan} />
+          </div>
           {c.plan.cortado && (
             <p className="mt-2 text-xs text-[var(--data-warning-700)] dark:text-[var(--data-warning)]">
               La carpeta tiene demasiados archivos: se van a sincronizar los primeros 5.000.
@@ -284,14 +338,17 @@ export default function CarpetaLocalPanel({
           {c.ultimo.rutasRepetidas.length > 0 && (
             <p className="mt-2 flex items-start gap-1.5 text-xs text-[var(--data-warning-700)] dark:text-[var(--data-warning)]">
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              {c.ultimo.rutasRepetidas.length} documento(s) del panel tienen un nombre que ya usa otro en la
-              misma carpeta y no se bajaron: renombralos para que entren.
+              {c.ultimo.rutasRepetidas.length} documento(s) del panel tienen un nombre que ya usa
+              otro en la misma carpeta y no se bajaron: renombralos para que entren.
             </p>
           )}
           {c.ultimo.errores.length > 0 && (
             <ul className="mt-2 space-y-0.5">
               {c.ultimo.errores.slice(0, 5).map((e) => (
-                <li key={e.ruta} className="truncate text-xs text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+                <li
+                  key={e.ruta}
+                  className="truncate text-xs text-[var(--data-error-700)] dark:text-[var(--data-error-500)]"
+                >
                   {e.ruta}: {e.motivo}
                 </li>
               ))}
@@ -301,13 +358,10 @@ export default function CarpetaLocalPanel({
       )}
 
       {c.error && (
-        <p className="mt-2 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">{c.error}</p>
+        <p className="mt-2 text-sm text-[var(--data-error-700)] dark:text-[var(--data-error-500)]">
+          {c.error}
+        </p>
       )}
-
-      <p className="mt-3 text-xs text-[var(--text-tertiary)]">
-        Mientras el panel esté abierto se revisa sola cada minuto. Si borras un archivo en tu PC, el documento va
-        a la papelera del panel (recuperable); si lo borras en el panel, el archivo se borra de tu carpeta.
-      </p>
     </div>
   );
 }

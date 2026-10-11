@@ -3,8 +3,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
-  Link2, Folder, FileText, Ban, Copy, Check, ExternalLink, Loader2, Lock, Eye, ShieldAlert,
+  Link2, Folder, FileText, Ban, Copy, ExternalLink, Loader2, Lock, Eye, ShieldAlert,
+  MoreHorizontal, RefreshCw,
 } from "@buleje/design-system/icons";
+import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
+import { ActionMenu } from "@/components/admin/shared/action-menu";
 import { cn } from "@/lib/utils";
 import { useConfirm } from "@/components/admin/shared/ConfirmDialog";
 import type { DbSharedLink } from "@/lib/types/documents";
@@ -64,7 +67,6 @@ export function EnlacesView({ onOpenDoc }: { onOpenDoc?: (docId: string) => void
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [soloActivos, setSoloActivos] = useState(true);
-  const [copiado, setCopiado] = useState<string | null>(null);
   const [cortando, setCortando] = useState<string | null>(null);
 
   const load = useCallback(() => {
@@ -87,8 +89,7 @@ export function EnlacesView({ onOpenDoc }: { onOpenDoc?: (docId: string) => void
   const copiar = async (l: DbSharedLink) => {
     try {
       await navigator.clipboard.writeText(`${window.location.origin}${rutaDe(l)}`);
-      setCopiado(l.id);
-      setTimeout(() => setCopiado((prev) => (prev === l.id ? null : prev)), 1800);
+      toast.success("Enlace copiado");
     } catch (err) {
       console.warn("[enlaces] no se pudo copiar", err);
     }
@@ -160,37 +161,46 @@ export function EnlacesView({ onOpenDoc }: { onOpenDoc?: (docId: string) => void
   return (
     <div className="space-y-4">
       {abiertos > 0 && (
-        <div className="flex items-start gap-3 rounded-2xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-100)] p-4 text-sm text-[var(--data-warning)] dark:bg-[var(--data-warning-500)]/12">
-          <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0" />
-          <p>
-            <span className="font-extrabold">{abiertos} {abiertos === 1 ? "enlace está abierto" : "enlaces están abiertos"}:</span>{" "}
-            cualquiera que tenga el link ve el archivo sin pedir clave. Corta los que ya no uses, o vuelve a compartir poniéndoles una clave.
+        <div className="flex items-center gap-2 rounded-2xl border-2 border-[var(--data-warning-500)]/40 bg-[var(--data-warning-100)] px-4 py-2.5 text-sm text-[var(--data-warning)] dark:bg-[var(--data-warning-500)]/12">
+          <ShieldAlert className="h-5 w-5 shrink-0" />
+          <p className="min-w-0 flex-1 font-extrabold">
+            {abiertos} {abiertos === 1 ? "enlace abierto" : "enlaces abiertos"}, sin clave
           </p>
+          <InfoTip
+            title="Enlaces sin clave"
+            what="Cualquiera que tenga el link ve el archivo sin pedir clave."
+            affects="Corta los que ya no uses, o vuelve a compartir poniéndoles una clave."
+          />
         </div>
       )}
 
       <div className="overflow-hidden rounded-2xl border border-[var(--rule-base)] bg-[var(--surface-raised)]">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-2.5">
-          <p className="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)]">
-            <Link2 className="h-3.5 w-3.5" /> {activos.length} {activos.length === 1 ? "enlace activo" : "enlaces activos"} de {links.length}
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-2">
+          <p className="flex items-center gap-2 text-sm font-bold text-[var(--text-secondary)]">
+            <Link2 className="h-4 w-4" /> {activos.length} {activos.length === 1 ? "activo" : "activos"} de {links.length}
           </p>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setSoloActivos((v) => !v)}
-              className="rounded-lg px-2 py-1 text-xs font-bold text-[var(--text-tertiary)] hover:bg-white hover:text-primary"
+              aria-pressed={!soloActivos}
+              className="h-12 rounded-xl px-3 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-raised)] hover:text-primary"
             >
-              {soloActivos ? "Ver también los cortados" : "Ver solo los activos"}
+              {soloActivos ? "Ver cortados" : "Solo activos"}
             </button>
-            <button onClick={load} className="rounded-lg px-2 py-1 text-xs font-bold text-[var(--text-tertiary)] hover:bg-white hover:text-primary">Actualizar</button>
-            {activos.length > 0 && (
-              <button
-                onClick={cortarTodos}
-                disabled={cortando === "all"}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--data-error-50)] px-2.5 py-1 text-xs font-bold text-[var(--data-error)] hover:bg-[var(--data-error-100)] disabled:opacity-50 dark:bg-[var(--data-error-500)]/10"
-              >
-                {cortando === "all" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Ban className="h-3.5 w-3.5" />} Cortar todos
-              </button>
-            )}
+            <ActionMenu
+              label="Más"
+              icon={MoreHorizontal}
+              soloIcono
+              size="md"
+              className="w-12 shrink-0"
+              title="Actualizar y cortar todos"
+              actions={[
+                { id: "actualizar", label: "Actualizar", icon: RefreshCw, onSelect: load },
+                ...(activos.length > 0
+                  ? [{ id: "cortar-todos", label: "Cortar todos", hint: "Todo lo compartido deja de abrirse", icon: Ban, tone: "danger" as const, busy: cortando === "all", disabled: cortando === "all", onSelect: () => void cortarTodos() }]
+                  : []),
+              ]}
+            />
           </div>
         </div>
 
@@ -229,15 +239,11 @@ export function EnlacesView({ onOpenDoc }: { onOpenDoc?: (docId: string) => void
                       </span>
                     )}
                   </p>
-                  <p className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-xs text-[var(--text-tertiary)]">
-                    <span>{l.kind === "folder" ? "Carpeta" : "Documento"}</span>
-                    <span aria-hidden>·</span>
+                  <p className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-xs text-[var(--text-tertiary)]" title={`${l.kind === "folder" ? "Carpeta" : "Documento"} · compartido por ${l.createdById}`}>
                     <span>{vigencia(l, estado)}</span>
                     <span aria-hidden>·</span>
                     <span className="inline-flex items-center gap-1"><Eye className="h-3 w-3" />{l.accessCount} {l.accessCount === 1 ? "apertura" : "aperturas"}</span>
                     {l.lastAccessAt && (<><span aria-hidden>·</span><span>última {fechaCorta(l.lastAccessAt)}</span></>)}
-                    <span aria-hidden>·</span>
-                    <span>por {l.createdById}</span>
                   </p>
                 </div>
 
@@ -246,26 +252,21 @@ export function EnlacesView({ onOpenDoc }: { onOpenDoc?: (docId: string) => void
                 </span>
 
                 <div className="flex shrink-0 items-center gap-1">
-                  {estado === "activo" && (
-                    <>
-                      <button onClick={() => copiar(l)} className="rounded-xl p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-primary" aria-label={`Copiar el enlace de ${l.targetName}`} title="Copiar el enlace">
-                        {copiado === l.id ? <Check className="h-4 w-4 text-[var(--data-success-700)] dark:text-[var(--data-success-500)]" /> : <Copy className="h-4 w-4" />}
-                      </button>
-                      <a href={rutaDe(l)} target="_blank" rel="noopener noreferrer" className="rounded-lg p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-sunken)] hover:text-primary" aria-label={`Abrir el enlace de ${l.targetName}`} title="Abrir como lo ve quien lo recibe">
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
-                    </>
-                  )}
                   {estado !== "revocado" && (
-                    <button
-                      onClick={() => cortar(l)}
-                      disabled={cortando === l.id}
-                      className="rounded-xl p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--data-error-500)]/10 hover:text-[var(--data-error)] disabled:opacity-50"
-                      aria-label={`Cortar el enlace de ${l.targetName}`}
-                      title="Cortar el enlace"
-                    >
-                      {cortando === l.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />}
-                    </button>
+                    <ActionMenu
+                      label={`Más de ${l.targetName}`}
+                      icon={MoreHorizontal}
+                      soloIcono
+                      size="md"
+                      className="w-12 shrink-0"
+                      title="Copiar, abrir o cortar el enlace"
+                      actions={[
+                        ...(estado === "activo"
+                          ? [{ id: "copiar", label: "Copiar el enlace", icon: Copy, onSelect: () => void copiar(l) }, { id: "abrir", label: "Abrir como lo ve quien lo recibe", icon: ExternalLink, onSelect: () => { window.open(rutaDe(l), "_blank", "noopener,noreferrer"); } }]
+                          : []),
+                        { id: "cortar", label: "Cortar el enlace", icon: Ban, tone: "danger" as const, busy: cortando === l.id, disabled: cortando === l.id, onSelect: () => void cortar(l) },
+                      ]}
+                    />
                   )}
                 </div>
               </li>
