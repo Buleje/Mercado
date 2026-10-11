@@ -82,19 +82,28 @@ export function ahoraEnLima(now: Date): { dia: number; minuto: number } {
 }
 
 /**
- * ¿Abierta ahora, en Lima? Mismo criterio que la ficha del marketplace
- * (`isOpenNow`): cierre incluido y cierre pasada la medianoche (19:00 → 02:00).
- * `null` = sin horario: no se decide (el aviso no sale).
+ * ¿Abierta ahora, en Lima? Cierre incluido. Un turno que cruza la medianoche
+ * (sábado 19:00 → 02:00) es del día en que ABRE: el domingo a la 01:00 sigue
+ * abierta por el turno del sábado, aunque el domingo esté cerrado o abra a las
+ * 10:00; y el domingo 19:00 → 02:00 no abre el domingo a la 01:00 si el sábado
+ * no abrió. `null` = sin horario: no se decide (el aviso no sale).
  */
 export function abiertoEnLima(horario: StoreHours | null, now: Date): boolean | null {
   if (!horario) return null;
   const { dia, minuto } = ahoraEnLima(now);
   const hoy = horario[DIAS[dia]];
-  if (!abreEseDia(hoy)) return false;
-  const abre = minutos(hoy.open) ?? 0;
-  const cierra = minutos(hoy.close) ?? 0;
-  if (cierra < abre) return minuto >= abre || minuto <= cierra;
-  return minuto >= abre && minuto <= cierra;
+  if (abreEseDia(hoy)) {
+    const abre = minutos(hoy.open) ?? 0;
+    const cierra = minutos(hoy.close) ?? 0;
+    if (cierra < abre ? minuto >= abre : minuto >= abre && minuto <= cierra) return true;
+  }
+  const ayer = horario[DIAS[(dia + 6) % 7]];
+  if (abreEseDia(ayer)) {
+    const abre = minutos(ayer.open) ?? 0;
+    const cierra = minutos(ayer.close) ?? 0;
+    if (cierra < abre && minuto <= cierra) return true;
+  }
+  return false;
 }
 
 /** «hoy a las 08:00», «mañana a las 08:00», «el lunes a las 08:00»; `null` si nunca abre. */

@@ -121,10 +121,12 @@ export function usePuntos() {
   const canjear = async (puntos: number): Promise<boolean> => {
     if (!elegido || puntos <= 0 || puntos > elegido.loyaltyPoints) return false;
     const phone = elegido.phone;
+    /* La ruta sólo tiene GET y PATCH (ajuste con signo): el POST de antes daba
+       405 y canjear no hacía nada (11-10). Negativo = canje. */
     const res = await fetch(`/api/loyalty/${encodeURIComponent(phone)}`, {
-      method: "POST",
+      method: "PATCH",
       headers: csrfHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ action: "redeem", points: puntos }),
+      body: JSON.stringify({ points: -puntos, reason: "Canje en Campañas › Puntos" }),
     });
     if (!res.ok) return false;
     setClientes((prev) => prev.map((c) => (c.phone === phone ? { ...c, loyaltyPoints: c.loyaltyPoints - puntos } : c)));

@@ -27,10 +27,19 @@ import { logger } from "@/lib/logger";
  * elegir el mes. Sin él, el mes en curso en Lima. Cada fila trae además el
  * desglose `ventas`/`pedidos` para que una pantalla pueda decir de dónde sale.
  *
+ * Roles: la plata del negocio entero. Dueño, admin y encargado, más el
+ * analista (lee ventas, gastos y la proyección: `RUTAS_PANEL`
+ * `/api/finance/cashflow-rolling`). Cajero y almacenero → 403: antes,
+ * `requireAdmin(req)` sin lista dejaba pasar a cualquier rol del panel, y
+ * ninguna pestaña de ellos la usa (Mi Plata e Impuestos no están en
+ * `MODULE_PERMISSIONS` de esos roles).
+ *
  * @prisma-direct ok — agregados con scope explícito por `auth.tenantId`.
  */
+const ROLES = ["admin", "owner", "manager", "analista"] as const;
+
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ROLES);
   if (auth instanceof NextResponse) return auth;
 
   const params = new URL(req.url).searchParams;

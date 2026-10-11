@@ -1,7 +1,9 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { limaDateKey } from "@/lib/utils";
-import { sumarDias, type SystemPayment } from "@/lib/finance/bank-reconciliation";
+import { medioDigital, mediosDeLaCuenta, sumarDias, type SystemPayment } from "@/lib/finance/bank-reconciliation";
+import { ESTADOS_PEDIDO_QUE_ENTRAN } from "@/lib/finance/ingresos-del-periodo";
+import { desglosarPago } from "@/lib/caja/desglosar-pago";
 
 /**
  * Lo que el sistema anotó y debería verse en el banco, para cuadrar el extracto
@@ -9,11 +11,21 @@ import { sumarDias, type SystemPayment } from "@/lib/finance/bank-reconciliation
  *
  * Fuentes (cada movimiento una sola vez):
  *  · Tesorería: los movimientos de la cuenta elegida, o de todas las de banco.
- *  · Ventas de mostrador cobradas por Yape, Plin, tarjeta o transferencia (`Sale.payment`).
+ *  · Ventas de mostrador cobradas por Yape, Plin, tarjeta o transferencia
+ *    (`Sale.payment`). Una venta MIXTA se parte en sus medios con el mismo
+ *    reparto que la caja (`desglosarPago`): de «efectivo 30 + Yape 20» entran
+ *    los 20. Se lee de `Sale` y no de las líneas `venta` de la caja porque la
+ *    venta sin caja abierta no deja línea (medido 11-10: 11 de 45 ventas la
+ *    tienen), y el medio de una línea `venta` no se corrige («Cambiar medio»
+ *    sólo toca ingresos y egresos: `lib/caja/cambiar-medio.ts`).
  *  · Caja: otros ingresos y egresos digitales que no son una venta (abono de un
  *    fiado por Yape, un pago por transferencia). La venta ya está arriba: su
  *    movimiento de caja (`saleId`) no se cuenta dos veces.
- *  · Pedidos online no cancelados cobrados por medio digital, con su N° de operación de Yape.
+ *  · Pedidos online que ya son plata del negocio (`ESTADOS_PEDIDO_QUE_ENTRAN`,
+ *    los mismos de Mi Plata) cobrados por medio digital, más los no cancelados
+ *    con N° de operación de Yape (el cliente dice que ya pagó: cruzarlo con el
+ *    banco es justo lo que sirve). Un pendiente sin N° no está en el banco.
+ * Con una cuenta elegida, sólo los medios que caen en ella (`mediosDeLaCuenta`).
  * Una venta o pedido que ya está anotado en Tesorería (`referencia` = su id) no se repite.
  */
 
@@ -75,11 +87,25 @@ export const ConciliacionBancariaDB = {
     let recortado = tesoreria.length >= TOPE_POR_FUENTE;
     if (!pedido.conVentas) return { pagos, porFuente, recortado };
 
+    const cuenta = pedido.cuentaId
+      ? await prisma.treasuryCuenta.findFirst({ where: { id: pedido.cuentaId, tenantId }, select: { tipo: true, nombre: true, banco: true } })
+      : null;
+    const medios = mediosDeLaCuenta(cuenta);
+    if (medios && medios.size === 0) return { pagos, porFuente, recortado };
+    const admite = (medio: string | null | undefined) => {
+      const m = medioDigital(medio);
+      return !!m && (!medios || medios.has(m));
+    };
+
     const yaEnTesoreria = new Set(tesoreria.map((m) => m.referencia).filter((r): r is string => !!r));
     const [ventas, caja, pedidos] = await Promise.all([
       prisma.sale.findMany({
-        where: { tenantId, createdAt, payment: { in: MEDIOS_DIGITALES } },
-        select: { id: true, total: true, payment: true, comprobanteNumero: true, createdAt: true },
+        where: {
+          tenantId,
+          createdAt,
+          OR: [{ payment: { in: MEDIOS_DIGITALES } }, { payment: { equals: "mixto", mode: "insensitive" } }],
+        },
+        select: { id: true, total: true, payment: true, paymentDetails: true, comprobanteNumero: true, createdAt: true },
         orderBy: { createdAt: "asc" },
         take: TOPE_POR_FUENTE,
       }),
@@ -96,7 +122,17 @@ export const ConciliacionBancariaDB = {
         take: TOPE_POR_FUENTE,
       }),
       prisma.order.findMany({
-        where: { tenantId, createdAt, deletedAt: null, status: { not: "cancelado" }, paymentMethod: { in: MEDIOS_DIGITALES } },
+        where: {
+          tenantId,
+          createdAt,
+          deletedAt: null,
+          paymentMethod: { in: MEDIOS_DIGITALES },
+          OR: [
+            { status: { in: [...ESTADOS_PEDIDO_QUE_ENTRAN] } },
+            // `gt: ""` = con N° de operación escrito (ni null ni vacío).
+            { status: { not: "cancelado" }, yapeOperationNumber: { gt: "" } },
+          ],
+        },
         select: { id: true, total: true, paymentMethod: true, yapeOperationNumber: true, createdAt: true },
         orderBy: { createdAt: "asc" },
         take: TOPE_POR_FUENTE,
@@ -106,16 +142,21 @@ export const ConciliacionBancariaDB = {
 
     for (const v of ventas) {
       if (yaEnTesoreria.has(v.id)) continue;
-      porFuente.ventas++;
-      pagos.push({
-        id: `venta:${v.id}`,
-        date: limaDateKey(v.createdAt),
-        amount: num(v.total),
-        method: `Venta · ${v.payment.toLowerCase()}`,
-        description: v.comprobanteNumero ? `Venta ${v.comprobanteNumero}` : "Venta de mostrador",
+      const lineas = desglosarPago(v.payment, v.paymentDetails, num(v.total)).filter((l) => admite(l.method));
+      const nombre = v.comprobanteNumero ? `Venta ${v.comprobanteNumero}` : "Venta de mostrador";
+      lineas.forEach((l, i) => {
+        porFuente.ventas++;
+        pagos.push({
+          id: lineas.length === 1 && medioDigital(v.payment) ? `venta:${v.id}` : `venta:${v.id}:${i}`,
+          date: limaDateKey(v.createdAt),
+          amount: num(l.amount),
+          method: `Venta · ${l.method.toLowerCase()}`,
+          description: medioDigital(v.payment) ? nombre : `${nombre} (pago mixto)`,
+        });
       });
     }
     for (const c of caja) {
+      if (!admite(c.method)) continue;
       porFuente.caja++;
       pagos.push({
         id: `caja:${c.id}`,
@@ -126,7 +167,7 @@ export const ConciliacionBancariaDB = {
       });
     }
     for (const p of pedidos) {
-      if (yaEnTesoreria.has(p.id)) continue;
+      if (yaEnTesoreria.has(p.id) || !admite(p.paymentMethod)) continue;
       porFuente.pedidos++;
       pagos.push({
         id: `pedido:${p.id}`,

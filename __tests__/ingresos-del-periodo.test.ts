@@ -117,6 +117,16 @@ describe("GET /api/finanzas/monthly-summary", () => {
     expect(ultima.createdAt).toEqual({ gte: new Date("2026-05-01T05:00:00.000Z"), lt: new Date("2026-06-01T05:00:00.000Z") });
   });
 
+  it("pide la lista de roles de gestión + analista (sin ella pasaba el cajero)", async () => {
+    const { GET } = await import("@/app/api/finanzas/monthly-summary/route");
+    const { NextRequest } = await import("next/server");
+    await GET(new NextRequest("http://x/api/finanzas/monthly-summary?months=1&hasta=2026-05"));
+    const roles = m.requireAdmin.mock.calls.at(-1)?.[1] as readonly string[] | undefined;
+    expect(roles).toEqual(["admin", "owner", "manager", "analista"]);
+    expect(roles).not.toContain("cajero");
+    expect(roles).not.toContain("almacenero");
+  });
+
   it("un hasta mal formado es un 400, no un mes inventado", async () => {
     const { GET } = await import("@/app/api/finanzas/monthly-summary/route");
     const { NextRequest } = await import("next/server");

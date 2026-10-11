@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { LoyaltyDB, normalizePhone } from "@/lib/jsondb";
+import { LoyaltyDB as LibroDePuntos } from "@/lib/db/loyalty.db";
+import { ApiError } from "@/lib/api-error";
 import { requireAdmin } from "@/lib/require-admin";
 import { requireCustomer } from "@/lib/auth/require-customer";
 import { CUSTOMER_SESSION, telefonoDeLaSesion } from "@/lib/auth/customer-session";
@@ -114,9 +116,21 @@ export async function PATCH(
     const normalized = normalizePhone(phone);
     const { points } = parsed.data;
     if (points > 0) {
-      const result = await LoyaltyDB.accruePoints(auth.tenantId, normalized, points);
-      if (!result) return NextResponse.json({ error: "Cliente no encontrado" }, { status: 404 });
-      return NextResponse.json(result);
+      /* Ajuste a mano: exactamente N puntos, con su asiento «manual». Antes iba
+         por `accruePoints`, que es el camino de una COMPRA: sumaba S/ N a
+         «Gastado», recalculaba el nivel y daba computePoints(N) puntos (11-10). */
+      try {
+        await LibroDePuntos.earn(auth.tenantId, normalized, points, "manual", {
+          por: auth.username,
+          ...(parsed.data.reason ? { motivo: parsed.data.reason } : {}),
+        });
+      } catch (err) {
+        if (err instanceof ApiError && (err.httpStatus === 404 || err.httpStatus === 403)) {
+          return NextResponse.json({ error: "Cliente no encontrado" }, { status: 404 });
+        }
+        throw err;
+      }
+      return NextResponse.json(await LoyaltyDB.getByPhone(auth.tenantId, normalized));
     } else {
       const ok = await LoyaltyDB.redeemPoints(auth.tenantId, normalized, Math.abs(points));
       if (!ok) return NextResponse.json({ error: "Puntos insuficientes" }, { status: 422 });

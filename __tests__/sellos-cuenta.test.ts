@@ -5,6 +5,7 @@ import {
   conConfig,
   ConfigSellosSchema,
   estadoDeSellos,
+  leerArchivoSellos,
   leerCanjes,
   leerConfigSellos,
   type CanjeSellos,
@@ -76,5 +77,20 @@ describe("tarjeta de sellos: lo guardado en los Json del programa", () => {
     expect(todos["999888777"]).toHaveLength(1);
     expect(todos["916409675"]).toHaveLength(1);
     expect(leerCanjes({ sellosCanjes: { x: [{ sellos: "10", at: "ayer" }] } })).toEqual({});
+  });
+
+  it("lo que el tope saca va al archivo y sigue restando; un archivo de antes de «desde» no resta", () => {
+    const lista = (dia: string) => Array.from({ length: 50 }, (_, i) => canje(`${dia}T${String(10 + Math.floor(i / 60)).padStart(2, "0")}:${String(i % 60).padStart(2, "0")}:00.000Z`));
+    const con51 = conCanje({ sellosCanjes: { k: lista("2026-10-02") } }, "k", canje("2026-10-09T15:00:00.000Z"), "2026-10-01");
+    const archivo = leerArchivoSellos(con51).k;
+    expect(archivo).toEqual({ canjes: 1, sellos: 10, hasta: "2026-10-02T10:00:00.000Z" });
+    expect(leerCanjes(con51).k).toHaveLength(50);
+    // 510 compras − 51 tarjetas = 0: sin el archivo daba un premio de más.
+    expect(estadoDeSellos(510, leerCanjes(con51).k, CONFIG, archivo)).toMatchObject({ premios: 0, canjeados: 51 });
+    expect(estadoDeSellos(510, leerCanjes(con51).k, CONFIG)).toMatchObject({ premios: 1 });
+    // Reinicio: «desde» pasa al 05-10 → el archivo (del 02-10) ya no resta, y al archivar de nuevo no se mezcla.
+    expect(estadoDeSellos(10, [], { compras: 10, desde: "2026-10-05" }, archivo)).toMatchObject({ premios: 1, canjeados: 0 });
+    const otra = conCanje(con51, "k", canje("2026-10-10T15:00:00.000Z"), "2026-10-05");
+    expect(leerArchivoSellos(otra).k).toEqual(archivo);
   });
 });

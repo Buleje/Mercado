@@ -70,6 +70,12 @@ export default function CuadrarConBanco({ open, onClose, cuentas }: { open: bool
             value={cuentaId}
             onChange={(e) => {
               setCuentaId(e.target.value);
+              /* Con una cuenta de banco elegida y varias en el negocio, no se sabe a
+                 cuál cae cada Yape o tarjeta: sumar las ventas por defecto las daría
+                 «sólo en el sistema». Una billetera cruza sólo su medio (el servidor). */
+              const elegida = opciones.find((c) => c.id === e.target.value);
+              const bancos = opciones.filter((c) => ES_BANCO.has(c.tipo)).length;
+              setConVentas(!elegida || elegida.tipo === "MONEDERO_DIGITAL" || (ES_BANCO.has(elegida.tipo) && bancos <= 1));
               limpiar();
             }}
             className={cn(CAMPO_INPUT, "h-12 w-full sm:w-auto sm:min-w-[12rem] sm:flex-1")}

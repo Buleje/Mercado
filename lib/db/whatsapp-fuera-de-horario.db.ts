@@ -22,10 +22,17 @@ import {
  * campo es único: si dos mensajes del mismo cliente llegan juntos, sólo uno
  * reserva el aviso. El único write extra es el propio mensaje (que la bandeja
  * guardaría igual).
+ *
+ * Un aviso que Meta rechazó (`failed`) no cuenta como avisado: se libera la
+ * reserva del tramo (`marcarFallido` le cambia el `waMessageId`) y el próximo
+ * mensaje del cliente lo reintenta. Tope: `FALLIDOS_TOPE` fallidos seguidos en
+ * 12 h y se deja de intentar (un token vencido no llena la bandeja de
+ * fallidos, uno por cada mensaje del cliente).
  */
 
 const PREFIJO = "aviso-cerrado:";
 const MS_TRAMO = HORAS_ENTRE_AVISOS * 3_600_000;
+export const FALLIDOS_TOPE = 3;
 
 export const WhatsAppFueraDeHorarioDB = {
   async ajuste(tenantId: string): Promise<AjusteFueraDeHorario> {
@@ -54,9 +61,12 @@ export const WhatsAppFueraDeHorarioDB = {
     return horarioValido(crudo);
   },
 
-  /** Cuándo se le mandó el último aviso a este cliente en las últimas 12 horas. */
+  /**
+   * Cuándo se le mandó el último aviso a este cliente en las últimas 12 horas
+   * (los fallidos no cuentan, salvo que ya sean `FALLIDOS_TOPE` seguidos).
+   */
   async ultimoAviso(tenantId: string, customerPhone: string, now: Date): Promise<Date | null> {
-    const fila = await prisma.whatsAppMessage.findFirst({
+    const filas = await prisma.whatsAppMessage.findMany({
       where: {
         tenantId,
         customerPhone,
@@ -65,9 +75,12 @@ export const WhatsAppFueraDeHorarioDB = {
         createdAt: { gte: new Date(now.getTime() - MS_TRAMO) },
       },
       orderBy: { createdAt: "desc" },
-      select: { createdAt: true },
+      select: { createdAt: true, status: true },
+      take: FALLIDOS_TOPE,
     });
-    return fila?.createdAt ?? null;
+    const mandado = filas.find((f) => f.status !== "failed");
+    if (mandado) return mandado.createdAt;
+    return filas.length >= FALLIDOS_TOPE ? filas[0].createdAt : null;
   },
 
   /**
@@ -92,9 +105,15 @@ export const WhatsAppFueraDeHorarioDB = {
     return fila ? { id: fila.id } : null;
   },
 
-  /** Meta no lo aceptó: la bandeja lo muestra como fallido. */
+  /**
+   * Meta no lo aceptó: la bandeja lo muestra como fallido y la reserva del
+   * tramo queda libre (el `waMessageId` pasa a `…:fallo:<id>`, sigue con el
+   * prefijo para que `ultimoAviso` cuente los fallidos).
+   */
   async marcarFallido(tenantId: string, id: string): Promise<void> {
-    await prisma.whatsAppMessage.updateMany({ where: { id, tenantId }, data: { status: "failed" } });
+    const fila = await prisma.whatsAppMessage.findFirst({ where: { id, tenantId }, select: { waMessageId: true } });
+    const libre = fila?.waMessageId?.startsWith(PREFIJO) ? { waMessageId: `${fila.waMessageId}:fallo:${id}` } : {};
+    await prisma.whatsAppMessage.updateMany({ where: { id, tenantId }, data: { status: "failed", ...libre } });
     invalidateByPrefix(`whatsapp-inbox:${tenantId}`);
   },
 };

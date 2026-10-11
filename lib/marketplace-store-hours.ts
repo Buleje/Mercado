@@ -71,17 +71,21 @@ function toMinutes(hhmm?: string): number | null {
 export function isOpenNow(hours: StoreHours | null | undefined, now: Date): boolean {
   if (!hours) return false;
   const lima = enLima(now);
-  const todayKey = JS_DAY_TO_KEY[lima.dia];
-  const day = hours[todayKey];
-  if (!day || day.closed) return false;
-  const open = toMinutes(day.open);
-  const close = toMinutes(day.close);
-  if (open === null || close === null) return false;
   const cur = lima.minuto;
-  // Soporte de cierres después de medianoche (close < open):
-  // ej. 19:00 → 02:00. Se considera abierto si cur >= open OR cur <= close.
-  if (close < open) return cur >= open || cur <= close;
-  return cur >= open && cur <= close;
+  // Un turno que cruza la medianoche (19:00 → 02:00) es del día en que ABRE:
+  // el domingo a la 01:00 sigue abierta por el turno del sábado aunque el
+  // domingo esté cerrado (antes miraba sólo el día de hoy y daba «cerrado»).
+  const turno = (key: DayKey) => {
+    const day = hours[key];
+    if (!day || day.closed) return null;
+    const open = toMinutes(day.open);
+    const close = toMinutes(day.close);
+    return open === null || close === null ? null : { open, close };
+  };
+  const hoy = turno(JS_DAY_TO_KEY[lima.dia]);
+  if (hoy && (hoy.close < hoy.open ? cur >= hoy.open : cur >= hoy.open && cur <= hoy.close)) return true;
+  const ayer = turno(JS_DAY_TO_KEY[(lima.dia + 6) % 7]);
+  return !!ayer && ayer.close < ayer.open && cur <= ayer.close;
 }
 
 /**

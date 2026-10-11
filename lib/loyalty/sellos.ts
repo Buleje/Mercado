@@ -8,7 +8,10 @@
  *  · la configuración vive en `Settings.loyaltyRulesJson` → clave `sellos`;
  *  · los canjes, en `Settings.loyaltyRewardsJson` → clave `sellosCanjes`
  *    (por celular, sus últimos 9 dígitos), y cada canje deja su renglón en el
- *    registro de actividad.
+ *    registro de actividad;
+ *  · los canjes que el tope de la lista saca (los más viejos), sumados en
+ *    `sellosArchivo` (por celular): siguen restando, así al canje 51 no
+ *    reaparece un premio. Lo guardado antes de esto no tiene archivo = 0.
  *
  * Un sello = una compra CERRADA desde `desde`: pedido entregado o venta del
  * POS con su celular (la misma regla que «Gastado» de Mis clientes,
@@ -48,6 +51,22 @@ export interface CanjeSellos {
   por: string;
   /** El premio de ese día. */
   premio: string;
+}
+
+/**
+ * Los canjes que salieron de la lista por el tope, sumados. Sólo restan si el
+ * más nuevo de ellos es de desde «desde» en adelante (cambiar la fecha reinicia
+ * las tarjetas). Si «desde» cae justo en medio del archivo (se movió a una
+ * fecha de hace más de 50 canjes), resta entero: mejor un premio de menos que
+ * uno entregado dos veces.
+ */
+export interface ArchivoSellos {
+  /** Canjes archivados. */
+  canjes: number;
+  /** Sellos que consumieron entre todos. */
+  sellos: number;
+  /** ISO del canje archivado más nuevo. */
+  hasta: string;
 }
 
 export interface EstadoSellos {
@@ -93,19 +112,39 @@ export function leerCanjes(rewards: unknown): Record<string, CanjeSellos[]> {
   return out;
 }
 
+/** Lo archivado por clave de celular; lo que no tiene forma se ignora. */
+export function leerArchivoSellos(rewards: unknown): Record<string, ArchivoSellos> {
+  if (!esObjeto(rewards) || !esObjeto(rewards.sellosArchivo)) return {};
+  const out: Record<string, ArchivoSellos> = {};
+  for (const [clave, a] of Object.entries(rewards.sellosArchivo)) {
+    if (!esObjeto(a) || typeof a.hasta !== "string" || Number.isNaN(Date.parse(a.hasta))) continue;
+    const canjes = Number(a.canjes);
+    const sellos = Number(a.sellos);
+    if (Number.isInteger(canjes) && canjes > 0 && Number.isFinite(sellos) && sellos > 0) out[clave] = { canjes, sellos, hasta: a.hasta };
+  }
+  return out;
+}
+
 /**
  * Dónde está el cliente en su tarjeta. `compras` = las que dieron sello desde
  * `desde`; sólo restan los canjes hechos desde ese día. Nunca negativo: si un
  * pedido entregado se anuló después del canje, la tarjeta queda en 0.
  */
-export function estadoDeSellos(compras: number, canjes: readonly CanjeSellos[], config: Pick<ConfigSellos, "compras" | "desde">): EstadoSellos {
+export function estadoDeSellos(
+  compras: number,
+  canjes: readonly CanjeSellos[],
+  config: Pick<ConfigSellos, "compras" | "desde">,
+  archivo?: ArchivoSellos | null,
+): EstadoSellos {
   const meta = config.compras;
   const inicio = inicioDeDesde(config.desde).getTime();
   const vigentes = canjes.filter((c) => Date.parse(c.at) >= inicio);
-  const usados = vigentes.reduce((s, c) => s + c.sellos, 0);
+  const archivoCuenta = !!archivo && Date.parse(archivo.hasta) >= inicio;
+  const usados = vigentes.reduce((s, c) => s + c.sellos, 0) + (archivoCuenta ? archivo.sellos : 0);
   const libres = Math.max(0, Math.floor(compras) - usados);
   const premios = Math.floor(libres / meta);
-  return { meta, compras: Math.max(0, Math.floor(compras)), canjeados: vigentes.length, premios, siguiente: libres - premios * meta };
+  const canjeados = vigentes.length + (archivoCuenta ? archivo.canjes : 0);
+  return { meta, compras: Math.max(0, Math.floor(compras)), canjeados, premios, siguiente: libres - premios * meta };
 }
 
 /** `rules` con la config nueva, sin pisar las demás claves que hubiera. */
@@ -113,10 +152,61 @@ export function conConfig(rules: unknown, config: ConfigSellos): Record<string, 
   return { ...(esObjeto(rules) ? rules : {}), sellos: config };
 }
 
-/** `rewards` con un canje más para `clave` (los más nuevos al final, con tope), sin pisar lo demás. */
-export function conCanje(rewards: unknown, clave: string, canje: CanjeSellos): Record<string, unknown> {
+/**
+ * `rewards` con un canje más para `clave` (los más nuevos al final, con tope),
+ * sin pisar lo demás. Lo que el tope saca se suma a `sellosArchivo`; con
+ * `desde`, sólo lo de ese día en adelante (un archivo de antes de reiniciar las
+ * tarjetas se descarta, no se mezcla con el de ahora).
+ */
+export function conCanje(rewards: unknown, clave: string, canje: CanjeSellos, desde?: string): Record<string, unknown> {
   const base = esObjeto(rewards) ? rewards : {};
-  const todos = leerCanjes(base);
-  const suyos = [...(todos[clave] ?? []), canje].slice(-CANJES_POR_CLIENTE);
-  return { ...base, sellosCanjes: { ...(esObjeto(base.sellosCanjes) ? base.sellosCanjes : {}), [clave]: suyos } };
+  const todos = [...(leerCanjes(base)[clave] ?? []), canje];
+  const sobran = todos.slice(0, Math.max(0, todos.length - CANJES_POR_CLIENTE));
+  const out: Record<string, unknown> = {
+    ...base,
+    sellosCanjes: { ...(esObjeto(base.sellosCanjes) ? base.sellosCanjes : {}), [clave]: todos.slice(-CANJES_POR_CLIENTE) },
+  };
+  const inicio = desde ? inicioDeDesde(desde).getTime() : Number.NEGATIVE_INFINITY;
+  const cuentan = sobran.filter((c) => Date.parse(c.at) >= inicio);
+  if (cuentan.length === 0) return out;
+  const anterior = leerArchivoSellos(base)[clave];
+  const previo = anterior && Date.parse(anterior.hasta) >= inicio ? anterior : null;
+  const archivo: ArchivoSellos = {
+    canjes: (previo?.canjes ?? 0) + cuentan.length,
+    sellos: (previo?.sellos ?? 0) + cuentan.reduce((n, c) => n + c.sellos, 0),
+    hasta: cuentan.reduce((max, c) => (Date.parse(c.at) > Date.parse(max) ? c.at : max), previo?.hasta ?? cuentan[0].at),
+  };
+  out.sellosArchivo = { ...(esObjeto(base.sellosArchivo) ? base.sellosArchivo : {}), [clave]: archivo };
+  return out;
+}
+
+const CLAVES_DE_SELLOS_EN_REWARDS = ["sellosCanjes", "sellosArchivo"] as const;
+
+/**
+ * Lo que manda `PUT /api/marketplace/loyalty/rules` reemplaza el Json entero:
+ * sin esto, guardar reglas o recompensas borraba la config de la tarjeta de
+ * sellos (`rules.sellos`) y sus canjes (`rewards.sellosCanjes/sellosArchivo`).
+ * Si lo nuevo es un objeto sin esas claves, se le pasan las de ahora; si no es
+ * un objeto (lista, null) y hay sellos guardados, `null` = no se puede guardar
+ * sin perderlos.
+ */
+export function conservarSellos(
+  nuevo: { rules?: unknown; rewards?: unknown },
+  actual: { rules: unknown; rewards: unknown },
+): { rules?: unknown; rewards?: unknown } | null {
+  const out: { rules?: unknown; rewards?: unknown } = { ...nuevo };
+  if (nuevo.rules !== undefined && esObjeto(actual.rules) && actual.rules.sellos !== undefined) {
+    if (!esObjeto(nuevo.rules)) return null;
+    if (nuevo.rules.sellos === undefined) out.rules = { ...nuevo.rules, sellos: actual.rules.sellos };
+  }
+  if (nuevo.rewards !== undefined && esObjeto(actual.rewards)) {
+    const guardadas = CLAVES_DE_SELLOS_EN_REWARDS.filter((k) => esObjeto(actual.rewards) && actual.rewards[k] !== undefined);
+    if (guardadas.length > 0) {
+      if (!esObjeto(nuevo.rewards)) return null;
+      const base: Record<string, unknown> = { ...nuevo.rewards };
+      for (const k of guardadas) if (base[k] === undefined) base[k] = actual.rewards[k];
+      out.rewards = base;
+    }
+  }
+  return out;
 }

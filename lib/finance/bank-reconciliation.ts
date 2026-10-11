@@ -320,6 +320,44 @@ export function sumarDias(fecha: string, dias: number): string {
   return new Date(Date.parse(`${fecha}T00:00:00.000Z`) + dias * 86_400_000).toISOString().slice(0, 10);
 }
 
+// ── Medios de pago ──────────────────────────────────────────────────────────
+
+/** Cómo escriben las pantallas los medios que llegan al banco → su forma única. */
+const MEDIO_CANONICO: Record<string, string> = {
+  yape: "yape",
+  plin: "plin",
+  tarjeta: "tarjeta",
+  card: "tarjeta",
+  transferencia: "transferencia",
+  transfer: "transferencia",
+  deposito: "deposito",
+  "depósito": "deposito",
+};
+
+/** «Yape», «card», «Depósito» → `yape`, `tarjeta`, `deposito`; `null` si no llega al banco (efectivo, fiado, mixto). */
+export function medioDigital(medio: string | null | undefined): string | null {
+  return MEDIO_CANONICO[(medio ?? "").trim().toLowerCase()] ?? null;
+}
+
+/**
+ * Qué cobros digitales se cruzan contra el extracto de esta cuenta (`null` = todos):
+ *  · sin cuenta («todas tus cuentas de banco») → todos;
+ *  · caja física → ninguno: un Yape no entra a la caja;
+ *  · billetera con «Yape» o «Plin» en el nombre → sólo ese medio;
+ *  · cualquier otra → todos: el sistema no sabe a qué banco cae cada medio (la
+ *    pantalla apaga «Sumar lo cobrado…» si hay más de una cuenta de banco).
+ */
+export function mediosDeLaCuenta(cuenta: { tipo: string; nombre: string; banco?: string | null } | null): ReadonlySet<string> | null {
+  if (!cuenta) return null;
+  if (cuenta.tipo === "CAJA_FISICA") return new Set();
+  if (cuenta.tipo === "MONEDERO_DIGITAL") {
+    const texto = `${cuenta.nombre} ${cuenta.banco ?? ""}`.toLowerCase();
+    const suyos = ["yape", "plin"].filter((m) => texto.includes(m));
+    if (suyos.length > 0) return new Set(suyos);
+  }
+  return null;
+}
+
 // ── Cruzar ──────────────────────────────────────────────────────────────────
 
 function diasEntre(a: string, b: string): number {
@@ -335,9 +373,15 @@ function claveReferencia(r: string | undefined): string {
   return /^\d+$/.test(s) ? s.replace(/^0+(?=\d)/, "") : s;
 }
 
-const mismoMonto = (a: number, b: number) => Math.abs(a - b) < TOLERANCIA_MONTO;
+/**
+ * En céntimos enteros, no en decimales: `1,13 − 1,12` da 0,00999… en float y
+ * pasaba por «el mismo monto»; `1,10 − 0,60` da 0,5000…1 y quedaba fuera del
+ * tope de S/ 0,50.
+ */
+const centimos = (n: number) => Math.round(n * 100);
+const mismoMonto = (a: number, b: number) => Math.abs(centimos(a) - centimos(b)) < centimos(TOLERANCIA_MONTO);
 const mismoSigno = (a: number, b: number) => Math.sign(a) === Math.sign(b);
-const diferenciaAdmitida = (monto: number) => Math.max(DIFERENCIA_MINIMA, Math.abs(monto) * DIFERENCIA_RELATIVA);
+const diferenciaAdmitida = (monto: number) => centimos(Math.max(DIFERENCIA_MINIMA, Math.abs(monto) * DIFERENCIA_RELATIVA));
 
 /**
  * Cruza el banco con el sistema, en tres pasadas (cada movimiento del sistema
@@ -402,7 +446,7 @@ export function cuadrarConElBanco(banco: BankRow[], sistema: SystemPayment[]): C
     const s = elMejor(
       (x) =>
         mismoSigno(x.amount, b.amount) &&
-        Math.abs(x.amount - b.amount) <= tope &&
+        Math.abs(centimos(x.amount) - centimos(b.amount)) <= tope &&
         diasEntre(x.date, b.date) <= TOLERANCIA_DIAS,
       (x) => Math.abs(x.amount - b.amount) * 100 + diasEntre(x.date, b.date),
     );

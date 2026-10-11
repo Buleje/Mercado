@@ -96,6 +96,15 @@ describe("isOpenNow", () => {
     expect(isOpenNow(LATE_NIGHT, SAT_3AM)).toBe(false);
   });
 
+  it("LATE_NIGHT — domingo 01:00 sigue abierta por el turno del sábado (el domingo está cerrado)", () => {
+    expect(isOpenNow(LATE_NIGHT, lima(2026, 4, 3, 1, 0))).toBe(true);
+    expect(isOpenNow(LATE_NIGHT, lima(2026, 4, 3, 3, 0))).toBe(false);
+  });
+
+  it("LATE_NIGHT — viernes 01:00 cerrada: el jueves no abrió y el turno del viernes empieza a las 19:00", () => {
+    expect(isOpenNow(LATE_NIGHT, lima(2026, 4, 8, 1, 0))).toBe(false);
+  });
+
   it("retorna false si la hora es inválida", () => {
     expect(isOpenNow({ mon: { open: "abc", close: "20:00" } }, MON_10AM)).toBe(false);
   });

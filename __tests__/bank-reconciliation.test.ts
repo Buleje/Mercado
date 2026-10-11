@@ -11,6 +11,8 @@ import {
   cuadrarConElBanco,
   leerCsv,
   leerExtracto,
+  medioDigital,
+  mediosDeLaCuenta,
   normalizarFecha,
   parseBankCsv,
   parseMonto,
@@ -149,6 +151,25 @@ describe("cuadrar con el banco", () => {
     expect(c.conDiferencia).toHaveLength(0);
     expect(c.soloBanco).toHaveLength(2);
     expect(c.soloSistema).toHaveLength(2);
+  });
+
+  it("montos en céntimos: 1,13 vs 1,12 NO es el mismo monto; 1,10 vs 0,60 sí entra en el tope de S/ 0,50", () => {
+    // En float 1,13 − 1,12 = 0,00999… y pasaba por «coinciden».
+    const c = cuadrarConElBanco([b("2026-10-15", 1.13)], [s("v1", "2026-10-15", 1.12)]);
+    expect(c.coinciden).toHaveLength(0);
+    expect(c.conDiferencia).toEqual([expect.objectContaining({ diferencia: 0.01 })]);
+    // 1,10 − 0,60 = 0,5000…1 en float y quedaba fuera del tope.
+    const d = cuadrarConElBanco([b("2026-10-15", 1.1)], [s("v1", "2026-10-15", 0.6)]);
+    expect(d.conDiferencia).toEqual([expect.objectContaining({ diferencia: 0.5 })]);
+  });
+
+  it("medios: forma única y qué se cruza contra cada cuenta", () => {
+    expect(["Yape", "card", "Depósito", "efectivo", "MIXTO", null].map(medioDigital)).toEqual(["yape", "tarjeta", "deposito", null, null, null]);
+    expect(mediosDeLaCuenta(null)).toBeNull();
+    expect(mediosDeLaCuenta({ tipo: "BANCO_CORRIENTE", nombre: "BCP" })).toBeNull();
+    expect([...(mediosDeLaCuenta({ tipo: "CAJA_FISICA", nombre: "Caja" }) ?? ["x"])]).toEqual([]);
+    expect([...(mediosDeLaCuenta({ tipo: "MONEDERO_DIGITAL", nombre: "Yape del negocio" }) ?? [])]).toEqual(["yape"]);
+    expect(mediosDeLaCuenta({ tipo: "MONEDERO_DIGITAL", nombre: "Billetera" })).toBeNull();
   });
 
   it("resumen: cantidad y monto con signo por grupo", () => {

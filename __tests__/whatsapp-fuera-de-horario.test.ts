@@ -96,6 +96,15 @@ describe("horario en hora de Lima", () => {
     expect(abiertoEnLima(h, new Date("2026-10-11T08:00:00Z"))).toBe(false); // dom 03:00
   });
 
+  it("el turno del sábado 19:00 → 02:00 sigue el domingo a la 01:00 aunque el domingo cierre o abra tarde", () => {
+    const noche = { open: "19:00", close: "02:00" };
+    const DOM_0100 = new Date("2026-10-11T06:00:00Z");
+    expect(abiertoEnLima({ sat: noche, sun: { open: "09:00", close: "14:00", closed: true } }, DOM_0100)).toBe(true);
+    expect(abiertoEnLima({ sat: noche, sun: { open: "10:00", close: "14:00" } }, DOM_0100)).toBe(true);
+    // Al revés: el domingo 19:00 → 02:00 no abre el domingo a la 01:00 si el sábado no abrió.
+    expect(abiertoEnLima({ sat: { open: "08:00", close: "20:00", closed: true }, sun: noche }, DOM_0100)).toBe(false);
+  });
+
   it("resumen de una línea, días iguales juntos", () => {
     expect(resumenHorario(MAIN)).toBe("Lun–Sáb 08:00–20:00 · Dom cerrado");
   });

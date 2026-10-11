@@ -29,7 +29,8 @@ import {
  * Sólo administrador o dueño: muestra la plata del banco del negocio.
  */
 
-export const MAX_BYTES = 5 * 1024 * 1024;
+/** 4 MB: Vercel corta el cuerpo a 4,5 MB con su propio 413 (sin JSON: la pantalla no podía decir qué pasó). */
+export const MAX_BYTES = 4 * 1024 * 1024;
 const MAX_FILAS_BANCO = 5000;
 /** Filas por grupo en la respuesta: la tabla del modal no muestra más (los totales sí cuentan todas). */
 const MAX_FILAS_POR_GRUPO = 500;
@@ -53,13 +54,13 @@ export async function POST(req: NextRequest) {
   const tenantId = auth.tenantId;
 
   const largo = Number(req.headers.get("content-length") ?? 0);
-  if (largo > MAX_BYTES + 64 * 1024) return error(413, "El archivo pesa más de 5 MB.");
+  if (largo > MAX_BYTES + 64 * 1024) return error(413, "El archivo pesa más de 4 MB: bájalo de a un mes.");
 
   const form = await req.formData().catch(() => null);
   if (!form) return error(400, "Manda el archivo del banco como multipart.");
   const archivo = form.get("archivo");
   if (!(archivo instanceof File) || archivo.size === 0) return error(400, "Falta el archivo del banco.");
-  if (archivo.size > MAX_BYTES) return error(413, "El archivo pesa más de 5 MB.");
+  if (archivo.size > MAX_BYTES) return error(413, "El archivo pesa más de 4 MB: bájalo de a un mes.");
   const tipo = tipoDeExtracto(archivo.name);
   if (tipo === "xls") return error(415, "Ese Excel es del formato viejo (.xls): ábrelo y guárdalo como .xlsx o CSV.");
   if (tipo === "otro") return error(415, "Sube el extracto en CSV, TXT o Excel (.xlsx).");

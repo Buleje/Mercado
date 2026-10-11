@@ -83,6 +83,13 @@ describe("POST /api/finanzas/conciliacion", () => {
     expect((await res.json()).error).toMatch(/\.xlsx o CSV/);
   });
 
+  it("más de 4 MB → 413 antes de leerlo (Vercel corta a 4,5 MB con su propio error)", async () => {
+    const res = await POST(subir({}, "a".repeat(4 * 1024 * 1024 + 10)));
+    expect(res.status).toBe(413);
+    expect((await res.json()).error).toMatch(/4 MB/);
+    expect(H.movimientos).not.toHaveBeenCalled();
+  });
+
   it("archivo sin movimientos → 422", async () => {
     const res = await POST(subir({}, "hola;mundo\nnada;aqui"));
     expect(res.status).toBe(422);
