@@ -285,6 +285,19 @@ describe("VISTAS_POR_MODULO refleja las pestañas reales de cada módulo", () =>
       archivo: "components/admin/comandos-ia/ComandosIA.tsx",
       constante: /const SUBS = \[([^\]]+)\]/,
     },
+    // Mi Plata (11-10): secciones de Gastos, Proyección e Impuestos.
+    "plata/gastos": {
+      archivo: "components/admin/unified/finanzas/GastosConPresupuesto.tsx",
+      constante: /export const SUBS_GASTOS = \[([^\]]+)\]/,
+    },
+    "plata/flujo-caja": {
+      archivo: "components/admin/finance/CashflowRollingTable.tsx",
+      constante: /export const SUBS_PROYECCION = \[([^\]]+)\]/,
+    },
+    "plata/impuestos": {
+      archivo: "components/admin/TaxTab.tsx",
+      constante: /const CLAVES: readonly Seccion\[\] = \[([^\]]+)\]/,
+    },
     "documentos/contratos": {
       archivo: "components/admin/ContratosModule.tsx",
       constante: /const CONTRATOS_VISTAS = \[([^\]]+)\]/,

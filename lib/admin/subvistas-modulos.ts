@@ -133,7 +133,7 @@ export const VISTAS_POR_MODULO: Readonly<Record<string, readonly SubvistaModulo[
     { key: "activos", label: "Activos", hint: "Tu maquinaria: alquileres, gastos, alquileres por cobrar, calendario y ranking", origen: ["plata", "activos"] },
     { key: "impuestos", label: "Impuestos del mes", hint: "IGV y renta del mes, y las obligaciones y declaraciones", origen: ["facturacion", "documentos"] },
     { key: "reportes", label: "Reporte mensual", hint: "El resumen del mes para imprimir o mandar en PDF", origen: ["plata", "activos"] },
-    { key: "contador", label: "Para el contador", hint: "Reportes de ventas, inventario y clientes para descargar", origen: ["plata", "activos"] },
+    { key: "contador", label: "Para el contador", hint: "Cada reporte (ventas, compras, inventario, clientes…) en una fila para bajarlo en CSV o PDF", origen: ["plata", "activos"] },
     { key: "importar", label: "Importar y exportar", hint: "Subir o descargar tus datos en Excel o CSV", origen: ["plata", "activos"] },
     { key: "cierres", label: "Cierres", hint: "El historial de cierres de caja", origen: ["plata", "activos"] },
   ],
@@ -347,6 +347,20 @@ export interface SubvistaAnidada extends SubvistaModulo {
 export const ANIDADAS_POR_MODULO: Readonly<Record<string, readonly SubvistaAnidada[]>> = {
   // Clave = id del TAB (`?tab=documentos` abre el hub de Documentos). Las
   // cotizaciones se mudaron a Comprobantes (ola 3, abajo en `facturacion`).
+  // Mi Plata (11-10, «muchos datos → secciones»): Gastos, Proyección e
+  // Impuestos dejaron los bloques apilados por secciones con `?sub=`.
+  plata: [
+    { vista: "gastos", key: "anotados", label: "Gastos anotados", hint: "Lo que gastaste en el mes, uno por fila", origen: ["plata"] },
+    { vista: "gastos", key: "presupuesto", label: "Presupuesto", hint: "Cuánto pensabas gastar por tipo contra lo gastado", origen: ["plata"] },
+    { vista: "gastos", key: "metas", label: "Metas del mes", hint: "Ventas y gastos contra la meta", origen: ["plata"] },
+    { vista: "gastos", key: "fijos", label: "Gastos fijos", hint: "Alquiler, luz, sueldos: lo que se repite cada mes", origen: ["plata", "compras"] },
+    { vista: "gastos", key: "historial", label: "Compras del mes", hint: "Lo comprado a proveedores, como gasto", origen: ["plata", "compras"] },
+    { vista: "flujo-caja", key: "semanas", label: "Lo que viene", hint: "Entradas y salidas de las próximas semanas", origen: ["plata"] },
+    { vista: "flujo-caja", key: "por-concepto", label: "Proyección por concepto", hint: "Las mismas semanas, abiertas por tipo de ingreso y gasto", origen: ["plata"] },
+    { vista: "flujo-caja", key: "caja-del-mes", label: "Caja del mes", hint: "Cómo cerró la caja cada día del mes", origen: ["plata"] },
+    { vista: "impuestos", key: "mes", label: "Impuestos: el mes", hint: "IGV y renta del mes", origen: ["plata"] },
+    { vista: "impuestos", key: "anio", label: "Impuestos: el año", hint: "Lo pagado y por pagar mes a mes en el año", origen: ["plata"] },
+  ],
   documentos: [
     { vista: "contratos", key: "plantillas", label: "Plantillas de contrato", hint: "Modelos para generar contratos", origen: ["contratos", "documentos"] },
     { vista: "contratos", key: "contratos", label: "Mis Contratos", hint: "Contratos emitidos y su estado de firma", origen: ["contratos", "documentos"] },
