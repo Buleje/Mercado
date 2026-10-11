@@ -14,6 +14,9 @@
  *    conteo, y «No leídas» (el mismo filtro `unread` del endpoint).
  *  - Arriba «Para atender ahora» (estado de hoy), abajo los avisos por día.
  *  - Cada aviso con su acción de 48 px; «Marcar todas leídas» en la cabecera.
+ *  - Amplio (Brandon 10-10: «más amplio y grande»): hasta 72 rem × 88 % del
+ *    alto en escritorio, pantalla completa en celular; desde 1280 px «Para
+ *    atender ahora» pasa a su columna a la derecha (categorías · avisos · hoy).
  */
 import { useMemo, useState } from "react";
 import { Bell, CheckCheck, RefreshCw, WifiOff, X } from "@buleje/design-system/icons";
@@ -21,9 +24,10 @@ import { CardTitle } from "@buleje/design-system";
 import AdminModal, { CabeceraPropia, MODAL_GUTTER } from "@/components/admin/shared/AdminModal";
 import { InfoTip } from "@/components/superadmin/_shared/InfoTip";
 import { cn } from "@/lib/utils";
-import AlertaAhoraFila from "./AlertaAhoraFila";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import NotificationItem from "./NotificationItem";
 import PestanasNotificaciones from "./PestanasNotificaciones";
+import SeccionAhora from "./SeccionAhora";
 import {
   agruparPorDia,
   categoriaDeTipo,
@@ -81,6 +85,7 @@ export default function NotificationHub({
   const [recarga, setRecarga] = useState(0);
   const { alertas, cargando: cargandoAlertas } = useAlertasConsolidadas(open, recarga);
   const soloSinLeer = filter === "unread";
+  const ahoraAlLado = useMediaQuery("(min-width: 1280px)");
 
   const conteos = useMemo(() => {
     const c: Record<string, number> = { todas: notifications.length + alertas.length };
@@ -117,15 +122,15 @@ export default function NotificationHub({
       open={open}
       onClose={onClose}
       variant="wide"
-      className="sm:max-w-[52rem]"
+      className="h-[100dvh] max-h-[100dvh] rounded-none sm:h-[88vh] sm:max-h-[88vh] sm:max-w-[min(72rem,94vw)] sm:rounded-2xl"
       hideCloseButton
       aboveModals
       claveVentana="centro-de-notificaciones"
     >
-      {/* Alto propio con tope: la cabecera y las categorías quedan fijas y sólo
-          la lista se desliza (a 400 px y con 100 avisos, la fila de categorías
-          no se va con el scroll). */}
-      <div className="flex max-h-[85vh] flex-col sm:max-h-[min(44rem,80vh)]">
+      {/* Alto fijo del modal (88 % / pantalla completa): la cabecera y las
+          categorías quedan fijas y sólo la lista se desliza (a 400 px y con 100
+          avisos, la fila de categorías no se va con el scroll). */}
+      <div className="flex min-h-0 flex-1 flex-col">
         <div className="shrink-0 border-b border-[var(--rule-base)] bg-[var(--surface-raised)]">
           <CabeceraPropia
             className={cn("flex items-center justify-between gap-2 py-2", MODAL_GUTTER)}
@@ -208,19 +213,7 @@ export default function NotificationHub({
           />
 
           <div className={cn("min-h-0 flex-1 space-y-5 overflow-y-auto py-4", MODAL_GUTTER)}>
-            {ahora.length > 0 && (
-              <section aria-labelledby="notif-ahora" className="space-y-2">
-                <CardTitle
-                  id="notif-ahora"
-                  className="text-sm font-bold text-[var(--text-secondary)]"
-                >
-                  Para atender ahora
-                </CardTitle>
-                {ahora.map((a) => (
-                  <AlertaAhoraFila key={a.id} alerta={a} onNavegar={onClose} />
-                ))}
-              </section>
-            )}
+            {!ahoraAlLado && <SeccionAhora alertas={ahora} onNavegar={onClose} />}
 
             {cargaFallida && avisos.length === 0 ? (
               <div
@@ -273,6 +266,12 @@ export default function NotificationHub({
               ))
             )}
           </div>
+
+          {ahoraAlLado && ahora.length > 0 && (
+            <div className="w-80 shrink-0 overflow-y-auto border-l border-[var(--rule-base)] bg-[var(--surface-sunken)] px-4 py-4">
+              <SeccionAhora alertas={ahora} onNavegar={onClose} />
+            </div>
+          )}
         </div>
       </div>
     </AdminModal>

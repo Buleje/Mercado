@@ -22,7 +22,9 @@ export default function AlertaAhoraFila({ alerta, onNavegar }: Props) {
   return (
     <div
       className={cn(
-        "flex items-center gap-3 rounded-xl border border-l-4 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2",
+        /* `flex-wrap`: en una columna angosta (la de la derecha del centro, o
+           400 px) la acción baja a su propia línea en vez de apretar el texto. */
+        "flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-l-4 border-[var(--rule-base)] bg-[var(--surface-raised)] px-3 py-2",
         urgente ? "border-l-[var(--data-error-500)]" : "border-l-[var(--data-warning-500)]",
       )}
     >
@@ -40,7 +42,9 @@ export default function AlertaAhoraFila({ alerta, onNavegar }: Props) {
           )}
         />
       </span>
-      <div className="min-w-0 flex-1">
+      {/* `grow basis-48`, no `min-w-*` + `flex-1`: el `* { min-width: 0 }` de
+          globals.css lo anula y con base 0 la acción nunca bajaba de línea. */}
+      <div className="grow basis-48">
         <p className="text-sm font-bold leading-snug text-[var(--text-primary)]">
           <span className="sr-only">{urgente ? "Urgente: " : "Atención: "}</span>
           {alerta.title}
@@ -55,7 +59,7 @@ export default function AlertaAhoraFila({ alerta, onNavegar }: Props) {
             irAEnlace(alerta.action.href);
             onNavegar();
           }}
-          className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold text-[var(--accent-ink)] transition-colors hover:bg-[var(--accent)]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] dark:text-[var(--accent)]"
+          className="ml-auto inline-flex h-12 shrink-0 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold text-[var(--accent-ink)] transition-colors hover:bg-[var(--accent)]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] dark:text-[var(--accent)]"
         >
           {alerta.action.label}
           <span aria-hidden>→</span>

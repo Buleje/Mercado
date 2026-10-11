@@ -13,6 +13,10 @@ import type { NotificationItem } from "@/components/notifications/useNotificatio
 const rolMock = vi.hoisted(() => ({ valor: "admin" as string | null }));
 vi.mock("@/hooks/use-mi-rol", () => ({ useMiRol: () => rolMock.valor }));
 
+// Desde 1280 px «Para atender ahora» va en su columna (jsdom no trae matchMedia).
+const anchoMock = vi.hoisted(() => ({ ancho: false }));
+vi.mock("@/hooks/use-media-query", () => ({ useMediaQuery: () => anchoMock.ancho }));
+
 const irAEnlace = vi.hoisted(() => vi.fn());
 vi.mock("@/components/admin/shared/ir-a-enlace", () => ({ irAEnlace }));
 
@@ -184,6 +188,18 @@ describe("NotificationHub — Para atender ahora", () => {
     fireEvent.click(screen.getByRole("button", { name: /Ver stock/ }));
     expect(irAEnlace).toHaveBeenCalledWith("/admin?tab=inventario&vista=stock");
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it("en pantalla ancha va en su columna, una sola vez (no repetida arriba de la lista)", async () => {
+    anchoMock.ancho = true;
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ lowStockProducts: 3, pendingOrders: 0, overduePayables: 0 }),
+    }) as unknown as typeof fetch;
+    render(<NotificationHub {...defaultProps} />);
+    expect(await screen.findByText("3 productos con stock bajo")).toBeInTheDocument();
+    expect(screen.getAllByText("Para atender ahora")).toHaveLength(1);
+    anchoMock.ancho = false;
   });
 });
 

@@ -15,6 +15,9 @@
  * - Cada acceso abre su módulo EN UN MODAL sobre la pantalla actual
  *   (`AccesoEnModal`, Brandon 10-10): no se navega. El módulo se baja recién
  *   al abrirlo (`next/dynamic` dentro de `AccesoEnModal`).
+ * - Cámaras lleva un contador de avisos de movimiento sin ver (la burbuja que
+ *   mira en segundo plano, `use-avisos-camaras.ts`); abrir Cámaras los da por
+ *   vistos. Si Cámaras no está a la vista, el contador va sobre «Accesos».
  */
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -23,6 +26,8 @@ import { AdminTooltip } from "@/components/admin/shared/AdminTooltip";
 import { cn } from "@/lib/utils";
 import type { AccesoRapido } from "./accesos-rapidos";
 import { useAccesosRapidos } from "./use-accesos-rapidos";
+import { ContadorAvisos, FilaSilencioAvisos, TONO_CONTADOR } from "./AvisosCamarasUI";
+import { marcarVistosAvisosCamaras, useAvisosCamaras } from "./use-avisos-camaras";
 
 const AccesoEnModal = dynamic(() => import("./AccesoEnModal"), { ssr: false });
 
@@ -42,8 +47,20 @@ export default function AccesosRapidos({ onDarkHeader = false }: Props) {
   const { permitidos, enLaBarra, anclados, alternarAnclado } = useAccesosRapidos();
   const [abierto, setAbierto] = useState(false);
   const [eligiendo, setEligiendo] = useState(false);
-  const [enModal, setEnModal] = useState<AccesoRapido | null>(null);
-  const cerrarModal = useCallback(() => setEnModal(null), []);
+  const [enModal, setEnModalCrudo] = useState<AccesoRapido | null>(null);
+  const cerrarModal = useCallback(() => setEnModalCrudo(null), []);
+  /* Abrir Cámaras = mirar: los avisos sin ver quedan vistos. */
+  const setEnModal = useCallback((a: AccesoRapido) => {
+    if (a.id === "camaras") marcarVistosAvisosCamaras();
+    setEnModalCrudo(a);
+  }, []);
+  const camaras = permitidos.find((a) => a.id === "camaras") ?? null;
+  const abrirCamaras = useCallback(() => {
+    if (camaras) setEnModal(camaras);
+  }, [camaras, setEnModal]);
+  const avisos = useAvisosCamaras(camaras !== null, abrirCamaras);
+  /* El contador va sobre «Accesos» si Cámaras no está en la barra, o la barra no entra (< 56 rem). */
+  const camarasEnBarra = enLaBarra.some((a) => a.id === "camaras");
   const raizRef = useRef<HTMLDivElement>(null);
   const botonRef = useRef<HTMLButtonElement>(null);
 
@@ -81,21 +98,29 @@ export default function AccesosRapidos({ onDarkHeader = false }: Props) {
     <div className="flex shrink-0 items-center gap-1">
       {enLaBarra.length > 0 && (
         <ul className="hidden items-center gap-1 @min-[56rem]:flex" aria-label="Accesos anclados">
-          {enLaBarra.map((a) => (
-            <li key={a.id}>
-              <AdminTooltip content={`${a.label} · ${a.hint}`} side="bottom" className="text-sm">
-                <button
-                  type="button"
-                  onClick={() => setEnModal(a)}
-                  aria-label={a.label}
-                  aria-haspopup="dialog"
-                  className={cn(BOTON, tono)}
+          {enLaBarra.map((a) => {
+            const n = a.id === "camaras" ? avisos.sinVer : 0;
+            return (
+              <li key={a.id}>
+                <AdminTooltip
+                  content={`${a.label} · ${n > 0 && avisos.resumen ? avisos.resumen : a.hint}`}
+                  side="bottom"
+                  className="text-sm"
                 >
-                  <a.icon className="h-5 w-5" aria-hidden />
-                </button>
-              </AdminTooltip>
-            </li>
-          ))}
+                  <button
+                    type="button"
+                    onClick={() => setEnModal(a)}
+                    aria-label={n > 0 ? `${a.label}, ${n} ${n === 1 ? "aviso" : "avisos"} sin ver` : a.label}
+                    aria-haspopup="dialog"
+                    className={cn(BOTON, tono, "relative")}
+                  >
+                    <a.icon className="h-5 w-5" aria-hidden />
+                    <ContadorAvisos n={n} />
+                  </button>
+                </AdminTooltip>
+              </li>
+            );
+          })}
         </ul>
       )}
 
@@ -111,15 +136,21 @@ export default function AccesosRapidos({ onDarkHeader = false }: Props) {
             }}
             aria-haspopup="menu"
             aria-expanded={abierto}
-            aria-label="Accesos rápidos"
+            aria-label={
+              avisos.sinVer > 0
+                ? `Accesos rápidos, ${avisos.sinVer} ${avisos.sinVer === 1 ? "aviso" : "avisos"} de cámaras sin ver`
+                : "Accesos rápidos"
+            }
             className={cn(
               BOTON,
+              "relative",
               abierto ? "bg-primary/10 text-[var(--accent-ink)] dark:text-[var(--accent)]" : tono,
               // En celular, el mismo lenguaje que la hamburguesa y la lupa.
               "max-sm:bg-primary/10 max-sm:text-[var(--accent-ink)] max-sm:ring-1 max-sm:ring-[var(--accent)]/20",
             )}
           >
             <LayoutGrid className="h-5 w-5" aria-hidden />
+            <ContadorAvisos n={avisos.sinVer} className={cn(camarasEnBarra && "@min-[56rem]:hidden")} />
           </button>
         </AdminTooltip>
 
@@ -159,6 +190,12 @@ export default function AccesosRapidos({ onDarkHeader = false }: Props) {
                       aria-hidden
                     />
                     <span className="min-w-0 flex-1 leading-tight">{a.label}</span>
+                    {a.id === "camaras" && !eligiendo && avisos.sinVer > 0 && (
+                      <span className={cn("shrink-0 rounded-full px-1.5 text-sm font-bold tabular-nums", TONO_CONTADOR)}>
+                        {avisos.sinVer > 9 ? "9+" : avisos.sinVer}
+                        <span className="sr-only"> sin ver</span>
+                      </span>
+                    )}
                     {eligiendo ? (
                       <span
                         aria-hidden
@@ -183,6 +220,7 @@ export default function AccesosRapidos({ onDarkHeader = false }: Props) {
                 );
               })}
             </div>
+            {camaras && !eligiendo && <FilaSilencioAvisos silencioHasta={avisos.silencioHasta} />}
             <button
               type="button"
               role="menuitem"

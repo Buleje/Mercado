@@ -25,11 +25,16 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
   type ReactNode,
 } from "react";
+import {
+  EVENTO_EXPANDIR_MOSAICO,
+  EVENTO_MOSAICO_A_LA_VISTA,
+} from "@/lib/camaras/avisos-segundo-plano";
 import type { CamaraMosaico } from "./MosaicoNubeCuadro";
 import { navegarEnElPanel } from "./navegar-panel";
 import { comoImagen, type TomarCuadro } from "./use-personas-mosaico";
@@ -103,6 +108,18 @@ export function MosaicoGlobalProvider({ children }: { children: ReactNode }) {
     () => ({ abierto: camaras !== null, abrir, cerrar, registrarVerEnTv, conCuadro, tomarCuadro }),
     [camaras, abrir, cerrar, registrarVerEnTv, conCuadro, tomarCuadro],
   );
+
+  /* Avisos de movimiento de la cabecera (10-10): su «Ver» expande el mosaico
+     minimizado, y el mosaico a la vista da por vistos los avisos pendientes. */
+  useEffect(() => {
+    const expandir = () => setMinimizado(false);
+    window.addEventListener(EVENTO_EXPANDIR_MOSAICO, expandir);
+    return () => window.removeEventListener(EVENTO_EXPANDIR_MOSAICO, expandir);
+  }, []);
+  const aLaVista = camaras !== null && !minimizado;
+  useEffect(() => {
+    if (aLaVista) window.dispatchEvent(new Event(EVENTO_MOSAICO_A_LA_VISTA));
+  }, [aLaVista]);
 
   /* «Ver en Fotos» del aviso de «Analizar»: el mosaico se minimiza (no se
      corta) y el panel va a Cámaras → Fotos, esté en la pestaña que esté. */

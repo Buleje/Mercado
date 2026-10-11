@@ -26,6 +26,7 @@ import {
   type MetaFotoPersona,
 } from "@/lib/camaras/personas";
 import { filtrarCajasIgnoradas, type ZonaIgnorada } from "@/lib/camaras/zonas-ignorar";
+import { emitirSenalCamara } from "@/lib/camaras/avisos-segundo-plano";
 import type { AparicionPersona, CajaFraccion, MotorDetector, PersonaEnVivo } from "@/lib/camaras/vigia";
 import { logger } from "@/lib/logger";
 import { OLVIDAR_PERSONA_MS, crearSeguimiento, seguir } from "@/lib/camaras/seguimiento";
@@ -214,8 +215,23 @@ export function useDetectorPersonas(opciones: OpcionesDetectorPersonas): Detecto
         /* «Apareció» sólo si alguien visto ahora ya se vio antes en el mismo lugar. */
         mismaPersona: enVivo.some((p) => !p.estimada && p.vistas >= 2),
       });
-      if (d.foto === "aparecio" || d.foto === "mas_gente")
-        setAparicion({ camaraId, nombre: ultimas.current.nombre, at, personas: enVivo.length });
+      const aparecio = d.foto === "aparecio" || d.foto === "mas_gente";
+      if (aparecio) setAparicion({ camaraId, nombre: ultimas.current.nombre, at, personas: enVivo.length });
+      /* Avisos en segundo plano de la cabecera (10-10): una señal sólo cuando
+         pasa algo; la cabecera decide si suma y si avisa. No cambia nada acá. */
+      if (aparecio || movimiento.length > 0) {
+        emitirSenalCamara(
+          {
+            camaraId,
+            nombre: ultimas.current.nombre,
+            at,
+            movimiento: movimiento.length > 0,
+            aparicion: aparecio,
+            personas: enVivo.length,
+          },
+          ultimas.current.leerFuente(),
+        );
+      }
       if (d.foto && subiendo) {
         /* Subida anterior en curso (4G lento): esta foto no sale, pero tampoco
            cuenta como tomada; se anota que se vio gente y la próxima mirada decide. */
